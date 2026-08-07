@@ -1,0 +1,238 @@
+{
+    "m_ios_wide_new_tab_page_session": {
+        "description": "Wide pixel sent at the end of a New Tab Page visit on iOS, capturing which actions the user took and how the visit ended.",
+        "owners": ["dus7"],
+        "triggers": ["other"],
+        "suffixes": ["daily"],
+        "parameters": [
+            // Standard wide event parameters
+            "appVersion",
+            "wideEventAppName",
+            "wideEventAppVersion",
+            "wideEventPlatform",
+            "wideEventType",
+            "wideEventFormFactor",
+            "wideEventSampleRate",
+            "wideEventIsFirstDailyOccurrence",
+            "wideEventFeatureStatus",
+            "wideEventMetaVersion",
+
+            // Wide event type identifier
+            {
+                "key": "meta.type",
+                "type": "string",
+                "description": "Wide event type identifier",
+                "enum": ["ios-new-tab-page-session"]
+            },
+
+            // Feature identifier
+            {
+                "key": "feature.name",
+                "type": "string",
+                "description": "Feature identifier for this wide pixel",
+                "enum": ["new_tab_page_session"]
+            },
+            {
+                "key": "feature.data.ext.status_reason",
+                "type": "string",
+                "description": "Terminal reason accompanying UNKNOWN outcomes, set only for a visit recovered after app termination",
+                "enum": ["app_terminated"]
+            },
+
+            // Visit context
+            {
+                "key": "feature.data.ext.trigger",
+                "type": "string",
+                "description": "What opened the New Tab Page",
+                "enum": ["app_open", "new_tab_opened", "new_tab_opened_after_fire"]
+            },
+            {
+                "key": "feature.data.ext.launch_keyboard_mode",
+                "type": "string",
+                "description": "Whether the New Tab Page was launched with the keyboard up (visit started in search mode) or down (visit started on the start page), as decided at launch",
+                "enum": ["up", "down"]
+            },
+            {
+                "key": "feature.data.ext.toggle_enabled",
+                "type": "boolean",
+                "description": "Whether the user has the Search / Duck.ai input toggle enabled in settings."
+            },
+
+            // Outcome
+            {
+                "key": "feature.data.ext.terminal_action",
+                "type": "string",
+                "description": "The single action that ended the visit. The first eighteen values map to SUCCESS; no_action_timeout (30 seconds of inactivity) and max_duration_exceeded (2 minute overall limit) map to FAILURE; app_backgrounded maps to CANCELLED; app_terminated maps to UNKNOWN.",
+                "enum": [
+                    "load_serp",
+                    "load_search_suggestion",
+                    "load_website",
+                    "load_duckai",
+                    "load_duckai_response",
+                    "load_previous_chat",
+                    "last_tab_loaded",
+                    "select_other_tab",
+                    "swipe_to_other_tab",
+                    "select_bookmark",
+                    "select_password",
+                    "select_download",
+                    "delete_data",
+                    "vpn_on",
+                    "vpn_off",
+                    "email_copied",
+                    "menu_item_selected",
+                    "custom_button",
+                    "no_action_timeout",
+                    "max_duration_exceeded",
+                    "app_backgrounded",
+                    "app_terminated"
+                ]
+            },
+            {
+                "key": "feature.data.ext.action_count_bucketed",
+                "type": "string",
+                "description": "Total number of actions taken during the visit, bucketed (lower end of bucket)",
+                "enum": ["0", "1", "2", "3", "5", "10", "20"]
+            },
+            {
+                "key": "feature.data.ext.time_to_first_interaction_ms_bucketed",
+                "type": "string",
+                "description": "Duration from the start of the visit to the first user interaction, bucketed (lower end of bucket, in ms)",
+                "enum": ["0", "1000", "5000", "10000", "30000", "60000", "300000", "600000"]
+            },
+            {
+                "key": "feature.data.ext.session_duration_ms_bucketed",
+                "type": "string",
+                "description": "Duration from the start of the visit to the terminal action, bucketed (lower end of bucket, in ms)",
+                "enum": ["0", "1000", "5000", "10000", "30000", "60000", "300000", "600000"]
+            },
+
+            // Action flags
+            {
+                "key": "feature.data.ext.actions.tap_input_bar",
+                "type": "boolean",
+                "description": "Whether the user tapped the input bar during the visit."
+            },
+            {
+                "key": "feature.data.ext.actions.type_in_input",
+                "type": "boolean",
+                "description": "Whether the user typed into the input during the visit."
+            },
+            {
+                "key": "feature.data.ext.actions.switch_toggle_to_search",
+                "type": "boolean",
+                "description": "Whether the user switched the input toggle to Search during the visit."
+            },
+            {
+                "key": "feature.data.ext.actions.switch_toggle_to_ai_chat",
+                "type": "boolean",
+                "description": "Whether the user switched the input toggle to Duck.ai during the visit."
+            },
+            {
+                "key": "feature.data.ext.actions.tap_duckai_button",
+                "type": "boolean",
+                "description": "Whether the user tapped the Duck.ai button during the visit."
+            },
+            {
+                "key": "feature.data.ext.actions.hit_submit",
+                "type": "boolean",
+                "description": "Whether the user submitted the input during the visit."
+            },
+            {
+                "key": "feature.data.ext.actions.choose_suggestion",
+                "type": "boolean",
+                "description": "Whether the user chose an autocomplete suggestion during the visit."
+            },
+            {
+                "key": "feature.data.ext.actions.tap_favorite",
+                "type": "boolean",
+                "description": "Whether the user tapped a favorite during the visit."
+            },
+            {
+                "key": "feature.data.ext.actions.tap_fire_button",
+                "type": "boolean",
+                "description": "Whether the user tapped the Fire button during the visit."
+            },
+            {
+                "key": "feature.data.ext.actions.tap_return_to_last",
+                "type": "boolean",
+                "description": "Whether the user tapped the return to last tab action during the visit."
+            },
+            {
+                "key": "feature.data.ext.actions.tap_tab_viewer_escape_hatch",
+                "type": "boolean",
+                "description": "Whether the user opened the tab viewer from the escape hatch during the visit."
+            },
+            {
+                "key": "feature.data.ext.actions.tap_tab_viewer_toolbar",
+                "type": "boolean",
+                "description": "Whether the user opened the tab viewer from the toolbar during the visit."
+            },
+            {
+                "key": "feature.data.ext.actions.tap_bookmarks_toolbar_item",
+                "type": "boolean",
+                "description": "Whether the user tapped the bookmarks toolbar item during the visit."
+            },
+            {
+                "key": "feature.data.ext.actions.tap_passwords_toolbar_item",
+                "type": "boolean",
+                "description": "Whether the user tapped the passwords toolbar item during the visit."
+            },
+            {
+                "key": "feature.data.ext.actions.open_menu",
+                "type": "boolean",
+                "description": "Whether the user opened the browser menu during the visit."
+            },
+            {
+                "key": "feature.data.ext.actions.menu_bookmarks",
+                "type": "boolean",
+                "description": "Whether the user selected Bookmarks from the menu during the visit."
+            },
+            {
+                "key": "feature.data.ext.actions.menu_passwords",
+                "type": "boolean",
+                "description": "Whether the user selected Passwords from the menu during the visit."
+            },
+            {
+                "key": "feature.data.ext.actions.menu_chats",
+                "type": "boolean",
+                "description": "Whether the user selected Chats from the menu during the visit."
+            },
+            {
+                "key": "feature.data.ext.actions.menu_downloads",
+                "type": "boolean",
+                "description": "Whether the user selected Downloads from the menu during the visit."
+            },
+            {
+                "key": "feature.data.ext.actions.menu_vpn",
+                "type": "boolean",
+                "description": "Whether the user selected the VPN entry from the menu during the visit."
+            },
+            {
+                "key": "feature.data.ext.actions.click_message_cta",
+                "type": "boolean",
+                "description": "Whether the user tapped the call to action on a New Tab Page message during the visit."
+            },
+            {
+                "key": "feature.data.ext.actions.click_message_dismiss",
+                "type": "boolean",
+                "description": "Whether the user dismissed a New Tab Page message during the visit."
+            },
+            {
+                "key": "feature.data.ext.actions.dismiss_keyboard",
+                "type": "boolean",
+                "description": "Whether the user dismissed the keyboard during the visit."
+            },
+            {
+                "key": "feature.data.ext.actions.scroll_view",
+                "type": "boolean",
+                "description": "Whether the user scrolled the New Tab Page during the visit."
+            },
+            {
+                "key": "feature.data.ext.actions.uti_back_arrow",
+                "type": "boolean",
+                "description": "Whether the user tapped the back arrow in the Unified Toggle Input during the visit."
+            }
+        ]
+    }
+}

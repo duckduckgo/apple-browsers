@@ -1,0 +1,186 @@
+{
+    "ios-new-tab-page-session": {
+        "description": "Sent at the end of a New Tab Page visit, capturing which actions the user took while the New Tab Page was on screen and how the visit ended.",
+        "owners": ["dus7"],
+        "meta": {
+            "type": "ios-new-tab-page-session",
+            "version": "0.0"
+        },
+        "feature": {
+            "name": "new_tab_page_session",
+            "status": ["SUCCESS", "FAILURE", "CANCELLED", "UNKNOWN"],
+            "data": {
+                "ext": {
+                    "status_reason": {
+                        "type": "string",
+                        "description": "Terminal reason accompanying UNKNOWN outcomes. Present only when a visit left in flight by app termination is recovered and reported later. Every other outcome describes itself through `terminal_action`.",
+                        "enum": ["app_terminated"]
+                    },
+                    "trigger": {
+                        "type": "string",
+                        "description": "What opened the New Tab Page. `app_open` = the New Tab Page was the surface the app launched into; `new_tab_opened` = the user opened a new tab within an already running app; `new_tab_opened_after_fire` = the New Tab Page the app lands on once the Fire button has cleared everything, which is a different intent from deliberately opening a blank tab.",
+                        "enum": ["app_open", "new_tab_opened", "new_tab_opened_after_fire"]
+                    },
+                    "launch_keyboard_mode": {
+                        "type": "string",
+                        "description": "Whether the New Tab Page was launched with the keyboard up (`up` = the input was focused, so the visit started in search mode) or with the keyboard down (`down` = the visit started on the start page). This is the mode the app decided on at launch, not the live keyboard state at any later point in the visit, and not the state of a connected hardware keyboard.",
+                        "enum": ["up", "down"]
+                    },
+                    "toggle_enabled": {
+                        "type": "boolean",
+                        "description": "True if the user has the Search / Duck.ai input toggle enabled in settings ('Toggle between Search and Duck.ai' rather than 'Search only')"
+                    },
+                    "terminal_action": {
+                        "type": "string",
+                        "description": "The single action that ended the visit. The first eighteen values (`load_serp` through `custom_button`) are user actions and map to SUCCESS. `custom_button` is the customizable toolbar button set to something other than Fire, reachable on the New Tab Page only while icon customization is enabled. `no_action_timeout` (the user took no action for 30 seconds) and `max_duration_exceeded` (the visit reached the 2 minute overall limit without ending) map to FAILURE. `app_backgrounded` maps to CANCELLED. `app_terminated` maps to UNKNOWN and is used for a visit recovered after the app was killed.",
+                        "enum": [
+                            "load_serp",
+                            "load_search_suggestion",
+                            "load_website",
+                            "load_duckai",
+                            "load_duckai_response",
+                            "load_previous_chat",
+                            "last_tab_loaded",
+                            "select_other_tab",
+                            "swipe_to_other_tab",
+                            "select_bookmark",
+                            "select_password",
+                            "select_download",
+                            "delete_data",
+                            "vpn_on",
+                            "vpn_off",
+                            "email_copied",
+                            "menu_item_selected",
+                            "custom_button",
+                            "no_action_timeout",
+                            "max_duration_exceeded",
+                            "app_backgrounded",
+                            "app_terminated"
+                        ]
+                    },
+                    "action_count_bucketed": {
+                        "type": "string",
+                        "description": "Total number of actions the user took during the visit, bucketed (lower end of bucket). Answers how many steps the user took between arriving on the New Tab Page and leaving it.",
+                        "enum": ["0", "1", "2", "3", "5", "10", "20"]
+                    },
+                    "time_to_first_interaction_ms_bucketed": {
+                        "type": "string",
+                        "description": "Time from the start of the visit to the user's first interaction with the New Tab Page, bucketed (lower end of bucket, in ms). Absent if the visit ended with no interaction at all.",
+                        "enum": ["0", "1000", "5000", "10000", "30000", "60000", "300000", "600000"]
+                    },
+                    "session_duration_ms_bucketed": {
+                        "type": "string",
+                        "description": "Total time the New Tab Page was visible, from the start of the visit until the terminal action, bucketed (lower end of bucket, in ms). Absent when the visit was recovered as app_terminated.",
+                        "enum": ["0", "1000", "5000", "10000", "30000", "60000", "300000", "600000"]
+                    },
+                    "actions": {
+                        "type": "object",
+                        "description": "Flags for each action the user could take during the visit. Unlike terminal_action, several of these can be true for a single visit.",
+                        "properties": {
+                            "tap_input_bar": {
+                                "type": "boolean",
+                                "description": "True if the user tapped the input bar during the visit"
+                            },
+                            "type_in_input": {
+                                "type": "boolean",
+                                "description": "True if the user typed into the input during the visit"
+                            },
+                            "switch_toggle_to_search": {
+                                "type": "boolean",
+                                "description": "True if the user switched the input toggle to Search during the visit"
+                            },
+                            "switch_toggle_to_ai_chat": {
+                                "type": "boolean",
+                                "description": "True if the user switched the input toggle to Duck.ai during the visit"
+                            },
+                            "tap_duckai_button": {
+                                "type": "boolean",
+                                "description": "True if the user tapped the Duck.ai button during the visit"
+                            },
+                            "hit_submit": {
+                                "type": "boolean",
+                                "description": "True if the user submitted the input during the visit"
+                            },
+                            "choose_suggestion": {
+                                "type": "boolean",
+                                "description": "True if the user chose an autocomplete suggestion during the visit"
+                            },
+                            "tap_favorite": {
+                                "type": "boolean",
+                                "description": "True if the user tapped a favorite during the visit"
+                            },
+                            "tap_fire_button": {
+                                "type": "boolean",
+                                "description": "True if the user tapped the Fire button during the visit"
+                            },
+                            "tap_return_to_last": {
+                                "type": "boolean",
+                                "description": "True if the user tapped the return to last tab action during the visit"
+                            },
+                            "tap_tab_viewer_escape_hatch": {
+                                "type": "boolean",
+                                "description": "True if the user opened the tab viewer from the escape hatch during the visit"
+                            },
+                            "tap_tab_viewer_toolbar": {
+                                "type": "boolean",
+                                "description": "True if the user opened the tab viewer from the toolbar during the visit"
+                            },
+                            "tap_bookmarks_toolbar_item": {
+                                "type": "boolean",
+                                "description": "True if the user tapped the bookmarks toolbar item during the visit"
+                            },
+                            "tap_passwords_toolbar_item": {
+                                "type": "boolean",
+                                "description": "True if the user tapped the passwords toolbar item during the visit"
+                            },
+                            "open_menu": {
+                                "type": "boolean",
+                                "description": "True if the user opened the browser menu during the visit"
+                            },
+                            "menu_bookmarks": {
+                                "type": "boolean",
+                                "description": "True if the user selected Bookmarks from the menu during the visit"
+                            },
+                            "menu_passwords": {
+                                "type": "boolean",
+                                "description": "True if the user selected Passwords from the menu during the visit"
+                            },
+                            "menu_chats": {
+                                "type": "boolean",
+                                "description": "True if the user selected Chats from the menu during the visit"
+                            },
+                            "menu_downloads": {
+                                "type": "boolean",
+                                "description": "True if the user selected Downloads from the menu during the visit"
+                            },
+                            "menu_vpn": {
+                                "type": "boolean",
+                                "description": "True if the user selected the VPN entry from the menu during the visit"
+                            },
+                            "click_message_cta": {
+                                "type": "boolean",
+                                "description": "True if the user tapped the call to action on a New Tab Page message during the visit"
+                            },
+                            "click_message_dismiss": {
+                                "type": "boolean",
+                                "description": "True if the user dismissed a New Tab Page message during the visit"
+                            },
+                            "dismiss_keyboard": {
+                                "type": "boolean",
+                                "description": "True if the user dismissed the keyboard during the visit"
+                            },
+                            "scroll_view": {
+                                "type": "boolean",
+                                "description": "True if the user scrolled the New Tab Page during the visit"
+                            },
+                            "uti_back_arrow": {
+                                "type": "boolean",
+                                "description": "True if the user tapped the back arrow in the Unified Toggle Input during the visit"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

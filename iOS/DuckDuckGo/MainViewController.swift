@@ -201,6 +201,10 @@ class MainViewController: UIViewController {
     let ntpAfterIdleInstrumentation: NTPAfterIdleInstrumentation
     let idleReturnTabCountInstrumentation: IdleReturnTabCountInstrumentation
     let postIdleSessionInstrumentation: PostIdleSessionInstrumentation
+    let newTabPageSessionInstrumentation: NewTabPageSessionInstrumentation
+    /// Set by the data clearing path so the New Tab Page it lands on is attributed to the
+    /// Fire button rather than to an ordinary new tab. Consumed by the next visit start.
+    private var isAttachingNewTabPageAfterFire = false
     let duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation
     let syncAutoRestoreHandler: SyncAutoRestoreHandling
     private let lastActiveTabStore: LastActiveTabStoring
@@ -551,6 +555,7 @@ class MainViewController: UIViewController {
         self.ntpAfterIdleInstrumentation = DefaultNTPAfterIdleInstrumentation(eligibilityManager: idleReturnEligibilityManager)
         self.idleReturnTabCountInstrumentation = DefaultIdleReturnTabCountInstrumentation(eligibilityManager: idleReturnEligibilityManager)
         self.postIdleSessionInstrumentation = DefaultPostIdleSessionInstrumentation(wideEvent: AppDependencyProvider.shared.wideEvent)
+        self.newTabPageSessionInstrumentation = DefaultNewTabPageSessionInstrumentation(wideEvent: AppDependencyProvider.shared.wideEvent)
         self.duckAIWideEventInstrumentation = DefaultDuckAIWideEventInstrumentation(
             wideEvent: AppDependencyProvider.shared.wideEvent,
             completeOrphanedFlowsOnInit: true
@@ -1424,6 +1429,7 @@ class MainViewController: UIViewController {
             ntpAfterIdleInstrumentation.appBackgroundedFromNTP(afterIdle: tab.openedAfterIdle)
         }
         postIdleSessionInstrumentation.sessionCancelledByBackground()
+        newTabPageSessionInstrumentation.visitBackgrounded()
 
         /// Resign the web view's first responder when backgrounding with the tab switcher
         /// visible. The tab switcher uses .overCurrentContext so the WKWebView stays in the
@@ -2049,14 +2055,6 @@ class MainViewController: UIViewController {
         updateScrollInteractionIfNeeded()
         presentContextualOnboardingDialogIfNeeded()
 
-        // It's possible for this to be called when in the background of the
-        //  switcher, and we only want to show the pixel when it's actually
-        // about to shown to the user.
-        if presentedViewController == nil || presentedViewController?.isBeingDismissed == true {
-            fireNewTabPixels()
-            fireNTPShownInstrumentation(openedAfterIdle: openedAfterIdle, hatch: hatch)
-        }
-
         // Suppress keyboard-on-new-tab when an NTP onboarding dialog is about to appear:
         // viewDidAppear fires after this function and shows the dialog, but the editing state
         // created here would immediately cover it.
@@ -2064,9 +2062,22 @@ class MainViewController: UIViewController {
         // is scheduled to fire: it drives its own beginEditing, and a premature activation here
         // causes the Dax logo to blink (disappear–reappear) before the completion dialog shows.
         let chatPathCompletionPending = daxDialogsManager.chatPathPhase == .trackerToEOJ && aiChatSettings.isAIChatEnabled
-        if isNewTab && allowingKeyboard && KeyboardSettings().onNewTab
+        // Resolved before the instrumentation call below so the wide event records the mode
+        // the app decided on, rather than sampling the keyboard afterwards and racing it.
+        let willBeginEditing = isNewTab && allowingKeyboard && KeyboardSettings().onNewTab
             && !daxDialogsManager.subscriptionPromotionPending
-            && !chatPathCompletionPending {
+            && !chatPathCompletionPending
+
+        // It's possible for this to be called when in the background of the
+        //  switcher, and we only want to show the pixel when it's actually
+        // about to shown to the user.
+        if presentedViewController == nil || presentedViewController?.isBeingDismissed == true {
+            fireNewTabPixels()
+            fireNTPShownInstrumentation(openedAfterIdle: openedAfterIdle, hatch: hatch)
+            startNewTabPageSessionInstrumentation(isNewTab: isNewTab, willBeginEditing: willBeginEditing)
+        }
+
+        if willBeginEditing {
             omniBar.beginEditing(animated: true)
         }
 
@@ -2092,6 +2103,34 @@ class MainViewController: UIViewController {
         if openedAfterIdle {
             postIdleSessionInstrumentation.sessionStarted(surface: .ntp)
         }
+    }
+
+    /// Whether an omnibar submission navigates straight to a site or runs a search, which is
+    /// the difference between the `loadWebsite` and `loadSerp` outcomes.
+    func terminalActionForSubmitted(query: String) -> NewTabPageSessionWideEventData.TerminalAction {
+        let url = URL(trimmedAddressBarString: query, useUnifiedLogic: isUnifiedURLPredictionEnabled)
+        let isSite = url?.isValid(usingUnifiedLogic: isUnifiedURLPredictionEnabled) == true
+        return isSite ? .loadWebsite : .loadSerp
+    }
+
+    /// Opens a New Tab Page visit for the Starting Experience Success Rate wide event.
+    ///
+    /// Re-attachments that are none of a launch, a new tab or a burn, such as switching to an
+    /// already empty tab, report `appOpen`.
+    private func startNewTabPageSessionInstrumentation(isNewTab: Bool, willBeginEditing: Bool) {
+        let trigger: NewTabPageSessionWideEventData.Trigger
+        if isAttachingNewTabPageAfterFire {
+            isAttachingNewTabPageAfterFire = false
+            trigger = .newTabOpenedAfterFire
+        } else {
+            trigger = isNewTab ? .newTabOpened : .appOpen
+        }
+
+        newTabPageSessionInstrumentation.visitStarted(
+            trigger: trigger,
+            launchKeyboardMode: willBeginEditing ? .up : .down,
+            toggleEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled
+        )
     }
 
     func fireNewTabPixels() {
@@ -2416,6 +2455,7 @@ class MainViewController: UIViewController {
             ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: currentTab.tabModel.openedAfterIdle)
         }
         postIdleSessionInstrumentation.sessionEnded(reason: .barUsed)
+        newTabPageSessionInstrumentation.visitEnded(terminalAction: .loadDuckai)
         prepareTabForRequest {
             currentTab.load(
                 query,
@@ -4575,6 +4615,8 @@ extension MainViewController: BrowserChromeDelegate {
             ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: tab.openedAfterIdle)
         }
         postIdleSessionInstrumentation.sessionEnded(reason: .barUsed)
+        newTabPageSessionInstrumentation.chooseSuggestion()
+        newTabPageSessionInstrumentation.visitEnded(terminalAction: .loadSearchSuggestion)
         newTabPageViewController?.chromeDelegate = nil
         dismissOmniBar()
         viewCoordinator.omniBar.cancel()
@@ -4712,6 +4754,10 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onOmniQueryUpdated(_ updatedQuery: String) {
+        if !updatedQuery.isEmpty {
+            newTabPageSessionInstrumentation.typeInInput()
+        }
+
         // Duck.ai text changes arrive via onAIChatQueryUpdated; don't show search here.
         if isModeToggleInAIChatMode {
             return
@@ -4755,6 +4801,8 @@ extension MainViewController: OmniBarDelegate {
             ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: tab.openedAfterIdle)
         }
         postIdleSessionInstrumentation.sessionEnded(reason: .barUsed)
+        newTabPageSessionInstrumentation.hitSubmit()
+        newTabPageSessionInstrumentation.visitEnded(terminalAction: terminalActionForSubmitted(query: query))
         loadQuery(query)
         hideNotificationBarIfBrokenSitePromptShown()
         showHomeRowReminder()
@@ -5233,6 +5281,7 @@ extension MainViewController: OmniBarDelegate {
         }
 
         if tapped {
+            newTabPageSessionInstrumentation.tapInputBar()
             let modeParam = [PixelParameters.browsingMode: tabManager.currentBrowsingMode.pixelParamValue]
             fireControllerAwarePixel(ntp: .addressBarClickOnNTP,
                                      serp: .addressBarClickOnSERP,
@@ -5313,6 +5362,7 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onAIChatPressed(prefilledText: String?) {
+        newTabPageSessionInstrumentation.tapDuckaiButton()
         ViewHighlighter.hideAll()
         hideSuggestionTray()
 
@@ -5605,6 +5655,11 @@ extension MainViewController: OmniBarDelegate {
             ntpAfterIdleInstrumentation.toggleUsedFromNTP(afterIdle: tab.openedAfterIdle)
         }
         postIdleSessionInstrumentation.toggleUsed()
+        if isModeToggleInAIChatMode {
+            newTabPageSessionInstrumentation.switchToggleToAiChat()
+        } else {
+            newTabPageSessionInstrumentation.switchToggleToSearch()
+        }
         iPadAIChatQuery = currentIPadAIQuery()
         refreshPopoverSuggestions()
     }
@@ -6891,6 +6946,7 @@ extension MainViewController {
             return
         }
         showBars()
+        isAttachingNewTabPageAfterFire = true
         attachHomeScreen()
         refreshTabBar()
 
@@ -7778,6 +7834,11 @@ extension MainViewController {
 
         let button = mobileCustomization.state.currentToolbarButton
         guard !button.requiresWebPage || hasWebPageContext else { return }
+        // Fire reports its own outcome through the data clearing path, so only the
+        // customized functions end the visit here.
+        if button != .fire {
+            newTabPageSessionInstrumentation.visitEnded(terminalAction: .customButton)
+        }
         switch button {
         case .home:
             guard let tab = self.currentTab?.tabModel else { return }

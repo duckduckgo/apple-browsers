@@ -22,10 +22,7 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import UIComponents
 
-/// A single capsule-shaped row for the post-subscription onboarding flow: a leading status icon and a
-/// label on a borderless, full-radius surface. The `status` picks the icon — an alert when the item is
-/// still `inactive`, a check once it is `active` — so the same row renders both the "off" and "on" states
-/// of a protection (e.g. a VPN feature row). Built from `SubscriptionOnboardingCard` + `CardItem`.
+/// A capsule row whose `status` picks the icon, so the same row renders a protection's off and on states.
 struct SubscriptionOnboardingListItemView: View {
     private enum Metrics {
         static let iconSpacing: CGFloat = 16

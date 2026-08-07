@@ -3206,6 +3206,10 @@ class MainViewController: UIViewController {
     /// clipping (keeps the pill shadow and below-bar overflow) and tints the exposed container darker
     /// so the notch shows.
     private func updateWindowedAddressBarCorners() {
+        // Runs every layout pass; on iPhone it can only repaint the container over the unified
+        // toggle input chrome, which owns it there.
+        guard AppWidthObserver.shared.isPad else { return }
+
         // Floating UI and the move animation own the container background; don't fight them. Both
         // re-run this via decorate().
         guard !isFloatingUIEnabled, !isAddressBarMoveInProgress else { return }
@@ -4131,6 +4135,9 @@ class MainViewController: UIViewController {
                 AIChatPromptHandler.shared.setData(prompt)
             }
             loadUrlInNewTab(chatURL, inheritedAttribution: nil) { [weak self] in
+                if let modelId {
+                    self?.unifiedToggleInputCoordinator?.updateSelectedModel(modelId)
+                }
                 if let payload {
                     self?.currentTab?.aiChatContentHandler.setPayload(payload: payload)
                 }
@@ -4139,6 +4146,9 @@ class MainViewController: UIViewController {
         }
 
         load(query, autoSend: autoSend, payload: payload, flowType: flowType, tools: tools, modelId: modelId, reasoningEffort: reasoningEffort, images: images, files: files)
+        if let modelId {
+            unifiedToggleInputCoordinator?.updateSelectedModel(modelId)
+        }
     }
 
     /// Executes the closure if the current tab is an AI tab

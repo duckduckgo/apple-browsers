@@ -22,10 +22,7 @@ import DesignResourcesKit
 import DuckUI
 import UIComponents
 
-/// The Subscription Settings re-entry card for the post-subscription onboarding flow: a borderless card
-/// with a leading icon, a title carrying the current setup `percentage`, a short body line, and a
-/// bottom-pinned primary CTA to resume the flow. Copy comes from `UserText`. Built from
-/// `SubscriptionOnboardingCard` + `CardItem`
+/// The Subscription Settings re-entry card, carrying the current setup `percentage` and a CTA to resume.
 struct SubscriptionOnboardingSetupCard: View {
     private enum Metrics {
         static let iconSpacing: CGFloat = 12

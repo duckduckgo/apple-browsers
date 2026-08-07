@@ -68,7 +68,7 @@ struct NewTabPageOmnibarSubscriptionDialogPresenterTests {
             return
         }
         #expect(url.absoluteString.contains("featurePage=duckai"))
-        #expect(url.absoluteString.contains("origin=funnel_newtab_macos__omnibar"))
+        #expect(url.absoluteString.contains("origin=funnel_newtab_macos__modelpicker"))
     }
 
     @available(iOS 16, macOS 13, *)
@@ -116,7 +116,26 @@ struct NewTabPageOmnibarSubscriptionDialogPresenterTests {
             return
         }
         #expect(url.absoluteString.contains("featurePage=duckai"))
-        #expect(url.absoluteString.contains("origin=funnel_newtab_macos__omnibar"))
+        #expect(url.absoluteString.contains("origin=funnel_newtab_macos__modelpicker"))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The gated picker decides the funnel origin", .timeLimit(.minutes(1)))
+    func pickerDecidesOrigin() async throws {
+        // Not parameterized: `OmnibarSubscriptionUpsellSource` isn't Sendable, so passing it as a
+        // test argument warns today and fails under the Swift 6 language mode.
+        for (source, expectedOrigin) in [(NewTabPageDataModel.OmnibarSubscriptionUpsellSource.model, "funnel_newtab_macos__modelpicker"),
+                                         (.reasoning, "funnel_newtab_macos__reasoningdropdown")] {
+            let (presenter, mockTabShower, _) = createPresenter()
+
+            presenter.makeUpsellDialog(userTier: .free, source: source).onSubscribe?()
+
+            guard case let .subscription(url) = mockTabShower.capturedContent else {
+                Issue.record("Expected .subscription tab content for \(source)")
+                return
+            }
+            #expect(url.absoluteString.contains("origin=\(expectedOrigin)"))
+        }
     }
 
     @available(iOS 16, macOS 13, *)

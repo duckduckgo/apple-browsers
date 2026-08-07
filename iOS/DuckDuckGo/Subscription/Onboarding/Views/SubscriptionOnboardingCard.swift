@@ -23,14 +23,8 @@ import UIComponents
 
 // MARK: - Card Shell
 
-/// The rounded card shell for the post-subscription onboarding flow: a design-system surface with an
-/// optional `header`, its main `items` content, and an optional `footer`, stacked vertically. When a
-/// header is present a full-width divider separates it from the content below. `bordered` adds a
-/// hairline border; `borderless` is fill-only.
-///
-/// For a card built from `CardItem`s, use the `CardItem` / `[CardItem]` convenience initializers — the
-/// list variants lay the rows out with a divider between adjacent rows (via `CardItemList`). For richer
-/// layouts pass arbitrary views through the `header` / `items` / `footer` builders.
+/// The rounded card shell for the onboarding flow. For rows built from `CardItem`s use the convenience
+/// initializers, which divide adjacent rows; pass arbitrary views through the builders for richer layouts.
 struct SubscriptionOnboardingCard<Header: View, Items: View, Footer: View>: View {
     /// The card's visual style.
     enum Style {

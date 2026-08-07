@@ -20,6 +20,7 @@
 import Foundation
 import PrivacyConfig
 import Core
+import FeatureFlags_iOS
 
 // MARK: - Fallback
 

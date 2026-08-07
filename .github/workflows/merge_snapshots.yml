@@ -12,6 +12,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      issues: write
     steps:
       - name: Check out trusted automation
         uses: actions/checkout@v6
@@ -40,5 +41,6 @@ jobs:
         if: success()
         env:
           GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: gh pr edit "$PR_NUMBER" --remove-label "Merge snapshots"
+        run: gh api -X DELETE "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/labels/Merge%20snapshots" 2>/dev/null || true

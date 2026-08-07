@@ -33,21 +33,6 @@ protocol BookmarksContextMenuDelegate: NSMenuDelegate, BookmarkSearchMenuItemSel
     func closePopoverIfNeeded()
 }
 
-/// Represents the Bookmarks root (`PseudoFolder.bookmarks`) as a context menu item‘s represented object.
-///
-/// The root has no `BookmarkFolder` to stand in for it, so the top-level entities are snapshotted here
-/// when the menu is built and the action handlers act on that same list.
-struct BookmarksRootMenuItem: Equatable {
-
-    let topLevelEntities: [BaseBookmarkEntity]
-
-    /// Bookmarks stored directly at the root, excluding bookmarks nested in top-level folders.
-    var bookmarks: [Bookmark] {
-        topLevelEntities.compactMap { $0 as? Bookmark }
-    }
-
-}
-
 final class BookmarksContextMenu: NSMenu {
 
     let bookmarkManager: BookmarkManager
@@ -82,21 +67,24 @@ final class BookmarksContextMenu: NSMenu {
     }
 
     override func update() {
+        items = makeMenuItems()
+    }
+
+    private func makeMenuItems() -> [NSMenuItem] {
         let selectedItems = bookmarksContextMenuDelegate?.selectedItems() ?? []
 
         // the Bookmarks root is represented by a PseudoFolder, so it has no BaseBookmarkEntity to build a menu from
         if isBookmarksRootTheOnlySelectedItem(in: selectedItems) {
             guard featureFlagger.isFeatureOn(.bookmarksReorderByName) else {
-                items = []
-                return
+                return []
             }
 
-            items = Self.rootMenuItems(
+            return Self.rootMenuItems(
                 topLevelEntities: bookmarkManager.list?.topLevelEntities ?? [],
                 target: self
             )
         } else {
-            items = Self.menuItems(
+            return Self.menuItems(
                 for: selectedItems,
                 target: self,
                 forSearch: bookmarksContextMenuDelegate?.isSearching ?? false,

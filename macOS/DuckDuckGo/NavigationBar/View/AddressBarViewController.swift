@@ -713,7 +713,7 @@ final class AddressBarViewController: NSViewController {
             /// text / suffix doesn't peek out past the panel edges.
             addressBarTextField.isHidden = true
             passiveTextField.isHidden = true
-        case .inactiveWithAIChat:
+        case .inactiveWithAIChat where !themeManager.isAppRebranded:
             /// Unfocused Duck.ai: always render via `addressBarTextField` showing the preserved prompt (or empty
             /// for the "Ask anything privately" placeholder). The value is pushed onto the field by the transitions
             /// that enter this state (`resignFocusKeepingAIChatMode`, `applyIncomingTabAIChatMode`, and
@@ -721,12 +721,16 @@ final class AddressBarViewController: NSViewController {
             /// inside `updateView` would recurse through the `$value` sink.
             addressBarTextField.isHidden = false
             passiveTextField.isHidden = true
-        case .active, .inactive:
-            let isPassiveTextFieldHidden = selectionState.isSelected || mode.isEditing
-            addressBarTextField.isHidden = isPassiveTextFieldHidden ? false : true
-            passiveTextField.isHidden = isPassiveTextFieldHidden ? true : false
+        case .active, .inactive, .inactiveWithAIChat:
+            let isPassiveTextFieldHidden = themeManager.isAppRebranded
+                ? (selectionState.isSelected || (mode.isEditing && !addressBarTextField.stringValue.isEmpty))
+                : (selectionState.isSelected || mode.isEditing)
+
+            addressBarTextField.isHidden = !isPassiveTextFieldHidden
+            passiveTextField.isHidden = isPassiveTextFieldHidden
         }
-        passiveTextField.textColor = colorsProvider.textPrimaryColor
+
+        refreshPlaceholderAppearance()
 
         // Workaround for macOS 26.0 NSTextFieldSimpleLabel rendering bug.
         // The internal labels get `alpha = 0` when the text field is hidden; un-hiding the field (e.g. transitioning
@@ -1049,6 +1053,18 @@ final class AddressBarViewController: NSViewController {
 
     private func refreshSuggestionsAppearance() {
         activeBackgroundViewWithSuggestions.backgroundColor = theme.colorsProvider.suggestionsBackgroundColor(isBurner: isBurner)
+    }
+
+    private func refreshPlaceholderAppearance() {
+        let colorsProvider = theme.colorsProvider
+
+        guard themeManager.isAppRebranded else {
+            passiveTextField.textColor = colorsProvider.textPrimaryColor
+            return
+        }
+
+        let displaysPlaceholder = tabViewModel?.passiveAddressBarDisplaysPlaceholder == true
+        passiveTextField.textColor = displaysPlaceholder ? colorsProvider.textSecondaryColor : colorsProvider.textPrimaryColor
     }
 
     private func layoutTextFields(withMinX minX: CGFloat) {

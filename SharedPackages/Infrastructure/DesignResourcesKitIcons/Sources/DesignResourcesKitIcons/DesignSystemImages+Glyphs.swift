@@ -458,6 +458,9 @@ public extension DesignSystemImages {
             public static var aiChatAddSolid: DesignSystemImage { .init(resource: .aiChatAddSolid24) }
             public static var aiChatDown: DesignSystemImage { .init(resource: .aiChatDown24) }
             public static var aiChatHistory: DesignSystemImage { .init(resource: .aiChatHistory24) }
+            public static var aiModelClaude: DesignSystemImage { .init(resource: .aiModelClaude24) }
+            public static var aiModelMistral: DesignSystemImage { .init(resource: .aiModelMistral24) }
+            public static var aiModelOpenAI: DesignSystemImage { .init(resource: .aiModelOpenAI24) }
             public static var aiChatSettings: DesignSystemImage { .init(resource: .aiSettings24) }
             public static var alertRecolorable: DesignSystemImage { .init(resource: .alertRecolorable24) }
             public static var arrowCircleUpLeft: DesignSystemImage { .init(resource: .arrowCircleUpLeft24) }

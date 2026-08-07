@@ -19,6 +19,7 @@
 
 import Foundation
 import Onboarding
+import DuckPlayer
 
 /// Store adapter backing the App-Settings toggles used across two onboarding steps.
 ///
@@ -48,6 +49,7 @@ extension AppUserDefaults: OnboardingAppSettingsPersonalizationStore {
         }
         set {
             duckPlayerNativeYoutubeMode = newValue ? .auto : .ask
+            duckPlayerNativeUISettingsMapped = true   // Prevent performing migration from old store given the value has been set. This prevent old storage to override new value.
         }
     }
 

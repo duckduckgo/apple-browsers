@@ -26,11 +26,13 @@ import Onboarding
 /// Store adapter backing the SERP-blob toggles used across two onboarding steps.
 ///
 /// Maps onboarding toggles onto the native SERP settings (persisted in the shared SERP blob):
-/// - **Safe search** (Search step): `true` → `.moderate` (the app default, shown selected when the step
-///   first loads), `false` → `.off`. A pre-existing `.strict` reads as enabled.
-/// - **Search Assist** (No AI step): `true` → `.sometimes` (app default), `false` → `.never`.
-/// - **AI-generated images** (No AI step): store-truth passthrough to `hideAIGeneratedImages`. The screen
-///   presents the inverse ("show AI-generated images"), so the view model performs the visual inversion.
+/// - **Safe search** (Search step):
+///   - `true` → `.moderate` (the app default, shown selected when the step first loads). A pre-existing `.strict` reads as enabled.
+///   - `false` → `.off`
+/// - **Search Assist** (No AI step):
+///   - `true` → `.sometimes` (app default)
+///   - `false` → `.never`.
+/// - **AI-generated images** (No AI step): store-truth passthrough to `hideAIGeneratedImages`.
 ///
 /// - See: [Search: Setup step](https://app.asana.com/1/137249556945/task/1216445221863465?focus=true)
 /// - See: [No AI: Setup step 1](https://app.asana.com/1/137249556945/task/1216445221863467?focus=true)

@@ -147,7 +147,7 @@ struct LocalNotificationsPlaygroundView: View {
                     }
                 case .inactivityNotification:
                     HStack(alignment: .top) {
-                        Text("The inactivity notification stops being scheduled when interaction count reaches the maxInteractions limit from the privacy config. Reset the count to test scheduling again.")
+                        Text(verbatim: "The inactivity notification stops being scheduled when interaction count reaches the maxInteractions limit from the privacy config. Reset the count to test scheduling again.")
                             .font(.caption)
                         Spacer()
 

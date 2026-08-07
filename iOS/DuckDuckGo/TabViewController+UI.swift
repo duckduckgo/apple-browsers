@@ -216,6 +216,7 @@ extension TabViewController {
         NSLayoutConstraint.activate([
             error.topAnchor.constraint(equalTo: safeArea.topAnchor),
             error.bottomAnchor.constraint(equalTo: safeArea.bottomAnchor),
+            error.centerXAnchor.constraint(equalTo: safeArea.centerXAnchor),
             error.widthAnchor.constraint(equalTo: rootView.widthAnchor),
 
             errorScrollView.contentLayoutGuide.heightAnchor.constraint(greaterThanOrEqualTo: errorScrollView.frameLayoutGuide.heightAnchor),

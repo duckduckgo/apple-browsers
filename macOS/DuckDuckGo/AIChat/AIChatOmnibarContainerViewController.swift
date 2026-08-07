@@ -124,6 +124,17 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// Constraint for suggestions view height
     private var suggestionsHeightConstraint: NSLayoutConstraint?
 
+    /// Zero when rebranded: hosts size the panel from the list's own height, so a gap reserved out
+    /// here is height the panel never got. The expanded gap lives inside the list instead.
+    private var suggestionsBottomPadding: CGFloat {
+        themeManager.isAppRebranded ? 0 : Constants.suggestionsBottomPadding
+    }
+
+    /// Exposed so hosts budget for the row instead of restating these anchors.
+    var controlsRowHeight: CGFloat {
+        Constants.toolButtonSize + Constants.toolButtonBottomInset + suggestionsBottomPadding
+    }
+
     /// Unified attachments carousel height constraint — 0 when both image and tab attachment
     /// lists are empty, `attachmentsCarouselRowHeight + attachmentsCarouselBottomSpacing` otherwise.
     /// (Named `attachmentsCarouselHeightConstraint` for the property's introduction history; it now
@@ -286,8 +297,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     var totalPassthroughHeight: CGFloat {
         var height = suggestionsHeight
         if suggestionsHeight > 0 {
-            // Add bottom padding when there are suggestions
-            height += Constants.suggestionsBottomPadding
+            height += suggestionsBottomPadding
         }
         if omnibarController.isOmnibarToolsEnabled || !imageUploadButton.isHidden {
             // Add tool buttons area: button size + spacing above suggestions
@@ -911,10 +921,13 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         let heightConstraint = suggestionsView.heightAnchor.constraint(equalToConstant: 0)
         suggestionsHeightConstraint = heightConstraint
 
+        let bottomConstraint = suggestionsView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor,
+                                                                      constant: -suggestionsBottomPadding)
+
         NSLayoutConstraint.activate([
             suggestionsView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
             suggestionsView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
-            suggestionsView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -Constants.suggestionsBottomPadding),
+            bottomConstraint,
             heightConstraint,
 
             // Submit button sits above suggestions

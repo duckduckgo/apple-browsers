@@ -19,7 +19,7 @@
 import AIChat
 import AppKit
 import Combine
-import FeatureFlags
+import FeatureFlags_macOS
 import PixelKit
 import PrivacyConfig
 

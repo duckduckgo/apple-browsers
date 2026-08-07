@@ -949,6 +949,12 @@
 /* Login name label for login details on autofill */
 "autofill.logins.details.login-name" = "Τίτλος";
 
+/* Message for alert when attempting to save a password that has neither a website nor a username */
+"autofill.logins.details.missing-website-or-username-alert.message" = "Για να αποθηκεύσετε αυτόν τον κωδικό πρόσβασης, εισαγάγετε έναν ιστότοπο ή ένα όνομα χρήστη.";
+
+/* Title for alert when attempting to save a password that has neither a website nor a username */
+"autofill.logins.details.missing-website-or-username-alert.title" = "Απαιτείται ιστότοπος ή όνομα χρήστη";
+
 /* Title when adding new autofill login */
 "autofill.logins.details.new-title" = "Προσθήκη κωδικού πρόσβασης";
 

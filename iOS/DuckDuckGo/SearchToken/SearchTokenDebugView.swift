@@ -20,6 +20,7 @@
 import Core
 import PrivacyConfig
 import SwiftUI
+import FeatureFlags_iOS
 
 /// Debug screen for the Search Token (Dindex) experiment.
 ///

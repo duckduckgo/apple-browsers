@@ -19,7 +19,7 @@
 import Combine
 import DesignResourcesKit
 import DesignResourcesKitIcons
-import FeatureFlags
+import FeatureFlags_macOS
 import MaliciousSiteProtection
 import Navigation
 import PersistenceTestingUtils

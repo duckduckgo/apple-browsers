@@ -27,6 +27,12 @@ protocol OnboardingIntroContentProviding {
     var landingContent: OnboardingLandingContent { get }
     var introStepContent: OnboardingIntroStepContent { get }
     var downloadReasonContent: OnboardingDownloadReasonContent { get }
+    var serpPersonalizationContent: OnboardingPersonalizationContent { get }
+    var aiModelPersonalizationContent: OnboardingAIModelContent { get }
+    var addressBarToggleModePersonalizationContent: OnboardingAddressBarToggleModeContent { get }
+    var aiSearchPersonalizationContent: OnboardingPersonalizationContent { get }
+    var aiChatEnabledPersonalizationContent: OnboardingDuckAIEnabledPersonalizationContent { get }
+    var youTubePersonalizationContent: OnboardingPersonalizationContent { get }
     var setDefaultBrowserContent: OnboardingComparisonContent { get }
     var aiIntroContent: OnboardingComparisonContent { get }
     var addToDockContent: OnboardingAddToDockContent { get }
@@ -39,6 +45,7 @@ protocol OnboardingIntroContentProviding {
 struct OnboardingIntroContentProvider: OnboardingIntroContentProviding {
     private let flowType: OnboardingFlowType
     private let featureFlagger: FeatureFlagger
+    private let searchExperienceProvider: OnboardingSearchExperienceProvider
     /// Resolves the user's selected download reason lazily. The reason is chosen mid-flow — after this provider is built — so it's read on demand.
     /// Defaults to `nil` (control arm and Duck.ai CPP flow).
     private let downloadReasonProvider: () -> OnboardingDownloadReason?
@@ -46,10 +53,12 @@ struct OnboardingIntroContentProvider: OnboardingIntroContentProviding {
     init(
         flowType: OnboardingFlowType,
         featureFlagger: FeatureFlagger,
+        searchExperienceProvider: OnboardingSearchExperienceProvider = OnboardingSearchExperience(),
         downloadReasonProvider: @escaping () -> OnboardingDownloadReason? = { nil }
     ) {
         self.flowType = flowType
         self.featureFlagger = featureFlagger
+        self.searchExperienceProvider = searchExperienceProvider
         self.downloadReasonProvider = downloadReasonProvider
     }
 }
@@ -175,6 +184,139 @@ extension OnboardingIntroContentProvider {
 
 }
 
+// MARK: - Personalization
+
+struct OnboardingPersonalizationContent: Equatable {
+    let title: String
+    let message: String?
+    let items: [Item]
+    let primaryCTA: String
+    let daxAnimation: DaxAnimation
+}
+
+extension OnboardingPersonalizationContent {
+
+    struct Item: Hashable, Equatable {
+        let type: ItemType
+        let title: String
+        let subtitle: String?
+    }
+
+}
+
+extension OnboardingPersonalizationContent.Item {
+
+    enum ItemType: Equatable {
+        case recentlyVisitedSites
+        case safeSearch
+        case searchAssist
+        case aiGeneratedImages
+        case youTubeAdBlocking
+        case duckPlayer
+    }
+
+}
+
+struct OnboardingAIModelContent: Equatable {
+    let title: String
+    let message: String
+    let primaryCTA: String
+    let daxAnimation: DaxAnimation
+}
+
+struct OnboardingAddressBarToggleModeContent: Equatable {
+    let title: String
+    let icon: OnboardingImageResource
+    let footer: String
+    let primaryCTA: String
+    let secondaryCTA: String
+    let daxAnimation: DaxAnimation?
+}
+
+struct OnboardingDuckAIEnabledPersonalizationContent: Equatable {
+    let icon: OnboardingImageResource
+    let title: String
+    let message: String
+    let primaryCTA: String
+    let secondaryCTA: String
+    let daxAnimation: DaxAnimation?
+}
+
+extension OnboardingIntroContentProvider {
+
+    var serpPersonalizationContent: OnboardingPersonalizationContent {
+        OnboardingPersonalizationContent(
+            title: UserText.Onboarding.Personalization.Search.title,
+            message: nil,
+            items: [
+                OnboardingPersonalizationContent.Item(type: .recentlyVisitedSites, title: UserText.Onboarding.Personalization.Search.recentlyVisitedSitesTitle, subtitle: UserText.Onboarding.Personalization.Search.recentlyVisitedSitesSubtitle),
+                OnboardingPersonalizationContent.Item(type: .safeSearch, title: UserText.Onboarding.Personalization.Search.safeSearchTitle, subtitle: UserText.Onboarding.Personalization.Search.safeSearchSubtitle)
+            ],
+            primaryCTA: UserText.Onboarding.Personalization.Search.cta,
+            daxAnimation: .wingLeft
+        )
+    }
+
+    var aiModelPersonalizationContent: OnboardingAIModelContent {
+        OnboardingAIModelContent(
+            title: UserText.Onboarding.Personalization.AIModel.title,
+            message: UserText.Onboarding.Personalization.AIModel.message,
+            primaryCTA: UserText.Onboarding.Personalization.AIModel.cta,
+            daxAnimation: .wingLeft
+        )
+    }
+
+    var addressBarToggleModePersonalizationContent: OnboardingAddressBarToggleModeContent {
+        OnboardingAddressBarToggleModeContent(
+            title: UserText.Onboarding.Personalization.AddressBarToggle.title,
+            icon: OnboardingImageResources.Personalization.addressBarToggleMode,
+            footer: UserText.Onboarding.Personalization.AddressBarToggle.footer,
+            primaryCTA: UserText.Onboarding.Personalization.AddressBarToggle.primaryCTA,
+            secondaryCTA: UserText.Onboarding.Personalization.AddressBarToggle.secondaryCTA,
+            daxAnimation: nil
+        )
+    }
+
+    var aiSearchPersonalizationContent: OnboardingPersonalizationContent {
+        OnboardingPersonalizationContent(
+            title: UserText.Onboarding.Personalization.AISearch.title,
+            message: nil,
+            items: [
+                OnboardingPersonalizationContent.Item(type: .searchAssist, title: UserText.Onboarding.Personalization.AISearch.searchAssistTitle, subtitle: UserText.Onboarding.Personalization.AISearch.searchAssistSubtitle),
+                OnboardingPersonalizationContent.Item(type: .aiGeneratedImages, title: UserText.Onboarding.Personalization.AISearch.hideAIGeneratedImagesTitle, subtitle: UserText.Onboarding.Personalization.AISearch.hideAIGeneratedImagesSubtitle)
+            ],
+            primaryCTA: UserText.Onboarding.Personalization.AISearch.cta,
+            daxAnimation: .wingLeft
+        )
+    }
+
+    var aiChatEnabledPersonalizationContent: OnboardingDuckAIEnabledPersonalizationContent {
+        OnboardingDuckAIEnabledPersonalizationContent(
+            icon: OnboardingImageResources.Personalization.addressBarToggleMode,
+            title: UserText.Onboarding.Personalization.DuckAIEnabled.title,
+            message: UserText.Onboarding.Personalization.DuckAIEnabled.message,
+            primaryCTA: UserText.Onboarding.Personalization.DuckAIEnabled.primaryCTA,
+            secondaryCTA: UserText.Onboarding.Personalization.DuckAIEnabled.secondaryCTA,
+            daxAnimation: nil
+        )
+    }
+
+    var youTubePersonalizationContent: OnboardingPersonalizationContent {
+        OnboardingPersonalizationContent(
+            title: UserText.Onboarding.Personalization.YouTube.title,
+            message: nil,
+            items: [
+                OnboardingPersonalizationContent.Item(type: .youTubeAdBlocking, title: UserText.Onboarding.Personalization.YouTube.adBlockingTitle, subtitle: nil),
+                OnboardingPersonalizationContent.Item(type: .duckPlayer, title: UserText.Onboarding.Personalization.YouTube.duckPlayerTitle, subtitle: UserText.Onboarding.Personalization.YouTube.duckPlayerSubtitle)
+            ],
+            primaryCTA: UserText.Onboarding.Personalization.YouTube.cta,
+            daxAnimation: .wingLeft
+        )
+    }
+
+}
+
+
 // MARK: - Content Provider + Comparison Chart
 
 struct OnboardingComparisonContent: Equatable {
@@ -192,7 +334,7 @@ struct OnboardingComparisonContent: Equatable {
     let primaryCTA: String
     /// When set, renders a secondary skip button below the primary CTA.
     let secondaryCTA: String?
-    let daxAnimation: DaxAnimation
+    let daxAnimation: DaxAnimation?
 }
 
 extension OnboardingIntroContentProvider {
@@ -241,7 +383,7 @@ extension OnboardingIntroContentProvider {
             features: RebrandedComparisonTableModel.browserFeatures(for: reason),
             primaryCTA: UserText.Onboarding.BrowsersComparison.cta,
             secondaryCTA: UserText.onboardingSkip,
-            daxAnimation: .wingBottom
+            daxAnimation: nil
         )
     }
 
@@ -280,7 +422,7 @@ extension OnboardingIntroContentProvider {
 
     var addToDockContent: OnboardingAddToDockContent {
         let promoMessage = switch flowType {
-        case .default: UserText.AddToDockOnboarding.Promo.introMessage
+        case .default: UserText.AddToDockOnboarding.Promo.introMessageNew
         case .duckAI: UserText.Onboarding.DuckAICPP.AddToDock.Promo.message
         }
 
@@ -389,27 +531,83 @@ struct OnboardingDuckAIQueryContent: Equatable {
     let title: String
     let searchPlaceholder: String
     let aiPlaceholder: String
+    /// Whether the Search / Duck.ai picker is shown.
     let isToggleVisible: Bool
+    /// The pre-selected input when the picker is visible, or the only input when it's hidden.
+    let defaultMode: DuckAIQueryMode
     let daxAnimation: DaxAnimation?
 }
 
 extension OnboardingIntroContentProvider {
 
     var duckAIQueryContent: OnboardingDuckAIQueryContent {
-        let (title, isToggleVisible) = switch flowType {
-        case .default:
-            (UserText.Onboarding.DuckAIQuery.title, true)
-        case .duckAI:
-            (UserText.Onboarding.DuckAICPP.DuckAIQuery.title, false)
-        }
-
+        let screen = duckAIQueryScreen
         return OnboardingDuckAIQueryContent(
-            title: title,
+            title: screen.title,
             searchPlaceholder: UserText.Onboarding.DuckAIQuery.searchPlaceholder,
             aiPlaceholder: UserText.Onboarding.DuckAIQuery.aiPlaceholder,
-            isToggleVisible: isToggleVisible,
+            isToggleVisible: screen.isToggleVisible,
+            defaultMode: screen.defaultMode,
             daxAnimation: nil
         )
     }
 
+    /// The Duck.ai query screen to present.
+    /// The Duck.ai flow from CPP is fixed.
+    /// The default flow branches on the download reason (see `defaultFlowDuckAIQueryScreen`).
+    private var duckAIQueryScreen: DuckAIQueryScreen {
+        switch flowType {
+        case .default: defaultFlowDuckAIQueryScreen
+        case .duckAI: .privateAIChat
+        }
+    }
+
+    /// Default-flow branching:
+    /// - `.privateAIChat` → the AI chat prompt (no picker visible).
+    /// - `.browserPrivately, .noAI, .blockAds` show the AI toggle only if the user
+    ///   turned the AI-chat search input on in the search experience screen, otherwise a search-only prompt.
+    /// - not enrolled (`.none`) → the default combined prompt.
+    private var defaultFlowDuckAIQueryScreen: DuckAIQueryScreen {
+        switch downloadReasonProvider() {
+        case .privateAIChat:
+            return .privateAIChat
+        case .browserPrivately, .noAI, .blockAds:
+            return searchExperienceProvider.didEnableAIChatSearchInputDuringOnboarding ? .searchOrAIChat : .privateSearch
+        case .none:
+            return .searchOrAIChat
+        }
+    }
+
+}
+
+/// A concrete Duck.ai query screen, owning its title and picker presentation.
+private enum DuckAIQueryScreen {
+    /// Search input only, no picker.
+    case privateSearch
+    /// Picker shown, pre-selecting Search.
+    case searchOrAIChat
+    /// AI input only, no picker.
+    case privateAIChat
+
+    var title: String {
+        switch self {
+        case .privateSearch: UserText.Onboarding.Personalization.DuckAIQuery.privateSearchTitle
+        case .searchOrAIChat: UserText.Onboarding.DuckAIQuery.title
+        case .privateAIChat: UserText.Onboarding.DuckAICPP.DuckAIQuery.title
+        }
+    }
+
+    var isToggleVisible: Bool {
+        switch self {
+        case .searchOrAIChat: true
+        case .privateSearch, .privateAIChat: false
+        }
+    }
+
+    var defaultMode: DuckAIQueryMode {
+        switch self {
+        case .privateSearch, .searchOrAIChat: .search
+        case .privateAIChat: .duckAI
+        }
+    }
 }

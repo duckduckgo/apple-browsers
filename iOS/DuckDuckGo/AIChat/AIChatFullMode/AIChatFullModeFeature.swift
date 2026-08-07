@@ -22,6 +22,7 @@ import PrivacyConfig
 import Common
 import FoundationExtensions
 import UIKit
+import FeatureFlags_iOS
 
 /// Provides access to full Duck AI chat mode availability.
 protocol AIChatFullModeFeatureProviding {

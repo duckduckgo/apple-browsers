@@ -617,8 +617,8 @@ final class LocalBookmarkStore: BookmarkStore {
                     assertionFailure("Object index not found in its parent")
                     continue
                 }
-                allChildren.remove(at: currentIndex)
                 guard currentIndex != insertionIndex else { continue }
+                allChildren.remove(at: currentIndex)
                 // decrement insertion index if moving object within the same folder to a higher index
                 if insertionIndex > currentIndex {
                     insertionIndexShift -= 1

@@ -39,7 +39,7 @@ import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
 import DDGSync
 import DuckAiDataStore
-import FeatureFlags
+import FeatureFlags_macOS
 import FoundationExtensions
 import Freemium
 import History

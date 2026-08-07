@@ -27,7 +27,7 @@ import PersistenceTestingUtils
 @testable import BrowserServicesKit
 @testable import DDGSync
 @testable import DuckDuckGo_Privacy_Browser
-import FeatureFlags
+import FeatureFlags_macOS
 
 private final class MockUserAuthenticator: UserAuthenticating {
     var stubAuthenticateUser = DeviceAuthenticationResult.success

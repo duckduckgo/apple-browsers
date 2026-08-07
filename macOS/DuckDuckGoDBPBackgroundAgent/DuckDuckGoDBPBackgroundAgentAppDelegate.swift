@@ -29,7 +29,7 @@ import Networking
 import Subscription
 import os.log
 import Configuration
-import FeatureFlags
+import FeatureFlags_macOS
 
 @objc(Application)
 final class DuckDuckGoDBPBackgroundAgentApplication: NSApplication {

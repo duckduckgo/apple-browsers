@@ -786,8 +786,8 @@ class AppPrivacyConfigurationTests: XCTestCase {
         let config = manager.privacyConfig
 
         let currentVersionProvider = MockAppVersionProvider(appVersion: "1.36.0")
-        XCTAssertFalse(config.isSubfeatureEnabled(iOSBrowserConfigSubfeature.intentionallyLocalOnlySubfeatureForTests, versionProvider: currentVersionProvider, randomizer: Double.random(in:), defaultValue: false))
-        XCTAssertTrue(config.isSubfeatureEnabled(iOSBrowserConfigSubfeature.intentionallyLocalOnlySubfeatureForTests, versionProvider: currentVersionProvider, randomizer: Double.random(in:), defaultValue: true))
+        XCTAssertFalse(config.isSubfeatureEnabled(MacOSBrowserConfigSubfeature.intentionallyLocalOnlySubfeatureForTests, versionProvider: currentVersionProvider, randomizer: Double.random(in:), defaultValue: false))
+        XCTAssertTrue(config.isSubfeatureEnabled(MacOSBrowserConfigSubfeature.intentionallyLocalOnlySubfeatureForTests, versionProvider: currentVersionProvider, randomizer: Double.random(in:), defaultValue: true))
     }
 
     let exampleSubfeatureWithRolloutsConfig = exampleSubfeatureWithRolloutsConfigTemplate(percent: 5.0)

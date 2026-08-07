@@ -18,7 +18,7 @@
 
 import Combine
 import Foundation
-import FeatureFlags
+import FeatureFlags_macOS
 import PixelKit
 import PrivacyConfig
 

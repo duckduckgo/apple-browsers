@@ -23,7 +23,7 @@ import Combine
 import Common
 import FoundationExtensions
 import DataBrokerProtection_macOS
-import FeatureFlags
+import FeatureFlags_macOS
 import Freemium
 import HistoryView
 import NewTabPage

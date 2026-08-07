@@ -17,7 +17,7 @@
 //
 
 import Combine
-import FeatureFlags
+import FeatureFlags_macOS
 import PixelKit
 import PixelKitTestingUtilities
 import PrivacyConfig

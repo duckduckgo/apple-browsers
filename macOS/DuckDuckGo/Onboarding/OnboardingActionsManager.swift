@@ -19,7 +19,7 @@
 import AIChat
 import Combine
 import Common
-import FeatureFlags
+import FeatureFlags_macOS
 import DuckPlayer
 import FoundationExtensions
 import Foundation

@@ -122,6 +122,13 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
     @Published var attachmentUsage: AIChatAttachmentUsage?
 
+    @Published private(set) var isEditing: Bool = false {
+        didSet {
+            guard oldValue != isEditing else { return }
+            applyEditMode()
+        }
+    }
+
     var isSubmitBlockedByRecoveryCard: Bool = false {
         didSet {
             guard oldValue != isSubmitBlockedByRecoveryCard else { return }
@@ -434,6 +441,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         subscribeToClearButtonTap()
         subscribeToAttachmentUsageChanges()
         subscribeToSubscriptionChanges()
+        subscribeToAppLifecycle()
         wideEventReporter.subscribe(
             aiChatStatus: $aiChatStatus.eraseToAnyPublisher(),
             stopGeneratingTapped: viewController.handler.stopGeneratingButtonTappedPublisher
@@ -636,7 +644,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     /// is actively building; they belong to the tab, not to the global last-used
     /// defaults, and must not write through to global preferences.
     private func persistDraftToStore() {
-        guard !isApplyingState, !isPerformingDismissCleanup, let uid = currentTabUID else { return }
+        guard !isApplyingState, !isPerformingDismissCleanup, !isEditing, let uid = currentTabUID else { return }
         stateStore.update(snapshotCurrentState(), for: uid)
     }
 
@@ -737,6 +745,28 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     func submitProgrammatic(text: String) {
         unifiedToggleInputVC(viewController, didSubmitText: text, mode: .aiChat)
+    }
+
+    // MARK: - Edit mode
+
+    func beginEditMode(prompt: String, attachments: [UnifiedToggleInputAttachment] = []) {
+        isEditing = true
+        showExpanded(prefilledText: prompt, inputMode: .aiChat, activatesInput: true)
+        attachmentController.replaceAllAttachments(with: attachments)
+    }
+
+    func endEditMode() {
+        guard isEditing else { return }
+        isEditing = false
+        resetToolsSelection()
+        clearAttachments()
+        setText("")
+        showCollapsed()
+    }
+
+    private func applyEditMode() {
+        viewController.setEditMode(isEditing)
+        delegate?.unifiedToggleInputDidChangeEditMode(isEditing)
     }
 
     func hide() {
@@ -1429,87 +1459,106 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             delegate?.unifiedToggleInputDidSubmitQuery(text)
             didSubmitQuery.send(text)
         case .aiChat:
-            let userScript = boundUserScript
-            let tools = toolsController.selectedToolsForSubmission()
+            handleAIChatSubmission(text: text)
+        }
+    }
 
-            if let validationMessage = attachmentController.submissionValidationMessage(for: text, mode: mode) {
-                attachmentController.presentValidationError(validationMessage)
-                return
-            }
+    private func handleAIChatSubmission(text: String) {
+        let userScript = boundUserScript
+        let tools = toolsController.selectedToolsForSubmission()
 
-            switchBarSubmissionMetrics.process(text, for: .aiChat)
-            sessionMonitor.recordActivity(mode: .aiChat)
-            pixelReporter.reportPromptSubmitted(
-                hasText: !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-                selectedTool: toolsController.selectedTool,
-                attachments: viewController.currentAttachments,
-                reasoningMode: reasoningModeForSubmitPixel,
-                modelId: modelStore.persistedModelId
-            )
-            pixelReporter.reportToolSubmittedIfNeeded(
-                selectedTool: toolsController.selectedTool,
-                attachments: viewController.currentAttachments
-            )
+        if let validationMessage = attachmentController.submissionValidationMessage(for: text, mode: .aiChat) {
+            attachmentController.presentValidationError(validationMessage)
+            return
+        }
 
-            let configuration = promptSubmissionConfiguration
-            recordDuckAISubmissionStarted(
-                reasoningEffort: configuration.reasoningEffort,
-                inputMode: .keyboard,
-                frontendDeliveryPath: userScript != nil ? .userScript : .urlAutoSubmit,
-                hasPageContext: userScript?.attachedPageContextProvider?() != nil,
-                toolsSelected: !(tools?.isEmpty ?? true),
-                attachmentsSelected: !viewController.currentAttachments.isEmpty
-            )
+        // In edit mode, submitting exits edit mode instead of sending a new prompt.
+        if isEditing {
+            endEditMode()
+            return
+        }
 
-            let images = selectedModelSupportsImageUpload
-                ? UnifiedToggleInputImageEncoder.encode(viewController.currentAttachments)
-                : nil
-            let files = selectedModelSupportsFileUpload
-                ? UnifiedToggleInputFileEncoder.encode(viewController.currentAttachments)
-                : nil
+        switchBarSubmissionMetrics.process(text, for: .aiChat)
+        sessionMonitor.recordActivity(mode: .aiChat)
+        pixelReporter.reportPromptSubmitted(
+            hasText: !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+            selectedTool: toolsController.selectedTool,
+            attachments: viewController.currentAttachments,
+            reasoningMode: reasoningModeForSubmitPixel,
+            modelId: modelStore.persistedModelId
+        )
+        pixelReporter.reportToolSubmittedIfNeeded(
+            selectedTool: toolsController.selectedTool,
+            attachments: viewController.currentAttachments
+        )
 
-            resetToolsSelection()
-            clearStoreEntryAfterSubmission()
-            if isContextualChatState, userScript == nil {
-                markActiveChatPromptSubmitted()
-                delegate?.unifiedToggleInputDidSubmitPrompt(
-                    text,
-                    modelId: configuration.modelId,
-                    tools: tools,
-                    reasoningEffort: configuration.reasoningEffort,
-                    images: images,
-                    files: files
-                )
-                recordDuckAIPromptDelivered(wasQueued: false, didSendBridgeMessage: nil)
-                clearAttachments()
-                setText("")
-                dismissOmnibarKeyboard()
-                return
-            }
+        let configuration = promptSubmissionConfiguration
+        recordDuckAISubmissionStarted(
+            reasoningEffort: configuration.reasoningEffort,
+            inputMode: .keyboard,
+            frontendDeliveryPath: userScript != nil ? .userScript : .urlAutoSubmit,
+            hasPageContext: userScript?.attachedPageContextProvider?() != nil,
+            toolsSelected: !(tools?.isEmpty ?? true),
+            attachmentsSelected: !viewController.currentAttachments.isEmpty
+        )
 
-            clearAttachments()
-            if isOmnibarNewAIChatPrompt {
-                viewController.prepareToolbarSubmitStyleForDismissal()
-            }
+        let images = selectedModelSupportsImageUpload
+            ? UnifiedToggleInputImageEncoder.encode(viewController.currentAttachments)
+            : nil
+        let files = selectedModelSupportsFileUpload
+            ? UnifiedToggleInputFileEncoder.encode(viewController.currentAttachments)
+            : nil
+
+        resetToolsSelection()
+        clearStoreEntryAfterSubmission()
+        deliverAIChatPrompt(text: text, images: images, files: files, configuration: configuration, tools: tools, userScript: userScript)
+    }
+
+    private func deliverAIChatPrompt(text: String,
+                                     images: [AIChatNativePrompt.NativePromptImage]?,
+                                     files: [AIChatNativePrompt.NativePromptFile]?,
+                                     configuration: PromptSubmissionConfiguration,
+                                     tools: [AIChatRAGTool]?,
+                                     userScript: AIChatUserScript?) {
+        if isContextualChatState, userScript == nil {
             markActiveChatPromptSubmitted()
-            if isOmnibarSession {
-                deactivateToOmnibar()
-            } else {
-                // showCollapsed has no dismiss hook; clear synchronously.
-                setText("")
-                showCollapsed()
-                if isContextualChatState {
-                    dismissOmnibarKeyboard()
-                }
+            delegate?.unifiedToggleInputDidSubmitPrompt(
+                text,
+                modelId: configuration.modelId,
+                tools: tools,
+                reasoningEffort: configuration.reasoningEffort,
+                images: images,
+                files: files
+            )
+            recordDuckAIPromptDelivered(wasQueued: false, didSendBridgeMessage: nil)
+            clearAttachments()
+            setText("")
+            dismissOmnibarKeyboard()
+            return
+        }
+
+        clearAttachments()
+        if isOmnibarNewAIChatPrompt {
+            viewController.prepareToolbarSubmitStyleForDismissal()
+        }
+        markActiveChatPromptSubmitted()
+        if isOmnibarSession {
+            deactivateToOmnibar()
+        } else {
+            // showCollapsed has no dismiss hook; clear synchronously.
+            setText("")
+            showCollapsed()
+            if isContextualChatState {
+                dismissOmnibarKeyboard()
             }
-            if let userScript {
-                let didSendBridgeMessage = userScript.canDispatchBridgeMessages
-                userScript.submitPrompt(text, images: images, files: files, modelId: configuration.modelId, tools: tools, reasoningEffort: configuration.reasoningEffort)
-                recordDuckAIPromptDelivered(wasQueued: false, didSendBridgeMessage: didSendBridgeMessage)
-            } else {
-                delegate?.unifiedToggleInputDidSubmitPrompt(text, modelId: configuration.modelId, tools: tools, reasoningEffort: configuration.reasoningEffort, images: images, files: files)
-                recordDuckAIPromptDelivered(wasQueued: false, didSendBridgeMessage: nil)
-            }
+        }
+        if let userScript {
+            let didSendBridgeMessage = userScript.canDispatchBridgeMessages
+            userScript.submitPrompt(text, images: images, files: files, modelId: configuration.modelId, tools: tools, reasoningEffort: configuration.reasoningEffort)
+            recordDuckAIPromptDelivered(wasQueued: false, didSendBridgeMessage: didSendBridgeMessage)
+        } else {
+            delegate?.unifiedToggleInputDidSubmitPrompt(text, modelId: configuration.modelId, tools: tools, reasoningEffort: configuration.reasoningEffort, images: images, files: files)
+            recordDuckAIPromptDelivered(wasQueued: false, didSendBridgeMessage: nil)
         }
     }
 
@@ -1890,6 +1939,15 @@ private extension UnifiedToggleInputCoordinator {
             .sink { [weak self] _ in
                 guard let self else { return }
                 self.refreshModelsAfterSubscriptionChange()
+            }
+            .store(in: &cancellables)
+    }
+
+    func subscribeToAppLifecycle() {
+        NotificationCenter.default.publisher(for: UIApplication.didEnterBackgroundNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.endEditMode()
             }
             .store(in: &cancellables)
     }

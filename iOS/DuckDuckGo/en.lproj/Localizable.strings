@@ -919,6 +919,12 @@
 /* Login name label for login details on autofill */
 "autofill.logins.details.login-name" = "Title";
 
+/* Message for alert when attempting to save a password that has neither a website nor a username */
+"autofill.logins.details.missing-website-or-username-alert.message" = "To save this password, enter a website or username.";
+
+/* Title for alert when attempting to save a password that has neither a website nor a username */
+"autofill.logins.details.missing-website-or-username-alert.title" = "Website or Username Required";
+
 /* Title when adding new autofill login */
 "autofill.logins.details.new-title" = "Add password";
 

@@ -59,15 +59,15 @@ extension OnboardingIntroViewState.Intro {
         case chooseAppIconDialog(content: OnboardingAppIconColorContent)
         case chooseAddressBarPositionDialog(content: OnboardingAddressBarPositionContent)
         case chooseSearchExperienceDialog(content: OnboardingSearchExperienceContent)
-        case duckAIQueryDialog(content: OnboardingDuckAIQueryContent, defaultMode: DuckAIQueryMode)
+        case duckAIQueryDialog(content: OnboardingDuckAIQueryContent)
         // NA Experiment: reason-tailored steps. Content-less for now; their content and views are
         // built in the UI task (add the associated `content:` then).
-        case searchPrivacySettingsDialog
-        case aiSearchSettingsDialog
-        case aiModelDialog
-        case toggleInputModeDialog
-        case keepDuckAIDialog
-        case duckPlayerDialog
+        case searchPrivacySettingsDialog(content: OnboardingPersonalizationContent)
+        case aiSearchSettingsDialog(content: OnboardingPersonalizationContent)
+        case aiModelDialog(content: OnboardingAIModelContent, options: [OnboardingAIModelOption], selectedID: String?)
+        case toggleInputModeDialog(content: OnboardingAddressBarToggleModeContent)
+        case keepDuckAIDialog(content: OnboardingDuckAIEnabledPersonalizationContent)
+        case duckPlayerDialog(content: OnboardingPersonalizationContent)
     }
 
     struct StepInfo: Equatable {

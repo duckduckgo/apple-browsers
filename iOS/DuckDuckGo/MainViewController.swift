@@ -385,6 +385,10 @@ class MainViewController: UIViewController {
     var unifiedToggleInputFloatingReturnKeyKeyboardBottomConstraint: NSLayoutConstraint?
     var unifiedToggleInputFloatingReturnKeyInputTopConstraint: NSLayoutConstraint?
     var aiChatTabChatHeaderView: AIChatTabChatHeaderView?
+    /// Minimal header shown in place of `aiChatTabChatHeaderView` while editing a message.
+    var aiChatEditHeaderView: AIChatEditHeaderView?
+    /// The web view whitened for the current edit, so it can be restored even if the tab changes.
+    weak var whitenedTranscriptWebView: WKWebView?
 
     /// Tracks live Duck.ai voice sessions per tab. Created in `setUpDuckAIVoiceSessionTracker()`.
     var duckAIVoiceSessionTracker: DuckAIVoiceSessionTracker?
@@ -1280,7 +1284,9 @@ class MainViewController: UIViewController {
         viewCoordinator.updateMinimalChromeBottomAnchor(pinnedToScreenBottom: pinToBottom)
         if pinToBottom {
             // Bar dropped to the screen bottom: clear the keyboard-driven layout left from omnibar editing.
-            currentTab?.webView.scrollView.contentInset.bottom = 0
+            if !isFloatingUIEnabled {
+                currentTab?.webView.scrollView.contentInset.bottom = 0
+            }
             currentTab?.borderView.bottomOffset = 0
             if appSettings.currentAddressBarPosition.isBottom,
                let ntp = newTabPageViewController,
@@ -1693,7 +1699,9 @@ class MainViewController: UIViewController {
             // Web keyboard. Leave bar at rest so keyboard hides it.
             viewCoordinator.constraints.navigationBarContainerHeight.constant = omniBarHeight
             if let currentTab {
-                currentTab.webView.scrollView.contentInset.bottom = 0
+                if !isFloatingUIEnabled {
+                    currentTab.webView.scrollView.contentInset.bottom = 0
+                }
                 currentTab.borderView.bottomOffset = 0
             }
             UIView.animate(withDuration: duration, delay: 0, options: animationCurve) {
@@ -1712,12 +1720,16 @@ class MainViewController: UIViewController {
         if isAnyAITabUTIState, let currentTab {
             // The web view is anchored to the input bar's top (.unifiedToggleInput mode),
             // so it never extends behind the input — no bottom inset is needed.
-            if currentTab.webView.scrollView.contentInset.bottom != 0 {
+            if isFloatingUIEnabled {
+                currentTab.updateWebViewBottomAnchor(for: currentBarsVisibility)
+            } else if currentTab.webView.scrollView.contentInset.bottom != 0 {
                 currentTab.webView.scrollView.contentInset = .init(top: 0, left: 0, bottom: 0, right: 0)
             }
         } else if appSettings.currentAddressBarPosition.isBottom, let currentTab {
             let inset = intersection.height > 0 ? omniBarHeight : 0
-            currentTab.webView.scrollView.contentInset = .init(top: 0, left: 0, bottom: inset, right: 0)
+            if !isFloatingUIEnabled {
+                currentTab.webView.scrollView.contentInset = .init(top: 0, left: 0, bottom: inset, right: 0)
+            }
 
             let bottomOffset = intersection.height > 0 ? containerHeight - omniBarHeight : 0
             currentTab.borderView.bottomOffset = -bottomOffset
@@ -3206,6 +3218,10 @@ class MainViewController: UIViewController {
     /// clipping (keeps the pill shadow and below-bar overflow) and tints the exposed container darker
     /// so the notch shows.
     private func updateWindowedAddressBarCorners() {
+        // Runs every layout pass; on iPhone it can only repaint the container over the unified
+        // toggle input chrome, which owns it there.
+        guard AppWidthObserver.shared.isPad else { return }
+
         // Floating UI and the move animation own the container background; don't fight them. Both
         // re-run this via decorate().
         guard !isFloatingUIEnabled, !isAddressBarMoveInProgress else { return }
@@ -4131,6 +4147,9 @@ class MainViewController: UIViewController {
                 AIChatPromptHandler.shared.setData(prompt)
             }
             loadUrlInNewTab(chatURL, inheritedAttribution: nil) { [weak self] in
+                if let modelId {
+                    self?.unifiedToggleInputCoordinator?.updateSelectedModel(modelId)
+                }
                 if let payload {
                     self?.currentTab?.aiChatContentHandler.setPayload(payload: payload)
                 }
@@ -4139,6 +4158,9 @@ class MainViewController: UIViewController {
         }
 
         load(query, autoSend: autoSend, payload: payload, flowType: flowType, tools: tools, modelId: modelId, reasoningEffort: reasoningEffort, images: images, files: files)
+        if let modelId {
+            unifiedToggleInputCoordinator?.updateSelectedModel(modelId)
+        }
     }
 
     /// Executes the closure if the current tab is an AI tab

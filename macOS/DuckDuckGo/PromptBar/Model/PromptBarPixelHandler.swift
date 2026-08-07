@@ -57,6 +57,8 @@ struct PromptBarPixelHandler: DuckAIPromptPixelFiring {
         case .fileValidationFailed(let reason): .fileValidationFailed(reason: reason)
         case .modelSelected: .modelSelected
         case .reasoningEffortSelected: .reasoningEffortSelected
+        case .modelPickerShown: .modelPickerShown(origin: SubscriptionFunnelOrigin.promptBarModelPicker.rawValue)
+        case .reasoningPickerShown: .reasoningPickerShown(origin: SubscriptionFunnelOrigin.promptBarReasoningDropdown.rawValue)
         case .voiceChatOpened: .newVoiceChat
         case .submittedWithTabs,
                 .tabAttachmentRemoved,
@@ -64,6 +66,7 @@ struct PromptBarPixelHandler: DuckAIPromptPixelFiring {
                 .tabChosen,
                 .tabPickerCanceled,
                 .customizeResponsesOpened,
+                .subscriptionUpsellShown,
                 .subscriptionUpsellTriggered:
             nil
         }

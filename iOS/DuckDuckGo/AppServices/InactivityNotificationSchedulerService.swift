@@ -48,6 +48,13 @@ final class InactivityNotificationSchedulerService {
             case .maxInteractions: return 4 // default to 4 interactions
             }
         }
+
+        func value(from settings: [String: Any]?) -> Int {
+            guard let value = settings?[rawValue] as? Int, value >= 1 else {
+                return defaultValue
+            }
+            return value
+        }
     }
 
     // MARK: - Dependencies
@@ -130,17 +137,11 @@ final class InactivityNotificationSchedulerService {
     }
 
     var daysInactive: Int {
-        guard let daysInactive = subfeatureSettings?[Settings.daysInactive.rawValue] as? Int, daysInactive >= 1 else {
-            return Settings.daysInactive.defaultValue
-        }
-        return daysInactive
+        Settings.daysInactive.value(from: subfeatureSettings)
     }
 
     var maxInteractions: Int {
-        guard let maxInteractions = subfeatureSettings?[Settings.maxInteractions.rawValue] as? Int, maxInteractions >= 1 else {
-            return Settings.maxInteractions.defaultValue
-        }
-        return maxInteractions
+        Settings.maxInteractions.value(from: subfeatureSettings)
     }
 
     // MARK: - Private

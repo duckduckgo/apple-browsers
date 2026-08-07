@@ -86,8 +86,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         static let legacyContainerTopPadding: CGFloat = 0
         static let contentLeadingInset: CGFloat = 2
         static let legacyContentLeadingInset: CGFloat = 0
-        /// How far the inner border sits inside the outer one. Also the difference between their
-        /// corner radii — see `innerBorderCornerRadius(for:)`.
+        /// Also the difference between the two borders' radii — see `innerBorderCornerRadius(for:)`.
         static let innerBorderInset: CGFloat = 1
     }
 
@@ -658,15 +657,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         omnibarController.surface.drawsOwnChrome
     }
 
-    /// Radius the inner border needs to stay concentric with the outer one.
-    ///
-    /// Both borders are `CALayer` strokes drawn along a rounded-rect path. Sharing one radius while
-    /// the inner rect is inset by `innerBorderInset` leaves the arcs non-concentric: the inner arc's
-    /// centre shifts diagonally, so through the corner sweep the two strokes drift to
-    /// `inset * sqrt(2)` apart against `inset` along the straight edges, and the pair reads as one
-    /// thickened, misplaced outline. Shrinking the radius by the inset keeps the arcs parallel.
-    ///
-    /// Only the bottom corners are rounded in the rebranded theme, which is where the artefact shows.
+    /// Sharing the outer radius across a 1pt inset leaves the arcs non-concentric, so the two
+    /// strokes drift apart through the corner and read as one thickened line.
     static func innerBorderCornerRadius(for outerRadius: CGFloat) -> CGFloat {
         max(0, outerRadius - Constants.innerBorderInset)
     }
@@ -1123,10 +1115,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
         /// Do not overlap shadow of main address bar
         let overlap = themeManager.isAppRebranded ? Constants.shadowOverlapHeight : Constants.legacyShadowOverlapHeight
-        /// `ShadowView` clamps its corner radius to half its shorter side, so trimming a collapsed
-        /// panel's shadow below twice the radius rounds its bottom corners tighter than the panel's
-        /// own background and reads as a mismatched outline. Trim less rather than lose the radius —
-        /// the shadow doesn't draw its top edge anyway, so the extra height costs nothing visually.
+        /// `ShadowView` clamps its radius to half its shorter side, so trimming further would round
+        /// the corners tighter than the background. Costs nothing: it draws no top edge anyway.
         frame.size.height = max(shadowView.cornerRadius * 2, frame.height - overlap)
 
         shadowView.frame = frame

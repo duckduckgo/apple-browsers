@@ -2361,6 +2361,18 @@
         }
       }
     },
+    "aichat.attach-menu.attach-tabs" : {
+      "comment" : "Item in the AI chat omnibar add-attachment menu that opens a modal for selecting multiple open tabs to attach",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Add Tabs"
+          }
+        }
+      }
+    },
     "aichat.attach-menu.files" : {
       "comment" : "Item in the AI chat omnibar add-attachment menu shown when the selected model supports file upload but not image upload. PDF is the only file format currently accepted, so the copy names it explicitly.",
       "extractionState" : "extracted_with_value",
@@ -2723,7 +2735,7 @@
     },
     "aichat.attach-menu.page-content" : {
       "comment" : "Top-level item in the AI chat omnibar add-attachment menu that opens the open-tabs submenu",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -2837,6 +2849,42 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Последние вкладки"
+          }
+        }
+      }
+    },
+    "aichat.attach-menu.tabs-header" : {
+      "comment" : "Section header inside the AI chat omnibar add-attachment menu listing the user's currently open browser tabs",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Tabs"
+          }
+        }
+      }
+    },
+    "aichat.attach-tabs-modal.attach" : {
+      "comment" : "Confirm button in the AI chat add-tabs modal, adds the selected tabs",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Add"
+          }
+        }
+      }
+    },
+    "aichat.attach-tabs-modal.search-placeholder" : {
+      "comment" : "Placeholder in the search field of the AI chat add-tabs modal, filters the list of open tabs",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search"
           }
         }
       }
@@ -3377,6 +3425,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Это сообщение слишком длинное для отправки с вложениями."
+          }
+        }
+      }
+    },
+    "aichat.attachment.tab.count.limit" : {
+      "comment" : "Error message displayed when the user has added more open tabs than are allowed. Parameter is the maximum number of tabs.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You can only add %d tabs at a time."
           }
         }
       }

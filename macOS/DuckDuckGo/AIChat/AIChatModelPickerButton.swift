@@ -64,8 +64,8 @@ final class AIChatModelPickerButton: NSView {
 
     private let backgroundLayer = CALayer()
 
-    /// Resting outline. Kept on its own layer because `backgroundLayer` is faded in and out
-    /// for hover/press, and the outline has to stay visible in every state.
+    /// Own layer because `backgroundLayer` fades in and out for hover/press, and the outline has
+    /// to stay visible in every state.
     private let borderLayer: CALayer = {
         let layer = CALayer()
         layer.cornerRadius = Constants.cornerRadius
@@ -106,8 +106,8 @@ final class AIChatModelPickerButton: NSView {
         didSet { updateFocusRingStrokeColor() }
     }
 
-    /// `borderColor` is a `CGColor`, so the dynamic `lines` colour has to be resolved against the
-    /// view's own appearance — `NSApp`'s would be wrong in a burner window's dark override.
+    /// A `CGColor` freezes the appearance it's resolved in, and `NSApp`'s would be wrong in a
+    /// burner window's dark override.
     private func updateBorderColor() {
         CATransaction.begin()
         CATransaction.setDisableActions(true)
@@ -219,8 +219,7 @@ final class AIChatModelPickerButton: NSView {
         backgroundLayer.opacity = 0
         layer?.insertSublayer(backgroundLayer, at: 0)
 
-        // Outline above the background fill, below the focus ring, so a focused pill still
-        // reads as focused rather than double-stroked.
+        // Below the focus ring, so a focused pill doesn't read as double-stroked.
         layer?.addSublayer(borderLayer)
         updateBorderColor()
 
@@ -315,8 +314,7 @@ final class AIChatModelPickerButton: NSView {
         addTrackingArea(newTrackingArea)
         trackingArea = newTrackingArea
 
-        // Picking a model resizes the pill and lands here. A freshly added tracking area reports
-        // nothing about a pointer that is already outside it, so re-sync explicitly.
+        // A new tracking area reports nothing about a pointer already outside it.
         refreshHoverState()
     }
 
@@ -333,8 +331,7 @@ final class AIChatModelPickerButton: NSView {
         isHovered = false
     }
 
-    /// Re-derives hover from the pointer's real position, for the cases where the tracking area
-    /// can't be trusted — see `sendMenuOpeningAction` and `updateTrackingAreas`.
+    /// For the cases where the tracking area can't be trusted — see `sendMenuOpeningAction`.
     private func refreshHoverState() {
         guard let window else {
             isHovered = false

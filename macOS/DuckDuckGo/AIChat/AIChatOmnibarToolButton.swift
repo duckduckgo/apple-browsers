@@ -36,39 +36,30 @@ protocol FocusRingControlling: AnyObject {
 
     var isFocusRingSuppressed: Bool { get set }
 
-    /// Drops the press fill and re-derives hover from where the pointer actually is.
+    /// Drops the press fill and re-derives hover from the pointer's real position.
     func resetTransientFillState()
 }
 
 extension FocusRingControlling {
 
-    /// Sends a button action that pops a menu, clearing the button's transient fill in step with
-    /// the menu disappearing.
-    ///
-    /// Two problems make the naive "reset after `sendAction` returns" wrong. Menu tracking is
-    /// modal, so no `mouseExited` reaches the button's tracking area while the menu is up and its
-    /// hover state is stale by the time it closes. And `popUp` only returns once AppKit has
-    /// flashed the selected item and animated the menu away, so resetting on its return trails
-    /// the menu's disappearance by a visible beat. `didEndTrackingNotification` lands when the
-    /// user commits to an item, ahead of both animations.
+    /// Modal menu tracking swallows `mouseExited`, and `popUp` returns only after AppKit's flash
+    /// and dismissal animations — so reset on this notification, which lands at the user's click.
     func sendMenuOpeningAction(_ sendAction: () -> Void) {
         let observer = NotificationCenter.default.addObserver(
             forName: NSMenu.didEndTrackingNotification,
             object: nil,
             queue: nil
         ) { [weak self] notification in
-            // Submenus post this too as they close under a still-open parent. Only the root menu
-            // going away means the button is done being "active" — a submenu has a `supermenu`.
+            // Submenus post this too, under a still-open parent; only the root menu means done.
             guard (notification.object as? NSMenu)?.supermenu == nil else { return }
-            // `queue: nil` posts synchronously on the posting thread, and menu tracking runs on
-            // the main thread, so this is already main-actor in practice.
+            // `queue: nil` posts synchronously, and menu tracking runs on the main thread.
             MainActor.assumeMainThread {
                 self?.resetTransientFillState()
             }
         }
         sendAction()
         NotificationCenter.default.removeObserver(observer)
-        // Belt and braces: covers an action that popped no menu at all, so posted no notification.
+        // Covers an action that popped no menu, so posted no notification.
         resetTransientFillState()
     }
 }
@@ -489,13 +480,11 @@ final class AIChatOmnibarToolButton: NSView {
         addTrackingArea(newTrackingArea)
         trackingArea = newTrackingArea
 
-        // A label or toggle change resizes the button and lands here. A freshly added tracking
-        // area reports nothing about a pointer that is already outside it, so re-sync explicitly.
+        // A new tracking area reports nothing about a pointer already outside it.
         refreshHoverState()
     }
 
-    /// Re-derives hover from the pointer's real position, for the cases where the tracking area
-    /// can't be trusted — see `sendMenuOpeningAction` and `updateTrackingAreas`.
+    /// For the cases where the tracking area can't be trusted — see `sendMenuOpeningAction`.
     private func refreshHoverState() {
         guard let window else {
             isHovered = false

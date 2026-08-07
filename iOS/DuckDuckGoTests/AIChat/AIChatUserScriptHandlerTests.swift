@@ -176,8 +176,10 @@ class AIChatUserScriptHandlerTests: XCTestCase {
 
     // MARK: - Native prompt editing
 
-    func testWhenNativePromptEditingFlagIsOnThenConfigAdvertisesSupport() {
+    func testWhenNativePromptEditingFlagIsOnAndNativeChatInputAvailableThenConfigAdvertisesSupport() {
         mockFeatureFlagger.enabledFeatureFlags = [.nativeAIPromptEditing]
+        mockAIChatFullModeFeature.isAvailable = true
+        mockUnifiedToggleInputFeature.isAvailable = true
         aiChatUserScriptHandler = makeAIChatUserScriptHandler()
 
         let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
@@ -185,8 +187,20 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         XCTAssertEqual(configValues?.supportsNativePromptEditing, true)
     }
 
+    func testWhenNativePromptEditingFlagIsOnButNativeChatInputUnavailableThenConfigDoesNotAdvertiseSupport() {
+        mockFeatureFlagger.enabledFeatureFlags = [.nativeAIPromptEditing]
+        mockUnifiedToggleInputFeature.isAvailable = false
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler()
+
+        let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
+
+        XCTAssertEqual(configValues?.supportsNativePromptEditing, false)
+    }
+
     func testWhenNativePromptEditingFlagIsOffThenConfigDoesNotAdvertiseSupport() {
         mockFeatureFlagger.enabledFeatureFlags = []
+        mockAIChatFullModeFeature.isAvailable = true
+        mockUnifiedToggleInputFeature.isAvailable = true
         aiChatUserScriptHandler = makeAIChatUserScriptHandler()
 
         let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues

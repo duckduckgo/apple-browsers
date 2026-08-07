@@ -42,9 +42,10 @@ struct BlankSnapshotOverlayReason: OptionSet {
 
 }
 
-struct OverlayWindowPresenter {
+final class OverlayWindowPresenter {
 
     private let mainWindow: UIWindow
+    private var didHideMainWindow = false
 
     init(mainWindow: UIWindow) {
         self.mainWindow = mainWindow
@@ -57,11 +58,13 @@ struct OverlayWindowPresenter {
     func revealInteractiveWindow(_ overlayWindow: UIWindow) {
         overlayWindow.makeKeyAndVisible()
         mainWindow.isHidden = true
+        didHideMainWindow = true
     }
 
     func removeWindow(_ overlayWindow: UIWindow) {
         overlayWindow.isHidden = true
-        if mainWindow.isHidden {
+        if didHideMainWindow {
+            didHideMainWindow = false
             mainWindow.makeKeyAndVisible()
         }
     }

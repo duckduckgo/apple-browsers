@@ -70,13 +70,14 @@ final class OverlayWindowPresenterTests {
     }
 
     @available(iOS 16.0, *)
-    @Test("Removing an interactive overlay restores the hidden main window", .timeLimit(.minutes(1)))
+    @Test("Removing an interactive overlay restores the main window when it was unhidden elsewhere", .timeLimit(.minutes(1)))
     func removeInteractiveWindow() {
         let mainWindow = WindowSpy()
-        mainWindow.isHidden = true
+        mainWindow.isHidden = false
         let overlayWindow = WindowSpy()
-        overlayWindow.isHidden = false
         let presenter = OverlayWindowPresenter(mainWindow: mainWindow)
+        presenter.revealInteractiveWindow(overlayWindow)
+        mainWindow.isHidden = false
 
         presenter.removeWindow(overlayWindow)
 

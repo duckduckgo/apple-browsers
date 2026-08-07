@@ -170,7 +170,8 @@ final class AIChatAttachedTabsTracker {
             if refreshed.url != attachments[index].url {
                 // The tab's own title, not the one on `page`: that has been through the discard
                 // filter already and may be blanked, which would let the old title back in.
-                observers[key]?.titleOfPreviousPage = observers[key]?.tab?.title
+                let titleBeingLeft = observers[key]?.tab?.title
+                observers[key]?.titleOfPreviousPage = titleBeingLeft
             }
             attachments[index] = refreshed
         }

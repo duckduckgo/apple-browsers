@@ -34,6 +34,19 @@ public enum DataBrokerProtectionMacOSPixels {
     case backgroundAgentStarted
     case backgroundAgentStartedStoppingDueToAnotherInstanceRunning
 
+    // Background Agent resource usage
+    case resourceUsageRun(
+        cpuTimeMinutesBucket: String,
+        averageCPUPercentBucket: String,
+        agentPeakFootprintMBBucket: String,
+        webContentPeakFootprintMBBucket: String
+    )
+    case cpuTime5Minutes
+    case cpuTime15Minutes
+    case cpuTime30Minutes
+    case cpuTime60Minutes
+    case criticalMemoryPressure
+
     // IPC server events
     case ipcServerProfileSavedCalledByApp
     case ipcServerProfileSavedReceivedByAgent
@@ -92,6 +105,13 @@ extension DataBrokerProtectionMacOSPixels: PixelKit.Event {
 
         case .backgroundAgentStarted: return "m_mac_dbp_background-agent_started"
         case .backgroundAgentStartedStoppingDueToAnotherInstanceRunning: return "m_mac_dbp_background-agent_started_stopping-due-to-another-instance-running"
+
+        case .resourceUsageRun: return "m_mac_dbp_resource-usage_run"
+        case .cpuTime5Minutes: return "m_mac_dbp_cpu-time_5m"
+        case .cpuTime15Minutes: return "m_mac_dbp_cpu-time_15m"
+        case .cpuTime30Minutes: return "m_mac_dbp_cpu-time_30m"
+        case .cpuTime60Minutes: return "m_mac_dbp_cpu-time_60m"
+        case .criticalMemoryPressure: return "m_mac_dbp_memory-pressure_critical"
 
             // IPC Server Pixels
         case .ipcServerProfileSavedCalledByApp: return "m_mac_dbp_ipc-server_profile-saved_called-by-app"
@@ -166,11 +186,28 @@ extension DataBrokerProtectionMacOSPixels: PixelKit.Event {
             ]
         case .webUILoadingFailed(let error):
             return [DataBrokerProtectionSharedPixels.Consts.errorCategoryKey: error]
+        case .resourceUsageRun(
+            let cpuTimeMinutesBucket,
+            let averageCPUPercentBucket,
+            let agentPeakFootprintMBBucket,
+            let webContentPeakFootprintMBBucket
+        ):
+            return [
+                "cpu_time_minutes_bucket": cpuTimeMinutesBucket,
+                "average_cpu_percent_bucket": averageCPUPercentBucket,
+                "agent_peak_footprint_mb_bucket": agentPeakFootprintMBBucket,
+                "web_content_peak_footprint_mb_bucket": webContentPeakFootprintMBBucket
+            ]
         case .mainAppSetUpFailedSecureVaultInitFailed,
                 .backgroundAgentSetUpFailedSecureVaultInitFailed,
 
                 .backgroundAgentStarted,
                 .backgroundAgentStartedStoppingDueToAnotherInstanceRunning,
+                .cpuTime5Minutes,
+                .cpuTime15Minutes,
+                .cpuTime30Minutes,
+                .cpuTime60Minutes,
+                .criticalMemoryPressure,
                 .dataBrokerProtectionNotificationSentFirstScanComplete,
                 .dataBrokerProtectionNotificationOpenedFirstScanComplete,
                 .dataBrokerProtectionNotificationSentFirstRemoval,
@@ -218,6 +255,12 @@ extension DataBrokerProtectionMacOSPixels: PixelKit.Event {
                 .backgroundAgentSetUpFailedSecureVaultInitFailed,
                 .backgroundAgentStarted,
                 .backgroundAgentStartedStoppingDueToAnotherInstanceRunning,
+                .resourceUsageRun,
+                .cpuTime5Minutes,
+                .cpuTime15Minutes,
+                .cpuTime30Minutes,
+                .cpuTime60Minutes,
+                .criticalMemoryPressure,
                 .ipcServerProfileSavedCalledByApp,
                 .ipcServerProfileSavedReceivedByAgent,
                 .ipcServerProfileSavedXPCError,
@@ -286,6 +329,7 @@ public class DataBrokerProtectionMacOSPixelsHandler: EventMapping<DataBrokerProt
                 PixelKit.fire(event, frequency: .legacyDailyAndCount, includeAppVersionParameter: true)
             case .backgroundAgentStarted,
                     .backgroundAgentStartedStoppingDueToAnotherInstanceRunning,
+                    .resourceUsageRun,
                     .dataBrokerProtectionNotificationSentFirstScanComplete,
                     .dataBrokerProtectionNotificationOpenedFirstScanComplete,
                     .dataBrokerProtectionNotificationSentFirstRemoval,
@@ -299,6 +343,13 @@ public class DataBrokerProtectionMacOSPixelsHandler: EventMapping<DataBrokerProt
                     .webUILoadingSuccess,
                     .invalidPayload:
                 PixelKit.fire(event)
+
+            case .cpuTime5Minutes,
+                    .cpuTime15Minutes,
+                    .cpuTime30Minutes,
+                    .cpuTime60Minutes,
+                    .criticalMemoryPressure:
+                PixelKit.fire(event, frequency: .dailyAndCount)
 
             case .homeViewShowNoPermissionError,
                     .homeViewShowWebUI,

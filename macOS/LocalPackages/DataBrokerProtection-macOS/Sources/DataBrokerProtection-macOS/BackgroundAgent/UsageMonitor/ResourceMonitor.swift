@@ -35,6 +35,7 @@ public protocol ResourceMonitoring: AnyObject {
 ///   `agent: 120/150 MiB` and `WebContent: 2.1/2.8 GiB` for current/peak usage.
 /// - WebContent: current process count; for example, `18` processes.
 /// - Pressure: whether critical memory pressure occurred during the run; for example, `true` after one event.
+/// - Pixels: a bucketed summary when the run ends, CPU thresholds as they are crossed, and critical pressure.
 public final class ResourceMonitor: ResourceMonitoring, @unchecked Sendable {
 
     // MARK: - Run State
@@ -62,6 +63,7 @@ public final class ResourceMonitor: ResourceMonitoring, @unchecked Sendable {
     private let resourceUsageStore = ResourceUsageStore()
 
     private let webContentProcessIDProvider = WebContentProcessIDProvider()
+    private let pixelReporter: ResourceUsagePixelReporting
     private var activeRun: ActiveRun?
 
     // MARK: - Public API
@@ -71,7 +73,13 @@ public final class ResourceMonitor: ResourceMonitoring, @unchecked Sendable {
         resourceUsageStore.get()
     }
 
-    public init() {}
+    public init() {
+        pixelReporter = ResourceUsagePixelReporter()
+    }
+
+    init(pixelReporter: ResourceUsagePixelReporting) {
+        self.pixelReporter = pixelReporter
+    }
 
     public func start() {
         monitorQueue.async { [weak self] in
@@ -104,6 +112,7 @@ public final class ResourceMonitor: ResourceMonitoring, @unchecked Sendable {
         )
         var memory = MemoryUsageMonitor()
         memory.start(webContentPIDs: webContentPIDs)
+        pixelReporter.start()
 
         let timer = DispatchSource.makeTimerSource(queue: monitorQueue)
         let memoryPressureSource = DispatchSource.makeMemoryPressureSource(
@@ -122,7 +131,9 @@ public final class ResourceMonitor: ResourceMonitoring, @unchecked Sendable {
         }
         memoryPressureSource.setEventHandler { [weak self, weak memoryPressureSource] in
             guard let self, memoryPressureSource?.data.contains(.critical) == true else { return }
-            self.activeRun?.memory.recordCriticalPressure()
+            if self.activeRun?.memory.recordCriticalPressure() == true {
+                self.pixelReporter.reportCriticalMemoryPressure()
+            }
             self.recordResourcesAndPublishSnapshot()
         }
         activeRun = ActiveRun(
@@ -140,7 +151,10 @@ public final class ResourceMonitor: ResourceMonitoring, @unchecked Sendable {
     private func stopMonitoring() {
         guard activeRun != nil else { return }
 
-        recordResourcesAndPublishSnapshot()
+        if let snapshot = recordResourcesAndPublishSnapshot() {
+            pixelReporter.reportCPUTime(snapshot.cpu.totalTime)
+            pixelReporter.reportRun(snapshot)
+        }
         activeRun?.timer.cancel()
         activeRun?.memoryPressureSource.cancel()
         activeRun = nil
@@ -152,6 +166,9 @@ public final class ResourceMonitor: ResourceMonitoring, @unchecked Sendable {
     private func handleTimerEvent() {
         let webContentPIDs = webContentProcessIDProvider.currentProcessIDs()
         activeRun?.cpu.recordSample(webContentPIDs: Set(webContentPIDs ?? []))
+        if let cpuTime = activeRun?.cpu.makeReport().totalTime {
+            pixelReporter.reportCPUTime(cpuTime)
+        }
         activeRun?.cpuSamplesUntilNextReport -= 1
 
         guard activeRun?.cpuSamplesUntilNextReport == 0 else { return }
@@ -161,19 +178,21 @@ public final class ResourceMonitor: ResourceMonitoring, @unchecked Sendable {
         publishDebugSnapshot()
     }
 
-    private func recordResourcesAndPublishSnapshot() {
+    @discardableResult
+    private func recordResourcesAndPublishSnapshot() -> ResourceSnapshot? {
         let webContentPIDs = webContentProcessIDProvider.currentProcessIDs()
         activeRun?.cpu.recordSample(webContentPIDs: Set(webContentPIDs ?? []))
         activeRun?.memory.recordSample(webContentPIDs: webContentPIDs)
-        publishDebugSnapshot()
+        return publishDebugSnapshot()
     }
 }
 
 // MARK: - Debugging & logging
 
 private extension ResourceMonitor {
-    private func publishDebugSnapshot() {
-        guard let activeRun else { return }
+    @discardableResult
+    private func publishDebugSnapshot() -> ResourceSnapshot? {
+        guard let activeRun else { return nil }
 
         let snapshot = ResourceSnapshot(
             reportedAt: Date(),
@@ -182,6 +201,7 @@ private extension ResourceMonitor {
         )
         resourceUsageStore.publish(DBPDebugResourceUsage.Sample(snapshot))
         log(snapshot)
+        return snapshot
     }
 
     private func log(_ snapshot: ResourceSnapshot) {

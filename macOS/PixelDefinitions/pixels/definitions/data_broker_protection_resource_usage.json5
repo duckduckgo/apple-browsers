@@ -1,0 +1,72 @@
+{
+    "m_mac_dbp_resource-usage_run": {
+        "description": "Fires when monitoring stops for a PIR queue run, reporting bucketed CPU and peak memory usage.",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "cpu_time_minutes_bucket",
+                "type": "string",
+                "enum": ["0", "1", "5", "15", "30", "60"],
+                "description": "CPU minutes bucket floor; 60 includes higher values."
+            },
+            {
+                "key": "average_cpu_percent_bucket",
+                "type": "string",
+                "enum": ["0", "10", "20", "30"],
+                "description": "Average core-equivalent CPU percent bucket floor; 30 includes higher values."
+            },
+            {
+                "key": "agent_peak_footprint_mb_bucket",
+                "type": "string",
+                "enum": ["0", "512", "1024", "2048", "4096"],
+                "description": "Peak agent physical footprint MiB bucket floor; 4096 includes higher values."
+            },
+            {
+                "key": "web_content_peak_footprint_mb_bucket",
+                "type": "string",
+                "enum": ["0", "512", "1024", "2048", "4096", "unknown"],
+                "description": "Peak summed WebContent footprint MiB bucket floor; 4096+ or unknown when unavailable."
+            },
+            "channel"
+        ]
+    },
+    "m_mac_dbp_cpu-time_5m": {
+        "description": "Fires when a PIR queue run consumes at least five minutes of cumulative CPU time.",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_dbp_cpu-time_15m": {
+        "description": "Fires when a PIR queue run consumes at least fifteen minutes of cumulative CPU time.",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_dbp_cpu-time_30m": {
+        "description": "Fires when a PIR queue run consumes at least thirty minutes of cumulative CPU time.",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_dbp_cpu-time_60m": {
+        "description": "Fires when a PIR queue run consumes at least sixty minutes of cumulative CPU time.",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_dbp_memory-pressure_critical": {
+        "description": "Fires once per PIR queue run when macOS first reports critical memory pressure during the run.",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    }
+}

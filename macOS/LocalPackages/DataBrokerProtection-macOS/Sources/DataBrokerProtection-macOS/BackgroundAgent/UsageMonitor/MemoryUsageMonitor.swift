@@ -59,8 +59,11 @@ struct MemoryUsageMonitor {
         state.peak.record(sample)
     }
 
-    mutating func recordCriticalPressure() {
+    /// Records critical pressure and returns whether this is the first event in the run.
+    mutating func recordCriticalPressure() -> Bool {
+        let isFirstEvent = !state.hadCriticalPressure
         state.hadCriticalPressure = true
+        return isFirstEvent
     }
 
     mutating func reset() {

@@ -332,7 +332,7 @@ final class AIChatUserScript: NSObject, Subfeature {
             "prompt": "Debug edit: change me and tap send",
             "hasResponsesToLose": true,
             "images": [["data": Self.debugPNGBase64, "format": "png"]],
-            "files": [["data": Self.debugTextBase64, "fileName": "notes.txt", "mimeType": "text/plain"]]
+            "files": [["data": Self.debugPDFBase64, "fileName": "notes.pdf", "mimeType": "application/pdf"]]
         ]
         Task { @MainActor in
             let reply = await handler.editPrompt(params: params, message: DebugEditUserScriptMessage())
@@ -348,7 +348,7 @@ final class AIChatUserScript: NSObject, Subfeature {
     }
 
     private static let debugPNGBase64 = "iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAIAAABt+uBvAAAArElEQVR42u3bQQ0AIAwDwHnijSCsYHqY2IM0l1RAd99mtU6PpO8eyW99ChAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECFAEUOphU30AAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAZQAZDi2rgAABAgQIECBAgAABAgQIECBAgAABAgQIECBA/sUMh4AAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAigB4/LNWF1N0KpwAAAABJRU5ErkJggg=="
-    private static let debugTextBase64 = "RGVidWcgZmlsZSBjb250ZW50cw=="
+    private static let debugPDFBase64 = "JVBERi0xLjQKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUl0gL0NvdW50IDEgPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCAzMDAgMjAwXSAvUmVzb3VyY2VzIDw8IC9Gb250IDw8IC9GMSA0IDAgUiA+PiA+PiAvQ29udGVudHMgNSAwIFIgPj4KZW5kb2JqCjQgMCBvYmoKPDwgL1R5cGUgL0ZvbnQgL1N1YnR5cGUgL1R5cGUxIC9CYXNlRm9udCAvSGVsdmV0aWNhID4+CmVuZG9iago1IDAgb2JqCjw8IC9MZW5ndGggNDAgPj4Kc3RyZWFtCkJUIC9GMSAyNCBUZiA2MCAxMDAgVGQgKERlYnVnIFBERikgVGogRVQKZW5kc3RyZWFtCmVuZG9iagp4cmVmCjAgNgowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDkgMDAwMDAgbiAKMDAwMDAwMDA1OCAwMDAwMCBuIAowMDAwMDAwMTE1IDAwMDAwIG4gCjAwMDAwMDAyNDEgMDAwMDAgbiAKMDAwMDAwMDMxMSAwMDAwMCBuIAp0cmFpbGVyCjw8IC9TaXplIDYgL1Jvb3QgMSAwIFIgPj4Kc3RhcnR4cmVmCjQwMQolJUVPRg=="
 
     private struct DebugEditUserScriptMessage: UserScriptMessage {
         var messageName: String { AIChatUserScriptMessages.editPrompt.rawValue }

@@ -388,7 +388,10 @@ extension XCUIApplication {
     static func dismissLocalNetworkPromptIfPresent() -> Bool {
         let notificationCenter = XCUIApplication(bundleIdentifier: "com.apple.UserNotificationCenter")
         for label in ["Allow", "Don’t Allow", "Don't Allow"] {
-            let button = notificationCenter.buttons[label]
+            // `.firstMatch`: UserNotificationCenter can surface the same label more than once
+            // (nested hierarchy / stacked notifications); a bare query would fail `.click()` with
+            // "multiple matching elements". Any match dismisses the prompt.
+            let button = notificationCenter.buttons[label].firstMatch
             if button.exists {
                 button.click()
                 return true

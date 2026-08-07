@@ -54,15 +54,17 @@ public final class EventHubSettings: EventHubSettingsProviding {
         guard !requirements.isEmpty else {
             return Just(Set<String>()).eraseToAnyPublisher()
         }
+        // Each requirement contributes its own names while consent is withheld, and nothing once granted;
+        // `combineLatest` then keeps the union current as any of them changes. Combine has no variadic
+        // form over an array, hence the reduce.
         let perRequirement = requirements.map { requirement in
-            requirement.isGrantedPublisher.map { (requirement.configNames, $0) }.eraseToAnyPublisher()
+            requirement.isGrantedPublisher
+                .map { $0 ? Set<String>() : requirement.configNames }
+                .eraseToAnyPublisher()
         }
-        let combined = perRequirement.dropFirst().reduce(perRequirement[0].map { [$0] }.eraseToAnyPublisher()) { accumulated, next in
-            accumulated.combineLatest(next).map { $0 + [$1] }.eraseToAnyPublisher()
+        return perRequirement.dropFirst().reduce(perRequirement[0]) { accumulated, next in
+            accumulated.combineLatest(next).map { $0.union($1) }.eraseToAnyPublisher()
         }
-        return combined
-            .map { states in Set(states.filter { !$0.1 }.flatMap(\.0)) }
-            .eraseToAnyPublisher()
     }
 
     private static func strip(

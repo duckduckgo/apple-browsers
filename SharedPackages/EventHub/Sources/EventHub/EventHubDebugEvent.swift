@@ -48,3 +48,28 @@ public enum EventHubDebugEvent: Equatable {
         case delete
     }
 }
+
+/// The pixel identity of each event. Deliberately here rather than in the platform event mappings: both
+/// platforms must fire the *same* base name for these to aggregate, and a per-platform copy of the switch
+/// is exactly how two names silently drift apart — the same reasoning as `EventHubGatedConfigNames`.
+/// The platform marker is not part of these names, matching `EventHubPixelFiring`: iOS lets PixelKit
+/// append `_ios_phone`/`_ios_tablet`, macOS appends `_macos` itself.
+public extension EventHubDebugEvent {
+
+    /// The bare governed pixel name, without platform marker or schedule suffix.
+    var pixelName: String {
+        switch self {
+        case .pixelStatePersistenceFailed: return "eventhub_pixel_state_persistence_failed"
+        case .consentStripFailed: return "eventhub_consent_strip_failed"
+        }
+    }
+
+    /// Event-specific parameters. The failing operation rides as a parameter rather than splitting the
+    /// name per operation, so the four persistence failures stay one aggregatable pixel.
+    var pixelParameters: [String: String] {
+        switch self {
+        case .pixelStatePersistenceFailed(let operation): return ["operation": operation.rawValue]
+        case .consentStripFailed: return [:]
+        }
+    }
+}

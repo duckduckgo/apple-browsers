@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Combine
 import Testing
 @testable import EventHub
 
@@ -70,5 +71,45 @@ struct EventHubPersistenceThrottlingTests {
         let restarted = f.restart()
 
         #expect(restarted.count(of: "burst") == Self.burstSize)
+    }
+
+    @Test("a rejected flush leaves the state pending, and the next flush persists it")
+    func rejectedFlushIsRetried() {
+        let h = FailableStoreHarness(settingsJSON: Self.burstConfig)
+        // The period-start state was persisted during setup, so the counter is on disk at zero; what
+        // must not survive the failed write is the increment.
+        h.store.throwOnWrite = true
+
+        h.manager.handleWebEvent(EventHubFixture.webEvent("e"), tabID: .new())
+        h.scheduler.advance(by: EventHubFixture.writeBehindFlush)
+
+        #expect(h.repository.pixelState(named: "burst")?.params["count"]?.value == 0)
+
+        h.store.throwOnWrite = false
+        h.scheduler.advance(by: EventHubFixture.writeBehindFlush)
+
+        #expect(h.repository.pixelState(named: "burst")?.params["count"]?.value == 1)
+    }
+}
+
+/// A hub over a store whose writes can be made to fail. `EventHubFixture` cannot do this: its
+/// `InMemoryKeyValueStore` conforms to the non-throwing `KeyValueStoring`.
+private final class FailableStoreHarness {
+    let store = ThrowingKeyValueStore()
+    let scheduler = ManualEventHubScheduler(startMillis: 1_780_000_000_000)
+    let repository: EventHubKeyValueStore
+    let manager: EventHub
+
+    init(settingsJSON: String) {
+        let parser = EventHubConfigParser()
+        repository = EventHubKeyValueStore(store: store, parser: parser)
+        manager = EventHub(store: repository, parser: parser, settings: TestSettingsProviding(json: settingsJSON),
+                            scheduler: scheduler, pixelFiring: SpyPixelFiring())
+        scheduler.settle = { [weak manager] in manager?.settle() }
+        manager.onAppForegrounded()
+        manager.onConfigChanged()
+        // Both are dispatched, so drain them here: the tests below arm a store failure immediately after
+        // construction and would otherwise be racing setup's own flush.
+        manager.settle()
     }
 }

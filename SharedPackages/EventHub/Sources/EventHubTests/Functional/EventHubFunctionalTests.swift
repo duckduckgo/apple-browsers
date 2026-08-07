@@ -80,21 +80,23 @@ struct EventHubFunctionalTests {
     /// and `handler` can share reference semantics with the rest of the harness.
     private final class Harness {
         let scheduler = ManualEventHubScheduler(startMillis: 1_780_000_000_000)
-        let repository: EventHubStore
+        let repository: EventHubKeyValueStore
         let manager: EventHub
         let handler: WebEventsHandler
         private let spyPixelFiring = SpyPixelFiring()
         private let tabIDBox = TabIDBox()
         private let enabledSubject = CurrentValueSubject<Bool, Never>(true)
-        var fired: [FiredPixel] { spyPixelFiring.fired }
+        /// Fences on the manager's queue first — it records fired pixels there, asynchronously.
+        var fired: [FiredPixel] { manager.settle(); return spyPixelFiring.fired }
 
         init(settingsJSON: String) {
             let parser = EventHubConfigParser()
             let store = InMemoryKeyValueStore()
             repository = EventHubKeyValueStore(store: store, parser: parser)
-            let settings = StaticSettingsProviding(json: settingsJSON, enabled: enabledSubject.eraseToAnyPublisher())
+            let settings = TestSettingsProviding(json: settingsJSON, enabled: enabledSubject.eraseToAnyPublisher())
             manager = EventHub(store: repository, parser: parser, settings: settings,
                                 scheduler: scheduler, pixelFiring: spyPixelFiring)
+            scheduler.settle = { [weak manager] in manager?.settle() }
             let tabIDBox = tabIDBox
             handler = WebEventsHandler(manager: manager, tabIDProvider: { _ in tabIDBox.value })
             manager.onAppForegrounded()
@@ -113,18 +115,6 @@ struct EventHubFunctionalTests {
         /// call `manager.onConfigChanged()` afterwards to make the manager act on it (same convention
         /// as `EventHubPixelManagerTests`) — `enabledPublisher` alone only updates `latestEnabled`.
         func setEnabled(_ value: Bool) { enabledSubject.send(value) }
-    }
-
-    /// Settings publisher whose config JSON is fixed for the lifetime of a test but whose `enabled`
-    /// state is controllable mid-test via `Harness.setEnabled`, mirroring `EventHubFixture`'s
-    /// `FakeEventHubSettingsProviding`.
-    private struct StaticSettingsProviding: EventHubSettingsProviding {
-        let enabledPublisher: AnyPublisher<Bool, Never>
-        let settingsPublisher: AnyPublisher<[String: Any]?, Never>
-        init(json: String, enabled: AnyPublisher<Bool, Never> = Just(true).eraseToAnyPublisher()) {
-            settingsPublisher = Just(settingsDictionary(json)).eraseToAnyPublisher()
-            enabledPublisher = enabled
-        }
     }
 
     @Test("adwall web event fires a bucketed pixel")
@@ -214,8 +204,9 @@ struct EventHubFunctionalTests {
         let firstScheduler = ManualEventHubScheduler(startMillis: 1_780_000_000_000)
         let firstRepository = EventHubKeyValueStore(store: sharedStore, parser: parser)
         let firstManager = EventHub(store: firstRepository, parser: parser,
-                                     settings: StaticSettingsProviding(json: Self.adwallConfig),
+                                     settings: TestSettingsProviding(json: Self.adwallConfig),
                                      scheduler: firstScheduler, pixelFiring: SpyPixelFiring())
+        firstScheduler.settle = { [weak firstManager] in firstManager?.settle() }
         let firstHandler = WebEventsHandler(manager: firstManager, tabIDProvider: { _ in tab })
         firstManager.onAppForegrounded()
         firstManager.onConfigChanged()
@@ -231,11 +222,13 @@ struct EventHubFunctionalTests {
         let secondRepository = EventHubKeyValueStore(store: sharedStore, parser: parser)
         let secondPixelFiring = SpyPixelFiring()
         let secondManager = EventHub(store: secondRepository, parser: parser,
-                                      settings: StaticSettingsProviding(json: Self.adwallConfig),
+                                      settings: TestSettingsProviding(json: Self.adwallConfig),
                                       scheduler: secondScheduler, pixelFiring: secondPixelFiring)
+        secondScheduler.settle = { [weak secondManager] in secondManager?.settle() }
 
         secondManager.onAppForegrounded()
         secondManager.onConfigChanged()
+        secondManager.settle()
 
         #expect(secondPixelFiring.fired.contains { $0.name == "webTelemetry_adwalls_day" && $0.parameters["adwallCount"] == "1" })
     }

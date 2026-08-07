@@ -317,7 +317,6 @@ final class StubEventHub: EventHubManaging {
     }
 
     func onConfigChanged() {}
-    func isEnabled() -> Bool { false }
     func onAppForegrounded() {}
     func onAppBackgrounded() {}
 }

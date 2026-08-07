@@ -24,6 +24,13 @@ import Foundation
 /// within the same call (see `EventHubTests.firingResetsTheCounterForTheNextPeriod`, which relies on
 /// the period-end firing and the next period's timer both being live after one `advance`).
 final class ManualEventHubScheduler: EventHubScheduler {
+    /// Set to `EventHub.settle` by whoever wires the two together. `EventHub` both re-arms and reads the
+    /// clock on its own queue, asynchronously — so without a fence, `advance(by:)` would test
+    /// `armedAtMillis` before the action's re-arm had landed and stop looping one fire early, and the
+    /// clock mutations below would race the manager's `nowMillis()` reads. Called before each clock
+    /// mutation and after each action for exactly that reason.
+    var settle: (() -> Void)?
+
     private var currentMillis: Int64
     private var armedAtMillis: Int64?
     private var armedAction: (() -> Void)?
@@ -40,11 +47,13 @@ final class ManualEventHubScheduler: EventHubScheduler {
     }
 
     func advance(by interval: TimeInterval) {
+        settle?()
         currentMillis += Int64(interval * 1000)
         while let dueAt = armedAtMillis, dueAt <= currentMillis, let action = armedAction {
             armedAtMillis = nil
             armedAction = nil
             action()
+            settle?()
         }
     }
 
@@ -54,6 +63,7 @@ final class ManualEventHubScheduler: EventHubScheduler {
     /// end, so `now` can legitimately be past `periodEnd` while the period has not yet been swept.
     /// Lets a test observe that window, which `advance(by:)` closes automatically.
     func advanceClockOnly(by interval: TimeInterval) {
+        settle?()
         currentMillis += Int64(interval * 1000)
     }
 }

@@ -17,6 +17,8 @@
 //  limitations under the License.
 //
 
+import Common
+import EventHub
 import PixelKit
 import XCTest
 
@@ -70,17 +72,61 @@ final class IOSEventHubPixelFiringTests: XCTestCase {
         XCTAssertEqual(firedParameters.first?["attributionPeriod"], "1769126400")
     }
 
+    // MARK: - Debug events
+
+    func testDebugEventFiresDailyAndCountWithThePhoneSuffix() {
+        setUpPixelKit(source: .iOS)
+
+        IOSEventHubDebugEventMapping().fire(.pixelStatePersistenceFailed(operation: .write))
+
+        XCTAssertEqual(firedNames, ["eventhub_pixel_state_persistence_failed_ios_phone_daily",
+                                    "eventhub_pixel_state_persistence_failed_ios_phone_count"])
+    }
+
+    func testDebugEventCarriesTheTabletSuffixOnIPad() {
+        setUpPixelKit(source: .iPadOS)
+
+        IOSEventHubDebugEventMapping().fire(.consentStripFailed)
+
+        XCTAssertEqual(firedNames, ["eventhub_consent_strip_failed_ios_tablet_daily",
+                                    "eventhub_consent_strip_failed_ios_tablet_count"])
+    }
+
+    func testDebugEventCarriesTheFailingOperation() {
+        setUpPixelKit(source: .iOS)
+
+        IOSEventHubDebugEventMapping().fire(.pixelStatePersistenceFailed(operation: .decode))
+
+        XCTAssertEqual(firedParameters.first?["operation"], "decode")
+    }
+
+    func testDebugEventCarriesTheUnderlyingError() {
+        setUpPixelKit(source: .iOS)
+        let error = NSError(domain: "TestDomain", code: 42)
+
+        IOSEventHubDebugEventMapping().fire(.pixelStatePersistenceFailed(operation: .read), error: error)
+
+        XCTAssertEqual(firedParameters.first?["d"], "TestDomain")
+        XCTAssertEqual(firedParameters.first?["e"], "42")
+    }
+
     // MARK: - Helpers
 
     /// `dryRun: false` — PixelKit deliberately skips `fireRequest` entirely when dry-running. `source` is
     /// what `platformSuffix` reads, so it has to be set explicitly rather than inherited from the device.
+    /// The defaults suite is cleared first: the debug-event pixels fire `.dailyAndCount`, and PixelKit
+    /// records the last daily fire there — a suite surviving from an earlier run would suppress the
+    /// `_daily` half and make these assertions depend on when they last ran.
     private func setUpPixelKit(source: PixelKit.Source) {
+        let suiteName = "\(type(of: self))"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defaults.removePersistentDomain(forName: suiteName)
         PixelKit.setUp(dryRun: false,
                        appVersion: "1.0.0",
                        source: source.rawValue,
                        session: "test",
                        defaultHeaders: [:],
-                       defaults: UserDefaults(suiteName: "\(type(of: self))")!) { name, _, parameters, _, _, _ in
+                       defaults: defaults) { name, _, parameters, _, _, _ in
             self.firedNames.append(name)
             self.firedParameters.append(parameters)
         }

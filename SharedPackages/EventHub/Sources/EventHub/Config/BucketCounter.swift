@@ -51,12 +51,9 @@ public enum BucketCounter {
     /// Returns the name of the first bucket matching `count`, or `nil` if no bucket matches. Buckets
     /// are evaluated in list order; the first whose range contains the count wins.
     public static func bucketCount(_ count: Int, buckets: BucketList) -> String? {
-        for bucket in buckets {
-            if count >= bucket.config.gte && (bucket.config.lt == nil || count < bucket.config.lt!) {
-                return bucket.name
-            }
-        }
-        return nil
+        buckets.first { bucket in
+            count >= bucket.config.gte && (bucket.config.lt.map { count < $0 } ?? true)
+        }?.name
     }
 
     /// Returns `true` when no bucket has a lower bound greater than `count`, i.e. the value is in the

@@ -25,10 +25,10 @@ struct EventHubStoreDebugEventTests {
     private static let sampleConfig = TelemetryPixelConfig(
         name: "testPixel",
         state: "enabled",
-        trigger: TelemetryTriggerConfig(type: "period", period: TelemetryPeriodConfig(seconds: 86400)),
+        trigger: TelemetryTriggerConfig(type: .period, periodSeconds: 86400),
         parameters: [
             "count": TelemetryParameterConfig(
-                template: "counter",
+                template: .counter,
                 source: "adwall.detected",
                 buckets: [OrderedBucket(name: "0+", config: BucketConfig(gte: 0))]),
         ])
@@ -40,7 +40,7 @@ struct EventHubStoreDebugEventTests {
 
     private let capture = CapturingEventMapping()
     private let store = ThrowingKeyValueStore()
-    private let repository: EventHubStore
+    private let repository: EventHubKeyValueStore
 
     init() {
         repository = EventHubKeyValueStore(store: store, parser: EventHubConfigParser(), eventMapping: capture.eventMapping)

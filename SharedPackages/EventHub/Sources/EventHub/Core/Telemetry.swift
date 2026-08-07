@@ -32,7 +32,7 @@ final class Telemetry {
         self.name = config.name
         self.config = config
         self.periodStartMillis = periodStartMillis
-        self.periodEndMillis = periodStartMillis + (config.trigger.period?.periodSeconds ?? 0) * 1000
+        self.periodEndMillis = periodStartMillis + (config.trigger.periodSeconds ?? 0) * 1000
         self.parameters = Self.makeParameters(config: config, dedupStore: dedupStore)
     }
 
@@ -66,6 +66,13 @@ final class Telemetry {
 
     func isElapsed(atMillis now: Int64) -> Bool { now >= periodEndMillis }
 
+    /// Whether any parameter of this period's config snapshot is fed by `source` — i.e. whether
+    /// `handleEvent` would look at an event of that type at all. Reads the same snapshot `handleEvent`
+    /// does, so the two can never disagree.
+    func handles(source: String) -> Bool {
+        config.parameters.values.contains { $0.source == source }
+    }
+
     /// Routes a matching event to every parameter whose config `source` equals `source`. Returns
     /// `true` if any parameter's state changed.
     @discardableResult
@@ -88,7 +95,7 @@ final class Telemetry {
     /// never these exact numbers.
     var rawCounterValues: [String: Int] {
         var result: [String: Int] = [:]
-        for (paramName, paramConfig) in config.parameters where paramConfig.isCounter {
+        for (paramName, paramConfig) in config.parameters where paramConfig.template == .counter {
             if let parameter = parameters[paramName] { result[paramName] = parameter.state.value }
         }
         return result

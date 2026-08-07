@@ -50,7 +50,7 @@ struct EventHubConfigParserTests {
     }
     """)
 
-    let parser: EventHubConfigParsing = EventHubConfigParser()
+    let parser = EventHubConfigParser()
 
     @Test("settings JSON parses the pixel correctly")
     func settingsJSONParsesPixelCorrectly() {
@@ -59,7 +59,7 @@ struct EventHubConfigParserTests {
         #expect(telemetry.count == 1)
         let pixel = telemetry[0]
         #expect(pixel.isEnabled)
-        #expect(pixel.trigger.period?.periodSeconds == 86400)
+        #expect(pixel.trigger.periodSeconds == 86400)
     }
 
     @Test("counter parameter with map buckets is parsed correctly")
@@ -67,7 +67,7 @@ struct EventHubConfigParserTests {
         let telemetry = parser.parseTelemetry(Self.settings)
         let param = try #require(telemetry.first?.parameters["count"])
 
-        #expect(param.isCounter)
+        #expect(param.template == .counter)
         #expect(param.source == "test")
         #expect(param.buckets?.count == 7)
         #expect(param.buckets?.first(where: { $0.name == "0" })?.config == BucketConfig(gte: 0, lt: 1))
@@ -84,7 +84,7 @@ struct EventHubConfigParserTests {
         } } }
         """)
 
-        #expect(parser.parseTelemetry(json).first?.trigger.period?.periodSeconds == 30)
+        #expect(parser.parseTelemetry(json).first?.trigger.periodSeconds == 30)
     }
 
     @Test("empty JSON returns empty telemetry")
@@ -228,10 +228,45 @@ struct EventHubConfigParserTests {
 
         #expect(restored.name == original.name)
         #expect(restored.state == original.state)
-        #expect(restored.trigger.period?.periodSeconds == original.trigger.period?.periodSeconds)
+        #expect(restored.trigger.periodSeconds == original.trigger.periodSeconds)
         #expect(restored.parameters.count == original.parameters.count)
         #expect(restored.parameters["count"]?.source == original.parameters["count"]?.source)
         #expect(restored.parameters["count"]?.buckets?.count == original.parameters["count"]?.buckets?.count)
+    }
+
+    // The two below pin the *format*, which the round trip above cannot: it would keep passing if both
+    // sides changed together. A config snapshot is persisted by one build and read back by the next, so
+    // a change to how the trigger type or parameter template is spelled would discard every in-flight
+    // period on upgrade — and these are also the strings remote config authors.
+    @Test("parses a config snapshot written by an earlier build")
+    func parsesConfigSnapshotWrittenByAnEarlierBuild() throws {
+        let stored = """
+        {"state":"enabled","trigger":{"type":"period","period":{"seconds":86400}},\
+        "parameters":{"count":{"template":"counter","source":"adwall","buckets":{"0":{"gte":0,"lt":1},"1+":{"gte":1}}}}}
+        """
+
+        let restored = try #require(parser.parseSinglePixelConfig(name: "webTelemetry_adwalls_day", json: stored))
+
+        #expect(restored.state == "enabled")
+        #expect(restored.trigger.type == .period)
+        #expect(restored.trigger.periodSeconds == 86400)
+        #expect(restored.parameters["count"]?.template == .counter)
+        #expect(restored.parameters["count"]?.source == "adwall")
+        #expect(restored.parameters["count"]?.buckets?.count == 2)
+    }
+
+    @Test("serializes the trigger type and parameter template as the strings config authors")
+    func serializesTriggerTypeAndTemplateAsAuthoredStrings() throws {
+        let config = TelemetryPixelConfig(
+            name: "test",
+            state: "enabled",
+            trigger: TelemetryTriggerConfig(type: .immediate, source: "e"),
+            parameters: ["d": TelemetryParameterConfig(template: .data, dataKey: "k")])
+
+        let json = try #require(parser.serializePixelConfig(config))
+
+        #expect(json.contains("\"type\":\"immediate\""))
+        #expect(json.contains("\"template\":\"data\""))
     }
 
     @Test("serializePixelConfig returns non-nil for a valid config")
@@ -239,8 +274,8 @@ struct EventHubConfigParserTests {
         let config = TelemetryPixelConfig(
             name: "test",
             state: "enabled",
-            trigger: TelemetryTriggerConfig(type: "period", period: TelemetryPeriodConfig(seconds: 86400)),
-            parameters: ["c": TelemetryParameterConfig(template: "counter", source: "e", buckets: [OrderedBucket(name: "0+", config: BucketConfig(gte: 0))])])
+            trigger: TelemetryTriggerConfig(type: .period, periodSeconds: 86400),
+            parameters: ["c": TelemetryParameterConfig(template: .counter, source: "e", buckets: [OrderedBucket(name: "0+", config: BucketConfig(gte: 0))])])
 
         #expect(parser.serializePixelConfig(config) != nil)
     }

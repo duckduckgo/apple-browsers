@@ -32,31 +32,39 @@ final class EventHubFixture {
     /// How far to advance virtual time to let the write-behind persistence flush run.
     static let writeBehindFlush: TimeInterval = 15
 
-    let store: InMemoryKeyValueStore
     let scheduler: ManualEventHubScheduler
-    let repository: EventHubStore
     let manager: EventHub
+
+    private let backingStore: InMemoryKeyValueStore
+    private let backingRepository: EventHubKeyValueStore
     private let spyPixelFiring = SpyPixelFiring()
-    var fired: [FiredPixel] { spyPixelFiring.fired }
+
+    // The manager mutates all three of these on its own queue, asynchronously, so every test-side read
+    // fences first. Reading `state(of:)`/`count(of:)` needs no such treatment: `activePixelStates` is
+    // itself a `queue.sync`.
+    var store: InMemoryKeyValueStore { manager.settle(); return backingStore }
+    var repository: EventHubKeyValueStore { manager.settle(); return backingRepository }
+    var fired: [FiredPixel] { manager.settle(); return spyPixelFiring.fired }
 
     private let enabledSubject: CurrentValueSubject<Bool, Never>
     private let settingsSubject: CurrentValueSubject<[String: Any]?, Never>
     private let settingsJSON: String
 
     private init(store: InMemoryKeyValueStore, settingsJSON: String, enabled: Bool, hasSettings: Bool) {
-        self.store = store
+        self.backingStore = store
         self.settingsJSON = settingsJSON
         self.scheduler = ManualEventHubScheduler(startMillis: Int64(Self.start.timeIntervalSince1970 * 1000))
 
         let parser = EventHubConfigParser()
-        self.repository = EventHubKeyValueStore(store: store, parser: parser)
+        self.backingRepository = EventHubKeyValueStore(store: store, parser: parser)
         self.enabledSubject = CurrentValueSubject(enabled)
         self.settingsSubject = CurrentValueSubject(hasSettings ? settingsDictionary(settingsJSON) : nil)
 
-        let settingsProvider = FakeEventHubSettingsProviding(enabled: enabledSubject.eraseToAnyPublisher(), settings: settingsSubject.eraseToAnyPublisher())
+        let settingsProvider = TestSettingsProviding(enabled: enabledSubject.eraseToAnyPublisher(), settings: settingsSubject.eraseToAnyPublisher())
 
-        self.manager = EventHub(store: repository, parser: parser, settings: settingsProvider,
+        self.manager = EventHub(store: backingRepository, parser: parser, settings: settingsProvider,
                                  scheduler: scheduler, pixelFiring: spyPixelFiring)
+        scheduler.settle = { [weak manager = self.manager] in manager?.settle() }
     }
 
     /// A foregrounded fixture with config applied — the common "active period" starting point.
@@ -123,18 +131,9 @@ final class EventHubFixture {
         manager.onAppBackgrounded()
         scheduler.advance(by: Self.writeBehindFlush)
 
-        let fixture = EventHubFixture(store: store, settingsJSON: settingsJSON, enabled: enabledSubject.value, hasSettings: true)
+        let fixture = EventHubFixture(store: backingStore, settingsJSON: settingsJSON, enabled: enabledSubject.value, hasSettings: true)
         fixture.manager.onAppForegrounded()
         fixture.manager.onConfigChanged()
         return fixture
-    }
-
-    private struct FakeEventHubSettingsProviding: EventHubSettingsProviding {
-        let enabledPublisher: AnyPublisher<Bool, Never>
-        let settingsPublisher: AnyPublisher<[String: Any]?, Never>
-        init(enabled: AnyPublisher<Bool, Never>, settings: AnyPublisher<[String: Any]?, Never>) {
-            self.enabledPublisher = enabled
-            self.settingsPublisher = settings
-        }
     }
 }

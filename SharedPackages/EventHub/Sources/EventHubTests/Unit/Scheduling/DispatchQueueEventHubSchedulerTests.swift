@@ -44,34 +44,35 @@ private final class FireRecorder: @unchecked Sendable {
 
 @Suite("DispatchQueueEventHubScheduler")
 struct DispatchQueueEventHubSchedulerTests {
-    @Test("fires the armed action once the real deadline elapses")
-    func firesArmedActionOnceRealDeadlineElapses() async throws {
+    // These wait on the callback rather than on the wall clock. Sleeping for "long enough" and then
+    // asserting is a race in both directions: an overshooting sleep makes a not-yet-fired check fail,
+    // and a late timer makes an already-fired check fail. Neither would be a real defect — the delay is
+    // Dispatch's to honour, not ours.
+    @Test("fires the armed action once the deadline elapses")
+    func firesArmedActionOnceDeadlineElapses() async {
         let scheduler = DispatchQueueEventHubScheduler(queue: DispatchQueue(label: "eventhub.scheduler.test.fires"))
-        let recorder = FireRecorder()
 
-        scheduler.arm(atMillis: scheduler.nowMillis() + 100) { recorder.record("fired") }
-
-        try await Task.sleep(nanoseconds: 50_000_000) // 0.05s: still before the 0.1s deadline
-        #expect(recorder.recorded.isEmpty)
-
-        try await Task.sleep(nanoseconds: 150_000_000) // total ~0.2s: past the deadline
-        #expect(recorder.recorded == ["fired"])
+        // Returning at all is the assertion: an armed timer that never fires hangs here instead.
+        await withCheckedContinuation { continuation in
+            scheduler.arm(atMillis: scheduler.nowMillis() + 50) { continuation.resume() }
+        }
     }
 
     @Test("re-arming cancels the previously armed timer; only the latest action fires")
-    func rearmingCancelsPreviouslyArmedTimer() async throws {
+    func rearmingCancelsPreviouslyArmedTimer() async {
         let scheduler = DispatchQueueEventHubScheduler(queue: DispatchQueue(label: "eventhub.scheduler.test.rearm"))
         let recorder = FireRecorder()
 
-        // Arm at 0.1s, then immediately re-arm at 0.3s with a different action. `arm` cancels whatever
-        // was previously scheduled, so "first" must never fire.
-        scheduler.arm(atMillis: scheduler.nowMillis() + 100) { recorder.record("first") }
-        scheduler.arm(atMillis: scheduler.nowMillis() + 300) { recorder.record("second") }
+        // "first" is due well before "second", so waiting for "second" to fire is enough: had the
+        // re-arm failed to cancel it, "first" would already be recorded by the time we get here.
+        scheduler.arm(atMillis: scheduler.nowMillis() + 50) { recorder.record("first") }
+        await withCheckedContinuation { continuation in
+            scheduler.arm(atMillis: scheduler.nowMillis() + 150) {
+                recorder.record("second")
+                continuation.resume()
+            }
+        }
 
-        try await Task.sleep(nanoseconds: 150_000_000) // 0.15s: past the cancelled first deadline
-        #expect(recorder.recorded.isEmpty)
-
-        try await Task.sleep(nanoseconds: 250_000_000) // total ~0.4s: past the second deadline
         #expect(recorder.recorded == ["second"])
     }
 

@@ -32,9 +32,9 @@ struct EventHubPersistenceIntegrationTests {
         let config = TelemetryPixelConfig(
             name: "webTelemetry_adwalls_day",
             state: "enabled",
-            trigger: TelemetryTriggerConfig(type: "period", period: TelemetryPeriodConfig(seconds: 86400)),
+            trigger: TelemetryTriggerConfig(type: .period, periodSeconds: 86400),
             parameters: [
-                "adwallCount": TelemetryParameterConfig(template: "counter", source: "adwall", buckets: [
+                "adwallCount": TelemetryParameterConfig(template: .counter, source: "adwall", buckets: [
                     OrderedBucket(name: "0", config: BucketConfig(gte: 0, lt: 1)),
                     OrderedBucket(name: "1", config: BucketConfig(gte: 1, lt: 2)),
                     OrderedBucket(name: "2+", config: BucketConfig(gte: 2)),
@@ -57,6 +57,6 @@ struct EventHubPersistenceIntegrationTests {
         #expect(unwrapped.periodEndMillis == 86_401_000)
         #expect(unwrapped.params["adwallCount"]?.value == 1)
         #expect(unwrapped.config.name == "webTelemetry_adwalls_day")
-        #expect(unwrapped.config.trigger.period?.periodSeconds == 86400)
+        #expect(unwrapped.config.trigger.periodSeconds == 86400)
     }
 }

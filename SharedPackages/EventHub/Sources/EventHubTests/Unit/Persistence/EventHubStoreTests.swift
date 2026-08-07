@@ -25,10 +25,10 @@ struct EventHubStoreTests {
     static let sampleConfig = TelemetryPixelConfig(
         name: "testPixel",
         state: "enabled",
-        trigger: TelemetryTriggerConfig(type: "period", period: TelemetryPeriodConfig(seconds: 86400)),
+        trigger: TelemetryTriggerConfig(type: .period, periodSeconds: 86400),
         parameters: [
             "count": TelemetryParameterConfig(
-                template: "counter",
+                template: .counter,
                 source: "adwall.detected",
                 buckets: [
                     OrderedBucket(name: "0", config: BucketConfig(gte: 0, lt: 1)),
@@ -38,7 +38,7 @@ struct EventHubStoreTests {
         ])
 
     let store = InMemoryKeyValueStore()
-    let repository: EventHubStore
+    let repository: EventHubKeyValueStore
 
     init() {
         repository = EventHubKeyValueStore(store: store, parser: EventHubConfigParser())
@@ -58,7 +58,7 @@ struct EventHubStoreTests {
         #expect(restored.params["count"]?.value == 3)
         #expect(restored.params["count"]?.stopCounting == false)
         #expect(restored.config.name == original.config.name)
-        #expect(restored.config.trigger.period?.periodSeconds == 86400)
+        #expect(restored.config.trigger.periodSeconds == 86400)
         #expect(restored.config.parameters.count == original.config.parameters.count)
     }
 
@@ -123,6 +123,30 @@ struct EventHubStoreTests {
         #expect(repository.allPixelStates().isEmpty)
     }
 
+    @Test("savePixelStates persists a batch in a single store write")
+    func savePixelStatesPersistsBatchInOneWrite() {
+        let baseline = store.setCallCount
+
+        let saved = repository.savePixelStates([
+            PixelState(pixelName: "a", periodStartMillis: 0, periodEndMillis: 86_400_000, config: Self.sampleConfig, params: ["count": ParamState(value: 1)]),
+            PixelState(pixelName: "b", periodStartMillis: 0, periodEndMillis: 86_400_000, config: Self.sampleConfig, params: ["count": ParamState(value: 2)]),
+            PixelState(pixelName: "c", periodStartMillis: 0, periodEndMillis: 86_400_000, config: Self.sampleConfig, params: ["count": ParamState(value: 3)]),
+        ])
+
+        #expect(saved)
+        #expect(store.setCallCount - baseline == 1)
+        #expect(Set(repository.allPixelStates().map(\.pixelName)) == ["a", "b", "c"])
+    }
+
+    @Test("savePixelStates merges into, rather than replaces, what is already stored")
+    func savePixelStatesMergesWithExistingEntries() {
+        repository.savePixelStates([PixelState(pixelName: "a", periodStartMillis: 0, periodEndMillis: 86_400_000, config: Self.sampleConfig, params: [:])])
+
+        repository.savePixelStates([PixelState(pixelName: "b", periodStartMillis: 0, periodEndMillis: 86_400_000, config: Self.sampleConfig, params: [:])])
+
+        #expect(Set(repository.allPixelStates().map(\.pixelName)) == ["a", "b"])
+    }
+
     @Test("round trips empty params")
     func roundTripsEmptyParams() throws {
         repository.savePixelState(PixelState(pixelName: "testPixel", periodStartMillis: 0, periodEndMillis: 86_400_000, config: Self.sampleConfig, params: [:]))
@@ -164,7 +188,7 @@ struct EventHubStoreTests {
 
     @Test("a nil backing store reports absence and drops writes without failing")
     func nilBackingStoreReportsAbsenceAndDropsWrites() {
-        let repository: EventHubStore = EventHubKeyValueStore(store: nil, parser: EventHubConfigParser())
+        let repository = EventHubKeyValueStore(store: nil, parser: EventHubConfigParser())
         let state = PixelState(pixelName: "testPixel", periodStartMillis: 0, periodEndMillis: 86_400_000,
                                 config: Self.sampleConfig, params: ["count": ParamState(value: 3)])
 

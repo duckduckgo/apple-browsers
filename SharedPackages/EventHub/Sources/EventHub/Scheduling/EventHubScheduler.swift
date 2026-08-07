@@ -18,30 +18,22 @@
 
 import Foundation
 
-/// The manager's notion of "now", expressed as UTC epoch milliseconds (mirrors the Windows
-/// `ISchedulers.DefaultScheduler.Now`, which the manager reads for both period-window arithmetic and
-/// `attributionPeriod`).
-public protocol EventHubClock {
-    func nowMillis() -> Int64
-}
-
 /// A single consolidated timer — never one per pixel (see the Tech Design's rejection of a per-pixel
 /// `[String: Timer]` map). `arm(atMillis:_:)` replaces whatever was previously armed; passing `nil`
 /// cancels without arming a new one. `EventHub` recomputes "the earlier of the earliest period end
 /// across all telemetries, or the next write-behind flush deadline" and re-arms on every state change.
-public protocol EventHubScheduler: EventHubClock {
+public protocol EventHubScheduler {
+    /// The manager's notion of "now", as UTC epoch milliseconds (mirrors the Windows
+    /// `ISchedulers.DefaultScheduler.Now`, read for both period-window arithmetic and
+    /// `attributionPeriod`). Callable from any thread: `EventHub` samples it both on its own queue and,
+    /// for the event entry points, on the caller's thread before dispatching.
+    func nowMillis() -> Int64
+
     func arm(atMillis dateMillis: Int64?, _ action: @escaping () -> Void)
 }
 
-/// Production scheduler: one `DispatchSourceTimer` on a dedicated serial queue.
-///
-/// - Important: `queue` must be a **different** `DispatchQueue` instance from the one passed to
-///   `EventHub.init(queue:)`. This queue is where the timer fires; `EventHub`'s scheduler-fire handler
-///   then calls `.sync` onto its own queue to serialize the fire with all its other state mutations. If
-///   the two queues are the same instance, the timer fires ON that queue and the `.sync` call is then
-///   dispatched onto the queue it's already executing on — a deadlock (the block waiting on `.sync` can
-///   never run until the currently-executing block — itself — returns). `EventHub` traps on this before
-///   the `.sync` rather than hanging; see `requireSchedulerFiredOnADifferentQueue`.
+/// Production scheduler: one `DispatchSourceTimer` on a dedicated serial queue. `arm` is only ever
+/// called from `EventHub`'s own queue, which is what makes the unsynchronized `timer` property safe.
 public final class DispatchQueueEventHubScheduler: EventHubScheduler {
     private let queue: DispatchQueue
     private var timer: DispatchSourceTimer?

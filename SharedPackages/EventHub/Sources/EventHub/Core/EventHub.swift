@@ -46,9 +46,6 @@ public protocol EventHubManaging: AnyObject {
     /// Notifies that the remote feature config (state and/or settings) has changed.
     func onConfigChanged()
 
-    /// Returns whether the eventHub feature is currently enabled.
-    func isEnabled() -> Bool
-
     /// Signals that the app has entered the foreground (catches up periods, re-arms timers).
     func onAppForegrounded()
 
@@ -62,26 +59,31 @@ public extension EventHubManaging {
 }
 
 /// Real `EventHubManaging` implementation. All mutable state is confined to one serial `DispatchQueue`
-/// (`queue`) — never a per-pixel lock, never per-pixel timers. Every public entry point (and the
-/// scheduler's fire callback) runs its body via `queue.sync`, so the serial queue acts as a mutex rather
-/// than a fire-and-forget dispatch: by the time a call returns, any state change and any pixel fire it
-/// caused have already happened and are visible to the caller. This is what lets tests built on
-/// `ManualEventHubScheduler` (whose `advance(by:)` invokes the armed callback inline, on the calling
-/// thread) observe fully-settled state immediately, with no additional synchronization.
+/// (`queue`) — never a per-pixel lock, never per-pixel timers. Every public entry point dispatches its
+/// body with `queue.async`, so no caller ever blocks on EventHub. That matters twice over: the entry
+/// points are called on the main thread (web messages, navigation, app lifecycle) while the work behind
+/// them includes key-value store I/O and a `PixelKit` fire; and the queue is never held across a call
+/// out to an injected collaborator, so a `pixelFiring`/`store`/`eventMapping` conformance that calls
+/// back into EventHub merely enqueues instead of deadlocking.
+///
+/// Because the body runs later, anything that must be sampled at the moment of the *call* is captured
+/// before dispatching — see `nowMillis` in `handleWebEvent`/`handleAggregatedEvent`, and the payload
+/// encoding in `handleImmediateEvent`.
+///
+/// The four remaining uses of `queue.sync` are deliberate. None can deadlock: none is reachable from
+/// inside the queue, and a serial queue is FIFO, so a `sync` enqueued after the caller's own `async`
+/// work runs after it.
+/// - `onAppBackgrounded()`, EventHub's flush boundary: it must not return before pending state is
+///   persisted, because the process may be suspended immediately afterwards.
+/// - the tail of `init`, so construction returns with the replayed initial settings already recorded.
+/// - `activePixelStates` and `settle()`, both test-facing: they are the fences that let tests built on
+///   `ManualEventHubScheduler` observe fully-settled state.
 public final class EventHub: EventHubManaging {
     /// How often pending (dirty) pixel state is persisted, absent a period boundary sooner than that.
     private static let flushInterval: Int64 = 10_000 // milliseconds
 
-    /// Marker for the same-queue misconfiguration described on `init`'s and
-    /// `DispatchQueueEventHubScheduler`'s doc comments. Dispatch doesn't expose a clean way to compare
-    /// two `DispatchQueue` instances for identity from inside a closure running on one of them, so
-    /// `init` associates this key with `queue` via `setSpecific`, and `requireSchedulerFiredOnADifferentQueue`
-    /// checks whether that same value is visible on whichever queue the scheduler's callback is
-    /// currently executing on.
-    private static let ownQueueIdentityKey = DispatchSpecificKey<ObjectIdentifier>()
-
-    private let store: EventHubStore
-    private let parser: EventHubConfigParsing
+    private let store: EventHubKeyValueStore
+    private let parser: EventHubConfigParser
     private let scheduler: EventHubScheduler
     private let pixelFiring: EventHubPixelFiring
     private let queue: DispatchQueue
@@ -111,16 +113,16 @@ public final class EventHub: EventHubManaging {
         queue.sync { telemetries.values.map { $0.snapshot() } }
     }
 
-    /// - Important: if `scheduler` is a `DispatchQueueEventHubScheduler`, it must have been constructed
-    ///   with a **different** `DispatchQueue` instance than `queue`. The scheduler's timer fires on its
-    ///   own queue; `EventHub`'s scheduler-fire handler then calls `queue.sync { ... }` from inside that
-    ///   callback. If both queues were the same instance, the timer would fire on `queue` and then
-    ///   `.sync` onto itself, which deadlocks — so `requireSchedulerFiredOnADifferentQueue` traps on the
-    ///   first timer fire instead, in release builds too. See `DispatchQueueEventHubScheduler`'s doc
-    ///   comment for the same constraint from the scheduler's side.
+    /// Blocks until the entry points the caller already invoked have finished. `internal`, like
+    /// `activePixelStates`: tests need it because they read the pixel-firing spy and the key-value store
+    /// directly, bypassing the queue. Production code has nothing to fence on.
+    func settle() {
+        queue.sync {}
+    }
+
     public init(
-        store: EventHubStore,
-        parser: EventHubConfigParsing,
+        store: EventHubKeyValueStore,
+        parser: EventHubConfigParser,
         settings: EventHubSettingsProviding,
         scheduler: EventHubScheduler,
         pixelFiring: EventHubPixelFiring,
@@ -131,15 +133,15 @@ public final class EventHub: EventHubManaging {
         self.scheduler = scheduler
         self.pixelFiring = pixelFiring
         self.queue = queue
-        queue.setSpecific(key: Self.ownQueueIdentityKey, value: ObjectIdentifier(queue))
 
         // Both subscriptions re-apply the config themselves, so any change in enablement *or* in the
         // settings (including a consent grant/revoke, which `EventHubSettings` folds into the settings
         // JSON) takes effect immediately. Integrators do not need to call `onConfigChanged()`.
         settings.enabledPublisher
             .sink { [weak self] enabled in
-                self?.queue.sync {
-                    guard let self, self.latestEnabled != enabled else { return }
+                guard let self else { return }
+                queue.async {
+                    guard self.latestEnabled != enabled else { return }
                     self.latestEnabled = enabled
                     Logger.eventHub.info("feature enabled = \(enabled, privacy: .public)")
                     if self.hasConsumedInitialSettings { self.applyConfigLocked() }
@@ -148,8 +150,8 @@ public final class EventHub: EventHubManaging {
             .store(in: &subscriptions)
         settings.settingsPublisher
             .sink { [weak self] settings in
-                self?.queue.sync {
-                    guard let self else { return }
+                guard let self else { return }
+                queue.async {
                     self.latestConfigs = settings.map { self.parser.parseTelemetry($0) } ?? []
                     Logger.eventHub.info("parsed \(self.latestConfigs.count, privacy: .public) telemetry config(s) from settings")
                     if self.hasConsumedInitialSettings { self.applyConfigLocked() }
@@ -157,38 +159,75 @@ public final class EventHub: EventHubManaging {
             }
             .store(in: &subscriptions)
 
+        // `sync`, and last: both publishers replay their current value synchronously as they are
+        // subscribed above, so those blocks are already queued ahead of this one and — the queue being
+        // FIFO — have recorded the initial settings by the time the flag flips. `init` therefore returns
+        // with the initial config consumed, exactly as it did when the subscriptions applied inline.
         queue.sync { hasConsumedInitialSettings = true }
     }
 
     public func handleWebEvent(_ webEventData: [String: Any], tabID: EventHubTabID) {
-        queue.sync {
-            guard latestEnabled, let type = webEventData["type"] as? String, !type.isEmpty else { return }
-            let data = webEventData["data"] as? [String: Any]
+        guard let type = webEventData["type"] as? String, !type.isEmpty else {
+            Logger.eventHub.debug("[EventHub] web event ignored, `type` was missing or empty")
+            return
+        }
+        Logger.eventHub.debug("[EventHub] web event received: \(type, privacy: .private), tab \(tabID.rawValue.uuidString, privacy: .private)")
+        let data = webEventData["data"] as? [String: Any]
+        // Sampled here, not in the block: `now` decides whether the event still belongs to the running
+        // period, so it has to be the arrival time. Read on the queue it would be the drain time, and an
+        // event arriving just before `periodEnd` could be dropped for landing in no period at all.
+        let nowMillis = scheduler.nowMillis()
+        queue.async { [self] in
+            guard latestEnabled else {
+                Logger.eventHub.debug("[EventHub] \(type, privacy: .private) dropped, the eventHub feature is disabled")
+                return
+            }
             fireImmediateLocked(source: type, data: data)
-            countPeriodLocked(source: type, data: data, tabID: tabID)
+            countPeriodLocked(source: type, data: data, tabID: tabID, nowMillis: nowMillis)
         }
     }
 
     public func handleImmediateEvent(_ type: String, data: Encodable?) {
-        queue.sync {
-            guard latestEnabled, !type.isEmpty else { return }
-            fireImmediateLocked(source: type, data: Self.encode(data))
+        guard !type.isEmpty else { return }
+        // Encoded here, not in the block: `data` is a caller-owned `Encodable` that may be a reference
+        // type, and the caller is free to mutate it the moment this returns. The cost is encoding a
+        // payload that a disabled feature then discards — native immediate events are rare enough that
+        // this is cheaper than the alternatives for reading `latestEnabled` off-queue.
+        Logger.eventHub.debug("[EventHub] native immediate event received: \(type, privacy: .public)")
+        let encoded = Self.encode(data)
+        queue.async { [self] in
+            guard latestEnabled else {
+                Logger.eventHub.debug("[EventHub] \(type, privacy: .public) dropped, the eventHub feature is disabled")
+                return
+            }
+            fireImmediateLocked(source: type, data: encoded)
         }
     }
 
     public func handleAggregatedEvent(_ type: String, data: Encodable?) {
-        queue.sync {
-            guard latestEnabled, !type.isEmpty else { return }
-            countPeriodLocked(source: type, data: Self.encode(data), tabID: .empty)
+        guard !type.isEmpty else { return }
+        Logger.eventHub.debug("[EventHub] native aggregated event received: \(type, privacy: .public)")
+        let encoded = Self.encode(data)
+        let nowMillis = scheduler.nowMillis()
+        queue.async { [self] in
+            guard latestEnabled else {
+                Logger.eventHub.debug("[EventHub] \(type, privacy: .public) dropped, the eventHub feature is disabled")
+                return
+            }
+            countPeriodLocked(source: type, data: encoded, tabID: .empty, nowMillis: nowMillis)
         }
     }
 
     private func fireImmediateLocked(source: String, data: [String: Any]?) {
-        for config in latestConfigs where config.isEnabled && config.trigger.isImmediate && config.trigger.source == source {
+        let matching = latestConfigs.filter { $0.isEnabled && $0.trigger.type == .immediate && $0.trigger.source == source }
+        Logger.eventHub.debug("[EventHub] immediate routing for \(source, privacy: .private) → \(matching.isEmpty ? "no immediate telemetry is triggered by it" : matching.map(\.name).joined(separator: ", "), privacy: .public)")
+        for config in matching {
             var params: [String: String] = [:]
-            for (paramName, paramConfig) in config.parameters where paramConfig.isData {
-                if let parameter = ParameterFactory.makeData(paramConfig), parameter.handle(data: data, tabID: .empty),
-                   let value = parameter.queryValue() {
+            for (paramName, paramConfig) in config.parameters where paramConfig.template == .data {
+                // Transient: an immediate pixel has no period and no dedup, so this parameter reports the
+                // triggering event's own payload and is discarded straight after firing.
+                let parameter = DataParameter(dataKey: paramConfig.dataKey)
+                if parameter.handle(data: data, tabID: .empty), let value = parameter.queryValue() {
                     params[paramName] = value
                 }
             }
@@ -201,22 +240,41 @@ public final class EventHub: EventHubManaging {
     /// events would otherwise mean thousands of store writes). Marking `dirtyNames` and re-arming the
     /// scheduler is enough: the pending state is picked up by the next period boundary, the next
     /// `flushInterval` deadline, or an explicit `onAppBackgrounded()`.
-    private func countPeriodLocked(source: String, data: [String: Any]?, tabID: EventHubTabID) {
-        // The timer is best-effort, so `now` can legitimately be past `periodEnd` before the sweep has
-        // run (notably on macOS, where a period can end while the app runs unfocused). An event
-        // arriving in that window belongs to no period and must not be counted into the elapsed one.
-        let now = scheduler.nowMillis()
-        for config in latestConfigs where config.isEnabled && config.trigger.isPeriod {
-            guard let telemetry = telemetries[config.name], !telemetry.isElapsed(atMillis: now) else { continue }
+    /// - Parameter nowMillis: the time the event *arrived*, sampled by the caller before dispatching
+    ///   onto the queue. The timer is best-effort, so it can legitimately be past `periodEnd` before the
+    ///   sweep has run (notably on macOS, where a period can end while the app runs unfocused). An event
+    ///   arriving in that window belongs to no period and must not be counted into the elapsed one.
+    private func countPeriodLocked(source: String, data: [String: Any]?, tabID: EventHubTabID, nowMillis now: Int64) {
+        // Every period telemetry this event was offered to, and what became of it. Logged as one line so
+        // "the pixel never fired" can be answered from a single entry: whether anything was listening,
+        // and if so why it did or did not count.
+        var outcomes: [String] = []
+        for config in latestConfigs where config.isEnabled && config.trigger.type == .period {
+            guard let telemetry = telemetries[config.name] else {
+                outcomes.append("\(config.name): no period running")
+                continue
+            }
+            guard telemetry.handles(source: source) else { continue }
+            guard !telemetry.isElapsed(atMillis: now) else {
+                outcomes.append("\(config.name): period already ended")
+                continue
+            }
             if telemetry.handleEvent(source: source, data: data, tabID: tabID) {
                 dirtyNames.insert(config.name)
+                outcomes.append("\(config.name): counted")
+            } else {
+                outcomes.append("\(config.name): no change (already counted on this tab, or the counter is capped)")
             }
         }
+        let summary = outcomes.isEmpty
+            ? "no period telemetry is fed by it (\(latestConfigs.count) config(s) loaded)"
+            : outcomes.joined(separator: "; ")
+        Logger.eventHub.debug("[EventHub] period routing for \(source, privacy: .private) → \(summary, privacy: .public)")
         rearmSchedulerLocked()
     }
 
     public func onConfigChanged() {
-        queue.sync { applyConfigLocked() }
+        queue.async { [self] in applyConfigLocked() }
     }
 
     private func applyConfigLocked() {
@@ -225,21 +283,21 @@ public final class EventHub: EventHubManaging {
         // a config removed remotely stops immediately, whereas a disabled pixel still fires the period
         // it was already running and only then stops (the restart is gated separately, in
         // `startNewPeriodLocked`, which checks `config.isEnabled`).
-        let presentNames = Set(latestConfigs.filter { $0.trigger.isPeriod }.map(\.name))
+        let presentNames = Set(latestConfigs.filter { $0.trigger.type == .period }.map(\.name))
         // Snapshot the keys: tearDownLocked mutates `telemetries` (removes the entry), so iterating a
         // live view of the same dictionary being mutated would be subtle even though Swift's COW makes
         // it memory-safe.
         for name in Array(telemetries.keys) where !presentNames.contains(name) {
             tearDownLocked(name)
         }
-        for config in latestConfigs where config.isEnabled && config.trigger.isPeriod && telemetries[config.name] == nil {
+        for config in latestConfigs where config.isEnabled && config.trigger.type == .period && telemetries[config.name] == nil {
             startNewPeriodLocked(config)
         }
         rearmSchedulerLocked()
     }
 
     private func startNewPeriodLocked(_ config: TelemetryPixelConfig) {
-        guard isForeground, latestEnabled, config.isEnabled, config.trigger.period != nil else { return }
+        guard isForeground, latestEnabled, config.isEnabled, config.trigger.periodSeconds != nil else { return }
         let telemetry = Telemetry(config: config, periodStartMillis: scheduler.nowMillis(), dedupStore: dedupStore)
         telemetries[config.name] = telemetry
         dirtyNames.insert(config.name)
@@ -260,15 +318,16 @@ public final class EventHub: EventHubManaging {
         rearmSchedulerLocked()
     }
 
-    public func isEnabled() -> Bool { queue.sync { latestEnabled } }
-
     public func onAppForegrounded() {
-        queue.sync {
+        queue.async { [self] in
             isForeground = true
             checkPixelsLocked()
         }
     }
 
+    /// The one blocking entry point, deliberately: this is EventHub's flush boundary, and on iOS the
+    /// process can be suspended as soon as it returns. Persisting has to have happened by then, so the
+    /// caller waits. Anything the caller dispatched earlier is drained first — the queue is FIFO.
     public func onAppBackgrounded() {
         queue.sync {
             isForeground = false
@@ -288,7 +347,7 @@ public final class EventHub: EventHubManaging {
         for telemetry in Array(telemetries.values) where telemetry.isElapsed(atMillis: now) {
             fireLocked(telemetry.name)
         }
-        for config in latestConfigs where config.isEnabled && config.trigger.isPeriod && telemetries[config.name] == nil {
+        for config in latestConfigs where config.isEnabled && config.trigger.type == .period && telemetries[config.name] == nil {
             startNewPeriodLocked(config)
         }
         flushDirtyLocked()
@@ -299,7 +358,7 @@ public final class EventHub: EventHubManaging {
         guard latestEnabled, let telemetry = telemetries[name] else { return }
         // Defense-in-depth against a config removed between arming and elapsing. Deliberately checks
         // presence, not `isEnabled`: a pixel disabled mid-period must still fire this final period.
-        guard latestConfigs.contains(where: { $0.name == name && $0.trigger.isPeriod }) else {
+        guard latestConfigs.contains(where: { $0.name == name && $0.trigger.type == .period }) else {
             tearDownLocked(name); return
         }
         telemetries.removeValue(forKey: name)
@@ -311,14 +370,15 @@ public final class EventHub: EventHubManaging {
             // trap. `EventHubConfigParser` rejects a period trigger without a positive `seconds`, on both
             // the live-config and restored-snapshot paths, so this only guards that invariant — if it ever
             // breaks, skip the fire rather than crash.
-            if let periodSeconds = telemetry.config.trigger.period?.periodSeconds {
-                params["attributionPeriod"] = String(EventHubAttribution.startOfIntervalSeconds(
-                    periodStartMillis: telemetry.periodStartMillis, periodSeconds: periodSeconds))
+            if let periodSeconds = telemetry.config.trigger.periodSeconds {
+                // Integer division truncates, so this rounds the period start down to the start of the
+                // interval of length `periodSeconds` that contains it, in UTC epoch seconds.
+                params["attributionPeriod"] = String(telemetry.periodStartMillis / 1000 / periodSeconds * periodSeconds)
                 let rawCounts = telemetry.rawCounterValues
                     .sorted { $0.key < $1.key }
                     .map { "\($0.key)=\($0.value)" }
                     .joined(separator: ", ")
-                Logger.eventHub.info("firing period pixel \(name, privacy: .public), raw counts [\(rawCounts, privacy: .public)]")
+                Logger.eventHub.debug("firing period pixel \(name, privacy: .public), raw counts [\(rawCounts, privacy: .private)]")
                 pixelFiring.enqueueFirePixel(named: name, parameters: params)
             } else {
                 Logger.eventHub.error("pixel \(name, privacy: .public) not fired, its period trigger has no period to attribute to")
@@ -330,13 +390,12 @@ public final class EventHub: EventHubManaging {
         }
     }
 
+    /// Names stay dirty when the store rejects the write, so the next flush — armed by
+    /// `rearmSchedulerLocked` for as long as anything is pending — retries them.
     private func flushDirtyLocked() {
         guard !dirtyNames.isEmpty else { return }
-        for name in dirtyNames {
-            if let telemetry = telemetries[name] {
-                store.savePixelState(telemetry.snapshot())
-            }
-        }
+        let states = dirtyNames.compactMap { telemetries[$0]?.snapshot() }
+        guard store.savePixelStates(states) else { return }
         dirtyNames.removeAll()
     }
 
@@ -349,31 +408,12 @@ public final class EventHub: EventHubManaging {
         // only crash-during-sustained-burst restart durability is affected.
         let nextFlush = dirtyNames.isEmpty ? nil : scheduler.nowMillis() + Self.flushInterval
         let candidates = [earliestPeriodEnd, nextFlush].compactMap { $0 }
+        // `async`, so it does not matter whether the scheduler's timer happens to fire on `queue` itself:
+        // the block queues up behind the current one instead of waiting on it.
         scheduler.arm(atMillis: candidates.min()) { [weak self] in
-            self?.requireSchedulerFiredOnADifferentQueue()
-            self?.queue.sync { self?.onSchedulerFiredLocked() }
+            guard let self else { return }
+            queue.async { self.onSchedulerFiredLocked() }
         }
-    }
-
-    /// Guards the same-queue misconfiguration described on `init`'s doc comment: if the scheduler's timer
-    /// fires directly on `queue` (i.e. the integrator passed the same `DispatchQueue` instance to both
-    /// `EventHub.init(queue:)` and `DispatchQueueEventHubScheduler.init(queue:)`), the `.sync` immediately
-    /// below would deadlock.
-    ///
-    /// Deliberately a `precondition`, not an `assert`: `assert` is compiled out under `-O`, so in release
-    /// the deadlock would happen instead. And it would not stay contained — every public entry point goes
-    /// through `queue.sync`, so once that queue is wedged the next caller blocks too, including the main
-    /// thread via `handleWebEvent`. A hang attributed to an unrelated thread is far harder to diagnose
-    /// than a trap naming the exact wiring mistake. The condition depends only on how the two objects were
-    /// constructed, so it is constant for a build: it trips on the first timer fire for everyone or for
-    /// nobody, which is what makes it safe to ship. Cost in release is one `getSpecific` TLS read per
-    /// scheduler fire, plus the one-time `setSpecific` in `init`.
-    private func requireSchedulerFiredOnADifferentQueue() {
-        precondition(DispatchQueue.getSpecific(key: Self.ownQueueIdentityKey) != ObjectIdentifier(queue),
-               "EventHub's scheduler must fire on a different DispatchQueue than EventHub's own `queue` — " +
-               "passing the same DispatchQueue instance to both EventHub.init(queue:) and " +
-               "DispatchQueueEventHubScheduler.init(queue:) causes the timer to fire on `queue` and then " +
-               "`.sync` onto itself, which deadlocks.")
     }
 
     private func onSchedulerFiredLocked() {
@@ -389,8 +429,8 @@ public final class EventHub: EventHubManaging {
     }
 
     public func onNavigationStarted(tabID: EventHubTabID, url: String) {
-        queue.sync {
-            guard !url.isEmpty else { return }
+        guard !url.isEmpty else { return }
+        queue.async { [self] in
             let previous = tabURLs[tabID]
             tabURLs[tabID] = url
             guard let previous, previous != url else { return }
@@ -399,7 +439,7 @@ public final class EventHub: EventHubManaging {
     }
 
     public func onTabClosed(tabID: EventHubTabID) {
-        queue.sync {
+        queue.async { [self] in
             tabURLs.removeValue(forKey: tabID)
             dedupStore.clear(tabID: tabID)
         }

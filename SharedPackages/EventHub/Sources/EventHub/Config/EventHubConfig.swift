@@ -18,52 +18,53 @@
 
 import Foundation
 
-/// Aggregation period. Authored as seconds (config-generation collapses any authored unit to seconds
-/// before it reaches the client — see the ported README).
-public struct TelemetryPeriodConfig: Equatable, Sendable {
-    public let seconds: Int
-
-    public init(seconds: Int) {
-        self.seconds = seconds
-    }
-
-    public var periodSeconds: Int64 { Int64(seconds) }
+/// When a pixel fires. Raw values are the strings remote config authors and the persisted config
+/// snapshot carries, so they must not change.
+public enum TelemetryTriggerType: String, Equatable, Sendable {
+    /// Aggregated over a period, and the default when config omits the type.
+    case period
+    /// One pixel per event.
+    case immediate
 }
 
-/// Describes when a pixel fires. `type` is `"period"` (aggregated, the default) or `"immediate"` (one
-/// pixel per event). Period triggers carry a `period`; immediate triggers carry a `source` event name.
+/// What a parameter measures. Raw values are the strings remote config authors and the persisted config
+/// snapshot carries, so they must not change.
+public enum TelemetryParameterTemplate: String, Equatable, Sendable {
+    /// Bucketed event count, using `buckets` and `source`.
+    case counter
+    /// A value forwarded from `webEvent.data` under `dataKey`.
+    case data
+}
+
+/// Describes when a pixel fires. Period triggers carry a `periodSeconds`; immediate triggers carry a
+/// `source` event name.
 public struct TelemetryTriggerConfig: Equatable, Sendable {
-    public let type: String
-    public let period: TelemetryPeriodConfig?
+    public let type: TelemetryTriggerType
+    /// Length of the aggregation period. Always seconds — config generation collapses any authored unit
+    /// to seconds before it reaches the client (see the ported README).
+    public let periodSeconds: Int64?
     public let source: String?
 
-    public init(type: String, period: TelemetryPeriodConfig? = nil, source: String? = nil) {
+    public init(type: TelemetryTriggerType, periodSeconds: Int64? = nil, source: String? = nil) {
         self.type = type
-        self.period = period
+        self.periodSeconds = periodSeconds
         self.source = source
     }
-
-    public var isImmediate: Bool { type == "immediate" }
-    public var isPeriod: Bool { type == "period" }
 }
 
-/// A single pixel parameter. `template` is `"counter"` (bucketed event count, using `buckets` and
-/// `source`) or `"data"` (a value forwarded from `webEvent.data` under `dataKey`).
+/// A single pixel parameter.
 public struct TelemetryParameterConfig: Equatable, Sendable {
-    public let template: String
+    public let template: TelemetryParameterTemplate
     public let source: String?
     public let dataKey: String?
     public let buckets: BucketList?
 
-    public init(template: String, source: String? = nil, dataKey: String? = nil, buckets: BucketList? = nil) {
+    public init(template: TelemetryParameterTemplate, source: String? = nil, dataKey: String? = nil, buckets: BucketList? = nil) {
         self.template = template
         self.source = source
         self.dataKey = dataKey
         self.buckets = buckets
     }
-
-    public var isCounter: Bool { template == "counter" }
-    public var isData: Bool { template == "data" }
 }
 
 /// Parsed configuration for a single EventHub telemetry pixel, as supplied by the remote `eventHub`

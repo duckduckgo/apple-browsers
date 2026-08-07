@@ -41,11 +41,6 @@ public final class EventHubConfigParser: EventHubConfigParsing {
     /// which strips consent-gated entries out of it.
     static let telemetryKey = "telemetry"
 
-    private static let periodType = "period"
-    private static let immediateType = "immediate"
-    private static let counterTemplate = "counter"
-    private static let dataTemplate = "data"
-
     public init() {}
 
     public func parseTelemetry(_ settings: [String: Any]) -> [TelemetryPixelConfig] {
@@ -90,7 +85,7 @@ public final class EventHubConfigParser: EventHubConfigParsing {
         let parameters = toParameters(pixel.parameters ?? [:], pixelName: name)
         // A period pixel with no parameters has nothing to report; immediate pixels may legitimately
         // carry none (they fire on the event alone).
-        if trigger.isPeriod && parameters.isEmpty {
+        if trigger.type == .period && parameters.isEmpty {
             Logger.eventHub.error("config: period pixel \(name, privacy: .public) skipped, no valid parameters")
             return nil
         }
@@ -98,23 +93,25 @@ public final class EventHubConfigParser: EventHubConfigParsing {
     }
 
     private static func toTrigger(_ dto: TriggerDTO, pixelName: String) -> TelemetryTriggerConfig? {
-        let type = dto.type ?? periodType
-        if type == immediateType {
+        // An omitted type means `period`; a present but unrecognised one is a config we cannot honour.
+        guard let type = dto.type.map(TelemetryTriggerType.init(rawValue:)) ?? .period else {
+            Logger.eventHub.error("config: pixel \(pixelName, privacy: .public) skipped, unknown trigger type \(dto.type ?? "<none>", privacy: .public)")
+            return nil
+        }
+        switch type {
+        case .immediate:
             guard let source = dto.source, !source.isEmpty else {
                 Logger.eventHub.error("config: pixel \(pixelName, privacy: .public) skipped, immediate trigger with no source")
                 return nil
             }
-            return TelemetryTriggerConfig(type: immediateType, source: source)
-        }
-        if type == periodType {
+            return TelemetryTriggerConfig(type: .immediate, source: source)
+        case .period:
             guard let period = dto.period, period.seconds > 0 else {
                 Logger.eventHub.error("config: pixel \(pixelName, privacy: .public) skipped, period seconds missing or not positive")
                 return nil
             }
-            return TelemetryTriggerConfig(type: periodType, periodSeconds: Int64(period.seconds))
+            return TelemetryTriggerConfig(type: .period, periodSeconds: Int64(period.seconds))
         }
-        Logger.eventHub.error("config: pixel \(pixelName, privacy: .public) skipped, unknown trigger type \(type, privacy: .public)")
-        return nil
     }
 
     private static func toParameters(_ parameters: [String: ParameterDTO], pixelName: String) -> [String: TelemetryParameterConfig] {
@@ -128,35 +125,37 @@ public final class EventHubConfigParser: EventHubConfigParsing {
     }
 
     private static func toParameter(_ parameter: ParameterDTO, pixelName: String, parameterName: String) -> TelemetryParameterConfig? {
-        if parameter.template == counterTemplate {
+        // Unlike the trigger type, an omitted template has no default — there is nothing to measure.
+        switch parameter.template.flatMap(TelemetryParameterTemplate.init(rawValue:)) {
+        case .counter:
             guard let source = parameter.source, !source.isEmpty,
                   let buckets = parameter.buckets, !buckets.ordered.isEmpty else {
                 Logger.eventHub.error("config: counter parameter \(pixelName, privacy: .public)/\(parameterName, privacy: .public) dropped, missing source and/or usable buckets")
                 return nil
             }
-            return TelemetryParameterConfig(template: counterTemplate, source: source, buckets: buckets.ordered)
-        }
-        if parameter.template == dataTemplate {
+            return TelemetryParameterConfig(template: .counter, source: source, buckets: buckets.ordered)
+        case .data:
             guard let dataKey = parameter.dataKey, !dataKey.isEmpty else {
                 Logger.eventHub.error("config: data parameter \(pixelName, privacy: .public)/\(parameterName, privacy: .public) dropped, missing dataKey")
                 return nil
             }
-            return TelemetryParameterConfig(template: dataTemplate, source: parameter.source, dataKey: dataKey)
+            return TelemetryParameterConfig(template: .data, source: parameter.source, dataKey: dataKey)
+        case nil:
+            Logger.eventHub.error("config: parameter \(pixelName, privacy: .public)/\(parameterName, privacy: .public) dropped, unknown template \(parameter.template ?? "<none>", privacy: .public)")
+            return nil
         }
-        Logger.eventHub.error("config: parameter \(pixelName, privacy: .public)/\(parameterName, privacy: .public) dropped, unknown template \(parameter.template ?? "<none>", privacy: .public)")
-        return nil
     }
 
     private static func toDTO(_ config: TelemetryPixelConfig) -> PixelDTO {
         PixelDTO(
             state: config.state,
             trigger: TriggerDTO(
-                type: config.trigger.type,
+                type: config.trigger.type.rawValue,
                 period: config.trigger.periodSeconds.map { PeriodDTO(seconds: Int($0)) },
                 source: config.trigger.source),
             parameters: config.parameters.mapValues { parameter in
                 ParameterDTO(
-                    template: parameter.template,
+                    template: parameter.template.rawValue,
                     source: parameter.source,
                     dataKey: parameter.dataKey,
                     buckets: parameter.buckets.map { BucketsDTO(ordered: $0) })

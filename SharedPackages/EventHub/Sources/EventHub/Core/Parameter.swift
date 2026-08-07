@@ -40,10 +40,10 @@ enum ParameterFactory {
     /// Builds the parameter for a pixel's running period. `dedupKey` identifies this parameter within
     /// its pixel (pixel×param×source) for `dedupStore` lookups.
     static func make(_ config: TelemetryParameterConfig, dedupKey: String, dedupStore: DedupStore) -> Parameter? {
-        if config.isCounter, let buckets = config.buckets {
+        if config.template == .counter, let buckets = config.buckets {
             return CounterParameter(buckets: buckets, dedupKey: dedupKey, dedupStore: dedupStore)
         }
-        if config.isData {
+        if config.template == .data {
             return DataParameter(dataKey: config.dataKey)
         }
         return nil

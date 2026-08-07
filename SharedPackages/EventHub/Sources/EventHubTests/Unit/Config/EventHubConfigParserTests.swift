@@ -67,7 +67,7 @@ struct EventHubConfigParserTests {
         let telemetry = parser.parseTelemetry(Self.settings)
         let param = try #require(telemetry.first?.parameters["count"])
 
-        #expect(param.isCounter)
+        #expect(param.template == .counter)
         #expect(param.source == "test")
         #expect(param.buckets?.count == 7)
         #expect(param.buckets?.first(where: { $0.name == "0" })?.config == BucketConfig(gte: 0, lt: 1))
@@ -234,13 +234,48 @@ struct EventHubConfigParserTests {
         #expect(restored.parameters["count"]?.buckets?.count == original.parameters["count"]?.buckets?.count)
     }
 
+    // The two below pin the *format*, which the round trip above cannot: it would keep passing if both
+    // sides changed together. A config snapshot is persisted by one build and read back by the next, so
+    // a change to how the trigger type or parameter template is spelled would discard every in-flight
+    // period on upgrade — and these are also the strings remote config authors.
+    @Test("parses a config snapshot written by an earlier build")
+    func parsesConfigSnapshotWrittenByAnEarlierBuild() throws {
+        let stored = """
+        {"state":"enabled","trigger":{"type":"period","period":{"seconds":86400}},\
+        "parameters":{"count":{"template":"counter","source":"adwall","buckets":{"0":{"gte":0,"lt":1},"1+":{"gte":1}}}}}
+        """
+
+        let restored = try #require(parser.parseSinglePixelConfig(name: "webTelemetry_adwalls_day", json: stored))
+
+        #expect(restored.state == "enabled")
+        #expect(restored.trigger.type == .period)
+        #expect(restored.trigger.periodSeconds == 86400)
+        #expect(restored.parameters["count"]?.template == .counter)
+        #expect(restored.parameters["count"]?.source == "adwall")
+        #expect(restored.parameters["count"]?.buckets?.count == 2)
+    }
+
+    @Test("serializes the trigger type and parameter template as the strings config authors")
+    func serializesTriggerTypeAndTemplateAsAuthoredStrings() throws {
+        let config = TelemetryPixelConfig(
+            name: "test",
+            state: "enabled",
+            trigger: TelemetryTriggerConfig(type: .immediate, source: "e"),
+            parameters: ["d": TelemetryParameterConfig(template: .data, dataKey: "k")])
+
+        let json = try #require(parser.serializePixelConfig(config))
+
+        #expect(json.contains("\"type\":\"immediate\""))
+        #expect(json.contains("\"template\":\"data\""))
+    }
+
     @Test("serializePixelConfig returns non-nil for a valid config")
     func serializePixelConfigReturnsNonNilForValidConfig() {
         let config = TelemetryPixelConfig(
             name: "test",
             state: "enabled",
-            trigger: TelemetryTriggerConfig(type: "period", periodSeconds: 86400),
-            parameters: ["c": TelemetryParameterConfig(template: "counter", source: "e", buckets: [OrderedBucket(name: "0+", config: BucketConfig(gte: 0))])])
+            trigger: TelemetryTriggerConfig(type: .period, periodSeconds: 86400),
+            parameters: ["c": TelemetryParameterConfig(template: .counter, source: "e", buckets: [OrderedBucket(name: "0+", config: BucketConfig(gte: 0))])])
 
         #expect(parser.serializePixelConfig(config) != nil)
     }

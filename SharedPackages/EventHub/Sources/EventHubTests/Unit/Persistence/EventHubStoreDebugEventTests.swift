@@ -25,10 +25,10 @@ struct EventHubStoreDebugEventTests {
     private static let sampleConfig = TelemetryPixelConfig(
         name: "testPixel",
         state: "enabled",
-        trigger: TelemetryTriggerConfig(type: "period", periodSeconds: 86400),
+        trigger: TelemetryTriggerConfig(type: .period, periodSeconds: 86400),
         parameters: [
             "count": TelemetryParameterConfig(
-                template: "counter",
+                template: .counter,
                 source: "adwall.detected",
                 buckets: [OrderedBucket(name: "0+", config: BucketConfig(gte: 0))]),
         ])

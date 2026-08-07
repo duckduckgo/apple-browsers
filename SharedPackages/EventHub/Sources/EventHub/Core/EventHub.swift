@@ -204,9 +204,9 @@ public final class EventHub: EventHubManaging {
     }
 
     private func fireImmediateLocked(source: String, data: [String: Any]?) {
-        for config in latestConfigs where config.isEnabled && config.trigger.isImmediate && config.trigger.source == source {
+        for config in latestConfigs where config.isEnabled && config.trigger.type == .immediate && config.trigger.source == source {
             var params: [String: String] = [:]
-            for (paramName, paramConfig) in config.parameters where paramConfig.isData {
+            for (paramName, paramConfig) in config.parameters where paramConfig.template == .data {
                 // Transient: an immediate pixel has no period and no dedup, so this parameter reports the
                 // triggering event's own payload and is discarded straight after firing.
                 let parameter = DataParameter(dataKey: paramConfig.dataKey)
@@ -228,7 +228,7 @@ public final class EventHub: EventHubManaging {
     ///   sweep has run (notably on macOS, where a period can end while the app runs unfocused). An event
     ///   arriving in that window belongs to no period and must not be counted into the elapsed one.
     private func countPeriodLocked(source: String, data: [String: Any]?, tabID: EventHubTabID, nowMillis now: Int64) {
-        for config in latestConfigs where config.isEnabled && config.trigger.isPeriod {
+        for config in latestConfigs where config.isEnabled && config.trigger.type == .period {
             guard let telemetry = telemetries[config.name], !telemetry.isElapsed(atMillis: now) else { continue }
             if telemetry.handleEvent(source: source, data: data, tabID: tabID) {
                 dirtyNames.insert(config.name)
@@ -247,14 +247,14 @@ public final class EventHub: EventHubManaging {
         // a config removed remotely stops immediately, whereas a disabled pixel still fires the period
         // it was already running and only then stops (the restart is gated separately, in
         // `startNewPeriodLocked`, which checks `config.isEnabled`).
-        let presentNames = Set(latestConfigs.filter { $0.trigger.isPeriod }.map(\.name))
+        let presentNames = Set(latestConfigs.filter { $0.trigger.type == .period }.map(\.name))
         // Snapshot the keys: tearDownLocked mutates `telemetries` (removes the entry), so iterating a
         // live view of the same dictionary being mutated would be subtle even though Swift's COW makes
         // it memory-safe.
         for name in Array(telemetries.keys) where !presentNames.contains(name) {
             tearDownLocked(name)
         }
-        for config in latestConfigs where config.isEnabled && config.trigger.isPeriod && telemetries[config.name] == nil {
+        for config in latestConfigs where config.isEnabled && config.trigger.type == .period && telemetries[config.name] == nil {
             startNewPeriodLocked(config)
         }
         rearmSchedulerLocked()
@@ -311,7 +311,7 @@ public final class EventHub: EventHubManaging {
         for telemetry in Array(telemetries.values) where telemetry.isElapsed(atMillis: now) {
             fireLocked(telemetry.name)
         }
-        for config in latestConfigs where config.isEnabled && config.trigger.isPeriod && telemetries[config.name] == nil {
+        for config in latestConfigs where config.isEnabled && config.trigger.type == .period && telemetries[config.name] == nil {
             startNewPeriodLocked(config)
         }
         flushDirtyLocked()
@@ -322,7 +322,7 @@ public final class EventHub: EventHubManaging {
         guard latestEnabled, let telemetry = telemetries[name] else { return }
         // Defense-in-depth against a config removed between arming and elapsing. Deliberately checks
         // presence, not `isEnabled`: a pixel disabled mid-period must still fire this final period.
-        guard latestConfigs.contains(where: { $0.name == name && $0.trigger.isPeriod }) else {
+        guard latestConfigs.contains(where: { $0.name == name && $0.trigger.type == .period }) else {
             tearDownLocked(name); return
         }
         telemetries.removeValue(forKey: name)

@@ -88,7 +88,7 @@ final class Telemetry {
     /// never these exact numbers.
     var rawCounterValues: [String: Int] {
         var result: [String: Int] = [:]
-        for (paramName, paramConfig) in config.parameters where paramConfig.isCounter {
+        for (paramName, paramConfig) in config.parameters where paramConfig.template == .counter {
             if let parameter = parameters[paramName] { result[paramName] = parameter.state.value }
         }
         return result

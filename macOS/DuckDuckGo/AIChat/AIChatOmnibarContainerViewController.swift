@@ -1122,7 +1122,12 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         var frame = superview.convert(winFrame, from: nil)
 
         /// Do not overlap shadow of main address bar
-        frame.size.height -= themeManager.isAppRebranded ? Constants.shadowOverlapHeight : Constants.legacyShadowOverlapHeight
+        let overlap = themeManager.isAppRebranded ? Constants.shadowOverlapHeight : Constants.legacyShadowOverlapHeight
+        /// `ShadowView` clamps its corner radius to half its shorter side, so trimming a collapsed
+        /// panel's shadow below twice the radius rounds its bottom corners tighter than the panel's
+        /// own background and reads as a mismatched outline. Trim less rather than lose the radius —
+        /// the shadow doesn't draw its top edge anyway, so the extra height costs nothing visually.
+        frame.size.height = max(shadowView.cornerRadius * 2, frame.height - overlap)
 
         shadowView.frame = frame
     }

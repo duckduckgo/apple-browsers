@@ -52,7 +52,17 @@ final class PromptBarOmnibarContentLayoutTests: XCTestCase {
     func testWhenThePromptIsOneLineThenTheControlsRowSitsClearOfIt() {
         let gap = layOutAndMeasureGap(prompt: "what is a duck")
 
-        XCTAssertGreaterThanOrEqual(gap, 8, "The controls row must not touch the prompt text")
+        // Exact, not a lower bound: a panel that over-budgets the controls row widens this gap
+        // instead of failing outright, which is how a stale row height slips through.
+        XCTAssertEqual(gap, 8, accuracy: 1, "The gap between the prompt and the controls row has moved")
+    }
+
+    func testWhenRebrandedThenThePromptToControlsGapIsUnchanged() {
+        content = makeContent(isAppRebranded: true)
+
+        let gap = layOutAndMeasureGap(prompt: "what is a duck")
+
+        XCTAssertEqual(gap, 8, accuracy: 1, "The rebranded panel budgets a different controls row height than it lays out")
     }
 
     func testWhenThePromptGrowsToMoreLinesThenTheGapBelowItDoesNotChange() {
@@ -113,8 +123,6 @@ final class PromptBarOmnibarContentLayoutTests: XCTestCase {
         }
     }
 
-    /// The suggestions list is collapsed on this surface, and its bottom padding used to apply anyway
-    /// — leaving the controls row 12pt clear of a container whose trailing inset is 8pt.
     func testWhenSuggestionsAreCollapsedThenTheSubmitButtonClearsTheBottomEdgeByItsTrailingInset() {
         content = makeContent(isAppRebranded: true)
         _ = layOutAndMeasureGap(prompt: "what is a duck")

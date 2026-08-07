@@ -123,25 +123,25 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// Constraint for suggestions view height
     private var suggestionsHeightConstraint: NSLayoutConstraint?
 
-    /// Gap below the suggestions list, driven in step with the height by
-    /// `applySuggestionsBottomPadding(forHeight:)`.
     private var suggestionsBottomConstraint: NSLayoutConstraint?
 
-    /// The gap is dead space while the list is collapsed: it pads the bottom of a zero-height view,
-    /// so the tools row clears the container by 12pt against an 8pt trailing inset. Dropped to zero
-    /// in the rebranded theme to even those up. The legacy theme's trailing inset is 13pt, where the
-    /// same change would make the mismatch worse, so it keeps the padding unconditionally.
+    /// Zero when rebranded: the collapsed list is zero-height, so this padded nothing and just pushed
+    /// the controls row 4pt off an 8pt trailing inset. Legacy's trailing inset is 13pt, so it keeps it.
     private var collapsedSuggestionsBottomPadding: CGFloat {
         themeManager.isAppRebranded ? 0 : Constants.suggestionsBottomPadding
     }
 
-    /// Gap below the list while it's showing. `AIChatSuggestionsView` only reserves 2pt inside its own
-    /// height, so the original 4pt here left the last row crowding the panel's bottom edge. Legacy
-    /// reserves 4pt internally and isn't part of the report, so it keeps the original gap.
+    /// `AIChatSuggestionsView` only reserves 2pt internally when rebranded, so it needs more here.
     private var expandedSuggestionsBottomPadding: CGFloat {
         themeManager.isAppRebranded
             ? Constants.rebrandedExpandedSuggestionsBottomPadding
             : Constants.suggestionsBottomPadding
+    }
+
+    /// Height the controls row occupies above the container's bottom edge. Hosts that stack their own
+    /// content above the panel budget with this rather than restating the arithmetic.
+    var controlsRowHeight: CGFloat {
+        Constants.toolButtonSize + Constants.toolButtonBottomInset + collapsedSuggestionsBottomPadding
     }
 
     private func applySuggestionsBottomPadding(forHeight height: CGFloat) {

@@ -316,7 +316,12 @@ private extension JobQueueManager {
             let errorCollection = DataBrokerProtectionJobsErrorCollection(oneTimeError: BrokerProfileJobQueueError.interrupted, operationErrors: operationErrorsForCurrentOperations())
             errorHandler?(errorCollection)
             resetMode()
-            delegate?.queueManagerDidFinishOperations(self)
+            if delegate != nil {
+                jobQueue.addBarrierBlock1 { [weak self] in
+                    guard let self else { return }
+                    self.delegate?.queueManagerDidFinishOperations(self)
+                }
+            }
             completion?()
         default:
             break

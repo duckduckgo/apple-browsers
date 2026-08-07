@@ -26,9 +26,15 @@ public protocol ResourceMonitoring: AnyObject {
     func stop()
 }
 
-/// Monitors one accepted PIR queue run on a dedicated serial queue. CPU accounting runs more frequently
-/// than reporting; memory is sampled when snapshots are published and at run end. Only WebKit PID discovery
-/// hops to the main queue because WebKit owns those proxy objects there.
+/// Monitors resource usage for one accepted PIR queue run.
+///
+/// Reports include:
+/// - CPU: cumulative agent and WebContent time, plus average core-equivalent utilization; for example,
+///   `agent: 3.2s`, `WebContent: 7.1s`, and `average: 1.7%`.
+/// - Memory: current and peak physical footprints for the agent and summed WebContent processes; for example,
+///   `agent: 120/150 MiB` and `WebContent: 2.1/2.8 GiB` for current/peak usage.
+/// - WebContent: current process count; for example, `18` processes.
+/// - Pressure: whether critical memory pressure occurred during the run; for example, `true` after one event.
 public final class ResourceMonitor: ResourceMonitoring, @unchecked Sendable {
 
     // MARK: - Run State
@@ -44,7 +50,7 @@ public final class ResourceMonitor: ResourceMonitoring, @unchecked Sendable {
     // MARK: - Dependencies and State
 
     private struct Constants {
-        static let cpuSampleInterval: TimeInterval = 10
+        static let cpuSampleInterval: TimeInterval = .seconds(10)
         static let cpuSamplesPerReport = 6
         static let bytesPerMebibyte = Double(1 << 20)
         static let bytesPerGibibyte = Double(1 << 30)
@@ -54,6 +60,7 @@ public final class ResourceMonitor: ResourceMonitoring, @unchecked Sendable {
     private let monitorQueue = DispatchQueue(label: "com.duckduckgo.pir.resource-monitor", qos: .utility)
     // Stores the latest published state for reads that do not run on monitorQueue.
     private let resourceUsageStore = ResourceUsageStore()
+
     private let webContentProcessIDProvider = WebContentProcessIDProvider()
     private var activeRun: ActiveRun?
 
@@ -115,7 +122,6 @@ public final class ResourceMonitor: ResourceMonitoring, @unchecked Sendable {
         }
         memoryPressureSource.setEventHandler { [weak self, weak memoryPressureSource] in
             guard let self, memoryPressureSource?.data.contains(.critical) == true else { return }
-            // Pressure is event-based, so keep it set for the remainder of this run.
             self.activeRun?.memory.recordCriticalPressure()
             self.recordResourcesAndPublishSnapshot()
         }
@@ -152,17 +158,21 @@ public final class ResourceMonitor: ResourceMonitoring, @unchecked Sendable {
 
         activeRun?.cpuSamplesUntilNextReport = Constants.cpuSamplesPerReport
         activeRun?.memory.recordSample(webContentPIDs: webContentPIDs)
-        publishSnapshot()
+        publishDebugSnapshot()
     }
 
     private func recordResourcesAndPublishSnapshot() {
         let webContentPIDs = webContentProcessIDProvider.currentProcessIDs()
         activeRun?.cpu.recordSample(webContentPIDs: Set(webContentPIDs ?? []))
         activeRun?.memory.recordSample(webContentPIDs: webContentPIDs)
-        publishSnapshot()
+        publishDebugSnapshot()
     }
+}
 
-    private func publishSnapshot() {
+// MARK: - Debugging & logging
+
+private extension ResourceMonitor {
+    private func publishDebugSnapshot() {
         guard let activeRun else { return }
 
         let snapshot = ResourceSnapshot(
@@ -173,11 +183,7 @@ public final class ResourceMonitor: ResourceMonitoring, @unchecked Sendable {
         resourceUsageStore.publish(DBPDebugResourceUsage.Sample(snapshot))
         log(snapshot)
     }
-}
 
-// MARK: - Debug & logging
-
-private extension ResourceMonitor {
     private func log(_ snapshot: ResourceSnapshot) {
         let webContentFootprint = snapshot.memory.webContent.footprintBytes.map(Self.formattedMemory) ?? "unavailable"
         let peakWebContentFootprint = snapshot.memory.webContent.peakFootprintBytes

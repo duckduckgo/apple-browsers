@@ -25,9 +25,9 @@ struct MemoryUsageSample {
 
     /// Current agent physical footprint, or zero when `task_info` fails.
     let agentFootprint: MemoryFootprint
-    /// Sum of readable WebContent footprints, or `nil` when PID discovery was unavailable.
+    /// Sum of WebContent footprints, or `nil` when PID discovery or any footprint read was unavailable.
     let webContentFootprint: MemoryFootprint?
-    /// WebContent PIDs discovered before unreadable footprints were discarded.
+    /// Number of WebContent PIDs discovered.
     let webContentCount: Int?
 
     static let unavailable = MemoryUsageSample(
@@ -43,14 +43,21 @@ struct MemoryUsageSampler {
 
     /// Treats `nil` PIDs as unavailable and an empty collection as zero WebContent usage.
     func takeSample(webContentPIDs: [pid_t]?) -> MemoryUsageSample {
-        let webContentFootprint = webContentPIDs.map { pids in
-            pids.compactMap(Self.physicalFootprint).reduce(0, +)
-        }
+        let webContentFootprint = webContentPIDs.flatMap(Self.combinedPhysicalFootprint)
         return MemoryUsageSample(
             agentFootprint: Self.agentPhysicalFootprint(),
             webContentFootprint: webContentFootprint,
             webContentCount: webContentPIDs?.count
         )
+    }
+
+    private static func combinedPhysicalFootprint(for pids: [pid_t]) -> MemoryUsageSample.MemoryFootprint? {
+        var total: MemoryUsageSample.MemoryFootprint = 0
+        for pid in pids {
+            guard let footprint = physicalFootprint(for: pid) else { return nil }
+            total += footprint
+        }
+        return total
     }
 
     private static func agentPhysicalFootprint() -> MemoryUsageSample.MemoryFootprint {

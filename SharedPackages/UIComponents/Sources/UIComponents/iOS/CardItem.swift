@@ -71,6 +71,26 @@ public struct CardItemIcon {
 public enum CardItemAccessory {
     case chevron(Color)
     case checkmark(Color)
+    /// A caller-supplied trailing view (e.g. a selection indicator).
+    case custom(AnyView)
+    /// An interactive toggle with a caller-supplied "on" tint. Unlike the visual accessories, this
+    /// stays a separate, focusable accessibility element so its on/off state is announced and
+    /// actionable by VoiceOver.
+    case toggle(Binding<Bool>, tint: Color)
+
+    /// Wraps any view as a ``custom(_:)`` accessory without the caller spelling out `AnyView`.
+    public static func custom(_ content: some View) -> CardItemAccessory {
+        .custom(AnyView(content))
+    }
+
+    /// Whether the accessory is an interactive control rather than a purely decorative glyph. The row
+    /// keeps an interactive accessory as its own focusable, announced accessibility element.
+    var isInteractive: Bool {
+        switch self {
+        case .chevron, .checkmark, .custom: false
+        case .toggle: true
+        }
+    }
 }
 
 /// A design-system font token for a ``CardItem``. Each value maps to a DesignResourcesKit dax font;
@@ -78,7 +98,7 @@ public enum CardItemAccessory {
 public struct CardItemFont {
     let font: Font
 
-    private init(_ font: Font) {
+    public init(_ font: Font) {
         self.font = font
     }
 }
@@ -209,12 +229,14 @@ private extension CardItem {
             .frame(maxWidth: .infinity, alignment: .leading)
 
             if let trailing {
-                trailingIcon(for: trailing)
+                trailingView(for: trailing)
                     .padding(.leading, 8)
-                    .accessibilityHidden(true)
+                    .accessibilityHidden(trailing.isInteractive ? false : true)
             }
         }
-        .combinedAccessibilityValue(accessibilityValue)
+        // An interactive accessory (e.g. a toggle) must stay its own focusable element, so the row
+        // is only merged into a single VoiceOver element for purely visual accessories.
+        .combinedAccessibilityValue(trailing?.isInteractive == true ? nil : accessibilityValue)
     }
 
     var rowAlignment: VerticalAlignment {
@@ -266,7 +288,7 @@ private extension CardItem {
     }
 
     @ViewBuilder
-    func trailingIcon(for accessory: CardItemAccessory) -> some View {
+    func trailingView(for accessory: CardItemAccessory) -> some View {
         switch accessory {
         case .chevron(let color):
             Image(systemName: "chevron.forward")
@@ -274,6 +296,12 @@ private extension CardItem {
         case .checkmark(let color):
             Image(systemName: "checkmark")
                 .foregroundColor(color)
+        case .custom(let view):
+            view
+        case .toggle(let isOn, let tint):
+            Toggle("", isOn: isOn)
+                .labelsHidden()
+                .tint(tint)
         }
     }
 }
@@ -377,6 +405,46 @@ private struct CardItemSparseSamples: View {
     }
 }
 
+private struct CardItemToggleSamples: View {
+    @State private var recentSitesOn = true
+    @State private var syncOn = false
+
+    var body: some View {
+        VStack(spacing: 16) {
+            CardItem(
+                icon: CardItemIcon(position: .leadingColumn, visual: .image(Image(systemName: "clock.fill")), size: .size24),
+                title: CardItemText("Recently visited sites", font: .bodyRegular),
+                text: CardItemText("Show when searching. Private, only on your device.", font: .footnoteRegular),
+                trailing: .toggle($recentSitesOn, tint: Color(designSystemColor: .accentPrimary)))
+
+            CardItem(
+                icon: CardItemIcon(position: .leadingColumn, visual: .image(Image(systemName: "arrow.triangle.2.circlepath")), size: .size24),
+                title: CardItemText("Sync", font: .bodyRegular),
+                trailing: .toggle($syncOn, tint: Color(designSystemColor: .accentPrimary)))
+        }
+        .padding()
+    }
+}
+
+private struct CardItemCustomAccessorySamples: View {
+    var body: some View {
+        VStack(spacing: 16) {
+            CardItem(
+                icon: CardItemIcon(position: .leadingColumn, visual: .image(Image(systemName: "sparkles")), size: .size24),
+                title: CardItemText("ChatGPT", font: .bodyRegular),
+                trailing: .custom(Image(systemName: "checkmark.circle.fill")
+                    .foregroundColor(Color(designSystemColor: .accentPrimary))))
+
+            CardItem(
+                icon: CardItemIcon(position: .leadingColumn, visual: .image(Image(systemName: "sparkles")), size: .size24),
+                title: CardItemText("Claude", font: .bodyRegular),
+                trailing: .custom(Image(systemName: "circle")
+                    .foregroundColor(Color(designSystemColor: .decorationPrimary))))
+        }
+        .padding()
+    }
+}
+
 private struct PreviewBlur: ViewModifier {
     func body(content: Content) -> some View {
         content.blur(radius: 6)
@@ -454,6 +522,19 @@ private struct CardItemSecondaryTextSamples: View {
 
 #Preview("Secondary text") {
     CardItemSecondaryTextSamples()
+}
+
+#Preview("Toggle") {
+    CardItemToggleSamples()
+}
+
+#Preview("Custom accessory") {
+    CardItemCustomAccessorySamples()
+}
+
+#Preview("Custom accessory Dark") {
+    CardItemCustomAccessorySamples()
+        .preferredColorScheme(.dark)
 }
 
 #endif

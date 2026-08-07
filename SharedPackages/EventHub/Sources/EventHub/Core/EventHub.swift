@@ -351,13 +351,12 @@ public final class EventHub: EventHubManaging {
         }
     }
 
+    /// Names stay dirty when the store rejects the write, so the next flush — armed by
+    /// `rearmSchedulerLocked` for as long as anything is pending — retries them.
     private func flushDirtyLocked() {
         guard !dirtyNames.isEmpty else { return }
-        for name in dirtyNames {
-            if let telemetry = telemetries[name] {
-                store.savePixelState(telemetry.snapshot())
-            }
-        }
+        let states = dirtyNames.compactMap { telemetries[$0]?.snapshot() }
+        guard store.savePixelStates(states) else { return }
         dirtyNames.removeAll()
     }
 

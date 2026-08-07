@@ -123,6 +123,30 @@ struct EventHubStoreTests {
         #expect(repository.allPixelStates().isEmpty)
     }
 
+    @Test("savePixelStates persists a batch in a single store write")
+    func savePixelStatesPersistsBatchInOneWrite() {
+        let baseline = store.setCallCount
+
+        let saved = repository.savePixelStates([
+            PixelState(pixelName: "a", periodStartMillis: 0, periodEndMillis: 86_400_000, config: Self.sampleConfig, params: ["count": ParamState(value: 1)]),
+            PixelState(pixelName: "b", periodStartMillis: 0, periodEndMillis: 86_400_000, config: Self.sampleConfig, params: ["count": ParamState(value: 2)]),
+            PixelState(pixelName: "c", periodStartMillis: 0, periodEndMillis: 86_400_000, config: Self.sampleConfig, params: ["count": ParamState(value: 3)]),
+        ])
+
+        #expect(saved)
+        #expect(store.setCallCount - baseline == 1)
+        #expect(Set(repository.allPixelStates().map(\.pixelName)) == ["a", "b", "c"])
+    }
+
+    @Test("savePixelStates merges into, rather than replaces, what is already stored")
+    func savePixelStatesMergesWithExistingEntries() {
+        repository.savePixelStates([PixelState(pixelName: "a", periodStartMillis: 0, periodEndMillis: 86_400_000, config: Self.sampleConfig, params: [:])])
+
+        repository.savePixelStates([PixelState(pixelName: "b", periodStartMillis: 0, periodEndMillis: 86_400_000, config: Self.sampleConfig, params: [:])])
+
+        #expect(Set(repository.allPixelStates().map(\.pixelName)) == ["a", "b"])
+    }
+
     @Test("round trips empty params")
     func roundTripsEmptyParams() throws {
         repository.savePixelState(PixelState(pixelName: "testPixel", periodStartMillis: 0, periodEndMillis: 86_400_000, config: Self.sampleConfig, params: [:]))

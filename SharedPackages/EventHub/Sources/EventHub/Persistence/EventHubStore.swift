@@ -30,14 +30,24 @@ public protocol EventHubStore {
     /// Returns all persisted pixel states, skipping any whose stored config cannot be parsed.
     func allPixelStates() -> [PixelState]
 
-    /// Persists (inserts or replaces) the state for a pixel.
-    func savePixelState(_ state: PixelState)
+    /// Persists (inserts or replaces) the states for a set of pixels in a single write.
+    ///
+    /// - Returns: `false` only when the store rejected the write, meaning the caller should keep the
+    ///   states pending and try again. States whose config or params cannot be serialised are skipped
+    ///   and do not fail the batch: that failure is permanent, so retrying could never clear it.
+    @discardableResult
+    func savePixelStates(_ states: [PixelState]) -> Bool
 
     /// Removes the persisted state for the named pixel, if any.
     func deletePixelState(named name: String)
 
     /// Removes all persisted pixel state.
     func deleteAllPixelStates()
+}
+
+public extension EventHubStore {
+    @discardableResult
+    func savePixelState(_ state: PixelState) -> Bool { savePixelStates([state]) }
 }
 
 /// Backs `EventHubStore` with a `ThrowingKeyValueStoring`. All persisted pixel states live under a
@@ -72,21 +82,30 @@ public final class EventHubKeyValueStore: EventHubStore {
         readMap().compactMap { name, entry in toPixelState(name: name, entry: entry) }
     }
 
-    public func savePixelState(_ state: PixelState) {
+    @discardableResult
+    public func savePixelStates(_ states: [PixelState]) -> Bool {
+        let entries = states.compactMap { state in serialise(state).map { (state.pixelName, $0) } }
+        guard !entries.isEmpty else { return true }
+        var map = readMap()
+        for (name, entry) in entries {
+            map[name] = entry
+        }
+        return writeMap(map)
+    }
+
+    private func serialise(_ state: PixelState) -> EventHubStoredPixelState? {
         guard let configJSON = parser.serializePixelConfig(state.config) else {
             Logger.eventHub.error("store: could not serialise the config snapshot for pixel \(state.pixelName, privacy: .public), state not saved")
-            return
+            return nil
         }
         guard let paramsData = try? JSONEncoder().encode(state.params),
               let paramsJSON = String(bytes: paramsData, encoding: .utf8) else {
             Logger.eventHub.error("store: could not serialise params for pixel \(state.pixelName, privacy: .public), state not saved")
-            return
+            return nil
         }
-        var map = readMap()
-        map[state.pixelName] = EventHubStoredPixelState(
+        return EventHubStoredPixelState(
             periodStartMillis: state.periodStartMillis, periodEndMillis: state.periodEndMillis,
             paramsJSON: paramsJSON, configJSON: configJSON)
-        writeMap(map)
     }
 
     public func deletePixelState(named name: String) {
@@ -129,16 +148,21 @@ public final class EventHubKeyValueStore: EventHubStore {
         }
     }
 
-    private func writeMap(_ map: [String: EventHubStoredPixelState]) {
+    /// - Returns: `false` when the store threw. Encoding our own map cannot fail on any input reachable
+    ///   from remote config, so that path reports success rather than making the caller retry forever.
+    @discardableResult
+    private func writeMap(_ map: [String: EventHubStoredPixelState]) -> Bool {
         guard let data = try? JSONEncoder().encode(map) else {
             Logger.eventHub.error("store: could not encode the pixel state map, nothing persisted")
-            return
+            return true
         }
         do {
             try store?.set(data, forKey: Self.storageKey)
+            return true
         } catch {
             Logger.eventHub.error("store: could not persist pixel state: \(error.localizedDescription, privacy: .public)")
             eventMapping?.fire(.pixelStatePersistenceFailed(operation: .write), error: error)
+            return false
         }
     }
 

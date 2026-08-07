@@ -60,7 +60,7 @@ final class EventHubFixture {
         self.enabledSubject = CurrentValueSubject(enabled)
         self.settingsSubject = CurrentValueSubject(hasSettings ? settingsDictionary(settingsJSON) : nil)
 
-        let settingsProvider = FakeEventHubSettingsProviding(enabled: enabledSubject.eraseToAnyPublisher(), settings: settingsSubject.eraseToAnyPublisher())
+        let settingsProvider = TestSettingsProviding(enabled: enabledSubject.eraseToAnyPublisher(), settings: settingsSubject.eraseToAnyPublisher())
 
         self.manager = EventHub(store: backingRepository, parser: parser, settings: settingsProvider,
                                  scheduler: scheduler, pixelFiring: spyPixelFiring)
@@ -135,14 +135,5 @@ final class EventHubFixture {
         fixture.manager.onAppForegrounded()
         fixture.manager.onConfigChanged()
         return fixture
-    }
-
-    private struct FakeEventHubSettingsProviding: EventHubSettingsProviding {
-        let enabledPublisher: AnyPublisher<Bool, Never>
-        let settingsPublisher: AnyPublisher<[String: Any]?, Never>
-        init(enabled: AnyPublisher<Bool, Never>, settings: AnyPublisher<[String: Any]?, Never>) {
-            self.enabledPublisher = enabled
-            self.settingsPublisher = settings
-        }
     }
 }

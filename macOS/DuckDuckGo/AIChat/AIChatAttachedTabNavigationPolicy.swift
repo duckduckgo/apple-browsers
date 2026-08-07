@@ -39,7 +39,8 @@ struct AIChatAttachedTabPage {
     }
 }
 
-/// What an attached tab's navigation does to its card: follow it, or drop the explicit pick.
+/// What an attached tab's navigation does to its card. An omnibar prompt is always about a new
+/// chat, so a card follows its tab rather than being dropped when the page changes under it.
 enum AIChatAttachedTabNavigationPolicy {
 
     enum Action: Equatable {
@@ -48,36 +49,21 @@ enum AIChatAttachedTabNavigationPolicy {
         case drop
     }
 
-    static func action(for attachment: AIChatTabAttachment,
-                       page: AIChatAttachedTabPage,
-                       isSettlingLoadFromAttachTime: Bool,
-                       automaticallySendsPageContext: Bool) -> Action {
-        guard case .url(let url, _, let source) = page.content, !AIChatTabMetadata.shouldExcludeFromTabPicker(url) else {
+    static func action(for attachment: AIChatTabAttachment, page: AIChatAttachedTabPage) -> Action {
+        guard case .url(let url, _, _) = page.content, !AIChatTabMetadata.shouldExcludeFromTabPicker(url) else {
             return .drop
         }
-        guard url != attachment.url else {
-            return updatedMetadata(for: attachment, page: page)
-        }
-        return afterPageChange(for: attachment,
-                               to: url,
-                               isSettling: isSettlingLoadFromAttachTime && source == .webViewUpdated,
-                               automaticallySendsPageContext: automaticallySendsPageContext)
+        return url == attachment.url ? updatedMetadata(for: attachment, page: page) : movedTo(url, from: attachment)
     }
 
-    /// Only the web view settling the load that was in flight at attach time (redirect, committed
-    /// URL) counts as the same pick; anything the user drove is a page change.
-    private static func afterPageChange(for attachment: AIChatTabAttachment,
-                                        to url: URL,
-                                        isSettling: Bool,
-                                        automaticallySendsPageContext: Bool) -> Action {
-        guard automaticallySendsPageContext || isSettling else { return .drop }
-        // The title still describes the page being left, so the card falls back to the host until
-        // the new one lands. A favicon belongs to the site, so it survives a move within one host.
-        return .refresh(AIChatTabAttachment(id: attachment.id,
-                                            title: url.host ?? url.absoluteString,
-                                            url: url,
-                                            favicon: url.host == attachment.url.host ? attachment.favicon : nil,
-                                            instanceID: attachment.instanceID))
+    /// The title still describes the page being left, so the card falls back to the host until the
+    /// new one lands. A favicon belongs to the site, so it survives a move within one host.
+    private static func movedTo(_ url: URL, from attachment: AIChatTabAttachment) -> Action {
+        .refresh(AIChatTabAttachment(id: attachment.id,
+                                     title: url.host ?? url.absoluteString,
+                                     url: url,
+                                     favicon: url.host == attachment.url.host ? attachment.favicon : nil,
+                                     instanceID: attachment.instanceID))
     }
 
     /// Same page: title and favicon land after it does, and neither is ever downgraded back to nil.

@@ -681,14 +681,12 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         wait(for: [pending], timeout: 1)
     }
 
-    private func makeControllerWithAttachedOtherTab(automaticallySendPageContext: Bool) -> (AIChatOmnibarController, Tab) {
+    /// Selected tab A holds the prompt; tab B is attached to it and then navigates.
+    private func makeControllerWithAttachedOtherTab() -> (AIChatOmnibarController, Tab) {
         let promptTab = Tab(content: .url(URL(string: "https://prompt.example")!, credential: nil, source: .ui))
         let attachedTab = Tab(content: .url(URL(string: "https://example.com")!, credential: nil, source: .ui))
         _ = tabCollectionViewModel.append(tab: attachedTab, selected: false)
         _ = tabCollectionViewModel.append(tab: promptTab, selected: true)
-
-        let menuConfig = MockAIChatConfig()
-        menuConfig.shouldAutomaticallySendPageContext = automaticallySendPageContext
 
         let controller = AIChatOmnibarController(
             aiChatTabOpener: mockTabOpener,
@@ -702,8 +700,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
             modelsService: mockModelsService,
             subscriptionManager: mockSubscriptionManager,
             subscriptionUpsellPresenter: mockSubscriptionUpsellPresenter,
-            badgeImpressionPersistor: mockBadgeImpressionPersistor,
-            aiChatMenuConfiguration: menuConfig
+            badgeImpressionPersistor: mockBadgeImpressionPersistor
         )
         controller.toggleTabAttachment(AIChatTabAttachment(id: attachedTab.uuid,
                                                            title: "Example",
@@ -713,28 +710,18 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         return (controller, attachedTab)
     }
 
-    func testWhenAttachedTabNavigatesAndPageContentIsNotSentAutomatically_ThenAttachmentIsDropped() {
-        let (controller, attachedTab) = makeControllerWithAttachedOtherTab(automaticallySendPageContext: false)
+    func testWhenAttachedTabNavigates_ThenTheAttachmentFollowsIt() {
+        let (controller, attachedTab) = makeControllerWithAttachedOtherTab()
 
         _ = attachedTab.setContent(.url(URL(string: "https://apple.com")!, credential: nil, source: .ui))
 
-        XCTAssertTrue(controller.activeTabAttachments.isEmpty,
-                      "The user attached one specific page; navigating away drops it rather than sending another page")
-    }
-
-    /// Tabs built here never finish loading, so they stand in for attaching a mid-load tab.
-    func testWhenTabAttachedMidLoadSettlesOnAnotherURL_ThenAttachmentRebasesInsteadOfBeingDropped() {
-        let (controller, attachedTab) = makeControllerWithAttachedOtherTab(automaticallySendPageContext: false)
-
-        _ = attachedTab.setContent(.url(URL(string: "https://apple.com")!, credential: nil, source: .webViewUpdated))
-
         XCTAssertEqual(controller.activeTabAttachments.map(\.url.absoluteString), ["https://apple.com"],
-                       "Dropping here would lose the tab the user just attached")
+                       "An omnibar prompt is about a new chat, so the card follows the tab it names")
     }
 
     /// Switching to the attached tab used to cancel its observer, losing that tab's navigation.
     func testWhenAttachedTabNavigatesWhileItIsSelected_ThenThePromptTabsAttachmentUpdatesImmediately() {
-        let (controller, attachedTab) = makeControllerWithAttachedOtherTab(automaticallySendPageContext: true)
+        let (controller, attachedTab) = makeControllerWithAttachedOtherTab()
         let promptTabState = tabCollectionViewModel.selectedTabViewModel?.addressBarSharedTextState
 
         // User switches to the attached tab and navigates it there.
@@ -747,7 +734,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
     }
 
     func testWhenAttachedTabIsClosed_ThenTheAttachmentIsDropped() throws {
-        let (controller, attachedTab) = makeControllerWithAttachedOtherTab(automaticallySendPageContext: true)
+        let (controller, attachedTab) = makeControllerWithAttachedOtherTab()
         let attachedIndex = tabCollectionViewModel.indexInAllTabs(where: { $0.uuid == attachedTab.uuid })
 
         tabCollectionViewModel.remove(at: try XCTUnwrap(attachedIndex))
@@ -757,7 +744,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
     }
 
     func testWhenAttachedTabIsDetached_ThenItsNavigationNoLongerTouchesTheAttachments() {
-        let (controller, attachedTab) = makeControllerWithAttachedOtherTab(automaticallySendPageContext: true)
+        let (controller, attachedTab) = makeControllerWithAttachedOtherTab()
         controller.removeTabAttachmentFromActiveTab(id: attachedTab.uuid)
         controller.toggleTabAttachment(makeTabAttachment(id: "other-tab"))
 

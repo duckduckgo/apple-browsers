@@ -34,13 +34,11 @@ final class AIChatAttachedTabNavigationPolicyTests: XCTestCase {
         .url(url, credential: nil, source: source)
     }
 
-    // MARK: - Navigating with the setting on → the card follows the tab
+    // MARK: - Navigating away → the card follows the tab
 
-    func testNavigationToAnotherSiteRefreshesAttachmentWhenAutomaticallySendingPageContext() {
+    func testNavigationToAnotherSiteRefreshesTheAttachment() {
         let action = AIChatAttachedTabNavigationPolicy.action(for: attachment(favicon: NSImage()),
-                                                             page: AIChatAttachedTabPage(content: content(newURL), title: "Apple", favicon: NSImage()),
-                                                             isSettlingLoadFromAttachTime: false,
-                                                             automaticallySendsPageContext: true)
+                                                             page: AIChatAttachedTabPage(content: content(newURL), title: "Apple", favicon: NSImage()))
 
         XCTAssertEqual(action, .refresh(AIChatTabAttachment(id: "tab-1", title: "apple.com", url: newURL, favicon: nil)),
                        "The published title still describes the page being left, and the icon belongs to the old site")
@@ -51,23 +49,10 @@ final class AIChatAttachedTabNavigationPolicyTests: XCTestCase {
         let otherPage = URL(string: "https://example.com/other")!
 
         let action = AIChatAttachedTabNavigationPolicy.action(for: attachment(favicon: favicon),
-                                                             page: AIChatAttachedTabPage(content: content(otherPage), title: "Article", favicon: favicon),
-                                                             isSettlingLoadFromAttachTime: false,
-                                                             automaticallySendsPageContext: true)
+                                                             page: AIChatAttachedTabPage(content: content(otherPage), title: "Article", favicon: favicon))
 
         XCTAssertEqual(action, .refresh(AIChatTabAttachment(id: "tab-1", title: "example.com", url: otherPage, favicon: favicon)),
                        "A favicon belongs to the site, so moving within it keeps the icon while the title resets")
-    }
-
-    // MARK: - Navigating with the setting off → the explicit pick is dropped
-
-    func testNavigationDropsAttachmentWhenNotAutomaticallySendingPageContext() {
-        let action = AIChatAttachedTabNavigationPolicy.action(for: attachment(),
-                                                             page: AIChatAttachedTabPage(content: content(newURL), title: "Apple", favicon: nil),
-                                                             isSettlingLoadFromAttachTime: false,
-                                                             automaticallySendsPageContext: false)
-
-        XCTAssertEqual(action, .drop)
     }
 
     // MARK: - Same page
@@ -76,18 +61,14 @@ final class AIChatAttachedTabNavigationPolicyTests: XCTestCase {
         let favicon = NSImage()
 
         let action = AIChatAttachedTabNavigationPolicy.action(for: attachment(favicon: favicon),
-                                                             page: AIChatAttachedTabPage(content: content(attachedURL), title: "Article", favicon: favicon),
-                                                             isSettlingLoadFromAttachTime: false,
-                                                             automaticallySendsPageContext: false)
+                                                             page: AIChatAttachedTabPage(content: content(attachedURL), title: "Article", favicon: favicon))
 
         XCTAssertEqual(action, .keep)
     }
 
     func testSamePageWithNoTitleYetKeepsTheAttachedTitle() {
         let action = AIChatAttachedTabNavigationPolicy.action(for: attachment(title: "Article"),
-                                                             page: AIChatAttachedTabPage(content: content(attachedURL), title: nil, favicon: nil),
-                                                             isSettlingLoadFromAttachTime: false,
-                                                             automaticallySendsPageContext: true)
+                                                             page: AIChatAttachedTabPage(content: content(attachedURL), title: nil, favicon: nil))
 
         XCTAssertEqual(action, .keep, "A missing title must not overwrite the attached one with the host")
     }
@@ -96,9 +77,7 @@ final class AIChatAttachedTabNavigationPolicyTests: XCTestCase {
         let favicon = NSImage()
 
         let action = AIChatAttachedTabNavigationPolicy.action(for: attachment(title: "example.com", favicon: favicon),
-                                                             page: AIChatAttachedTabPage(content: content(attachedURL), title: "Article", favicon: favicon),
-                                                             isSettlingLoadFromAttachTime: false,
-                                                             automaticallySendsPageContext: false)
+                                                             page: AIChatAttachedTabPage(content: content(attachedURL), title: "Article", favicon: favicon))
 
         XCTAssertEqual(action, .refresh(AIChatTabAttachment(id: "tab-1",
                                                             title: "Article",
@@ -110,9 +89,7 @@ final class AIChatAttachedTabNavigationPolicyTests: XCTestCase {
         let favicon = NSImage()
 
         let action = AIChatAttachedTabNavigationPolicy.action(for: attachment(favicon: nil),
-                                                             page: AIChatAttachedTabPage(content: content(attachedURL), title: "Article", favicon: favicon),
-                                                             isSettlingLoadFromAttachTime: false,
-                                                             automaticallySendsPageContext: false)
+                                                             page: AIChatAttachedTabPage(content: content(attachedURL), title: "Article", favicon: favicon))
 
         XCTAssertEqual(action, .refresh(AIChatTabAttachment(id: "tab-1", title: "Article", url: attachedURL, favicon: favicon)),
                        "The icon lands after the page it belongs to — the card has to pick it up")
@@ -122,65 +99,24 @@ final class AIChatAttachedTabNavigationPolicyTests: XCTestCase {
         let attachedFavicon = NSImage()
 
         let action = AIChatAttachedTabNavigationPolicy.action(for: attachment(favicon: attachedFavicon),
-                                                             page: AIChatAttachedTabPage(content: content(attachedURL), title: "Article", favicon: nil),
-                                                             isSettlingLoadFromAttachTime: false,
-                                                             automaticallySendsPageContext: false)
+                                                             page: AIChatAttachedTabPage(content: content(attachedURL), title: "Article", favicon: nil))
 
         XCTAssertEqual(action, .keep, "A missing favicon must not blank out the one already on the card")
     }
 
-    // MARK: - Attached mid-load → the load settling is the same pick, not a navigation away
+    // MARK: - Landing somewhere unattachable
 
-    func testLoadInFlightAtAttachTimeRebasesTheAttachmentEvenWithAutoSendOff() {
-        // Attaching a loading tab captures its pre-redirect URL; the committed one lands moments later.
-        let action = AIChatAttachedTabNavigationPolicy.action(for: attachment(url: URL(string: "http://example.com")!),
-                                                             page: AIChatAttachedTabPage(content: content(attachedURL, source: .webViewUpdated),
-                                                                                         title: "Article",
-                                                                                         favicon: nil),
-                                                             isSettlingLoadFromAttachTime: true,
-                                                             automaticallySendsPageContext: false)
-
-        XCTAssertEqual(action, .refresh(AIChatTabAttachment(id: "tab-1", title: "example.com", url: attachedURL, favicon: nil)),
-                       "Dropping here would lose the tab the user just attached")
-    }
-
-    func testUserNavigationWhileTheAttachTimeLoadIsStillRunningIsNotTreatedAsSettling() {
+    func testNavigationToDuckAIDropsTheAttachment() {
         let action = AIChatAttachedTabNavigationPolicy.action(for: attachment(),
-                                                             page: AIChatAttachedTabPage(content: content(newURL, source: .userEntered("apple.com")), title: nil, favicon: nil),
-                                                             isSettlingLoadFromAttachTime: true,
-                                                             automaticallySendsPageContext: false)
-
-        XCTAssertEqual(action, .drop, "The user drove this one, so it is a page change and not the load settling")
-    }
-
-    func testLoadInFlightAtAttachTimeStillDropsWhenItLandsSomewhereUnattachable() {
-        let action = AIChatAttachedTabNavigationPolicy.action(for: attachment(),
-                                                             page: AIChatAttachedTabPage(content: content(URL(string: "https://duckduckgo.com/?ia=chat")!, source: .webViewUpdated), title: nil, favicon: nil),
-                                                             isSettlingLoadFromAttachTime: true,
-                                                             automaticallySendsPageContext: false)
-
-        XCTAssertEqual(action, .drop)
-    }
-
-    // MARK: - Landing somewhere unattachable → dropped either way
-
-    func testNavigationToDuckAIDropsAttachmentEvenWhenAutomaticallySendingPageContext() {
-        let action = AIChatAttachedTabNavigationPolicy.action(for: attachment(),
-                                                             page: AIChatAttachedTabPage(content: content(URL(string: "https://duckduckgo.com/?ia=chat")!), title: "Duck.ai", favicon: nil),
-                                                             isSettlingLoadFromAttachTime: false,
-                                                             automaticallySendsPageContext: true)
+                                                             page: AIChatAttachedTabPage(content: content(URL(string: "https://duckduckgo.com/?ia=chat")!), title: "Duck.ai", favicon: nil))
 
         XCTAssertEqual(action, .drop)
     }
 
     func testNavigationToNonURLContentDropsAttachment() {
-        for automaticallySendsPageContext in [true, false] {
-            let action = AIChatAttachedTabNavigationPolicy.action(for: attachment(),
-                                                                 page: AIChatAttachedTabPage(content: .newtab, title: nil, favicon: nil),
-                                                                 isSettlingLoadFromAttachTime: false,
-                                                                 automaticallySendsPageContext: automaticallySendsPageContext)
+        let action = AIChatAttachedTabNavigationPolicy.action(for: attachment(),
+                                                             page: AIChatAttachedTabPage(content: .newtab, title: nil, favicon: nil))
 
-            XCTAssertEqual(action, .drop, "New tab page isn't attachable (auto-send: \(automaticallySendsPageContext))")
-        }
+        XCTAssertEqual(action, .drop, "A new tab page isn't attachable")
     }
 }

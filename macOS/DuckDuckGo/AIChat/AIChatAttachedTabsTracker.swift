@@ -19,7 +19,6 @@
 import AppKit
 import Combine
 import Foundation
-import WebKit
 
 /// Keeps each prompt's tab attachments in step with the tabs they point at: cards follow or drop on
 /// navigation per `AIChatAttachedTabNavigationPolicy`, and closed tabs lose their attachment.
@@ -37,19 +36,12 @@ final class AIChatAttachedTabsTracker {
         /// Suspending a tab swaps the `Tab` behind the same uuid, stranding the old subscription.
         weak var tab: Tab?
         let cancellable: AnyCancellable
-        /// While set, a URL change is that load settling (redirect, committed URL), not a page change.
-        var isSettlingLoadFromAttachTime: Bool
-        /// What the web view had committed when the tab was attached, replaced once by the load that
-        /// was in flight. A further commit is a navigation the user (or the page) chose.
-        weak var navigationAtAttachTime: WKBackForwardListItem?
-        var hasCommittedSinceAttach = false
         /// The title of the page just navigated away from: it keeps being published for a beat after
         /// the URL changes, and adopting it would put the old page's name on the new one.
         var titleOfPreviousPage: String?
     }
 
     private weak var origin: (any DuckAIPromptOriginProviding)?
-    private let automaticallySendsPageContext: () -> Bool
 
     private var observers: [ObserverKey: Observer] = [:]
     private weak var activeStore: (any DuckAIPromptDraftStoring)?
@@ -58,9 +50,8 @@ final class AIChatAttachedTabsTracker {
     private let seenStores = NSHashTable<AnyObject>.weakObjects()
     private var tabListCancellable: AnyCancellable?
 
-    init(origin: (any DuckAIPromptOriginProviding)?, automaticallySendsPageContext: @escaping () -> Bool) {
+    init(origin: (any DuckAIPromptOriginProviding)?) {
         self.origin = origin
-        self.automaticallySendsPageContext = automaticallySendsPageContext
         watchTabListForClosedTabs()
     }
 
@@ -128,14 +119,11 @@ final class AIChatAttachedTabsTracker {
             let key = ObserverKey(promptStore: ObjectIdentifier(store), tabId: attachment.id)
             guard observers[key]?.tab !== tab else { continue }
 
-            let isSettling = hasUncommittedLoad(tab)
             observers[key] = Observer(promptStore: store,
                                       tab: tab,
-                                      cancellable: observe(tab, key: key, in: store),
-                                      isSettlingLoadFromAttachTime: isSettling,
-                                      navigationAtAttachTime: tab.webView.backForwardList.currentItem)
+                                      cancellable: observe(tab, key: key, in: store))
             // Reconcile against the page the tab is on now, which may predate this observer.
-            applyPolicy(for: key, in: store, page: AIChatAttachedTabPage(tab: tab), isSettlingLoad: isSettling)
+            applyPolicy(for: key, in: store, page: AIChatAttachedTabPage(tab: tab))
         }
     }
 
@@ -146,51 +134,8 @@ final class AIChatAttachedTabsTracker {
             .map { AIChatAttachedTabPage(content: $0, title: $1, favicon: $2, isLoading: $3) }
             .sink { [weak self, weak store] page in
                 guard let self, let store else { return }
-                self.applyPolicy(for: key,
-                                 in: store,
-                                 page: self.discardingTitleOfPreviousPage(from: page, for: key),
-                                 isSettlingLoad: self.isSettlingLoad(for: key, page: page))
+                self.applyPolicy(for: key, in: store, page: self.discardingTitleOfPreviousPage(from: page, for: key))
             }
-    }
-
-    /// Whether this change is still the load that was running when the tab was attached. Ends at the
-    /// first navigation the web view commits on top of that one, and when the load finishes.
-    private func isSettlingLoad(for key: ObserverKey, page: AIChatAttachedTabPage) -> Bool {
-        guard let observer = observers[key], observer.isSettlingLoadFromAttachTime else { return false }
-
-        // The load in flight commits once — over the attach-time item for a fresh tab, or as a new
-        // item when a page was already committed. A second commit is the user going elsewhere.
-        let committed = observer.tab?.webView.backForwardList.currentItem
-        if committed !== observer.navigationAtAttachTime {
-            guard !observer.hasCommittedSinceAttach else {
-                observers[key]?.isSettlingLoadFromAttachTime = false
-                return false
-            }
-            observers[key]?.hasCommittedSinceAttach = true
-            observers[key]?.navigationAtAttachTime = committed
-        }
-        return finishSettlingIfLoaded(key: key, page: page)
-    }
-
-    private func finishSettlingIfLoaded(key: ObserverKey, page: AIChatAttachedTabPage) -> Bool {
-        if !page.isLoading {
-            observers[key]?.isSettlingLoadFromAttachTime = false
-        }
-        return true
-    }
-
-    /// Blanks the title while it still holds the previous page's, so the card shows the new page's
-    /// host until its own title arrives.
-    private func discardingTitleOfPreviousPage(from page: AIChatAttachedTabPage, for key: ObserverKey) -> AIChatAttachedTabPage {
-        // No load event tells us the new page's title has arrived — `handleUrlDidChange` assigns
-        // content directly, leaving the old title in place, and it can outlive the load. So the old
-        // value is refused for as long as it is published; a page whose title matches the previous
-        // one keeps the host, which is plain but never another page's name.
-        guard let stale = observers[key]?.titleOfPreviousPage, page.title == stale else {
-            observers[key]?.titleOfPreviousPage = nil
-            return page
-        }
-        return AIChatAttachedTabPage(content: page.content, title: nil, favicon: page.favicon, isLoading: page.isLoading)
     }
 
     // MARK: - Applying the policy
@@ -198,15 +143,11 @@ final class AIChatAttachedTabsTracker {
     /// `store` is the prompt's own store, which is not necessarily the active one.
     private func applyPolicy(for key: ObserverKey,
                              in store: any DuckAIPromptDraftStoring,
-                             page: AIChatAttachedTabPage,
-                             isSettlingLoad: Bool) {
+                             page: AIChatAttachedTabPage) {
         var attachments = store.aiChatTabAttachments
         guard let index = attachments.firstIndex(where: { $0.id == key.tabId }) else { return }
 
-        switch AIChatAttachedTabNavigationPolicy.action(for: attachments[index],
-                                                       page: page,
-                                                       isSettlingLoadFromAttachTime: isSettlingLoad,
-                                                       automaticallySendsPageContext: automaticallySendsPageContext()) {
+        switch AIChatAttachedTabNavigationPolicy.action(for: attachments[index], page: page) {
         case .keep:
             return
         case .drop:
@@ -225,13 +166,6 @@ final class AIChatAttachedTabsTracker {
     }
 
     // MARK: - Tab lookup
-
-    /// A load that hasn't committed: the tab's content is ahead of what the web view is showing. A
-    /// page that has committed and is only finishing subresources isn't one, so a navigation made
-    /// after it can't pass as the attach-time load settling.
-    private func hasUncommittedLoad(_ tab: Tab) -> Bool {
-        tab.isLoading && tab.content.urlForWebView != tab.webView.url
-    }
 
     /// Suspended tabs are skipped: they can't navigate, and the tab-list watch re-observes on resume.
     private func loadedTab(withId id: String, in collection: TabCollectionViewModel) -> Tab? {

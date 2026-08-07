@@ -101,17 +101,7 @@ final class AIChatOmnibarController {
     /// Shared 4-view cap across both pickers (reuses `FreeTrialBadgePersistor`, separately keyed).
     /// Past the cap the badge mutes instead of hiding — it's the only entry point to the upsell.
     private let badgeImpressionPersistor: FreeTrialBadgePersisting
-    /// Resolved on use, so constructing a controller never reaches for the app delegate.
-    private let injectedAIChatMenuConfiguration: AIChatMenuVisibilityConfigurable?
-    private var aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable {
-        injectedAIChatMenuConfiguration ?? NSApp.delegateTyped.aiChatMenuConfiguration
-    }
-    private lazy var attachedTabsTracker = AIChatAttachedTabsTracker(
-        origin: origin,
-        automaticallySendsPageContext: { [weak self] in
-            self?.aiChatMenuConfiguration.shouldAutomaticallySendPageContext ?? false
-        }
-    )
+    private lazy var attachedTabsTracker = AIChatAttachedTabsTracker(origin: origin)
     private var preferences: AIChatPreferencesPersisting
     private var cancellables = Set<AnyCancellable>()
     private var draftStoreCancellable: AnyCancellable?
@@ -291,8 +281,7 @@ final class AIChatOmnibarController {
         // are both @MainActor-isolated; a default *parameter value* is evaluated in a nonisolated
         // context even though this initializer's body is not, so the real default is resolved below.
         subscriptionUpsellPresenter: AIChatOmnibarSubscriptionUpselling? = nil,
-        badgeImpressionPersistor: FreeTrialBadgePersisting = FreeTrialBadgePersistor(keyValueStore: UserDefaults.standard, keyPrefix: "aichat-omnibar"),
-        aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable? = nil
+        badgeImpressionPersistor: FreeTrialBadgePersisting = FreeTrialBadgePersistor(keyValueStore: UserDefaults.standard, keyPrefix: "aichat-omnibar")
     ) {
         self.aiChatTabOpener = aiChatTabOpener
         self.surface = surface
@@ -310,7 +299,6 @@ final class AIChatOmnibarController {
         self.subscriptionUpsellPresenter = subscriptionUpsellPresenter
             ?? AIChatOmnibarSubscriptionUpsellPresenter(coordinator: Application.appDelegate.subscriptionNavigationCoordinator)
         self.badgeImpressionPersistor = badgeImpressionPersistor
-        self.injectedAIChatMenuConfiguration = aiChatMenuConfiguration
         self.suggestionsViewModel = AIChatSuggestionsViewModel(
             maxSuggestions: suggestionsReader?.maxHistoryCount ?? AIChatSuggestionsViewModel.defaultMaxSuggestions
         )
@@ -1410,39 +1398,22 @@ final class AIChatOmnibarController {
 
         // Stamp `tabId` on each successful extraction (or strip it if the entry matches the
         // active tab), then re-order to match the carousel's insertion order.
-        // Extraction resolves the live tab, which may have navigated while the extraction ran. With
-        // page content not sent automatically, only the page still attached by then may ship — read
-        // after the await, so a redirect the tracker accepted counts and a drop it made is honoured.
-        let sendsAnyPage = aiChatMenuConfiguration.shouldAutomaticallySendPageContext
+        // Extraction resolves the live tab, which may have navigated while the extraction ran, so
+        // only attachments this submission made — and that are still attached — may ship.
         let submittedInstanceIDs = Dictionary(tabAttachments.map { ($0.id, $0.instanceID) }, uniquingKeysWith: { _, latest in latest })
         // Matched on instanceID, so a tab detached and reattached mid-submit is a different
         // attachment and its new page can't ride along with this prompt.
-        let attachedNow = Dictionary((promptStore?.aiChatTabAttachments ?? tabAttachments)
+        let attachedNow = Set((promptStore?.aiChatTabAttachments ?? tabAttachments)
             .filter { submittedInstanceIDs[$0.id] == $0.instanceID }
-            .map { ($0.id, $0.url) }, uniquingKeysWith: { _, latest in latest })
+            .map(\.id))
         var byId: [String: AIChatPageContextData] = [:]
         for (tabId, maybeContext) in extracted {
-            guard let ctx = maybeContext, let attachedURL = attachedNow[tabId] else { continue }
-            if !sendsAnyPage, !Self.isSameAttachedPage(ctx.url, as: attachedURL) { continue }
+            guard let ctx = maybeContext, attachedNow.contains(tabId) else { continue }
             let stampedTabId: String? = (tabId == activeTabUUID) ? nil : tabId
             byId[tabId] = ctx.withTabId(stampedTabId)
         }
         let ordered: [AIChatPageContextData] = tabAttachments.compactMap { byId[$0.id] }
         return ordered.isEmpty ? nil : .multiple(ordered)
-    }
-
-    /// Web-view and tab-content URLs for one page can write the root path as "" or "/".
-    private static func isSameAttachedPage(_ extractedURL: String, as attachedURL: URL) -> Bool {
-        guard let extracted = URL(string: extractedURL) else { return false }
-        return withoutRootSlash(extracted) == withoutRootSlash(attachedURL)
-    }
-
-    private static func withoutRootSlash(_ url: URL) -> String {
-        guard url.path == "/", var components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
-            return url.absoluteString
-        }
-        components.path = ""
-        return components.string ?? url.absoluteString
     }
 
     /// Converts image attachments to base64-encoded `NativePromptImage` values for the JS bridge.

@@ -707,6 +707,11 @@ final class TabBarViewItem: NSCollectionViewItem {
                 view.layer?.shadowOpacity = 0
             }
 
+            /// Fix: Ensure the Close button layout is re-evaluated whenever the Item gets selected
+            if isSelected, isSelected != oldValue {
+                view.needsLayout = true
+            }
+
             updateSubviews()
 
             cell.refreshStateIfNeeded(isSelected: isSelected, isDragged: isDragged, isMouseOver: isMouseOver)

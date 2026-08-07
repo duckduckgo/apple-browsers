@@ -206,7 +206,6 @@ class AIChatUserScriptHandlerTests: XCTestCase {
     func testWhenEditPromptParamsAreInvalidThenReturnsCancelled() async throws {
         mockFeatureFlagger.enabledFeatureFlags = [.nativeAIPromptEditing]
 
-        // Missing the required `prompt` / `hasResponsesToLose` fields.
         let reply = try XCTUnwrap(await aiChatUserScriptHandler.editPrompt(params: ["foo": "bar"], message: MockUserScriptMessage(name: "test", body: [:])) as? EditPromptReply)
 
         guard case .cancelled = reply else { return XCTFail("Expected .cancelled for invalid params") }

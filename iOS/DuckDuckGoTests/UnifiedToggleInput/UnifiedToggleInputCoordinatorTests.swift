@@ -223,11 +223,9 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     func test_editPrompt_holdsUntilSubmit_thenResolvesWithEditedContent() async {
         let request = EditPromptRequest(prompt: "original", images: nil, files: nil, hasResponsesToLose: false)
 
-        // editPrompt suspends until the user submits; run it concurrently.
         let editTask = Task { await sut.editPrompt(request) }
-        await Task.yield() // let editPrompt reach its suspension: input prefilled, reply pending
+        await Task.yield() // let editPrompt reach its suspension
 
-        // Simulate the user editing the prefilled text and submitting.
         sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "edited", mode: .aiChat)
 
         let reply = await editTask.value

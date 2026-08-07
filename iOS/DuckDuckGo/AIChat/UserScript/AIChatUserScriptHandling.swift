@@ -549,19 +549,13 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
     
     func editPrompt(params: Any, message: UserScriptMessage) async -> Encodable? {
-        // The FE only calls this when `supportsNativePromptEditing` is advertised (behind the
-        // nativeAIPromptEditing flag); guard defensively so a stale FE gets a clean cancel.
         guard featureFlagger.isFeatureOn(.nativeAIPromptEditing) else {
             return EditPromptReply.cancelled
         }
-        // The FE sends the message's current content (prompt + base64 attachments); native
-        // prefills its input from it.
         guard let request: EditPromptRequest = DecodableHelper.decode(from: params) else {
             Logger.aiChat.error("editPrompt: invalid params")
             return EditPromptReply.cancelled
         }
-        // Hand off to the native input, which prefills, enters edit mode, and holds until the
-        // user submits or cancels. Returns .cancelled when no input is attached.
         guard let inputBoxHandler else { return EditPromptReply.cancelled }
         return await inputBoxHandler.editPrompt(request)
     }

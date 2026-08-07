@@ -326,11 +326,7 @@ final class AIChatUserScript: NSObject, Subfeature {
 #if DEBUG
     // MARK: - Debug editing harness
 
-    /// Debug-only: drives the `editPrompt` bridge exactly as the FE would — builds a preset
-    /// request (prompt + one image + one file) and routes it through the real message handler,
-    /// then logs the reply native would send back once the user submits or cancels. Lets the
-    /// full round-trip be exercised end-to-end without the FE by borrowing an existing header
-    /// control as the trigger.
+    /// Debug-only: drives the `editPrompt` bridge like the FE would and logs the reply.
     func debugSimulateEditPromptRoundTrip() {
         let params: [String: Any] = [
             "prompt": "Debug edit: change me and tap send",
@@ -351,9 +347,7 @@ final class AIChatUserScript: NSObject, Subfeature {
         return (try? encoder.encode(reply)).flatMap { String(data: $0, encoding: .utf8) }
     }
 
-    /// 96×96 checkerboard PNG so the attachment thumbnail is visibly non-empty.
     private static let debugPNGBase64 = "iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAIAAABt+uBvAAAArElEQVR42u3bQQ0AIAwDwHnijSCsYHqY2IM0l1RAd99mtU6PpO8eyW99ChAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECFAEUOphU30AAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAZQAZDi2rgAABAgQIECBAgAABAgQIECBAgAABAgQIECBA/sUMh4AAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAigB4/LNWF1N0KpwAAAABJRU5ErkJggg=="
-    /// "Debug file contents" as UTF-8.
     private static let debugTextBase64 = "RGVidWcgZmlsZSBjb250ZW50cw=="
 
     private struct DebugEditUserScriptMessage: UserScriptMessage {

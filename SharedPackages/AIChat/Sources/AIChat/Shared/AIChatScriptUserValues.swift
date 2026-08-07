@@ -118,9 +118,6 @@ public struct AIChatNativeConfigValues: Codable {
     public let supportsMultipleContexts: Bool
     public let supportsTabPicker: Bool
     public let supportsNativeStorage: Bool
-    /// `true` when the native input can take over editing an existing message (the FE hands the
-    /// edit off via `editPrompt` instead of showing its own inline editor). Gated by the
-    /// `nativeAIPromptEditing` feature flag.
     public let supportsNativePromptEditing: Bool
     /// `true` when the native side supplies page-type signals so the duck.ai web app can render
     /// page-tailored suggested prompts ("suggestions").

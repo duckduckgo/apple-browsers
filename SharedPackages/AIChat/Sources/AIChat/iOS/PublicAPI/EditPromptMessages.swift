@@ -19,17 +19,10 @@
 #if os(iOS)
 import Foundation
 
-/// Request payload for the `editPrompt` bridge message (FE → native).
-///
-/// The FE sends the message's current content; native prefills its input from it. Attachments
-/// cross as base64, reusing the same shapes as `submitAIChatNativePrompt`. See the FE/Native
-/// editing contract tech design.
 public struct EditPromptRequest: Decodable {
     public let prompt: String
     public let images: [AIChatNativePrompt.NativePromptImage]?
     public let files: [AIChatNativePrompt.NativePromptFile]?
-    /// `true` when the edited message has later responses that resubmitting would discard, so
-    /// the native input can surface the "you'll lose the responses" warning.
     public let hasResponsesToLose: Bool
 
     public init(prompt: String,
@@ -43,18 +36,11 @@ public struct EditPromptRequest: Decodable {
     }
 }
 
-/// Reply payload for the `editPrompt` bridge message (native → FE).
-///
-/// Two distinct shapes, per the contract: submit encodes `{ prompt, images, files }`; cancel
-/// encodes `{ cancelled: true }` (no other keys). Attachments reuse the same shapes as
-/// `submitAIChatNativePrompt` (`NativePromptImage` / `NativePromptFile`).
 public enum EditPromptReply: Encodable {
-    /// The user submitted the edit. Encodes `{ prompt, images, files }`.
     case submit(prompt: String,
                 images: [AIChatNativePrompt.NativePromptImage]?,
                 files: [AIChatNativePrompt.NativePromptFile]?)
 
-    /// The user cancelled the edit. Encodes `{ cancelled: true }`; the FE restores the bubble.
     case cancelled
 
     private enum CodingKeys: String, CodingKey {

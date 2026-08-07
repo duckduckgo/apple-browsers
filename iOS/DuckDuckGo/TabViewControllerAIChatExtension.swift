@@ -103,8 +103,6 @@ extension TabViewController: AITabController {
     }
 
 #if DEBUG
-    /// Debug-only: fires the `editPrompt` bridge round-trip against this tab's AI Chat user
-    /// script (see `AIChatUserScript.debugSimulateEditPromptRoundTrip`).
     func debugSimulateEditPrompt() {
         userScripts?.aiChatUserScript.debugSimulateEditPromptRoundTrip()
     }

@@ -749,22 +749,17 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     // MARK: - Edit mode
 
-    /// Held while editing an existing message via the FE `editPrompt` bridge; resolved with
-    /// `.submit` on submit or `.cancelled` on any exit through `endEditMode`.
     private var editContinuation: CheckedContinuation<EditPromptReply, Never>?
     private var editHasResponsesToLose = false
 
-    /// Bridge entry: prefill + enter edit mode, then suspend until the user submits or cancels.
     func editPrompt(_ request: EditPromptRequest) async -> EditPromptReply {
-        resolveEdit(.cancelled) // clear any stale pending edit
+        resolveEdit(.cancelled)
         beginEditMode(prompt: request.prompt,
                       attachments: makeAttachments(from: request),
                       hasResponsesToLose: request.hasResponsesToLose)
         return await withCheckedContinuation { editContinuation = $0 }
     }
 
-    /// Bridge entry: the FE cancelled the edit from its side. Exit edit mode; the pending
-    /// `editPrompt` resolves as cancelled via `endEditMode`.
     func cancelEdit() {
         endEditMode()
     }
@@ -786,15 +781,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         showCollapsed()
     }
 
-    /// Resolves the pending edit exactly once (no-op when nothing is pending).
     private func resolveEdit(_ reply: EditPromptReply) {
         guard let continuation = editContinuation else { return }
         editContinuation = nil
         continuation.resume(returning: reply)
     }
 
-    /// Rebuilds native input attachments from the request's base64 payload — the reverse of
-    /// `UnifiedToggleInputImageEncoder` / `UnifiedToggleInputFileEncoder`.
     private func makeAttachments(from request: EditPromptRequest) -> [UnifiedToggleInputAttachment] {
         var attachments: [UnifiedToggleInputAttachment] = []
         for image in request.images ?? [] {
@@ -1517,8 +1509,6 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             return
         }
 
-        // In edit mode, submitting resolves the held editPrompt reply with the edited content
-        // (the FE receives it and re-renders) instead of sending a new prompt, then exits edit mode.
         if isEditing {
             let images = selectedModelSupportsImageUpload
                 ? UnifiedToggleInputImageEncoder.encode(viewController.currentAttachments)

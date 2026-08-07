@@ -1115,6 +1115,30 @@ class TabViewController: UIViewController {
         !isAITab && aiChatTextSelectionFeature.isSearchAvailable
     }
 
+    /// Wired on the tab's own web view rather than the contextual sheet's, so the Duck.ai conversation
+    /// itself stays menu-free.
+    private func configureTextSelectionMenu(on webView: WebView?) {
+        guard let webView else { return }
+
+        webView.isAskAIChatItemAvailable = { [weak self] in
+            self?.isAskAIChatSelectionItemAvailable ?? false
+        }
+
+        webView.isSearchWithDuckDuckGoItemAvailable = { [weak self] in
+            self?.isSearchSelectionItemAvailable ?? false
+        }
+
+        webView.askAIChatHandler = { [weak self] text in
+            guard let self else { return }
+            self.delegate?.tab(self, didRequestAIChatForSelectedText: text)
+        }
+
+        webView.searchWithDuckDuckGoHandler = { [weak self] text in
+            guard let self else { return }
+            self.delegate?.tab(self, didRequestSearchForSelectedText: text)
+        }
+    }
+
     // The `consumeCookies` is legacy behaviour from the previous Fireproofing implementation. Cookies no longer need to be consumed after invocations
     // of the Fire button, but the app still does so in the event that previously persisted cookies have not yet been consumed.
     func attachWebView(configuration: WKWebViewConfiguration,
@@ -1176,25 +1200,7 @@ class TabViewController: UIViewController {
             (webView as? WebView)?.setInputAccessoryViewHidden(true)
         }
 
-        if let webView = webView as? WebView {
-            webView.isAskAIChatItemAvailable = { [weak self] in
-                self?.isAskAIChatSelectionItemAvailable ?? false
-            }
-
-            webView.isSearchWithDuckDuckGoItemAvailable = { [weak self] in
-                self?.isSearchSelectionItemAvailable ?? false
-            }
-
-            webView.askAIChatHandler = { [weak self] text in
-                guard let self else { return }
-                self.delegate?.tab(self, didRequestAIChatForSelectedText: text)
-            }
-
-            webView.searchWithDuckDuckGoHandler = { [weak self] text in
-                guard let self else { return }
-                self.delegate?.tab(self, didRequestSearchForSelectedText: text)
-            }
-        }
+        configureTextSelectionMenu(on: webView as? WebView)
 
         updateContentMode()
 

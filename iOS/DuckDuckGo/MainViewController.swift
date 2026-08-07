@@ -2300,9 +2300,11 @@ class MainViewController: UIViewController {
     /// - Parameters:
     ///   - query: The search query to be loaded.
     ///   - reuseExisting: The policy for reusing an existing tab. Defaults to `none`, meaning no reuse.
-    func loadQueryInNewTab(_ query: String, reuseExisting: ExistingTabReusePolicy? = .none, fromExternalLink: Bool = false) {
+    /// - Parameter forceSearchQuery: Search for `query` even when it looks like a URL. Callers acting on
+    ///   an explicit "search for this" choice should pass true, or a URL-shaped input navigates instead.
+    func loadQueryInNewTab(_ query: String, reuseExisting: ExistingTabReusePolicy? = .none, fromExternalLink: Bool = false, forceSearchQuery: Bool = false) {
         dismissOmniBar()
-        guard let url = URL.makeSearchURL(query: query, useUnifiedLogic: isUnifiedURLPredictionEnabled) else {
+        guard let url = URL.makeSearchURL(query: query, useUnifiedLogic: isUnifiedURLPredictionEnabled, forceSearchQuery: forceSearchQuery) else {
             Logger.lifecycle.error("Couldn't form URL for query: \(query, privacy: .public)")
             return
         }
@@ -5954,6 +5956,9 @@ extension MainViewController: NewTabPageControllerDelegate {
 
 extension MainViewController: TabDelegate {
 
+    /// Far longer than any real search, short enough to keep the URL well inside server limits.
+    private static let maxSelectionSearchQueryLength = 500
+
     func searchToken(for tab: TabViewController) -> String? {
         if let token = searchTokenFetcher.retrieveToken() {
             return token
@@ -6305,6 +6310,17 @@ extension MainViewController: TabDelegate {
             newTab(allowingKeyboard: false)
         }
         openAIChat()
+    }
+
+    /// Opens the sheet; carrying the selection into it arrives with the selection model.
+    func tab(_ tab: TabViewController, didRequestAIChatForSelectedText text: String) {
+        tab.presentContextualAIChatSheet(from: self)
+    }
+
+    /// Selections are uncapped by design, but on this path the query *is* the payload — select-all on a
+    /// long article would otherwise build a URL no server accepts.
+    func tab(_ tab: TabViewController, didRequestSearchForSelectedText text: String) {
+        loadQueryInNewTab(String(text.prefix(Self.maxSelectionSearchQueryLength)), forceSearchQuery: true)
     }
 
     func tabDidRequestAIChatHistory(tab: TabViewController, source: AIChatHistorySource) {

@@ -69,3 +69,82 @@ final class WebViewInputAccessoryTests: XCTestCase {
         XCTAssertNil(webView.inputAccessoryView)
     }
 }
+
+final class WebViewSelectionMenuTests: XCTestCase {
+
+    private func makeWebView() -> WebView {
+        WebView(frame: .zero, configuration: WKWebViewConfiguration())
+    }
+
+    private func makeWebView(askAvailable: Bool, searchAvailable: Bool) -> WebView {
+        let webView = makeWebView()
+        webView.isAskAIChatItemAvailable = { askAvailable }
+        webView.isSearchWithDuckDuckGoItemAvailable = { searchAvailable }
+        return webView
+    }
+
+    func testWhenAvailabilityUnsetThenNoItemsAreOffered() {
+        XCTAssertEqual(makeWebView().selectionMenuItems(forSystem: .context), [])
+    }
+
+    func testWhenBothAreAvailableThenAskIsOfferedFirst() {
+        let webView = makeWebView(askAvailable: true, searchAvailable: true)
+        XCTAssertEqual(webView.selectionMenuItems(forSystem: .context), [.askAIChat, .searchWithDuckDuckGo])
+    }
+
+    func testWhenNeitherIsAvailableThenNoItemsAreOffered() {
+        let webView = makeWebView(askAvailable: false, searchAvailable: false)
+        XCTAssertEqual(webView.selectionMenuItems(forSystem: .context), [])
+    }
+
+    /// Duck.ai switched off must leave Search in place.
+    func testWhenOnlySearchIsAvailableThenOnlySearchIsOffered() {
+        let webView = makeWebView(askAvailable: false, searchAvailable: true)
+        XCTAssertEqual(webView.selectionMenuItems(forSystem: .context), [.searchWithDuckDuckGo])
+    }
+
+    func testWhenOnlyAskIsAvailableThenOnlyAskIsOffered() {
+        let webView = makeWebView(askAvailable: true, searchAvailable: false)
+        XCTAssertEqual(webView.selectionMenuItems(forSystem: .context), [.askAIChat])
+    }
+
+    func testWhenSystemIsMainThenNoItemsAreOfferedEvenWhenAvailable() {
+        let webView = makeWebView(askAvailable: true, searchAvailable: true)
+        XCTAssertEqual(webView.selectionMenuItems(forSystem: .main), [])
+    }
+
+    func testAvailabilityIsReevaluatedOnEveryMenuBuild() {
+        let webView = makeWebView()
+        var available = false
+        webView.isAskAIChatItemAvailable = { available }
+
+        XCTAssertEqual(webView.selectionMenuItems(forSystem: .context), [])
+        available = true
+        XCTAssertEqual(webView.selectionMenuItems(forSystem: .context), [.askAIChat])
+        available = false
+        XCTAssertEqual(webView.selectionMenuItems(forSystem: .context), [])
+    }
+
+    func testSelectionIsTrimmedOfSurroundingWhitespaceAndNewlines() {
+        XCTAssertEqual(WebView.normalizedSelection("  \n hello world \n\t "), "hello world")
+    }
+
+    func testSelectionKeepsInteriorWhitespace() {
+        XCTAssertEqual(WebView.normalizedSelection("first line\nsecond line"), "first line\nsecond line")
+    }
+
+    func testEmptySelectionIsRejected() {
+        XCTAssertNil(WebView.normalizedSelection(""))
+    }
+
+    func testWhitespaceOnlySelectionIsRejected() {
+        XCTAssertNil(WebView.normalizedSelection("   \n\t  "))
+    }
+
+    /// Length is deliberately not capped here — truncation is the payload builder's job, and it needs
+    /// the selection's real length.
+    func testLongSelectionIsPassedThroughAtFullLength() {
+        let selection = String(repeating: "a", count: 250_000)
+        XCTAssertEqual(WebView.normalizedSelection(selection)?.count, 250_000)
+    }
+}

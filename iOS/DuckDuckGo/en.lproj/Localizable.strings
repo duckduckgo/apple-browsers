@@ -34,6 +34,9 @@
 /* Add action - button shown in alert */
 "action.title.add" = "Add";
 
+/* Edit-menu action shown on text selected in the browser; attaches the selection to Duck.ai so the user can ask their own question about it */
+"action.title.aiChat.askDuckAI" = "Ask Duck.ai";
+
 /* Long-press menu item on the iPad Duck.ai chrome chip that hides the bottom-sheet button half. */
 "action.title.aiChat.hideContextualSheetButton" = "Hide Bottom Sheet Shortcut";
 
@@ -171,6 +174,9 @@
 
 /* Add to Favorites action */
 "action.title.save.favorite" = "Add Favorite";
+
+/* Edit-menu action shown on text selected in the browser; opens a DuckDuckGo search for the selected text in a new tab */
+"action.title.searchWithDuckDuckGo" = "Search with DuckDuckGo";
 
 /* Settings action */
 "action.title.settings" = "Settings";

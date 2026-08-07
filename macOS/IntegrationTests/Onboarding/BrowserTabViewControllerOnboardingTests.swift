@@ -507,20 +507,21 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenFireIsSkippedThenHighFiveIsPresentedAsARootDialogAndUpsellFollows() throws {
+    func testWhenFireIsSkippedThenInlineHighFiveAdvancesToUpsell() throws {
         presentDialog(.trackers(message: NSAttributedString(string: "trackers"), shouldFollowUp: true))
         let presentationsBefore = factory.makeViewCallCount
 
-        // Trackers advances to Fire in place. Skip then asks the host to present High Five.
+        // Trackers advances to Fire in place, and Skip advances to High Five in place.
         factory.performOnGotItPressed()
         factory.performOnGotItPressed()
-        XCTAssertEqual(factory.capturedType, .highFive)
+        XCTAssertEqual(factory.capturedType, .trackers(message: NSAttributedString(string: "trackers"), shouldFollowUp: true))
+        XCTAssertEqual(factory.makeViewCallCount, presentationsBefore)
 
-        // High Five advances to the upsell after its visual dismissal.
+        // The inline High Five advances to the upsell after its visual dismissal.
         factory.performOnGotItPressed()
         factory.performOnDismiss()
         XCTAssertEqual(factory.capturedType, .subscriptionUpsell)
-        XCTAssertEqual(factory.makeViewCallCount, presentationsBefore + 2)
+        XCTAssertEqual(factory.makeViewCallCount, presentationsBefore + 1)
         XCTAssertEqual(pixelReporter.gotItPressedDialog, .highFive)
         XCTAssertEqual(pixelReporter.dismissedDialog, .highFive)
     }

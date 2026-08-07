@@ -894,10 +894,10 @@ final class BrowserTabViewController: NSViewController {
         if case .tryFireButton = currentState {
             delegate?.highlightFireButton()
         }
-        // Skip leaves the Fire tutorial and presents High Five as a normal root dialog. Keeping the
-        // final steps host-level means their captured identities remain stable through dismissal.
+        // The rebranded Fire dialog transitions to High Five in place. Remember the visible content
+        // so its later callbacks remain High Five even after the manager advances to the upsell.
         if case .highFive = currentState {
-            presentContextualOnboarding(showLastDialog: true)
+            presentedContextualOnboardingDialogType = .highFive
         }
         // Legacy dismisses before this runs, rebranded after its fade. A nil presented type means the
         // teardown already happened; otherwise the dismiss handler presents instead.
@@ -907,6 +907,10 @@ final class BrowserTabViewController: NSViewController {
     }
 
     private func displayedDialogType(forRoot rootDialogType: ContextualDialogType) -> ContextualDialogType {
+        if let presentedContextualOnboardingDialogType,
+           presentedContextualOnboardingDialogType == .highFive || presentedContextualOnboardingDialogType == .subscriptionUpsell {
+            return presentedContextualOnboardingDialogType
+        }
         switch rootDialogType {
         case .highFive, .subscriptionUpsell:
             return rootDialogType

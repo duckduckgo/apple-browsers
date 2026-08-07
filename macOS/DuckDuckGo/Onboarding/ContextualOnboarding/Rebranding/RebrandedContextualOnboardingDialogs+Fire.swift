@@ -26,15 +26,34 @@ extension OnboardingRebranding {
     struct OnboardingFireDialog: View {
         let viewModel: OnboardingFireButtonDialogViewModel
         let onManualDismiss: () -> Void
+        /// Fires when the bubble transitions in-place to the highFive content,
+        /// so the host can swap the background illustration to match.
+        let onContentTransition: (() -> Void)?
+
+        @State private var showNextScreen: Bool = false
 
         var body: some View {
-            OnboardingBubbleView.withDismissButton(
-                tailPosition: nil,
-                onDismiss: onManualDismiss
-            ) {
-                OnboardingFireDialogContent(viewModel: viewModel)
+            if showNextScreen {
+                OnboardingRebranding.OnboardingEndOfJourneyDialog(
+                    highFiveAction: viewModel.highFive,
+                    onManualDismiss: onManualDismiss
+                )
+                .transition(.opacity)
+            } else {
+                OnboardingBubbleView.withDismissButton(
+                    tailPosition: nil,
+                    onDismiss: onManualDismiss
+                ) {
+                    OnboardingFireDialogContent(viewModel: viewModel) {
+                        onContentTransition?()
+                        withAnimation(.easeInOut(duration: OnboardingRebranding.Layout.inlineTransitionDuration)) {
+                            showNextScreen = true
+                        }
+                    }
+                }
+                .contextualOnboardingPanelLayout()
+                .transition(.opacity)
             }
-            .contextualOnboardingPanelLayout()
         }
     }
 
@@ -60,6 +79,8 @@ extension OnboardingRebranding {
         )
 
         let viewModel: OnboardingFireButtonDialogViewModel
+        let onSkip: () -> Void
+
         var body: some View {
             OnboardingRebranding.ContextualDaxDialogContent(
                 orientation: .horizontalStack(alignment: .center),
@@ -73,6 +94,7 @@ extension OnboardingRebranding {
 
                     Button(UserText.ContextualOnboarding.onboardingTryFireButtonSkip) {
                         viewModel.skipFireButton()
+                        onSkip()
                     }
                     .buttonStyle(OnboardingFireDialogSkipButtonStyle())
                 }

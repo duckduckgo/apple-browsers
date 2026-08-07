@@ -707,11 +707,7 @@ final class TabBarViewItem: NSCollectionViewItem {
                 view.layer?.shadowOpacity = 0
             }
 
-            /// Fix: Ensure the Close button layout is re-evaluated whenever the Item gets selected
-            if isSelected, isSelected != oldValue {
-                view.needsLayout = true
-            }
-
+            refreshLayoutIfNeeded(isSelected: isSelected, wasSelected: oldValue)
             updateSubviews()
 
             cell.refreshStateIfNeeded(isSelected: isSelected, isDragged: isDragged, isMouseOver: isMouseOver)
@@ -960,6 +956,15 @@ final class TabBarViewItem: NSCollectionViewItem {
         let tintColor: NSColor? = isBurnerTab ? .textColor : nil
 
         cell.faviconView.imageTintColor = tintColor
+    }
+
+    private func refreshLayoutIfNeeded(isSelected: Bool, wasSelected: Bool) {
+        guard isSelected, isSelected != wasSelected else {
+            return
+        }
+
+        /// Fix: Ensure the Close button layout is re-evaluated whenever the `TabBarViewItem` is selected
+        view.needsLayout = true
     }
 
     private var usedPermissions = Permissions() {

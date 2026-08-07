@@ -90,7 +90,7 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
     /// Posted by the FE to request focus on the native address bar (UTI).
     /// Native honors this only when the Unified Toggle Input feature is enabled.
     case focusChatInput
-    
+
     case editPrompt
     case cancelEdit
 

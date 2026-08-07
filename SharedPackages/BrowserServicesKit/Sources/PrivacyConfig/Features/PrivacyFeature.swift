@@ -304,6 +304,12 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     case customizeNTPIcons
 
+    /// Gates the New Tab Page session wide event, which measures the Starting Experience
+    /// Success Rate. Off by default; enabled remotely once the pixel definition clears its
+    /// second privacy review.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217276406422603
+    case newTabPageSessionInstrumentation
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215169783702336
     case walletPassDownload
 

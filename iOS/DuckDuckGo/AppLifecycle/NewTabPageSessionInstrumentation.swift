@@ -91,10 +91,41 @@ protocol NewTabPageSessionInstrumentation: AnyObject {
     func visitBackgrounded()
 }
 
+/// Reads the wide event sample rate from the feature's remote settings, so the volume can be
+/// dialled down without shipping a release. This event is projected to be the highest volume
+/// wide event on either platform, so the rate needs to be adjustable in production.
+enum NewTabPageSessionSampleRate {
+
+    static let settingKey = "sampleRate"
+    static let fullRate: Float = 1.0
+
+    /// Absent, malformed or out of range settings all fall back to the full rate, so a bad
+    /// remote value can never silently discard data.
+    static func resolve(from settingsJSON: String?) -> Float {
+        guard let settingsJSON,
+              let data = settingsJSON.data(using: .utf8),
+              let settings = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let value = settings[settingKey] as? NSNumber else {
+            return fullRate
+        }
+
+        let rate = value.floatValue
+        guard rate > 0, rate <= fullRate else { return fullRate }
+        return rate
+    }
+}
+
 final class DefaultNewTabPageSessionInstrumentation: NewTabPageSessionInstrumentation {
 
     private let wideEvent: WideEventManaging
     private let dateProvider: () -> Date
+
+    /// Read per visit rather than cached, so turning the flag off remotely takes effect
+    /// without waiting for a relaunch.
+    private let isEnabled: () -> Bool
+
+    /// Also read per visit, so a rate change lands without a relaunch.
+    private let sampleRate: () -> Float
 
     /// The live visit is kept in memory and written to storage only at start and at
     /// completion, so a visit costs one disk write regardless of how many actions it
@@ -102,14 +133,22 @@ final class DefaultNewTabPageSessionInstrumentation: NewTabPageSessionInstrument
     private var activeVisit: NewTabPageSessionWideEventData?
 
     init(wideEvent: WideEventManaging,
-         dateProvider: @escaping () -> Date = { Date() }) {
+         dateProvider: @escaping () -> Date = { Date() },
+         isEnabled: @escaping () -> Bool = { true },
+         sampleRate: @escaping () -> Float = { NewTabPageSessionSampleRate.fullRate }) {
         self.wideEvent = wideEvent
         self.dateProvider = dateProvider
+        self.isEnabled = isEnabled
+        self.sampleRate = sampleRate
     }
 
     func visitStarted(trigger: NewTabPageSessionWideEventData.Trigger,
                       launchKeyboardMode: NewTabPageSessionWideEventData.LaunchKeyboardMode,
                       toggleEnabled: Bool) {
+        // The only gate needed: with no visit open, every action and terminal already
+        // no-ops on its `activeVisit` guard.
+        guard isEnabled() else { return }
+
         expireActiveVisitIfNeeded()
 
         if let supersededVisit = activeVisit {
@@ -136,8 +175,11 @@ final class DefaultNewTabPageSessionInstrumentation: NewTabPageSessionInstrument
         let visit = NewTabPageSessionWideEventData(trigger: trigger,
                                                   launchKeyboardMode: launchKeyboardMode,
                                                   toggleEnabled: toggleEnabled,
-                                                  startedAt: dateProvider())
+                                                  startedAt: dateProvider(),
+                                                  globalData: WideEventGlobalData(sampleRate: sampleRate()))
         activeVisit = visit
+        // Sampling is applied here, at the only point the framework consults it. A visit
+        // dropped by the sampler still runs locally; its later calls simply no-op.
         wideEvent.startFlow(visit)
     }
 

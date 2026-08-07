@@ -555,7 +555,15 @@ class MainViewController: UIViewController {
         self.ntpAfterIdleInstrumentation = DefaultNTPAfterIdleInstrumentation(eligibilityManager: idleReturnEligibilityManager)
         self.idleReturnTabCountInstrumentation = DefaultIdleReturnTabCountInstrumentation(eligibilityManager: idleReturnEligibilityManager)
         self.postIdleSessionInstrumentation = DefaultPostIdleSessionInstrumentation(wideEvent: AppDependencyProvider.shared.wideEvent)
-        self.newTabPageSessionInstrumentation = DefaultNewTabPageSessionInstrumentation(wideEvent: AppDependencyProvider.shared.wideEvent)
+        self.newTabPageSessionInstrumentation = DefaultNewTabPageSessionInstrumentation(
+            wideEvent: AppDependencyProvider.shared.wideEvent,
+            isEnabled: { featureFlagger.isFeatureOn(.newTabPageSessionInstrumentation) },
+            sampleRate: {
+                NewTabPageSessionSampleRate.resolve(
+                    from: privacyConfigurationManager.privacyConfig.settings(for: iOSBrowserConfigSubfeature.newTabPageSessionInstrumentation)
+                )
+            }
+        )
         self.duckAIWideEventInstrumentation = DefaultDuckAIWideEventInstrumentation(
             wideEvent: AppDependencyProvider.shared.wideEvent,
             completeOrphanedFlowsOnInit: true

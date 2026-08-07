@@ -464,6 +464,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217024926605808
     case customizeNTPIcons
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217276406422603
+    case newTabPageSessionInstrumentation
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215169783702336
     case walletPassDownload
 
@@ -864,6 +867,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.defaultExistingIPhoneUsersToNewTabAfterIdle))
         case .customizeNTPIcons:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.customizeNTPIcons))
+        case .newTabPageSessionInstrumentation:
+            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.newTabPageSessionInstrumentation))
         case .walletPassDownload:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.walletPassDownload))
         case .aiChatChromeShortcutIPad:

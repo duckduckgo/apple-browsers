@@ -32,14 +32,60 @@ struct NewTabPageSessionInstrumentationTests {
         func advance(by seconds: TimeInterval) { now = now.addingTimeInterval(seconds) }
     }
 
-    private func makeSUT() -> (DefaultNewTabPageSessionInstrumentation, WideEventMock, MockClock) {
+    private func makeSUT(isEnabled: Bool = true) -> (DefaultNewTabPageSessionInstrumentation, WideEventMock, MockClock) {
         let wideEvent = WideEventMock()
         let clock = MockClock()
         let sut = DefaultNewTabPageSessionInstrumentation(
             wideEvent: wideEvent,
-            dateProvider: { clock.now }
+            dateProvider: { clock.now },
+            isEnabled: { isEnabled }
         )
         return (sut, wideEvent, clock)
+    }
+
+    @available(iOS 16, *)
+    @Test("Remote sample rate is read, and bad values fall back to the full rate", .timeLimit(.minutes(1)))
+    func sampleRateResolution() {
+        #expect(NewTabPageSessionSampleRate.resolve(from: #"{"sampleRate": 0.3}"#) == 0.3)
+        #expect(NewTabPageSessionSampleRate.resolve(from: #"{"sampleRate": 1}"#) == 1.0)
+
+        // Anything unusable means full rate, so a bad remote value cannot silently discard data.
+        #expect(NewTabPageSessionSampleRate.resolve(from: nil) == 1.0)
+        #expect(NewTabPageSessionSampleRate.resolve(from: "") == 1.0)
+        #expect(NewTabPageSessionSampleRate.resolve(from: "not json") == 1.0)
+        #expect(NewTabPageSessionSampleRate.resolve(from: #"{"other": 0.3}"#) == 1.0)
+        #expect(NewTabPageSessionSampleRate.resolve(from: #"{"sampleRate": 0}"#) == 1.0)
+        #expect(NewTabPageSessionSampleRate.resolve(from: #"{"sampleRate": 1.5}"#) == 1.0)
+        #expect(NewTabPageSessionSampleRate.resolve(from: #"{"sampleRate": -0.2}"#) == 1.0)
+    }
+
+    @available(iOS 16, *)
+    @Test("Sample rate reaches the started visit", .timeLimit(.minutes(1)))
+    func sampleRateIsAppliedToVisit() {
+        let wideEvent = WideEventMock()
+        let sut = DefaultNewTabPageSessionInstrumentation(wideEvent: wideEvent, sampleRate: { 0.25 })
+
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: true)
+
+        let visit = wideEvent.started.last as? NewTabPageSessionWideEventData
+        #expect(visit?.globalData.sampleRate == 0.25)
+    }
+
+    @available(iOS 16, *)
+    @Test("Nothing is recorded while the feature flag is off", .timeLimit(.minutes(1)))
+    func disabledByFeatureFlagRecordsNothing() {
+        let (sut, wideEvent, _) = makeSUT(isEnabled: false)
+
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: true)
+        sut.tapInputBar()
+        sut.hitSubmit()
+        sut.visitEnded(terminalAction: .loadSerp)
+        sut.visitBackgrounded()
+
+        #expect(wideEvent.started.isEmpty)
+        #expect(wideEvent.updates.isEmpty)
+        #expect(wideEvent.completions.isEmpty)
+        #expect(wideEvent.discarded.isEmpty)
     }
 
     /// The instrumentation keeps the live visit in memory and never calls `updateFlow`, so

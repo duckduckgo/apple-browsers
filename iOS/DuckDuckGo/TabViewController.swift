@@ -4111,7 +4111,7 @@ extension TabViewController: UserContentControllerDelegate {
         case .tabTermination:
             tabTerminationErrorPageInstrumentation.sendFeedbackSelected()
         case .safariRedirectLoop:
-            PixelKit.fire(SafariRedirectPixel.reportBrokenSiteFromErrorPage, frequency: .dailyAndCount)
+            SafariRedirectPixel.reportBrokenSiteFromErrorPage.fireDailyAndCount()
         case nil:
             return
         }
@@ -5255,13 +5255,13 @@ extension TabViewController: SERPSettingsUserScriptDelegate {
 extension TabViewController: SafariRedirectHandlerDelegate {
 
     func safariRedirectHandler(_ handler: SafariRedirectHandling, didRequestLoadURL url: URL) {
-        PixelKit.fire(SafariRedirectPixel.loadURLRequested, frequency: .dailyAndCount)
+        SafariRedirectPixel.loadURLRequested.fireDailyAndCount()
         shouldUseSafariOnlyUserAgentForNextMainFrameNavigation = true
         load(url: url, didUpgradeURL: false)
     }
 
     func safariRedirectHandler(_ handler: SafariRedirectHandling, didRequestShowSafariRedirectLoopErrorForURL url: URL) {
-        PixelKit.fire(SafariRedirectPixel.loopErrorPageShown, frequency: .dailyAndCount)
+        SafariRedirectPixel.loopErrorPageShown.fireDailyAndCount()
         shouldUseSafariOnlyUserAgentForNextMainFrameNavigation = false
         showSafariRedirectLoopError(for: url)
     }

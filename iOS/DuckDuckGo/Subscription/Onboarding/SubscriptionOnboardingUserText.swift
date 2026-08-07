@@ -41,6 +41,7 @@ extension UserText {
     public static let subscriptionOnboardingWelcomePIRBody = NotLocalizedString("subscription.onboarding.welcome.pir.body", value: "Find and remove your personal info from sites that store and sell it, reducing spam.", comment: "Welcome screen feature-list row description for Personal Information Removal")
 
     public static let subscriptionOnboardingChecklistVPNTitle = NotLocalizedString("subscription.onboarding.checklist.vpn.title", value: "DuckDuckGo VPN", comment: "Completion checklist row title for the VPN")
+    public static let subscriptionOnboardingChecklistWidgetTitle = NotLocalizedString("subscription.onboarding.checklist.widget.title", value: "VPN Home Screen Widget", comment: "Completion checklist row title for the VPN home screen widget")
     public static let subscriptionOnboardingChecklistIDTRTitle = NotLocalizedString("subscription.onboarding.checklist.idtr.title", value: "Identity Theft Restoration", comment: "Completion checklist row title for Identity Theft Restoration")
     public static let subscriptionOnboardingChecklistDuckAITitle = NotLocalizedString("subscription.onboarding.checklist.duck-ai.title", value: "Advanced Models in Duck.ai", comment: "Completion checklist row title for the advanced Duck.ai models")
     public static let subscriptionOnboardingChecklistPIRTitle = NotLocalizedString("subscription.onboarding.checklist.pir.title", value: "Personal Information Removal", comment: "Completion checklist row title for Personal Information Removal")
@@ -200,4 +201,26 @@ extension UserText {
     public static let subscriptionOnboardingPIRInfoAutomatedBody = NotLocalizedString("subscription.onboarding.pir.info.automated.body", value: "Let us handle the time, effort, and complexity typically required to get your details removed. We scan for your info, request its removal, and receive and handle confirmation emails for you.", comment: "PIR info sheet feature card body: totally automated")
     public static let subscriptionOnboardingPIRInfoMonitorTitle = NotLocalizedString("subscription.onboarding.pir.info.monitor.title", value: "Monitor removal progress in real time", comment: "PIR info sheet feature card title: monitor removal progress")
     public static let subscriptionOnboardingPIRInfoMonitorBody = NotLocalizedString("subscription.onboarding.pir.info.monitor.body", value: "It can take a while for sites to update, so we made it easy to keep tabs on progress of ongoing removals and see the personal info we've removed in real time on your personal dashboard.", comment: "PIR info sheet feature card body: monitor removal progress")
+
+    // MARK: - Order confirmation screen
+
+    public static let subscriptionOnboardingOrderConfirmationTitle = NotLocalizedString("subscription.onboarding.order-confirmation.title", value: "Protections unlocked!", comment: "Order confirmation screen title, shown right after checkout completes")
+    public static let subscriptionOnboardingOrderConfirmationTrialExplanation = NotLocalizedString("subscription.onboarding.order-confirmation.trial.explanation", value: "Start using your premium protections today!", comment: "Order confirmation screen subtitle shown when the customer is on a free trial")
+    public static let subscriptionOnboardingOrderConfirmationPaidExplanation = NotLocalizedString("subscription.onboarding.order-confirmation.paid.explanation", value: "Your subscription is active. Start using your premium protections today!", comment: "Order confirmation screen subtitle shown when the customer purchased without a free trial")
+    public static let subscriptionOnboardingOrderConfirmationNextButton = NotLocalizedString("subscription.onboarding.order-confirmation.next.button", value: "Let's go!", comment: "Order confirmation screen primary button that starts the onboarding flow")
+
+    // MARK: - Progress screen
+
+    public static let subscriptionOnboardingProgressTitle = NotLocalizedString("subscription.onboarding.progress.title", value: "Nice work!", comment: "Progress screen title shown when some protections are still unactivated")
+    public static let subscriptionOnboardingProgressExplanation = NotLocalizedString("subscription.onboarding.progress.explanation", value: "You can finish setting up the rest of your protections any time from Subscription Settings.", comment: "Progress screen subtitle shown when some protections are still unactivated")
+    /// The complete state carries no subtitle — the title stands on its own.
+    public static let subscriptionOnboardingProgressCompleteTitle = NotLocalizedString("subscription.onboarding.progress.complete.title", value: "You are all set up and ready to go!", comment: "Progress screen title shown when every protection has been activated")
+    /// Rendered as Markdown, so the emphasised path is bold on screen.
+    public static let subscriptionOnboardingProgressDuckAIExplanation = NotLocalizedString("subscription.onboarding.progress.duck-ai.explanation", value: "Once you finish chatting, you can continue setting up your new premium protections in **Settings > Subscriptions Settings.**", comment: "Progress screen subtitle shown before handing the customer over to a Duck.ai chat. The text between ** ** is bold; keep the markers around the translated settings path")
+    public static let subscriptionOnboardingProgressDoneButton = NotLocalizedString("subscription.onboarding.progress.done.button", value: "Got it!", comment: "Progress screen primary button that finishes onboarding")
+
+    // MARK: - IDTR and PIR section screens
+
+    /// Shared by both protection overview screens, which offer the same action in the same words.
+    public static let subscriptionOnboardingActivateButton = NotLocalizedString("subscription.onboarding.activate.button", value: "Activate", comment: "Protection overview screen primary button that activates that protection")
 }

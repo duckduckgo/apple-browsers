@@ -33,19 +33,36 @@ struct SubscriptionOnboardingDuckAIView: View {
 
     @StateObject private var viewModel: SubscriptionOnboardingDuckAIViewModel
     private let title: String?
+    private let progress: Progress
 
     @State private var isShowingInfoSheet = false
 
+    /// Checklist progress for the hand-off interstitial.
+    // TODO|htang: SubscriptionOnboardingFlowViewModel will hold this and inject it (Stage 3); until then the
+    // host passes it in by hand.
+    struct Progress {
+        var percentage: Int
+        var completedItems: Set<SubscriptionOnboardingChecklistItem>
+
+        static let none = Progress(percentage: 0, completedItems: [])
+    }
+
+    /// How long the interstitial holds before the chat is requested, if the customer doesn't tap through.
+    private static let interstitialDuration: TimeInterval = 3
+
     init(viewModel: @autoclosure @escaping () -> SubscriptionOnboardingDuckAIViewModel,
-         title: String? = nil) {
+         title: String? = nil,
+         progress: Progress = .none) {
         _viewModel = StateObject(wrappedValue: viewModel())
         self.title = title
+        self.progress = progress
     }
 
     var body: some View {
         SubscriptionOnboardingBaseView(
             title: title,
-            navigationButton: .back({ viewModel.goBack() }),
+            // The back button is hidden during hand-off since the interstitial covers the page but not the nav bar.
+            navigationButton: viewModel.isShowingInterstitial ? nil : .back({ viewModel.goBack() }),
             header: header,
             footer: footer,
             scrollsContent: false) {
@@ -54,6 +71,34 @@ struct SubscriptionOnboardingDuckAIView: View {
         .onAppear { viewModel.onAppear() }
         .onDisappear { viewModel.onDisappear() }
         .subscriptionOnboardingInfoSheet(.duckAI, isPresented: $isShowingInfoSheet)
+        .overlay {
+            if viewModel.isShowingInterstitial {
+                interstitial
+            }
+        }
+    }
+}
+
+// MARK: - Hand-off interstitial
+
+private extension SubscriptionOnboardingDuckAIView {
+
+    /// Holds for ``interstitialDuration`` then requests the chat, or sooner if tapped. Fires `handOffToChat()` only once.
+    var interstitial: some View {
+        SubscriptionOnboardingProgressView(
+            variant: .duckAIInterstitial,
+            percentage: progress.percentage,
+            completedItems: progress.completedItems,
+            onDone: {})
+        .contentShape(Rectangle())
+        .onTapGesture { viewModel.handOffToChat() }
+        .task {
+            try? await Task.sleep(nanoseconds: UInt64(Self.interstitialDuration * 1_000_000_000))
+            // `try?` swallows the cancellation, so without this the hand-off would still fire after the
+            // view goes away.
+            guard !Task.isCancelled else { return }
+            viewModel.handOffToChat()
+        }
     }
 }
 

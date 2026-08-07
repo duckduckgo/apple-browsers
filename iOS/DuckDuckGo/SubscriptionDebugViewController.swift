@@ -129,9 +129,14 @@ final class SubscriptionDebugViewController: UITableViewController {
     }
 
     enum OnboardingRows: Int, CaseIterable {
+        case orderConfirmation
         case welcome
         case vpn
+        case idtr
         case duckAI
+        case pir
+        case progress
+        case progressComplete
         case tapAllowHint
     }
 
@@ -322,14 +327,29 @@ final class SubscriptionDebugViewController: UITableViewController {
 
         case .onboarding:
             switch OnboardingRows(rawValue: indexPath.row) {
+            case .orderConfirmation:
+                cell.textLabel?.text = "Order Confirmation"
+                cell.accessoryType = .disclosureIndicator
             case .welcome:
                 cell.textLabel?.text = "Welcome"
                 cell.accessoryType = .disclosureIndicator
             case .vpn:
                 cell.textLabel?.text = "VPN"
                 cell.accessoryType = .disclosureIndicator
+            case .idtr:
+                cell.textLabel?.text = "Identity Theft Restoration"
+                cell.accessoryType = .disclosureIndicator
             case .duckAI:
                 cell.textLabel?.text = "Duck.ai"
+                cell.accessoryType = .disclosureIndicator
+            case .pir:
+                cell.textLabel?.text = "Personal Information Removal"
+                cell.accessoryType = .disclosureIndicator
+            case .progress:
+                cell.textLabel?.text = "Progress — Summary (80%)"
+                cell.accessoryType = .disclosureIndicator
+            case .progressComplete:
+                cell.textLabel?.text = "Progress — Completion (100% + confetti)"
                 cell.accessoryType = .disclosureIndicator
             case .tapAllowHint:
                 cell.textLabel?.text = "Tap Allow Hint Overlay"
@@ -407,9 +427,18 @@ final class SubscriptionDebugViewController: UITableViewController {
             }
         case .onboarding:
             switch OnboardingRows(rawValue: indexPath.row) {
+            case .orderConfirmation: showOrderConfirmationOnboarding()
             case .welcome: showWelcomeOnboarding()
             case .vpn: showVPNOnboarding()
+            case .idtr: showIDTROnboarding()
             case .duckAI: showDuckAIOnboarding()
+            case .pir: showPIROnboarding()
+            case .progress: showProgressOnboarding(variant: .summary,
+                                                   percentage: 80,
+                                                   completedItems: [.vpn, .widget, .idtr, .duckAI])
+            case .progressComplete: showProgressOnboarding(variant: .completion,
+                                                           percentage: 100,
+                                                           completedItems: Set(SubscriptionOnboardingChecklistItem.allCases))
             case .tapAllowHint: showTapAllowHintPlayground()
             default: break
             }
@@ -856,6 +885,52 @@ final class SubscriptionDebugViewController: UITableViewController {
         navigationController?.pushViewController(hostingController, animated: true)
     }
 
+    private func showOrderConfirmationOnboarding() {
+        let hostingController = UIHostingController(
+            rootView: SubscriptionOnboardingOrderConfirmationView(
+                viewModel: SubscriptionOnboardingOrderConfirmationViewModel(),
+                navigationButton: .close({ [weak self] in self?.dismiss(animated: true) }),
+                onNext: { [weak self] in self?.dismiss(animated: true) })
+                .subscriptionOnboardingNavigationContainer())
+        present(hostingController, animated: true)
+    }
+
+    private func showIDTROnboarding() {
+        let hostingController = UIHostingController(
+            rootView: SubscriptionOnboardingIDTRView(
+                navigationButton: .close({ [weak self] in self?.dismiss(animated: true) }),
+                onNext: { [weak self] in self?.dismiss(animated: true) })
+                .subscriptionOnboardingNavigationContainer())
+        present(hostingController, animated: true)
+    }
+
+    /// The real "start PIR" hand-off needs the Data Broker Protection view-controller provider, which the
+    /// flow launcher will inject in Stage 3; here the CTA just dismisses.
+    private func showPIROnboarding() {
+        let hostingController = UIHostingController(
+            rootView: SubscriptionOnboardingPIRView(
+                navigationButton: .close({ [weak self] in self?.dismiss(animated: true) }),
+                onStart: { [weak self] in self?.dismiss(animated: true) })
+                .subscriptionOnboardingNavigationContainer())
+        present(hostingController, animated: true)
+    }
+
+    private func showProgressOnboarding(variant: SubscriptionOnboardingProgressView.Variant,
+                                        percentage: Int,
+                                        completedItems: Set<SubscriptionOnboardingChecklistItem>) {
+        let hostingController = UIHostingController(
+            rootView: SubscriptionOnboardingProgressView(
+                variant: variant,
+                percentage: percentage,
+                completedItems: completedItems,
+                navigationButton: .close({ [weak self] in self?.dismiss(animated: true) }),
+                onSelectItem: { _ in },
+                onDone: { [weak self] in self?.dismiss(animated: true) })
+                .subscriptionOnboardingNavigationContainer()
+                .graphicLottieRenderer(Self.onboardingLottieRenderer))
+        present(hostingController, animated: true)
+    }
+
     private func showWelcomeOnboarding() {
         let hostingController = UIHostingController(
             rootView: SubscriptionOnboardingWelcomeView(onClose: { [weak self] in self?.dismiss(animated: true) })
@@ -872,11 +947,16 @@ final class SubscriptionDebugViewController: UITableViewController {
         present(hostingController, animated: true)
     }
 
+    /// The progress values are stand-ins for what the flow view model will supply in Stage 3. The Lottie
+    /// renderer is required here because the hand-off interstitial embeds the progress card, whose completed
+    /// rows animate a check.
     private func showDuckAIOnboarding() {
         let hostingController = UIHostingController(
             rootView: SubscriptionOnboardingDuckAIView(
-                viewModel: SubscriptionOnboardingDuckAIViewModel(prefetcher: SubscriptionOnboardingPrefetcher(), delegate: self))
-                .subscriptionOnboardingNavigationContainer())
+                viewModel: SubscriptionOnboardingDuckAIViewModel(prefetcher: SubscriptionOnboardingPrefetcher(), delegate: self),
+                progress: .init(percentage: 60, completedItems: [.vpn, .widget, .idtr]))
+                .subscriptionOnboardingNavigationContainer()
+                .graphicLottieRenderer(Self.onboardingLottieRenderer))
         present(hostingController, animated: true)
     }
 
@@ -903,6 +983,7 @@ extension Bool {
         String(self)
     }
 }
+
 
 extension SubscriptionDebugViewController: SubscriptionOnboardingSectionDelegate {
     func sectionDidComplete(_ section: SubscriptionOnboardingSection) {}

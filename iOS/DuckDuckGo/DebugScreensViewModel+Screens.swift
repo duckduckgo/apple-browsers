@@ -29,6 +29,7 @@ import WebExtensions
 import DuckUI
 import Persistence
 import FeatureFlags_iOS
+import UIComponents
 
 extension DebugScreensViewModel {
 
@@ -155,6 +156,9 @@ extension DebugScreensViewModel {
             }),
             .view(title: "Alert Playground", { _ in
                 AlertPlaygroundView()
+            }),
+            .view(title: "Confetti Playground", { _ in
+                ConfettiPlaygroundView()
             }),
             .view(title: "Tab Generator", { d in
                 BulkGeneratorView(factory: BulkTabFactory(tabManager: d.tabManager))

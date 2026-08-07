@@ -21,6 +21,7 @@ import Foundation
 import Combine
 import AIChat
 import Subscription
+import os.log
 
 /// A seam over the `/models` fetch and the persisted selection, so both can be mocked in tests.
 @MainActor
@@ -54,6 +55,8 @@ final class DefaultSubscriptionOnboardingAIModelProvider: SubscriptionOnboarding
             let response = try await modelsService.fetchModels()
             models = UTIModelStore.resolveModels(from: response.models, userTier: userTier)
         } catch {
+            // TODO|htang: report this with a pixel in Step 3.
+            Logger.subscription.error("Duck.ai onboarding model fetch failed: \(error.localizedDescription, privacy: .public)")
             models = []
         }
         return models
@@ -75,9 +78,15 @@ final class SubscriptionOnboardingDuckAIViewModel: ObservableObject {
     @Published private(set) var availableModels: [AIChatModel] = []
     @Published private(set) var selectedModelID: String?
 
+    /// Whether the progress interstitial is covering the picker while the chat is handed over.
+    @Published private(set) var isShowingInterstitial = false
+
     private let prefetcher: SubscriptionOnboardingPrefetcher
     private weak var delegate: SubscriptionOnboardingSectionDelegate?
     private var cancellables = Set<AnyCancellable>()
+
+    /// Prevents duplicate hand-offs when the interstitial's view is recreated.
+    private var didHandOffToChat = false
 
     init(prefetcher: SubscriptionOnboardingPrefetcher,
          delegate: SubscriptionOnboardingSectionDelegate? = nil) {
@@ -119,13 +128,32 @@ final class SubscriptionOnboardingDuckAIViewModel: ObservableObject {
         selectedModelID = modelID
     }
 
-    /// Persists the committed model (default or tapped) so the launched chat opens with it, then requests
-    /// the chat.
+    /// Persists the committed model (default or tapped) so the launched chat opens with it, then shows the
+    /// interstitial. The chat itself is requested by ``handOffToChat()`` once that has had its moment.
     func startChat() {
         if let selectedModelID {
             prefetcher.updateSelectedModel(selectedModelID)
         }
-        delegate?.sectionDidRequestDuckAIChat(modelID: selectedModelID)
+        isShowingInterstitial = true
+    }
+
+    /// Requests the chat, at most once — the interstitial's timer and its tap-to-skip both call this.
+    ///
+    /// Deliberately leaves the interstitial up: the launcher dismisses the whole presented chain itself, so
+    /// tearing it down here would double-animate the hand-off.
+    func handOffToChat() {
+        guard !didHandOffToChat else { return }
+
+        // Nothing can present the chat, so drop the interstitial rather than stranding the customer on a
+        // page with no back button and no footer. Deliberately not latched, so a later tap can retry.
+        guard let delegate else {
+            Logger.subscription.error("Duck.ai onboarding hand-off had no delegate; dismissing the interstitial")
+            isShowingInterstitial = false
+            return
+        }
+
+        didHandOffToChat = true
+        delegate.sectionDidRequestDuckAIChat(modelID: selectedModelID)
     }
 
     /// Skips this (currently last) section, finishing the flow.

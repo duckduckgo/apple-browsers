@@ -22,30 +22,16 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import UIComponents
 
-/// A generic "Learn More" info sheet for a subscription protection: a hero header above a scrollable list of feature cards.
+/// Body of a protection's info screen: feature cards plus optional disclaimer. Pairs with ``SubscriptionOnboardingHeaderView/init(content:onInfoLinkTap:)`` for shared headers.
 struct SubscriptionOnboardingInfoView: View {
     let content: SubscriptionOnboardingInfoContent
-    let onClose: () -> Void
 
     private enum Metrics {
         static let cardSpacing: CGFloat = 16
-        static let explanationTopSpacing: CGFloat = 24
         static let disclaimerTopSpacing: CGFloat = 24
     }
 
     var body: some View {
-        SubscriptionOnboardingBaseView(
-            navigationButton: .close(onClose),
-            header: SubscriptionOnboardingHeaderView(
-                visual: content.visual,
-                title: content.title,
-                explanation: content.explanation,
-                explanationTopSpacing: Metrics.explanationTopSpacing)) {
-            featureCards
-        }
-    }
-
-    private var featureCards: some View {
         VStack(spacing: Metrics.disclaimerTopSpacing) {
             VStack(spacing: Metrics.cardSpacing) {
                 ForEach(content.features) { feature in
@@ -77,35 +63,57 @@ struct SubscriptionOnboardingInfoView: View {
     }
 }
 
+// MARK: - Header
+
+extension SubscriptionOnboardingHeaderView {
+    /// Header for a protection's info content.
+    init(content: SubscriptionOnboardingInfoContent, onInfoLinkTap: (() -> Void)? = nil) {
+        self.init(visual: content.visual,
+                  title: content.title,
+                  explanation: content.explanation,
+                  explanationTopSpacing: SubscriptionOnboardingInfoContent.headerExplanationTopSpacing,
+                  onInfoLinkTap: onInfoLinkTap)
+    }
+}
+
 // MARK: - Presentation
 
+/// Info content as a self-contained sheet with close button, no footer.
+private struct SubscriptionOnboardingInfoSheet: View {
+    let content: SubscriptionOnboardingInfoContent
+    let onClose: () -> Void
+
+    var body: some View {
+        SubscriptionOnboardingBaseView(
+            navigationButton: .close(onClose),
+            header: SubscriptionOnboardingHeaderView(content: content)) {
+            SubscriptionOnboardingInfoView(content: content)
+        }
+        .subscriptionOnboardingNavigationContainer()
+    }
+}
+
 extension View {
-    /// Presents a fixed protection's "Learn More" info sheet — a ``SubscriptionOnboardingInfoView`` wrapped in
-    /// the shared navigation container — bound to `isPresented`. Used by the VPN and Duck.ai screens.
+    /// Presents a protection's "Learn More" info sheet.
     func subscriptionOnboardingInfoSheet(_ content: SubscriptionOnboardingInfoContent,
                                          isPresented: Binding<Bool>) -> some View {
         sheet(isPresented: isPresented) {
-            SubscriptionOnboardingInfoView(content: content, onClose: { isPresented.wrappedValue = false })
-                .subscriptionOnboardingNavigationContainer()
+            SubscriptionOnboardingInfoSheet(content: content, onClose: { isPresented.wrappedValue = false })
         }
     }
 
-    /// Presents the "Learn More" info sheet for whichever checklist `item` is selected (`nil` = dismissed).
-    /// Used by the welcome list, where the presented protection varies with the tapped row.
+    /// Presents the "Learn More" info sheet for the selected checklist item.
     func subscriptionOnboardingInfoSheet(item: Binding<SubscriptionOnboardingChecklistItem?>) -> some View {
         sheet(item: item) { selected in
-            SubscriptionOnboardingInfoView(content: .content(for: selected), onClose: { item.wrappedValue = nil })
-                .subscriptionOnboardingNavigationContainer()
+            SubscriptionOnboardingInfoSheet(content: .content(for: selected), onClose: { item.wrappedValue = nil })
         }
     }
 }
 
 // MARK: - Content
 
-/// The data backing a ``SubscriptionOnboardingInfoView``: the hero header plus the feature cards to list.
-/// One value is built per ``SubscriptionOnboardingChecklistItem`` via ``content(for:)``.
+/// Data backing ``SubscriptionOnboardingInfoView``: hero header and feature cards.
 struct SubscriptionOnboardingInfoContent {
-    /// A single feature card on the info sheet.
     struct Feature: Identifiable {
         var id: String { title }
         let icon: Image
@@ -119,13 +127,16 @@ struct SubscriptionOnboardingInfoContent {
     let explanation: String?
     let features: [Feature]
     var disclaimer: String?
+
+    /// Info screens sit explanation further below title than default header spacing.
+    static let headerExplanationTopSpacing: CGFloat = 24
 }
 
 extension SubscriptionOnboardingInfoContent {
-    /// The info-sheet content for a checklist item. Total over the fixed set of items, so it's non-optional.
+    /// Info-sheet content for a checklist item. The widget resolves to VPN's content.
     static func content(for item: SubscriptionOnboardingChecklistItem) -> SubscriptionOnboardingInfoContent {
         switch item {
-        case .vpn: return .vpn
+        case .vpn, .widget: return .vpn
         case .idtr: return .idtr
         case .duckAI: return .duckAI
         case .pir: return .pir
@@ -162,7 +173,6 @@ extension SubscriptionOnboardingInfoContent {
         features: PIRInfoFeature.allCases.map(\.feature))
 }
 
-/// The VPN features listed on the VPN info sheet.
 private enum VPNInfoFeature: CaseIterable {
     case devices
     case noLogging
@@ -212,7 +222,6 @@ private enum VPNInfoFeature: CaseIterable {
     }
 }
 
-/// The Duck.ai features listed on the Duck.ai info sheet.
 private enum DuckAIInfoFeature: CaseIterable {
     case models
     case privacy
@@ -252,7 +261,6 @@ private enum IDTRInfoFeature: CaseIterable {
     case authorities
     case medical
 
-    /// `walletItems` has no matching design-system glyph — a placeholder, flagged for a real icon.
     var feature: SubscriptionOnboardingInfoContent.Feature {
         switch self {
         case .financialLosses:
@@ -291,7 +299,6 @@ private enum IDTRInfoFeature: CaseIterable {
     }
 }
 
-/// The PIR features listed on the PIR info sheet.
 private enum PIRInfoFeature: CaseIterable {
     case platforms
     case repeatedScans
@@ -328,8 +335,7 @@ private enum PIRInfoFeature: CaseIterable {
 
 // MARK: - Platform grid
 
-/// The 2-column platform grid shown in the footer of a "Platforms"/"Devices" info-sheet card (VPN, PIR):
-/// one `CardItem` per platform (a leading platform glyph and its name).
+/// 2-column platform grid for info-sheet cards.
 struct SubscriptionOnboardingPlatformGrid: View {
     private enum Metrics {
         static let columnSpacing: CGFloat = 4
@@ -347,7 +353,6 @@ struct SubscriptionOnboardingPlatformGrid: View {
         GridItem(.flexible(maximum: Metrics.secondColumnMaxWidth), spacing: Metrics.columnSpacing, alignment: .leading)
     ]
 
-    /// Defaults to all four platforms (the VPN "Devices" card); PIR is Mac/Windows-only and passes a subset.
     init(platforms: [Platform] = Platform.allCases) {
         self.platforms = platforms
     }
@@ -363,8 +368,6 @@ struct SubscriptionOnboardingPlatformGrid: View {
         .padding(.top, Metrics.topPadding)
     }
 
-    /// The platforms selectable for a card's grid — VPN's "Devices" card shows all four; PIR's "Platforms"
-    /// card shows only Mac and Windows.
     enum Platform: CaseIterable {
         case iOS
         case android
@@ -395,38 +398,33 @@ struct SubscriptionOnboardingPlatformGrid: View {
 
 #Preview("Light") {
     RebrandedPreview {
-        SubscriptionOnboardingInfoView(content: .vpn, onClose: {})
-            .subscriptionOnboardingNavigationContainer()
+        SubscriptionOnboardingInfoSheet(content: .vpn, onClose: {})
     }
 }
 
 #Preview("Dark") {
     RebrandedPreview {
-        SubscriptionOnboardingInfoView(content: .vpn, onClose: {})
-            .subscriptionOnboardingNavigationContainer()
+        SubscriptionOnboardingInfoSheet(content: .vpn, onClose: {})
     }
     .preferredColorScheme(.dark)
 }
 
 #Preview("Large Text") {
     RebrandedPreview {
-        SubscriptionOnboardingInfoView(content: .vpn, onClose: {})
-            .subscriptionOnboardingNavigationContainer()
+        SubscriptionOnboardingInfoSheet(content: .vpn, onClose: {})
     }
     .dynamicTypeSize(.accessibility5)
 }
 
 #Preview("IDTR") {
     RebrandedPreview {
-        SubscriptionOnboardingInfoView(content: .idtr, onClose: {})
-            .subscriptionOnboardingNavigationContainer()
+        SubscriptionOnboardingInfoSheet(content: .idtr, onClose: {})
     }
 }
 
 #Preview("PIR") {
     RebrandedPreview {
-        SubscriptionOnboardingInfoView(content: .pir, onClose: {})
-            .subscriptionOnboardingNavigationContainer()
+        SubscriptionOnboardingInfoSheet(content: .pir, onClose: {})
     }
 }
 

@@ -227,12 +227,6 @@ private extension SubscriptionOnboardingConnectionInfo {
     static let valencia = SubscriptionOnboardingConnectionInfo(ip: "45.132.71.9", city: "Valencia", country: "ES")
 }
 
-private let previewLottieRenderer = GraphicLottieRenderer { name, _ in
-    AnyView(
-        Lottie.LottieView(animation: .named(name))
-            .playbackMode(.playing(.fromProgress(0, toProgress: 1, loopMode: .playOnce)))
-    )
-}
 
 @MainActor
 private func activationPreview(state: SubscriptionOnboardingVPNActivationViewModel.ConnectionState,
@@ -248,7 +242,7 @@ private func activationPreview(state: SubscriptionOnboardingVPNActivationViewMod
                             didFailToStartVPN: didFailToStart),
         title: String(format: UserText.subscriptionOnboardingStepIndicatorFormat, 1, 4))
     .subscriptionOnboardingNavigationContainer()
-    .graphicLottieRenderer(previewLottieRenderer)
+    .graphicLottieRenderer(subscriptionOnboardingPreviewLottieRenderer)
 }
 
 #Preview("Off - Light") {
@@ -332,7 +326,7 @@ private struct VPNRevealPreview: View {
             viewModel: viewModel,
             title: String(format: UserText.subscriptionOnboardingStepIndicatorFormat, 1, 4))
         .subscriptionOnboardingNavigationContainer()
-        .graphicLottieRenderer(previewLottieRenderer)
+        .graphicLottieRenderer(subscriptionOnboardingPreviewLottieRenderer)
         .task {
             try? await Task.sleep(nanoseconds: 1_000_000_000)
             await viewModel.turnOnVPN()

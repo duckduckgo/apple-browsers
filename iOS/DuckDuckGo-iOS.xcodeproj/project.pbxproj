@@ -286,6 +286,13 @@
 		369E692A2E5F579B00F98A8F /* NotificationServiceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 369E69292E5F579500F98A8F /* NotificationServiceManager.swift */; };
 		369E692D2E5F6EC200F98A8F /* InactivityNotificationSchedulerServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 369E692C2E5F6EB500F98A8F /* InactivityNotificationSchedulerServiceTests.swift */; };
 		36A96A0A2E6606CF003D4529 /* LocalNotificationsPlaygroundView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36A96A092E6606C0003D4529 /* LocalNotificationsPlaygroundView.swift */; };
+		36E8274030264E3700147F78 /* SubscriptionOnboardingIDTRView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36E8273E30264E3700147F78 /* SubscriptionOnboardingIDTRView.swift */; };
+		36E8274330264E4200147F78 /* SubscriptionOnboardingPIRView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36E8274130264E4200147F78 /* SubscriptionOnboardingPIRView.swift */; };
+		36E8274830264E8300147F78 /* SubscriptionOnboardingOrderConfirmationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36E8274630264E8300147F78 /* SubscriptionOnboardingOrderConfirmationView.swift */; };
+		36E8274930264E8300147F78 /* SubscriptionOnboardingOrderConfirmationViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36E8274730264E8300147F78 /* SubscriptionOnboardingOrderConfirmationViewModel.swift */; };
+		36E8274B3026506A00147F78 /* SubscriptionOnboardingOrderConfirmationViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36E8274A3026506A00147F78 /* SubscriptionOnboardingOrderConfirmationViewModelTests.swift */; };
+		36E8274D3026508B00147F78 /* SubscriptionOnboardingProgressCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36E8274C3026508B00147F78 /* SubscriptionOnboardingProgressCardView.swift */; };
+		36E82751302657A800147F78 /* subscription-hero.json in Resources */ = {isa = PBXBuildFile; fileRef = 36E82750302657A800147F78 /* subscription-hero.json */; };
 		36F2CA592E604C5100C7039D /* UNUserNotificationCenterRepresentable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36F2CA582E604C4700C7039D /* UNUserNotificationCenterRepresentable.swift */; };
 		36F2CA5B2E60589600C7039D /* MockUNUserNotificationCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36F2CA5A2E60588F00C7039D /* MockUNUserNotificationCenter.swift */; };
 		36F2CA5C2E60589600C7039D /* MockUNUserNotificationCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36F2CA5A2E60588F00C7039D /* MockUNUserNotificationCenter.swift */; };
@@ -3178,6 +3185,13 @@
 		369E69292E5F579500F98A8F /* NotificationServiceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationServiceManager.swift; sourceTree = "<group>"; };
 		369E692C2E5F6EB500F98A8F /* InactivityNotificationSchedulerServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InactivityNotificationSchedulerServiceTests.swift; sourceTree = "<group>"; };
 		36A96A092E6606C0003D4529 /* LocalNotificationsPlaygroundView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalNotificationsPlaygroundView.swift; sourceTree = "<group>"; };
+		36E8273E30264E3700147F78 /* SubscriptionOnboardingIDTRView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingIDTRView.swift; sourceTree = "<group>"; };
+		36E8274130264E4200147F78 /* SubscriptionOnboardingPIRView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingPIRView.swift; sourceTree = "<group>"; };
+		36E8274630264E8300147F78 /* SubscriptionOnboardingOrderConfirmationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingOrderConfirmationView.swift; sourceTree = "<group>"; };
+		36E8274730264E8300147F78 /* SubscriptionOnboardingOrderConfirmationViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingOrderConfirmationViewModel.swift; sourceTree = "<group>"; };
+		36E8274A3026506A00147F78 /* SubscriptionOnboardingOrderConfirmationViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingOrderConfirmationViewModelTests.swift; sourceTree = "<group>"; };
+		36E8274C3026508B00147F78 /* SubscriptionOnboardingProgressCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingProgressCardView.swift; sourceTree = "<group>"; };
+		36E82750302657A800147F78 /* subscription-hero.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "subscription-hero.json"; sourceTree = "<group>"; };
 		36F2CA582E604C4700C7039D /* UNUserNotificationCenterRepresentable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UNUserNotificationCenterRepresentable.swift; sourceTree = "<group>"; };
 		36F2CA5A2E60588F00C7039D /* MockUNUserNotificationCenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockUNUserNotificationCenter.swift; sourceTree = "<group>"; };
 		36F2CA612E6098EF00C7039D /* InactivityNotificationSchedulerServiceIntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InactivityNotificationSchedulerServiceIntegrationTests.swift; sourceTree = "<group>"; };
@@ -6916,10 +6930,7 @@
 			isa = PBXGroup;
 			children = (
 				3666D86630017A6800B63F99 /* SubscriptionOnboardingCard.swift */,
-				3666D85C30016E4D00B63F99 /* SubscriptionOnboardingProgressView.swift */,
-				36208F763005742400EB6335 /* SubscriptionOnboardingSetupCard.swift */,
 				36208F743005707600EB6335 /* SubscriptionOnboardingShowcaseCard.swift */,
-				3666D85B30016E4D00B63F99 /* SubscriptionOnboardingFreeTrialCalendarCard.swift */,
 				178EFB7398B7AB474F366BAA /* SubscriptionOnboardingBaseView.swift */,
 				D7916A1677761825AA258550 /* SubscriptionOnboardingHeaderView.swift */,
 				805FC085FDE8FE82A5752D91 /* SubscriptionOnboardingNavigationContainer.swift */,
@@ -6949,6 +6960,7 @@
 			children = (
 				3666D879300193EA00B63F99 /* check-color.json */,
 				476A68112A66CB1C5BBDC94E /* vpn-v4.json */,
+				36E82750302657A800147F78 /* subscription-hero.json */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -6956,6 +6968,7 @@
 		3666D87C3001AA9600B63F99 /* Onboarding */ = {
 			isa = PBXGroup;
 			children = (
+				36E8274A3026506A00147F78 /* SubscriptionOnboardingOrderConfirmationViewModelTests.swift */,
 				365454803013A6F3009EFA0A /* SubscriptionOnboardingDuckAIViewModelTests.swift */,
 				3666D87B3001AA9600B63F99 /* SubscriptionOnboardingFreeTrialCalendarCardModelTests.swift */,
 				DE747E6BBE21B3AFA2A1A263 /* SubscriptionOnboardingPrefetcherTests.swift */,
@@ -6979,6 +6992,25 @@
 				852A4D003013738B00FA7A16 /* PrivacyUserDefaultsTests.swift */,
 			);
 			path = AppServices;
+			sourceTree = "<group>";
+		};
+		36E8273C3026477500147F78 /* OrderConfirmation */ = {
+			isa = PBXGroup;
+			children = (
+				36E8274630264E8300147F78 /* SubscriptionOnboardingOrderConfirmationView.swift */,
+				36E8274730264E8300147F78 /* SubscriptionOnboardingOrderConfirmationViewModel.swift */,
+				3666D85B30016E4D00B63F99 /* SubscriptionOnboardingFreeTrialCalendarCard.swift */,
+			);
+			path = OrderConfirmation;
+			sourceTree = "<group>";
+		};
+		36E8273D30264CFB00147F78 /* OnboardingProgress */ = {
+			isa = PBXGroup;
+			children = (
+				36E8274C3026508B00147F78 /* SubscriptionOnboardingProgressCardView.swift */,
+				3666D85C30016E4D00B63F99 /* SubscriptionOnboardingProgressView.swift */,
+			);
+			path = OnboardingProgress;
 			sourceTree = "<group>";
 		};
 		36F619572F68655A00CBF121 /* Statistics */ = {
@@ -7302,9 +7334,14 @@
 		5BFBBD7E3B267C5BD08A618D /* Features */ = {
 			isa = PBXGroup;
 			children = (
+				36E8273D30264CFB00147F78 /* OnboardingProgress */,
+				36E8273C3026477500147F78 /* OrderConfirmation */,
 				70AA0BDA5B192D7F634F5112 /* SubscriptionOnboardingWelcomeView.swift */,
 				1FB20C7A9A1F8C8AB5BA4C81 /* DuckAI */,
 				DFA8FBBD246E7F2032437DD6 /* VPN */,
+				36208F763005742400EB6335 /* SubscriptionOnboardingSetupCard.swift */,
+				36E8273E30264E3700147F78 /* SubscriptionOnboardingIDTRView.swift */,
+				36E8274130264E4200147F78 /* SubscriptionOnboardingPIRView.swift */,
 			);
 			path = Features;
 			sourceTree = "<group>";
@@ -12856,6 +12893,7 @@
 				9880723725FA4E450039EF4B /* menu_dark.json in Resources */,
 				1E162615296D910F0004127F /* cookie-icon-animated-40-dark.json in Resources */,
 				85514FFD2372DA0100DBC528 /* ios13-home-row.mp4 in Resources */,
+				36E82751302657A800147F78 /* subscription-hero.json in Resources */,
 				85F98F98296F4CB100742F4A /* SyncAssets.xcassets in Resources */,
 				EDB406DD2FFBB06300118162 /* success.json in Resources */,
 				31BC5F412C2B0B540004DF37 /* DuckPlayer.xcassets in Resources */,
@@ -13289,6 +13327,7 @@
 				BB490ECF2EBDF36B00649B5B /* WinBackOfferFactory.swift in Sources */,
 				8577A1C5255D2C0D00D43FCD /* BrowserToolbarView.swift in Sources */,
 				6FE095D82BD90AFB00490FF8 /* UniversalOmniBarState.swift in Sources */,
+				36E8274D3026508B00147F78 /* SubscriptionOnboardingProgressCardView.swift in Sources */,
 				4B359FD52FB52B810020D70F /* PrivacyStatsDatabase.swift in Sources */,
 				4B359FD62FB52B810020D70F /* PrivacyStatsProviding.swift in Sources */,
 				1DEAADE82BA38AA500E25A97 /* SettingsGeneralView.swift in Sources */,
@@ -13300,6 +13339,8 @@
 				1E87615928A1517200C7C5CE /* PrivacyDashboardViewController.swift in Sources */,
 				9FD6E60E2DF90D5200C2B032 /* VideoPlayerCoordinator.swift in Sources */,
 				6F23315D2DD4AAF2004D102D /* TabSwitcherStaticView.swift in Sources */,
+				36E8274830264E8300147F78 /* SubscriptionOnboardingOrderConfirmationView.swift in Sources */,
+				36E8274930264E8300147F78 /* SubscriptionOnboardingOrderConfirmationViewModel.swift in Sources */,
 				6F03CAFE2C32DD08004179A8 /* HomePageMessagesConfiguration.swift in Sources */,
 				851952682CE2522700578553 /* AutocompleteSuggestionsDataSource.swift in Sources */,
 				B59B16982FAB879900C1040A /* OmniBarFocuser.swift in Sources */,
@@ -13410,6 +13451,7 @@
 				D68DF81C2B58302E0023DBEA /* SubscriptionRestoreView.swift in Sources */,
 				D664C7CE2B289AA200CBFA76 /* SubscriptionPagesUseSubscriptionFeature.swift in Sources */,
 				8508931F2EA7AF04005F84FD /* MobileCustomization.swift in Sources */,
+				36E8274330264E4200147F78 /* SubscriptionOnboardingPIRView.swift in Sources */,
 				EE9D68DC2AE16AE100B55EF4 /* NotificationsAuthorizationController.swift in Sources */,
 				C13F45092EEC4FD500B7AA99 /* AIChatDeleteOperation.swift in Sources */,
 				C13F45092EEC4FD500B7BB99 /* AIChatUpdateOperation.swift in Sources */,
@@ -13915,6 +13957,7 @@
 				CB3B4D4A2D5FA4A3006DAD63 /* AppConfiguration.swift in Sources */,
 				9FA8A61F300DCE8A000DF5DE /* OnboardingPersonalization+AppSettings.swift in Sources */,
 				9F2E797E2E0B9F6500E2BEF3 /* DefaultBrowserPromptService.swift in Sources */,
+				36E8274030264E3700147F78 /* SubscriptionOnboardingIDTRView.swift in Sources */,
 				D664C7B62B289AA200CBFA76 /* SubscriptionFlowViewModel.swift in Sources */,
 				4BD96E0B2C4DCE55003BC32C /* VPNSnoozeLiveActivityManager.swift in Sources */,
 				9F9A92312C86AAE9001D036D /* OnboardingDebugView.swift in Sources */,
@@ -14766,6 +14809,7 @@
 				5BF0B1762FC78C74009D088E /* NavigationResponseRouterTests.swift in Sources */,
 				6F7FB8E12C660B3E00867DA7 /* NewTabPageFavoritesModelTests.swift in Sources */,
 				BBF1BDF32EA6333000358243 /* MockWinBackOfferService.swift in Sources */,
+				36E8274B3026506A00147F78 /* SubscriptionOnboardingOrderConfirmationViewModelTests.swift in Sources */,
 				CB6D178B2FA2109C00ECD5AE /* DuckAIURLSuggestionsLoaderTests.swift in Sources */,
 				CB6D17B72FB000000ECD5AE /* AIChatSyncPromoViewModelTests.swift in Sources */,
 				CB6D17C22FB000000ECD5AE /* AIChatSyncPromoViewTests.swift in Sources */,

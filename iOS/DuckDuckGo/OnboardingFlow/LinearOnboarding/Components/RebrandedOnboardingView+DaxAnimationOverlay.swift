@@ -308,3 +308,122 @@ struct DaxAnimationOverlay: View {
         size.height - bottomPadding - animation.size.height / 2
     }
 }
+
+#if DEBUG
+
+// MARK: - Previews
+
+/// Puts the overlay over the real onboarding background so position and size can be judged in context.
+///
+/// The Lottie only plays in Xcode's **live preview** (the ▶︎ button); a static snapshot shows the first
+/// frame. Note `thumbUp` has a 0.75s `startDelay`, so it stays hidden briefly before appearing.
+private struct DaxAnimationOverlayPreview: View {
+    let animation: DaxAnimation
+    var playForward: Bool = true
+    var isExiting: Bool = false
+
+    var body: some View {
+        ZStack {
+            OnboardingBackground()
+            DaxAnimationOverlay(animation: animation, playForward: playForward, isExiting: isExiting)
+        }
+        .ignoresSafeArea()
+    }
+}
+
+/// Drives `isExiting` and `playForward` by hand, so the entrance, the exit slide/fade and the two-stage
+/// split can each be watched without waiting on a real onboarding step change.
+private struct DaxAnimationOverlayControlPreview: View {
+    @State private var animation: DaxAnimation = .thumbUp
+    @State private var playForward = true
+    @State private var isExiting = false
+    /// Rebuilding the overlay is the only way to replay an entrance, since it runs from `onAppear`.
+    @State private var runID = UUID()
+
+    private let presets: [(name: String, animation: DaxAnimation)] = [
+        ("Thumb Up", .thumbUp),
+        ("Wing Bottom", .wingBottom),
+        ("Wing Left", .wingLeft),
+        ("Wing Right", .wingRight)
+    ]
+
+    var body: some View {
+        ZStack {
+            OnboardingBackground()
+                .ignoresSafeArea()
+
+            DaxAnimationOverlay(animation: animation, playForward: playForward, isExiting: isExiting)
+                .id(runID)
+
+            VStack {
+                Spacer()
+                controls
+            }
+            .padding()
+        }
+    }
+
+    private var controls: some View {
+        VStack(spacing: 12) {
+            Picker("Preset", selection: presetSelection) {
+                ForEach(presets.indices, id: \.self) { index in
+                    Text(verbatim: presets[index].name).tag(index)
+                }
+            }
+            .pickerStyle(.segmented)
+
+            Toggle("Play forward", isOn: $playForward)
+            Toggle("Exiting", isOn: $isExiting)
+
+            Button("Replay entrance") {
+                isExiting = false
+                runID = UUID()
+            }
+        }
+        .padding()
+        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12))
+    }
+
+    /// Selecting a preset also resets the run, so the new animation plays its entrance rather than
+    /// inheriting the previous one's state.
+    private var presetSelection: Binding<Int> {
+        Binding(
+            get: { presets.firstIndex { $0.animation == animation } ?? 0 },
+            set: { index in
+                animation = presets[index].animation
+                isExiting = false
+                runID = UUID()
+            })
+    }
+}
+
+#Preview("Thumb Up") {
+    DaxAnimationOverlayPreview(animation: .thumbUp)
+}
+
+#Preview("Wing Bottom") {
+    DaxAnimationOverlayPreview(animation: .wingBottom)
+}
+
+#Preview("Wing Left") {
+    DaxAnimationOverlayPreview(animation: .wingLeft)
+}
+
+#Preview("Wing Right") {
+    DaxAnimationOverlayPreview(animation: .wingRight)
+}
+
+#Preview("Exiting — Thumb Up") {
+    DaxAnimationOverlayPreview(animation: .thumbUp, isExiting: true)
+}
+
+#Preview("Interactive") {
+    DaxAnimationOverlayControlPreview()
+}
+
+#Preview("Dark") {
+    DaxAnimationOverlayPreview(animation: .wingBottom)
+        .preferredColorScheme(.dark)
+}
+
+#endif

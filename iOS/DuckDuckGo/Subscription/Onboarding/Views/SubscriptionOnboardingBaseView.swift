@@ -22,11 +22,18 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import DuckUI
 
+/// The content insets `SubscriptionOnboardingBaseView` applies to every page, exposed so an element that
+/// needs to bleed past them can cancel the real values rather than hard-coding copies.
+enum SubscriptionOnboardingPageInsets {
+    static let horizontal: CGFloat = 24
+    static let vertical: CGFloat = 20
+}
+
 private enum Metrics {
-    static let horizontalPadding: CGFloat = 24
+    static let horizontalPadding = SubscriptionOnboardingPageInsets.horizontal
     static let navigationButtonSize: CGFloat = 44
     static let navigationGlyphSize: CGFloat = 24
-    static let contentVerticalPadding: CGFloat = 20
+    static let contentVerticalPadding = SubscriptionOnboardingPageInsets.vertical
     static let sectionSpacing: CGFloat = 24
     static let footerSpacing: CGFloat = 8
 }
@@ -99,19 +106,26 @@ struct SubscriptionOnboardingBaseView<Content: View>: View {
     private let header: SubscriptionOnboardingHeaderView?
     private let footer: SubscriptionOnboardingFooter?
     private let scrollsContent: Bool
+    private let declaresNavigationChrome: Bool
     private let content: Content
 
+    /// - Parameter declaresNavigationChrome: pass `false` when the page is rendered *inside* another page
+    ///   rather than pushed onto the navigation stack. A nested page would otherwise reconfigure the host's
+    ///   navigation bar — claiming its toolbar slots and overriding its title display mode and background —
+    ///   for as long as it is on screen.
     init(title: String? = nil,
          navigationButton: SubscriptionOnboardingNavigationButton? = nil,
          header: SubscriptionOnboardingHeaderView? = nil,
          footer: SubscriptionOnboardingFooter? = nil,
          scrollsContent: Bool = true,
+         declaresNavigationChrome: Bool = true,
          @ViewBuilder content: () -> Content) {
         self.title = title
         self.navigationButton = navigationButton
         self.header = header
         self.footer = footer
         self.scrollsContent = scrollsContent
+        self.declaresNavigationChrome = declaresNavigationChrome
         self.content = content()
     }
 
@@ -124,6 +138,18 @@ struct SubscriptionOnboardingBaseView<Content: View>: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(pageBackgroundColor.ignoresSafeArea())
             .safeAreaInset(edge: .bottom) { footerView }
+
+        if declaresNavigationChrome {
+            navigationChrome(around: page)
+        } else {
+            page
+        }
+    }
+
+    /// Every navigation-bar reconfiguration lives here, so a page that doesn't own the bar applies none of it.
+    @ViewBuilder
+    private func navigationChrome<Page: View>(around page: Page) -> some View {
+        let bar = page
             .navigationBarTitleDisplayMode(.inline)
             .navigationBarBackButtonHidden(true)
             .navigationBarBackground(pageBackgroundColor)
@@ -131,9 +157,9 @@ struct SubscriptionOnboardingBaseView<Content: View>: View {
         // On iOS 26 the toolbar wraps its items in a shared Liquid Glass background (with a drop
         // shadow). Hide it so the leading button shows only its own circular fill.
         if #available(iOS 26.0, *) {
-            page.toolbar { toolbarContent.sharedBackgroundVisibility(.hidden) }
+            bar.toolbar { toolbarContent.sharedBackgroundVisibility(.hidden) }
         } else {
-            page.toolbar { toolbarContent }
+            bar.toolbar { toolbarContent }
         }
     }
 

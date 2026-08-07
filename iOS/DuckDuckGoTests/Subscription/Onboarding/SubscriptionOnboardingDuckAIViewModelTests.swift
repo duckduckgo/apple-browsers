@@ -160,7 +160,7 @@ final class SubscriptionOnboardingDuckAIViewModelTests: XCTestCase {
         XCTAssertEqual(provider.updatedModelID, "a")
     }
 
-    func testWhenStartChatThenRequestsDuckAIChatWithoutCompletingSection() async {
+    func testWhenStartChatThenInterstitialIsShownAndChatIsNotYetRequested() async {
         let delegate = SpySectionDelegate()
         let provider = MockAIModelProvider(models: [model("a", tier: ["plus"])])
         let (viewModel, _) = makeViewModel(provider: provider, delegate: delegate)
@@ -170,9 +170,40 @@ final class SubscriptionOnboardingDuckAIViewModelTests: XCTestCase {
 
         viewModel.startChat()
 
+        XCTAssertTrue(viewModel.isShowingInterstitial)
+        XCTAssertTrue(delegate.requestedChatModelIDs.isEmpty)
+    }
+
+    func testWhenHandingOffThenRequestsDuckAIChatWithoutCompletingSection() async {
+        let delegate = SpySectionDelegate()
+        let provider = MockAIModelProvider(models: [model("a", tier: ["plus"])])
+        let (viewModel, _) = makeViewModel(provider: provider, delegate: delegate)
+        await wait(viewModel.$selectedModelID, until: { $0 != nil }) {
+            viewModel.onAppear()
+        }
+
+        viewModel.startChat()
+        viewModel.handOffToChat()
+
         XCTAssertEqual(delegate.requestedChatModelIDs, ["a"])
         // Requesting the chat does not complete the section.
         XCTAssertTrue(delegate.completedSections.isEmpty)
+    }
+
+    /// The interstitial's timer and its tap-to-skip can both fire.
+    func testWhenHandingOffTwiceThenChatIsRequestedOnlyOnce() async {
+        let delegate = SpySectionDelegate()
+        let provider = MockAIModelProvider(models: [model("a", tier: ["plus"])])
+        let (viewModel, _) = makeViewModel(provider: provider, delegate: delegate)
+        await wait(viewModel.$selectedModelID, until: { $0 != nil }) {
+            viewModel.onAppear()
+        }
+
+        viewModel.startChat()
+        viewModel.handOffToChat()
+        viewModel.handOffToChat()
+
+        XCTAssertEqual(delegate.requestedChatModelIDs.count, 1)
     }
 
     func testWhenStartChatWithNoModelsThenChatIsRequestedWithoutASelection() async {
@@ -184,6 +215,7 @@ final class SubscriptionOnboardingDuckAIViewModelTests: XCTestCase {
         }
 
         viewModel.startChat()
+        viewModel.handOffToChat()
 
         XCTAssertEqual(delegate.requestedChatModelIDs.count, 1)
         XCTAssertNil(delegate.requestedChatModelIDs[0])

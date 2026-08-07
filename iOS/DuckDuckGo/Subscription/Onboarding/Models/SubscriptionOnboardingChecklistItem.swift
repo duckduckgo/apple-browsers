@@ -17,19 +17,22 @@
 //  limitations under the License.
 //
 
-/// The fixed set of subscription protections (VPN, IDTR, Duck.ai, PIR), shared by the onboarding welcome
-/// list and the completion checklist. `title` is the checklist row copy; the welcome list supplies its own.
+/// Steps the completion checklist tracks. `widget` is a checklist step but not a subscription feature—it has no "Learn More" content and doesn't appear in the welcome list.
 enum SubscriptionOnboardingChecklistItem: CaseIterable, Identifiable {
     case vpn
+    case widget
     case idtr
     case duckAI
     case pir
+
+    static let features: [SubscriptionOnboardingChecklistItem] = [.vpn, .idtr, .duckAI, .pir]
 
     var id: Self { self }
 
     var title: String {
         switch self {
         case .vpn: return UserText.subscriptionOnboardingChecklistVPNTitle
+        case .widget: return UserText.subscriptionOnboardingChecklistWidgetTitle
         case .idtr: return UserText.subscriptionOnboardingChecklistIDTRTitle
         case .duckAI: return UserText.subscriptionOnboardingChecklistDuckAITitle
         case .pir: return UserText.subscriptionOnboardingChecklistPIRTitle

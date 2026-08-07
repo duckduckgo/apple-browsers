@@ -22,6 +22,7 @@ import BrowserServicesKit
 import Core
 import Bookmarks
 import DesignResourcesKit
+import FeatureFlags_iOS
 
 // MARK: Source agnostic action implementations
 extension TabSwitcherViewController {

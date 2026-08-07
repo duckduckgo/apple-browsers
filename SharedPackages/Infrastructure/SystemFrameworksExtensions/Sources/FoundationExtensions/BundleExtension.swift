@@ -35,6 +35,8 @@ public extension Bundle {
         public static let alphaBuildSuffix = "DDG_ALPHA_BUILD_SUFFIX"
         /// Custom key that may be added by the build workflow to indicate a commit of the build
         public static let commitSHA = "DDG_COMMIT_SHA"
+        /// Xcode version encoded by Xcode in the processed Info.plist, for example "2700" for Xcode 27.0
+        public static let xcodeVersion = "DTXcode"
 
         public static let vpnMenuAgentBundleId = "AGENT_BUNDLE_ID"
         public static let vpnMenuAgentProductName = "AGENT_PRODUCT_NAME"

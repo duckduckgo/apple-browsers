@@ -43,6 +43,15 @@ public struct PreviewSnapshots<State> {
     }
 
     public init<Content: View>(
+        configure: @escaping () -> Content
+    ) where State == Void {
+        self.init(
+            configurations: [.init(name: "", state: ())],
+            configure: { _ in configure() }
+        )
+    }
+
+    public init<Content: View>(
         states: [State],
         configure: @escaping (State) -> Content
     ) where State: NamedPreviewState {
@@ -76,10 +85,13 @@ public struct PreviewSnapshots<State> {
 
     @ViewBuilder
     private func preview(for configuration: Configuration) -> some View {
+        let preview = configure(configuration.state)
+            .previewInterfaceOrientation(configuration.interfaceOrientation)
+
         if configuration.name.isEmpty {
-            configure(configuration.state)
+            preview
         } else {
-            configure(configuration.state)
+            preview
                 .previewDisplayName(configuration.name)
         }
     }
@@ -90,15 +102,18 @@ public extension PreviewSnapshots {
         public let name: String
         public let state: State
         public let scope: PreviewSnapshotScope
+        public let interfaceOrientation: InterfaceOrientation
 
         public init(
             name: String,
             state: State,
-            scope: PreviewSnapshotScope = .all
+            scope: PreviewSnapshotScope = .all,
+            interfaceOrientation: InterfaceOrientation = .portrait
         ) {
             self.name = name
             self.state = state
             self.scope = scope
+            self.interfaceOrientation = interfaceOrientation
         }
     }
 }

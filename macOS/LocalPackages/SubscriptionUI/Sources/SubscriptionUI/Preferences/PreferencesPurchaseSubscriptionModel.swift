@@ -20,7 +20,7 @@ import AppKit
 import Subscription
 import struct Combine.AnyPublisher
 import enum Combine.Publishers
-import FeatureFlags
+import FeatureFlags_macOS
 import PrivacyConfig
 import os.log
 

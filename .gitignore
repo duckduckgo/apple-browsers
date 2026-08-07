@@ -96,3 +96,11 @@ content-scope-scripts/
 privacy-configuration/
 .xcodebuildmcp/config.yaml
 .claude/worktrees
+
+# Snapshot references live in the SnapshotReferences submodule (see tech design).
+# Ignore all inline __Snapshots__ so redirected suites can never commit an inline fallback
+# (e.g. when the submodule isn't checked out). Suites still recorded inline because they call
+# point-free's assertSnapshot directly are re-included below until they're migrated.
+**/__Snapshots__/
+!macOS/UnitTests/URLDragPreviewProvider/__Snapshots__/
+!macOS/UnitTests/URLDragPreviewProvider/__Snapshots__/**

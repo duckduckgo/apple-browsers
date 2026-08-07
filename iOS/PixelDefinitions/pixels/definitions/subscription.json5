@@ -76,6 +76,57 @@
         ]
     },
 
+    // VPN Subscription Funnel Entry Points
+    "subscription_vpn_toolbar_impression": {
+        "description": "Fired when the customizable toolbar VPN button is presented to the user (customization enabled and VPN selected as the toolbar button).",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource", "vpnSubscriptionActive"]
+    },
+    "subscription_vpn_toolbar_click": {
+        "description": "Fired when a non-subscriber taps the customizable toolbar VPN button and is redirected into the subscription funnel.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "subscription_vpn_address-bar_impression": {
+        "description": "Fired when the customizable address-bar VPN button is presented to the user (customization enabled and VPN selected as the address-bar button).",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource", "vpnSubscriptionActive"]
+    },
+    "subscription_vpn_address-bar_click": {
+        "description": "Fired when a non-subscriber taps the customizable address-bar VPN button and is redirected into the subscription funnel.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "subscription_vpn_widget_click": {
+        "description": "Fired when a non-subscriber taps the VPN widget entry point and is redirected into the subscription funnel.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "subscription_vpn_shortcut_click": {
+        "description": "Fired when a non-subscriber taps the VPN app shortcut entry point and is redirected into the subscription funnel.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "subscription_vpn_notification_click": {
+        "description": "Fired when a non-subscriber taps the VPN notification entry point and is redirected into the subscription funnel.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+
     // Pending Transaction Recovery
     "m_privacy-pro_purchase_success_after_pending_transaction": {
         "description": "Fired when a subscription purchase succeeds after previously being in a pending transaction state (e.g., Ask to Buy was approved)",

@@ -86,6 +86,10 @@ extension OnboardingPersonalizationManager {
 
 extension OnboardingPersonalizationManager {
 
+    public var selectedAIChatModelID: String? {
+        aiModelSettings.selectedAIModel?.id
+    }
+
     public func setAIChatModel(_ model: OnboardingAIModel) {
         aiModelSettings.selectedAIModel = model
     }

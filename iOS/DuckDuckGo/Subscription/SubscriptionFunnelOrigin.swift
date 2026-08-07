@@ -46,16 +46,63 @@ enum SubscriptionFunnelOrigin: String {
     case addressBarModelPicker = "funnel_addressbar_ios__modelpicker"
 
     /// User entered the funnel by tapping a gated reasoning level in the Unified Toggle Input reasoning picker from the address bar.
-    /// https://app.asana.com/1/137249556945/project/1207260194172075/task/1213994750860310
-    case addressBarReasoningPicker = "funnel_addressbar_ios__reasoningpicker"
+    /// https://app.asana.com/1/137249556945/project/414235014887631/task/1216243794936344?focus=true
+    case addressBarReasoningPicker = "funnel_addressbar_ios__reasoningdropdown"
 
     /// User entered the funnel by tapping a gated model in the Unified Toggle Input model picker from the Duck.ai tab.
     /// https://app.asana.com/1/137249556945/project/1207260194172075/task/1213994750860310
     case duckAIModelPicker = "funnel_duckai_ios__modelpicker"
 
     /// User entered the funnel by tapping a gated reasoning level in the Unified Toggle Input reasoning picker from the Duck.ai tab.
-    /// https://app.asana.com/1/137249556945/project/1207260194172075/task/1213994750860310
-    case duckAIReasoningPicker = "funnel_duckai_ios__reasoningpicker"
+    /// https://app.asana.com/1/137249556945/project/414235014887631/task/1216243794936344?focus=true
+    case duckAIReasoningPicker = "funnel_duckai_ios__reasoningdropdown"
+
+    /// User entered the funnel via the native "Free Plan / Upgrade" plate in the Duck.ai tab header.
+    /// https://app.asana.com/1/137249556945/project/414235014887631/task/1216395339071576?focus=true
+    case duckAIFreeLabel = "funnel_duckai_ios__freelabel"
+
+    // MARK: - Duck.ai Funnel Origins (frontend-reported)
+
+    /// Frontend-reported: the upgrade button in the Duck.ai web sidebar.
+    /// https://app.asana.com/1/137249556945/task/1216395339071576
+    case duckAIAiSidebar = "funnel_duckai_ios__aisidebar"
+
+    /// Frontend-reported: the "activate subscription" banner shown when a paid model is loaded on the free
+    /// tier or with an invalid auth token.
+    /// https://app.asana.com/1/137249556945/task/1216395339071576
+    case duckAIActivateSubscription = "funnel_duckai_ios__activatesubscription"
+
+    /// Frontend-reported: the free-tier quota-limit message.
+    /// https://app.asana.com/1/137249556945/task/1216395339071576
+    case duckAIFreeLimit = "funnel_duckai_ios__freelimit"
+
+    /// Frontend-reported: the image-generation quota-limit message.
+    /// https://app.asana.com/1/137249556945/task/1216395339071576
+    case duckAIImageGenerationLimit = "funnel_duckai_ios__imagegenerationlimit"
+
+    /// Frontend-reported: the Plus-tier quota-limit message.
+    /// https://app.asana.com/1/137249556945/task/1216395339071576
+    case duckAIPlusLimit = "funnel_duckai_ios__pluslimit"
+
+    /// Frontend-reported: the subscription promotion card at the bottom of a new chat.
+    /// https://app.asana.com/1/137249556945/task/1216395339071576
+    case duckAIPromotionCard = "funnel_duckai_ios__promotioncard"
+
+    /// Frontend-reported: the "Subscribe to DuckDuckGo" button in Duck.ai settings.
+    /// https://app.asana.com/1/137249556945/task/1216395339071576
+    case duckAISettings = "funnel_duckai_ios__settings"
+
+    /// Frontend-reported: the Pro-upgrade disclaimer banner shown to Plus-tier users reaching a Pro model.
+    /// https://app.asana.com/1/137249556945/task/1216395339071576
+    case duckAIDisclaimerBanner = "funnel_duckai_ios__disclaimerbanner"
+
+    /// Frontend-reported: the voice-chat quota-limit modal.
+    /// https://app.asana.com/1/137249556945/task/1216395339071576
+    case duckAIVoiceChatLimit = "funnel_duckai_ios__voicechatlimit"
+
+    /// Frontend-reported: the voice-chat duration-limit modal.
+    /// https://app.asana.com/1/137249556945/task/1216395339071576
+    case duckAIVoiceChatDurationLimit = "funnel_duckai_ios__voicechatdurationlimit"
 
     // MARK: - Win-Back Offer Origins
     

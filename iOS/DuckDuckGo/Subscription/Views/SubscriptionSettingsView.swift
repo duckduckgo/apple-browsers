@@ -117,7 +117,7 @@ struct SubscriptionSettingsViewV2: View {
                     .daxBodyRegular()
                     .foregroundColor(Color(designSystemColor: .textPrimary))
             }
-            .listRowBackground(Color(designSystemColor: .surface))
+            .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
 
             // Row 2: Upgrade button with chevron
             if let tierName = viewModel.firstAvailableUpgradeTier {
@@ -451,7 +451,7 @@ struct SubscriptionSettingsViewV2: View {
                 .padding(.vertical, -10)
             if viewModel.state.cancelPendingDowngradeDetails != nil {
                 downgradeBanner
-                    .listRowBackground(Color(designSystemColor: .surface))
+                    .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
             }
             if viewModel.shouldShowUpgrade {
                 upgradeSection
@@ -604,14 +604,14 @@ struct SubscriptionSettingsViewV2: View {
             Section {
                 // Row 1: Icon + Description
                 HStack(alignment: .top, spacing: 12) {
-                    Image(uiImage: DesignSystemImages.Color.Size24.info)
+                    Image(uiImage: DesignSystemImages.Glyphs.Size24.infoRecolorable)
                         .resizable()
                         .frame(width: 24, height: 24)
                     Text(details)
                         .daxBodyRegular()
                         .foregroundColor(Color(designSystemColor: .textPrimary))
                 }
-                .listRowBackground(Color(designSystemColor: .surface))
+                .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
 
                 // Row 2: Cancel downgrade button
                 SettingsCustomCell(content: {

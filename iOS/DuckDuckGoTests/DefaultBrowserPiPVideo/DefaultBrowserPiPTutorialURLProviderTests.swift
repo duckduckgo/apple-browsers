@@ -21,6 +21,7 @@ import Foundation
 import Testing
 import Core
 import SystemSettingsPiPTutorial
+import FeatureFlags_iOS
 @testable import DuckDuckGo
 
 @Suite("System Settings PiP Tutorial - Default Browser", .serialized)

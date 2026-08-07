@@ -152,7 +152,7 @@ struct SyncSuccessViewV2: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
-        .listRowBackground(Color(designSystemColor: .surface))
+        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
     }
 
     private var autoRestoreSection: some View {
@@ -163,7 +163,7 @@ struct SyncSuccessViewV2: View {
                 .foregroundColor(Color(designSystemColor: .textPrimary))
                 .disabled(model.isAutoRestoreUpdating)
         }
-        .listRowBackground(Color(designSystemColor: .surface))
+        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
     }
 }
 

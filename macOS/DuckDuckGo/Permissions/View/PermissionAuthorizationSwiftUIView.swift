@@ -410,10 +410,10 @@ struct PermissionAuthorizationSwiftUIView: View {
                 Button(action: requestSystemPermission) {
                     Text(permissionType.systemPermissionEnableText)
                         .font(.system(size: 13))
-                        .foregroundColor(.white)
+                        .foregroundColor(Color(designSystemColor: .accentContentPrimary))
                         .frame(maxWidth: .infinity)
                         .frame(height: 36)
-                        .background(Color.accentColor)
+                        .background(Color(designSystemColor: .accentPrimary))
                         .cornerRadius(8)
                 }
                 .buttonStyle(PlainButtonStyle())
@@ -431,7 +431,7 @@ struct PermissionAuthorizationSwiftUIView: View {
             case .authorized:
                 Text(permissionType.systemPermissionEnabledText)
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(Color(designSystemColor: .textSuccess))
+                    .foregroundColor(Color(designSystemColor: .statusGreen))
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .frame(height: 36)
 
@@ -500,7 +500,7 @@ struct PermissionAuthorizationSwiftUIView: View {
                 // Completed state: green checkmark
                 ZStack {
                     Circle()
-                        .fill(Color(designSystemColor: .textSuccess))
+                        .fill(Color(designSystemColor: .statusGreen))
                         .frame(width: stepIndicatorSize, height: stepIndicatorSize)
 
                     Image(nsImage: DesignSystemImages.Glyphs.Size12.check)
@@ -535,7 +535,7 @@ struct PermissionAuthorizationSwiftUIView: View {
         }) {
             Text(UserText.permissionPopupLearnMoreLink)
                 .font(.system(size: 13))
-                .foregroundColor(Color(designSystemColor: .textLink))
+                .foregroundColor(Color(designSystemColor: .accentTextPrimary))
         }
         .buttonStyle(PlainButtonStyle())
         .cursor(.pointingHand)
@@ -574,7 +574,7 @@ struct PermissionAuthorizationSwiftUIView: View {
         + Text(verbatim: permissionType == .notification ? "\n" : " ")
         + Text(permissionType.systemSettingsLinkText)
             .font(.system(size: 12))
-            .foregroundColor(Color(designSystemColor: .textLink)))
+            .foregroundColor(Color(designSystemColor: .accentTextPrimary)))
             .lineSpacing(6)
             .multilineTextAlignment(.center)
             .fixedSize(horizontal: false, vertical: true)

@@ -23,6 +23,7 @@ import Core
 import DesignResourcesKit
 import PrivacyConfig
 import os.log
+import FeatureFlags_iOS
 
 /// Utility for calculating DaxEasterEgg logo frames with consistent sizing across components.
 struct DaxEasterEggLayout {

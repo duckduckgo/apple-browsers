@@ -20,7 +20,7 @@ import AIChat
 import AppKit
 import WebKit
 import Combine
-import FeatureFlags
+import FeatureFlags_macOS
 import NewTabPage
 import PrivacyConfig
 import os.log

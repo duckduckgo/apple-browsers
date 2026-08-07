@@ -36,6 +36,7 @@ struct SubscriptionOnboardingVPNActivationView: View {
     @StateObject private var viewModel: SubscriptionOnboardingVPNActivationViewModel
 
     private let title: String?
+    private let navigationButton: SubscriptionOnboardingNavigationButton?
 
     @StateObject private var tapAllowHint = TapAllowHintCoordinator()
 
@@ -43,15 +44,17 @@ struct SubscriptionOnboardingVPNActivationView: View {
     @State private var tapAllowHintWindow = TapAllowHintOverlayWindow()
 
     init(viewModel: @autoclosure @escaping () -> SubscriptionOnboardingVPNActivationViewModel,
-         title: String? = nil) {
+         title: String? = nil,
+         navigationButton: SubscriptionOnboardingNavigationButton? = nil) {
         _viewModel = StateObject(wrappedValue: viewModel())
         self.title = title
+        self.navigationButton = navigationButton
     }
 
     var body: some View {
         SubscriptionOnboardingBaseView(
             title: title,
-            navigationButton: .back({ viewModel.goBack() }),
+            navigationButton: navigationButton,
             header: header,
             footer: footer) {
             content
@@ -195,11 +198,9 @@ private extension SubscriptionOnboardingVPNActivationView {
                 return .single(.init(UserText.subscriptionOnboardingVPNActivationTurnOnButton, action: startVPN))
             }
             return .double(primary: .init(UserText.subscriptionOnboardingVPNActivationTryAgainButton, action: startVPN),
-                           secondary: .init(UserText.subscriptionOnboardingVPNActivationSkipButton,
-                                            push: SubscriptionOnboardingVPNWidgetEducationView(title: title, onDone: { viewModel.advance() })))
+                           secondary: .init(UserText.subscriptionOnboardingVPNActivationSkipButton) { viewModel.advance() })
         case .on:
-            return .single(.init(UserText.subscriptionOnboardingVPNActivationNextButton,
-                                 push: SubscriptionOnboardingVPNWidgetEducationView(title: title, onDone: { viewModel.advance() })))
+            return .single(.init(UserText.subscriptionOnboardingVPNActivationNextButton) { viewModel.advance() })
         }
     }
 }
@@ -242,7 +243,7 @@ private func activationPreview(state: SubscriptionOnboardingVPNActivationViewMod
                             didFailToStartVPN: didFailToStart),
         title: String(format: UserText.subscriptionOnboardingStepIndicatorFormat, 1, 4))
     .subscriptionOnboardingNavigationContainer()
-    .graphicLottieRenderer(subscriptionOnboardingPreviewLottieRenderer)
+    .graphicLottieRenderer(SubscriptionOnboardingLottieRenderer.shared)
 }
 
 #Preview("Off - Light") {
@@ -326,7 +327,7 @@ private struct VPNRevealPreview: View {
             viewModel: viewModel,
             title: String(format: UserText.subscriptionOnboardingStepIndicatorFormat, 1, 4))
         .subscriptionOnboardingNavigationContainer()
-        .graphicLottieRenderer(subscriptionOnboardingPreviewLottieRenderer)
+        .graphicLottieRenderer(SubscriptionOnboardingLottieRenderer.shared)
         .task {
             try? await Task.sleep(nanoseconds: 1_000_000_000)
             await viewModel.turnOnVPN()

@@ -20,9 +20,7 @@
 import Foundation
 import AIChat
 
-/// Prefetches what the flow's sections need, once at flow start, so screens read the result rather than
-/// refetching on every visit.
-// TODO: will be owned by SubscriptionOnboardingFlowViewModel.swift calling `prefetch()` once at flow start
+/// Prefetches flow data once at startup; screens read cached results rather than refetching.
 @MainActor
 final class SubscriptionOnboardingPrefetcher: ObservableObject {
 
@@ -62,10 +60,26 @@ final class SubscriptionOnboardingPrefetcher: ObservableObject {
         modelsTask?.cancel()
     }
 
-    /// Kicks off both fetches at flow start.
-    func prefetch() {
-        fetchConnectionInfoIfNeeded()
-        fetchModelsIfNeeded()
+    /// Requested fetches. Runs that skip sections shouldn't pay for their fetches.
+    struct Targets: OptionSet {
+        let rawValue: Int
+
+        /// The pre-VPN connection info the activation screen compares against.
+        static let connectionInfo = Targets(rawValue: 1 << 0)
+        /// The Duck.ai model list.
+        static let aiModels = Targets(rawValue: 1 << 1)
+
+        static let all: Targets = [.connectionInfo, .aiModels]
+    }
+
+    /// Starts requested fetches; no default to avoid unnecessary fetches.
+    func prefetch(_ targets: Targets) {
+        if targets.contains(.connectionInfo) {
+            fetchConnectionInfoIfNeeded()
+        }
+        if targets.contains(.aiModels) {
+            fetchModelsIfNeeded()
+        }
     }
 
     func fetchConnectionInfoIfNeeded() {

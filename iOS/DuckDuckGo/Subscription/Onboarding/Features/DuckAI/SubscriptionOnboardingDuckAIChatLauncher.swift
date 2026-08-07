@@ -24,7 +24,16 @@ import UIKit
 struct SubscriptionOnboardingDuckAIChatLauncher {
 
     func launch(from presentingViewController: UIViewController, modelID: String?) {
-        guard let mainViewController = presentingViewController.view.window?.rootViewController as? MainViewController else {
+        launch(using: presentingViewController.view.window?.rootViewController, modelID: modelID)
+    }
+
+    /// SwiftUI variant that finds the root window.
+    func launch(modelID: String?) {
+        launch(using: UIApplication.shared.firstKeyWindow?.rootViewController, modelID: modelID)
+    }
+
+    private func launch(using rootViewController: UIViewController?, modelID: String?) {
+        guard let mainViewController = rootViewController as? MainViewController else {
             assertionFailure("Expected MainViewController as rootViewController when launching Duck.ai from onboarding")
             return
         }

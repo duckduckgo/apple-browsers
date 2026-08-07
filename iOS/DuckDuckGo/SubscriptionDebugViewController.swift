@@ -68,6 +68,7 @@ final class SubscriptionDebugViewController: UITableViewController {
         Sections.regionOverride: "Region override for App Store Sandbox",
         Sections.expirationReminder: "Expiration Reminder Notification",
         Sections.onboarding: "Onboarding",
+        Sections.onboardingSubflows: "Onboarding Subflows",
     ]
 
     enum Sections: Int, CaseIterable {
@@ -81,6 +82,7 @@ final class SubscriptionDebugViewController: UITableViewController {
         case regionOverride
         case expirationReminder
         case onboarding
+        case onboardingSubflows
     }
 
     enum AuthorizationRows: Int, CaseIterable {
@@ -129,6 +131,12 @@ final class SubscriptionDebugViewController: UITableViewController {
     }
 
     enum OnboardingRows: Int, CaseIterable {
+        case setupCard
+        case resetProgress
+        case fullFlowAfterSubscription
+    }
+
+    enum OnboardingSubflowRows: Int, CaseIterable {
         case orderConfirmation
         case welcome
         case vpn
@@ -155,10 +163,14 @@ final class SubscriptionDebugViewController: UITableViewController {
         super.viewDidLoad()
         loadStoreKitMetadata()
         loadExpirationReminderStatus()
+        // The onboarding setup card sizes itself; every other row keeps the storyboard's fixed height.
+        tableView.estimatedRowHeight = tableView.rowHeight
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        // Returning from a flow run: show the progress it left behind.
+        refreshSetupCard()
         loadExpirationReminderStatus()
     }
 
@@ -169,6 +181,14 @@ final class SubscriptionDebugViewController: UITableViewController {
 
     var serviceEnvironment: SubscriptionEnvironment.ServiceEnvironment {
         return subscriptionManager.currentEnvironment.serviceEnvironment
+    }
+
+    override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        guard Sections(rawValue: indexPath.section) == .onboarding,
+              OnboardingRows(rawValue: indexPath.row) == .setupCard else {
+            return tableView.rowHeight
+        }
+        return UITableView.automaticDimension
     }
 
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -327,6 +347,20 @@ final class SubscriptionDebugViewController: UITableViewController {
 
         case .onboarding:
             switch OnboardingRows(rawValue: indexPath.row) {
+            case .setupCard:
+                return setupCardCell
+            case .resetProgress:
+                cell.textLabel?.text = "Reset Onboarding Progress"
+                cell.accessoryType = .none
+            case .fullFlowAfterSubscription:
+                cell.textLabel?.text = "Full Flow — After Subscription"
+                cell.accessoryType = .disclosureIndicator
+            case .none:
+                break
+            }
+
+        case .onboardingSubflows:
+            switch OnboardingSubflowRows(rawValue: indexPath.row) {
             case .orderConfirmation:
                 cell.textLabel?.text = "Order Confirmation"
                 cell.accessoryType = .disclosureIndicator
@@ -377,6 +411,7 @@ final class SubscriptionDebugViewController: UITableViewController {
         case .regionOverride: return RegionOverrideRows.allCases.count
         case .expirationReminder: return ExpirationReminderRows.allCases.count
         case .onboarding: return OnboardingRows.allCases.count
+        case .onboardingSubflows: return OnboardingSubflowRows.allCases.count
         case .none: return 0
         }
     }
@@ -427,6 +462,13 @@ final class SubscriptionDebugViewController: UITableViewController {
             }
         case .onboarding:
             switch OnboardingRows(rawValue: indexPath.row) {
+            case .setupCard: break
+            case .resetProgress: resetOnboardingProgress()
+            case .fullFlowAfterSubscription: showOnboardingFlow(entryPoint: .postCheckout)
+            default: break
+            }
+        case .onboardingSubflows:
+            switch OnboardingSubflowRows(rawValue: indexPath.row) {
             case .orderConfirmation: showOrderConfirmationOnboarding()
             case .welcome: showWelcomeOnboarding()
             case .vpn: showVPNOnboarding()
@@ -888,9 +930,8 @@ final class SubscriptionDebugViewController: UITableViewController {
     private func showOrderConfirmationOnboarding() {
         let hostingController = UIHostingController(
             rootView: SubscriptionOnboardingOrderConfirmationView(
-                viewModel: SubscriptionOnboardingOrderConfirmationViewModel(),
-                navigationButton: .close({ [weak self] in self?.dismiss(animated: true) }),
-                onNext: { [weak self] in self?.dismiss(animated: true) })
+                viewModel: SubscriptionOnboardingOrderConfirmationViewModel(delegate: self),
+                navigationButton: .close({ [weak self] in self?.dismiss(animated: true) }))
                 .subscriptionOnboardingNavigationContainer())
         present(hostingController, animated: true)
     }
@@ -904,8 +945,9 @@ final class SubscriptionDebugViewController: UITableViewController {
         present(hostingController, animated: true)
     }
 
-    /// The real "start PIR" hand-off needs the Data Broker Protection view-controller provider, which the
-    /// flow launcher will inject in Stage 3; here the CTA just dismisses.
+    /// The real "start PIR" hand-off needs the Data Broker Protection view-controller provider, which lives
+    /// on `DBPService` and reaches the flow through `SubscriptionOnboardingLauncher.PIRAvailability`. The
+    /// debug menu has no handle on it, so this standalone row's CTA just dismisses.
     private func showPIROnboarding() {
         let hostingController = UIHostingController(
             rootView: SubscriptionOnboardingPIRView(
@@ -927,13 +969,15 @@ final class SubscriptionDebugViewController: UITableViewController {
                 onSelectItem: { _ in },
                 onDone: { [weak self] in self?.dismiss(animated: true) })
                 .subscriptionOnboardingNavigationContainer()
-                .graphicLottieRenderer(Self.onboardingLottieRenderer))
+                .graphicLottieRenderer(SubscriptionOnboardingLottieRenderer.shared))
         present(hostingController, animated: true)
     }
 
     private func showWelcomeOnboarding() {
         let hostingController = UIHostingController(
-            rootView: SubscriptionOnboardingWelcomeView(onClose: { [weak self] in self?.dismiss(animated: true) })
+            rootView: SubscriptionOnboardingWelcomeView(
+                navigationButton: .close({ [weak self] in self?.dismiss(animated: true) }),
+                onNext: { [weak self] in self?.dismiss(animated: true) })
                 .subscriptionOnboardingNavigationContainer())
         present(hostingController, animated: true)
     }
@@ -941,23 +985,82 @@ final class SubscriptionDebugViewController: UITableViewController {
     private func showVPNOnboarding() {
         let hostingController = UIHostingController(
             rootView: SubscriptionOnboardingVPNActivationView(
-                viewModel: SubscriptionOnboardingVPNActivationViewModel(prefetcher: SubscriptionOnboardingPrefetcher(), delegate: self))
+                viewModel: SubscriptionOnboardingVPNActivationViewModel(prefetcher: SubscriptionOnboardingPrefetcher(), delegate: self),
+                navigationButton: .close({ [weak self] in self?.dismiss(animated: true) }))
                 .subscriptionOnboardingNavigationContainer()
-                .graphicLottieRenderer(Self.onboardingLottieRenderer))
+                .graphicLottieRenderer(SubscriptionOnboardingLottieRenderer.shared))
         present(hostingController, animated: true)
     }
 
-    /// The progress values are stand-ins for what the flow view model will supply in Stage 3. The Lottie
-    /// renderer is required here because the hand-off interstitial embeds the progress card, whose completed
-    /// rows animate a check.
+    /// Standalone screen only — the progress values are hand-picked, where the full-flow rows take theirs
+    /// from `SubscriptionOnboardingFlowViewModel`. The Lottie renderer is required because the hand-off
+    /// interstitial embeds the progress card, whose completed rows animate a check.
     private func showDuckAIOnboarding() {
         let hostingController = UIHostingController(
             rootView: SubscriptionOnboardingDuckAIView(
                 viewModel: SubscriptionOnboardingDuckAIViewModel(prefetcher: SubscriptionOnboardingPrefetcher(), delegate: self),
-                progress: .init(percentage: 60, completedItems: [.vpn, .widget, .idtr]))
+                navigationButton: .close({ [weak self] in self?.dismiss(animated: true) }),
+                progress: { .init(percentage: 60, completedItems: [.vpn, .widget, .idtr]) })
                 .subscriptionOnboardingNavigationContainer()
-                .graphicLottieRenderer(Self.onboardingLottieRenderer))
+                .graphicLottieRenderer(SubscriptionOnboardingLottieRenderer.shared))
         present(hostingController, animated: true)
+    }
+
+    /// Launches the real flow. PIR is left unavailable here because its view-controller provider lives on
+    /// `DBPService`, which the debug menu has no handle on — the Settings entry point in C3 supplies it.
+    private func showOnboardingFlow(entryPoint: SubscriptionOnboardingEntryPoint) {
+        SubscriptionOnboardingLauncher(keyValueStore: subscriptionUserDefaults)
+            .present(from: self, entryPoint: entryPoint)
+    }
+
+    /// Mirrors the Subscription Settings entry point: the real card, over the real stored progress. Kept
+    /// outside the reuse pool — it owns a hosting controller, which must not end up under another row.
+    private lazy var setupCardCell: UITableViewCell = {
+        let cell = UITableViewCell()
+        cell.selectionStyle = .none
+        cell.backgroundColor = .clear
+
+        addChild(setupCardHostingController)
+        let hosted = setupCardHostingController.view!
+        hosted.backgroundColor = .clear
+        hosted.translatesAutoresizingMaskIntoConstraints = false
+        cell.contentView.addSubview(hosted)
+        NSLayoutConstraint.activate([
+            hosted.leadingAnchor.constraint(equalTo: cell.contentView.leadingAnchor),
+            hosted.trailingAnchor.constraint(equalTo: cell.contentView.trailingAnchor),
+            hosted.topAnchor.constraint(equalTo: cell.contentView.topAnchor),
+            hosted.bottomAnchor.constraint(equalTo: cell.contentView.bottomAnchor)
+        ])
+        setupCardHostingController.didMove(toParent: self)
+        return cell
+    }()
+
+    private lazy var setupCardHostingController = UIHostingController(rootView: makeSetupCardView())
+
+    /// The percentage is resolved here rather than held as SwiftUI state, so returning from a run can refresh
+    /// the card by replacing its root view.
+    private func makeSetupCardView() -> SubscriptionOnboardingSetupCardDebugView {
+        let store = SubscriptionOnboardingProgressStore(keyValueStore: subscriptionUserDefaults)
+        return SubscriptionOnboardingSetupCardDebugView(
+            // PIR is unavailable throughout the debug menu, so the checklist here is the four-item one.
+            percentage: SubscriptionOnboardingChecklistItem.completionPercentage(
+                completed: store.completedItems,
+                checklist: SubscriptionOnboardingChecklistItem.checklist(isPIRAvailable: false)),
+            onContinue: { [weak self] in
+                self?.showOnboardingFlow(entryPoint: .subscriptionSettings)
+            })
+    }
+
+    private func refreshSetupCard() {
+        setupCardHostingController.rootView = makeSetupCardView()
+    }
+
+    private func resetOnboardingProgress() {
+        var store = SubscriptionOnboardingProgressStore(keyValueStore: subscriptionUserDefaults)
+        store.completedItems = []
+        store.cardFirstShownDate = nil
+        refreshSetupCard()
+        showAlert(title: "Onboarding progress reset")
     }
 
     private func showTapAllowHintPlayground() {
@@ -968,13 +1071,18 @@ final class SubscriptionDebugViewController: UITableViewController {
         present(hostingController, animated: true)
     }
 
-    private static let onboardingLottieRenderer = GraphicLottieRenderer { name, playback in
-        AnyView(
-            Lottie.LottieView(animation: .named(name))
-                .playbackMode(playback == .playOnce
-                    ? .playing(.fromProgress(0, toProgress: 1, loopMode: .playOnce))
-                    : .paused(at: .progress(playback == .frozenAtEnd ? 1 : 0)))
-        )
+}
+
+/// The real card, rendered inline in the debug table's Onboarding section.
+private struct SubscriptionOnboardingSetupCardDebugView: View {
+    let percentage: Int
+    let onContinue: () -> Void
+
+    var body: some View {
+        SubscriptionOnboardingSetupCard(visual: .image(Image(.subscription56)),
+                                        percentage: percentage,
+                                        onContinue: onContinue)
+            .padding(.vertical, 8)
     }
 }
 
@@ -993,10 +1101,6 @@ extension SubscriptionDebugViewController: SubscriptionOnboardingSectionDelegate
     }
 
     func sectionDidRequestAdvance() {
-        dismiss(animated: true)
-    }
-
-    func sectionDidRequestGoBack() {
         dismiss(animated: true)
     }
 }

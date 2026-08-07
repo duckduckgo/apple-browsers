@@ -26,8 +26,7 @@ import os.log
 /// A seam over the `/models` fetch and the persisted selection, so both can be mocked in tests.
 @MainActor
 protocol SubscriptionOnboardingAIModelProviding: AnyObject {
-    /// Fetches the available models. An empty result signals "no models"; the underlying error is swallowed,
-    /// so failure is inferred from emptiness.
+    /// Fetches the available models; empty result indicates failure.
     func fetchModels() async -> [AIChatModel]
     func updateSelectedModel(_ modelID: String)
 }
@@ -128,19 +127,17 @@ final class SubscriptionOnboardingDuckAIViewModel: ObservableObject {
         selectedModelID = modelID
     }
 
-    /// Persists the committed model (default or tapped) so the launched chat opens with it, then shows the
-    /// interstitial. The chat itself is requested by ``handOffToChat()`` once that has had its moment.
+    /// Persists the model selection, marks the step complete, then shows the interstitial. Completion is reported
+    /// here (not at hand-off) so the checklist shows Duck.ai finished on the screen launching it.
     func startChat() {
         if let selectedModelID {
             prefetcher.updateSelectedModel(selectedModelID)
         }
+        delegate?.sectionDidComplete(.duckAI)
         isShowingInterstitial = true
     }
 
-    /// Requests the chat, at most once — the interstitial's timer and its tap-to-skip both call this.
-    ///
-    /// Deliberately leaves the interstitial up: the launcher dismisses the whole presented chain itself, so
-    /// tearing it down here would double-animate the hand-off.
+    /// Requests the chat at most once. Leaves the interstitial up since the launcher dismisses the entire chain.
     func handOffToChat() {
         guard !didHandOffToChat else { return }
 
@@ -156,13 +153,8 @@ final class SubscriptionOnboardingDuckAIViewModel: ObservableObject {
         delegate.sectionDidRequestDuckAIChat(modelID: selectedModelID)
     }
 
-    /// Skips this (currently last) section, finishing the flow.
+    /// Leaves Duck.ai without starting a chat, moving the flow to the next section.
     func skip() {
         delegate?.sectionDidRequestAdvance()
-    }
-
-    /// Leaves this section, going back to the previous one.
-    func goBack() {
-        delegate?.sectionDidRequestGoBack()
     }
 }

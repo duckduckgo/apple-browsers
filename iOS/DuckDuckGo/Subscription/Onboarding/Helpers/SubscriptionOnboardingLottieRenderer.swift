@@ -1,5 +1,5 @@
 //
-//  SubscriptionOnboardingSectionDelegate.swift
+//  SubscriptionOnboardingLottieRenderer.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -17,12 +17,18 @@
 //  limitations under the License.
 //
 
-/// Receives events from an onboarding section.
-///
-/// There is no "go back" here: back is a native pop everywhere, and the flow view model's navigation binding
-/// walks its cursor back to match.
-protocol SubscriptionOnboardingSectionDelegate: AnyObject {
-    func sectionDidComplete(_ section: SubscriptionOnboardingSection)
-    func sectionDidRequestDuckAIChat(modelID: String?)
-    func sectionDidRequestAdvance()
+import SwiftUI
+import Lottie
+import UIComponents
+
+/// Renders Lottie animations; must be injected by every onboarding screen host.
+enum SubscriptionOnboardingLottieRenderer {
+    static let shared = GraphicLottieRenderer { name, playback in
+        AnyView(
+            Lottie.LottieView(animation: .named(name))
+                .playbackMode(playback == .playOnce
+                    ? .playing(.fromProgress(0, toProgress: 1, loopMode: .playOnce))
+                    : .paused(at: .progress(playback == .frozenAtEnd ? 1 : 0)))
+        )
+    }
 }

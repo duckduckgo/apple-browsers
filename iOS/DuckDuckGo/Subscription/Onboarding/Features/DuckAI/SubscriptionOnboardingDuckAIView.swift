@@ -33,15 +33,17 @@ struct SubscriptionOnboardingDuckAIView: View {
 
     @StateObject private var viewModel: SubscriptionOnboardingDuckAIViewModel
     private let title: String?
-    private let progress: Progress
+    private let navigationButton: SubscriptionOnboardingNavigationButton?
+    private let progress: () -> Progress
 
     @State private var isShowingInfoSheet = false
 
-    /// Checklist progress for the hand-off interstitial.
-    // TODO|htang: SubscriptionOnboardingFlowViewModel will hold this and inject it (Stage 3); until then the
-    // host passes it in by hand.
+    /// Checklist progress for the hand-off interstitial, supplied by the flow view model.
     struct Progress {
         var percentage: Int
+        /// This customer's checklist, which is four items when PIR is unreachable. Without it the interstitial
+        /// falls back to every case and shows a PIR row they can never tick.
+        var items: [SubscriptionOnboardingChecklistItem] = SubscriptionOnboardingChecklistItem.allCases
         var completedItems: Set<SubscriptionOnboardingChecklistItem>
 
         static let none = Progress(percentage: 0, completedItems: [])
@@ -52,9 +54,11 @@ struct SubscriptionOnboardingDuckAIView: View {
 
     init(viewModel: @autoclosure @escaping () -> SubscriptionOnboardingDuckAIViewModel,
          title: String? = nil,
-         progress: Progress = .none) {
+         navigationButton: SubscriptionOnboardingNavigationButton? = nil,
+         progress: @escaping () -> Progress = { .none }) {
         _viewModel = StateObject(wrappedValue: viewModel())
         self.title = title
+        self.navigationButton = navigationButton
         self.progress = progress
     }
 
@@ -62,7 +66,7 @@ struct SubscriptionOnboardingDuckAIView: View {
         SubscriptionOnboardingBaseView(
             title: title,
             // The back button is hidden during hand-off since the interstitial covers the page but not the nav bar.
-            navigationButton: viewModel.isShowingInterstitial ? nil : .back({ viewModel.goBack() }),
+            navigationButton: viewModel.isShowingInterstitial ? nil : navigationButton,
             header: header,
             footer: footer,
             scrollsContent: false) {
@@ -85,9 +89,11 @@ private extension SubscriptionOnboardingDuckAIView {
 
     /// Holds for ``interstitialDuration`` then requests the chat, or sooner if tapped. Fires `handOffToChat()` only once.
     var interstitial: some View {
-        SubscriptionOnboardingProgressView(
+        let progress = progress()
+        return SubscriptionOnboardingProgressView(
             variant: .duckAIInterstitial,
             percentage: progress.percentage,
+            items: progress.items,
             completedItems: progress.completedItems,
             onDone: {})
         .contentShape(Rectangle())
@@ -138,8 +144,7 @@ private extension SubscriptionOnboardingDuckAIView {
         }
     }
 
-    /// Whether rows show/report a selection at all — false on iPad, where model preselection has no way
-    /// to reach a fresh chat session, so neither the checkmark nor its accessibility value should appear.
+    /// Whether rows show a selection (false on iPad where model preselection can't reach a fresh chat session).
     var isSelectable: Bool {
         !DevicePlatform.isIpad
     }

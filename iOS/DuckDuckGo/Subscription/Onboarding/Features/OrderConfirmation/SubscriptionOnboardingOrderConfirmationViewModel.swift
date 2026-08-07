@@ -37,8 +37,7 @@ final class DefaultSubscriptionOnboardingSubscriptionProvider: SubscriptionOnboa
         self.subscriptionManager = subscriptionManager
     }
 
-    /// Errors are swallowed: the confirmation screen degrades to its paid variant rather than blocking the
-    /// customer on the first screen after checkout.
+    /// Errors are swallowed; screen degrades to paid variant.
     func fetchSubscription() async -> DuckDuckGoSubscription? {
         do {
             return try await subscriptionManager.getSubscription()
@@ -50,8 +49,7 @@ final class DefaultSubscriptionOnboardingSubscriptionProvider: SubscriptionOnboa
     }
 }
 
-/// Backs the order confirmation screen, resolving whether the purchase started a free trial and, if so, the
-/// calendar card that describes it.
+/// Resolves purchase type and free trial details for the confirmation screen.
 @MainActor
 final class SubscriptionOnboardingOrderConfirmationViewModel: ObservableObject {
 
@@ -60,7 +58,7 @@ final class SubscriptionOnboardingOrderConfirmationViewModel: ObservableObject {
         case loading
         /// A free trial is running; the calendar card renders from this model.
         case freeTrial(SubscriptionOnboardingFreeTrialCalendarCardModel)
-        /// A paid purchase — or one whose trial dates don't describe a plausible trial. Neither shows a card.
+        /// Paid purchase or implausible trial dates (no card shown).
         case paid
     }
 
@@ -73,15 +71,18 @@ final class SubscriptionOnboardingOrderConfirmationViewModel: ObservableObject {
     private let subscriptionProvider: SubscriptionOnboardingSubscriptionProviding
     private let now: Date
     private let calendar: Calendar
+    private weak var delegate: SubscriptionOnboardingSectionDelegate?
 
     /// `subscriptionProvider` is defaulted inside the body rather than in the signature: default arguments
     /// are evaluated in a nonisolated context, and the live provider's initializer is main-actor isolated.
     init(subscriptionProvider: SubscriptionOnboardingSubscriptionProviding? = nil,
          now: Date = Date(),
-         calendar: Calendar = .current) {
+         calendar: Calendar = .current,
+         delegate: SubscriptionOnboardingSectionDelegate? = nil) {
         self.subscriptionProvider = subscriptionProvider ?? DefaultSubscriptionOnboardingSubscriptionProvider()
         self.now = now
         self.calendar = calendar
+        self.delegate = delegate
     }
 
     // MARK: - Display values
@@ -107,6 +108,11 @@ final class SubscriptionOnboardingOrderConfirmationViewModel: ObservableObject {
         guard case .loading = state else { return }
         state = Self.state(for: await subscriptionProvider.fetchSubscription(), now: now, calendar: calendar)
     }
+
+    /// Leaves the confirmation screen for the welcome section.
+    func proceed() {
+        delegate?.sectionDidRequestAdvance()
+    }
 }
 
 // MARK: - Mapping
@@ -116,8 +122,7 @@ private extension SubscriptionOnboardingOrderConfirmationViewModel {
     static func state(for subscription: DuckDuckGoSubscription?, now: Date, calendar: Calendar) -> State {
         guard let subscription, subscription.hasActiveTrialOffer else { return .paid }
 
-        // During an active trial `expiresOrRenewsAt` is the date the trial ends and billing begins, which is
-        // also what Subscription Settings renders as the trial's end.
+        // `expiresOrRenewsAt` is the trial end / billing start date.
         let billingStartDate = subscription.expiresOrRenewsAt
         guard let trialLength = trialLength(from: subscription.startedAt, to: billingStartDate, calendar: calendar) else {
             return .paid

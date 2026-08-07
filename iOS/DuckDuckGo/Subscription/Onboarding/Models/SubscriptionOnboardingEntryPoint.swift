@@ -1,5 +1,5 @@
 //
-//  SubscriptionOnboardingSectionDelegate.swift
+//  SubscriptionOnboardingEntryPoint.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -17,12 +17,14 @@
 //  limitations under the License.
 //
 
-/// Receives events from an onboarding section.
+/// Where the onboarding flow was launched from.
 ///
-/// There is no "go back" here: back is a native pop everywhere, and the flow view model's navigation binding
-/// walks its cursor back to match.
-protocol SubscriptionOnboardingSectionDelegate: AnyObject {
-    func sectionDidComplete(_ section: SubscriptionOnboardingSection)
-    func sectionDidRequestDuckAIChat(modelID: String?)
-    func sectionDidRequestAdvance()
+/// An entry point supplies exactly two things — its section sequence (`SubscriptionOnboardingFlowViewModel`)
+/// and what leaving the flow does (`SubscriptionOnboardingLauncher`) — so adding one is a case and a list,
+/// with no change to any screen.
+enum SubscriptionOnboardingEntryPoint {
+    /// Presented over the post-checkout page once a first purchase completes.
+    case postCheckout
+    /// The "Continue Setup" card on Subscription Settings.
+    case subscriptionSettings
 }

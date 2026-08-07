@@ -127,7 +127,7 @@ final class SubscriptionOnboardingVPNActivationViewModelTests: XCTestCase {
         }
 
         XCTAssertEqual(viewModel.connectionState, .on)
-        XCTAssertEqual(delegate.completedSections, [.vpn])
+        XCTAssertEqual(delegate.completedSections, [.vpnActivation])
     }
 
     func testWhenAlreadyOnThenVPNConnectionInfoComesFromServerInfoObserverAndOriginalIsNotFetched() async {
@@ -155,7 +155,7 @@ final class SubscriptionOnboardingVPNActivationViewModelTests: XCTestCase {
         viewModel.onAppear()
         viewModel.onAppear()
 
-        XCTAssertEqual(delegate.completedSections, [.vpn])
+        XCTAssertEqual(delegate.completedSections, [.vpnActivation])
     }
 
     func testWhenAlreadyOnThenOnAppearReportsSectionComplete() {
@@ -164,7 +164,7 @@ final class SubscriptionOnboardingVPNActivationViewModelTests: XCTestCase {
 
         viewModel.onAppear()
 
-        XCTAssertEqual(delegate.completedSections, [.vpn])
+        XCTAssertEqual(delegate.completedSections, [.vpnActivation])
     }
 
     func testWhenTunnelConnectsThenVPNConnectionInfoComesFromServerInfoObserver() async {
@@ -773,5 +773,4 @@ private final class SpySectionDelegate: SubscriptionOnboardingSectionDelegate {
 
     func sectionDidRequestDuckAIChat(modelID: String?) {}
     func sectionDidRequestAdvance() {}
-    func sectionDidRequestGoBack() {}
 }

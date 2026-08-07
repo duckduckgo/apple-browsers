@@ -25,20 +25,43 @@ final class SubscriptionOnboardingSectionTests: XCTestCase {
 
     // MARK: - Kind mapping
 
-    func testWhenSectionIsWelcomeThenKindIsOverview() {
+    func testWhenSectionIsAnOverviewThenKindIsOverview() {
+        XCTAssertEqual(SubscriptionOnboardingSection.orderConfirmation.kind, .overview)
         XCTAssertEqual(SubscriptionOnboardingSection.welcome.kind, .overview)
     }
 
-    func testWhenSectionIsVPNThenKindIsVPNActivation() {
-        XCTAssertEqual(SubscriptionOnboardingSection.vpn.kind, .activation(.vpn))
-    }
-
-    func testWhenSectionIsDuckAIThenKindIsDuckAIActivation() {
+    func testWhenSectionIsAnActivationThenKindCarriesItsChecklistItem() {
+        XCTAssertEqual(SubscriptionOnboardingSection.vpnActivation.kind, .activation(.vpn))
+        XCTAssertEqual(SubscriptionOnboardingSection.vpnWidget.kind, .activation(.widget))
+        XCTAssertEqual(SubscriptionOnboardingSection.idtr.kind, .activation(.idtr))
         XCTAssertEqual(SubscriptionOnboardingSection.duckAI.kind, .activation(.duckAI))
+        XCTAssertEqual(SubscriptionOnboardingSection.pir.kind, .activation(.pir))
     }
 
-    func testWhenEnumeratingSectionsThenTheyAreExactlyWelcomeVPNAndDuckAI() {
-        XCTAssertEqual(SubscriptionOnboardingSection.allCases, [.welcome, .vpn, .duckAI])
+    func testWhenSectionIsProgressThenKindIsProgressTracker() {
+        XCTAssertEqual(SubscriptionOnboardingSection.progress.kind, .progressTracker)
+    }
+
+    func testWhenEnumeratingActivationSectionsThenPIRIsExcluded() {
+        XCTAssertEqual(SubscriptionOnboardingSection.activationSections,
+                       [.vpnActivation, .vpnWidget, .idtr, .duckAI])
+    }
+
+    // MARK: - Step indicator
+
+    func testWhenSectionIsCountedByTheIndicatorThenItsStepIsItsPositionIncludingPIR() {
+        XCTAssertEqual(SubscriptionOnboardingSection.vpnActivation.indicatorStep, 1)
+        XCTAssertEqual(SubscriptionOnboardingSection.vpnWidget.indicatorStep, 2)
+        XCTAssertEqual(SubscriptionOnboardingSection.idtr.indicatorStep, 3)
+        XCTAssertEqual(SubscriptionOnboardingSection.duckAI.indicatorStep, 4)
+        XCTAssertEqual(SubscriptionOnboardingSection.pir.indicatorStep, 5)
+        XCTAssertEqual(SubscriptionOnboardingSection.indicatorStepCount, 5)
+    }
+
+    func testWhenSectionIsNotCountedByTheIndicatorThenItHasNoStep() {
+        XCTAssertNil(SubscriptionOnboardingSection.orderConfirmation.indicatorStep)
+        XCTAssertNil(SubscriptionOnboardingSection.welcome.indicatorStep)
+        XCTAssertNil(SubscriptionOnboardingSection.progress.indicatorStep)
     }
 
     // MARK: - Navigation button accessibility

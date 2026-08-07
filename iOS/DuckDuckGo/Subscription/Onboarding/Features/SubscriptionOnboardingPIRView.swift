@@ -19,18 +19,27 @@
 
 import SwiftUI
 
-/// Personal Information Removal section screen. Starting PIR is passed in (not reached internally) because the Data Broker Protection provider lives on `DBPService`.
+/// Personal Information Removal section screen.
 struct SubscriptionOnboardingPIRView: View {
     private let title: String?
     private let navigationButton: SubscriptionOnboardingNavigationButton?
-    private let onStart: () -> Void
+    private let activateButton: SubscriptionOnboardingFooterButton
 
     init(title: String? = nil,
          navigationButton: SubscriptionOnboardingNavigationButton? = nil,
          onStart: @escaping () -> Void) {
         self.title = title
         self.navigationButton = navigationButton
-        self.onStart = onStart
+        self.activateButton = .init(UserText.subscriptionOnboardingActivateButton, action: onStart)
+    }
+
+    /// Pushes `destination` so PIR opens on its own stack.
+    init<Destination: View>(title: String? = nil,
+                            navigationButton: SubscriptionOnboardingNavigationButton? = nil,
+                            push destination: Destination) {
+        self.title = title
+        self.navigationButton = navigationButton
+        self.activateButton = .init(UserText.subscriptionOnboardingActivateButton, push: destination)
     }
 
     var body: some View {
@@ -44,8 +53,7 @@ struct SubscriptionOnboardingPIRView: View {
     }
 
     private var footer: SubscriptionOnboardingFooter {
-        let start = SubscriptionOnboardingFooterButton(UserText.subscriptionOnboardingActivateButton, action: onStart)
-        return .single(start)
+        .single(activateButton)
     }
 }
 

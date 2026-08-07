@@ -41,9 +41,13 @@ struct SubscriptionOnboardingProgressView: View {
     }
 
     private let variant: Variant
-    private let percentage: Int
     private let items: [SubscriptionOnboardingChecklistItem]
-    private let completedItems: Set<SubscriptionOnboardingChecklistItem>
+    /// Re-read on appear rather than fixed at construction: PIR is completed in Data Broker Protection, so
+    /// coming back from it has to show the customer the state they just earned.
+    private let readProgress: () -> (percentage: Int, completedItems: Set<SubscriptionOnboardingChecklistItem>)
+
+    @State private var percentage: Int
+    @State private var completedItems: Set<SubscriptionOnboardingChecklistItem>
     private let title: String?
     private let navigationButton: SubscriptionOnboardingNavigationButton?
     private let onSelectItem: ((SubscriptionOnboardingChecklistItem) -> Void)?
@@ -60,11 +64,14 @@ struct SubscriptionOnboardingProgressView: View {
          title: String? = nil,
          navigationButton: SubscriptionOnboardingNavigationButton? = nil,
          onSelectItem: ((SubscriptionOnboardingChecklistItem) -> Void)? = nil,
+         readProgress: (() -> (percentage: Int, completedItems: Set<SubscriptionOnboardingChecklistItem>))? = nil,
          onDone: @escaping () -> Void) {
         self.variant = variant
-        self.percentage = percentage
         self.items = items
-        self.completedItems = completedItems
+        let initialProgress = (percentage: percentage, completedItems: completedItems)
+        self.readProgress = readProgress ?? { initialProgress }
+        _percentage = State(initialValue: percentage)
+        _completedItems = State(initialValue: completedItems)
         self.title = title
         self.navigationButton = navigationButton
         self.onSelectItem = onSelectItem
@@ -90,6 +97,10 @@ struct SubscriptionOnboardingProgressView: View {
             }
         }
         .onAppear {
+            let progress = readProgress()
+            percentage = progress.percentage
+            completedItems = progress.completedItems
+
             guard shouldCelebrate, !didTriggerConfetti else { return }
             didTriggerConfetti = true
         }
@@ -100,9 +111,10 @@ struct SubscriptionOnboardingProgressView: View {
 
 private extension SubscriptionOnboardingProgressView {
 
-    /// Only a fully complete flow celebrates.
+    /// Only a fully complete flow celebrates. Driven by the live percentage, not the variant fixed at
+    /// construction, so completing PIR and coming back still earns the burst.
     var shouldCelebrate: Bool {
-        variant == .completion
+        variant != .duckAIInterstitial && percentage >= 100
     }
 
     var header: SubscriptionOnboardingHeaderView {
@@ -122,16 +134,17 @@ private extension SubscriptionOnboardingProgressView {
     /// Complete state shows the animated hero (as a reward); Duck.ai hand-off shows Duck.ai's mark. The host must inject a `graphicLottieRenderer`.
     var headerVisual: Graphic {
         switch variant {
-        case .completion: return .lottie(name: Metrics.completeHeroAnimation)
-        case .summary: return .image(Image(.subscriptionCheckFeature128))
+        case .completion, .summary:
+            return shouldCelebrate ? .lottie(name: Metrics.completeHeroAnimation) : .image(Image(.subscriptionCheckFeature128))
         case .duckAIInterstitial: return .image(Image(.onboardingDuckAI128))
         }
     }
 
     var headerTitle: String {
         switch variant {
-        case .completion: return UserText.subscriptionOnboardingProgressCompleteTitle
-        case .summary, .duckAIInterstitial: return UserText.subscriptionOnboardingProgressTitle
+        case .completion, .summary:
+            return shouldCelebrate ? UserText.subscriptionOnboardingProgressCompleteTitle : UserText.subscriptionOnboardingProgressTitle
+        case .duckAIInterstitial: return UserText.subscriptionOnboardingProgressTitle
         }
     }
 
@@ -139,8 +152,7 @@ private extension SubscriptionOnboardingProgressView {
     /// rather than leaving a gap.
     var headerExplanation: String? {
         switch variant {
-        case .completion: return nil
-        case .summary: return UserText.subscriptionOnboardingProgressExplanation
+        case .completion, .summary: return shouldCelebrate ? nil : UserText.subscriptionOnboardingProgressExplanation
         case .duckAIInterstitial: return UserText.subscriptionOnboardingProgressDuckAIExplanation
         }
     }
@@ -162,7 +174,7 @@ private struct SubscriptionOnboardingProgressViewPreview: View {
             onSelectItem: { _ in },
             onDone: {})
             .subscriptionOnboardingNavigationContainer()
-            .graphicLottieRenderer(subscriptionOnboardingPreviewLottieRenderer)
+            .graphicLottieRenderer(SubscriptionOnboardingLottieRenderer.shared)
     }
 }
 

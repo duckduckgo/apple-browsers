@@ -70,8 +70,7 @@ final class SubscriptionOnboardingDuckAIViewModelTests: XCTestCase {
     }
 
     func testWhenOnAppearThenSelectsMostPremiumAvailableModel() async {
-        // "a" is advanced (non-free tier); "b" is a free-tier model. The default selection must be the most
-        // premium available model, and must not be swayed by whatever was previously persisted.
+        // Defaults to most premium available model.
         let provider = MockAIModelProvider(models: [model("b", tier: ["free"]), model("a", tier: ["plus"])])
         let (viewModel, _) = makeViewModel(provider: provider)
 
@@ -158,6 +157,34 @@ final class SubscriptionOnboardingDuckAIViewModelTests: XCTestCase {
         viewModel.startChat()
 
         XCTAssertEqual(provider.updatedModelID, "a")
+    }
+
+    func testWhenStartChatThenTheDuckAIStepCompletesBeforeTheInterstitialShows() async {
+        // The interstitial renders the checklist, so completing at hand-off instead would show Duck.ai
+        // outstanding on the very screen that is opening it. Tech spec: complete when the in-flow chat starts.
+        let delegate = SpySectionDelegate()
+        let provider = MockAIModelProvider(models: [model("a", tier: ["plus"])])
+        let (viewModel, _) = makeViewModel(provider: provider, delegate: delegate)
+        await wait(viewModel.$selectedModelID, until: { $0 != nil }) {
+            viewModel.onAppear()
+        }
+
+        viewModel.startChat()
+
+        XCTAssertEqual(delegate.completedSections, [.duckAI])
+    }
+
+    func testWhenSkippingThenTheDuckAIStepDoesNotComplete() async {
+        let delegate = SpySectionDelegate()
+        let provider = MockAIModelProvider(models: [model("a", tier: ["plus"])])
+        let (viewModel, _) = makeViewModel(provider: provider, delegate: delegate)
+        await wait(viewModel.$selectedModelID, until: { $0 != nil }) {
+            viewModel.onAppear()
+        }
+
+        viewModel.skip()
+
+        XCTAssertTrue(delegate.completedSections.isEmpty)
     }
 
     func testWhenStartChatThenInterstitialIsShownAndChatIsNotYetRequested() async {
@@ -309,7 +336,6 @@ private final class SpySectionDelegate: SubscriptionOnboardingSectionDelegate {
         requestedChatModelIDs.append(modelID)
     }
     func sectionDidRequestAdvance() {}
-    func sectionDidRequestGoBack() {}
 }
 
 // MARK: - DefaultSubscriptionOnboardingAIModelProvider

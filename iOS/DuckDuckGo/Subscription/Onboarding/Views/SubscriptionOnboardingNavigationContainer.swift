@@ -23,10 +23,15 @@ import UIKit
 extension View {
     func subscriptionOnboardingNavigationContainer() -> some View {
         NavigationView {
-            self
-                .background(InteractivePopGestureEnabler())
+            self.subscriptionOnboardingInteractivePopEnabled()
         }
         .navigationViewStyle(.stack)
+    }
+
+    /// Re-enables swipe-back, which UIKit disables whenever a screen hides the default back button — as every
+    /// onboarding page does in favour of its own. Needed under `NavigationStack` for the same reason.
+    func subscriptionOnboardingInteractivePopEnabled() -> some View {
+        background(InteractivePopGestureEnabler())
     }
 }
 

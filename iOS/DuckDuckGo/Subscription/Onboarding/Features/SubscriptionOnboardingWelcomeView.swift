@@ -24,20 +24,19 @@ import UIComponents
 
 /// Overview of four premium protections. Tapping a row opens its info sheet; primary button starts the flow.
 struct SubscriptionOnboardingWelcomeView: View {
-    let onClose: () -> Void
+    var navigationButton: SubscriptionOnboardingNavigationButton?
+    var onNext: () -> Void = {}
 
     @State private var selectedFeature: SubscriptionOnboardingChecklistItem?
 
     var body: some View {
         SubscriptionOnboardingBaseView(
-            navigationButton: .close(onClose),
+            navigationButton: navigationButton,
             header: SubscriptionOnboardingHeaderView(
                 visual: .image(Image(.subscriptionDDG96)),
                 title: UserText.subscriptionOnboardingWelcomeTitle,
                 explanation: UserText.subscriptionOnboardingWelcomeExplanation),
-            footer: .single(.init(UserText.subscriptionOnboardingWelcomeNextButton, action: {
-                // TODO: advance to the first section once the flow view model exists.
-            }))) {
+            footer: .single(.init(UserText.subscriptionOnboardingWelcomeNextButton, action: onNext))) {
             WelcomeCard(onSelect: { selectedFeature = $0 })
         }
         .subscriptionOnboardingInfoSheet(item: $selectedFeature)
@@ -118,14 +117,14 @@ private extension WelcomeCard {
 
 #Preview("Light") {
     RebrandedPreview {
-        SubscriptionOnboardingWelcomeView(onClose: {})
+        SubscriptionOnboardingWelcomeView(navigationButton: .close({}))
             .subscriptionOnboardingNavigationContainer()
     }
 }
 
 #Preview("Dark") {
     RebrandedPreview {
-        SubscriptionOnboardingWelcomeView(onClose: {})
+        SubscriptionOnboardingWelcomeView(navigationButton: .close({}))
             .subscriptionOnboardingNavigationContainer()
     }
     .preferredColorScheme(.dark)
@@ -133,7 +132,7 @@ private extension WelcomeCard {
 
 #Preview("Large Text") {
     RebrandedPreview {
-        SubscriptionOnboardingWelcomeView(onClose: {})
+        SubscriptionOnboardingWelcomeView(navigationButton: .close({}))
             .subscriptionOnboardingNavigationContainer()
     }
     .dynamicTypeSize(.accessibility5)

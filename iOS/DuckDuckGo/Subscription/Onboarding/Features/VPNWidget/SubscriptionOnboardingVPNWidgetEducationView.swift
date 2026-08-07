@@ -23,7 +23,10 @@ import SwiftUI
 struct SubscriptionOnboardingVPNWidgetEducationView: View {
 
     var title: String?
-    /// Passed through to the tips screen, which is where the VPN section finishes.
+    var navigationButton: SubscriptionOnboardingNavigationButton?
+    /// Reported when the customer reaches the tips screen, which is the only way past this one.
+    var onWidgetStepDone: () -> Void = {}
+    /// Passed through to the tips screen, which is where this section finishes.
     var onDone: () -> Void = {}
 
     @Environment(\.dismiss) private var dismiss
@@ -31,10 +34,10 @@ struct SubscriptionOnboardingVPNWidgetEducationView: View {
     var body: some View {
         SubscriptionOnboardingBaseView(
             title: title,
-            navigationButton: .back({ dismiss() }),
+            navigationButton: navigationButton ?? .back({ dismiss() }),
             header: SubscriptionOnboardingHeaderView(title: UserText.subscriptionOnboardingVPNWidgetEducationTitle),
             footer: .single(.init(UserText.subscriptionOnboardingVPNWidgetEducationGotItButton,
-                                           push: SubscriptionOnboardingVPNTipsView(title: title, onDone: onDone)))) {
+                                  push: tipsScreen))) {
             WidgetEducationContentView(
                 thirdParagraphText: UserText.addVPNWidgetSettingsThirdParagraph,
                 thirdParagraphDetail: .image(
@@ -43,6 +46,11 @@ struct SubscriptionOnboardingVPNWidgetEducationView: View {
                     horizontalOffset: -7,
                     dropsShadow: true))
         }
+    }
+
+    private var tipsScreen: some View {
+        SubscriptionOnboardingVPNTipsView(title: title, onDone: onDone)
+            .onAppear(perform: onWidgetStepDone)
     }
 }
 

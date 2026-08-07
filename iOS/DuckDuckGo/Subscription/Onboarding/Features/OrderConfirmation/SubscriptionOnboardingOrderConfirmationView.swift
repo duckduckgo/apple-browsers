@@ -21,38 +21,31 @@ import SwiftUI
 import DesignResourcesKit
 import UIComponents
 
-/// The first screen after checkout: confirms the purchase and, when the customer is on a free trial, shows
-/// where they are in it. The calendar card is omitted for a paid purchase, and while the subscription is
-/// still resolving.
+/// Purchase confirmation screen; shows free trial progress when applicable.
 struct SubscriptionOnboardingOrderConfirmationView: View {
     private enum Metrics {
         static let contentSpacing: CGFloat = 24
-        /// How much further than the page's own bottom inset the illustration is pulled down, so it also
-        /// eats into the gap above the CTA. Tuned by eye.
+        /// Illustration overhang tuned by eye.
         static let illustrationOverhang: CGFloat = 36
-        /// The illustration's authored size (402x351) as a ratio, so its height follows the page width
-        /// instead of whatever vertical space happens to be left over.
+        /// Illustration aspect ratio (402:351).
         static let illustrationAspectRatio: CGFloat = 402.0 / 351.0
     }
 
     @StateObject private var viewModel: SubscriptionOnboardingOrderConfirmationViewModel
 
     private let navigationButton: SubscriptionOnboardingNavigationButton?
-    private let onNext: () -> Void
 
     init(viewModel: @autoclosure @escaping () -> SubscriptionOnboardingOrderConfirmationViewModel,
-         navigationButton: SubscriptionOnboardingNavigationButton? = nil,
-         onNext: @escaping () -> Void) {
+         navigationButton: SubscriptionOnboardingNavigationButton? = nil) {
         _viewModel = StateObject(wrappedValue: viewModel())
         self.navigationButton = navigationButton
-        self.onNext = onNext
     }
 
     var body: some View {
         SubscriptionOnboardingBaseView(
             navigationButton: navigationButton,
             header: header,
-            footer: .single(.init(UserText.subscriptionOnboardingOrderConfirmationNextButton, action: onNext)),
+            footer: .single(.init(UserText.subscriptionOnboardingOrderConfirmationNextButton) { viewModel.proceed() }),
             scrollsContent: false) {
             content
         }
@@ -72,8 +65,7 @@ private extension SubscriptionOnboardingOrderConfirmationView {
             explanation: viewModel.explanation)
     }
 
-    /// The illustration is a background (not stacked) so the card floats over it. The geometry reader supplies
-    /// page width for sizing the artwork, since SwiftUI would otherwise constrain it to available height.
+    /// Illustration is a background so the card floats over it.
     var content: some View {
         GeometryReader { proxy in
             VStack(spacing: Metrics.contentSpacing) {
@@ -90,7 +82,7 @@ private extension SubscriptionOnboardingOrderConfirmationView {
         }
     }
 
-    /// Static image (not Lottie). Sized by width with height from the ratio. Negative paddings cancel the base view's page insets.
+    /// Static image sized by width with aspect ratio. Negative paddings cancel page insets.
     func illustration(pageWidth: CGFloat) -> some View {
         Image(.daxThumbupStatic)
             .resizable()
@@ -108,8 +100,7 @@ private extension SubscriptionOnboardingOrderConfirmationView {
     RebrandedPreview {
         SubscriptionOnboardingOrderConfirmationView(
             viewModel: .preview(state: .previewFreeTrial()),
-            navigationButton: .close({}),
-            onNext: {})
+            navigationButton: .close({}))
             .subscriptionOnboardingNavigationContainer()
     }
 }
@@ -118,8 +109,7 @@ private extension SubscriptionOnboardingOrderConfirmationView {
     RebrandedPreview {
         SubscriptionOnboardingOrderConfirmationView(
             viewModel: .preview(state: .previewFreeTrial(dayOffset: 3)),
-            navigationButton: .close({}),
-            onNext: {})
+            navigationButton: .close({}))
             .subscriptionOnboardingNavigationContainer()
     }
 }
@@ -128,8 +118,7 @@ private extension SubscriptionOnboardingOrderConfirmationView {
     RebrandedPreview {
         SubscriptionOnboardingOrderConfirmationView(
             viewModel: .preview(state: .paid),
-            navigationButton: .close({}),
-            onNext: {})
+            navigationButton: .close({}))
             .subscriptionOnboardingNavigationContainer()
     }
 }
@@ -138,8 +127,7 @@ private extension SubscriptionOnboardingOrderConfirmationView {
     RebrandedPreview {
         SubscriptionOnboardingOrderConfirmationView(
             viewModel: .preview(state: .loading),
-            navigationButton: .close({}),
-            onNext: {})
+            navigationButton: .close({}))
             .subscriptionOnboardingNavigationContainer()
     }
 }
@@ -148,8 +136,7 @@ private extension SubscriptionOnboardingOrderConfirmationView {
     RebrandedPreview {
         SubscriptionOnboardingOrderConfirmationView(
             viewModel: .preview(state: .previewFreeTrial()),
-            navigationButton: .close({}),
-            onNext: {})
+            navigationButton: .close({}))
             .subscriptionOnboardingNavigationContainer()
     }
     .preferredColorScheme(.dark)
@@ -159,8 +146,7 @@ private extension SubscriptionOnboardingOrderConfirmationView {
     RebrandedPreview {
         SubscriptionOnboardingOrderConfirmationView(
             viewModel: .preview(state: .previewFreeTrial()),
-            navigationButton: .close({}),
-            onNext: {})
+            navigationButton: .close({}))
             .subscriptionOnboardingNavigationContainer()
     }
     .dynamicTypeSize(.accessibility5)

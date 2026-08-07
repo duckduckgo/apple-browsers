@@ -22,7 +22,7 @@ import DesignResourcesKit
 import DuckUI
 import UIComponents
 
-/// The Subscription Settings re-entry card, carrying the current setup `percentage` and a CTA to resume.
+/// Subscription Settings re-entry card showing setup progress and resume button.
 struct SubscriptionOnboardingSetupCard: View {
     private enum Metrics {
         static let iconSpacing: CGFloat = 12
@@ -57,12 +57,7 @@ struct SubscriptionOnboardingSetupCard: View {
     }
 
     private var title: String {
-        String(format: UserText.subscriptionOnboardingSetupCardTitleFormat, clampedPercentage)
-    }
-
-    // TODO|htang: remove once percentage clamping is centralized in SubscriptionOnboardingFlowViewModel.
-    private var clampedPercentage: Int {
-        min(max(percentage, 0), 100)
+        String(format: UserText.subscriptionOnboardingSetupCardTitleFormat, percentage)
     }
 }
 

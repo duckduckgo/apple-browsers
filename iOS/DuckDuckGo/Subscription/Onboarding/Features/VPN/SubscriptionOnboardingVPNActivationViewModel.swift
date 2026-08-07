@@ -41,13 +41,12 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
 
     @Published private(set) var connectionState: ConnectionState
 
-    /// The original (pre-VPN) connection, mirrored from the prefetcher while off and retained.
+    /// The original (pre-VPN) connection.
     @Published private(set) var originalConnectionInfo: ConnectionInfoState = .idle
     /// The VPN egress server info (address + location) from the shared server-info observer.
     @Published private(set) var vpnServerInfo: NetworkProtectionStatusServerInfo = .unknown
 
-    /// Whether the customer declined the system VPN-configuration prompt, observed from the controller's
-    /// configuration-denied signal.
+    /// Whether the customer declined the VPN-configuration prompt.
     @Published private(set) var didDenyVPNPermission = false
 
     /// Whether starting the VPN failed for a reason other than a denial
@@ -104,8 +103,7 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
         return UserText.netPVPNLocationNearest
     }
 
-    /// The IP text for a fetch state: the address once `.loaded`, otherwise the IP placeholder (loading,
-    /// failed, or not yet started all read the same on this screen).
+    /// IP address text for a fetch state: address once loaded, otherwise placeholder.
     private func ipText(for state: ConnectionInfoState) -> String {
         guard case .loaded(let info) = state else { return Self.ipPlaceholder }
         return info.ip
@@ -119,8 +117,7 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
 
     // MARK: - Actions
 
-    /// Sets up the connection and prefetcher observers, then kicks off the appropriate fetch for the current
-    /// state when the view appears, and returns immediately
+    /// Sets up observers and starts the appropriate fetch for the current state.
     func onAppear() {
         observeConnection()
         switch connectionState {
@@ -133,11 +130,6 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
 
     func onDisappear() {
         cancellables.removeAll()
-    }
-
-    /// Leaves this section, going back to the previous one.
-    func goBack() {
-        delegate?.sectionDidRequestGoBack()
     }
 
     /// Finishes this section, moving the flow to the next one.
@@ -218,7 +210,7 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
     private func reportCompletionIfNeeded() {
         guard !hasReportedCompletion else { return }
         hasReportedCompletion = true
-        delegate?.sectionDidComplete(.vpn)
+        delegate?.sectionDidComplete(.vpnActivation)
     }
 }
 

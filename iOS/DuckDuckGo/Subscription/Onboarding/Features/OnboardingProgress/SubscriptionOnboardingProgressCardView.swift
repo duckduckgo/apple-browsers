@@ -65,7 +65,7 @@ struct SubscriptionOnboardingProgressCardView: View {
 private extension SubscriptionOnboardingProgressCardView {
     var progressHeader: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text(verbatim: "\(clampedPercentage)%")
+            Text(verbatim: "\(percentage)%")
                 // No dax token at this display size
                 .font(.system(size: Metrics.percentageFontSize, weight: .bold))
                 .foregroundColor(Color(designSystemColor: .textPrimary))
@@ -74,15 +74,10 @@ private extension SubscriptionOnboardingProgressCardView {
                 .daxHeadline()
                 .foregroundColor(Color(designSystemColor: .textSecondary))
 
-            SubscriptionOnboardingProgressBar(percentage: clampedPercentage)
+            SubscriptionOnboardingProgressBar(percentage: percentage)
                 .padding(.top, Metrics.progressBarTopSpacing)
         }
         .padding(Metrics.headerPadding)
-    }
-
-    // TODO|htang: remove once percentage clamping is centralized in SubscriptionOnboardingFlowViewModel (Stage 3).
-    var clampedPercentage: Int {
-        min(max(percentage, 0), 100)
     }
 
     /// The tap action for the row at `index`, or `nil` when it isn't selectable — only an incomplete PIR row is.
@@ -129,7 +124,8 @@ private struct SubscriptionOnboardingProgressBar: View {
         static let trackHeight: CGFloat = 12
     }
 
-    /// The completion percentage, expected in `0...100` (the caller clamps it).
+    /// The completion percentage. `SubscriptionOnboardingFlowViewModel` is the source and clamps it; the
+    /// fill clamps again because an out-of-range value here is an invalid frame, not just a wrong label.
     let percentage: Int
 
     var body: some View {
@@ -151,24 +147,11 @@ private struct SubscriptionOnboardingProgressBar: View {
 
 private extension SubscriptionOnboardingProgressBar {
     var fraction: Double {
-        Double(percentage) / 100
+        min(max(Double(percentage) / 100, 0), 1)
     }
 }
 
 #if DEBUG
-
-import Lottie
-
-/// Renders the completed-check Lottie (`check-color`) in previews and, until the Stage 3 flow host exists,
-/// wherever else the card is shown. Honors Reduce Motion by freezing on the final frame.
-let subscriptionOnboardingPreviewLottieRenderer = GraphicLottieRenderer { name, playback in
-    AnyView(
-        Lottie.LottieView(animation: .named(name))
-            .playbackMode(playback == .playOnce
-                ? .playing(.fromProgress(0, toProgress: 1, loopMode: .playOnce))
-                : .paused(at: .progress(playback == .frozenAtEnd ? 1 : 0)))
-    )
-}
 
 private struct SubscriptionOnboardingProgressCardViewPreview: View {
     let pirComplete: Bool
@@ -193,7 +176,7 @@ private struct SubscriptionOnboardingProgressCardViewPreview: View {
             .padding()
         }
         .background(Color(designSystemColor: .surfaceTertiary).ignoresSafeArea())
-        .graphicLottieRenderer(subscriptionOnboardingPreviewLottieRenderer)
+        .graphicLottieRenderer(SubscriptionOnboardingLottieRenderer.shared)
     }
 
     private static let items = SubscriptionOnboardingChecklistItem.allCases

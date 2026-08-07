@@ -43,10 +43,21 @@ else
 	echo "ℹ️  Companion PR #$PR_NUMBER is already merged."
 fi
 
-MERGED_AT="$(gh pr view "$PR_NUMBER" -R "$SUBMODULE_REPO" --json mergedAt --jq '.mergedAt // empty')"
-NEW_POINTER="$(gh pr view "$PR_NUMBER" -R "$SUBMODULE_REPO" --json mergeCommit --jq '.mergeCommit.oid // empty')"
+MERGED_AT=""
+NEW_POINTER=""
+for attempt in 1 2 3 4 5; do
+	MERGED_AT="$(gh pr view "$PR_NUMBER" -R "$SUBMODULE_REPO" --json mergedAt --jq '.mergedAt // empty')"
+	NEW_POINTER="$(gh pr view "$PR_NUMBER" -R "$SUBMODULE_REPO" --json mergeCommit --jq '.mergeCommit.oid // empty')"
+	if [ -n "$MERGED_AT" ] && [ -n "$NEW_POINTER" ]; then
+		break
+	fi
+	if [ "$attempt" -lt 5 ]; then
+		echo "⏳ Merge commit not reported yet (attempt $attempt/5); retrying in 3s..."
+		sleep 3
+	fi
+done
 if [ -z "$MERGED_AT" ] || [ -z "$NEW_POINTER" ]; then
-	echo "❌ Companion PR #$PR_NUMBER has not merged yet; refusing to update the submodule pointer."
+	echo "❌ Companion PR #$PR_NUMBER did not report a merge commit after retries; refusing to update the submodule pointer."
 	exit 1
 fi
 

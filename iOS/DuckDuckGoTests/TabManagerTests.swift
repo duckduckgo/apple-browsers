@@ -408,12 +408,32 @@ final class TabManagerTests: XCTestCase {
 
         XCTAssertFalse(try XCTUnwrap(controller.makeBreakageAdditionalInfo()).isAfterTabTermination)
 
-        manager.invalidateCache(forController: controller, reloadCurrent: false)
+        manager.invalidateCache(forController: controller, reloadCurrent: true)
 
         XCTAssertEqual(detector.checkedTabIDs, [controller.tabModel.uid])
         XCTAssertFalse(controller.error.isHidden)
         XCTAssertEqual(controller.errorHeader.text, UserText.tabTerminationErrorPageTitle)
         XCTAssertTrue(try XCTUnwrap(controller.makeBreakageAdditionalInfo()).isAfterTabTermination)
+    }
+
+    func testWhenCurrentTabTerminatesWithoutReloadThenTerminationIsNotRecorded() throws {
+        let detector = MockTabTerminationErrorPageDetector(shouldShowErrorPage: true)
+        let tabsModel = TabsModel(desktop: false)
+        tabsModel.insert(
+            tab: Tab(link: Link(title: "example", url: URL(string: "https://example.com")!)),
+            placement: .atEnd,
+            selectNewTab: true)
+        let manager = try makeManager(
+            tabsModel,
+            tabTerminationErrorPageDetector: detector)
+        let controller = try XCTUnwrap(manager.current(createIfNeeded: true))
+        controller.url = URL(string: "https://example.com")!
+
+        manager.invalidateCache(forController: controller, reloadCurrent: false)
+
+        XCTAssertTrue(detector.checkedTabIDs.isEmpty)
+        XCTAssertTrue(controller.error.isHidden)
+        XCTAssertFalse(try XCTUnwrap(controller.makeBreakageAdditionalInfo()).isAfterTabTermination)
     }
 
     func makeManager(_ model: TabsModel,

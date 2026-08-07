@@ -155,7 +155,8 @@ extension TabViewController {
     }
 
     func setupErrorView(in rootView: UIView) {
-        error = UIView()
+        let errorScrollView = UIScrollView()
+        error = errorScrollView
         error.translatesAutoresizingMaskIntoConstraints = false
         error.isHidden = true
         rootView.addSubview(error)
@@ -207,22 +208,25 @@ extension TabViewController {
         errorContentStack.setCustomSpacing(32, after: errorReportBrokenSiteButton)
 
         let safeArea = rootView.safeAreaLayoutGuide
-        let minHeightConstraint = error.heightAnchor.constraint(equalToConstant: 400)
-        minHeightConstraint.priority = .defaultLow
         let errorActionButtonFillWidthConstraint = errorActionButton.widthAnchor.constraint(equalTo: error.widthAnchor, constant: -64)
         errorActionButtonFillWidthConstraint.priority = .defaultHigh
+        let errorContentHeightConstraint = errorScrollView.contentLayoutGuide.heightAnchor.constraint(
+            equalTo: errorScrollView.frameLayoutGuide.heightAnchor)
+        errorContentHeightConstraint.priority = .defaultHigh
         NSLayoutConstraint.activate([
-            error.centerXAnchor.constraint(equalTo: safeArea.centerXAnchor),
-            error.centerYAnchor.constraint(equalTo: safeArea.centerYAnchor),
+            error.topAnchor.constraint(equalTo: safeArea.topAnchor),
+            error.bottomAnchor.constraint(equalTo: safeArea.bottomAnchor),
             error.widthAnchor.constraint(equalTo: rootView.widthAnchor),
-            minHeightConstraint,
 
-            errorContentStack.centerXAnchor.constraint(equalTo: error.centerXAnchor),
-            errorContentStack.centerYAnchor.constraint(equalTo: error.centerYAnchor),
-            errorContentStack.leadingAnchor.constraint(equalTo: error.leadingAnchor, constant: 10),
-            errorContentStack.trailingAnchor.constraint(equalTo: error.trailingAnchor, constant: -10),
-            errorContentStack.topAnchor.constraint(greaterThanOrEqualTo: error.topAnchor),
-            errorContentStack.bottomAnchor.constraint(lessThanOrEqualTo: error.bottomAnchor),
+            errorScrollView.contentLayoutGuide.heightAnchor.constraint(greaterThanOrEqualTo: errorScrollView.frameLayoutGuide.heightAnchor),
+            errorContentHeightConstraint,
+            errorContentStack.centerXAnchor.constraint(equalTo: errorScrollView.contentLayoutGuide.centerXAnchor),
+            errorContentStack.centerYAnchor.constraint(equalTo: errorScrollView.contentLayoutGuide.centerYAnchor),
+            errorContentStack.leadingAnchor.constraint(equalTo: errorScrollView.contentLayoutGuide.leadingAnchor, constant: 10),
+            errorContentStack.trailingAnchor.constraint(equalTo: errorScrollView.contentLayoutGuide.trailingAnchor, constant: -10),
+            errorContentStack.topAnchor.constraint(greaterThanOrEqualTo: errorScrollView.contentLayoutGuide.topAnchor),
+            errorContentStack.bottomAnchor.constraint(lessThanOrEqualTo: errorScrollView.contentLayoutGuide.bottomAnchor),
+            errorContentStack.widthAnchor.constraint(equalTo: errorScrollView.frameLayoutGuide.widthAnchor, constant: -20),
 
             labelsStack.widthAnchor.constraint(lessThanOrEqualToConstant: 400),
             errorMessage.widthAnchor.constraint(lessThanOrEqualTo: errorHeader.widthAnchor),

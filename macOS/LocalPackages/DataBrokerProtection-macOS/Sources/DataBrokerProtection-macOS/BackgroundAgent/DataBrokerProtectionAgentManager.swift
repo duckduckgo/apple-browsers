@@ -46,7 +46,7 @@ public class DataBrokerProtectionAgentManagerProvider {
                                     featureFlagger: DBPFeatureFlagging,
                                     wideEvent: WideEventManaging,
                                     vpnBypassService: VPNBypassFeatureProvider,
-                                    resourceMonitor: ResourceMonitoring,
+                                    resourceMonitor: ResourceMonitoring?,
                                     applicationNameForUserAgentProvider: @escaping () -> String?) -> DataBrokerProtectionAgentManager? {
         guard let pixelKit = PixelKit.shared else {
             assertionFailure("PixelKit not set up")

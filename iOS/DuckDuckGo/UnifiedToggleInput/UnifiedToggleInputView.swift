@@ -355,7 +355,6 @@ final class UnifiedToggleInputView: UIView {
         set { toolsToolbar.isImageButtonHidden = newValue }
     }
 
-    /// Puts the toolbar into/out of edit mode (hides the tools / reasoning / model controls).
     func setEditMode(_ editing: Bool) {
         toolsToolbar.isEditing = editing
         // TODO: gate on the FE-supplied `hasResponsesToLose`; shown whenever editing for now.
@@ -364,22 +363,16 @@ final class UnifiedToggleInputView: UIView {
 
     private func setEditReplaceDisclaimerCardVisible(_ visible: Bool) {
         editReplaceDisclaimerCard.isHidden = !visible
-        // Swap the card's bottom anchor to lift the input card, revealing the disclaimer card
-        // stacked behind and peeking below it.
         cardBottomConstraint.isActive = !visible
         cardEditBottomConstraint.isActive = visible
     }
 
-    /// Second, slightly-off-white card that sits behind the input card in edit mode. Matches the
-    /// input card's corner radius; non-interactive so taps fall through; starts hidden.
     private static func makeEditReplaceDisclaimerCard() -> UIView {
         let card = UIView()
         card.translatesAutoresizingMaskIntoConstraints = false
         card.backgroundColor = UIColor(designSystemColor: .surfaceSecondary)
         card.layer.cornerRadius = Constants.cardCornerRadiusExpanded
-        // Only the bottom corners round — the top is tucked behind the input card.
         card.layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
-        // Soft drop shadow so the peeking strip reads as a distinct card behind the input.
         card.layer.shadowColor = UIColor(designSystemColor: .shadowSecondary).cgColor
         card.layer.shadowOpacity = 1
         card.layer.shadowOffset = CGSize(width: 0, height: 6)
@@ -387,8 +380,6 @@ final class UnifiedToggleInputView: UIView {
         card.isUserInteractionEnabled = false
         card.isHidden = true
 
-        // Info icon + caption, bottom-left aligned so they sit in the strip that peeks below the
-        // input card.
         let icon = UIImageView(image: DesignSystemImages.Color.Size24.infoFeedback)
         icon.translatesAutoresizingMaskIntoConstraints = false
         icon.contentMode = .scaleAspectFit
@@ -415,8 +406,6 @@ final class UnifiedToggleInputView: UIView {
             icon.heightAnchor.constraint(equalToConstant: Constants.editDisclaimerIconSize),
             stack.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: Constants.editDisclaimerContentLeading),
             stack.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -Constants.editDisclaimerContentLeading),
-            // Top pins past the hidden overlap + the visible gap; bottom pins to the card bottom.
-            // With both ends pinned and no fixed card height, the card grows to fit a wrapped caption.
             stack.topAnchor.constraint(equalTo: card.topAnchor, constant: Constants.editDisclaimerOverlap + Constants.editDisclaimerTopGap),
             stack.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -Constants.editDisclaimerContentBottom),
         ])
@@ -479,7 +468,6 @@ final class UnifiedToggleInputView: UIView {
     private let attachmentsStrip = UnifiedToggleInputAttachmentsStripView()
     private let toolsToolbar = UnifiedToggleInputToolbarView()
 
-    /// Card stacked behind the input card in edit mode
     private lazy var editReplaceDisclaimerCard = Self.makeEditReplaceDisclaimerCard()
     private var pageContextChipCancellables = Set<AnyCancellable>()
 
@@ -1588,9 +1576,6 @@ private extension UnifiedToggleInputView {
         cardTrailingFlankedConstraint = cardView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -flankedHorizontalInset)
         cardTrailingFlankedConstraint.isActive = false
         cardBottomConstraint = cardView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Constants.collapsedCardBottomMargin)
-        // Lifts the input card by the peek height so the disclaimer card shows below it in edit mode.
-        // Sit the input card's bottom `overlap` past the disclaimer card's top, so the rest of the
-        // disclaimer card (content-sized) peeks below. Tracks the disclaimer card as its copy grows.
         cardEditBottomConstraint = cardView.bottomAnchor.constraint(equalTo: editReplaceDisclaimerCard.topAnchor, constant: Constants.editDisclaimerOverlap)
         cardEditBottomConstraint.isActive = false
         cardPinnedHeightConstraint = cardView.heightAnchor.constraint(equalToConstant: Constants.collapsedCardHeight)
@@ -1615,8 +1600,6 @@ private extension UnifiedToggleInputView {
             cardTrailingConstraint,
             cardBottomConstraint,
 
-            // Same width as the input card; always pinned to the view's bottom at a fixed height,
-            // so it stays determinate while hidden and peeks out once the card lifts in edit mode.
             editReplaceDisclaimerCard.leadingAnchor.constraint(equalTo: cardView.leadingAnchor),
             editReplaceDisclaimerCard.trailingAnchor.constraint(equalTo: cardView.trailingAnchor),
             editReplaceDisclaimerCard.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Constants.cardVerticalMarginBottom),

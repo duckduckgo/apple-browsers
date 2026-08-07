@@ -196,15 +196,11 @@ final class UnifiedToggleInputToolbarView: UIView {
         set { returnKeyButton.isHidden = newValue }
     }
 
-    /// True while the native input is editing an existing message. Editing only changes text and
-    /// removes attachments, so the tools, reasoning, and model controls are hidden.
     var isEditing: Bool = false {
         didSet {
             guard oldValue != isEditing else { return }
-            // Editing hides the secondary-control groups, leaving the submit cluster.
             leftControlsGroup.isHidden = isEditing
             secondaryTrailingGroup.isHidden = isEditing
-            // Keep an empty field showing a disabled submit rather than the voice mic.
             updateSubmitButtonAppearance()
         }
     }
@@ -399,7 +395,6 @@ final class UnifiedToggleInputToolbarView: UIView {
         return button
     }()
 
-    /// Secondary controls, grouped so edit mode can hide them with one `isHidden` per group.
     private lazy var leftControlsGroup: UIStackView = {
         let stack = UIStackView(arrangedSubviews: [imageButton, toolsButton, selectedToolChipView])
         stack.axis = .horizontal
@@ -518,7 +513,6 @@ private extension UnifiedToggleInputToolbarView {
     }
 
     func updateSubmitButtonAppearance() {
-        // No voice mic while editing — an empty field stays a disabled submit button.
         let showVoice = isAIVoiceChatActive && !isSubmitEnabled && !isEditing
         let usesReturnKeyStyle = usesNewPromptSubmitStyle || preservesSubmitStyleDuringDismissal
         let icon: UIImage? = {

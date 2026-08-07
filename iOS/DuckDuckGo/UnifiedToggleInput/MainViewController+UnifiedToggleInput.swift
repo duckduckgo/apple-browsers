@@ -447,15 +447,12 @@ private extension MainViewController {
             .store(in: &unifiedToggleInputCancellables)
     }
 
-    /// Host-side edit chrome: transcript whiteout + header swap.
     private func applyEditModeChrome(_ isEditing: Bool) {
         setDuckAITranscriptDimmedForEditing(isEditing)
-        // Swap the normal header for the minimal edit header (both live in the same container).
         aiChatTabChatHeaderView?.isHidden = isEditing
         aiChatEditHeaderView?.isHidden = !isEditing
     }
 
-    /// Whites out the Duck.ai transcript while editing and restores it on exit. Full-tab only.
     private func setDuckAITranscriptDimmedForEditing(_ isEditing: Bool) {
         if isEditing {
             guard currentTab?.isAITab == true, let webView = currentTab?.webView else { return }
@@ -860,7 +857,6 @@ private extension MainViewController {
         self.aiChatTabChatHeaderView = headerView
         viewCoordinator.aiChatTabChatHeaderView = headerView
 
-        // The edit header shares the container and swaps in over the normal header during edit mode.
         let editHeaderView = AIChatEditHeaderView()
         editHeaderView.delegate = self
         editHeaderView.translatesAutoresizingMaskIntoConstraints = false

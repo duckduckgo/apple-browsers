@@ -122,8 +122,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
     @Published var attachmentUsage: AIChatAttachmentUsage?
 
-    /// True while the native input is in "edit an existing message" mode. Hosts observe this to
-    /// apply the edit-mode chrome (dim the transcript, swap the header).
     @Published private(set) var isEditing: Bool = false {
         didSet {
             guard oldValue != isEditing else { return }
@@ -757,8 +755,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         attachmentController.replaceAllAttachments(with: attachments)
     }
 
-    /// Exits edit mode back to a normal input: clears the flag (restoring host chrome) and resets
-    /// the input. The single exit point for submit / cancel / teardown.
     func endEditMode() {
         guard isEditing else { return }
         isEditing = false
@@ -768,7 +764,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         showCollapsed()
     }
 
-    /// Fans edit mode out to the input (`setEditMode`) and the host chrome (via the delegate).
     private func applyEditMode() {
         viewController.setEditMode(isEditing)
         delegate?.unifiedToggleInputDidChangeEditMode(isEditing)
@@ -1935,7 +1930,6 @@ private extension UnifiedToggleInputCoordinator {
             .store(in: &cancellables)
     }
 
-    /// Cancels an in-progress edit when the app backgrounds. `endEditMode` is a no-op when not editing.
     func subscribeToAppLifecycle() {
         NotificationCenter.default.publisher(for: UIApplication.didEnterBackgroundNotification)
             .receive(on: DispatchQueue.main)

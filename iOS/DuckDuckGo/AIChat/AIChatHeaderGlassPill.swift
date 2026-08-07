@@ -21,11 +21,9 @@ import DesignResourcesKit
 import UIKit
 
 /// Glass capsule chrome for the Duck.ai tab headers; add controls to `contentView`. Split into an
-/// outer shadow host and an inner clipped host so the shadow renders outside the capsule while
-/// content (and menu-dismiss highlights) stay clipped inside.
+/// outer shadow host and an inner clipped host so the shadow renders outside while content clips.
 final class AIChatHeaderGlassPill: UIView {
 
-    /// Add pill content here (an icon button, or a multi-icon stack).
     let contentView = UIView()
 
     private let cornerRadius: CGFloat
@@ -88,13 +86,11 @@ final class AIChatHeaderGlassPill: UIView {
         fatalError("init(coder:) has not been implemented")
     }
 
-    /// Re-resolve the glass style for the current light/dark appearance. No-op on legacy.
     func refreshGlassForCurrentTraits() {
         guard #available(iOS 26, *), let glassEffectView else { return }
         glassEffectView.effect = Self.glassEffect(for: traitCollection)
     }
 
-    /// Drop shadow for the capsule; `dimmed` softens it during onboarding lock.
     func applyShadow(dimmed: Bool) {
         layer.shadowColor = UIColor.black.cgColor
         layer.shadowOpacity = dimmed ? 0.04 : 0.16

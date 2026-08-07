@@ -2950,6 +2950,12 @@
 /* Title for the Import Passwords Promotion banner */
 "import.passwords.promo.title" = "Jelszavak importálása a DuckDuckGóba";
 
+/* Body for the notification sent after a period of inactivity. */
+"inactivity.notification.body" = "Használd a DuckDuckGót, hogy elkerüld a weben követő hirdetéseket, és csökkentsd az online lábnyomodat.";
+
+/* Title for the notification sent after a period of inactivity. */
+"inactivity.notification.title" = "Irányítsd magad az online élményedet";
+
 /* Placeholder text for the duck.ai input field */
 "input.field.placeholder.duckai" = "Kérdezz bármit privátban";
 

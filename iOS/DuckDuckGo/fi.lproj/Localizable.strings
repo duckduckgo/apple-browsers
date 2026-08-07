@@ -2950,6 +2950,12 @@
 /* Title for the Import Passwords Promotion banner */
 "import.passwords.promo.title" = "Tuo salasanasi DuckDuckGohon";
 
+/* Body for the notification sent after a period of inactivity. */
+"inactivity.notification.body" = "Käytä DuckDuckGo-hakukonetta välttääksesi sinua verkossa seuraavat mainokset ja pienentääksesi digitaalista jalanjälkeäsi.";
+
+/* Title for the notification sent after a period of inactivity. */
+"inactivity.notification.title" = "Hallinnoi verkkokokemustasi";
+
 /* Placeholder text for the duck.ai input field */
 "input.field.placeholder.duckai" = "Kysy mitä tahansa yksityisesti";
 

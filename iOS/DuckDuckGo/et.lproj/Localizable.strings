@@ -2950,6 +2950,12 @@
 /* Title for the Import Passwords Promotion banner */
 "import.passwords.promo.title" = "Impordi paroolid DuckDuckGosse";
 
+/* Body for the notification sent after a period of inactivity. */
+"inactivity.notification.body" = "Kasuta DuckDuckGo-d, et vältida reklaame, mis sind veebis jälgivad, ja vähendada oma digitaalset jalajälge.";
+
+/* Title for the notification sent after a period of inactivity. */
+"inactivity.notification.title" = "Kontrolli oma veebikogemust";
+
 /* Placeholder text for the duck.ai input field */
 "input.field.placeholder.duckai" = "Küsi ükskõik mida privaatselt";
 

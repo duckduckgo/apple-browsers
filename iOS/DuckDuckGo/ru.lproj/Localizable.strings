@@ -2950,6 +2950,12 @@
 /* Title for the Import Passwords Promotion banner */
 "import.passwords.promo.title" = "Импорт паролей в DuckDuckGo";
 
+/* Body for the notification sent after a period of inactivity. */
+"inactivity.notification.body" = "Используйте DuckDuckGo, чтобы избежать рекламы, которая отслеживает вас в Интернете, и уменьшить ваш цифровой след.";
+
+/* Title for the notification sent after a period of inactivity. */
+"inactivity.notification.title" = "Управляйте своим опытом в сети";
+
 /* Placeholder text for the duck.ai input field */
 "input.field.placeholder.duckai" = "Задавайте любые вопросы, сохраняя конфиденциальность";
 

@@ -7,7 +7,7 @@
             "version": "0.0"
         },
         "feature": {
-            "name": "new_tab_page_session",
+            "name": "new-tab-page-session",
             "status": ["SUCCESS", "FAILURE", "CANCELLED", "UNKNOWN"],
             "data": {
                 "ext": {

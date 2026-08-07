@@ -28,7 +28,7 @@ final class NewTabPageSessionWideEventData: WideEventData {
 
     static let metadata = WideEventMetadata(
         pixelName: "new_tab_page_session",
-        featureName: "new_tab_page_session",
+        featureName: "new-tab-page-session",
         mobileMetaType: "ios-new-tab-page-session",
         // API requires both; only mobileMetaType is read on iOS.
         desktopMetaType: "macos-new-tab-page-session",

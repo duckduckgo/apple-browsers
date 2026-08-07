@@ -30,7 +30,7 @@
                 "key": "feature.name",
                 "type": "string",
                 "description": "Feature identifier for this wide pixel",
-                "enum": ["new_tab_page_session"]
+                "enum": ["new-tab-page-session"]
             },
             {
                 "key": "feature.data.ext.status_reason",

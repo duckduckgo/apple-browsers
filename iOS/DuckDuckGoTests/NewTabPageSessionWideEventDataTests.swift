@@ -97,7 +97,7 @@ struct NewTabPageSessionWideEventDataTests {
     @Test("Metadata exposes expected pixel and feature names", .timeLimit(.minutes(1)))
     func metadataExposesExpectedNames() {
         #expect(NewTabPageSessionWideEventData.metadata.pixelName == "new_tab_page_session")
-        #expect(NewTabPageSessionWideEventData.metadata.featureName == "new_tab_page_session")
+        #expect(NewTabPageSessionWideEventData.metadata.featureName == "new-tab-page-session")
         #expect(NewTabPageSessionWideEventData.metadata.type == "ios-new-tab-page-session")
         #expect(NewTabPageSessionWideEventData.metadata.version == "1.0.0")
     }

@@ -93,7 +93,7 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProviding {
         case .final:
             // `.final` is intercepted in NewTabPageViewController and rendered via `createEndOfJourneyDialog`
             // (content-driven), so it never reaches this switch.
-            assertionFailure("Should not be reached.")
+            let _ = assertionFailure("Should not be reached.")
             EmptyView()
         case .subscriptionPromotion:
             // Re-use same dismiss closure as dismissing the final dialog will set onboarding completed true

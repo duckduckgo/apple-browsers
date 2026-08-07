@@ -206,13 +206,13 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     var isAITabExpanded: Bool { stateMachine.isAITabExpanded }
     var isAITabCollapsed: Bool { stateMachine.isAITabCollapsed }
     var isContextualChatState: Bool { stateMachine.isContextualChatState }
-    var isOmnibaring: Bool { stateMachine.isOmnibaring }
+    var isOmnibarEditing: Bool { stateMachine.isOmnibarEditing }
     var omnibarState: UnifiedToggleInputDisplayState.OmnibarState? { stateMachine.omnibarState }
     var isSearchOnAITab: Bool { stateMachine.isSearchOnAITab(inputMode: inputMode) }
     var isDuckAISurfaceForAttribution: Bool { stateMachine.isDuckAISurfaceForAttribution }
     var pixelSurface: UnifiedToggleInputPixelSurface { stateMachine.pixelSurface }
     var isInputPaneExpanded: Bool { stateMachine.isInputPaneExpanded }
-    var isInputing: Bool { stateMachine.isInputing }
+    var isInputEditing: Bool { stateMachine.isInputEditing }
     var isActive: Bool { stateMachine.isActive }
 
     private var isOmnibarNewAIChatPrompt: Bool {
@@ -228,7 +228,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     private var usesFloatingReturnKey: Bool {
-        isOmnibaring && isInputVisibleForKeyboard && isOmnibarNewAIChatPrompt
+        isOmnibarEditing && isInputVisibleForKeyboard && isOmnibarNewAIChatPrompt
     }
 
     private var cancellables = Set<AnyCancellable>()
@@ -646,7 +646,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     /// is actively building; they belong to the tab, not to the global last-used
     /// defaults, and must not write through to global preferences.
     private func persistDraftToStore() {
-        guard !isApplyingState, !isPerformingDismissCleanup, !ising, let uid = currentTabUID else { return }
+        guard !isApplyingState, !isPerformingDismissCleanup, !isEditing, let uid = currentTabUID else { return }
         stateStore.update(snapshotCurrentState(), for: uid)
     }
 
@@ -749,11 +749,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         unifiedToggleInputVC(viewController, didSubmitText: text, mode: .aiChat)
     }
 
-    // MARK: -  mode
+    // MARK: - Edit mode
 
-    /// Enters " an existing message" mode: opens the input prefilled with the message's text
-    /// and attachments and flips `ising` so hosts apply the -mode chrome.
-    func beginMode(prompt: String, attachments: [UnifiedToggleInputAttachment] = []) {
+    func beginEditMode(prompt: String, attachments: [UnifiedToggleInputAttachment] = []) {
         isEditing = true
         showExpanded(prefilledText: prompt, inputMode: .aiChat, activatesInput: true)
         attachmentController.replaceAllAttachments(with: attachments)

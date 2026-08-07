@@ -66,6 +66,13 @@ final class Telemetry {
 
     func isElapsed(atMillis now: Int64) -> Bool { now >= periodEndMillis }
 
+    /// Whether any parameter of this period's config snapshot is fed by `source` — i.e. whether
+    /// `handleEvent` would look at an event of that type at all. Reads the same snapshot `handleEvent`
+    /// does, so the two can never disagree.
+    func handles(source: String) -> Bool {
+        config.parameters.values.contains { $0.source == source }
+    }
+
     /// Routes a matching event to every parameter whose config `source` equals `source`. Returns
     /// `true` if any parameter's state changed.
     @discardableResult

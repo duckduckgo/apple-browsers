@@ -167,14 +167,21 @@ public final class EventHub: EventHubManaging {
     }
 
     public func handleWebEvent(_ webEventData: [String: Any], tabID: EventHubTabID) {
-        guard let type = webEventData["type"] as? String, !type.isEmpty else { return }
+        guard let type = webEventData["type"] as? String, !type.isEmpty else {
+            Logger.eventHub.debug("[EventHub] web event ignored, `type` was missing or empty")
+            return
+        }
+        Logger.eventHub.debug("[EventHub] web event received: \(type, privacy: .private), tab \(tabID.rawValue.uuidString, privacy: .private)")
         let data = webEventData["data"] as? [String: Any]
         // Sampled here, not in the block: `now` decides whether the event still belongs to the running
         // period, so it has to be the arrival time. Read on the queue it would be the drain time, and an
         // event arriving just before `periodEnd` could be dropped for landing in no period at all.
         let nowMillis = scheduler.nowMillis()
         queue.async { [self] in
-            guard latestEnabled else { return }
+            guard latestEnabled else {
+                Logger.eventHub.debug("[EventHub] \(type, privacy: .private) dropped, the eventHub feature is disabled")
+                return
+            }
             fireImmediateLocked(source: type, data: data)
             countPeriodLocked(source: type, data: data, tabID: tabID, nowMillis: nowMillis)
         }
@@ -186,25 +193,35 @@ public final class EventHub: EventHubManaging {
         // type, and the caller is free to mutate it the moment this returns. The cost is encoding a
         // payload that a disabled feature then discards — native immediate events are rare enough that
         // this is cheaper than the alternatives for reading `latestEnabled` off-queue.
+        Logger.eventHub.debug("[EventHub] native immediate event received: \(type, privacy: .public)")
         let encoded = Self.encode(data)
         queue.async { [self] in
-            guard latestEnabled else { return }
+            guard latestEnabled else {
+                Logger.eventHub.debug("[EventHub] \(type, privacy: .public) dropped, the eventHub feature is disabled")
+                return
+            }
             fireImmediateLocked(source: type, data: encoded)
         }
     }
 
     public func handleAggregatedEvent(_ type: String, data: Encodable?) {
         guard !type.isEmpty else { return }
+        Logger.eventHub.debug("[EventHub] native aggregated event received: \(type, privacy: .public)")
         let encoded = Self.encode(data)
         let nowMillis = scheduler.nowMillis()
         queue.async { [self] in
-            guard latestEnabled else { return }
+            guard latestEnabled else {
+                Logger.eventHub.debug("[EventHub] \(type, privacy: .public) dropped, the eventHub feature is disabled")
+                return
+            }
             countPeriodLocked(source: type, data: encoded, tabID: .empty, nowMillis: nowMillis)
         }
     }
 
     private func fireImmediateLocked(source: String, data: [String: Any]?) {
-        for config in latestConfigs where config.isEnabled && config.trigger.type == .immediate && config.trigger.source == source {
+        let matching = latestConfigs.filter { $0.isEnabled && $0.trigger.type == .immediate && $0.trigger.source == source }
+        Logger.eventHub.debug("[EventHub] immediate routing for \(source, privacy: .private) → \(matching.isEmpty ? "no immediate telemetry is triggered by it" : matching.map(\.name).joined(separator: ", "), privacy: .public)")
+        for config in matching {
             var params: [String: String] = [:]
             for (paramName, paramConfig) in config.parameters where paramConfig.template == .data {
                 // Transient: an immediate pixel has no period and no dedup, so this parameter reports the
@@ -228,12 +245,31 @@ public final class EventHub: EventHubManaging {
     ///   sweep has run (notably on macOS, where a period can end while the app runs unfocused). An event
     ///   arriving in that window belongs to no period and must not be counted into the elapsed one.
     private func countPeriodLocked(source: String, data: [String: Any]?, tabID: EventHubTabID, nowMillis now: Int64) {
+        // Every period telemetry this event was offered to, and what became of it. Logged as one line so
+        // "the pixel never fired" can be answered from a single entry: whether anything was listening,
+        // and if so why it did or did not count.
+        var outcomes: [String] = []
         for config in latestConfigs where config.isEnabled && config.trigger.type == .period {
-            guard let telemetry = telemetries[config.name], !telemetry.isElapsed(atMillis: now) else { continue }
+            guard let telemetry = telemetries[config.name] else {
+                outcomes.append("\(config.name): no period running")
+                continue
+            }
+            guard telemetry.handles(source: source) else { continue }
+            guard !telemetry.isElapsed(atMillis: now) else {
+                outcomes.append("\(config.name): period already ended")
+                continue
+            }
             if telemetry.handleEvent(source: source, data: data, tabID: tabID) {
                 dirtyNames.insert(config.name)
+                outcomes.append("\(config.name): counted")
+            } else {
+                outcomes.append("\(config.name): no change (already counted on this tab, or the counter is capped)")
             }
         }
+        let summary = outcomes.isEmpty
+            ? "no period telemetry is fed by it (\(latestConfigs.count) config(s) loaded)"
+            : outcomes.joined(separator: "; ")
+        Logger.eventHub.debug("[EventHub] period routing for \(source, privacy: .private) → \(summary, privacy: .public)")
         rearmSchedulerLocked()
     }
 

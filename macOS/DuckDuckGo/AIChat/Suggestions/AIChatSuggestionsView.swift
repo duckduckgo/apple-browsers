@@ -35,9 +35,7 @@ final class AIChatSuggestionsView: NSView {
         static let legacySeparatorHorizontalInset: CGFloat = 12
         static let rowsHorizontalPadding: CGFloat = 6
         static let legacyRowsHorizontalPadding: CGFloat = 4
-        /// Space under the last row. Lives here rather than in the hosting container's constraints
-        /// because this is the height panels are sized from — a gap added outside it is height the
-        /// panel never reserves.
+        /// Space under the last row. Belongs here because this height is what panels are sized from.
         static let bottomPadding: CGFloat = 8
         static let legacyBottomPadding: CGFloat = 4
         static let viewAllChatsSeparatorBottomPadding: CGFloat = 0

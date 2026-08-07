@@ -122,18 +122,13 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// Constraint for suggestions view height
     private var suggestionsHeightConstraint: NSLayoutConstraint?
 
-    /// Zero when rebranded. Hosts size the panel from the suggestions view's own height and don't
-    /// account for a gap below it, so anything reserved here is height the panel never got — a
-    /// constant error while this was 4pt in every state, and a visible jump if it varies by state.
-    /// The gap under an expanded list therefore lives inside `AIChatSuggestionsView`'s height instead.
-    /// Legacy keeps the original 4pt: its trailing inset is 13pt, so the collapsed row already sits
-    /// about right, and its list reserves its own 4pt internally.
+    /// Zero when rebranded: hosts size the panel from the list's own height, so a gap reserved out
+    /// here is height the panel never got. The expanded gap lives inside the list instead.
     private var suggestionsBottomPadding: CGFloat {
         themeManager.isAppRebranded ? 0 : Constants.suggestionsBottomPadding
     }
 
-    /// Height the controls row occupies above the container's bottom edge. Hosts that stack their own
-    /// content above the panel budget with this rather than restating the arithmetic.
+    /// Exposed so hosts budget for the row instead of restating these anchors.
     var controlsRowHeight: CGFloat {
         Constants.toolButtonSize + Constants.toolButtonBottomInset + suggestionsBottomPadding
     }

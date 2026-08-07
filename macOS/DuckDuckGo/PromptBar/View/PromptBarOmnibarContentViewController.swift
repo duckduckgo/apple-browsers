@@ -30,7 +30,6 @@ final class PromptBarOmnibarContentViewController: NSViewController {
         static let promptLeadingInset: CGFloat = 10
         static let promptTrailingInset: CGFloat = 78
         static let promptToControlsSpacing: CGFloat = 8
-        // The controls row's height comes from the container VC — it owns those anchors.
         /// Placeholder for the initial frame, replaced by the first real measurement.
         static let nominalCollapsedHeight: CGFloat = 80
         static let backdropMaterial: NSVisualEffectView.Material = .hudWindow

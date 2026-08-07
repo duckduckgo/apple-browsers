@@ -165,10 +165,8 @@ final class PromptBarOmnibarContentLayoutTests: XCTestCase {
 
     // MARK: - Measurement
 
-    /// The 8pt the panel puts between the prompt and the controls row, plus whatever it reserves above
-    /// that row — 5pt of container top padding when rebranded, nothing in legacy. Asserting the exact
-    /// figure rather than a lower bound is the point: a panel that over-budgets the controls row shows
-    /// up here as extra slack, which a `>=` assertion waves through.
+    /// Exact rather than a lower bound: a panel that over-budgets the controls row shows up here as
+    /// extra slack, which `>=` waves through.
     private var expectedPromptToControlsGap: CGFloat {
         8 + containerViewController.additionalContentHeight
     }

@@ -950,17 +950,6 @@ class TabViewController: UIViewController {
         updateWebViewBottomAnchor(for: 1.0)
     }
 
-    @discardableResult
-    private func setWebViewObscuredContentInsetsIfSupported(_ insets: UIEdgeInsets) -> Bool {
-        guard #available(iOS 26, *),
-              let webView,
-              webView.responds(to: #selector(setter: WKWebView.obscuredContentInsets)) else {
-            return false
-        }
-        webView.obscuredContentInsets = insets
-        return true
-    }
-
     func updateWebViewBottomAnchor(for barsVisibilityPercent: CGFloat) {
         let isUnifiedToggleInputAffectingBottomLayout = isAITab && unifiedToggleInputFeature.isAvailable
         if appSettings.currentAddressBarPosition == .bottom && !isUnifiedToggleInputAffectingBottomLayout {
@@ -991,6 +980,10 @@ class TabViewController: UIViewController {
             webViewBottomAnchorConstraint?.constant = 0
         }
         if FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled {
+            guard #available(iOS 26, *) else {
+                assertionFailure("Floating UI requires iOS 26")
+                return
+            }
             borderView.bottomAlpha = 0
             borderView.isHidden = true
             borderView.isTopVisible = false
@@ -1005,36 +998,19 @@ class TabViewController: UIViewController {
             if scrollViewAdjustmentBehaviorBeforeFloatingUI == nil {
                 scrollViewAdjustmentBehaviorBeforeFloatingUI = WebViewScrollViewInsetUpdater.beginManaging(webView.scrollView)
             }
-            if setWebViewObscuredContentInsetsIfSupported(obscuredInsets) {
-                // Keep the web view full-bleed and reserve the chrome region via WebKit's public
-                // `obscuredContentInsets`, which positions page fixed/sticky elements and the layout
-                // viewport reliably (including on load) and lets content scroll behind the glass.
-                webViewBottomAnchorConstraint?.constant = 0
-                if additionalSafeAreaInsets != .zero {
-                    additionalSafeAreaInsets = .zero
-                }
-                WebViewScrollViewInsetUpdater.update(webView.scrollView, insets: obscuredInsets)
-                hasAppliedFloatingUIScrollViewInsets = true
-            } else {
-                // iOS 18 fallback: physically resize the web view so its bottom edge sits at the top of
-                // the visible bottom chrome (toolbar -> capsule -> safe area), and inset the top via
-                // `additionalSafeAreaInsets`.
-                let bottomObscuredHeight = isUnifiedToggleInputAffectingLayout
-                    ? 0
-                    : (chromeDelegate?.floatingWebViewBottomObscuredHeight(for: barsVisibilityPercent) ?? 0)
-                webViewBottomAnchorConstraint?.constant = -bottomObscuredHeight
-                if hasAppliedFloatingUIScrollViewInsets {
-                    WebViewScrollViewInsetUpdater.update(webView.scrollView, insets: .zero)
-                    hasAppliedFloatingUIScrollViewInsets = false
-                }
-                restoreScrollViewAdjustmentBehaviorAfterFloatingUI()
-                updateFloatingUISafeAreaInsets()
+            webView.obscuredContentInsets = obscuredInsets
+            webViewBottomAnchorConstraint?.constant = 0
+            if additionalSafeAreaInsets != .zero {
+                additionalSafeAreaInsets = .zero
             }
+            WebViewScrollViewInsetUpdater.update(webView.scrollView, insets: obscuredInsets)
+            hasAppliedFloatingUIScrollViewInsets = true
         } else {
             borderView.isHidden = false
             borderView.bottomAlpha = AppWidthObserver.shared.isLargeWidth ? 0 : barsVisibilityPercent
-            // Defensive: clear any obscured insets left over if floating UI was toggled off at runtime.
-            setWebViewObscuredContentInsetsIfSupported(.zero)
+            if #available(iOS 26, *) {
+                webView.obscuredContentInsets = .zero
+            }
             if hasAppliedFloatingUIScrollViewInsets {
                 WebViewScrollViewInsetUpdater.update(webView.scrollView, insets: .zero)
                 hasAppliedFloatingUIScrollViewInsets = false
@@ -1050,23 +1026,6 @@ class TabViewController: UIViewController {
         guard let behavior = scrollViewAdjustmentBehaviorBeforeFloatingUI else { return }
         WebViewScrollViewInsetUpdater.endManaging(webView.scrollView, restoring: behavior)
         scrollViewAdjustmentBehaviorBeforeFloatingUI = nil
-    }
-
-    /// In floating UI mode the web view underflows the top glass chrome, so communicate the top
-    /// omnibar-obscured region to WebKit via `additionalSafeAreaInsets` (top only). The bottom obscured
-    /// region is handled by resizing the web view instead (see `updateWebViewBottomAnchor`), which pins
-    /// bottom `position: fixed` elements reliably on load.
-    private func updateFloatingUISafeAreaInsets() {
-        // AI tabs with the unified toggle input manage their own top/bottom layout (the content
-        // container stays anchored to the chrome), so adding insets there would double-offset.
-        let isUnifiedToggleInputAffectingLayout = isAITab && unifiedToggleInputFeature.isAvailable
-        let insets = FloatingUILayoutPolicy.webViewAdditionalSafeAreaInsets(
-            addressBarPosition: appSettings.currentAddressBarPosition,
-            isUnifiedToggleInputAffectingLayout: isUnifiedToggleInputAffectingLayout,
-            omniBarHeight: chromeDelegate?.omniBar.barView.expectedHeight ?? 0
-        )
-        guard additionalSafeAreaInsets != insets else { return }
-        additionalSafeAreaInsets = insets
     }
 
     private func observeNetPConnectionStatusChanges() {

@@ -83,42 +83,6 @@ final class FloatingUIManagerTests: XCTestCase {
 
 final class FloatingUILayoutPolicyTests: XCTestCase {
 
-    func testWhenTopAddressBarThenAdditionalSafeAreaInsetsApplyOmniBarHeightToTopOnly() {
-        let insets = FloatingUILayoutPolicy.webViewAdditionalSafeAreaInsets(
-            addressBarPosition: .top,
-            isUnifiedToggleInputAffectingLayout: false,
-            omniBarHeight: 52
-        )
-
-        XCTAssertEqual(insets, UIEdgeInsets(top: 52, left: 0, bottom: 0, right: 0))
-    }
-
-    func testWhenBottomAddressBarThenAdditionalSafeAreaInsetsAreZero() {
-        let insets = FloatingUILayoutPolicy.webViewAdditionalSafeAreaInsets(
-            addressBarPosition: .bottom,
-            isUnifiedToggleInputAffectingLayout: false,
-            omniBarHeight: 52
-        )
-
-        XCTAssertEqual(insets, .zero)
-    }
-
-    func testWhenUnifiedToggleInputAffectsLayoutThenInsetsAreZero() {
-        let topInsets = FloatingUILayoutPolicy.webViewAdditionalSafeAreaInsets(
-            addressBarPosition: .top,
-            isUnifiedToggleInputAffectingLayout: true,
-            omniBarHeight: 52
-        )
-        XCTAssertEqual(topInsets, .zero)
-
-        let bottomInsets = FloatingUILayoutPolicy.webViewAdditionalSafeAreaInsets(
-            addressBarPosition: .bottom,
-            isUnifiedToggleInputAffectingLayout: true,
-            omniBarHeight: 52
-        )
-        XCTAssertEqual(bottomInsets, .zero)
-    }
-
     func testWhenBarsVisibleThenBottomObscuredHeightIsToolbarSlot() {
         let height = FloatingUILayoutPolicy.webViewBottomObscuredHeight(
             barsVisibilityPercent: 1,

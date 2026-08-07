@@ -52,7 +52,7 @@ struct AutofillCreditCardListView: View {
                             }
                         }
                     }
-                    .listRowBackground(Color(designSystemColor: .surface))
+                    .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
                 }
                 .applyInsetGroupedListStyle()
             }

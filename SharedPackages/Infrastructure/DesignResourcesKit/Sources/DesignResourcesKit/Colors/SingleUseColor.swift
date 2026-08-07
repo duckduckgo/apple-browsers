@@ -25,6 +25,11 @@ public enum SingleUseColor {
     case fireModeAccent
 
 #if os(iOS)
+    /// Background for grouped-list rows and visually associated inline cards.
+    /// Temporary compatibility token; replace with `.surfaceTertiary` when the
+    /// legacy palette and app-rebranding feature flag are removed.
+    case groupedListContentBackground
+
     case controlWidgetBackground
     case unifiedFeedbackFieldBackground
     case privacyDashboardBackground
@@ -119,6 +124,7 @@ public extension SingleUseColor {
         case destructiveGlowPrimary
 
         case controlsFillPrimary
+        case controlBorderTertiary
 
         case decorationPrimary
         case decorationSecondary

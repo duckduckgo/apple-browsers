@@ -23,14 +23,14 @@ import XCTest
 @MainActor
 final class TabSwitcherChromeFactoryTests: XCTestCase {
 
-    func testWhenFloatingUIEnabledThenFloatingChromeIsCreated() {
-        let chrome = TabSwitcherChromeFactory.makeChrome(isFloatingUIEnabled: true,
+    func testWhenTabSwitcherJuly2026EnabledThenFloatingChromeIsCreated() {
+        let chrome = TabSwitcherChromeFactory.makeChrome(isTabSwitcherJuly2026Enabled: true,
                                                          appSettings: AppSettingsMock())
         XCTAssertTrue(chrome is FloatingTabSwitcherChrome)
     }
 
-    func testWhenFloatingUIDisabledThenLegacyChromeIsCreated() {
-        let chrome = TabSwitcherChromeFactory.makeChrome(isFloatingUIEnabled: false,
+    func testWhenTabSwitcherJuly2026DisabledThenLegacyChromeIsCreated() {
+        let chrome = TabSwitcherChromeFactory.makeChrome(isTabSwitcherJuly2026Enabled: false,
                                                          appSettings: AppSettingsMock())
         XCTAssertTrue(chrome is LegacyTabSwitcherChrome)
     }

@@ -570,6 +570,41 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         XCTAssertEqual(sut.viewController.attachmentValidationMessage, expectedMessage)
     }
 
+    func testTransientLimitBannerSurvivesAsyncModelResync() {
+        let prefs = StubAIChatPreferences()
+        prefs.selectedModelId = "image-model"
+        let sut = makeCoordinator(preferences: prefs)
+        sut.modelStore.models = [makeModel(id: "image-model", supportsImageUpload: true, supportedFileTypes: [])]
+        sut.activateFromOmnibar(inputMode: .aiChat)
+
+        let limitMessage = UserText.aiChatAttachmentImageTurnLimit(maxImagesPerTurn: 3)
+        sut.presentPasteError(limitMessage)
+        XCTAssertEqual(sut.viewController.attachmentValidationMessage, limitMessage)
+
+        // A models refresh (onModelsUpdated fires on a Duck.ai tab, routing through handleModelsUpdated) must not clear a limit banner that isn't backed by an attachment.
+        sut.updateSelectedModel("image-model")
+        XCTAssertEqual(sut.viewController.attachmentValidationMessage, limitMessage)
+
+        // A genuine user action still clears it.
+        sut.clearAttachments()
+        XCTAssertNil(sut.viewController.attachmentValidationMessage)
+    }
+
+    func testTransientLimitBannerDoesNotLeakToAnotherTab() {
+        let prefs = StubAIChatPreferences()
+        prefs.selectedModelId = "image-model"
+        let sut = makeCoordinator(preferences: prefs)
+        sut.modelStore.models = [makeModel(id: "image-model", supportsImageUpload: true, supportedFileTypes: [])]
+        sut.activateFromOmnibar(inputMode: .aiChat)
+
+        sut.presentPasteError(UserText.aiChatAttachmentImageTurnLimit(maxImagesPerTurn: 3))
+        XCTAssertNotNil(sut.viewController.attachmentValidationMessage)
+
+        // Loading another tab's state (an aiChat tab with no invalid attachment) must not re-show the previous tab's paste banner.
+        sut.applyState(TabInputState(toggleMode: .aiChat))
+        XCTAssertNil(sut.viewController.attachmentValidationMessage)
+    }
+
     func testAttachmentErrorBannerDisplaysAllAttachmentErrorCopy() {
         let sut = makeCoordinator()
         let messages = [

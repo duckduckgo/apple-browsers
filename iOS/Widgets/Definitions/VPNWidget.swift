@@ -88,7 +88,7 @@ class VPNStatusTimelineProvider: TimelineProvider {
         NETunnelProviderManager.loadAllFromPreferences { managers, error in
             let defaults = UserDefaults.networkProtectionGroupDefaults
             let location = defaults.string(forKey: NetworkProtectionUserDefaultKeys.lastSelectedServerCity) ?? "Unknown Location"
-            let expiration = Date().addingTimeInterval(TimeInterval.minutes(5))
+            let expiration = Date().addingTimeInterval(5 * 60)
 
             if error != nil {
                 let entry = VPNStatusTimelineEntry(date: expiration, status: .error, location: location)

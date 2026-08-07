@@ -1,0 +1,80 @@
+appId: com.duckduckgo.mobile.ios
+tags:
+    - iphone
+    - sync_v2
+name: 04_sync_data_setup_v2
+
+---
+
+# Set up
+- runFlow:
+    file: ../shared/sync_setup_v2.yaml
+
+# Add local favorite and bookmark
+- runFlow:
+    file: ../shared/add_bookmarks_and_favorites.yaml
+- runFlow:
+    file: ../shared/use_firebutton.yaml
+
+# Add local login
+- runFlow:
+    when:
+      visible:
+        text: "Cancel"
+    commands:
+      - tapOn: Cancel
+- tapOn: Browsing menu
+- tapOn: Settings
+- runFlow:
+    file: ../shared/add_login_from_settings.yaml
+
+# Add local credit card
+- tapOn: Browsing menu
+- tapOn: Settings
+- runFlow:
+    file: ../shared/add_credit_card_from_settings.yaml
+
+#  Copy Recovery Code
+- tapOn: Browsing menu
+- tapOn: Settings
+- runFlow:
+    file: ../shared/copy_recovery_code_from_settings.yaml
+    env:
+        CODE: ${CODE}
+
+# Set Internal User
+- runFlow:
+    file: ../shared/set_internal_user_from_settings.yaml
+
+    # Set Dev environment
+- runFlow:
+    file: ../shared/set_sync_dev_environment.yaml
+
+# Login
+- assertVisible: Sync & Backup
+- tapOn: Sync & Backup
+- runFlow:
+    file: ../shared/sync_login_v2.yaml
+- assertVisible: Sync & Backup
+
+# Log Out
+- runFlow:
+    file: ../shared/sync_logout_v2.yaml
+- tapOn: Settings
+- tapOn: Done
+
+# Remove bookmarks that were added locally
+- runFlow:
+    file: ../shared/remove_local_bookmarks.yaml
+
+# Remove Login that was added locally
+- runFlow:
+    file: ../shared/remove_local_logins.yaml
+
+# Remove Credit Card that was added locally
+- runFlow:
+    file: ../shared/remove_local_credit_cards.yaml
+
+# Maestro seems to get stuck without an additional step here
+- assertVisible:
+    id: searchEntry

@@ -216,6 +216,7 @@ class SwitchBarTextEntryView: UIView {
 
     private var heightConstraint: NSLayoutConstraint?
     private var buttonsTrailingConstraint: NSLayoutConstraint?
+    private var buttonsCenterYConstraint: NSLayoutConstraint?
     private var placeholderTopConstraint: NSLayoutConstraint?
     private var placeholderCenterYConstraint: NSLayoutConstraint?
 
@@ -235,6 +236,13 @@ class SwitchBarTextEntryView: UIView {
 
     var onTextInputActivated: (() -> Void)?
     var onAIChatShortcutTapped: (() -> Void)?
+
+    /// Injected paste handler for the multi-line (Duck.ai) control. Attachments are Duck.ai-only, so the single-line search field doesn't receive it. Nil leaves default paste.
+    weak var attachmentPasteHandler: AttachmentPasteHandling? {
+        didSet {
+            textView.attachmentPasteHandler = attachmentPasteHandler
+        }
+    }
 
     var isExpandable: Bool = false {
         didSet {
@@ -258,6 +266,13 @@ class SwitchBarTextEntryView: UIView {
     var isUsingIncreasedButtonPadding: Bool = false {
         didSet {
             updateButtonsPadding()
+        }
+    }
+
+    var trailingButtonsRowHeight: CGFloat = Constants.minHeight {
+        didSet {
+            guard trailingButtonsRowHeight != oldValue else { return }
+            updateButtonsVerticalAlignment()
         }
     }
 
@@ -441,10 +456,16 @@ class SwitchBarTextEntryView: UIView {
         buttonsTrailingConstraint?.constant = isUsingIncreasedButtonPadding ? -Constants.additionalVerticalButtonsPadding : 0
     }
 
+    private func updateButtonsVerticalAlignment() {
+        buttonsCenterYConstraint?.constant = trailingButtonsRowHeight / 2
+    }
+
     private func setupConstraints() {
 
         buttonsTrailingConstraint = buttonsView.trailingAnchor.constraint(equalTo: trailingAnchor)
         buttonsTrailingConstraint?.isActive = true
+        let buttonsCenterY = buttonsView.centerYAnchor.constraint(equalTo: topAnchor, constant: trailingButtonsRowHeight / 2)
+        buttonsCenterYConstraint = buttonsCenterY
         let placeholderTopConstraint = placeholderLabel.topAnchor.constraint(equalTo: textView.topAnchor, constant: Constants.placeholderTopOffset)
         let placeholderCenterYConstraint = placeholderLabel.centerYAnchor.constraint(equalTo: textView.centerYAnchor)
         self.placeholderTopConstraint = placeholderTopConstraint
@@ -469,7 +490,7 @@ class SwitchBarTextEntryView: UIView {
             placeholderLabel.trailingAnchor.constraint(equalTo: buttonsView.leadingAnchor),
 
             // Pin to the top row so the button stays top-right when the field grows multi-line.
-            buttonsView.centerYAnchor.constraint(equalTo: topAnchor, constant: Constants.minHeight / 2)
+            buttonsCenterY
         ])
     }
 

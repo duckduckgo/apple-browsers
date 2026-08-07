@@ -54,8 +54,7 @@ final class DataBrokerProtectionIOSManagerVaultInitReasonTests: XCTestCase {
 
     func test_launch_unknownProfile_initializes() async throws {
         let initAttemptCount = LockedCount()
-        let (sut, dependencies) = makeDeferredManager(countingInto: initAttemptCount)
-        dependencies.profileStateManager.recordProfileStateUnknown()
+        let (sut, _) = makeDeferredManager(countingInto: initAttemptCount)
 
         try await sut.prepareSecureVaultResourcesAtLaunch()
 

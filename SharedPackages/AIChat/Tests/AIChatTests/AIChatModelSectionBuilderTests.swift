@@ -21,170 +21,32 @@ import XCTest
 
 final class AIChatModelSectionBuilderTests: XCTestCase {
 
-    private let advancedHeader = "Advanced Models"
-    private let basicHeader = "Basic Models"
+    // MARK: - groupByAccess
 
-    // MARK: - Free User
-
-    func testWhenFreeUserThenAccessibleModelsInFirstSectionAndPremiumInSecond() {
+    func testWhenModelsAreAccessibleThenGroupByAccessPutsThemInAccessible() {
         let models = [
             makeModel(id: "free-1", entityHasAccess: true, accessTier: ["free"]),
             makeModel(id: "free-2", entityHasAccess: true, accessTier: ["free"]),
+        ]
+
+        let (accessible, gated) = AIChatModelSectionBuilder.groupByAccess(models: models)
+
+        XCTAssertEqual(accessible.map(\.id), ["free-1", "free-2"])
+        XCTAssertTrue(gated.isEmpty)
+    }
+
+    /// A gated model must stay visible (with its required tier attached), not be dropped.
+    func testWhenModelIsNotAccessibleThenGroupByAccessPutsItInGatedWithRequiredTier() {
+        let models = [
+            makeModel(id: "free-1", entityHasAccess: true, accessTier: ["free"]),
             makeModel(id: "premium-1", entityHasAccess: false, accessTier: ["plus", "pro"]),
         ]
 
-        let sections = AIChatModelSectionBuilder.buildSections(
-            models: models,
-            hasActiveSubscription: false,
-            advancedSectionHeader: advancedHeader,
-            basicSectionHeader: basicHeader
-        )
+        let (accessible, gated) = AIChatModelSectionBuilder.groupByAccess(models: models)
 
-        XCTAssertEqual(sections.count, 2)
-
-        // First section: accessible models, no header
-        XCTAssertNil(sections[0].header)
-        XCTAssertEqual(sections[0].items.map(\.id), ["free-1", "free-2"])
-
-        // Second section: premium models with header
-        XCTAssertEqual(sections[1].header, advancedHeader)
-        XCTAssertEqual(sections[1].items.map(\.id), ["premium-1"])
-    }
-
-    func testWhenFreeUserHasNoPremiumModelsThenSingleSectionReturned() {
-        let models = [
-            makeModel(id: "free-1", entityHasAccess: true, accessTier: ["free"]),
-        ]
-
-        let sections = AIChatModelSectionBuilder.buildSections(
-            models: models,
-            hasActiveSubscription: false,
-            advancedSectionHeader: advancedHeader,
-            basicSectionHeader: basicHeader
-        )
-
-        XCTAssertEqual(sections.count, 1)
-        XCTAssertNil(sections[0].header)
-        XCTAssertEqual(sections[0].items.map(\.id), ["free-1"])
-    }
-
-    func testWhenFreeUserHasOnlyPremiumModelsThenSingleSectionWithHeaderReturned() {
-        let models = [
-            makeModel(id: "premium-1", entityHasAccess: false, accessTier: ["plus"]),
-        ]
-
-        let sections = AIChatModelSectionBuilder.buildSections(
-            models: models,
-            hasActiveSubscription: false,
-            advancedSectionHeader: advancedHeader,
-            basicSectionHeader: basicHeader
-        )
-
-        XCTAssertEqual(sections.count, 1)
-        XCTAssertEqual(sections[0].header, advancedHeader)
-        XCTAssertEqual(sections[0].items.map(\.id), ["premium-1"])
-    }
-
-    // MARK: - Subscribed User
-
-    func testWhenSubscribedUserThenAdvancedModelsFirstAndBasicSecond() {
-        let models = [
-            makeModel(id: "basic-1", entityHasAccess: true, accessTier: ["free", "plus"]),
-            makeModel(id: "advanced-1", entityHasAccess: true, accessTier: ["plus", "pro"]),
-            makeModel(id: "advanced-2", entityHasAccess: true, accessTier: ["plus"]),
-        ]
-
-        let sections = AIChatModelSectionBuilder.buildSections(
-            models: models,
-            hasActiveSubscription: true,
-            advancedSectionHeader: advancedHeader,
-            basicSectionHeader: basicHeader
-        )
-
-        XCTAssertEqual(sections.count, 2)
-
-        // First section: advanced models, no header
-        XCTAssertNil(sections[0].header)
-        XCTAssertEqual(sections[0].items.map(\.id), ["advanced-1", "advanced-2"])
-
-        // Second section: basic models with header
-        XCTAssertEqual(sections[1].header, basicHeader)
-        XCTAssertEqual(sections[1].items.map(\.id), ["basic-1"])
-    }
-
-    func testWhenSubscribedPlusUserThenProOnlyModelsAreHidden() {
-        let models = [
-            makeModel(id: "basic-1", entityHasAccess: true, accessTier: ["free", "plus"]),
-            makeModel(id: "plus-model", entityHasAccess: true, accessTier: ["plus", "pro"]),
-            makeModel(id: "pro-only", entityHasAccess: false, accessTier: ["pro"]),
-        ]
-
-        let sections = AIChatModelSectionBuilder.buildSections(
-            models: models,
-            hasActiveSubscription: true,
-            advancedSectionHeader: advancedHeader,
-            basicSectionHeader: basicHeader
-        )
-
-        // pro-only model should be hidden entirely
-        let allIds = sections.flatMap { $0.items.map(\.id) }
-        XCTAssertFalse(allIds.contains("pro-only"))
-        XCTAssertTrue(allIds.contains("plus-model"))
-        XCTAssertTrue(allIds.contains("basic-1"))
-    }
-
-    func testWhenSubscribedUserHasOnlyBasicModelsThenSingleSectionWithHeaderReturned() {
-        let models = [
-            makeModel(id: "basic-1", entityHasAccess: true, accessTier: ["free", "plus"]),
-        ]
-
-        let sections = AIChatModelSectionBuilder.buildSections(
-            models: models,
-            hasActiveSubscription: true,
-            advancedSectionHeader: advancedHeader,
-            basicSectionHeader: basicHeader
-        )
-
-        XCTAssertEqual(sections.count, 1)
-        XCTAssertEqual(sections[0].header, basicHeader)
-        XCTAssertEqual(sections[0].items.map(\.id), ["basic-1"])
-    }
-
-    // MARK: - Edge Cases
-
-    func testWhenModelsAreEmptyThenEmptySectionsReturned() {
-        let freeSections = AIChatModelSectionBuilder.buildSections(
-            models: [],
-            hasActiveSubscription: false,
-            advancedSectionHeader: advancedHeader,
-            basicSectionHeader: basicHeader
-        )
-        XCTAssertTrue(freeSections.isEmpty)
-
-        let subscribedSections = AIChatModelSectionBuilder.buildSections(
-            models: [],
-            hasActiveSubscription: true,
-            advancedSectionHeader: advancedHeader,
-            basicSectionHeader: basicHeader
-        )
-        XCTAssertTrue(subscribedSections.isEmpty)
-    }
-
-    func testWhenBuildingSectionsThenModelOrderIsPreserved() {
-        let models = [
-            makeModel(id: "z-model", entityHasAccess: true, accessTier: ["free"]),
-            makeModel(id: "a-model", entityHasAccess: true, accessTier: ["free"]),
-            makeModel(id: "m-model", entityHasAccess: true, accessTier: ["free"]),
-        ]
-
-        let sections = AIChatModelSectionBuilder.buildSections(
-            models: models,
-            hasActiveSubscription: false,
-            advancedSectionHeader: advancedHeader,
-            basicSectionHeader: basicHeader
-        )
-
-        XCTAssertEqual(sections[0].items.map(\.id), ["z-model", "a-model", "m-model"])
+        XCTAssertEqual(accessible.map(\.id), ["free-1"])
+        XCTAssertEqual(gated.map(\.model.id), ["premium-1"])
+        XCTAssertEqual(gated.first?.requiredTier, .plus)
     }
 
     // MARK: - Ordering (PoC recommended-first)

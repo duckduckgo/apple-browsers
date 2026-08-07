@@ -38,6 +38,9 @@ struct SyncCodeSheetView: View {
             }
             .padding(Metrics.contentPadding)
             .background(SimplifiedSyncStyle.screenBackground)
+            .onAppear {
+                model.delegate?.barcodeScreenShown()
+            }
             .navigationTitle(UserText.simplifiedSyncCodeSheetTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -135,7 +138,7 @@ struct SyncCodeSheetView: View {
             arrowLength: Metrics.copyConfirmationArrowLength,
             arrowWidth: Metrics.copyConfirmationArrowWidth,
             arrowEdge: .bottom,
-            arrowOffset: 0.4,
+            arrowOffset: 0.5,
             cornerRadius: Metrics.copyConfirmationCornerRadius,
             fillColor: Color(designSystemColor: .surface),
             contentPadding: EdgeInsets(top: 16, leading: 20, bottom: 16, trailing: 20)

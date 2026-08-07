@@ -574,7 +574,7 @@ class FireExecutor: FireExecuting {
             DailyPixel.fireDailyAndCount(pixel: .aiChatHistoryDeleteSuccessful)
         case .failure(let error):
             Logger.aiChat.debug("Failed to clear Duck.ai chat history: \(error.localizedDescription)")
-            DailyPixel.fireDailyAndCount(pixel: .aiChatHistoryDeleteFailed)
+            DailyPixel.fireDailyAndCount(pixel: .aiChatHistoryDeleteFailed, error: error)
 
             if let userScriptError = error as? UserScriptError {
                 userScriptError.fireLoadJSFailedPixelIfNeeded()
@@ -600,7 +600,7 @@ class FireExecutor: FireExecuting {
             DailyPixel.fireDailyAndCount(pixel: .aiChatHistoryDeleteSuccessful)
         case .failure(let error):
             Logger.aiChat.debug("Failed to clear fire mode Duck.ai chat history: \(error.localizedDescription)")
-            DailyPixel.fireDailyAndCount(pixel: .aiChatHistoryDeleteFailed)
+            DailyPixel.fireDailyAndCount(pixel: .aiChatHistoryDeleteFailed, error: error)
 
             if let userScriptError = error as? UserScriptError {
                 userScriptError.fireLoadJSFailedPixelIfNeeded()

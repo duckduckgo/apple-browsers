@@ -1,0 +1,68 @@
+appId: com.duckduckgo.mobile.ios
+tags:
+    - iphone
+    - sync_v2
+name: 05_sync_data_check_v2
+
+---
+# IMPORTANT: This test is strictly related to 04_sync_data_setup_v2
+#            and it will fail if 04 is not executed before.
+#            The test is split in two different flow to accomodate
+#            for Maestro CI max execution time.
+
+- runFlow:
+    file: ../shared/sync_setup_v2.yaml
+
+#  Copy Recovery Code
+- tapOn: Browsing menu
+- tapOn: Settings
+- runFlow:
+    file: ../shared/copy_recovery_code_from_settings.yaml
+    env:
+        CODE: ${CODE}
+
+# Set Internal User
+- runFlow:
+    file: ../shared/set_internal_user_from_settings.yaml
+
+    # Set Dev environment
+- runFlow:
+    file: ../shared/set_sync_dev_environment.yaml
+
+# Login
+- assertVisible: Sync & Backup
+- tapOn: Sync & Backup
+- runFlow:
+    file: ../shared/sync_login_v2.yaml
+- assertVisible: Sync & Backup
+
+# Verify bookmarks have been merged
+- tapOn: Settings
+- runFlow:
+    file: ../shared/sync_verify_bookmarks.yaml
+
+# Verify favorites are unified
+- tapOn: Done
+- tapOn: Browsing menu
+- tapOn: Settings
+- runFlow:
+    file: ../shared/sync_verify_unified_favorites.yaml
+
+# Ensure the keyboard is dismissed before continuing.
+# This flow sets internal user above, which enables the unified toggle input, so the
+# address-bar dismiss is the "Back" chevron rather than the classic "Cancel"/Dismiss button.
+- runFlow:
+    file: ../shared/dismiss_address_bar_editing.yaml
+
+# Verify logins
+- tapOn: Browsing menu
+- tapOn: Settings
+- runFlow:
+    file: ../shared/sync_verify_logins.yaml
+
+# Verify credit cards
+- tapOn: Done
+- tapOn: Browsing menu
+- tapOn: Settings
+- runFlow:
+    file: ../shared/sync_verify_credit_cards.yaml

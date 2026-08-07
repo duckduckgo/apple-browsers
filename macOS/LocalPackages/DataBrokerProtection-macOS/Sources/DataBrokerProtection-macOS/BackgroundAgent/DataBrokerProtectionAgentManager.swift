@@ -31,7 +31,7 @@ import UserNotifications
 import DataBrokerProtectionCore
 import DataBrokerProtectionDebugServer
 import PrivacyConfig
-import FeatureFlags
+import FeatureFlags_macOS
 
 // This is to avoid exposing all the dependancies outside of the DBP package
 public class DataBrokerProtectionAgentManagerProvider {

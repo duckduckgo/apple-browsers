@@ -96,15 +96,24 @@ extension OnboardingView {
         }
 
         private var tableHeader: RebrandedOnboardingComparisonTableView.Header {
+            let leftIcon = switch content.competitor {
+            case .safari:
+                OnboardingRebrandingImages.Comparison.safariIcon
+            case .google:
+                OnboardingRebrandingImages.Comparison.googleIcon
+            case .ai:
+                OnboardingRebrandingImages.Comparison.popularAIsIcon
+            }
+
             if let subHeader = content.subHeader {
                 return .textAndIcons(
                     title: subHeader,
-                    leftIcon: OnboardingRebrandingImages.Comparison.popularAIsIcon,
+                    leftIcon: leftIcon,
                     rightIcon: OnboardingRebrandingImages.Comparison.ddgIcon
                 )
             }
             return .icons(
-                leftIcon: OnboardingRebrandingImages.Comparison.safariIcon,
+                leftIcon: leftIcon,
                 rightIcon: OnboardingRebrandingImages.Comparison.ddgIcon
             )
         }

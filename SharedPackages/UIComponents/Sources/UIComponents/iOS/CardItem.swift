@@ -71,6 +71,26 @@ public struct CardItemIcon {
 public enum CardItemAccessory {
     case chevron(Color)
     case checkmark(Color)
+    /// A caller-supplied trailing view (e.g. a selection indicator).
+    case custom(AnyView)
+    /// An interactive toggle with a caller-supplied "on" tint. Unlike the visual accessories, this
+    /// stays a separate, focusable accessibility element so its on/off state is announced and
+    /// actionable by VoiceOver.
+    case toggle(Binding<Bool>, tint: Color)
+
+    /// Wraps any view as a ``custom(_:)`` accessory without the caller spelling out `AnyView`.
+    public static func custom(_ content: some View) -> CardItemAccessory {
+        .custom(AnyView(content))
+    }
+
+    /// Whether the accessory is an interactive control rather than a purely decorative glyph. The row
+    /// keeps an interactive accessory as its own focusable, announced accessibility element.
+    var isInteractive: Bool {
+        switch self {
+        case .chevron, .checkmark, .custom: false
+        case .toggle: true
+        }
+    }
 }
 
 /// A design-system font token for a ``CardItem``. Each value maps to a DesignResourcesKit dax font;
@@ -78,7 +98,7 @@ public enum CardItemAccessory {
 public struct CardItemFont {
     let font: Font
 
-    private init(_ font: Font) {
+    public init(_ font: Font) {
         self.font = font
     }
 }
@@ -99,12 +119,33 @@ public struct CardItemText {
     public let font: CardItemFont
     public let color: Color?
     public let modifier: AnyViewModifier?
+    /// An optional second run appended inline after `text`in the same
+    /// `font` coloured `secondaryColor`. Honored by a card item's body text run.
+    /// The defaults keep every existing call site unchanged.
+    public let secondaryText: String?
+    public let secondaryColor: Color?
 
-    public init(_ text: String, font: CardItemFont, color: Color? = nil, modifier: AnyViewModifier? = nil) {
+    public init(_ text: String, font: CardItemFont, color: Color? = nil, modifier: AnyViewModifier? = nil,
+                secondaryText: String? = nil, secondaryColor: Color? = nil) {
         self.text = text
         self.font = font
         self.color = color
         self.modifier = modifier
+        self.secondaryText = secondaryText
+        self.secondaryColor = secondaryColor
+    }
+}
+
+extension CardItemText {
+    /// The text as a SwiftUI `Text`: the main run in `font` coloured `color` (falling back to
+    /// `defaultColor`), plus — when `secondaryText` is set — an inline second run in the same `font`
+    /// coloured `secondaryColor` (or `defaultColor`). The caller applies the modifier.
+    func styledText(defaultColor: Color) -> Text {
+        let main = Text(text).font(font.font).foregroundColor(color ?? defaultColor)
+        guard let secondaryText else { return main }
+        return main + Text(" " + secondaryText)
+            .font(font.font)
+            .foregroundColor(secondaryColor ?? defaultColor)
     }
 }
 
@@ -188,12 +229,14 @@ private extension CardItem {
             .frame(maxWidth: .infinity, alignment: .leading)
 
             if let trailing {
-                trailingIcon(for: trailing)
+                trailingView(for: trailing)
                     .padding(.leading, 8)
-                    .accessibilityHidden(true)
+                    .accessibilityHidden(trailing.isInteractive ? false : true)
             }
         }
-        .combinedAccessibilityValue(accessibilityValue)
+        // An interactive accessory (e.g. a toggle) must stay its own focusable element, so the row
+        // is only merged into a single VoiceOver element for purely visual accessories.
+        .combinedAccessibilityValue(trailing?.isInteractive == true ? nil : accessibilityValue)
     }
 
     var rowAlignment: VerticalAlignment {
@@ -203,7 +246,7 @@ private extension CardItem {
     var textBlock: some View {
         VStack(alignment: .leading, spacing: 0) {
             if let overline {
-                Text(verbatim: overline.text)
+                Text(overline.text)
                     .font(overline.font.font)
                     .foregroundColor(overline.color ?? Color(designSystemColor: .textPrimary))
                     .applyingModifier(overline.modifier)
@@ -211,9 +254,7 @@ private extension CardItem {
             VStack(alignment: .leading, spacing: titleTextSpacing) {
                 titleLine
                 if let text {
-                    Text(verbatim: text.text)
-                        .font(text.font.font)
-                        .foregroundColor(text.color ?? Color(designSystemColor: .textSecondary))
+                    text.styledText(defaultColor: Color(designSystemColor: .textSecondary))
                         .fixedSize(horizontal: false, vertical: true)
                         .applyingModifier(text.modifier)
                 }
@@ -227,13 +268,13 @@ private extension CardItem {
         if title != nil || !titleDetails.isEmpty {
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 if let title {
-                    Text(verbatim: title.text)
+                    Text(title.text)
                         .font(title.font.font)
                         .foregroundColor(title.color ?? Color(designSystemColor: .textPrimary))
                         .applyingModifier(title.modifier)
                 }
                 ForEach(Array(titleDetails.enumerated()), id: \.offset) { _, detail in
-                    Text(verbatim: detail.text)
+                    Text(detail.text)
                         .font(detail.font.font)
                         .foregroundColor(detail.color ?? Color(designSystemColor: .textSecondary))
                         .applyingModifier(detail.modifier)
@@ -247,7 +288,7 @@ private extension CardItem {
     }
 
     @ViewBuilder
-    func trailingIcon(for accessory: CardItemAccessory) -> some View {
+    func trailingView(for accessory: CardItemAccessory) -> some View {
         switch accessory {
         case .chevron(let color):
             Image(systemName: "chevron.forward")
@@ -255,6 +296,12 @@ private extension CardItem {
         case .checkmark(let color):
             Image(systemName: "checkmark")
                 .foregroundColor(color)
+        case .custom(let view):
+            view
+        case .toggle(let isOn, let tint):
+            Toggle("", isOn: isOn)
+                .labelsHidden()
+                .tint(tint)
         }
     }
 }
@@ -358,6 +405,46 @@ private struct CardItemSparseSamples: View {
     }
 }
 
+private struct CardItemToggleSamples: View {
+    @State private var recentSitesOn = true
+    @State private var syncOn = false
+
+    var body: some View {
+        VStack(spacing: 16) {
+            CardItem(
+                icon: CardItemIcon(position: .leadingColumn, visual: .image(Image(systemName: "clock.fill")), size: .size24),
+                title: CardItemText("Recently visited sites", font: .bodyRegular),
+                text: CardItemText("Show when searching. Private, only on your device.", font: .footnoteRegular),
+                trailing: .toggle($recentSitesOn, tint: Color(designSystemColor: .accentPrimary)))
+
+            CardItem(
+                icon: CardItemIcon(position: .leadingColumn, visual: .image(Image(systemName: "arrow.triangle.2.circlepath")), size: .size24),
+                title: CardItemText("Sync", font: .bodyRegular),
+                trailing: .toggle($syncOn, tint: Color(designSystemColor: .accentPrimary)))
+        }
+        .padding()
+    }
+}
+
+private struct CardItemCustomAccessorySamples: View {
+    var body: some View {
+        VStack(spacing: 16) {
+            CardItem(
+                icon: CardItemIcon(position: .leadingColumn, visual: .image(Image(systemName: "sparkles")), size: .size24),
+                title: CardItemText("ChatGPT", font: .bodyRegular),
+                trailing: .custom(Image(systemName: "checkmark.circle.fill")
+                    .foregroundColor(Color(designSystemColor: .accentPrimary))))
+
+            CardItem(
+                icon: CardItemIcon(position: .leadingColumn, visual: .image(Image(systemName: "sparkles")), size: .size24),
+                title: CardItemText("Claude", font: .bodyRegular),
+                trailing: .custom(Image(systemName: "circle")
+                    .foregroundColor(Color(designSystemColor: .decorationPrimary))))
+        }
+        .padding()
+    }
+}
+
 private struct PreviewBlur: ViewModifier {
     func body(content: Content) -> some View {
         content.blur(radius: 6)
@@ -388,6 +475,29 @@ private struct CardItemModifierSamples: View {
     }
 }
 
+private struct CardItemSecondaryTextSamples: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            CardItem(
+                icon: CardItemIcon(position: .leading, visual: .image(Image(systemName: "location.fill")), size: .size24),
+                overline: CardItemText("NEW IP ADDRESS", font: .footnoteRegular),
+                title: CardItemText("45.132.71.9", font: .bodyRegular),
+                text: CardItemText("🇪🇸 Valencia, Spain", font: .footnoteRegular,
+                                   color: Color(designSystemColor: .textPrimary),
+                                   secondaryText: "(Nearest)",
+                                   secondaryColor: Color(designSystemColor: .textSecondary)))
+
+            CardItem(
+                icon: CardItemIcon(position: .leading, visual: .image(Image(systemName: "location.fill")), size: .size24),
+                overline: CardItemText("NEW IP ADDRESS", font: .footnoteRegular),
+                title: CardItemText("45.132.71.9", font: .bodyRegular),
+                text: CardItemText("🇪🇸 Valencia, Spain", font: .footnoteRegular,
+                                   color: Color(designSystemColor: .textPrimary)))
+        }
+        .padding()
+    }
+}
+
 #Preview("Light") {
     CardItemPreviewSamples()
 }
@@ -408,6 +518,23 @@ private struct CardItemModifierSamples: View {
 
 #Preview("Modifiers") {
     CardItemModifierSamples()
+}
+
+#Preview("Secondary text") {
+    CardItemSecondaryTextSamples()
+}
+
+#Preview("Toggle") {
+    CardItemToggleSamples()
+}
+
+#Preview("Custom accessory") {
+    CardItemCustomAccessorySamples()
+}
+
+#Preview("Custom accessory Dark") {
+    CardItemCustomAccessorySamples()
+        .preferredColorScheme(.dark)
 }
 
 #endif

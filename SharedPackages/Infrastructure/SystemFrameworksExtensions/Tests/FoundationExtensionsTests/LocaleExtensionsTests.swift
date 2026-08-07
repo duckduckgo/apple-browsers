@@ -28,4 +28,10 @@ final class LocaleExtensionsTests: XCTest {
         XCTAssert(locale.localeIdentifierAsJsonFormat == "en-US", "The returned identifier should be in JSON format")
     }
 
+    func testWhenCheckingEnglishLanguageThenMatchesPreferredLanguage() {
+        let expectedValue = Locale.preferredLanguages.first?.lowercased().hasPrefix("en") ?? false
+
+        XCTAssertEqual(Locale.current.isEnglishLanguage, expectedValue)
+    }
+
 }

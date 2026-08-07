@@ -131,10 +131,9 @@ class SettingsLegacyViewProvider: ObservableObject {
     }
 
     private func instantiateAppIconController(onChange: @escaping (AppIcon) -> Void) -> UIViewController {
-        let storyboard = UIStoryboard(name: StoryboardName.settings, bundle: nil)
-        return storyboard.instantiateViewController(identifier: "AppIcon") { coder in
-            return AppIconSettingsViewController(onChange: onChange, coder: coder)
-        }
+        let hostingController = UIHostingController(rootView: SettingsAppIconPicker(onChange: onChange))
+        hostingController.title = UserText.settingsIcon
+        return hostingController
     }
 
     private func instantiateFireproofingController() -> UIViewController {
@@ -172,7 +171,7 @@ class SettingsLegacyViewProvider: ObservableObject {
     var addToDock: UIViewController { instantiate( "instructions", fromStoryboard: StoryboardName.homeRow) }
     var gpc: UIViewController { instantiate("DoNotSell", fromStoryboard: StoryboardName.settings) }
     var autoConsent: UIViewController { instantiate("AutoconsentSettingsViewController", fromStoryboard: StoryboardName.settings) }
-    var unprotectedSites: UIViewController { instantiate("UnprotectedSites", fromStoryboard: StoryboardName.settings) }
+    var unprotectedSites: UIViewController { UnprotectedSitesViewController() }
     var fireproofSites: UIViewController { instantiateFireproofingController() }
     var keyboard: UIViewController { instantiate("Keyboard", fromStoryboard: StoryboardName.settings) }
     var feedback: UIViewController { instantiate("Feedback", fromStoryboard: StoryboardName.feedback) }

@@ -29,7 +29,8 @@ class TabSuspensionTests: UITestCase {
             "tabSuspension": true,
             "tabSuspensionDebugging": true,
             "aiChatChromeSidebar": true,  // sidebar and floating sidebar feature flags
-            "aiChatSidebarFloating": true // are required for testing AI Chat sidebar suspension
+            "aiChatSidebarFloating": true, // are required for testing AI Chat sidebar suspension
+            "aiChatChromeMenuButton": false // keep the split sidebar button; this test clicks it directly
         ])
         app.openNewWindow()
     }

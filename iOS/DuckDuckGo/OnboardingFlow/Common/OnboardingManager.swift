@@ -23,6 +23,7 @@ import Core
 import Onboarding
 import Persistence
 import PrivacyConfig
+import FeatureFlags_iOS
 
 enum OnboardingUserType: String, Equatable, CaseIterable, CustomStringConvertible {
     case notSet
@@ -281,6 +282,10 @@ protocol OnboardingStepsProvider: AnyObject {
 
 /// Handles the user's answer on the Download Screen for the `onboardingFlowByDownloadReasonExperiment` experiment.
 protocol OnboardingDownloadReasonHandling: AnyObject {
+    /// The reason the user selected on the Download Screen, or `nil` before they've answered
+    /// (and for flows outside the download-reason experiment). Used to tailor reason-specific content.
+    var currentDownloadReason: OnboardingDownloadReason? { get }
+
     /// Records the user's selected download reason and returns the steps that follow the Download Screen.
     ///
     /// Called by the view model when the user answers the Download Screen. The reason is persisted
@@ -297,6 +302,10 @@ extension OnboardingManager: OnboardingStepsProvider {
 }
 
 extension OnboardingManager: OnboardingDownloadReasonHandling {
+
+    var currentDownloadReason: OnboardingDownloadReason? {
+        tutorialSettings.onboardingDownloadReason
+    }
 
     func selectDownloadReason(_ reason: OnboardingDownloadReason) -> [OnboardingIntroStep] {
         tutorialSettings.onboardingDownloadReason = reason
@@ -404,16 +413,15 @@ private extension OnboardingManager {
     }
 
     var downloadReasonExperimentCohort: FeatureFlag.OnboardingFlowByDownloadReasonExperimentCohort? {
-        // The experiment targets new installers on iPhone. Locale/region targeting is handled remotely
-        // via the feature flag rollout, so it isn't gated here.
-        guard isIphone, isNewUser else { return nil }
-        return featureFlagger.resolveCohort(for: FeatureFlag.onboardingFlowByDownloadReasonExperiment) as? FeatureFlag.OnboardingFlowByDownloadReasonExperimentCohort
+        featureFlagger.assignedCohort(for: FeatureFlag.onboardingFlowByDownloadReasonExperiment) as? FeatureFlag.OnboardingFlowByDownloadReasonExperimentCohort
     }
 
     /// Enrolls default-flow users in the download-reason experiment.
     func enrollInDownloadReasonExperimentIfNeeded(resolvedFlow: OnboardingFlowType) {
-        guard resolvedFlow == .default else { return }
-        _ = downloadReasonExperimentCohort
+        // The experiment targets new installers on iPhone. Locale/region targeting is handled remotely
+        // via the feature flag rollout, so it isn't gated here.
+        guard resolvedFlow == .default, isIphone, isNewUser else { return }
+        _ = featureFlagger.resolveCohort(for: FeatureFlag.onboardingFlowByDownloadReasonExperiment) as? FeatureFlag.OnboardingFlowByDownloadReasonExperimentCohort
     }
 
     /// Persist the flow and source for onboarding pixels based on the evaluated context.

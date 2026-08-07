@@ -63,7 +63,7 @@ class SyncOperationTests: XCTestCase {
         let dataProvider = DataProvidingMock(feature: feature)
         let syncOperation = SyncOperation(dataProviders: [dataProvider], storage: storage, crypter: crypter, requestMaker: requestMaker)
 
-        request.error = .noResponseBody
+        request.error = SyncError.noResponseBody
         await assertThrowsAnyError({
             try await syncOperation.sync(fetchOnly: false)
         }, errorHandler: { error in
@@ -86,7 +86,7 @@ class SyncOperationTests: XCTestCase {
         }
         let syncOperation = SyncOperation(dataProviders: [dataProvider], storage: storage, crypter: crypter, requestMaker: requestMaker)
 
-        request.error = .noResponseBody
+        request.error = SyncError.noResponseBody
         await assertThrowsAnyError({
             try await syncOperation.sync(fetchOnly: false)
         }, errorHandler: { error in
@@ -131,7 +131,7 @@ class SyncOperationTests: XCTestCase {
 
         let syncOperation = SyncOperation(dataProviders: [dataProvider1, dataProvider2, dataProvider3], storage: storage, crypter: crypter, requestMaker: requestMaker)
 
-        request.error = .noResponseBody
+        request.error = SyncError.noResponseBody
         await assertThrowsAnyError {
             try await syncOperation.sync(fetchOnly: false)
         }

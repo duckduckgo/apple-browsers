@@ -23,7 +23,7 @@ import CombineExtensions
 import Common
 import ConcurrencyExtensions
 import EventHub
-import FeatureFlags
+import FeatureFlags_macOS
 import Foundation
 import FoundationExtensions
 import History

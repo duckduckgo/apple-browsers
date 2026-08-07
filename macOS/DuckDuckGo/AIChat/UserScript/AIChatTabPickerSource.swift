@@ -76,9 +76,14 @@ enum AIChatTabPickerSource {
     /// The result of resolving a picked tab id to a live `Tab`.
     struct ResolvedTab {
         let tab: Tab
-        /// True when the tab was `.unloaded` (suspended or never-loaded) and we just materialized it —
-        /// the caller should trigger a load and wait for navigation before extracting content.
+        /// True when the tab was `.unloaded` (suspended or never-loaded) and we just materialized it.
         let wasMaterialized: Bool
+
+        /// True when the web view has no page yet. A pinned tab restored at launch is already `.loaded`
+        /// but unloaded until first selection, so `wasMaterialized` alone misses it.
+        var needsLoad: Bool {
+            wasMaterialized || tab.webView.url == nil
+        }
     }
 
     /// Locates the attachable tab with `id` across the origin-scoped collections — **including

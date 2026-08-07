@@ -24,6 +24,7 @@ import PrivacyConfig
 import Testing
 import class UIKit.UIDevice
 import protocol BrowserServicesKit.VariantManager
+import FeatureFlags_iOS
 @testable import Core
 @testable import DuckDuckGo
 
@@ -549,17 +550,17 @@ struct OnboardingStepsForConfiguredFlow {
     @Test("Check countsTowardProgress excludes the intro dialog, interludes, and the Download Screen")
     func countsTowardProgressExcludesNonProgressSteps() {
         // Steps excluded regardless of flow.
-        #expect(OnboardingIntroStep.introDialog(isReturningUser: false).countsTowardProgress(flow: .default) == false)
-        #expect(OnboardingIntroStep.interlude(.duckAI).countsTowardProgress(flow: .default) == false)
-        #expect(OnboardingIntroStep.downloadReasonSelection.countsTowardProgress(flow: .default) == false)
+        #expect(!OnboardingIntroStep.introDialog(isReturningUser: false).countsTowardProgress(flow: .default))
+        #expect(!OnboardingIntroStep.interlude(.duckAI).countsTowardProgress(flow: .default))
+        #expect(!OnboardingIntroStep.downloadReasonSelection.countsTowardProgress(flow: .default))
 
         // Steps counted regardless of flow.
-        #expect(OnboardingIntroStep.setDefaultBrowser.countsTowardProgress(flow: .default) == true)
-        #expect(OnboardingIntroStep.aiIntro.countsTowardProgress(flow: .default) == true)
-        #expect(OnboardingIntroStep.addToDockPromo.countsTowardProgress(flow: .default) == true)
-        #expect(OnboardingIntroStep.appIconSelection.countsTowardProgress(flow: .default) == true)
-        #expect(OnboardingIntroStep.addressBarPositionSelection.countsTowardProgress(flow: .default) == true)
-        #expect(OnboardingIntroStep.searchExperienceSelection.countsTowardProgress(flow: .default) == true)
+        #expect(OnboardingIntroStep.setDefaultBrowser.countsTowardProgress(flow: .default))
+        #expect(OnboardingIntroStep.aiIntro.countsTowardProgress(flow: .default))
+        #expect(OnboardingIntroStep.addToDockPromo.countsTowardProgress(flow: .default))
+        #expect(OnboardingIntroStep.appIconSelection.countsTowardProgress(flow: .default))
+        #expect(OnboardingIntroStep.addressBarPositionSelection.countsTowardProgress(flow: .default))
+        #expect(OnboardingIntroStep.searchExperienceSelection.countsTowardProgress(flow: .default))
     }
 
     @Test("Check countsTowardProgress counts the Duck.ai query step only in the Duck.ai flow")
@@ -698,22 +699,9 @@ struct OnboardingDownloadReasonExperimentTests {
 
     @Test(
         "selectDownloadReason returns the reason-tailored steps",
-        arguments: zip(
-            [
-                .browserPrivately,
-                .privateAIChat,
-                .noAI,
-                .blockAds
-            ] as [OnboardingDownloadReason],
-            [
-                [.setDefaultBrowser, .searchPrivacySettingsSelection, .searchExperienceSelection, .addressBarPositionSelection, .addToDockPromo, .appIconSelection, .duckAIQuerySelection],
-                [.setDefaultBrowser, .aiModelSelection, .toggleInputModeSelection, .addressBarPositionSelection, .addToDockPromo, .appIconSelection, .duckAIQuerySelection],
-                [.setDefaultBrowser, .aiSearchSettingsSelection, .keepDuckAISelection, .addressBarPositionSelection, .addToDockPromo, .appIconSelection, .duckAIQuerySelection],
-                [.setDefaultBrowser, .duckPlayerSelection, .searchExperienceSelection, .addressBarPositionSelection, .addToDockPromo, .appIconSelection, .duckAIQuerySelection],
-            ] as [[OnboardingIntroStep]]
-        )
+        arguments: OnboardingDownloadReason.allCases
     )
-    func selectDownloadReasonReturnsTailoredSteps(_ reason: OnboardingDownloadReason, _ expected: [OnboardingIntroStep]) {
+    func selectDownloadReasonReturnsTailoredSteps(_ reason: OnboardingDownloadReason) {
         // GIVEN
         let sut = makeManager(cohort: .treatment)
 
@@ -721,24 +709,59 @@ struct OnboardingDownloadReasonExperimentTests {
         let result = sut.selectDownloadReason(reason)
 
         // THEN
-        #expect(result == expected)
+        #expect(result == OnboardingStepsHelper.expectedRemainingSteps(for: reason))
+    }
+
+    // MARK: - currentDownloadReason
+
+    @Test("Download Reason is nil before a reason is chosen")
+    func currentDownloadReasonIsNilByDefault() {
+        // GIVEN
+        let sut = makeManager(cohort: .treatment)
+
+        // THEN
+        #expect(sut.currentDownloadReason == nil)
+    }
+
+    @Test("Download Reason reflects the persisted reason", arguments: OnboardingDownloadReason.allCases)
+    func currentDownloadReasonReflectsPersistedReason(_ reason: OnboardingDownloadReason) {
+        // GIVEN
+        let tutorialSettings = makeTutorialSettings()
+        tutorialSettings.onboardingDownloadReason = reason
+        let sut = makeManager(cohort: .treatment, tutorialSettings: tutorialSettings)
+
+        // THEN
+        #expect(sut.currentDownloadReason == reason)
+    }
+
+    @Test("Download Reason stores value", arguments: OnboardingDownloadReason.allCases)
+    func selectDownloadReasonUpdatesCurrentDownloadReason(_ reason: OnboardingDownloadReason) {
+        // GIVEN
+        let sut = makeManager(cohort: .treatment)
+        #expect(sut.currentDownloadReason == nil)
+
+        // WHEN
+        _ = sut.selectDownloadReason(reason)
+
+        // THEN
+        #expect(sut.currentDownloadReason == reason)
     }
 
     // MARK: - Eligibility (new installers, iPhone)
 
-    @Test("iPad users are not enrolled even in the treatment cohort")
+    @Test("iPad users are not enrolled")
     func iPadUsersAreNotEnrolled() {
         // GIVEN
-        let sut = makeManager(cohort: .treatment, isIphone: false)
+        let sut = makeManager(cohort: nil, isIphone: false)
 
         // THEN
         #expect(sut.onboardingSteps == OnboardingStepsHelper.expectedIPadSteps(isReturningUser: false))
     }
 
-    @Test("Returning users are not enrolled even in the treatment cohort")
+    @Test("Returning users are not enrolled")
     func returningUsersAreNotEnrolled() {
         // GIVEN
-        let sut = makeManager(cohort: .treatment, variantManager: OnboardingManagerVariants.returningUserVariantManagerMock)
+        let sut = makeManager(cohort: nil, variantManager: OnboardingManagerVariants.returningUserVariantManagerMock)
 
         // THEN
         #expect(sut.onboardingSteps == OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: true))
@@ -746,12 +769,13 @@ struct OnboardingDownloadReasonExperimentTests {
 
     @Test("Ineligible users report the default pixel, not the tailored one")
     func ineligibleUsersReportDefaultPixel() {
-        // GIVEN — iPad user is ineligible even in the treatment cohort.
+        // GIVEN — an iPad user (ineligible).
         let sharedPixelStorage = makePixelStore()
         let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: false)
+        let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: nil)
         let sut = OnboardingManager(
             appDefaults: AppSettingsMock(),
-            featureFlagger: PrivacyConfig.MockFeatureFlagger(resolveCohortStub: Cohort.treatment),
+            featureFlagger: featureFlagger,
             variantManager: OnboardingManagerVariants.newUserVariantManagerMock,
             isIphone: false,
             tutorialSettings: tutorialSettings,
@@ -761,7 +785,9 @@ struct OnboardingDownloadReasonExperimentTests {
         // WHEN
         sut.configureOnboardingFlow(from: nil)
 
-        // THEN
+        // THEN — the eligibility guard skips enrollment (no cohort is ever assigned), so the user
+        // reports under the default flow rather than the tailored one.
+        #expect(featureFlagger.didCallResolveCohort == false)
         #expect(sharedPixelStorage.onboardingFlow == .default)
     }
 

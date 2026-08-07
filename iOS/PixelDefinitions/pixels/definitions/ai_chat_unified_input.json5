@@ -118,12 +118,18 @@
                 "key": "origin",
                 "description": "Origin value for the reasoning effort picker impression.",
                 "type": "string",
-                "enum": ["funnel_addressbar_ios__reasoningpicker", "funnel_duckai_ios__reasoningpicker"]
+                "enum": [
+                    "funnel_addressbar_ios__reasoningdropdown",
+                    "funnel_duckai_ios__reasoningdropdown",
+                    // Shipped from 7.228.0 until the rename to ...__reasoningdropdown; kept so historic data validates.
+                    "funnel_addressbar_ios__reasoningpicker",
+                    "funnel_duckai_ios__reasoningpicker"
+                ]
             }
         ]
     },
     "m_aichat_unified_input_image_attached": {
-        "description": "Fires when the user attaches an image (camera or photo library) in the Unified Toggle Input.",
+        "description": "Fires when the user attaches an image (camera, photo library, or paste) in the Unified Toggle Input.",
         "owners": ["pikorddg", "aataraxiaa"],
         "triggers": ["other"],
         "suffixes": ["daily_count", "platform", "form_factor"],
@@ -134,7 +140,7 @@
                 "key": "source",
                 "description": "Source of the attached image.",
                 "type": "string",
-                "enum": ["camera", "photo_library"]
+                "enum": ["camera", "photo_library", "paste"]
             }
         ]
     },
@@ -146,11 +152,20 @@
         "parameters": ["appVersion", "unified_input_surface"]
     },
     "m_aichat_unified_input_file_attached": {
-        "description": "Fires when the user attaches a file in the Unified Toggle Input (post-validation).",
+        "description": "Fires when the user attaches a file (file picker or paste) in the Unified Toggle Input (post-validation).",
         "owners": ["pikorddg", "aataraxiaa"],
         "triggers": ["other"],
         "suffixes": ["daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion", "unified_input_surface"]
+        "parameters": [
+            "appVersion",
+            "unified_input_surface",
+            {
+                "key": "source",
+                "description": "Source of the attached file.",
+                "type": "string",
+                "enum": ["file_picker", "paste"]
+            }
+        ]
     },
     "m_aichat_unified_input_file_removed": {
         "description": "Fires when the user removes an attached file (or invalid file) from the Unified Toggle Input.",
@@ -172,6 +187,12 @@
                 "description": "Reason for the file validation failure.",
                 "type": "string",
                 "enum": ["size_exceeded", "count_exceeded", "unsupported_type", "encrypted", "unreadable", "other"]
+            },
+            {
+                "key": "source",
+                "description": "Source of the rejected file.",
+                "type": "string",
+                "enum": ["file_picker", "paste"]
             }
         ]
     },
@@ -239,8 +260,11 @@
                 "type": "string",
                 "enum": [
                     "funnel_addressbar_ios__modelpicker",
-                    "funnel_addressbar_ios__reasoningpicker",
+                    "funnel_addressbar_ios__reasoningdropdown",
                     "funnel_duckai_ios__modelpicker",
+                    "funnel_duckai_ios__reasoningdropdown",
+                    // Shipped from 7.228.0 until the rename to ...__reasoningdropdown; kept so historic data validates.
+                    "funnel_addressbar_ios__reasoningpicker",
                     "funnel_duckai_ios__reasoningpicker"
                 ]
             }
@@ -251,7 +275,30 @@
         "owners": ["pikorddg"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion"]
+        "parameters": [
+            "appVersion",
+            {
+                "key": "origin",
+                "description": "Origin value for the Duck.ai tab-header upgrade label tap.",
+                "type": "string",
+                "enum": ["funnel_duckai_ios__freelabel"]
+            }
+        ]
+    },
+    "m_aichat_unified_input_chat_header_upgrade_shown": {
+        "description": "Fires each time the 'Free Plan / Upgrade' label in the Duck.ai tab header becomes visible.",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "origin",
+                "description": "Origin value for the Duck.ai tab-header upgrade label impression.",
+                "type": "string",
+                "enum": ["funnel_duckai_ios__freelabel"]
+            }
+        ]
     },
     "m_autocomplete_duckai_click_website": {
         "description": "Fires when user clicks on a website suggestion in the Duck.ai autocomplete suggestion list.",

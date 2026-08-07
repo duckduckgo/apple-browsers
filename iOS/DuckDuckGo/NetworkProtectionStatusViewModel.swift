@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import FoundationExtensions
 import Combine
 import CombineExtensions
 import NetworkExtension
@@ -28,6 +29,7 @@ import Core
 import PrivacyConfig
 import Subscription
 import TipKit
+import FeatureFlags_iOS
 
 struct NetworkProtectionLocationStatusModel {
     enum LocationIcon {

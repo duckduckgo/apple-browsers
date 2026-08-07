@@ -20,6 +20,7 @@ import BrowserServicesKit
 import Combine
 import Common
 import FoundationExtensions
+import Network
 import WebKit
 import UserScript
 
@@ -41,6 +42,8 @@ extension WKWebViewConfiguration {
             // set shared object if not set yet
             Self.sharedVisitedLinkStore = self.visitedLinkStore
         }
+
+        applyWebViewProxyIfNeeded()
 
         allowsAirPlayForMediaPlayback = true
         preferences.isElementFullscreenEnabled = true
@@ -74,6 +77,21 @@ extension WKWebViewConfiguration {
         self.processPool.geolocationProvider = GeolocationProvider(processPool: self.processPool)
     }
 
+    @MainActor
+    private func applyWebViewProxyIfNeeded() {
+        guard #available(macOS 14.0, *),
+              let proxy = LaunchOptionsHandler().webViewProxy,
+              let port = NWEndpoint.Port(rawValue: proxy.port) else {
+            return
+        }
+        let endpoint = NWEndpoint.hostPort(
+            host: NWEndpoint.Host(proxy.host),
+            port: port
+        )
+        websiteDataStore.proxyConfigurations = [
+            ProxyConfiguration(socksv5Proxy: endpoint)
+        ]
+    }
 }
 
 extension WKPreferences {

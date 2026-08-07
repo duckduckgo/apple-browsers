@@ -35,6 +35,7 @@ import PrivacyStats
 import Networking
 import WebExtensions
 import Onboarding
+import FeatureFlags_iOS
 
 @MainActor
 protocol URLHandling: AnyObject {
@@ -69,7 +70,7 @@ final class MainCoordinator {
 
     private let subscriptionManager: any SubscriptionManager
     private let featureFlagger: FeatureFlagger
-    private let modalPromptCoordinationService: ModalPromptCoordinationService
+    private let promoCoordinationService: PromoCoordinationService
     private let launchSourceManager: LaunchSourceManaging
     private let keyValueStore: ThrowingKeyValueStoring
     private let onboardingSearchExperienceSelectionHandler: OnboardingSearchExperienceSelectionHandler
@@ -130,7 +131,7 @@ final class MainCoordinator {
          freemiumPIRDebugSettings: FreemiumPIRDebugSettings,
          freemiumDBPUserStateManager: FreemiumDBPUserStateManaging,
          profileStateManager: DBPProfileStateManaging,
-         modalPromptCoordinationService: ModalPromptCoordinationService,
+         promoCoordinationService: PromoCoordinationService,
          mobileCustomization: MobileCustomization,
          productSurfaceTelemetry: ProductSurfaceTelemetry,
          whatsNewRepository: WhatsNewMessageRepository,
@@ -145,7 +146,7 @@ final class MainCoordinator {
         self.keyValueStore = keyValueStore
         self.darkReaderFeatureSettings = AppDarkReaderFeatureSettings(featureFlagger: featureFlagger,
                                                                       privacyConfigurationManager: privacyConfigurationManager)
-        self.modalPromptCoordinationService = modalPromptCoordinationService
+        self.promoCoordinationService = promoCoordinationService
         self.wideEvent = wideEvent
         self.onboardingManager = onboardingManager
         self.voiceSessionStateManager = VoiceSessionStateManager()
@@ -315,7 +316,8 @@ final class MainCoordinator {
                                         darkReaderFeatureSettings: darkReaderFeatureSettings,
                                         toggleModeStorage: toggleModeStorage,
                                         onboardingManager: onboardingManager,
-                                        recentModalPromptStatusProvider: modalPromptCoordinationService)
+                                        newTabPagePromoCoordinator: promoCoordinationService,
+                                        recentModalPromptStatusProvider: promoCoordinationService)
 
         setupWebExtensions(privacyConfigurationManager: privacyConfigurationManager)
 
@@ -658,7 +660,7 @@ final class MainCoordinator {
     }
 
     func presentModalPromptIfNeeded() {
-        modalPromptCoordinationService.presentModalPromptIfNeeded(from: controller)
+        promoCoordinationService.presentModalPromptIfNeeded(from: controller)
     }
 
     // MARK: App Lifecycle handling

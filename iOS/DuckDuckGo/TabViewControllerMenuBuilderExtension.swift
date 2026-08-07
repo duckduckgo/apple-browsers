@@ -31,6 +31,7 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import DuckPlayer
 import UIComponents
+import FeatureFlags_iOS
 
 extension TabViewController {
 
@@ -584,7 +585,7 @@ extension TabViewController {
             self?.openAIChatHistory()
         })
     }
-    
+
     /// Mirrors the Plus-menu "New Voice Chat": starts a Duck.ai voice session.
     private func buildAINewVoiceChatEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry {
         .regular(name: UserText.aiChatHeaderNewVoiceChatTitle,

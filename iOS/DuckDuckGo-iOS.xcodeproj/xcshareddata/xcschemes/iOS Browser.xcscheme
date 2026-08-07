@@ -262,6 +262,26 @@
                ReferencedContainer = "container:LocalPackages/SyncUI-iOS">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "SnapshotTestingSupportTests"
+               BuildableName = "SnapshotTestingSupportTests"
+               BlueprintName = "SnapshotTestingSupportTests"
+               ReferencedContainer = "container:../SharedPackages/SnapshotTestingSupport">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "FeatureFlagsTests"
+               BuildableName = "FeatureFlagsTests"
+               BlueprintName = "FeatureFlagsTests"
+               ReferencedContainer = "container:LocalPackages/FeatureFlags-iOS">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction

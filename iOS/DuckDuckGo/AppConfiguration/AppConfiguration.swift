@@ -29,6 +29,7 @@ import WebKit
 import DuckSansFont
 #endif
 import PrivacyConfig
+import FeatureFlags_iOS
 
 struct AppConfiguration {
 

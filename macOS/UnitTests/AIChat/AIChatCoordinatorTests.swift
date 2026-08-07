@@ -21,7 +21,7 @@ import BrowserServicesKit
 import Combine
 import PixelKit
 import PixelKitTestingUtilities
-import FeatureFlags
+import FeatureFlags_macOS
 import PrivacyConfig
 import SharedTestUtilities
 import XCTest
@@ -1105,6 +1105,25 @@ class MockAIChatTabOpener: AIChatTabOpening {
 
     func setOpenMethodCalledExpectation(_ expectation: XCTestExpectation) {
         openMethodCalledExpectation = expectation
+    }
+
+    var lastTargetedQuery: String?
+    var lastTargetWindowController: MainWindowController?
+
+    @MainActor
+    func openAIChatTab(withQuery query: String, inNewTabOf windowController: MainWindowController) {
+        openAIChatTabCalled = true
+        lastTargetedQuery = query
+        lastTargetWindowController = windowController
+    }
+
+    var lastNewWindowDroppingPoint: NSPoint?
+
+    @MainActor
+    func openAIChatTab(withQuery query: String, inNewWindowAt droppingPoint: NSPoint) {
+        openAIChatTabCalled = true
+        lastTargetedQuery = query
+        lastNewWindowDroppingPoint = droppingPoint
     }
 
     @MainActor

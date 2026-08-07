@@ -24,7 +24,7 @@ on:
     # We're also adding ready_for_review to run checks when a draft PR becomes ready for review.
     types: [opened, synchronize, reopened, ready_for_review]
     paths:
-      - '.github/**'
+      - '.github/workflows/macos_performance_tests.yml'
       - '.xcode-version'
 
 concurrency:

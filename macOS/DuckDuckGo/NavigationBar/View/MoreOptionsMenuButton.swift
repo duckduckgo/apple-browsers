@@ -30,7 +30,7 @@ final class MoreOptionsMenuButton: MouseOverButton, NotificationDotProviding {
     var notificationLayer: CALayer?
     private var cancellable: AnyCancellable?
 
-    var notificationColor: NSColor = .updateIndicator {
+    var notificationColor: NSColor = NSColor(designSystemColor: .accentPrimary) {
         didSet {
             updateNotificationLayer()
         }

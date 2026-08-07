@@ -390,22 +390,7 @@ final class AttributedMetricManagerTests: XCTestCase {
 
     // MARK: - Average Search Count Tests
 
-    /// Tests average search count pixel within first month (includes dayAverage parameter)
-    ///
-    /// ## Input → Output Mapping
-    ///
-    /// | Days Since Install | Raw Average | Bucketed Count | Parameters |
-    /// |-------------------|-------------|----------------|------------|
-    /// | 18-20 (< 28 days) | varies      | varies         | count=bucketed, dayAverage=raw_count, origin/installDate |
-    ///
-    /// ## Bucket Configuration
-    /// - user_average_searches_past_week_first_month: [5, 9] → ≤5 maps to 0, ≤9 maps to 1, >9 maps to 2
-    ///
-    /// ## Test Validation
-    /// - Pixel fires within first 28 days with dayAverage parameter
-    /// - count parameter is bucketed
-    /// - dayAverage parameter contains raw search count
-    /// - Trigger: .userDidSearch calls processAverageSearchCount()
+    /// Within the first month but at a full window (day 20): fires the first-month pixel with no dayAverage.
     func testProcessAverageSearchCountFirstMonth() {
         let pixelExpectation = XCTestExpectation(description: "Average search count pixel fired")
         var capturedCount: Int?
@@ -418,10 +403,6 @@ final class AttributedMetricManagerTests: XCTestCase {
                 capturedDayAverage = self.extractIntParameter(parameters, key: "dayAverage")
                 if capturedCount == nil {
                     XCTFail("Missing or invalid count parameter")
-                    return
-                }
-                if capturedDayAverage == nil {
-                    XCTFail("Missing or invalid dayAverage parameter")
                     return
                 }
                 pixelExpectation.fulfill()
@@ -446,26 +427,11 @@ final class AttributedMetricManagerTests: XCTestCase {
 
         wait(for: [pixelExpectation], timeout: 5.0)
         XCTAssertNotNil(capturedCount, "Should capture bucketed count")
-        XCTAssertNotNil(capturedDayAverage, "Should capture day average")
+        // Days 20 and 31 are full 7-day windows, so dayAverage is dropped.
+        XCTAssertNil(capturedDayAverage, "dayAverage must be absent once the window is full (day 7+)")
     }
 
-    /// Tests average search count pixel after first month (includes dayAverage parameter)
-    ///
-    /// ## Input → Output Mapping
-    ///
-    /// | Days Since Install | Raw Average | Bucketed Count | Parameters |
-    /// |-------------------|-------------|----------------|------------|
-    /// | 29-31 (≥ 28 days) | varies      | varies         | count=bucketed, dayAverage=raw_count, origin/installDate |
-    ///
-    /// ## Bucket Configuration
-    /// - user_average_searches_past_week: [5, 9] → ≤5 maps to 0, ≤9 maps to 1, >9 maps to 2
-    ///
-    /// ## Test Validation
-    /// - Pixel fires after 28 days with dayAverage parameter
-    /// - count parameter is bucketed
-    /// - dayAverage parameter contains raw search count
-    /// - Different pixel name than first month version
-    /// - Trigger: .userDidSearch calls processAverageSearchCount()
+    /// After the first month (day 31): fires the non-first-month pixel; established user, so no dayAverage.
     func testProcessAverageSearchCountAfterFirstMonth() {
         let pixelExpectation = XCTestExpectation(description: "Average search count pixel fired")
         var capturedCount: Int?
@@ -478,10 +444,6 @@ final class AttributedMetricManagerTests: XCTestCase {
                 capturedDayAverage = self.extractIntParameter(parameters, key: "dayAverage")
                 if capturedCount == nil {
                     XCTFail("Missing or invalid count parameter")
-                    return
-                }
-                if capturedDayAverage == nil {
-                    XCTFail("Missing or invalid dayAverage parameter")
                     return
                 }
                 pixelExpectation.fulfill()
@@ -506,7 +468,152 @@ final class AttributedMetricManagerTests: XCTestCase {
 
         wait(for: [pixelExpectation], timeout: 5.0)
         XCTAssertNotNil(capturedCount, "Should capture bucketed count")
-        XCTAssertNotNil(capturedDayAverage, "Should capture day average")
+        // Days 20 and 31 are full 7-day windows, so dayAverage is dropped.
+        XCTAssertNil(capturedDayAverage, "dayAverage must be absent once the window is full (day 7+)")
+    }
+
+    // MARK: - Average search e2e (calendar-day denominator & dayAverage ramp-up)
+
+    /// Ramp-up: 6 searches on one active day, processed on day 2.
+    /// Denominator must be calendar days (2), not active days (1):
+    /// count = 6/2 = 3 → bucket 0 (buggy: 6/1 = 6 → bucket 1); dayAverage = 2 (buggy: 1).
+    func testAverageSearch_e2e_rampUp_dividesByCalendarDays() {
+        let pixelExpectation = XCTestExpectation(description: "search pixel fired at day 2")
+        var capturedCount: Int?
+        var capturedDayAverage: Int?
+
+        let fixture = createTestFixture { pixelName, _, parameters, _, _, _ in
+            guard pixelName == "attributed_metric_average_searches_past_week_first_month" else { return }
+            capturedCount = self.extractIntParameter(parameters, key: "count")
+            capturedDayAverage = self.extractIntParameter(parameters, key: "dayAverage")
+            pixelExpectation.fulfill()
+        }
+        defer { fixture.cleanup() }
+
+        fixture.installDateProvider.installDate = fixture.timeMachine.now()      // day 0
+        fixture.timeMachine.travel(by: .day, value: 1)                          // day 1: 6 searches, 1 active day
+        for _ in 0..<6 { fixture.attributionManager.process(trigger: .userDidSearch) }
+        fixture.timeMachine.travel(by: .day, value: 1)                          // day 2: triggering search, excluded from window
+        fixture.attributionManager.process(trigger: .userDidSearch)
+
+        wait(for: [pixelExpectation], timeout: 5.0)
+        XCTAssertEqual(capturedCount, 0, "6 searches ÷ 2 calendar days = 3 → bucket 0 (not 6 ÷ 1 active day = 6 → bucket 1)")
+        XCTAssertEqual(capturedDayAverage, 2, "dayAverage must be calendar days (2), not active days (1)")
+    }
+
+    /// Established user (day 8): divides by 7 and drops dayAverage.
+    func testAverageSearch_e2e_established_dividesBy7_dropsDayAverage() {
+        let pixelExpectation = XCTestExpectation(description: "search pixel fired at day 8")
+        var capturedParameters: [String: String]?
+
+        let fixture = createTestFixture { pixelName, _, parameters, _, _, _ in
+            guard pixelName == "attributed_metric_average_searches_past_week_first_month" else { return }
+            capturedParameters = parameters
+            pixelExpectation.fulfill()
+        }
+        defer { fixture.cleanup() }
+
+        fixture.installDateProvider.installDate = fixture.timeMachine.now()      // day 0
+        fixture.timeMachine.travel(by: .day, value: 1)                          // day 1: 6 searches
+        for _ in 0..<6 { fixture.attributionManager.process(trigger: .userDidSearch) }
+        fixture.timeMachine.travel(by: .day, value: 7)                          // day 8: full window; triggering search excluded
+        fixture.attributionManager.process(trigger: .userDidSearch)
+
+        wait(for: [pixelExpectation], timeout: 5.0)
+        XCTAssertEqual(extractIntParameter(capturedParameters ?? [:], key: "count"), 0,
+                       "6 searches ÷ 7 = 0.86 → bucket 0 (not 6 ÷ 1 active day = 6 → bucket 1)")
+        XCTAssertNil(capturedParameters?["dayAverage"], "dayAverage must be dropped from day 7 (full window)")
+    }
+
+    /// Install day: no history yet, so no average pixel is sent.
+    func testAverageSearch_e2e_installDay_doesNotFire() {
+        let pixelExpectation = XCTestExpectation(description: "no search pixel on install day")
+        pixelExpectation.isInverted = true
+
+        let fixture = createTestFixture { pixelName, _, _, _, _, _ in
+            if pixelName == "attributed_metric_average_searches_past_week_first_month" {
+                pixelExpectation.fulfill()
+            }
+        }
+        defer { fixture.cleanup() }
+
+        fixture.installDateProvider.installDate = fixture.timeMachine.now()      // day 0
+        fixture.attributionManager.process(trigger: .userDidSearch)             // same day
+
+        wait(for: [pixelExpectation], timeout: 1.0)
+    }
+
+    /// Higher bucket: 12 searches over 2 calendar days → 6 → bucket 1.
+    func testAverageSearch_e2e_rampUp_landsInHigherBucket() {
+        let pixelExpectation = XCTestExpectation(description: "search pixel fired at day 2")
+        var capturedCount: Int?
+        var capturedDayAverage: Int?
+
+        let fixture = createTestFixture { pixelName, _, parameters, _, _, _ in
+            guard pixelName == "attributed_metric_average_searches_past_week_first_month" else { return }
+            capturedCount = self.extractIntParameter(parameters, key: "count")
+            capturedDayAverage = self.extractIntParameter(parameters, key: "dayAverage")
+            pixelExpectation.fulfill()
+        }
+        defer { fixture.cleanup() }
+
+        fixture.installDateProvider.installDate = fixture.timeMachine.now()      // day 0
+        fixture.timeMachine.travel(by: .day, value: 1)                          // day 1: 12 searches, 1 active day
+        for _ in 0..<12 { fixture.attributionManager.process(trigger: .userDidSearch) }
+        fixture.timeMachine.travel(by: .day, value: 1)                          // day 2: triggering search, excluded from window
+        fixture.attributionManager.process(trigger: .userDidSearch)
+
+        wait(for: [pixelExpectation], timeout: 5.0)
+        XCTAssertEqual(capturedCount, 1, "12 ÷ 2 = 6 → bucket 1 [5,9] (buggy: 12 ÷ 1 = 12 → bucket 2)")
+        XCTAssertEqual(capturedDayAverage, 2, "dayAverage = calendar days (2)")
+    }
+
+    /// Ad clicks, established user (day 8): divides by 7 and drops dayAverage.
+    func testAverageAdClicks_e2e_established_dividesBy7_dropsDayAverage() {
+        let pixelExpectation = XCTestExpectation(description: "ad click pixel fired at day 8")
+        var capturedParameters: [String: String]?
+
+        let fixture = createTestFixture { pixelName, _, parameters, _, _, _ in
+            guard pixelName == "attributed_metric_average_ad_clicks_past_week" else { return }
+            capturedParameters = parameters
+            pixelExpectation.fulfill()
+        }
+        defer { fixture.cleanup() }
+
+        fixture.installDateProvider.installDate = fixture.timeMachine.now()      // day 0
+        fixture.timeMachine.travel(by: .day, value: 1)                          // day 1: 6 ad clicks
+        for _ in 0..<6 { fixture.attributionManager.process(trigger: .userDidSelectAD) }
+        fixture.timeMachine.travel(by: .day, value: 7)                          // day 8: full window
+        fixture.attributionManager.process(trigger: .userDidSelectAD)
+
+        wait(for: [pixelExpectation], timeout: 5.0)
+        XCTAssertEqual(extractIntParameter(capturedParameters ?? [:], key: "count"), 0,
+                       "6 ad clicks ÷ 7 → bucket 0 (not 6 ÷ 1 active day = 6 → bucket 2)")
+        XCTAssertNil(capturedParameters?["dayAverage"], "dayAverage must be dropped from day 7")
+    }
+
+    /// Duck.ai usage, established user (day 8): divides by 7 and drops dayAverage.
+    func testAverageDuckAiUsage_e2e_established_dividesBy7_dropsDayAverage() {
+        let pixelExpectation = XCTestExpectation(description: "duck.ai pixel fired at day 8")
+        var capturedParameters: [String: String]?
+
+        let fixture = createTestFixture { pixelName, _, parameters, _, _, _ in
+            guard pixelName == "attributed_metric_average_duck_ai_usage_past_week" else { return }
+            capturedParameters = parameters
+            pixelExpectation.fulfill()
+        }
+        defer { fixture.cleanup() }
+
+        fixture.installDateProvider.installDate = fixture.timeMachine.now()      // day 0
+        fixture.timeMachine.travel(by: .day, value: 1)                          // day 1: 6 chats
+        for _ in 0..<6 { fixture.attributionManager.process(trigger: .userDidDuckAIChat) }
+        fixture.timeMachine.travel(by: .day, value: 7)                          // day 8: full window
+        fixture.attributionManager.process(trigger: .userDidDuckAIChat)
+
+        wait(for: [pixelExpectation], timeout: 5.0)
+        XCTAssertEqual(extractIntParameter(capturedParameters ?? [:], key: "count"), 0,
+                       "6 chats ÷ 7 → bucket 0 (not 6 ÷ 1 active day = 6 → bucket 1)")
+        XCTAssertNil(capturedParameters?["dayAverage"], "dayAverage must be dropped from day 7")
     }
 
     // MARK: - Average AD Click Tests
@@ -852,6 +959,67 @@ final class AttributedMetricManagerTests: XCTestCase {
 
         await fulfillment(of: [pixelExpectation], timeout: 5.0)
         XCTAssertEqual(capturedMonth, 2, "Should send bucketed length 2 for month 2+")
+    }
+
+    /// A converted free-trial user must emit month=1 (paid start) once, not on every app launch.
+    func testProcessSubscriptionCheck_month1_firesOnceAcrossRestarts() async {
+        let firstFire = XCTestExpectation(description: "month=1 fired")
+        let noSecondFire = XCTestExpectation(description: "month=1 not re-fired")
+        noSecondFire.isInverted = true
+        var month1FireCount = 0
+
+        let fixture = createTestFixture(
+            pixelHandler: { pixelName, _, parameters, _, _, _ in
+                guard pixelName == "attributed_metric_subscribed",
+                      self.extractIntParameter(parameters, key: "month") == 1 else { return }
+                month1FireCount += 1
+                if month1FireCount == 1 { firstFire.fulfill() } else { noSecondFire.fulfill() }
+            },
+            subscriptionStateProvider: SubscriptionStateProviderMock(isFreeTrial: false, isActive: true)
+        )
+        defer { fixture.cleanup() }
+
+        fixture.installDateProvider.installDate = fixture.timeMachine.now()
+        fixture.dataStorage.subscriptionDate = fixture.timeMachine.now()
+        fixture.dataStorage.subscriptionFreeTrialFired = true   // trial pixel sent; user has now converted to paid
+
+        // First launch after conversion → month=1 fires once.
+        fixture.attributionManager.process(trigger: .appDidStart)
+        await fulfillment(of: [firstFire], timeout: 5.0)
+
+        // Next day, another launch → must NOT re-fire month=1.
+        fixture.timeMachine.travel(by: .day, value: 1)
+        fixture.attributionManager.process(trigger: .appDidStart)
+        await fulfillment(of: [noSecondFire], timeout: 2.0)
+
+        XCTAssertEqual(month1FireCount, 1, "month=1 (paid start) must fire once, not on every launch")
+    }
+
+    /// A converted free-trial user (month=1 already sent) must advance to month=2+, not stay stuck on month=1.
+    func testProcessSubscriptionCheck_convertedTrialUser_advancesToMonth2() async {
+        let pixelExpectation = XCTestExpectation(description: "subscription pixel fired")
+        var capturedMonth: Int?
+
+        let fixture = createTestFixture(
+            pixelHandler: { pixelName, _, parameters, _, _, _ in
+                guard pixelName == "attributed_metric_subscribed" else { return }
+                capturedMonth = self.extractIntParameter(parameters, key: "month")
+                pixelExpectation.fulfill()
+            },
+            subscriptionStateProvider: SubscriptionStateProviderMock(isFreeTrial: false, isActive: true)
+        )
+        defer { fixture.cleanup() }
+
+        fixture.installDateProvider.installDate = fixture.timeMachine.now()
+        fixture.dataStorage.subscriptionDate = fixture.timeMachine.now()
+        fixture.dataStorage.subscriptionFreeTrialFired = true   // started on a free trial...
+        fixture.dataStorage.subscriptionMonth1Fired = true      // ...converted, month=1 already sent
+
+        fixture.timeMachine.travel(by: .day, value: 31)         // now active for more than a month
+        fixture.attributionManager.process(trigger: .appDidStart)
+
+        await fulfillment(of: [pixelExpectation], timeout: 5.0)
+        XCTAssertEqual(capturedMonth, 2, "Converted trial user must advance to month=2+, not re-fire month=1")
     }
 
     // MARK: - Sync Tests

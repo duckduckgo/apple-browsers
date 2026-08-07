@@ -41,7 +41,7 @@ enum PrivacyIcon {
 
     fileprivate var staticImage: UIImage? {
         switch self {
-        case .daxLogo: return UIImage(resource: .logoIcon)
+        case .daxLogo: return UIImage(rebrandable: "duckduckgo-favicon-24x24")
         case .alert: return DesignSystemImages.Glyphs.Size24.alertRecolorable
         default: return nil
         }

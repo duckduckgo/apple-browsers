@@ -31,43 +31,57 @@ public struct SimplifiedConnectingSheetViewV2: View {
     public var body: some View {
         ZStack {
             switch model.connectingSheetPhase {
-            case .connecting:
-                SimplifiedConnectingContentViewV2()
-                    .transition(.opacity)
             case .syncAnotherDevice:
                 SyncAnotherDevicePromptViewV2(model: model)
-                    .transition(.opacity)
-            case .recoverYourData:
-                RecoverYourDataView(model: model)
-                    .transition(.opacity)
-            case .deviceConnected:
-                SyncDeviceAddedViewV2(model: model)
-                    .transition(.opacity)
+            case .connecting(let isRecovery, let isFinishing):
+                SimplifiedConnectingContentViewV2(
+                    isRecovery: isRecovery,
+                    isFinishing: isFinishing,
+                    onAnimationFinished: { model.connectingAnimationDidFinish() }
+                )
+            case .success(let isRecovery):
+                SyncSuccessViewV2(model: model, isRecovery: isRecovery)
             case .none:
                 EmptyView()
             }
         }
-        .animation(.easeInOut(duration: 0.3), value: model.connectingSheetPhase)
         .background(Color(designSystemColor: .backgroundSheets).ignoresSafeArea())
     }
 }
 
 #if DEBUG
 #Preview("Connecting") {
-    SimplifiedConnectingSheetViewV2(model: .connectingSheetPreview(phase: .connecting))
+    RebrandedPreview(isRebranded: true) {
+        SimplifiedConnectingSheetViewV2(model: .connectingSheetPreview(phase: .connecting(isRecovery: false)))
+    }
 }
 
 #Preview("Connecting – Dark") {
-    SimplifiedConnectingSheetViewV2(model: .connectingSheetPreview(phase: .connecting))
-        .preferredColorScheme(.dark)
+    RebrandedPreview(isRebranded: true) {
+        SimplifiedConnectingSheetViewV2(model: .connectingSheetPreview(phase: .connecting(isRecovery: false)))
+    }
+    .preferredColorScheme(.dark)
 }
 
 #Preview("Sync Another Device") {
-    SimplifiedConnectingSheetViewV2(model: .connectingSheetPreview(phase: .syncAnotherDevice))
+    RebrandedPreview(isRebranded: true) {
+        SimplifiedConnectingSheetViewV2(model: .connectingSheetPreview(phase: .syncAnotherDevice(isConnecting: false)))
+    }
 }
 
 #Preview("Device Connected") {
-    SimplifiedConnectingSheetViewV2(model: .connectingSheetPreview(phase: .deviceConnected))
+    RebrandedPreview(isRebranded: true) {
+        SimplifiedConnectingSheetViewV2(model: .connectingSheetPreview(phase: .success(isRecovery: false)))
+    }
+}
+
+
+#Preview("Recovering") {
+    SimplifiedConnectingSheetViewV2(model: .connectingSheetPreview(phase: .connecting(isRecovery: true)))
+}
+
+#Preview("Recovery Completed") {
+    SimplifiedConnectingSheetViewV2(model: .connectingSheetPreview(phase: .success(isRecovery: true)))
 }
 
 private extension SyncSettingsViewModel {

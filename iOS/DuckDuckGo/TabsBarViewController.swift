@@ -20,12 +20,14 @@
 import UIKit
 import Combine
 import Core
+import FoundationExtensions
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import BrowserServicesKit
 import AIChat
 import Persistence
 import PrivacyConfig
+import FeatureFlags_iOS
 
 protocol TabsBarDelegate: NSObjectProtocol {
     
@@ -54,10 +56,16 @@ class TabsBarViewController: UIViewController {
         static let buttonWidth: CGFloat = 44
         static let buttonHeight: CGFloat = 40
         static let stackSpacing: CGFloat = 12
+        static let addTabButtonGap: CGFloat = 6
         static let minItemWidth: CGFloat = 120
         static let maxItemWidthFraction: CGFloat = 0.33
         static let narrowMaxItemWidthFraction: CGFloat = 0.5
         static let leadingInset: CGFloat = 16
+        /// Wider than `leadingInset` so the active tab's flare clears the rounded address bar corner below.
+        static let firstTabLeadingMargin: CGFloat = 24
+        /// Active-tab bottom fillet size (Figma spec).
+        static let tabRampSize = CGSize(width: 10, height: 10)
+        static let windowControlsTabGap: CGFloat = 16
     }
     
     enum NewTabType {
@@ -71,6 +79,25 @@ class TabsBarViewController: UIViewController {
     var collectionView: UICollectionView { tabsBarView.collectionView }
     var buttonsStack: UIStackView { tabsBarView.buttonsStack }
     var buttonsBackground: UIView { tabsBarView.buttonsBackground }
+
+    private var addTabButtonLeadingConstraint: NSLayoutConstraint?
+    private var currentLayout: TabsBarLayout?
+
+    // Opaque backdrop so tabs scrolling under the sticky button don't show through it.
+    private let addTabButtonBackground = UIView()
+
+    // Draws the active tab's flared background; the callbacks below forward to it.
+    private lazy var flareBackground = TabFlareBackgroundController(
+        collectionView: collectionView,
+        topCornerRadius: TabsBarCell.cornerRadius,
+        rampSize: Constants.tabRampSize,
+        currentIndex: { [weak self] in self?.currentIndex },
+        fillColor: { ThemeManager.shared.currentTheme.omniBarBackgroundColor }
+    )
+
+    func setCurrentTabSelectionAlpha(_ alpha: CGFloat) {
+        flareBackground.hideAlpha = alpha.clamped(to: 0...1)
+    }
 
     lazy var fireButton: UIButton = {
         createButton(image: DesignSystemImages.Glyphs.Size24.fireSolid)
@@ -163,16 +190,37 @@ class TabsBarViewController: UIViewController {
         collectionView.isPrefetchingEnabled = false
         collectionView.register(TabsBarCell.self, forCellWithReuseIdentifier: TabsBarCell.reuseIdentifier)
 
+        // Insert the flare overlay and reserve room for the leftmost tab's fillet (collection leading
+        // is pulled in to match).
+        flareBackground.update()
+        collectionView.contentInset.left = Constants.tabRampSize.width
+
         addTabButton.setImage(DesignSystemImages.Glyphs.Size24.add, for: .normal)
         fireButton.setImage(DesignSystemImages.Glyphs.Size24.fireSolid, for: .normal)
 
         buttonsStack.spacing = Constants.stackSpacing
         buttonsStack.alignment = .center
 
-        buttonsStack.addArrangedSubview(addTabButton)
         buttonsStack.addArrangedSubview(aiChatChip)
         buttonsStack.addArrangedSubview(fireButton)
         buttonsStack.addArrangedSubview(tabSwitcherButton)
+
+        // Not in buttonsStack: its position is computed per tab count, see recomputeItemSize()/TabsBarLayout.
+        addTabButtonBackground.translatesAutoresizingMaskIntoConstraints = false
+        addTabButton.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(addTabButtonBackground)
+        view.addSubview(addTabButton)
+        let leadingConstraint = addTabButton.leadingAnchor.constraint(equalTo: collectionView.leadingAnchor)
+        addTabButtonLeadingConstraint = leadingConstraint
+        NSLayoutConstraint.activate([
+            leadingConstraint,
+            addTabButton.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+
+            addTabButtonBackground.leadingAnchor.constraint(equalTo: addTabButton.leadingAnchor),
+            addTabButtonBackground.trailingAnchor.constraint(equalTo: addTabButton.trailingAnchor),
+            addTabButtonBackground.topAnchor.constraint(equalTo: view.topAnchor),
+            addTabButtonBackground.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
 
         addTabButton.addTarget(self, action: #selector(onNewTabPressed), for: .touchUpInside)
         aiChatChip.textButton.addTarget(self, action: #selector(onAIChatPressed), for: .touchUpInside)
@@ -327,28 +375,46 @@ class TabsBarViewController: UIViewController {
         DispatchQueue.main.async {
             guard let currentIndex = self.currentIndex else { return }
             let indexPath = IndexPath(row: currentIndex, section: 0)
-            guard let attributes = self.collectionView.layoutAttributesForItem(at: indexPath) else { return }
-            let visibleRect = CGRect(origin: self.collectionView.contentOffset, size: self.collectionView.bounds.size)
-            let isPartiallyClipped = visibleRect.intersects(attributes.frame) && !visibleRect.contains(attributes.frame)
-            guard isPartiallyClipped else { return }
+            guard self.isPartiallyClipped(at: indexPath) else { return }
             self.collectionView.scrollToItem(at: indexPath, at: [], animated: true)
         }
     }
 
-    private func recomputeItemSize() {
-        let availableWidth = collectionView.frame.size.width
-        guard tabsCount > 0 else { return }
-
-        let itemWidth = Self.itemWidth(
-            availableWidth: availableWidth,
-            visibleItems: tabsCount,
-            minWidth: Constants.minItemWidth,
-            maxWidth: maxItemWidth(forStripWidth: availableWidth)
+    /// Excludes the sticky button's reserved contentInset, else a tab under it reads as "visible".
+    private func isPartiallyClipped(at indexPath: IndexPath) -> Bool {
+        guard let attributes = collectionView.layoutAttributesForItem(at: indexPath) else { return false }
+        let visibleSize = CGSize(
+            width: collectionView.bounds.width - collectionView.contentInset.right,
+            height: collectionView.bounds.height
         )
+        let visibleRect = CGRect(origin: collectionView.contentOffset, size: visibleSize)
+        return visibleRect.intersects(attributes.frame) && !visibleRect.contains(attributes.frame)
+    }
 
-        if let flowLayout = collectionView.collectionViewLayout as? UICollectionViewFlowLayout {
-            flowLayout.itemSize = CGSize(width: itemWidth, height: view.frame.size.height)
+    private func recomputeItemSize() {
+        let stripWidth = collectionView.frame.size.width
+        guard stripWidth > 0 else { return }
+        let leadingContentInset = collectionView.contentInset.left
+        let availableStripWidth = max(0, stripWidth - leadingContentInset)
+
+        let layout = TabsBarLayout(
+            stripWidth: availableStripWidth,
+            tabsCount: tabsCount,
+            minItemWidth: Constants.minItemWidth,
+            maxItemWidth: maxItemWidth(forStripWidth: availableStripWidth),
+            buttonWidth: Constants.buttonWidth,
+            buttonGap: Constants.addTabButtonGap
+        )
+        currentLayout = layout
+
+        if let flowLayout = collectionView.collectionViewLayout as? UICollectionViewFlowLayout, tabsCount > 0 {
+            flowLayout.itemSize = CGSize(width: layout.itemWidth, height: view.frame.size.height)
         }
+        // Room before the add button so the last tab's trailing fillet clears its opaque backdrop.
+        let rampWidth = Constants.tabRampSize.width
+        let trailingFilletRoom = layout.isFloored ? 0 : max(0, rampWidth - Constants.addTabButtonGap)
+        addTabButtonLeadingConstraint?.constant = layout.addTabButtonLeadingOffset + leadingContentInset + trailingFilletRoom
+        collectionView.contentInset.right = layout.addTabButtonContentInsetRight + (layout.isFloored ? rampWidth : 0)
     }
 
     /// Half the strip, but in landscape also capped at a third of the full-screen strip so a resize
@@ -382,18 +448,7 @@ class TabsBarViewController: UIViewController {
     /// True when tabs are floored at min width so the strip scrolls. Inactive tabs then hide the close
     /// button (kept on the active tab, revealed on pointer hover); touch closes the rest via long press.
     private var isStripOverflowing: Bool {
-        let availableWidth = collectionView.frame.size.width
-        let itemWidth = (collectionView.collectionViewLayout as? UICollectionViewFlowLayout)?.itemSize.width ?? 0
-        return availableWidth > 0 && itemWidth > 0 && CGFloat(tabsCount) * itemWidth > availableWidth
-    }
-
-    /// Equal share of the strip, capped at `maxWidth` then floored at `minWidth` (floor wins).
-    static func itemWidth(availableWidth: CGFloat, visibleItems: Int, minWidth: CGFloat, maxWidth: CGFloat) -> CGFloat {
-        guard visibleItems > 0 else { return 0 }
-        var width = availableWidth / CGFloat(visibleItems)
-        width = min(width, maxWidth)
-        width = max(width, minWidth)
-        return width
+        currentLayout?.isFloored ?? false
     }
 
     private func reloadData() {
@@ -401,6 +456,7 @@ class TabsBarViewController: UIViewController {
         tabSwitcherButton.tabCount = tabsCount
         tabSwitcherButton.isFireMode = (tabManager?.currentBrowsingMode ?? .normal) == .fire
         tabSwitcherButton.hasUnread = hasUnread
+        flareBackground.update()
     }
 
     func backgroundTabAdded() {
@@ -524,7 +580,27 @@ class TabsBarViewController: UIViewController {
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
+        updateWindowControlsInsetIfNeeded()
+        // Catches layout passes (e.g. the first one) that land before refresh()/backgroundTabAdded().
+        recomputeItemSize()
+        flareBackground.update()
         NotificationCenter.default.post(name: TabsBarViewController.viewDidLayoutNotification, object: self)
+    }
+
+    // Recalculate after resizing because reserved window control width changes.
+    private func updateWindowControlsInsetIfNeeded() {
+        let margin: CGFloat
+        if WindowControlsRowLayout.sharesRow(in: view, isEnabled: WindowControlsRowLayout.isEnabled(featureFlagger: featureFlagger)) {
+            let clearsWindowControls = WindowControlsRowLayout.leadingInset(in: view) + Constants.windowControlsTabGap
+            margin = max(Constants.firstTabLeadingMargin, clearsWindowControls)
+        } else {
+            // Horizontal adaptation reserves display corner space in full screen.
+            margin = Constants.firstTabLeadingMargin
+        }
+        guard tabsBarView.firstTabLeadingMargin != margin else { return }
+
+        tabsBarView.firstTabLeadingMargin = margin
+        view.layoutIfNeeded()
     }
 }
 
@@ -587,7 +663,30 @@ extension TabsBarViewController: UICollectionViewDelegate {
 
     func collectionView(_ collectionView: UICollectionView,
                         previewForDismissingContextMenuWithConfiguration configuration: UIContextMenuConfiguration) -> UITargetedPreview? {
+        // Fires on every preview dismissal; `willEndContextMenu` may not (e.g. when the lift converts
+        // into a drag), so restore from here.
+        flareBackground.endPreview()
         return tabMenuPreview(for: configuration)
+    }
+
+    func collectionView(_ collectionView: UICollectionView,
+                        willDisplayContextMenu configuration: UIContextMenuConfiguration,
+                        animator: UIContextMenuInteractionAnimating?) {
+        flareBackground.beginPreview(forRow: (configuration.identifier as? NSNumber)?.intValue, animator: animator)
+    }
+
+    func collectionView(_ collectionView: UICollectionView,
+                        willEndContextMenu configuration: UIContextMenuConfiguration,
+                        animator: UIContextMenuInteractionAnimating?) {
+        // Fallback; `previewForDismissing` handles the rest.
+        flareBackground.endPreview()
+    }
+
+    func collectionView(_ collectionView: UICollectionView,
+                        willPerformPreviewActionForMenuWith configuration: UIContextMenuConfiguration,
+                        animator: UIContextMenuInteractionCommitAnimating) {
+        // Committing the preview also ends the menu without `willEndContextMenu`.
+        flareBackground.endPreview()
     }
 
     private func tabMenuPreview(for configuration: UIContextMenuConfiguration) -> UITargetedPreview? {
@@ -631,6 +730,14 @@ extension TabsBarViewController: UICollectionViewDragDelegate {
 
     func collectionView(_ collectionView: UICollectionView, dragPreviewParametersForItemAt indexPath: IndexPath) -> UIDragPreviewParameters? {
         return tabDragPreviewParameters(at: indexPath, backgroundColor: tabLiftBackgroundColor)
+    }
+
+    func collectionView(_ collectionView: UICollectionView, dragSessionWillBegin session: UIDragSession) {
+        flareBackground.beginReorder()
+    }
+
+    func collectionView(_ collectionView: UICollectionView, dragSessionDidEnd session: UIDragSession) {
+        flareBackground.endReorder()
     }
 
     private func tabDragPreviewParameters(at indexPath: IndexPath, backgroundColor: UIColor) -> UIDragPreviewParameters? {
@@ -685,6 +792,7 @@ extension TabsBarViewController: UICollectionViewDropDelegate {
                                    hidesInactiveCloseButton: hidesInactiveCloseButton,
                                    withTheme: theme)
         }
+        flareBackground.update()
     }
 
 }
@@ -756,16 +864,12 @@ extension TabsBarViewController: UICollectionViewDataSource {
             guard let self = self, let model = model,
                 let tabIndex = self.tabsModel?.indexOf(tab: model)
                 else { return }
-
-            // Failsafe: don't close a tab that isn't fully visible; scroll it in first (a second tap closes it).
-            let indexPath = IndexPath(item: tabIndex, section: 0)
-            let visibleRect = CGRect(origin: self.collectionView.contentOffset, size: self.collectionView.bounds.size)
-            if let attributes = self.collectionView.layoutAttributesForItem(at: indexPath),
-               !visibleRect.contains(attributes.frame) {
+            let indexPath = IndexPath(row: tabIndex, section: 0)
+            // Reveal a not-fully-visible tab instead of closing it, guards against accidental taps.
+            guard !self.isPartiallyClipped(at: indexPath) else {
                 self.collectionView.scrollToItem(at: indexPath, at: [], animated: true)
                 return
             }
-
             self.closeTab(at: tabIndex)
         }
         return cell
@@ -779,10 +883,13 @@ extension TabsBarViewController {
         let theme = ThemeManager.shared.currentTheme
         view.backgroundColor = theme.tabsBarBackgroundColor
         view.tintColor = theme.barTintColor
-        collectionView.backgroundColor = theme.tabsBarBackgroundColor
+        // Clear so the flare behind the cells shows through.
+        collectionView.backgroundColor = .clear
         buttonsBackground.backgroundColor = theme.tabsBarBackgroundColor
-        
+        addTabButtonBackground.backgroundColor = theme.tabsBarBackgroundColor
+
         collectionView.reloadData()
+        flareBackground.update()
     }
 
 }

@@ -81,9 +81,9 @@ final class PasswordManagementViewController: NSViewController {
     @IBOutlet var lockScreenIconImageView: NSImageView! {
         didSet {
             if DeviceAuthenticator.deviceSupportsBiometrics {
-                lockScreenIconImageView.image = .loginsLockTouchID
+                lockScreenIconImageView.image = themeManager.isAppRebranded ? .lockTouchID128 : .loginsLockTouchIDLegacy
             } else {
-                lockScreenIconImageView.image = .loginsLockPassword
+                lockScreenIconImageView.image = themeManager.isAppRebranded ? .lockLocked128 : .loginsLockPasswordLegacy
             }
         }
     }
@@ -725,9 +725,13 @@ final class PasswordManagementViewController: NSViewController {
     private func doSaveCredentials(_ credentials: SecureVaultModels.WebsiteCredentials) {
         let isNew = credentials.account.id == nil
 
+        let isNoteWithoutDomain = (credentials.account.username?.isEmpty ?? true)
+            && (credentials.account.domain?.trimmingCharacters(in: .whitespaces).isEmpty ?? true)
+
         func showDuplicateAlert() {
             if let window = view.window {
-                NSAlert.passwordManagerDuplicateLogin().beginSheetModal(for: window)
+                let alert = isNoteWithoutDomain ? NSAlert.passwordManagerNoteRequiresDomain() : NSAlert.passwordManagerDuplicateLogin()
+                alert.beginSheetModal(for: window)
             }
         }
 

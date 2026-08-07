@@ -28,6 +28,42 @@ public enum AIChatMetricName: String, Codable {
     case userDidAcceptTermsAndConditions
     case userDidSelectSuggestion
     case userDidViewSuggestions
+
+    // MARK: - Subscription funnel metrics
+    // Reported by the frontend only inside a native app, where its own website pixel is suppressed.
+    // https://app.asana.com/1/137249556945/task/1216395339071571
+    case userDidViewAiSidebarUpgradeButton
+    case userDidViewActivateSubscriptionBanner
+    case userDidViewFreePlanBadge
+    case userDidViewFreeLimitMessage
+    case userDidViewImageGenerationLimitMessage
+    case userDidViewPlusLimitMessage
+    case userDidViewPromotionCard
+    case userDidViewSettingsSubscribeButton
+    case userDidViewProUpgradeDisclaimerBanner
+    case userDidViewVoiceChatLimitModal
+    case userDidViewVoiceChatDurationLimitModal
+
+    case userDidClickAiSidebarUpgradeButton
+    case userDidClickActivateSubscriptionButton
+    case userDidClickFreePlanUpgradeButton
+    case userDidClickFreeLimitSubscribeLink
+    case userDidClickImageGenerationLimitSubscribeButton
+    case userDidClickPlusLimitUpgradeLink
+    case userDidClickPromotionCardButton
+    case userDidClickSettingsSubscribeButton
+    case userDidClickProUpgradeDisclaimerBannerButton
+    case userDidClickVoiceChatLimitModalSubscribeButton
+    case userDidClickVoiceChatDurationLimitModalSubscribeButton
+
+    // MARK: - Subscription funnel modal metrics
+    // The subscribe / upgrade-to-Pro modal the funnel entry points above open. These carry `source`,
+    // naming the entry point the modal was opened from.
+    case userDidOpenSubscribeModal
+    case userDidClickSubscribeOnSubscribeModal
+    case userDidClickActivateOnSubscribeModal
+    case userDidOpenUpgradeToProModal
+    case userDidClickUpgradeOnUpgradeToProModal
 }
 
 // Model tier for AI Chat metrics
@@ -48,13 +84,17 @@ public struct AIChatMetric: Codable {
     public let pageType: String?
     /// Whether the shown suggestions were smart (page-tailored) rather than generic. Carried by `userDidViewSuggestions`.
     public let isSmart: Bool?
+    /// Funnel entry point a modal was opened from (e.g. `freelimit`). Decoded as a plain string so a new FE
+    /// slug never breaks decoding. Carried by the subscription funnel modal metrics.
+    public let source: String?
 
-     public init(metricName: AIChatMetricName, modelTier: AIChatModelTier? = nil, suggestionId: String? = nil, pageType: String? = nil, isSmart: Bool? = nil) {
+     public init(metricName: AIChatMetricName, modelTier: AIChatModelTier? = nil, suggestionId: String? = nil, pageType: String? = nil, isSmart: Bool? = nil, source: String? = nil) {
          self.metricName = metricName
          self.modelTier = modelTier
          self.suggestionId = suggestionId
          self.pageType = pageType
          self.isSmart = isSmart
+         self.source = source
      }
 }
 

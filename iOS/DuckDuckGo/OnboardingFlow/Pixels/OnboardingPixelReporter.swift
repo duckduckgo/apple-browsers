@@ -184,6 +184,7 @@ extension AppIcon {
         case .blue: .blue
         case .purple: .purple
         case .black: .black
+        case .white: .white
         }
     }
 }

@@ -196,6 +196,15 @@ final class UnifiedToggleInputToolbarView: UIView {
         set { returnKeyButton.isHidden = newValue }
     }
 
+    var isEditing: Bool = false {
+        didSet {
+            guard oldValue != isEditing else { return }
+            leftControlsGroup.isHidden = isEditing
+            secondaryTrailingGroup.isHidden = isEditing
+            updateSubmitButtonAppearance()
+        }
+    }
+
     private var modelChipExplicitlyHidden = false
 
     // MARK: - UI Components
@@ -386,6 +395,24 @@ final class UnifiedToggleInputToolbarView: UIView {
         return button
     }()
 
+    private lazy var leftControlsGroup: UIStackView = {
+        let stack = UIStackView(arrangedSubviews: [imageButton, toolsButton, selectedToolChipView])
+        stack.axis = .horizontal
+        stack.spacing = Constants.leftGroupSpacing
+        stack.alignment = .center
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        return stack
+    }()
+
+    private lazy var secondaryTrailingGroup: UIStackView = {
+        let stack = UIStackView(arrangedSubviews: [reasoningButton, modelChipButton])
+        stack.axis = .horizontal
+        stack.spacing = Constants.rightGroupSpacing
+        stack.alignment = .center
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        return stack
+    }()
+
     // MARK: - Initialization
 
     override init(frame: CGRect) {
@@ -401,18 +428,12 @@ final class UnifiedToggleInputToolbarView: UIView {
 private extension UnifiedToggleInputToolbarView {
 
     private func setupUI() {
-        let leftGroup = UIStackView(arrangedSubviews: [imageButton, toolsButton, selectedToolChipView])
-        leftGroup.axis = .horizontal
-        leftGroup.spacing = Constants.leftGroupSpacing
-        leftGroup.alignment = .center
-        leftGroup.translatesAutoresizingMaskIntoConstraints = false
-
         let spacer = UIView()
         spacer.translatesAutoresizingMaskIntoConstraints = false
         spacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
         spacer.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
-        let rightGroup = UIStackView(arrangedSubviews: [reasoningButton, modelChipButton, returnKeyButton, submitButton, stopButton])
+        let rightGroup = UIStackView(arrangedSubviews: [secondaryTrailingGroup, returnKeyButton, submitButton, stopButton])
         rightGroup.axis = .horizontal
         rightGroup.spacing = Constants.rightGroupSpacing
         rightGroup.alignment = .center
@@ -420,7 +441,7 @@ private extension UnifiedToggleInputToolbarView {
         rightGroup.setContentHuggingPriority(.required, for: .horizontal)
         rightGroup.setContentCompressionResistancePriority(.required, for: .horizontal)
 
-        let outerStack = UIStackView(arrangedSubviews: [leftGroup, spacer, rightGroup])
+        let outerStack = UIStackView(arrangedSubviews: [leftControlsGroup, spacer, rightGroup])
         outerStack.axis = .horizontal
         outerStack.alignment = .center
         outerStack.translatesAutoresizingMaskIntoConstraints = false
@@ -492,7 +513,7 @@ private extension UnifiedToggleInputToolbarView {
     }
 
     func updateSubmitButtonAppearance() {
-        let showVoice = isAIVoiceChatActive && !isSubmitEnabled
+        let showVoice = isAIVoiceChatActive && !isSubmitEnabled && !isEditing
         let usesReturnKeyStyle = usesNewPromptSubmitStyle || preservesSubmitStyleDuringDismissal
         let icon: UIImage? = {
             if showVoice {

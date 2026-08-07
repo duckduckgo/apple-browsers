@@ -1,13 +1,13 @@
 {
-  "originHash" : "c83b04d371e1c66148dd4d9771e4262264e9cf9c0f52cc062b940e7336600002",
+  "originHash" : "ac2a9945ad19c7da6daf61472649344613332f0fa77e9b4e44a6ce545a90bea6",
   "pins" : [
     {
       "identity" : "content-scope-scripts",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
-        "revision" : "dc9b1280951a22359aac33d07ffd410cbbae2b94",
-        "version" : "15.12.0"
+        "revision" : "3011e9e06cc68d3f9c2cd7b00aadabcd34d2869a",
+        "version" : "15.19.0"
       }
     },
     {
@@ -42,8 +42,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/privacy-dashboard",
       "state" : {
-        "revision" : "40a8c752fb73a15738899dc0edb5e17e33302a37",
-        "version" : "9.10.1"
+        "revision" : "88a028fe9e4aa53941cb49dfc93bbcf62bd46f3b",
+        "version" : "9.10.2"
       }
     },
     {

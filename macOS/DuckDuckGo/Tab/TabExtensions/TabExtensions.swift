@@ -161,7 +161,8 @@ extension TabExtensionsBuilder {
             SpecialErrorPageTabExtension(webViewPublisher: args.webViewFuture,
                                          scriptsPublisher: userScripts.compactMap { $0 },
                                          closeTab: args.closeTab,
-                                         maliciousSiteDetector: dependencies.maliciousSiteDetector)
+                                         maliciousSiteDetector: dependencies.maliciousSiteDetector,
+                                         acceptsInsecureCertificates: LaunchOptionsHandler().acceptsInsecureCertificates)
         }
 
         add {

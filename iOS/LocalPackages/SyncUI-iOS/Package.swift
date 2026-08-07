@@ -38,7 +38,7 @@ let package = Package(
         .package(path: "../../../SharedPackages/Infrastructure/MetricBuilder"),
         .package(path: "../../../SharedPackages/UIComponents"),
         .package(url: "https://github.com/duckduckgo/apple-toolbox.git", exact: "3.2.1"),
-        .package(url: "https://github.com/airbnb/lottie-spm.git", exact: "4.5.2"),
+        .package(url: "https://github.com/airbnb/lottie-spm.git", exact: "4.6.1"),
     ],
     targets: [
         .target(
@@ -53,7 +53,8 @@ let package = Package(
             ],
             resources: [
                 .process("Resources/SyncMedia.xcassets"),
-                .copy("Resources/SyncScanQRCode.lottie")
+                .copy("Resources/SyncScanQRCode.lottie"),
+                .copy("Resources/SyncLock.lottie")
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))

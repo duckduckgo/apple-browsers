@@ -252,6 +252,86 @@ final class AIChatPageContextHandlerTests: XCTestCase {
         XCTAssertNotNil(receivedContext!)
     }
 
+    // MARK: - Favicon Enrichment Tests
+
+    func testFaviconEnrichmentReplacesFaviconAndPreservesPageTypeSignals() throws {
+        // Given: A favicon provider that supplies an encoded favicon, forcing the handler
+        // to re-build the context data (the enrichment path).
+        let mockScript = MockPageContextCollecting()
+        let webView = WKWebView()
+        let encodedFavicon = "data:image/png;base64,\(Self.onePixelPNGBase64)"
+        let handler = makeHandler(
+            webViewProvider: { webView },
+            userScriptProvider: { mockScript },
+            faviconProvider: { _ in encodedFavicon }
+        )
+
+        let expectation = XCTestExpectation(description: "Context published")
+        var receivedContext: AIChatPageContext?
+        handler.contextPublisher
+            .dropFirst()
+            .first()
+            .sink { context in
+                receivedContext = context
+                expectation.fulfill()
+            }
+            .store(in: &cancellables)
+
+        // When: Script publishes a context carrying every optional field
+        handler.triggerContextCollection(trigger: .auto)
+        mockScript.simulate(context: Self.makeFullyPopulatedContext())
+
+        wait(for: [expectation], timeout: 1.0)
+
+        // Then: Favicon is replaced, everything else survives the re-build
+        let contextData = try XCTUnwrap(receivedContext?.contextData)
+        XCTAssertEqual(contextData.favicon, [.init(href: encodedFavicon, rel: "icon")])
+        XCTAssertNotNil(receivedContext?.favicon, "Encoded favicon should decode to a UIImage")
+        XCTAssertEqual(contextData.pageTypeSignals, Self.makeFullyPopulatedContext().pageTypeSignals)
+        XCTAssertEqual(contextData.tabId, "tab-1")
+        XCTAssertEqual(contextData.attached, false)
+        XCTAssertEqual(contextData.attachable, true)
+    }
+
+    /// Compares the enriched context against the original field-by-field via their
+    /// JSON representations, ignoring only `favicon`. When a new field is added to
+    /// `AIChatPageContextData` but not carried over in the handler's favicon enrichment,
+    /// this test fails without needing an update — extend `makeFullyPopulatedContext`
+    /// with a non-default value for the new field so the protection stays meaningful.
+    func testFaviconEnrichmentPreservesEveryFieldExceptFavicon() throws {
+        let mockScript = MockPageContextCollecting()
+        let webView = WKWebView()
+        let handler = makeHandler(
+            webViewProvider: { webView },
+            userScriptProvider: { mockScript },
+            faviconProvider: { _ in "data:image/png;base64,\(Self.onePixelPNGBase64)" }
+        )
+
+        let expectation = XCTestExpectation(description: "Context published")
+        var receivedContext: AIChatPageContext?
+        handler.contextPublisher
+            .dropFirst()
+            .first()
+            .sink { context in
+                receivedContext = context
+                expectation.fulfill()
+            }
+            .store(in: &cancellables)
+
+        let original = Self.makeFullyPopulatedContext()
+        handler.triggerContextCollection(trigger: .auto)
+        mockScript.simulate(context: original)
+
+        wait(for: [expectation], timeout: 1.0)
+
+        let enriched = try XCTUnwrap(receivedContext?.contextData)
+        XCTAssertEqual(
+            try jsonDictionary(of: original, ignoringKey: "favicon"),
+            try jsonDictionary(of: enriched, ignoringKey: "favicon"),
+            "Favicon enrichment re-builds AIChatPageContextData - every field except favicon must be carried over"
+        )
+    }
+
     // MARK: - Unavailable Pixel Tests
 
     func testUnavailablePixelFiresWhenNoUserScript() {
@@ -386,6 +466,34 @@ final class AIChatPageContextHandlerTests: XCTestCase {
         XCTAssertEqual(extractionPixels.calls.first?.outcome, .failure(.deserializeFailed))
     }
 
+    /// A script error used to be dropped without resolving the request, so it surfaced 30s later as
+    /// a timeout. It must now report its own reason, with a latency, as soon as the reply arrives.
+    func testWhenScriptErrorThenReportsScriptErrorOutcomeNotTimeout() {
+        let mockScript = MockPageContextCollecting()
+        let extractionPixels = MockPageContextExtractionPixelFiring()
+        let policy = makeBlocklistPolicy()
+        let handler = makeHandler(
+            webViewProvider: { WKWebView() },
+            userScriptProvider: { mockScript },
+            attachabilityPolicyProvider: { policy },
+            currentURLProvider: { URL(string: "https://example.com/article") },
+            mimeTypeProvider: { _ in "text/html" },
+            extractionPixelHandler: extractionPixels
+        )
+
+        let expectation = XCTestExpectation(description: "Context published")
+        handler.contextPublisher.dropFirst().first().sink { _ in expectation.fulfill() }.store(in: &cancellables)
+
+        handler.triggerContextCollection(trigger: .userRequest)
+        mockScript.simulateScriptError()
+        wait(for: [expectation], timeout: 1.0)
+
+        XCTAssertEqual(extractionPixels.calls.count, 1)
+        XCTAssertEqual(extractionPixels.calls.first?.outcome, .failure(.scriptError))
+        XCTAssertEqual(extractionPixels.calls.first?.trigger, .userRequest)
+        XCTAssertNotNil(extractionPixels.calls.first?.latency)
+    }
+
     func testWhenNoAttachabilityConfigThenCollectsButFiresNoExtractionPixels() {
         let mockScript = MockPageContextCollecting()
         let extractionPixels = MockPageContextExtractionPixelFiring()
@@ -516,6 +624,32 @@ final class AIChatPageContextHandlerTests: XCTestCase {
 
     // MARK: - Helpers
 
+    /// 1x1 transparent PNG so the encoded favicon decodes into a real UIImage.
+    private static let onePixelPNGBase64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
+
+    /// Every optional field carries a non-default value so field-preservation tests catch drops.
+    private static func makeFullyPopulatedContext() -> AIChatPageContextData {
+        AIChatPageContextData(
+            title: "Test Page",
+            favicon: [.init(href: "https://example.com/favicon.ico", rel: "icon")],
+            url: "https://example.com/article",
+            content: "This is some page content for testing.",
+            truncated: true,
+            fullContentLength: 1234,
+            attachable: true,
+            tabId: "tab-1",
+            pageTypeSignals: AIChatPageTypeSignals(jsonLdType: ["Recipe", "Article"], ogType: "article", lang: "eu"),
+            attached: false
+        )
+    }
+
+    private func jsonDictionary(of context: AIChatPageContextData, ignoringKey key: String) throws -> NSDictionary {
+        let encoded = try JSONEncoder().encode(context)
+        var dictionary = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        dictionary.removeValue(forKey: key)
+        return NSDictionary(dictionary: dictionary)
+    }
+
     private func makeHandler(
         webViewProvider: WebViewProvider? = nil,
         userScriptProvider: UserScriptProvider? = nil,
@@ -556,10 +690,15 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
     func fireSheetDismissed() {}
     func fireSessionRestored() {}
     func fireExpandButtonTapped() {}
+    func fireHeaderTitleTapped() {}
     func fireNewChatButtonTapped() {}
     func fireQuickActionSummarizeSelected() {}
     func fireQuickActionAskAboutPageShown() {}
     func fireQuickActionAskAboutPageSelected() {}
+    func fireAskAboutPageSuggestionSelected(pageType: SuggestionsPageType) {}
+    func fireSuggestionSelected(suggestionId: String, pageType: SuggestionsPageType) {}
+    func fireSuggestionsViewed(isSmart: Bool, pageType: SuggestionsPageType) {}
+    func fireSuggestionsContextCollectionTimedOut() {}
     func fireRecentChatsPopupDisplayed() {}
     func fireRecentChatSelected() {}
     func fireViewAllChatsTapped() {}
@@ -588,9 +727,9 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
 // MARK: - Mock Page Context Collecting
 
 private final class MockPageContextCollecting: PageContextCollecting {
-    private let mockSubject = PassthroughSubject<AIChatPageContextData?, Never>()
+    private let mockSubject = PassthroughSubject<PageContextCollectionResult, Never>()
 
-    var collectionResultPublisher: AnyPublisher<AIChatPageContextData?, Never> {
+    var collectionResultPublisher: AnyPublisher<PageContextCollectionResult, Never> {
         mockSubject.eraseToAnyPublisher()
     }
 
@@ -603,7 +742,11 @@ private final class MockPageContextCollecting: PageContextCollecting {
     }
 
     func simulateNilContext() {
-        mockSubject.send(nil)
+        mockSubject.send(.decodeFailed)
+    }
+
+    func simulateScriptError() {
+        mockSubject.send(.scriptError)
     }
 
     func simulateEmptyContext() {
@@ -615,7 +758,7 @@ private final class MockPageContextCollecting: PageContextCollecting {
             truncated: false,
             fullContentLength: 0
         )
-        mockSubject.send(emptyContext)
+        mockSubject.send(.collected(emptyContext))
     }
 
     func simulateValidContext() {
@@ -627,7 +770,11 @@ private final class MockPageContextCollecting: PageContextCollecting {
             truncated: false,
             fullContentLength: 39
         )
-        mockSubject.send(validContext)
+        mockSubject.send(.collected(validContext))
+    }
+
+    func simulate(context: AIChatPageContextData) {
+        mockSubject.send(.collected(context))
     }
 }
 

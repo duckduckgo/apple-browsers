@@ -30,7 +30,7 @@ struct SearchWidgetView: View {
         DesignSystemWidgetContainerView {
             VStack(alignment: .center) {
 
-                ResizableTintableImage(fullColor: UIImage(resource: .widgetDaxLogo),
+                ResizableTintableImage(fullColor: UIImage(rebrandable: "WidgetDaxLogo") ?? UIImage(resource: .widgetDaxLogo),
                                        tintable: UIImage(resource: .widgetDaxLogoTinted))
                     .frame(width: 68, height: 68, alignment: .center)
 

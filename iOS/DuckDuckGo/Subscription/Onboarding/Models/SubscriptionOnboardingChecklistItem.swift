@@ -19,11 +19,13 @@
 
 /// The fixed set of subscription protections (VPN, IDTR, Duck.ai, PIR), shared by the onboarding welcome
 /// list and the completion checklist. `title` is the checklist row copy; the welcome list supplies its own.
-enum SubscriptionOnboardingChecklistItem: CaseIterable {
+enum SubscriptionOnboardingChecklistItem: CaseIterable, Identifiable {
     case vpn
     case idtr
     case duckAI
     case pir
+
+    var id: Self { self }
 
     var title: String {
         switch self {

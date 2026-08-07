@@ -72,6 +72,7 @@ public final class CrashReportReader {
         return filteredPaths
             .compactMap(crashReport(from:))
             .filter(matchesBundleID)
+            .filter { !$0.isSimulated }
     }
 
     private func isCrashReportPath(_ path: URL) -> Bool {

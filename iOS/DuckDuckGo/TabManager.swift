@@ -22,6 +22,7 @@ import FoundationExtensions
 import Core
 import DDGSync
 import EventHub
+import FeatureFlags_iOS
 import WebKit
 import BrowserServicesKit
 import Persistence
@@ -138,6 +139,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     private let contextualOnboardingLogic: ContextualOnboardingLogic
     private let onboardingPixelReporter: OnboardingPixelReporting
     private let featureFlagger: FeatureFlagger
+    private let tabTerminationTelemetry: any TabTerminationTelemetry
     private let contentScopeExperimentManager: ContentScopeExperimentsManaging
     private let textZoomCoordinatorProvider: TextZoomCoordinatorProviding
     private let autoconsentManagementProvider: AutoconsentManagementProviding
@@ -223,7 +225,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
          duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
          toggleModeStorage: ToggleModeStoring = ToggleModeStorage(),
          adBlockingAvailability: AdBlockingAvailabilityProviding,
-         eventHub: EventHubManaging
+         eventHub: EventHubManaging,
+         tabTerminationTelemetry: (any TabTerminationTelemetry)? = nil
     ) {
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
         self.duckAiFireModeStorageHandler = duckAiFireModeStorageHandler
@@ -241,6 +244,9 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         self.contextualOnboardingLogic = contextualOnboardingLogic
         self.onboardingPixelReporter = onboardingPixelReporter
         self.featureFlagger = featureFlagger
+        self.tabTerminationTelemetry = tabTerminationTelemetry ?? DefaultTabTerminationTelemetry(
+            featureFlagger: featureFlagger,
+            keyValueStore: UserDefaults.app)
         self.contentScopeExperimentManager = contentScopeExperimentManager
         self.appSettings = appSettings
         self.autoplaySettings = autoplaySettings
@@ -645,6 +651,11 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     }
 
     @MainActor
+    func webContentProcessDidTerminate() {
+        tabTerminationTelemetry.webContentProcessDidTerminate(activeTabCount: tabControllerCache.count)
+    }
+
+    @MainActor
     func invalidateCache(forController controller: TabViewController) {
         if current() === controller {
             DailyPixel.fireDailyAndCount(pixel: .webKitTerminationDidReloadCurrentTab, pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
@@ -662,14 +673,9 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
 
     /// Schedules a debounced save. Returns immediately; the write is async. Callers that need
     /// the write on disk before returning, or that need the real write `Result`, must use
-    /// `flushPendingSave()` instead. When the `tabsSaveOptimization` feature flag is off, falls
-    /// back to a synchronous save (old behavior) but the result is still discarded.
+    /// `flushPendingSave()` instead.
     @MainActor
     func save() {
-        guard featureFlagger.isFeatureOn(.tabsSaveOptimization) else {
-            _ = tabsModelProvider.flushPendingSave()
-            return
-        }
         scheduleDebouncedSave()
     }
 
@@ -951,6 +957,7 @@ extension TabManager {
     @MainActor
     @objc
     private func onMemoryWarning(_ notification: NSNotification) {
+        tabTerminationTelemetry.didReceiveMemoryWarning()
         flushPendingSave()
     }
 

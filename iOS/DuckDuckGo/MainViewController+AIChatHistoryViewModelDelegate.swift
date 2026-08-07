@@ -23,8 +23,16 @@ import AIChat
 extension MainViewController: AIChatHistoryViewModelDelegate {
 
     func viewModelDidRequestOpenNewChat() {
-        dismiss(animated: true) { [weak self] in
-            self?.openAIChat()
+        if let tab = currentTab, tab.isAITab {
+            unifiedToggleInputCoordinator?.startNewChat()
+            tab.submitStartChatAction()
+            dismiss(animated: true) { [weak self] in
+                self?.unifiedToggleInputCoordinator?.showExpanded(inputMode: .aiChat)
+            }
+        } else {
+            dismiss(animated: true) { [weak self] in
+                self?.openAIChat()
+            }
         }
     }
 
@@ -32,6 +40,18 @@ extension MainViewController: AIChatHistoryViewModelDelegate {
         let url = aiChatSettings.aiChatURL.withChatID(chatId)
         dismiss(animated: true) { [weak self] in
             self?.onChatHistorySelected(url: url)
+        }
+    }
+
+    func viewModelDidRequestChatProtection() {
+        dismiss(animated: true) { [weak self] in
+            guard let self else { return }
+            if let tab = self.currentTab, tab.isAITab {
+                tab.submitOpenChatProtectionAction()
+            } else {
+                let url = AIChatURLParameters.chatProtectionURL(from: self.aiChatSettings.aiChatURL)
+                self.loadUrlRespectingAIBoundary(url)
+            }
         }
     }
 

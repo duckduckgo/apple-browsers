@@ -16,7 +16,6 @@
 //  limitations under the License.
 //
 
-import FeatureFlags
 import Foundation
 import PixelKit
 import PrivacyConfig
@@ -52,7 +51,6 @@ final class ChromeExtensionInstaller: ThirdPartyBrowserExtensionInstalling {
         static let profileExtensionsPath = "Extensions"
     }
 
-    private let featureFlagger: FeatureFlagger
     private let buildType: ApplicationBuildType
     private let isChromeInstalled: () -> Bool
     private let applicationSupportURL: URL
@@ -60,14 +58,12 @@ final class ChromeExtensionInstaller: ThirdPartyBrowserExtensionInstalling {
     private let pixelFiring: PixelFiring?
 
     init(
-        featureFlagger: FeatureFlagger,
         buildType: ApplicationBuildType,
         isChromeInstalled: @escaping () -> Bool,
         applicationSupportURL: URL,
         fileManager: FileManager,
         pixelFiring: PixelFiring?
     ) {
-        self.featureFlagger = featureFlagger
         self.buildType = buildType
         self.isChromeInstalled = isChromeInstalled
         self.applicationSupportURL = applicationSupportURL
@@ -83,7 +79,6 @@ final class ChromeExtensionInstaller: ThirdPartyBrowserExtensionInstalling {
     /// Whether the Chrome extension can be staged for the user.
     ///
     /// Returns `true` only when all of the following hold:
-    /// - The `onboardingChromeExtension` feature flag is enabled
     /// - The app is a Sparkle (DMG) build
     /// - Chrome is installed and has been launched before
     /// - None of the DDG extension variants are already installed in any Chrome channel or profile
@@ -92,8 +87,7 @@ final class ChromeExtensionInstaller: ThirdPartyBrowserExtensionInstalling {
     var canInstallDDGExtension: Bool {
         let channelRoots = installedChannelRoots
 
-        guard featureFlagger.isFeatureOn(.onboardingChromeExtension),
-              buildType.isSparkleBuild,
+        guard buildType.isSparkleBuild,
               isChromeInstalled(),
               !channelRoots.isEmpty else {
             return false

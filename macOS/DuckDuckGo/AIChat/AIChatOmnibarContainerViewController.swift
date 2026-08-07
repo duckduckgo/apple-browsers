@@ -25,7 +25,7 @@ import UniformTypeIdentifiers
 import DesignResourcesKitIcons
 import AIChat
 import BrowserServicesKit
-import FeatureFlags
+import FeatureFlags_macOS
 import PixelKit
 import PrivacyConfig
 
@@ -65,6 +65,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         static let toolButtonBottomInset: CGFloat = 8
         static let modelPickerTrailingSpacing: CGFloat = 4
         static let modelPickerHeight: CGFloat = 28
+        static let recentTabsInMenu = 5
         static let attachmentsLeadingInset: CGFloat = 13
         static let attachmentsBottomSpacing: CGFloat = 16
         static let attachmentsRowHeight: CGFloat = AIChatImageAttachmentThumbnailView.totalHeight
@@ -85,6 +86,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         static let legacyContainerTopPadding: CGFloat = 0
         static let contentLeadingInset: CGFloat = 2
         static let legacyContentLeadingInset: CGFloat = 0
+        /// Also the difference between the two borders' radii — see `innerBorderCornerRadius(for:)`.
+        static let innerBorderInset: CGFloat = 1
     }
 
     private let backgroundView = MouseBlockingBackgroundView()
@@ -121,6 +124,17 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// Constraint for suggestions view height
     private var suggestionsHeightConstraint: NSLayoutConstraint?
 
+    /// Zero when rebranded: hosts size the panel from the list's own height, so a gap reserved out
+    /// here is height the panel never got. The expanded gap lives inside the list instead.
+    private var suggestionsBottomPadding: CGFloat {
+        themeManager.isAppRebranded ? 0 : Constants.suggestionsBottomPadding
+    }
+
+    /// Exposed so hosts budget for the row instead of restating these anchors.
+    var controlsRowHeight: CGFloat {
+        Constants.toolButtonSize + Constants.toolButtonBottomInset + suggestionsBottomPadding
+    }
+
     /// Unified attachments carousel height constraint — 0 when both image and tab attachment
     /// lists are empty, `attachmentsCarouselRowHeight + attachmentsCarouselBottomSpacing` otherwise.
     /// (Named `attachmentsCarouselHeightConstraint` for the property's introduction history; it now
@@ -134,6 +148,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// data still updates immediately so the menu's checkmarks stay in sync; only the panel
     /// growth is held back.
     private var isDeferringCarouselLayout = false
+
+    private var didMutateDuringAttachMenuSession = false
 
     /// Sticky error from the most recent file pick that was rejected at pick-time (too large, too
     /// many pages, encrypted/unreadable, unsupported, or over the count limit). Shown in the
@@ -207,13 +223,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     }
 
     func makeFirstAvailableToolButtonFirstResponder() {
-        if let button = firstAvailableToolButtonForFocus() {
-            view.window?.makeFirstResponder(button)
-        }
+        firstAvailableToolButtonForFocus()?.takeKeyboardFocus()
     }
 
     func makeModelPickerButtonFirstResponder() {
-        view.window?.makeFirstResponder(modelPickerButton)
+        modelPickerButton.takeKeyboardFocus()
     }
 
     /// Advances focus to the next tool button after the given one, or to model picker, then to the
@@ -226,7 +240,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         }
         // Find next visible button after current
         for nextButton in buttons[(index + 1)...] where !nextButton.isHidden && nextButton.isEnabled {
-            view.window?.makeFirstResponder(nextButton)
+            nextButton.takeKeyboardFocus()
             return
         }
         // No more tool buttons — try model picker, then voice-mode submit button, then text view
@@ -268,7 +282,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// Whether the attachments error label should be visible — either a sticky pick-time rejection
     /// or a live count-excess cue (one over the cap).
     private var shouldShowAttachmentError: Bool {
-        lastAttachmentError != nil || hasVisibleImageExcess || hasVisibleFileExcess
+        lastAttachmentError != nil || hasVisibleImageExcess || hasVisibleFileExcess || hasVisibleTabExcess
     }
 
     /// Extra height needed beyond text and suggestions for dynamic content like attachments.
@@ -283,8 +297,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     var totalPassthroughHeight: CGFloat {
         var height = suggestionsHeight
         if suggestionsHeight > 0 {
-            // Add bottom padding when there are suggestions
-            height += Constants.suggestionsBottomPadding
+            height += suggestionsBottomPadding
         }
         if omnibarController.isOmnibarToolsEnabled || !imageUploadButton.isHidden {
             // Add tool buttons area: button size + spacing above suggestions
@@ -304,6 +317,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// File-side analogue of `hasVisibleImageExcess`.
     private var hasVisibleFileExcess: Bool {
         omnibarController.selectedModelSupportsFileUpload && hasExcessFileAttachments
+    }
+
+    /// Tab-side analogue of `hasVisibleImageExcess`. Not picker-flag-gated: tab cards always render.
+    private var hasVisibleTabExcess: Bool {
+        omnibarController.hasExcessTabAttachments
     }
 
     required init?(coder: NSCoder) {
@@ -330,7 +348,6 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         super.viewDidLoad()
 
         setupUI()
-        setupBurnerStyleIfNeeded()
         setupSuggestionsView()
         subscribeToThemeChanges()
         subscribeToTextChanges()
@@ -378,7 +395,13 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         textChangeCancellable = omnibarController.$currentText
             .receive(on: DispatchQueue.main)
             .sink { [weak self] text in
-                self?.updateSubmitButtonState(for: text)
+                guard let self else { return }
+                self.updateSubmitButtonState(for: text)
+                // A file rejected at pick time leaves no card, so editing is the only way to clear its error.
+                if self.lastAttachmentError != nil {
+                    self.lastAttachmentError = nil
+                    self.updateAttachmentsLayout()
+                }
             }
     }
 
@@ -417,7 +440,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         let canSendImages = omnibarController.isImageGenerationMode || omnibarController.selectedModelSupportsImageUpload
         let imageBlockingExcess = canSendImages && omnibarController.hasExcessActiveTabImageAttachments
         let fileBlockingExcess = omnibarController.selectedModelSupportsFileUpload && hasExcessFileAttachments
-        let hasBlockingExcess = imageBlockingExcess || fileBlockingExcess
+        let tabBlockingExcess = omnibarController.hasExcessTabAttachments
+        let hasBlockingExcess = imageBlockingExcess || fileBlockingExcess || tabBlockingExcess
 
         // Voice-chat mode only kicks in when the input is empty, the feature flag is on, and we
         // aren't in image-generation mode (where the button must keep its image-flow semantics).
@@ -638,8 +662,22 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         updateSuggestionsHeight(suppress ? 0 : lastKnownSuggestionsHeight)
     }
 
+    private var hostDrawsChrome: Bool {
+        omnibarController.surface.drawsOwnChrome
+    }
+
+    /// Sharing the outer radius across a 1pt inset leaves the arcs non-concentric, so the two
+    /// strokes drift apart through the corner and read as one thickened line.
+    static func innerBorderCornerRadius(for outerRadius: CGFloat) -> CGFloat {
+        max(0, outerRadius - Constants.innerBorderInset)
+    }
+
     private func applyTopClipMask() {
         view.wantsLayer = true
+        guard !hostDrawsChrome else {
+            view.layer?.mask = nil
+            return
+        }
         guard view.bounds.height > 10 else {
             view.layer?.mask = nil
             return
@@ -767,7 +805,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         // of truth for the order; the carousel itself never mutates its own state.
         attachmentsCarouselView.onImageAttachmentRemoveRequested = { [weak self] id in
             guard let self else { return }
-            PixelKit.fire(AIChatPixel.aiChatAddressBarImageRemoved, frequency: .dailyAndCount, includeAppVersionParameter: true)
+            omnibarController.pixelHandler.fire(.imageRemoved)
             self.lastAttachmentError = nil
             self.resizeTasks[id]?.cancel()
             self.resizeTasks.removeValue(forKey: id)
@@ -780,11 +818,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             // mention-specific `mention_tab_removed` continues to fire only when the user
             // deselects through the @-picker UI, which keeps it as a clean signal of
             // @-picker engagement).
-            PixelKit.fire(AIChatPixel.aiChatAddressBarAttachTabRemoved, frequency: .dailyAndCount, includeAppVersionParameter: true)
+            self?.omnibarController.pixelHandler.fire(.tabAttachmentRemoved)
             self?.omnibarController.removeTabAttachmentFromActiveTab(id: id)
         }
         attachmentsCarouselView.onFileAttachmentRemoveRequested = { [weak self] id in
-            PixelKit.fire(AIChatPixel.aiChatAddressBarFileRemoved, frequency: .dailyAndCount, includeAppVersionParameter: true)
+            self?.omnibarController.pixelHandler.fire(.fileRemoved)
             self?.lastAttachmentError = nil
             self?.omnibarController.removeFileAttachmentFromActiveTab(id: id)
         }
@@ -810,10 +848,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             backgroundView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             backgroundView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
 
-            innerBorderView.topAnchor.constraint(equalTo: backgroundView.topAnchor, constant: 1),
-            innerBorderView.leadingAnchor.constraint(equalTo: backgroundView.leadingAnchor, constant: 1),
-            innerBorderView.trailingAnchor.constraint(equalTo: backgroundView.trailingAnchor, constant: -1),
-            innerBorderView.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor, constant: -1),
+            innerBorderView.topAnchor.constraint(equalTo: backgroundView.topAnchor, constant: Constants.innerBorderInset),
+            innerBorderView.leadingAnchor.constraint(equalTo: backgroundView.leadingAnchor, constant: Constants.innerBorderInset),
+            innerBorderView.trailingAnchor.constraint(equalTo: backgroundView.trailingAnchor, constant: -Constants.innerBorderInset),
+            innerBorderView.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor, constant: -Constants.innerBorderInset),
 
             containerView.topAnchor.constraint(equalTo: backgroundView.topAnchor),
             containerView.leadingAnchor.constraint(equalTo: backgroundView.leadingAnchor),
@@ -872,19 +910,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         applyTheme(theme: themeManager.theme)
     }
 
-    // MARK: - Burner Style
-
-    private func setupBurnerStyleIfNeeded() {
-        guard burnerMode.isBurner, themeManager.isAppRebranded else { return }
-
-        let style = BurnerAppearanceStyle()
-        style.enableDarkModeOverride(in: view)
-        style.enableDarkModeOverride(in: suggestionsView)
-    }
-
     // MARK: - Suggestions Setup
 
     private func setupSuggestionsView() {
+        suggestionsView.isBurner = burnerMode.isBurner
         suggestionsView.translatesAutoresizingMaskIntoConstraints = false
         containerView.addSubview(suggestionsView)
 
@@ -892,10 +921,13 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         let heightConstraint = suggestionsView.heightAnchor.constraint(equalToConstant: 0)
         suggestionsHeightConstraint = heightConstraint
 
+        let bottomConstraint = suggestionsView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor,
+                                                                      constant: -suggestionsBottomPadding)
+
         NSLayoutConstraint.activate([
             suggestionsView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
             suggestionsView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
-            suggestionsView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -Constants.suggestionsBottomPadding),
+            bottomConstraint,
             heightConstraint,
 
             // Submit button sits above suggestions
@@ -1057,6 +1089,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     }
 
     private func addShadowToWindow() {
+        guard !hostDrawsChrome else { return }
         guard shadowView.superview == nil else { return }
         view.window?.contentView?.addSubview(shadowView)
         layoutShadowView()
@@ -1083,7 +1116,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         var frame = superview.convert(winFrame, from: nil)
 
         /// Do not overlap shadow of main address bar
-        frame.size.height -= themeManager.isAppRebranded ? Constants.shadowOverlapHeight : Constants.legacyShadowOverlapHeight
+        let overlap = themeManager.isAppRebranded ? Constants.shadowOverlapHeight : Constants.legacyShadowOverlapHeight
+        /// `ShadowView` clamps its radius to half its shorter side, so trimming further would round
+        /// the corners tighter than the background. Costs nothing: it draws no top edge anyway.
+        frame.size.height = max(shadowView.cornerRadius * 2, frame.height - overlap)
 
         shadowView.frame = frame
     }
@@ -1099,16 +1135,23 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     @objc private func toolsButtonClicked() {
         let menu = buildToolsMenu()
-        menu.popUp(positioning: nil, at: NSPoint(x: 0, y: -5), in: toolsButton)
+        popUp(menu, at: NSPoint(x: 0, y: -5), in: toolsButton)
+    }
+
+    /// `popUp` tracks modally without moving first responder, so the ring would stay lit under it.
+    private func popUp<Button: NSView & FocusRingControlling>(_ menu: NSMenu, at point: NSPoint, in button: Button) {
+        button.isFocusRingSuppressed = true
+        menu.popUp(positioning: nil, at: point, in: button)
+        button.isFocusRingSuppressed = false
     }
 
     @objc private func imageGenActiveButtonClicked() {
-        PixelKit.fire(AIChatPixel.aiChatAddressBarImageGenerationDeactivated, frequency: .dailyAndCount, includeAppVersionParameter: true)
+        omnibarController.pixelHandler.fire(.imageGenerationDeactivated)
         omnibarController.toggleImageGenerationMode()
     }
 
     @objc private func webSearchActiveButtonClicked() {
-        PixelKit.fire(AIChatPixel.aiChatAddressBarWebSearchDeactivated, frequency: .dailyAndCount, includeAppVersionParameter: true)
+        omnibarController.pixelHandler.fire(.webSearchDeactivated)
         omnibarController.toggleWebSearchMode()
     }
 
@@ -1191,21 +1234,21 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     @objc private func toolsMenuCreateImageClicked() {
         if !omnibarController.isImageGenerationMode {
-            PixelKit.fire(AIChatPixel.aiChatAddressBarImageGenerationActivated, frequency: .dailyAndCount, includeAppVersionParameter: true)
+            omnibarController.pixelHandler.fire(.imageGenerationActivated)
         }
         omnibarController.toggleImageGenerationMode()
     }
 
     @objc private func toolsMenuWebSearchClicked() {
         if !omnibarController.isWebSearchMode {
-            PixelKit.fire(AIChatPixel.aiChatAddressBarWebSearchActivated, frequency: .dailyAndCount, includeAppVersionParameter: true)
+            omnibarController.pixelHandler.fire(.webSearchActivated)
         }
         omnibarController.toggleWebSearchMode()
     }
 
     private func presentCustomizeResponsesModal() {
         guard customizeResponsesModal == nil else { return }
-        PixelKit.fire(AIChatPixel.aiChatAddressBarCustomizeResponsesOpened, frequency: .dailyAndCount, includeAppVersionParameter: true)
+        omnibarController.pixelHandler.fire(.customizeResponsesOpened)
         guard let parentWindow = view.window else {
             omnibarController.openCustomizeResponses()
             return
@@ -1231,7 +1274,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             // Hold the panel layout still while the menu is up — see `isDeferringCarouselLayout`
             // for the rationale. Carousel data still updates so the menu's checkmarks stay in sync.
             isDeferringCarouselLayout = true
-            menu.popUp(positioning: nil, at: NSPoint(x: 0, y: -5), in: imageUploadButton)
+            popUp(menu, at: NSPoint(x: 0, y: -5), in: imageUploadButton)
         } else {
             presentImageFilePicker()
         }
@@ -1293,11 +1336,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                             pendingFiles: pendingFiles
                         )
                         if let error = validator.fileValidationError(for: descriptor, enforceCount: false) {
-                            PixelKit.fire(
-                                AIChatPixel.aiChatAddressBarFileValidationFailed(reason: error.reason.rawValue),
-                                frequency: .dailyAndCount,
-                                includeAppVersionParameter: true
-                            )
+                            self.omnibarController.pixelHandler.fire(.fileValidationFailed(reason: error.reason.rawValue))
                             if firstFileError == nil { firstFileError = error.message }
                             continue
                         }
@@ -1308,7 +1347,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                     guard pendingFiles.count < self.omnibarController.fileAttachmentsDisplayCap else { continue }
 
                     self.omnibarController.addFileAttachmentToActiveTab(attachment)
-                    PixelKit.fire(AIChatPixel.aiChatAddressBarFileAttached, frequency: .dailyAndCount, includeAppVersionParameter: true)
+                    self.omnibarController.pixelHandler.fire(.fileAttached)
                     pendingFiles.append(descriptor)
                 }
             }
@@ -1384,7 +1423,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         // false and the menu only offers page content, so the tooltip must match rather than read
         // "Add Images or PDFs".
         guard shouldShowImageOrFileMenuItem else {
-            return UserText.aiChatAttachMenuPageContent
+            return UserText.aiChatAttachMenuAttachTabs
         }
         return attachMenuItemTitle()
     }
@@ -1408,89 +1447,107 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             imageItem.target = self
             imageItem.image = DesignSystemImages.Glyphs.Size16.folder
             menu.addItem(imageItem)
-            menu.addItem(NSMenuItem.separator())
         }
 
-        let pageItem = NSMenuItem(
-            title: UserText.aiChatAttachMenuPageContent,
-            action: nil,
+        let candidates = omnibarController.openTabsForOmnibarPicker()
+
+        let attachTabsItem = NSMenuItem(
+            title: UserText.aiChatAttachMenuAttachTabs,
+            action: #selector(attachMenuAttachTabsClicked),
             keyEquivalent: ""
         )
-        pageItem.image = DesignSystemImages.Glyphs.Size16.pageContentAttach
-        pageItem.submenu = buildAttachTabsSubmenu()
-        menu.addItem(pageItem)
+        attachTabsItem.target = self
+        attachTabsItem.image = DesignSystemImages.Glyphs.Size16.tabContentAttach
+        attachTabsItem.isEnabled = !candidates.isEmpty
+        menu.addItem(attachTabsItem)
+
+        appendRecentTabs(candidates, to: menu)
 
         return menu
     }
 
-    /// Observer installed as the `NSMenuDelegate` of the "Add Page Content" submenu so we can
-    /// fire the picker-shown / picker-canceled pixels exactly once per open/close cycle. The
-    /// row's `onToggle` callback below flips the observer's `didMutateDuringSession` flag so
-    /// the canceled pixel is only fired when nothing was toggled during the session.
-    /// Retained on the VC because `NSMenu.delegate` is weak.
-    private var attachTabsSubmenuObserver: AttachTabsSubmenuObserver?
-
-    /// Builds the "Attach Page Content" submenu. When the user has open URL tabs, the submenu
-    /// starts with a "Recent Tabs" section header followed by a custom-view row per tab — each
-    /// row stays-open-on-click via `AIChatTabPickerMenuRowView` so the user can multi-toggle
-    /// without dismissing the menu. When there are no tabs to show, the submenu drops the header
-    /// and shows only a disabled "No open tabs" placeholder.
-    private func buildAttachTabsSubmenu() -> NSMenu {
-        let menu = NSMenu()
-        menu.autoenablesItems = false
-
-        // Observer fires the picker-shown pixel on willOpen and the picker-canceled pixel on
-        // didClose when no row was toggled in between. Stored on the VC so its lifetime
-        // covers the menu's lifetime (NSMenu's delegate ref is weak).
-        let observer = AttachTabsSubmenuObserver()
-        attachTabsSubmenuObserver = observer
-        menu.delegate = observer
-
+    private func appendRecentTabs(_ allCandidates: [AIChatTabAttachment], to menu: NSMenu) {
         let attachedIds = Set(omnibarController.activeTabAttachments.map(\.id))
-        let candidates = omnibarController.openTabsForOmnibarPicker()
         let currentTabId = omnibarController.currentTabUUID
+        let candidates = allCandidates.prefix(Constants.recentTabsInMenu)
+
+        menu.addItem(NSMenuItem.separator())
 
         guard !candidates.isEmpty else {
             let empty = NSMenuItem(title: UserText.aiChatAttachMenuNoOpenTabs, action: nil, keyEquivalent: "")
             empty.isEnabled = false
             menu.addItem(empty)
-            return menu
+            return
         }
 
         let header = NSMenuItem(title: UserText.aiChatAttachMenuRecentTabsHeader, action: nil, keyEquivalent: "")
         header.isEnabled = false
         menu.addItem(header)
 
-        // `openTabsForOmnibarPicker()` returns the current tab first, so the menu shows
-        // "(Current Tab)" pinned on top.
+        let atCap = attachedIds.count >= omnibarController.tabAttachmentsDisplayCap
+
         for candidate in candidates {
-            let item = NSMenuItem()
-            let row = AIChatTabPickerMenuRowView(
-                attachment: candidate,
-                isAttached: attachedIds.contains(candidate.id),
-                isCurrentTab: candidate.id == currentTabId,
-                onToggle: { [weak omnibarController, weak observer] in
-                    guard let omnibarController else { return }
-                    // Read state BEFORE toggle so we know which pixel to fire — the toggle
-                    // flips it, so post-toggle we'd see the opposite of "what just happened".
-                    let wasAttached = omnibarController.activeTabAttachments.contains(where: { $0.id == candidate.id })
-                    omnibarController.toggleTabAttachment(candidate)
-                    let pixel: AIChatPixel = wasAttached
-                        ? .aiChatAddressBarAttachTabRemoved
-                        : .aiChatAddressBarAttachTabChosen
-                    PixelKit.fire(pixel, frequency: .dailyAndCount, includeAppVersionParameter: true)
-                    observer?.markDidMutate()
-                }
-            )
-            item.view = row
+            let isAttached = attachedIds.contains(candidate.id)
+            var title = candidate.title.isEmpty ? (candidate.url.host ?? candidate.url.absoluteString) : candidate.title
+            if candidate.id == currentTabId {
+                title += " " + UserText.aiChatTabPickerCurrentTabSuffix
+            }
+            let item = NSMenuItem(title: title, action: #selector(recentTabClicked), keyEquivalent: "")
+            item.target = self
+            item.representedObject = candidate
+            item.toolTip = candidate.url.absoluteString
+            item.isEnabled = !isAttached && !atCap
+            item.image = menuFavicon(for: candidate)
             menu.addItem(item)
         }
+    }
 
-        return menu
+    private func menuFavicon(for attachment: AIChatTabAttachment) -> NSImage? {
+        let image = (attachment.favicon ?? DesignSystemImages.Glyphs.Size16.globe).copy() as? NSImage
+        image?.size = NSSize(width: 16, height: 16)
+        return image
+    }
+
+    @objc private func recentTabClicked(_ sender: NSMenuItem) {
+        guard let candidate = sender.representedObject as? AIChatTabAttachment else { return }
+        didMutateDuringAttachMenuSession = true
+        omnibarController.toggleTabAttachment(candidate)
+        omnibarController.pixelHandler.fire(.tabChosen)
+        updateAttachmentsLayout()
     }
 
     @objc private func attachMenuImageOrFileClicked() {
+        didMutateDuringAttachMenuSession = true
         presentImageFilePicker()
+    }
+
+    @objc private func attachMenuAttachTabsClicked() {
+        didMutateDuringAttachMenuSession = true
+        let candidates = omnibarController.openTabsForOmnibarPicker()
+        AIChatAttachTabsModal(
+            tabs: candidates,
+            currentTabId: omnibarController.currentTabUUID,
+            preselectedIds: Set(omnibarController.activeTabAttachments.map(\.id)),
+            maxSelection: omnibarController.isTabAttachmentLimitEnabled ? AIChatOmnibarController.maxTabAttachments : .max,
+            onAttach: { [weak self] selected in
+                self?.applyTabSelection(selected, offered: candidates)
+            }
+        ).show(in: view.window)
+    }
+
+    private func applyTabSelection(_ selected: [AIChatTabAttachment], offered: [AIChatTabAttachment]) {
+        let diff = AIChatTabSelectionDiff.compute(current: omnibarController.activeTabAttachments,
+                                                 selected: selected,
+                                                 offered: offered)
+        for id in diff.remove {
+            omnibarController.removeTabAttachmentFromActiveTab(id: id)
+            omnibarController.pixelHandler.fire(.tabAttachmentRemoved)
+        }
+        for tab in diff.add {
+            omnibarController.toggleTabAttachment(tab)
+            omnibarController.pixelHandler.fire(.tabChosen)
+        }
+        updateAttachmentsLayout()
     }
 
     /// Attempts to add an image attachment from a drag-and-drop operation.
@@ -1535,7 +1592,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             skipResize: true
         )
         omnibarController.addImageAttachmentToActiveTab(placeholder)
-        PixelKit.fire(AIChatPixel.aiChatAddressBarImageAttached, frequency: .dailyAndCount, includeAppVersionParameter: true)
+        omnibarController.pixelHandler.fire(.imageAttached)
 
         resizeTasks[placeholderId] = makeResizeTask(for: url, placeholderId: placeholderId)
     }
@@ -1572,6 +1629,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             self?.cancelAllImageResizeTasks()
             // Submit clears all attachments, so a leftover pick-time rejection no longer applies.
             self?.lastAttachmentError = nil
+            self?.updateAttachmentsLayout()
+        }
+        // Submit-time validation rejection: surface it where pick-time rejections show up.
+        omnibarController.onAttachmentValidationFailed = { [weak self] message in
+            self?.lastAttachmentError = message
             self?.updateAttachmentsLayout()
         }
         // Block submit until in-flight resize tasks finish so the prompt carries the resized
@@ -1611,10 +1673,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         // overlap the tools row below. Keeping the two decisions in sync prevents that.
         let visibleImageExcess = hasVisibleImageExcess
         let visibleFileExcess = hasVisibleFileExcess
+        let visibleTabExcess = hasVisibleTabExcess
         // A sticky pick-time rejection (size / pages / unsupported / count) takes priority — it
         // names the precise reason the file the user just chose wasn't added. Otherwise fall back
         // to the live count-excess copy; file excess wins over image excess as it's the more
-        // recently introduced and likely thing the user has just done.
+        // recently introduced and likely thing the user has just done, and tab excess falls last.
         attachmentsErrorLabel.isHidden = !shouldShowAttachmentError
         if let lastAttachmentError {
             attachmentsErrorLabel.stringValue = lastAttachmentError
@@ -1624,9 +1687,13 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             attachmentsErrorLabel.stringValue = UserText.aiChatAttachmentFileCountLimit(
                 maxFilesPerConversation: omnibarController.maxFileAttachments
             )
-        } else {
+        } else if visibleImageExcess {
             attachmentsErrorLabel.stringValue = UserText.aiChatAttachmentImageTurnLimit(
                 maxImagesPerTurn: omnibarController.maxImageAttachments
+            )
+        } else if visibleTabExcess {
+            attachmentsErrorLabel.stringValue = UserText.aiChatAttachmentTabCountLimit(
+                maxTabs: AIChatOmnibarController.maxTabAttachments
             )
         }
 
@@ -1721,10 +1788,17 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     }
 
     @objc private func modelPickerButtonClicked() {
-        let menu = buildModelPickerMenu()
+        // Resolved once and passed on: `modelPickerItems` records a free-trial badge impression, so
+        // asking for it twice per open would burn through the badge's view cap at double speed.
+        let items = omnibarController.modelPickerItems(selectedModelId: selectedModelId)
+        // Only a picker that actually shows a gated row is a subscription-funnel impression.
+        if items.contains(where: { if case .gatedModel = $0 { return true } else { return false } }) {
+            omnibarController.pixelHandler.fire(.modelPickerShown)
+        }
+        let menu = buildModelPickerMenu(items: items)
         // Align menu's trailing edge with button's trailing edge, with a small gap below
         let x = modelPickerButton.bounds.width - menu.size.width
-        menu.popUp(positioning: nil, at: NSPoint(x: x, y: -5), in: modelPickerButton)
+        popUp(menu, at: NSPoint(x: x, y: -5), in: modelPickerButton)
     }
 
     private var selectedModelId: String {
@@ -1757,12 +1831,12 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             }
     }
 
-    private func buildModelPickerMenu() -> NSMenu {
+    private func buildModelPickerMenu(items: [AIChatModelPickerItem]) -> NSMenu {
         let menu = NSMenu()
         menu.autoenablesItems = false
 
         // The controller decides what the menu shows; this only maps each item to an NSMenuItem.
-        for item in omnibarController.modelPickerItems(selectedModelId: selectedModelId) {
+        for item in items {
             switch item {
             case .model(let model, let badge, let isSelected):
                 menu.addItem(modelRow(for: model, trailingText: badge, isSelected: isSelected,
@@ -1825,7 +1899,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         // the newly selected model doesn't support it — the button would otherwise pop an empty menu).
         updateToolButtonsVisibility(isEnabled: omnibarController.isOmnibarToolsEnabled)
         updateReasoningPickerVisibility()
-        PixelKit.fire(AIChatPixel.aiChatAddressBarModelSelected, frequency: .dailyAndCount, includeAppVersionParameter: true)
+        omnibarController.pixelHandler.fire(.modelSelected)
     }
 
     // MARK: - Reasoning Picker
@@ -1842,11 +1916,15 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         menu.minimumWidth = Self.reasoningPickerMinimumWidth
 
         // The controller decides what the menu shows; this only maps each item to an NSMenuItem.
-        for item in omnibarController.reasoningPickerItems() {
+        let items = omnibarController.reasoningPickerItems()
+        if items.contains(where: \.isGated) {
+            omnibarController.pixelHandler.fire(.reasoningPickerShown)
+        }
+        for item in items {
             menu.addItem(reasoningEffortRow(for: item, in: menu))
         }
 
-        menu.popUp(positioning: nil, at: NSPoint(x: 0, y: -5), in: reasoningPickerButton)
+        popUp(menu, at: NSPoint(x: 0, y: -5), in: reasoningPickerButton)
     }
 
     /// Maps a resolved item to a row via `ModelMenuRowView` (shared with the model picker so gated
@@ -1878,7 +1956,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     @objc private func reasoningEffortBadgeSelected(_ sender: NSMenuItem) {
         guard let effort = sender.representedObject as? AIChatReasoningEffort,
               let requiredTier = omnibarController.requiredTier(for: effort) else { return }
-        presentSubscriptionUpsellDialog(requiredTier: requiredTier, origin: .addressBarReasoningPicker)
+        presentSubscriptionUpsellDialog(requiredTier: requiredTier, origin: .addressBarReasoningDropdown)
     }
 
     @objc private func reasoningEffortSelected(_ sender: NSMenuItem) {
@@ -1886,11 +1964,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         switch omnibarController.handleReasoningEffortSelection(effort) {
         case .selected(let effort):
             updateReasoningPickerAppearance(effort)
-            PixelKit.fire(AIChatPixel.aiChatAddressBarReasoningEffortSelected, frequency: .dailyAndCount, includeAppVersionParameter: true)
+            omnibarController.pixelHandler.fire(.reasoningEffortSelected)
         case .gated(let requiredTier):
             // Explains the upsell via a sheet rather than navigating immediately, and leaves the
             // current selection unchanged.
-            presentSubscriptionUpsellDialog(requiredTier: requiredTier, origin: .addressBarReasoningPicker)
+            presentSubscriptionUpsellDialog(requiredTier: requiredTier, origin: .addressBarReasoningDropdown)
         }
     }
 
@@ -1898,23 +1976,12 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// gated tap here rather than navigating directly (per design review). A SwiftUI `ModalView`
     /// rather than `NSAlert`, which can't center its icon/title.
     private func presentSubscriptionUpsellDialog(requiredTier: AIChatModelPublicAccessTier, origin: SubscriptionFunnelOrigin) {
-        var dialog = AIChatSubscriptionUpsellDialog()
+        var dialog: AIChatSubscriptionUpsellDialog
         switch omnibarController.userTier {
         case .free:
-            // Title/message stay generic. Only the primary button follows eligibility, matching
-            // the badge/tag text ("Try for Free" vs "Upgrade") — the native purchase flow presents
-            // the trial terms itself, so an ineligible user shouldn't be told "Subscribe" only to
-            // find no trial offered.
-            dialog.primaryButtonText = omnibarController.shouldOfferFreeTrial
-                ? UserText.aiChatSubscriptionUpsellDialogTryForFreeButton
-                : UserText.aiChatSubscriptionUpsellDialogUpgradeButton
+            dialog = .upsell(isEligibleForFreeTrial: omnibarController.shouldOfferFreeTrial)
         case .plus, .pro, .internal:
-            // An existing Plus subscriber is upgrading an active subscription, not discovering
-            // one — different copy, and no "I Have a Subscription" button since that doesn't apply.
-            dialog.title = UserText.aiChatSubscriptionUpsellDialogProTitle
-            dialog.message = UserText.aiChatSubscriptionUpsellDialogProMessage
-            dialog.primaryButtonText = UserText.aiChatSubscriptionUpsellDialogUpgradeButton
-            dialog.showsHaveSubscriptionButton = false
+            dialog = .proUpgrade()
         }
         dialog.onSubscribe = { [weak self] in
             self?.omnibarController.presentSubscriptionUpsell(requiredTier: requiredTier, origin: origin)
@@ -1922,6 +1989,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         dialog.onHaveSubscription = { [weak self] in
             self?.omnibarController.presentSubscriptionActivationFlow()
         }
+        omnibarController.pixelHandler.fire(.subscriptionUpsellShown(origin: origin.rawValue))
         dialog.show()
     }
 
@@ -1986,7 +2054,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         let colorsProvider = theme.colorsProvider
         let isAppRebranding = themeManager.isAppRebranded
 
-        backgroundView.backgroundColor = colorsProvider.activeAddressBarBackgroundColor
+        // Painted transparent rather than skipped: `applyTheme` re-runs on appearance changes and
+        // would otherwise restore what `setupUI` set.
+        backgroundView.backgroundColor = hostDrawsChrome ? .clear : colorsProvider.activeAddressBarBackgroundColor(isBurner: burnerMode.isBurner)
         backgroundView.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions
 
         if isAppRebranding {
@@ -1995,7 +2065,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             backgroundView.layer?.masksToBounds = false  // Don't clip subviews - important for hit testing
         }
 
-        if let borderColor = NSColor(named: "AddressBarBorderColor") {
+        if hostDrawsChrome {
+            backgroundView.borderColor = .clear
+        } else if let borderColor = NSColor(named: "AddressBarBorderColor") {
             backgroundView.borderColor = borderColor
         }
 
@@ -2035,9 +2107,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         modelPickerButton.tintColor = toolButtonTintColor
         modelPickerButton.focusRingColor = focusRingColor
 
-        innerBorderView.borderColor = NSColor(named: "AddressBarInnerBorderColor")
+        innerBorderView.borderColor = hostDrawsChrome ? .clear : NSColor(named: "AddressBarInnerBorderColor")
         innerBorderView.backgroundColor = NSColor.clear
-        innerBorderView.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions
+        innerBorderView.cornerRadius = Self.innerBorderCornerRadius(
+            for: barStyleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions
+        )
 
         if isAppRebranding {
             innerBorderView.roundedCorners = [.bottomLeft, .bottomRight]
@@ -2120,53 +2194,25 @@ final class AIChatSubmitButton: MouseOverButton {
 
 extension AIChatOmnibarContainerViewController: NSMenuDelegate {
 
+    func menuWillOpen(_ menu: NSMenu) {
+        didMutateDuringAttachMenuSession = false
+        omnibarController.pixelHandler.fire(.tabPickerShown)
+    }
+
     /// `NSMenu` calls this when the entire menu chain (top-level menu + any open submenu) closes.
     /// Used to release the carousel-layout deferral that was started in `attachButtonClicked` —
     /// once unset, the panel reflows once with whatever toggles the user accumulated. Full
     /// `updateAttachmentsLayout()` (vs. just the row layout) so error label / attach-button
     /// state stay in sync with whatever the user attached while the menu was open.
     func menuDidClose(_ menu: NSMenu) {
+        DispatchQueue.main.async { [weak self] in
+            guard let self, !self.didMutateDuringAttachMenuSession else { return }
+            self.omnibarController.pixelHandler.fire(.tabPickerCanceled)
+        }
         guard isDeferringCarouselLayout else { return }
         isDeferringCarouselLayout = false
         updateAttachmentsLayout()
         attachmentsCarouselView.superview?.layoutSubtreeIfNeeded()
         attachmentsCarouselView.scrollLastAddedAttachmentIntoView()
-    }
-}
-
-// MARK: - "Add Page Content" submenu observer
-
-/// Observes one open/close cycle of the "Add Page Content" submenu so the picker-shown and
-/// picker-canceled pixels fire exactly once per session. Sits as the submenu's
-/// `NSMenuDelegate` (the VC's own conformance already handles the top-level attach menu's
-/// `menuDidClose`, so we keep this submenu-only logic separate to avoid mixing concerns).
-private final class AttachTabsSubmenuObserver: NSObject, NSMenuDelegate {
-
-    /// `true` once any row's `onToggle` fired during the current open session. Reset on the
-    /// next `menuWillOpen` so each open/close pair is evaluated independently.
-    private var didMutateDuringSession = false
-
-    func menuWillOpen(_ menu: NSMenu) {
-        didMutateDuringSession = false
-        PixelKit.fire(
-            AIChatPixel.aiChatAddressBarAttachTabsPickerShown,
-            frequency: .dailyAndCount,
-            includeAppVersionParameter: true
-        )
-    }
-
-    func menuDidClose(_ menu: NSMenu) {
-        guard !didMutateDuringSession else { return }
-        PixelKit.fire(
-            AIChatPixel.aiChatAddressBarAttachPickerCanceled,
-            frequency: .dailyAndCount,
-            includeAppVersionParameter: true
-        )
-    }
-
-    /// Called from the row's `onToggle` closure so the cancel pixel is suppressed when the
-    /// user actually picked or removed something during this session.
-    func markDidMutate() {
-        didMutateDuringSession = true
     }
 }

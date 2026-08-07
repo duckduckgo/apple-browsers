@@ -180,5 +180,100 @@
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
+    },
+    "aichat_contextual_suggestion_selected": {
+        "description": "Fired when the user taps a suggested-prompt chip on the contextual sheet start surface. Under contextualSuggestedPrompts this also represents the Ask about page quick action, which additionally fires the legacy m_aichat_contextual_quick_action_ask_about_page_selected pixel.",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "suggestionId",
+                "description": "Catalog key of the selected suggestion (e.g. summarize-page, translate-page, ask-about-page).",
+                "type": "string"
+            },
+            {
+                "key": "pageType",
+                "description": "Coarse page-type bucket computed natively from page-type signals. Never a URL, domain or page content.",
+                "type": "string",
+                "enum": [
+                    "recipe",
+                    "product",
+                    "article",
+                    "video",
+                    "job",
+                    "book",
+                    "event",
+                    "place",
+                    "forum",
+                    "code",
+                    "course",
+                    "review",
+                    "person",
+                    "howto",
+                    "faq",
+                    "none"
+                ]
+            }
+        ]
+    },
+    "aichat_contextual_suggestions_viewed": {
+        "description": "Fired when the contextual sheet start surface renders suggested-prompt chips to the user; every render (sheet presentation or navigation re-resolve) counts as an impression",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "isSmart",
+                "description": "Whether the shown suggestions were smart (page-tailored) rather than generic defaults.",
+                "type": "boolean"
+            },
+            {
+                "key": "pageType",
+                "description": "Coarse page-type bucket computed natively from page-type signals. Never a URL, domain or page content.",
+                "type": "string",
+                "enum": [
+                    "recipe",
+                    "product",
+                    "article",
+                    "video",
+                    "job",
+                    "book",
+                    "event",
+                    "place",
+                    "forum",
+                    "code",
+                    "course",
+                    "review",
+                    "person",
+                    "howto",
+                    "faq",
+                    "none"
+                ]
+            }
+        ]
+    },
+    "aichat_contextual_header_title_tapped": {
+        "description": "Fired when the user taps the Duck.ai title in the contextual sheet header to expand into full AI Chat",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "debug_aichat_contextual_suggestions_catalog_load_failed": {
+        "description": "Fired when the bundled PageSuggestionsCatalog.json is missing or fails to decode and the suggested-prompts matcher falls back to the single Summarize this page floor",
+        "owners": ["pikorddg"],
+        "triggers": ["exception"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "debug_aichat_contextual_suggestions_context_collection_timed_out": {
+        "description": "Fired when page-type signal collection times out and contextual suggested prompts fall back to generic defaults",
+        "owners": ["pikorddg"],
+        "triggers": ["exception"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
     }
 }

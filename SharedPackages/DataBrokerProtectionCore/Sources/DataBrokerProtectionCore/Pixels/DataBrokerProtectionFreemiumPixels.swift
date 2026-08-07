@@ -32,6 +32,7 @@ public class DataBrokerProtectionFreemiumPixelHandler: EventMapping<DataBrokerPr
                     .newTabScanClickCount,
                     .newTabResultsClickCount,
                     .newTabNoResultsClickCount,
+                    .overFlowScanImpressionCount,
                     .overFlowScanCount,
                     .overFlowResultsCount:
                 PixelKit.fire(event, frequency: .standard)
@@ -68,6 +69,8 @@ public enum DataBrokerProtectionFreemiumPixels: PixelKitEvent {
     case newTabNoResultsClickCount
     case newTabNoResultsDismiss
     // Overflow menu
+    case overFlowScanImpression
+    case overFlowScanImpressionCount
     case overFlowScan
     case overFlowScanCount
     case overFlowResults
@@ -110,6 +113,10 @@ public enum DataBrokerProtectionFreemiumPixels: PixelKitEvent {
             return "dbp-free_newtab_no-results_click_c"
         case .newTabNoResultsDismiss:
             return "dbp-free_newtab_no-results_dismiss_u"
+        case .overFlowScanImpression:
+            return "dbp-free_overflow_scan_impression_u"
+        case .overFlowScanImpressionCount:
+            return "dbp-free_overflow_scan_impression_c"
         case .overFlowScan:
             return "dbp-free_overflow_scan_u"
         case .overFlowScanCount:
@@ -146,6 +153,8 @@ public enum DataBrokerProtectionFreemiumPixels: PixelKitEvent {
                 .newTabNoResultsClick,
                 .newTabNoResultsClickCount,
                 .newTabNoResultsDismiss,
+                .overFlowScanImpression,
+                .overFlowScanImpressionCount,
                 .overFlowScan,
                 .overFlowScanCount,
                 .overFlowResults,

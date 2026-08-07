@@ -9,6 +9,12 @@
         "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
         "examples": ["7.175.1"]
     },
+    "ui_version": {
+        "key": "ui_version",
+        "type": "string",
+        "description": "The version of the Sync settings and setup user interface.",
+        "enum": ["v1", "v2"]
+    },
     "unified_input_surface": {
         "key": "surface",
         "type": "string",

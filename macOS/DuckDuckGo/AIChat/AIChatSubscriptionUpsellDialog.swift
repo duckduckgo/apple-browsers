@@ -49,6 +49,7 @@ struct AIChatSubscriptionUpsellDialog: ModalView {
                 Text(title)
                     .font(.system(size: 15).weight(.semibold))
                     .multilineTextAlignment(.center)
+                    .frame(maxWidth: 250)
                     .fixMultilineScrollableText()
                 Text(message)
                     .font(.system(size: 13))
@@ -93,6 +94,31 @@ struct AIChatSubscriptionUpsellDialog: ModalView {
             }
         }
         .padding(20)
-        .frame(width: 330)
+        .frame(width: 310)
+    }
+}
+
+extension AIChatSubscriptionUpsellDialog {
+    /// The free-tier upsell dialog, shared by the address bar and NTP omnibars. Only the primary
+    /// button follows trial eligibility — the native purchase flow presents trial terms itself, so
+    /// an ineligible user shouldn't be told "Subscribe" only to find no trial offered.
+    static func upsell(isEligibleForFreeTrial: Bool) -> AIChatSubscriptionUpsellDialog {
+        var dialog = AIChatSubscriptionUpsellDialog()
+        dialog.primaryButtonText = isEligibleForFreeTrial
+            ? UserText.aiChatSubscriptionUpsellDialogTryForFreeButton
+            : UserText.aiChatSubscriptionUpsellDialogUpgradeButton
+        return dialog
+    }
+
+    /// The Plus→Pro upgrade dialog, shared by the address bar and NTP omnibars. An existing Plus
+    /// subscriber is upgrading an active subscription, not discovering one, so it drops the
+    /// "I Have a Subscription" button and uses Pro-specific copy.
+    static func proUpgrade() -> AIChatSubscriptionUpsellDialog {
+        var dialog = AIChatSubscriptionUpsellDialog()
+        dialog.title = UserText.aiChatSubscriptionUpsellDialogProTitle
+        dialog.message = UserText.aiChatSubscriptionUpsellDialogProMessage
+        dialog.primaryButtonText = UserText.aiChatSubscriptionUpsellDialogUpgradeButton
+        dialog.showsHaveSubscriptionButton = false
+        return dialog
     }
 }

@@ -32,6 +32,7 @@ final class AIChatModelPickerButton: NSView {
         static let chevronSize: CGFloat = 16
         static let fontSize: CGFloat = 12
         static let cornerRadius: CGFloat = 14
+        static let borderWidth: CGFloat = 1
     }
 
     private let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
@@ -62,6 +63,16 @@ final class AIChatModelPickerButton: NSView {
     }()
 
     private let backgroundLayer = CALayer()
+
+    /// Own layer because `backgroundLayer` fades in and out for hover/press, and the outline has
+    /// to stay visible in every state.
+    private let borderLayer: CALayer = {
+        let layer = CALayer()
+        layer.cornerRadius = Constants.cornerRadius
+        layer.borderWidth = Constants.borderWidth
+        return layer
+    }()
+
     private let focusRingLayer: CAShapeLayer = {
         let layer = CAShapeLayer()
         layer.fillColor = nil
@@ -93,6 +104,17 @@ final class AIChatModelPickerButton: NSView {
     /// via `applyTheme(theme:)` so the ring follows in-app theme switches (Pink, Blue, etc.).
     var focusRingColor: NSColor = NSColor(designSystemColor: .accentPrimary) {
         didSet { updateFocusRingStrokeColor() }
+    }
+
+    /// A `CGColor` freezes the appearance it's resolved in, and `NSApp`'s would be wrong in a
+    /// burner window's dark override.
+    private func updateBorderColor() {
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        effectiveAppearance.performAsCurrentDrawingAppearance {
+            borderLayer.borderColor = NSColor(designSystemColor: .lines).cgColor
+        }
+        CATransaction.commit()
     }
 
     private func updateFocusRingStrokeColor() {
@@ -142,14 +164,39 @@ final class AIChatModelPickerButton: NSView {
 
     override func becomeFirstResponder() -> Bool {
         let didBecome = super.becomeFirstResponder()
-        if didBecome { setFocusRingHidden(false) }
+        if didBecome { isFocused = true }
         return didBecome
     }
 
     override func resignFirstResponder() -> Bool {
         let didResign = super.resignFirstResponder()
-        if didResign { setFocusRingHidden(true) }
+        if didResign {
+            isFocused = false
+            wantsFocusRing = false
+        }
         return didResign
+    }
+
+    func takeKeyboardFocus() {
+        wantsFocusRing = true
+        window?.makeFirstResponder(self)
+    }
+
+    private var isFocused = false {
+        didSet { applyFocusRingVisibility() }
+    }
+
+    /// AppKit promotes any clicked view that accepts first responder, so focus can't gate the ring.
+    private var wantsFocusRing = false {
+        didSet { applyFocusRingVisibility() }
+    }
+
+    var isFocusRingSuppressed = false {
+        didSet { applyFocusRingVisibility() }
+    }
+
+    private func applyFocusRingVisibility() {
+        setFocusRingHidden(!isFocused || !wantsFocusRing || isFocusRingSuppressed)
     }
 
     private func setFocusRingHidden(_ hidden: Bool) {
@@ -171,6 +218,10 @@ final class AIChatModelPickerButton: NSView {
         backgroundLayer.cornerRadius = Constants.cornerRadius
         backgroundLayer.opacity = 0
         layer?.insertSublayer(backgroundLayer, at: 0)
+
+        // Below the focus ring, so a focused pill doesn't read as double-stroked.
+        layer?.addSublayer(borderLayer)
+        updateBorderColor()
 
         // Focus ring sublayer sits above the background so it stays visible while hovered.
         // Stroke colour follows `focusRingColor` and re-resolves against the view's effective
@@ -199,6 +250,7 @@ final class AIChatModelPickerButton: NSView {
     override func layout() {
         super.layout()
         backgroundLayer.frame = bounds
+        borderLayer.frame = bounds
 
         // Focus ring sits 1pt outside the pill. Rendered as a sublayer rather than
         // in `draw(_:)` so the 1pt overflow is not clipped by the view's backing layer
@@ -261,6 +313,9 @@ final class AIChatModelPickerButton: NSView {
         )
         addTrackingArea(newTrackingArea)
         trackingArea = newTrackingArea
+
+        // A new tracking area reports nothing about a pointer already outside it.
+        refreshHoverState()
     }
 
     override func mouseEntered(with event: NSEvent) {
@@ -276,7 +331,22 @@ final class AIChatModelPickerButton: NSView {
         isHovered = false
     }
 
+    /// For the cases where the tracking area can't be trusted — see `sendMenuOpeningAction`.
+    private func refreshHoverState() {
+        guard let window else {
+            isHovered = false
+            return
+        }
+        isHovered = bounds.contains(convert(window.mouseLocationOutsideOfEventStream, from: nil))
+    }
+
+    func resetTransientFillState() {
+        isMouseDown = false
+        refreshHoverState()
+    }
+
     override func mouseDown(with event: NSEvent) {
+        wantsFocusRing = false
         isMouseDown = true
     }
 
@@ -289,7 +359,10 @@ final class AIChatModelPickerButton: NSView {
         let locationInView = convert(event.locationInWindow, from: nil)
         if bounds.contains(locationInView) && isMouseDown {
             if let action, let target {
-                NSApp.sendAction(action, to: target, from: self)
+                sendMenuOpeningAction {
+                    NSApp.sendAction(action, to: target, from: self)
+                }
+                return
             }
         }
         isMouseDown = false
@@ -315,6 +388,7 @@ final class AIChatModelPickerButton: NSView {
     override func viewDidChangeEffectiveAppearance() {
         super.viewDidChangeEffectiveAppearance()
         updateAppearance()
+        updateBorderColor()
         updateFocusRingStrokeColor()
     }
 
@@ -327,3 +401,5 @@ final class AIChatModelPickerButton: NSView {
         addCursorRect(bounds, cursor: .arrow)
     }
 }
+
+extension AIChatModelPickerButton: FocusRingControlling {}

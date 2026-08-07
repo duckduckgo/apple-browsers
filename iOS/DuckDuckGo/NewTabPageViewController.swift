@@ -99,6 +99,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
          remoteMessagingActionHandler: RemoteMessagingActionHandling,
          remoteMessagingImageLoader: RemoteMessagingImageLoading,
          remoteMessagingPixelReporter: RemoteMessagingPixelReporting? = nil,
+         promoCoordinator: NewTabPagePromoCoordinating,
          appSettings: AppSettings,
          faviconsCache: FavoritesFaviconCaching,
          subscriptionManager: any SubscriptionManager,
@@ -131,6 +132,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
                                                 messageActionHandler: remoteMessagingActionHandler,
                                                 imageLoader: remoteMessagingImageLoader,
                                                 pixelReporter: remoteMessagingPixelReporter,
+                                                promoCoordinator: promoCoordinator,
                                                 isOpenedAfterIdle: { [weak viewModel] in viewModel?.openedAfterIdle ?? false })
 
         super.init(rootView: NewTabPageView(isFocussedState: isFocussedState,

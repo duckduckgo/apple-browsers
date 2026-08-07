@@ -22,6 +22,8 @@ import XCTest
 import Core
 import Combine
 @testable import DDGSync
+import OHHTTPStubs
+import OHHTTPStubsSwift
 import Persistence
 import Common
 import FoundationExtensions
@@ -93,6 +95,29 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
         featureFlagger = nil
         syncAutoRestoreHandler = nil
         super.tearDown()
+    }
+
+    @MainActor
+    func testWhenSimplifiedSyncSetupV2IsDisabledThenSyncUIVersionIsV1() {
+        XCTAssertEqual(vc.syncUIVersion, "v1")
+        XCTAssertEqual(vc.uiVersionParameters, [PixelParameters.uiVersion: "v1"])
+    }
+
+    @MainActor
+    func testWhenSimplifiedSyncSetupV2IsEnabledThenSyncUIVersionIsV2() {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.simplifiedSyncSetupV2])
+        let vc = SyncSettingsViewController(
+            syncService: ddgSyncing,
+            syncBookmarksAdapter: syncBookmarksAdapter,
+            syncCredentialsAdapter: syncCredentialsAdapter,
+            syncCreditCardsAdapter: syncCreditCardsAdapter,
+            syncPausedStateManager: errorHandler,
+            featureFlagger: featureFlagger,
+            syncAutoRestoreHandler: syncAutoRestoreHandler
+        )
+
+        XCTAssertEqual(vc.syncUIVersion, "v2")
+        XCTAssertEqual(vc.uiVersionParameters, [PixelParameters.uiVersion: "v2"])
     }
 
     @MainActor
@@ -238,6 +263,69 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenPairingV2ExchangePresenterStartFailsThenFiresFailureContextPixel() async {
+        featureFlagger.enabledFeatureFlags.append(.exchangeKeysToSyncWithAnotherDevice)
+        ddgSyncing.account = SyncAccount(
+            deviceId: "device-id",
+            deviceName: "iPhone",
+            deviceType: "iPhone",
+            userId: "user-id",
+            primaryKey: Data(),
+            secretKey: Data(),
+            token: "token",
+            state: .active
+        )
+        await assertPairingV2PresenterStartFailurePixel(source: .exchange, myRole: "host") { connectionController, failure in
+            connectionController.startExchangeModeError = failure
+        }
+    }
+
+    @MainActor
+    func testWhenPairingV2ConnectPresenterStartFailsThenFiresFailureContextPixel() async {
+        featureFlagger.enabledFeatureFlags.append(.exchangeKeysToSyncWithAnotherDevice)
+        ddgSyncing.account = nil
+        await assertPairingV2PresenterStartFailurePixel(source: .connect, myRole: "joiner") { connectionController, failure in
+            connectionController.startConnectModeError = failure
+        }
+    }
+
+    @MainActor
+    private func assertPairingV2PresenterStartFailurePixel(source: SyncSetupSource,
+                                                           myRole: String,
+                                                           configure: (MockSyncConnectionControlling, PairingV2OperationFailure) -> Void) async {
+        let context = PairingV2FailureContext(stage: .presenterOpenOwnChannel, kind: .httpError)
+        let connectionController = MockSyncConnectionControlling()
+        let failure = PairingV2OperationFailure(
+            context: context,
+            underlyingError: SyncError.unexpectedStatusCode(500)
+        )
+        configure(connectionController, failure)
+        vc.connectionController = connectionController
+        let pixelExpectation = expectation(description: "fires Pairing V2 presenter start failure pixel")
+        let wasDryRun = Pixel.isDryRun
+        Pixel.isDryRun = false
+        stub(condition: isHost("improving.duckduckgo.com")) { request in
+            let parameters = request.url?.queryParameters()
+            if request.url?.path.contains(Pixel.Event.syncSetupEndedFailed.name) == true,
+               parameters?[PixelParameters.reason] == SyncSetupFailureReason.relayChannelFailure,
+               parameters?[PixelParameters.source] == source.rawValue,
+               parameters?["my_role"] == myRole,
+               parameters?["pairing_failure_stage"] == "presenter_open_own_channel",
+               parameters?["pairing_failure_kind"] == "http_error" {
+                pixelExpectation.fulfill()
+            }
+            return HTTPStubsResponse(data: Data(), statusCode: 200, headers: nil)
+        }
+        defer {
+            Pixel.isDryRun = wasDryRun
+            HTTPStubs.removeAllStubs()
+        }
+
+        vc.showSyncWithAnotherDevice()
+        await fulfillment(of: [pixelExpectation], timeout: 5)
+    }
+
+    @MainActor
     func testWhenContinueAfterPreservedAccountRemovalForRecoverThenLocalRemovalIsDeferred() async {
         ddgSyncing.account = SyncAccount(
             deviceId: "device-id",
@@ -366,6 +454,26 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
         spyVC.controllerDidCreateSyncAccount(shouldShowSyncEnabled: false)
 
         XCTAssertEqual(spyVC.dismissVCAndShowDeviceSyncedToastCallCount, 0)
+    }
+
+    @MainActor
+    func testWhenV1ConnectCreatesAccountWithSimplifiedV2LayoutThenCompletionShowsSuccess() {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.simplifiedSyncSetupV2])
+        let spyVC = SpySyncSettingsViewController(
+            syncService: ddgSyncing,
+            syncBookmarksAdapter: syncBookmarksAdapter,
+            syncCredentialsAdapter: syncCredentialsAdapter,
+            syncCreditCardsAdapter: syncCreditCardsAdapter,
+            syncPausedStateManager: errorHandler,
+            featureFlagger: featureFlagger,
+            syncAutoRestoreHandler: syncAutoRestoreHandler
+        )
+        spyVC.viewModel.connectingSheetPhase = .connecting(isRecovery: false)
+
+        spyVC.controllerDidCreateSyncAccount(shouldShowSyncEnabled: true)
+        spyVC.controllerDidCompleteAccountConnection(shouldShowSyncEnabled: false, setupSource: .connect, codeSource: .qrCode)
+
+        XCTAssertEqual(spyVC.viewModel.connectingSheetPhase, .connecting(isRecovery: false, isFinishing: true))
     }
 
     @MainActor

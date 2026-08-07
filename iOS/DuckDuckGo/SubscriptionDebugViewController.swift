@@ -28,6 +28,9 @@ import StoreKit
 import PrivacyConfig
 import Networking
 import UserNotifications
+import UIComponents
+import Lottie
+import FeatureFlags_iOS
 
 final class SubscriptionDebugViewController: UITableViewController {
 
@@ -64,6 +67,7 @@ final class SubscriptionDebugViewController: UITableViewController {
         Sections.metadata: "StoreKit Metadata",
         Sections.regionOverride: "Region override for App Store Sandbox",
         Sections.expirationReminder: "Expiration Reminder Notification",
+        Sections.onboarding: "Onboarding",
     ]
 
     enum Sections: Int, CaseIterable {
@@ -76,6 +80,7 @@ final class SubscriptionDebugViewController: UITableViewController {
         case metadata
         case regionOverride
         case expirationReminder
+        case onboarding
     }
 
     enum AuthorizationRows: Int, CaseIterable {
@@ -121,6 +126,13 @@ final class SubscriptionDebugViewController: UITableViewController {
     enum ExpirationReminderRows: Int, CaseIterable {
         case currentStatus
         case triggerMockNotification
+    }
+
+    enum OnboardingRows: Int, CaseIterable {
+        case welcome
+        case vpn
+        case duckAI
+        case tapAllowHint
     }
 
     private var notificationAuthStatusText: String = "Loading"
@@ -308,6 +320,24 @@ final class SubscriptionDebugViewController: UITableViewController {
                 break
             }
 
+        case .onboarding:
+            switch OnboardingRows(rawValue: indexPath.row) {
+            case .welcome:
+                cell.textLabel?.text = "Welcome"
+                cell.accessoryType = .disclosureIndicator
+            case .vpn:
+                cell.textLabel?.text = "VPN"
+                cell.accessoryType = .disclosureIndicator
+            case .duckAI:
+                cell.textLabel?.text = "Duck.ai"
+                cell.accessoryType = .disclosureIndicator
+            case .tapAllowHint:
+                cell.textLabel?.text = "Tap Allow Hint Overlay"
+                cell.accessoryType = .disclosureIndicator
+            case .none:
+                break
+            }
+
         case .none:
             break
         }
@@ -326,6 +356,7 @@ final class SubscriptionDebugViewController: UITableViewController {
         case .metadata: return MetadataRows.allCases.count
         case .regionOverride: return RegionOverrideRows.allCases.count
         case .expirationReminder: return ExpirationReminderRows.allCases.count
+        case .onboarding: return OnboardingRows.allCases.count
         case .none: return 0
         }
     }
@@ -372,6 +403,14 @@ final class SubscriptionDebugViewController: UITableViewController {
         case .expirationReminder:
             switch ExpirationReminderRows(rawValue: indexPath.row) {
             case .triggerMockNotification: triggerMockExpirationReminder()
+            default: break
+            }
+        case .onboarding:
+            switch OnboardingRows(rawValue: indexPath.row) {
+            case .welcome: showWelcomeOnboarding()
+            case .vpn: showVPNOnboarding()
+            case .duckAI: showDuckAIOnboarding()
+            case .tapAllowHint: showTapAllowHintPlayground()
             default: break
             }
         case .none:
@@ -816,10 +855,67 @@ final class SubscriptionDebugViewController: UITableViewController {
         let hostingController = UIHostingController(rootView: ProductionSubscriptionPurchaseDebugView(subscriptionSelectionHandler: handler))
         navigationController?.pushViewController(hostingController, animated: true)
     }
+
+    private func showWelcomeOnboarding() {
+        let hostingController = UIHostingController(
+            rootView: SubscriptionOnboardingWelcomeView(onClose: { [weak self] in self?.dismiss(animated: true) })
+                .subscriptionOnboardingNavigationContainer())
+        present(hostingController, animated: true)
+    }
+
+    private func showVPNOnboarding() {
+        let hostingController = UIHostingController(
+            rootView: SubscriptionOnboardingVPNActivationView(
+                viewModel: SubscriptionOnboardingVPNActivationViewModel(prefetcher: SubscriptionOnboardingPrefetcher(), delegate: self))
+                .subscriptionOnboardingNavigationContainer()
+                .graphicLottieRenderer(Self.onboardingLottieRenderer))
+        present(hostingController, animated: true)
+    }
+
+    private func showDuckAIOnboarding() {
+        let hostingController = UIHostingController(
+            rootView: SubscriptionOnboardingDuckAIView(
+                viewModel: SubscriptionOnboardingDuckAIViewModel(prefetcher: SubscriptionOnboardingPrefetcher(), delegate: self))
+                .subscriptionOnboardingNavigationContainer())
+        present(hostingController, animated: true)
+    }
+
+    private func showTapAllowHintPlayground() {
+        let hostingController = UIHostingController(
+            rootView: TapAllowHintOverlayPlaygroundView(onClose: { [weak self] in self?.dismiss(animated: true) }))
+        hostingController.modalPresentationStyle = .overFullScreen
+        hostingController.view.backgroundColor = .clear
+        present(hostingController, animated: true)
+    }
+
+    private static let onboardingLottieRenderer = GraphicLottieRenderer { name, playback in
+        AnyView(
+            Lottie.LottieView(animation: .named(name))
+                .playbackMode(playback == .playOnce
+                    ? .playing(.fromProgress(0, toProgress: 1, loopMode: .playOnce))
+                    : .paused(at: .progress(playback == .frozenAtEnd ? 1 : 0)))
+        )
+    }
 }
 
 extension Bool {
     fileprivate var toString: String {
         String(self)
+    }
+}
+
+extension SubscriptionDebugViewController: SubscriptionOnboardingSectionDelegate {
+    func sectionDidComplete(_ section: SubscriptionOnboardingSection) {}
+
+    func sectionDidRequestDuckAIChat(modelID: String?) {
+        SubscriptionOnboardingDuckAIChatLauncher().launch(from: self, modelID: modelID)
+    }
+
+    func sectionDidRequestAdvance() {
+        dismiss(animated: true)
+    }
+
+    func sectionDidRequestGoBack() {
+        dismiss(animated: true)
     }
 }

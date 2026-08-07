@@ -22,6 +22,19 @@
                     "enum": ["true"]
                 }
             }
+        },
+        "onboardingChromeExtension": {
+            "cohorts": ["control", "treatment"],
+            "metrics": {
+                "setAsDefault": {
+                    "description": "User clicked the Set as Default call to action during onboarding",
+                    "enum": ["true"]
+                },
+                "onboardingCompleted": {
+                    "description": "User completed the full onboarding flow",
+                    "enum": ["true"]
+                }
+            }
         }
     }
 }

@@ -19,6 +19,7 @@
 
 import XCTest
 import Core
+import FoundationExtensions
 import Persistence
 import BrowserServicesKit
 import RemoteMessaging
@@ -60,7 +61,7 @@ final class NewAddressBarPickerDisplayValidatorTests: XCTestCase {
         mockOnboardingSearchExperienceProvider = MockOnboardingSearchExperienceProvider()
         mockStatisticsStore = MockStatisticsStore()
 
-        // Note: tutorialSettings and launchSourceManager validation moved to ModalPromptCoordinationService
+        // Note: tutorialSettings and launchSourceManager validation moved to PromoCoordinationService
         validator = NewAddressBarPickerDisplayValidator(
             aiChatSettings: mockAIChatSettings,
             featureFlagger: mockFeatureFlagger,

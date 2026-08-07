@@ -18,7 +18,7 @@
 
 import AppKit
 import Combine
-import FeatureFlags
+import FeatureFlags_macOS
 import MaliciousSiteProtection
 import PixelKit
 import PreferencesUI_macOS
@@ -75,7 +75,8 @@ extension Preferences {
                             HStack {
                                 if dockModel.isAddedToDock {
                                     HStack {
-                                        Image(.checkCircle).foregroundColor(Color(.successGreen))
+                                        Image(.checkCircle)
+                                            .foregroundColor(Color(designSystemColor: .statusGreen))
                                         Text(UserText.isAddedToDock)
                                     }
                                     .transition(.opacity)
@@ -347,6 +348,7 @@ extension Preferences {
                             TextMenuItemCaption(UserText.autoplayCaption)
                         }
                     }
+                    .id(PreferencesScrollAnchor.permissions)
                 }
             }
             .sheet(isPresented: isPresentingAddToDockDemoVideo) {
@@ -382,10 +384,7 @@ struct CustomHomePageSheet: View {
                 }
                 .padding(8)
             }
-            .roundedBorder()
             .padding(EdgeInsets(top: 10, leading: 15, bottom: 10, trailing: 15))
-
-            Divider()
 
             HStack(alignment: .center) {
                 Spacer()

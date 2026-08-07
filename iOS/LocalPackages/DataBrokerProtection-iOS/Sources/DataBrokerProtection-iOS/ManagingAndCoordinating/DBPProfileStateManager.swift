@@ -31,7 +31,6 @@ public protocol DBPProfileStateManaging {
 
     func recordProfileSaved()
     func recordProfileDeleted()
-    func recordProfileStateUnknown()
     func reconcileProfileState(hasSavedProfile: Bool)
 }
 
@@ -62,10 +61,6 @@ public final class DefaultDBPProfileStateManager: DBPProfileStateManaging {
 
     public func recordProfileDeleted() {
         setProfileState(.noProfile)
-    }
-
-    public func recordProfileStateUnknown() {
-        setProfileState(.unknown)
     }
 
     public func reconcileProfileState(hasSavedProfile: Bool) {

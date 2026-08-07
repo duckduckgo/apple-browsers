@@ -108,6 +108,14 @@ extension SharedColorPaletteDefinition {
         case .shieldPrivacy:
             return shieldPrivacy
 
+        /// Status
+        case .statusGray:
+            return statusGray
+        case .statusGreen:
+            return statusGreen
+        case .statusRed:
+            return statusRed
+
         /// VPN
         /// Feature-scoped colours for the VPN status pill and header animation, resolved inline
         /// (following the Permission Center pattern) since they don't vary by accent palette. Per the
@@ -227,11 +235,37 @@ extension SharedColorPaletteDefinition {
         case .iconsTertiary:
             return iconsTertiary
 
-        /// Input
-        case .inputActive:
-            return inputActive
-        case .inputResting:
-            return inputResting
+        /// Unified Input
+        case .unifiedInputControlFillPrimary:
+            return unifiedInputControlFillPrimary
+        case .unifiedInputControlFillSecondary:
+            return unifiedInputControlFillSecondary
+        case .unifiedInputControlShadowPrimary:
+            return unifiedInputControlShadowPrimary
+        case .unifiedInputFieldFillPrimary:
+            return unifiedInputFieldFillPrimary
+        case .unifiedInputFieldFillSecondary:
+            return unifiedInputFieldFillSecondary
+        case .unifiedInputFireControlFillPrimary:
+            return unifiedInputFireControlFillPrimary
+        case .unifiedInputFireControlFillSecondary:
+            return unifiedInputFireControlFillSecondary
+        case .unifiedInputFireFieldFillPrimary:
+            return unifiedInputFireFieldFillPrimary
+        case .unifiedInputFireFieldFillSecondary:
+            return unifiedInputFireFieldFillSecondary
+        case .unifiedInputFireIconsPrimary:
+            return unifiedInputFireIconsPrimary
+        case .unifiedInputFireIconsSecondary:
+            return unifiedInputFireIconsSecondary
+        case .unifiedInputFireTextPrimary:
+            return unifiedInputFireTextPrimary
+        case .unifiedInputFireTextSecondary:
+            return unifiedInputFireTextSecondary
+        case .unifiedInputTextPrimary:
+            return unifiedInputTextPrimary
+        case .unifiedInputTextSecondary:
+            return unifiedInputTextSecondary
 
         /// System
         case .lines:
@@ -296,6 +330,8 @@ extension SharedColorPaletteDefinition {
             return toneShadePrimary
         case .toneTintPrimary:
             return toneTintPrimary
+        case .toneTintSecondary:
+            return toneTintSecondary
 
         /// Permission Center
         case .permissionCenterBackground:

@@ -46,7 +46,7 @@ import FoundationExtensions
 /// - Platform-specific AI chat preference providers
 /// - Message origin rules for security validation
 /// - Optional event mapper for error analytics
-public protocol SERPSettingsProviding {
+public protocol SERPSettingsProviding: AnyObject {
 
     /// Builds message origin rules for validating SERP communication.
     ///
@@ -220,14 +220,18 @@ public extension SERPSettingsProviding {
     func currentNativeSettingsSnapshot() -> [String: String] {
         return [
             SERPSettingsConstants.searchAssistKey: searchAssistFrequency.rawValue,
-            SERPSettingsConstants.hideAIGeneratedImagesKey: HideAIGeneratedImages.rawValue(forHidden: hideAIGeneratedImages)
+            SERPSettingsConstants.hideAIGeneratedImagesKey: HideAIGeneratedImages.rawValue(forHidden: hideAIGeneratedImages),
+            SERPSettingsConstants.safeSearch: safeSearch.rawValue
         ]
     }
 
     /// Search Assist (`kbe`) frequency, backed by native storage.
     ///
-    /// Reads fall back to `SearchAssistFrequency.defaultValue` when the key is absent. Setting the
-    /// default removes the key, mirroring the SERP (which omits defaults) so the two stay consistent.
+    /// Reads fall back to `SearchAssistFrequency.defaultValue` when the key is absent.The value is
+    /// **always written explicitly — even the default** — rather than removing the key.
+    /// Keeping `kbe` present makes native the source of truth at the SERP's load-time `getNativeSettings` read, so an open SERP can't fall back to a stale `localStorage`
+    /// cache and clobber a native write.
+    /// The SERP still omits the default from its own snapshots, so a later SERP sync may drop the key again which is fine.
     var searchAssistFrequency: SearchAssistFrequency {
         get {
             guard let rawValue = serpSettingValue(forKey: SERPSettingsConstants.searchAssistKey) else {
@@ -241,15 +245,16 @@ public extension SERPSettingsProviding {
             return frequency
         }
         set {
-            let value = newValue == .defaultValue ? nil : newValue.rawValue
-            setSERPSetting(value, forKey: SERPSettingsConstants.searchAssistKey)
+            setSERPSetting(newValue.rawValue, forKey: SERPSettingsConstants.searchAssistKey)
         }
     }
 
     /// Whether AI-generated images are hidden (`kbj`), backed by native storage.
     ///
-    /// Reads fall back to `HideAIGeneratedImages.defaultValue` when the key is absent. Setting the
-    /// default removes the key.
+    /// Reads fall back to `HideAIGeneratedImages.defaultValue` when the key is absent. The value is
+    /// **always written explicitly — even the default** (see `searchAssistFrequency` for the full
+    /// rationale): keeping `kbj` present makes native authoritative at the SERP's load-time read, so
+    /// an open SERP can't fall back to a stale localStorage cache and clobber a native write.
     var hideAIGeneratedImages: Bool {
         get {
             guard let rawValue = serpSettingValue(forKey: SERPSettingsConstants.hideAIGeneratedImagesKey) else {
@@ -263,8 +268,30 @@ public extension SERPSettingsProviding {
             return hidden
         }
         set {
-            let value = newValue == HideAIGeneratedImages.defaultValue ? nil : HideAIGeneratedImages.rawValue(forHidden: newValue)
-            setSERPSetting(value, forKey: SERPSettingsConstants.hideAIGeneratedImagesKey)
+            setSERPSetting(HideAIGeneratedImages.rawValue(forHidden: newValue), forKey: SERPSettingsConstants.hideAIGeneratedImagesKey)
+        }
+    }
+
+    /// Safe Search (`kp`) level, backed by native storage.
+    ///
+    /// Reads fall back to `SafeSearch.defaultValue` when the key is absent. The value is **always
+    /// written explicitly — even the default** (see `searchAssistFrequency` for the full rationale):
+    /// keeping `kp` present makes native authoritative at the SERP's load-time read, so an open SERP
+    /// can't fall back to a stale localStorage cache and clobber a native write.
+    var safeSearch: SafeSearch {
+        get {
+            guard let rawValue = serpSettingValue(forKey: SERPSettingsConstants.safeSearch) else {
+                return .defaultValue
+            }
+            guard let safeSearch = SafeSearch(rawValue: rawValue) else {
+                // Key is present but holds a value the native enum doesn't recognize (contract mismatch).
+                eventMapper?.fire(.unrecognizedValue)
+                return .defaultValue
+            }
+            return safeSearch
+        }
+        set {
+            setSERPSetting(newValue.rawValue, forKey: SERPSettingsConstants.safeSearch)
         }
     }
 

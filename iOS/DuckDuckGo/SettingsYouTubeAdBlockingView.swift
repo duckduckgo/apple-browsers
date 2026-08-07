@@ -34,7 +34,7 @@ struct SettingsYouTubeAdBlockingView: View {
     @EnvironmentObject var viewModel: SettingsViewModel
 
     var description: SettingsDescription {
-        SettingsDescription(imageName: "SettingsDuckPlayerHero",
+        SettingsDescription(imageName: "SettingsAdBlockingHero",
                             title: UserText.youTubeAdBlockingTitle,
                             status: .alwaysOn,
                             explanation: UserText.adBlockingDescription)
@@ -62,7 +62,7 @@ struct SettingsYouTubeAdBlockingView: View {
                 if viewModel.isYouTubeAdBlockingRemotelyDisabled {
                     Section(header: Text(UserText.adBlockingYouTubeSectionHeader)) {
                         remotelyDisabledRow
-                            .listRowBackground(Color(designSystemColor: .surface))
+                            .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
                     }
                 } else if viewModel.isYouTubeAdBlockingDisclosureHidden {
                     Section(header: Text(UserText.adBlockingYouTubeSectionHeader),
@@ -84,7 +84,7 @@ struct SettingsYouTubeAdBlockingView: View {
                 ) {
                     SettingsCellView(label: UserText.duckPlayerFeatureName)
                 }
-                .listRowBackground(Color(designSystemColor: .surface))
+                .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
                 .disabled(viewModel.shouldDisplayDuckPlayerContingencyMessage)
             }
         }

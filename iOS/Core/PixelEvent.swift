@@ -375,6 +375,8 @@ extension Pixel {
         case voiceSearchAIChatDone
         case openVoiceSearch
         case voiceSearchCancelled
+        case voiceSearchError
+        case voiceSearchNoSpeech
 
         case bookmarkLaunchList
         case bookmarkLaunchScored
@@ -1125,6 +1127,7 @@ extension Pixel {
         case syncAutoRestorePreservedAccountClearFailed
 
         case syncSetupBarcodeScreenShown
+        case syncSetupScanQRScreenShown
         case syncSetupBarcodeScannerSuccess
         case syncSetupBarcodeScannerFailed
         case syncSetupBarcodeCodeCopied
@@ -1443,6 +1446,8 @@ extension Pixel {
         case settingsSyncRecoverSyncedDataTapped
         case settingsSyncSignupConfirmedTapped
         case settingsSyncRecoveryConfirmedTapped
+        case settingsSyncAnotherDevicePromptShown
+        case settingsSyncAnotherDevicePromptOptionTapped
         case settingsAppearanceOpen
         case settingsThemeSelectorPressed
         case settingsAddressBarTopSelected
@@ -1692,6 +1697,10 @@ extension Pixel {
         case aiChatContextualAutoAttachDAU
         case aiChatIsEnabledDaily
 
+        // MARK: Duck.ai subscription funnel (frontend-reported entry points)
+        case aiChatSubscriptionFunnelImpression
+        case aiChatSubscriptionFunnelClick
+
         case duckAiNativeStorageMigrationDoneUnique(key: String)
         case duckAiNativeStorageMigrationDoneCount(key: String)
         case duckAiNativeStorageMigrationDoneBlankCount
@@ -1731,7 +1740,8 @@ extension Pixel {
         case aiChatSettingsMenuSidebarTapped
         case aiChatSettingsMenuAIChatSettingsTapped
         case aiChatSettingsMenuNewChatTabTapped
-        
+        case aiChatNewImageTapped
+
         case aiChatTabSwitcherOpened
         case aiChatFireButtonTapped
         case aiChatTabDidTerminate
@@ -1808,6 +1818,10 @@ extension Pixel {
         case aiChatHistoryPinAdded
         case aiChatHistoryPinRemoved
         case aiChatHistoryDownloadStarted
+        case aiChatHistoryDownloadSuccessful
+        case aiChatHistorySelectionDeleteConfirmed
+        case aiChatHistorySelectionDownloadStarted
+        case aiChatHistoryChatProtectionTapped
         case aiChatHistoryEditModeEntered
         case aiChatHistoryNewChatTapped
         case aiChatHistoryLoadFailed
@@ -1848,6 +1862,11 @@ extension Pixel {
 
         case aiChatContextualQuickActionAskAboutPageShown
         case aiChatContextualQuickActionAskAboutPageSelected
+        case aiChatContextualSuggestionSelected
+        case aiChatContextualSuggestionsViewed
+        case aiChatContextualHeaderTitleTapped
+        case aiChatContextualSuggestionsCatalogLoadFailed
+        case aiChatContextualSuggestionsContextCollectionTimedOut
         case aiChatContextualRecentChatsPopupDisplayed
         case aiChatContextualRecentChatSelected
         case aiChatContextualViewAllChatsTapped
@@ -1873,6 +1892,7 @@ extension Pixel {
         case unifiedToggleInputStopGenerationTapped
         case unifiedToggleInputSubscriptionUpsellTriggered
         case unifiedToggleInputChatHeaderUpgradeTapped
+        case unifiedToggleInputChatHeaderUpgradeShown
         case unifiedToggleInputPromptSubmitted
         case unifiedToggleInputShowModelPicker
         case unifiedToggleInputSubmitChangeModel
@@ -1903,7 +1923,6 @@ extension Pixel {
         case tabInteractionStateSourceMissingRootDirectory
         case tabInteractionStateSourceFailedToWrite
 
-        case tabInteractionStateFailedToRestore
         case tabInteractionStateRestorationTime(_ time: BucketAggregation)
 
         // MARK: Malicious Site Protection
@@ -2181,6 +2200,8 @@ extension Pixel.Event {
         case .settingsSyncRecoverSyncedDataTapped: return "m_settings_sync_recover_synced_data_tapped"
         case .settingsSyncSignupConfirmedTapped: return "m_settings_sync_signup_confirmed_tapped"
         case .settingsSyncRecoveryConfirmedTapped: return "m_settings_sync_recovery_confirmed_tapped"
+        case .settingsSyncAnotherDevicePromptShown: return "m_settings_sync_another_device_prompt_shown"
+        case .settingsSyncAnotherDevicePromptOptionTapped: return "m_settings_sync_another_device_prompt_option_tapped"
         case .settingsAppearanceOpen: return "m_settings_appearance_open"
         case .settingsThemeSelectorPressed: return "m_settings_theme_selector_pressed"
         case .settingsAddressBarTopSelected: return "m_settings_address_bar_top_selected"
@@ -2393,6 +2414,8 @@ extension Pixel.Event {
         case .voiceSearchAIChatDone: return "m_voice_search_aichat_done"
         case .openVoiceSearch: return "m_open_voice_search"
         case .voiceSearchCancelled: return "m_voice_search_cancelled"
+        case .voiceSearchError: return "voice_search_error"
+        case .voiceSearchNoSpeech: return "voice_search_no_speech"
             
         case .bookmarkImportSuccess: return "m_bi_s"
         case .bookmarkImportFailure: return "m_bi_e"
@@ -2981,8 +3004,6 @@ extension Pixel.Event {
         case .tabInteractionStateSourceFailedToWrite:
             return "m_d_tab-interaction-state-source_failed-to-write"
 
-        case .tabInteractionStateFailedToRestore:
-            return "m_d_tab-interaction-state_failed-to-restore"
         case .tabInteractionStateRestorationTime(let aggregation):
             return "m_d_tab-interaction-state_restoration-time-\(aggregation)"
 
@@ -3171,6 +3192,7 @@ extension Pixel.Event {
         case .syncAutoRestorePreservedAccountClearFailed: return "sync-auto-restore_preserved_account_clear_failed"
 
         case .syncSetupBarcodeScreenShown: return "sync_setup_barcode_screen_shown"
+        case .syncSetupScanQRScreenShown: return "sync_setup_scan_qr_screen_shown"
         case .syncSetupBarcodeScannerSuccess: return "sync_setup_barcode_scanner_success"
         case .syncSetupBarcodeScannerFailed: return "sync_setup_barcode_scanner_failed"
         case .syncSetupBarcodeCodeCopied: return "sync_setup_barcode_code_copied"
@@ -3591,6 +3613,11 @@ extension Pixel.Event {
         case .aiChatContextualAutoAttachDAU: return "m_aichat_contextual_auto_attach_dau"
         case .aiChatIsEnabledDaily: return "m_aichat_is_enabled_daily"
 
+        // The hyphen inside these snake_case names is deliberate: it matches the macOS names so a single
+        // query answers both platforms.
+        case .aiChatSubscriptionFunnelImpression: return "m_aichat_subscription-funnel_impression"
+        case .aiChatSubscriptionFunnelClick: return "m_aichat_subscription-funnel_click"
+
         // AI Features telemetry: no `m_` prefix so the wire names are identical to macOS.
         case .aiFeaturesStateDaily: return "ai_features_state_daily"
         case .aiFeaturesDisabled: return "ai_features_disabled"
@@ -3641,7 +3668,8 @@ extension Pixel.Event {
         case .aiChatSettingsMenuSidebarTapped: return "m_aichat_settings_menu_sidebar_tapped"
         case .aiChatSettingsMenuAIChatSettingsTapped: return "m_aichat_settings_menu_aichat_settings_tapped"
         case .aiChatSettingsMenuNewChatTabTapped: return "m_aichat_settings_menu_new_chat_tab_tapped"
-            
+        case .aiChatNewImageTapped: return "aichat_new_image_tapped"
+
         case .aiChatTabSwitcherOpened: return "m_aichat_tab_switcher_opened"
         case .aiChatFireButtonTapped: return "m_aichat_fire_button_tapped"
         case .aiChatTabDidTerminate: return "m_aichat_tab_did_terminate"
@@ -3709,6 +3737,10 @@ extension Pixel.Event {
         case .aiChatHistoryPinAdded: return "aichat_history_pin_added"
         case .aiChatHistoryPinRemoved: return "aichat_history_pin_removed"
         case .aiChatHistoryDownloadStarted: return "aichat_history_download_started"
+        case .aiChatHistoryDownloadSuccessful: return "aichat_history_download_successful"
+        case .aiChatHistorySelectionDeleteConfirmed: return "aichat_history_selection_delete_confirmed"
+        case .aiChatHistorySelectionDownloadStarted: return "aichat_history_selection_download_started"
+        case .aiChatHistoryChatProtectionTapped: return "aichat_history_chat_protection_tapped"
         case .aiChatHistoryEditModeEntered: return "aichat_history_edit_mode_entered"
         case .aiChatHistoryNewChatTapped: return "aichat_history_new_chat_tapped"
         case .aiChatHistoryLoadFailed: return "aichat_history_load_failed"
@@ -3746,6 +3778,12 @@ extension Pixel.Event {
         case .aiChatPageContextExtractionPrevented: return "aichat_page_context_extraction_prevented"
         case .aiChatContextualQuickActionAskAboutPageShown: return "m_aichat_contextual_quick_action_ask_about_page_shown"
         case .aiChatContextualQuickActionAskAboutPageSelected: return "m_aichat_contextual_quick_action_ask_about_page_selected"
+        case .aiChatContextualSuggestionSelected: return "aichat_contextual_suggestion_selected"
+        case .aiChatContextualSuggestionsViewed: return "aichat_contextual_suggestions_viewed"
+        case .aiChatContextualHeaderTitleTapped: return "aichat_contextual_header_title_tapped"
+        case .aiChatContextualSuggestionsCatalogLoadFailed: return "debug_aichat_contextual_suggestions_catalog_load_failed"
+        case .aiChatContextualSuggestionsContextCollectionTimedOut:
+            return "debug_aichat_contextual_suggestions_context_collection_timed_out"
         case .aiChatContextualRecentChatsPopupDisplayed: return "m_aichat_contextual_recent_chats_popup_displayed"
         case .aiChatContextualRecentChatSelected: return "m_aichat_contextual_recent_chat_selected"
         case .aiChatContextualViewAllChatsTapped: return "m_aichat_contextual_view_all_chats_tapped"
@@ -3771,6 +3809,7 @@ extension Pixel.Event {
         case .unifiedToggleInputStopGenerationTapped: return "m_aichat_unified_input_stop_generation_tapped"
         case .unifiedToggleInputSubscriptionUpsellTriggered: return "m_aichat_unified_input_subscription_upsell_triggered"
         case .unifiedToggleInputChatHeaderUpgradeTapped: return "m_aichat_unified_input_chat_header_upgrade_tapped"
+        case .unifiedToggleInputChatHeaderUpgradeShown: return "m_aichat_unified_input_chat_header_upgrade_shown"
         case .unifiedToggleInputPromptSubmitted: return "m_aichat_unified_input_prompt_submitted"
         case .unifiedToggleInputShowModelPicker: return "aichat_unified_input_show_model_picker"
         case .unifiedToggleInputSubmitChangeModel: return "aichat_unified_input_submit_change_model"

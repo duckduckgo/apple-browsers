@@ -949,6 +949,12 @@
 /* Login name label for login details on autofill */
 "autofill.logins.details.login-name" = "Otsikko";
 
+/* Message for alert when attempting to save a password that has neither a website nor a username */
+"autofill.logins.details.missing-website-or-username-alert.message" = "Tallenna tämä salasana antamalla verkkosivusto tai käyttäjätunnus.";
+
+/* Title for alert when attempting to save a password that has neither a website nor a username */
+"autofill.logins.details.missing-website-or-username-alert.title" = "Verkkosivusto tai käyttäjätunnus vaaditaan";
+
 /* Title when adding new autofill login */
 "autofill.logins.details.new-title" = "Lisää salasana";
 

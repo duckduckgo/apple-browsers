@@ -75042,6 +75042,126 @@
         }
       }
     },
+    "password.manager.alert.missing.website.or.username.description" : {
+      "comment" : "Body text of alert shown when saving a password that has neither a website nor a username",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gib eine Website oder einen Benutzernamen ein, um dieses Passwort zu speichern."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "To save this password, enter a website or username."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Para guardar esta contraseña, introduce un sitio web o un nombre de usuario."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pour enregistrer ce mot de passe, saisis un site ou un nom d'utilisateur."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Per salvare questa password, inserisci un sito web o un nome utente."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Om dit wachtwoord op te slaan, voer je een website of gebruikersnaam in."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aby zapisać to hasło, wprowadź witrynę lub nazwę użytkownika."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Para guardares esta palavra-passe, introduz um site ou um nome de utilizador."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Чтобы сохранить этот пароль, введи сайт или имя пользователя."
+          }
+        }
+      }
+    },
+    "password.manager.alert.missing.website.or.username.title" : {
+      "comment" : "Title of alert shown when saving a password that has neither a website nor a username",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Website oder Benutzername erforderlich"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Website or Username Required"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se requiere un sitio web o nombre de usuario"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Site web ou nom d'utilisateur requis"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sito web o nome utente richiesto"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Website of gebruikersnaam vereist"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wymagana witryna lub nazwa użytkownika"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Site ou nome de utilizador obrigatório"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Укажите веб-сайт или имя пользователя"
+          }
+        }
+      }
+    },
     "Passwords:" : {
       "comment" : "Data import summary format of how many passwords were successfully imported.",
       "localizations" : {

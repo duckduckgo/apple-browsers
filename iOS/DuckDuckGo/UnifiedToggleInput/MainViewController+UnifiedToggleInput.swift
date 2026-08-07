@@ -447,12 +447,32 @@ private extension MainViewController {
             .store(in: &unifiedToggleInputCancellables)
     }
 
+    private func applyEditModeChrome(_ isEditing: Bool) {
+        setDuckAITranscriptDimmedForEditing(isEditing)
+        aiChatTabChatHeaderView?.isHidden = isEditing
+        aiChatEditHeaderView?.isHidden = !isEditing
+    }
+
+    private func setDuckAITranscriptDimmedForEditing(_ isEditing: Bool) {
+        if isEditing {
+            guard currentTab?.isAITab == true, let webView = currentTab?.webView else { return }
+            whitenedTranscriptWebView = webView
+            UIView.animate(withDuration: 0.2) { webView.alpha = 0 }
+        } else {
+            // Restore the exact web view we whitened, not `currentTab`'s — the tab may have changed.
+            let webView = whitenedTranscriptWebView
+            whitenedTranscriptWebView = nil
+            UIView.animate(withDuration: 0.2) { webView?.alpha = 1 }
+        }
+    }
+
     func subscribeToModeChanges(_ coordinator: UnifiedToggleInputCoordinator) {
         coordinator.modeChangePublisher
             .sink { [weak self] mode in
                 self?.handleModeChange(mode)
             }
             .store(in: &unifiedToggleInputCancellables)
+
 
         coordinator.attachmentsChangePublisher
             .sink { [weak self] in
@@ -836,6 +856,19 @@ private extension MainViewController {
         )
         self.aiChatTabChatHeaderView = headerView
         viewCoordinator.aiChatTabChatHeaderView = headerView
+
+        let editHeaderView = AIChatEditHeaderView()
+        editHeaderView.delegate = self
+        editHeaderView.translatesAutoresizingMaskIntoConstraints = false
+        editHeaderView.isHidden = true
+        viewCoordinator.aiChatTabChatHeaderContainer.addSubview(editHeaderView)
+        NSLayoutConstraint.activate([
+            editHeaderView.topAnchor.constraint(equalTo: viewCoordinator.aiChatTabChatHeaderContainer.topAnchor),
+            editHeaderView.leadingAnchor.constraint(equalTo: viewCoordinator.aiChatTabChatHeaderContainer.leadingAnchor),
+            editHeaderView.trailingAnchor.constraint(equalTo: viewCoordinator.aiChatTabChatHeaderContainer.trailingAnchor),
+            editHeaderView.bottomAnchor.constraint(equalTo: viewCoordinator.aiChatTabChatHeaderContainer.bottomAnchor),
+        ])
+        self.aiChatEditHeaderView = editHeaderView
     }
 
     func refreshAIChatTabChatHeaderSubscriptionState() {
@@ -1263,6 +1296,10 @@ extension MainViewController: UnifiedToggleInputDelegate {
         onMenuPressed()
     }
 
+    func unifiedToggleInputDidChangeEditMode(_ isEditing: Bool) {
+        applyEditModeChrome(isEditing)
+    }
+
     func unifiedToggleInputDismissSnapshot() -> UTIDismissSnapshot {
         let tab = tabManager.currentTabsModel.currentTab
         // AI tab reuses the same textView for the flanked input — populating it with the URL
@@ -1434,6 +1471,15 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
     func aiChatTabChatHeaderDidTapTabSwitcher() {
         // Via `requestTabSwitcher()` not `showTabSwitcher()` — fires the same pixels as every other entry point.
         requestTabSwitcher()
+    }
+
+}
+
+// MARK: - AIChatEditHeaderViewDelegate
+
+extension MainViewController: AIChatEditHeaderViewDelegate {
+    func aiChatEditHeaderDidTapCancel() {
+        unifiedToggleInputCoordinator?.endEditMode()
     }
 }
 

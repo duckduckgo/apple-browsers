@@ -949,6 +949,12 @@
 /* Login name label for login details on autofill */
 "autofill.logins.details.login-name" = "Nosaukums";
 
+/* Message for alert when attempting to save a password that has neither a website nor a username */
+"autofill.logins.details.missing-website-or-username-alert.message" = "Lai saglabātu šo paroli, ievadi vietni vai lietotājvārdu.";
+
+/* Title for alert when attempting to save a password that has neither a website nor a username */
+"autofill.logins.details.missing-website-or-username-alert.title" = "Jāievada vietne vai lietotājvārds";
+
 /* Title when adding new autofill login */
 "autofill.logins.details.new-title" = "Pievienot paroli";
 

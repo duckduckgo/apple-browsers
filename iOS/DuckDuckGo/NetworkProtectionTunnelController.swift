@@ -62,6 +62,15 @@ final class NetworkProtectionTunnelController: VPNConnectionContextProvidingTunn
         controllerErrorSubject.eraseToAnyPublisher()
     }
 
+    /// Signals that the customer declined the system prompt to add the VPN configuration.
+    ///
+    /// Kept separate from `controllerErrorPublisher` because a denial is an intentional user action. It fires only so screens that need
+    /// to react to a denial can observe it.
+    private let configurationDeniedSubject = PassthroughSubject<Void, Never>()
+    var configurationDeniedPublisher: AnyPublisher<Void, Never> {
+        configurationDeniedSubject.eraseToAnyPublisher()
+    }
+
     // Wide Event
     private let wideEvent: WideEventManaging
     private var connectionWideEventData: VPNConnectionWideEventData?
@@ -223,6 +232,7 @@ final class NetworkProtectionTunnelController: VPNConnectionContextProvidingTunn
 
             completeAndCleanupConnectionWideEvent(with: error, description: error.contextualizedDescription())
             if case StartError.configSystemPermissionsDenied = error {
+                configurationDeniedSubject.send()
                 return
             }
 
@@ -320,6 +330,16 @@ final class NetworkProtectionTunnelController: VPNConnectionContextProvidingTunn
     var isInstalled: Bool {
         get async {
             return await self.tunnelManager != nil
+        }
+    }
+
+    /// A fresh "is a VPN configuration installed?" check.
+    /// `isInstalled` can report a stale `true` after a config is removed from
+    /// system Settings, because `subscribeToConfigurationChanges` only clears the cache when the reload
+    /// throws or reports `.invalid`, which a Settings removal doesn't always surface.
+    var isConfigurationInstalled: Bool {
+        get async {
+            (try? await NETunnelProviderManager.loadAllFromPreferences())?.isEmpty == false
         }
     }
 

@@ -36,6 +36,20 @@ final class OmniBarEqualityCheckTests: XCTestCase {
         XCTAssertTrue(zip(cell.constraints, initialConstraints).allSatisfy { $0.0 === $0.1 })
     }
 
+    func testOmniBarCellReattachesSameOmniBarAfterItMovesToAnotherCell() {
+        let firstCell = OmniBarCell()
+        let secondCell = OmniBarCell()
+        let omniBar = MockOmniBar()
+        firstCell.isFloatingUIEnabledProvider = { false }
+        secondCell.isFloatingUIEnabledProvider = { false }
+        firstCell.omniBar = omniBar
+        secondCell.omniBar = omniBar
+
+        firstCell.omniBar = omniBar
+
+        XCTAssertTrue(omniBar.barView.superview === firstCell)
+    }
+
     func testRequiresUpdateChecksForIsLoading() {
         let loadingOmniBarState = DummyOmniBarState(isLoading: true)
         let notLoadingOmniBarState = DummyOmniBarState(isLoading: false)

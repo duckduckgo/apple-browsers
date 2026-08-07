@@ -56,6 +56,7 @@ struct ScanTabView: View {
         .onAppear {
             model.resetScanningGate()
             model.prepareCameraForIntroIfAuthorized()
+            model.delegate?.scanQRCodeScreenShown()
         }
     }
 

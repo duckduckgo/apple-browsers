@@ -28,17 +28,20 @@ enum PromoTrigger {
     case appLaunched
     case windowBecameKey
     case newTabPageAppeared
+    case autoplayDiscoverability
     case testTriggered
 
     /// Triggers for promotions, mapped to `PromoTrigger` values.
     static let triggerPublisher: AnyPublisher<PromoTrigger, Never> = {
-        let triggers = Publishers.Merge3(
+        let triggers = Publishers.MergeMany(
             NotificationCenter.default.publisher(for: .promoServiceAppLaunched)
                 .map { _ in PromoTrigger.appLaunched },
             NotificationCenter.default.publisher(for: .newTabPageWebViewDidAppear)
                 .map { _ in PromoTrigger.newTabPageAppeared },
             NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)
-                .map { _ in PromoTrigger.windowBecameKey }
+                .map { _ in PromoTrigger.windowBecameKey },
+            NotificationCenter.default.publisher(for: .autoplayPolicyDisplayed)
+                .map { _ in PromoTrigger.autoplayDiscoverability }
         ).eraseToAnyPublisher()
 
         if PromoServiceFactory.includeTestPromos{
@@ -55,4 +58,5 @@ enum PromoTrigger {
 extension Notification.Name {
     static let promoServiceAppLaunched = Notification.Name("com.duckduckgo.app.promoService.appLaunched")
     static let promoDebugTestTrigger = Notification.Name("com.duckduckgo.app.promoService.debugTestTrigger")
+    static let autoplayPolicyDisplayed = Notification.Name("com.duckduckgo.app.autoplayPolicyDisplayed")
 }

@@ -86,6 +86,35 @@ final class AIChatTabPickerSourceTests: XCTestCase {
         XCTAssertTrue(resolved?.wasMaterialized == true)
     }
 
+    // MARK: - needsLoad (page not in the web view yet)
+
+    func testNeedsLoadIsTrueForJustMaterializedSuspendedTab() {
+        let collection = collectionWithSuspendedTab(id: "suspended-4", url: "https://apple.com")
+        let wcm = WindowControllersManagerMock()
+        wcm.customAllTabCollectionViewModels = [collection]
+
+        let resolved = AIChatTabPickerSource.materializeAttachableTab(withId: "suspended-4", forOrigin: collection, in: wcm)
+
+        XCTAssertTrue(resolved?.wasMaterialized == true)
+        XCTAssertTrue(resolved?.needsLoad == true)
+    }
+
+    /// The pinned-tab-at-launch shape: already `.loaded` so there's nothing to materialize, but the web
+    /// view is still empty. This is the case a `wasMaterialized`-only check skips.
+    func testNeedsLoadIsTrueForRestoredTabThatWasAlreadyLoadedButNeverNavigated() {
+        let restored = Tab(content: .url(URL(string: "https://pinned.example")!, credential: nil, source: .pendingStateRestoration),
+                           interactionStateData: Data())
+        let collection = TabCollectionViewModel(tabCollection: TabCollection(tabs: [restored]))
+        let wcm = WindowControllersManagerMock()
+        wcm.customAllTabCollectionViewModels = [collection]
+
+        let resolved = AIChatTabPickerSource.materializeAttachableTab(withId: restored.uuid, forOrigin: collection, in: wcm)
+
+        XCTAssertNotNil(resolved)
+        XCTAssertFalse(resolved?.wasMaterialized ?? true, "Nothing to materialize — the tab is already .loaded")
+        XCTAssertTrue(resolved?.needsLoad == true, "…but its web view has no page, so a load must still be kicked")
+    }
+
     func testMaterializeDoesNotResolveRegularTabFromFireWindowOrigin() {
         let regular = collectionWithSuspendedTab(id: "suspended-3", url: "https://apple.com")
         let burner = burnerCollection()

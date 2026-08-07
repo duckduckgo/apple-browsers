@@ -17,7 +17,7 @@
 //
 
 import Common
-import FeatureFlags
+import FeatureFlags_macOS
 import FoundationExtensions
 import History
 import HistoryView

@@ -493,6 +493,18 @@
                 "type": "string",
                 "description": "The funnel that led to the subscription flow"
             },
+            {
+                "key": "context.name",
+                "type": "string",
+                "description": "Legacy location of the funnel name, replaced by feature.data.ext.funnel_name in 1.181.0.",
+                "examples": [
+                    "funnel_app_macos",
+                    "funnel_appsettings_macos",
+                    "funnel_appmenu_macos",
+                    "funnel_freescan_macos",
+                    "funnel_toolbar_macos"
+                ]
+            },
             "channel"
         ]
     },

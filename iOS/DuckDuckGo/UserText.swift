@@ -2519,6 +2519,59 @@ public struct UserText {
             public static let cta = NotLocalizedString("onboarding.downloadReason.cta", value: "Next", comment: "Button to continue to the next onboarding screen after choosing a reason.")
         }
 
+        public enum Personalization {
+
+            public enum Search {
+                public static let title = NotLocalizedString("onboarding.personalization.search.title", value: "Your search, your way.", comment: "Title of the onboarding search personalization screen.")
+                public static let recentlyVisitedSitesTitle = NotLocalizedString("onboarding.personalization.search.recentlyVisitedSites.title", value: "Recently visited sites", comment: "Title for the recently visited sites option on the onboarding search personalization screen.")
+                public static let recentlyVisitedSitesSubtitle = NotLocalizedString("onboarding.personalization.search.recentlyVisitedSites.subtitle", value: "Show when searching. Private, only on your device.", comment: "Subtitle for the recently visited sites option on the onboarding search personalization screen.")
+                public static let safeSearchTitle = NotLocalizedString("onboarding.personalization.search.safeSearch.title", value: "Safe search", comment: "Title for the safe search option on the onboarding search personalization screen.")
+                public static let safeSearchSubtitle = NotLocalizedString("onboarding.personalization.search.safeSearch.subtitle", value: "Omit questionable (mostly adult) material in results.", comment: "Subtitle for the safe search option on the onboarding search personalization screen.")
+                public static let cta = NotLocalizedString("onboarding.personalization.search.cta", value: "Next", comment: "Button to continue to the next onboarding screen from the search personalization screen.")
+            }
+
+            public enum AIModel {
+                public static let title = NotLocalizedString("onboarding.personalization.aiModel.title", value: "Your chats, your way.", comment: "Title of the onboarding AI model personalization screen.")
+                public static let message = NotLocalizedString("onboarding.personalization.aiModel.message", value: "Change your default AI now, or anytime during chat.", comment: "Message of the onboarding AI model personalization screen.")
+                public static let cta = NotLocalizedString("onboarding.personalization.aiModel.cta", value: "Next", comment: "Button to continue to the next onboarding screen from the AI model personalization screen.")
+            }
+
+            public enum AddressBarToggle {
+                public static let title = NotLocalizedString("onboarding.personalization.addressBarToggle.title", value: "Want new tabs to open with AI chat?", comment: "Title of the onboarding address bar toggle mode personalization screen.")
+                public static let footer = NotLocalizedString("onboarding.personalization.addressBarToggle.footer", value: "You can switch to Search with one tap", comment: "Footer of the onboarding address bar toggle mode personalization screen.")
+                public static let primaryCTA = NotLocalizedString("onboarding.personalization.addressBarToggle.cta.primary", value: "Open tabs with AI chat", comment: "Primary button to open new tabs with AI chat on the onboarding address bar toggle mode personalization screen.")
+                public static let secondaryCTA = NotLocalizedString("onboarding.personalization.addressBarToggle.cta.secondary", value: "Not Now", comment: "Secondary button to dismiss the onboarding address bar toggle mode personalization screen.")
+            }
+
+            public enum AISearch {
+                public static let title = NotLocalizedString("onboarding.personalization.aiSearch.title", value: "Search without AI", comment: "Title of the onboarding AI search personalization screen.")
+                public static let searchAssistTitle = NotLocalizedString("onboarding.personalization.aiSearch.searchAssist.title", value: "Search Assist", comment: "Title for the Search Assist option on the onboarding AI search personalization screen.")
+                public static let searchAssistSubtitle = NotLocalizedString("onboarding.personalization.aiSearch.searchAssist.subtitle", value: "AI-generated answers within search results", comment: "Subtitle for the Search Assist option on the onboarding AI search personalization screen.")
+                public static let hideAIGeneratedImagesTitle = NotLocalizedString("onboarding.personalization.aiSearch.hideAIGeneratedImages.title", value: "Hide AI-generated images", comment: "Title for the hide AI-generated images option on the onboarding AI search personalization screen.")
+                public static let hideAIGeneratedImagesSubtitle = NotLocalizedString("onboarding.personalization.aiSearch.hideAIGeneratedImages.subtitle", value: "Filters out known AI spam sites from image search results", comment: "Subtitle for the hide AI-generated images option on the onboarding AI search personalization screen.")
+                public static let cta = NotLocalizedString("onboarding.personalization.aiSearch.cta", value: "Next", comment: "Button to continue to the next onboarding screen from the AI search personalization screen.")
+            }
+
+            public enum DuckAIEnabled {
+                public static let title = NotLocalizedString("onboarding.personalization.duckAIEnabled.title", value: "Want the option to chat privately with popular AIs?", comment: "Title of the onboarding Duck.ai enabled personalization screen.")
+                public static let message = NotLocalizedString("onboarding.personalization.duckAIEnabled.message", value: "In Duck.ai, your chats are anonymized by us and never used to train AI.", comment: "Message of the onboarding Duck.ai enabled personalization screen.")
+                public static let primaryCTA = NotLocalizedString("onboarding.personalization.duckAIEnabled.cta.primary", value: "Keep Duck.ai On", comment: "Primary button to keep Duck.ai on from the onboarding Duck.ai enabled personalization screen.")
+                public static let secondaryCTA = NotLocalizedString("onboarding.personalization.duckAIEnabled.cta.secondary", value: "Turn Duck.ai Off", comment: "Secondary button to turn Duck.ai off from the onboarding Duck.ai enabled personalization screen.")
+            }
+
+            public enum YouTube {
+                public static let title = NotLocalizedString("onboarding.personalization.youTube.title", value: "YouTube, without the noise.", comment: "Title of the onboarding YouTube personalization screen.")
+                public static let adBlockingTitle = NotLocalizedString("onboarding.personalization.youTube.adBlocking.title", value: "YouTube ad blocking", comment: "Title for the YouTube ad blocking option on the onboarding YouTube personalization screen.")
+                public static let duckPlayerTitle = NotLocalizedString("onboarding.personalization.youTube.duckPlayer.title", value: "Duck Player", comment: "Title for the Duck Player option on the onboarding YouTube personalization screen.")
+                public static let duckPlayerSubtitle = NotLocalizedString("onboarding.personalization.youTube.duckPlayer.subtitle", value: "Opens YouTube videos in theater mode", comment: "Subtitle for the Duck Player option on the onboarding YouTube personalization screen.")
+                public static let cta = NotLocalizedString("onboarding.personalization.youTube.cta", value: "Next", comment: "Button to continue to the next onboarding screen from the YouTube personalization screen.")
+            }
+
+            public enum DuckAIQuery {
+                public static let privateSearchTitle = NotLocalizedString("onboarding.personalization.duckAIQuery.privateSearch.title", value: "Now, try a private search!", comment: "Title for the private search Duck.ai query onboarding screen.")
+            }
+        }
+
         public enum RestorePrompt {
             public static let title = NSLocalizedString("onboarding.restore.prompt.title", value: "Let’s pick up where you left off", comment: "Title for the returning-user restore prompt")
             public static let body = NSLocalizedString("onboarding.restore.prompt.body", value: "Want to restore your bookmarks, passwords, and more from your previous DuckDuckGo sync?", comment: "Body copy for the returning-user restore prompt")
@@ -2806,6 +2859,7 @@ public struct UserText {
         public enum Promo {
             static let title = NSLocalizedString("contextual.onboarding.addToDock.promo.title", value: "Add me to your Dock!", comment: "The title of the onboarding dialog popup that promotes adding the DDG browser icon to the dock.")
             static let introMessage = NSLocalizedString("contextual.onboarding.addToDock.promo.intro.message", value: "I’ll nest in easy reach for all your daily browsing.", comment: "The message of the onboarding dialog popup that promotes adding the DDG browser icon to the dock.")
+            static let introMessageNew = NotLocalizedString("onboarding.addToDock.promo.intro.message", value: "I'll nest in easy reach for quick access.", comment: "The message of the onboarding dialog popup that promotes adding the DDG browser icon to the dock.")
             static let contextualMessage = NSLocalizedString("contextual.onboarding.addToDock.promo.contextual.message", value: "Remember, every time you browse with me a creepy ad loses its wings.\n\nSo keep me in your Dock for daily browsing.", comment: "Message of the last screen of the onboarding that promotes adding the DDG browser icon to the dock.")
         }
 

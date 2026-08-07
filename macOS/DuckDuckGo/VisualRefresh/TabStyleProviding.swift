@@ -72,7 +72,7 @@ final class LegacyTabAnimationsStyleProvider: TabStyleProviding {
 final class TabAnimationsStyleProvider: TabStyleProviding {
     private let palette: ThemeColors
 
-    var separatorColor: NSColor { palette.surfaceDecorationTertiary }
+    var separatorColor: NSColor { palette.surfaceDecorationSecondary }
     var selectedTabColor: NSColor { palette.surfacePrimary }
     var hoverTabColor: NSColor { palette.surfacePrimary }
 

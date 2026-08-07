@@ -349,8 +349,6 @@ final class AddressBarViewController: NSViewController {
         view.wantsLayer = true
         view.layer?.masksToBounds = false
 
-        setupBurnerStyleIfNeeded()
-
         setupAddressBarPlaceHolder()
         addressBarTextField.setAccessibilityIdentifier("AddressBarViewController.addressBarTextField")
 
@@ -742,7 +740,7 @@ final class AddressBarViewController: NSViewController {
         }
 
         updateShadowViewPresence(selectionState.isSelected)
-        inactiveBackgroundView.backgroundColor = colorsProvider.inactiveAddressBarBackgroundColor
+        inactiveBackgroundView.backgroundColor = colorsProvider.inactiveAddressBarBackgroundColor(isBurner: isBurner)
 
         /// When duck.ai is active, the extended `activeBackgroundViewWithSuggestions` is the single background
         /// behind the bar (it merges with the panel below). Suppress the regular inactive / active variants to
@@ -775,10 +773,8 @@ final class AddressBarViewController: NSViewController {
             activeBackgroundView.borderColor = .addressBarBorder
         } else {
             activeBackgroundView.borderWidth = 2.0
-            activeBackgroundView.borderColor = isBurner ? colorsProvider.addressBarFireBorderColor : colorsProvider.addressBarActiveBorderColor
+            activeBackgroundView.borderColor = colorsProvider.addressBarActiveBorderColor(isBurner: isBurner)
         }
-
-        setupBurnerStyleIfNeeded()
 
         setupAddressBarPlaceHolder()
         refreshAddressBarCornerRadius()
@@ -842,13 +838,6 @@ final class AddressBarViewController: NSViewController {
         inactiveBackgroundViewTrailingConstraint.constant = styleProvider.addressBarInactiveBackgroundViewTrailingPadding
         buttonsContainerViewLeadingConstraint.constant = styleProvider.addressBarButtonsContainerViewLeadingPadding
         buttonsContainerViewTrailingConstraint.constant = styleProvider.addressBarButtonsContainerViewTrailingPadding
-    }
-
-    private func setupBurnerStyleIfNeeded() {
-        guard isBurner, themeManager.isAppRebranded else { return }
-
-        let style = BurnerAppearanceStyle()
-        style.enableDarkModeOverride(in: view)
     }
 
     private func setupAddressBarPlaceHolder() {
@@ -1019,9 +1008,9 @@ final class AddressBarViewController: NSViewController {
                     activeBackgroundView.borderColor = .addressBarBorder
                 } else {
                     activeBackgroundView.borderWidth = 2.0
-                    activeBackgroundView.borderColor = isBurner ? colorsProvider.addressBarFireBorderColor : colorsProvider.addressBarActiveBorderColor
+                    activeBackgroundView.borderColor = colorsProvider.addressBarActiveBorderColor(isBurner: isBurner)
                 }
-                activeBackgroundView.backgroundColor = theme.colorsProvider.activeAddressBarBackgroundColor
+                activeBackgroundView.backgroundColor = colorsProvider.activeAddressBarBackgroundColor(isBurner: isBurner)
                 switchToTabBox.backgroundColor = navigationBarBackgroundColor.blended(with: .addressBarBackground)
 
                 /// Important: `activeOuterBorderView` is hidden when `isAppRedesign` evaluates as true
@@ -1029,20 +1018,20 @@ final class AddressBarViewController: NSViewController {
                 activeOuterBorderView.backgroundColor = isBurner ? NSColor.burnerAccent.withAlphaComponent(0.2) : theme.colorsProvider.addressBarOutlineShadow
 
                 if !themeManager.isAppRebranded {
-                    addressBarButtonsViewController?.trailingButtonsBackgroundColor = theme.colorsProvider.activeAddressBarBackgroundColor
+                    addressBarButtonsViewController?.trailingButtonsBackgroundColor = colorsProvider.activeAddressBarBackgroundColor(isBurner: isBurner)
                 }
 
             } else {
                 activeBackgroundView.borderWidth = 0
                 activeBackgroundView.borderColor = nil
-                activeBackgroundView.backgroundColor = theme.colorsProvider.inactiveAddressBarBackgroundColor
+                activeBackgroundView.backgroundColor = colorsProvider.inactiveAddressBarBackgroundColor(isBurner: isBurner)
 
                 switchToTabBox.backgroundColor = navigationBarBackgroundColor.blended(with: .inactiveSearchBarBackground)
 
                 activeOuterBorderView.isHidden = true
 
                 if !themeManager.isAppRebranded {
-                    addressBarButtonsViewController?.trailingButtonsBackgroundColor = theme.colorsProvider.inactiveAddressBarBackgroundColor
+                    addressBarButtonsViewController?.trailingButtonsBackgroundColor = colorsProvider.inactiveAddressBarBackgroundColor(isBurner: isBurner)
                 }
             }
         }
@@ -1059,7 +1048,7 @@ final class AddressBarViewController: NSViewController {
     }
 
     private func refreshSuggestionsAppearance() {
-        activeBackgroundViewWithSuggestions.backgroundColor = theme.colorsProvider.suggestionsBackgroundColor
+        activeBackgroundViewWithSuggestions.backgroundColor = theme.colorsProvider.suggestionsBackgroundColor(isBurner: isBurner)
     }
 
     private func layoutTextFields(withMinX minX: CGFloat) {
@@ -1413,8 +1402,8 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
         _ = escapeKeyDown()
     }
 
-    func addressBarButtonsViewControllerOpenAIChatSettingsButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController) {
-        tabCollectionViewModel.insertOrAppendNewTab(.settings(pane: .aiChat))
+    func addressBarButtonsViewController(_ addressBarButtonsViewController: AddressBarButtonsViewController, openSettingsPane pane: PreferencePaneIdentifier) {
+        tabCollectionViewModel.insertOrAppendNewTab(.settings(pane: pane))
     }
 
     func addressBarButtonsViewControllerAIChatButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController) {

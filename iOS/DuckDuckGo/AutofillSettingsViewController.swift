@@ -42,6 +42,7 @@ enum AutofillSettingsSource: String {
     case viewSavedCreditCardPrompt = "view_saved_credit_card_prompt"
     case creditCardKeyboardShortcut = "credit_card_keyboard_shortcut"
     case customizedToolbarButton = "customized_toolbar_button"
+    case customizedAddressBarButton = "customized_address_bar_button"
     case extensionEnablePrompt = "extension_enable_prompt"
 }
 

@@ -31,6 +31,7 @@ import DDGSync
 import Suggestions
 import AIChat
 import RemoteMessaging
+import FeatureFlags_iOS
 
 protocol UnifiedInputContentContainerViewControllerDelegate: AnyObject {
     func unifiedInputEditingStateDidSubmitQuery(_ query: String)
@@ -764,6 +765,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             remoteMessagingActionHandler: ntpDeps.remoteMessagingActionHandler,
             remoteMessagingImageLoader: ntpDeps.remoteMessagingImageLoader,
             remoteMessagingPixelReporter: ntpDeps.remoteMessagingPixelReporter,
+            promoCoordinator: ntpDeps.promoCoordinator,
             appSettings: ntpDeps.appSettings,
             faviconsCache: ntpDeps.faviconsCache,
             subscriptionManager: ntpDeps.subscriptionManager,

@@ -60,7 +60,7 @@ typealias PageContextMIMETypeProvider = (URL) -> String?
 
 /// Protocol for page context collection, enabling dependency injection and testing.
 protocol PageContextCollecting: AnyObject {
-    var collectionResultPublisher: AnyPublisher<AIChatPageContextData?, Never> { get }
+    var collectionResultPublisher: AnyPublisher<PageContextCollectionResult, Never> { get }
     var webView: WKWebView? { get set }
     func collect()
 }
@@ -269,8 +269,8 @@ private extension AIChatPageContextHandler {
     }
 
     /// No pending request => a duplicate or a collect we didn't initiate; skip.
-    func fireExtractionOutcome(for pageContext: AIChatPageContextData?) {
-        guard let resolution = extractionResolver.resolve(pageContext: pageContext) else { return }
+    func fireExtractionOutcome(for result: PageContextCollectionResult) {
+        guard let resolution = extractionResolver.resolve(result) else { return }
         fireExtractionPixel(resolution.outcome, trigger: resolution.trigger, latency: resolution.latency)
     }
 
@@ -310,13 +310,13 @@ private extension AIChatPageContextHandler {
         Logger.aiChat.debug("[PageContext] startObservingUpdates - subscribing to new script instance")
         updatesCancellable = script.collectionResultPublisher
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] pageContext in
+            .sink { [weak self] result in
                 guard let self else { return }
 
-                self.fireExtractionOutcome(for: pageContext)
+                self.fireExtractionOutcome(for: result)
 
-                guard let pageContext else {
-                    Logger.aiChat.debug("[PageContext] Context collection returned nil - decode failure, publishing nil to subscribers")
+                guard let pageContext = result.pageContext else {
+                    Logger.aiChat.debug("[PageContext] Context collection failed (\(String(describing: result))) - publishing nil to subscribers")
                     self.contextSubject.send(nil)
                     return
                 }

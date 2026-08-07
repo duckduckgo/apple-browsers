@@ -459,18 +459,18 @@ extension OnboardingView {
                 introView(content: content, dialogType: dialogType)
             case let .downloadReasonDialog(content):
                 downloadReasonView(content: content)
-            case .searchPrivacySettingsDialog:
-                placeholderView(title: "Search Privacy Settings", action: model.searchPrivacySettingsContinueAction)
-            case .aiSearchSettingsDialog:
-                placeholderView(title: "AI Search Settings", action: model.aiSearchSettingsContinueAction)
-            case .aiModelDialog:
-                placeholderView(title: "AI Model Preference", action: model.aiModelContinueAction)
-            case .toggleInputModeDialog:
-                placeholderView(title: "Toggle Input Default Mode", action: model.toggleInputModeContinueAction)
-            case .keepDuckAIDialog:
-                placeholderView(title: "Keep Duck.ai Setting", action: model.keepDuckAIContinueAction)
-            case .duckPlayerDialog:
-                placeholderView(title: "Duck Player Settings", action: model.duckPlayerContinueAction)
+            case let .searchPrivacySettingsDialog(content):
+                toggleSettingsPersonalizationView(content: content, action: model.searchPrivacySettingsContinueAction)
+            case let .aiSearchSettingsDialog(content):
+                toggleSettingsPersonalizationView(content: content, action: model.aiSearchSettingsContinueAction)
+            case let .aiModelDialog(content, options, selectedID):
+                aiModelSelectionView(content: content, options: options, selectedID: selectedID)
+            case let .toggleInputModeDialog(content):
+                addressBarToggleModeView(content: content)
+            case let .keepDuckAIDialog(content):
+                aiChatEnabledSelectionView(content: content)
+            case let .duckPlayerDialog(content):
+                toggleSettingsPersonalizationView(content: content, action: model.duckPlayerContinueAction)
             case let .setDefaultBrowserDialog(content):
                 setDefaultBrowserView(content: content)
             case let .aiIntroDialog(content):
@@ -483,8 +483,8 @@ extension OnboardingView {
                 addressBarPositionView(content: content)
             case let .chooseSearchExperienceDialog(content):
                 searchExperienceSelectionView(content: content)
-            case let .duckAIQueryDialog(content, defaultMode):
-                duckAIQuerySelectionView(content: content, defaultMode: defaultMode)
+            case let .duckAIQueryDialog(content):
+                duckAIQuerySelectionView(content: content)
             }
         }
 
@@ -499,17 +499,78 @@ extension OnboardingView {
             }
         }
 
-        // TODO: Shared placeholder for the reason-tailored steps until each screen is built (UI task).
-        // Tapping Next runs the step's own action (just advances for now) so the flow is walkable.
-        private func placeholderView(title: String, action: @escaping () -> Void) -> some View {
-            VStack(spacing: 16) {
-                Text(title)
-                Button("Next") {
-                    animateContentTransition {
-                        action()
-                    }
+        private func toggleSettingsPersonalizationView(content: OnboardingPersonalizationContent, action: @escaping () -> Void) -> some View {
+            let personalizationManager = model.personalizationManager
+
+            let items = content.items.map { item in
+                OnboardingPersonalizationToggleItem(item, isOn: item.type.uiBindingTo(manager: personalizationManager))
+            }
+
+            return PersonalizationToggleTemplate(
+                content: content,
+                items: items,
+                isVisible: $showBubbleContent
+            ) {
+                animateContentTransition {
+                    action()
                 }
             }
+        }
+
+        private func aiModelSelectionView(content: OnboardingAIModelContent, options: [OnboardingAIModelOption], selectedID: String?) -> some View {
+            AIModelSelection(
+                content: content,
+                options: options,
+                selectedID: selectedID,
+                modelPersonalization: model.personalizationManager,
+                isVisible: $showBubbleContent
+            ) {
+                animateContentTransition {
+                    model.aiModelContinueAction()
+                }
+            }
+        }
+
+        private func addressBarToggleModeView(content: OnboardingAddressBarToggleModeContent) -> some View {
+            let personalizationManager = model.personalizationManager
+
+            return AddressBarToggleModeContent(
+                content: content,
+                isVisible: $showBubbleContent,
+                primaryAction: {
+                    personalizationManager.setNewTabOpensWithAIChat(true)
+                    animateContentTransition {
+                        model.toggleInputModeContinueAction()
+                    }
+                },
+                secondaryAction: {
+                    personalizationManager.setNewTabOpensWithAIChat(false)
+                    animateContentTransition {
+                        model.toggleInputModeContinueAction()
+                    }
+                }
+            )
+        }
+
+        private func aiChatEnabledSelectionView(content: OnboardingDuckAIEnabledPersonalizationContent) -> some View {
+            let personalizationManager = model.personalizationManager
+
+            return DuckAIEnabledPersonalizationContent(
+                content: content,
+                isVisible: $showBubbleContent,
+                primaryAction: {
+                    personalizationManager.setDuckAIEnabled(true)
+                    animateContentTransition {
+                        model.keepDuckAIContinueAction(isEnabled: true)
+                    }
+                },
+                secondaryAction: {
+                    personalizationManager.setDuckAIEnabled(false)
+                    animateContentTransition {
+                        model.keepDuckAIContinueAction(isEnabled: false)
+                    }
+                }
+            )
         }
 
         private func addToDockPromoView(content: OnboardingAddToDockContent) -> some View {
@@ -602,9 +663,14 @@ extension OnboardingView {
                 return scaledThumbUpAnimation(forBubbleHeight: lockedIntroBubbleHeight, base: content.daxAnimation)
             case .downloadReasonDialog(let content):
                 return content.daxAnimation
-            case .searchPrivacySettingsDialog, .aiSearchSettingsDialog, .aiModelDialog,
-                 .toggleInputModeDialog, .keepDuckAIDialog, .duckPlayerDialog:
-                return nil // TODO: dax animation for the reason-tailored steps (UI task).
+            case .searchPrivacySettingsDialog(let content), .aiSearchSettingsDialog(let content), .duckPlayerDialog(let content):
+                return content.daxAnimation
+            case .aiModelDialog(let content, _, _):
+                return content.daxAnimation
+            case let .toggleInputModeDialog(content):
+                return content.daxAnimation
+            case let .keepDuckAIDialog(content):
+                return content.daxAnimation
             case .setDefaultBrowserDialog(let content):
                 return content.daxAnimation
             case .aiIntroDialog(let content):
@@ -617,7 +683,7 @@ extension OnboardingView {
                 return content.daxAnimation
             case .chooseSearchExperienceDialog(let content):
                 return content.daxAnimation
-            case .duckAIQueryDialog(let content, _):
+            case .duckAIQueryDialog(let content):
                 return content.daxAnimation
             }
         }
@@ -654,10 +720,9 @@ extension OnboardingView {
         }
 
         /// Hide → action → show sequence prevents cross-fading between steps.
-        private func duckAIQuerySelectionView(content: OnboardingDuckAIQueryContent, defaultMode: DuckAIQueryMode) -> some View {
+        private func duckAIQuerySelectionView(content: OnboardingDuckAIQueryContent) -> some View {
             DuckAIQuerySearchContent(
                 content: content,
-                defaultMode: defaultMode,
                 visualStyle: .rebranded,
                 onModeConfirmed: model.selectDuckAIQueryAction(selection:),
                 openAIChatAction: model.openAIChatFromOnboarding,

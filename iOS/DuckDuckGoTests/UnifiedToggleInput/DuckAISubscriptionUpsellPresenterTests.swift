@@ -44,7 +44,7 @@ final class DuckAISubscriptionUpsellPresenterTests: XCTestCase {
                 return false
             }
             return self.hasQueryItem(in: components, name: "featurePage", value: "duckai")
-                && self.hasQueryItem(in: components, name: "origin", value: "funnel_addressbar_ios__reasoningpicker")
+                && self.hasQueryItem(in: components, name: "origin", value: "funnel_addressbar_ios__reasoningdropdown")
         }
 
         sut.presentPurchaseFlow(source: .reasoningPicker, isAITabState: false)
@@ -58,7 +58,7 @@ final class DuckAISubscriptionUpsellPresenterTests: XCTestCase {
                   case .subscriptionPlanChangeFlow(let components) = deepLink else {
                 return false
             }
-            return self.hasQueryItem(in: components, name: "origin", value: "funnel_addressbar_ios__reasoningpicker")
+            return self.hasQueryItem(in: components, name: "origin", value: "funnel_addressbar_ios__reasoningdropdown")
         }
 
         sut.presentUpgradeFlow(source: .reasoningPicker, isAITabState: false)
@@ -72,7 +72,7 @@ final class DuckAISubscriptionUpsellPresenterTests: XCTestCase {
                   case .subscriptionFlow(let components) = deepLink else {
                 return false
             }
-            return self.hasQueryItem(in: components, name: "origin", value: "funnel_duckai_ios__reasoningpicker")
+            return self.hasQueryItem(in: components, name: "origin", value: "funnel_duckai_ios__reasoningdropdown")
         }
 
         sut.presentPurchaseFlow(source: .reasoningPicker, isAITabState: true)
@@ -90,6 +90,21 @@ final class DuckAISubscriptionUpsellPresenterTests: XCTestCase {
         }
 
         sut.presentPurchaseFlow(source: .modelPicker, isAITabState: false)
+
+        wait(for: [expectation], timeout: 1.0)
+    }
+
+    func testPresentPurchaseFlowFromChatHeaderPlateCarriesFeaturePageAndFreeLabelOrigin() {
+        let expectation = expectation(forNotification: .settingsDeepLinkNotification, object: nil, notificationCenter: notificationCenter) { notification in
+            guard let deepLink = notification.object as? SettingsViewModel.SettingsDeepLinkSection,
+                  case .subscriptionFlow(let components) = deepLink else {
+                return false
+            }
+            return self.hasQueryItem(in: components, name: "featurePage", value: "duckai")
+                && self.hasQueryItem(in: components, name: "origin", value: "funnel_duckai_ios__freelabel")
+        }
+
+        sut.presentPurchaseFlow(origin: .duckAIFreeLabel)
 
         wait(for: [expectation], timeout: 1.0)
     }

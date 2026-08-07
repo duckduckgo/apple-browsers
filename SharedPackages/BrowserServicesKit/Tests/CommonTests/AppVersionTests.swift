@@ -63,6 +63,15 @@ final class AppVersionTests: XCTestCase {
         XCTAssertEqual(Constants.build, testee.buildNumber)
     }
 
+    func testXcodeMajorVersion() {
+        mockBundle.add(name: Bundle.Key.xcodeVersion, value: "2700")
+        XCTAssertEqual("27", testee.xcodeMajorVersion)
+    }
+
+    func testXcodeMajorVersionIsEmptyWhenUnavailable() {
+        XCTAssertEqual("", testee.xcodeMajorVersion)
+    }
+
     func testAlphaBuildSuffix() {
         let suffix = "test-suffix"
         mockBundle.add(name: Bundle.Key.alphaBuildSuffix, value: suffix)

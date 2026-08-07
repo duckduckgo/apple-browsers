@@ -169,7 +169,7 @@ final class AIChatPreferences: ObservableObject {
     }
 
     var shouldShowPromptBarPreferences: Bool {
-        featureFlagger.isFeatureOn(.macosPromptBar)
+        featureFlagger.isFeatureOn(.promptBar)
     }
 
     // Native SERP AI settings (Search Assist / Hide AI Images), backed by the shared SERP settings store.

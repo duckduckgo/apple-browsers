@@ -338,6 +338,326 @@ final class UnifiedToggleInputModelPickerPrototypePresenter: NSObject {
 }
 
 @MainActor
+final class UnifiedToggleInputModelPickerPrototypeV2Presenter: NSObject {
+
+    private weak var presentedViewController: UIViewController?
+
+    func present(from presentingViewController: UIViewController,
+                 sourceView: UIView,
+                 onSelect: @escaping (String) -> Void,
+                 onCallToAction: @escaping (UpsellFlowType) -> Void) {
+        guard presentedViewController == nil else { return }
+
+        let rootView = UnifiedToggleInputModelPickerPrototypeV2View(
+            content: .free,
+            onSelect: onSelect,
+            onCallToAction: { [weak self] flowType in
+                self?.dismiss {
+                    onCallToAction(flowType)
+                }
+            }
+        )
+        .presentationCornerRadiusIfAvailable(Metrics.cornerRadius)
+        let hostingController = UIHostingController(rootView: rootView)
+        hostingController.view.backgroundColor = .clear
+        hostingController.view.isOpaque = false
+        hostingController.modalPresentationStyle = .popover
+        hostingController.preferredContentSize = CGSize(width: Metrics.width, height: Metrics.height)
+
+        guard let popover = hostingController.popoverPresentationController else { return }
+        popover.sourceView = sourceView
+        popover.sourceRect = sourceView.bounds
+        popover.permittedArrowDirections = []
+        popover.backgroundColor = .clear
+        popover.delegate = self
+
+        presentingViewController.present(hostingController, animated: true)
+        presentedViewController = hostingController
+    }
+
+    private func dismiss(completion: @escaping () -> Void) {
+        guard let presentedViewController else {
+            completion()
+            return
+        }
+
+        self.presentedViewController = nil
+        presentedViewController.dismiss(animated: true, completion: completion)
+    }
+}
+
+private struct UnifiedToggleInputModelPickerPrototypeV2Content {
+
+    struct Item: Identifiable {
+        let id: String
+        let emphasizedName: String
+        let remainingName: String
+        let subtitle: String?
+        let provider: AIChatModel.ModelProvider
+        let isEnabled: Bool
+    }
+
+    let availableItems: [Item]
+    let advancedItems: [Item]
+    let initiallySelectedModelID: String
+
+    static let free = UnifiedToggleInputModelPickerPrototypeV2Content(
+        availableItems: [
+            item("gpt-5.4-nano", emphasizedName: "GPT-5.4", remainingName: " nano", subtitle: "Best for everyday use", provider: .openAI),
+            item("gpt-5-mini", emphasizedName: "GPT-5", remainingName: " mini", subtitle: "Solid but uses limits faster", provider: .openAI),
+            item("claude-haiku-3.5", emphasizedName: "Claude", remainingName: " Haiku 3.5", subtitle: "Solid but uses limits faster", provider: .anthropic),
+            item("mistral-small-3", emphasizedName: "Mistral", remainingName: " Small 3", provider: .mistral),
+            item("gpt-oss-120b", emphasizedName: "gpt-oss", remainingName: " 120B", provider: .oss),
+            item("gemma-4-31b", emphasizedName: "Gemma 4", remainingName: " 31B", provider: .oss),
+        ],
+        advancedItems: [
+            item("gpt-5.4", emphasizedName: "", remainingName: "GPT-5.4", provider: .openAI, isEnabled: false),
+            item("claude-sonnet-4.6", emphasizedName: "", remainingName: "Claude Sonnet 4.6", provider: .openAI, isEnabled: false),
+            item("claude-opus-4.8", emphasizedName: "", remainingName: "Claude Opus 4.8", provider: .anthropic, isEnabled: false),
+        ],
+        initiallySelectedModelID: "gpt-5.4-nano"
+    )
+
+    private static func item(_ id: String,
+                             emphasizedName: String,
+                             remainingName: String,
+                             subtitle: String? = nil,
+                             provider: AIChatModel.ModelProvider,
+                             isEnabled: Bool = true) -> Item {
+        .init(
+            id: id,
+            emphasizedName: emphasizedName,
+            remainingName: remainingName,
+            subtitle: subtitle,
+            provider: provider,
+            isEnabled: isEnabled
+        )
+    }
+}
+
+private struct UnifiedToggleInputModelPickerPrototypeV2View: View {
+
+    let content: UnifiedToggleInputModelPickerPrototypeV2Content
+    let onSelect: (String) -> Void
+    let onCallToAction: (UpsellFlowType) -> Void
+
+    @State private var selectedModelID: String
+
+    init(content: UnifiedToggleInputModelPickerPrototypeV2Content,
+         onSelect: @escaping (String) -> Void,
+         onCallToAction: @escaping (UpsellFlowType) -> Void) {
+        self.content = content
+        self.onSelect = onSelect
+        self.onCallToAction = onCallToAction
+        _selectedModelID = State(initialValue: content.initiallySelectedModelID)
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            ForEach(content.availableItems) { item in
+                UnifiedToggleInputModelPickerPrototypeV2Row(
+                    item: item,
+                    isSelected: selectedModelID == item.id,
+                    action: {
+                        selectedModelID = item.id
+                        onSelect(item.id)
+                    }
+                )
+            }
+
+            separator
+            advancedModelsHeader
+
+            ForEach(content.advancedItems) { item in
+                UnifiedToggleInputModelPickerPrototypeV2Row(
+                    item: item,
+                    isSelected: false,
+                    action: {
+                        onCallToAction(.purchase)
+                    }
+                )
+            }
+        }
+        .padding(.horizontal, Metrics.horizontalPadding)
+        .padding(.vertical, Metrics.verticalPadding)
+        .frame(width: Metrics.width, height: Metrics.height, alignment: .top)
+        .background(menuBackground)
+        .clipShape(RoundedRectangle(cornerRadius: Metrics.cornerRadius, style: .continuous))
+        .accessibilityIdentifier("ModelPickerPrototypeV2")
+    }
+
+    private var separator: some View {
+        Color(designSystemColor: .lines)
+            .frame(height: 1 / UIScreen.main.scale)
+            .frame(height: Metrics.separatorHeight)
+            .padding(.horizontal, Metrics.separatorHorizontalPadding)
+            .accessibilityHidden(true)
+    }
+
+    private var advancedModelsHeader: some View {
+        HStack(spacing: Metrics.headerSpacing) {
+            Text(verbatim: "Advanced Models")
+                .font(.footnote.weight(.medium))
+                .foregroundStyle(Color(designSystemColor: .textTertiary))
+
+            Spacer(minLength: 0)
+
+            Button {
+                onCallToAction(.purchase)
+            } label: {
+                Text(verbatim: "TRY FOR FREE")
+                    .daxCaptionBold()
+                    .foregroundStyle(Color(designSystemColor: .textPrimary))
+                    .padding(.horizontal, Metrics.callToActionHorizontalPadding)
+                    .frame(height: Metrics.callToActionHeight)
+                    .background(RebrandingColor.Pollen.pollen30, in: Capsule())
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("ModelPickerPrototypeV2TryForFreeButton")
+        }
+        .padding(.horizontal, Metrics.headerHorizontalPadding)
+        .frame(height: Metrics.headerHeight)
+    }
+
+    @ViewBuilder
+    private var menuBackground: some View {
+        let shape = RoundedRectangle(cornerRadius: Metrics.cornerRadius, style: .continuous)
+
+        if #available(iOS 26.0, *) {
+            Color.clear
+                .glassEffect(.regular, in: shape)
+        } else {
+            shape
+                .fill(.regularMaterial)
+        }
+    }
+}
+
+private extension UnifiedToggleInputModelPickerPrototypeV2View {
+
+    enum Metrics {
+        static let width: CGFloat = 270
+        static let height: CGFloat = 496
+        static let cornerRadius: CGFloat = 32
+        static let horizontalPadding: CGFloat = 16
+        static let verticalPadding: CGFloat = 10
+        static let separatorHeight: CGFloat = 21
+        static let separatorHorizontalPadding: CGFloat = 8
+        static let headerHeight: CGFloat = 35
+        static let headerHorizontalPadding: CGFloat = 8
+        static let headerSpacing: CGFloat = 8
+        static let callToActionHorizontalPadding: CGFloat = 8
+        static let callToActionHeight: CGFloat = 24
+    }
+}
+
+private struct UnifiedToggleInputModelPickerPrototypeV2Row: View {
+
+    let item: UnifiedToggleInputModelPickerPrototypeV2Content.Item
+    let isSelected: Bool
+    let action: (() -> Void)?
+
+    var body: some View {
+        Group {
+            if let action {
+                Button(action: action) {
+                    rowContent
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("ModelPickerPrototypeV2.\(item.id)")
+            } else {
+                rowContent
+                    .accessibilityElement(children: .combine)
+            }
+        }
+        .opacity(item.isEnabled ? 1 : Metrics.disabledOpacity)
+        .frame(height: item.subtitle == nil ? Metrics.standardHeight : Metrics.subtitleHeight)
+    }
+
+    private var rowContent: some View {
+        HStack(spacing: Metrics.itemSpacing) {
+            Image(systemName: "checkmark")
+                .font(.body.weight(.semibold))
+                .foregroundStyle(Color(designSystemColor: .textPrimary))
+                .frame(width: Metrics.selectionWidth, height: Metrics.selectionHeight)
+                .opacity(isSelected ? 1 : 0)
+                .accessibilityHidden(true)
+
+            HStack(spacing: Metrics.leadingSpacing) {
+                providerIcon
+
+                VStack(alignment: .leading, spacing: Metrics.textSpacing) {
+                    modelName
+
+                    if let subtitle = item.subtitle {
+                        Text(verbatim: subtitle)
+                            .daxFootnoteRegular()
+                            .foregroundStyle(Color(designSystemColor: .textSecondary))
+                            .lineLimit(1)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+        .padding(.leading, Metrics.leadingPadding)
+        .padding(.trailing, Metrics.trailingPadding)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .contentShape(Rectangle())
+    }
+
+    private var providerIcon: some View {
+        Image(uiImage: icon(for: item.provider))
+            .resizable()
+            .renderingMode(.template)
+            .scaledToFit()
+            .foregroundStyle(Color(designSystemColor: .icons))
+            .frame(width: Metrics.iconSize, height: Metrics.iconSize)
+            .accessibilityHidden(true)
+    }
+
+    private var modelName: some View {
+        (Text(verbatim: item.emphasizedName)
+            .font(Font(UIFont.daxBodyBold()))
+        + Text(verbatim: item.remainingName)
+            .font(Font(UIFont.daxBodyRegular())))
+            .foregroundStyle(Color(designSystemColor: .textPrimary))
+            .lineLimit(1)
+    }
+
+    private func icon(for provider: AIChatModel.ModelProvider) -> UIImage {
+        switch provider {
+        case .openAI:
+            return DesignSystemImages.Glyphs.Size16.aiModelOpenAI
+        case .meta:
+            return DesignSystemImages.Glyphs.Size16.aiModelLlama
+        case .anthropic:
+            return DesignSystemImages.Glyphs.Size16.aiModelClaude
+        case .mistral:
+            return DesignSystemImages.Glyphs.Size16.aiModelMistral
+        case .oss, .unknown:
+            return DesignSystemImages.Glyphs.Size16.aiModelOSS
+        }
+    }
+}
+
+private extension UnifiedToggleInputModelPickerPrototypeV2Row {
+
+    enum Metrics {
+        static let standardHeight: CGFloat = 40
+        static let subtitleHeight: CGFloat = 60
+        static let selectionWidth: CGFloat = 24
+        static let selectionHeight: CGFloat = 22
+        static let itemSpacing: CGFloat = 6
+        static let leadingSpacing: CGFloat = 8
+        static let textSpacing: CGFloat = 2
+        static let leadingPadding: CGFloat = 6
+        static let trailingPadding: CGFloat = 8
+        static let iconSize: CGFloat = 16
+        static let disabledOpacity = 0.3
+    }
+}
+
+@MainActor
 final class UnifiedToggleInputSubscriptionUpsellPrototypePresenter {
 
     private weak var presentedViewController: UIViewController?
@@ -545,6 +865,26 @@ extension UnifiedToggleInputModelPickerPrototypePresenter: UIPopoverPresentation
 
     func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
         presentedViewController = nil
+    }
+}
+
+extension UnifiedToggleInputModelPickerPrototypeV2Presenter: UIPopoverPresentationControllerDelegate {
+
+    func adaptivePresentationStyle(for controller: UIPresentationController) -> UIModalPresentationStyle {
+        .none
+    }
+
+    func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
+        presentedViewController = nil
+    }
+}
+
+private extension UnifiedToggleInputModelPickerPrototypeV2Presenter {
+
+    enum Metrics {
+        static let width: CGFloat = 270
+        static let height: CGFloat = 496
+        static let cornerRadius: CGFloat = 32
     }
 }
 

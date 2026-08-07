@@ -172,7 +172,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private var wideEventReporter: UTIWideEventReporter!
     private var modelSelector: UTIModelSelector!
 #if DEBUG || ALPHA
-    private let modelPickerPrototypePresenter = UnifiedToggleInputModelPickerPrototypePresenter()
+    private let modelPickerPrototypeV2Presenter = UnifiedToggleInputModelPickerPrototypeV2Presenter()
     private let subscriptionUpsellPrototypePresenter = UnifiedToggleInputSubscriptionUpsellPrototypePresenter()
 #endif
     private var attachmentController: UTIAttachmentController!
@@ -1666,16 +1666,10 @@ private extension UnifiedToggleInputCoordinator {
             return
         }
 
-        modelPickerPrototypePresenter.present(
+        modelPickerPrototypeV2Presenter.present(
             from: presentingViewController,
             sourceView: viewController.modelPickerSourceView,
             onSelect: { _ in },
-            onInfo: { _ in
-                NotificationCenter.default.post(
-                    name: .settingsDeepLinkNotification,
-                    object: SettingsViewModel.SettingsDeepLinkSection.general
-                )
-            },
             onCallToAction: { [weak self] flowType in
                 switch flowType {
                 case .purchase:

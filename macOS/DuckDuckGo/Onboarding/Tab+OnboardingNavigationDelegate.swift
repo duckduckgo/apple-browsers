@@ -22,11 +22,8 @@ import Subscription
 
 extension OnboardingNavigationDelegate {
 
-    /// Opens the subscription purchase page attributed to the onboarding upsell, so the existing
-    /// funnel plumbing picks the visit up as `origin=funnel_onboarding_macos__subscriptionupsell`.
-    ///
-    /// The service environment is left at the `purchaseURLComponentsWithOrigin` default, matching
-    /// every other macOS purchase-URL call site.
+    /// Opens the purchase page tagged with the onboarding-upsell origin. The service environment is
+    /// left at the default, matching every other macOS purchase-URL call site.
     func navigateToSubscriptionUpsellPurchasePage() {
         guard let url = SubscriptionURL.purchaseURLComponentsWithOrigin(
             SubscriptionFunnelOrigin.onboardingSubscriptionUpsell.rawValue

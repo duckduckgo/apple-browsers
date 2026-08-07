@@ -2370,6 +2370,7 @@ class CapturingContextualOnboardingStateUpdater: ContextualOnboardingStateUpdate
         gotItPressedCalled = true
     }
 
+
     func fireButtonUsed() {
         fireButtonUsedCalled = true
     }

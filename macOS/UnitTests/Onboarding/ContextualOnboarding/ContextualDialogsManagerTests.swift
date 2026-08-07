@@ -40,24 +40,41 @@ class ContextualDialogsManagerTests {
         trackerProvider.trackerType = .blockedTrackers(entityNames: ["Tracker1"])
     }
 
-    // MARK: - Subscription Upsell Experiment Enrollment
+    // MARK: - Subscription Upsell Flow
 
     @available(iOS 16, macOS 13, *)
-    @Test("Subscription upsell experiment enrolls when the highFive dialog is dismissed", .timeLimit(.minutes(1)))
-    func testWhenHighFiveIsDismissedThenSubscriptionUpsellExperimentEnrolls() {
+    @Test("High Five enrolls once and navigation advances to the treatment upsell", .timeLimit(.minutes(1)),
+          arguments: [26, 28, 30, 32])
+    func testWhenHighFiveIsShownThenTreatmentEnrollsAndAdvances(contextualDialogsSeenKey: Int) async {
+        subscriptionUpsellExperiment.cohortStub = .treatment
         manager.state = .ongoing
-        manager.lastDialog = .highFive
+        stateStorage.contextualDialogsSeen = combinationDictionary[contextualDialogsSeenKey]!
+        let tab = await Tab(content: .newtab)
 
-        manager.gotItPressed()
-
+        #expect(manager.dialogTypeForTab(tab, privacyInfo: nil) == .highFive)
         #expect(subscriptionUpsellExperiment.enrollCallCount == 1)
-        #expect(manager.state == .onboardingCompleted)
+
+        #expect(manager.dialogTypeForTab(tab, privacyInfo: nil) == .subscriptionUpsell)
+        #expect(subscriptionUpsellExperiment.enrollCallCount == 1)
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Subscription upsell experiment does not enroll when an earlier dialog is dismissed", .timeLimit(.minutes(1)),
-          arguments: [ContextualDialogType.searchDone(shouldFollowUp: true), .tryFireButton, .tryASearch, .tryASite])
-    func testWhenEarlierDialogIsDismissedThenSubscriptionUpsellExperimentDoesNotEnroll(dialog: ContextualDialogType) {
+    @Test("Skipping Fire advances to High Five and enrolls", .timeLimit(.minutes(1)))
+    func testWhenFireIsSkippedThenHighFiveBecomesTheNextRootDialog() {
+        manager.state = .ongoing
+        manager.lastDialog = .tryFireButton
+
+        manager.gotItPressed()
+
+        #expect(manager.lastDialog == .highFive)
+        #expect(stateStorage.contextualDialogsSeen.contains("highFive"))
+        #expect(subscriptionUpsellExperiment.enrollCallCount == 1)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Earlier dialogs do not enroll in the experiment", .timeLimit(.minutes(1)),
+          arguments: [ContextualDialogType.searchDone(shouldFollowUp: true), .tryASearch, .tryASite])
+    func testWhenEarlierDialogAdvancesThenExperimentDoesNotEnroll(dialog: ContextualDialogType) {
         manager.state = .ongoing
         manager.lastDialog = dialog
 
@@ -67,24 +84,8 @@ class ContextualDialogsManagerTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Subscription upsell experiment does not enroll merely because highFive was shown", .timeLimit(.minutes(1)),
-          arguments: [26, 28, 30, 32])
-    func testWhenHighFiveIsShownThenSubscriptionUpsellExperimentDoesNotEnroll(contextualDialogsSeenKey: Int) async {
-        manager.state = .ongoing
-        let tab = await Tab(content: .newtab)
-        stateStorage.contextualDialogsSeen = combinationDictionary[contextualDialogsSeenKey]!
-
-        let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
-
-        #expect(dialog == .highFive)
-        #expect(subscriptionUpsellExperiment.enrollCallCount == 0)
-    }
-
-    // MARK: - Subscription Upsell Step
-
-    @available(iOS 16, macOS 13, *)
-    @Test("Treatment cohort gets the upsell after highFive and onboarding stays ongoing", .timeLimit(.minutes(1)))
-    func testWhenTreatmentThenUpsellFollowsHighFive() {
+    @Test("Treatment queues the one-shot upsell after High Five", .timeLimit(.minutes(1)))
+    func testWhenTreatmentCompletesHighFiveThenUpsellIsQueued() {
         subscriptionUpsellExperiment.cohortStub = .treatment
         manager.state = .ongoing
         manager.lastDialog = .highFive
@@ -97,90 +98,71 @@ class ContextualDialogsManagerTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Control cohort completes onboarding at highFive", .timeLimit(.minutes(1)))
-    func testWhenControlThenHighFiveCompletesOnboarding() {
-        subscriptionUpsellExperiment.cohortStub = .control
-        manager.state = .ongoing
-        manager.lastDialog = .highFive
+    @Test("Control and unresolved cohorts complete at High Five", .timeLimit(.minutes(1)))
+    func testWhenNotTreatmentThenHighFiveCompletesOnboarding() {
+        let cohorts: [FeatureFlag.OnboardingSubscriptionUpsellCohort?] = [.control, nil]
+        for cohort in cohorts {
+            stateStorage = MockContextualDialogStateStoring()
+            subscriptionUpsellExperiment = SpyOnboardingSubscriptionUpsellEnrolling()
+            subscriptionUpsellExperiment.cohortStub = cohort
+            manager = ContextualDialogsManager(
+                trackerMessageProvider: trackerProvider,
+                subscriptionUpsellExperiment: subscriptionUpsellExperiment,
+                stateStorage: stateStorage)
+            manager.state = .ongoing
+            manager.lastDialog = .highFive
 
-        manager.gotItPressed()
+            manager.gotItPressed()
 
-        #expect(manager.state == .onboardingCompleted)
-        #expect(manager.lastDialog == nil)
-        #expect(!stateStorage.contextualDialogsSeen.contains("subscriptionUpsell"))
+            #expect(manager.state == .onboardingCompleted)
+            #expect(manager.lastDialog == nil)
+        }
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Dismissing the upsell completes onboarding", .timeLimit(.minutes(1)))
-    func testWhenUpsellIsDismissedThenOnboardingCompletes() {
+    @Test("Completing the upsell completes onboarding", .timeLimit(.minutes(1)))
+    func testWhenUpsellCompletesThenItCannotBeOfferedAgain() async {
         manager.state = .ongoing
         manager.lastDialog = .subscriptionUpsell
 
         manager.gotItPressed()
 
-        #expect(manager.state == .onboardingCompleted)
-        #expect(manager.lastDialog == nil)
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("Skipping the fire dialog points lastDialog at highFive without marking it seen", .timeLimit(.minutes(1)))
-    func testWhenFireButtonDialogIsSkippedThenHighFiveBecomesLastDialog() {
-        manager.state = .ongoing
-        manager.lastDialog = .tryFireButton
-
-        manager.gotItPressed()
-
-        #expect(manager.lastDialog == .highFive)
-        #expect(!stateStorage.contextualDialogsSeen.contains("highFive"))
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("A pending upsell is returned for any tab and is not clobbered", .timeLimit(.minutes(1)))
-    func testWhenUpsellIsPendingThenItIsReturnedForAnyTab() async {
-        manager.state = .ongoing
-        manager.lastDialog = .subscriptionUpsell
-        stateStorage.contextualDialogsSeen = combinationDictionary[64]!
-        let otherTab = await Tab(content: .newtab)
-
-        let dialog = manager.dialogTypeForTab(otherTab, privacyInfo: nil)
-
-        #expect(dialog == .subscriptionUpsell)
-        #expect(manager.lastDialog == .subscriptionUpsell)
-        #expect(manager.state == .ongoing)
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("The upsell is not shown again once onboarding completed", .timeLimit(.minutes(1)))
-    func testWhenOnboardingCompletedThenUpsellIsNotShownAgain() async {
-        manager.state = .ongoing
-        manager.lastDialog = .subscriptionUpsell
-        manager.gotItPressed()
         let tab = await Tab(content: .newtab)
-
-        let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
-
-        #expect(dialog == nil)
+        #expect(manager.dialogTypeForTab(tab, privacyInfo: nil) == nil)
         #expect(manager.state == .onboardingCompleted)
+        #expect(manager.lastDialog == nil)
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Treatment arm runs fire skip through highFive and the upsell exactly once", .timeLimit(.minutes(1)))
-    func testTreatmentArmSequenceFromFireSkipToCompletion() {
+    @Test("Navigation away from a shown upsell completes onboarding", .timeLimit(.minutes(1)))
+    func testWhenNavigatingAwayFromUpsellThenOnboardingCompletes() async {
         subscriptionUpsellExperiment.cohortStub = .treatment
         manager.state = .ongoing
-        manager.lastDialog = .tryFireButton
-
+        manager.lastDialog = .highFive
         manager.gotItPressed()
-        #expect(manager.lastDialog == .highFive)
+        let otherTab = await Tab(content: .newtab)
 
-        manager.gotItPressed()
-        #expect(manager.lastDialog == .subscriptionUpsell)
-        #expect(manager.state == .ongoing)
-
-        manager.gotItPressed()
-        #expect(manager.lastDialog == nil)
+        #expect(manager.dialogTypeForTab(otherTab, privacyInfo: nil) == nil)
         #expect(manager.state == .onboardingCompleted)
-        #expect(subscriptionUpsellExperiment.enrollCallCount == 1)
+        #expect(manager.lastDialog == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Relaunch after the upsell was queued does not show it again", .timeLimit(.minutes(1)))
+    func testWhenRelaunchingAfterUpsellWasQueuedThenOnboardingCompletes() async {
+        subscriptionUpsellExperiment.cohortStub = .treatment
+        manager.state = .ongoing
+        manager.lastDialog = .highFive
+        manager.gotItPressed()
+
+        let relaunched = ContextualDialogsManager(
+            trackerMessageProvider: trackerProvider,
+            subscriptionUpsellExperiment: subscriptionUpsellExperiment,
+            stateStorage: stateStorage)
+        let tab = await Tab(content: .newtab)
+
+        #expect(relaunched.dialogTypeForTab(tab, privacyInfo: nil) == nil)
+        #expect(relaunched.state == .onboardingCompleted)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -515,6 +497,8 @@ class SpyOnboardingSubscriptionUpsellEnrolling: OnboardingSubscriptionUpsellEnro
 
     var enrollCallCount = 0
     var cohortStub: FeatureFlag.OnboardingSubscriptionUpsellCohort?
+
+    var cohort: FeatureFlag.OnboardingSubscriptionUpsellCohort? { cohortStub }
 
     func enroll() -> FeatureFlag.OnboardingSubscriptionUpsellCohort? {
         enrollCallCount += 1

@@ -24,8 +24,7 @@ import Onboarding
 extension OnboardingRebranding {
 
     struct OnboardingSubscriptionUpsellDialog: View {
-        /// Layout values unique to the subscription upsell dialog. Shared metrics live on
-        /// `OnboardingRebranding.Layout`.
+        /// Values unique to this dialog; shared metrics live on `OnboardingRebranding.Layout`.
         private enum Layout {
             /// Matches the high-five dialog so the tail doesn't jump between the two screens.
             static let tailOffset: CGFloat = 0.85

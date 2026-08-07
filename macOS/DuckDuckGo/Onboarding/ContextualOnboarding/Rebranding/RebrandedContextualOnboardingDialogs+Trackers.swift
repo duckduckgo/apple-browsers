@@ -64,8 +64,7 @@ extension OnboardingRebranding {
             if showNextScreen {
                 OnboardingRebranding.OnboardingFireDialog(
                     viewModel: viewModel,
-                    onManualDismiss: onManualDismiss,
-                    onContentTransition: nil
+                    onManualDismiss: onManualDismiss
                 )
                 .transition(.opacity)
             } else {

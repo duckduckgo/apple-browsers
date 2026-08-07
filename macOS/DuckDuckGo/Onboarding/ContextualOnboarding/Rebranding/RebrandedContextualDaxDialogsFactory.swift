@@ -82,15 +82,22 @@ private struct PanelBottomBorder: View {
 struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
 
     private let onboardingPixelReporter: OnboardingPixelReporting
+    private let subscriptionUpsellMetrics: OnboardingSubscriptionUpsellMetricsReporting
     private let fireCoordinator: FireCoordinator
 
-    init(onboardingPixelReporter: OnboardingPixelReporting = OnboardingPixelReporter(), fireCoordinator: FireCoordinator) {
+    init(onboardingPixelReporter: OnboardingPixelReporting = OnboardingPixelReporter(),
+         subscriptionUpsellMetrics: OnboardingSubscriptionUpsellMetricsReporting = OnboardingSubscriptionUpsellMetricsReporter(),
+         fireCoordinator: FireCoordinator) {
         self.onboardingPixelReporter = onboardingPixelReporter
+        self.subscriptionUpsellMetrics = subscriptionUpsellMetrics
         self.fireCoordinator = fireCoordinator
     }
 
     func makeView(for type: ContextualDialogType, delegate: any OnboardingNavigationDelegate, onDismiss: @escaping () -> Void, onManualDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void, onFireButtonPressed: @escaping () -> Void, onSuggestionPressed: @escaping () -> Void) -> AnyView {
         onboardingPixelReporter.measureDialogShown(dialogType: type)
+        if case .subscriptionUpsell = type {
+            subscriptionUpsellMetrics.report(.upsellShown)
+        }
         return AnyView(
             ContextualDialogView(
                 type: type,
@@ -121,7 +128,7 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
             onboardingPixelReporter.measureLastDialogShown()
             return AnyView(highFiveDialog(onDismiss: onDismiss, onManualDismiss: onManualDismiss, onGotItPressed: onGotItPressed))
         case .subscriptionUpsell:
-            return AnyView(subscriptionUpsellDialog(delegate: delegate, onDismiss: onDismiss, onManualDismiss: onManualDismiss, onGotItPressed: onGotItPressed))
+            return AnyView(Self.subscriptionUpsellDialog(delegate: delegate, metrics: subscriptionUpsellMetrics, onDismiss: onDismiss, onManualDismiss: onManualDismiss, onGotItPressed: onGotItPressed))
         }
     }
 
@@ -233,21 +240,31 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
 
     private func tryFireButtonDialog(onDismiss: @escaping () -> Void, onManualDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void, onFireButtonPressed: @escaping () -> Void) -> some View {
         let viewModel = OnboardingFireButtonDialogViewModel(onboardingPixelReporter: onboardingPixelReporter, fireCoordinator: fireCoordinator, onDismiss: onDismiss, onGotItPressed: onGotItPressed, onFireButtonPressed: onFireButtonPressed)
-        return OnboardingRebranding.OnboardingFireDialog(viewModel: viewModel, onManualDismiss: onManualDismiss, onContentTransition: nil)
+        return OnboardingRebranding.OnboardingFireDialog(viewModel: viewModel, onManualDismiss: onManualDismiss)
     }
 
-    private func subscriptionUpsellDialog(delegate: any OnboardingNavigationDelegate, onDismiss: @escaping () -> Void, onManualDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void) -> some View {
+    static func subscriptionUpsellDialog(delegate: any OnboardingNavigationDelegate,
+                                         metrics: OnboardingSubscriptionUpsellMetricsReporting,
+                                         onDismiss: @escaping () -> Void,
+                                         onManualDismiss: @escaping () -> Void,
+                                         onGotItPressed: @escaping () -> Void) -> OnboardingRebranding.OnboardingSubscriptionUpsellDialog {
         OnboardingRebranding.OnboardingSubscriptionUpsellDialog(
             acceptAction: {
-                delegate.navigateToSubscriptionUpsellPurchasePage()
-                onDismiss()
+                metrics.report(.tryForFreeClick)
                 onGotItPressed()
+                onDismiss()
+                delegate.navigateToSubscriptionUpsellPurchasePage()
             },
             declineAction: {
-                onDismiss()
+                metrics.report(.noThanksClick)
                 onGotItPressed()
+                onDismiss()
             },
-            onManualDismiss: onManualDismiss
+            onManualDismiss: {
+                metrics.report(.upsellDismissed)
+                onGotItPressed()
+                onManualDismiss()
+            }
         )
     }
 

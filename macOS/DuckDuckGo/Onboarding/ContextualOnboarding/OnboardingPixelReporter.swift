@@ -134,8 +134,7 @@ extension OnboardingPixelReporter: OnboardingDialogsReporting {
         case .highFive:
             fire(ContextualOnboardingPixel.finalDialogDismissed, .uniqueByName)
         case .subscriptionUpsell:
-            // No contextual-onboarding pixels for the upsell yet; the experiment's own metric
-            // pixels land with the secondary-metrics work.
+            // The upsell reports through the experiment's own metrics instead.
             break
         }
     }

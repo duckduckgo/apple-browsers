@@ -24,30 +24,22 @@ import Subscription
 /// Enrolls a user in the onboarding subscription upsell experiment.
 protocol OnboardingSubscriptionUpsellEnrolling {
 
-    /// Assigns a cohort for eligible users and returns it, so the caller can branch on the result of
-    /// the same call that performed the assignment. `nil` when the user is not eligible.
+    /// The already-assigned cohort, or `nil` when never enrolled. Never assigns.
+    var cohort: FeatureFlag.OnboardingSubscriptionUpsellCohort? { get }
+
+    /// Assigns a cohort for eligible users and returns it. `nil` when the user is not eligible.
     @discardableResult
     func enroll() -> FeatureFlag.OnboardingSubscriptionUpsellCohort?
 }
 
-/// The subscription state the upsell experiment needs to decide who may take part.
-///
-/// Deliberately narrower than `SubscriptionManager` so the eligibility gate can be tested
-/// without standing up the whole subscription stack.
+/// Narrower than `SubscriptionManager` so the eligibility gate can be tested on its own.
 protocol OnboardingSubscriptionUpsellSubscriptionState {
-    /// Whether the user could complete a subscription purchase on this build and platform.
     var isSubscriptionPurchaseEligible: Bool { get }
-    /// Whether the user is already signed in to a subscription.
     var isUserAuthenticated: Bool { get }
 }
 
-/// A/B experiment adding a subscription upsell screen at the end of contextual onboarding.
-///
-/// The experiment is not a test of how many subscribers the screen produces — it exists to show that
-/// adding another onboarding screen does not hurt search or app retention. Those two are the primary
-/// metrics and `PixelExperimentKit` derives them from the enrollment pixel, which is why enrollment
-/// is the only thing wired up so far. Secondary metric pixels land with the screen itself.
-///
+/// A/B experiment adding a subscription upsell screen at the end of contextual onboarding. Primary
+/// metrics are search and app retention, derived by `PixelExperimentKit` from the enrollment pixel.
 /// https://app.asana.com/1/137249556945/task/1210565180535541
 struct OnboardingSubscriptionUpsellExperiment: OnboardingSubscriptionUpsellEnrolling {
 
@@ -64,16 +56,13 @@ struct OnboardingSubscriptionUpsellExperiment: OnboardingSubscriptionUpsellEnrol
                   subscriptionState: SubscriptionManagerUpsellSubscriptionState(subscriptionManager: subscriptionManager))
     }
 
-    /// Whether this user may take part in the experiment at all.
-    ///
-    /// Checked before `resolveCohort` so ineligible users land in neither arm. Because the primary
-    /// metrics are retention, an ineligible user sitting in the control arm would be noise we could
-    /// not filter out afterwards.
-    ///
-    /// Deliberately not gated on the onboarding rebranding: the upsell ships on every supported
-    /// macOS version, so both the rebranded and legacy dialog factories present it.
+    /// Checked before `resolveCohort` so ineligible users land in neither arm.
     var isEligible: Bool {
         subscriptionState.isSubscriptionPurchaseEligible && !subscriptionState.isUserAuthenticated
+    }
+
+    var cohort: FeatureFlag.OnboardingSubscriptionUpsellCohort? {
+        featureFlagger.assignedCohort(for: FeatureFlag.onboardingSubscriptionUpsell) as? FeatureFlag.OnboardingSubscriptionUpsellCohort
     }
 
     @discardableResult

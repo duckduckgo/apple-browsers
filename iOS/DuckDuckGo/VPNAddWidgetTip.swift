@@ -18,6 +18,7 @@
 //
 
 import TipKit
+import DesignResourcesKitIcons
 
 /// A tip to suggest to the user that they add our VPN widget for quick access to the VPN
 ///
@@ -61,7 +62,7 @@ extension VPNAddWidgetTip: Tip {
     }
 
     var image: Image? {
-        Image(.vpnAddWidgetTipIcon)
+        Image(rebrandable: "Add-Widget-Color-24")
     }
 
     var actions: [Action] {

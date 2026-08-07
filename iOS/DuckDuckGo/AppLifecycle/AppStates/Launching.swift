@@ -30,6 +30,7 @@ import BrowserServicesKit
 import Subscription
 import RemoteMessaging
 import WebExtensions
+import FeatureFlags_iOS
 
 /// Represents the transient state where the app is being prepared for user interaction after being launched by the system.
 /// - Usage:
@@ -79,6 +80,8 @@ struct Launching: LaunchingHandling {
             featureFlagger.isFeatureOn(.appRebranding)
         }
 
+        DesignSystemPalette.current = featureFlagger.isFeatureOn(.appRebranding) ? .rebranded : .default
+
         favicons = Favicons(fireproofing: fireproofing)
 
         let appKeyValueFileStoreService = try AppKeyValueFileStoreService()
@@ -119,10 +122,19 @@ struct Launching: LaunchingHandling {
         let contentBlocking = ContentBlocking.shared
 
         onboardingManager = OnboardingManager(appDefaults: appSettings, featureFlagger: featureFlagger, variantManager: configuration.atbAndVariantConfiguration.variantManager, tutorialSettings: DefaultTutorialSettings())
+
+        // Construct the storage handler before SyncService so AIChatSyncCleaner has the
+        // storage hook it needs to flush pending pin updates on each sync cycle.
+        let duckAiNativeStorageHandler = Self.makeNativeStorageHandler(
+            featureFlagger: featureFlagger,
+            keyValueStore: appKeyValueFileStoreService.keyValueFilesStore
+        )
+
         let syncService = SyncService(bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
                                       privacyConfigurationManager: contentBlocking.privacyConfigurationManager,
                                       keyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
-                                      faviconStoring: favicons)
+                                      faviconStoring: favicons,
+                                      duckAiNativeStorageHandler: duckAiNativeStorageHandler)
 
         let webExtensionManagerHolder = WebExtensionManagerHolder()
         let webExtensionAvailability = WebExtensionAvailability(
@@ -130,11 +142,6 @@ struct Launching: LaunchingHandling {
             webExtensionManagerProvider: {
                 webExtensionManagerHolder.manager
             }
-        )
-
-        let duckAiNativeStorageHandler = Self.makeNativeStorageHandler(
-            featureFlagger: featureFlagger,
-            keyValueStore: appKeyValueFileStoreService.keyValueFilesStore
         )
         let fireModeStorageController = FireModeNativeStorageController(
             featureFlagger: featureFlagger,
@@ -171,6 +178,7 @@ struct Launching: LaunchingHandling {
                                     freemiumPIRDebugSettings: freemiumPIRDebugSettings)
         let configurationService = RemoteConfigurationService()
         let crashCollectionService = CrashCollectionService(featureFlagger: featureFlagger)
+        let launchTimeMetricsService = LaunchTimeMetricsService(featureFlagger: featureFlagger)
         let statisticsService = StatisticsService()
 
         let productSurfaceTelemetry = PixelProductSurfaceTelemetry(featureFlagger: featureFlagger, dailyPixelFiring: DailyPixel.self)
@@ -200,6 +208,12 @@ struct Launching: LaunchingHandling {
             dataProvider: RemoteMessagingImageLoader.defaultDataProvider,
             cache: RemoteMessagingImageLoader.defaultCache
         )
+        let idleReturnEligibilityManager = IdleReturnEligibilityManager(
+            featureFlagger: featureFlagger,
+            keyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
+            privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager,
+            isStillOnboarding: { daxDialogs.isStillOnboarding() }
+        )
         let remoteMessagingService = RemoteMessagingService(bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
                                                             database: configuration.persistentStoresConfiguration.database,
                                                             appSettings: appSettings,
@@ -211,13 +225,15 @@ struct Launching: LaunchingHandling {
                                                             winBackOfferService: winBackOfferService,
                                                             freemiumPIREligibilityChecker: freemiumPIREligibilityChecker,
                                                             freemiumDBPUserStateManager: dbpService.freemiumDBPUserStateManager,
+                                                            profileStateManager: dbpService.profileStateManager,
                                                             subscriptionDataReporter: reportingService.subscriptionDataReporter,
                                                             remoteMessagingImageLoader: remoteMessagingImageLoader,
+                                                            idleReturnEligibilityManager: idleReturnEligibilityManager,
                                                             dbpRunPrerequisitesDelegate: dbpService.dbpIOSPublicInterface)
         let subscriptionService = SubscriptionService(privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager, featureFlagger: featureFlagger)
         let maliciousSiteProtectionService = MaliciousSiteProtectionService(featureFlagger: featureFlagger,
                                                                             privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager)
-        let systemSettingsPiPTutorialService = SystemSettingsPiPTutorialService()
+        let systemSettingsPiPTutorialService = SystemSettingsPiPTutorialService(featureFlagger: featureFlagger)
         let wideEventService = WideEventService(
             wideEvent: AppDependencyProvider.shared.wideEvent,
             subscriptionManager: AppDependencyProvider.shared.subscriptionManager
@@ -232,7 +248,8 @@ struct Launching: LaunchingHandling {
         )
 
         // Has to be initialised after configuration.start in case values need to be migrated
-        aiChatSettings = AIChatSettings()
+        let aiChatSettings = AIChatSettings()
+        self.aiChatSettings = aiChatSettings
 
         // Create What's New repository for use in modal prompts and settings
         let whatsNewRepository = DefaultWhatsNewMessageRepository(
@@ -247,15 +264,25 @@ struct Launching: LaunchingHandling {
         )
         let subscriptionPromoPresenter = SubscriptionPromoPresenter(coordinator: subscriptionPromoCoordinator)
 
-        // Initialise modal prompts coordination
+        // Subscription promo for existing users (7+ days since install) who have never seen a subscription offer
+        let subscriptionPromoExistingUserCoordinator = SubscriptionPromoExistingUserCoordinator(
+            daxDialogs: daxDialogs,
+            featureFlagger: featureFlagger,
+            subscriptionManager: AppDependencyProvider.shared.subscriptionManager
+        )
+        let subscriptionPromoExistingUserPresenter = SubscriptionPromoPresenter(coordinator: subscriptionPromoExistingUserCoordinator)
+
+        // Initialise promo coordination
         let omniBarFocuser = OmniBarFocuserProvider()
-        let modalPromptCoordinationService = ModalPromptCoordinationFactory.makeService(
+        let promoQueueLeaseArbiter = PromoQueueLeaseArbiter()
+        let promoCoordinationService = PromoCoordinationFactory.makeService(
             dependency: .init(
                 launchSourceManager: launchSourceManager,
                 contextualOnboardingStatusProvider: daxDialogs,
                 keyValueFileStoreService: appKeyValueFileStoreService.keyValueFilesStore,
                 privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager,
                 featureFlagger: featureFlagger,
+                promoQueueLeaseArbiter: promoQueueLeaseArbiter,
                 whatsNewRepository: whatsNewRepository,
                 remoteMessagingActionHandler: remoteMessagingService.remoteMessagingActionHandler,
                 remoteMessagingPixelReporter: remoteMessagingService.pixelReporter,
@@ -268,12 +295,17 @@ struct Launching: LaunchingHandling {
                 winBackOfferCoordinator: winBackOfferService.coordinator,
                 subscriptionPromoPresenter: subscriptionPromoPresenter,
                 subscriptionPromoCoordinator: subscriptionPromoCoordinator,
+                subscriptionPromoExistingUserPresenter: subscriptionPromoExistingUserPresenter,
+                subscriptionPromoExistingUserCoordinator: subscriptionPromoExistingUserCoordinator,
                 userScriptsDependencies: contentBlockingService.userScriptsDependencies,
                 omniBarFocuser: omniBarFocuser
             )
         )
 
-        let mobileCustomization = MobileCustomization(keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
+        let mobileCustomization = MobileCustomization(
+            keyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
+            connectionStatusObserver: AppDependencyProvider.shared.connectionObserver,
+            isDuckAIEnabled: { aiChatSettings.isAIChatEnabled })
 
         // MARK: - Main Coordinator Setup
         // Initialize the main coordinator which manages the app's primary view controller
@@ -306,7 +338,8 @@ struct Launching: LaunchingHandling {
                                               freemiumPIREligibilityChecker: freemiumPIREligibilityChecker,
                                               freemiumPIRDebugSettings: freemiumPIRDebugSettings,
                                               freemiumDBPUserStateManager: dbpService.freemiumDBPUserStateManager,
-                                              modalPromptCoordinationService: modalPromptCoordinationService,
+                                              profileStateManager: dbpService.profileStateManager,
+                                              promoCoordinationService: promoCoordinationService,
                                               mobileCustomization: mobileCustomization,
                                               productSurfaceTelemetry: productSurfaceTelemetry,
                                               whatsNewRepository: whatsNewRepository,
@@ -351,6 +384,7 @@ struct Launching: LaunchingHandling {
                                reportingService: reportingService,
                                subscriptionService: subscriptionService,
                                crashCollectionService: crashCollectionService,
+                               launchTimeMetricsService: launchTimeMetricsService,
                                maliciousSiteProtectionService: maliciousSiteProtectionService,
                                statisticsService: statisticsService,
                                keyValueFileStoreService: appKeyValueFileStoreService,
@@ -364,6 +398,12 @@ struct Launching: LaunchingHandling {
 
         // Clean up wide event data at launch
         launchTaskManager.register(task: WideEventLaunchCleanupTask(wideEventService: wideEventService))
+        launchTaskManager.register(task: BlockLaunchTask(name: "Initialize PIR Secure Vault") { taskContext in
+            Task {
+                await dbpService.prepareSecureVaultResourcesAtLaunch()
+                taskContext.finish()
+            }
+        })
 
         // MARK: - Final Configuration
         // Complete the configuration process and set up the main window
@@ -383,6 +423,15 @@ struct Launching: LaunchingHandling {
 #endif
 
         logAppLaunchTime()
+
+#if DEBUG
+        if LaunchOptionsHandler().shouldOpenPIRDashboardForTesting {
+            let mainCoordinator = mainCoordinator
+            Task { @MainActor in
+                mainCoordinator.presentDataBrokerProtectionDashboard()
+            }
+        }
+#endif
         // Keep this init method minimal and think twice before adding anything here.
         // - Use AppConfiguration for one-time setup.
         // - Use a service for functionality that persists throughout the app's lifecycle.
@@ -408,7 +457,8 @@ struct Launching: LaunchingHandling {
                     migrationKey: "com.duckduckgo.duckai.nativeStorage.defaultMigratedFromAppGroup",
                     label: .default,
                     keyValueStore: keyValueStore,
-                    pixelFiring: DuckAiNativeStorageContainerMigrationPixelAdapter()
+                    pixelFiring: DuckAiNativeStorageContainerMigrationPixelAdapter(),
+                    lockedLaunchFixEnabled: featureFlagger.isFeatureOn(.duckAINativeStorageMigrationLockedLaunchFix)
                 ).run()
                 if outcome == .skip {
                     return nil

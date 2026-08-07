@@ -28,7 +28,6 @@ struct MockOmnibarDependency: OmnibarDependencyProvider {
     var suggestionTrayDependencies: SuggestionTrayDependencies?
     var voiceSearchHelper: VoiceSearchHelperProtocol
     var featureFlagger: FeatureFlagger
-    var aichatIPadTabFeature: AIChatIPadTabFeatureProviding
     var aiChatSettings: AIChatSettingsProvider
     var aiChatSyncCleaner: AIChatSyncCleaning?
     var aiChatAddressBarExperience: AIChatAddressBarExperienceProviding
@@ -39,7 +38,6 @@ struct MockOmnibarDependency: OmnibarDependencyProvider {
 
     init(voiceSearchHelper: VoiceSearchHelperProtocol = MockVoiceSearchHelper(),
          featureFlagger: FeatureFlagger = MockFeatureFlagger(),
-         aichatIPadTabFeature: AIChatIPadTabFeatureProviding = MockAIChatIPadTabFeature(),
          aiChatSettings: AIChatSettingsProvider = MockAIChatSettingsProvider(),
          aiChatAddressBarExperience: AIChatAddressBarExperienceProviding? = nil,
          userInterfaceIdiomProvider: UserInterfaceIdiomProviding = SystemUserInterfaceIdiomProvider(),
@@ -48,7 +46,6 @@ struct MockOmnibarDependency: OmnibarDependencyProvider {
          mobileCustomization: MobileCustomization = MobileCustomization(keyValueStore: MockThrowingKeyValueStore())) {
         self.voiceSearchHelper = voiceSearchHelper
         self.featureFlagger = featureFlagger
-        self.aichatIPadTabFeature = aichatIPadTabFeature
         self.aiChatSettings = aiChatSettings
         self.aiChatAddressBarExperience = aiChatAddressBarExperience
             ?? AIChatAddressBarExperience(featureFlagger: featureFlagger,
@@ -58,8 +55,4 @@ struct MockOmnibarDependency: OmnibarDependencyProvider {
         self.daxEasterEggPresenter = daxEasterEggPresenter
         self.mobileCustomization = mobileCustomization
     }
-}
-
-struct MockAIChatIPadTabFeature: AIChatIPadTabFeatureProviding {
-    var isAvailable: Bool = false
 }

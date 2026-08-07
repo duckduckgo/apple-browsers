@@ -25,5 +25,5 @@ tags:
     timeout: 10000
 
 # No fallback toast for a happy-path single event.
-- assertNotVisible: "Multiple events aren't supported"
-- assertNotVisible: "This file can't be processed"
+- assertNotVisible: "Multiple events aren't supported. Try opening the downloaded file instead."
+- assertNotVisible: "This file can't be processed. Try opening the downloaded file instead."

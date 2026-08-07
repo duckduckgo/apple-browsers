@@ -22,8 +22,10 @@ import Foundation
 import UIKit
 import AIChat
 import Core
+import PrivacyConfig
 import DesignResourcesKitIcons
 import os.log
+import FeatureFlags_iOS
 
 @MainActor
 final class AIChatHistoryViewModel: ObservableObject {
@@ -48,24 +50,51 @@ final class AIChatHistoryViewModel: ObservableObject {
 
     var isEmpty: Bool { pinned.isEmpty && recent.isEmpty }
 
+    var isFilterApplied: Bool { !effectiveQuery.isEmpty }
+
+    /// Number of chats currently visible (respects the active filter).
+    var visibleChatCount: Int { pinned.count + recent.count }
+
+    /// Count of ALL persistent chats, independent of the active search filter. `burnAllChats`
+    /// clears every chat, so the confirmation must reflect the full scope — not just the matches
+    /// currently shown in `pinned`/`recent`.
+    private(set) var totalChatCount: Int = 0
+
     private let reader: ChatHistoryReading
     private let fireExecutor: FireExecuting?
     private let downloader: ChatHistoryDownloading?
-    private let downloadQueue: DispatchQueue
+    private let pinner: ChatPinning?
+    private let mutationQueue: DispatchQueue
+    private let instrumentation: AIChatHistoryInstrumentation
+    private let source: AIChatHistorySource
+    private let featureFlagger: FeatureFlagger
     private var cancellables: Set<AnyCancellable> = []
+
+    /// Gates the redesigned Chats UI (overflow menu + multi-select); off keeps the original layout.
+    var isRedesignEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatHistoryMultiselect)
+    }
 
     weak var delegate: AIChatHistoryViewModelDelegate?
 
     init(
         reader: ChatHistoryReading,
+        featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
         fireExecutor: FireExecuting? = nil,
         downloader: ChatHistoryDownloading? = nil,
-        downloadQueue: DispatchQueue = DispatchQueue.global(qos: .userInitiated)
+        pinner: ChatPinning? = nil,
+        source: AIChatHistorySource = .browserMenu,
+        mutationQueue: DispatchQueue = DispatchQueue(label: "chat-history.mutation", qos: .userInitiated),
+        instrumentation: AIChatHistoryInstrumentation = DefaultAIChatHistoryInstrumentation()
     ) {
         self.reader = reader
+        self.featureFlagger = featureFlagger
         self.fireExecutor = fireExecutor
         self.downloader = downloader
-        self.downloadQueue = downloadQueue
+        self.pinner = pinner
+        self.source = source
+        self.mutationQueue = mutationQueue
+        self.instrumentation = instrumentation
 
         // `.failure` as a sentinel keeps the combined publisher alive for `loadFailed`.
         let chats: AnyPublisher<Result<[DuckAiChat], Error>, Never> = reader.chatsPublisher()
@@ -96,10 +125,15 @@ final class AIChatHistoryViewModel: ObservableObject {
                 ? allChats
                 : allChats.filter { $0.title.localizedCaseInsensitiveContains(trimmed) }
             loadFailed = false
+            totalChatCount = allChats.count
             pinned = filtered.filter(\.pinned)
             recent = filtered.filter { !$0.pinned }
-        case .failure:
+        case .failure(let error):
+            if !loadFailed {
+                instrumentation.loadFailed(error: error)
+            }
             loadFailed = true
+            totalChatCount = 0
             pinned = []
             recent = []
         }
@@ -144,36 +178,177 @@ final class AIChatHistoryViewModel: ObservableObject {
 
     // MARK: - Intents
 
+    /// Call once when the screen is first presented. Fires the screen-shown impression.
+    func screenDidLoad() {
+        instrumentation.screenShown(source: source)
+    }
+
+    func searchActivated() {
+        instrumentation.searchActivated()
+    }
+
+    func editModeEntered() {
+        instrumentation.editModeEntered()
+    }
+
+    func fireAllTapped() {
+        instrumentation.fireAllTapped()
+    }
+
     func newChatTapped() {
+        instrumentation.newChatTapped()
+        delegate?.viewModelDidRequestOpenNewChat()
+    }
+
+    func emptyStateCTATapped() {
+        instrumentation.emptyCTATapped()
         delegate?.viewModelDidRequestOpenNewChat()
     }
 
     func openChat(chatId: String) {
+        instrumentation.chatOpened()
         delegate?.viewModelDidRequestOpenChat(chatId: chatId)
+    }
+
+    func openChatProtection() {
+        instrumentation.chatProtectionTapped()
+        delegate?.viewModelDidRequestChatProtection()
     }
 
     func deleteChat(chatId: String) {
         // Sheet only surfaces persistent chats, so never fire-mode.
         guard let fireExecutor else { return }
+        instrumentation.chatDeleted()
         Task { @MainActor in
-            await fireExecutor.burnChat(chatID: chatId, isFireMode: false)
+            let result = await fireExecutor.burnChat(chatID: chatId, isFireMode: false)
+            guard case .success = result else { return }
+            // Flush the deletion to sync now so the FE doesn't re-pull the chat.
+            fireExecutor.scheduleSync()
         }
     }
 
+    /// Optimistically removes the chat and returns its index path so the row can be animated out.
+    @discardableResult
+    func removeChatFromList(chatId: String) -> IndexPath? {
+        if let row = pinned.firstIndex(where: { $0.chatId == chatId }) {
+            pinned.remove(at: row)
+            return IndexPath(row: row, section: Section.pinned.rawValue)
+        }
+        if let row = recent.firstIndex(where: { $0.chatId == chatId }) {
+            recent.remove(at: row)
+            return IndexPath(row: row, section: Section.recent.rawValue)
+        }
+        return nil
+    }
+
+    func burnAllChats() async {
+        guard let fireExecutor else { return }
+        // Reached only after the user confirms the delete-all action.
+        instrumentation.fireAllConfirmed()
+        let result = await fireExecutor.burnAllChats(isFireMode: false)
+        guard case .success = result else { return }
+        // Flush the clear to sync now so the FE doesn't re-pull the chats.
+        fireExecutor.scheduleSync()
+    }
+
+    /// Never fire-mode (sheet only surfaces persistent chats); one batch burn, sync flushed once.
+    func burnSelectedChats(chatIds: [String]) async {
+        guard let fireExecutor, !chatIds.isEmpty else { return }
+        // Reached only after the user confirms the multi-select delete action.
+        instrumentation.selectionDeleteConfirmed()
+        let result = await fireExecutor.burnChats(chatIDs: chatIds, isFireMode: false)
+        guard case .success = result else { return }
+        fireExecutor.scheduleSync()
+    }
+
     func downloadChat(chatId: String) {
-        // Image-gen exports do enough I/O to freeze the sheet — dispatch off-main.
-        guard let downloader else { return }
-        downloadQueue.async { [weak self] in
-            do {
-                let url = try downloader.downloadChat(chatId: chatId)
-                DispatchQueue.main.async { [weak self] in
-                    self?.delegate?.viewModelDidExportChat(filename: url.lastPathComponent)
+        guard downloader != nil else { return }
+        instrumentation.downloadStarted()
+        exportChats([chatId]) { [weak self] urls in
+            guard let filename = urls.first?.lastPathComponent else { return }
+            self?.delegate?.viewModelDidExportChat(filename: filename)
+        }
+    }
+
+    func downloadSelectedChats(chatIds: [String]) {
+        guard downloader != nil, !chatIds.isEmpty else { return }
+        instrumentation.selectionDownloadStarted()
+        exportChats(chatIds) { [weak self] urls in
+            self?.delegate?.viewModelDidExportChats(count: urls.count)
+        }
+    }
+
+    private func exportChats(_ chatIds: [String], onExported: @escaping ([URL]) -> Void) {
+        guard let downloader, !chatIds.isEmpty else { return }
+        let instrumentation = instrumentation
+        mutationQueue.async {
+            var urls: [URL] = []
+            for chatId in chatIds {
+                do {
+                    urls.append(try downloader.downloadChat(chatId: chatId))
+                } catch {
+                    Logger.aiChat.debug("Chat export failed: \(error.localizedDescription)")
+                    instrumentation.downloadFailed(error: error)
                 }
-            } catch {
-                Logger.aiChat.debug("Chat export failed: \(error.localizedDescription)")
-                // Failure-state toast pairs with the pixels-pass follow-up (task #28).
+            }
+            DispatchQueue.main.async { [weak self] in
+                // Chats were attempted (input was non-empty); an empty result means every one failed.
+                if urls.isEmpty {
+                    self?.delegate?.viewModelDidFailExport()
+                } else {
+                    instrumentation.downloadSucceeded()
+                    onExported(urls)
+                }
             }
         }
+    }
+
+    func isPinned(chatId: String) -> Bool {
+        pinned.contains(where: { $0.chatId == chatId })
+    }
+
+    /// Optimistically moves the chat between sections and dispatches the storage write.
+    /// Returns the source + destination index paths for the table animation, or `nil` when
+    /// no move is possible (chat absent or pinner not wired).
+    @discardableResult
+    func togglePin(chatId: String) -> (source: IndexPath, destination: IndexPath)? {
+        guard let pinner, let move = applyOptimisticPinToggle(chatId: chatId) else { return nil }
+        let newPinned = move.destination.section == Section.pinned.rawValue
+        if newPinned {
+            instrumentation.pinAdded()
+        } else {
+            instrumentation.pinRemoved()
+        }
+        let instrumentation = instrumentation
+        mutationQueue.async {
+            do {
+                try pinner.setPinned(chatId: chatId, pinned: newPinned)
+            } catch {
+                Logger.aiChat.debug("Pin toggle failed: \(error.localizedDescription)")
+                instrumentation.pinToggleFailed(error: error)
+            }
+        }
+        return move
+    }
+
+    private func applyOptimisticPinToggle(chatId: String) -> (source: IndexPath, destination: IndexPath)? {
+        if let row = pinned.firstIndex(where: { $0.chatId == chatId }) {
+            let chat = pinned.remove(at: row)
+            let toggled = chat.withPinned(false)
+            let insertIndex = recent.firstIndex(where: { $0.lastEdit < toggled.lastEdit }) ?? recent.count
+            recent.insert(toggled, at: insertIndex)
+            return (IndexPath(row: row, section: Section.pinned.rawValue),
+                    IndexPath(row: insertIndex, section: Section.recent.rawValue))
+        }
+        if let row = recent.firstIndex(where: { $0.chatId == chatId }) {
+            let chat = recent.remove(at: row)
+            let toggled = chat.withPinned(true)
+            let insertIndex = pinned.firstIndex(where: { $0.lastEdit < toggled.lastEdit }) ?? pinned.count
+            pinned.insert(toggled, at: insertIndex)
+            return (IndexPath(row: row, section: Section.recent.rawValue),
+                    IndexPath(row: insertIndex, section: Section.pinned.rawValue))
+        }
+        return nil
     }
 
     func updateQuery(_ newValue: String) {
@@ -198,15 +373,21 @@ final class AIChatHistoryViewModel: ObservableObject {
 
     private static func icon(for chat: DuckAiChat) -> UIImage {
         let image: UIImage
-        // Switch on `chat.chatType` rather than `AIChatSuggestion.kind(forModel:)` so chats
-        // that produced images via a tool call (without the image-mode model id) still get
+        // Pinned rows show the standard pin regardless of chat type; non-pinned rows use their
+        // type glyph. Switch on `chat.chatType` rather than `AIChatSuggestion.kind(forModel:)` so
+        // chats that produced images via a tool call (without the image-mode model id) still get
         // the image glyph — same precedence the exporter uses.
-        switch (chat.chatType, chat.pinned) {
-        case (.discussion, true): image = DesignSystemImages.Glyphs.Size24.chatPinned
-        case (.discussion, false): image = DesignSystemImages.Glyphs.Size24.chat
-        case (.voice, true): image = DesignSystemImages.Glyphs.Size24.voicePinned
-        case (.voice, false): image = DesignSystemImages.Glyphs.Size24.voice
-        case (.imageGeneration, _): image = DesignSystemImages.Glyphs.Size24.image
+        if chat.pinned {
+            image = DesignSystemImages.Glyphs.Size24.pin
+        } else {
+            switch chat.chatType {
+            case .discussion:
+                image = DesignSystemImages.Glyphs.Size24.chat
+            case .voice:
+                image = DesignSystemImages.Glyphs.Size24.voice
+            case .imageGeneration:
+                image = DesignSystemImages.Glyphs.Size24.images
+            }
         }
         // The chat-family glyph assets aren't marked `template-rendering-intent` in their
         // Contents.json, so without forcing template mode they render in their own
@@ -224,8 +405,20 @@ protocol AIChatHistoryViewModelDelegate: AnyObject {
     /// Dismiss the sheet and open `chatId` in Duck.ai.
     func viewModelDidRequestOpenChat(chatId: String)
 
+    /// Dismiss the sheet and open the Duck.ai chat protection page.
+    func viewModelDidRequestChatProtection()
+
     /// A chat export finished writing to disk. Present the "Download complete" toast for
     /// `filename` with a "Show" action that dismisses the sheet and opens the in-app
     /// Downloads list.
     func viewModelDidExportChat(filename: String)
+
+    /// A multi-select export finished. `count` chats were each written to disk as their own
+    /// file; present one aggregate "N chats downloaded" toast with a "Show" action that
+    /// dismisses the sheet and opens the in-app Downloads list.
+    func viewModelDidExportChats(count: Int)
+
+    /// An export produced no files — a single download failed, or every selected chat failed.
+    /// Present a "download failed" error toast. (Not called when nothing was selected.)
+    func viewModelDidFailExport()
 }

@@ -33,4 +33,9 @@ extension Pixel {
         DailyPixel.fireDailyAndCount(pixel: .maliciousSiteProtection(event: convertedPixelEvent), withAdditionalParameters: convertedPixelEvent.parameters)
     }
 
+    static func fireDailyAndStandard(_ event: MaliciousSiteProtection.Event) {
+        guard let convertedPixelEvent = Event.MaliciousSiteProtectionEvent(event) else { return }
+        DailyPixel.fireDailyAndCount(pixel: .maliciousSiteProtection(event: convertedPixelEvent), pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes, withAdditionalParameters: convertedPixelEvent.parameters)
+    }
+
 }

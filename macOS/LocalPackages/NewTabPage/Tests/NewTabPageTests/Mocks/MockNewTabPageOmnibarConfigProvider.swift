@@ -18,6 +18,7 @@
 
 import Combine
 import NewTabPage
+import WebKit
 
 final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
 
@@ -56,6 +57,25 @@ final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProvidin
 
     var isWebSearchEnabled: Bool = false
 
+    var isCustomizeResponsesEnabled: Bool = false
+
+    var customizeResponsesStateResult = NewTabPageDataModel.OmnibarCustomizeResponsesState.none
+    @MainActor
+    func customizeResponsesState(requestingWebView: WKWebView?) -> NewTabPageDataModel.OmnibarCustomizeResponsesState {
+        customizeResponsesStateResult
+    }
+
+    let customizeResponsesStateSubject = PassthroughSubject<Void, Never>()
+    var customizeResponsesStatePublisher: AnyPublisher<Void, Never> {
+        customizeResponsesStateSubject.eraseToAnyPublisher()
+    }
+
+    @Published var isAttachTabsEnabled: Bool = false
+
+    var isAttachTabsEnabledPublisher: AnyPublisher<Bool, Never> {
+        $isAttachTabsEnabled.removeDuplicates().eraseToAnyPublisher()
+    }
+
     @Published var isVoiceChatAccessEnabled: Bool = false
 
     /// Mirrors the real `NewTabPageOmnibarConfigProvider.isVoiceChatAccessEnabledPublisher`
@@ -85,5 +105,17 @@ final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProvidin
 
     var selectedReasoningEffortPublisher: AnyPublisher<String?, Never> {
         $selectedReasoningEffort.dropFirst().eraseToAnyPublisher()
+    }
+
+    @Published var isAIChatDeletionEnabled: Bool = false
+
+    var isAIChatDeletionEnabledPublisher: AnyPublisher<Bool, Never> {
+        $isAIChatDeletionEnabled.removeDuplicates().eraseToAnyPublisher()
+    }
+
+    @Published var isSearchSuggestionDeletionEnabled: Bool = false
+
+    var isSearchSuggestionDeletionEnabledPublisher: AnyPublisher<Bool, Never> {
+        $isSearchSuggestionDeletionEnabled.removeDuplicates().eraseToAnyPublisher()
     }
 }

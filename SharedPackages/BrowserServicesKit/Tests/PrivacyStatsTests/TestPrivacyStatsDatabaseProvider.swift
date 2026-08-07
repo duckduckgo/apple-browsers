@@ -16,8 +16,10 @@
 //  limitations under the License.
 //
 
+import CoreData
 import Persistence
 import XCTest
+
 @testable import PrivacyStats
 
 final class TestPrivacyStatsDatabaseProvider: PrivacyStatsDatabaseProviding {

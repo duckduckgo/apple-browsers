@@ -17,14 +17,12 @@
 //  limitations under the License.
 //
 
-import SwiftUI
-import Combine
+import UIComponents
 
-enum StatusIndicator: Equatable {
-    case alwaysOn
-    case on
-    case off
-
+// `StatusIndicator` and `StatusIndicatorView` now live in the UIComponents package. These app-side
+// extensions supply the app's localized status copy and keep existing `StatusIndicatorView(status:)`
+// call sites working without threading text through each one.
+extension StatusIndicator {
     var text: String {
         switch self {
         case .alwaysOn:
@@ -34,5 +32,11 @@ enum StatusIndicator: Equatable {
         case .off:
             return UserText.settingsOff
         }
+    }
+}
+
+extension StatusIndicatorView {
+    init(status: StatusIndicator, isDotHidden: Bool = false) {
+        self.init(status: status, text: status.text, isDotHidden: isDotHidden)
     }
 }

@@ -31,6 +31,7 @@ final class TabInputStateTests: XCTestCase {
         XCTAssertNil(sut.selectedModelID)
         XCTAssertNil(sut.selectedReasoningMode)
         XCTAssertNil(sut.selectedTool)
+        XCTAssertFalse(sut.isModelPickerForcedVisible)
     }
 
     func test_equatable_sameValues_areEqual() {

@@ -1,0 +1,1501 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "description": "Sent at the end of a data clearing (Fire) flow, capturing the overall outcome plus per-action timing, status, and errors for each data category cleared. The journey resolves to SUCCESS when clearing completes, or UNKNOWN when it is orphaned and resolved on a later launch.",
+    "$comment": "{\"owners\":[\"hanyutang-sandra\"]}",
+    "type": "object",
+    "required": ["meta", "global", "feature", "app", "context"],
+    "additionalProperties": false,
+    "properties": {
+        "meta": {
+            "type": "object",
+            "required": ["type", "version"],
+            "additionalProperties": false,
+            "properties": { "type": { "const": "ios-data-clearing" }, "version": { "const": "1.1.0" } }
+        },
+        "app": {
+            "type": "object",
+            "required": ["name", "version"],
+            "additionalProperties": false,
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "The name of the application",
+                    "enum": ["DuckDuckGo", "DuckDuckGo-Alpha", "DuckDuckGo-Experimental", "PacketTunnelProvider"]
+                },
+                "version": { "type": "string", "description": "The version of the application", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+                "form_factor": { "type": "string", "description": "The form factor of the device", "enum": ["phone", "tablet"] }
+            }
+        },
+        "global": {
+            "type": "object",
+            "required": ["platform", "type", "sample_rate"],
+            "additionalProperties": false,
+            "properties": {
+                "platform": { "type": "string", "description": "The platform the app is running on", "enum": ["iOS"] },
+                "type": { "type": "string", "description": "The type of application", "enum": ["app"] },
+                "sample_rate": { "type": "number", "description": "Sample rate for this event", "minimum": 0, "maximum": 1 },
+                "is_first_daily_occurrence": {
+                    "type": "boolean",
+                    "description": "Whether this is the first occurrence of this event today. Only included when true."
+                }
+            }
+        },
+        "feature": {
+            "type": "object",
+            "required": ["name", "status", "data"],
+            "additionalProperties": false,
+            "properties": {
+                "name": { "type": "string", "description": "The feature name for this event", "enum": ["data-clearing"] },
+                "status": { "type": "string", "description": "The overall status of the operation", "enum": ["SUCCESS", "UNKNOWN"] },
+                "data": {
+                    "type": "object",
+                    "required": ["ext"],
+                    "additionalProperties": false,
+                    "properties": {
+                        "ext": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                                "status_reason": {
+                                    "type": "string",
+                                    "description": "Reason accompanying an UNKNOWN status: partial_data = an orphaned flow was completed on a later launch; timeout = the clearing did not complete within the timeout window.",
+                                    "enum": ["partial_data", "timeout"]
+                                },
+                                "included_options": {
+                                    "type": "string",
+                                    "description": "Comma-separated list of specific options the user selected (tabs, data, aiChats).",
+                                    "examples": ["tabs", "data", "aiChats", "tabs,data", "tabs,data,aiChats"]
+                                },
+                                "trigger": {
+                                    "type": "string",
+                                    "description": "What initiated the clearing flow.",
+                                    "enum": ["manualFire", "autoClearOnLaunch", "autoClearOnForeground", "fireModeAutoClear"]
+                                },
+                                "scope": {
+                                    "type": "string",
+                                    "description": "Scope of the clearing action.",
+                                    "enum": ["tab", "all", "fireMode", "normalMode"]
+                                },
+                                "source": {
+                                    "type": "string",
+                                    "description": "Entry point that triggered the data clearing flow.",
+                                    "enum": [
+                                        "browsing",
+                                        "escapeHatch",
+                                        "tabSwitcher",
+                                        "settings",
+                                        "quickFire",
+                                        "deeplink",
+                                        "autoClear",
+                                        "chatSuggestions"
+                                    ]
+                                },
+                                "overall_latency_ms": {
+                                    "type": "integer",
+                                    "description": "Duration from start of the clearing attempt to its end state (in ms). Rounded to 10ms precision, capped at 10000ms (10 seconds)."
+                                },
+                                "clear_tabs_status": {
+                                    "type": "string",
+                                    "description": "Final status of the clear_tabs action.",
+                                    "enum": ["SUCCESS", "FAILURE"]
+                                },
+                                "clear_tabs_latency_ms": {
+                                    "type": "integer",
+                                    "description": "Duration from start of the action to its end state (in ms). Rounded to 10ms precision, capped at 10000ms (10 seconds)."
+                                },
+                                "clear_tabs_error": {
+                                    "type": "object",
+                                    "description": "Per-action error details for a single data clearing action. Mirrors the shared error block but is keyed by `description` rather than `error_description`.",
+                                    "properties": {
+                                        "domain": { "type": "string", "description": "The top level error domain" },
+                                        "code": { "type": "integer", "description": "The top level error code" },
+                                        "description": { "type": "string", "description": "Additional error description" },
+                                        "underlying_domain": { "type": "string", "description": "The underlying error domain" },
+                                        "underlying_code": { "type": "integer", "description": "The underlying error code" },
+                                        "underlying_domain2": {
+                                            "type": "string",
+                                            "description": "The second nested underlying error domain"
+                                        },
+                                        "underlying_code2": { "type": "integer", "description": "The second nested underlying error code" },
+                                        "underlying_domain3": {
+                                            "type": "string",
+                                            "description": "The third nested underlying error domain"
+                                        },
+                                        "underlying_code3": { "type": "integer", "description": "The third nested underlying error code" },
+                                        "underlying_domain4": {
+                                            "type": "string",
+                                            "description": "The fourth nested underlying error domain"
+                                        },
+                                        "underlying_code4": { "type": "integer", "description": "The fourth nested underlying error code" },
+                                        "underlying_domain5": {
+                                            "type": "string",
+                                            "description": "The fifth nested underlying error domain"
+                                        },
+                                        "underlying_code5": { "type": "integer", "description": "The fifth nested underlying error code" },
+                                        "underlying_domain6": {
+                                            "type": "string",
+                                            "description": "The sixth nested underlying error domain"
+                                        },
+                                        "underlying_code6": { "type": "integer", "description": "The sixth nested underlying error code" },
+                                        "underlying_domain7": {
+                                            "type": "string",
+                                            "description": "The seventh nested underlying error domain"
+                                        },
+                                        "underlying_code7": {
+                                            "type": "integer",
+                                            "description": "The seventh nested underlying error code"
+                                        },
+                                        "underlying_domain8": {
+                                            "type": "string",
+                                            "description": "The eighth nested underlying error domain"
+                                        },
+                                        "underlying_code8": { "type": "integer", "description": "The eighth nested underlying error code" },
+                                        "underlying_domain9": {
+                                            "type": "string",
+                                            "description": "The ninth nested underlying error domain"
+                                        },
+                                        "underlying_code9": { "type": "integer", "description": "The ninth nested underlying error code" }
+                                    },
+                                    "additionalProperties": false
+                                },
+                                "clear_all_history_status": {
+                                    "type": "string",
+                                    "description": "Final status of the clear_all_history action.",
+                                    "enum": ["SUCCESS", "FAILURE"]
+                                },
+                                "clear_all_history_latency_ms": {
+                                    "type": "integer",
+                                    "description": "Duration from start of the action to its end state (in ms). Rounded to 10ms precision, capped at 10000ms (10 seconds)."
+                                },
+                                "clear_all_history_error": {
+                                    "type": "object",
+                                    "description": "Per-action error details for a single data clearing action. Mirrors the shared error block but is keyed by `description` rather than `error_description`.",
+                                    "properties": {
+                                        "domain": { "type": "string", "description": "The top level error domain" },
+                                        "code": { "type": "integer", "description": "The top level error code" },
+                                        "description": { "type": "string", "description": "Additional error description" },
+                                        "underlying_domain": { "type": "string", "description": "The underlying error domain" },
+                                        "underlying_code": { "type": "integer", "description": "The underlying error code" },
+                                        "underlying_domain2": {
+                                            "type": "string",
+                                            "description": "The second nested underlying error domain"
+                                        },
+                                        "underlying_code2": { "type": "integer", "description": "The second nested underlying error code" },
+                                        "underlying_domain3": {
+                                            "type": "string",
+                                            "description": "The third nested underlying error domain"
+                                        },
+                                        "underlying_code3": { "type": "integer", "description": "The third nested underlying error code" },
+                                        "underlying_domain4": {
+                                            "type": "string",
+                                            "description": "The fourth nested underlying error domain"
+                                        },
+                                        "underlying_code4": { "type": "integer", "description": "The fourth nested underlying error code" },
+                                        "underlying_domain5": {
+                                            "type": "string",
+                                            "description": "The fifth nested underlying error domain"
+                                        },
+                                        "underlying_code5": { "type": "integer", "description": "The fifth nested underlying error code" },
+                                        "underlying_domain6": {
+                                            "type": "string",
+                                            "description": "The sixth nested underlying error domain"
+                                        },
+                                        "underlying_code6": { "type": "integer", "description": "The sixth nested underlying error code" },
+                                        "underlying_domain7": {
+                                            "type": "string",
+                                            "description": "The seventh nested underlying error domain"
+                                        },
+                                        "underlying_code7": {
+                                            "type": "integer",
+                                            "description": "The seventh nested underlying error code"
+                                        },
+                                        "underlying_domain8": {
+                                            "type": "string",
+                                            "description": "The eighth nested underlying error domain"
+                                        },
+                                        "underlying_code8": { "type": "integer", "description": "The eighth nested underlying error code" },
+                                        "underlying_domain9": {
+                                            "type": "string",
+                                            "description": "The ninth nested underlying error domain"
+                                        },
+                                        "underlying_code9": { "type": "integer", "description": "The ninth nested underlying error code" }
+                                    },
+                                    "additionalProperties": false
+                                },
+                                "clear_aiChat_history_status": {
+                                    "type": "string",
+                                    "description": "Final status of the clear_aiChat_history action.",
+                                    "enum": ["SUCCESS", "FAILURE"]
+                                },
+                                "clear_aiChat_history_latency_ms": {
+                                    "type": "integer",
+                                    "description": "Duration from start of the action to its end state (in ms). Rounded to 10ms precision, capped at 10000ms (10 seconds)."
+                                },
+                                "clear_aiChat_history_error": {
+                                    "type": "object",
+                                    "description": "Per-action error details for a single data clearing action. Mirrors the shared error block but is keyed by `description` rather than `error_description`.",
+                                    "properties": {
+                                        "domain": { "type": "string", "description": "The top level error domain" },
+                                        "code": { "type": "integer", "description": "The top level error code" },
+                                        "description": { "type": "string", "description": "Additional error description" },
+                                        "underlying_domain": { "type": "string", "description": "The underlying error domain" },
+                                        "underlying_code": { "type": "integer", "description": "The underlying error code" },
+                                        "underlying_domain2": {
+                                            "type": "string",
+                                            "description": "The second nested underlying error domain"
+                                        },
+                                        "underlying_code2": { "type": "integer", "description": "The second nested underlying error code" },
+                                        "underlying_domain3": {
+                                            "type": "string",
+                                            "description": "The third nested underlying error domain"
+                                        },
+                                        "underlying_code3": { "type": "integer", "description": "The third nested underlying error code" },
+                                        "underlying_domain4": {
+                                            "type": "string",
+                                            "description": "The fourth nested underlying error domain"
+                                        },
+                                        "underlying_code4": { "type": "integer", "description": "The fourth nested underlying error code" },
+                                        "underlying_domain5": {
+                                            "type": "string",
+                                            "description": "The fifth nested underlying error domain"
+                                        },
+                                        "underlying_code5": { "type": "integer", "description": "The fifth nested underlying error code" },
+                                        "underlying_domain6": {
+                                            "type": "string",
+                                            "description": "The sixth nested underlying error domain"
+                                        },
+                                        "underlying_code6": { "type": "integer", "description": "The sixth nested underlying error code" },
+                                        "underlying_domain7": {
+                                            "type": "string",
+                                            "description": "The seventh nested underlying error domain"
+                                        },
+                                        "underlying_code7": {
+                                            "type": "integer",
+                                            "description": "The seventh nested underlying error code"
+                                        },
+                                        "underlying_domain8": {
+                                            "type": "string",
+                                            "description": "The eighth nested underlying error domain"
+                                        },
+                                        "underlying_code8": { "type": "integer", "description": "The eighth nested underlying error code" },
+                                        "underlying_domain9": {
+                                            "type": "string",
+                                            "description": "The ninth nested underlying error domain"
+                                        },
+                                        "underlying_code9": { "type": "integer", "description": "The ninth nested underlying error code" }
+                                    },
+                                    "additionalProperties": false
+                                },
+                                "clear_autoconsent_management_cache_status": {
+                                    "type": "string",
+                                    "description": "Final status of the clear_autoconsent_management_cache action.",
+                                    "enum": ["SUCCESS", "FAILURE"]
+                                },
+                                "clear_autoconsent_management_cache_latency_ms": {
+                                    "type": "integer",
+                                    "description": "Duration from start of the action to its end state (in ms). Rounded to 10ms precision, capped at 10000ms (10 seconds)."
+                                },
+                                "clear_autoconsent_management_cache_error": {
+                                    "type": "object",
+                                    "description": "Per-action error details for a single data clearing action. Mirrors the shared error block but is keyed by `description` rather than `error_description`.",
+                                    "properties": {
+                                        "domain": { "type": "string", "description": "The top level error domain" },
+                                        "code": { "type": "integer", "description": "The top level error code" },
+                                        "description": { "type": "string", "description": "Additional error description" },
+                                        "underlying_domain": { "type": "string", "description": "The underlying error domain" },
+                                        "underlying_code": { "type": "integer", "description": "The underlying error code" },
+                                        "underlying_domain2": {
+                                            "type": "string",
+                                            "description": "The second nested underlying error domain"
+                                        },
+                                        "underlying_code2": { "type": "integer", "description": "The second nested underlying error code" },
+                                        "underlying_domain3": {
+                                            "type": "string",
+                                            "description": "The third nested underlying error domain"
+                                        },
+                                        "underlying_code3": { "type": "integer", "description": "The third nested underlying error code" },
+                                        "underlying_domain4": {
+                                            "type": "string",
+                                            "description": "The fourth nested underlying error domain"
+                                        },
+                                        "underlying_code4": { "type": "integer", "description": "The fourth nested underlying error code" },
+                                        "underlying_domain5": {
+                                            "type": "string",
+                                            "description": "The fifth nested underlying error domain"
+                                        },
+                                        "underlying_code5": { "type": "integer", "description": "The fifth nested underlying error code" },
+                                        "underlying_domain6": {
+                                            "type": "string",
+                                            "description": "The sixth nested underlying error domain"
+                                        },
+                                        "underlying_code6": { "type": "integer", "description": "The sixth nested underlying error code" },
+                                        "underlying_domain7": {
+                                            "type": "string",
+                                            "description": "The seventh nested underlying error domain"
+                                        },
+                                        "underlying_code7": {
+                                            "type": "integer",
+                                            "description": "The seventh nested underlying error code"
+                                        },
+                                        "underlying_domain8": {
+                                            "type": "string",
+                                            "description": "The eighth nested underlying error domain"
+                                        },
+                                        "underlying_code8": { "type": "integer", "description": "The eighth nested underlying error code" },
+                                        "underlying_domain9": {
+                                            "type": "string",
+                                            "description": "The ninth nested underlying error domain"
+                                        },
+                                        "underlying_code9": { "type": "integer", "description": "The ninth nested underlying error code" }
+                                    },
+                                    "additionalProperties": false
+                                },
+                                "clear_favicon_cache_status": {
+                                    "type": "string",
+                                    "description": "Final status of the clear_favicon_cache action.",
+                                    "enum": ["SUCCESS", "FAILURE"]
+                                },
+                                "clear_favicon_cache_latency_ms": {
+                                    "type": "integer",
+                                    "description": "Duration from start of the action to its end state (in ms). Rounded to 10ms precision, capped at 10000ms (10 seconds)."
+                                },
+                                "clear_favicon_cache_error": {
+                                    "type": "object",
+                                    "description": "Per-action error details for a single data clearing action. Mirrors the shared error block but is keyed by `description` rather than `error_description`.",
+                                    "properties": {
+                                        "domain": { "type": "string", "description": "The top level error domain" },
+                                        "code": { "type": "integer", "description": "The top level error code" },
+                                        "description": { "type": "string", "description": "Additional error description" },
+                                        "underlying_domain": { "type": "string", "description": "The underlying error domain" },
+                                        "underlying_code": { "type": "integer", "description": "The underlying error code" },
+                                        "underlying_domain2": {
+                                            "type": "string",
+                                            "description": "The second nested underlying error domain"
+                                        },
+                                        "underlying_code2": { "type": "integer", "description": "The second nested underlying error code" },
+                                        "underlying_domain3": {
+                                            "type": "string",
+                                            "description": "The third nested underlying error domain"
+                                        },
+                                        "underlying_code3": { "type": "integer", "description": "The third nested underlying error code" },
+                                        "underlying_domain4": {
+                                            "type": "string",
+                                            "description": "The fourth nested underlying error domain"
+                                        },
+                                        "underlying_code4": { "type": "integer", "description": "The fourth nested underlying error code" },
+                                        "underlying_domain5": {
+                                            "type": "string",
+                                            "description": "The fifth nested underlying error domain"
+                                        },
+                                        "underlying_code5": { "type": "integer", "description": "The fifth nested underlying error code" },
+                                        "underlying_domain6": {
+                                            "type": "string",
+                                            "description": "The sixth nested underlying error domain"
+                                        },
+                                        "underlying_code6": { "type": "integer", "description": "The sixth nested underlying error code" },
+                                        "underlying_domain7": {
+                                            "type": "string",
+                                            "description": "The seventh nested underlying error domain"
+                                        },
+                                        "underlying_code7": {
+                                            "type": "integer",
+                                            "description": "The seventh nested underlying error code"
+                                        },
+                                        "underlying_domain8": {
+                                            "type": "string",
+                                            "description": "The eighth nested underlying error domain"
+                                        },
+                                        "underlying_code8": { "type": "integer", "description": "The eighth nested underlying error code" },
+                                        "underlying_domain9": {
+                                            "type": "string",
+                                            "description": "The ninth nested underlying error domain"
+                                        },
+                                        "underlying_code9": { "type": "integer", "description": "The ninth nested underlying error code" }
+                                    },
+                                    "additionalProperties": false
+                                },
+                                "cancel_all_downloads_status": {
+                                    "type": "string",
+                                    "description": "Final status of the cancel_all_downloads action.",
+                                    "enum": ["SUCCESS", "FAILURE"]
+                                },
+                                "cancel_all_downloads_latency_ms": {
+                                    "type": "integer",
+                                    "description": "Duration from start of the action to its end state (in ms). Rounded to 10ms precision, capped at 10000ms (10 seconds)."
+                                },
+                                "cancel_all_downloads_error": {
+                                    "type": "object",
+                                    "description": "Per-action error details for a single data clearing action. Mirrors the shared error block but is keyed by `description` rather than `error_description`.",
+                                    "properties": {
+                                        "domain": { "type": "string", "description": "The top level error domain" },
+                                        "code": { "type": "integer", "description": "The top level error code" },
+                                        "description": { "type": "string", "description": "Additional error description" },
+                                        "underlying_domain": { "type": "string", "description": "The underlying error domain" },
+                                        "underlying_code": { "type": "integer", "description": "The underlying error code" },
+                                        "underlying_domain2": {
+                                            "type": "string",
+                                            "description": "The second nested underlying error domain"
+                                        },
+                                        "underlying_code2": { "type": "integer", "description": "The second nested underlying error code" },
+                                        "underlying_domain3": {
+                                            "type": "string",
+                                            "description": "The third nested underlying error domain"
+                                        },
+                                        "underlying_code3": { "type": "integer", "description": "The third nested underlying error code" },
+                                        "underlying_domain4": {
+                                            "type": "string",
+                                            "description": "The fourth nested underlying error domain"
+                                        },
+                                        "underlying_code4": { "type": "integer", "description": "The fourth nested underlying error code" },
+                                        "underlying_domain5": {
+                                            "type": "string",
+                                            "description": "The fifth nested underlying error domain"
+                                        },
+                                        "underlying_code5": { "type": "integer", "description": "The fifth nested underlying error code" },
+                                        "underlying_domain6": {
+                                            "type": "string",
+                                            "description": "The sixth nested underlying error domain"
+                                        },
+                                        "underlying_code6": { "type": "integer", "description": "The sixth nested underlying error code" },
+                                        "underlying_domain7": {
+                                            "type": "string",
+                                            "description": "The seventh nested underlying error domain"
+                                        },
+                                        "underlying_code7": {
+                                            "type": "integer",
+                                            "description": "The seventh nested underlying error code"
+                                        },
+                                        "underlying_domain8": {
+                                            "type": "string",
+                                            "description": "The eighth nested underlying error domain"
+                                        },
+                                        "underlying_code8": { "type": "integer", "description": "The eighth nested underlying error code" },
+                                        "underlying_domain9": {
+                                            "type": "string",
+                                            "description": "The ninth nested underlying error domain"
+                                        },
+                                        "underlying_code9": { "type": "integer", "description": "The ninth nested underlying error code" }
+                                    },
+                                    "additionalProperties": false
+                                },
+                                "clear_bookmark_database_status": {
+                                    "type": "string",
+                                    "description": "Final status of the clear_bookmark_database action.",
+                                    "enum": ["SUCCESS", "FAILURE"]
+                                },
+                                "clear_bookmark_database_latency_ms": {
+                                    "type": "integer",
+                                    "description": "Duration from start of the action to its end state (in ms). Rounded to 10ms precision, capped at 10000ms (10 seconds)."
+                                },
+                                "clear_bookmark_database_error": {
+                                    "type": "object",
+                                    "description": "Per-action error details for a single data clearing action. Mirrors the shared error block but is keyed by `description` rather than `error_description`.",
+                                    "properties": {
+                                        "domain": { "type": "string", "description": "The top level error domain" },
+                                        "code": { "type": "integer", "description": "The top level error code" },
+                                        "description": { "type": "string", "description": "Additional error description" },
+                                        "underlying_domain": { "type": "string", "description": "The underlying error domain" },
+                                        "underlying_code": { "type": "integer", "description": "The underlying error code" },
+                                        "underlying_domain2": {
+                                            "type": "string",
+                                            "description": "The second nested underlying error domain"
+                                        },
+                                        "underlying_code2": { "type": "integer", "description": "The second nested underlying error code" },
+                                        "underlying_domain3": {
+                                            "type": "string",
+                                            "description": "The third nested underlying error domain"
+                                        },
+                                        "underlying_code3": { "type": "integer", "description": "The third nested underlying error code" },
+                                        "underlying_domain4": {
+                                            "type": "string",
+                                            "description": "The fourth nested underlying error domain"
+                                        },
+                                        "underlying_code4": { "type": "integer", "description": "The fourth nested underlying error code" },
+                                        "underlying_domain5": {
+                                            "type": "string",
+                                            "description": "The fifth nested underlying error domain"
+                                        },
+                                        "underlying_code5": { "type": "integer", "description": "The fifth nested underlying error code" },
+                                        "underlying_domain6": {
+                                            "type": "string",
+                                            "description": "The sixth nested underlying error domain"
+                                        },
+                                        "underlying_code6": { "type": "integer", "description": "The sixth nested underlying error code" },
+                                        "underlying_domain7": {
+                                            "type": "string",
+                                            "description": "The seventh nested underlying error domain"
+                                        },
+                                        "underlying_code7": {
+                                            "type": "integer",
+                                            "description": "The seventh nested underlying error code"
+                                        },
+                                        "underlying_domain8": {
+                                            "type": "string",
+                                            "description": "The eighth nested underlying error domain"
+                                        },
+                                        "underlying_code8": { "type": "integer", "description": "The eighth nested underlying error code" },
+                                        "underlying_domain9": {
+                                            "type": "string",
+                                            "description": "The ninth nested underlying error domain"
+                                        },
+                                        "underlying_code9": { "type": "integer", "description": "The ninth nested underlying error code" }
+                                    },
+                                    "additionalProperties": false
+                                },
+                                "forget_text_zoom_status": {
+                                    "type": "string",
+                                    "description": "Final status of the forget_text_zoom action.",
+                                    "enum": ["SUCCESS", "FAILURE"]
+                                },
+                                "forget_text_zoom_latency_ms": {
+                                    "type": "integer",
+                                    "description": "Duration from start of the action to its end state (in ms). Rounded to 10ms precision, capped at 10000ms (10 seconds)."
+                                },
+                                "forget_text_zoom_error": {
+                                    "type": "object",
+                                    "description": "Per-action error details for a single data clearing action. Mirrors the shared error block but is keyed by `description` rather than `error_description`.",
+                                    "properties": {
+                                        "domain": { "type": "string", "description": "The top level error domain" },
+                                        "code": { "type": "integer", "description": "The top level error code" },
+                                        "description": { "type": "string", "description": "Additional error description" },
+                                        "underlying_domain": { "type": "string", "description": "The underlying error domain" },
+                                        "underlying_code": { "type": "integer", "description": "The underlying error code" },
+                                        "underlying_domain2": {
+                                            "type": "string",
+                                            "description": "The second nested underlying error domain"
+                                        },
+                                        "underlying_code2": { "type": "integer", "description": "The second nested underlying error code" },
+                                        "underlying_domain3": {
+                                            "type": "string",
+                                            "description": "The third nested underlying error domain"
+                                        },
+                                        "underlying_code3": { "type": "integer", "description": "The third nested underlying error code" },
+                                        "underlying_domain4": {
+                                            "type": "string",
+                                            "description": "The fourth nested underlying error domain"
+                                        },
+                                        "underlying_code4": { "type": "integer", "description": "The fourth nested underlying error code" },
+                                        "underlying_domain5": {
+                                            "type": "string",
+                                            "description": "The fifth nested underlying error domain"
+                                        },
+                                        "underlying_code5": { "type": "integer", "description": "The fifth nested underlying error code" },
+                                        "underlying_domain6": {
+                                            "type": "string",
+                                            "description": "The sixth nested underlying error domain"
+                                        },
+                                        "underlying_code6": { "type": "integer", "description": "The sixth nested underlying error code" },
+                                        "underlying_domain7": {
+                                            "type": "string",
+                                            "description": "The seventh nested underlying error domain"
+                                        },
+                                        "underlying_code7": {
+                                            "type": "integer",
+                                            "description": "The seventh nested underlying error code"
+                                        },
+                                        "underlying_domain8": {
+                                            "type": "string",
+                                            "description": "The eighth nested underlying error domain"
+                                        },
+                                        "underlying_code8": { "type": "integer", "description": "The eighth nested underlying error code" },
+                                        "underlying_domain9": {
+                                            "type": "string",
+                                            "description": "The ninth nested underlying error domain"
+                                        },
+                                        "underlying_code9": { "type": "integer", "description": "The ninth nested underlying error code" }
+                                    },
+                                    "additionalProperties": false
+                                },
+                                "clear_privacy_stats_status": {
+                                    "type": "string",
+                                    "description": "Final status of the clear_privacy_stats action.",
+                                    "enum": ["SUCCESS", "FAILURE"]
+                                },
+                                "clear_privacy_stats_latency_ms": {
+                                    "type": "integer",
+                                    "description": "Duration from start of the action to its end state (in ms). Rounded to 10ms precision, capped at 10000ms (10 seconds)."
+                                },
+                                "clear_privacy_stats_error": {
+                                    "type": "object",
+                                    "description": "Per-action error details for a single data clearing action. Mirrors the shared error block but is keyed by `description` rather than `error_description`.",
+                                    "properties": {
+                                        "domain": { "type": "string", "description": "The top level error domain" },
+                                        "code": { "type": "integer", "description": "The top level error code" },
+                                        "description": { "type": "string", "description": "Additional error description" },
+                                        "underlying_domain": { "type": "string", "description": "The underlying error domain" },
+                                        "underlying_code": { "type": "integer", "description": "The underlying error code" },
+                                        "underlying_domain2": {
+                                            "type": "string",
+                                            "description": "The second nested underlying error domain"
+                                        },
+                                        "underlying_code2": { "type": "integer", "description": "The second nested underlying error code" },
+                                        "underlying_domain3": {
+                                            "type": "string",
+                                            "description": "The third nested underlying error domain"
+                                        },
+                                        "underlying_code3": { "type": "integer", "description": "The third nested underlying error code" },
+                                        "underlying_domain4": {
+                                            "type": "string",
+                                            "description": "The fourth nested underlying error domain"
+                                        },
+                                        "underlying_code4": { "type": "integer", "description": "The fourth nested underlying error code" },
+                                        "underlying_domain5": {
+                                            "type": "string",
+                                            "description": "The fifth nested underlying error domain"
+                                        },
+                                        "underlying_code5": { "type": "integer", "description": "The fifth nested underlying error code" },
+                                        "underlying_domain6": {
+                                            "type": "string",
+                                            "description": "The sixth nested underlying error domain"
+                                        },
+                                        "underlying_code6": { "type": "integer", "description": "The sixth nested underlying error code" },
+                                        "underlying_domain7": {
+                                            "type": "string",
+                                            "description": "The seventh nested underlying error domain"
+                                        },
+                                        "underlying_code7": {
+                                            "type": "integer",
+                                            "description": "The seventh nested underlying error code"
+                                        },
+                                        "underlying_domain8": {
+                                            "type": "string",
+                                            "description": "The eighth nested underlying error domain"
+                                        },
+                                        "underlying_code8": { "type": "integer", "description": "The eighth nested underlying error code" },
+                                        "underlying_domain9": {
+                                            "type": "string",
+                                            "description": "The ninth nested underlying error domain"
+                                        },
+                                        "underlying_code9": { "type": "integer", "description": "The ninth nested underlying error code" }
+                                    },
+                                    "additionalProperties": false
+                                },
+                                "clear_url_caches_status": {
+                                    "type": "string",
+                                    "description": "Final status of the clear_url_caches action.",
+                                    "enum": ["SUCCESS", "FAILURE"]
+                                },
+                                "clear_url_caches_latency_ms": {
+                                    "type": "integer",
+                                    "description": "Duration from start of the action to its end state (in ms). Rounded to 10ms precision, capped at 10000ms (10 seconds)."
+                                },
+                                "clear_url_caches_error": {
+                                    "type": "object",
+                                    "description": "Per-action error details for a single data clearing action. Mirrors the shared error block but is keyed by `description` rather than `error_description`.",
+                                    "properties": {
+                                        "domain": { "type": "string", "description": "The top level error domain" },
+                                        "code": { "type": "integer", "description": "The top level error code" },
+                                        "description": { "type": "string", "description": "Additional error description" },
+                                        "underlying_domain": { "type": "string", "description": "The underlying error domain" },
+                                        "underlying_code": { "type": "integer", "description": "The underlying error code" },
+                                        "underlying_domain2": {
+                                            "type": "string",
+                                            "description": "The second nested underlying error domain"
+                                        },
+                                        "underlying_code2": { "type": "integer", "description": "The second nested underlying error code" },
+                                        "underlying_domain3": {
+                                            "type": "string",
+                                            "description": "The third nested underlying error domain"
+                                        },
+                                        "underlying_code3": { "type": "integer", "description": "The third nested underlying error code" },
+                                        "underlying_domain4": {
+                                            "type": "string",
+                                            "description": "The fourth nested underlying error domain"
+                                        },
+                                        "underlying_code4": { "type": "integer", "description": "The fourth nested underlying error code" },
+                                        "underlying_domain5": {
+                                            "type": "string",
+                                            "description": "The fifth nested underlying error domain"
+                                        },
+                                        "underlying_code5": { "type": "integer", "description": "The fifth nested underlying error code" },
+                                        "underlying_domain6": {
+                                            "type": "string",
+                                            "description": "The sixth nested underlying error domain"
+                                        },
+                                        "underlying_code6": { "type": "integer", "description": "The sixth nested underlying error code" },
+                                        "underlying_domain7": {
+                                            "type": "string",
+                                            "description": "The seventh nested underlying error domain"
+                                        },
+                                        "underlying_code7": {
+                                            "type": "integer",
+                                            "description": "The seventh nested underlying error code"
+                                        },
+                                        "underlying_domain8": {
+                                            "type": "string",
+                                            "description": "The eighth nested underlying error domain"
+                                        },
+                                        "underlying_code8": { "type": "integer", "description": "The eighth nested underlying error code" },
+                                        "underlying_domain9": {
+                                            "type": "string",
+                                            "description": "The ninth nested underlying error domain"
+                                        },
+                                        "underlying_code9": { "type": "integer", "description": "The ninth nested underlying error code" }
+                                    },
+                                    "additionalProperties": false
+                                },
+                                "clear_daxDialogs_held_URL_data_status": {
+                                    "type": "string",
+                                    "description": "Final status of the clear_daxDialogs_held_URL_data action.",
+                                    "enum": ["SUCCESS", "FAILURE"]
+                                },
+                                "clear_daxDialogs_held_URL_data_latency_ms": {
+                                    "type": "integer",
+                                    "description": "Duration from start of the action to its end state (in ms). Rounded to 10ms precision, capped at 10000ms (10 seconds)."
+                                },
+                                "clear_daxDialogs_held_URL_data_error": {
+                                    "type": "object",
+                                    "description": "Per-action error details for a single data clearing action. Mirrors the shared error block but is keyed by `description` rather than `error_description`.",
+                                    "properties": {
+                                        "domain": { "type": "string", "description": "The top level error domain" },
+                                        "code": { "type": "integer", "description": "The top level error code" },
+                                        "description": { "type": "string", "description": "Additional error description" },
+                                        "underlying_domain": { "type": "string", "description": "The underlying error domain" },
+                                        "underlying_code": { "type": "integer", "description": "The underlying error code" },
+                                        "underlying_domain2": {
+                                            "type": "string",
+                                            "description": "The second nested underlying error domain"
+                                        },
+                                        "underlying_code2": { "type": "integer", "description": "The second nested underlying error code" },
+                                        "underlying_domain3": {
+                                            "type": "string",
+                                            "description": "The third nested underlying error domain"
+                                        },
+                                        "underlying_code3": { "type": "integer", "description": "The third nested underlying error code" },
+                                        "underlying_domain4": {
+                                            "type": "string",
+                                            "description": "The fourth nested underlying error domain"
+                                        },
+                                        "underlying_code4": { "type": "integer", "description": "The fourth nested underlying error code" },
+                                        "underlying_domain5": {
+                                            "type": "string",
+                                            "description": "The fifth nested underlying error domain"
+                                        },
+                                        "underlying_code5": { "type": "integer", "description": "The fifth nested underlying error code" },
+                                        "underlying_domain6": {
+                                            "type": "string",
+                                            "description": "The sixth nested underlying error domain"
+                                        },
+                                        "underlying_code6": { "type": "integer", "description": "The sixth nested underlying error code" },
+                                        "underlying_domain7": {
+                                            "type": "string",
+                                            "description": "The seventh nested underlying error domain"
+                                        },
+                                        "underlying_code7": {
+                                            "type": "integer",
+                                            "description": "The seventh nested underlying error code"
+                                        },
+                                        "underlying_domain8": {
+                                            "type": "string",
+                                            "description": "The eighth nested underlying error domain"
+                                        },
+                                        "underlying_code8": { "type": "integer", "description": "The eighth nested underlying error code" },
+                                        "underlying_domain9": {
+                                            "type": "string",
+                                            "description": "The ninth nested underlying error domain"
+                                        },
+                                        "underlying_code9": { "type": "integer", "description": "The ninth nested underlying error code" }
+                                    },
+                                    "additionalProperties": false
+                                },
+                                "delete_contextual_aiChat_status": {
+                                    "type": "string",
+                                    "description": "Final status of the delete_contextual_aiChat action.",
+                                    "enum": ["SUCCESS", "FAILURE"]
+                                },
+                                "delete_contextual_aiChat_latency_ms": {
+                                    "type": "integer",
+                                    "description": "Duration from start of the action to its end state (in ms). Rounded to 10ms precision, capped at 10000ms (10 seconds)."
+                                },
+                                "delete_contextual_aiChat_error": {
+                                    "type": "object",
+                                    "description": "Per-action error details for a single data clearing action. Mirrors the shared error block but is keyed by `description` rather than `error_description`.",
+                                    "properties": {
+                                        "domain": { "type": "string", "description": "The top level error domain" },
+                                        "code": { "type": "integer", "description": "The top level error code" },
+                                        "description": { "type": "string", "description": "Additional error description" },
+                                        "underlying_domain": { "type": "string", "description": "The underlying error domain" },
+                                        "underlying_code": { "type": "integer", "description": "The underlying error code" },
+                                        "underlying_domain2": {
+                                            "type": "string",
+                                            "description": "The second nested underlying error domain"
+                                        },
+                                        "underlying_code2": { "type": "integer", "description": "The second nested underlying error code" },
+                                        "underlying_domain3": {
+                                            "type": "string",
+                                            "description": "The third nested underlying error domain"
+                                        },
+                                        "underlying_code3": { "type": "integer", "description": "The third nested underlying error code" },
+                                        "underlying_domain4": {
+                                            "type": "string",
+                                            "description": "The fourth nested underlying error domain"
+                                        },
+                                        "underlying_code4": { "type": "integer", "description": "The fourth nested underlying error code" },
+                                        "underlying_domain5": {
+                                            "type": "string",
+                                            "description": "The fifth nested underlying error domain"
+                                        },
+                                        "underlying_code5": { "type": "integer", "description": "The fifth nested underlying error code" },
+                                        "underlying_domain6": {
+                                            "type": "string",
+                                            "description": "The sixth nested underlying error domain"
+                                        },
+                                        "underlying_code6": { "type": "integer", "description": "The sixth nested underlying error code" },
+                                        "underlying_domain7": {
+                                            "type": "string",
+                                            "description": "The seventh nested underlying error domain"
+                                        },
+                                        "underlying_code7": {
+                                            "type": "integer",
+                                            "description": "The seventh nested underlying error code"
+                                        },
+                                        "underlying_domain8": {
+                                            "type": "string",
+                                            "description": "The eighth nested underlying error domain"
+                                        },
+                                        "underlying_code8": { "type": "integer", "description": "The eighth nested underlying error code" },
+                                        "underlying_domain9": {
+                                            "type": "string",
+                                            "description": "The ninth nested underlying error domain"
+                                        },
+                                        "underlying_code9": { "type": "integer", "description": "The ninth nested underlying error code" }
+                                    },
+                                    "additionalProperties": false
+                                },
+                                "clear_website_data_fire_mode_status": {
+                                    "type": "string",
+                                    "description": "Final status of the clear_website_data_fire_mode action.",
+                                    "enum": ["SUCCESS", "FAILURE"]
+                                },
+                                "clear_website_data_fire_mode_latency_ms": {
+                                    "type": "integer",
+                                    "description": "Duration from start of the action to its end state (in ms). Rounded to 10ms precision, capped at 10000ms (10 seconds)."
+                                },
+                                "clear_website_data_fire_mode_error": {
+                                    "type": "object",
+                                    "description": "Per-action error details for a single data clearing action. Mirrors the shared error block but is keyed by `description` rather than `error_description`.",
+                                    "properties": {
+                                        "domain": { "type": "string", "description": "The top level error domain" },
+                                        "code": { "type": "integer", "description": "The top level error code" },
+                                        "description": { "type": "string", "description": "Additional error description" },
+                                        "underlying_domain": { "type": "string", "description": "The underlying error domain" },
+                                        "underlying_code": { "type": "integer", "description": "The underlying error code" },
+                                        "underlying_domain2": {
+                                            "type": "string",
+                                            "description": "The second nested underlying error domain"
+                                        },
+                                        "underlying_code2": { "type": "integer", "description": "The second nested underlying error code" },
+                                        "underlying_domain3": {
+                                            "type": "string",
+                                            "description": "The third nested underlying error domain"
+                                        },
+                                        "underlying_code3": { "type": "integer", "description": "The third nested underlying error code" },
+                                        "underlying_domain4": {
+                                            "type": "string",
+                                            "description": "The fourth nested underlying error domain"
+                                        },
+                                        "underlying_code4": { "type": "integer", "description": "The fourth nested underlying error code" },
+                                        "underlying_domain5": {
+                                            "type": "string",
+                                            "description": "The fifth nested underlying error domain"
+                                        },
+                                        "underlying_code5": { "type": "integer", "description": "The fifth nested underlying error code" },
+                                        "underlying_domain6": {
+                                            "type": "string",
+                                            "description": "The sixth nested underlying error domain"
+                                        },
+                                        "underlying_code6": { "type": "integer", "description": "The sixth nested underlying error code" },
+                                        "underlying_domain7": {
+                                            "type": "string",
+                                            "description": "The seventh nested underlying error domain"
+                                        },
+                                        "underlying_code7": {
+                                            "type": "integer",
+                                            "description": "The seventh nested underlying error code"
+                                        },
+                                        "underlying_domain8": {
+                                            "type": "string",
+                                            "description": "The eighth nested underlying error domain"
+                                        },
+                                        "underlying_code8": { "type": "integer", "description": "The eighth nested underlying error code" },
+                                        "underlying_domain9": {
+                                            "type": "string",
+                                            "description": "The ninth nested underlying error domain"
+                                        },
+                                        "underlying_code9": { "type": "integer", "description": "The ninth nested underlying error code" }
+                                    },
+                                    "additionalProperties": false
+                                },
+                                "clear_autoconsent_management_cache_fire_mode_status": {
+                                    "type": "string",
+                                    "description": "Final status of the clear_autoconsent_management_cache_fire_mode action.",
+                                    "enum": ["SUCCESS", "FAILURE"]
+                                },
+                                "clear_autoconsent_management_cache_fire_mode_latency_ms": {
+                                    "type": "integer",
+                                    "description": "Duration from start of the action to its end state (in ms). Rounded to 10ms precision, capped at 10000ms (10 seconds)."
+                                },
+                                "clear_autoconsent_management_cache_fire_mode_error": {
+                                    "type": "object",
+                                    "description": "Per-action error details for a single data clearing action. Mirrors the shared error block but is keyed by `description` rather than `error_description`.",
+                                    "properties": {
+                                        "domain": { "type": "string", "description": "The top level error domain" },
+                                        "code": { "type": "integer", "description": "The top level error code" },
+                                        "description": { "type": "string", "description": "Additional error description" },
+                                        "underlying_domain": { "type": "string", "description": "The underlying error domain" },
+                                        "underlying_code": { "type": "integer", "description": "The underlying error code" },
+                                        "underlying_domain2": {
+                                            "type": "string",
+                                            "description": "The second nested underlying error domain"
+                                        },
+                                        "underlying_code2": { "type": "integer", "description": "The second nested underlying error code" },
+                                        "underlying_domain3": {
+                                            "type": "string",
+                                            "description": "The third nested underlying error domain"
+                                        },
+                                        "underlying_code3": { "type": "integer", "description": "The third nested underlying error code" },
+                                        "underlying_domain4": {
+                                            "type": "string",
+                                            "description": "The fourth nested underlying error domain"
+                                        },
+                                        "underlying_code4": { "type": "integer", "description": "The fourth nested underlying error code" },
+                                        "underlying_domain5": {
+                                            "type": "string",
+                                            "description": "The fifth nested underlying error domain"
+                                        },
+                                        "underlying_code5": { "type": "integer", "description": "The fifth nested underlying error code" },
+                                        "underlying_domain6": {
+                                            "type": "string",
+                                            "description": "The sixth nested underlying error domain"
+                                        },
+                                        "underlying_code6": { "type": "integer", "description": "The sixth nested underlying error code" },
+                                        "underlying_domain7": {
+                                            "type": "string",
+                                            "description": "The seventh nested underlying error domain"
+                                        },
+                                        "underlying_code7": {
+                                            "type": "integer",
+                                            "description": "The seventh nested underlying error code"
+                                        },
+                                        "underlying_domain8": {
+                                            "type": "string",
+                                            "description": "The eighth nested underlying error domain"
+                                        },
+                                        "underlying_code8": { "type": "integer", "description": "The eighth nested underlying error code" },
+                                        "underlying_domain9": {
+                                            "type": "string",
+                                            "description": "The ninth nested underlying error domain"
+                                        },
+                                        "underlying_code9": { "type": "integer", "description": "The ninth nested underlying error code" }
+                                    },
+                                    "additionalProperties": false
+                                },
+                                "forget_text_zoom_fire_mode_status": {
+                                    "type": "string",
+                                    "description": "Final status of the forget_text_zoom_fire_mode action.",
+                                    "enum": ["SUCCESS", "FAILURE"]
+                                },
+                                "forget_text_zoom_fire_mode_latency_ms": {
+                                    "type": "integer",
+                                    "description": "Duration from start of the action to its end state (in ms). Rounded to 10ms precision, capped at 10000ms (10 seconds)."
+                                },
+                                "forget_text_zoom_fire_mode_error": {
+                                    "type": "object",
+                                    "description": "Per-action error details for a single data clearing action. Mirrors the shared error block but is keyed by `description` rather than `error_description`.",
+                                    "properties": {
+                                        "domain": { "type": "string", "description": "The top level error domain" },
+                                        "code": { "type": "integer", "description": "The top level error code" },
+                                        "description": { "type": "string", "description": "Additional error description" },
+                                        "underlying_domain": { "type": "string", "description": "The underlying error domain" },
+                                        "underlying_code": { "type": "integer", "description": "The underlying error code" },
+                                        "underlying_domain2": {
+                                            "type": "string",
+                                            "description": "The second nested underlying error domain"
+                                        },
+                                        "underlying_code2": { "type": "integer", "description": "The second nested underlying error code" },
+                                        "underlying_domain3": {
+                                            "type": "string",
+                                            "description": "The third nested underlying error domain"
+                                        },
+                                        "underlying_code3": { "type": "integer", "description": "The third nested underlying error code" },
+                                        "underlying_domain4": {
+                                            "type": "string",
+                                            "description": "The fourth nested underlying error domain"
+                                        },
+                                        "underlying_code4": { "type": "integer", "description": "The fourth nested underlying error code" },
+                                        "underlying_domain5": {
+                                            "type": "string",
+                                            "description": "The fifth nested underlying error domain"
+                                        },
+                                        "underlying_code5": { "type": "integer", "description": "The fifth nested underlying error code" },
+                                        "underlying_domain6": {
+                                            "type": "string",
+                                            "description": "The sixth nested underlying error domain"
+                                        },
+                                        "underlying_code6": { "type": "integer", "description": "The sixth nested underlying error code" },
+                                        "underlying_domain7": {
+                                            "type": "string",
+                                            "description": "The seventh nested underlying error domain"
+                                        },
+                                        "underlying_code7": {
+                                            "type": "integer",
+                                            "description": "The seventh nested underlying error code"
+                                        },
+                                        "underlying_domain8": {
+                                            "type": "string",
+                                            "description": "The eighth nested underlying error domain"
+                                        },
+                                        "underlying_code8": { "type": "integer", "description": "The eighth nested underlying error code" },
+                                        "underlying_domain9": {
+                                            "type": "string",
+                                            "description": "The ninth nested underlying error domain"
+                                        },
+                                        "underlying_code9": { "type": "integer", "description": "The ninth nested underlying error code" }
+                                    },
+                                    "additionalProperties": false
+                                },
+                                "clear_website_data": {
+                                    "type": "object",
+                                    "description": "Per-sub-action results for website-data clearing (status, latency, and error for each website-data step).",
+                                    "properties": {
+                                        "clear_safely_removable_website_data_status": {
+                                            "type": "string",
+                                            "description": "Final status of the clear_website_data.clear_safely_removable_website_data action.",
+                                            "enum": ["SUCCESS", "FAILURE"]
+                                        },
+                                        "clear_safely_removable_website_data_latency_ms": {
+                                            "type": "integer",
+                                            "description": "Duration from start of the action to its end state (in ms). Rounded to 10ms precision, capped at 10000ms (10 seconds)."
+                                        },
+                                        "clear_safely_removable_website_data_error": {
+                                            "type": "object",
+                                            "description": "Per-action error details for a single data clearing action. Mirrors the shared error block but is keyed by `description` rather than `error_description`.",
+                                            "properties": {
+                                                "domain": { "type": "string", "description": "The top level error domain" },
+                                                "code": { "type": "integer", "description": "The top level error code" },
+                                                "description": { "type": "string", "description": "Additional error description" },
+                                                "underlying_domain": { "type": "string", "description": "The underlying error domain" },
+                                                "underlying_code": { "type": "integer", "description": "The underlying error code" },
+                                                "underlying_domain2": {
+                                                    "type": "string",
+                                                    "description": "The second nested underlying error domain"
+                                                },
+                                                "underlying_code2": {
+                                                    "type": "integer",
+                                                    "description": "The second nested underlying error code"
+                                                },
+                                                "underlying_domain3": {
+                                                    "type": "string",
+                                                    "description": "The third nested underlying error domain"
+                                                },
+                                                "underlying_code3": {
+                                                    "type": "integer",
+                                                    "description": "The third nested underlying error code"
+                                                },
+                                                "underlying_domain4": {
+                                                    "type": "string",
+                                                    "description": "The fourth nested underlying error domain"
+                                                },
+                                                "underlying_code4": {
+                                                    "type": "integer",
+                                                    "description": "The fourth nested underlying error code"
+                                                },
+                                                "underlying_domain5": {
+                                                    "type": "string",
+                                                    "description": "The fifth nested underlying error domain"
+                                                },
+                                                "underlying_code5": {
+                                                    "type": "integer",
+                                                    "description": "The fifth nested underlying error code"
+                                                },
+                                                "underlying_domain6": {
+                                                    "type": "string",
+                                                    "description": "The sixth nested underlying error domain"
+                                                },
+                                                "underlying_code6": {
+                                                    "type": "integer",
+                                                    "description": "The sixth nested underlying error code"
+                                                },
+                                                "underlying_domain7": {
+                                                    "type": "string",
+                                                    "description": "The seventh nested underlying error domain"
+                                                },
+                                                "underlying_code7": {
+                                                    "type": "integer",
+                                                    "description": "The seventh nested underlying error code"
+                                                },
+                                                "underlying_domain8": {
+                                                    "type": "string",
+                                                    "description": "The eighth nested underlying error domain"
+                                                },
+                                                "underlying_code8": {
+                                                    "type": "integer",
+                                                    "description": "The eighth nested underlying error code"
+                                                },
+                                                "underlying_domain9": {
+                                                    "type": "string",
+                                                    "description": "The ninth nested underlying error domain"
+                                                },
+                                                "underlying_code9": {
+                                                    "type": "integer",
+                                                    "description": "The ninth nested underlying error code"
+                                                }
+                                            },
+                                            "additionalProperties": false
+                                        },
+                                        "clear_fireproofable_data_for_nonFireproof_domains_status": {
+                                            "type": "string",
+                                            "description": "Final status of the clear_website_data.clear_fireproofable_data_for_nonFireproof_domains action.",
+                                            "enum": ["SUCCESS", "FAILURE"]
+                                        },
+                                        "clear_fireproofable_data_for_nonFireproof_domains_latency_ms": {
+                                            "type": "integer",
+                                            "description": "Duration from start of the action to its end state (in ms). Rounded to 10ms precision, capped at 10000ms (10 seconds)."
+                                        },
+                                        "clear_fireproofable_data_for_nonFireproof_domains_error": {
+                                            "type": "object",
+                                            "description": "Per-action error details for a single data clearing action. Mirrors the shared error block but is keyed by `description` rather than `error_description`.",
+                                            "properties": {
+                                                "domain": { "type": "string", "description": "The top level error domain" },
+                                                "code": { "type": "integer", "description": "The top level error code" },
+                                                "description": { "type": "string", "description": "Additional error description" },
+                                                "underlying_domain": { "type": "string", "description": "The underlying error domain" },
+                                                "underlying_code": { "type": "integer", "description": "The underlying error code" },
+                                                "underlying_domain2": {
+                                                    "type": "string",
+                                                    "description": "The second nested underlying error domain"
+                                                },
+                                                "underlying_code2": {
+                                                    "type": "integer",
+                                                    "description": "The second nested underlying error code"
+                                                },
+                                                "underlying_domain3": {
+                                                    "type": "string",
+                                                    "description": "The third nested underlying error domain"
+                                                },
+                                                "underlying_code3": {
+                                                    "type": "integer",
+                                                    "description": "The third nested underlying error code"
+                                                },
+                                                "underlying_domain4": {
+                                                    "type": "string",
+                                                    "description": "The fourth nested underlying error domain"
+                                                },
+                                                "underlying_code4": {
+                                                    "type": "integer",
+                                                    "description": "The fourth nested underlying error code"
+                                                },
+                                                "underlying_domain5": {
+                                                    "type": "string",
+                                                    "description": "The fifth nested underlying error domain"
+                                                },
+                                                "underlying_code5": {
+                                                    "type": "integer",
+                                                    "description": "The fifth nested underlying error code"
+                                                },
+                                                "underlying_domain6": {
+                                                    "type": "string",
+                                                    "description": "The sixth nested underlying error domain"
+                                                },
+                                                "underlying_code6": {
+                                                    "type": "integer",
+                                                    "description": "The sixth nested underlying error code"
+                                                },
+                                                "underlying_domain7": {
+                                                    "type": "string",
+                                                    "description": "The seventh nested underlying error domain"
+                                                },
+                                                "underlying_code7": {
+                                                    "type": "integer",
+                                                    "description": "The seventh nested underlying error code"
+                                                },
+                                                "underlying_domain8": {
+                                                    "type": "string",
+                                                    "description": "The eighth nested underlying error domain"
+                                                },
+                                                "underlying_code8": {
+                                                    "type": "integer",
+                                                    "description": "The eighth nested underlying error code"
+                                                },
+                                                "underlying_domain9": {
+                                                    "type": "string",
+                                                    "description": "The ninth nested underlying error domain"
+                                                },
+                                                "underlying_code9": {
+                                                    "type": "integer",
+                                                    "description": "The ninth nested underlying error code"
+                                                }
+                                            },
+                                            "additionalProperties": false
+                                        },
+                                        "clear_cookies_for_nonFireproofed_domains_status": {
+                                            "type": "string",
+                                            "description": "Final status of the clear_website_data.clear_cookies_for_nonFireproofed_domains action.",
+                                            "enum": ["SUCCESS", "FAILURE"]
+                                        },
+                                        "clear_cookies_for_nonFireproofed_domains_latency_ms": {
+                                            "type": "integer",
+                                            "description": "Duration from start of the action to its end state (in ms). Rounded to 10ms precision, capped at 10000ms (10 seconds)."
+                                        },
+                                        "clear_cookies_for_nonFireproofed_domains_error": {
+                                            "type": "object",
+                                            "description": "Per-action error details for a single data clearing action. Mirrors the shared error block but is keyed by `description` rather than `error_description`.",
+                                            "properties": {
+                                                "domain": { "type": "string", "description": "The top level error domain" },
+                                                "code": { "type": "integer", "description": "The top level error code" },
+                                                "description": { "type": "string", "description": "Additional error description" },
+                                                "underlying_domain": { "type": "string", "description": "The underlying error domain" },
+                                                "underlying_code": { "type": "integer", "description": "The underlying error code" },
+                                                "underlying_domain2": {
+                                                    "type": "string",
+                                                    "description": "The second nested underlying error domain"
+                                                },
+                                                "underlying_code2": {
+                                                    "type": "integer",
+                                                    "description": "The second nested underlying error code"
+                                                },
+                                                "underlying_domain3": {
+                                                    "type": "string",
+                                                    "description": "The third nested underlying error domain"
+                                                },
+                                                "underlying_code3": {
+                                                    "type": "integer",
+                                                    "description": "The third nested underlying error code"
+                                                },
+                                                "underlying_domain4": {
+                                                    "type": "string",
+                                                    "description": "The fourth nested underlying error domain"
+                                                },
+                                                "underlying_code4": {
+                                                    "type": "integer",
+                                                    "description": "The fourth nested underlying error code"
+                                                },
+                                                "underlying_domain5": {
+                                                    "type": "string",
+                                                    "description": "The fifth nested underlying error domain"
+                                                },
+                                                "underlying_code5": {
+                                                    "type": "integer",
+                                                    "description": "The fifth nested underlying error code"
+                                                },
+                                                "underlying_domain6": {
+                                                    "type": "string",
+                                                    "description": "The sixth nested underlying error domain"
+                                                },
+                                                "underlying_code6": {
+                                                    "type": "integer",
+                                                    "description": "The sixth nested underlying error code"
+                                                },
+                                                "underlying_domain7": {
+                                                    "type": "string",
+                                                    "description": "The seventh nested underlying error domain"
+                                                },
+                                                "underlying_code7": {
+                                                    "type": "integer",
+                                                    "description": "The seventh nested underlying error code"
+                                                },
+                                                "underlying_domain8": {
+                                                    "type": "string",
+                                                    "description": "The eighth nested underlying error domain"
+                                                },
+                                                "underlying_code8": {
+                                                    "type": "integer",
+                                                    "description": "The eighth nested underlying error code"
+                                                },
+                                                "underlying_domain9": {
+                                                    "type": "string",
+                                                    "description": "The ninth nested underlying error domain"
+                                                },
+                                                "underlying_code9": {
+                                                    "type": "integer",
+                                                    "description": "The ninth nested underlying error code"
+                                                }
+                                            },
+                                            "additionalProperties": false
+                                        },
+                                        "remove_observations_data_status": {
+                                            "type": "string",
+                                            "description": "Final status of the clear_website_data.remove_observations_data action.",
+                                            "enum": ["SUCCESS", "FAILURE"]
+                                        },
+                                        "remove_observations_data_latency_ms": {
+                                            "type": "integer",
+                                            "description": "Duration from start of the action to its end state (in ms). Rounded to 10ms precision, capped at 10000ms (10 seconds)."
+                                        },
+                                        "remove_observations_data_error": {
+                                            "type": "object",
+                                            "description": "Per-action error details for a single data clearing action. Mirrors the shared error block but is keyed by `description` rather than `error_description`.",
+                                            "properties": {
+                                                "domain": { "type": "string", "description": "The top level error domain" },
+                                                "code": { "type": "integer", "description": "The top level error code" },
+                                                "description": { "type": "string", "description": "Additional error description" },
+                                                "underlying_domain": { "type": "string", "description": "The underlying error domain" },
+                                                "underlying_code": { "type": "integer", "description": "The underlying error code" },
+                                                "underlying_domain2": {
+                                                    "type": "string",
+                                                    "description": "The second nested underlying error domain"
+                                                },
+                                                "underlying_code2": {
+                                                    "type": "integer",
+                                                    "description": "The second nested underlying error code"
+                                                },
+                                                "underlying_domain3": {
+                                                    "type": "string",
+                                                    "description": "The third nested underlying error domain"
+                                                },
+                                                "underlying_code3": {
+                                                    "type": "integer",
+                                                    "description": "The third nested underlying error code"
+                                                },
+                                                "underlying_domain4": {
+                                                    "type": "string",
+                                                    "description": "The fourth nested underlying error domain"
+                                                },
+                                                "underlying_code4": {
+                                                    "type": "integer",
+                                                    "description": "The fourth nested underlying error code"
+                                                },
+                                                "underlying_domain5": {
+                                                    "type": "string",
+                                                    "description": "The fifth nested underlying error domain"
+                                                },
+                                                "underlying_code5": {
+                                                    "type": "integer",
+                                                    "description": "The fifth nested underlying error code"
+                                                },
+                                                "underlying_domain6": {
+                                                    "type": "string",
+                                                    "description": "The sixth nested underlying error domain"
+                                                },
+                                                "underlying_code6": {
+                                                    "type": "integer",
+                                                    "description": "The sixth nested underlying error code"
+                                                },
+                                                "underlying_domain7": {
+                                                    "type": "string",
+                                                    "description": "The seventh nested underlying error domain"
+                                                },
+                                                "underlying_code7": {
+                                                    "type": "integer",
+                                                    "description": "The seventh nested underlying error code"
+                                                },
+                                                "underlying_domain8": {
+                                                    "type": "string",
+                                                    "description": "The eighth nested underlying error domain"
+                                                },
+                                                "underlying_code8": {
+                                                    "type": "integer",
+                                                    "description": "The eighth nested underlying error code"
+                                                },
+                                                "underlying_domain9": {
+                                                    "type": "string",
+                                                    "description": "The ninth nested underlying error domain"
+                                                },
+                                                "underlying_code9": {
+                                                    "type": "integer",
+                                                    "description": "The ninth nested underlying error code"
+                                                }
+                                            },
+                                            "additionalProperties": false
+                                        },
+                                        "remove_all_containers_after_delay_status": {
+                                            "type": "string",
+                                            "description": "Final status of the clear_website_data.remove_all_containers_after_delay action.",
+                                            "enum": ["SUCCESS", "FAILURE"]
+                                        },
+                                        "remove_all_containers_after_delay_latency_ms": {
+                                            "type": "integer",
+                                            "description": "Duration from start of the action to its end state (in ms). Rounded to 10ms precision, capped at 10000ms (10 seconds)."
+                                        },
+                                        "remove_all_containers_after_delay_error": {
+                                            "type": "object",
+                                            "description": "Per-action error details for a single data clearing action. Mirrors the shared error block but is keyed by `description` rather than `error_description`.",
+                                            "properties": {
+                                                "domain": { "type": "string", "description": "The top level error domain" },
+                                                "code": { "type": "integer", "description": "The top level error code" },
+                                                "description": { "type": "string", "description": "Additional error description" },
+                                                "underlying_domain": { "type": "string", "description": "The underlying error domain" },
+                                                "underlying_code": { "type": "integer", "description": "The underlying error code" },
+                                                "underlying_domain2": {
+                                                    "type": "string",
+                                                    "description": "The second nested underlying error domain"
+                                                },
+                                                "underlying_code2": {
+                                                    "type": "integer",
+                                                    "description": "The second nested underlying error code"
+                                                },
+                                                "underlying_domain3": {
+                                                    "type": "string",
+                                                    "description": "The third nested underlying error domain"
+                                                },
+                                                "underlying_code3": {
+                                                    "type": "integer",
+                                                    "description": "The third nested underlying error code"
+                                                },
+                                                "underlying_domain4": {
+                                                    "type": "string",
+                                                    "description": "The fourth nested underlying error domain"
+                                                },
+                                                "underlying_code4": {
+                                                    "type": "integer",
+                                                    "description": "The fourth nested underlying error code"
+                                                },
+                                                "underlying_domain5": {
+                                                    "type": "string",
+                                                    "description": "The fifth nested underlying error domain"
+                                                },
+                                                "underlying_code5": {
+                                                    "type": "integer",
+                                                    "description": "The fifth nested underlying error code"
+                                                },
+                                                "underlying_domain6": {
+                                                    "type": "string",
+                                                    "description": "The sixth nested underlying error domain"
+                                                },
+                                                "underlying_code6": {
+                                                    "type": "integer",
+                                                    "description": "The sixth nested underlying error code"
+                                                },
+                                                "underlying_domain7": {
+                                                    "type": "string",
+                                                    "description": "The seventh nested underlying error domain"
+                                                },
+                                                "underlying_code7": {
+                                                    "type": "integer",
+                                                    "description": "The seventh nested underlying error code"
+                                                },
+                                                "underlying_domain8": {
+                                                    "type": "string",
+                                                    "description": "The eighth nested underlying error domain"
+                                                },
+                                                "underlying_code8": {
+                                                    "type": "integer",
+                                                    "description": "The eighth nested underlying error code"
+                                                },
+                                                "underlying_domain9": {
+                                                    "type": "string",
+                                                    "description": "The ninth nested underlying error domain"
+                                                },
+                                                "underlying_code9": {
+                                                    "type": "integer",
+                                                    "description": "The ninth nested underlying error code"
+                                                }
+                                            },
+                                            "additionalProperties": false
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "context": {
+            "type": "object",
+            "required": ["name"],
+            "additionalProperties": false,
+            "properties": { "name": { "type": "string", "description": "Context name for the event", "enum": ["funnel_default_ios"] } }
+        }
+    }
+}

@@ -16,7 +16,7 @@
 //  limitations under the License.
 //
 
-import FeatureFlags
+import FeatureFlags_macOS
 import Foundation
 import Navigation
 import PixelKit
@@ -56,7 +56,7 @@ final class NavigationPixelNavigationResponder {
         let type: WKSameDocumentNavigationType
 
         func isAnchorFollowingStatePop(_ previous: SameDocumentNavigation?) -> Bool {
-            previous?.url.isSameDocument(url) == true
+            previous?.url.equals(url, by: .sameDocument) == true
             && type == .anchorNavigation
             && previous?.type == .sessionStatePop
         }

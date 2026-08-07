@@ -20,6 +20,17 @@
 import AIChat
 import Core
 import Foundation
+import Subscription
+
+/// The UTI surface a pixel is fired from, sent as the `surface` param (`voice_tapped` reuses `source`).
+enum UnifiedToggleInputPixelSurface: String {
+    /// The address bar / omnibar (any omnibar surface that isn't the Duck.ai tab).
+    case addressBar = "address_bar"
+    /// The dedicated Duck.ai tab.
+    case duckAI = "duck_ai"
+    /// The contextual chat sheet presented over a web page.
+    case contextualChat = "contextual_chat"
+}
 
 private enum UnifiedPromptSubmittedSelectedToolPixelValue: String {
     case webSearch = "web_search"
@@ -46,6 +57,9 @@ private enum UnifiedPromptSubmittedSelectedToolPixelValue: String {
             self = .webSearch
         case .imageGeneration:
             self = .imageGeneration
+        case .customizeResponses:
+            // Not a model tool — never produced from a selected tool, so it never reports as one.
+            self = .none
         }
     }
 }
@@ -68,6 +82,7 @@ extension UTIToolsMenu.Item.Identifier {
         switch self {
         case .imageGeneration: return true
         case .webSearch: return false
+        case .customizeResponses: return false
         }
     }
 }
@@ -75,12 +90,12 @@ extension UTIToolsMenu.Item.Identifier {
 final class UnifiedToggleInputCoordinatorPixelHelper {
     private init() {}
 
-    static func fireAttachmentRemovedPixel(for attachment: UnifiedToggleInputAttachment) {
+    static func fireAttachmentRemovedPixel(for attachment: UnifiedToggleInputAttachment, surface: UnifiedToggleInputPixelSurface, firing: UTIPixelFiring = .live) {
         switch attachment {
         case .image:
-            DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputImageRemoved)
+            firing.fireDailyAndCount(.unifiedToggleInputImageRemoved, surfaceParameters(surface))
         case .file, .invalidFile:
-            DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputFileRemoved)
+            firing.fireDailyAndCount(.unifiedToggleInputFileRemoved, surfaceParameters(surface))
         }
     }
 
@@ -88,78 +103,111 @@ final class UnifiedToggleInputCoordinatorPixelHelper {
         source: SubscriptionFlowSource,
         currentTier: AIChatUserTier,
         requiredTier: AIChatModelPublicAccessTier,
-        flowType: UpsellFlowType
+        flowType: UpsellFlowType,
+        isAITabState: Bool,
+        firing: UTIPixelFiring = .live
     ) {
-        Pixel.fire(pixel: .unifiedToggleInputSubscriptionUpsellTriggered,
-                   withAdditionalParameters: [
-                    "source": source == .modelPicker ? "model_picker" : "reasoning_picker",
-                    "current_tier": currentTier.rawValue,
-                    "required_tier": requiredTier == .pro ? "pro" : "plus",
-                    "flow_type": flowType.rawValue
-                   ]
-        )
+        firing.fire(.unifiedToggleInputSubscriptionUpsellTriggered, [
+            "source": source == .modelPicker ? "model_picker" : "reasoning_picker",
+            "current_tier": currentTier.rawValue,
+            "required_tier": requiredTier == .pro ? "pro" : "plus",
+            "flow_type": flowType.rawValue,
+            AttributionParameter.origin: measurementOrigin(for: source, isAITabState: isAITabState).rawValue
+        ])
     }
 
-    static func fireToolSelectedPixel(for tool: AIChatRAGTool) {
+    static func measurementOrigin(for source: SubscriptionFlowSource, isAITabState: Bool) -> SubscriptionFunnelOrigin {
+        switch (isAITabState, source) {
+        case (true, .modelPicker):
+            return .duckAIModelPicker
+        case (true, .reasoningPicker):
+            return .duckAIReasoningPicker
+        case (false, .modelPicker):
+            return .addressBarModelPicker
+        case (false, .reasoningPicker):
+            return .addressBarReasoningPicker
+        }
+    }
+
+    static func fireToolSelectedPixel(for tool: AIChatRAGTool, surface: UnifiedToggleInputPixelSurface, firing: UTIPixelFiring = .live) {
         switch tool {
         case .imageGeneration:
-            DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputImageGenerationSelected)
+            firing.fireDailyAndCount(.unifiedToggleInputImageGenerationSelected, surfaceParameters(surface))
         case .webSearch:
-            DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputWebSearchSelected)
+            firing.fireDailyAndCount(.unifiedToggleInputWebSearchSelected, surfaceParameters(surface))
         default:
             break
         }
     }
 
-    static func fireToolDeselectedPixel(for tool: AIChatRAGTool) {
+    static func fireToolDeselectedPixel(for tool: AIChatRAGTool, surface: UnifiedToggleInputPixelSurface, firing: UTIPixelFiring = .live) {
         switch tool {
         case .imageGeneration:
-            DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputImageGenerationDeselected)
+            firing.fireDailyAndCount(.unifiedToggleInputImageGenerationDeselected, surfaceParameters(surface))
         case .webSearch:
-            DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputWebSearchDeselected)
+            firing.fireDailyAndCount(.unifiedToggleInputWebSearchDeselected, surfaceParameters(surface))
         default:
             break
         }
     }
 
     static func fireUnifiedPromptSubmittedPixel(
-        text: String,
+        hasText: Bool,
         selectedTool: AIChatRAGTool?,
         attachments: [UnifiedToggleInputAttachment],
         reasoningMode: AIChatReasoningMode?,
-        modelId: String?
+        modelId: String?,
+        surface: UnifiedToggleInputPixelSurface,
+        firing: UTIPixelFiring = .live
     ) {
         let selectedToolValue = UnifiedPromptSubmittedSelectedToolPixelValue(selectedTool: selectedTool).rawValue
-        let hasText = !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         let reasoningEffort = reasoningMode?.rawValue ?? "none"
         let modelId = modelId ?? ""
 
-        DailyPixel.fireDailyAndCount(
-            pixel: .unifiedToggleInputPromptSubmitted,
-            withAdditionalParameters: [
-                "selected_tool": selectedToolValue,
-                "model_id": modelId,
-                "reasoning_effort": reasoningEffort,
-                "has_image_attachment": hasImageAttachment(in: attachments) ? "true" : "false",
-                "has_file_attachment": hasFileAttachment(in: attachments) ? "true" : "false",
-                "has_text": hasText ? "true" : "false"
-            ]
-        )
+        firing.fireDailyAndCount(.unifiedToggleInputPromptSubmitted, [
+            "selected_tool": selectedToolValue,
+            "model_id": modelId,
+            "reasoning_effort": reasoningEffort,
+            "has_image_attachment": hasImageAttachment(in: attachments) ? "true" : "false",
+            "has_file_attachment": hasFileAttachment(in: attachments) ? "true" : "false",
+            "has_text": hasText ? "true" : "false",
+            "surface": surface.rawValue
+        ])
     }
 
-    static func fireToolSubmittedPixelIfNeeded(selectedTool: AIChatRAGTool?, attachments: [UnifiedToggleInputAttachment]) {
+    static func fireModelSelectedPixel(modelId: String, surface: UnifiedToggleInputPixelSurface, firing: UTIPixelFiring = .live) {
+        firing.fire(.unifiedToggleInputModelSelected, ["model_id": modelId, "surface": surface.rawValue])
+    }
+
+    static func fireModelPickerShownPixel(isAITabState: Bool, firing: UTIPixelFiring = .live) {
+        firing.fire(.unifiedToggleInputModelPickerShown, [
+            AttributionParameter.origin: measurementOrigin(for: .modelPicker, isAITabState: isAITabState).rawValue
+        ])
+    }
+
+    static func fireReasoningPickerShownPixel(isAITabState: Bool, firing: UTIPixelFiring = .live) {
+        firing.fire(.unifiedToggleInputReasoningEffortPickerShown, [
+            AttributionParameter.origin: measurementOrigin(for: .reasoningPicker, isAITabState: isAITabState).rawValue
+        ])
+    }
+
+    static func fireToolSubmittedPixelIfNeeded(selectedTool: AIChatRAGTool?, attachments: [UnifiedToggleInputAttachment], surface: UnifiedToggleInputPixelSurface, firing: UTIPixelFiring = .live) {
         guard let selectedTool else { return }
         switch selectedTool {
         case .imageGeneration:
-            DailyPixel.fireDailyAndCount(
-                pixel: .unifiedToggleInputImageGenerationSubmitted,
-                withAdditionalParameters: ["has_reference_image": hasImageAttachment(in: attachments) ? "true" : "false"]
-            )
+            firing.fireDailyAndCount(.unifiedToggleInputImageGenerationSubmitted, [
+                "has_reference_image": hasImageAttachment(in: attachments) ? "true" : "false",
+                "surface": surface.rawValue
+            ])
         case .webSearch:
-            DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputWebSearchSubmitted)
+            firing.fireDailyAndCount(.unifiedToggleInputWebSearchSubmitted, surfaceParameters(surface))
         default:
             break
         }
+    }
+
+    private static func surfaceParameters(_ surface: UnifiedToggleInputPixelSurface) -> [String: String] {
+        ["surface": surface.rawValue]
     }
 
     private static func hasImageAttachment(in attachments: [UnifiedToggleInputAttachment]) -> Bool {

@@ -36,6 +36,9 @@ playground.xcworkspace
 # Tracking it only produced churn. The per-project Package.resolved files stay committed.
 DuckDuckGo.xcworkspace/xcshareddata/swiftpm/Package.resolved
 
+# Ignore Xcode Cloud configuration, which is not used by this repo.
+**/xcshareddata/xcodecloud/
+
 # fastlane
 #
 # It is recommended to not store the screenshots in the git repo.
@@ -50,6 +53,10 @@ fastlane/test_output
 
 # Ruby
 vendor/
+
+# Python (bytecode caches from scripts/, e.g. translation-pr-checks hooks)
+__pycache__/
+*.pyc
 
 # Release
 node_modules/
@@ -88,3 +95,12 @@ buildServer.json
 content-scope-scripts/
 privacy-configuration/
 .xcodebuildmcp/config.yaml
+.claude/worktrees
+
+# Snapshot references live in the SnapshotReferences submodule (see tech design).
+# Ignore all inline __Snapshots__ so redirected suites can never commit an inline fallback
+# (e.g. when the submodule isn't checked out). Suites still recorded inline because they call
+# point-free's assertSnapshot directly are re-included below until they're migrated.
+**/__Snapshots__/
+!macOS/UnitTests/URLDragPreviewProvider/__Snapshots__/
+!macOS/UnitTests/URLDragPreviewProvider/__Snapshots__/**

@@ -36,20 +36,20 @@ final class IOSAutoconsentMessageHandlerDelegate: AutoconsentMessageHandlerDeleg
         )
     }
 
-    func refreshDashboardState(domain: String, consentStatus: ConsentStatusInfo) {
-        Logger.webExtensions.debug("iOS: Refreshing dashboard state for \(domain)")
+    func refreshDashboardState(url: URL, consentStatus: ConsentStatusInfo) {
+        Logger.webExtensions.debug("iOS: Refreshing dashboard state for \(url.shortDescription)")
         NotificationCenter.default.post(
             name: .webExtensionAutoconsentDashboardStateRefresh,
             object: self,
             userInfo: [
-                AutoconsentNotification.UserInfoKeys.domain: domain,
+                AutoconsentNotification.UserInfoKeys.url: url,
                 AutoconsentNotification.UserInfoKeys.consentStatus: consentStatus
             ]
         )
     }
 
     func handleCookiePopup(_ popupInfo: CookiePopupHandledInfo) {
-        Logger.webExtensions.debug("iOS: Cookie popup handled for \(popupInfo.url.absoluteString)")
+        Logger.webExtensions.debug("iOS: Cookie popup handled for \(popupInfo.url.shortDescription)")
     }
 
     func sendPixel(_ pixelInfo: PixelInfo) {

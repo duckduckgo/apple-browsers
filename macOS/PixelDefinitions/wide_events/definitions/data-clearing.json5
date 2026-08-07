@@ -1,0 +1,282 @@
+{
+    "macos-data-clearing": {
+        "description": "Sent at the end of a data clearing (Fire) flow, capturing the overall outcome plus per-action timing, status, and errors for each data category cleared. The journey resolves to SUCCESS when clearing completes, or UNKNOWN when it is orphaned and resolved on a later launch.",
+        "owners": ["hanyutang-sandra"],
+        "meta": {
+            "type": "macos-data-clearing",
+            "version": "1.0"
+        },
+        "feature": {
+            "name": "data-clearing",
+            "status": ["SUCCESS", "UNKNOWN"],
+            "data": {
+                "ext": {
+                    "status_reason": {
+                        "type": "string",
+                        "description": "Reason accompanying an UNKNOWN status: partial_data = an orphaned flow was completed on a later launch; timeout = the clearing did not complete within the timeout window.",
+                        "enum": ["partial_data", "timeout"]
+                    },
+                    "options": {
+                        "type": "string",
+                        "description": "What data the user selected for clearing.",
+                        "enum": ["currentTab", "currentWindow", "allData"]
+                    },
+                    "trigger": {
+                        "type": "string",
+                        "description": "What initiated the clearing flow.",
+                        "enum": ["manual", "autoClear"]
+                    },
+                    "path": {
+                        "type": "string",
+                        "description": "Execution path during clearing.",
+                        "enum": ["burnEntity", "burnAll", "burnVisits"]
+                    },
+                    "included_domains": {
+                        "type": "string",
+                        "description": "Comma-separated list of domain categories included in the clear, for example \"History,TabsAndWindows,CookiesAndSiteData\".",
+                        "examples": [
+                            "History",
+                            "TabsAndWindows",
+                            "CookiesAndSiteData",
+                            "ChatHistory",
+                            "History,TabsAndWindows,CookiesAndSiteData,ChatHistory"
+                        ]
+                    },
+                    "overall_latency_ms": {
+                        "type": "integer",
+                        "description": "Duration from start of the clearing attempt to its end state (in ms). Rounded to 10ms precision, capped at 10000ms (10 seconds)."
+                    },
+                    "clear_tabs_status": {
+                        "type": "string",
+                        "description": "Final status of the clear_tabs action.",
+                        "enum": ["SUCCESS", "FAILURE"]
+                    },
+                    "clear_tabs_latency_ms": {
+                        "type": "integer",
+                        "description": "Duration from start of the action to its end state (in ms). Rounded to 10ms precision, capped at 10000ms (10 seconds)."
+                    },
+                    "clear_tabs_error": "dataClearingActionError",
+                    "clear_all_history_status": {
+                        "type": "string",
+                        "description": "Final status of the clear_all_history action.",
+                        "enum": ["SUCCESS", "FAILURE"]
+                    },
+                    "clear_all_history_latency_ms": {
+                        "type": "integer",
+                        "description": "Duration from start of the action to its end state (in ms). Rounded to 10ms precision, capped at 10000ms (10 seconds)."
+                    },
+                    "clear_all_history_error": "dataClearingActionError",
+                    "clear_aiChat_history_status": {
+                        "type": "string",
+                        "description": "Final status of the clear_aiChat_history action.",
+                        "enum": ["SUCCESS", "FAILURE"]
+                    },
+                    "clear_aiChat_history_latency_ms": {
+                        "type": "integer",
+                        "description": "Duration from start of the action to its end state (in ms). Rounded to 10ms precision, capped at 10000ms (10 seconds)."
+                    },
+                    "clear_aiChat_history_error": "dataClearingActionError",
+                    "clear_autoconsent_management_cache_status": {
+                        "type": "string",
+                        "description": "Final status of the clear_autoconsent_management_cache action.",
+                        "enum": ["SUCCESS", "FAILURE"]
+                    },
+                    "clear_autoconsent_management_cache_latency_ms": {
+                        "type": "integer",
+                        "description": "Duration from start of the action to its end state (in ms). Rounded to 10ms precision, capped at 10000ms (10 seconds)."
+                    },
+                    "clear_autoconsent_management_cache_error": "dataClearingActionError",
+                    "clear_favicon_cache_status": {
+                        "type": "string",
+                        "description": "Final status of the clear_favicon_cache action.",
+                        "enum": ["SUCCESS", "FAILURE"]
+                    },
+                    "clear_favicon_cache_latency_ms": {
+                        "type": "integer",
+                        "description": "Duration from start of the action to its end state (in ms). Rounded to 10ms precision, capped at 10000ms (10 seconds)."
+                    },
+                    "clear_favicon_cache_error": "dataClearingActionError",
+                    "cancel_all_downloads_status": {
+                        "type": "string",
+                        "description": "Final status of the cancel_all_downloads action.",
+                        "enum": ["SUCCESS", "FAILURE"]
+                    },
+                    "cancel_all_downloads_latency_ms": {
+                        "type": "integer",
+                        "description": "Duration from start of the action to its end state (in ms). Rounded to 10ms precision, capped at 10000ms (10 seconds)."
+                    },
+                    "cancel_all_downloads_error": "dataClearingActionError",
+                    "clear_bookmark_database_status": {
+                        "type": "string",
+                        "description": "Final status of the clear_bookmark_database action.",
+                        "enum": ["SUCCESS", "FAILURE"]
+                    },
+                    "clear_bookmark_database_latency_ms": {
+                        "type": "integer",
+                        "description": "Duration from start of the action to its end state (in ms). Rounded to 10ms precision, capped at 10000ms (10 seconds)."
+                    },
+                    "clear_bookmark_database_error": "dataClearingActionError",
+                    "forget_text_zoom_status": {
+                        "type": "string",
+                        "description": "Final status of the forget_text_zoom action.",
+                        "enum": ["SUCCESS", "FAILURE"]
+                    },
+                    "forget_text_zoom_latency_ms": {
+                        "type": "integer",
+                        "description": "Duration from start of the action to its end state (in ms). Rounded to 10ms precision, capped at 10000ms (10 seconds)."
+                    },
+                    "forget_text_zoom_error": "dataClearingActionError",
+                    "clear_privacy_stats_status": {
+                        "type": "string",
+                        "description": "Final status of the clear_privacy_stats action.",
+                        "enum": ["SUCCESS", "FAILURE"]
+                    },
+                    "clear_privacy_stats_latency_ms": {
+                        "type": "integer",
+                        "description": "Duration from start of the action to its end state (in ms). Rounded to 10ms precision, capped at 10000ms (10 seconds)."
+                    },
+                    "clear_privacy_stats_error": "dataClearingActionError",
+                    "clear_permissions_status": {
+                        "type": "string",
+                        "description": "Final status of the clear_permissions action.",
+                        "enum": ["SUCCESS", "FAILURE"]
+                    },
+                    "clear_permissions_latency_ms": {
+                        "type": "integer",
+                        "description": "Duration from start of the action to its end state (in ms). Rounded to 10ms precision, capped at 10000ms (10 seconds)."
+                    },
+                    "clear_permissions_error": "dataClearingActionError",
+                    "clear_visited_links_status": {
+                        "type": "string",
+                        "description": "Final status of the clear_visited_links action.",
+                        "enum": ["SUCCESS", "FAILURE"]
+                    },
+                    "clear_visited_links_latency_ms": {
+                        "type": "integer",
+                        "description": "Duration from start of the action to its end state (in ms). Rounded to 10ms precision, capped at 10000ms (10 seconds)."
+                    },
+                    "clear_visited_links_error": "dataClearingActionError",
+                    "clear_recently_closed_status": {
+                        "type": "string",
+                        "description": "Final status of the clear_recently_closed action.",
+                        "enum": ["SUCCESS", "FAILURE"]
+                    },
+                    "clear_recently_closed_latency_ms": {
+                        "type": "integer",
+                        "description": "Duration from start of the action to its end state (in ms). Rounded to 10ms precision, capped at 10000ms (10 seconds)."
+                    },
+                    "clear_recently_closed_error": "dataClearingActionError",
+                    "clear_last_session_state_status": {
+                        "type": "string",
+                        "description": "Final status of the clear_last_session_state action.",
+                        "enum": ["SUCCESS", "FAILURE"]
+                    },
+                    "clear_last_session_state_latency_ms": {
+                        "type": "integer",
+                        "description": "Duration from start of the action to its end state (in ms). Rounded to 10ms precision, capped at 10000ms (10 seconds)."
+                    },
+                    "clear_last_session_state_error": "dataClearingActionError",
+                    "reset_cookie_popup_blocked_flag_status": {
+                        "type": "string",
+                        "description": "Final status of the reset_cookie_popup_blocked_flag action.",
+                        "enum": ["SUCCESS", "FAILURE"]
+                    },
+                    "reset_cookie_popup_blocked_flag_latency_ms": {
+                        "type": "integer",
+                        "description": "Duration from start of the action to its end state (in ms). Rounded to 10ms precision, capped at 10000ms (10 seconds)."
+                    },
+                    "reset_cookie_popup_blocked_flag_error": "dataClearingActionError",
+                    "clear_autoconsent_stats_status": {
+                        "type": "string",
+                        "description": "Final status of the clear_autoconsent_stats action.",
+                        "enum": ["SUCCESS", "FAILURE"]
+                    },
+                    "clear_autoconsent_stats_latency_ms": {
+                        "type": "integer",
+                        "description": "Duration from start of the action to its end state (in ms). Rounded to 10ms precision, capped at 10000ms (10 seconds)."
+                    },
+                    "clear_autoconsent_stats_error": "dataClearingActionError",
+                    "clear_visits_status": {
+                        "type": "string",
+                        "description": "Final status of the clear_visits action.",
+                        "enum": ["SUCCESS", "FAILURE"]
+                    },
+                    "clear_visits_latency_ms": {
+                        "type": "integer",
+                        "description": "Duration from start of the action to its end state (in ms). Rounded to 10ms precision, capped at 10000ms (10 seconds)."
+                    },
+                    "clear_visits_error": "dataClearingActionError",
+                    "clear_website_data": {
+                        "type": "object",
+                        "description": "Per-sub-action results for website-data clearing (status, latency, and error for each website-data step).",
+                        "properties": {
+                            "clear_safely_removable_website_data_status": {
+                                "type": "string",
+                                "description": "Final status of the clear_website_data.clear_safely_removable_website_data action.",
+                                "enum": ["SUCCESS", "FAILURE"]
+                            },
+                            "clear_safely_removable_website_data_latency_ms": {
+                                "type": "integer",
+                                "description": "Duration from start of the action to its end state (in ms). Rounded to 10ms precision, capped at 10000ms (10 seconds)."
+                            },
+                            "clear_safely_removable_website_data_error": "dataClearingActionError",
+                            "clear_fireproofable_data_for_nonFireproof_domains_status": {
+                                "type": "string",
+                                "description": "Final status of the clear_website_data.clear_fireproofable_data_for_nonFireproof_domains action.",
+                                "enum": ["SUCCESS", "FAILURE"]
+                            },
+                            "clear_fireproofable_data_for_nonFireproof_domains_latency_ms": {
+                                "type": "integer",
+                                "description": "Duration from start of the action to its end state (in ms). Rounded to 10ms precision, capped at 10000ms (10 seconds)."
+                            },
+                            "clear_fireproofable_data_for_nonFireproof_domains_error": "dataClearingActionError",
+                            "clear_cookies_for_nonFireproofed_domains_status": {
+                                "type": "string",
+                                "description": "Final status of the clear_website_data.clear_cookies_for_nonFireproofed_domains action.",
+                                "enum": ["SUCCESS", "FAILURE"]
+                            },
+                            "clear_cookies_for_nonFireproofed_domains_latency_ms": {
+                                "type": "integer",
+                                "description": "Duration from start of the action to its end state (in ms). Rounded to 10ms precision, capped at 10000ms (10 seconds)."
+                            },
+                            "clear_cookies_for_nonFireproofed_domains_error": "dataClearingActionError",
+                            "clear_file_cache_status": {
+                                "type": "string",
+                                "description": "Final status of the clear_website_data.clear_file_cache action.",
+                                "enum": ["SUCCESS", "FAILURE"]
+                            },
+                            "clear_file_cache_latency_ms": {
+                                "type": "integer",
+                                "description": "Duration from start of the action to its end state (in ms). Rounded to 10ms precision, capped at 10000ms (10 seconds)."
+                            },
+                            "clear_file_cache_error": "dataClearingActionError",
+                            "clear_device_hash_salts_status": {
+                                "type": "string",
+                                "description": "Final status of the clear_website_data.clear_device_hash_salts action.",
+                                "enum": ["SUCCESS", "FAILURE"]
+                            },
+                            "clear_device_hash_salts_latency_ms": {
+                                "type": "integer",
+                                "description": "Duration from start of the action to its end state (in ms). Rounded to 10ms precision, capped at 10000ms (10 seconds)."
+                            },
+                            "clear_device_hash_salts_error": "dataClearingActionError",
+                            "clear_remove_resource_load_statistics_database_status": {
+                                "type": "string",
+                                "description": "Final status of the clear_website_data.clear_remove_resource_load_statistics_database action.",
+                                "enum": ["SUCCESS", "FAILURE"]
+                            },
+                            "clear_remove_resource_load_statistics_database_latency_ms": {
+                                "type": "integer",
+                                "description": "Duration from start of the action to its end state (in ms). Rounded to 10ms precision, capped at 10000ms (10 seconds)."
+                            },
+                            "clear_remove_resource_load_statistics_database_error": "dataClearingActionError"
+                        }
+                    }
+                }
+            }
+        },
+        "context": {
+            "name": ["funnel_default_macos"]
+        }
+    }
+}

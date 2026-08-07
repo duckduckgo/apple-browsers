@@ -18,6 +18,7 @@
 //
 
 import SwiftUI
+import DesignResourcesKitIcons
 
 struct AuthConfirmationPromptView: View {
     
@@ -122,7 +123,7 @@ private enum Const {
 }
 
 private extension Image {
-    static let lock = Image(.autofillLock)
+    static let lock = Image(uiImage: DesignSystemImages.Color.Size128.lockLocked)
 }
 
 #Preview {

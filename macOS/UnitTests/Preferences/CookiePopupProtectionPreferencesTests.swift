@@ -17,30 +17,58 @@
 //
 
 import XCTest
+import WebExtensions
 @testable import DuckDuckGo_Privacy_Browser
 
 class MockCookiePopupProtectionPreferencesPersistor: CookiePopupProtectionPreferencesPersistor {
     var autoconsentEnabled: Bool = false
+    var cookiePopupPreferenceRawValue: String?
+    var didMigrateCookiePopupPreference: Bool = false
 }
 
 class CookiePopupProtectionPreferencesTests: XCTestCase {
 
     @MainActor
-    func testWhenInitializedThenItLoadsPersistedAutoconsentSetting() {
+    func testWhenInitializedWithMigratedPreferenceThenItLoadsPersistedValue() {
         let mockPersistor = MockCookiePopupProtectionPreferencesPersistor()
-        mockPersistor.autoconsentEnabled = true
+        mockPersistor.didMigrateCookiePopupPreference = true
+        mockPersistor.cookiePopupPreferenceRawValue = CookiePopupPreference.max.rawValue
         let cookiePopupPreferences = CookiePopupProtectionPreferences(persistor: mockPersistor, windowControllersManager: WindowControllersManagerMock())
 
+        XCTAssertEqual(cookiePopupPreferences.cookiePopupPreference, .max)
         XCTAssertTrue(cookiePopupPreferences.isAutoconsentEnabled)
     }
 
     @MainActor
-    func testWhenIsAutoconsentEnabledUpdatedThenPersistorUpdates() {
+    func testWhenMigratingFromDisabledAutoconsentThenPreferenceIsDoNotBlock() {
         let mockPersistor = MockCookiePopupProtectionPreferencesPersistor()
+        mockPersistor.autoconsentEnabled = false
         let cookiePopupPreferences = CookiePopupProtectionPreferences(persistor: mockPersistor, windowControllersManager: WindowControllersManagerMock())
-        cookiePopupPreferences.isAutoconsentEnabled = false
 
-        XCTAssertFalse(mockPersistor.autoconsentEnabled)
+        XCTAssertEqual(cookiePopupPreferences.cookiePopupPreference, .off)
+        XCTAssertFalse(cookiePopupPreferences.isAutoconsentEnabled)
+        XCTAssertTrue(mockPersistor.didMigrateCookiePopupPreference)
+    }
+
+    @MainActor
+    func testWhenMigratingFromEnabledAutoconsentThenPreferenceIsBlockStandard() {
+        let mockPersistor = MockCookiePopupProtectionPreferencesPersistor()
+        mockPersistor.autoconsentEnabled = true
+        let cookiePopupPreferences = CookiePopupProtectionPreferences(persistor: mockPersistor, windowControllersManager: WindowControllersManagerMock())
+
+        XCTAssertEqual(cookiePopupPreferences.cookiePopupPreference, .default)
+        XCTAssertTrue(mockPersistor.didMigrateCookiePopupPreference)
+    }
+
+    @MainActor
+    func testWhenCookiePopupPreferenceUpdatedThenPersistorUpdates() {
+        let mockPersistor = MockCookiePopupProtectionPreferencesPersistor()
+        mockPersistor.didMigrateCookiePopupPreference = true
+        mockPersistor.cookiePopupPreferenceRawValue = CookiePopupPreference.default.rawValue
+        let cookiePopupPreferences = CookiePopupProtectionPreferences(persistor: mockPersistor, windowControllersManager: WindowControllersManagerMock())
+        cookiePopupPreferences.cookiePopupPreference = .off
+
+        XCTAssertEqual(mockPersistor.cookiePopupPreferenceRawValue, CookiePopupPreference.off.rawValue)
     }
 
 }

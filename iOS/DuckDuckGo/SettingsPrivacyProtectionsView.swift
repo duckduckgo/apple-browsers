@@ -18,6 +18,7 @@
 //
 
 import SwiftUI
+import UIComponents
 import UIKit
 import Core
 import DesignResourcesKit

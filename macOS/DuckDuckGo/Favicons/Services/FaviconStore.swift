@@ -27,7 +27,15 @@ import os.log
 
 protocol FaviconStoring {
 
+    /// Eager full-image load used by `EagerFaviconImageCache` when the `faviconLazyImageLoading`
+    /// feature flag is disabled. Loads every stored favicon (including its image BLOB) into memory.
+    ///
+    /// This function is not used by lazy-loading `FaviconImageCache` (replaced by `loadFaviconMetadata`).
+    ///
     func loadFavicons() async throws -> [Favicon]
+
+    func loadFaviconMetadata() async throws -> [FaviconMetadata]
+    func loadImage(for identifier: UUID) async throws -> NSImage?
     func save(_ favicons: [Favicon]) async throws
     func removeFavicons(_ favicons: [Favicon]) async throws
 
@@ -39,11 +47,15 @@ protocol FaviconStoring {
 
 }
 
-final class FaviconStore: FaviconStoring {
+final class FaviconStore: FaviconStoring, Sendable {
 
     enum FaviconStoreError: Error {
         case notLoadedYet
         case savingFailed
+        /// The stored favicon bitmap could not be decoded (corrupt image data). This is
+        /// distinct from transient failures such as a Core Data fetch error, so callers
+        /// can safely drop the corrupt favicon while leaving recoverable failures alone.
+        case imageDecodingFailed
     }
 
     private let context: NSManagedObjectContext
@@ -71,6 +83,77 @@ final class FaviconStore: FaviconStoring {
                 } catch {
                     continuation.resume(throwing: error)
                 }
+            }
+        }
+    }
+
+    func loadFaviconMetadata() async throws -> [FaviconMetadata] {
+        try await context.perform { [weak self] in
+            guard let self else {
+                return []
+            }
+            // Fetch only the columns needed to build `FaviconMetadata`, deliberately
+            // excluding the `imageEncrypted` BLOB. With `.dictionaryResultType` and an
+            // explicit `propertiesToFetch`, the generated SQL SELECTs just these
+            // columns, so the (potentially very large) image bytes are never read off disk at launch.
+            let fetchRequest = NSFetchRequest<NSDictionary>(entityName: FaviconManagedObject.className())
+            fetchRequest.sortDescriptors = [NSSortDescriptor(key: #keyPath(FaviconManagedObject.dateCreated), ascending: true)]
+            fetchRequest.resultType = .dictionaryResultType
+            fetchRequest.propertiesToFetch = [
+                #keyPath(FaviconManagedObject.identifier),
+                #keyPath(FaviconManagedObject.urlEncrypted),
+                #keyPath(FaviconManagedObject.documentUrlEncrypted),
+                #keyPath(FaviconManagedObject.dateCreated),
+                #keyPath(FaviconManagedObject.relation)
+            ]
+
+            // `.dictionaryResultType` returns the raw stored value for Transformable
+            // attributes (the encrypted `Data`), without applying the reverse
+            // ValueTransformer. We resolve the transformer from the model and apply it
+            // manually to decode `urlEncrypted`/`documentUrlEncrypted` back to `URL`.
+            let urlTransformer = context.persistentStoreCoordinator?.managedObjectModel
+                .entitiesByName[FaviconManagedObject.className()]?
+                .attributesByName[#keyPath(FaviconManagedObject.urlEncrypted)]?
+                .valueTransformerName
+                .flatMap { ValueTransformer(forName: NSValueTransformerName($0)) }
+
+            let dictionaries = try context.fetch(fetchRequest)
+            Logger.favicons.debug("\(dictionaries.count) favicon metadata entries loaded")
+            return dictionaries.compactMap { FaviconMetadata(dictionary: $0, urlTransformer: urlTransformer) }
+        }
+    }
+
+    func loadImage(for identifier: UUID) async throws -> NSImage? {
+        // Decode off the main thread on the store's private-queue context. Reading
+        // `imageEncrypted` makes Core Data unarchive the stored NSImage, which for
+        // large blobs is expensive — running it via the async `context.perform`
+        // keeps the decode off `@MainActor` callers.
+        try await context.perform { [context] in
+            let fetchRequest = FaviconManagedObject.fetchRequest() as NSFetchRequest<FaviconManagedObject>
+            fetchRequest.predicate = NSPredicate(format: "%K == %@", #keyPath(FaviconManagedObject.identifier), identifier as NSUUID)
+            fetchRequest.fetchLimit = 1
+            fetchRequest.propertiesToFetch = [
+                #keyPath(FaviconManagedObject.imageEncrypted)
+            ]
+
+            // A Core Data fetch failure here is transient (e.g. an I/O error) and is
+            // rethrown as-is, so callers do NOT treat it as a corrupt favicon.
+            let fetchResult: [FaviconManagedObject] = try context.fetch(fetchRequest)
+
+            // If the saved bitmap is corrupt, AppKit raises an Objective-C
+            // `NSInvalidUnarchiveOperationException` ("bad TIFF data") while unarchiving.
+            // Swift's `try`/`try?` cannot catch Objective-C exceptions, so this would otherwise crash the app.
+            // `NSException.catch` bridges it to a Swift error, which we surface as
+            // `FaviconStoreError.imageDecodingFailed` so the caller can delete the corrupt
+            // favicon and have the favicon system re-fetch it on the next visit.
+            do {
+                return try NSException.catch {
+                    fetchResult.first?.imageEncrypted as? NSImage
+                }
+            } catch {
+                Logger.favicons.error("Decoding stored favicon image failed for \(identifier.uuidString): \(error.localizedDescription)")
+                PixelKit.fire(DebugEvent(GeneralPixel.faviconDecryptionFailedUnique), frequency: .legacyDaily)
+                throw FaviconStoreError.imageDecodingFailed
             }
         }
     }
@@ -224,12 +307,15 @@ final class FaviconStore: FaviconStoring {
 
 fileprivate extension Favicon {
 
+    /// Builds a full `Favicon` (including its decoded image) from a fetched managed object.
+    /// Used by the eager `loadFavicons()` path when lazy favicon loading is disabled.
     init?(faviconMO: FaviconManagedObject) {
         guard let identifier = faviconMO.identifier,
               let url = faviconMO.urlEncrypted as? URL,
               let documentUrl = faviconMO.documentUrlEncrypted as? URL,
               let dateCreated = faviconMO.dateCreated,
-              let relation = Favicon.Relation(rawValue: Int(faviconMO.relation)) else {
+              let relation = Favicon.Relation(rawValue: Int(faviconMO.relation))
+        else {
             PixelKit.fire(DebugEvent(GeneralPixel.faviconDecryptionFailedUnique), frequency: .legacyDaily)
             assertionFailure("Favicon: Failed to init Favicon from FaviconManagedObject")
             return nil
@@ -251,6 +337,43 @@ fileprivate extension Favicon {
         }
 
         self.init(identifier: identifier, url: url, image: image, relation: relation, documentUrl: documentUrl, dateCreated: dateCreated)
+    }
+
+}
+
+fileprivate extension FaviconMetadata {
+
+    /// Builds metadata from a `.dictionaryResultType` fetch that excludes the `imageEncrypted` BLOB.
+    ///
+    /// Transformable attributes (`urlEncrypted`, `documentUrlEncrypted`) come back as the raw
+    /// encrypted `Data` because dictionary fetches don't apply the reverse ValueTransformer, so we
+    /// decode them here using `urlTransformer` (the same `EncryptedValueTransformer<NSURL>` the
+    /// managed object would use). Already-decoded `URL`/`NSURL` values are accepted as a fallback.
+    init?(dictionary: NSDictionary, urlTransformer: ValueTransformer?) {
+        func decodeURL(forKey key: String) -> URL? {
+            let value = dictionary[key]
+            if let url = value as? URL {
+                return url
+            }
+            if let data = value as? Data {
+                return urlTransformer?.reverseTransformedValue(data) as? URL
+            }
+            return nil
+        }
+
+        guard let identifier = dictionary[#keyPath(FaviconManagedObject.identifier)] as? UUID,
+              let url = decodeURL(forKey: #keyPath(FaviconManagedObject.urlEncrypted)),
+              let documentUrl = decodeURL(forKey: #keyPath(FaviconManagedObject.documentUrlEncrypted)),
+              let dateCreated = dictionary[#keyPath(FaviconManagedObject.dateCreated)] as? Date,
+              let relationRawValue = dictionary[#keyPath(FaviconManagedObject.relation)] as? Int,
+              let relation = Favicon.Relation(rawValue: relationRawValue)
+        else {
+            PixelKit.fire(DebugEvent(GeneralPixel.faviconDecryptionFailedUnique), frequency: .legacyDaily)
+            assertionFailure("FaviconMetadata: Failed to init from fetched dictionary")
+            return nil
+        }
+
+        self.init(identifier: identifier, url: url, documentUrl: documentUrl, dateCreated: dateCreated, relation: relation)
     }
 
 }

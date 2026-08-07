@@ -20,9 +20,11 @@
 import UIKit
 import PrivacyDashboard
 import AIChat
+import Common
 import Core
 import Kingfisher
 import DesignResourcesKitIcons
+import FeatureFlags_iOS
 
 class OmniBarViewController: UIViewController, OmniBar {
 
@@ -33,6 +35,10 @@ class OmniBarViewController: UIViewController, OmniBar {
 
     /// Access to iPad-specific expandable search area features.
     var expandableBarView: ExpandableOmniBarView? { barView as? ExpandableOmniBarView }
+
+    /// Overridden by `DefaultOmniBarViewController` when the iPad Duck.ai controls are active.
+    /// Empty here (all values `nil`).
+    var iPadDuckAIControlValues: IPadDuckAIControlValues { IPadDuckAIControlValuesSnapshot() }
 
     var isBackButtonEnabled: Bool {
         get { barView.backButton.isEnabled }
@@ -403,8 +409,13 @@ class OmniBarViewController: UIViewController, OmniBar {
         refreshState(state.onEnterAIChatState)
     }
 
+    /// Sticky flag: true once the user types in the field, until the page URL is (re)displayed. A tap or
+    /// cursor move doesn't set it. Lets callers tell an unedited page URL from a user-entered query.
+    var userDidEditText = false
+
     func refreshText(forUrl url: URL?, forceFullURL: Bool) {
         guard !textField.isEditing else { return }
+        userDidEditText = false
         guard let url = url else {
             textField.text = nil
             return
@@ -553,7 +564,7 @@ class OmniBarViewController: UIViewController, OmniBar {
             return
         }
 
-        if privacyInfo.url.isDuckAIURL, dependencies.aichatIPadTabFeature.isAvailable {
+        if privacyInfo.url.isDuckAIURL, DevicePlatform.isIpad {
             showCustomIcon(icon: .duckAI)
             return
         }
@@ -807,12 +818,14 @@ class OmniBarViewController: UIViewController, OmniBar {
         let state = dependencies.mobileCustomization.state
         guard state.isEnabled else {
             barView.customizableButton.setImage(DesignSystemImages.Glyphs.Size24.shareApple, for: .normal)
+            barView.customizableButton.isEnabled = self.state.isBrowsing
             barView.isCustomizableButtonHidden = !self.state.showCustomizableButton
             return
         }
 
         let largeIcon = dependencies.mobileCustomization.largeIconForButton(state.currentAddressBarButton)
         barView.customizableButton.setImage(largeIcon, for: .normal)
+        barView.customizableButton.isEnabled = !state.currentAddressBarButton.requiresWebPage || self.state.isBrowsing
 
         if self.state.showCustomizableButton {
             barView.isCustomizableButtonHidden = largeIcon == nil
@@ -875,7 +888,13 @@ class OmniBarViewController: UIViewController, OmniBar {
         expandableBarView?.aiChatTextView.text = nil
         expandableBarView?.updateTextFieldPlaceholderVisibility(hasText: false)
         expandableBarView?.updateAIChatSendButton(hasText: false)
-        omniDelegate?.onOmniQueryUpdated("")
+        // Notify the active mode's delegate so its suggestions refresh for the now-empty query — Duck.ai
+        // text changes route through `onAIChatQueryUpdated`, which `onOmniQueryUpdated` ignores.
+        if selectedTextEntryMode == .aiChat {
+            omniDelegate?.onAIChatQueryUpdated("")
+        } else {
+            omniDelegate?.onOmniQueryUpdated("")
+        }
     }
 
     private func updateLeftIconContainerState(oldState: any OmniBarState, newState: any OmniBarState) {
@@ -1065,6 +1084,7 @@ class OmniBarViewController: UIViewController, OmniBar {
 
 extension OmniBarViewController: UITextFieldDelegate {
     @objc func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
+        userDidEditText = true
         self.refreshState(self.state.onEditingStartedState)
         return true
     }

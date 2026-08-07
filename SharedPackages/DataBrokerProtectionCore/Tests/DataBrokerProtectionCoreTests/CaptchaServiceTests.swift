@@ -22,6 +22,8 @@ import Foundation
 import DataBrokerProtectionCoreTestsUtils
 import NetworkingTestingUtils
 
+private typealias MockURLProtocol = DataBrokerProtectionCoreTestsUtils.MockURLProtocol
+
 final class CaptchaServiceTests: XCTestCase {
     private let servicePixel = MockDataBrokerProtectionBackendServicePixels()
     let jsonEncoder = JSONEncoder()

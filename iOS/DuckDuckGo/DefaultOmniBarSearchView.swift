@@ -109,7 +109,7 @@ final class DefaultOmniBarSearchView: UIView {
     func updateFireModeAppearance(fireMode: Bool) {
         textField.tintColor = fireMode
         ? UIColor(singleUseColor: .fireModeAccent)
-        : UIColor(designSystemColor: .accent)
+        : UIColor(designSystemColor: .accentPrimary)
     }
 
     private func setUpSubviews() {
@@ -206,7 +206,7 @@ final class DefaultOmniBarSearchView: UIView {
         textField.contentVerticalAlignment = .center
         textField.font = UIFont.daxBodyRegular()
         textField.textColor = UIColor(designSystemColor: .textPrimary)
-        textField.tintColor = UIColor(designSystemColor: .accent)
+        textField.tintColor = UIColor(designSystemColor: .accentPrimary)
         textField.autocapitalizationType = .none
         textField.autocorrectionType = .no
         textField.spellCheckingType = .no

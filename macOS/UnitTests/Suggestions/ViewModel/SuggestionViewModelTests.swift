@@ -215,32 +215,13 @@ final class SuggestionViewModelTests: XCTestCase {
         XCTAssertEqual(suggestionViewModel.suffix, UserText.duckDuckGo)
     }
 
-    // MARK: - AI Chat Omnibar Toggle Tests
+    // MARK: - Website Suggestion Suffix Tests
 
-    func testWhenAIChatToggleEnabledAndSuggestionIsWebsite_ThenSuffixShowsVisitHost() {
+    func testWhenSuggestionIsWebsite_ThenSuffixIsNil() {
         let urlString = "https://spreadprivacy.com"
         let url = URL(string: urlString)!
         let suggestion = Suggestion.website(url: url)
         let featureFlagger = MockFeatureFlagger()
-        featureFlagger.enabledFeatureFlags = [.aiChatOmnibarToggle, .aiChatOmnibarCluster]
-
-        let suggestionViewModel = SuggestionViewModel(
-            isHomePage: false,
-            suggestion: suggestion,
-            userStringValue: "",
-            themeManager: MockThemeManager(),
-            featureFlagger: featureFlagger
-        )
-
-        XCTAssertEqual(suggestionViewModel.suffix, "\(UserText.addressBarVisitSuffix) spreadprivacy.com")
-    }
-
-    func testWhenAIChatToggleDisabledAndSuggestionIsWebsite_ThenSuffixIsNil() {
-        let urlString = "https://spreadprivacy.com"
-        let url = URL(string: urlString)!
-        let suggestion = Suggestion.website(url: url)
-        let featureFlagger = MockFeatureFlagger()
-        // Feature flag is disabled by default
 
         let suggestionViewModel = SuggestionViewModel(
             isHomePage: false,
@@ -251,24 +232,6 @@ final class SuggestionViewModelTests: XCTestCase {
         )
 
         XCTAssertNil(suggestionViewModel.suffix)
-    }
-
-    func testWhenAIChatToggleEnabledAndSuggestionIsWebsiteWithPath_ThenSuffixShowsVisitRootHost() {
-        let urlString = "https://spreadprivacy.com/blog/article"
-        let url = URL(string: urlString)!
-        let suggestion = Suggestion.website(url: url)
-        let featureFlagger = MockFeatureFlagger()
-        featureFlagger.enabledFeatureFlags = [.aiChatOmnibarToggle, .aiChatOmnibarCluster]
-
-        let suggestionViewModel = SuggestionViewModel(
-            isHomePage: false,
-            suggestion: suggestion,
-            userStringValue: "",
-            themeManager: MockThemeManager(),
-            featureFlagger: featureFlagger
-        )
-
-        XCTAssertEqual(suggestionViewModel.suffix, "\(UserText.addressBarVisitSuffix) spreadprivacy.com")
     }
 
     // MARK: - Ask AI Chat Suggestion Tests

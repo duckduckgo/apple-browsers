@@ -25,11 +25,13 @@ import Bookmarks
 import Persistence
 import History
 import Core
+import FeatureFlags_iOS
 
 class MainViewFactory {
 
     private let coordinator: MainViewCoordinator
     private let featureFlagger: FeatureFlagger
+    private let floatingUIManager: FloatingUIManaging
     private let omnibarDependencies: OmnibarDependencyProvider
     
     var superview: UIView {
@@ -47,11 +49,17 @@ class MainViewFactory {
         return false
     }
 
+    var isWindowControlsRowEnabled: Bool {
+        WindowControlsRowLayout.isEnabled(featureFlagger: featureFlagger)
+    }
+
     private init(parentController: UIViewController,
                  omnibarDependencies: OmnibarDependencyProvider,
-                 featureFlagger: FeatureFlagger) {
+                 featureFlagger: FeatureFlagger,
+                 floatingUIManager: FloatingUIManaging) {
         coordinator = MainViewCoordinator(parentController: parentController)
         self.featureFlagger = featureFlagger
+        self.floatingUIManager = floatingUIManager
         self.omnibarDependencies = omnibarDependencies
     }
 
@@ -61,6 +69,7 @@ class MainViewFactory {
                                     aiChatAddressBarExperience: AIChatAddressBarExperienceProviding,
                                     voiceSearchHelper: VoiceSearchHelperProtocol,
                                     featureFlagger: FeatureFlagger,
+                                    floatingUIManager: FloatingUIManaging,
                                     suggestionTrayDependencies: SuggestionTrayDependencies? = nil,
                                     appSettings: AppSettings,
                                     daxEasterEggLogoStore: DaxEasterEggLogoStoring = DaxEasterEggLogoStore(),
@@ -71,7 +80,6 @@ class MainViewFactory {
         let presenter = daxEasterEggPresenter ?? DaxEasterEggPresenter(logoStore: daxEasterEggLogoStore, featureFlagger: featureFlagger)
         let omnibarDependencies = OmnibarDependencies(voiceSearchHelper: voiceSearchHelper,
                                                       featureFlagger: featureFlagger,
-                                                      aichatIPadTabFeature: AIChatIPadTabFeature(featureFlagger: featureFlagger),
                                                       aiChatSettings: aiChatSettings,
                                                       aiChatSyncCleaner: aiChatSyncCleaner,
                                                       aiChatAddressBarExperience: aiChatAddressBarExperience,
@@ -83,7 +91,8 @@ class MainViewFactory {
 
         let factory = MainViewFactory(parentController: parentController,
                                       omnibarDependencies: omnibarDependencies,
-                                      featureFlagger: featureFlagger)
+                                      featureFlagger: featureFlagger,
+                                      floatingUIManager: floatingUIManager)
         factory.createViews()
         factory.disableAutoresizingOnImmediateSubviews(factory.superview)
         factory.constrainViews()
@@ -98,6 +107,43 @@ class MainViewFactory {
 
 }
 
+/// Uses corner adapted layout regions because UIKit does not expose window control frames.
+enum WindowControlsRowLayout {
+
+    static func isEnabled(featureFlagger: FeatureFlagger?) -> Bool {
+        guard #available(iOS 26, *), UIDevice.current.userInterfaceIdiom == .pad, let featureFlagger else { return false }
+        return featureFlagger.isFeatureOn(.iPadTabsBarInWindowControlsRow)
+    }
+
+    /// Returns false in full screen because horizontal adaptation also reserves display corner space.
+    static func sharesRow(in view: UIView, isEnabled: Bool) -> Bool {
+        isEnabled && view.isWindowedPresentation
+    }
+
+    static func sharesRow(in view: UIView, for size: CGSize, isEnabled: Bool) -> Bool {
+        isEnabled && view.isWindowedPresentation(for: size)
+    }
+
+    static func leadingInset(in view: UIView) -> CGFloat {
+        guard #available(iOS 26, *) else { return 0 }
+        return view.directionalEdgeInsets(for: .margins(cornerAdaptation: .horizontal)).leading
+    }
+
+    static func topInset(in view: UIView, sharesRow: Bool) -> CGFloat {
+        guard #available(iOS 26, *) else { return 0 }
+        let adaptation: UIView.LayoutRegion.AdaptivityAxis = sharesRow ? .horizontal : .vertical
+        return view.directionalEdgeInsets(for: .margins(cornerAdaptation: adaptation)).top
+    }
+
+    static func rowHeight(in view: UIView) -> CGFloat {
+        guard #available(iOS 26, *) else { return 0 }
+        let pushedBelow = view.directionalEdgeInsets(for: .margins(cornerAdaptation: .vertical)).top
+        let pushedAside = view.directionalEdgeInsets(for: .margins(cornerAdaptation: .horizontal)).top
+        return max(0, pushedBelow - pushedAside)
+    }
+
+}
+
 /// Create functions.  The lightweight subclases of UIView make it easier to debug to the UI.
 extension MainViewFactory {
 
@@ -105,9 +151,11 @@ extension MainViewFactory {
         createLogoBackground()
         createContentContainer()
         createSuggestionTrayContainer()
+        createFocusedStateBackground()
         createUnifiedInputContentContainer()
         createTopSlideContainer()
         createStatusBackground()
+        createWindowControlsRowBackground()
         createTabBarContainer()
         createOmniBar()
         createToolbar()
@@ -124,7 +172,10 @@ extension MainViewFactory {
     }
 
     private func createOmniBar() {
-        let controller = OmniBarFactory.createOmniBarViewController(with: omnibarDependencies)
+        let controller = OmniBarFactory.createOmniBarViewController(
+            with: omnibarDependencies,
+            isFloatingUIEnabled: floatingUIManager.isFloatingUIEnabled
+        )
         coordinator.parentController?.addChild(controller)
         coordinator.omniBar = controller
         controller.barView.translatesAutoresizingMaskIntoConstraints = false
@@ -184,9 +235,22 @@ extension MainViewFactory {
     }
     
     final class NavigationBarContainer: UIView {
+        private static let floatingInsets = UIEdgeInsets.zero
+        private static let floatingCornerRadius: CGFloat = 0
+
+        private let floatingMaterialView: UIVisualEffectView = {
+            let view = UIVisualEffectView(effect: nil)
+            view.translatesAutoresizingMaskIntoConstraints = false
+            view.isUserInteractionEnabled = false
+            view.clipsToBounds = true
+            view.layer.cornerCurve = .continuous
+            return view
+        }()
+
+        private var floatingMaterialConstraints: [NSLayoutConstraint] = []
+        private var isFloatingStyleEnabled = false
 
         /// Enables overflow hit testing for iPad expanded search area.
-        /// Set to `true` when `FeatureFlag.iPadAIToggle` is on.
         var allowsOverflowHitTesting = false {
             didSet {
                 guard allowsOverflowHitTesting != oldValue else { return }
@@ -196,6 +260,30 @@ extension MainViewFactory {
                     removeGestureRecognizer(overflowTapGesture)
                 }
             }
+        }
+
+        override init(frame: CGRect) {
+            super.init(frame: frame)
+            addSubview(floatingMaterialView)
+            floatingMaterialConstraints = [
+                floatingMaterialView.leadingAnchor.constraint(equalTo: leadingAnchor),
+                floatingMaterialView.trailingAnchor.constraint(equalTo: trailingAnchor),
+                floatingMaterialView.topAnchor.constraint(equalTo: topAnchor),
+                floatingMaterialView.bottomAnchor.constraint(equalTo: bottomAnchor)
+            ]
+            NSLayoutConstraint.activate(floatingMaterialConstraints)
+            applyFloatingStyle(animated: false)
+        }
+
+        @available(*, unavailable)
+        required init?(coder: NSCoder) {
+            fatalError("init(coder:) has not been implemented")
+        }
+
+        func setFloatingStyleEnabled(_ enabled: Bool) {
+            guard isFloatingStyleEnabled != enabled else { return }
+            isFloatingStyleEnabled = enabled
+            applyFloatingStyle(animated: true)
         }
 
         private lazy var overflowTapGesture: UITapGestureRecognizer = {
@@ -248,9 +336,34 @@ extension MainViewFactory {
             }
             return nil
         }
+
+        private func applyFloatingStyle(animated: Bool) {
+            let updates = {
+                self.floatingMaterialConstraints[0].constant = 0
+                self.floatingMaterialConstraints[1].constant = 0
+                self.floatingMaterialConstraints[2].constant = 0
+                self.floatingMaterialConstraints[3].constant = 0
+                self.floatingMaterialView.layer.cornerRadius = 0
+                self.floatingMaterialView.effect = nil
+
+                if self.isFloatingStyleEnabled {
+                    self.floatingMaterialView.isHidden = true
+                } else {
+                    self.floatingMaterialView.isHidden = false
+                }
+                self.layoutIfNeeded()
+            }
+
+            if animated {
+                UIView.animate(withDuration: 0.2, animations: updates)
+            } else {
+                updates()
+            }
+        }
     }
     private func createNavigationBarContainer() {
         coordinator.navigationBarContainer = NavigationBarContainer()
+        coordinator.navigationBarContainer.setFloatingStyleEnabled(floatingUIManager.isFloatingUIEnabled)
         superview.addSubview(coordinator.navigationBarContainer)
     }
 
@@ -260,10 +373,26 @@ extension MainViewFactory {
         superview.addSubview(coordinator.contentContainer)
     }
 
-    final class StatusBackgroundView: UIView { }
+    final class StatusBackgroundView: UIVisualEffectView { }
     private func createStatusBackground() {
-        coordinator.statusBackground = StatusBackgroundView()
+        let view = StatusBackgroundView(effect: nil)
+        if floatingUIManager.isFloatingUIEnabled {
+            view.backgroundColor = .clear
+        } else {
+            view.backgroundColor = UIColor(designSystemColor: .background)
+        }
+        coordinator.statusBackground = view
         superview.addSubview(coordinator.statusBackground)
+    }
+
+    final class WindowControlsRowBackground: UIView { }
+    private func createWindowControlsRowBackground() {
+        guard isWindowControlsRowEnabled else { return }
+        let view = WindowControlsRowBackground()
+        view.isHidden = true
+        view.isUserInteractionEnabled = false
+        coordinator.windowControlsRowBackground = view
+        superview.addSubview(view)
     }
 
     final class TabBarContainer: UIView { }
@@ -288,9 +417,18 @@ extension MainViewFactory {
         superview.addSubview(coordinator.unifiedInputContentContainer)
     }
 
+    final class FocusedStateBackgroundView: UIView { }
+    private func createFocusedStateBackground() {
+        coordinator.focusedStateBackground = FocusedStateBackgroundView()
+        coordinator.focusedStateBackground.isHidden = true
+        coordinator.focusedStateBackground.backgroundColor = UIColor(designSystemColor: .panel)
+        superview.addSubview(coordinator.focusedStateBackground)
+    }
+
     private func createToolbar() {
-        coordinator.toolbar = HitTestingToolbar()
-        coordinator.toolbar.isTranslucent = false
+        coordinator.toolbar = BrowserToolbarView()
+        coordinator.toolbar.setFloatingStyleEnabled(floatingUIManager.isFloatingUIEnabled)
+        coordinator.toolbar.backgroundColor = .clear
         superview.addSubview(coordinator.toolbar)
         coordinator.toolbarHandler = ToolbarHandler(toolbar: coordinator.toolbar)
         coordinator.updateToolbarWithState(.newTab)
@@ -356,8 +494,10 @@ extension MainViewFactory {
     private func constrainViews() {
         constrainLogoBackground()
         constrainTopSlideContainer()
+        constrainWindowControlsRowBackground()
         constrainContentContainer()
         constrainSuggestionTrayContainer()
+        constrainFocusedStateBackground()
         constrainUnifiedInputContentContainer()
         constrainStatusBackground()
         constrainTabBarContainer()
@@ -367,15 +507,32 @@ extension MainViewFactory {
         constrainAITabCollapsedTopSeparator()
         constrainAIChatTabChatHeaderContainer()
     }
+
+    private func constrainWindowControlsRowBackground() {
+        guard #available(iOS 26, *), isPad, let background = coordinator.windowControlsRowBackground else { return }
+        let guide = superview.layoutGuide(for: .margins(cornerAdaptation: .horizontal))
+        NSLayoutConstraint.activate([
+            background.constrainView(superview, by: .leading),
+            background.constrainView(superview, by: .trailing),
+            background.constrainAttribute(.height, to: MainViewCoordinator.Constants.tabBarContainerHeight),
+            background.topAnchor.constraint(equalTo: guide.topAnchor, constant: MainViewCoordinator.Constants.windowControlsRowTopSpacing),
+        ])
+    }
     
     private func constrainNavigationBarContainer() {
         let container = coordinator.navigationBarContainer!
         let toolbar = coordinator.toolbar!
         let navigationBarCollectionView = coordinator.navigationBarCollectionView!
+        let horizontalInset: CGFloat = 0
 
         if #available(iOS 26, *), isPad {
             let guide = superview.layoutGuide(for: .margins(cornerAdaptation: .vertical))
             coordinator.constraints.navigationBarContainerTop = container.topAnchor.constraint(equalTo: guide.topAnchor)
+            if isWindowControlsRowEnabled {
+                let sharedRowGuide = superview.layoutGuide(for: .margins(cornerAdaptation: .horizontal))
+                coordinator.constraints.navigationBarContainerTopBelowWindowControls = coordinator.constraints.navigationBarContainerTop
+                coordinator.constraints.navigationBarContainerTopInWindowControlsRow = container.topAnchor.constraint(equalTo: sharedRowGuide.topAnchor)
+            }
         } else {
             coordinator.constraints.navigationBarContainerTop = container.constrainView(superview.safeAreaLayoutGuide, by: .top)
         }
@@ -393,8 +550,8 @@ extension MainViewFactory {
             coordinator.constraints.navigationBarContainerHeight,
             navigationBarCollectionView.constrainAttribute(.height, to: barHeight),
             navigationBarCollectionView.constrainView(container, by: .top),
-            navigationBarCollectionView.constrainView(container, by: .leading),
-            navigationBarCollectionView.constrainView(container, by: .trailing),
+            navigationBarCollectionView.constrainView(container, by: .leading, constant: horizontalInset),
+            navigationBarCollectionView.constrainView(container, by: .trailing, constant: -horizontalInset),
         ])
     }
 
@@ -404,6 +561,11 @@ extension MainViewFactory {
         if #available(iOS 26, *), isPad {
             let guide = superview.layoutGuide(for: .margins(cornerAdaptation: .vertical))
             coordinator.constraints.tabBarContainerTop = tabBarContainer.topAnchor.constraint(equalTo: guide.topAnchor)
+            if isWindowControlsRowEnabled {
+                let sharedRowGuide = superview.layoutGuide(for: .margins(cornerAdaptation: .horizontal))
+                coordinator.constraints.tabBarContainerTopBelowWindowControls = coordinator.constraints.tabBarContainerTop
+                coordinator.constraints.tabBarContainerTopInWindowControlsRow = tabBarContainer.topAnchor.constraint(equalTo: sharedRowGuide.topAnchor)
+            }
         } else {
             coordinator.constraints.tabBarContainerTop = tabBarContainer.constrainView(superview.safeAreaLayoutGuide, by: .top)
         }
@@ -411,9 +573,10 @@ extension MainViewFactory {
         NSLayoutConstraint.activate([
             tabBarContainer.constrainView(superview, by: .leading),
             tabBarContainer.constrainView(superview, by: .trailing),
-            tabBarContainer.constrainAttribute(.height, to: 40),
+            tabBarContainer.constrainAttribute(.height, to: MainViewCoordinator.Constants.tabBarContainerHeight),
             coordinator.constraints.tabBarContainerTop,
         ])
+
     }
 
     private func constrainStatusBackground() {
@@ -439,7 +602,14 @@ extension MainViewFactory {
         let toolbar = coordinator.toolbar!
 
         coordinator.constraints.contentContainerTop = contentContainer.constrainView(coordinator.topSlideContainer!, by: .top, to: .bottom)
+        if let windowControlsRowBackground = coordinator.windowControlsRowBackground {
+            // Lower priority lets shared row clearance win while top chrome slides behind it.
+            coordinator.constraints.contentContainerTop.priority = .init(999)
+            coordinator.constraints.contentContainerTopBelowWindowControlsRow =
+                contentContainer.constrainView(windowControlsRowBackground, by: .top, to: .bottom, relatedBy: .greaterThanOrEqual)
+        }
         coordinator.constraints.contentContainerTopToSafeArea = contentContainer.topAnchor.constraint(equalTo: superview.safeAreaLayoutGuide.topAnchor)
+        coordinator.constraints.contentContainerTopToSuperview = contentContainer.topAnchor.constraint(equalTo: superview.topAnchor)
         coordinator.constraints.contentContainerBottomToToolbarTop = contentContainer.constrainView(toolbar, by: .bottom, to: .top)
         coordinator.constraints.contentContainerBottomToSafeArea = contentContainer.constrainView(superview, by: .bottom)
         coordinator.constraints.contentContainerBottomToUnifiedToggleInputTop = contentContainer.bottomAnchor.constraint(equalTo: coordinator.unifiedToggleInputContainer.topAnchor)
@@ -455,15 +625,19 @@ extension MainViewFactory {
     private func constrainToolbar() {
 
         // Changing this?  Best change TabSwitcherViewController too
-        let toolbarWidthMod = isiOS26 ? 14.0 : 4.0
+        let isFloatingUIEnabled = floatingUIManager.isFloatingUIEnabled
+        let toolbarWidthMod = isFloatingUIEnabled ? 0.0 : (isiOS26 ? 14.0 : 4.0)
 
         let toolbar = coordinator.toolbar!
         coordinator.constraints.toolbarBottom = toolbar.constrainView(superview.safeAreaLayoutGuide, by: .bottom)
-        coordinator.constraints.toolbarHeightConstraint = toolbar.constrainAttribute(.height, to: 49)
+        // Match the toolbar's internal buttons-only height for the current style so the initial
+        // constraint doesn't conflict before `updateToolbarLayoutForAddressBarPosition` runs.
+        let initialToolbarHeight = isFloatingUIEnabled ? BrowserToolbarView.totalHeight(withOmnibarHeight: 0, isFloating: isFloatingUIEnabled) : BrowserToolbarView.legacyButtonsHeight
+        coordinator.constraints.toolbarHeight = toolbar.constrainAttribute(.height, to: initialToolbarHeight)
         NSLayoutConstraint.activate([
             toolbar.constrainView(superview, by: .width, constant: toolbarWidthMod),
             toolbar.constrainView(superview, by: .centerX),
-            coordinator.constraints.toolbarHeightConstraint,
+            coordinator.constraints.toolbarHeight,
             coordinator.constraints.toolbarBottom,
         ])
     }
@@ -519,11 +693,24 @@ extension MainViewFactory {
     private func constrainUnifiedInputContentContainer() {
         let container = coordinator.unifiedInputContentContainer!
         let toolbar = coordinator.toolbar!
+        let topAnchor: NSLayoutYAxisAnchor = floatingUIManager.isFloatingUIEnabled
+            ? superview.topAnchor
+            : superview.safeAreaLayoutGuide.topAnchor
         NSLayoutConstraint.activate([
-            container.topAnchor.constraint(equalTo: superview.safeAreaLayoutGuide.topAnchor),
+            container.topAnchor.constraint(equalTo: topAnchor),
             container.bottomAnchor.constraint(equalTo: toolbar.topAnchor),
             container.leadingAnchor.constraint(equalTo: superview.leadingAnchor),
             container.trailingAnchor.constraint(equalTo: superview.trailingAnchor),
+        ])
+    }
+
+    private func constrainFocusedStateBackground() {
+        let view = coordinator.focusedStateBackground!
+        NSLayoutConstraint.activate([
+            view.topAnchor.constraint(equalTo: superview.topAnchor),
+            view.bottomAnchor.constraint(equalTo: superview.bottomAnchor),
+            view.leadingAnchor.constraint(equalTo: superview.leadingAnchor),
+            view.trailingAnchor.constraint(equalTo: superview.trailingAnchor),
         ])
     }
 

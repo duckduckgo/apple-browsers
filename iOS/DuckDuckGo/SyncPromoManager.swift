@@ -25,6 +25,7 @@ import FoundationExtensions
 import Core
 import Persistence
 import DDGSync
+import FeatureFlags_iOS
 
 protocol SyncPromoManaging {
     func shouldPresentPromoFor(_ touchpoint: SyncPromoManager.Touchpoint, count: Int) -> Bool
@@ -58,7 +59,7 @@ final class SyncPromoManager: SyncPromoManaging {
         case impressionCap = "impression_cap"
     }
 
-    static let aiChatImpressionCap = 3
+    static let aiChatImpressionCap = 5
 
     private let featureFlagger: FeatureFlagger
     private let syncService: DDGSyncing

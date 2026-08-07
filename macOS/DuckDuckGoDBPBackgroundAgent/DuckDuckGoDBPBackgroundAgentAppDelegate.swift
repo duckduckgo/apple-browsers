@@ -29,7 +29,7 @@ import Networking
 import Subscription
 import os.log
 import Configuration
-import FeatureFlags
+import FeatureFlags_macOS
 
 @objc(Application)
 final class DuckDuckGoDBPBackgroundAgentApplication: NSApplication {
@@ -135,7 +135,7 @@ final class DuckDuckGoDBPBackgroundAgentAppDelegate: NSObject, NSApplicationDele
             featureFlagger: dbpFeatureFlagger,
             wideEvent: wideEvent,
             vpnBypassService: VPNBypassService(),
-            applicationNameForUserAgent: WebViewUserAgentProvider.applicationNameForUserAgent
+            applicationNameForUserAgentProvider: { WebViewUserAgentProvider.applicationNameForUserAgent }
         )
         manager?.agentFinishedLaunching()
 

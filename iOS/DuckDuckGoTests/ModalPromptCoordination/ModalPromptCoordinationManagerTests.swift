@@ -28,12 +28,14 @@ final class ModalPromptCoordinationManagerTests {
     private let cooldownManagerMock: MockPromptCooldownManager
     private let schedulerMock: MockModalPromptScheduler
     private let presenterMock: MockModalPromptPresenter
+    private let promoQueueLeaseArbiter: PromoQueueLeaseArbiter
     private var sut: ModalPromptCoordinationManager!
 
     init() {
         cooldownManagerMock = MockPromptCooldownManager()
         schedulerMock = MockModalPromptScheduler()
         presenterMock = MockModalPromptPresenter()
+        promoQueueLeaseArbiter = PromoQueueLeaseArbiter()
     }
 
     // MARK: - Cooldown Period Tests
@@ -46,6 +48,8 @@ final class ModalPromptCoordinationManagerTests {
         sut = ModalPromptCoordinationManager(
             providers: [provider],
             cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
         #expect(!presenterMock.didCallPresent)
@@ -69,6 +73,8 @@ final class ModalPromptCoordinationManagerTests {
         sut = ModalPromptCoordinationManager(
             providers: [provider],
             cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
         #expect(!presenterMock.didCallPresent)
@@ -99,6 +105,8 @@ final class ModalPromptCoordinationManagerTests {
         sut = ModalPromptCoordinationManager(
             providers: [firstProvider, secondProvider],
             cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
 
@@ -125,6 +133,8 @@ final class ModalPromptCoordinationManagerTests {
         sut = ModalPromptCoordinationManager(
             providers: [firstProvider, secondProvider],
             cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
 
@@ -155,6 +165,8 @@ final class ModalPromptCoordinationManagerTests {
         sut = ModalPromptCoordinationManager(
             providers: [firstProvider, secondProvider, thirdProvider, fourthProvider, fifthProvider],
             cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
 
@@ -188,6 +200,8 @@ final class ModalPromptCoordinationManagerTests {
         sut = ModalPromptCoordinationManager(
             providers: [firstProvider, secondProvider, thirdProvider],
             cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
 
@@ -221,6 +235,8 @@ final class ModalPromptCoordinationManagerTests {
         sut = ModalPromptCoordinationManager(
             providers: [provider],
             cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
 
@@ -252,6 +268,8 @@ final class ModalPromptCoordinationManagerTests {
         sut = ModalPromptCoordinationManager(
             providers: [provider],
             cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
 
@@ -273,6 +291,8 @@ final class ModalPromptCoordinationManagerTests {
         sut = ModalPromptCoordinationManager(
             providers: [provider],
             cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
 
@@ -292,6 +312,8 @@ final class ModalPromptCoordinationManagerTests {
         sut = ModalPromptCoordinationManager(
             providers: [provider],
             cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
 
@@ -318,6 +340,8 @@ final class ModalPromptCoordinationManagerTests {
         sut = ModalPromptCoordinationManager(
             providers: [provider],
             cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
         #expect(!cooldownManagerMock.didCallRecordLastPromptPresentationTimestamp)
@@ -330,6 +354,56 @@ final class ModalPromptCoordinationManagerTests {
         #expect(cooldownManagerMock.didCallRecordLastPromptPresentationTimestamp)
     }
 
+    @available(iOS 16, *)
+    @Test("Check Session Flag Survives The Legacy Presentation Completion", .timeLimit(.minutes(1)))
+    func whenLegacyPresentationCompletesThenSessionFlagRemainsSet() {
+        // GIVEN
+        cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
+        let provider = MockModalPromptProvider()
+        sut = ModalPromptCoordinationManager(
+            providers: [provider],
+            cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
+            modalPromptScheduling: schedulerMock
+        )
+        sut.presentModalPromptIfNeeded(from: presenterMock)
+        // Held up by the in-flight legacy attempt alone: UIKit has not presented anything yet.
+        #expect(sut.didPresentModalPromptThisSession)
+        #expect(!sut.didActuallyPresentModalPromptThisSession)
+
+        // WHEN the scheduled presentation runs, the completion clears that in-flight attempt — so it has to latch
+        // actual session history in the same breath or suppression collapses exactly as the modal appears.
+        schedulerMock.executeScheduledBlock()
+
+        // THEN
+        #expect(sut.didActuallyPresentModalPromptThisSession)
+        #expect(sut.didPresentModalPromptThisSession)
+        #expect(provider.didCallDidPresentModal)
+    }
+
+    @available(iOS 16, *)
+    @Test("Check Session Flag Is Not Set When No Modal Is Presented", .timeLimit(.minutes(1)))
+    func whenNoModalIsPresentedThenSessionFlagIsNotSet() {
+        // GIVEN
+        cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
+        let provider = MockModalPromptProvider(shouldReturnPrompt: false)
+        sut = ModalPromptCoordinationManager(
+            providers: [provider],
+            cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
+            modalPromptScheduling: schedulerMock
+        )
+
+        // WHEN
+        sut.presentModalPromptIfNeeded(from: presenterMock)
+        schedulerMock.executeScheduledBlock()
+
+        // THEN
+        #expect(!sut.didPresentModalPromptThisSession)
+    }
+
     @Test("Check Cooldown Is Not Recorded When No Modal Is Presented")
     func whenNoModalIsPresentedThenCooldownIsNotRecorded() {
         // GIVEN
@@ -338,6 +412,8 @@ final class ModalPromptCoordinationManagerTests {
         sut = ModalPromptCoordinationManager(
             providers: [provider],
             cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
 
@@ -357,6 +433,8 @@ final class ModalPromptCoordinationManagerTests {
         sut = ModalPromptCoordinationManager(
             providers: [provider],
             cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
 
@@ -380,6 +458,8 @@ final class ModalPromptCoordinationManagerTests {
         sut = ModalPromptCoordinationManager(
             providers: [provider],
             cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
 
@@ -401,6 +481,8 @@ final class ModalPromptCoordinationManagerTests {
         sut = ModalPromptCoordinationManager(
             providers: [provider],
             cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
 
@@ -412,4 +494,5 @@ final class ModalPromptCoordinationManagerTests {
         #expect(presenterMock.didCallPresent)
         #expect(provider.didCallDidPresentModal)
     }
+
 }

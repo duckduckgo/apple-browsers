@@ -34,8 +34,15 @@ final class SwitchBarHandlerTests: XCTestCase {
         static var isIphone: Bool = true
     }
 
+    private final class MockUnifiedToggleInputFeature: UnifiedToggleInputFeatureProviding {
+        var isAvailable: Bool = false
+        var isToggleHiddenOnDuckAITab: Bool = false
+        var isAttachmentPasteEnabled: Bool = false
+    }
+
     private var sut: SwitchBarHandler!
     private var mockVoiceSearchHelper: MockVoiceSearchHelper!
+    private var mockUnifiedToggleInputFeature: MockUnifiedToggleInputFeature!
     private var mockStorage: MockKeyValueStore!
     private var cancellables: Set<AnyCancellable>!
 
@@ -43,6 +50,7 @@ final class SwitchBarHandlerTests: XCTestCase {
         super.setUp()
         MockDevicePlatform.isIphone = true
         mockVoiceSearchHelper = MockVoiceSearchHelper()
+        mockUnifiedToggleInputFeature = MockUnifiedToggleInputFeature()
         mockStorage = MockKeyValueStore()
         cancellables = Set<AnyCancellable>()
         createSUT()
@@ -52,6 +60,7 @@ final class SwitchBarHandlerTests: XCTestCase {
         cancellables = nil
         sut = nil
         mockVoiceSearchHelper = nil
+        mockUnifiedToggleInputFeature = nil
         mockStorage = nil
         super.tearDown()
     }
@@ -61,6 +70,7 @@ final class SwitchBarHandlerTests: XCTestCase {
             voiceSearchHelper: mockVoiceSearchHelper,
             aiChatSettings: MockAIChatSettingsProvider(),
             sessionStateMetrics: SessionStateMetrics(storage: mockStorage),
+            unifiedToggleInputFeature: mockUnifiedToggleInputFeature,
             devicePlatform: devicePlatform,
             isFireTab: false
         )

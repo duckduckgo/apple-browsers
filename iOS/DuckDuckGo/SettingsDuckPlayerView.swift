@@ -65,7 +65,7 @@ struct SettingsDuckPlayerView: View {
                     Link(UserText.settingsDuckPlayerLearnMore,
                          destination: SettingsDuckPlayerView.learnMoreURL)
                     .daxBodyRegular()
-                    .accentColor(Color.init(designSystemColor: .accent))
+                    .accentColor(Color.init(designSystemColor: .accentPrimary))
                 }
                 .frame(maxWidth: .infinity)
                 .listRowBackground(Color.clear)

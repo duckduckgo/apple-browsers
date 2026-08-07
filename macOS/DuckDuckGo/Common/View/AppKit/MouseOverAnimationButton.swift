@@ -80,6 +80,14 @@ final class MouseOverAnimationButton: AddressBarButton {
         }
     }
 
+    /// Allows us to override the Animation View Size, for precise layout adjustments
+    var overrideAnimationViewSize: CGSize? {
+        didSet {
+            guard oldValue != overrideAnimationViewSize else { return }
+            resetAnimationView()
+        }
+    }
+
     struct AnimationViews {
         let aqua: LottieAnimationView
         let dark: LottieAnimationView
@@ -139,13 +147,29 @@ final class MouseOverAnimationButton: AddressBarButton {
         newAnimationView.translatesAutoresizingMaskIntoConstraints = false
         addSubview(newAnimationView)
 
-        // Inset and offset to align hover animation with static icon
+        if let overrideAnimationViewSize {
+            NSLayoutConstraint.activate([
+                newAnimationView.centerXAnchor.constraint(equalTo: centerXAnchor),
+                newAnimationView.centerYAnchor.constraint(equalTo: centerYAnchor),
+                newAnimationView.widthAnchor.constraint(equalToConstant: overrideAnimationViewSize.width),
+                newAnimationView.heightAnchor.constraint(equalToConstant: overrideAnimationViewSize.height)
+            ])
+
+            return
+        }
+
         NSLayoutConstraint.activate([
             newAnimationView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 0.5),
             newAnimationView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -1),
             newAnimationView.topAnchor.constraint(equalTo: topAnchor, constant: 0.5),
             newAnimationView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -1)
         ])
+    }
+
+    private func resetAnimationView() {
+        currentAnimationView?.removeFromSuperview()
+        currentAnimationView = nil
+        updateAnimationView()
     }
 
     // MARK: - Animating

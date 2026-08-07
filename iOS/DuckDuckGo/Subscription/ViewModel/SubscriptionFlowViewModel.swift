@@ -25,6 +25,7 @@ import Core
 import PrivacyConfig
 import DataBrokerProtection_iOS
 import PixelKit
+import FeatureFlags_iOS
 
 enum SubscriptionFlowType {
     case firstPurchase
@@ -57,7 +58,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
     var webViewModel: AsyncHeadlessWebViewViewModel
     let subscriptionManager: any SubscriptionManager
     weak var dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?
-    let purchaseURL: URL
+    let initialURL: URL
     let flowType: SubscriptionFlowType
 
     private let urlOpener: URLOpener
@@ -108,7 +109,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
 
     private let webViewSettings: AsyncHeadlessWebViewSettings
 
-    init(purchaseURL: URL,
+    init(initialURL: URL,
          flowType: SubscriptionFlowType,
          isInternalUser: Bool = false,
          userScript: SubscriptionPagesUserScript,
@@ -120,7 +121,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          wideEvent: WideEventManaging = AppDependencyProvider.shared.wideEvent,
          dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?) {
-        self.purchaseURL = purchaseURL
+        self.initialURL = initialURL
         self.flowType = flowType
         self.userScript = userScript
         self.userScriptsDependencies = userScriptsDependencies
@@ -372,13 +373,21 @@ final class SubscriptionFlowViewModel: ObservableObject {
         DispatchQueue.main.async {
             self.resetState()
         }
+
+        let isInitialPurchaseOfferScreen = flowType.impressionPixel != nil
+            && initialURL.forComparison() != subscriptionManager.url(for: .welcome).forComparison()
+
         if webViewModel.url != subscriptionManager.url(for: currentSubscriptionURL).forComparison() {
-            self.webViewModel.navigationCoordinator.navigateTo(url: purchaseURL)
+            // Only enroll users into experiment for initial purchase offer.
+            let urlToLoad = isInitialPurchaseOfferScreen
+                ? MonthlyFreeTrialExperiment.appendingCohortParameter(to: initialURL, resolvedBy: featureFlagger)
+                : initialURL
+            self.webViewModel.navigationCoordinator.navigateTo(url: urlToLoad)
         }
         await self.setupTransactionObserver()
         await self.setupWebViewObservers()
-        if let pixel = flowType.impressionPixel {
-            let origin = URLComponents(url: purchaseURL, resolvingAgainstBaseURL: false)?
+        if isInitialPurchaseOfferScreen, let pixel = flowType.impressionPixel {
+            let origin = URLComponents(url: initialURL, resolvingAgainstBaseURL: false)?
                 .queryItems?
                 .first(where: { $0.name == AttributionParameter.origin })?
                 .value

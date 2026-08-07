@@ -125,7 +125,6 @@ function hideIrrelevantFields() {
         'Which version of the DuckDuckGo',
         'Describe the issue',
         '[IGNORE IF NO]',
-        'If available, attach any screenshots',
         'Which downstream provider',
         'Ban type',
     ];
@@ -138,6 +137,7 @@ function hideIrrelevantFields() {
     moveSubmitButtonUnderDescription();
     injectDiagnosticsSection();
     injectScreenshotSection();
+    showAndRelabelAttachmentRow();
     hookSubmitForDiagnostics();
     rehideFieldsWhenReturningToNativeApps();
 
@@ -320,6 +320,11 @@ function injectScreenshotSection() {
     anchor.parentNode.insertBefore(section, anchor.nextSibling);
 }
 
+// Attaches the screenshot to the hidden Asana file input at submit time.
+// Always preserves any files already in the input (e.g. from the user's own
+// file picker) so neither the screenshot nor user-selected files are lost.
+// Privacy contract: this function is only called from the submit listener,
+// gated on the checkbox state at that moment — files are never attached eagerly.
 function attachScreenshotToForm() {
     var img = document.querySelector('#ddg-screenshot-section img');
     if (!img || !img.src.startsWith('data:image/png;base64,')) return;
@@ -332,22 +337,36 @@ function attachScreenshotToForm() {
     }
     var file = new File([array], 'screenshot.png', { type: 'image/png' });
 
+    // Use the data attribute set by showAndRelabelAttachmentRow(). If it was not
+    // set during initialisation (e.g. the Asana row wasn't in the DOM yet), try
+    // once now before giving up — avoids a silent no-op on submit.
+    if (!document.querySelector('[data-ddg-attach-row]')) { showAndRelabelAttachmentRow(); }
+    var attachRow = document.querySelector('[data-ddg-attach-row]');
+    if (!attachRow) return;
+    var fileInput = attachRow.querySelector('input[type="file"]');
+    if (!fileInput) return;
+
+    var dt = new DataTransfer();
+    for (var i = 0; i < fileInput.files.length; i++) { dt.items.add(fileInput.files[i]); }
+    dt.items.add(file);
+    fileInput.files = dt.files;
+    fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
+function showAndRelabelAttachmentRow() {
     var attachLabel = Array.from(document.querySelectorAll('label'))
         .find(function(l) { return l.textContent.trim().startsWith('If available, attach'); });
     if (!attachLabel) return;
-
     var attachRow = attachLabel.closest('.WorkRequestsFieldRow');
     if (!attachRow) return;
 
+    attachLabel.textContent = 'Add files (optional)';
+    // Mark the row so attachScreenshotToForm() can find it without depending on
+    // Asana's internal CSS class names. The row stays at its original DOM position
+    // (no insertBefore) — hidden fields above it take no visual space, so visual
+    // ordering is correct without moving the node.
+    attachRow.setAttribute('data-ddg-attach-row', 'true');
     attachRow.style.display = '';
-    var fileInput = attachRow.querySelector('input[type="file"]');
-    if (fileInput) {
-        var dt = new DataTransfer();
-        dt.items.add(file);
-        fileInput.files = dt.files;
-        fileInput.dispatchEvent(new Event('change', { bubbles: true }));
-    }
-    setTimeout(function() { attachRow.style.display = 'none'; }, 200);
 }
 
 function hookSubmitForDiagnostics() {

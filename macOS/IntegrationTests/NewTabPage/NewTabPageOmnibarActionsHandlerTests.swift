@@ -46,6 +46,13 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
                 promptHandler: promptHandler,
                 windowControllersManager: windowControllersManager,
                 tabsPreferences: tabsPreferences,
+                historyCoordinator: Application.appDelegate.historyCoordinator,
+                aiChatDeleter: AIChatDeleter(historyCleaner: HistoryCleaner(
+                    featureFlagger: Application.appDelegate.featureFlagger,
+                    privacyConfig: Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager,
+                    nativeStorageHandler: Application.appDelegate.duckAiNativeStorageHandler,
+                    featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: Application.appDelegate.featureFlagger)
+                )),
                 isShiftPressed: { false },
                 isCommandPressed: { false },
                 firePixel: { [weak self] event in self?.firedPixels.append(event.name) }
@@ -101,7 +108,7 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
     func testWhenSubmitAIChatOnSameTab_ThenAIChatOpens() {
         let target: NewTabPageDataModel.OpenTarget = .sameTab
 
-        handler.submitChat("duckduckgo", target: target, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil)
+        handler.submitChat("duckduckgo", target: target, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContexts: nil, files: nil)
 
         XCTAssert(windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.tabs.last?.url?.isDuckAIURL ?? false)
         XCTAssertEqual(windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.tabs.count, 1)
@@ -111,7 +118,7 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
     func testWhenSubmitAIChatOnNewTab_ThenNewTabOpensWithAIChat() {
         let target: NewTabPageDataModel.OpenTarget = .newTab
 
-        handler.submitChat("duckduckgo", target: target, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil)
+        handler.submitChat("duckduckgo", target: target, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContexts: nil, files: nil)
 
         XCTAssert(windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.tabs.last?.url?.isDuckAIURL ?? false)
         XCTAssertEqual(windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.tabs.count, 2)
@@ -125,7 +132,9 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
                            images: nil,
                            mode: nil,
                            toolChoice: nil,
-                           reasoningEffort: "low")
+                           reasoningEffort: "low",
+                           pageContexts: nil,
+                           files: nil)
 
         let prompt = promptHandler.consumeData()
         let expectedPrompt = AIChatNativePrompt.queryPrompt("duckduckgo",
@@ -133,6 +142,37 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
                                                            modelId: "gpt-5.2",
                                                            reasoningEffort: .low)
         XCTAssertEqual(prompt, expectedPrompt)
+    }
+
+    @MainActor
+    func testWhenSubmitAIChatWithAttachments_ThenPromptCarriesPageContextsAndFiles() {
+        let context = NewTabPageDataModel.OmnibarPageContext(tabId: "tab-1", title: "Apple", url: "https://apple.com", favicon: NewTabPageDataModel.OmnibarTabFavicon(src: "data:image/png;base64,AAAA"), content: "## Apple", truncated: false, fullContentLength: 8)
+        let file = NewTabPageDataModel.OmnibarPromptFile(data: "base64", fileName: "doc.pdf", mimeType: "application/pdf")
+
+        handler.submitChat("compare",
+                           target: .sameTab,
+                           modelId: nil,
+                           images: nil,
+                           mode: nil,
+                           toolChoice: nil,
+                           reasoningEffort: nil,
+                           pageContexts: [context],
+                           files: [file])
+
+        let prompt = promptHandler.consumeData()
+        guard case .multiple(let contexts) = prompt?.pageContext else {
+            return XCTFail("Expected multiple page contexts on the prompt")
+        }
+        XCTAssertEqual(contexts.count, 1)
+        XCTAssertEqual(contexts.first?.tabId, "tab-1")
+        XCTAssertEqual(contexts.first?.content, "## Apple")
+        XCTAssertEqual(contexts.first?.favicon.first?.href, "data:image/png;base64,AAAA")
+
+        guard case .query(let query) = prompt?.tool else {
+            return XCTFail("Expected a query prompt")
+        }
+        XCTAssertEqual(query.files?.first?.fileName, "doc.pdf")
+        XCTAssertEqual(query.files?.first?.mimeType, "application/pdf")
     }
 
     // MARK: - openAiChat pixels

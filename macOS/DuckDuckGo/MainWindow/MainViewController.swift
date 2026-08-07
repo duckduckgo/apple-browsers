@@ -44,6 +44,7 @@ final class MainViewController: NSViewController {
     let aiChatCoordinator: AIChatCoordinating
     let aiChatSummarizer: AIChatSummarizer
     let aiChatTranslator: AIChatTranslator
+    let aiChatSelectionContextAttacher: AIChatSelectionContextAttaching
 
     private(set) lazy var findInPageViewController: FindInPageViewController = {
         let vc = FindInPageViewController.create()
@@ -88,7 +89,9 @@ final class MainViewController: NSViewController {
 
     private let startupProfiler: StartupProfiler
 
-    private let themeManager: ThemeManaging
+    let themeManager: ThemeManaging
+    var themeUpdateCancellable: AnyCancellable?
+
     private var theme: ThemeStyleProviding {
         themeManager.theme
     }
@@ -267,6 +270,15 @@ final class MainViewController: NSViewController {
             pixelFiring: pixelFiring
         )
 
+        aiChatSelectionContextAttacher = AIChatSelectionContextAttacher(
+            aiChatMenuConfig: aiChatMenuConfig,
+            aiChatCoordinator: aiChatCoordinator,
+            pixelFiring: pixelFiring,
+            currentPageContextProvider: { [weak tabCollectionViewModel] in
+                tabCollectionViewModel?.selectedTabViewModel?.tab.pageContext
+            }
+        )
+
         navigationBarViewController = NavigationBarViewController.create(tabCollectionViewModel: tabCollectionViewModel,
                                                                          downloadListCoordinator: downloadListCoordinator,
                                                                          bookmarkManager: bookmarkManager,
@@ -294,7 +306,7 @@ final class MainViewController: NSViewController {
                                                                          pinningManager: pinningManager,
                                                                          memoryUsageMonitor: memoryUsageMonitor)
 
-        fireViewController = FireViewController.create(tabCollectionViewModel: tabCollectionViewModel, fireViewModel: fireCoordinator.fireViewModel, visualizeFireAnimationDecider: visualizeFireAnimationDecider)
+        fireViewController = FireViewController.create(tabCollectionViewModel: tabCollectionViewModel, fireViewModel: fireCoordinator.fireViewModel, visualizeFireAnimationDecider: visualizeFireAnimationDecider, featureFlagger: featureFlagger)
         bookmarksBarViewController = BookmarksBarViewController.create(
             tabCollectionViewModel: tabCollectionViewModel,
             bookmarkManager: bookmarkManager,
@@ -315,18 +327,28 @@ final class MainViewController: NSViewController {
         )
         let aiChatOmnibarController = AIChatOmnibarController(
             aiChatTabOpener: aiChatTabOpener,
-            tabCollectionViewModel: tabCollectionViewModel,
+            surface: .addressBar,
+            draftSource: TabPromptDraftSource(tabCollectionViewModel: tabCollectionViewModel),
+            origin: WindowPromptOrigin(tabCollectionViewModel: tabCollectionViewModel),
+            pixelHandler: AddressBarPromptPixelHandler(),
             suggestionsReader: suggestionsReader,
+            // Fire Windows run an isolated Duck.ai session; persisted chat-history suggestions
+            // from the regular session can't be opened here, so suppress them.
+            isBurner: tabCollectionViewModel.isBurner,
             preferences: NSApp.delegateTyped.aiChatPreferencesPersistor
         )
 
         aiChatOmnibarContainerViewController = AIChatOmnibarContainerViewController(
             themeManager: themeManager,
-            omnibarController: aiChatOmnibarController
+            omnibarController: aiChatOmnibarController,
+            duckAiNativeStorageHandler: NSApp.delegateTyped.burnerDuckAiStorageRegistry?.handler(for: tabCollectionViewModel.burnerMode)
+                ?? NSApp.delegateTyped.duckAiNativeStorageHandler,
+            burnerMode: tabCollectionViewModel.burnerMode
         )
         aiChatOmnibarTextContainerViewController = AIChatOmnibarTextContainerViewController(
             omnibarController: aiChatOmnibarController,
-            themeManager: themeManager
+            themeManager: themeManager,
+            isBurner: tabCollectionViewModel.isBurner
         )
         self.vpnUpsellPopoverPresenter = vpnUpsellPopoverPresenter
         self.startupProfiler = startupProfiler
@@ -357,6 +379,7 @@ final class MainViewController: NSViewController {
         subscribeToSelectedTabViewModel()
         subscribeToBookmarkBarVisibility()
         subscribeToSetAsDefaultAndAddToDockPromptsNotifications()
+        subscribeToThemeChanges()
         mainView.findInPageContainerView.applyDropShadow()
 
         view.registerForDraggedTypes([.URL, .fileURL])
@@ -388,7 +411,7 @@ final class MainViewController: NSViewController {
             }
         }
 
-        updateDividerColor(isShowingHomePage: tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab)
+        refreshDividerColor()
     }
 
     override func viewDidAppear() {
@@ -744,16 +767,21 @@ final class MainViewController: NSViewController {
         mainView.layoutSubtreeIfNeeded()
         mainView.updateTrackingAreas()
 
-        updateDividerColor(isShowingHomePage: tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab)
+        refreshDividerColor()
     }
 
-    private func updateDividerColor(isShowingHomePage isHomePage: Bool) {
+    private func refreshDividerColor() {
+        let isShowingHomepage = tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab
+        refreshDividerColor(isShowingHomePage: isShowingHomepage)
+    }
+
+    private func refreshDividerColor(isShowingHomePage isHomePage: Bool) {
         NSAppearance.withAppAppearance {
             if theme.addToolbarShadow {
                 if mainView.isBannerViewShown {
                     mainView.divider.backgroundColor = .bannerViewDivider
                 } else {
-                    mainView.divider.backgroundColor = theme.palette.surfaceDecorationPrimary
+                    mainView.divider.backgroundColor = theme.palette.unifiedInputFieldFillSecondary
                 }
             } else {
                 let backgroundColor: NSColor = {
@@ -799,7 +827,7 @@ final class MainViewController: NSViewController {
                 window.title = UserText.burnerWindowHeader
                 return
             }
-            let truncatedTitle = title.truncated(length: MainMenu.Constants.maxTitleLength)
+            let truncatedTitle = title.truncated(to: MainMenu.Constants.maxTitleLength, position: .tail)
 
             window.title = truncatedTitle
         }
@@ -828,7 +856,7 @@ final class MainViewController: NSViewController {
     }
 
     private func resizeNavigationBar(isHomePage homePage: Bool, animated: Bool) {
-        updateDividerColor(isShowingHomePage: homePage)
+        refreshDividerColor(isShowingHomePage: homePage)
         navigationBarViewController.resizeAddressBar(for: homePage ? .homePage : (isInPopUpWindow ? .popUpWindow : .default), animated: animated)
     }
 
@@ -1023,7 +1051,7 @@ final class MainViewController: NSViewController {
         mainView.isBannerViewShown = true
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-            self?.updateDividerColor(isShowingHomePage: self?.tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab)
+            self?.refreshDividerColor()
         }
     }
 
@@ -1032,7 +1060,7 @@ final class MainViewController: NSViewController {
         mainView.isBannerViewShown = false
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in
-            self?.updateDividerColor(isShowingHomePage: self?.tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab)
+            self?.refreshDividerColor()
         }
     }
 
@@ -1054,13 +1082,13 @@ final class MainViewController: NSViewController {
         /// the panel (unfocused + prompt preserved). Skip the panel tear-down and the address-bar focus grab
         /// below — otherwise we'd reset the tab's shared duck.ai flag and exit back to search.
         let isIncomingTabInDuckAIMode = selectedTabViewModel.addressBarSharedTextState.isInDuckAIMode
-        if isIncomingTabInDuckAIMode, featureFlagger.isFeatureOn(.aiChatOmnibarToggle) {
+        if isIncomingTabInDuckAIMode {
             return
         }
 
         /// Close AI Chat omnibar if visible before adjusting first responder
         /// https://app.asana.com/1/137249556945/project/1204167627774280/task/1212252449969913?focus=true
-        if mainView.isAIChatOmnibarContainerShown && featureFlagger.isFeatureOn(.aiChatOmnibarToggle) {
+        if mainView.isAIChatOmnibarContainerShown {
             updateAIChatOmnibarContainerVisibility(visible: false, shouldKeepSelection: false)
             aiChatOmnibarContainerViewController.cleanup()
         }
@@ -1158,7 +1186,6 @@ extension MainViewController {
         }
 
         if flags.contains(.option) || flags.contains(.shift),
-           featureFlagger.isFeatureOn(.aiChatOmnibarToggle),
            let buttonsViewController = navigationBarViewController.addressBarViewController?.addressBarButtonsViewController {
             let isSwitchingToAIChatMode = buttonsViewController.searchModeToggleControl?.selectedSegment == 0
             buttonsViewController.toggleSearchMode()
@@ -1167,8 +1194,7 @@ extension MainViewController {
                 self.aiChatOmnibarTextContainerViewController.insertNewlineIfHasContent(addressBarText: currentText)
             }
             return true
-        } else if flags.contains(.control),
-                  featureFlagger.isFeatureOn(.aiChatOmnibarToggle) {
+        } else if flags.contains(.control) {
             addressBarTextField.openAIChatWithPrompt()
             return true
         } else if flags.contains(.shift) && aiChatMenuConfig.shouldDisplayAddressBarShortcutWhenTyping {
@@ -1416,6 +1442,13 @@ extension MainViewController: DefaultBrowserAndDockPromptUIHosting {
 
     func provideModalAnchor() -> NSWindow? {
         getSourceWindowToShowInactiveUserModal()
+    }
+}
+
+extension MainViewController: ThemeUpdateListening {
+
+    func applyThemeStyle(theme: ThemeStyleProviding) {
+        refreshDividerColor()
     }
 }
 

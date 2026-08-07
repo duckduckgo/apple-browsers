@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Foundation
 import LetsMove
 import PixelKit
@@ -86,6 +87,19 @@ final class VPNURLEventHandler {
 
     func showShareFeedback() {
         windowControllersManager.showShareFeedbackModal(source: .vpn)
+    }
+
+    func copySupportInfo() async -> Bool {
+        let collector = DefaultVPNMetadataCollector(subscriptionManager: Application.appDelegate.subscriptionManager)
+        let metadata = await collector.collectMetadata()
+
+        guard let supportInfo = metadata.toPrettyPrintedJSON() else {
+            assertionFailure("Failed to encode VPN support info")
+            return false
+        }
+
+        NSPasteboard.general.copy(supportInfo)
+        return true
     }
 
     func showMainWindow() {

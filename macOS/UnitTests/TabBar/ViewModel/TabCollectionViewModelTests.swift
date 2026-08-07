@@ -1469,6 +1469,60 @@ final class TabCollectionViewModelTests: XCTestCase {
         XCTAssertEqual(tabVM?.addressBarSharedTextState.isInDuckAIMode, true)
         XCTAssertEqual(tabVM?.addressBarSharedTextState.aiChatToolMode, .webSearch)
     }
+
+    // MARK: - removeAllTabs(andAppend:)
+
+    @MainActor
+    func testWhenRemoveAllTabsAndAppendCalled_ThenAllTabsAreReplacedWithTheGivenTab() {
+        let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
+        tabCollectionViewModel.appendNewTab()
+        tabCollectionViewModel.appendNewTab()
+        XCTAssertEqual(tabCollectionViewModel.tabCollection.tabs.count, 3)
+
+        let newTab = Tab(content: .newtab)
+        tabCollectionViewModel.removeAllTabs(andAppend: newTab)
+
+        XCTAssertEqual(tabCollectionViewModel.tabCollection.tabs.count, 1)
+        XCTAssertTrue(tabCollectionViewModel.selectedTabViewModel?.tab === newTab)
+    }
+
+    @MainActor
+    func testWhenRemoveAllTabsAndAppendCalled_ThenTheAppendedTabIsSelected() {
+        let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
+        tabCollectionViewModel.appendNewTab()
+        tabCollectionViewModel.appendNewTab()
+        tabCollectionViewModel.select(at: .unpinned(2))
+
+        tabCollectionViewModel.removeAllTabs(andAppend: Tab(content: .newtab))
+
+        XCTAssertEqual(tabCollectionViewModel.selectionIndex, .unpinned(0))
+    }
+
+    // The point of this API is to replace the window's tabs in a single batched change, so the tab
+    // bar reloads (didMultipleChanges) rather than animating an insertion (didAppend) followed by a
+    // bulk removal — which is what caused the transient extra tabs during a non-animated burn.
+    @MainActor
+    func testWhenRemoveAllTabsAndAppendCalled_ThenDelegateReceivesMultipleChangesAndNotAppend() {
+        let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
+        tabCollectionViewModel.appendNewTab()
+        let delegate = TabCollectionViewModelDelegateMock()
+        tabCollectionViewModel.delegate = delegate
+
+        tabCollectionViewModel.removeAllTabs(andAppend: Tab(content: .newtab))
+
+        XCTAssertTrue(delegate.didMultipleChangesCalled)
+        XCTAssertFalse(delegate.didAppendCalled)
+    }
+
+    @MainActor
+    func testWhenRemoveAllTabsAndAppendCalledWithNewTab_ThenNewTabPageOpenNotificationIsPosted() {
+        let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
+        let expectation = expectation(forNotification: .newTabPageOpen, object: nil)
+
+        tabCollectionViewModel.removeAllTabs(andAppend: Tab(content: .newtab))
+
+        wait(for: [expectation], timeout: 1)
+    }
 }
 
 fileprivate extension TabCollectionViewModel {

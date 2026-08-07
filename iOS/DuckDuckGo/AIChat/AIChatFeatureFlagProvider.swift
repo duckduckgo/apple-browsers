@@ -20,6 +20,7 @@
 import AIChat
 import PrivacyConfig
 import Core
+import FeatureFlags_iOS
 
 struct AIChatFeatureFlagProvider: AIChatFeatureFlagProviding {
 
@@ -35,6 +36,10 @@ struct AIChatFeatureFlagProvider: AIChatFeatureFlagProviding {
 
     func supportsSyncChatsDeletion() -> Bool {
         featureFlagger.isFeatureOn(for: FeatureFlag.supportsSyncChatsDeletion)
+    }
+
+    func supportsSyncChatsUpdate() -> Bool {
+        featureFlagger.isFeatureOn(for: FeatureFlag.supportsSyncChatsUpdate)
     }
 
     func isNativeDataAccessEnabled() -> Bool {

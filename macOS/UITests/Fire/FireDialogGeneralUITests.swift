@@ -202,7 +202,7 @@ final class FireDialogGeneralUITests: UITestCase, FireDialogUITests {
 
         // Verify New Tab is open
         XCTAssertTrue(app.tabs["New Tab"].waitForExistence(timeout: UITests.Timeouts.elementExistence), "New Tab should be open")
-        XCTAssertTrue(app.webViews["New Tab Page"].exists, "New Tab Page webView should be visible")
+        verifyNewTabPageIsOpen()
 
         // Verify old tabs are gone
         XCTAssertFalse(app.tabs[page1Title].exists, "Old tab 1 should not exist")
@@ -259,7 +259,7 @@ final class FireDialogGeneralUITests: UITestCase, FireDialogUITests {
         XCTAssertEqual(app.windows.count, 1, "Should have exactly 1 window")
         XCTAssertEqual(app.tabs.count, 1, "Should have 1 new tab after burning")
         XCTAssertTrue(app.tabs["New Tab"].waitForExistence(timeout: UITests.Timeouts.elementExistence), "New Tab should be open")
-        XCTAssertTrue(app.webViews["New Tab Page"].exists, "New Tab Page webView should be visible")
+        verifyNewTabPageIsOpen()
 
         // Reopen History window to verify site is still in it (windows were closed by tabs toggle)
         app.openHistory()
@@ -441,7 +441,7 @@ final class FireDialogGeneralUITests: UITestCase, FireDialogUITests {
         XCTAssertEqual(app.windows.count, 1, "Should have exactly 1 window")
         XCTAssertEqual(app.tabs.count, 1, "Should have 1 new tab after burning")
         XCTAssertTrue(app.tabs["New Tab"].waitForExistence(timeout: UITests.Timeouts.elementExistence), "New Tab should be open")
-        XCTAssertTrue(app.webViews["New Tab Page"].exists, "New Tab Page webView should be visible")
+        verifyNewTabPageIsOpen()
 
         // Reopen History window to verify site is still in it
         app.openHistory()

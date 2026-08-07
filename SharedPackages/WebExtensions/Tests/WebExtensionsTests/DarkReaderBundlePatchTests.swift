@@ -26,6 +26,7 @@ import XCTest
 final class DarkReaderBundlePatchTests: XCTestCase {
 
     private var extractedDir: URL!
+    private var baseDir: URL!
 
     override func setUp() async throws {
         try await super.setUp()
@@ -51,6 +52,27 @@ final class DarkReaderBundlePatchTests: XCTestCase {
         }
 
         extractedDir = tempDir
+
+        // The bundle may be packaged flat (manifest.json at the root, matching the
+        // other embedded extensions) or wrapped in a top-level folder. Resolve the
+        // directory that actually contains manifest.json, mirroring how the app's
+        // WebExtensionStorageProviding.resolveInstalledExtension locates it.
+        baseDir = Self.directoryContainingManifest(in: tempDir) ?? tempDir
+    }
+
+    private static func directoryContainingManifest(in root: URL) -> URL? {
+        let fileManager = FileManager.default
+        if fileManager.fileExists(atPath: root.appendingPathComponent("manifest.json").path) {
+            return root
+        }
+        let contents = (try? fileManager.contentsOfDirectory(
+            at: root,
+            includingPropertiesForKeys: nil,
+            options: [.skipsHiddenFiles]
+        )) ?? []
+        return contents.first { item in
+            fileManager.fileExists(atPath: item.appendingPathComponent("manifest.json").path)
+        }
     }
 
     override func tearDown() {
@@ -83,7 +105,38 @@ final class DarkReaderBundlePatchTests: XCTestCase {
         XCTAssertTrue(permissions.contains("nativeMessaging"))
     }
 
+    func testManifestVersionContainsDuckDuckGoPatchComponent() throws {
+        let manifest = try loadManifestJSON()
+        let version = try XCTUnwrap(manifest["version"] as? String)
+        let components = version.split(separator: ".")
+
+        XCTAssertEqual(components.count, 4, "Patched Dark Reader version must contain four numeric components")
+        XCTAssertEqual(components.last.map(String.init), "1", "Patched Dark Reader version must use DuckDuckGo patch component 1")
+        XCTAssertTrue(components.allSatisfy { Int($0) != nil }, "Patched Dark Reader version components must be numeric")
+    }
+
+    func testManifestUsesNonpersistentBackgroundPage() throws {
+        let manifest = try loadManifestJSON()
+        let background = try XCTUnwrap(manifest["background"] as? [String: Any])
+        let scripts = try XCTUnwrap(background["scripts"] as? [String])
+
+        XCTAssertEqual(scripts, ["background/index.js"])
+        XCTAssertEqual(background["persistent"] as? Bool, false)
+        XCTAssertNil(background["service_worker"])
+    }
+
     // MARK: - Background Script Patches
+
+    func testContentScriptRetriesColdBackgroundConnection() throws {
+        let contentScript = try loadContentScript()
+
+        XCTAssertTrue(contentScript.contains("function sendMessage(message, errorHandler = cleanup)"))
+        XCTAssertTrue(contentScript.contains("promise.then(responseHandler).catch(errorHandler)"))
+        XCTAssertTrue(contentScript.contains("const maxConnectionAttempts = 4"))
+        XCTAssertTrue(contentScript.contains("const connectionRetryDelay = 500"))
+        XCTAssertTrue(contentScript.contains("sendConnectionOrResumeMessage(type, attempt + 1)"))
+        XCTAssertTrue(contentScript.contains("clearTimeout(connectionRetryTimer)"))
+    }
 
     func testBackgroundScriptContainsNativeMessagingCall() throws {
         let backgroundJS = try loadBackgroundScript()
@@ -112,6 +165,16 @@ final class DarkReaderBundlePatchTests: XCTestCase {
         )
     }
 
+    func testBackgroundScriptBoundsNativeDomainExclusionCheck() throws {
+        let backgroundJS = try loadBackgroundScript()
+
+        XCTAssertTrue(
+            backgroundJS.contains("Promise.race") &&
+                backgroundJS.contains("setTimeout(() => resolve(null), 500)"),
+            "background/index.js must not wait indefinitely for the native domain exclusion response"
+        )
+    }
+
     func testBackgroundScriptContainsCleanUpResponseForExcludedDomains() throws {
         let backgroundJS = try loadBackgroundScript()
 
@@ -120,6 +183,19 @@ final class DarkReaderBundlePatchTests: XCTestCase {
             backgroundJS.contains("result.isExcluded") && backgroundJS.contains("CLEAN_UP"),
             "background/index.js must return CLEAN_UP message when isDomainExcluded response indicates exclusion"
         )
+    }
+
+    func testFallbackScriptAvoidsCoarseWikipediaFallback() throws {
+        let fallbackJS = try loadFallbackScript()
+
+        XCTAssertTrue(fallbackJS.contains("const isWikipedia"))
+        XCTAssertTrue(fallbackJS.contains("--background-color-base: #101418"))
+        XCTAssertTrue(fallbackJS.contains(".mw-page-container, .mw-body, .mw-body-content"))
+        XCTAssertTrue(fallbackJS.contains("a { color: #6b9eff !important; }"))
+        XCTAssertTrue(fallbackJS.contains(".skin-theme-clientpref-night, .skin-theme-clientpref-os"))
+        XCTAssertTrue(fallbackJS.contains("wikipediaThemeObserver"))
+        XCTAssertTrue(fallbackJS.contains("fallback.remove()"))
+        XCTAssertTrue(fallbackJS.contains("location.hostname.endsWith(\".wikipedia.org\")"))
     }
 
     // MARK: - Existing Patches (automation mode)
@@ -152,17 +228,52 @@ final class DarkReaderBundlePatchTests: XCTestCase {
         )
     }
 
+    // MARK: - Detector Hint Patches
+
+    func testWikipediaDetectorHintContainsExplicitAndAutomaticDarkThemeClasses() throws {
+        let detectorHints = try loadDetectorHints()
+        let wikimediaBlock = try XCTUnwrap(
+            detectorHints
+                .components(separatedBy: "================================")
+                .first { $0.contains("*.wikipedia.org") }
+        )
+
+        XCTAssertTrue(
+            wikimediaBlock.contains(".skin-theme-clientpref-night"),
+            "Wikipedia detector hint must recognize Wikipedia's explicit dark theme"
+        )
+        XCTAssertTrue(
+            wikimediaBlock.contains(".skin-theme-clientpref-os"),
+            "Wikipedia detector hint must recognize Wikipedia's automatic dark theme"
+        )
+    }
+
     // MARK: - Helpers
 
     private func loadManifestJSON() throws -> [String: Any] {
-        let manifestURL = extractedDir.appendingPathComponent("darkreader/manifest.json")
+        let manifestURL = baseDir.appendingPathComponent("manifest.json")
         let data = try Data(contentsOf: manifestURL)
         return try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
     }
 
     private func loadBackgroundScript() throws -> String {
-        let backgroundURL = extractedDir.appendingPathComponent("darkreader/background/index.js")
+        let backgroundURL = baseDir.appendingPathComponent("background/index.js")
         return try String(contentsOf: backgroundURL, encoding: .utf8)
+    }
+
+    private func loadContentScript() throws -> String {
+        let contentScriptURL = baseDir.appendingPathComponent("inject/index.js")
+        return try String(contentsOf: contentScriptURL, encoding: .utf8)
+    }
+
+    private func loadFallbackScript() throws -> String {
+        let fallbackURL = baseDir.appendingPathComponent("inject/fallback.js")
+        return try String(contentsOf: fallbackURL, encoding: .utf8)
+    }
+
+    private func loadDetectorHints() throws -> String {
+        let detectorHintsURL = baseDir.appendingPathComponent("config/detector-hints.config")
+        return try String(contentsOf: detectorHintsURL, encoding: .utf8)
     }
 }
 #endif

@@ -42,7 +42,7 @@ struct AutofillSettingsView: View {
                     }
                 }
             }
-            .listRowBackground(Color(designSystemColor: .surface))
+            .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
 
             if viewModel.showCreditCards {
                 Section(header: Text(UserText.autofillSettingsAskToSaveAndAutofill),
@@ -55,13 +55,13 @@ struct AutofillSettingsView: View {
                                       title: UserText.autofillCreditCardListTitle)
                     }
                 }
-                .listRowBackground(Color(designSystemColor: .surface))
+                .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
             } else {
                 Section(footer: PasswordFooterView(viewModel: viewModel)) {
                     ToggleRowView(toggleStatus: $viewModel.savePasswordsEnabled,
                                   title: UserText.autofillSettingsAskToSaveAndAutofill)
                 }
-                .listRowBackground(Color(designSystemColor: .surface))
+                .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
             }
             
             Section(header: Text(UserText.autofillSettingsImportPasswordsSectionHeader).foregroundColor(.secondary)) {
@@ -100,11 +100,11 @@ struct AutofillSettingsView: View {
                     } label: {
                         Text(UserText.autofillEmptyViewImportButtonTitle)
                             .daxBodyRegular()
-                            .foregroundColor(Color(designSystemColor: .accent))
+                            .foregroundColor(Color(designSystemColor: .accentPrimary))
                     }
                 }
             }
-            .listRowBackground(Color(designSystemColor: .surface))
+            .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
 
             if viewModel.showExtensionSettings || viewModel.shouldShowNeverPromptReset() {
                 Section(header: Text(UserText.autofillSettingsOptionsSectionHeader).foregroundColor(.secondary)) {
@@ -120,7 +120,7 @@ struct AutofillSettingsView: View {
                             viewModel.resetExcludedSites()
                         } label: {
                             Text(UserText.autofillNeverSavedSettings)
-                                .foregroundColor(Color(designSystemColor: .accent))
+                                .foregroundColor(Color(designSystemColor: .accentPrimary))
                         }
                         .confirmationDialog(
                             "",
@@ -138,7 +138,7 @@ struct AutofillSettingsView: View {
                         }
                     }
                 }
-                .listRowBackground(Color(designSystemColor: .surface))
+                .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
             }
 
         }
@@ -206,7 +206,7 @@ struct AutofillSettingsView: View {
         var body: some View {
             return Toggle(title, isOn: $toggleStatus)
                 .toggleStyle(.switch)
-                .tint(Color(designSystemColor: .accent))
+                .tint(Color(designSystemColor: .accentPrimary))
                 .foregroundColor(Color(designSystemColor: .textPrimary))
                 .daxBodyRegular()
         }

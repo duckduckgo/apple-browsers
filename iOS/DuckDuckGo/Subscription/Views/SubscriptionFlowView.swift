@@ -23,6 +23,7 @@ import DesignResourcesKit
 import Core
 import DataBrokerProtection_iOS
 import PrivacyConfig
+import VPN
 
 struct SubscriptionFlowView: View {
         
@@ -50,7 +51,9 @@ struct SubscriptionFlowView: View {
     var body: some View {
         
         // Hidden Navigation Links for Onboarding sections
-        NavigationLink(destination: LazyView(NetworkProtectionRootView().navigationViewStyle(.stack)),
+        NavigationLink(destination: LazyView(
+            NetworkProtectionRootView(source: .subscriptionFlow)
+                .navigationViewStyle(.stack)),
                        isActive: $isShowingNetP,
                        label: { EmptyView() })
         

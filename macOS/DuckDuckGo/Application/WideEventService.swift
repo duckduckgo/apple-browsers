@@ -45,6 +45,7 @@ actor WideEventService {
         await processCompletion(VPNConnectionWideEventData.self, trigger: trigger)
         await processSubscriptionPurchaseCompletion(trigger: trigger)
         await processCompletion(DataImportWideEventData.self, trigger: trigger)
+        await processCompletion(AuthV2TokenRefreshWideEventData.self, trigger: trigger)
 
         isProcessing = false
     }

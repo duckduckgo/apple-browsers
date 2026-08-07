@@ -64,6 +64,19 @@ public extension NSEvent {
         KeyEquivalent(event: self)
     }
 
+    /// Whether the event originates from the mouse (button, drag, movement or scroll).
+    var isMouse: Bool {
+        switch type {
+        case .leftMouseDown, .leftMouseUp,
+             .rightMouseDown, .rightMouseUp,
+             .otherMouseDown, .otherMouseUp,
+             .leftMouseDragged, .rightMouseDragged, .otherMouseDragged,
+             .mouseMoved, .mouseEntered, .mouseExited,
+             .scrollWheel: true
+        default: false
+        }
+    }
+
     /// is NSEvent representing right mouse down event or cntrl+mouse down event
     var isContextClick: Bool {
         let isControlClick = type == .leftMouseDown && (modifierFlags.rawValue & NSEvent.ModifierFlags.control.rawValue != 0)

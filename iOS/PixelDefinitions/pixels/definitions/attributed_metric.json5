@@ -18,8 +18,7 @@
             {
                 "key": "default_browser",
                 "description": "Whether the browser is set as default",
-                "type": "string",
-                "enum": ["true", "false"]
+                "type": "boolean"
             },
             {
                 "key": "count",
@@ -52,8 +51,7 @@
             {
                 "key": "default_browser",
                 "description": "Whether the browser is set as default",
-                "type": "string",
-                "enum": ["true", "false"]
+                "type": "boolean"
             },
             {
                 "key": "count",

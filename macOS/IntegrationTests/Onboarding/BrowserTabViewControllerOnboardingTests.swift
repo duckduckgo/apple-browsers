@@ -20,7 +20,7 @@ import AIChat
 import Combine
 import Common
 import FoundationExtensions
-import FeatureFlags
+import FeatureFlags_macOS
 import History
 import HistoryView
 import Onboarding
@@ -80,6 +80,8 @@ class MockWebTrackingProtectionPreferencesPersistor: WebTrackingProtectionPrefer
 
 class MockCookiePopupProtectionPreferencesPersistor: CookiePopupProtectionPreferencesPersistor {
     var autoconsentEnabled: Bool = false
+    var cookiePopupPreferenceRawValue: String?
+    var didMigrateCookiePopupPreference: Bool = false
 }
 
 class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
@@ -130,6 +132,7 @@ final class MockAIChatConfig: AIChatMenuVisibilityConfigurable {
     var shouldOpenAIChatInSidebar = false
     var shouldDisplaySummarizationMenuItem = false
     var shouldDisplayTranslationMenuItem = false
+    var shouldDisplaySelectionContextMenuItem = false
     var shouldAutomaticallySendPageContext = false
     var shouldDisplayAddressBarShortcutWhenTyping: Bool = false
     var shouldAutomaticallySendPageContextTelemetryValue: Bool?
@@ -194,8 +197,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
                 duckPlayer: DuckPlayer(
                     preferencesPersistor: DuckPlayerPreferencesPersistorMock(),
                     privacyConfigurationManager: MockPrivacyConfigurationManager(),
-                    internalUserDecider: featureFlagger.internalUserDecider,
-                    featureFlagger: featureFlagger
+                    internalUserDecider: featureFlagger.internalUserDecider
                 ),
                 pinningManager: MockPinningManager()
             )
@@ -511,6 +513,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
                                               fireproofDomains: MockFireproofDomains(),
                                               faviconManagement: FaviconManagerMock(),
                                               windowControllersManager: windowControllersManager,
+                                              dataClearingPreferences: Application.appDelegate.dataClearingPreferences,
                                               pixelFiring: nil,
                                               historyProvider: MockHistoryViewDataProvider())
         let mainViewController = MainViewController(

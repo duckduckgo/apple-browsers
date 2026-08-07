@@ -17,9 +17,12 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Onboarding
+import Persistence
 import SystemSettingsPiPTutorial
 import UIKit
+import WebExtensions
 
 @MainActor
 enum OnboardingIntroFactory {
@@ -30,7 +33,9 @@ enum OnboardingIntroFactory {
         systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
         daxDialogsManager: DaxDialogsManaging,
         syncAutoRestoreHandler: SyncAutoRestoreHandling,
-        onboardingManager: OnboardingManaging
+        onboardingManager: OnboardingManaging,
+        keyValueStore: ThrowingKeyValueStoring,
+        adBlockingAvailability: AdBlockingAvailabilityProviding
     ) -> OnboardingIntroViewModel {
         OnboardingIntroViewModel(
             pixelReporter: pixelReporter,
@@ -40,7 +45,11 @@ enum OnboardingIntroFactory {
                 configuration: .enabled,
                 syncAutoRestoreHandler: syncAutoRestoreHandler
             ),
-            onboardingManager: onboardingManager
+            onboardingManager: onboardingManager,
+            personalizationManager: OnboardingPersonalizationManager.make(
+                keyValueStore: keyValueStore,
+                adBlockingAvailability: adBlockingAvailability
+            )
         )
     }
 
@@ -48,26 +57,46 @@ enum OnboardingIntroFactory {
     /// 
     /// - Parameters:
     ///   - viewModel: The ViewModel to wire.
-    ///   - isRebranded: `true` if needs to use rebranding visual language. `false` otherwise.
     ///   - delegate: The delegate for the onboarding flow.
     /// - Returns: A new instance of the linear onboarding view controller with the provided view model.
     static func makeController(
         viewModel: OnboardingIntroViewModel,
-        isRebranded: Bool,
         delegate: OnboardingDelegate
     ) -> UIViewController {
-        let controller: Onboarding = if isRebranded {
-            OnboardingIntroViewController(
-                rootView: RebrandedOnboardingView(model: viewModel),
-                viewModel: viewModel
-            )
-        } else {
-            OnboardingIntroViewController(
+        let controller = OnboardingIntroViewController(
                 rootView: OnboardingView(model: viewModel),
                 viewModel: viewModel
             )
-        }
         controller.delegate = delegate
         return controller
+    }
+}
+
+// MARK: - Personalization manager composition
+
+private extension OnboardingPersonalizationManager {
+
+    /// Builds the personalization facade wired to the app's concrete settings stores.
+    ///
+    /// Most stores are stateless wrappers over persistence and are created inline. The two that need
+    /// shared, app-lifetime instances are injected: `keyValueStore` (where the settings actually live)
+    /// and `adBlockingAvailability` (session state owned by the app).
+    static func make(
+        keyValueStore: ThrowingKeyValueStoring,
+        adBlockingAvailability: AdBlockingAvailabilityProviding
+    ) -> OnboardingPersonalizationManaging {
+        let serpSettings = SERPSettingsProvider(aiChatProvider: AIChatSettings())
+        serpSettings.keyValueStore = keyValueStore   // otherwise safe-search reads/writes no-op
+
+        return OnboardingPersonalizationManager(
+            appSettings: AppUserDefaults(),
+            serpSettings: serpSettings,
+            aiChatSettings: AIChatSettings(),
+            aiModelSettings: OnboardingAIModelAdapter(persistor: AIChatPreferencesPersistor()),
+            youTubeAdBlocking: OnboardingYouTubeAdBlockingAdapter(
+                keyValueStore: keyValueStore,
+                adBlockingAvailability: adBlockingAvailability
+            )
+        )
     }
 }

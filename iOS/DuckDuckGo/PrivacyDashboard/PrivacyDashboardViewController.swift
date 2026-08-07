@@ -308,6 +308,8 @@ extension PrivacyDashboardViewController {
         let isAfterSuppressedXSafariRedirect: Bool
         let loadedWebExtensions: String?
         let adBlockingExtensionScriptletsVersion: String?
+        let cpmExtensionLoaded: Bool
+        let cpmExtensionDroppedCallbacks: Int
     }
     
     enum BrokenSiteReportError: Error {
@@ -342,6 +344,10 @@ extension PrivacyDashboardViewController {
         let blockedTrackerDomains = privacyInfo.trackerInfo.trackersBlocked.compactMap { $0.domain }
         let protectionsState = privacyConfigurationManager.privacyConfig.isFeature(.contentBlocking,
                                                                                    enabledForDomain: breakageAdditionalInfo.currentURL.host)
+        let cookieConsentInfo = privacyInfo.cookieConsentManaged?.withCPMRuntimeInfo(
+            extensionLoaded: breakageAdditionalInfo.cpmExtensionLoaded,
+            droppedCallbacks: breakageAdditionalInfo.cpmExtensionDroppedCallbacks
+        )
 
         var errors: [Error]?
         var statusCodes: [Int]?
@@ -377,7 +383,7 @@ extension PrivacyDashboardViewController {
                                 extendedPerformanceMetrics: privacyAwareWebVitals,
                                 userRefreshCount: breakageAdditionalInfo.userRefreshCount,
                                 variant: "",
-                                cookieConsentInfo: privacyInfo.cookieConsentManaged,
+                                cookieConsentInfo: cookieConsentInfo,
                                 debugFlags: privacyInfo.debugFlags,
                                 privacyExperiments: privacyInfo.privacyExperimentCohorts,
                                 isPirEnabled: nil,

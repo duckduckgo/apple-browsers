@@ -18,9 +18,28 @@
 
 import SwiftUI
 import SwiftUIExtensions
+import DesignResourcesKit
 
 struct WarningView: View {
+
+    enum Constants {
+        static let backgroundCornerRadius = 16.0
+        static let legacyBackgroundCornerRadius = 8.0
+    }
+
     let model: Model
+
+    /// Captured at init so it stays stable for the view's lifetime.
+    let isAppRebranded: Bool
+
+    init(model: Model, isAppRebranded: Bool = DesignSystemRebrand.isAppRebranded()) {
+        self.model = model
+        self.isAppRebranded = isAppRebranded
+    }
+
+    private var cornerRadius: CGFloat {
+        isAppRebranded ? Constants.backgroundCornerRadius : Constants.legacyBackgroundCornerRadius
+    }
 
     public var body: some View {
         VStack(spacing: 0) {
@@ -47,7 +66,10 @@ struct WarningView: View {
                 }
             }
             .padding(16)
-            .background(RoundedRectangle(cornerRadius: 8).fill(Color(.alertBubbleBackground)))
+            .background(
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .fill(Color(.alertBubbleBackground))
+            )
         }
         .padding(EdgeInsets(top: 8, leading: 8, bottom: 4, trailing: 8))
     }

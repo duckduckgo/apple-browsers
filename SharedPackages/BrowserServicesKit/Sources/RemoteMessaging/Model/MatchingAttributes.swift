@@ -175,6 +175,11 @@ struct SubscriptionStatusMatchingAttribute: SingleValueMatching {
     var fallback: Bool?
 }
 
+struct SubscriptionTierMatchingAttribute: SingleValueMatching {
+    var value: [String]? = []
+    var fallback: Bool?
+}
+
 struct SubscriptionFreeTrialActiveMatchingAttribute: SingleValueMatching {
     var value: Bool?
     var fallback: Bool?
@@ -259,6 +264,11 @@ struct AllFeatureFlagsEnabledMatchingAttribute: ArrayContainsAllMatching {
 
 struct SyncEnabledMatchingAttribute: SingleValueMatching {
     var value: Bool?
+    var fallback: Bool?
+}
+
+struct NTPAfterIdleStateMatchingAttribute: SingleValueMatching {
+    var value: [String]? = []
     var fallback: Bool?
 }
 

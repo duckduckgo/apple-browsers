@@ -21,6 +21,7 @@ import Common
 import FoundationExtensions
 import Core
 import DDGSync
+import FeatureFlags_iOS
 import WebKit
 import BrowserServicesKit
 import Persistence
@@ -56,8 +57,6 @@ protocol TabManaging {
 enum FireModeSwitchSource: String {
     case tabSelection = "tab_selection"
     case longPressTabsIcon = "long_press_tabs_icon"
-    case menuPromotion = "menu_promotion"
-    case ntpPromotion = "ntp_promotion"
     case longPressLink = "long_press_link"
     case tabSwitcherLongPress = "tab_switcher_long_press"
     case keyCommand = "key_command"
@@ -139,6 +138,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     private let contextualOnboardingLogic: ContextualOnboardingLogic
     private let onboardingPixelReporter: OnboardingPixelReporting
     private let featureFlagger: FeatureFlagger
+    private let tabTerminationTelemetry: any TabTerminationTelemetry
     private let contentScopeExperimentManager: ContentScopeExperimentsManaging
     private let textZoomCoordinatorProvider: TextZoomCoordinatorProviding
     private let autoconsentManagementProvider: AutoconsentManagementProviding
@@ -161,7 +161,6 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     private let launchSourceManager: LaunchSourceManaging
     private let darkReaderFeatureSettings: DarkReaderFeatureSettings
     private let toggleModeStorage: ToggleModeStoring
-    private let fireModePromotionEligibility: FireModePromotionCoordinating?
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     private let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
 
@@ -221,8 +220,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
          toggleModeStorage: ToggleModeStoring = ToggleModeStorage(),
-         fireModePromotionEligibility: FireModePromotionCoordinating? = nil,
-         adBlockingAvailability: AdBlockingAvailabilityProviding
+         adBlockingAvailability: AdBlockingAvailabilityProviding,
+         tabTerminationTelemetry: (any TabTerminationTelemetry)? = nil
     ) {
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
         self.duckAiFireModeStorageHandler = duckAiFireModeStorageHandler
@@ -240,6 +239,9 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         self.contextualOnboardingLogic = contextualOnboardingLogic
         self.onboardingPixelReporter = onboardingPixelReporter
         self.featureFlagger = featureFlagger
+        self.tabTerminationTelemetry = tabTerminationTelemetry ?? DefaultTabTerminationTelemetry(
+            featureFlagger: featureFlagger,
+            keyValueStore: UserDefaults.app)
         self.contentScopeExperimentManager = contentScopeExperimentManager
         self.appSettings = appSettings
         self.autoplaySettings = autoplaySettings
@@ -261,7 +263,6 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         self.launchSourceManager = launchSourceManager
         self.toggleModeStorage = toggleModeStorage
         self.darkReaderFeatureSettings = darkReaderFeatureSettings
-        self.fireModePromotionEligibility = fireModePromotionEligibility
         self.adBlockingAvailability = adBlockingAvailability
         registerForNotifications()
     }
@@ -282,9 +283,6 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         }
         _currentBrowsingMode = mode
         fireModeDelegate?.tabManagerDidChangeBrowsingMode(mode)
-        if mode == .fire {
-            fireModePromotionEligibility?.markFireModeVisited()
-        }
         Pixel.fire(pixel: .browsingModeSwitched, withAdditionalParameters: [
             PixelParameters.browsingMode: mode.pixelParamValue,
             PixelParameters.source: source.rawValue
@@ -388,6 +386,20 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     
     func controller(for tab: Tab) -> TabViewController? {
         return tabControllerCache.first { $0.tabModel === tab }
+    }
+
+    @MainActor
+    func controller(for tab: Tab, createIfNeeded: Bool) -> TabViewController? {
+        if let controller = controller(for: tab) {
+            return controller
+        }
+        guard createIfNeeded, tab.link != nil else { return nil }
+
+        let tabInteractionState = interactionStateSource?.popLastStateForTab(tab)
+        let controller = buildController(forTab: tab, inheritedAttribution: nil, interactionState: tabInteractionState)
+        tabControllerCache.append(controller)
+        cacheDelegate?.tabManager(self, didCreateController: controller)
+        return controller
     }
 
     func controller(forWebView webView: WKWebView) -> TabViewController? {
@@ -631,9 +643,19 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     }
 
     @MainActor
+    func webContentProcessDidTerminate() {
+        tabTerminationTelemetry.webContentProcessDidTerminate(activeTabCount: tabControllerCache.count)
+    }
+
+    @MainActor
     func invalidateCache(forController controller: TabViewController) {
         if current() === controller {
-            Pixel.fire(pixel: .webKitTerminationDidReloadCurrentTab)
+            DailyPixel.fireDailyAndCount(pixel: .webKitTerminationDidReloadCurrentTab, pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
+
+            if controller.url?.isDuckAIURL == true {
+                DailyPixel.fireDailyAndCount(pixel: .aiChatTabDidReloadAfterTermination)
+            }
+
             current()?.reload()
         } else {
             removeFromCache(controller)
@@ -643,14 +665,9 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
 
     /// Schedules a debounced save. Returns immediately; the write is async. Callers that need
     /// the write on disk before returning, or that need the real write `Result`, must use
-    /// `flushPendingSave()` instead. When the `tabsSaveOptimization` feature flag is off, falls
-    /// back to a synchronous save (old behavior) but the result is still discarded.
+    /// `flushPendingSave()` instead.
     @MainActor
     func save() {
-        guard featureFlagger.isFeatureOn(.tabsSaveOptimization) else {
-            _ = tabsModelProvider.flushPendingSave()
-            return
-        }
         scheduleDebouncedSave()
     }
 
@@ -802,6 +819,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         if clearTabHistory {
             removeTabHistory(for: tabIDs)
         }
+
+        tabsCacheNeedsCleanup = true
     }
 
     private func removeTabHistory(for tabIDs: [String]) {
@@ -930,6 +949,7 @@ extension TabManager {
     @MainActor
     @objc
     private func onMemoryWarning(_ notification: NSNotification) {
+        tabTerminationTelemetry.didReceiveMemoryWarning()
         flushPendingSave()
     }
 

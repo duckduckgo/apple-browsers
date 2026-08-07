@@ -17,6 +17,7 @@
 //
 
 import Combine
+import PrivacyConfig
 import PrivacyConfigTestsUtils
 import XCTest
 
@@ -36,6 +37,7 @@ class FaviconManagerTests: XCTestCase {
             bookmarkManager: MockBookmarkManager(),
             fireproofDomains: MockFireproofDomains(domains: []),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger(),
             imageCache: { _ in self.imageCache },
             referenceCache: { _ in self.referenceCache }
         )
@@ -53,9 +55,44 @@ class FaviconManagerTests: XCTestCase {
             cacheType: .inMemory,
             bookmarkManager: MockBookmarkManager(),
             fireproofDomains: MockFireproofDomains(domains: []),
-            privacyConfigurationManager: MockPrivacyConfigurationManager()
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger()
         )
         XCTAssertNotNil(faviconManager.store as? FaviconNullStore)
+    }
+
+    // MARK: - resolvedCachedFavicon(for host:)
+
+    @MainActor
+    func testResolvedCachedFaviconForHostResolvesURLViaHostReferenceAndReturnsDecodedImage() async throws {
+        let host = "example.com"
+        let faviconURL = try XCTUnwrap("https://example.com/favicon.ico".url)
+        let documentURL = try XCTUnwrap("https://example.com".url)
+        let image = NSImage(size: NSSize(width: 16, height: 16))
+
+        referenceCache.getFaviconURLForHost = { requestedHost, sizeCategory in
+            requestedHost == host && sizeCategory == .small ? faviconURL : nil
+        }
+        imageCache.getFaviconWithURL = { url in
+            url == faviconURL ? Favicon(identifier: UUID(), url: faviconURL, image: image, relation: .favicon, documentUrl: documentURL, dateCreated: Date()) : nil
+        }
+
+        let favicon = await faviconManager.resolvedCachedFavicon(for: host, sizeCategory: .small)
+
+        XCTAssertEqual(favicon?.url, faviconURL)
+        XCTAssertEqual(favicon?.image, image)
+        XCTAssertEqual(referenceCache.getFaviconURLForHostCalls.map(\.host), [host])
+        XCTAssertEqual(imageCache.getFaviconWithURLCalls, [faviconURL])
+    }
+
+    @MainActor
+    func testResolvedCachedFaviconForHostReturnsNilWhenHostHasNoReference() async {
+        referenceCache.getFaviconURLForHost = { _, _ in nil }
+
+        let favicon = await faviconManager.resolvedCachedFavicon(for: "unknown.example", sizeCategory: .small)
+
+        XCTAssertNil(favicon)
+        XCTAssertTrue(imageCache.getFaviconWithURLCalls.isEmpty)
     }
 
     // MARK: - fallBackToSmaller
@@ -231,4 +268,102 @@ class FaviconManagerTests: XCTestCase {
         XCTAssertNil(faviconManager.getCachedFavicon(for: domainURL, sizeCategory: .small))
         XCTAssertNotNil(faviconManager.getCachedFavicon(forUrlOrAnySubdomain: domainURL, sizeCategory: .small, fallBackToSmaller: false))
     }
+
+    // MARK: - fetchFavicons size selection
+
+    func testFaviconSelectionDropsLargerFaviconsAndSVGsWhenAnExactMaxFaviconExists() {
+        let small = FaviconSize(longestSide: 16, isSVG: false)
+        let medium = FaviconSize(longestSide: 32, isSVG: false)
+        let exactMax = FaviconSize(longestSide: 64, isSVG: false)
+        let larger = FaviconSize(longestSide: 256, isSVG: false)
+        let svg = FaviconSize(longestSide: 0, isSVG: true)
+
+        // A 64px favicon exists, so the 256px favicon and the SVG are dropped.
+        XCTAssertEqual(FaviconManager.faviconsToKeep([small, medium, exactMax, larger, svg], maxStoredSize: 64),
+                       [small, medium, exactMax])
+    }
+
+    func testFaviconSelectionKeepsSmallestLargerFaviconAndDropsSVGWhenALargerRasterExists() {
+        let small = FaviconSize(longestSide: 16, isSVG: false)
+        let medium = FaviconSize(longestSide: 32, isSVG: false)
+        let smallestLarger = FaviconSize(longestSide: 128, isSVG: false)
+        let largest = FaviconSize(longestSide: 256, isSVG: false)
+        let svg = FaviconSize(longestSide: 0, isSVG: true)
+
+        // No 64px favicon, but larger rasters exist: keep the smallest larger one (128px), drop 256px, and
+        // drop the SVG (a raster already covers the largest displayed size).
+        XCTAssertEqual(FaviconManager.faviconsToKeep([small, medium, smallestLarger, largest, svg], maxStoredSize: 64),
+                       [small, medium, smallestLarger])
+    }
+
+    func testFaviconSelectionKeepsSVGWhenEveryRasterFaviconIsSmallerThanMax() {
+        let small = FaviconSize(longestSide: 16, isSVG: false)
+        let medium = FaviconSize(longestSide: 32, isSVG: false)
+        let svg = FaviconSize(longestSide: 0, isSVG: true)
+
+        // No raster reaches 64px, so the SVG is kept to cover the larger displayed sizes.
+        XCTAssertEqual(FaviconManager.faviconsToKeep([small, medium, svg], maxStoredSize: 64),
+                       [small, medium, svg])
+    }
+
+    func testFaviconSelectionKeepsSVGOnlyWhenThereIsNoRasterFavicon() {
+        let svg = FaviconSize(longestSide: 0, isSVG: true)
+        XCTAssertEqual(FaviconManager.faviconsToKeep([svg], maxStoredSize: 64), [svg])
+    }
+
+    func testFaviconSelectionDropsSVGWhenAnExactMaxFaviconExists() {
+        let exactMax = FaviconSize(longestSide: 64, isSVG: false)
+        let svg = FaviconSize(longestSide: 0, isSVG: true)
+        XCTAssertEqual(FaviconManager.faviconsToKeep([exactMax, svg], maxStoredSize: 64), [exactMax])
+    }
+
+    func testFaviconSelectionKeepsEveryFaviconAtOrBelowMax() {
+        let favicons = [
+            FaviconSize(longestSide: 16, isSVG: false),
+            FaviconSize(longestSide: 32, isSVG: false),
+            FaviconSize(longestSide: 64, isSVG: false)
+        ]
+        XCTAssertEqual(FaviconManager.faviconsToKeep(favicons, maxStoredSize: 64), favicons)
+    }
+
+    func testFaviconSelectionDeduplicatesSameSize() {
+        let favicons = [
+            FaviconSize(longestSide: 512, isSVG: true),
+            FaviconSize(longestSide: 180, isSVG: false),
+            FaviconSize(longestSide: 16, isSVG: false),
+            FaviconSize(longestSide: 180, isSVG: false),
+            FaviconSize(longestSide: 48, isSVG: false),
+            FaviconSize(longestSide: 32, isSVG: false)
+        ]
+        XCTAssertEqual(
+            FaviconManager.faviconsToKeep(favicons, maxStoredSize: 64).sorted(by: { $0.longestSide < $1.longestSide }),
+            [
+                FaviconSize(longestSide: 16, isSVG: false),
+                FaviconSize(longestSide: 32, isSVG: false),
+                FaviconSize(longestSide: 48, isSVG: false),
+                FaviconSize(longestSide: 180, isSVG: false)
+            ]
+        )
+    }
+
+    func testFaviconSelectionDropsLargestFavicon() {
+        let favicons = [
+            FaviconSize(longestSide: 48, isSVG: false),
+            FaviconSize(longestSide: 114, isSVG: false),
+            FaviconSize(longestSide: 144, isSVG: false)
+        ]
+        XCTAssertEqual(
+            FaviconManager.faviconsToKeep(favicons, maxStoredSize: 64).sorted(by: { $0.longestSide < $1.longestSide }),
+            [
+                FaviconSize(longestSide: 48, isSVG: false),
+                FaviconSize(longestSide: 114, isSVG: false)
+            ]
+        )
+    }
+}
+
+/// Lightweight `FaviconSizeRepresentable` used to exercise `FaviconManager.faviconsToKeep`.
+private struct FaviconSize: FaviconSizeRepresentable, Equatable {
+    let longestSide: CGFloat
+    let isSVG: Bool
 }

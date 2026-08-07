@@ -20,19 +20,11 @@ import Foundation
 import DataBrokerProtectionCore
 import DataBrokerProtection_macOS
 import PrivacyConfig
-import FeatureFlags
+import FeatureFlags_macOS
 import PixelKit
 
 final class DBPFeatureFlagger: DBPFeatureFlagging {
     fileprivate let featureFlagger: FeatureFlagger
-
-    var isRemoteBrokerDeliveryFeatureOn: Bool {
-        featureFlagger.isFeatureOn(.dbpRemoteBrokerDelivery)
-    }
-
-    var isEmailConfirmationDecouplingFeatureOn: Bool {
-        featureFlagger.isFeatureOn(.dbpEmailConfirmationDecoupling)
-    }
 
     var isForegroundRunningOnAppActiveFeatureOn: Bool {
         // Not relevant to macOS
@@ -48,9 +40,8 @@ final class DBPFeatureFlagger: DBPFeatureFlagging {
         featureFlagger.isFeatureOn(.dbpWebViewUserAgent)
     }
 
-    var isContentBlockingOn: Bool {
-        // content blocking is iOS-only.
-        false
+    var isOptOutRetryErrorFrequencyExperimentOn: Bool {
+        featureFlagger.isFeatureOn(.dbpOptOutRetryError96Hours)
     }
 
     init(featureFlagger: FeatureFlagger) {

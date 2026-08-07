@@ -1,0 +1,33 @@
+# vcf_contact_links_happy_path.yaml
+# Single-VCARD .vcf file should present the native CNContactViewController
+# ("Add to Contacts" card) without a fallback toast.
+appId: com.duckduckgo.mobile.ios
+tags:
+    - iphone
+    - release
+
+---
+
+- runFlow:
+    file: ../shared/setup.yaml
+
+- assertVisible:
+    id: "searchEntry"
+- tapOn:
+    id: "searchEntry"
+- inputText: "https://privacy-test-pages.site/features/download/contact-full.vcf"
+- pressKey: Enter
+
+# The native "Add to Contacts" card has appeared. We anchor on the card's Cancel
+# button accessibility id rather than the contact's name/fields: the iOS 26 system
+# Contacts UI renders its content in a remote view whose accessibility is only
+# intermittently captured by Maestro, whereas this app-owned nav-bar button is
+# reliably exposed. The id (vs the bare "Cancel" text) also disambiguates it from
+# the browser omnibar's own Cancel button.
+- extendedWaitUntil:
+    visible:
+        id: "contactPreviewCancelButton"
+    timeout: 10000
+
+# No parse-failure toast for a happy-path single contact.
+- assertNotVisible: "Unable to add contact. Try opening the contact file from Downloads instead."

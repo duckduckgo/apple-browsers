@@ -41,11 +41,14 @@ public class BookmarkOrFolder {
         return nil
     }
 
-    // There's no guarantee that imported bookmarks will have a URL, this is used to filter them out during import
+    // There's no guarantee that imported bookmarks will have a URL, this is used to filter them out during import.
+    // We also drop bookmarks whose URL uses an unsafe scheme (e.g. javascript:/data:), which would execute content
+    // rather than navigate if the bookmark were later activated.
     public var isInvalidBookmark: Bool {
         switch type {
         case .bookmark, .favorite:
-            return urlString == nil
+            guard let urlString else { return true }
+            return urlString.hasUnsafeBookmarkImportScheme()
         default:
             return false
         }

@@ -183,6 +183,7 @@ extension Preferences {
                         Text(UserText.autofillNeverLock).tag(false)
                     }, label: {})
                     .pickerStyle(.radioGroup)
+                    .rebrandedControlTint()
                     .offset(x: PreferencesUI_macOS.Const.pickerHorizontalOffset)
                     TextMenuItemCaption(UserText.autofillNeverLockWarning)
                 }
@@ -206,6 +207,7 @@ extension Preferences {
                 content()
             }, label: {})
             .pickerStyle(.radioGroup)
+            .rebrandedControlTint()
             .offset(x: PreferencesUI_macOS.Const.pickerHorizontalOffset)
         }
 

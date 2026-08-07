@@ -97,7 +97,7 @@ jobs:
         esac
 
     - name: Register SSH keys for private repos
-      uses: webfactory/ssh-agent@v0.9.1
+      uses: webfactory/ssh-agent@v0.10.0
       with:
         ssh-private-key: |
           ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
@@ -143,7 +143,7 @@ jobs:
 
     - name: Upload dSYMs artifact
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: DuckDuckGo-${{ steps.destination.outputs.destination }}-dSYM-${{ env.app_version }}.${{ env.build_number }}
         path: ${{ env.dsyms_path }}

@@ -42,7 +42,7 @@ public struct APIRequest {
 
     @available(*, deprecated, message: "Please use 'APIService' instead.")
     @discardableResult public func fetch(completion: @escaping APIRequestCompletion) -> URLSessionDataTask {
-        Logger.networking.debug("Requesting \(request.httpMethod ?? "") \(request.url?.absoluteString ?? ""), headers \(String(describing: request.allHTTPHeaderFields ?? [:]))")
+        Logger.networking.debug("Requesting \(request.httpMethod ?? "") \(request.url?.shortDescription ?? ""), headers \(String(describing: request.allHTTPHeaderFields ?? [:]))")
         let task = urlSession.dataTask(with: request) { (data, urlResponse, error) in
             if let error = error {
                 completion(nil, .urlSession(error))
@@ -63,7 +63,7 @@ public struct APIRequest {
     fileprivate func validateAndUnwrap(data: Data?, response: URLResponse) throws -> APIResponse {
         let httpResponse = try response.asHTTPURLResponse()
 
-        Logger.networking.debug("Request completed: \(request.httpMethod ?? "") \(request.url?.absoluteString ?? "") response code: \(httpResponse.statusCode)")
+        Logger.networking.debug("Request completed: \(request.httpMethod ?? "") \(request.url?.shortDescription ?? "") response code: \(httpResponse.statusCode)")
 
         var data = data
         if requirements.contains(.allowHTTPNotModified), httpResponse.httpStatus == .notModified {
@@ -87,7 +87,7 @@ public struct APIRequest {
 
     @available(*, deprecated, message: "Please use 'APIService' instead.")
     public func fetch() async throws -> APIResponse {
-        Logger.networking.debug("Requesting \(request.httpMethod ?? "") \(request.url?.absoluteString ?? ""), headers \(String(describing: request.allHTTPHeaderFields ?? [:]))")
+        Logger.networking.debug("Requesting \(request.httpMethod ?? "") \(request.url?.shortDescription ?? ""), headers \(String(describing: request.allHTTPHeaderFields ?? [:]))")
         let (data, response) = try await fetch(for: request)
         return try validateAndUnwrap(data: data, response: response)
     }

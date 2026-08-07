@@ -53,10 +53,12 @@ protocol SwitchBarHandling: AnyObject {
     var isTopBarPosition: Bool { get }
     var isToggleEnabled: Bool { get }
     var isFireTab: Bool { get }
+    var isImageGenerationSelected: Bool { get }
 
     var isUsingExpandedBottomBarHeight: Bool { get }
     var isUsingFadeOutAnimation: Bool { get }
     var usesExpandedAIChatTextEntryLayout: Bool { get }
+    var usesLegacyLayoutMetrics: Bool { get }
     var shouldDisableAutocorrectOnEmpty: Bool { get }
 
     /// Suppresses the in-pill voice button — used when an external flank already provides one.
@@ -95,7 +97,9 @@ protocol SwitchBarHandling: AnyObject {
 extension SwitchBarHandling {
     func saveToggleState() {}
     func stopGeneratingButtonTapped() {}
+    var isImageGenerationSelected: Bool { false }
     var usesExpandedAIChatTextEntryLayout: Bool { false }
+    var usesLegacyLayoutMetrics: Bool { false }
     var submitsAIChatOnKeyboardReturn: Bool { true }
     var submitsAIChatOnKeyboardReturnPublisher: AnyPublisher<Bool, Never> { Just(true).eraseToAnyPublisher() }
 }
@@ -147,6 +151,10 @@ final class SwitchBarHandler: SwitchBarHandling {
     }
 
     var usesExpandedAIChatTextEntryLayout: Bool {
+        devicePlatform.isIphone && !unifiedToggleInputFeature.isAvailable
+    }
+
+    var usesLegacyLayoutMetrics: Bool {
         devicePlatform.isIphone && !unifiedToggleInputFeature.isAvailable
     }
 

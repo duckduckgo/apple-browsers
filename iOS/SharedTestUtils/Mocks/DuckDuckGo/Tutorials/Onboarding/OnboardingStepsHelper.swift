@@ -17,13 +17,14 @@
 //  limitations under the License.
 //
 
+import Onboarding
 @testable import DuckDuckGo
 
 struct OnboardingStepsHelper {
     static func expectedIPhoneSteps(isReturningUser: Bool) -> [OnboardingIntroStep] {
         [
             .introDialog(isReturningUser: isReturningUser),
-            .browserComparison,
+            .setDefaultBrowser,
             .addToDockPromo,
             .appIconSelection,
             .addressBarPositionSelection,
@@ -34,7 +35,7 @@ struct OnboardingStepsHelper {
     static func expectedIPadSteps(isReturningUser: Bool) -> [OnboardingIntroStep] {
         [
             .introDialog(isReturningUser: isReturningUser),
-            .browserComparison,
+            .setDefaultBrowser,
             .appIconSelection
         ]
     }
@@ -46,12 +47,31 @@ struct OnboardingStepsHelper {
     static func expectedDuckAISteps(isReturningUser: Bool) -> [OnboardingIntroStep] {
         [
             .introDialog(isReturningUser: isReturningUser),
-            .aiComparison,
+            .aiIntro,
             .duckAIQuerySelection,
             .interlude(.duckAI),
             .addToDockPromo,
-            .browserComparison,
+            .setDefaultBrowser,
             .addressBarPositionSelection
         ]
+    }
+
+    /// The remaining steps that follow the Download Screen for a given reason
+    static func expectedRemainingSteps(for reason: OnboardingDownloadReason) -> [OnboardingIntroStep] {
+        let commonSteps: [OnboardingIntroStep] = [.addressBarPositionSelection, .addToDockPromo, .appIconSelection, .duckAIQuerySelection]
+
+        let personalisationSteps: [OnboardingIntroStep]
+        switch reason {
+        case .browserPrivately:
+            personalisationSteps = [.searchPrivacySettingsSelection, .searchExperienceSelection]
+        case .privateAIChat:
+            personalisationSteps = [.aiModelSelection, .toggleInputModeSelection]
+        case .noAI:
+            personalisationSteps = [.aiSearchSettingsSelection, .keepDuckAISelection]
+        case .blockAds:
+            personalisationSteps = [.duckPlayerSelection, .searchExperienceSelection]
+        }
+
+        return [.setDefaultBrowser] + personalisationSteps + commonSteps
     }
 }

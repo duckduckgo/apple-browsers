@@ -45,7 +45,6 @@ final class NewTabPageNextStepsCardsActionHandler: NewTabPageNextStepsCardsActio
     private let pixelHandler: NewTabPageNextStepsCardsPixelHandling
     private let newTabPageNavigator: NewTabPageNavigator
     private let syncLauncher: SyncDeviceFlowLaunching?
-    private let featureFlagger: FeatureFlagger
 
     var duckPlayerURL: String {
         let duckPlayerSettings = privacyConfigurationManager.privacyConfig.settings(for: .duckPlayer)
@@ -61,8 +60,7 @@ final class NewTabPageNextStepsCardsActionHandler: NewTabPageNextStepsCardsActio
          privacyConfigurationManager: PrivacyConfigurationManaging,
          pixelHandler: NewTabPageNextStepsCardsPixelHandling,
          newTabPageNavigator: NewTabPageNavigator,
-         syncLauncher: SyncDeviceFlowLaunching? = nil,
-         featureFlagger: FeatureFlagger) {
+         syncLauncher: SyncDeviceFlowLaunching? = nil) {
 
         self.defaultBrowserProvider = defaultBrowserProvider
         self.dockCustomizer = dockCustomizer
@@ -72,7 +70,6 @@ final class NewTabPageNextStepsCardsActionHandler: NewTabPageNextStepsCardsActio
         self.pixelHandler = pixelHandler
         self.newTabPageNavigator = newTabPageNavigator
         self.syncLauncher = syncLauncher
-        self.featureFlagger = featureFlagger
     }
 
     @MainActor func performAction(for card: NewTabPageDataModel.CardID, refreshCardsAction: (() -> Void)?) {
@@ -130,7 +127,7 @@ private extension NewTabPageNextStepsCardsActionHandler {
 
     func performDockAction(completion: (() -> Void)?) {
         pixelHandler.fireAddedToDockPixel()
-        if dockCustomizer.addToDock(), featureFlagger.isFeatureOn(.nextStepsListWidget) {
+        if dockCustomizer.addToDock() {
             completion?()
         }
     }

@@ -18,12 +18,14 @@
 //
 
 import Foundation
+import FoundationExtensions
 import MaliciousSiteProtection
 import BackgroundTasks
 import Core
 import Combine
 import PrivacyConfig
 import CombineSchedulers
+import FeatureFlags_iOS
 
 protocol MaliciousSiteProtectionDatasetsFetching {
     @MainActor

@@ -65,6 +65,10 @@ final class CapturingFaviconReferenceCache: FaviconReferenceCaching {
         burnDomainsCallsCount += 1
     }
 
+    func removeAllReferences() async {
+        removeAllReferencesCallsCount += 1
+    }
+
     struct Insert: Equatable {
         let smallURL: URL?
         let mediumURL: URL?
@@ -105,6 +109,7 @@ final class CapturingFaviconReferenceCache: FaviconReferenceCaching {
     var cleanCallsCount: Int = 0
     var burnCallsCount: Int = 0
     var burnDomainsCallsCount: Int = 0
+    var removeAllReferencesCallsCount: Int = 0
 
     var getFaviconURLForDocumentURL: (URL, Favicon.SizeCategory) -> URL? = { _, _ in nil }
     var getFaviconURLForHost: (String, Favicon.SizeCategory) -> URL? = { _, _ in nil }

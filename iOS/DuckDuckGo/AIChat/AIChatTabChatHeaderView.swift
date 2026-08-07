@@ -27,10 +27,12 @@ protocol AIChatTabChatHeaderViewDelegate: AnyObject {
     func aiChatTabChatHeaderDidTapClose()
     func aiChatTabChatHeaderDidTapNewChat()
     func aiChatTabChatHeaderDidTapNewVoiceChat()
+    func aiChatTabChatHeaderDidTapNewImage()
     func aiChatTabChatHeaderDidTapNewTab()
     func aiChatTabChatHeaderDidTapNewSearch()
     func aiChatTabChatHeaderDidTapNewFireTab()
     func aiChatTabChatHeaderDidTapTabSwitcher()
+    func aiChatTabChatHeaderUpgradePlateDidBecomeVisible()
 }
 
 final class AIChatTabChatHeaderView: UIView {
@@ -57,39 +59,67 @@ final class AIChatTabChatHeaderView: UIView {
 
     private let isFireModeEnabled: Bool
 
+    private let shouldShowImageGeneration: Bool
+
     private struct ViewState: Equatable {
         /// `nil` until the first subscription-state check resolves, so we can render a blank
         /// title slot rather than flashing "Free Plan" before flipping to "Duck.ai".
         var isSubscriptionActive: Bool?
         var isVoiceSessionActive: Bool = false
+        /// Hides the free/upgrade title during the Duck.ai fire onboarding step.
+        var isOnboardingLocked: Bool = false
+        /// Visibility of the enclosing Duck.ai tab-header container.
+        var isContainerVisible: Bool = false
     }
 
     private var state = ViewState() {
         didSet {
             guard state != oldValue else { return }
             applyState()
+            notifyDelegateIfUpgradePlateBecameVisible()
         }
+    }
+
+    private var wasUpgradePlateVisible = false
+
+    /// `nil` subscription state means unresolved, not free — hence the explicit `== false`.
+    private var isTitleContainerVisible: Bool {
+        !state.isOnboardingLocked && state.isSubscriptionActive == false
+    }
+
+    private var isTitleHolderVisible: Bool {
+        !state.isVoiceSessionActive
+    }
+
+    private var isUpgradePlateVisible: Bool {
+        state.isContainerVisible && isTitleHolderVisible && isTitleContainerVisible
+    }
+
+    private func notifyDelegateIfUpgradePlateBecameVisible() {
+        let isVisible = isUpgradePlateVisible
+        guard isVisible != wasUpgradePlateVisible else { return }
+        wasUpgradePlateVisible = isVisible
+        guard isVisible else { return }
+        delegate?.aiChatTabChatHeaderUpgradePlateDidBecomeVisible()
     }
 
     private lazy var closeButton: UIButton = makeIconButton(
         image: DesignSystemImages.Glyphs.Size24.close,
         accessibilityLabel: UserText.aiChatHeaderCloseTabAccessibilityLabel,
-        action: #selector(closeTapped),
-        includeChrome: false
+        action: #selector(closeTapped)
     )
 
     private lazy var chatListButton: UIButton = makeIconButton(
         image: DesignSystemImages.Glyphs.Size24.chats,
         accessibilityLabel: UserText.aiChatHeaderRecentChatsAccessibilityLabel,
-        action: #selector(chatListTapped),
-        includeChrome: false
+        action: #selector(chatListTapped)
     )
 
-    lazy var closeButtonPill: UIView = makePillContainer()
-    lazy var chatListButtonPill: UIView = makePillContainer()
-    private lazy var rightPairPill: UIView = makePillContainer()
+    lazy var closeButtonPill = AIChatHeaderGlassPill(cornerRadius: Constants.buttonSize / 2)
+    lazy var chatListButtonPill = AIChatHeaderGlassPill(cornerRadius: Constants.buttonSize / 2)
+    private lazy var rightPairPill = AIChatHeaderGlassPill(cornerRadius: Constants.buttonSize / 2)
 
-    private var isOnboardingLocked = false
+    private var glassPills: [AIChatHeaderGlassPill] { [closeButtonPill, chatListButtonPill, rightPairPill] }
 
     private var titleSpacingConstraints: [NSLayoutConstraint] = []
 
@@ -144,8 +174,7 @@ final class AIChatTabChatHeaderView: UIView {
         let button = makeIconButton(
             image: DesignSystemImages.Glyphs.Size24.add,
             accessibilityLabel: UserText.aiChatHeaderPlusMenuAccessibilityLabel,
-            action: #selector(newChatTapped),
-            includeChrome: false
+            action: #selector(newChatTapped)
         )
         button.menu = makeNewChatPlusMenu()
         button.showsMenuAsPrimaryAction = true
@@ -181,7 +210,17 @@ final class AIChatTabChatHeaderView: UIView {
         ) { [weak self] _ in
             self?.delegate?.aiChatTabChatHeaderDidTapNewSearch()
         }
-        let inTabGroup = UIMenu(options: .displayInline, children: [newChat, newVoiceChat])
+        var inTabActions: [UIAction] = [newChat, newVoiceChat]
+        if shouldShowImageGeneration {
+            let newImage = UIAction(
+                title: UserText.aiChatHeaderNewImageTitle,
+                image: DesignSystemImages.Glyphs.Size24.image
+            ) { [weak self] _ in
+                self?.delegate?.aiChatTabChatHeaderDidTapNewImage()
+            }
+            inTabActions.append(newImage)
+        }
+        let inTabGroup = UIMenu(options: .displayInline, children: inTabActions)
         var newTabActions: [UIAction] = [newTab, newSearch]
         if isFireModeEnabled {
             let newFireTab = UIAction(
@@ -325,14 +364,16 @@ final class AIChatTabChatHeaderView: UIView {
         return stack
     }()
 
-    init(isFireModeEnabled: Bool) {
+    init(isFireModeEnabled: Bool, shouldShowImageGeneration: Bool) {
         self.isFireModeEnabled = isFireModeEnabled
+        self.shouldShowImageGeneration = shouldShowImageGeneration
         super.init(frame: .zero)
         setupUI()
     }
 
     override init(frame: CGRect) {
         self.isFireModeEnabled = false
+        self.shouldShowImageGeneration = false
         super.init(frame: frame)
         setupUI()
     }
@@ -344,13 +385,17 @@ final class AIChatTabChatHeaderView: UIView {
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
         if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
-            updateGlassPillEffects()
+            glassPills.forEach { $0.refreshGlassForCurrentTraits() }
             updateButtonShadows()
         }
     }
 
     func configure(isSubscriptionActive: Bool) {
         state.isSubscriptionActive = isSubscriptionActive
+    }
+
+    func setContainerVisible(_ visible: Bool) {
+        state.isContainerVisible = visible
     }
 
     /// Hide title, chat-list pill, and close button during voice — voice owns its own dismiss UI.
@@ -361,7 +406,6 @@ final class AIChatTabChatHeaderView: UIView {
     /// Lock/unlock header controls during onboarding (close included — would otherwise let users escape via the NTP).
     /// Dimming is applied to the enclosing pills so the glass background and tab-count label fade uniformly with the icons.
     func setOnboardingLocked(_ locked: Bool) {
-        isOnboardingLocked = locked
         closeButton.isEnabled = !locked
         newChatButton.isEnabled = !locked
         chatListButton.isEnabled = !locked
@@ -373,14 +417,16 @@ final class AIChatTabChatHeaderView: UIView {
         chatListButtonPill.alpha = dimmedAlpha
         rightPairPill.alpha = dimmedAlpha
         titleContainer.alpha = dimmedAlpha
+        state.isOnboardingLocked = locked
         updateButtonShadows()
     }
 
     private func applyState() {
-        titleContainer.isHidden = state.isSubscriptionActive != false
+        // During fire onboarding, hide the free/upgrade title to avoid distraction.
+        titleContainer.isHidden = !isTitleContainerVisible
         paidTitleStack.isHidden = state.isSubscriptionActive != true
         let voiceActive = state.isVoiceSessionActive
-        titleHolder.isHidden = voiceActive
+        titleHolder.isHidden = !isTitleHolderVisible
         // Hide each pill (and its button inside it) together so the surrounding glass pill
         // background also disappears during voice sessions. Voice mode owns its own dismiss UI.
         chatListButtonPill.isHidden = voiceActive
@@ -408,10 +454,10 @@ final class AIChatTabChatHeaderView: UIView {
 
         leftStack.addArrangedSubview(closeButtonPill)
         leftStack.addArrangedSubview(chatListButtonPill)
-        pillContentSuperview(for: closeButtonPill).addSubview(closeButton)
-        pillContentSuperview(for: chatListButtonPill).addSubview(chatListButton)
+        closeButtonPill.contentView.addSubview(closeButton)
+        chatListButtonPill.contentView.addSubview(chatListButton)
         rightStack.addArrangedSubview(rightPairPill)
-        pillContentSuperview(for: rightPairPill).addSubview(rightPairStack)
+        rightPairPill.contentView.addSubview(rightPairStack)
 
         // Only the shared right-pair pill can cross-fire between icons, so only those two are guarded.
         for control in [newChatButton, tabSwitcherButton] as [UIControl] {
@@ -503,137 +549,21 @@ final class AIChatTabChatHeaderView: UIView {
         updateButtonShadows()
     }
 
-    private func makeIconButton(image: DesignSystemImage, accessibilityLabel: String, action: Selector, includeChrome: Bool = true) -> UIButton {
-        let image = image.withRenderingMode(.alwaysTemplate)
-        let button: UIButton
-        if includeChrome, #available(iOS 26, *) {
-            var config = UIButton.Configuration.prominentClearGlass()
-            config.image = image
-            config.cornerStyle = .capsule
-            button = UIButton(configuration: config)
-        } else if includeChrome {
-            button = makeIconButtonLegacy(image: image)
-        } else {
-            button = UIButton(type: .system)
-            button.setImage(image, for: .normal)
-            button.automaticallyUpdatesConfiguration = false
-            button.configurationUpdateHandler = nil
-        }
+    private func makeIconButton(image: DesignSystemImage, accessibilityLabel: String, action: Selector) -> UIButton {
+        let button = UIButton(type: .system)
+        button.setImage(image.withRenderingMode(.alwaysTemplate), for: .normal)
+        button.automaticallyUpdatesConfiguration = false
+        button.configurationUpdateHandler = nil
         button.translatesAutoresizingMaskIntoConstraints = false
         button.tintColor = UIColor(designSystemColor: .icons)
         button.imageView?.contentMode = .scaleAspectFit
         button.accessibilityLabel = accessibilityLabel
         button.addTarget(self, action: action, for: .touchUpInside)
-        if includeChrome {
-            applyGlassChromeShadow(to: button)
-        }
         return button
-    }
-
-    private func makeIconButtonLegacy(image: DesignSystemImage) -> UIButton {
-        let button = UIButton(type: .system)
-        button.setImage(image, for: .normal)
-        button.backgroundColor = UIColor(designSystemColor: .controlsRaisedFillPrimary)
-        button.layer.cornerRadius = Constants.buttonSize / 2
-        return button
-    }
-
-    private func pillContentSuperview(for pill: UIView) -> UIView {
-        // Pill is the shadow host; first subview is the clip host that holds the visual chrome.
-        let clipHost = pill.subviews.first(where: { $0.accessibilityIdentifier == Self.pillClipHostIdentifier }) ?? pill
-        if #available(iOS 26, *),
-           let effectView = clipHost.subviews.first(where: { $0 is UIVisualEffectView }) as? UIVisualEffectView {
-            return effectView.contentView
-        }
-        return clipHost
-    }
-
-    private static let pillClipHostIdentifier = "aiChatHeader.pillClipHost"
-
-    /// Two-view pill: outer `shadowHost` (drop shadow, no clip) wrapping inner `clipHost` (rounded, clipped).
-    /// The split contains menu-dismiss rendering inside the clip host while letting the shadow render outside — one layer can't do both.
-    private func makePillContainer() -> UIView {
-        let shadowHost = UIView()
-        shadowHost.translatesAutoresizingMaskIntoConstraints = false
-
-        let clipHost = UIView()
-        clipHost.translatesAutoresizingMaskIntoConstraints = false
-        clipHost.accessibilityIdentifier = Self.pillClipHostIdentifier
-        clipHost.layer.cornerRadius = Constants.buttonSize / 2
-        clipHost.clipsToBounds = true
-
-        shadowHost.addSubview(clipHost)
-        NSLayoutConstraint.activate([
-            clipHost.topAnchor.constraint(equalTo: shadowHost.topAnchor),
-            clipHost.leadingAnchor.constraint(equalTo: shadowHost.leadingAnchor),
-            clipHost.trailingAnchor.constraint(equalTo: shadowHost.trailingAnchor),
-            clipHost.bottomAnchor.constraint(equalTo: shadowHost.bottomAnchor),
-        ])
-
-        if #available(iOS 26, *) {
-            let effectView = makeGlassPillEffectView()
-            clipHost.addSubview(effectView)
-            NSLayoutConstraint.activate([
-                effectView.topAnchor.constraint(equalTo: clipHost.topAnchor),
-                effectView.leadingAnchor.constraint(equalTo: clipHost.leadingAnchor),
-                effectView.trailingAnchor.constraint(equalTo: clipHost.trailingAnchor),
-                effectView.bottomAnchor.constraint(equalTo: clipHost.bottomAnchor),
-            ])
-        } else {
-            clipHost.backgroundColor = UIColor(designSystemColor: .controlsRaisedFillPrimary)
-        }
-
-        // Shadow on the outer host so it renders outside the capsule bounds. Corner radius is
-        // mirrored here too so the shadow itself follows the capsule shape.
-        shadowHost.layer.cornerRadius = Constants.buttonSize / 2
-        applyGlassChromeShadow(to: shadowHost)
-        return shadowHost
-    }
-
-    @available(iOS 26, *)
-    private func makeGlassPillEffectView() -> UIVisualEffectView {
-        let effectView = UIVisualEffectView(effect: makeGlassPillEffect())
-        effectView.translatesAutoresizingMaskIntoConstraints = false
-        effectView.layer.cornerRadius = Constants.buttonSize / 2
-        effectView.clipsToBounds = true
-        return effectView
-    }
-
-    @available(iOS 26, *)
-    private func makeGlassPillEffect() -> UIGlassEffect {
-        let glassStyle: UIGlassEffect.Style = traitCollection.userInterfaceStyle == .dark ? .clear : .regular
-        let effect = UIGlassEffect(style: glassStyle)
-        effect.isInteractive = true
-        return effect
-    }
-
-    private func updateGlassPillEffects() {
-        guard #available(iOS 26, *) else { return }
-
-        for pill in [closeButtonPill, chatListButtonPill, rightPairPill] {
-            // Pill is the shadow host; the effect view lives inside the clip host one level in.
-            let clipHost = pill.subviews.first(where: { $0.accessibilityIdentifier == Self.pillClipHostIdentifier })
-            let searchRoot = clipHost ?? pill
-            guard let effectView = searchRoot.subviews.first(where: { $0 is UIVisualEffectView }) as? UIVisualEffectView else { continue }
-            effectView.effect = makeGlassPillEffect()
-        }
     }
 
     private func updateButtonShadows() {
-        let chromedViews: [UIView] = [closeButtonPill, chatListButtonPill, rightPairPill]
-        for view in chromedViews {
-            applyGlassChromeShadow(to: view)
-        }
-    }
-
-    private func applyGlassChromeShadow(to view: UIView) {
-        view.layer.shadowColor = UIColor.black.cgColor
-        view.layer.shadowOpacity = isOnboardingLocked ? 0.04 : 0.16
-        view.layer.shadowOffset = CGSize(width: 0, height: 8)
-        view.layer.shadowRadius = 16
-        view.layer.borderWidth = 0
-        view.layer.borderColor = nil
-        view.clipsToBounds = false
+        glassPills.forEach { $0.applyShadow(dimmed: state.isOnboardingLocked) }
     }
 
     @objc private func closeTapped() { delegate?.aiChatTabChatHeaderDidTapClose() }

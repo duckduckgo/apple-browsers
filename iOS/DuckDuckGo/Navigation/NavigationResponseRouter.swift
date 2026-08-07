@@ -21,6 +21,7 @@ import BrowserServicesKit
 import Core
 import Foundation
 import PrivacyConfig
+import FeatureFlags_iOS
 
 /// Decides which routing branch should fire for a given navigation response.
 ///
@@ -81,10 +82,9 @@ struct NavigationResponseRouter {
             return shape.hasTemporaryBlobDownload ? .blobAllow : .blobDownload
         }
 
-        if FilePreviewHelper.canAutoPreviewMIMEType(shape.mimeType) ||
-            FilePreviewHelper.canAutoPreviewICSByExtension(url: shape.url,
-                                                           filename: shape.suggestedFilename,
-                                                           featureFlagger: featureFlagger) {
+        if FilePreviewHelper.canAutoPreview(mimeType: shape.mimeType,
+                                            url: shape.url,
+                                            filename: shape.suggestedFilename) {
             pixelFiring.fire(.downloadStarted,
                              withAdditionalParameters: [PixelParameters.canAutoPreviewMIMEType: "1"])
 
@@ -95,8 +95,7 @@ struct NavigationResponseRouter {
 
             let shouldPersist = FilePreviewHelper.shouldPersistInDownloads(mimeType: shape.mimeType,
                                                                            url: shape.url,
-                                                                           filename: shape.suggestedFilename,
-                                                                           featureFlagger: featureFlagger)
+                                                                           filename: shape.suggestedFilename)
             if shouldPersist || !featureFlagger.isFeatureOn(.walletPassDownload) {
                 return .autoPreviewPersist
             }

@@ -22,6 +22,7 @@ import Core
 import Foundation
 import PrivacyConfig
 import Testing
+import FeatureFlags_iOS
 @testable import DuckDuckGo
 
 @Suite("NavigationResponseRouter", .serialized)
@@ -146,10 +147,10 @@ final class NavigationResponseRouterTests {
     }
 
     @available(iOS 16, *)
-    @Test("Returns autoPreviewPersist for calendar MIME when icsCalendarLinks is on, even with walletPassDownload also on", .timeLimit(.minutes(1)))
-    func returnsAutoPreviewPersistForCalendarMIMEWhenICSFlagOn() {
+    @Test("Returns autoPreviewPersist for calendar MIME, even with walletPassDownload also on", .timeLimit(.minutes(1)))
+    func returnsAutoPreviewPersistForCalendarMIME() {
         // GIVEN
-        let router = makeRouter(walletPassDownload: true, icsCalendarLinks: true)
+        let router = makeRouter(walletPassDownload: true)
         let shape = makeShape(mimeType: .calendar)
 
         // WHEN
@@ -160,24 +161,10 @@ final class NavigationResponseRouterTests {
     }
 
     @available(iOS 16, *)
-    @Test("Returns autoPreviewTransient for calendar MIME when icsCalendarLinks is off", .timeLimit(.minutes(1)))
-    func returnsAutoPreviewTransientForCalendarMIMEWhenICSFlagOff() {
-        // GIVEN
-        let router = makeRouter(walletPassDownload: true, icsCalendarLinks: false)
-        let shape = makeShape(mimeType: .calendar)
-
-        // WHEN
-        let decision = router.decide(for: shape)
-
-        // THEN
-        #expect(decision == .autoPreviewTransient)
-    }
-
-    @available(iOS 16, *)
     @Test("Returns autoPreviewPersist for .ics URL extension even when MIME is octet-stream", .timeLimit(.minutes(1)))
     func returnsAutoPreviewPersistForICSByURLExtension() {
         // GIVEN
-        let router = makeRouter(walletPassDownload: true, icsCalendarLinks: true)
+        let router = makeRouter(walletPassDownload: true)
         let shape = makeShape(
             url: URL(string: "https://example.com/event.ics"),
             mimeType: .octetStream,
@@ -195,7 +182,7 @@ final class NavigationResponseRouterTests {
     @Test("Returns autoPreviewPersist for .ics suggestedFilename even when URL has no .ics extension", .timeLimit(.minutes(1)))
     func returnsAutoPreviewPersistForICSBySuggestedFilename() {
         // GIVEN
-        let router = makeRouter(walletPassDownload: true, icsCalendarLinks: true)
+        let router = makeRouter(walletPassDownload: true)
         let shape = makeShape(
             url: URL(string: "https://example.com/download"),
             mimeType: .octetStream,
@@ -227,7 +214,7 @@ final class NavigationResponseRouterTests {
     @Test("Returns autoPreviewPersist for calendar MIME with a nil URL", .timeLimit(.minutes(1)))
     func returnsAutoPreviewPersistForCalendarWithNilURL() {
         // GIVEN
-        let router = makeRouter(walletPassDownload: true, icsCalendarLinks: true)
+        let router = makeRouter(walletPassDownload: true)
         let shape = makeShape(url: nil, mimeType: .calendar)
 
         // WHEN
@@ -235,6 +222,88 @@ final class NavigationResponseRouterTests {
 
         // THEN
         #expect(decision == .autoPreviewPersist)
+    }
+
+    // MARK: - vCard contact links
+
+    @available(iOS 16, *)
+    @Test("Returns autoPreviewPersist for contact MIME, even with walletPassDownload also on", .timeLimit(.minutes(1)))
+    func returnsAutoPreviewPersistForContactMIME() {
+        // GIVEN
+        let router = makeRouter(walletPassDownload: true)
+        let shape = makeShape(mimeType: .contact)
+
+        // WHEN
+        let decision = router.decide(for: shape)
+
+        // THEN
+        #expect(decision == .autoPreviewPersist)
+    }
+
+    @available(iOS 16, *)
+    @Test("Returns autoPreviewPersist for .vcf URL extension even when MIME is octet-stream", .timeLimit(.minutes(1)))
+    func returnsAutoPreviewPersistForVCardByURLExtension() {
+        // GIVEN
+        let router = makeRouter(walletPassDownload: true)
+        let shape = makeShape(
+            url: URL(string: "https://example.com/contact.vcf"),
+            mimeType: .octetStream,
+            suggestedFilename: "contact.vcf"
+        )
+
+        // WHEN
+        let decision = router.decide(for: shape)
+
+        // THEN
+        #expect(decision == .autoPreviewPersist)
+    }
+
+    @available(iOS 16, *)
+    @Test("Returns autoPreviewPersist for .vcard suggestedFilename even when URL has no extension", .timeLimit(.minutes(1)))
+    func returnsAutoPreviewPersistForVCardBySuggestedFilename() {
+        // GIVEN
+        let router = makeRouter(walletPassDownload: true)
+        let shape = makeShape(
+            url: URL(string: "https://example.com/download"),
+            mimeType: .octetStream,
+            suggestedFilename: "contact.vcard"
+        )
+
+        // WHEN
+        let decision = router.decide(for: shape)
+
+        // THEN
+        #expect(decision == .autoPreviewPersist)
+    }
+
+    @available(iOS 16, *)
+    @Test("Fires m_download_started with can_auto_preview=1 for a vCard contact", .timeLimit(.minutes(1)))
+    func firesDownloadStartedPixelForVCard() {
+        // GIVEN
+        let router = makeRouter(walletPassDownload: true)
+        let shape = makeShape(mimeType: .contact)
+
+        // WHEN
+        _ = router.decide(for: shape)
+
+        // THEN
+        let downloadStarted = PixelFiringMock.allPixelsFired.first { $0.pixelName == Pixel.Event.downloadStarted.name }
+        #expect(downloadStarted != nil)
+        #expect(downloadStarted?.params?[PixelParameters.canAutoPreviewMIMEType] == "1")
+    }
+
+    @available(iOS 16, *)
+    @Test("Does not fire wallet_pass_preview_requested for a vCard contact", .timeLimit(.minutes(1)))
+    func doesNotFireWalletPassPreviewRequestedForVCard() {
+        // GIVEN
+        let router = makeRouter(walletPassDownload: true)
+        let shape = makeShape(mimeType: .contact)
+
+        // WHEN
+        _ = router.decide(for: shape)
+
+        // THEN
+        #expect(!PixelFiringMock.allPixelsFired.contains { $0.pixelName == Pixel.Event.walletPassPreviewRequested.name })
     }
 
     // MARK: - Data scheme download (branch 3a)
@@ -481,7 +550,7 @@ final class NavigationResponseRouterTests {
     @Test("Does not fire wallet_pass_preview_requested for ICS", .timeLimit(.minutes(1)))
     func doesNotFireWalletPassPreviewRequestedForICS() {
         // GIVEN
-        let router = makeRouter(walletPassDownload: true, icsCalendarLinks: true)
+        let router = makeRouter(walletPassDownload: true)
         let shape = makeShape(mimeType: .calendar)
 
         // WHEN
@@ -495,7 +564,7 @@ final class NavigationResponseRouterTests {
     @Test("Does not fire wallet_pass_preview_requested for ICS routed via URL extension", .timeLimit(.minutes(1)))
     func doesNotFireWalletPassPreviewRequestedForICSByURLExtension() {
         // GIVEN
-        let router = makeRouter(walletPassDownload: true, icsCalendarLinks: true)
+        let router = makeRouter(walletPassDownload: true)
         let shape = makeShape(
             url: URL(string: "https://example.com/event.ics"),
             mimeType: .octetStream,
@@ -511,10 +580,9 @@ final class NavigationResponseRouterTests {
 
     // MARK: - Helpers
 
-    private func makeRouter(walletPassDownload: Bool = true, icsCalendarLinks: Bool = false) -> NavigationResponseRouter {
+    private func makeRouter(walletPassDownload: Bool = true) -> NavigationResponseRouter {
         var enabled: [FeatureFlag] = []
         if walletPassDownload { enabled.append(.walletPassDownload) }
-        if icsCalendarLinks { enabled.append(.icsCalendarLinks) }
         let flagger = MockFeatureFlagger(enabledFeatureFlags: enabled)
         return NavigationResponseRouter(featureFlagger: flagger, pixelFiring: PixelFiringMock.self)
     }

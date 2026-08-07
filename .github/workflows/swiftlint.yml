@@ -3,7 +3,7 @@ on:
   push:
     branches: [main]
   pull_request:
-    types: [labeled, unlabeled, opened, reopened, edited, synchronize, ready_for_review]
+    types: [labeled, unlabeled, opened, reopened, synchronize, ready_for_review]
 
 jobs:
   should-run-checks:
@@ -21,7 +21,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Cache Mint packages
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.mint
           key: ${{ runner.os }}-mint-${{ hashFiles('Mintfile') }}

@@ -43,7 +43,7 @@ extension MainViewController {
 
     func syncBottomOmnibarAnchorIfNeeded(for coordinator: UnifiedToggleInputCoordinator) {
         guard coordinator.cardPosition == .bottom,
-              case .omnibar(let state) = coordinator.displayState,
+              let state = coordinator.omnibarState,
               viewCoordinator.addressBarPosition.isBottom else {
             return
         }
@@ -53,9 +53,23 @@ extension MainViewController {
 
     func currentOmnibarPlaceholderWindowX() -> CGFloat? {
         guard let textField = viewCoordinator.omniBar.barView.textField,
-              textField.window != nil else { return nil }
+              omnibarChromeIsOnScreenForHandoff(textField) else { return nil }
         let placeholderRect = textField.placeholderRect(forBounds: textField.bounds)
         return textField.convert(placeholderRect.origin, to: nil).x
+    }
+
+    /// Window-space frame of the resting omnibar pill (the visible search-area container). Used by
+    /// the bottom-position UTI to disguise its collapsed pose as the floating omnibar at hand-off.
+    func currentOmnibarPillWindowFrame() -> CGRect? {
+        guard let pill = viewCoordinator.omniBar.barView.searchContainer,
+              omnibarChromeIsOnScreenForHandoff(pill) else { return nil }
+        return pill.convert(pill.bounds, to: nil)
+    }
+
+    /// Off-screen omnibar (e.g. new-tab focus before swipe-tabs reparents it) is unmeasurable, so the hand-off falls back to resting margins.
+    private func omnibarChromeIsOnScreenForHandoff(_ view: UIView) -> Bool {
+        guard let window = view.window else { return false }
+        return window.bounds.intersects(view.convert(view.bounds, to: nil))
     }
 
     func currentOmnibarPlaceholderColor() -> UIColor? {
@@ -65,11 +79,17 @@ extension MainViewController {
         return attributed.attribute(.foregroundColor, at: 0, effectiveRange: nil) as? UIColor
     }
 
-    /// Returns the NTP view's center Y in window coordinates, or nil if not available.
-    func ntpLogoWindowCenterY() -> CGFloat? {
-        guard let ntpView = newTabPageViewController?.view,
-              let window = ntpView.window else { return nil }
-        return ntpView.convert(CGPoint(x: 0, y: ntpView.bounds.midY), to: window).y
+    func reconcileFloatingLayoutAfterUTIExit() {
+        guard FloatingUILayoutPolicy.shouldHostOmnibarInFloatingToolbar(
+            isFloatingUIEnabled: isFloatingUIEnabled,
+            addressBarPosition: appSettings.currentAddressBarPosition,
+            isUnifiedToggleInputVisible: false,
+            isMinimalChromeLayout: isInMinimalChromeLayout
+        ),
+              currentTab?.isAITab != true else {
+            return
+        }
+        refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
     }
 }
 
@@ -90,6 +110,7 @@ private extension MainViewController {
             applyUnifiedInputChromeBackground(.aiTabChatChromeHidden)
             viewCoordinator.anchorContentContainerToInputTop()
         }
+        viewCoordinator.ensureNavContainerOwnershipForUnifiedToggleInputIfNeeded()
         viewCoordinator.showUnifiedToggleInput()
         if let coordinator = unifiedToggleInputCoordinator,
            coordinator.isAITabState,
@@ -160,6 +181,7 @@ private extension MainViewController {
     /// updated. Whether this snaps or animates is decided by the caller (which wraps this in
     /// `UTIAnimationStyle.perform`).
     private func applyAITabExpandedPose() {
+        viewCoordinator.ensureNavContainerOwnershipForUnifiedToggleInputIfNeeded()
         viewCoordinator.showUnifiedToggleInput()
         guard let coordinator = unifiedToggleInputCoordinator else { return }
         let renderState = coordinator.computeRenderState()
@@ -175,42 +197,60 @@ private extension MainViewController {
     }
 
     func handleShowOmnibarEditingIntent(height: CGFloat, pendingHeight: CGFloat?) {
+        warmSearchTokenIfEligible()
         guard let coordinator = unifiedToggleInputCoordinator else { return }
 
+        coordinator.contentViewController.refreshSuggestionsCaches()
+
+        // Measure the resting omnibar pill + placeholder text before ownership transfer detaches the
+        // omnibar from the toolbar (bottom floating), so the collapsed UTI pose and its text can
+        // align to them with no hand-off snap. Measured live first; once detached it reads `nil`.
+        let omnibarPillWindowFrame = coordinator.cardPosition.isBottom ? currentOmnibarPillWindowFrame() : nil
+        coordinator.viewController.omnibarPillWindowFrame = omnibarPillWindowFrame
         let omnibarPlaceholderWindowX = currentOmnibarPlaceholderWindowX()
+        // Cached so the symmetric dismiss can slide the text back onto the omnibar even though the
+        // omnibar is no longer in the toolbar by then.
+        coordinator.cachedOmnibarPlaceholderWindowX = omnibarPlaceholderWindowX
+
+        viewCoordinator.ensureNavContainerOwnershipForUnifiedToggleInputIfNeeded()
+
         let omnibarPlaceholderColor = currentOmnibarPlaceholderColor()
         let utiPlaceholderColor = coordinator.viewController.defaultPlaceholderColor
 
         let isLogoToLogo = newTabPageViewController?.isShowingLogo == true
-        let ntpStartCenterY = ntpLogoWindowCenterY()
+        // Favorites hand off seamlessly too: the embedded grid is already laid out where the NTP grid is,
+        // so it slides in without the container's fade (which otherwise reads as a flash over the slide).
+        let isFavoritesToFavorites = newTabPageViewController?.isShowingFavorites == true
         let isBottom = coordinator.cardPosition.isBottom
 
         viewCoordinator.showUnifiedToggleInputOmnibar(expandedHeight: height)
         viewCoordinator.suggestionTrayContainer.isHidden = true
         updateUnifiedInputContentVisibility(for: coordinator)
 
-        if !isLogoToLogo {
-            viewCoordinator.unifiedInputContentContainer.alpha = 0
+        // The container is now laid out at its editing-start frame; pin the collapsed card to the
+        // measured pill so frame 0 of the focus animation matches the omnibar exactly (bottom only).
+        if coordinator.cardPosition == .bottom {
+            coordinator.viewController.captureOmnibarMatchedInsets()
         }
+
+        if !isLogoToLogo {
+            // Hide the real NTP favorites while focusing so the UTI's embedded favorites don't
+            // cross-dissolve against them (mirrors the defocus hide-reveal). Revealed again on dismiss.
+            newTabPageViewController?.setFavoritesHidden(true)
+        }
+        // Seamless handoffs (logo/favorites) show the content immediately; only other content fades in.
+        let isSeamlessHandoff = isLogoToLogo || isFavoritesToFavorites
+        viewCoordinator.unifiedInputContentContainer.alpha = isSeamlessHandoff ? 1 : 0
 
         if let omnibarPlaceholderWindowX {
             coordinator.viewController.alignVisibleTextLeadingEdge(toWindowX: omnibarPlaceholderWindowX)
         }
 
-        // For logo-to-logo: place the UTI Logo at the NTP Logo's position, swap visibility
-        // in one frame, then let the animation drive the UTI Logo to its final position.
-        if isLogoToLogo,
-           let ntpY = ntpStartCenterY,
-           let utiY = coordinator.contentViewController.daxLogoManager.logoWindowCenterY {
-            let bottomLogoOffset = isBottom ? Constants.bottomDaxLogoTransitionYOffset : 0
-            let offset = ntpY - utiY + bottomLogoOffset
-            let naturalOffset = coordinator.contentViewController.daxLogoManager.logoYOffset
-            coordinator.contentViewController.daxLogoManager.setLogoYOffset(naturalOffset + offset)
-            coordinator.contentViewController.view.layoutIfNeeded()
-
-            coordinator.contentViewController.setLogoHidden(false)
+        if isLogoToLogo {
+            // Hide the NTP logo during the seamless logo→logo focus so it doesn't double with the
+            // focused SwiftUI logo; revealed again on dismiss. (Alpha is already 1 via the seamless
+            // handoff above — the focused logo rests at the NTP anchor by construction, no manual swap.)
             newTabPageViewController?.setLogoHidden(true)
-            viewCoordinator.unifiedInputContentContainer.alpha = 1
         }
 
         let duration = Constants.omnibarTransitionDuration(isBottom: isBottom)
@@ -227,15 +267,9 @@ private extension MainViewController {
                 if let pendingHeight {
                     self.viewCoordinator.constraints.navigationBarContainerHeight.constant = pendingHeight
                 }
-                // Reset top-bar handoff so the animation interpolates the logo from its
-                // SWAP position to its natural position. Bottom bar keeps the offset and
-                // lets the keyboard guide handle final positioning.
-                if isLogoToLogo, !isBottom {
-                    coordinator.contentViewController.daxLogoManager.setLogoYOffset(0)
-                }
                 self.viewCoordinator.superview.layoutIfNeeded()
                 coordinator.pushContentInsets()
-                if !isLogoToLogo {
+                if !isSeamlessHandoff {
                     self.viewCoordinator.unifiedInputContentContainer.alpha = 1
                 }
                 coordinator.viewController.setTextHorizontalShift(0)
@@ -259,7 +293,9 @@ private extension MainViewController {
             coordinator?.clearText()
         }
         if animated {
-            let omnibarPlaceholderWindowX = currentOmnibarPlaceholderWindowX()
+            // Bottom floating: the omnibar is detached from the toolbar by now, so fall back to the
+            // placeholder X captured at focus (live read is nil).
+            let omnibarPlaceholderWindowX = currentOmnibarPlaceholderWindowX() ?? coordinator?.cachedOmnibarPlaceholderWindowX
             let omnibarPlaceholderColor = currentOmnibarPlaceholderColor()
             let utiPlaceholderColor = coordinator?.viewController.defaultPlaceholderColor
             let duration = Constants.omnibarTransitionDuration(isBottom: viewCoordinator.addressBarPosition.isBottom)
@@ -276,6 +312,8 @@ private extension MainViewController {
                 )
             }
         } else {
+            // Match the animated path: restore resting layout before cleanup, else the returning tab's content is stranded.
+            viewCoordinator.animateUnifiedToggleInputOmnibarDismissLayout()
             viewCoordinator.finishUnifiedToggleInputOmnibarDismiss()
             onDismissed()
         }
@@ -289,13 +327,17 @@ private extension MainViewController {
         resetUnifiedInputContentAfterHide()
         // Avoid leaking text into the next input session.
         unifiedToggleInputCoordinator?.clearText()
+        reconcileFloatingLayoutAfterUTIExit()
     }
 
+    /// Shared intent teardown; restores the NTP logo/favorites hidden at focus, mirroring the animated back-button dismiss (idempotent).
     func resetUnifiedInputContentAfterHide() {
         unifiedToggleInputCoordinator?.contentViewController.setActive(false)
         viewCoordinator.hideUnifiedInputContent()
         unifiedToggleInputCoordinator?.contentViewController.setContentInset(top: 0, bottom: 0)
         hideSuggestionTray()
+        newTabPageViewController?.setLogoHidden(false)
+        newTabPageViewController?.setFavoritesHidden(false)
     }
 
     func applyBottomOmnibarVisibility(_ state: UnifiedToggleInputDisplayState.OmnibarState) {
@@ -305,6 +347,7 @@ private extension MainViewController {
             recomputeNavigationBarContainerHeightIfNeeded()
             return
         }
+        viewCoordinator.ensureNavContainerOwnershipForUnifiedToggleInputIfNeeded()
         applyBottomOmnibarAnchor(state)
         viewCoordinator.navigationBarContainer.superview?.layoutIfNeeded()
         recomputeNavigationBarContainerHeightIfNeeded()
@@ -318,4 +361,5 @@ private extension MainViewController {
             viewCoordinator.restoreNavBarToToolbarForOmnibarInactive()
         }
     }
+
 }

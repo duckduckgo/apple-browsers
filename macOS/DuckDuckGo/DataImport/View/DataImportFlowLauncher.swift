@@ -19,7 +19,7 @@
 import AppKit
 import DDGSync
 import BrowserServicesKit
-import FeatureFlags
+import FeatureFlags_macOS
 
 /// Protocol for re-launching data import flows from within data import
 ///

@@ -26,8 +26,9 @@ struct ModeToggleTransition: Equatable {
     /// Whether the keyboard should transfer from the duckAITextView to the textField.
     let needsKeyboardTransfer: Bool
 
-    /// Whether automatic text selection should be suppressed after the transfer.
-    let suppressTextSelection: Bool
+    /// Select all the destination text after the transition — true when restoring the page URL, so it
+    /// reads as the unedited address and a later switch to duck.ai clears it again.
+    let selectAllText: Bool
 }
 
 protocol IPadModeToggleTextModeling {
@@ -38,6 +39,8 @@ protocol IPadModeToggleTextModeling {
     var hasSubmittableText: Bool { get }
 
     func updateText(_ text: String)
+    func rememberSearchTextToRestore(_ text: String)
+    func invalidateSearchTextToRestore()
     func transition(to newMode: TextEntryMode) -> ModeToggleTransition?
     func beginTransition()
     func endTransition()
@@ -48,6 +51,10 @@ final class IPadModeToggleTextModel: IPadModeToggleTextModeling {
     private(set) var currentMode: TextEntryMode = .search
     private(set) var sharedText: String = ""
     private(set) var isTransitioning: Bool = false
+
+    /// Page URL cleared when switching to duck.ai, to restore on the way back to search if the user
+    /// didn't type anything in duck.ai. Consumed on the next return-to-search transition.
+    private var searchTextToRestore: String?
 
     var showPlaceholder: Bool {
         sharedText.isEmpty
@@ -61,6 +68,14 @@ final class IPadModeToggleTextModel: IPadModeToggleTextModeling {
         sharedText = text
     }
 
+    func rememberSearchTextToRestore(_ text: String) {
+        searchTextToRestore = text
+    }
+
+    func invalidateSearchTextToRestore() {
+        searchTextToRestore = nil
+    }
+
     /// Computes the transition actions for a mode change.
     /// Returns `nil` if the mode hasn't changed (no-op).
     func transition(to newMode: TextEntryMode) -> ModeToggleTransition? {
@@ -68,10 +83,23 @@ final class IPadModeToggleTextModel: IPadModeToggleTextModeling {
 
         let fromAIChatToSearch = currentMode == .aiChat && newMode == .search
 
+        // Returning to search without typing in duck.ai → restore the cleared page URL (and reselect
+        // it, so it reads as the unedited address).
+        var text = sharedText
+        var restoredPageURL = false
+        if fromAIChatToSearch {
+            if sharedText.isEmpty, let restore = searchTextToRestore {
+                text = restore
+                sharedText = restore
+                restoredPageURL = true
+            }
+            searchTextToRestore = nil
+        }
+
         let action = ModeToggleTransition(
-            text: sharedText,
+            text: text,
             needsKeyboardTransfer: fromAIChatToSearch,
-            suppressTextSelection: fromAIChatToSearch)
+            selectAllText: restoredPageURL)
 
         currentMode = newMode
         return action

@@ -23,6 +23,7 @@ import WebKit
 final class WebExtensionEventsListenerMock: WebExtensionEventsListening {
 
     var controller: WKWebExtensionController?
+    var droppedCallbacksCount = 0
 
     var didOpenWindowCalled = false
     func didOpenWindow(_ window: WKWebExtensionWindow) {
@@ -77,5 +78,12 @@ final class WebExtensionEventsListenerMock: WebExtensionEventsListening {
     var didChangeTabPropertiesCalled = false
     func didChangeTabProperties(_ properties: WKWebExtension.TabChangedProperties, for tab: WKWebExtensionTab) {
         didChangeTabPropertiesCalled = true
+    }
+
+    private(set) var isSuppressingTabLifecycleEvents = false
+    func withTabLifecycleEventsSuppressed(_ body: () -> Void) {
+        isSuppressingTabLifecycleEvents = true
+        body()
+        isSuppressingTabLifecycleEvents = false
     }
 }

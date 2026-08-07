@@ -18,9 +18,9 @@
 
 import XCTest
 
-/// UI tests for the Duck.ai address-bar mode (the per-tab Search ↔ Duck.ai toggle introduced by the
-/// `aiChatOmnibarToggle` feature). Covers the high-traffic state transitions: tab-switch draft
-/// preservation, Cmd+T from Duck.ai, two-step ESC, and refocus from the unfocused Duck.ai state.
+/// UI tests for the Duck.ai address-bar mode (the per-tab Search ↔ Duck.ai toggle). Covers the
+/// high-traffic state transitions: tab-switch draft preservation, Cmd+T from Duck.ai, two-step ESC,
+/// and refocus from the unfocused Duck.ai state.
 class AIChatOmnibarTests: UITestCase {
 
     private var addressBarTextField: XCUIElement!
@@ -35,7 +35,7 @@ class AIChatOmnibarTests: UITestCase {
     override func setUpWithError() throws {
         try super.setUpWithError()
         continueAfterFailure = false
-        app = XCUIApplication.setUp(featureFlags: ["aiChatOmnibarToggle": true])
+        app = XCUIApplication.setUp()
 
         addressBarTextField = app.addressBar
         app.enforceSingleWindow()

@@ -40,8 +40,6 @@ public extension OnboardingTheme {
             lhs.maxTopMargin == rhs.maxTopMargin &&
             lhs.progressBarTrailingPadding == rhs.progressBarTrailingPadding &&
             lhs.progressBarTopPadding == rhs.progressBarTopPadding &&
-            lhs.rebrandingBadgeLeadingPadding == rhs.rebrandingBadgeLeadingPadding &&
-            lhs.rebrandingBadgeTopPadding == rhs.rebrandingBadgeTopPadding &&
             lhs.actionsSpacing == rhs.actionsSpacing
         }
 
@@ -65,10 +63,6 @@ public extension OnboardingTheme {
         public let progressBarTrailingPadding: CGFloat
         /// Top padding for the progress bar.
         public let progressBarTopPadding: CGFloat
-        /// Leading padding for the rebranding badge.
-        public let rebrandingBadgeLeadingPadding: CGFloat
-        /// Top padding for the rebranding badge.
-        public let rebrandingBadgeTopPadding: CGFloat
 
         #if os(iOS)
         /// Vertical offset percentage for the dialog, resolved at runtime based on device size class.
@@ -86,8 +80,6 @@ public extension OnboardingTheme {
             maxTopMargin: CGFloat,
             progressBarTrailingPadding: CGFloat,
             progressBarTopPadding: CGFloat,
-            rebrandingBadgeLeadingPadding: CGFloat,
-            rebrandingBadgeTopPadding: CGFloat,
             dialogVerticalOffsetPercentage: MetricBuilder<CGFloat>,
             actionsSpacing: CGFloat,
         ) {
@@ -100,8 +92,6 @@ public extension OnboardingTheme {
             self.maxTopMargin = maxTopMargin
             self.progressBarTrailingPadding = progressBarTrailingPadding
             self.progressBarTopPadding = progressBarTopPadding
-            self.rebrandingBadgeLeadingPadding = rebrandingBadgeLeadingPadding
-            self.rebrandingBadgeTopPadding = rebrandingBadgeTopPadding
             self.dialogVerticalOffsetPercentage = dialogVerticalOffsetPercentage
             self.actionsSpacing = actionsSpacing
         }
@@ -116,8 +106,6 @@ public extension OnboardingTheme {
             maxTopMargin: CGFloat,
             progressBarTrailingPadding: CGFloat,
             progressBarTopPadding: CGFloat,
-            rebrandingBadgeLeadingPadding: CGFloat,
-            rebrandingBadgeTopPadding: CGFloat,
             actionsSpacing: CGFloat = 20
         ) {
             self.contentOuterSpacing = contentOuterSpacing
@@ -129,8 +117,6 @@ public extension OnboardingTheme {
             self.maxTopMargin = maxTopMargin
             self.progressBarTrailingPadding = progressBarTrailingPadding
             self.progressBarTopPadding = progressBarTopPadding
-            self.rebrandingBadgeLeadingPadding = rebrandingBadgeLeadingPadding
-            self.rebrandingBadgeTopPadding = rebrandingBadgeTopPadding
             self.actionsSpacing = actionsSpacing
         }
         #endif

@@ -18,23 +18,19 @@
 //
 
 import SwiftUI
-import DesignResourcesKit
+import DesignResourcesKitIcons
 
 struct LockScreenView: View {
     var body: some View {
         GeometryReader { geometry in
             VStack {
                 Spacer()
-                Image(.autofillLock)
+                Image(uiImage: DesignSystemImages.Color.Size128.lockLocked)
                     .position(x: geometry.size.width / 2,
-                              y: shouldCenterVerticallyInLandscape(on: geometry) ? geometry.size.height / 2 : geometry.size.height * 0.8)
+                              y: geometry.size.height / 2)
             }
         }
         .background(Color(designSystemColor: .background))
-    }
-    
-    private func shouldCenterVerticallyInLandscape(on geometry: GeometryProxy) -> Bool {
-        return UIDevice.current.userInterfaceIdiom == .phone && geometry.size.width > geometry.size.height
     }
 }
 

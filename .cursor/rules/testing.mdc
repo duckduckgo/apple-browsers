@@ -844,6 +844,22 @@ func user_authentication_fails_with_invalid_credentials() { }
 func external_urls_are_valid() { }
 ```
 
+#### Required: `.timeLimit` on every `@Test`:
+
+Every `@Test` must carry a `.timeLimit(.minutes(1))` trait, guarded with `@available(iOS 16, macOS 13, *)` on the test:
+
+```swift
+@available(iOS 16, macOS 13, *)
+@Test("External URLs are validated correctly", .timeLimit(.minutes(1)))
+func external_urls_are_valid() { }
+```
+
+- Swift Testing does not abort a hung or deadlocked `@Test` quickly on its own, so an unbounded test can stall the entire CI job. `.timeLimit` caps it.
+- `.timeLimit` only accepts minute granularity, so `.minutes(1)` is the tightest allowed cap — use it as the default.
+- The trait requires iOS 16 / macOS 13, hence the `@available` guard.
+- This is separate from the assertion timeouts below (`fulfillment`/`wait`, max 5s) — `.timeLimit` is the outer safety net against total hangs.
+- Cursor Bugbot flags new `@Test`s missing a timeout (see `.cursor/BUGBOT.md`).
+
 #### @Test Naming Guidelines:
 - Use clear, descriptive text in `@Test("description")`
 - Function names should be simple and readable (no "test" prefix needed)

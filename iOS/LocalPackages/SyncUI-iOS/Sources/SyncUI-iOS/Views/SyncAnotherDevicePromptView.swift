@@ -29,7 +29,7 @@ struct SyncAnotherDevicePromptView: View {
     var body: some View {
         VStack(spacing: 0) {
             VStack(spacing: 0) {
-                Image(rebrandable: "Desktop-Sync-New-Feature-128")
+                Image(rebrandable: "Desktop-Sync-New-Feature-128", bundle: .module)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 128, height: 96)
@@ -82,3 +82,33 @@ struct SyncAnotherDevicePromptView: View {
         .background(Color(designSystemColor: .backgroundSheets).ignoresSafeArea())
     }
 }
+
+// MARK: - Previews
+
+#if DEBUG
+
+private extension SyncSettingsViewModel {
+    /// A bare model for previews — this view only calls model methods from its buttons and doesn't
+    /// branch on model state, so no configuration is needed.
+    static func previewModel() -> SyncSettingsViewModel {
+        SyncSettingsViewModel(
+            isOnDevEnvironment: { false },
+            switchToProdEnvironment: {},
+            autoRestoreProvider: SyncAutoRestorePreviewProvider.disabled
+        )
+    }
+}
+
+#Preview("Rebranded") {
+    RebrandedPreview(isRebranded: true) {
+        SyncAnotherDevicePromptView(model: .previewModel())
+    }
+}
+
+#Preview("Legacy brand") {
+    RebrandedPreview(isRebranded: false) {
+        SyncAnotherDevicePromptView(model: .previewModel())
+    }
+}
+
+#endif

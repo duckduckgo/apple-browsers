@@ -61,7 +61,8 @@ extension AIChatHistoryManager {
                                            aiChatDeleter: chatDeleter,
                                            viewModel: viewModel,
                                            isIPadExperience: isIPadExperience,
-                                           isFireTab: isFireTab)
+                                           isFireTab: isFireTab,
+                                           featureFlagger: featureFlagger)
         return (manager, viewModel)
     }
 }
@@ -74,5 +75,7 @@ final class NilAIChatSyncCleaner: AIChatSyncCleaning {
     func recordLocalClearFromAutoClearBackgroundTimestampIfPresent() async {}
     func recordChatDeletion(chatID: String) async {}
     func deleteIfNeeded() async {}
+    func recordChatUpdate(chatID: String) async {}
+    func updateIfNeeded() async {}
     func scheduleSync() {}
 }

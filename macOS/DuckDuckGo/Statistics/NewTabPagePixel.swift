@@ -161,8 +161,13 @@ enum NewTabPagePixel: PixelKitEvent {
     case aiChatRecentChatSelectedMouse
     case aiChatRecentChatSelectedKeyboard
 
+    case ntpAiChatRecentChatDeleteButtonClicked
+    case ntpAiChatRecentChatDeleteConfirmed
+    case ntpAiChatRecentChatDeleteCancelled
+    case ntpAutocompleteResultDeleted
+
     // Parameter duration: Load time in **seconds** (will be converted to milliseconds in pixel).
-    case newTabPageLoadingTime(duration: TimeInterval, osMajorVersion: Int)
+    case newTabPageLoadingTime(duration: TimeInterval)
 
     // See macOS/PixelDefinitions/pixels/new_tab_page_pixels.json5
     case nextStepsCardClicked(_ card: String, cardImpressionCount: Int, ntpImpressionCount: Int, daysSinceInstall: Int?, activeUsageDays: Int)
@@ -199,6 +204,10 @@ enum NewTabPagePixel: PixelKitEvent {
         case .aiChatRecentChatSelectedPinnedKeyboard: return "new-tab-page_aichat_recent_chat_selected_pinned_keyboard"
         case .aiChatRecentChatSelectedMouse: return "new-tab-page_aichat_recent_chat_selected_mouse"
         case .aiChatRecentChatSelectedKeyboard: return "new-tab-page_aichat_recent_chat_selected_keyboard"
+        case .ntpAiChatRecentChatDeleteButtonClicked: return "ntp_aichat_recent_chat_delete_button_clicked"
+        case .ntpAiChatRecentChatDeleteConfirmed: return "ntp_aichat_recent_chat_delete_confirmed"
+        case .ntpAiChatRecentChatDeleteCancelled: return "ntp_aichat_recent_chat_delete_cancelled"
+        case .ntpAutocompleteResultDeleted: return "ntp_autocomplete_result_deleted"
         case .newTabPageLoadingTime: return "new-tab-page_loading_time"
         case .nextStepsCardClicked(let card, _, _, _, _): return "new-tab-page_next-steps_\(card)_clicked"
         case .nextStepsCardDismissed(let card, _, _, _, _): return "new-tab-page_next-steps_\(card)_dismissed"
@@ -222,11 +231,10 @@ enum NewTabPagePixel: PixelKitEvent {
             return [
                 "mode": mode.rawValue
             ]
-        case .newTabPageLoadingTime(let duration, let osMajorVersion):
+        case .newTabPageLoadingTime(let duration):
             // "loadingTime" is reported in **milliseconds**
             return [
-                "loadingTime": String(Int(duration * 1000)),
-                "osMajorVersion": "\(osMajorVersion)"
+                "loadingTime": String(Int(duration * 1000))
             ]
         case let .nextStepsCardClicked(_, cardImpressionCount, ntpImpressionCount, daysSinceInstall, activeUsageDays),
             let .nextStepsCardDismissed(_, cardImpressionCount, ntpImpressionCount, daysSinceInstall, activeUsageDays):
@@ -259,6 +267,10 @@ enum NewTabPagePixel: PixelKitEvent {
                 .aiChatRecentChatSelectedPinnedKeyboard,
                 .aiChatRecentChatSelectedMouse,
                 .aiChatRecentChatSelectedKeyboard,
+                .ntpAiChatRecentChatDeleteButtonClicked,
+                .ntpAiChatRecentChatDeleteConfirmed,
+                .ntpAiChatRecentChatDeleteCancelled,
+                .ntpAutocompleteResultDeleted,
                 .nextStepsCardShown:
             return nil
         }
@@ -337,6 +349,10 @@ enum NewTabPagePixel: PixelKitEvent {
                 .aiChatRecentChatSelectedPinnedKeyboard,
                 .aiChatRecentChatSelectedMouse,
                 .aiChatRecentChatSelectedKeyboard,
+                .ntpAiChatRecentChatDeleteButtonClicked,
+                .ntpAiChatRecentChatDeleteConfirmed,
+                .ntpAiChatRecentChatDeleteCancelled,
+                .ntpAutocompleteResultDeleted,
                 .newTabPageLoadingTime:
             return [.pixelSource]
         case .nextStepsCardClicked,

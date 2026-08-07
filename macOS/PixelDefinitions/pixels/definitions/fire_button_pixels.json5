@@ -1,0 +1,198 @@
+// Fire Button and Fire Dialog pixels (see FireButtonPixel.swift)
+{
+    "fire_started_macos": {
+        "description": "Fired when the user starts a fire (burn), either by confirming the Fire dialog, from the AI Chat menu, or via Auto-Clear on app exit.",
+        "owners": ["ayoy"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "fire_started_in-session_macos": {
+        "description": "Fired alongside fire_started_macos to mark that a fire (burn) was started during the current app session.",
+        "owners": ["ayoy"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "fire_started_on-exit_macos": {
+        "description": "Fired alongside fire_started_macos when data is automatically cleared on app exit (Auto-Clear).",
+        "owners": ["ayoy"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "fire_started_on-startup_macos": {
+        "description": "Fired alongside fire_started_macos when data is automatically cleared on startup because the previous session did not terminate cleanly (Auto-Clear).",
+        "owners": ["ayoy"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "fire_burn_current-tab_macos": {
+        "description": "Fired when the user burns the current tab. Reports the selected tab and data-clearing options.",
+        "owners": ["ayoy"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "pinned",
+                "type": "boolean",
+                "description": "Whether the current tab is pinned"
+            },
+            {
+                "key": "close_tab",
+                "type": "boolean",
+                "description": "Whether the tab is closed as part of the burn"
+            },
+            {
+                "key": "clear_history",
+                "type": "boolean",
+                "description": "Whether history is cleared"
+            },
+            {
+                "key": "clear_site_data",
+                "type": "boolean",
+                "description": "Whether cookies and site data are cleared"
+            }
+        ]
+    },
+    "fire_burn_current-window_macos": {
+        "description": "Fired when the user burns the current window. Reports the selected window and data-clearing options.",
+        "owners": ["ayoy"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "has_pinned_tabs",
+                "type": "boolean",
+                "description": "Whether the current window has pinned tabs"
+            },
+            {
+                "key": "close_window",
+                "type": "boolean",
+                "description": "Whether the window is closed as part of the burn"
+            },
+            {
+                "key": "clear_history",
+                "type": "boolean",
+                "description": "Whether history is cleared"
+            },
+            {
+                "key": "clear_site_data",
+                "type": "boolean",
+                "description": "Whether cookies and site data are cleared"
+            }
+        ]
+    },
+    "fire_burn_all-sites_macos": {
+        "description": "Fired when the user burns all data (all sites). Reports the selected data-clearing options.",
+        "owners": ["ayoy"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "has_pinned_tabs",
+                "type": "boolean",
+                "description": "Whether there are any pinned tabs"
+            },
+            {
+                "key": "close_windows",
+                "type": "boolean",
+                "description": "Whether tabs and windows are closed as part of the burn"
+            },
+            {
+                "key": "clear_history",
+                "type": "boolean",
+                "description": "Whether history is cleared"
+            },
+            {
+                "key": "clear_site_data",
+                "type": "boolean",
+                "description": "Whether cookies and site data are cleared"
+            },
+            {
+                "key": "clear_ai_chats",
+                "type": "boolean",
+                "description": "Whether Duck.ai chat history is cleared"
+            }
+        ]
+    },
+    "fire_burn_ai-chats_macos": {
+        "description": "Fired when the user burns Duck.ai chat history from the AI Chat menu.",
+        "owners": ["ayoy"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "fire_dialog_toggle_mode_macos": {
+        "description": "Fired when the user changes the clearing scope (Current Tab / Current Window / All Data) in the Fire dialog.",
+        "owners": ["ayoy"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "fire_dialog_change_settings_macos_u": {
+        "description": "Sent once per install, the first time the user changes any of the Fire dialog data-clearing toggles (close tabs/windows, clear history, clear site data, or clear AI chats).",
+        "owners": ["ayoy"],
+        "triggers": ["user_submitted"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "fire_dialog_toggle_close_tabs_macos": {
+        "description": "Fired when the user toggles the close tabs/windows option in the Fire dialog.",
+        "owners": ["ayoy"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "fire_dialog_toggle_clear_history_macos": {
+        "description": "Fired when the user toggles the clear history option in the Fire dialog.",
+        "owners": ["ayoy"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "fire_dialog_toggle_clear_site_data_macos": {
+        "description": "Fired when the user toggles the clear cookies & site data option in the Fire dialog.",
+        "owners": ["ayoy"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "fire_dialog_toggle_clear_ai_chats_macos": {
+        "description": "Fired when the user toggles the clear Duck.ai chat history option in the Fire dialog.",
+        "owners": ["ayoy"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "fire_dialog_delete_individual_sites_clicked_macos": {
+        "description": "Fired when the user clicks the link to delete individual sites from the Fire dialog.",
+        "owners": ["ayoy"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "fire_dialog_manage_fireproofed_sites_macos": {
+        "description": "Fired when the user opens Manage Fireproof Sites from the Fire dialog.",
+        "owners": ["ayoy"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "fire_dialog_cancel_macos": {
+        "description": "Fired when the user dismisses the Fire dialog without performing a burn.",
+        "owners": ["ayoy"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    }
+}

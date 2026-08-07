@@ -57,9 +57,11 @@ final class MockPixelRetryQueueStore: PixelRetryQueueStoring {
     }
 }
 
-/// Controllable `PixelKit.FireRequest`. Distinguishes organic fires from retries by the `retriedPixel`
-/// parameter that `PixelRetryQueue` adds on replay. Retries can be held (deferred) to drive concurrency
-/// tests, mirroring iOS `DelayedPixelFiringMock`.
+/// Controllable `PixelKit.FireRequest`, modelling the network sender that `PixelRetryQueue` decorates.
+/// Like the real sender it is retry-agnostic: it records every fire and returns `defaultResult`, with no
+/// notion of organic-vs-replay. Tests drive scenarios through the pixel identities they control — naming
+/// the pixels they enqueue and asserting on calls by name. Named fires can be held (deferred) via
+/// `deferredPixelNames` to drive concurrency tests, mirroring iOS `DelayedPixelFiringMock`.
 final class FireRequestMock {
 
     struct Call {
@@ -67,19 +69,16 @@ final class FireRequestMock {
         let headers: [String: String]
         let parameters: [String: String]
         let allowedQueryReservedCharacters: CharacterSet?
-        let isRetry: Bool
     }
 
     private let lock = NSLock()
     private var _calls: [Call] = []
-    private var pendingRetryCompletions: [PixelKit.CompletionBlock] = []
+    private var pendingCompletions: [PixelKit.CompletionBlock] = []
 
-    /// Result returned for organic (non-retry) fires.
-    var organicResult: (success: Bool, error: Error?) = (true, nil)
-    /// Result returned for retry fires when `deferRetries` is false.
-    var retryResult: (success: Bool, error: Error?) = (true, nil)
-    /// When true, retry fires' completions are held until `completePendingRetries` is called.
-    var deferRetries = false
+    /// Result returned for every fire that isn't held by `deferredPixelNames`.
+    var defaultResult: (success: Bool, error: Error?) = (true, nil)
+    /// Fires for these pixel names have their completions held until `completePendingFires` is called.
+    var deferredPixelNames: Set<String> = []
 
     /// Invoked (synchronously, on the firing thread) after each call is recorded.
     var onFireReceived: ((Call) -> Void)?
@@ -89,42 +88,30 @@ final class FireRequestMock {
         return _calls
     }
 
-    var pendingRetryCount: Int {
-        lock.lock(); defer { lock.unlock() }
-        return pendingRetryCompletions.count
-    }
-
     var fireRequest: PixelKit.FireRequest {
         { [self] pixelName, headers, parameters, allowedChars, _, onComplete in
-            let isRetry = parameters["retriedPixel"] == "1"
             let call = Call(pixelName: pixelName,
                             headers: headers,
                             parameters: parameters,
-                            allowedQueryReservedCharacters: allowedChars,
-                            isRetry: isRetry)
+                            allowedQueryReservedCharacters: allowedChars)
             lock.lock()
             _calls.append(call)
-            let shouldDefer = isRetry && deferRetries
-            if shouldDefer { pendingRetryCompletions.append(onComplete) }
-            let organic = organicResult
-            let retry = retryResult
+            let shouldDefer = deferredPixelNames.contains(pixelName)
+            if shouldDefer { pendingCompletions.append(onComplete) }
+            let result = defaultResult
             lock.unlock()
 
             onFireReceived?(call)
 
             if shouldDefer { return }
-            if isRetry {
-                onComplete(retry.success, retry.error)
-            } else {
-                onComplete(organic.success, organic.error)
-            }
+            onComplete(result.success, result.error)
         }
     }
 
-    func completePendingRetries(success: Bool, error: Error? = nil) {
+    func completePendingFires(success: Bool, error: Error? = nil) {
         lock.lock()
-        let completions = pendingRetryCompletions
-        pendingRetryCompletions.removeAll()
+        let completions = pendingCompletions
+        pendingCompletions.removeAll()
         lock.unlock()
         completions.forEach { $0(success, error) }
     }

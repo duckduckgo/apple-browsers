@@ -103,6 +103,14 @@ final class FireExecutorTests: XCTestCase {
             deleteAIChatCalls.append(chatID)
             return deleteAIChatResult
         }
+
+        var deleteAIChatsResult: Result<Void, Error> = .success(())
+        private(set) var deleteAIChatsCalls: [[String]] = []
+
+        func deleteAIChats(chatIDs: [String]) async -> Result<Void, Error> {
+            deleteAIChatsCalls.append(chatIDs)
+            return deleteAIChatsResult
+        }
     }
 
     class MockBookmarkDatabaseCleaner: BookmarkDatabaseCleaning {
@@ -120,7 +128,7 @@ final class FireExecutorTests: XCTestCase {
     private var mockTabManager: MockTabManager!
     private var spyDownloadManager: SpyDownloadManager!
     private var mockWebsiteDataManager: MockWebsiteDataManager!
-    private var mockDaxDialogsManager: DummyDaxDialogsManager!
+    private var mockDaxDialogsManager: MockDaxDialogsManager!
     private var mockSyncService: MockDDGSyncing!
     private var mockFireproofing: MockFireproofing!
     private var mockTextZoomCoordinatorProvider: MockTextZoomCoordinatorProvider!
@@ -143,7 +151,7 @@ final class FireExecutorTests: XCTestCase {
         mockTabManager = MockTabManager()
         spyDownloadManager = SpyDownloadManager()
         mockWebsiteDataManager = MockWebsiteDataManager()
-        mockDaxDialogsManager = DummyDaxDialogsManager()
+        mockDaxDialogsManager = MockDaxDialogsManager()
         mockSyncService = MockDDGSyncing(authState: .inactive, isSyncInProgress: false)
         mockFireproofing = MockFireproofing(domains: [])
         mockTextZoomCoordinatorProvider = MockTextZoomCoordinatorProvider()

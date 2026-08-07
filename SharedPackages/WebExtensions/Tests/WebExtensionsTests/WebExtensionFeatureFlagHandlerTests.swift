@@ -657,6 +657,7 @@ private final class MockWebExtensionManaging: WebExtensionManaging {
 @available(macOS 15.4, iOS 18.4, *)
 private final class MockEventsListener: WebExtensionEventsListening {
     var controller: WKWebExtensionController?
+    var droppedCallbacksCount = 0
 
     func didOpenWindow(_ window: WKWebExtensionWindow) {}
     func didCloseWindow(_ window: WKWebExtensionWindow) {}
@@ -669,4 +670,5 @@ private final class MockEventsListener: WebExtensionEventsListening {
     func didMoveTab(_ tab: WKWebExtensionTab, from oldIndex: Int, in oldWindow: WKWebExtensionWindow) {}
     func didReplaceTab(_ oldTab: WKWebExtensionTab, with tab: WKWebExtensionTab) {}
     func didChangeTabProperties(_ properties: WKWebExtension.TabChangedProperties, for tab: WKWebExtensionTab) {}
+    func withTabLifecycleEventsSuppressed(_ body: () -> Void) { body() }
 }

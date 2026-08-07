@@ -79,6 +79,25 @@ public struct AIChatNativeHandoffData: Codable {
     }
 }
 
+/// Native-owned attachment caps for the duck.ai web app, keyed by type; an absent entry means no limit.
+public struct AIChatNativeAttachmentLimits: Codable, Equatable {
+    public struct TabLimits: Codable, Equatable {
+        /// Max open tabs attachable to one prompt; omit the entry for "no limit" (0/negative aren't sentinels).
+        public let maxAttached: Int
+
+        public init(maxAttached: Int) {
+            self.maxAttached = maxAttached
+        }
+    }
+
+    /// Cap on tabs attached via the sidebar picker; nil = no tab limit (kill switch off).
+    public let tabs: TabLimits?
+
+    public init(tabs: TabLimits?) {
+        self.tabs = tabs
+    }
+}
+
 public struct AIChatNativeConfigValues: Codable {
     public let isAIChatHandoffEnabled: Bool
     public let platform: String
@@ -99,17 +118,28 @@ public struct AIChatNativeConfigValues: Codable {
     public let supportsMultipleContexts: Bool
     public let supportsTabPicker: Bool
     public let supportsNativeStorage: Bool
+    /// `true` when the native side supplies page-type signals so the duck.ai web app can render
+    /// page-tailored suggested prompts ("suggestions").
+    public let supportsSuggestions: Bool
     /// `true` when the native app handles the "voice chat start failed" remediation UI
     /// (e.g. surfaces the OS microphone-disabled prompt). When this is `true` the FE
     /// must suppress its own in-page tooltip and post `voiceChatStartFailed` to native
     /// after `getUserMedia` rejects.
     public let supportsNativeVoicePermissionHandler: Bool
+    /// `true` when the native app handles the "dictation start failed" remediation UI.
+    /// Mirrors `supportsNativeVoicePermissionHandler` but for the dictation flow: when this
+    /// is `true` the FE must suppress its own in-page tooltip and post `dictationStartFailed`
+    /// to native after `getUserMedia` rejects. Native surfaces the OS microphone-disabled
+    /// prompt with dictation-specific copy.
+    public let supportsNativeDictationPermissionHandler: Bool
     /// Whether this is a new or returning (reinstall) install — `unknown` when the platform
     /// can't tell. Surfaced on the `web.conversion.duckai.prompt` pixel.
     public let installType: AIChatInstallType
     /// Bucketed age of the install (days since the ATB install date):
     /// 0 = same day, 1 = 1–7, 2 = 8–14, 3 = 15–21, 4 = 22–28, 5 = after day 28.
     public let installAge: Int
+    /// Native-owned attachment caps read by the sidebar; nil (omitted) means no caps.
+    public let attachmentLimits: AIChatNativeAttachmentLimits?
 
     public static var defaultValues: AIChatNativeConfigValues {
 #if os(iOS)
@@ -130,7 +160,8 @@ public struct AIChatNativeConfigValues: Codable {
                                         supportsAIChatSync: false,
                                         supportsMultipleContexts: false,
                                         supportsNativeStorage: false,
-                                        supportsNativeVoicePermissionHandler: false)
+                                        supportsNativeVoicePermissionHandler: false,
+                                        supportsNativeDictationPermissionHandler: false)
 #endif
 
 #if os(macOS)
@@ -151,7 +182,8 @@ public struct AIChatNativeConfigValues: Codable {
                                         supportsAIChatSync: false,
                                         supportsMultipleContexts: false,
                                         supportsNativeStorage: false,
-                                        supportsNativeVoicePermissionHandler: true)
+                                        supportsNativeVoicePermissionHandler: true,
+                                        supportsNativeDictationPermissionHandler: true)
 #endif
     }
 
@@ -173,9 +205,12 @@ public struct AIChatNativeConfigValues: Codable {
                 supportsMultipleContexts: Bool = false,
                 supportsTabPicker: Bool = false,
                 supportsNativeStorage: Bool = false,
+                supportsSuggestions: Bool = false,
                 supportsNativeVoicePermissionHandler: Bool = false,
+                supportsNativeDictationPermissionHandler: Bool = false,
                 installType: AIChatInstallType = .new,
-                installAge: Int = 0) {
+                installAge: Int = 0,
+                attachmentLimits: AIChatNativeAttachmentLimits? = nil) {
         self.isAIChatHandoffEnabled = isAIChatHandoffEnabled
         self.platform = Platform.name
         self.supportsClosingAIChat = supportsClosingAIChat
@@ -195,9 +230,12 @@ public struct AIChatNativeConfigValues: Codable {
         self.supportsMultipleContexts = supportsMultipleContexts
         self.supportsTabPicker = supportsTabPicker
         self.supportsNativeStorage = supportsNativeStorage
+        self.supportsSuggestions = supportsSuggestions
         self.supportsNativeVoicePermissionHandler = supportsNativeVoicePermissionHandler
+        self.supportsNativeDictationPermissionHandler = supportsNativeDictationPermissionHandler
         self.installType = installType
         self.installAge = installAge
+        self.attachmentLimits = attachmentLimits
     }
 
     /// Buckets the days between the install date and `now` into the values expected by the

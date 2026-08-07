@@ -26,8 +26,12 @@ public class MockOAuthClient: OAuthClient {
         internalCurrentTokenContainer != nil
     }
     public var internalCurrentTokenContainer: Networking.TokenContainer?
+    public var currentTokenContainerError: Error?
     public func currentTokenContainer() throws -> TokenContainer? {
-        internalCurrentTokenContainer
+        if let currentTokenContainerError {
+            throw currentTokenContainerError
+        }
+        return internalCurrentTokenContainer
     }
 
     public func setCurrentTokenContainer(_ tokenContainer: TokenContainer?) throws {
@@ -35,7 +39,10 @@ public class MockOAuthClient: OAuthClient {
     }
 
     public var getTokensResponse: Result<Networking.TokenContainer, Error>!
-    public func getTokens(policy: Networking.AuthTokensCachePolicy) async throws -> Networking.TokenContainer {
+    public private(set) var getTokensTriggers: [Networking.TokenRefreshTrigger] = []
+
+    public func getTokens(policy: Networking.AuthTokensCachePolicy, trigger: Networking.TokenRefreshTrigger) async throws -> Networking.TokenContainer {
+        getTokensTriggers.append(trigger)
         switch getTokensResponse! {
         case .success(let success):
             return success

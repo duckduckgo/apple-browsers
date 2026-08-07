@@ -118,11 +118,12 @@ public final class AIChatNativeInputView: UIView {
         textView.font = fontMetrics.scaledFont(for: UIFont.systemFont(ofSize: Constants.fontSize))
         textView.adjustsFontForContentSizeCategory = true
         textView.backgroundColor = .clear
-        textView.tintColor = UIColor(designSystemColor: .accent)
+        textView.tintColor = UIColor(designSystemColor: .accentPrimary)
         textView.textColor = UIColor(designSystemColor: .textPrimary)
         textView.textContainerInset = Constants.textContainerInset
         textView.isScrollEnabled = false
         textView.delegate = self
+        textView.accessibilityIdentifier = "AIChatNativeInputView.textView"
         textView.translatesAutoresizingMaskIntoConstraints = false
         return textView
     }()
@@ -173,7 +174,7 @@ public final class AIChatNativeInputView: UIView {
     private lazy var submitButton: UIButton = {
         let button = UIButton(type: .system)
         button.setImage(DesignSystemImages.Glyphs.Size24.arrowUp, for: .normal)
-        button.tintColor = UIColor(designSystemColor: .accent)
+        button.tintColor = UIColor(designSystemColor: .accentPrimary)
         button.accessibilityIdentifier = "AIChatNativeInputView.submitButton"
         button.translatesAutoresizingMaskIntoConstraints = false
         button.addTarget(self, action: #selector(submitButtonTapped), for: .touchUpInside)
@@ -269,10 +270,9 @@ public final class AIChatNativeInputView: UIView {
         chipView.configure(state: state)
     }
 
-    /// Sets the tap-to-attach callback on the current chip view (for placeholder taps).
+    /// Placeholder chips are no longer rendered; attach is handled by the attachment menu.
     public func setChipTapCallback(_ callback: @escaping () -> Void) {
-        guard let chipView = currentChipView as? AIChatContextChipView else { return }
-        chipView.onTapToAttach = callback
+        _ = callback
     }
 }
 
@@ -375,7 +375,7 @@ private extension AIChatNativeInputView {
 
         submitButton.isEnabled = hasSubmittableText
         if hasSubmittableText {
-            submitButtonContainer.backgroundColor = UIColor(designSystemColor: .accent)
+            submitButtonContainer.backgroundColor = UIColor(designSystemColor: .accentPrimary)
             submitButton.tintColor = .white
         } else {
             submitButtonContainer.backgroundColor = .clear

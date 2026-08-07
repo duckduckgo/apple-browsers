@@ -52,22 +52,40 @@ final class AIChatHistoryCell: UITableViewCell {
         fatalError("init(coder:) is not supported.")
     }
 
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        titleLabel.text = nil
+        iconImageView.image = nil
+    }
+
     private func setupViews() {
         // Explicit `backgroundColor` keeps the `.insetGrouped` rounded-corner mask
         // attached through swipe gestures (without it the last row's bottom corner
         // flashes square mid-swipe). Bookmarks' cells do the same.
-        backgroundColor = UIColor(designSystemColor: .surface)
+        backgroundColor = UIColor(singleUseColor: .groupedListContentBackground)
+        // Keep the surface background when selected (the multi-select checkmark indicates
+        // selection) instead of the default grey highlight blending the row into the list.
+        let selectedBackground = UIView()
+        selectedBackground.backgroundColor = UIColor(singleUseColor: .groupedListContentBackground)
+        selectedBackgroundView = selectedBackground
 
         contentView.addSubview(iconImageView)
         contentView.addSubview(titleLabel)
 
+        // Rows are 52pt tall (per design); `greaterThanOrEqual` lets them grow with
+        // larger Dynamic Type sizes rather than clipping.
+        let rowHeight = contentView.heightAnchor.constraint(greaterThanOrEqualToConstant: 52)
+        rowHeight.priority = .required - 1
+
         NSLayoutConstraint.activate([
+            rowHeight,
+
             iconImageView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
             iconImageView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
-            iconImageView.widthAnchor.constraint(equalToConstant: 20),
-            iconImageView.heightAnchor.constraint(equalToConstant: 20),
+            iconImageView.widthAnchor.constraint(equalToConstant: 24),
+            iconImageView.heightAnchor.constraint(equalToConstant: 24),
 
-            titleLabel.leadingAnchor.constraint(equalTo: iconImageView.trailingAnchor, constant: 12),
+            titleLabel.leadingAnchor.constraint(equalTo: iconImageView.trailingAnchor, constant: 8),
             titleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
             titleLabel.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
             titleLabel.topAnchor.constraint(greaterThanOrEqualTo: contentView.topAnchor, constant: 11.5),
@@ -76,7 +94,7 @@ final class AIChatHistoryCell: UITableViewCell {
 
         titleLabel.textColor = UIColor(designSystemColor: .textPrimary)
 
-        // Separator starts where the text starts (16 + 20 + 12).
+        // Separator starts where the text starts (16 + 24 + 8).
         separatorInset = UIEdgeInsets(top: 0, left: 48, bottom: 0, right: 0)
     }
 }

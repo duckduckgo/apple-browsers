@@ -70,11 +70,17 @@ final class AIChatMenuTests: XCTestCase {
         XCTAssertTrue(titles.contains(UserText.aiChatMenuDeleteAllChats))
     }
 
-    func testOpenDuckAIItemHasOptionCommandNShortcut() {
+    func testNewChatItemHasOptionCommandNShortcut() {
         let menu = AIChatMenu(suggestionsReader: suggestionsReader, actions: actions)
-        let item = menu.items.first { $0.title == UserText.aiChatMenuOpenDuckAI }
+        let item = menu.items.first { $0.title == UserText.aiChatMenuNewChat }
         XCTAssertEqual(item?.keyEquivalent, "n")
         XCTAssertEqual(item?.keyEquivalentModifierMask, [.option, .command])
+    }
+
+    func testOpenDuckAIItemHasNoShortcut() {
+        let menu = AIChatMenu(suggestionsReader: suggestionsReader, actions: actions)
+        let item = menu.items.first { $0.title == UserText.aiChatMenuOpenDuckAI }
+        XCTAssertEqual(item?.keyEquivalent, "")
     }
 
     func testMoreOptionsOpenDuckAIItemHasNoShortcut() {
@@ -376,6 +382,10 @@ private final class StubAIChatHistoryCleaner: AIChatHistoryCleaning {
         cleanAIChatHistoryCalled = true
         return result
     }
+
+    func allChats() -> [DuckAiChat] {
+        []
+    }
 }
 
 private final class StubAIChatSyncCleaning: AIChatSyncCleaning {
@@ -392,6 +402,10 @@ private final class StubAIChatSyncCleaning: AIChatSyncCleaning {
     func recordChatDeletion(chatID: String) async {}
 
     func deleteIfNeeded() async {}
+
+    func recordChatUpdate(chatID: String) async {}
+
+    func updateIfNeeded() async {}
 
     func scheduleSync() {}
 }

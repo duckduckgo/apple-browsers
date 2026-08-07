@@ -1,4 +1,5 @@
 {
+  "originHash" : "dcdfbe4de770641a18834466b4641abdd25fe5da9a88f096bcb1e84d46ba8a6e",
   "pins" : [
     {
       "identity" : "apple-toolbox",
@@ -7,6 +8,15 @@
       "state" : {
         "revision" : "579eb1d65c7f221094856269fc0e457a1c2a6660",
         "version" : "3.2.1"
+      }
+    },
+    {
+      "identity" : "lottie-spm",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/airbnb/lottie-spm.git",
+      "state" : {
+        "revision" : "0aff16288f8dc1e3dab35cbf5cf45979673fd3df",
+        "version" : "4.6.1"
       }
     },
     {
@@ -28,5 +38,5 @@
       }
     }
   ],
-  "version" : 2
+  "version" : 3
 }

@@ -1,9 +1,6 @@
 /* No comment provided by engineer. */
 "%@\n%@" = "%@\n%@";
 
-/* Auto-Restore - Description */
-"auto.restore.description" = "Automatski vrati svoje podatke na ovom uređaju ako ponovno instaliraš aplikaciju.";
-
 /* Auto-Restore Ready Sheet - Description */
 "auto.restore.ready.description" = "Nastavi sesiju Sync & Backup kako bi vratio oznake, lozinke i još mnogo toga ili nastavi s novim postavljanjem.";
 
@@ -31,12 +28,6 @@
 /* Auto-Restore Settings Row - On */
 "auto.restore.settings.row.on" = "Uključeno";
 
-/* Auto-restore section - Footer */
-"auto.restore.toggle.footer" = "Podaci se automatski vraćaju ako ponovno instaliraš aplikaciju. Podaci Sync & Backup ne mogu se oporaviti nakon 18 (ili više) mjeseci neaktivnosti.";
-
-/* Auto-Restore - Toggle Label */
-"auto.restore.toggle.label" = "Vraćanje prilikom ponovne instalacije aplikacije";
-
 /* Standard Buttons - Back Button */
 "back.button" = "Natrag";
 
@@ -58,32 +49,11 @@
 /* Camera View - Permission Required */
 "camera.permission.required" = "Potrebna je dozvola za kameru";
 
-/* Camera View - Point Camera Indication */
-"camera.point.camera.indication" = "Usmjeri kameru prema QR kodu za sinkronizaciju";
-
 /* No comment provided by engineer. */
 "Cancel" = "Otkaži";
 
 /* Standard Buttons - Cancel Button */
 "cancel.button" = "Otkaži";
-
-/* Connect With Server Sheet - Button */
-"connect.with.server.sheet.button" = "Uključi sinkronizaciju i sigurnosno kopiranje";
-
-/* Connect With Server Sheet - Description Part 1 */
-"connect.with.server.sheet.description.part1" = "Time se stvara šifrirana sigurnosna kopija tvojih oznaka i podataka za automatsko popunjavanje na sigurnom poslužitelju DuckDuckGo, koja se može sinkronizirati s tvojim drugim uređajima.";
-
-/* Connect With Server Sheet - Description Part 1 */
-"connect.with.server.sheet.description.part1-updated" = "Time se stvara šifrirana sigurnosna kopija tvojih spremljenih oznaka, lozinki, kreditnih kartica i Duck.ai čavrljanja na sigurnom poslužitelju DuckDuckGo, koji se može sinkronizirati s tvojim drugim uređajima.";
-
-/* Connect With Server Sheet - Description Part 2 */
-"connect.with.server.sheet.description.part2" = "Ključ za šifriranje pohranjen je samo na tvom uređaju, DuckDuckGo mu ne može pristupiti.";
-
-/* Connect With Server Sheet - Footer */
-"connect.with.server.sheet.footer" = "Kasnije možeš sinkronizirati s drugim uređajima.";
-
-/* Connect With Server Sheet - Title */
-"connect.with.server.sheet.title" = "Sinkroniziraj i izradi sigurnosnu kopiju ovog uređaja";
 
 /* Standard Buttons - Copy Button */
 "copy.button" = "Kopiraj";
@@ -100,17 +70,8 @@
 /* Alert title for invalid credit cards being filtered out of synced data */
 "creditCards.invalid.objects.present.title" = "Neke kreditne kartice se ne sinkroniziraju zbog pretjerano dugog sadržaja u određenim poljima.";
 
-/* Delete Server Data - Button */
-"delete.server.data" = "Isključi i izbriši podatke poslužitelja...";
-
 /* No comment provided by engineer. */
 "Dev environment" = "Dev okruženje";
-
-/* Device SyncedSheet Button to go get DuckDuckGo on other devices */
-"device.synced.sheet.button.get.other.devices" = "Nabavi DuckDuckGo na drugim uređajima";
-
-/* Device SyncedSheet - Title */
-"device.synced.sheet.title" = "Tvoji su podaci sinkronizirani!";
 
 /* Standard Buttons - Done Button */
 "done.button" = "Gotovo";
@@ -130,38 +91,17 @@
 /* Fetch Favicons Onboarding - Title */
 "fetch.favicons.onboarding.title" = "Želiš li preuzeti ikone koje nedostaju?";
 
-/* Options - Fetch Favicons Description */
-"fetch.favicons.option.caption" = "Automatski preuzmi ikone za svoje sinkronizirane oznake. Preuzimanja ikona izložena su vašoj mreži.";
-
 /* Options - Fetch Favicons Title */
 "fetch.favicons.option.title" = "Ikone za automatsko preuzimanje";
 
 /* No comment provided by engineer. */
 "Keep Development" = "Nastavi razvoj";
 
-/* Manually Enter Code View - Instruction with sync menu path and view text code menu item inserted */
-"manually.enter.code.instruction.attributed" = "Idi na %1$@ i odaberi %2$@ u aplikaciji DuckDuckGo na drugom sinkroniziranom uređaju i zalijepi šifru ovdje za sinkronizaciju ovog uređaja.";
-
 /* Manually Enter Code View - Title */
 "manually.enter.code.title" = "Ručno unesi šifru";
 
-/* Manually Enter Code View - Validating Code Action */
-"manually.enter.code.validating.code.action" = "Provjera valjanosti šifre";
-
-/* Manually Enter Code View - Validating Code Failed Action */
-"manually.enter.code.validating.code.failed.action" = "Nevažeća šifra.";
-
-/* Standard Buttons - Next Button */
-"next.button" = "Dalje";
-
 /* Standard Buttons - Not Now Button */
 "not.now.button" = "Ne sada";
-
-/* Options - Section Header */
-"options.section.header" = "Opcije";
-
-/* Section header for other syncing options */
-"other.options.section.header" = "Ostale mogućnosti";
 
 /* Standard Buttons - Paste Button */
 "paste.button" = "Zalijepi";
@@ -175,20 +115,8 @@
 /* Button title for sync credit cards limits exceeded warning to go to manage credit cards */
 "prefrences.sync.credit-cards-limit-exceeded-action" = "Upravljanje kreditnim karticama…";
 
-/* Preparing To Sync Sheet - Description */
-"preparing.to.sync.sheet.description" = "Vaše oznake i podaci za automatsko popunjavanje pripremaju se za sinkronizaciju. Ovo bi trebalo trajati samo trenutak.";
-
-/* Preparing To Sync Sheet - Description */
-"preparing.to.sync.sheet.description-updated" = "Tvoje oznake, lozinke i Duck.ai čavrljanja pripremaju se za sinkronizaciju. Ovo bi trebalo trajati samo trenutak.";
-
-/* Preparing To Sync Sheet - Footer */
-"preparing.to.sync.sheet.footer" = "Povezivanje u tijeku...";
-
-/* Preparing To Sync Sheet - Title */
-"preparing.to.sync.sheet.title" = "Postavljanje sinkronizacije i sigurnosnog kopiranja";
-
-/* Link label for recovering synced data */
-"recover.synced.data.link" = "Oporavak sinkroniziranih podataka";
+/* Preparing to sync title */
+"preparing.to.sync.title" = "Priprema za sinkronizaciju";
 
 /* Recover Synced Data Sheet - Button */
 "recover.synced.data.sheet.button" = "Oporavak sinkroniziranih podataka";
@@ -217,86 +145,8 @@
 /* Remove Device View - Title */
 "remove.device.title" = "Želiš li ukloniti uređaj?";
 
-/* Save Recovery Code Sheet - Card Title */
-"save.recovery.code.card.title" = "Kôd za oporavak";
-
-/* Save Recovery Code Sheet - Copy Code Toast */
-"save.recovery.code.code.copied.button" = "Šifra za oporavak kopirana je u međuspremnik";
-
-/* Save Recovery Code Sheet - Copy Code Button */
-"save.recovery.code.copy.code.button" = "Kopiraj šifru";
-
-/* Save Recovery Code Sheet - Save as PDF Button */
-"save.recovery.code.save.as.pdf.button" = "Preuzmi kao PDF";
-
-/* Save Recovery Code Sheet - Footer */
-"save.recovery.code.sheet.footer" = "Svatko s pristupom ovoj šifri može pristupiti tvojim sinkroniziranim podacima, stoga ih čuvaj na sigurnom mjestu.";
-
-/* Recovery Code Sheet - Description */
-"save.recovery.key.body" = "Spremi ovaj kôd kako bi mogao oporaviti svoje podatke ako izgubiš pristup ovom uređaju – čuvaj ga na sigurnom.";
-
-/* Recovery Code Sheet - Title */
-"save.recovery.key.title" = "Jednostavno oporavi svoje podatke";
-
-/* Save RecoveryPDF - Button */
-"save.recovery.pdf.button" = "Spremi PDF za oporavak";
-
-/* Save RecoveryPDF - Footer + Learn More, with markdown link */
-"save.recovery.pdf.footer" = "Upotrijebi ovaj kôd za vraćanje podataka ako izgubiš pristup ovom uređaju. Podaci sinkronizacije i sigurnosne kopije (Sync & Backup) ne mogu se oporaviti nakon 18 (ili više) mjeseci neaktivnosti. [Saznaj više](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)";
-
-/* Scan Or Enter Code To Recover Synced Data View - Enter Code Link */
-"scan.code.to.recover.synced.data.enter.code.link" = "Ručno unesi tekstnu šifru";
-
-/* Scan Or Enter Code To Recover Synced Data View - Explanation */
-"scan.code.to.recover.synced.data.explanation" = "Skeniraj QR kôd na svom PDF-u za oporavak ili drugom sinkroniziranom uređaju za vraćanje svojih podataka.";
-
-/* Scan Or Enter Code To Recover Synced Data View - Footer */
-"scan.code.to.recover.synced.data.footer" = "Ne možeš skenirati?";
-
-/* Scan Or Enter Code To Recover Synced Data View - Title */
-"scan.code.to.recover.synced.data.title" = "Oporavak sinkroniziranih podataka";
-
-/* Scan or See Code View - Footer */
-"scan.or.see.code.footer" = "Ne možeš skenirati?";
-
-/* Scan or See Code View - Instruction */
-"scan.or.see.code.instruction" = "Idi na Postavke › Sinkronizacija i sigurnosno kopiranje u pregledniku DuckDuckGo na drugom uređaju i odaberite \"Sinkroniziraj s drugim uređajem\".";
-
-/* Scan or See Code View - Instruction with syncMenuPath */
-"scan.or.see.code.instruction.attributed" = "Idi na %@ u pregledniku DuckDuckGo na drugom uređaju i odaberite ”Sinkroniziraj s drugim uređajem”.";
-
-/* Scan or See Code View - Manually Enter Code Link */
-"scan.or.see.code.manually.enter.code.link" = "Ručno unesi šifru";
-
-/* Scan or See Code View - Instruction with syncMenuPath */
-"scan.or.see.code.other.device.instruction.attributed" = "Otvori aplikaciju DuckDuckGo na svom drugom uređaju i idi na %@.";
-
-/* Scan or See Code View - Scan Code Instructions Body */
-"scan.or.see.code.scan.code.instructions.body" = "Skeniraj ovaj kôd drugim uređajem za sinkronizaciju.";
-
-/* Scan or See Code View - Scan Code Instructions Title */
-"scan.or.see.code.scan.code.instructions.title" = "S mobilnog uređaja na mobilni uređaj?";
-
-/* Scan or See Code View - Scan Code Instructions Body */
-"scan.or.see.code.scan.code.qr.instructions.body" = "Otvori DuckDuckGo na svom drugom uređaju i skeniraj ovu šifru za sinkronizaciju.";
-
-/* Scan or See Code View - Scan Code Instructions Title */
-"scan.or.see.code.scan.code.qr.instructions.title" = "Ili skeniraj s DuckDuckGoom na svom drugom uređaju";
-
-/* Scan or See Code View - Share Code Link */
-"scan.or.see.code.share.code.link" = "Dijeli tekstnu šifru";
-
-/* Scan or See Code View - Title */
-"scan.or.see.code.title" = "Skeniraj QR kôd";
-
 /* No comment provided by engineer. */
 "Switch to Production" = "Prijeđi na proizvodnju";
-
-/* Link label for syncing and backing up the device */
-"sync.and.backup.this.device.link" = "Sinkroniziraj i izradi sigurnosnu kopiju ovog uređaja";
-
-/* Button to get DuckDuckGo on other devices */
-"sync.get.other.devices" = "Nabavi DuckDuckGo na drugim uređajima";
 
 /* Button title to share link for downloading DuckDuckGo on other devices */
 "sync.get.other.devices.card.button.title" = "Podijeli poveznicu za preuzimanje";
@@ -312,9 +162,6 @@
 
 /* Message included when sharing a url via the system share sheet */
 "sync.get.other.devices.share.link.message" = "Instaliraj preglednik DuckDuckGo na svoje uređaje i možeš započeti sigurnu sinkronizaciju oznaka i podataka za automatsko popunjavanje:";
-
-/* Sync Menu Path */
-"sync.menu.path" = "Postavke > Sinkronizacija i sigurnosno kopiranje kopija > Sinkronizacija s drugim uređajem";
 
 /* Sync passcode required alert - button */
 "sync.passcode.required.alert.go.to.settings.button" = "Idi na Postavke";
@@ -343,6 +190,12 @@
 /* Prompt title after enabling sync */
 "sync.simplified.another.device.title" = "Sinkronizirati vaše podatke s drugim uređajem?";
 
+/* Body on the sync-setup prompt explaining the sync-another-device option */
+"sync.simplified.another.device.v2.body" = "Pomoći ćemo ti sinkronizirati uređaje.";
+
+/* Title on the sync-setup prompt asking whether to sync with another device or just this device */
+"sync.simplified.another.device.v2.title" = "Sinkroniziraj ovaj uređaj s obližnjim računalom.";
+
 /* Caption displayed on 'auto-download bookmarks icons' toggle. */
 "sync.simplified.bookmarks.section.fetch-favicons.caption" = "Učitava ikone s web-mjesta koja ste označili. Preuzimanja ikona izložena su tvojoj mreži.";
 
@@ -355,14 +208,56 @@
 /* Text shown next to toggle while sync is being set up */
 "sync.simplified.connecting" = "Povezivanje u tijeku...";
 
+/* Title shown on the connecting screen while Sync & Backup is being set up on this device */
+"sync.simplified.connecting.v2.title" = "Opcija Sync & Backup šifrirana je metodom \"od kraja do kraja\" na svim tvojim uređajima.";
+
 /* Sync settings 'Copy Recovery Code' button */
 "sync.simplified.copy.recovery.code.button" = "Kopiraj kôd za oporavak";
 
 /* Sync settings action button title to turn off sync and delete server data */
 "sync.simplified.delete.sync.data.button" = "Isključi sinkronizaciju i izbriši podatke poslužitelja";
 
+/* Description on the device-added success screen explaining what the recovery code is for */
+"sync.simplified.device.added.v2.description" = "Upotrijebi ovaj kôd za vraćanje podataka ako izgubiš pristup svojim uređajima. Čuvaj ga na sigurnom.";
+
+/* Fallback subject used in the device-added success title when the current device's name is unavailable. Substituted as %@ in simplifiedDeviceAddedV2Title. */
+"sync.simplified.device.added.v2.fallback.device.name" = "Ovaj uređaj";
+
+/* Title on the success screen shown after a device joins Sync & Backup. %@ is the name of the current device that was just added. */
+"sync.simplified.device.added.v2.title" = "%@ je dodan u Sync & Backup.";
+
 /* Sync settings 'Download Recovery Code' button */
 "sync.simplified.download.recovery.code.button" = "Preuzmi kôd za oporavak";
+
+/* Section header above the get-desktop-browser option in sync setup */
+"sync.simplified.download.section.header" = "Preuzimanje";
+
+/* Button to download the recovery code on the recover-your-data screen */
+"sync.simplified.download.your.recovery.code.button" = "Preuzmi svoj kôd za oporavak";
+
+/* Description shown when Sync & Backup is enabled (when AI chat sync is available) */
+"sync.simplified.enabled.header.message" = "Tvoje oznake, podaci za automatsko popunjavanje i Duck.ai čavrljanja sinkroniziraju se i sigurnosno pohranjuju uz end-to-end enkripciju.";
+
+/* Description shown when Sync & Backup is enabled */
+"sync.simplified.enabled.header.message.basic" = "Tvoje oznake i podaci za automatsko popunjavanje sinkroniziraju se uz end-to-end enkripciju.";
+
+/* Sync & Backup screen title shown when Sync is enabled */
+"sync.simplified.enabled.header.title" = "DuckDuckGo je sinkroniziran";
+
+/* Label above the example sync code placeholder on the enter-code tab */
+"sync.simplified.enter.code.example.label" = "Primjer kôda:";
+
+/* First part of the enter-code instructions, followed by a DuckDuckGo app chip */
+"sync.simplified.enter.code.open" = "Otvori svoj drugi";
+
+/* Button to paste the sync code on the enter-code tab */
+"sync.simplified.enter.code.paste.button" = "Zalijepi kôd za sinkronizaciju";
+
+/* Second part of the enter-code instructions. **...** marks the parts shown in the primary text color. */
+"sync.simplified.enter.code.steps" = "Idi na **Sync & Backup** › **Sinkroniziraj s drugim uređajem** › **Kopiraj tekstualni kôd**.";
+
+/* Title on the enter-code tab of the V2 scan screen */
+"sync.simplified.enter.code.title" = "Unesi kôd za sinkronizaciju.";
 
 /* Button subtitle to get the DuckDuckGo desktop browser */
 "sync.simplified.get.desktop.browser.subtitle" = "DuckDuckGo za Mac i Windows";
@@ -370,11 +265,53 @@
 /* Button title to get the DuckDuckGo desktop browser. */
 "sync.simplified.get.desktop.browser.title" = "Nabavi preglednik za PC";
 
+/* Row label to get the DuckDuckGo desktop browser */
+"sync.simplified.get.our.desktop.browser.title" = "Preuzmi naš preglednik za računalo";
+
+/* Sync setup row label to recover synced data using an existing recovery code */
+"sync.simplified.have.recovery.code.button" = "Imam kôd za oporavak";
+
 /* Description of the Sync & Backup feature (when AI chat sync is available) */
 "sync.simplified.header.message" = "Spremi svoje oznake, podatke automatskog popunjavanja i Duck.ai čavrljanja te ih sinkroniziraj između svojih uređaja pomoću end-to-end enkripcije.";
 
 /* Description of the Sync & Backup feature */
 "sync.simplified.header.message.basic" = "Spremi svoje knjižne oznake i podatke za automatsko popunjavanje te ih sinkroniziraj između uređaja pomoću end-to-end enkripcije.";
+
+/* Description of the Sync & Backup feature */
+"sync.simplified.header.message.basic.v2" = "Sinkroniziraj svoje podatke za automatsko popunjavanje i oznake u svim svojim aplikacijama DuckDuckGo, uz end-to-end enkripciju.";
+
+/* Description of the Sync & Backup feature (when AI chat sync is available) */
+"sync.simplified.header.message.v2" = "Sinkroniziraj i sigurnosno pohrani svoje podatke za automatsko popunjavanje, oznake i Duck.ai čavrljanja, uz end-to-end enkripciju, u svim svojim DuckDuckGo aplikacijama.";
+
+/* Sync & Backup screen title */
+"sync.simplified.header.title" = "Održavaj DuckDuckGo sinkroniziranim";
+
+/* Footer caption shown under the Remove Device button on the manage device screen */
+"sync.simplified.manage.device.remove.footer" = "Ovaj uređaj više neće moći pristupiti tvojim sinkroniziranim podacima ako ga ukloniš.";
+
+/* Status label shown under a device name on the manage device screen when the device is synced */
+"sync.simplified.manage.device.status.synced" = "Sinkronizirano";
+
+/* Footer caption shown under the Sync & Backup This Device toggle on the manage this device screen */
+"sync.simplified.manage.device.turn.off.footer" = "Ovaj uređaj više neće moći pristupiti tvojim sinkroniziranim podacima ako se ovo isključi.";
+
+/* My Devices section header shown when Sync & Backup is enabled */
+"sync.simplified.my.devices.section.header" = "Moji uređaji";
+
+/* Section header above the recovery-code option in sync setup */
+"sync.simplified.recover.synced.data.section.header" = "Oporavak sinkroniziranih podataka";
+
+/* Title shown on the connecting screen while a device's synced data is being recovered */
+"sync.simplified.recovering.data.v2.title" = "Obnavljanje podataka";
+
+/* Label above the recovery code on the recover-your-data screen */
+"sync.simplified.recovery.code.label" = "Kôd za oporavak";
+
+/* Description on the success screen shown after synced data has been recovered on this device */
+"sync.simplified.recovery.complete.v2.description" = "Šifrirano od početka do kraja na svim tvojim uređajima.";
+
+/* Title on the success screen shown after synced data has been recovered on this device */
+"sync.simplified.recovery.complete.v2.title" = "Sync & Backup je uključen";
 
 /* Sync settings data recovery section footer. %@ is replaced with the URL. */
 "sync.simplified.recovery.section.footer" = "Upotrijebi ovaj kôd za vraćanje podataka ako izgubiš pristup ovom uređaju. Podaci sinkronizacije i sigurnosne kopije (Sync & Backup) ne mogu se oporaviti nakon 18 (ili više) mjeseci neaktivnosti. [Saznaj više](%@)";
@@ -388,8 +325,14 @@
 /* Status text when connecting devices to sync */
 "sync.simplified.scan-or-view-code.connecting.status" = "Povezivanje u tijeku...";
 
-/* Instruction shown during sync setup flow */
-"sync.simplified.scan-or-view-code.connecting.title" = "Drži DuckDuckGo otvoren na oba uređaja";
+/* Instruction shown during sync setup flow. */
+"sync.simplified.scan-or-view-code.connecting.title" = "Šifrirano od početka do kraja na svim tvojim uređajima.";
+
+/* Message of the reminder shown after the user copies the sync code. */
+"sync.simplified.scan-or-view-code.copy-confirmation.message" = "Vrati se na ovaj uređaj nakon što zalijepiš kôd.";
+
+/* Title of the reminder shown after the user copies the sync code. */
+"sync.simplified.scan-or-view-code.copy-confirmation.title" = "Zalijepi kôd u aplikaciju svog drugog uređaja";
 
 /* Button to navigate to manual sync code entry */
 "sync.simplified.scan-or-view-code.manually.enter.code" = "Ručno unesi šifru";
@@ -419,10 +362,58 @@
 "sync.simplified.scan-or-view-code.title" = "Sinkroniziraj svoje uređaje";
 
 /* Instructions on sync QR code display screen (will be shown above the DuckDuckGo app icon and name) */
-"sync.simplified.scan-or-view-code.view.instructions" = "Skeniraj ili zalijepi ovaj kôd na svoj drugi";
+"sync.simplified.scan-or-view-code.view.instructions" = "Skeniraj ili zalijepi ovaj kôd u aplikaciju svog drugog";
+
+/* Close button in the V2 scan screen navigation bar */
+"sync.simplified.scan.v2.close.button" = "Zatvori";
+
+/* Chip label on the scan-QR tab referring to the DuckDuckGo desktop app */
+"sync.simplified.scan.v2.qr.app.name" = "DuckDuckGo za osobno računalo";
+
+/* Heading overlaid on the camera on the scan-QR tab of the V2 scan screen */
+"sync.simplified.scan.v2.qr.heading" = "Skeniraj QR kôd za sinkronizaciju.";
+
+/* First part of the scan-QR instructions, followed by a DuckDuckGo app chip */
+"sync.simplified.scan.v2.qr.open" = "Otvori";
+
+/* Button on the scan-QR intro animation that dismisses the animation and reveals the camera */
+"sync.simplified.scan.v2.qr.ready.button" = "Spreman sam za skeniranje";
+
+/* Second part of the scan-QR instructions. **...** marks the parts shown in the primary text color. */
+"sync.simplified.scan.v2.qr.steps" = "i idi na **Sync & Backup** › **Sinkroniziraj s drugim uređajem**";
+
+/* V2 segmented control tab title for entering a code */
+"sync.simplified.scan.v2.tab.enter.code" = "Unesi kôd";
+
+/* V2 segmented control tab title for scanning a QR code */
+"sync.simplified.scan.v2.tab.scan.qr" = "Skeniraj QR";
+
+/* Status label shown next to the title when Sync & Backup is disabled */
+"sync.simplified.status.off" = "Isključeno";
+
+/* Status label shown next to the title when Sync & Backup is enabled */
+"sync.simplified.status.on" = "Uključeno";
+
+/* Button to copy the text sync code on the sync-code sheet */
+"sync.simplified.sync.code.copy.button" = "Kopiraj tekstni kôd";
+
+/* First part of the sync-code sheet instructions, followed by a DuckDuckGo app chip */
+"sync.simplified.sync.code.sheet.open" = "Na drugom uređaju otvori";
+
+/* Second part of the sync-code sheet instructions. **...** marks the parts shown in the primary text color. */
+"sync.simplified.sync.code.sheet.scan" = "Idi na **Sync & Backup** › **Sinkroniziraj s drugim uređajem** i skeniraj ovaj kôd:";
+
+/* Navigation title of the sheet that shows this device's sync QR code */
+"sync.simplified.sync.code.sheet.title" = "Skeniraj ili kopiraj kôd";
+
+/* Button on the sync-setup prompt to enable Sync & Backup on the current device only, without pairing another device */
+"sync.simplified.this.device.only" = "Sinkroniziraj samo ovaj uređaj";
 
 /* Sync & Backup enabled / disabled toggle title */
 "sync.simplified.toggle.title" = "Sinkronizacija i sigurnosno kopiranje";
+
+/* Sync & Backup enabled / disabled toggle title, referring to the current device */
+"sync.simplified.toggle.title.this.device" = "Sinkroniziraj ovaj uređaj";
 
 /* Use Recovery Code sync setup button label */
 "sync.simplified.use.recovery.code.button" = "Upotrijebi kôd za oporavak";
@@ -442,47 +433,14 @@
 /* Title of the warning message */
 "sync.warning.sync.unavailable" = "Sinkronizacija i sigurnosno kopiranje nisu dostupni";
 
-/* Button label for syncing with another device */
-"sync.with.another.device.button" = "Sinkronizacija s drugim uređajem";
-
-/* Footer message for syncing with another device */
-"sync.with.another.device.footer" = "Tvoji su podaci šifrirani od početka do kraja, a DuckDuckGo nema pristup ključu za šifriranje.";
-
-/* Message for syncing with another device */
-"sync.with.another.device.message" = "Sigurno sinkroniziraj oznake i lozinke između svojih uređaja.";
-
-/* Message for syncing with another device */
-"sync.with.another.device.message-updated" = "Sigurno sinkroniziraj oznake, podatke za automatsko popunjavanje i Duck.ai čavrljanja između svojih uređaja.";
-
-/* Title for syncing with another device */
-"sync.with.another.device.title" = "Započni sinkronizaciju";
-
 /* Synced Devices - Section Header */
 "synced.devices.section.header" = "Sinkronizirani uređaji";
-
-/* Synced Devices - Sync with Another Device Label */
-"synced.devices.sync.with.another.device.label" = "Sinkronizacija s drugim uređajem";
 
 /* Synced Devices - This Device Label */
 "synced.devices.this.device.label" = "Ovaj uređaj";
 
-/* Turn Sync Off - Button */
-"turn.sync.off" = "Isključi sinkronizaciju i sigurnosno kopiranje...";
-
-/* Sync enabled - footer description of data that is syncing */
-"turn.sync.off.section.footer" = "Oznake, podaci za automatsko popunjavanje i Duck.ai čavrljanja trenutno su sinkronizirani na svim tvojim uređajima.";
-
-/* Turn Sync Off - Section Header */
-"turn.sync.off.section.header" = "Sinkronizacija je omogućena";
-
-/* Options - Unify Favorites Instruction */
-"unified.favorites.instruction" = "Koristi iste omiljene oznake na svim svojim uređajima. Isključi za odvajanje favorita za mobilne uređaje i stolna računala.";
-
 /* Options - Unify Favorites Title */
 "unified.favorites.title" = "Objedini favorite na svim uređajima";
-
-/* View Text Code menu item */
-"view.text.code.menu.item" = "Prikaz tekstne šifre";
 
 /* No comment provided by engineer. */
 "You're using Sync Development environment" = "Koristi Sync Development okruženje";

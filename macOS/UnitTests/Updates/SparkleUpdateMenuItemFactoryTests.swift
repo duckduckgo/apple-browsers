@@ -89,6 +89,7 @@ final class SparkleUpdateMenuItemFactoryTests: XCTestCase {
 private final class MockSparkleUpdateController: NSObject, SparkleUpdateControlling {
 
     var isAtRestartCheckpoint = false
+    var shouldAutoCheckOnReleaseNotesLoad = true
 
     // MARK: - SparkleUpdateControlling
 

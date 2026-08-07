@@ -18,6 +18,7 @@
 
 import BrowserServicesKit
 import Common
+import DesignResourcesKit
 import FoundationExtensions
 import PreferencesUI_macOS
 import SwiftUI
@@ -123,6 +124,7 @@ enum Preferences {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color(colorsProvider.settingsBackgroundColor))
+            .environment(\.designSystemPalette, themeManager.designColorPalette)
         }
 
         @ViewBuilder

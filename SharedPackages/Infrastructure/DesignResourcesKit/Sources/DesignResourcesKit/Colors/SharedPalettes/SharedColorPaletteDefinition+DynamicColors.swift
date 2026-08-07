@@ -33,6 +33,28 @@ extension SharedColorPaletteDefinition {
             return accentContentSecondary
         case .accentContentTertiary:
             return accentContentTertiary
+        case .accentFirePrimary:
+            return accentFirePrimary
+        case .accentFireSecondary:
+            return accentFireSecondary
+        case .accentFireTertiary:
+            return accentFireTertiary
+        case .accentFireContentPrimary:
+            return accentFireContentPrimary
+        case .accentFireContentSecondary:
+            return accentFireContentSecondary
+        case .accentFireContentTertiary:
+            return accentFireContentTertiary
+        case .accentFireGlowPrimary:
+            return accentFireGlowPrimary
+        case .accentFireGlowSecondary:
+            return accentFireGlowSecondary
+        case .accentFireTextPrimary:
+            return accentFireTextPrimary
+        case .accentFireTextSecondary:
+            return accentFireTextSecondary
+        case .accentFireTextTertiary:
+            return accentFireTextTertiary
         case .accentGlowPrimary:
             return accentGlowPrimary
         case .accentGlowSecondary:
@@ -85,6 +107,36 @@ extension SharedColorPaletteDefinition {
         /// Shield
         case .shieldPrivacy:
             return shieldPrivacy
+
+        /// Status
+        case .statusGray:
+            return statusGray
+        case .statusGreen:
+            return statusGreen
+        case .statusRed:
+            return statusRed
+
+        /// VPN
+        /// Feature-scoped colours for the VPN status pill and header animation, resolved inline
+        /// (following the Permission Center pattern) since they don't vary by accent palette. Per the
+        /// Figma spec, backgrounds and foregrounds (text/icon) vary by light/dark mode, each with a
+        /// darker interaction (hover/press) variant.
+        case .vpnGreen:
+            return DynamicColor(lightColor: RebrandingColor.Green.green20, darkColor: RebrandingColor.Green.green70)
+        case .vpnGreenPressed:
+            return DynamicColor(lightColor: RebrandingColor.Green.green30, darkColor: RebrandingColor.Green.green80)
+        case .vpnGreenForeground:
+            return DynamicColor(lightColor: RebrandingColor.Lilypad.lilypad90, darkColor: RebrandingColor.Lilypad.lilypad10)
+        case .vpnGreenForegroundPressed:
+            return DynamicColor(lightColor: RebrandingColor.Lilypad.lilypad100, darkColor: RebrandingColor.Lilypad.lilypad0)
+        case .vpnYellow:
+            return DynamicColor(lightColor: RebrandingColor.Pollen.pollen30, darkColor: RebrandingColor.Pollen.pollen70)
+        case .vpnYellowPressed:
+            return DynamicColor(lightColor: RebrandingColor.Pollen.pollen40, darkColor: RebrandingColor.Pollen.pollen80)
+        case .vpnYellowForeground:
+            return DynamicColor(lightColor: RebrandingColor.Pollen.pollen80, darkColor: RebrandingColor.Pollen.pollen20)
+        case .vpnYellowForegroundPressed:
+            return DynamicColor(lightColor: RebrandingColor.Pollen.pollen90, darkColor: RebrandingColor.Pollen.pollen10)
 
         /// Buttons/Primary
         case .buttonsPrimaryDefault:
@@ -146,6 +198,8 @@ extension SharedColorPaletteDefinition {
             return controlsRaisedBackdrop
         case .controlsRaisedFillPrimary:
             return controlsRaisedFillPrimary
+        case .controlsSubtleFillSecondary:
+            return controlsSubtleFillSecondary
 
         /// Destructive Colors
         case .destructiveContentPrimary:
@@ -181,6 +235,38 @@ extension SharedColorPaletteDefinition {
         case .iconsTertiary:
             return iconsTertiary
 
+        /// Unified Input
+        case .unifiedInputControlFillPrimary:
+            return unifiedInputControlFillPrimary
+        case .unifiedInputControlFillSecondary:
+            return unifiedInputControlFillSecondary
+        case .unifiedInputControlShadowPrimary:
+            return unifiedInputControlShadowPrimary
+        case .unifiedInputFieldFillPrimary:
+            return unifiedInputFieldFillPrimary
+        case .unifiedInputFieldFillSecondary:
+            return unifiedInputFieldFillSecondary
+        case .unifiedInputFireControlFillPrimary:
+            return unifiedInputFireControlFillPrimary
+        case .unifiedInputFireControlFillSecondary:
+            return unifiedInputFireControlFillSecondary
+        case .unifiedInputFireFieldFillPrimary:
+            return unifiedInputFireFieldFillPrimary
+        case .unifiedInputFireFieldFillSecondary:
+            return unifiedInputFireFieldFillSecondary
+        case .unifiedInputFireIconsPrimary:
+            return unifiedInputFireIconsPrimary
+        case .unifiedInputFireIconsSecondary:
+            return unifiedInputFireIconsSecondary
+        case .unifiedInputFireTextPrimary:
+            return unifiedInputFireTextPrimary
+        case .unifiedInputFireTextSecondary:
+            return unifiedInputFireTextSecondary
+        case .unifiedInputTextPrimary:
+            return unifiedInputTextPrimary
+        case .unifiedInputTextSecondary:
+            return unifiedInputTextSecondary
+
         /// System
         case .lines:
             return lines
@@ -198,6 +284,14 @@ extension SharedColorPaletteDefinition {
             return shadowSecondary
         case .shadowTertiary:
             return shadowTertiary
+
+        /// Status
+        case .statusYellowPrimary:
+            return statusYellowPrimary
+        case .statusYellowSecondary:
+            return statusYellowSecondary
+        case .statusYellowTertiary:
+            return statusYellowTertiary
 
         /// Surface Colors
         case .surfaceBackdrop:
@@ -236,6 +330,8 @@ extension SharedColorPaletteDefinition {
             return toneShadePrimary
         case .toneTintPrimary:
             return toneTintPrimary
+        case .toneTintSecondary:
+            return toneTintSecondary
 
         /// Permission Center
         case .permissionCenterBackground:
@@ -248,6 +344,21 @@ extension SharedColorPaletteDefinition {
             return DynamicColor(lightColor: .white, darkColor: Color(0x857A6E))
         case .permissionReloadButtonText:
             return DynamicColor(lightColor: Color(0x333333), darkColor: Color(0xE8E8E8))
+        }
+    }
+
+    static func dynamicColor(for singleUseColor: SingleUseColor) -> DynamicColor {
+        switch singleUseColor {
+        case .fireModeAccent:
+            return DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin50, darkColor: RebrandingColor.Mandarin.mandarin40)
+        case .fireButtonGradientStart:
+            return DynamicColor(staticColor: RebrandingColor.Mandarin.mandarin50)
+        case .fireButtonGradientEnd:
+            return DynamicColor(staticColor: RebrandingColor.Red.red50)
+        case .fireButtonPressedGradientStart:
+            return DynamicColor(staticColor: RebrandingColor.Mandarin.mandarin60)
+        case .fireButtonPressedGradientEnd:
+            return DynamicColor(staticColor: RebrandingColor.Red.red70)
         }
     }
 }

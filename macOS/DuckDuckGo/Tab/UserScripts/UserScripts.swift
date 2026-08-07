@@ -25,6 +25,7 @@ import PrivacyConfig
 import HistoryView
 import Persistence
 import PixelKit
+import SERPInstallOrigin
 import SERPSettings
 import SpecialErrorPages
 import Subscription
@@ -56,6 +57,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
     let subscriptionUserScript: SubscriptionUserScript?
     let historyViewUserScript: HistoryViewUserScript
     let serpSettingsUserScript: SERPSettingsUserScript?
+    let serpUserScript: SERPInstallOriginUserScript
     let trackerProtectionSubfeature = TrackerProtectionSubfeature()
     let duckAiNativeStorageUserScript: DuckAiNativeStorageUserScript?
     let faviconScript = FaviconUserScript()
@@ -102,6 +104,12 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
             featureFlagProvider: subscriptionFeatureFlagAdapter,
             navigationDelegate: NSApp.delegateTyped.subscriptionNavigationCoordinator,
             debugHost: aiChatDebugURLSettings.customURLHostname
+        )
+        let installOriginEnabled = StandardApplicationBuildType().isSparkleBuild
+        serpUserScript = SERPInstallOriginUserScript(
+            serpBaseURL: URL.duckDuckGo,
+            installOriginEnabled: installOriginEnabled,
+            installOriginVariantProvider: installOriginEnabled ? DefaultInstallOriginVariantProvider() : nil
         )
         serpSettingsUserScript = SERPSettingsUserScript(serpSettingsProviding: SERPSettingsProvider())
 
@@ -243,6 +251,8 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         if let serpSettingsUserScript {
             contentScopeUserScriptIsolated.registerSubfeature(delegate: serpSettingsUserScript)
         }
+
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: serpUserScript)
 
         if let duckAiNativeStorageUserScript {
             contentScopeUserScriptIsolated.registerSubfeature(delegate: duckAiNativeStorageUserScript)

@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import Combine
 
 final class ExcludedDomainsViewController: NSViewController {
     typealias Model = ExcludedDomainsViewModel
@@ -56,6 +57,8 @@ final class ExcludedDomainsViewController: NSViewController {
 
     private let model: Model
 
+    private var cancellables = Set<AnyCancellable>()
+
     init?(model: Model, coder: NSCoder) {
         self.model = model
 
@@ -72,6 +75,30 @@ final class ExcludedDomainsViewController: NSViewController {
         applyModalWindowStyleIfNeeded()
         reloadData()
         setUpStrings()
+        subscribeToFaviconUpdates()
+    }
+
+    private func subscribeToFaviconUpdates() {
+        NotificationCenter.default.publisher(for: .faviconCacheUpdated)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] notification in
+                self?.refreshFavicons(for: notification.faviconsCacheUpdate)
+            }
+            .store(in: &cancellables)
+    }
+
+    private func refreshFavicons(for update: FaviconsCacheUpdate?) {
+        // No payload: refresh defensively. Otherwise only reload when an updated
+        // host matches a displayed domain or any of its subdomains (mirroring the
+        // `forDomainOrAnySubdomain:` lookup used to populate the cells).
+        if let update, !update.hosts.contains(where: { host in
+            visibleDomains.contains { domain in
+                host == domain || host.hasSuffix(".\(domain)")
+            }
+        }) {
+            return
+        }
+        tableView.reloadData()
     }
 
     private func setUpStrings() {

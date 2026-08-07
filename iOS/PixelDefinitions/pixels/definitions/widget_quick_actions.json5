@@ -1,7 +1,7 @@
 {
     "m_widget_medium_launch": {
         "description": "Fires daily and counts when the user taps any shortcut in the medium quick-actions widget. The shortcut parameter identifies which shortcut was tapped, allowing per-shortcut analysis and inference of customisation usage.",
-        "owners": ["edulpn"],
+        "owners": ["samsymons"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": [

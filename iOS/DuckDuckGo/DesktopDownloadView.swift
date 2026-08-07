@@ -77,7 +77,7 @@ struct DesktopDownloadView: View {
 
                     menuView
                         .daxHeadline()
-                        .foregroundColor(Color(designSystemColor: .accent))
+                        .foregroundColor(Color(designSystemColor: .accentPrimary))
                         .fixedSize()
                     
                     Button(
@@ -126,7 +126,7 @@ struct DesktopDownloadView: View {
                         }, label: {
                             Text(viewModel.browserDetails.otherPlatformText)
                                 .daxHeadline()
-                                .foregroundColor(Color(designSystemColor: .accent))
+                                .foregroundColor(Color(designSystemColor: .accentPrimary))
                                 .multilineTextAlignment(.center)
                                 .lineSpacing(5)
                         }

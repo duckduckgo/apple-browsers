@@ -37,6 +37,8 @@ class AIChatUserScriptHandlerTests: XCTestCase {
     var mockAIChatSyncHandler: MockAIChatSyncHandling!
     var mockAIChatFullModeFeature: MockAIChatFullModeFeatureProviding!
     var mockAIChatContextualModeFeature: MockAIChatContextualModeFeatureProviding!
+    var mockUnifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider!
+    var mockIPadDuckAIControlsFeature: MockIPadDuckAIControlsFeatureProvider!
     private var mockUserScriptErrorEventMapper: CapturingAIChatUserScriptErrorEventMapper!
     private var mockUserDefaults: UserDefaults!
 
@@ -51,6 +53,8 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         mockAIChatSyncHandler = MockAIChatSyncHandling()
         mockAIChatFullModeFeature = MockAIChatFullModeFeatureProviding()
         mockAIChatContextualModeFeature = MockAIChatContextualModeFeatureProviding()
+        mockUnifiedToggleInputFeature = MockUnifiedToggleInputFeatureProvider()
+        mockIPadDuckAIControlsFeature = MockIPadDuckAIControlsFeatureProvider()
         mockUserScriptErrorEventMapper = CapturingAIChatUserScriptErrorEventMapper()
 
         mockUserDefaults = UserDefaults(suiteName: mockSuiteName)
@@ -67,6 +71,8 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         mockAIChatSyncHandler = nil
         mockAIChatFullModeFeature = nil
         mockAIChatContextualModeFeature = nil
+        mockUnifiedToggleInputFeature = nil
+        mockIPadDuckAIControlsFeature = nil
         mockUserScriptErrorEventMapper = nil
         PixelFiringMock.tearDown()
         super.tearDown()
@@ -84,6 +90,8 @@ class AIChatUserScriptHandlerTests: XCTestCase {
             keyValueStore: mockUserDefaults,
             aichatFullModeFeature: mockAIChatFullModeFeature,
             aichatContextualModeFeature: mockAIChatContextualModeFeature,
+            unifiedToggleInputFeature: mockUnifiedToggleInputFeature,
+            iPadDuckAIControlsFeature: mockIPadDuckAIControlsFeature,
             aiChatUserScriptErrorEventMapper: aiChatUserScriptErrorEventMapper ?? AIChatUserScriptErrorEventMapper(),
             isNativeStorageBridgeAvailable: isNativeStorageBridgeAvailable,
             installDateProvider: installDateProvider,
@@ -871,14 +879,14 @@ final class MockAIChatSyncHandling: AIChatSyncHandling {
 
 extension AIChatUserScriptHandlerTests {
 
-    func testGetAIChatPageContextReturnsNilContextWhenNoHandler() {
-        let response = aiChatUserScriptHandler.getAIChatPageContext(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? PageContextResponse
+    func testGetAIChatPageContextReturnsNilContextWhenNoHandler() async {
+        let response = await aiChatUserScriptHandler.getAIChatPageContext(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? PageContextResponse
 
         XCTAssertNotNil(response)
         XCTAssertNil(response?.pageContext)
     }
 
-    func testGetAIChatPageContextReturnsContextWhenProviderSet() {
+    func testGetAIChatPageContextReturnsContextWhenProviderSet() async {
         let expectedContext = AIChatPageContextData(
             title: "Test Page",
             favicon: [],
@@ -889,7 +897,7 @@ extension AIChatUserScriptHandlerTests {
         )
         aiChatUserScriptHandler.setPageContextProvider { _ in expectedContext }
 
-        let response = aiChatUserScriptHandler.getAIChatPageContext(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? PageContextResponse
+        let response = await aiChatUserScriptHandler.getAIChatPageContext(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? PageContextResponse
 
         XCTAssertNotNil(response)
         XCTAssertNotNil(response?.pageContext)
@@ -898,10 +906,10 @@ extension AIChatUserScriptHandlerTests {
         XCTAssertEqual(response?.pageContext?.content, "Test content")
     }
 
-    func testGetAIChatPageContextReturnsNilContextWhenProviderReturnsNil() {
+    func testGetAIChatPageContextReturnsNilContextWhenProviderReturnsNil() async {
         aiChatUserScriptHandler.setPageContextProvider { _ in nil }
 
-        let response = aiChatUserScriptHandler.getAIChatPageContext(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? PageContextResponse
+        let response = await aiChatUserScriptHandler.getAIChatPageContext(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? PageContextResponse
 
         XCTAssertNotNil(response)
         XCTAssertNil(response?.pageContext)
@@ -946,5 +954,163 @@ extension AIChatUserScriptHandlerTests {
 
         // Then
         XCTAssertEqual(mockUserDefaults.object(forKey: termsAcceptedKey) as? Bool, true)
+    }
+}
+
+// MARK: - focusChatInput Tests
+
+extension AIChatUserScriptHandlerTests {
+
+    @MainActor
+    func testWhenUnifiedToggleInputFeatureIsAvailableThenFocusChatInputCallsHandler() async {
+        // Given
+        mockUnifiedToggleInputFeature.isAvailable = true
+        var handlerCallCount = 0
+        aiChatUserScriptHandler.focusChatInputHandler = { handlerCallCount += 1 }
+
+        // When
+        let result = await aiChatUserScriptHandler.focusChatInput(
+            params: [],
+            message: MockUserScriptMessage(name: "test", body: [:])
+        )
+
+        // Then
+        XCTAssertNil(result)
+        XCTAssertEqual(handlerCallCount, 1)
+    }
+
+    @MainActor
+    func testWhenUnifiedToggleInputFeatureIsUnavailableThenFocusChatInputDoesNotCallHandler() async {
+        // Given
+        mockUnifiedToggleInputFeature.isAvailable = false
+        var handlerCallCount = 0
+        aiChatUserScriptHandler.focusChatInputHandler = { handlerCallCount += 1 }
+
+        // When
+        let result = await aiChatUserScriptHandler.focusChatInput(
+            params: [],
+            message: MockUserScriptMessage(name: "test", body: [:])
+        )
+
+        // Then
+        XCTAssertNil(result)
+        XCTAssertEqual(handlerCallCount, 0)
+    }
+
+    @MainActor
+    func testWhenFocusChatInputHandlerIsNotSetThenFocusChatInputReturnsNilWithoutCrashing() async {
+        // Given
+        mockUnifiedToggleInputFeature.isAvailable = true
+        aiChatUserScriptHandler.focusChatInputHandler = nil
+
+        // When
+        let result = await aiChatUserScriptHandler.focusChatInput(
+            params: [],
+            message: MockUserScriptMessage(name: "test", body: [:])
+        )
+
+        // Then
+        XCTAssertNil(result)
+    }
+}
+
+// MARK: - supportsNativePrompt (iPad Duck.ai bar controls)
+
+extension AIChatUserScriptHandlerTests {
+
+    func testWhenIPadDuckAIControlsAvailableThenSupportsNativePromptIsTrueButSupportsNativeChatInputIsFalse() {
+        // Given the iPad model picker is active and UTI (iPhone) is not
+        mockUnifiedToggleInputFeature.isAvailable = false
+        mockIPadDuckAIControlsFeature.isAvailable = true
+
+        // When
+        let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
+
+        // Then: the front end is told to read the native prompt (model), but input is not deferred to native
+        XCTAssertEqual(configValues?.supportsNativePrompt, true)
+        XCTAssertEqual(configValues?.supportsNativeChatInput, false)
+    }
+
+    func testWhenNoNativePromptSourceAvailableThenSupportsNativePromptIsFalse() {
+        // Given neither the iPad picker nor UTI is active
+        mockUnifiedToggleInputFeature.isAvailable = false
+        mockIPadDuckAIControlsFeature.isAvailable = false
+
+        // When
+        let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
+
+        // Then
+        XCTAssertEqual(configValues?.supportsNativePrompt, false)
+    }
+}
+
+// MARK: - Subscription Funnel Bridge Tests
+
+/// Forwards decoded metrics into the real pixel metric handler, so a test can drive the whole path from the
+/// frontend's raw `reportMetric` payload through to the fired pixel.
+private final class MetricForwardingHandler: AIChatMetricReportingHandling {
+
+    private let pixelMetricHandler: AIChatPixelMetricHandler
+
+    init(pixelMetricHandler: AIChatPixelMetricHandler) {
+        self.pixelMetricHandler = pixelMetricHandler
+    }
+
+    func didReportMetric(_ metric: AIChatMetric) {
+        pixelMetricHandler.firePixelWithMetric(metric)
+    }
+}
+
+extension AIChatUserScriptHandlerTests {
+
+    func testWhenFrontendReportsFunnelMetricThenFunnelPixelFiresWithOrigin() async {
+        // Given
+        let testCases: [(metricName: String, pixel: Pixel.Event, origin: String)] = [
+            ("userDidViewAiSidebarUpgradeButton", .aiChatSubscriptionFunnelImpression, "funnel_duckai_ios__aisidebar"),
+            ("userDidClickAiSidebarUpgradeButton", .aiChatSubscriptionFunnelClick, "funnel_duckai_ios__aisidebar"),
+            ("userDidViewActivateSubscriptionBanner", .aiChatSubscriptionFunnelImpression, "funnel_duckai_ios__activatesubscription"),
+            ("userDidClickActivateSubscriptionButton", .aiChatSubscriptionFunnelClick, "funnel_duckai_ios__activatesubscription"),
+            ("userDidViewFreeLimitMessage", .aiChatSubscriptionFunnelImpression, "funnel_duckai_ios__freelimit"),
+            ("userDidClickFreeLimitSubscribeLink", .aiChatSubscriptionFunnelClick, "funnel_duckai_ios__freelimit"),
+            ("userDidViewImageGenerationLimitMessage", .aiChatSubscriptionFunnelImpression, "funnel_duckai_ios__imagegenerationlimit"),
+            ("userDidClickImageGenerationLimitSubscribeButton", .aiChatSubscriptionFunnelClick, "funnel_duckai_ios__imagegenerationlimit"),
+            ("userDidViewPlusLimitMessage", .aiChatSubscriptionFunnelImpression, "funnel_duckai_ios__pluslimit"),
+            ("userDidClickPlusLimitUpgradeLink", .aiChatSubscriptionFunnelClick, "funnel_duckai_ios__pluslimit"),
+            ("userDidViewPromotionCard", .aiChatSubscriptionFunnelImpression, "funnel_duckai_ios__promotioncard"),
+            ("userDidClickPromotionCardButton", .aiChatSubscriptionFunnelClick, "funnel_duckai_ios__promotioncard"),
+            ("userDidViewSettingsSubscribeButton", .aiChatSubscriptionFunnelImpression, "funnel_duckai_ios__settings"),
+            ("userDidClickSettingsSubscribeButton", .aiChatSubscriptionFunnelClick, "funnel_duckai_ios__settings"),
+            ("userDidViewProUpgradeDisclaimerBanner", .aiChatSubscriptionFunnelImpression, "funnel_duckai_ios__disclaimerbanner"),
+            ("userDidClickProUpgradeDisclaimerBannerButton", .aiChatSubscriptionFunnelClick, "funnel_duckai_ios__disclaimerbanner"),
+            ("userDidViewVoiceChatLimitModal", .aiChatSubscriptionFunnelImpression, "funnel_duckai_ios__voicechatlimit"),
+            ("userDidClickVoiceChatLimitModalSubscribeButton", .aiChatSubscriptionFunnelClick, "funnel_duckai_ios__voicechatlimit"),
+            ("userDidViewVoiceChatDurationLimitModal", .aiChatSubscriptionFunnelImpression, "funnel_duckai_ios__voicechatdurationlimit"),
+            ("userDidClickVoiceChatDurationLimitModalSubscribeButton", .aiChatSubscriptionFunnelClick, "funnel_duckai_ios__voicechatdurationlimit")
+        ]
+        XCTAssertEqual(testCases.count, AIChatPixelMetricHandler.funnelMetricToPixelMap.count,
+                       "The funnel map gained or lost entries this test does not cover")
+
+        // The injected mapper turns a decode failure into an observable event rather than a silent drop
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler(aiChatUserScriptErrorEventMapper: mockUserScriptErrorEventMapper)
+
+        // A non-nil elapsed time proves the funnel path adds no timestamp parameter of its own
+        let forwardingHandler = MetricForwardingHandler(
+            pixelMetricHandler: AIChatPixelMetricHandler(timeElapsedInMinutes: 7, pixelFiring: PixelFiringMock.self)
+        )
+        aiChatUserScriptHandler.setMetricReportingHandler(forwardingHandler)
+
+        for testCase in testCases {
+            PixelFiringMock.tearDown()
+
+            // When
+            _ = await aiChatUserScriptHandler.reportMetric(params: ["metricName": testCase.metricName],
+                                                           message: MockUserScriptMessage(name: "test", body: [:]))
+
+            // Then
+            XCTAssertTrue(mockUserScriptErrorEventMapper.events.isEmpty, "\(testCase.metricName) failed to decode")
+            XCTAssertEqual(PixelFiringMock.allPixelsFired.count, 1, testCase.metricName)
+            XCTAssertEqual(PixelFiringMock.lastPixelName, testCase.pixel.name, testCase.metricName)
+            XCTAssertEqual(PixelFiringMock.lastParams, ["origin": testCase.origin], testCase.metricName)
+        }
     }
 }

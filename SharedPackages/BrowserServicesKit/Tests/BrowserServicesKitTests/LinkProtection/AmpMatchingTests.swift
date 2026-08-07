@@ -57,8 +57,8 @@ struct AmpRefTests: Decodable {
 final class AmpMatchingTests: XCTestCase {
 
     private enum Resource {
-        static let config = "Resources/privacy-reference-tests/amp-protections/config_reference.json"
-        static let tests = "Resources/privacy-reference-tests/amp-protections/tests.json"
+        static let config = "Res/privacy-reference-tests/amp-protections/config_reference.json"
+        static let tests = "Res/privacy-reference-tests/amp-protections/tests.json"
     }
 
     private static let data = JsonTestDataLoader()

@@ -63,6 +63,7 @@ protocol FireModePromotionCoordinating {
     func markMenuPromotionShown()
     func markMenuPromotionEngaged()
 
+    var isTabSwitcherTipEligible: Bool { get }
     var isTabSwitcherTipExpired: Bool { get }
     func markTabSwitcherTipShown()
 }
@@ -116,19 +117,9 @@ final class FireModePromotionsCoordinator: FireModePromotionCoordinating {
 
     // MARK: - NTP Promotion
 
-    /// Shows the promotion when:
-    /// - Fire mode feature flag is enabled
-    /// - User has burned tabs at least once
-    /// - User has NOT visited fire mode themselves
-    /// - User has not dismissed or engaged with the promotion
-    /// - Promotion has not expired (3 days since first shown)
+    /// NTP promotion is always disabled now that Fire Tabs is established. Code kept in case we re-enable it.
     var isNTPPromotionEligible: Bool {
-        guard fireModeCapability.isFireModeEnabled else { return false }
-        guard hasBurnedTabs else { return false }
-        guard !hasVisitedFireMode else { return false }
-        guard !isDismissed && !isEngaged && ntpFirstSeenDate == nil else { return false }
-        // Expiration is no longer relevant as we only show it once.
-        return true
+        return false
     }
 
     func markNTPPromotionShown() {
@@ -170,6 +161,11 @@ final class FireModePromotionsCoordinator: FireModePromotionCoordinating {
     }
 
     // MARK: - Tab Switcher Tip
+
+    /// Tab Switcher tip is always disabled now that Fire Tabs is established. Code kept in case we re-enable it.
+    var isTabSwitcherTipEligible: Bool {
+        return false
+    }
 
     /// The 3-day expiration is tracked here; view count and X-button dismissal
     /// are handled by TipKit's `maxDisplayCount` and native invalidation.

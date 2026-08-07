@@ -21,6 +21,7 @@ import Carbon
 import Combine
 import Common
 import FoundationExtensions
+import PrivacyConfig
 import SwiftUI
 import PixelKit
 
@@ -50,8 +51,12 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
         .withAccessibilityIdentifier("BookmarkManagementDetailViewController.newFolderButton")
     private lazy var deleteItemsButton = MouseOverButton(title: Self.thinSpace + UserText.bookmarksBarContextMenuDelete, target: self, action: #selector(delete))
         .withAccessibilityIdentifier("BookmarkManagementDetailViewController.deleteItemsButton")
-    private lazy var sortItemsButton = MouseOverButton(title: Self.thinSpace + UserText.bookmarksSort.capitalized, target: self, action: #selector(sortBookmarks))
-        .withAccessibilityIdentifier("BookmarkManagementDetailViewController.sortItemsButton")
+    private lazy var sortItemsButton: MouseOverButton = {
+        let button = MouseOverButton(title: Self.thinSpace + managementDetailViewModel.sortButtonTitle, target: self, action: #selector(sortBookmarks))
+            .withAccessibilityIdentifier("BookmarkManagementDetailViewController.sortItemsButton")
+        button.toolTip = managementDetailViewModel.isBookmarksReorderByNameEnabled ? UserText.bookmarksSortViewTooltip : nil
+        return button
+    }()
 
     lazy var searchBar = SearchField()
         .withAccessibilityIdentifier("BookmarkManagementDetailViewController.searchBar")
@@ -96,7 +101,7 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
     private lazy var syncPromoManager: SyncPromoManaging = SyncPromoManager()
 
     private lazy var syncPromoViewHostingView: NSView = {
-        let model = SyncPromoViewModel(touchpointType: .bookmarks, primaryButtonAction: { [weak self] in
+        let model = SyncPromoViewModel(isAppRebranded: themeManager.isAppRebranded, touchpointType: .bookmarks, primaryButtonAction: { [weak self] in
             self?.syncPromoManager.goToSyncSettings(for: .bookmarks)
         }, dismissButtonAction: { [weak self] in
             self?.syncPromoManager.dismissPromoFor(.bookmarks)
@@ -127,10 +132,13 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
         self.selectionState = selectionState
     }
 
-    init(bookmarkManager: BookmarkManager,
-         dragDropManager: BookmarkDragDropManager,
-         pinningManager: PinningManager,
-         themeManager: ThemeManaging = NSApp.delegateTyped.themeManager) {
+    init(
+        bookmarkManager: BookmarkManager,
+        dragDropManager: BookmarkDragDropManager,
+        pinningManager: PinningManager,
+        themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
+        featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger
+    ) {
         self.bookmarkManager = bookmarkManager
         self.dragDropManager = dragDropManager
         self.pinningManager = pinningManager
@@ -139,10 +147,13 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
         let sortViewModel = SortBookmarksViewModel(manager: bookmarkManager, metrics: metrics, origin: .manager)
         self.sortBookmarksViewModel = sortViewModel
         self.themeManager = themeManager
-        self.managementDetailViewModel = BookmarkManagementDetailViewModel(bookmarkManager: bookmarkManager,
-                                                                           metrics: metrics,
-                                                                           navigationEngagementMetrics: navigationEngagementMetrics,
-                                                                           mode: bookmarkManager.sortMode)
+        self.managementDetailViewModel = BookmarkManagementDetailViewModel(
+            bookmarkManager: bookmarkManager,
+            metrics: metrics,
+            navigationEngagementMetrics: navigationEngagementMetrics,
+            featureFlagger: featureFlagger,
+            mode: bookmarkManager.sortMode
+        )
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -307,6 +318,7 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
     override func viewDidAppear() {
         subscribeToSelectedSortMode()
         subscribeToFirstResponder()
+        subscribeToFaviconCacheUpdates()
         // reloadData() will be called from BookmarkManagementSidebarViewController → dataSource.$selectedFolders observer → update(selectionState:)
         // updatesyncPromoViewHostingVisibility() will be called from reloadData()
     }
@@ -322,13 +334,13 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
             let bookmarksIconsProvider = theme.iconsProvider.bookmarksIconsProvider
             switch newSortMode {
             case .nameDescending:
-                self.sortItemsButton.title = Self.thinSpace + UserText.bookmarksSortByNameTitle
+                self.sortItemsButton.title = Self.thinSpace + managementDetailViewModel.sortButtonByNameTitle
                 self.sortItemsButton.image = bookmarksIconsProvider.sortBookmarkDescendingIcon
             case .nameAscending:
-                self.sortItemsButton.title = Self.thinSpace + UserText.bookmarksSortByNameTitle
+                self.sortItemsButton.title = Self.thinSpace + managementDetailViewModel.sortButtonByNameTitle
                 self.sortItemsButton.image = bookmarksIconsProvider.sortBookmarkAscendingIcon
             case .manual:
-                self.sortItemsButton.title = Self.thinSpace + UserText.bookmarksSort
+                self.sortItemsButton.title = Self.thinSpace + managementDetailViewModel.sortButtonTitle
                 self.sortItemsButton.image = bookmarksIconsProvider.sortBookmarkManuallyIcon
             }
 
@@ -349,6 +361,39 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
                 self?.firstResponderDidChange($0)
             }
             .store(in: &cancellables)
+    }
+
+    /// Bookmark favicons are lazy-loaded: `Bookmark.favicon(.small)` may return `nil` on a cache miss and the
+    /// cell falls back to a default icon. When the image is decoded later, `.faviconCacheUpdated` is posted; refresh
+    /// the table when the update relates to a host currently displayed in the list (or defensively if no payload).
+    private func subscribeToFaviconCacheUpdates() {
+        NotificationCenter.default.publisher(for: .faviconCacheUpdated)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] notification in
+                guard let self else { return }
+                if let update = notification.faviconsCacheUpdate, update.hosts.isDisjoint(with: self.displayedBookmarkHosts) {
+                    return
+                }
+                self.refreshFavicons()
+            }
+            .store(in: &cancellables)
+    }
+
+    /// Hosts of the bookmarks currently visible in the list, used to filter favicon-cache updates.
+    private var displayedBookmarkHosts: Set<String> {
+        Set(managementDetailViewModel.visibleBookmarks.compactMap { ($0 as? Bookmark)?.urlObject?.host })
+    }
+
+    /// Refreshes favicons in place on the currently-visible rows instead of `reloadData()`. Rebuilding every
+    /// cell on each favicon-cache update would flicker the icons (blank/placeholder during the decode window).
+    private func refreshFavicons() {
+        dispatchPrecondition(condition: .onQueue(.main))
+        let visibleRows = tableView.rows(in: tableView.visibleRect)
+        guard visibleRows.length > 0 else { return }
+        for row in visibleRows.location..<(visibleRows.location + visibleRows.length) {
+            guard let cell = tableView.view(atColumn: 0, row: row, makeIfNecessary: false) as? BookmarkTableCellView else { continue }
+            cell.refreshDisplayedFavicon()
+        }
     }
 
     override func keyDown(with event: NSEvent) {

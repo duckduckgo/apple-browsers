@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import FoundationExtensions
 import Core
 import DDGSync
 
@@ -48,7 +49,7 @@ class ImportPasswordsViaSyncStatusHandler {
             return
         }
         
-        if importCheckStartDate.isLessThan48HoursAgo() {
+        if importCheckStartDate.isLessThan(daysAgo: 2) {
             guard syncService.authState != .inactive else {
                 return
             }

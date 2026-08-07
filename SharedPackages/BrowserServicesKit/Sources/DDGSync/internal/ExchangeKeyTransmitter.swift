@@ -55,13 +55,11 @@ struct ExchangeRecoveryKeyTransmitter: ExchangeRecoveryKeyTransmitting {
     let exchangeMessage: ExchangeMessage
 
     func send() async throws {
-        guard let recoveryCode = try storage.account()?.recoveryCode else {
+        guard let account = try storage.account() else {
             throw SyncError.accountNotFound
         }
 
-        guard let recoveryCodeData = Data(base64Encoded: recoveryCode) else {
-            throw SyncError.unableToEncodeRequestBody("Base64 encoding failed")
-        }
+        let recoveryCodeData = try SyncCode(recovery: .v1(.init(userId: account.userId, primaryKey: account.primaryKey))).toJSON()
 
         let encryptedRecoveryKey = try crypter.seal(recoveryCodeData, secretKey: exchangeMessage.publicKey)
         let encodedRecoveryKey = encryptedRecoveryKey.base64EncodedString()

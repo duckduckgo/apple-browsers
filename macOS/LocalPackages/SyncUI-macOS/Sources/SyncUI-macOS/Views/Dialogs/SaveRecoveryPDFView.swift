@@ -26,7 +26,7 @@ struct SaveRecoveryPDFView: View {
     var body: some View {
         SyncDialog {
             VStack(spacing: 20.0) {
-                Image(.syncRecoveryPDF)
+                Image(viewModel.isAppRebranded ? .syncRecoveryPDF : .syncRecoveryPDFLegacy)
                 SyncUIViews.TextHeader(text: UserText.saveRecoveryPDF)
                 SyncUIViews.TextDetailMultiline(text: UserText.recoveryPDFExplanation)
             }
@@ -67,7 +67,7 @@ struct SaveRecoveryPDFView: View {
             Button(UserText.next) {
                 viewModel.delegate?.recoveryCodeNextPressed()
             }
-            .buttonStyle(DefaultActionButtonStyle(enabled: true))
+            .buttonStyle(DefaultActionButtonStyle(enabled: true, stateColors: .themedActionButton))
         }
         .frame(width: 420)
     }

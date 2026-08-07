@@ -51,8 +51,10 @@ public struct PillSegmentedControl: View {
     let selectedForeground: Color
     let unselectedForeground: Color
     let containerBorder: Color
+    let containerCornerRadius: CGFloat
     let selectedIconBackground: Color
     let unselectedIconBackground: Color
+    let segmentCornerRadius: CGFloat
     let selectedSegmentFill: Color
     let selectedSegmentStroke: Color
     let selectedSegmentShadowColor: Color
@@ -68,6 +70,8 @@ public struct PillSegmentedControl: View {
         segments: [PillSegment],
         containerBackground: Color,
         containerBorder: Color,
+        containerCornerRadius: CGFloat = 12,
+        segmentCornerRadius: CGFloat = 10,
         selectedForeground: Color,
         unselectedForeground: Color,
         selectedIconBackground: Color,
@@ -88,6 +92,7 @@ public struct PillSegmentedControl: View {
         self.selectedForeground = selectedForeground
         self.unselectedForeground = unselectedForeground
         self.containerBorder = containerBorder
+        self.containerCornerRadius = containerCornerRadius
         self.selectedIconBackground = selectedIconBackground
         self.unselectedIconBackground = unselectedIconBackground
         self.selectedSegmentFill = selectedSegmentFill
@@ -96,6 +101,7 @@ public struct PillSegmentedControl: View {
         self.selectedSegmentShadowRadius = selectedSegmentShadowRadius
         self.selectedSegmentShadowY = selectedSegmentShadowY
         self.selectedSegmentTopStroke = selectedSegmentTopStroke
+        self.segmentCornerRadius = segmentCornerRadius
         self.hoverSegmentBackground = hoverSegmentBackground
         self.pressedSegmentBackground = pressedSegmentBackground
         self.hoverOverlay = hoverOverlay
@@ -103,7 +109,7 @@ public struct PillSegmentedControl: View {
 
     public var body: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            RoundedRectangle(cornerRadius: containerCornerRadius, style: .continuous)
                 .fill(containerBackground)
 
             // Separators underlay (placed below selection and content)
@@ -136,7 +142,7 @@ public struct PillSegmentedControl: View {
 
                 // Hover underlay: fixed per segment, no slide; fades out on mouse-out
                 if let hover = hoveredIndex, pressedUnderlayIndex == nil {
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    RoundedRectangle(cornerRadius: segmentCornerRadius, style: .continuous)
                         .fill(hoverSegmentBackground)
                         .padding(2)
                         .frame(width: max(0, segmentWidth), height: geo.size.height)
@@ -145,7 +151,7 @@ public struct PillSegmentedControl: View {
                 }
 
                 if let fading = hoverFadeOutIndex {
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    RoundedRectangle(cornerRadius: segmentCornerRadius, style: .continuous)
                         .fill(hoverSegmentBackground)
                         .padding(2)
                         .frame(width: max(0, segmentWidth), height: geo.size.height)
@@ -156,7 +162,7 @@ public struct PillSegmentedControl: View {
 
                 // Pressed underlay remains static at press index
                 if let idx = pressedUnderlayIndex {
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    RoundedRectangle(cornerRadius: segmentCornerRadius, style: .continuous)
                         .fill(pressedSegmentBackground)
                         .padding(2)
                         .frame(width: max(0, segmentWidth), height: geo.size.height)
@@ -165,11 +171,11 @@ public struct PillSegmentedControl: View {
                 }
 
                 ZStack(alignment: .top) {
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    RoundedRectangle(cornerRadius: segmentCornerRadius, style: .continuous)
                         .fill(selectedSegmentFill)
                         .shadow(color: selectedSegmentShadowColor, radius: selectedSegmentShadowRadius, x: 0, y: selectedSegmentShadowY)
                     // Top gradient stroke
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    RoundedRectangle(cornerRadius: segmentCornerRadius, style: .continuous)
                         .stroke(
                             LinearGradient(
                                 gradient: Gradient(colors: [selectedSegmentTopStroke, selectedSegmentTopStroke.opacity(0)]),
@@ -187,7 +193,7 @@ public struct PillSegmentedControl: View {
                         .padding(.top, 11)
                         .offset(x: circleCenterOffset)
                         .opacity(selectionCircleOpacity)
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    RoundedRectangle(cornerRadius: segmentCornerRadius, style: .continuous)
                         .stroke(selectedSegmentStroke, lineWidth: 1)
                 }
                 .padding(.init(top: 2,
@@ -226,6 +232,7 @@ public struct PillSegmentedControl: View {
                         unselectedForeground: unselectedForeground,
                         hoverBackground: hoverSegmentBackground,
                         hoverOverlay: hoverOverlay,
+                        cornerRadius: segmentCornerRadius,
                         onTap: { selection = segment.id },
                         onPressChanged: { isPressed in
                             if isPressed {
@@ -257,9 +264,9 @@ public struct PillSegmentedControl: View {
                     // Separators are drawn in the underlay above
                 }
             }
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: containerCornerRadius, style: .continuous))
 
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            RoundedRectangle(cornerRadius: containerCornerRadius, style: .continuous)
                 .stroke(containerBorder, lineWidth: 1)
                 .padding(1)
         }
@@ -288,6 +295,7 @@ private struct PillSegmentItemView: View {
     let unselectedForeground: Color
     let hoverBackground: Color
     let hoverOverlay: Color
+    let cornerRadius: CGFloat
     let onTap: () -> Void
     let onPressChanged: (Bool) -> Void
     let onHoverChanged: (Bool) -> Void
@@ -302,10 +310,10 @@ private struct PillSegmentItemView: View {
             ZStack {
                 // Hovering Background is rendered by `PillSegmentedControl` itself (`hoveredIndex` property)
                 // Purpose of this Rectangle View is to define the clickable area
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                     .fill(Color.clear)
                     .padding(2)
-                    .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .contentShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
 
                 // Material-like gradient that follows pointer (appears for both selected and unselected)
                 GeometryReader { proxy in
@@ -322,7 +330,7 @@ private struct PillSegmentItemView: View {
                         lastSize = newSize
                     }
                 }
-                .mask(RoundedRectangle(cornerRadius: 10, style: .continuous).padding(2))
+                .mask(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous).padding(2))
                 .allowsHitTesting(false)
 
                 VStack(spacing: 5) {

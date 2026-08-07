@@ -26,14 +26,19 @@ import DesignResourcesKit
 final class AIChatSuggestionsView: NSView {
 
     private enum Constants {
-        static let rowHeight: CGFloat = 32
+        static let rowHeight: CGFloat = 34
+        static let legacyRowHeight: CGFloat = 32
         static let separatorHeight: CGFloat = 1
         static let separatorTopPadding: CGFloat = 0
         static let separatorBottomPadding: CGFloat = 8
-        static let separatorHorizontalInset: CGFloat = 12
-        static let rowsHorizontalPadding: CGFloat = 4
-        static let bottomPadding: CGFloat = 4
-        static let viewAllChatsSeparatorBottomPadding: CGFloat = 8
+        static let separatorHorizontalInset: CGFloat = 1
+        static let legacySeparatorHorizontalInset: CGFloat = 12
+        static let rowsHorizontalPadding: CGFloat = 6
+        static let legacyRowsHorizontalPadding: CGFloat = 4
+        static let bottomPadding: CGFloat = 2
+        static let legacyBottomPadding: CGFloat = 4
+        static let viewAllChatsSeparatorBottomPadding: CGFloat = 0
+        static let legacyViewAllChatsSeparatorBottomPadding: CGFloat = 8
     }
 
     // MARK: - UI Components
@@ -57,6 +62,8 @@ final class AIChatSuggestionsView: NSView {
 
     // MARK: - Properties
 
+    /// Remove `themeManager` once `.appRebranding` ships
+    private let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
     private var rowViews: [AIChatSuggestionRowView] = []
     private var cancellables = Set<AnyCancellable>()
     private var previousSuggestionCount: Int = 0
@@ -66,6 +73,7 @@ final class AIChatSuggestionsView: NSView {
     private var viewAllChatsRowView: AIChatViewAllChatsRowView?
     private var viewAllChatsSeparatorView: NSView?
 
+    var isBurner: Bool = false
     var canDeleteSuggestions: Bool = false
     var onSuggestionClicked: ((AIChatSuggestion) -> Void)?
     var onSuggestionDeleted: ((AIChatSuggestion) -> Void)?
@@ -92,22 +100,26 @@ final class AIChatSuggestionsView: NSView {
         addSubview(separatorView)
         addSubview(stackView)
 
+        let isAppRebranded = themeManager.isAppRebranded
+        let separatorLeadingInset: CGFloat = isAppRebranded ? Constants.separatorHorizontalInset : Constants.legacySeparatorHorizontalInset
+        let rowsHorizontalPadding: CGFloat = isAppRebranded ? Constants.rowsHorizontalPadding : Constants.legacyRowsHorizontalPadding
+
         NSLayoutConstraint.activate([
             separatorView.topAnchor.constraint(equalTo: topAnchor, constant: Constants.separatorTopPadding),
-            separatorView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.separatorHorizontalInset),
-            separatorView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.separatorHorizontalInset),
+            separatorView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: separatorLeadingInset),
+            separatorView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -separatorLeadingInset),
             separatorView.heightAnchor.constraint(equalToConstant: Constants.separatorHeight),
 
             stackView.topAnchor.constraint(equalTo: separatorView.bottomAnchor, constant: Constants.separatorBottomPadding),
-            stackView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.rowsHorizontalPadding),
-            stackView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.rowsHorizontalPadding)
+            stackView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: rowsHorizontalPadding),
+            stackView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -rowsHorizontalPadding)
         ])
 
         updateSeparatorColor()
     }
 
     private func updateSeparatorColor() {
-        NSAppearance.withAppAppearance {
+        NSAppearance.withAppearance(appearance) {
             separatorView.layer?.backgroundColor = NSColor(designSystemColor: .lines).cgColor
         }
     }
@@ -141,12 +153,17 @@ final class AIChatSuggestionsView: NSView {
 
     /// Calculates the required height for a given number of suggestions.
     /// This is a static calculation that doesn't depend on view state.
-    static func calculateHeight(forSuggestionCount count: Int, showViewAllChats: Bool = false) -> CGFloat {
+    static func calculateHeight(forSuggestionCount count: Int, showViewAllChats: Bool = false, isAppRebranded: Bool) -> CGFloat {
         guard count > 0 else { return 0 }
+        let rowHeight = isAppRebranded ? Constants.rowHeight : Constants.legacyRowHeight
+        let viewAllChatsSeparatorBottomPadding = isAppRebranded ? Constants.viewAllChatsSeparatorBottomPadding : Constants.legacyViewAllChatsSeparatorBottomPadding
+        let bottomPadding = isAppRebranded ? Constants.bottomPadding : Constants.legacyBottomPadding
         let separatorTotalHeight = Constants.separatorHeight + Constants.separatorTopPadding + Constants.separatorBottomPadding
-        let rowsHeight = CGFloat(count) * Constants.rowHeight
-        let viewAllChatsHeight = showViewAllChats ? Constants.separatorHeight + Constants.viewAllChatsSeparatorBottomPadding + Constants.rowHeight : 0
-        return separatorTotalHeight + rowsHeight + viewAllChatsHeight + Constants.bottomPadding
+        let rowsHeight = CGFloat(count) * rowHeight
+        let viewAllChatsSeparatorHeight = showViewAllChats && isAppRebranded ? 0 : Constants.separatorHeight
+        let viewAllChatsHeight = showViewAllChats ? viewAllChatsSeparatorHeight + viewAllChatsSeparatorBottomPadding + rowHeight : 0
+
+        return separatorTotalHeight + rowsHeight + viewAllChatsHeight + bottomPadding
     }
 
     // MARK: - Public Methods
@@ -166,7 +183,7 @@ final class AIChatSuggestionsView: NSView {
 
         // Create new row views
         for (index, suggestion) in suggestions.enumerated() {
-            let rowView = AIChatSuggestionRowView(suggestion: suggestion)
+            let rowView = AIChatSuggestionRowView(suggestion: suggestion, isBurner: isBurner)
             rowView.translatesAutoresizingMaskIntoConstraints = false
 
             rowView.onClick = { [weak self] in
@@ -212,19 +229,21 @@ final class AIChatSuggestionsView: NSView {
 
         guard show else { return }
 
-        let separator = NSView()
-        separator.translatesAutoresizingMaskIntoConstraints = false
-        separator.wantsLayer = true
-        NSAppearance.withAppAppearance {
-            separator.layer?.backgroundColor = NSColor(designSystemColor: .lines).cgColor
+        if !themeManager.isAppRebranded {
+            let separator = NSView()
+            separator.translatesAutoresizingMaskIntoConstraints = false
+            separator.wantsLayer = true
+            NSAppearance.withAppearance(appearance) {
+                separator.layer?.backgroundColor = NSColor(designSystemColor: .lines).cgColor
+            }
+            stackView.addArrangedSubview(separator)
+            separator.widthAnchor.constraint(equalTo: stackView.widthAnchor).isActive = true
+            separator.heightAnchor.constraint(equalToConstant: Constants.separatorHeight).isActive = true
+            stackView.setCustomSpacing(Constants.legacyViewAllChatsSeparatorBottomPadding, after: separator)
+            viewAllChatsSeparatorView = separator
         }
-        stackView.addArrangedSubview(separator)
-        separator.widthAnchor.constraint(equalTo: stackView.widthAnchor).isActive = true
-        separator.heightAnchor.constraint(equalToConstant: Constants.separatorHeight).isActive = true
-        stackView.setCustomSpacing(Constants.viewAllChatsSeparatorBottomPadding, after: separator)
-        viewAllChatsSeparatorView = separator
 
-        let viewAllRow = AIChatViewAllChatsRowView()
+        let viewAllRow = AIChatViewAllChatsRowView(isBurner: isBurner)
         viewAllRow.translatesAutoresizingMaskIntoConstraints = false
 
         viewAllRow.onClick = { [weak self] in
@@ -298,7 +317,8 @@ final class AIChatSuggestionsView: NSView {
 
                 if countChanged {
                     let newHeight = AIChatSuggestionsView.calculateHeight(forSuggestionCount: suggestions.count,
-                                                                          showViewAllChats: viewModel.showViewAllChats)
+                                                                          showViewAllChats: viewModel.showViewAllChats,
+                                                                          isAppRebranded: themeManager.isAppRebranded)
                     onHeightChange(newHeight)
                 }
             }
@@ -313,7 +333,8 @@ final class AIChatSuggestionsView: NSView {
                 self.updateViewAllChatsFooter(show: showViewAllChats)
                 self.updateSelection(viewModel.selectedIndex, isKeyboardNavigating: viewModel.isKeyboardNavigating)
                 let newHeight = AIChatSuggestionsView.calculateHeight(forSuggestionCount: viewModel.filteredSuggestions.count,
-                                                                      showViewAllChats: showViewAllChats)
+                                                                      showViewAllChats: showViewAllChats,
+                                                                      isAppRebranded: themeManager.isAppRebranded)
                 onHeightChange(newHeight)
             }
             .store(in: &cancellables)

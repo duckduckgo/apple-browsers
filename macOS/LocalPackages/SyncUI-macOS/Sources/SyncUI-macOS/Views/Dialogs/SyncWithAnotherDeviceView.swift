@@ -18,27 +18,39 @@
 
 import SwiftUI
 import SwiftUIExtensions
+import DesignResourcesKit
 
 struct SyncWithAnotherDeviceView: View {
 
     @EnvironmentObject var model: ManagementDialogModel
     @EnvironmentObject var recoveryCodeModel: RecoveryCodeViewModel
+    @Environment(\.designSystemPalette) private var palette
     let codeForDisplayOrPasting: String
     let stringForQRCode: String
 
     @State private var selectedSegment = 0
     @State private var showQRCode = true
+    @State private var showCopyConfirmation = false
+
+    private var step3Markdown: String {
+        if selectedSegment == 1 {
+            return UserText.syncWithAnotherDeviceStep3EnterCode
+        }
+        return showQRCode ? UserText.syncWithAnotherDeviceStep3ScanQRCode : UserText.syncWithAnotherDeviceStep3TextCode
+    }
 
     var body: some View {
         SyncDialog(spacing: 20.0) {
             VStack(spacing: 20.0) {
-                Image(.sync96)
+                Image(model.isAppRebranded ? .syncPair96 : .syncPair96Legacy)
                 SyncUIViews.TextHeader(text: UserText.syncWithAnotherDeviceTitle)
             }
 
             VStack(alignment: .leading, spacing: 10) {
                 instructionStepView(number: 1, markdown: UserText.syncWithAnotherDeviceStep1, showAppIcon: true)
                 instructionStepView(number: 2, markdown: UserText.syncWithAnotherDeviceStep2)
+                instructionStepView(number: 3, markdown: step3Markdown)
+                instructionStepView(number: 4, markdown: UserText.syncWithAnotherDeviceStep4)
             }
             .frame(minWidth: Metrics.contentMinWidth, alignment: .leading)
             .padding(.leading, 4)
@@ -73,6 +85,12 @@ struct SyncWithAnotherDeviceView: View {
             }
         }
         .frame(width: 420)
+        .onChange(of: selectedSegment) { _ in
+            showCopyConfirmation = false
+        }
+        .onChange(of: showQRCode) { _ in
+            showCopyConfirmation = false
+        }
     }
 
     fileprivate func pickerView() -> some View {
@@ -99,7 +117,7 @@ struct SyncWithAnotherDeviceView: View {
             selectedSegment = tag
         } label: {
             HStack {
-                Image(imageName)
+                Image(imageName, bundle: .module)
                 Text(title)
             }
             .frame(maxWidth: .infinity)
@@ -107,9 +125,9 @@ struct SyncWithAnotherDeviceView: View {
             .background(
                 ZStack {
                     RoundedRectangle(cornerRadius: Metrics.pickerInnerRadius)
-                        .stroke(selectedSegment == tag ? Color(.blackWhite10) : .clear, lineWidth: 1)
+                        .stroke(selectedSegment == tag ? Color(designSystemColor: .controlsRaisedFillPrimary) : .clear, lineWidth: 1)
                     RoundedRectangle(cornerRadius: Metrics.pickerInnerRadius)
-                        .fill(selectedSegment == tag ? Color(.pickerViewSelected) : .clear)
+                        .fill(selectedSegment == tag ? Color(designSystemColor: .controlsRaisedFillPrimary) : .clear)
                 }
             )
         }
@@ -123,7 +141,7 @@ struct SyncWithAnotherDeviceView: View {
             Spacer()
             Text(UserText.syncWithAnotherDeviceUseTextCode)
                 .fontWeight(.semibold)
-                .foregroundColor(Color(.linkBlue))
+                .rebrandableLinkForeground()
                 .onTapGesture {
                     showQRCode = false
                 }
@@ -176,6 +194,7 @@ struct SyncWithAnotherDeviceView: View {
                     }
                     Button {
                         model.delegate?.copyCode()
+                        showCopyConfirmation = true
                     } label: {
                         HStack {
                             Image(.copy)
@@ -183,6 +202,9 @@ struct SyncWithAnotherDeviceView: View {
                         }
                         .padding(.horizontal, 12)
                         .frame(height: 28)
+                    }
+                    .popover(isPresented: $showCopyConfirmation, arrowEdge: .bottom) {
+                        copyConfirmationView()
                     }
                 }
                 .frame(width: 348, height: 32)
@@ -199,13 +221,25 @@ struct SyncWithAnotherDeviceView: View {
         .frame(width: 348)
     }
 
+    fileprivate func copyConfirmationView() -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(UserText.syncWithAnotherDeviceCopyConfirmationTitle)
+                .fontWeight(.bold)
+            Text(UserText.syncWithAnotherDeviceCopyConfirmationMessage)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .multilineTextAlignment(.leading)
+        .frame(width: 240, alignment: .leading)
+        .padding(16)
+    }
+
     @ViewBuilder
     fileprivate func instructionStepView(number: Int, markdown: String, showAppIcon: Bool = false) -> some View {
         HStack(alignment: .center, spacing: 14) {
             NumberBadge(number: number)
 
             HStack(spacing: 4) {
-                Text(parseBoldMarkdown(markdown))
+                Text(parseBoldMarkdown(markdown, palette: palette))
                     .fixedSize(horizontal: false, vertical: true)
                 if showAppIcon {
                     Image(.duckDuckGo24)
@@ -221,7 +255,7 @@ struct SyncWithAnotherDeviceView: View {
     fileprivate func fallbackInstructionStepText(_ markdown: String, showAppIcon: Bool) -> some View {
         HStack(spacing: 4) {
             Text(markdown.replacingOccurrences(of: "**", with: ""))
-                .foregroundColor(.secondary)
+                .foregroundColor(.primary)
                 .fixedSize(horizontal: false, vertical: true)
             if showAppIcon {
                 Image(.duckDuckGo24)
@@ -233,15 +267,19 @@ struct SyncWithAnotherDeviceView: View {
 
     /// Parses bold markdown text and replaces bold styling with primary color.
     ///
-    fileprivate func parseBoldMarkdown(_ string: String) -> AttributedString {
+    fileprivate func parseBoldMarkdown(_ string: String, palette: ColorPalette = DesignSystemPalette.current) -> AttributedString {
         guard var result = try? AttributedString(markdown: string) else {
             var plain = AttributedString(string.replacingOccurrences(of: "**", with: ""))
-            plain.foregroundColor = .secondary
+            plain.foregroundColor = .primary
             return plain
         }
         for run in result.runs {
-            let isBold = run.inlinePresentationIntent?.contains(.stronglyEmphasized) == true
-            result[run.range].foregroundColor = isBold ? .primary : .secondary
+            if run.link != nil {
+                result[run.range].foregroundColor = .rebrandableLink(palette: palette)
+                result[run.range].inlinePresentationIntent = nil
+                continue
+            }
+            result[run.range].foregroundColor = .primary
             result[run.range].inlinePresentationIntent = nil
         }
         return result
@@ -285,10 +323,10 @@ private struct NumberBadge: View {
     var body: some View {
         ZStack {
             Circle()
-                .fill(Color.primary.opacity(0.06))
+                .fill(Color(designSystemColor: .toneTintSecondary))
             Text(verbatim: "\(number)")
                 .font(.system(size: 8.75, weight: .semibold))
-                .foregroundColor(.secondary)
+                .foregroundColor(Color(designSystemColor: .accentAltTextPrimary))
         }
         .frame(width: 16, height: 16)
     }
@@ -299,4 +337,14 @@ private enum Metrics {
     static let pickerInnerRadius: CGFloat = 6
     static let appIconSize: CGFloat = 16
     static let contentMinWidth: CGFloat = 380
+}
+
+#Preview {
+    let sampleCode = "eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiNjgwRDQ1QjUtNUU2RS00MzQ3LTlDNDQtQjZGQkU4MEZDNEE3IiwicHJpbWFyeV9rZXkiOiJBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWiJ9fQ=="
+
+    return SyncWithAnotherDeviceView(codeForDisplayOrPasting: sampleCode, stringForQRCode: sampleCode)
+        .environmentObject(ManagementDialogModel())
+        .environmentObject(RecoveryCodeViewModel())
+        .frame(width: 420)
+        .padding()
 }

@@ -134,6 +134,29 @@
         ],
         "parameters": ["appVersion", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
     },
+    "m_tab_terminated_": {
+        "description": "Fires when a tab's WebKit web content process terminates, with the WebKit termination reason in the pixel name.",
+        "owners": ["samsymons"],
+        "triggers": ["exception"],
+        "suffixes": [
+            {
+                "description": "WebKit web content process termination reason",
+                "enum": [
+                    "exceeded_memory_limit",
+                    "exceeded_cpu_limit",
+                    "requested_by_client",
+                    "crash",
+                    "exceeded_shared_process_crash_limit",
+                    "unknown"
+                ]
+            },
+            "first_daily_count",
+            "platform",
+            "form_factor"
+        ],
+        "parameters": ["appVersion"]
+    },
+
     "m_app-did-terminate-with-unhandled-error": {
         "description": "Fires when app failed to handle crash on launch.",
         "owners": ["jaceklyp", "bwaresiak"],

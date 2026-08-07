@@ -234,6 +234,55 @@ struct DuckAIWideEventInstrumentationTests {
         #expect(wideEvent.completions.isEmpty)
     }
 
+    @available(iOS 16, *)
+    @Test("promptDeliveryUpdated wasQueued=false marks did_attempt_delivery", .timeLimit(.minutes(1)))
+    func deliveryNotQueuedMarksAttempted() {
+        let (sut, wideEvent, _) = makeSUT()
+        startPromptSubmission(on: Self.activeTab, sut: sut)
+
+        sut.promptDeliveryUpdated(scope: .tab(Self.activeTab), wasQueued: false, didSendBridgeMessage: nil)
+
+        let update = lastUpdatedData(wideEvent)
+        #expect(update?.didAttemptDelivery == true)
+    }
+
+    @available(iOS 16, *)
+    @Test("promptDeliveryUpdated wasQueued=nil marks did_attempt_delivery", .timeLimit(.minutes(1)))
+    func deliveryNilQueuedMarksAttempted() {
+        let (sut, wideEvent, _) = makeSUT()
+        startPromptSubmission(on: Self.activeTab, sut: sut)
+
+        sut.promptDeliveryUpdated(scope: .tab(Self.activeTab), wasQueued: nil, didSendBridgeMessage: true)
+
+        let update = lastUpdatedData(wideEvent)
+        #expect(update?.didAttemptDelivery == true)
+    }
+
+    @available(iOS 16, *)
+    @Test("promptDeliveryUpdated wasQueued=true does not mark did_attempt_delivery", .timeLimit(.minutes(1)))
+    func queuedDeliveryDoesNotMarkAttempted() {
+        let (sut, wideEvent, _) = makeSUT()
+        startPromptSubmission(on: Self.activeTab, sut: sut)
+
+        sut.promptDeliveryUpdated(scope: .tab(Self.activeTab), wasQueued: true, didSendBridgeMessage: nil)
+
+        let update = lastUpdatedData(wideEvent)
+        #expect(update?.didAttemptDelivery == false)
+    }
+
+    @available(iOS 16, *)
+    @Test("A queued delivery that later flushes marks did_attempt_delivery", .timeLimit(.minutes(1)))
+    func queuedThenFlushedMarksAttempted() {
+        let (sut, wideEvent, _) = makeSUT()
+        startPromptSubmission(on: Self.activeTab, sut: sut)
+
+        sut.promptDeliveryUpdated(scope: .tab(Self.activeTab), wasQueued: true, didSendBridgeMessage: nil)
+        #expect(lastUpdatedData(wideEvent)?.didAttemptDelivery == false)
+
+        sut.promptDeliveryUpdated(scope: .tab(Self.activeTab), wasQueued: nil, didSendBridgeMessage: true)
+        #expect(lastUpdatedData(wideEvent)?.didAttemptDelivery == true)
+    }
+
     // MARK: - Frontend acknowledgement
 
     @available(iOS 16, *)
@@ -633,6 +682,35 @@ struct DuckAIWideEventInstrumentationTests {
         #expect(wideEvent.completions.isEmpty)
     }
 
+    @available(iOS 16, *)
+    @Test("promptInterpretedAsURL cancels the active flow with interpreted_as_url", .timeLimit(.minutes(1)))
+    func promptInterpretedAsURLCancels() {
+        let (sut, wideEvent, clock) = makeSUT()
+        startPromptSubmission(on: Self.activeTab, sut: sut)
+
+        clock.advance(by: 1.0)
+        sut.promptInterpretedAsURL(scope: .tab(Self.activeTab))
+
+        guard let completion = lastCompletion(wideEvent) else {
+            Issue.record("Expected a cancellation completion")
+            return
+        }
+        #expect(completion.1 == .cancelled)
+        #expect(completion.0.cancellationReason == .interpretedAsURL)
+        #expect(completion.0.didAttemptDelivery == false)
+        #expect(completion.0.endedInterval.end == Self.baseNow.addingTimeInterval(1.0))
+    }
+
+    @available(iOS 16, *)
+    @Test("promptInterpretedAsURL on an unknown scope is a no-op", .timeLimit(.minutes(1)))
+    func promptInterpretedAsURLOnUnknownScopeIsNoop() {
+        let (sut, wideEvent, _) = makeSUT()
+
+        sut.promptInterpretedAsURL(scope: .tab(Self.activeTab))
+
+        #expect(wideEvent.completions.isEmpty)
+    }
+
     // MARK: - Page load failures
 
     @available(iOS 16, *)
@@ -754,7 +832,7 @@ struct DuckAIWideEventInstrumentationTests {
         #expect(DuckAIPromptWideEventData.metadata.pixelName == "duckai_prompt")
         #expect(DuckAIPromptWideEventData.metadata.featureName == "duckai-prompt")
         #expect(DuckAIPromptWideEventData.metadata.type == "ios-duckai-prompt")
-        #expect(DuckAIPromptWideEventData.metadata.version == "1.0.0")
+        #expect(DuckAIPromptWideEventData.metadata.version == "1.1.0")
     }
 
     @available(iOS 16, *)
@@ -777,9 +855,21 @@ struct DuckAIWideEventInstrumentationTests {
         #expect(params["feature.data.ext.prompt.is_first_prompt"] as? Bool == false)
         #expect(params["feature.data.ext.delivery.queued"] as? Bool == false)
         #expect(params["feature.data.ext.delivery.did_receive_bridge_message"] as? Bool == false)
+        #expect(params["feature.data.ext.delivery.did_attempt_delivery"] as? Bool == false)
         #expect(params["feature.data.ext.prompt.has_page_context"] as? Bool == true)
         #expect(params["feature.data.ext.prompt.tools_selected"] as? Bool == true)
         #expect(params["feature.data.ext.prompt.attachments_selected"] as? Bool == true)
+    }
+
+    @available(iOS 16, *)
+    @Test("did_attempt_delivery is emitted true once set", .timeLimit(.minutes(1)))
+    func didAttemptDeliveryEmittedWhenSet() {
+        let data = makeData()
+        data.didAttemptDelivery = true
+
+        let params = data.jsonParameters()
+
+        #expect(params["feature.data.ext.delivery.did_attempt_delivery"] as? Bool == true)
     }
 
     @available(iOS 16, *)
@@ -824,6 +914,7 @@ struct DuckAIWideEventInstrumentationTests {
         data.cancellationReason = .switchedTabs
         data.frontendDeliveryQueued = true
         data.didSendBridgeMessage = false
+        data.didAttemptDelivery = true
         data.startThinkingInterval.end = Self.baseNow.addingTimeInterval(1.0)
         data.startGeneratingInterval.end = Self.baseNow.addingTimeInterval(2.0)
         data.generatingCompletedInterval.end = Self.baseNow.addingTimeInterval(3.0)
@@ -845,6 +936,7 @@ struct DuckAIWideEventInstrumentationTests {
         #expect(decoded.frontendDeliveryPath == .urlAutoSubmit)
         #expect(decoded.frontendDeliveryQueued == true)
         #expect(decoded.didSendBridgeMessage == false)
+        #expect(decoded.didAttemptDelivery == true)
         #expect(decoded.hasPageContext == true)
         #expect(decoded.toolsSelected == true)
         #expect(decoded.attachmentsSelected == true)

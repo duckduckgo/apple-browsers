@@ -156,7 +156,7 @@ extension SpecialErrorPageNavigationHandler: SpecialErrorPageUserScriptDelegate 
             sslErrorPageNavigationHandler.leaveSite()
             navigateBackIfPossible()
         case .maliciousSite:
-            maliciousSiteProtectionNavigationHandler.leaveSite()
+            maliciousSiteProtectionNavigationHandler.leaveSite(errorData: errorData)
             closeTab(shouldCreateNewTab: true)
         }
     }

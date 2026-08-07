@@ -69,21 +69,21 @@ struct SettingsRootView: View {
             if #available(iOS 18.2, *) {
                 if viewModel.shouldShowSetAsDefaultBrowser || viewModel.shouldShowImportPasswords {
                     SettingsCompleteSetupView()
-                        .listRowBackground(Color(designSystemColor: .surface))
+                        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
                 }
             }
             SettingsPrivacyProtectionsView()
-                .listRowBackground(Color(designSystemColor: .surface))
+                .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
             SettingsSubscriptionView().environmentObject(subscriptionNavigationCoordinator)
-                .listRowBackground(Color(designSystemColor: .surface))
+                .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
             SettingsMainSettingsView()
-                .listRowBackground(Color(designSystemColor: .surface))
+                .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
             SettingsNextStepsView()
-                .listRowBackground(Color(designSystemColor: .surface))
+                .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
             SettingsOthersView()
-                .listRowBackground(Color(designSystemColor: .surface))
+                .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
             SettingsDebugView()
-                .listRowBackground(Color(designSystemColor: .surface))
+                .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
         }
         .navigationBarTitle(UserText.settingsTitle, displayMode: .inline)
         .navigationBarItems(trailing: Button(UserText.navigationTitleDone) {
@@ -148,8 +148,10 @@ struct SettingsRootView: View {
         }
     }
 
-    @ViewBuilder func subscriptionFlowNavigationDestination(redirectURLComponents: URLComponents?) -> some View {
+    @ViewBuilder func subscriptionFlowNavigationDestination(redirectURLComponents: URLComponents?,
+                                                            landingURL: URL? = nil) -> some View {
         SubscriptionContainerViewFactory.makeSubscribeFlowV2(redirectURLComponents: redirectURLComponents,
+                                                             landingURL: landingURL,
                                                              navigationCoordinator: subscriptionNavigationCoordinator,
                                                              subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
                                                              subscriptionFeatureAvailability: viewModel.subscriptionFeatureAvailability,
@@ -239,6 +241,10 @@ struct SettingsRootView: View {
         case let .subscriptionPlanChangeFlow(redirectURLComponents):
             subscriptionPlanChangeFlowNavigationDestination(redirectURLComponents: redirectURLComponents)
                 .environmentObject(subscriptionNavigationCoordinator)
+        case .subscriptionWelcome:
+            subscriptionFlowNavigationDestination(redirectURLComponents: nil,
+                                                  landingURL: AppDependencyProvider.shared.subscriptionManager.url(for: .welcome))
+                .environmentObject(subscriptionNavigationCoordinator)
         case .restoreFlow:
             emailFlowNavigationDestination()
         case .duckPlayer:
@@ -247,8 +253,12 @@ struct SettingsRootView: View {
             } else {
                 SettingsDuckPlayerView().environmentObject(viewModel)
             }
-        case .netP:
-            NetworkProtectionRootView()
+        case let .netP(source, scrollToStrictRouting):
+            if scrollToStrictRouting {
+                NetworkProtectionVPNSettingsView(scrollsToStrictRouting: true)
+            } else {
+                NetworkProtectionRootView(source: source)
+            }
         case .aiChat:
             SettingsAIFeaturesView().environmentObject(viewModel)
         case .privateSearch:

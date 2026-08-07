@@ -20,6 +20,7 @@ import Foundation
 import DDGSync
 import Combine
 import CombineExtensions
+import DesignResourcesKit
 import Common
 import FoundationExtensions
 import SystemConfiguration
@@ -37,7 +38,12 @@ extension SyncDevice {
     }
 
     init(_ device: RegisteredDevice) {
-        let kind: Kind = device.type == "desktop" ? .desktop : .mobile
+        let kind: Kind
+        if device.credentialId == SyncCredentialID.thirdParty {
+            kind = .thirdParty
+        } else {
+            kind = device.type == "desktop" ? .desktop : .mobile
+        }
         self.init(kind: kind, name: device.name, id: device.id)
     }
 }
@@ -193,6 +199,7 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
     @Published var isAccountRecoveryAvailable: Bool = true
     @Published var isAppVersionNotSupported: Bool = true
     @Published var isAIChatSyncEnabled: Bool = false
+    @Published var isAppRebranded: Bool = false
 
     private let syncPausedStateManager: any SyncPausedStateManaging
     let syncSettingsHandler: SyncSettingsViewHandling
@@ -237,6 +244,7 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
         self.syncFeatureFlags = syncService.featureFlags
         self.syncPausedStateManager = syncPausedStateManager
         self.featureFlagger = featureFlagger
+        self.isAppRebranded = DesignSystemRebrand.isAppRebranded()
 
         self.isFaviconsFetchingEnabled = syncBookmarksAdapter.isFaviconsFetchingEnabled
         self.isUnifiedFavoritesEnabled = appearancePreferences.favoritesDisplayMode.isDisplayUnified
@@ -262,10 +270,10 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
     private func updateInvalidObjects() {
         invalidBookmarksTitles = syncBookmarksAdapter.provider?
             .fetchDescriptionsForObjectsThatFailedValidation()
-            .map { $0.truncated(length: 15) } ?? []
+            .map { $0.truncated(to: 15, position: .tail) } ?? []
 
         let invalidCredentialsObjects: [String] = (try? syncCredentialsAdapter.provider?.fetchDescriptionsForObjectsThatFailedValidation()) ?? []
-        invalidCredentialsTitles = invalidCredentialsObjects.map({ $0.truncated(length: 15) })
+        invalidCredentialsTitles = invalidCredentialsObjects.map({ $0.truncated(to: 15, position: .tail) })
 
         if let syncCreditCardsAdapter = syncCreditCardsAdapter {
             let invalidCreditCardsObjects: [String] = (try? syncCreditCardsAdapter.provider?.fetchDescriptionsForObjectsThatFailedValidation()) ?? []

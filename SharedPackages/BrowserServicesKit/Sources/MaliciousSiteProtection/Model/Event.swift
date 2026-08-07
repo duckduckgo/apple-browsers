@@ -39,6 +39,7 @@ public extension PixelKit {
 public enum Event: PixelKitEvent {
     case errorPageShown(category: ThreatKind, clientSideHit: Bool?)
     case visitSite(category: ThreatKind)
+    case leaveSite(category: ThreatKind)
     case iframeLoaded(category: ThreatKind)
     case settingToggled(to: Bool)
     case matchesApiTimeout
@@ -57,6 +58,8 @@ public enum Event: PixelKitEvent {
             return "malicious-site-protection_error-page-shown"
         case .visitSite:
             return "malicious-site-protection_visit-site"
+        case .leaveSite:
+            return "malicious-site-protection_leave-site"
         case .iframeLoaded:
             return "malicious-site-protection_iframe-loaded"
         case .settingToggled:
@@ -95,7 +98,8 @@ public enum Event: PixelKitEvent {
             }
             return parameters
         case .visitSite(category: let category),
-             .iframeLoaded(category: let category):
+                .leaveSite(category: let category),
+                .iframeLoaded(category: let category):
             return [
                 PixelKit.Parameters.category: category.rawValue,
             ]
@@ -151,6 +155,7 @@ public enum Event: PixelKitEvent {
         #if os(iOS)
         case .errorPageShown,
                 .visitSite,
+                .leaveSite,
                 .iframeLoaded,
                 .settingToggled,
                 .matchesApiTimeout,
@@ -164,6 +169,7 @@ public enum Event: PixelKitEvent {
         #else
         case .errorPageShown,
                 .visitSite,
+                .leaveSite,
                 .iframeLoaded,
                 .settingToggled,
                 .matchesApiTimeout,

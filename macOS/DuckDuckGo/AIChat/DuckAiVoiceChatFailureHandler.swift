@@ -21,10 +21,22 @@ import Foundation
 import PixelKit
 import WebKit
 
+/// Which Duck.ai mic-using flow triggered the OS-disabled remediation prompt. Selects the
+/// copy shown in `SystemDisabledPermissionInfoView`; the underlying detection and surface are
+/// identical for both.
+enum DuckAiMicPermissionSource {
+    case voiceChat
+    case dictation
+}
+
 protocol DuckAiVoiceChatFailureHandling: AnyObject {
     /// Called when the Duck.ai FE posts `voiceChatStartFailed` after `getUserMedia` rejects.
     /// `reason` is the `error.name` from the FE (e.g. `"NotAllowedError"`).
     @MainActor func handleVoiceChatStartFailed(reason: String, sourceWebView: WKWebView?)
+
+    /// Called when the Duck.ai FE posts `dictationStartFailed` after `getUserMedia` rejects.
+    /// Same handling as voice chat; only the surfaced remediation copy differs.
+    @MainActor func handleDictationStartFailed(reason: String, sourceWebView: WKWebView?)
 }
 
 /// Acts on Duck.ai voice-chat failures forwarded from the JS bridge. When the FE reports a
@@ -57,11 +69,29 @@ final class DuckAiVoiceChatFailureHandler: DuckAiVoiceChatFailureHandling {
 
     @MainActor
     func handleVoiceChatStartFailed(reason: String, sourceWebView: WKWebView?) {
-        guard reason == Self.notAllowedErrorReason else {
+        handleStartFailed(reason: reason, source: .voiceChat, sourceWebView: sourceWebView)
+    }
+
+    @MainActor
+    func handleDictationStartFailed(reason: String, sourceWebView: WKWebView?) {
+        handleStartFailed(reason: reason, source: .dictation, sourceWebView: sourceWebView)
+    }
+
+    @MainActor
+    private func handleStartFailed(reason: String, source: DuckAiMicPermissionSource, sourceWebView: WKWebView?) {
+        // `aiChatVoiceChatStartFailed` is voice-chat-only telemetry; dictation has no dedicated
+        // pixel yet, so don't count its failures here (mirrors the `.micOsDenied` decision in
+        // `AddressBarButtonsViewController`).
+        func fireOtherFailureIfNeeded() {
+            guard source == .voiceChat else { return }
             pixelFiring?.fire(
                 AIChatPixel.aiChatVoiceChatStartFailed(reason: .other),
                 frequency: .dailyAndCount
             )
+        }
+
+        guard reason == Self.notAllowedErrorReason else {
+            fireOtherFailureIfNeeded()
             return
         }
 
@@ -74,10 +104,7 @@ final class DuckAiVoiceChatFailureHandler: DuckAiVoiceChatFailureHandling {
         }()
 
         guard isOSMicrophoneDenied else {
-            pixelFiring?.fire(
-                AIChatPixel.aiChatVoiceChatStartFailed(reason: .other),
-                frequency: .dailyAndCount
-            )
+            fireOtherFailureIfNeeded()
             return
         }
 
@@ -90,7 +117,7 @@ final class DuckAiVoiceChatFailureHandler: DuckAiVoiceChatFailureHandling {
         // surfaced the remediation popover". Firing here would over-count on rapid FE retries
         // because the production presenter's `isPermissionCenterPresented` always returns
         // `false`.
-        permissionCenterPresenter.presentPermissionCenter(for: sourceWebView)
+        permissionCenterPresenter.presentPermissionCenter(for: sourceWebView, source: source)
     }
 }
 
@@ -98,7 +125,7 @@ final class DuckAiVoiceChatFailureHandler: DuckAiVoiceChatFailureHandling {
 
 protocol DuckAiVoiceChatPermissionCenterPresenting: AnyObject {
     @MainActor func isPermissionCenterPresented(for webView: WKWebView?) -> Bool
-    @MainActor func presentPermissionCenter(for webView: WKWebView?)
+    @MainActor func presentPermissionCenter(for webView: WKWebView?, source: DuckAiMicPermissionSource)
 }
 
 /// Notification-based presenter used in production: posts a notification carrying the source
@@ -124,9 +151,18 @@ final class NotificationCenterPermissionCenterPresenter: DuckAiVoiceChatPermissi
     }
 
     @MainActor
-    func presentPermissionCenter(for webView: WKWebView?) {
-        notificationCenter.post(name: .aiChatVoiceChatPermissionCenterRequested, object: webView)
+    func presentPermissionCenter(for webView: WKWebView?, source: DuckAiMicPermissionSource) {
+        notificationCenter.post(
+            name: .aiChatVoiceChatPermissionCenterRequested,
+            object: webView,
+            userInfo: [NotificationCenterPermissionCenterPresenter.sourceUserInfoKey: source]
+        )
     }
+
+    /// `userInfo` key carrying the `DuckAiMicPermissionSource` on
+    /// `aiChatVoiceChatPermissionCenterRequested`. Absent/unrecognized values default to
+    /// `.voiceChat` at the receiver.
+    static let sourceUserInfoKey = "source"
 }
 
 extension NSNotification.Name {

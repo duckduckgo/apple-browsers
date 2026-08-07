@@ -22,6 +22,7 @@ import Suggestions
 import Common
 import FoundationExtensions
 import AIChat
+import History
 import os.log
 import PixelKit
 
@@ -30,28 +31,48 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
     private let promptHandler: AIChatPromptHandler
     private let windowControllersManager: WindowControllersManagerProtocol & AIChatTabManaging
     private let tabsPreferences: TabsPreferences
+    private let historyCoordinator: HistoryCoordinating
+    private let aiChatDeleter: AIChatDeleting
     private let isShiftPressed: () -> Bool
     private let isCommandPressed: () -> Bool
     private let firePixel: (PixelKitEvent) -> Void
+    /// Deletion-flow pixels fire at `.dailyAndCount`, matching the address-bar delete pixels.
+    private let fireDailyCountPixel: (PixelKitEvent) -> Void
+    private let presentDeleteConfirmation: @MainActor (String, NSWindow?) async -> Bool
+
+    /// Called after the Customize Responses modal closes or the toggle is set, so the NTP config
+    /// (sub-label + toggle state) is re-pushed to open New Tab Pages.
+    var onCustomizeResponsesChanged: () -> Void = {}
+
+    /// Retains the Customize Responses modal host while it is presented over the NTP window.
+    private var customizeResponsesModal: CustomizeResponsesModalController?
 
     init(promptHandler: AIChatPromptHandler = AIChatPromptHandler.shared,
          windowControllersManager: WindowControllersManagerProtocol & AIChatTabManaging,
          tabsPreferences: TabsPreferences,
+         historyCoordinator: HistoryCoordinating,
+         aiChatDeleter: AIChatDeleting,
          isShiftPressed: @escaping () -> Bool = { NSApp?.isShiftPressed ?? false },
          isCommandPressed: @escaping () -> Bool = { NSApp?.isCommandPressed ?? false },
-         firePixel: @escaping (PixelKitEvent) -> Void = { PixelKit.fire($0, frequency: .dailyAndStandard) }) {
+         firePixel: @escaping (PixelKitEvent) -> Void = { PixelKit.fire($0, frequency: .dailyAndStandard) },
+         fireDailyCountPixel: @escaping (PixelKitEvent) -> Void = { PixelKit.fire($0, frequency: .dailyAndCount, includeAppVersionParameter: true) },
+         presentDeleteConfirmation: @escaping @MainActor (String, NSWindow?) async -> Bool = NewTabPageOmnibarActionsHandler.presentNativeDeleteConfirmation) {
         self.promptHandler = promptHandler
         self.windowControllersManager = windowControllersManager
         self.tabsPreferences = tabsPreferences
+        self.historyCoordinator = historyCoordinator
+        self.aiChatDeleter = aiChatDeleter
         self.isShiftPressed = isShiftPressed
         self.isCommandPressed = isCommandPressed
         self.firePixel = firePixel
+        self.fireDailyCountPixel = fireDailyCountPixel
+        self.presentDeleteConfirmation = presentDeleteConfirmation
     }
 
     func submitSearch(_ term: String, target: NewTabPage.NewTabPageDataModel.OpenTarget) {
         // Check for the keyboard shortcut to open the chat
         if isShiftPressed() {
-            submitChat(term, target: isCommandPressed() ? .newTab : .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil)
+            submitChat(term, target: isCommandPressed() ? .newTab : .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContexts: nil, files: nil)
             return
         }
 
@@ -124,7 +145,9 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
                     images: [NewTabPage.NewTabPageDataModel.SubmitChatImage]?,
                     mode: String?,
                     toolChoice: [String]?,
-                    reasoningEffort: String?) {
+                    reasoningEffort: String?,
+                    pageContexts: [NewTabPage.NewTabPageDataModel.OmnibarPageContext]?,
+                    files: [NewTabPage.NewTabPageDataModel.OmnibarPromptFile]?) {
         firePixel(NewTabPagePixel.promptSubmitted)
 
         if let images, !images.isEmpty {
@@ -164,18 +187,38 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
 
         tabOpener.openAIChatTab(with: .query(chat), behavior: behavior)
 
-        // Re-set prompt after tab opener to include images, mode, tool choice, model selection,
-        // and reasoning effort (tab opener overwrites with a plain query)
+        // Re-set prompt after tab opener to include images, files, attached page contexts, mode,
+        // tool choice, model selection, and reasoning effort (tab opener overwrites with a plain query)
         let nativeImages = images?.map { AIChatNativePrompt.NativePromptImage(data: $0.data, format: $0.format) }
+        let nativeFiles = files?.map { AIChatNativePrompt.NativePromptFile(data: $0.data, fileName: $0.fileName, mimeType: $0.mimeType) }
         let nativeReasoningEffort = reasoningEffort.flatMap(AIChatReasoningEffort.init(rawValue:))
+        let pageContextPayload = (pageContexts?.map(Self.pageContextData(from:))).flatMap { $0.isEmpty ? nil : AIChatPageContextPayload.multiple($0) }
         let nativePrompt = AIChatNativePrompt.queryPrompt(chat,
                                                           autoSubmit: true,
                                                           toolChoice: toolChoice,
                                                           images: nativeImages,
+                                                          files: nativeFiles,
                                                           modelId: modelId,
+                                                          pageContext: pageContextPayload,
                                                           mode: mode,
                                                           reasoningEffort: nativeReasoningEffort)
         promptHandler.setData(nativePrompt)
+    }
+
+    /// Converts a web-echoed `OmnibarPageContext` (the shape native originally returned from
+    /// `omnibar_getTabContent`) into the `AIChatPageContextData` the Duck.ai native prompt carries.
+    /// The base64 favicon `src` round-trips back into a `PageContextFavicon` href.
+    private static func pageContextData(from context: NewTabPage.NewTabPageDataModel.OmnibarPageContext) -> AIChatPageContextData {
+        let favicon = context.favicon.map { [AIChatPageContextData.PageContextFavicon(href: $0.src, rel: "icon")] } ?? []
+        return AIChatPageContextData(
+            title: context.title,
+            favicon: favicon,
+            url: context.url,
+            content: context.content ?? "",
+            truncated: context.truncated ?? false,
+            fullContentLength: context.fullContentLength ?? 0,
+            tabId: context.tabId
+        )
     }
 
     @MainActor
@@ -218,6 +261,32 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
         tabOpener.openNewAIChat(in: behavior)
     }
 
+    @MainActor
+    func openCustomizeResponses() {
+        guard customizeResponsesModal == nil else { return }
+        guard let mainWindowController = windowControllersManager.lastKeyMainWindowController,
+              let window = mainWindowController.window else {
+            Logger.newTabPageOmnibar.error("Failed to get key window in openCustomizeResponses")
+            return
+        }
+        PixelKit.fire(AIChatPixel.aiChatNtpCustomizeResponsesOpened, frequency: .dailyAndCount, includeAppVersionParameter: true)
+        let modal = CustomizeResponsesModalController(burnerMode: mainWindowController.mainViewController.tabCollectionViewModel.burnerMode)
+        modal.onClose = { [weak self] in
+            self?.customizeResponsesModal = nil
+            self?.onCustomizeResponsesChanged()
+        }
+        customizeResponsesModal = modal
+        modal.present(over: window)
+    }
+
+    @MainActor
+    func setCustomizeResponsesActive(_ active: Bool) {
+        let burnerMode = windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.burnerMode ?? .regular
+        let handler = NSApp.delegateTyped.burnerDuckAiStorageRegistry?.handler(for: burnerMode) ?? NSApp.delegateTyped.duckAiNativeStorageHandler
+        CustomizeResponsesStore(storageHandler: handler).setActive(active)
+        onCustomizeResponsesChanged()
+    }
+
     private func linkOpenBehavior(for target: NewTabPageDataModel.OpenTarget, using tabsPreferences: TabsPreferences) -> LinkOpenBehavior {
         switch target {
         case .sameTab:
@@ -227,6 +296,47 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
         case .newWindow:
             return .newWindow(selected: tabsPreferences.switchToNewTabWhenOpened)
         }
+    }
+
+    @MainActor
+    func confirmDeleteAiChat(chatId: String, title: String, sourceWindow: NSWindow?) async -> Bool {
+        fireDailyCountPixel(NewTabPagePixel.ntpAiChatRecentChatDeleteButtonClicked)
+
+        guard await presentDeleteConfirmation(title, sourceWindow) else {
+            fireDailyCountPixel(NewTabPagePixel.ntpAiChatRecentChatDeleteCancelled)
+            return false
+        }
+
+        fireDailyCountPixel(NewTabPagePixel.ntpAiChatRecentChatDeleteConfirmed)
+        // No wait needed: the native delete is synchronous and the NTP re-fetches via omnibar_getAiChats.
+        aiChatDeleter.deleteChat(chatID: chatId)
+        return true
+    }
+
+    @MainActor
+    func removeSuggestion(_ url: String) {
+        guard let url = URL(string: url) else {
+            Logger.newTabPageOmnibar.error("removeSuggestion: invalid URL string")
+            return
+        }
+        fireDailyCountPixel(NewTabPagePixel.ntpAutocompleteResultDeleted)
+        historyCoordinator.removeUrlEntry(url, completion: nil)
+    }
+
+    /// Same dialog as the address-bar delete flow: a sheet on `sourceWindow`, or app-modal when nil.
+    @MainActor
+    static func presentNativeDeleteConfirmation(title: String, sourceWindow: NSWindow?) async -> Bool {
+        let alert = NSAlert.recentChatDeleteConfirmation(title: title)
+
+        let response: NSApplication.ModalResponse
+        if let sourceWindow {
+            response = await withCheckedContinuation { continuation in
+                alert.beginSheetModal(for: sourceWindow) { continuation.resume(returning: $0) }
+            }
+        } else {
+            response = await alert.runModal()
+        }
+        return response == .OK
     }
 
 }

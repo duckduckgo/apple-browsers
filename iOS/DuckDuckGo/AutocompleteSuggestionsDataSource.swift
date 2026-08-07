@@ -37,7 +37,8 @@ final class AutocompleteSuggestionsDataSource: SuggestionLoadingDataSource {
     private var performSuggestionsRequest: SuggestionsRequest
 
     /// Specifically open tabs that do not have the same URL as the current tab so that we avoid shown them in the results.
-    private lazy var candidateOpenTabs: [BrowserTab] = {
+    /// Computed per load (not snapshotted) so a long-lived data source reflects tab changes — e.g. tabs cleared by fire.
+    private var candidateOpenTabs: [BrowserTab] {
         tabsModel.tabs.compactMap {
             guard let url = $0.link?.url,
                   tabsModel.currentTab?.link?.url != $0.link?.url
@@ -45,11 +46,16 @@ final class AutocompleteSuggestionsDataSource: SuggestionLoadingDataSource {
 
             return OpenTab(tabId: $0.uid, title: $0.link?.displayTitle ?? "", url: url)
         }
-    }()
+    }
 
-    private lazy var cachedBookmarks: CachedBookmarks = {
-        CachedBookmarks(bookmarksDatabase)
-    }()
+    private var cachedBookmarks: CachedBookmarks
+
+    /// Rebuilds the bookmark snapshot. A long-lived data source (unified input) must call this at the
+    /// start of each editing session so bookmark add/remove is reflected — legacy gets it for free by
+    /// building a fresh data source per session.
+    func refreshCaches() {
+        cachedBookmarks = CachedBookmarks(bookmarksDatabase)
+    }
 
     var platform: Platform {
         .mobile
@@ -61,6 +67,7 @@ final class AutocompleteSuggestionsDataSource: SuggestionLoadingDataSource {
         self.featureFlagger = featureFlagger
         self.tabsModel = tabsModel
         self.performSuggestionsRequest = performSuggestionsRequest
+        self.cachedBookmarks = CachedBookmarks(bookmarksDatabase)
     }
 
     @MainActor

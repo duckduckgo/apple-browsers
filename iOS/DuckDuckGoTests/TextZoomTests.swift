@@ -193,6 +193,24 @@ final class TextZoomTests: XCTestCase {
         XCTAssertEqual(fireCoordinator.textZoomLevel(forHost: "example.com"), appSettings.defaultTextZoomLevel)
     }
 
+    func testIncrementedReturnsNextHigherLevel() {
+        XCTAssertEqual(TextZoomLevel.percent50.incremented(), .percent60)
+        XCTAssertEqual(TextZoomLevel.percent100.incremented(), .percent110)
+    }
+
+    func testIncrementedClampsAtMaximum() {
+        XCTAssertEqual(TextZoomLevel.percent170.incremented(), .percent170)
+    }
+
+    func testDecrementedReturnsNextLowerLevel() {
+        XCTAssertEqual(TextZoomLevel.percent170.decremented(), .percent160)
+        XCTAssertEqual(TextZoomLevel.percent100.decremented(), .percent90)
+    }
+
+    func testDecrementedClampsAtMinimum() {
+        XCTAssertEqual(TextZoomLevel.percent50.decremented(), .percent50)
+    }
+
 }
 
 // MARK: - SpyTextZoomStorage

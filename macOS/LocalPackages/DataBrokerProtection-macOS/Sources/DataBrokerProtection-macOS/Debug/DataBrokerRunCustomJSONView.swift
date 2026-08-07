@@ -19,7 +19,7 @@
 import SwiftUI
 import BrowserServicesKit
 import DataBrokerProtectionCore
-import FeatureFlags
+import FeatureFlags_macOS
 
 struct DataBrokerRunCustomJSONView: View {
     private enum Constants {
@@ -137,8 +137,6 @@ struct DataBrokerRunCustomJSONView: View {
 
     private var dbpFeatureFlagLines: [(name: String, value: String)] {
         [
-            (FeatureFlag.dbpRemoteBrokerDelivery.rawValue, viewModel.featureFlagger.isRemoteBrokerDeliveryFeatureOn.description),
-            (FeatureFlag.dbpEmailConfirmationDecoupling.rawValue, viewModel.featureFlagger.isEmailConfirmationDecouplingFeatureOn.description),
             (FeatureFlag.dbpWebViewUserAgent.rawValue, viewModel.featureFlagger.isWebViewUserAgentOn.description),
         ]
     }
@@ -193,7 +191,7 @@ struct DataBrokerRunCustomJSONView: View {
 
             Text("macOS App version: \(viewModel.appVersion())")
             Text("DBP API endpoint: \(viewModel.dbpEndpoint)")
-            Text("Web view applicationNameForUserAgent: \(viewModel.applicationNameForUserAgentDisplayValue)")
+            Text("Web view applicationNameForUserAgentProvider: \(viewModel.applicationNameForUserAgentDisplayValue)")
 
             VStack(alignment: .leading, spacing: 0) {
                 ForEach(dbpFeatureFlagLines, id: \.name) { flag in

@@ -42,6 +42,8 @@ protocol UnifiedToggleInputViewControllerDelegate: AnyObject {
     func unifiedToggleInputVCDidTapFire(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidTapAppMenu(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidTapReturnKey(_ vc: UnifiedToggleInputViewController)
+    func unifiedToggleInputVCDidShowModelPicker(_ vc: UnifiedToggleInputViewController)
+    func unifiedToggleInputVCDidShowReasoningPicker(_ vc: UnifiedToggleInputViewController)
 }
 
 // MARK: - View Controller
@@ -72,6 +74,10 @@ final class UnifiedToggleInputViewController: UIViewController {
     /// Dims the input bar for the fire-education onboarding step without affecting the fire button.
     func setOnboardingDimmed(_ dimmed: Bool) {
         inputBarView.setOnboardingDimmed(dimmed)
+    }
+
+    func setMenuAlertVisible(_ isVisible: Bool, animated: Bool) {
+        inputBarView.setMenuAlertVisible(isVisible, animated: animated)
     }
 
     init(isToggleEnabled: Bool, isFireTab: Bool = false) {
@@ -189,6 +195,11 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.attachmentMenu = newValue }
     }
 
+    weak var attachmentPasteHandler: AttachmentPasteHandling? {
+        get { inputBarView.attachmentPasteHandler }
+        set { inputBarView.attachmentPasteHandler = newValue }
+    }
+
     var reasoningPickerMenu: UIMenu? {
         get { inputBarView.reasoningPickerMenu }
         set { inputBarView.reasoningPickerMenu = newValue }
@@ -232,6 +243,10 @@ final class UnifiedToggleInputViewController: UIViewController {
     var isImageButtonHidden: Bool {
         get { inputBarView.isImageButtonHidden }
         set { inputBarView.isImageButtonHidden = newValue }
+    }
+
+    func setEditMode(_ editing: Bool) {
+        inputBarView.setEditMode(editing)
     }
 
     var isImageButtonEnabled: Bool {
@@ -283,7 +298,8 @@ final class UnifiedToggleInputViewController: UIViewController {
         usesOmnibarMargins = config.usesOmnibarMargins
         isTopBarPosition = config.isTopBarPosition
         // Set before `applyCardLayout` reads the flag.
-        inputBarView.isInlineDismissHidden = config.isAITab
+        inputBarView.isInlineDismissHidden = config.isInlineDismissHidden
+        inputBarView.isAITab = config.isAITab
         setInputMode(config.inputMode, animated: animated)
         setInactiveCardAppearance(config.inactiveAppearance)
         applyCardLayout(config.cardLayout, animated: animated)
@@ -323,12 +339,25 @@ final class UnifiedToggleInputViewController: UIViewController {
         inputBarView.finalizeOmnibarEditingDismiss()
     }
 
+    var omnibarPillWindowFrame: CGRect? {
+        get { inputBarView.omnibarPillWindowFrame }
+        set { inputBarView.omnibarPillWindowFrame = newValue }
+    }
+
+    func captureOmnibarMatchedInsets() {
+        inputBarView.captureOmnibarMatchedInsets()
+    }
+
     func setInputMode(_ mode: TextEntryMode, animated: Bool) {
         inputBarView.setInputMode(mode, animated: animated)
     }
 
     func selectAllText() {
         inputBarView.selectAllText()
+    }
+
+    func moveCaretToStart() {
+        inputBarView.moveCaretToStart()
     }
 
     var placeholderWindowX: CGFloat? { inputBarView.placeholderWindowX }
@@ -460,6 +489,14 @@ extension UnifiedToggleInputViewController: UnifiedToggleInputViewDelegate {
 
     func unifiedToggleInputViewDidTapReturnKey(_ view: UnifiedToggleInputView) {
         delegate?.unifiedToggleInputVCDidTapReturnKey(self)
+    }
+
+    func unifiedToggleInputViewDidShowModelPicker(_ view: UnifiedToggleInputView) {
+        delegate?.unifiedToggleInputVCDidShowModelPicker(self)
+    }
+
+    func unifiedToggleInputViewDidShowReasoningPicker(_ view: UnifiedToggleInputView) {
+        delegate?.unifiedToggleInputVCDidShowReasoningPicker(self)
     }
 }
 

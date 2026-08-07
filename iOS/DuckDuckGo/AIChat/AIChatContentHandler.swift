@@ -35,14 +35,23 @@ protocol AIChatUserScriptProviding: AnyObject {
     var canDispatchBridgeMessages: Bool { get }
     func setPayloadHandler(_ payloadHandler: any AIChatConsumableDataHandling)
     func setOpenLinkHandler(_ openLinkHandler: ((URL) -> Void)?)
-    func setPageContextProvider(_ provider: ((PageContextRequestReason) -> AIChatPageContextData?)?)
+    func setPageContextProvider(_ provider: PageContextAsyncProvider?)
+    func setChatStatusHandler(_ handler: (@MainActor (AIChatStatusValue) -> Void)?)
     func setContextualModePixelHandler(_ pixelHandler: AIChatContextualModePixelFiring)
     func setDisplayMode(_ displayMode: AIChatDisplayMode)
     func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData?)
+    func submitPrompt(_ prompt: String,
+                      images: [AIChatNativePrompt.NativePromptImage]?,
+                      files: [AIChatNativePrompt.NativePromptFile]?,
+                      modelId: String?,
+                      tools: [AIChatRAGTool]?,
+                      pageContext: AIChatPageContextData?,
+                      reasoningEffort: AIChatReasoningEffort?)
     func submitStartChatAction()
     func submitOpenSettingsAction()
     func submitPageContext(_ context: AIChatPageContextData?)
     func submitToggleSidebarAction()
+    func submitOpenChatProtectionAction()
 }
 
 extension AIChatUserScriptProviding {
@@ -75,6 +84,9 @@ protocol AIChatContentHandlingDelegate: AnyObject {
     /// Called when the frontend requests page context (`getAIChatPageContext`), signaling it has initialized and registered its JS message handlers.
     func aiChatContentHandlerDidReceivePageContextRequest(_ handler: AIChatContentHandling)
 
+    /// Called when the frontend reports the current chat response state.
+    func aiChatContentHandler(_ handler: AIChatContentHandling, didUpdateChatStatus status: AIChatStatusValue)
+
     func aiChatContentHandler(_ handler: AIChatContentHandling, didRequestToOpen url: URL)
 }
 
@@ -98,15 +110,26 @@ protocol AIChatContentHandling: AnyObject {
     /// Submits a prompt to the AI Chat with optional page context.
     func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData?)
 
+    /// Submits a rich native prompt to the AI Chat.
+    func submitPrompt(_ prompt: String,
+                      images: [AIChatNativePrompt.NativePromptImage]?,
+                      files: [AIChatNativePrompt.NativePromptFile]?,
+                      modelId: String?,
+                      tools: [AIChatRAGTool]?,
+                      pageContext: AIChatPageContextData?,
+                      reasoningEffort: AIChatReasoningEffort?)
 
     /// Submits a start chat action to initiate a new AI Chat conversation.
-    func submitStartChatAction()
+    func submitStartChatAction() async
 
     /// Submits an open settings action to open the AI Chat settings.
     func submitOpenSettingsAction()
 
     /// Submits a toggle sidebar action to open/close the sidebar.
     func submitToggleSidebarAction()
+
+    /// Submits a chat-protection action, opening the "All chats are private" page.
+    func submitOpenChatProtectionAction()
 
     /// Pushes page context to the frontend (for context updates during navigation).
     func submitPageContext(_ context: AIChatPageContextData?)
@@ -129,6 +152,7 @@ extension AIChatContentHandling {
 extension AIChatContentHandlingDelegate {
     func aiChatContentHandlerDidReceivePageContextRequest(_ handler: AIChatContentHandling) {}
     func aiChatContentHandlerDidReceiveNewChatCreated(_ handler: AIChatContentHandling) {}
+    func aiChatContentHandler(_ handler: AIChatContentHandling, didUpdateChatStatus status: AIChatStatusValue) {}
     func aiChatContentHandler(_ handler: AIChatContentHandling, didRequestToOpen url: URL) {}
 }
 
@@ -144,12 +168,13 @@ final class AIChatContentHandler: AIChatContentHandling {
     private let statisticsLoader: StatisticsLoader
     private let unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding
     private let debugSettings: AIChatDebugSettingsHandling
+    private let iPadDuckAIControlsFeature: IPadDuckAIControlsFeatureProviding
 
     private var userScript: AIChatUserScriptProviding?
 
     /// Closure to get page context for contextual mode. Nil in full mode.
     /// Parameter is the request reason (e.g., `.userAction` for manual attach).
-    private let getPageContext: ((PageContextRequestReason) -> AIChatPageContextData?)?
+    private let getPageContext: PageContextAsyncProvider?
 
     weak var delegate: AIChatContentHandlingDelegate?
 
@@ -162,7 +187,8 @@ final class AIChatContentHandler: AIChatContentHandling {
          statisticsLoader: StatisticsLoader = .shared,
          unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
          debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
-         getPageContext: ((PageContextRequestReason) -> AIChatPageContextData?)? = nil) {
+         iPadDuckAIControlsFeature: IPadDuckAIControlsFeatureProviding = IPadDuckAIControlsFeature(),
+         getPageContext: PageContextAsyncProvider? = nil) {
         self.aiChatSettings = aiChatSettings
         self.payloadHandler = payloadHandler
         self.pixelMetricHandler = pixelMetricHandler
@@ -172,6 +198,7 @@ final class AIChatContentHandler: AIChatContentHandling {
         self.statisticsLoader = statisticsLoader
         self.unifiedToggleInputFeature = unifiedToggleInputFeature
         self.debugSettings = debugSettings
+        self.iPadDuckAIControlsFeature = iPadDuckAIControlsFeature
         self.getPageContext = getPageContext
     }
 
@@ -183,6 +210,10 @@ final class AIChatContentHandler: AIChatContentHandling {
         self.userScript?.setOpenLinkHandler { [weak self] url in
             guard let self else { return }
             self.delegate?.aiChatContentHandler(self, didRequestToOpen: url)
+        }
+        self.userScript?.setChatStatusHandler { [weak self] status in
+            guard let self else { return }
+            self.delegate?.aiChatContentHandler(self, didUpdateChatStatus: status)
         }
         self.userScript?.webView = webView
         self.userScript?.setPageContextProvider(getPageContext)
@@ -233,7 +264,7 @@ final class AIChatContentHandler: AIChatContentHandling {
 
         if isNativeInputParameterSupported(for: aiChatSettings.aiChatURL) {
             queryItems.removeAll { $0.name == AIChatURLParameters.nativeInputName }
-            if unifiedToggleInputFeature.isAvailable {
+            if unifiedToggleInputFeature.isAvailable || iPadDuckAIControlsFeature.isAvailable {
                 queryItems.append(URLQueryItem(name: AIChatURLParameters.nativeInputName, value: AIChatURLParameters.nativeInputValue))
             }
         }
@@ -259,10 +290,20 @@ final class AIChatContentHandler: AIChatContentHandling {
         userScript?.submitPrompt(prompt, pageContext: pageContext)
     }
 
+    func submitPrompt(_ prompt: String,
+                      images: [AIChatNativePrompt.NativePromptImage]?,
+                      files: [AIChatNativePrompt.NativePromptFile]?,
+                      modelId: String?,
+                      tools: [AIChatRAGTool]?,
+                      pageContext: AIChatPageContextData?,
+                      reasoningEffort: AIChatReasoningEffort?) {
+        userScript?.submitPrompt(prompt, images: images, files: files, modelId: modelId, tools: tools, pageContext: pageContext, reasoningEffort: reasoningEffort)
+    }
+
     /// Submits a start chat action to initiate a new AI Chat conversation.
     /// Only pushes page context if auto-attach is enabled; manual attach goes through explicit pushPageContext calls.
-    func submitStartChatAction() {
-        if aiChatSettings.isAutomaticContextAttachmentEnabled, let context = getPageContext?(.other) {
+    func submitStartChatAction() async {
+        if aiChatSettings.isAutomaticContextAttachmentEnabled, let context = await getPageContext?(.other) {
             userScript?.submitPageContext(context)
         }
         userScript?.submitStartChatAction()
@@ -276,6 +317,10 @@ final class AIChatContentHandler: AIChatContentHandling {
     /// Submits a toggle sidebar action to open/close the sidebar.
     func submitToggleSidebarAction() {
         userScript?.submitToggleSidebarAction()
+    }
+
+    func submitOpenChatProtectionAction() {
+        userScript?.submitOpenChatProtectionAction()
     }
 
     func submitPageContext(_ context: AIChatPageContextData?) {
@@ -292,7 +337,7 @@ final class AIChatContentHandler: AIChatContentHandling {
     private func updatingNativeInputParameterIfNeeded(in url: URL) -> URL {
         AIChatURLParameters.updatingNativeInputURL(
             from: url,
-            isNativeInputAvailable: unifiedToggleInputFeature.isAvailable,
+            isNativeInputAvailable: unifiedToggleInputFeature.isAvailable || iPadDuckAIControlsFeature.isAvailable,
             isSupportedURL: isNativeInputParameterSupported(for: url)
         )
     }

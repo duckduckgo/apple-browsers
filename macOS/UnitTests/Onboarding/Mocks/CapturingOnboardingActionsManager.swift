@@ -22,7 +22,10 @@ import Foundation
 class CapturingOnboardingActionsManager: OnboardingActionsManaging {
 
     var configuration: OnboardingConfiguration = OnboardingConfiguration(
-        stepDefinitions: StepDefinitions(systemSettings: SystemSettings(rows: [])),
+        stepDefinitions: StepDefinitions(
+            systemSettings: SystemSettings(rows: []),
+            getStarted: GetStarted(options: [])
+        ),
         exclude: [],
         order: "",
         env: "environment",
@@ -39,6 +42,7 @@ class CapturingOnboardingActionsManager: OnboardingActionsManaging {
     var setSessionRestoreCalled = false
     var setHomeButtonPositionCalled = false
     var setDuckAiInAddressBarCalled = false
+    var installChromeExtensionCalled = false
     var onboardingStartedCalled = false
     var reportExceptionCalled = false
     var exceptionParams: [String: String] = [:]
@@ -93,6 +97,10 @@ class CapturingOnboardingActionsManager: OnboardingActionsManaging {
     func setDuckAiInAddressBar(enabled: Bool) {
         setDuckAiInAddressBarCalled = true
         duckAiInAddressBarEnabled = enabled
+    }
+
+    func installChromeExtension() {
+        installChromeExtensionCalled = true
     }
 
     func stepCompleted(step: OnboardingSteps) {

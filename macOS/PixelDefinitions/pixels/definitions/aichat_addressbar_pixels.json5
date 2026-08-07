@@ -145,6 +145,23 @@
         "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
+    "m_mac_aichat_addressbar_file_validation_failed": {
+        "description": "Fired when a file picked for the duck.ai omnibar is rejected at pick-time by the attachment validator (too large, over the total-size budget, too many pages, unsupported type, encrypted, or unreadable)",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "reason",
+                "description": "Reason for the file validation failure.",
+                "type": "string",
+                "enum": ["size_exceeded", "count_exceeded", "unsupported_type", "encrypted", "unreadable", "other"]
+            }
+        ]
+    },
     "m_mac_aichat_addressbar_attach_tabs_picker_shown": {
         "description": "Fired when user opens the duck.ai omnibar attach menu's 'Add Page Content' submenu, which lists open tabs whose page content can be attached",
         "owners": ["tomasstrba"],
@@ -224,12 +241,63 @@
         "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
+    "m_mac_aichat_addressbar_model_picker_shown": {
+        "description": "Fired when the address bar's Duck.ai model picker is opened showing at least one subscriber-exclusive model — the subscription-funnel impression for that entry point. See https://app.asana.com/1/137249556945/task/1216395339071571",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionFunnelOrigin"]
+    },
+    "m_mac_aichat_addressbar_reasoning_picker_shown": {
+        "description": "Fired when the address bar's Duck.ai reasoning-effort picker is opened showing at least one gated effort — the subscription-funnel impression for that entry point. See https://app.asana.com/1/137249556945/task/1216395339071571",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionFunnelOrigin"]
+    },
     "m_mac_aichat_addressbar_reasoning_effort_selected": {
         "description": "Fired when user selects a reasoning effort from the native omnibar picker",
         "owners": ["jotaemepereira"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_addressbar_subscription_upsell_shown": {
+        "description": "Fired when the native subscription upsell dialog is shown after the user taps a gated model or reasoning effort in the address bar's Duck.ai picker. Pairs with m_mac_aichat_addressbar_subscription_upsell_triggered for a view-to-click rate. See https://app.asana.com/1/137249556945/task/1216395339071571",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionFunnelOrigin"]
+    },
+    "m_mac_aichat_addressbar_subscription_upsell_triggered": {
+        "description": "Fired when user taps a gated model or reasoning effort in the native omnibar picker, routing them to the subscription purchase/upgrade flow",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "current_tier",
+                "type": "string",
+                "description": "The user's subscription tier at the time of the gated selection",
+                "enum": ["free", "plus", "pro", "internal"]
+            },
+            {
+                "key": "required_tier",
+                "type": "string",
+                "description": "The public subscription tier required to unlock the gated model or reasoning effort",
+                "enum": ["free", "plus", "pro"]
+            },
+            {
+                "key": "flow_type",
+                "type": "string",
+                "description": "Which subscription flow the user was routed to",
+                "enum": ["purchase", "upgrade"]
+            },
+            "subscriptionFunnelOrigin"
+        ]
     },
     "m_mac_aichat_new_voice_chat_omnibar_native": {
         "description": "Fired when user opens a new Duck.ai voice chat from the native omnibar",
@@ -254,6 +322,20 @@
     },
     "m_mac_aichat_recent_chat_delete_cancelled": {
         "description": "Fired when user cancels deletion of a recent chat suggestion in the address bar",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_single_delete_successful": {
+        "description": "Fired when a single chat deletion (address bar or New Tab Page) completes successfully",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_single_delete_failed": {
+        "description": "Fired when a single chat deletion (address bar or New Tab Page) fails",
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
@@ -304,6 +386,13 @@
     "m_mac_aichat_addressbar_web_search_submitted": {
         "description": "Fired when user submits a prompt while web search mode is active",
         "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_addressbar_customize_responses_opened": {
+        "description": "Fired when the user opens Customize Responses from the native address bar Tools menu",
+        "owners": ["jotaemepereira"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource", "channel"]

@@ -53,7 +53,7 @@ final class NavigationBarViewController: NSViewController {
     @IBOutlet private var goBackButton: MouseOverButton!
     @IBOutlet private var goForwardButton: MouseOverButton!
     @IBOutlet private var refreshOrStopButton: MouseOverButton!
-    @IBOutlet private(set) var optionsButton: MouseOverButton!
+    @IBOutlet private(set) var optionsButton: MoreOptionsMenuButton!
     @IBOutlet private var overflowButton: MouseOverButton!
     @IBOutlet private var bookmarkListButton: MouseOverButton!
     @IBOutlet private var passwordManagementButton: MouseOverButton!
@@ -181,6 +181,7 @@ final class NavigationBarViewController: NSViewController {
     let themeManager: ThemeManaging
     var themeUpdateCancellable: AnyCancellable?
 
+    /// Deprecated: Remove when `appRebranding` Ships
     private var leftFocusSpacer: NSView?
     private var rightFocusSpacer: NSView?
 
@@ -341,7 +342,8 @@ final class NavigationBarViewController: NSViewController {
             autofillPopoverPresenter: autofillPopoverPresenter,
             vpnUpsellPopoverPresenter: vpnUpsellPopoverPresenter,
             pinningManager: pinningManager,
-            isBurner: tabCollectionViewModel.isBurner
+            isBurner: tabCollectionViewModel.isBurner,
+            isAppRebranded: themeManager.isAppRebranded
         )
 
         self.tabCollectionViewModel = tabCollectionViewModel
@@ -550,7 +552,7 @@ final class NavigationBarViewController: NSViewController {
         updateNavigationBarForCurrentWidth()
     }
 
-    func resizeAddressBar(for sizeClass: AddressBarSizeClass, animated: Bool) {
+    func resizeAddressBar(for sizeClass: AddressBarSizeClass, allowsAsync: Bool = true, animated: Bool) {
         daxFadeInAnimation?.cancel()
         heightChangeAnimation?.cancel()
 
@@ -613,19 +615,28 @@ final class NavigationBarViewController: NSViewController {
                 performResize()
             }
         }
-        if let window = view.window, window.isVisible {
+
+        if let window = view.window, window.isVisible, allowsAsync {
             let dispatchItem = DispatchWorkItem(block: heightChange)
             DispatchQueue.main.async(execute: dispatchItem)
             self.heightChangeAnimation = dispatchItem
-        } else {
-            // update synchronously for off-screen view
-            prepareNavigationBar()
-            heightChange()
+            return
         }
+
+        // Update Synchronously
+        prepareNavigationBar()
+        heightChange()
     }
 
     private func resizeAddressBarWidth(isAddressBarFocused: Bool) {
-        if theme.addressBarStyleProvider.shouldShowNewSearchIcon {
+        let styleProvider = theme.addressBarStyleProvider
+        if !styleProvider.shouldUseLegacyAddressBarSpacingMechanism {
+            addressBarViewController?.refreshAddressBarBackgroundWidth()
+            return
+        }
+
+        /// Will be removed when `.appRebranding` ships
+        if styleProvider.shouldShowNewSearchIcon {
             if !isAddressBarFocused {
                 if leftFocusSpacer == nil {
                     leftFocusSpacer = NSView()
@@ -689,7 +700,11 @@ final class NavigationBarViewController: NSViewController {
         if pinningManager.isPinned(.autofill) && !isInPopUpWindow {
             passwordManagementButton.isHidden = false
         } else {
-            passwordManagementButton.isShown = popovers.isPasswordManagementPopoverShown || isAutoFillAutosaveMessageVisible
+            // Keep the button visible while the onboarding popover is anchored to it, otherwise hiding the button
+            // collapses the stack view and the popover detaches to a stray position.
+            passwordManagementButton.isShown = popovers.isPasswordManagementPopoverShown
+                || isAutoFillAutosaveMessageVisible
+                || popovers.isAutofillOnboardingPopoverShown
         }
 
         popovers.passwordManagementDomain = nil
@@ -1932,6 +1947,14 @@ extension NavigationBarViewController: ThemeUpdateListening {
         setupNavigationButtons()
         setupBackgroundViewsAndColors()
         setupAsBurnerWindowIfNeeded(theme: theme)
+        refreshNotificationsColor(theme: theme)
+    }
+
+    private func refreshNotificationsColor(theme: ThemeStyleProviding) {
+        let notificationColor = theme.colorsProvider.accentPrimaryColor
+
+        optionsButton.notificationColor = notificationColor
+        networkProtectionButton.notificationColor = notificationColor
     }
 }
 
@@ -1954,7 +1977,7 @@ extension NavigationBarViewController: NSMenuDelegate {
 
         let downloadsTitle = pinningManager.shortcutTitle(for: .downloads)
         menu.addItem(withTitle: downloadsTitle, action: #selector(toggleDownloadsPanelPinning), keyEquivalent: "J")
-            .withImage(DesignSystemImages.Glyphs.Size12.downloads)
+            .withImage(DesignSystemImages.Glyphs.Size12.download)
 
         let autofillTitle = pinningManager.shortcutTitle(for: .autofill)
         menu.addItem(withTitle: autofillTitle, action: #selector(toggleAutofillPanelPinning), keyEquivalent: "A")
@@ -2328,6 +2351,10 @@ extension NavigationBarViewController: MouseOverButtonDelegate {
 extension NavigationBarViewController: AddressBarViewControllerDelegate {
 
     func resizeAddressBarForHomePage(_ addressBarViewController: AddressBarViewController) {
+        resizeAddressBarForHomePage(addressBarViewController, allowsAsync: true)
+    }
+
+    func resizeAddressBarForHomePage(_ addressBarViewController: AddressBarViewController, allowsAsync: Bool) {
         let addressBarSizeClass: AddressBarSizeClass
         if isInPopUpWindow {
             addressBarSizeClass = .popUpWindow
@@ -2338,7 +2365,7 @@ extension NavigationBarViewController: AddressBarViewControllerDelegate {
         }
 
         if theme.addressBarStyleProvider.shouldShowNewSearchIcon {
-            resizeAddressBar(for: addressBarSizeClass, animated: false)
+            resizeAddressBar(for: addressBarSizeClass, allowsAsync: allowsAsync, animated: false)
         }
     }
 

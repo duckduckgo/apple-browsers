@@ -12,13 +12,21 @@
                 "key": "source",
                 "description": "What triggered the sidebar to open",
                 "type": "string",
-                "enum": ["address-bar-button", "summarization", "serp", "context-menu", "translation", "tabbar-button"]
+                "enum": [
+                    "address-bar-button",
+                    "summarization",
+                    "serp",
+                    "context-menu",
+                    "translation",
+                    "attach-selection",
+                    "tabbar-button",
+                    "ask-about-page"
+                ]
             },
             {
                 "key": "automaticPageContext",
                 "description": "Whether the automatic page context collection is enabled in AI Features settings",
-                "type": "string",
-                "enum": ["true", "false"]
+                "type": "boolean"
             },
             {
                 "key": "minutesSinceSidebarHidden",
@@ -33,11 +41,18 @@
         "owners": ["miasma13"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_translation_source_link_clicked": {
         "description": "Fired when user clicks the website link on a translation prompt in Duck.ai tab or sidebar",
         "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_aichat_attach_selection": {
+        "description": "Fired when the user attaches a text selection to Duck.ai via the 'Attach to Duck.ai' context-menu action",
+        "owners": ["tomasstrba"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
         "parameters": ["appVersion", "pixelSource"]
@@ -88,6 +103,84 @@
         "owners": ["pikorddg"],
         "triggers": ["other"],
         "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_suggestion_selected": {
+        "description": "Fired when the user taps a sidebar page-suggestion chip (including ask-about-page, which only attaches the page and does not submit a prompt)",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "suggestionId",
+                "description": "Catalog key of the selected suggestion (e.g. summarize-page, translate-page, ask-about-page). Bounded and PII-free.",
+                "type": "string"
+            },
+            {
+                "key": "pageType",
+                "description": "Coarse page-type bucket the frontend computes from page-type signals. Never a URL, domain or page content.",
+                "type": "string",
+                "enum": [
+                    "recipe",
+                    "product",
+                    "article",
+                    "video",
+                    "job",
+                    "book",
+                    "event",
+                    "place",
+                    "forum",
+                    "code",
+                    "course",
+                    "review",
+                    "person",
+                    "howto",
+                    "faq",
+                    "none"
+                ]
+            },
+            "channel"
+        ]
+    },
+    "m_mac_aichat_suggestions_viewed": {
+        "description": "Fired when the Duck.ai sidebar presents page-suggestion chips to the user",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "isSmart",
+                "description": "Whether the shown suggestions were smart (page-tailored) rather than generic.",
+                "type": "boolean"
+            },
+            {
+                "key": "pageType",
+                "description": "Coarse page-type bucket the frontend computes from page-type signals. Never a URL, domain or page content.",
+                "type": "string",
+                "enum": [
+                    "recipe",
+                    "product",
+                    "article",
+                    "video",
+                    "job",
+                    "book",
+                    "event",
+                    "place",
+                    "forum",
+                    "code",
+                    "course",
+                    "review",
+                    "person",
+                    "howto",
+                    "faq",
+                    "none"
+                ]
+            },
+            "channel"
+        ]
     },
     "m_mac_aichat_sidebar_resized": {
         "description": "Fired when user finishes dragging the sidebar resize grip (after 500 ms debounce)",
@@ -168,8 +261,22 @@
         "suffixes": ["daily_standard"],
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
+    "m_mac_aichat_new_chat_title_bar_menu": {
+        "description": "Fired when user picks New Chat from the tab-bar Ask Duck.ai menu (or middle-clicks the pill) to open a new chat tab",
+        "owners": ["jaceklyp"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
     "m_mac_aichat_tab_did_terminate": {
         "description": "Fired when a Duck.ai tab's WebKit web content process terminates",
+        "owners": ["aataraxiaa", "Bunn", "samsymons"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+    "m_mac_aichat_tab_termination_loop": {
+        "description": "Fired when a Duck.ai tab enters a WebKit content-process crash loop (repeated terminations within the crash-loop window). Daily counts users affected; count tracks how often Duck.ai pages break. underlyingErrorCode carries the WKProcessTerminationReason.",
         "owners": ["aataraxiaa", "Bunn", "samsymons"],
         "triggers": ["exception"],
         "suffixes": ["daily_count"],
@@ -225,5 +332,54 @@
             },
             "channel"
         ]
+    },
+    "m_mac_aichat_subscription-funnel_impression": {
+        "description": "Fired when a Duck.ai subscription-funnel entry point (e.g. free-plan badge, promo card, usage-limit message) is shown to the user in the web frontend. The website pixel is suppressed in-app, so the frontend reports the surface over the reportMetric bridge and the native layer fires this pixel with the funnel origin. See https://app.asana.com/1/137249556945/task/1216395339071571",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionFunnelOrigin"]
+    },
+    "m_mac_aichat_subscription-funnel_click": {
+        "description": "Fired when the user clicks the CTA on a Duck.ai subscription-funnel entry point (e.g. an upgrade/subscribe button) in the web frontend. The website pixel is suppressed in-app, so the frontend reports the surface over the reportMetric bridge and the native layer fires this pixel with the funnel origin. See https://app.asana.com/1/137249556945/task/1216395339071571",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionFunnelOrigin"]
+    },
+    "m_mac_aichat_subscription-funnel_subscribe-modal_impression": {
+        "description": "Fired when the Duck.ai subscribe modal is shown in the web frontend. The frontend reports the modal over the reportMetric bridge and the native layer fires this pixel with the funnel origin of the entry point the modal was opened from. See https://app.asana.com/1/137249556945/task/1216395339071571",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionFunnelOrigin"]
+    },
+    "m_mac_aichat_subscription-funnel_subscribe-modal_subscribe_click": {
+        "description": "Fired when the user clicks the subscribe CTA in the Duck.ai subscribe modal. The frontend reports the click over the reportMetric bridge and the native layer fires this pixel with the funnel origin of the entry point the modal was opened from. See https://app.asana.com/1/137249556945/task/1216395339071571",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionFunnelOrigin"]
+    },
+    "m_mac_aichat_subscription-funnel_subscribe-modal_activate_click": {
+        "description": "Fired when the user clicks the \"I have a subscription\" CTA in the Duck.ai subscribe modal. The frontend reports the click over the reportMetric bridge and the native layer fires this pixel with the funnel origin of the entry point the modal was opened from. See https://app.asana.com/1/137249556945/task/1216395339071571",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionFunnelOrigin"]
+    },
+    "m_mac_aichat_subscription-funnel_upgrade-to-pro-modal_impression": {
+        "description": "Fired when the Duck.ai upgrade-to-Pro modal is shown to an existing Plus subscriber in the web frontend. The frontend reports the modal over the reportMetric bridge and the native layer fires this pixel with the funnel origin of the entry point the modal was opened from. See https://app.asana.com/1/137249556945/task/1216395339071571",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionFunnelOrigin"]
+    },
+    "m_mac_aichat_subscription-funnel_upgrade-to-pro-modal_upgrade_click": {
+        "description": "Fired when the user clicks the upgrade CTA in the Duck.ai upgrade-to-Pro modal. The frontend reports the click over the reportMetric bridge and the native layer fires this pixel with the funnel origin of the entry point the modal was opened from. See https://app.asana.com/1/137249556945/task/1216395339071571",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionFunnelOrigin"]
     }
 }

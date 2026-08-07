@@ -29,6 +29,10 @@ let package = Package(
             name: "WebExtensions",
             targets: ["WebExtensions"]
         ),
+        .library(
+            name: "WebExtensionsTestSupport",
+            targets: ["WebExtensionsTestSupport"]
+        ),
     ],
     dependencies: [
         .package(path: "../BrowserServicesKit"),
@@ -51,10 +55,17 @@ let package = Package(
                 .copy("BundledWebExtensions")
             ]
         ),
+        .target(
+            name: "WebExtensionsTestSupport",
+            dependencies: [
+                "WebExtensions",
+            ]
+        ),
         .testTarget(
             name: "WebExtensionsTests",
             dependencies: [
                 "WebExtensions",
+                "WebExtensionsTestSupport",
                 .product(name: "Persistence", package: "BrowserServicesKit"),
                 .product(name: "PersistenceTestingUtils", package: "BrowserServicesKit"),
                 .product(name: "PrivacyConfigTestsUtils", package: "BrowserServicesKit")

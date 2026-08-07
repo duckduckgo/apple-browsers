@@ -22,7 +22,7 @@ import ConcurrencyExtensions
 import ContentScopeScripts
 import DataBrokerProtectionCore
 import enum UserScript.UserScriptError
-import FeatureFlags
+import FeatureFlags_macOS
 import Foundation
 import FoundationExtensions
 import os.log
@@ -196,7 +196,6 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                                      database: nil,
                                      emailServiceV0: emailService,
                                      emailServiceV1: emailServiceV1,
-                                     featureFlagger: featureFlagger,
                                      pixelHandler: pixelHandler,
                                      debugEventHandler: { [weak self] message in
                                         self?.addHistoryDebugEvent(summary: "Email confirmation", details: message)
@@ -213,7 +212,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     let contentScopeProperties: ContentScopeProperties
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
     let featureFlagger: DBPFeatureFlagging
-    let applicationNameForUserAgent: String?
+    let applicationNameForUserAgentProvider: () -> String?
 
     private var isSyncingAgeFields = false
 
@@ -233,10 +232,10 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
 
     init(authenticationManager: DataBrokerProtectionAuthenticationManaging,
          featureFlagger: DBPFeatureFlagging,
-         applicationNameForUserAgent: String?) {
+         applicationNameForUserAgentProvider: @escaping () -> String?) {
         let privacyConfigurationManager = DBPPrivacyConfigurationManager()
         self.featureFlagger = featureFlagger
-        self.applicationNameForUserAgent = applicationNameForUserAgent
+        self.applicationNameForUserAgentProvider = applicationNameForUserAgentProvider
         let features = ContentScopeFeatureToggles(emailProtection: false,
                                                   emailProtectionIncontextSignup: false,
                                                   credentialsAutofill: false,
@@ -332,13 +331,13 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                                 emailConfirmationDataService: self.emailConfirmationDataService,
                                 captchaService: self.captchaService,
                                 featureFlagger: self.featureFlagger,
-                                applicationNameForUserAgent: self.applicationNameForUserAgent,
+                                applicationNameForUserAgentProvider: self.applicationNameForUserAgentProvider,
                                 stageDurationCalculator: stageCalculator,
                                 pixelHandler: fakePixelHandler,
                                 executionConfig: .init(),
                                 shouldRunNextStep: { true }
                             )
-                            let extractedProfiles = try await runner.scan(query, showWebView: true) { true }
+                            let extractedProfiles = try await runner.scan(showWebView: true) { true }
                             let brokerId = DebugHelper.stableId(for: query.dataBroker)
                             let profileQueryId = DebugHelper.stableId(for: query.profileQuery)
                             let assignedProfiles: [ExtractedProfile] = extractedProfiles.map { profile in
@@ -429,7 +428,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                     emailConfirmationDataService: self.emailConfirmationDataService,
                     captchaService: self.captchaService,
                     featureFlagger: self.featureFlagger,
-                    applicationNameForUserAgent: self.applicationNameForUserAgent,
+                    applicationNameForUserAgentProvider: self.applicationNameForUserAgentProvider,
                     stageCalculator: stageCalculator,
                     pixelHandler: fakePixelHandler,
                     executionConfig: .init(),
@@ -437,12 +436,10 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                     shouldRunNextStep: { true }
                 )
 
-                try await runner.optOut(profileQuery: brokerProfileQueryData,
-                                        extractedProfile: scanResult.extractedProfile,
+                try await runner.optOut(extractedProfile: scanResult.extractedProfile,
                                         showWebView: true) { true }
 
-                if self.featureFlagger.isEmailConfirmationDecouplingFeatureOn,
-                   scanResult.dataBroker.requiresEmailConfirmationDuringOptOut() {
+                if scanResult.dataBroker.requiresEmailConfirmationDuringOptOut() {
                     addOptOutAwaitingEmailConfirmationEvent(for: scanResult)
                     Task { @MainActor in
                         self.isProgressActive = false
@@ -580,7 +577,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     }
 
     var applicationNameForUserAgentDisplayValue: String {
-        applicationNameForUserAgent ?? "nil"
+        applicationNameForUserAgentProvider() ?? "nil"
     }
 
     func addDebugEvent(kind: DebugEventKind, summary: String, profileQueryLabel: String, details: String, progressText: String) {

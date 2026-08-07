@@ -60,6 +60,21 @@ class QuickLookPreviewHelper: NSObject, FilePreview {
         let previewItem = url as NSURL
         return QLPreviewController.canPreview(previewItem)
     }
+
+    static func presentAsFallback(_ filePath: URL,
+                                  from viewController: UIViewController,
+                                  completion: @escaping () -> Void) {
+        let presentQuickLook = {
+            let iPadFormSheet: UIModalPresentationStyle? = UIDevice.current.userInterfaceIdiom == .pad ? .formSheet : nil
+            QuickLookPreviewHelper(filePath, viewController: viewController)
+                .preview(modalPresentationStyle: iPadFormSheet, completion: completion)
+        }
+        if let presented = viewController.presentedViewController {
+            presented.dismiss(animated: false, completion: presentQuickLook)
+        } else {
+            presentQuickLook()
+        }
+    }
 }
 
 extension QuickLookPreviewHelper: QLPreviewControllerDataSource {

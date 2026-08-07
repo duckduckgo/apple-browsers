@@ -242,7 +242,6 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
 
         try await sut.executeOptOut(
             on: runner,
-            brokerProfileQueryData: makeFixtureBrokerProfileQueryData(),
             extractedProfile: .mockWithoutRemovedDate,
             showWebView: true,
             shouldRunNextStep: { true }
@@ -258,7 +257,6 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
         do {
             try await sut.executeOptOut(
                 on: runner,
-                brokerProfileQueryData: makeFixtureBrokerProfileQueryData(),
                 extractedProfile: .mockWithoutRemovedDate,
                 showWebView: true,
                 shouldRunNextStep: { true }
@@ -658,7 +656,13 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
         let mockBrokerProfileQuery = BrokerProfileQueryData(dataBroker: mockDataBroker, profileQuery: mockProfileQuery, scanJobData: mockScanOperation, optOutJobData: [mockOptOutOperation])
         mockDatabase.brokerProfileQueryDataToReturn = [mockBrokerProfileQuery]
 
-        try sut.updateOperationDataDates(origin: .optOut, brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId, schedulingConfig: config, database: mockDatabase)
+        try sut.updateOperationDataDates(origin: .optOut,
+                                         brokerId: brokerId,
+                                         profileQueryId: profileQueryId,
+                                         extractedProfileId: extractedProfileId,
+                                         schedulingConfig: config,
+                                         database: mockDatabase,
+                                         featureFlagger: DisabledOptOutRetryErrorFeatureFlagger())
 
         // If the date is not going to be set, we don't call the database function
         XCTAssertFalse(mockDatabase.wasUpdatedPreferredRunDateForScanCalled)

@@ -1,22 +1,6 @@
 // Update Flow pixels
 // See https://app.asana.com/0/72649045549333/1208001118995887/f
 {
-    "m_mac_app_store_check_for_update": {
-        "description": "Pixel",
-        "owners": ["jotaemepereira"],
-        "triggers": ["other"],
-        "parameters": [
-            {
-                "key": "source",
-                "type": "string",
-                "description": "The source where the action happens",
-                "enum": ["about", "more_options", "main_menu"]
-            },
-            "appVersion",
-            "pixelSource",
-            "channel"
-        ]
-    },
     "m_mac_update_notification_shown": {
         "description": "Fired when the update notification popover appears after an update is detected",
         "owners": ["jotaemepereira"],
@@ -33,6 +17,13 @@
         "description": "Fired when user taps the \"Update DuckDuckGo\" button in the About preferences",
         "owners": ["jotaemepereira"],
         "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_check_for_updates_from_main_menu": {
+        "description": "Fired when the user clicks the \"Check for Updates…\" item in the menu bar, on all build types. pixelSource distinguishes App Store (browser-appstore) from Sparkle/DMG (browser-dmg) builds.",
+        "owners": ["diegoreymendez", "jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_release_metadata_fetch_failed": {

@@ -74,7 +74,7 @@ struct OmniBarNotification: View {
                 .padding(.bottom, 7)
                 .padding(.trailing, 9)
         } else {
-            Image(rebrandable: "ShieldColor")
+            Image(uiImage: DesignSystemImages.Color.Size24.shield)
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(width: Constants.Size.staticIcon.width, height: Constants.Size.staticIcon.height)

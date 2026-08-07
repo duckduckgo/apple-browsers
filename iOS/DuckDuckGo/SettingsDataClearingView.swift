@@ -111,7 +111,7 @@ struct SettingsDataClearingView: View {
                 Image(uiImage: DesignSystemImages.Glyphs.Size24.fireSolid)
                     .tintIfAvailable(Color(designSystemColor: .icons))
                 Text(viewModel.clearDataButtonTitle)
-                    .foregroundStyle(Color(designSystemColor: .accent))
+                    .foregroundStyle(Color(designSystemColor: .accentPrimary))
                 Spacer()
             }
         )

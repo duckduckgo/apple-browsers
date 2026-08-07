@@ -62,7 +62,7 @@ final class JobQueueManagerTests: XCTestCase {
                                                         emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
                                                         captchaService: CaptchaServiceMock(),
                                                         featureFlagger: MockDBPFeatureFlagger(),
-                                                        applicationNameForUserAgent: nil)
+                                                        applicationNameForUserAgentProvider: { nil })
     }
 
     func testWhenStartImmediateScanOperations_thenCreatorIsCalledWithManualScanOperationType() async throws {
@@ -567,6 +567,39 @@ final class JobQueueManagerTests: XCTestCase {
         XCTAssertEqual(receivedIdentifier.profileQueryId, 59)
         XCTAssertNil(receivedIdentifier.extractedProfileId)
         XCTAssertEqual(receivedIdentifier.stepType, .scan)
+    }
+
+    func testMultipleErrorOperationsConcurrently() async throws {
+        // Given
+        sut = JobQueueManager(jobQueue: mockQueue,
+                              jobProvider: mockOperationsCreator,
+                              emailConfirmationJobProvider: mockEmailConfirmationJobProvider,
+                              mismatchCalculator: mockMismatchCalculator,
+                              pixelHandler: mockPixelHandler)
+        let errorCount = 50
+        let expectation = expectation(description: "Expected completion to be called")
+        var errorCollection: DataBrokerProtectionJobsErrorCollection!
+
+        sut.startImmediateScanOperationsIfPermitted(showWebView: false, isAuthenticatedUser: true, jobDependencies: mockDependencies) { errors in
+            errorCollection = errors
+        } completion: {
+            expectation.fulfill()
+        }
+
+        // When
+        DispatchQueue.concurrentPerform(iterations: errorCount) { _ in
+            sut.dataBrokerOperationDidError(DataBrokerProtectionError.actionFailed(actionID: "action", message: "failed"),
+                                            withBrokerURL: nil,
+                                            version: nil,
+                                            identifier: nil,
+                                            dataBrokerParent: nil,
+                                            isFreeScan: nil)
+        }
+        mockQueue.completeAllOperations()
+
+        // Then
+        await fulfillment(of: [expectation], timeout: 5)
+        XCTAssertEqual(errorCollection.operationErrors?.count, errorCount)
     }
 
     func testWhenStartImmediateOptOut_andCurrentModeIsScheduled_thenCurrentOperationsAreInterrupted() {

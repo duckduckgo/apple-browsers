@@ -203,8 +203,8 @@ final class CriticalPathsTests: XCTestCase {
         settingsSheetsQuery.buttons["Enter Code"].click()
         settingsSheetsQuery.buttons["Paste"].click()
         let alertSheet = sheetsQuery.sheets["alert"]
-        alertSheet.staticTexts["Sync & Backup Error"].click()
-        XCTAssertTrue(alertSheet.exists, "Sync Error text is not visible")
+        alertSheet.staticTexts["Sync failed."].assertExists()
+        alertSheet.buttons["Got It"].assertExists().click()
 
     }
 

@@ -48,10 +48,32 @@ jobs:
             github-reviewer-user: ${{ github.event.review.user.login }}
             github-token: ${{ secrets.APPLE_GH_RO_PAT }}
 
-        - name: Fail if reviewer's Asana mapping is missing
+        - name: Create PR review subtask if missing
           if: ${{ steps.find-subtask.outputs.subtask-ids == '[]' }}
+          uses: duckduckgo/apple-toolbox/actions/asana-create-pr-subtask@main
+          with:
+            access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
+            asana-task-id: ${{ steps.get-task-id.outputs.task-id }}
+            github-reviewer-user: ${{ github.event.review.user.login }}
+            github-pr-author-user: ${{ github.event.pull_request.user.login }}
+            github-pr-author-type: ${{ github.event.pull_request.user.type }}
+            github-token: ${{ secrets.APPLE_GH_RO_PAT }}
+            asana-project-id: ${{ vars.APPLE_TEAM_CODE_REVIEWS_ASANA_PROJECT_ID }}
+            asana-section-id: ${{ vars.APPLE_TEAM_CODE_REVIEWS_SECTION_ID }}
+
+        - name: Resolve PR review subtask for the reviewer
+          id: resolve-subtask
+          uses: duckduckgo/apple-toolbox/actions/asana-fetch-pr-subtasks@main
+          with:
+            access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
+            asana-task-id: ${{ steps.get-task-id.outputs.task-id }}
+            github-reviewer-user: ${{ github.event.review.user.login }}
+            github-token: ${{ secrets.APPLE_GH_RO_PAT }}
+
+        - name: Fail if PR review subtask could not be resolved
+          if: ${{ steps.resolve-subtask.outputs.subtask-ids == '[]' }}
           run: |
-            echo "::error::No PR review subtask found for @${{ github.event.review.user.login }}. They may not be in the GitHub→Asana mapping. Add them in duckduckgo/native-github-asana-sync and re-run."
+            echo "::error::No PR review subtask could be found or created for @${{ github.event.review.user.login }}. Check their GitHub→Asana mapping and the parent Asana task, then re-run."
             exit 1
 
         - name: Build comment text
@@ -69,30 +91,30 @@ jobs:
             echo "text=${prefix} by @${REVIEWER} — see review: ${REVIEW_URL}" >> "$GITHUB_OUTPUT"
 
         - name: Post review comment
-          uses: duckduckgo/native-github-asana-sync@v2.4
+          uses: duckduckgo/native-github-asana-sync@v2.5.1
           with:
             action: 'post-comment-asana-task'
             asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}
-            asana-task-id: ${{ fromJSON(steps.find-subtask.outputs.subtask-ids)[0] }}
+            asana-task-id: ${{ fromJSON(steps.resolve-subtask.outputs.subtask-ids)[0] }}
             asana-task-comment: ${{ steps.comment.outputs.text }}
             asana-task-comment-pinned: false
 
         - name: Mark subtask complete on approve
           if: ${{ github.event.review.state == 'approved' }}
-          uses: duckduckgo/native-github-asana-sync@v2.4
+          uses: duckduckgo/native-github-asana-sync@v2.5.1
           with:
             action: 'mark-asana-task-complete'
             asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}
-            asana-task-id: ${{ fromJSON(steps.find-subtask.outputs.subtask-ids)[0] }}
+            asana-task-id: ${{ fromJSON(steps.resolve-subtask.outputs.subtask-ids)[0] }}
             is-complete: true
 
         # If a reviewer returns to a previously approved PR (subtask already
         # completed) and submits a non-approve review, reopen the subtask.
         - name: Mark subtask incomplete on non-approve review
           if: ${{ github.event.review.state != 'approved' }}
-          uses: duckduckgo/native-github-asana-sync@v2.4
+          uses: duckduckgo/native-github-asana-sync@v2.5.1
           with:
             action: 'mark-asana-task-complete'
             asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}
-            asana-task-id: ${{ fromJSON(steps.find-subtask.outputs.subtask-ids)[0] }}
+            asana-task-id: ${{ fromJSON(steps.resolve-subtask.outputs.subtask-ids)[0] }}
             is-complete: false

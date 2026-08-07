@@ -57,6 +57,7 @@ final class AIChatUserScript: NSObject, Subfeature {
         case syncStatusChanged(AIChatSyncHandler.SyncStatus)
         case customizeResponsesAction
         case changeModelAction(modelId: String)
+        case openChatProtectionAction
 
         struct ChangeModelActionParams: Encodable {
             let modelId: String
@@ -82,6 +83,8 @@ final class AIChatUserScript: NSObject, Subfeature {
                 return "submitCustomizeResponsesAction"
             case .changeModelAction:
                 return "submitChangeModelAction"
+            case .openChatProtectionAction:
+                return "submitOpenChatProtectionAction"
             }
         }
 
@@ -180,6 +183,7 @@ final class AIChatUserScript: NSObject, Subfeature {
             Logger.aiChat.debug("AIChatUserScript: unhandled message: \(methodName)")
             return nil
         }
+        Logger.aiChat.debug("AIChatUserScript: handled message: \(methodName)")
 
         delegate?.aiChatUserScript(self, didReceiveMessage: message)
 
@@ -250,6 +254,8 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.disableChatInput
         case .enableChatInput:
             return handler.enableChatInput
+        case .focusChatInput:
+            return handler.focusChatInput
         default:
             return nil
         }
@@ -267,8 +273,12 @@ final class AIChatUserScript: NSObject, Subfeature {
         handler.displayMode = displayMode
     }
 
-    func setPageContextProvider(_ provider: ((PageContextRequestReason) -> AIChatPageContextData?)?) {
+    func setPageContextProvider(_ provider: PageContextAsyncProvider?) {
         self.handler.setPageContextProvider(provider)
+    }
+
+    func setChatStatusHandler(_ handler: (@MainActor (AIChatStatusValue) -> Void)?) {
+        self.handler.setChatStatusHandler(handler)
     }
 
     func setContextualModePixelHandler(_ pixelHandler: AIChatContextualModePixelFiring) {
@@ -277,6 +287,10 @@ final class AIChatUserScript: NSObject, Subfeature {
 
     func setFireModeProvider(_ provider: (() -> Bool)?) {
         handler.isFireModeProvider = provider
+    }
+
+    func setFocusChatInputHandler(_ handler: (@MainActor () -> Void)?) {
+        self.handler.focusChatInputHandler = handler
     }
 
     // MARK: - Input Box Event Subscription
@@ -325,7 +339,13 @@ final class AIChatUserScript: NSObject, Subfeature {
         submitPrompt(prompt, images: images, files: files, modelId: modelId, tools: nil, reasoningEffort: reasoningEffort)
     }
 
-    func submitPrompt(_ prompt: String, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]? = nil, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort? = nil) {
+    func submitPrompt(_ prompt: String,
+                      images: [AIChatNativePrompt.NativePromptImage]?,
+                      files: [AIChatNativePrompt.NativePromptFile]? = nil,
+                      modelId: String?,
+                      tools: [AIChatRAGTool]?,
+                      pageContext: AIChatPageContextData? = nil,
+                      reasoningEffort: AIChatReasoningEffort? = nil) {
         // `attachedPageContextProvider` returns the single current-page form on iOS; wrap it
         // in the `.single` variant of the union the schema now accepts.
         let promptPayload = AIChatNativePrompt.queryPrompt(
@@ -335,7 +355,7 @@ final class AIChatUserScript: NSObject, Subfeature {
             images: images,
             files: files,
             modelId: modelId,
-            pageContext: attachedPageContextProvider?().map(AIChatPageContextPayload.single),
+            pageContext: (pageContext ?? attachedPageContextProvider?()).map(AIChatPageContextPayload.single),
             reasoningEffort: reasoningEffort
         )
         push(.submitPrompt(promptPayload))
@@ -365,6 +385,10 @@ final class AIChatUserScript: NSObject, Subfeature {
 
     func submitToggleSidebarAction() {
         push(.toggleSidebarAction)
+    }
+
+    func submitOpenChatProtectionAction() {
+        push(.openChatProtectionAction)
     }
 
     /// Pushes sync status change to the web content when sync state changes (login/logout, availability).

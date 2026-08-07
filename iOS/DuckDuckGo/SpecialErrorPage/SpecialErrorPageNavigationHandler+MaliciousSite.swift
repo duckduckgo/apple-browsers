@@ -154,7 +154,14 @@ extension MaliciousSiteProtectionNavigationHandler: SpecialErrorPageActionHandle
         Pixel.fire(MaliciousSiteProtection.Event.visitSite(category: threatKind))
     }
 
-    func leaveSite() { }
+    func leaveSite(errorData: SpecialErrorData) {
+        guard let threatKind = errorData.threatKind else {
+            assertionFailure("Error Data should have a threat kind")
+            return
+        }
+
+        Pixel.fire(MaliciousSiteProtection.Event.leaveSite(category: threatKind))
+    }
 
     func advancedInfoPresented() { }
 

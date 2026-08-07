@@ -19,6 +19,15 @@
 import Foundation
 
 struct LoginResult: Sendable {
-   let account: SyncAccount
-   let devices: [RegisteredDevice]
+    let account: SyncAccount
+    let devices: [RegisteredDevice]
+    let keys: [ProtectedKey]?
+    let accessCredentials: [AccessCredential]?
+
+    init(account: SyncAccount, devices: [RegisteredDevice], keys: [ProtectedKey]? = nil, accessCredentials: [AccessCredential]? = nil) {
+        self.account = account
+        self.devices = devices
+        self.keys = keys
+        self.accessCredentials = accessCredentials
+    }
 }

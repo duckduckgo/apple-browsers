@@ -55,7 +55,6 @@ final class PixelRetryQueueTests: XCTestCase {
     // MARK: - Persist on failure
 
     func testWhenOrganicFireSucceeds_ThenNothingIsStored_AndCompletionIsForwarded() {
-        fireMock.organicResult = (true, nil)
         let queue = makeQueue()
         let completed = expectation(description: "onComplete")
 
@@ -71,7 +70,7 @@ final class PixelRetryQueueTests: XCTestCase {
 
     func testWhenOrganicFireFails_ThenItemIsStoredWithTimestamp_AndCompletionIsForwarded() {
         let error = NSError(domain: "test", code: 7)
-        fireMock.organicResult = (false, error)
+        fireMock.defaultResult = (false, error)
         let queue = makeQueue()
         let completed = expectation(description: "onComplete")
 
@@ -88,7 +87,6 @@ final class PixelRetryQueueTests: XCTestCase {
         XCTAssertEqual(stored.pixelName, "m_organic")
         XCTAssertEqual(stored.headers, ["H": "V"])
         XCTAssertEqual(stored.parameters["k"], "v")
-        XCTAssertNotNil(stored.parameters["originalPixelTimestamp"])
         XCTAssertEqual(stored.timestamp, now)
     }
 
@@ -110,20 +108,25 @@ final class PixelRetryQueueTests: XCTestCase {
         XCTAssertTrue(store.items.isEmpty)
         XCTAssertEqual(fireMock.calls.count, 1)
         XCTAssertEqual(fireMock.calls.first?.pixelName, "m_queued")
+        // The replay carries the item's stored parameters unchanged — nothing is injected on send.
+        XCTAssertEqual(fireMock.calls.first?.parameters, item.parameters)
     }
 
-    func testWhenReplayingItem_ThenRetriedPixelParameterIsAdded() {
-        let item = makeItem(name: "m_queued")
-        try? store.append([item])
+    func testWhenReplayingItemWithLegacyTimestampParameter_ThenItIsStrippedBeforeSending() {
+        // Items persisted by builds that still baked in `originalPixelTimestamp` must not replay with it.
+        let legacy = PixelRetryQueueItem(pixelName: "m_queued",
+                                         headers: [:],
+                                         parameters: ["key": "value", "originalPixelTimestamp": "2026-06-11T00:00:00Z"],
+                                         allowedQueryReservedCharacters: nil,
+                                         timestamp: now)
+        try? store.append([legacy])
         let queue = makeQueue()
         let drained = expectation(description: "drained")
 
         queue.sendQueuedPixels { _ in drained.fulfill() }
         wait(for: [drained], timeout: 2.0)
 
-        let call = fireMock.calls.first
-        XCTAssertEqual(call?.parameters["retriedPixel"], "1")
-        XCTAssertEqual(call?.parameters["key"], "value")
+        XCTAssertEqual(fireMock.calls.first?.parameters, ["key": "value"])
     }
 
     func testWhenItemIsOlderThan28Days_ThenItIsNotSentButIsRemoved() {
@@ -196,33 +199,34 @@ final class PixelRetryQueueTests: XCTestCase {
         try? store.append([item])
         let queue = makeQueue()
 
-        let retryReceived = expectation(description: "retry received")
+        // The queued pixel is only ever fired via replay, so receiving it confirms the drain ran.
+        let queuedReplayed = expectation(description: "queued item replayed")
         fireMock.onFireReceived = { call in
-            if call.isRetry { retryReceived.fulfill() }
+            if call.pixelName == "m_queued" { queuedReplayed.fulfill() }
         }
 
         // An organic success should trigger a drain that replays the queued item.
         queue.fireRequest("m_organic", [:], [:], nil, true) { _, _ in }
 
-        wait(for: [retryReceived], timeout: 2.0)
-        XCTAssertTrue(fireMock.calls.contains { $0.isRetry && $0.pixelName == "m_queued" })
+        wait(for: [queuedReplayed], timeout: 2.0)
+        XCTAssertTrue(fireMock.calls.contains { $0.pixelName == "m_queued" })
     }
 
     func testWhenNewFireFailsWhileDraining_ThenNewItemIsAlsoStored() {
         let initialItem = makeItem(name: "m_initial")
         try? store.append([initialItem])
 
-        fireMock.deferRetries = true            // hold the in-flight retry open
-        fireMock.organicResult = (false, NSError(domain: "test", code: 1))  // the new organic fire fails
+        fireMock.deferredPixelNames = ["m_initial"]   // hold the in-flight replay open
+        fireMock.defaultResult = (false, NSError(domain: "test", code: 1))  // the new organic fire fails
         let queue = makeQueue()
 
-        // Start the drain; wait until the retry call is received (and held).
-        let retryReceived = expectation(description: "retry received")
+        // Start the drain; wait until the replay of the queued item is received (and held).
+        let replayReceived = expectation(description: "replay received")
         fireMock.onFireReceived = { call in
-            if call.isRetry { retryReceived.fulfill() }
+            if call.pixelName == "m_initial" { replayReceived.fulfill() }
         }
         queue.sendQueuedPixels()
-        wait(for: [retryReceived], timeout: 2.0)
+        wait(for: [replayReceived], timeout: 2.0)
 
         // Fire a failing organic pixel while the drain is in flight.
         let organicCompleted = expectation(description: "organic completed")
@@ -233,14 +237,14 @@ final class PixelRetryQueueTests: XCTestCase {
         XCTAssertEqual(store.items.count, 2)
         XCTAssertTrue(store.items.contains(initialItem))
 
-        // Release the held retry so the drain completes.
-        fireMock.completePendingRetries(success: true)
+        // Release the held replay so the drain completes.
+        fireMock.completePendingFires(success: true)
     }
 
     func testWhenRetryFails_ThenItemRemainsQueued() {
         let item = makeItem(name: "m_queued")
         try? store.append([item])
-        fireMock.retryResult = (false, NSError(domain: "test", code: 2))
+        fireMock.defaultResult = (false, NSError(domain: "test", code: 2))
         let queue = makeQueue()
         let drained = expectation(description: "drained")
 
@@ -253,7 +257,7 @@ final class PixelRetryQueueTests: XCTestCase {
     func testWhenAFailedPixelIsEnqueued_ThenExpiredItemsArePruned() {
         let expired = makeItem(name: "m_stale", ageInDays: 30)
         try? store.append([expired])
-        fireMock.organicResult = (false, NSError(domain: "test", code: 1))
+        fireMock.defaultResult = (false, NSError(domain: "test", code: 1))
         let queue = makeQueue()
         let completed = expectation(description: "onComplete")
 
@@ -268,7 +272,7 @@ final class PixelRetryQueueTests: XCTestCase {
 
     func testWhenExpiredPruningFails_ThenTheFailedPixelIsStillQueued() {
         store.storedItemsError = NSError(domain: "test", code: 9)   // the prune's read throws
-        fireMock.organicResult = (false, NSError(domain: "test", code: 1))
+        fireMock.defaultResult = (false, NSError(domain: "test", code: 1))
         let queue = makeQueue()
         let completed = expectation(description: "onComplete")
 

@@ -65,6 +65,7 @@ let package = Package(
                 .product(name: "PrivacyConfig", package: "BrowserServicesKit"),
                 .product(name: "UserScript", package: "BrowserServicesKit"),
                 .product(name: "DuckAiDataStore", package: "BrowserServicesKit"),
+                .product(name: "WKAbstractions", package: "BrowserServicesKit"),
                 .product(name: "DDGSyncCrypto", package: "sync_crypto")
             ],
             resources: [
@@ -89,9 +90,11 @@ let package = Package(
             name: "AIChatTests",
             dependencies: [
                 "AIChat",
+                "AIChatTestingUtilities",
                 .product(name: "BrowserServicesKitTestsUtils", package: "BrowserServicesKit"),
                 .product(name: "PersistenceTestingUtils", package: "BrowserServicesKit"),
-                .product(name: "PrivacyConfigTestsUtils", package: "BrowserServicesKit")
+                .product(name: "PrivacyConfigTestsUtils", package: "BrowserServicesKit"),
+                .product(name: "WKAbstractions", package: "BrowserServicesKit")
             ]
         )
     ]

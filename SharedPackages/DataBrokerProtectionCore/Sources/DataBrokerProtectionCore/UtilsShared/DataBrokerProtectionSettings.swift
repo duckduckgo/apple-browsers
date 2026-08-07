@@ -70,7 +70,7 @@ public final class DataBrokerProtectionSettings {
         }
     }
 
-    private(set) var lastBrokerJSONUpdateCheckTimestamp: TimeInterval {
+    public private(set) var lastBrokerJSONUpdateCheckTimestamp: TimeInterval {
         get {
             defaults.double(forKey: Keys.lastBrokerJSONUpdateCheckTimestampKey)
         }

@@ -21,11 +21,16 @@ import Combine
 import PreferencesUI_macOS
 import SwiftUI
 import SwiftUIExtensions
+import WebExtensions
 
 extension Preferences {
 
     struct CookiePopupProtectionView: View {
         @ObservedObject var model: CookiePopupProtectionPreferences
+
+        private var isAutoManageEnabled: Bool {
+            model.cookiePopupPreference.isAutoManageCookiePopupsEnabled
+        }
 
         var body: some View {
             PreferencePane(UserText.cookiePopUpProtection, spacing: 4) {
@@ -45,9 +50,27 @@ extension Preferences {
                     }
                 }
 
-                // SECTION 3: Search Settings
+                // SECTION 3: Cookie Pop-up Settings
                 PreferencePaneSection {
-                    ToggleMenuItem(UserText.autoconsentCheckboxTitle, isOn: $model.isAutoconsentEnabled)
+                    SpacedCheckbox {
+                        ToggleMenuItemWithDescription(
+                            UserText.autoManageCookiePopupsTitle,
+                            UserText.autoManageCookiePopupsExplanation,
+                            isOn: model.autoManageCookiePopupsEnabledBinding,
+                            spacing: 12
+                        )
+                    }
+
+                    if isAutoManageEnabled {
+                        SpacedCheckbox {
+                            ToggleMenuItemWithDescription(
+                                UserText.popUpsWithoutOptOutsTitle,
+                                UserText.popUpsWithoutOptOutsExplanation,
+                                isOn: model.popUpsWithoutOptOutsEnabledBinding,
+                                spacing: 12
+                            )
+                        }
+                    }
                 }
             }
         }

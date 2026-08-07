@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import AIChat
+import AppUpdaterShared
 import BrowserServicesKit
 import Combine
 import Common
@@ -327,6 +329,8 @@ final class FireTests: XCTestCase {
                                                                     tabsPreferences: NSApp.delegateTyped.tabsPreferences,
                                                                     keyValueStore: NSApp.delegateTyped.keyValueStore,
                                                                     sessionRestorePromptCoordinator: NSApp.delegateTyped.sessionRestorePromptCoordinator,
+                                                                    applicationUpdateDetecting: NSApp.delegateTyped.applicationUpdateDetector,
+                                                                    restartSourceResolver: NSApp.delegateTyped.uncleanExitRestartSourceResolver,
                                                                     pixelFiring: nil)
         appStateRestorationManager.applicationDidFinishLaunching()
 
@@ -359,6 +363,8 @@ final class FireTests: XCTestCase {
                                                                     tabsPreferences: NSApp.delegateTyped.tabsPreferences,
                                                                     keyValueStore: NSApp.delegateTyped.keyValueStore,
                                                                     sessionRestorePromptCoordinator: NSApp.delegateTyped.sessionRestorePromptCoordinator,
+                                                                    applicationUpdateDetecting: NSApp.delegateTyped.applicationUpdateDetector,
+                                                                    restartSourceResolver: NSApp.delegateTyped.uncleanExitRestartSourceResolver,
                                                                     pixelFiring: nil)
         appStateRestorationManager.applicationDidFinishLaunching()
 
@@ -861,5 +867,9 @@ private class WKVisitedLinkStoreMock: NSObject {
 
 }
 
-extension FileStoreMock: FileStore {}
-extension MockAIChatHistoryCleaner: AIChatHistoryCleaning {}
+extension FileStoreMock: @retroactive FileStore {}
+extension MockAIChatHistoryCleaner: @retroactive AIChatHistoryCleaning {
+    public func allChats() -> [DuckAiChat] {
+        allChatsStub.map { DuckAiChat(chatId: $0.chatId, title: $0.title, model: "", lastEdit: "", pinned: false) }
+    }
+}

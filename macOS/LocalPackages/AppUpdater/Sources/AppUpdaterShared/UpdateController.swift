@@ -20,7 +20,7 @@ import BrowserServicesKit
 import Combine
 import Common
 import FoundationExtensions
-import FeatureFlags
+import FeatureFlags_macOS
 import Foundation
 import Navigation
 import Persistence
@@ -43,6 +43,7 @@ public protocol SparkleUpdateControllerFactory {
                             pixelFiring: PixelFiring?,
                             notificationPresenter: any UpdateNotificationPresenting,
                             keyValueStore: any ThrowingKeyValueStoring,
+                            applicationUpdateDetector: ApplicationUpdateDetector,
                             allowCustomUpdateFeed: Bool,
                             isAutoUpdatePaused: @escaping () -> Bool,
                             wideEvent: WideEventManaging,
@@ -220,6 +221,9 @@ public protocol SparkleUpdateControlling: UpdateController, SparkleUpdateControl
     ///
     /// **Usage**: Drives UI state to show "Restart to Update" button in Settings.
     var isAtRestartCheckpoint: Bool { get }
+
+    /// Whether the release notes page should automatically trigger an update check on load.
+    var shouldAutoCheckOnReleaseNotesLoad: Bool { get }
 
     /// Publisher that emits when the app is about to relaunch for an update.
     ///

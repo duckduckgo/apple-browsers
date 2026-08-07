@@ -51,36 +51,25 @@ final class AutofillExtensionSettingsViewModel: ObservableObject {
 
     private let coordinator: AutofillExtensionEnableCoordinator
     private let source: String
-    private let experimentPixels: AutofillOnboardingExperimentPixelFiring
     weak var delegate: (any AutofillExtensionSettingsViewModelDelegate)?
 
     @Published var isExtensionEnabled: Bool = false
     @Published var isShowingActivationView: Bool = false
-    /// Temporary flag used to ensure we don't fire pixel on initial state discovery
-    private var hasCompletedInitialLoad: Bool = false
 
     var isEnableRequestThrottled: Bool {
         coordinator.isEnableRequestThrottled
     }
 
     init(source: String,
-         coordinator: AutofillExtensionEnableCoordinator? = nil,
-         experimentPixels: AutofillOnboardingExperimentPixelFiring = AutofillOnboardingExperimentPixelReporter()) {
+         coordinator: AutofillExtensionEnableCoordinator? = nil) {
         self.source = source
         self.coordinator = coordinator ?? AutofillExtensionEnableCoordinator(source: source)
-        self.experimentPixels = experimentPixels
         self.coordinator.delegate = self
         Task { await updateExtensionStatus() }
     }
 
     func updateExtensionStatus() async {
-        let wasEnabled = isExtensionEnabled
         isExtensionEnabled = await coordinator.updateExtensionStatus()
-
-        if hasCompletedInitialLoad && wasEnabled != isExtensionEnabled {
-            experimentPixels.fireAutofillInOtherAppsEnabled(isExtensionEnabled)
-        }
-        hasCompletedInitialLoad = true
     }
 
     func enableExtension() async {
@@ -90,7 +79,6 @@ final class AutofillExtensionSettingsViewModel: ObservableObject {
         case .success:
             isExtensionEnabled = true
             isShowingActivationView = true
-            experimentPixels.fireAutofillInOtherAppsEnabled(true)
         case .throttled, .cancelled, .failed:
             isExtensionEnabled = false
             isShowingActivationView = false

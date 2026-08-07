@@ -17,7 +17,9 @@
 //  limitations under the License.
 //
 
+import FeatureFlags_iOS
 import Foundation
+import PersistenceTestingUtils
 import UIKit
 import XCTest
 @testable import Core
@@ -269,6 +271,7 @@ class LargeOmniBarStateTests: XCTestCase {
         XCTAssertTrue(testee.showVoiceSearch)
         XCTAssertFalse(testee.showAbort)
         XCTAssertFalse(testee.showRefresh)
+        XCTAssertFalse(testee.showCustomizableButton)
 
         XCTAssertTrue(testee.hasLargeWidth)
         XCTAssertTrue(testee.showBackButton)
@@ -289,6 +292,7 @@ class LargeOmniBarStateTests: XCTestCase {
         XCTAssertFalse(testee.showVoiceSearch)
         XCTAssertFalse(testee.showAbort)
         XCTAssertFalse(testee.showRefresh)
+        XCTAssertFalse(testee.showCustomizableButton)
 
         XCTAssertTrue(testee.hasLargeWidth)
         XCTAssertTrue(testee.showBackButton)
@@ -300,6 +304,33 @@ class LargeOmniBarStateTests: XCTestCase {
     func testWhenEnteringHomeNonEditingStateThenTextIsCleared() {
         let testee = LargeOmniBarState.HomeNonEditingState(dependencies: MockOmnibarDependency(voiceSearchHelper: enabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger), isLoading: false)
         XCTAssertTrue(testee.clearTextOnStart)
+    }
+
+    func testWhenCustomizeNTPIconsIsEnabledAndButtonDoesNotRequireWebPageThenHomeNonEditingStateShowsCustomizableButton() {
+        mockFeatureFlagger.enabledFeatureFlags = [.customizeNTPIcons]
+        let mobileCustomization = MobileCustomization(keyValueStore: MockThrowingKeyValueStore(), isPad: false)
+        var customizationState = mobileCustomization.state
+        customizationState.currentAddressBarButton = .home
+        mobileCustomization.persist(customizationState)
+        let testee = LargeOmniBarState.HomeNonEditingState(
+            dependencies: MockOmnibarDependency(voiceSearchHelper: enabledVoiceSearchHelper,
+                                                featureFlagger: mockFeatureFlagger,
+                                                mobileCustomization: mobileCustomization),
+            isLoading: false)
+
+        XCTAssertTrue(testee.showCustomizableButton)
+    }
+
+    func testWhenCustomizeNTPIconsIsEnabledAndButtonRequiresWebPageThenHomeNonEditingStateHidesCustomizableButton() {
+        mockFeatureFlagger.enabledFeatureFlags = [.customizeNTPIcons]
+        let mobileCustomization = MobileCustomization(keyValueStore: MockThrowingKeyValueStore(), isPad: false)
+        let testee = LargeOmniBarState.HomeNonEditingState(
+            dependencies: MockOmnibarDependency(voiceSearchHelper: enabledVoiceSearchHelper,
+                                                featureFlagger: mockFeatureFlagger,
+                                                mobileCustomization: mobileCustomization),
+            isLoading: false)
+
+        XCTAssertFalse(testee.showCustomizableButton)
     }
 
     func testWhenInHomeNonEditingStateThenEditingStartedTransitionsToEmptyEditingState() {
@@ -567,12 +598,11 @@ class LargeOmniBarStateTests: XCTestCase {
         XCTAssertEqual(testee.onBrowsingStoppedState.name, LargeOmniBarState.HomeNonEditingState(dependencies: MockOmnibarDependency(voiceSearchHelper: enabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger), isLoading: false).name)
     }
 
-    func testWhenIPadAIToggleEnabledThenAIChatButtonAndModeToggleAreShown() {
+    func testWhenIPadThenAIChatButtonAndModeToggleAreShown() {
         UIDevice.swizzleCurrent()
         defer { UIDevice.unswizzleCurrent() }
         MockUIDevice.mockUserInterfaceIdiom = .pad
 
-        mockFeatureFlagger.enabledFeatureFlags = [.iPadAIToggle]
         let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper,
                                                  featureFlagger: mockFeatureFlagger,
                                                  aiChatSettings: mockAIChatSettingsEnabled)
@@ -581,7 +611,11 @@ class LargeOmniBarStateTests: XCTestCase {
         XCTAssertTrue(testee.showAIChatModeToggle)
     }
 
-    func testWhenIPadAIToggleDisabledThenShowAIChatModeToggleIsFalse() {
+    func testWhenIPhoneThenShowAIChatModeToggleIsFalse() {
+        UIDevice.swizzleCurrent()
+        defer { UIDevice.unswizzleCurrent() }
+        MockUIDevice.mockUserInterfaceIdiom = .phone
+
         let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper,
                                                  featureFlagger: mockFeatureFlagger,
                                                  aiChatSettings: mockAIChatSettingsEnabled)
@@ -590,12 +624,11 @@ class LargeOmniBarStateTests: XCTestCase {
         XCTAssertFalse(testee.showAIChatModeToggle)
     }
 
-    func testWhenAIChatButtonHiddenThenShowAIChatModeToggleIsFalseEvenIfFlagEnabled() {
+    func testWhenAIChatButtonHiddenThenShowAIChatModeToggleIsFalse() {
         UIDevice.swizzleCurrent()
         defer { UIDevice.unswizzleCurrent() }
         MockUIDevice.mockUserInterfaceIdiom = .pad
 
-        mockFeatureFlagger.enabledFeatureFlags = [.iPadAIToggle]
         let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper,
                                                  featureFlagger: mockFeatureFlagger)
         let testee = LargeOmniBarState.BrowsingNonEditingState(dependencies: dependencies, isLoading: false)
@@ -603,12 +636,11 @@ class LargeOmniBarStateTests: XCTestCase {
         XCTAssertFalse(testee.showAIChatModeToggle)
     }
 
-    func testWhenAIChatSearchInputSettingDisabledThenAIChatButtonIsShownAndModeToggleIsHiddenIfFlagEnabled() {
+    func testWhenAIChatSearchInputSettingDisabledThenAIChatButtonIsShownAndModeToggleIsHidden() {
         UIDevice.swizzleCurrent()
         defer { UIDevice.unswizzleCurrent() }
         MockUIDevice.mockUserInterfaceIdiom = .pad
 
-        mockFeatureFlagger.enabledFeatureFlags = [.iPadAIToggle]
         let aiChatSettings = MockAIChatSettingsProvider(isAIChatEnabled: true,
                                                         isAIChatAddressBarUserSettingsEnabled: true,
                                                         isAIChatSearchInputUserSettingsEnabled: false)
@@ -620,12 +652,7 @@ class LargeOmniBarStateTests: XCTestCase {
         XCTAssertFalse(testee.showAIChatModeToggle)
     }
 
-    func testWhenIPadAIToggleEnabledAndRefreshEnabledThenShowRefreshOutsideAddressBarIsTrue() {
-        UIDevice.swizzleCurrent()
-        defer { UIDevice.unswizzleCurrent() }
-        MockUIDevice.mockUserInterfaceIdiom = .pad
-
-        mockFeatureFlagger.enabledFeatureFlags = [.iPadAIToggle]
+    func testWhenLargeWidthAndRefreshEnabledThenShowRefreshOutsideAddressBarIsTrue() {
         let appSettings = AppSettingsMock()
         appSettings.currentRefreshButtonPosition = .addressBar
         let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper,
@@ -633,16 +660,6 @@ class LargeOmniBarStateTests: XCTestCase {
                                                  appSettings: appSettings)
         let testee = LargeOmniBarState.BrowsingNonEditingState(dependencies: dependencies, isLoading: false)
         XCTAssertTrue(testee.showRefreshOutsideAddressBar)
-    }
-
-    func testWhenIPadAIToggleDisabledThenShowRefreshOutsideAddressBarIsFalse() {
-        let appSettings = AppSettingsMock()
-        appSettings.currentRefreshButtonPosition = .addressBar
-        let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper,
-                                                 featureFlagger: mockFeatureFlagger,
-                                                 appSettings: appSettings)
-        let testee = LargeOmniBarState.BrowsingNonEditingState(dependencies: dependencies, isLoading: false)
-        XCTAssertFalse(testee.showRefreshOutsideAddressBar)
     }
 
     // MARK: - AI Chat Mode State Tests

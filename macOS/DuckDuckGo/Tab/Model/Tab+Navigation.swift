@@ -34,6 +34,9 @@ extension Tab: NavigationResponder {
             // AI Chat navigations handling
             .weak(nullable: self.aiChat),
 
+            // Re-collect page context/signals once a page finishes loading (sidebar suggestions)
+            .weak(nullable: self.pageContext),
+
             // Pop-ups and Navigation Key Modifiers handling
             .weak(nullable: self.popupHandling),
             .strong(NavigationPixelNavigationResponder(featureFlagger: featureFlagger)),

@@ -151,5 +151,5 @@ private extension Color {
     static let filename = Color(designSystemColor: .textPrimary)
     static let fileSize = Color(designSystemColor: .textSecondary)
     static let progressBackground = Color(designSystemColor: .lines)
-    static let progressFill = Color(designSystemColor: .accent)
+    static let progressFill = Color(designSystemColor: .accentPrimary)
 }

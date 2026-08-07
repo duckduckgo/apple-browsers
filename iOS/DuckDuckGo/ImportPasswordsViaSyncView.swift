@@ -33,7 +33,7 @@ struct ImportPasswordsViaSyncView: View {
         ScrollView {
             VStack(spacing: 0) {
                 ImportOverview(viewModel: viewModel)
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, 8)
 
                 Divider()
                     .padding(.vertical, 32)
@@ -84,17 +84,16 @@ struct ImportPasswordsViaSyncView: View {
                     } label: {
                         Text(ImportPasswordsViaSyncViewModel.ButtonType.getBrowser.title)
                     }
-                    .buttonStyle(PrimaryButtonStyle(compact: true))
+                    .buttonStyle(PrimaryButtonStyle(fullWidth: true))
 
                     Button {
                         viewModel.buttonPressed(.sync)
                     } label: {
                         Text(ImportPasswordsViaSyncViewModel.ButtonType.sync.title)
                     }
-                    .buttonStyle(SecondaryFillButtonStyle(compact: true))
+                    .buttonStyle(SecondaryFillButtonStyle(fullWidth: true))
                 }
-                .fixedSize(horizontal: true, vertical: false)
-                .padding(8)
+                .padding(.vertical, 8)
             }
             .background(
                 NavigationLink(destination: DesktopDownloadView(viewModel: .init(platform: .desktop)), isActive: $navigate) {
@@ -164,11 +163,15 @@ struct NumberBadge: View {
             .daxHeadline()
             .background(
                 Circle()
-                    .fill(colorScheme == .dark ? darkBulletColor : lightBulletColor)
+                    .fill(AppRebrand.isAppRebranded() ?
+                          Color(designSystemColor: .accentGlowSecondary)
+                          : colorScheme == .dark ? darkBulletColor : lightBulletColor)
                     .frame(width: 24, height: 24)
             )
             .frame(width: 10)
-            .foregroundColor(Color(designSystemColor: .accent))
+            .foregroundColor(AppRebrand.isAppRebranded() ?
+                             Color(designSystemColor: .accentTextPrimary)
+                             : Color(designSystemColor: .accentPrimary))
             .fixedSize()
             .padding(10)
     }

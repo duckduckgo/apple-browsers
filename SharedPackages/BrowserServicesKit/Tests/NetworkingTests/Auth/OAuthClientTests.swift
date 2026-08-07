@@ -25,7 +25,7 @@ import JWTKit
 extension OAuthClientRefreshEvent: Equatable {
     public static func == (lhs: OAuthClientRefreshEvent, rhs: OAuthClientRefreshEvent) -> Bool {
         switch (lhs, rhs) {
-        case (.tokenRefreshStarted(_), .tokenRefreshStarted(_)),
+        case (.tokenRefreshStarted, .tokenRefreshStarted),
              (.tokenRefreshRefreshingAccessToken(_), .tokenRefreshRefreshingAccessToken(_)),
              (.tokenRefreshRefreshedAccessToken(_), .tokenRefreshRefreshedAccessToken(_)),
              (.tokenRefreshFetchingJWKS(_), .tokenRefreshFetchingJWKS(_)),
@@ -127,7 +127,7 @@ final class OAuthClientTests: XCTestCase {
 
     private func assertRefreshSuccessEvents() {
         let expectedEventSequence: [OAuthClientRefreshEvent] = [
-            .tokenRefreshStarted(refreshID: ""),
+            .tokenRefreshStarted(refreshID: "", trigger: .client),
             .tokenRefreshRefreshingAccessToken(refreshID: ""),
             .tokenRefreshRefreshedAccessToken(refreshID: ""),
             .tokenRefreshSavingTokens(refreshID: ""),
@@ -137,15 +137,16 @@ final class OAuthClientTests: XCTestCase {
         XCTAssertEqual(eventCapture.capturedEvents, expectedEventSequence)
 
         guard let firstEvent = eventCapture.capturedEvents.first,
-              case .tokenRefreshStarted(let refreshID) = firstEvent else {
+              case .tokenRefreshStarted(let refreshID, _) = firstEvent else {
             XCTFail("First event should be tokenRefreshStarted")
             return
         }
 
         for event in eventCapture.capturedEvents {
             switch event {
-            case .tokenRefreshStarted(let id),
-                 .tokenRefreshRefreshingAccessToken(let id),
+            case .tokenRefreshStarted(let id, _):
+                XCTAssertEqual(id, refreshID, "All events should have the same refreshID")
+            case .tokenRefreshRefreshingAccessToken(let id),
                  .tokenRefreshRefreshedAccessToken(let id),
                  .tokenRefreshFetchingJWKS(let id),
                  .tokenRefreshFetchedJWKS(let id),
@@ -161,7 +162,7 @@ final class OAuthClientTests: XCTestCase {
     }
 
     private func assertRefreshFailedEvents(validateError: (Error) -> Void) {
-        XCTAssertTrue(eventCapture.capturedEvents.contains(.tokenRefreshStarted(refreshID: "")))
+        XCTAssertTrue(eventCapture.capturedEvents.contains(.tokenRefreshStarted(refreshID: "", trigger: .client)))
         XCTAssertTrue(eventCapture.capturedEvents.contains(.tokenRefreshRefreshingAccessToken(refreshID: "")))
         XCTAssertTrue(eventCapture.capturedEvents.contains(.tokenRefreshFailed(refreshID: "", error: OAuthServiceError.invalidResponseCode(HTTPStatusCode.gatewayTimeout))))
         XCTAssertFalse(eventCapture.capturedEvents.contains(.tokenRefreshSucceeded(refreshID: "")))
@@ -176,7 +177,7 @@ final class OAuthClientTests: XCTestCase {
     }
 
     private func assertRefreshFailedEventsWithoutRefresh(validateError: (Error) -> Void) {
-        XCTAssertTrue(eventCapture.capturedEvents.contains(.tokenRefreshStarted(refreshID: "")))
+        XCTAssertTrue(eventCapture.capturedEvents.contains(.tokenRefreshStarted(refreshID: "", trigger: .client)))
         XCTAssertFalse(eventCapture.capturedEvents.contains(.tokenRefreshRefreshingAccessToken(refreshID: "")))
         XCTAssertTrue(eventCapture.capturedEvents.contains(.tokenRefreshFailed(refreshID: "", error: OAuthClientError.missingTokenContainer)))
         XCTAssertFalse(eventCapture.capturedEvents.contains(.tokenRefreshSucceeded(refreshID: "")))
@@ -481,6 +482,27 @@ final class OAuthClientTests: XCTestCase {
         } catch {
             XCTAssertEqual(error as? OAuthServiceError, .invalidResponseCode(HTTPStatusCode.gatewayTimeout))
         }
+    }
+
+    func testGetToken_createIfNeeded_expiredInvalidRefreshToken_usesCreateIfNeededTriggerThenCreatesAccount() async throws {
+        let bodyError = OAuthRequest.BodyError(errorCode: .invalidTokenRequest, tokenStatus: .reused)
+        let requestError = OAuthRequestError(from: bodyError)
+        mockOAuthService.refreshAccessTokenResponse = .failure(OAuthServiceError.authAPIError(requestError))
+        mockOAuthService.authorizeResponse = .success("auth_session_id")
+        mockOAuthService.createAccountResponse = .success("auth_code")
+        mockOAuthService.getAccessTokenResponse = .success(OAuthTokensFactory.makeValidOAuthTokenResponse())
+        try tokenStorage.saveTokenContainer(OAuthTokensFactory.makeExpiredTokenContainer())
+        await oAuthClient.setTestingDecodedTokenContainer(OAuthTokensFactory.makeValidTokenContainer())
+
+        let tokenContainer = try await oAuthClient.getTokens(policy: .createIfNeeded)
+
+        XCTAssertFalse(tokenContainer.decodedAccessToken.isExpired())
+        XCTAssertEqual(mockOAuthService.refreshAccessTokenCallCount, 1)
+
+        guard case .tokenRefreshStarted(_, let trigger) = eventCapture.capturedEvents.first else {
+            return XCTFail("Expected createIfNeeded to attempt a refresh before creating an account")
+        }
+        XCTAssertEqual(trigger.rawValue, "create_if_needed")
     }
 
     // MARK: - Event Mapping

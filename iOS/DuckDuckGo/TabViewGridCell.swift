@@ -73,7 +73,6 @@ final class TabViewGridCell: TabViewCell {
         previewClipView.clipsToBounds = true
         previewClipView.layer.cornerRadius = TabViewCell.Constants.previewCornerRadius
         previewClipView.layer.cornerCurve = .continuous
-        previewClipView.layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
         background.addSubview(previewClipView)
 
         let previewImageView = UIImageView()
@@ -81,6 +80,18 @@ final class TabViewGridCell: TabViewCell {
         previewImageView.clipsToBounds = true
         previewClipView.addSubview(previewImageView)
         preview = previewImageView
+
+        // Rich Duck.ai grid card container. Occupies the same slot as the screenshot
+        // preview; visibility is toggled in `TabViewCell.update(...)` based on the
+        // resolved `DuckAIGridItem`.
+        let richCard = DuckAIGridCardView()
+        richCard.translatesAutoresizingMaskIntoConstraints = false
+        richCard.isHidden = true
+        // The Duck.ai card occupies the exact same slot as the screenshot preview, so it matches
+        // the preview's corner radius (which the app rebrand enlarges) in both rebrand states.
+        richCard.layer.cornerRadius = TabViewCell.Constants.previewCornerRadius
+        background.addSubview(richCard)
+        richCardContainer = richCard
 
         let spacing = buttonContainer.leadingAnchor.constraint(equalTo: headerStack.trailingAnchor,
                                                                constant: TabViewCell.Constants.removeButtonTextSpacingRegular)
@@ -129,6 +140,13 @@ final class TabViewGridCell: TabViewCell {
             previewImageView.leadingAnchor.constraint(equalTo: previewClipView.leadingAnchor),
             pvBottom,
             pvTrailing,
+
+            // Exactly overlap the screenshot preview — same position, size, and (via the
+            // corner radius set above) rounding, in both rebrand states.
+            richCard.topAnchor.constraint(equalTo: previewClipView.topAnchor),
+            richCard.leadingAnchor.constraint(equalTo: previewClipView.leadingAnchor),
+            richCard.trailingAnchor.constraint(equalTo: previewClipView.trailingAnchor),
+            richCard.bottomAnchor.constraint(equalTo: previewClipView.bottomAnchor),
         ])
     }
 }

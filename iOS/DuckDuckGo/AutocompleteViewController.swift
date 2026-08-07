@@ -32,6 +32,7 @@ import Combine
 import PrivacyConfig
 import SwiftUI
 import AIChat
+import FeatureFlags_iOS
 
 class AutocompleteViewController: UIHostingController<AutocompleteView> {
 
@@ -39,6 +40,19 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
     private static let session = URLSession(configuration: .ephemeral)
 
     var selectedSuggestion: Suggestion?
+
+    /// The keyboard-highlighted suggestion. Reads the live model selection (unlike `selectedSuggestion`, which is never set).
+    var highlightedSuggestion: Suggestion? {
+        model.selection?.suggestion
+    }
+
+    var isKeyboardSelectionAtFirstRow: Bool {
+        model.isSelectionAtFirstRow
+    }
+
+    func clearKeyboardSelection() {
+        model.selection = nil
+    }
 
     weak var delegate: AutocompleteViewControllerDelegate?
     weak var presentationDelegate: AutocompleteViewControllerPresentationDelegate?

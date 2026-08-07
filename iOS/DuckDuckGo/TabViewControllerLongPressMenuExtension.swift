@@ -67,7 +67,7 @@ extension TabViewController {
             UIAction(title: UserText.actionShare,
                      image: DesignSystemImages.Glyphs.Size16.shareApple) { [weak self] _ in
                 guard let webView = self?.webView else { return }
-                let shareSheetOrigin = Point(x: Int(webView.bounds.midX), y: Int(0))
+                let shareSheetOrigin = CGPoint(x: webView.bounds.midX, y: 0)
                 self?.onShareAction(forUrl: url, atPoint: shareSheetOrigin)
             }
         ]
@@ -106,7 +106,7 @@ extension TabViewController {
         }
     }
     
-    private func onShareAction(forUrl url: URL, atPoint point: Point?) {
+    private func onShareAction(forUrl url: URL, atPoint point: CGPoint?) {
         guard let webView = webView else { return }
         presentShareSheet(withItems: [url], fromView: webView, atPoint: point)
     }

@@ -35,8 +35,8 @@ final class GPCReferenceTests: XCTestCase {
     private var javascriptTests = [GpcJavaScriptAPITest]()
 
     private enum Resource {
-        static let config = "Resources/privacy-reference-tests/global-privacy-control/config_reference.json"
-        static let tests = "Resources/privacy-reference-tests/global-privacy-control/tests.json"
+        static let config = "Res/privacy-reference-tests/global-privacy-control/config_reference.json"
+        static let tests = "Res/privacy-reference-tests/global-privacy-control/tests.json"
     }
 
     private var privacyManager: PrivacyConfigurationManager {

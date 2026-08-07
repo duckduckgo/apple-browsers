@@ -19,7 +19,8 @@
 import Foundation
 import PixelKit
 
-public func pixelAssertionFailure(_ message: @autoclosure () -> String = String(), file: StaticString = #fileID, line: UInt = #line) {
-    PixelKit.fire(DebugEvent(eventType: .assertionFailure(message: message(), file: file, line: line), standardParameters: [.pixelSource]), frequency: .dailyAndStandard)
-    Swift.assertionFailure(message(), file: file, line: line)
+public func pixelAssertionFailure(_ message: @autoclosure () -> String = String(), error: Error? = nil, file: StaticString = #fileID, line: UInt = #line) {
+    PixelKit.fire(DebugEvent(eventType: .assertionFailure(message: message(), file: file, line: line), error: error, standardParameters: [.pixelSource]), frequency: .dailyAndStandard)
+    // Use module-level assertionFailure so tests can intercept via customAssertionFailure.
+    assertionFailure(message(), file: file, line: line)
 }

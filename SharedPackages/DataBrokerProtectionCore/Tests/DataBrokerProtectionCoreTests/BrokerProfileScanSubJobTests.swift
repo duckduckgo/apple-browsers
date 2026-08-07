@@ -20,6 +20,7 @@ import XCTest
 import BrowserServicesKit
 import Common
 import PixelKit
+import PixelKitTestingUtilities
 @testable import DataBrokerProtectionCore
 import DataBrokerProtectionCoreTestsUtils
 
@@ -349,7 +350,6 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         runner.scanResults = [.mockWithoutRemovedDate]
 
         let profiles = try await sut.executeScan(runner: runner,
-                                                 brokerProfileQueryData: makeFixtureBrokerProfileQueryData(),
                                                  showWebView: true,
                                                  shouldRunNextStep: { true })
 
@@ -363,7 +363,6 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
 
         do {
             _ = try await sut.executeScan(runner: runner,
-                                          brokerProfileQueryData: makeFixtureBrokerProfileQueryData(),
                                           showWebView: true,
                                           shouldRunNextStep: { true })
             XCTFail("Expected runner scan to throw")
@@ -378,7 +377,6 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         runner.scanResults = expectedProfiles
 
         let profiles = try await sut.executeScan(runner: runner,
-                                                 brokerProfileQueryData: makeFixtureBrokerProfileQueryData(),
                                                  showWebView: false,
                                                  shouldRunNextStep: { true })
 
@@ -608,6 +606,47 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         let firedNames = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.map(\.name)
         XCTAssertFalse(firedNames.contains("dbp_optout_process_success"))
         XCTAssertFalse(firedNames.contains("dbp_optout_stage_finish"))
+    }
+
+    func testMarkSavedProfilesAsRemovedAndNotifyUser_resolvesFoundDateBeforeStoringConfirmation() throws {
+        let identifiers = makeFixtureIdentifiers()
+        let foundDate = Date().addingTimeInterval(-60)
+        mockDatabase.scanEvents = [
+            HistoryEvent(brokerId: identifiers.brokerId,
+                         profileQueryId: identifiers.profileQueryId,
+                         type: .matchesFound(count: 1),
+                         date: foundDate)
+        ]
+        mockDatabase.optOutEvents = [
+            HistoryEvent(extractedProfileId: 1,
+                         brokerId: identifiers.brokerId,
+                         profileQueryId: identifiers.profileQueryId,
+                         type: .optOutRequested,
+                         date: foundDate.addingTimeInterval(10))
+        ]
+        let wideEvent = WideEventMock()
+        mockDependencies.wideEvent = wideEvent
+        let completionExpectation = expectation(description: "confirmation wide event completed")
+        wideEvent.onComplete = { data, status in
+            let confirmationData = data as? OptOutConfirmationWideEventData
+            XCTAssertEqual(status, .success)
+            XCTAssertEqual(confirmationData?.confirmationInterval?.start, foundDate)
+            XCTAssertNotNil(confirmationData?.confirmationInterval?.end)
+            XCTAssertGreaterThan(confirmationData?.confirmationInterval?.durationMilliseconds ?? 0, 0)
+            completionExpectation.fulfill()
+        }
+
+        try sut.markSavedProfilesAsRemovedAndNotifyUser(
+            removedProfiles: [.mockWithoutRemovedDate],
+            brokerId: identifiers.brokerId,
+            profileQueryId: identifiers.profileQueryId,
+            brokerProfileQueryData: makeFixtureBrokerProfileQueryData(),
+            database: mockDatabase,
+            pixelHandler: mockPixelHandler,
+            eventsHandler: mockEventsHandler
+        )
+
+        wait(for: [completionExpectation], timeout: 1.0)
     }
 
     // MARK: - handleRemovedProfiles

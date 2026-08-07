@@ -84,6 +84,7 @@ class RemoteMessagingProcessingTests: XCTestCase {
                     subscriptionDaysSinceSubscribed: -1,
                     subscriptionDaysUntilExpiry: -1,
                     subscriptionPurchasePlatform: nil,
+                    subscriptionTier: nil,
                     isSubscriptionActive: false,
                     isSubscriptionExpiring: false,
                     isSubscriptionExpired: false,

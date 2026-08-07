@@ -66,6 +66,11 @@ struct AutocompleteView: View {
         .padding(.top, model.isPad ? 10 : 0)
         .modifier(HideScrollContentBackground())
         .background(Color(designSystemColor: .background))
+        .onHover { isHovering in
+            if !isHovering {
+                model.clearSelection()
+            }
+        }
         .modifier(CompactSectionSpacing())
         .modifier(DisableSelection())
         .modifier(DismissKeyboardOnSwipe())
@@ -121,6 +126,17 @@ private struct HideScrollContentBackground: ViewModifier {
     }
 }
 
+private struct SuggestionSelectedKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+private extension EnvironmentValues {
+    var suggestionIsSelected: Bool {
+        get { self[SuggestionSelectedKey.self] }
+        set { self[SuggestionSelectedKey.self] = newValue }
+    }
+}
+
 private struct SuggestionsSection: View {
 
     @EnvironmentObject var autocompleteViewModel: AutocompleteViewModel
@@ -130,12 +146,15 @@ private struct SuggestionsSection: View {
     var onSuggestionSelected: (AutocompleteViewModel.SuggestionModel) -> Void
     var onSuggestionDeleted: (AutocompleteViewModel.SuggestionModel) -> Void
 
-    let selectedColor = Color(designSystemColor: .accent)
+    let selectedColor = Color(designSystemColor: .accentPrimary)
 
     let unselectedColor = Color(designSystemColor: .surface)
 
     private struct Metrics {
-        static let rowInsets = EdgeInsets(top: 10, leading: 10, bottom: 8, trailing: 14)
+        // Horizontal insets stay on the row to keep the separator's leading inset. Vertical insets
+        // move inside the row content (below) so the hover/tap area covers the full row height.
+        static let horizontalRowInsets = EdgeInsets(top: 0, leading: 10, bottom: 0, trailing: 14)
+        static let verticalRowInsets = EdgeInsets(top: 10, leading: 0, bottom: 8, trailing: 0)
     }
 
     var body: some View {
@@ -147,10 +166,17 @@ private struct SuggestionsSection: View {
                     SuggestionView(model: suggestions[index],
                                    query: query,
                                    onDelete: { onSuggestionDeleted(suggestions[index]) })
+                        .padding(Metrics.verticalRowInsets)
+                        .contentShape(Rectangle())
                  }
                  .listRowBackground(autocompleteViewModel.selection == suggestions[index] ? selectedColor : unselectedColor)
-                 .listRowInsets(Metrics.rowInsets)
+                 .listRowInsets(Metrics.horizontalRowInsets)
                  .listRowSeparatorTint(Color(designSystemColor: .lines), edges: [.bottom])
+                 .onHover { isHovering in
+                     if isHovering {
+                         autocompleteViewModel.selection = suggestions[index]
+                     }
+                 }
             }
         }
     }
@@ -169,6 +195,10 @@ private struct SuggestionView: View {
         guard model.canShowTapAhead else { return nil }
         return Image(uiImage: autocompleteModel.isAddressBarAtBottom ?
                      DesignSystemImages.Glyphs.Size16.arrowCircleDownLeft : DesignSystemImages.Glyphs.Size16.arrowCircleUpLeft)
+    }
+
+    private var isSelected: Bool {
+        autocompleteModel.selection == model
     }
 
     var body: some View {
@@ -233,6 +263,7 @@ private struct SuggestionView: View {
 
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .environment(\.suggestionIsSelected, isSelected)
     }
 
 }
@@ -240,6 +271,8 @@ private struct SuggestionView: View {
 private struct SuggestionListItem: View {
 
     @EnvironmentObject var autocompleteModel: AutocompleteViewModel
+
+    @Environment(\.suggestionIsSelected) private var isSelected: Bool
 
     let icon: Image
     let title: String
@@ -266,12 +299,17 @@ private struct SuggestionListItem: View {
         self.onDelete = onDelete
     }
 
+    // On a selected row the background is the accent fill, so content switches to the on-accent color to stay legible.
+    private func contentColor(_ base: DesignSystemColor) -> Color {
+        Color(designSystemColor: isSelected ? .accentContentPrimary : base)
+    }
+
     var body: some View {
         HStack(spacing: 0) {
             icon
                 .resizable()
                 .frame(width: Metrics.iconSize, height: Metrics.iconSize)
-                .tintIfAvailable(Color(designSystemColor: .icons))
+                .tintIfAvailable(contentColor(.icons))
 
             VStack(alignment: .leading, spacing: 0) {
 
@@ -280,15 +318,15 @@ private struct SuggestionListItem: View {
                     if let query, title.hasPrefix(query) {
                         Text(query)
                             .font(Font(uiFont: UIFont.daxBodyRegular()))
-                            .foregroundColor(Color(designSystemColor: .textPrimary))
+                            .foregroundColor(contentColor(.textPrimary))
                         +
                         Text(title.dropping(prefix: query))
                             .font(Font(uiFont: UIFont.daxBodyBold()))
-                            .foregroundColor(Color(designSystemColor: .textPrimary))
+                            .foregroundColor(contentColor(.textPrimary))
                     } else {
                         Text(title)
                             .font(Font(uiFont: UIFont.daxBodyRegular()))
-                                .foregroundColor(Color(designSystemColor: .textPrimary))
+                                .foregroundColor(contentColor(.textPrimary))
                     }
                 }
                 .lineLimit(1)
@@ -296,7 +334,7 @@ private struct SuggestionListItem: View {
                 if let subtitle {
                     Text(subtitle)
                         .daxFootnoteRegular()
-                        .foregroundColor(Color(designSystemColor: .textSecondary))
+                        .foregroundColor(contentColor(.textSecondary))
                         .lineLimit(1)
                         .frame(minHeight: Metrics.subtitleMinHeight)
                 }
@@ -316,14 +354,14 @@ private struct SuggestionListItem: View {
                     .highPriorityGesture(TapGesture().onEnded {
                         onTapIndicator?()
                     })
-                    .tintIfAvailable(Color.init(designSystemColor: .iconsSecondary))
+                    .tintIfAvailable(contentColor(.iconsSecondary))
                     .padding(.leading, Metrics.indicatorLeadingPadding)
             } else if let onDelete {
                 Image(uiImage: DesignSystemImages.Glyphs.Size16.clear)
                     .highPriorityGesture(TapGesture().onEnded {
                         onDelete()
                     })
-                    .tintIfAvailable(Color(designSystemColor: .iconsSecondary))
+                    .tintIfAvailable(contentColor(.iconsSecondary))
                     .padding(.leading, Metrics.indicatorLeadingPadding)
                     .accessibilityIdentifier("Autocomplete.Suggestions.ListItem.DeleteButton")
                     .accessibilityLabel(UserText.actionDelete)

@@ -25,7 +25,7 @@ import FoundationExtensions
 import Configuration
 import Networking
 import Crashes
-import FeatureFlags
+import FeatureFlags_macOS
 import History
 import HistoryView
 import os.log
@@ -46,8 +46,8 @@ extension AppDelegate {
 
     @MainActor
     @objc func checkForUpdates(_ sender: Any?) {
+        PixelKit.fire(UpdateFlowPixels.checkForUpdatesFromMainMenu, frequency: .dailyAndCount)
         if StandardApplicationBuildType().isAppStoreBuild {
-            PixelKit.fire(UpdateFlowPixels.checkForUpdate(source: .mainMenu))
             NSWorkspace.shared.open(.appStore)
         } else if StandardApplicationBuildType().isSparkleBuild {
             if SupportedOSChecker().showsSupportWarning {
@@ -66,8 +66,21 @@ extension AppDelegate {
     }
 
     @objc func newBurnerWindow(_ sender: Any?) {
+        // Distinguish between "user pressed ⌘N and Open Fire Window by default is enabled" vs
+        // "user explicitly chose to open a Fire Window".
+        //
+        // If the user opens a Fire Window by pressing ⌘N while they have "Open Fire Window by default"
+        // enabled, we record that path as an automatic Fire Window open.
+        //
+        // Every other invocation — mouse clicks on the menu item, the Dock menu, the Fire popover button,
+        // and ⇧⌘N when the preference is off — is an explicit user choice and is recorded as a manual
+        // Fire Window open.
+        let isKeyShortcut = NSApp.currentEvent?.type == .keyDown
+        let isFireWindowOpenedDueToDefaultPreferenceEnabled: Bool = isKeyShortcut
+            && visualizeFireSettingsDecider.isOpenFireWindowByDefaultEnabled
         DispatchQueue.main.async {
-            WindowsManager.openNewWindow(burnerMode: BurnerMode(isBurner: true))
+            WindowsManager.openNewWindow(burnerMode: BurnerMode(isBurner: true),
+                                         isOpenedAutomatically: isFireWindowOpenedDueToDefaultPreferenceEnabled)
         }
     }
 
@@ -288,6 +301,7 @@ extension AppDelegate {
             },
             preselectedCategory: category,
             preselectedSubCategory: subcategory,
+            isAppRebranded: Application.appDelegate.themeManager.isAppRebranded,
             onClose: {
                 window?.close()
             },
@@ -336,6 +350,7 @@ extension AppDelegate {
         var window: NSWindow?
 
         let formView = RequestNewFeatureFormFlowView(
+            isAppRebranded: Application.appDelegate.themeManager.isAppRebranded,
             onClose: {
                 window?.close()
             },
@@ -524,10 +539,16 @@ extension AppDelegate {
     }
 
     @MainActor
+    @objc func debugClearFaviconsCache(_ sender: Any?) {
+        faviconManager.clearInMemoryFaviconCache()
+    }
+
+    @MainActor
     @objc func skipOnboarding(_ sender: Any?) {
         UserDefaults.standard.set(true, forKey: UserDefaultsWrapper<Bool>.Key.onboardingFinished.rawValue)
         Application.appDelegate.onboardingContextualDialogsManager.state = .onboardingCompleted
         OnboardingActionsManager.isOnboardingFinished = true
+        OnboardingActionsManager.applyAdBlockingRolloutDuckPlayerDefaultIfNeeded(featureFlagger: Application.appDelegate.featureFlagger)
         Application.appDelegate.windowControllersManager.updatePreventUserInteraction(prevent: false)
         Application.appDelegate.windowControllersManager.replaceTabWith(Tab(content: .newtab))
     }
@@ -564,6 +585,12 @@ extension AppDelegate {
     }
 
     @objc func debugResetContinueSetup(_ sender: Any?) {
+        homePageSetUpDependencies.clearAll()
+
+        NewTabPageNextStepsCardsDebugPersistor().debugVisibleCards = []
+
+        NotificationCenter.default.post(name: .nextStepsCardsDebugDidReset, object: nil)
+
         let persistor = AppearancePreferencesUserDefaultsPersistor(keyValueStore: keyValueStore)
         persistor.continueSetUpCardsLastDemonstrated = nil
         persistor.continueSetUpCardsNumberOfDaysDemonstrated = 0
@@ -574,7 +601,8 @@ extension AppDelegate {
         duckPlayer.preferences.youtubeOverlayAnyButtonPressed = false
         duckPlayer.preferences.duckPlayerMode = .alwaysAsk
         UserDefaultsWrapper<Bool>(key: .homePageContinueSetUpImport, defaultValue: false).clear()
-        homePageSetUpDependencies.clearAll()
+
+        NotificationCenter.default.post(name: .newTabPageWebViewDidAppear, object: nil)
     }
 
     @MainActor
@@ -788,11 +816,6 @@ extension AppDelegate {
         duckPlayer.preferences.youtubeOverlayInteracted = false
     }
 
-    @objc func resetMakeDuckDuckGoYoursUserSettings(_ sender: Any?) {
-        UserDefaults.standard.set(true, forKey: UserDefaultsWrapper<Bool>.Key.homePageShowAllFeatures.rawValue)
-        homePageSetUpDependencies.clearAll()
-    }
-
     @objc func resetOnboarding(_ sender: Any?) {
         UserDefaults.standard.set(false, forKey: UserDefaultsWrapper<Bool>.Key.onboardingFinished.rawValue)
     }
@@ -902,7 +925,7 @@ extension AppDelegate {
             throw error
         }
         if let configurationUrl {
-            Logger.config.debug("New configuration URL set to \(configurationUrl.absoluteString)")
+            Logger.config.debug("New configuration URL set to \(configurationUrl.shortDescription)")
         } else {
             Logger.config.log("New configuration URL reset to default")
         }
@@ -1336,7 +1359,23 @@ extension MainViewController {
     @objc func toggleDuckAISidebar(_ sender: Any?) {
         guard featureFlagger.isFeatureOn(.aiChatChromeSidebar),
               aiChatMenuConfig.shouldDisplayAnyAIChatFeature else { return }
+        // Always a plain open/close, no page attach — even in menu-button layout. Only the tab-bar
+        // "Ask About Page" item attaches the current page.
         aiChatCoordinator.toggleSidebar()
+    }
+
+    /// Duck.ai → Ask About Page / Close Sidebar (⌥⌘L in menu-button layout): toggles the Duck.ai chat —
+    /// closes it if presented (sidebar or floating), otherwise opens the sidebar with the current page
+    /// attached. Routed through the responder chain so it targets the key window reliably.
+    @objc func askAboutPage(_ sender: Any?) {
+        guard featureFlagger.isFeatureOn(.aiChatChromeSidebar),
+              featureFlagger.isFeatureOn(.aiChatChromeMenuButton),
+              aiChatMenuConfig.shouldDisplayAnyAIChatFeature else { return }
+        if tabBarViewController.isDuckAIChatPresented {
+            tabBarViewController.closeDuckAIChat()
+        } else {
+            tabBarViewController.openDuckAISidebarWithPageAttachment()
+        }
     }
 
     @objc func toggleAutofillShortcut(_ sender: Any) {
@@ -1480,6 +1519,20 @@ extension MainViewController {
         browserTabViewController.openNewTab(with: .bookmarks)
     }
 
+    @objc func inspectFavicons(_ sender: Any?) {
+        makeKeyIfNeeded()
+        browserTabViewController.openNewTab(with: .url(.favicons, source: .ui))
+    }
+
+    @objc func debugShowCookiePopupProtectionOptInDialog(_ sender: Any?) {
+        browserTabViewController.showCookiePopupProtectionOptInDialog()
+    }
+
+    @objc func debugResetCookiePopupProtectionOptInLaunchFlag(_ sender: Any?) {
+        NSApp.delegateTyped.promoService?.undismiss(promoId: PromoServiceFactory.cookiePopupProtectionOptInPromoID, clearHistory: true)
+        CookiePopupProtectionOptInPromptStore(keyValueStore: Application.appDelegate.keyValueStore).reset()
+    }
+
     @objc func showHistory(_ sender: Any?) {
         makeKeyIfNeeded()
         browserTabViewController.openNewTab(with: .anyHistoryPane)
@@ -1534,8 +1587,11 @@ extension MainViewController {
     @objc func moveTabToNewWindow(_ sender: Any?) {
         guard let (tab, index) = getActiveTabAndIndex() else { return }
 
-        tabCollectionViewModel.remove(at: index)
-        WindowsManager.openNewWindow(with: tab)
+        // The tab moves to a new window; it isn't closed and reopened.
+        TabCollectionViewModel.withWebExtensionTabLifecycleEventsSuppressed {
+            tabCollectionViewModel.remove(at: index)
+            WindowsManager.openNewWindow(with: tab)
+        }
     }
 
     @objc func newTabNextToActive(_ sender: Any?) {
@@ -1579,14 +1635,19 @@ extension MainViewController {
         let otherTabs = otherTabCollectionViewModels.flatMap { $0.tabCollection.tabs }
         let otherLocalHistoryOfRemovedTabs = Set(otherTabCollectionViewModels.flatMap { $0.tabCollection.localHistoryOfRemovedTabs })
 
-        WindowsManager.closeWindows(except: excludedWindowControllers.compactMap(\.window))
-
-        tabCollectionViewModel.append(tabs: otherTabs, andSelect: false)
+        // The merged tabs stay alive under the same identity; they aren't newly opened.
+        TabCollectionViewModel.withWebExtensionTabLifecycleEventsSuppressed {
+            tabCollectionViewModel.append(tabs: otherTabs, andSelect: false)
+        }
         tabCollectionViewModel.tabCollection.localHistoryOfRemovedTabs += otherLocalHistoryOfRemovedTabs
 
         // Tabs from `otherTabCollectionViewModels` were moved to `tabCollectionViewModel`
         // clear the collection models so they are empty at `deinit` and no deinit checks assert.
         otherTabCollectionViewModels.forEach { $0.clearAfterMerge() }
+
+        // Close the now-empty source windows last. Closing them while they still held the tabs would
+        // let WebKit tear the (still-registered) moved tabs down together with their old window.
+        WindowsManager.closeWindows(except: excludedWindowControllers.compactMap(\.window))
     }
 
     // MARK: - Printing
@@ -1637,7 +1698,7 @@ extension MainViewController {
         let persistor = NewTabPageNextStepsCardsPersistor(keyValueStore: NSApp.delegateTyped.keyValueStore)
         let debugPersistor = NewTabPageNextStepsCardsDebugPersistor()
         guard let card = debugPersistor.debugVisibleCards.first else { return }
-        persistor.setTimesShown(10, for: card)
+        persistor.setTimesShown(NewTabPageNextStepsSingleCardProvider.Constants.maxTimesCardShown, for: card)
         NotificationCenter.default.post(name: .newTabPageWebViewDidAppear, object: nil)
     }
 
@@ -1939,7 +2000,7 @@ extension AppDelegate: NSMenuItemValidation {
         case #selector(AppDelegate.reopenLastClosedTab(_:)):
             return recentlyClosedCoordinator.canReopenRecentlyClosedTab
 
-        // Reopen All Windows From Last Session
+        // Reopen All Windows and Tabs From Last Session
         case #selector(AppDelegate.reopenAllWindowsFromLastSession(_:)):
             return stateRestorationManager.canRestoreLastSessionState
 

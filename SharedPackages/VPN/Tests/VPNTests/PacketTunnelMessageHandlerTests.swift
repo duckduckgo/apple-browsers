@@ -100,6 +100,7 @@ private final class MockNotificationsPresenter: VPNNotificationsPresenting {
     var showTestNotificationCalled = false
 
     func showConnectedNotification(serverLocation: String?, snoozeEnded: Bool) {}
+    func showStrictRoutingReminderNotification() {}
     func showReconnectingNotification() {}
     func showConnectionFailureNotification() {}
     func showSnoozingNotification(duration: TimeInterval) {}

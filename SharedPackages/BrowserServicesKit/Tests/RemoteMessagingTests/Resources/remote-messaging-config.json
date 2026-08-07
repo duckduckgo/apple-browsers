@@ -295,6 +295,9 @@
         "pproSubscriptionStatus": {
           "value": ["active", "expiring"]
         },
+        "pproSubscriptionTier": {
+          "value": ["pro", "plus"]
+        },
         "pproDaysSinceSubscribed": {
             "min": 5,
             "max": 8

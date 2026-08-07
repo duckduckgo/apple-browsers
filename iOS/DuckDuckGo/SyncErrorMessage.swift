@@ -30,19 +30,39 @@ enum SyncErrorMessage {
     case unableToRemoveDevice
     case unableToCreateRecoveryPdf
     case unableToRecognizeCode
+    case updateRequired
+    case unsupportedThirdPartyRecoveryCode
+    case thirdPartyAccountAlreadyUpgraded
+    case alreadyPairedWithAccount
+    case syncCancelledFromOtherDevice
 
     var title: String {
-        return UserText.syncErrorAlertTitle
+        switch self {
+        case .unableToRecognizeCode:
+            return UserText.unableToRecognizeCodeTitle
+        case .unableToSyncWithDevice:
+            return UserText.syncFailedTitle
+        case .alreadyPairedWithAccount:
+            return UserText.syncAlreadyPairedWithAccountTitle
+        case .updateRequired:
+            return UserText.syncUpdateRequiredTitle
+        case .unsupportedThirdPartyRecoveryCode:
+            return UserText.syncUnsupportedThirdPartyRecoveryCodeTitle
+        case .syncCancelledFromOtherDevice:
+            return UserText.syncCancelledFromOtherDeviceTitle
+        default:
+            return UserText.syncErrorAlertTitle
+        }
     }
 
-    var description: String {
+    var description: String? {
         switch self {
         case .unknownError:
             return UserText.unknownErrorTryAgainMessage
         case .unableToSyncToServer:
             return UserText.unableToSyncToServerDescription
         case .unableToSyncWithDevice:
-            return UserText.unableToSyncWithOtherDeviceDescription
+            return UserText.syncFailedDescription
         case .unableToMergeTwoAccounts:
             return UserText.unableToMergeTwoAccountsErrorDescription
         case .unableToUpdateDeviceName:
@@ -57,6 +77,29 @@ enum SyncErrorMessage {
             return UserText.unableToCreateRecoveryPDF
         case .unableToRecognizeCode:
             return UserText.unableToRecognizeCode
+        case .updateRequired:
+            return nil
+        case .unsupportedThirdPartyRecoveryCode:
+            return UserText.syncUnsupportedThirdPartyRecoveryCodeDescription
+        case .thirdPartyAccountAlreadyUpgraded:
+            return UserText.syncThirdPartyAccountAlreadyUpgradedDescription
+        case .alreadyPairedWithAccount:
+            return UserText.syncAlreadyPairedWithAccountDescription
+        case .syncCancelledFromOtherDevice:
+            return UserText.syncCancelledFromOtherDeviceDescription
+        }
+    }
+
+    var buttonTitle: String {
+        switch self {
+        case .unableToRecognizeCode, .unableToSyncWithDevice, .updateRequired, .unsupportedThirdPartyRecoveryCode:
+            return UserText.syncSetupErrorGotItButton
+        case .alreadyPairedWithAccount:
+            return UserText.syncAlreadyPairedWithAccountButton
+        case .syncCancelledFromOtherDevice:
+            return UserText.syncCancelledFromOtherDeviceButton
+        default:
+            return UserText.syncPausedAlertOkButton
         }
     }
 

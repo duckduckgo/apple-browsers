@@ -124,7 +124,7 @@ jobs:
       run: bats --formatter junit scripts/tests/* > bats-tests.xml
 
     - name: Publish unit tests report
-      uses: mikepenz/action-junit-report@v4
+      uses: mikepenz/action-junit-report@v6
       if: always() # always run even if the previous step fails
       with:
         check_name: "Test Report: Shell Scripts"
@@ -175,7 +175,7 @@ jobs:
 
     steps:
     - name: Register SSH keys for private repos
-      uses: webfactory/ssh-agent@v0.9.1
+      uses: webfactory/ssh-agent@v0.10.0
       with:
         ssh-private-key: |
           ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
@@ -241,7 +241,7 @@ jobs:
 
     - name: Cache SPM
       if: env.cache_key_hash
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: macOS/DerivedData/SourcePackages
         key: ${{ runner.os }}-macos-${{ matrix.cache-key }}${{ env.cache_key_hash }}
@@ -252,20 +252,37 @@ jobs:
       uses: ./.github/actions/select-xcode-version
 
     - name: Restore Xcode Compilation Cache
-      uses: actions/cache/restore@v4
+      uses: actions/cache/restore@v5
       with:
         path: macOS/DerivedData/CompilationCache.noindex
         key: xcode-compilation-cache-${{ matrix.flavor }}
         restore-keys: |
           xcode-compilation-cache-${{ matrix.flavor }}-
 
-    - name: Build and run unit tests
-      id: run-unit-tests
+    - name: Build for testing
+      id: build-for-testing
       run: |
         echo "Runner ${RUNNER_NAME} (${RUNNER_TRACKING_ID})"
+
+        set -o pipefail && xcodebuild build-for-testing \
+          -scheme "${{ matrix.scheme }}" \
+          -derivedDataPath "DerivedData" \
+          -configuration "CI" \
+          -skipPackagePluginValidation -skipMacroValidation \
+          ENABLE_TESTABILITY=true \
+          ONLY_ACTIVE_ARCH=${{ matrix.active-arch }} \
+          COMPILATION_CACHE_ENABLE_CACHING=YES \
+          OTHER_CODE_SIGN_FLAGS=--timestamp=none \
+          | tee ${{ matrix.flavor }}-build-for-testing-xcodebuild.log \
+          | sed -e 's/CoreData: error:/CoreData: [notice]:/g' -e 's/Failed to create NSXPCConnection/[notice] NSXPCConnection unavailable/g' \
+          | xcbeautify
+
+    - name: Run unit tests
+      id: run-unit-tests
+      run: |
         export OS_ACTIVITY_MODE=debug
 
-        set -o pipefail && xcodebuild test \
+        set -o pipefail && xcodebuild test-without-building \
           -scheme "${{ matrix.scheme }}" \
           -derivedDataPath "DerivedData" \
           -configuration "CI" \
@@ -273,10 +290,6 @@ jobs:
           -test-timeouts-enabled YES \
           -default-test-execution-time-allowance 60 \
           -maximum-test-execution-time-allowance 120 \
-          ENABLE_TESTABILITY=true \
-          ONLY_ACTIVE_ARCH=${{ matrix.active-arch }} \
-          COMPILATION_CACHE_ENABLE_CACHING=YES \
-          OTHER_CODE_SIGN_FLAGS=--timestamp=none \
           "-skip-testing:${{ matrix.integration-tests-target }}" \
           -test-iterations 3 \
           -retry-tests-on-failure \
@@ -288,7 +301,7 @@ jobs:
     - name: Run integration tests
       id: run-integration-tests
       run: |
-        set -o pipefail && xcodebuild test \
+        set -o pipefail && xcodebuild test-without-building \
           -scheme "${{ matrix.scheme }}" \
           -derivedDataPath "DerivedData" \
           -configuration "CI" \
@@ -296,10 +309,6 @@ jobs:
           -test-timeouts-enabled YES \
           -default-test-execution-time-allowance 60 \
           -maximum-test-execution-time-allowance 120 \
-          ENABLE_TESTABILITY=true \
-          ONLY_ACTIVE_ARCH=${{ matrix.active-arch }} \
-          COMPILATION_CACHE_ENABLE_CACHING=YES \
-          OTHER_CODE_SIGN_FLAGS=--timestamp=none \
           "-only-testing:${{ matrix.integration-tests-target }}" \
           -test-iterations 3 \
           -retry-tests-on-failure \
@@ -321,7 +330,7 @@ jobs:
 
     - name: Save Xcode Compilation Cache
       if: github.ref == 'refs/heads/main' && steps.compilation-cache-hash.outputs.hash
-      uses: actions/cache/save@v4
+      uses: actions/cache/save@v5
       with:
         path: macOS/DerivedData/CompilationCache.noindex
         key: xcode-compilation-cache-${{ matrix.flavor }}-${{ steps.compilation-cache-hash.outputs.hash }}
@@ -375,7 +384,7 @@ jobs:
         test-outcome: ${{ steps.run-integration-tests.outcome }}
 
     - name: Upload JUnit XML as artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       if: always()
       with:
         name: macos-${{ matrix.flavor }}-unittests.xml
@@ -385,7 +394,7 @@ jobs:
         retention-days: 7
 
     - name: Publish unit tests report
-      uses: mikepenz/action-junit-report@v4
+      uses: mikepenz/action-junit-report@v6
       if: always() # always run even if the previous step fails
       with:
         check_name: "Test Report: ${{ matrix.flavor }}"
@@ -430,8 +439,16 @@ jobs:
       with:
         pixel-name: m_ci_apple_status_mac_main_${{ matrix.flavor }}_integration_tests_${{ steps.run-integration-tests.outcome }}
 
+    - name: Upload failed build log
+      uses: actions/upload-artifact@v6
+      if: failure() || cancelled()
+      with:
+        name: ${{ matrix.flavor }}-build-for-testing-xcodebuild.log
+        path: macOS/${{ matrix.flavor }}-build-for-testing-xcodebuild.log
+        retention-days: 7
+
     - name: Upload failed unit tests log
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       if: failure() || cancelled()
       with:
         name: ${{ matrix.flavor }}-unittests-xcodebuild.log
@@ -439,7 +456,7 @@ jobs:
         retention-days: 7
 
     - name: Upload failed unit tests xcresult
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       if: failure() || cancelled()
       with:
         name: ${{ matrix.flavor }}-unittests.xcresult
@@ -447,7 +464,7 @@ jobs:
         retention-days: 7
 
     - name: Upload failed integration tests log
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       if: failure() || cancelled()
       with:
         name: ${{ matrix.flavor }}-integrationtests-xcodebuild.log
@@ -455,7 +472,7 @@ jobs:
         retention-days: 7
 
     - name: Upload failed integration tests xcresult
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       if: failure() || cancelled()
       with:
         name: ${{ matrix.flavor }}-integrationtests.xcresult
@@ -463,7 +480,7 @@ jobs:
         retention-days: 7
 
     - name: Upload crash reports
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       if: failure() || cancelled()
       with:
         name: ${{ matrix.flavor }}-crash-reports
@@ -512,7 +529,7 @@ jobs:
 
     steps:
     - name: Register SSH keys for private repos
-      uses: webfactory/ssh-agent@v0.9.1
+      uses: webfactory/ssh-agent@v0.10.0
       with:
         ssh-private-key: |
           ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
@@ -569,7 +586,7 @@ jobs:
 
     - name: Cache SPM
       if: env.cache_key_hash
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: macOS/DerivedData/SourcePackages
         key: ${{ runner.os }}-mac-release-build-${{ env.cache_key_hash }}
@@ -580,7 +597,7 @@ jobs:
       uses: ./.github/actions/select-xcode-version
 
     - name: Restore Xcode Compilation Cache
-      uses: actions/cache/restore@v4
+      uses: actions/cache/restore@v5
       with:
         path: macOS/DerivedData/CompilationCache.noindex
         key: xcode-compilation-cache-release
@@ -613,7 +630,7 @@ jobs:
 
     - name: Save Xcode Compilation Cache
       if: github.ref == 'refs/heads/main' && steps.compilation-cache-hash.outputs.hash
-      uses: actions/cache/save@v4
+      uses: actions/cache/save@v5
       with:
         path: macOS/DerivedData/CompilationCache.noindex
         key: xcode-compilation-cache-release-${{ steps.compilation-cache-hash.outputs.hash }}
@@ -638,7 +655,7 @@ jobs:
         echo "EOF" >> $GITHUB_OUTPUT
 
     - name: Upload failed test log
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       if: failure()
       with:
         name: release-xcodebuild.log
@@ -657,7 +674,7 @@ jobs:
         working-directory: .
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 18
           cache: 'npm'
@@ -701,7 +718,7 @@ jobs:
           fetch-depth: 0 # Allows scripts to diff against the base branch
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.11'
 

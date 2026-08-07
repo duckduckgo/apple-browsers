@@ -73,27 +73,24 @@ final class BrowsingMenuViewController: UIViewController {
     private let menuEntries: [BrowsingMenuEntry]
     private let daxDialogsManager: DaxDialogsManaging
     private let appSettings: AppSettings
-    private let productSurfaceTelemetry: ProductSurfaceTelemetry
     private var wasActionSelected: Bool = false
 
     var onDismiss: ((_ wasActionSelected: Bool) -> Void)?
 
     var isUsingSingleBar: Bool = false
 
-    class func instantiate(headerEntries: [BrowsingMenuEntry], menuEntries: [BrowsingMenuEntry], daxDialogsManager: DaxDialogsManaging, appSettings: AppSettings = AppDependencyProvider.shared.appSettings, productSurfaceTelemetry: ProductSurfaceTelemetry) -> BrowsingMenuViewController {
+    class func instantiate(headerEntries: [BrowsingMenuEntry], menuEntries: [BrowsingMenuEntry], daxDialogsManager: DaxDialogsManaging, appSettings: AppSettings = AppDependencyProvider.shared.appSettings) -> BrowsingMenuViewController {
         BrowsingMenuViewController(headerEntries: headerEntries,
                                    menuEntries: menuEntries,
                                    daxDialogsManager: daxDialogsManager,
-                                   appSettings: appSettings,
-                                   productSurfaceTelemetry: productSurfaceTelemetry)
+                                   appSettings: appSettings)
     }
 
-    init(headerEntries: [BrowsingMenuEntry], menuEntries: [BrowsingMenuEntry], daxDialogsManager: DaxDialogsManaging, appSettings: AppSettings, productSurfaceTelemetry: ProductSurfaceTelemetry) {
+    init(headerEntries: [BrowsingMenuEntry], menuEntries: [BrowsingMenuEntry], daxDialogsManager: DaxDialogsManaging, appSettings: AppSettings) {
         self.headerEntries = headerEntries
         self.menuEntries = menuEntries
         self.daxDialogsManager = daxDialogsManager
         self.appSettings = appSettings
-        self.productSurfaceTelemetry = productSurfaceTelemetry
         super.init(nibName: nil, bundle: nil)
         self.transitioningDelegate = self
     }
@@ -237,11 +234,6 @@ final class BrowsingMenuViewController: UIViewController {
         tableView.dataSource = self
         tableView.register(BrowsingMenuEntryViewCell.self, forCellReuseIdentifier: Contants.entryCellReuseIdentifier)
         tableView.register(BrowsingMenuSeparatorViewCell.self, forCellReuseIdentifier: Contants.separatorCellReuseIdentifier)
-    }
-
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-        productSurfaceTelemetry.menuUsed()
     }
 
     override func viewWillDisappear(_ animated: Bool) {

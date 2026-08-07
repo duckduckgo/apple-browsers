@@ -20,6 +20,7 @@
 import Core
 import Persistence
 import SwiftUI
+import FeatureFlags_iOS
 
 struct AdBlockingDebugView: View {
 
@@ -143,7 +144,7 @@ struct AdBlockingDebugView: View {
         } label: {
             pickerLabel(title: "duckPlayerMode",
                         isUnset: duckPlayerMode == .unset,
-                        defaultLabel: rolloutDefaultsActive ? "disabled" : "alwaysAsk")
+                        defaultLabel: "alwaysAsk")
         }
         .pickerStyle(.menu)
     }
@@ -171,7 +172,7 @@ struct AdBlockingDebugView: View {
         } label: {
             pickerLabel(title: "duckPlayerNativeYoutubeMode",
                         isUnset: duckPlayerNativeYoutubeMode == .unset,
-                        defaultLabel: rolloutDefaultsActive ? "never" : "ask")
+                        defaultLabel: "ask")
         }
         .pickerStyle(.menu)
     }

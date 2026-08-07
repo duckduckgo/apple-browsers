@@ -1,0 +1,115 @@
+appId: com.duckduckgo.mobile.ios
+tags:
+    - iphone
+    - release
+    - unified_toggle_input
+name: test_contextual_web_uti_manual_attach_regression
+
+---
+
+# With the immediate contextual UTI flag off, contextual chat still starts with the
+# basic native input, then shows the web UTI after the first prompt. In manual mode
+# there is no placeholder chip: page context is attached from the web UTI's attachment
+# menu via "Ask About Page", and a manually attached context is cleared when the sheet
+# is reopened on a different page.
+
+- launchApp:
+    appId: "com.duckduckgo.mobile.ios"
+    clearState: true
+    clearKeychain: true
+    arguments:
+        isOnboardingCompleted: ${ONBOARDING_COMPLETED}
+        currentAppVariant: ${APP_VARIANT}
+        isRunningUITests: true
+        ff.unifiedToggleInput: "true"
+        ff.contextualDuckAIMode: "true"
+        ff.aiChatContextualUnifiedToggleInput: "false"
+        ff.aiChatAutoAttachContextByDefault: "false"
+
+- runFlow:
+    file: ../shared/dismiss_chat_open_modals.yaml
+
+- tapOn:
+    id: "searchEntry"
+- inputText: "https://privacy-test-pages.site"
+- pressKey: Enter
+- assertVisible: ".*Privacy Test Pages.*"
+
+- tapOn:
+    id: "Browser.OmniBar.Button.AIChat"
+- assertVisible:
+    id: "AIChat.ContextualSheet"
+- assertVisible:
+    id: "AIChatNativeInputView.submitButton"
+
+- tapOn:
+    id: "AIChatNativeInputView.textView"
+- inputText: "First contextual prompt"
+- tapOn:
+    id: "AIChatNativeInputView.submitButton"
+
+- runFlow:
+    file: ../shared/dismiss_chat_open_modals.yaml
+
+# After the first prompt the web UTI replaces the native input. There is no dashed
+# placeholder chip and, in manual mode, no context is attached yet.
+- extendedWaitUntil:
+    visible: "Attach"
+    timeout: 30000
+- assertNotVisible:
+    id: "AIChat.ContextChip.Placeholder"
+- assertNotVisible:
+    id: "AIChat.ContextChip.AttachedTitle"
+
+- tapOn:
+    id: "AIChat.ContextualSheet.CloseButton"
+- waitForAnimationToEnd:
+    timeout: 3000
+
+- tapOn:
+    id: "searchEntry"
+- inputText: "https://privacy-test-pages.site/security/address-bar-spoofing/index.html"
+- pressKey: Enter
+- assertVisible: ".*Address Bar Spoofing.*"
+
+# Manually attach the current page from the web UTI's attachment menu.
+- tapOn:
+    id: "Browser.OmniBar.Button.AIChat"
+- assertVisible:
+    id: "AIChat.ContextualSheet"
+- assertNotVisible:
+    id: "AIChat.ContextChip.AttachedTitle"
+- tapOn: "Attach"
+- assertVisible: "Ask About Page"
+- tapOn: "Ask About Page"
+- extendedWaitUntil:
+    visible:
+        id: "AIChat.ContextChip.AttachedTitle"
+    timeout: 10000
+
+- tapOn:
+    id: "AIChat.ContextualSheet.CloseButton"
+- waitForAnimationToEnd:
+    timeout: 3000
+
+# Navigating to a different page and reopening clears the manually attached context; it
+# does not silently reattach and no placeholder chip appears. "Ask About Page" is still
+# available to attach the new page.
+- tapOn:
+    id: "searchEntry"
+- inputText: "https://privacy-test-pages.site/privacy-protections/geolocation/"
+- pressKey: Enter
+- assertVisible: ".*Geolocation.*"
+
+- tapOn:
+    id: "Browser.OmniBar.Button.AIChat"
+- assertVisible:
+    id: "AIChat.ContextualSheet"
+- extendedWaitUntil:
+    notVisible:
+        id: "AIChat.ContextChip.AttachedTitle"
+    timeout: 10000
+- assertNotVisible:
+    id: "AIChat.ContextChip.Placeholder"
+- tapOn: "Attach"
+- assertVisible: "Ask About Page"

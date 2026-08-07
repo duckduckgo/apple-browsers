@@ -26,6 +26,10 @@ public protocol WebExtensionManaging: AnyObject {
     @available(macOS 15.4, iOS 18.4, *)
     var loadedExtensions: Set<WKWebExtensionContext> { get }
 
+    /// The set of embedded extension types currently loaded into the controller.
+    @available(macOS 15.4, iOS 18.4, *)
+    var loadedEmbeddedExtensionTypes: Set<DuckDuckGoWebExtensionType> { get }
+
     /// The identifiers of installed web extensions.
     @available(macOS 15.4, iOS 18.4, *)
     var webExtensionIdentifiers: [String] { get }
@@ -145,6 +149,17 @@ public struct ScriptletDebugInfo: Identifiable {
 
 @available(macOS 15.4, iOS 18.4, *)
 public extension WebExtensionManaging {
+
+    /// Whether the embedded autoconsent web extension is loaded and active.
+    var isAutoconsentExtensionLoaded: Bool {
+        loadedExtensions.contains { $0.duckDuckGoWebExtensionType == .embedded }
+    }
+
+    /// Default: derive the loaded embedded types from the loaded contexts.
+    @available(macOS 15.4, iOS 18.4, *)
+    var loadedEmbeddedExtensionTypes: Set<DuckDuckGoWebExtensionType> {
+        Set(loadedExtensions.compactMap(\.duckDuckGoWebExtensionType))
+    }
 
     /// Returns a comma-separated string of short labels for all currently installed embedded extensions,
     /// or `nil` if none are installed.

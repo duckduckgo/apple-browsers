@@ -20,17 +20,28 @@ import SwiftUI
 import SwiftUIExtensions
 
 struct PreparingToSyncView: View {
+    let mode: PreparingToSyncMode
+
     @EnvironmentObject var model: ManagementDialogModel
 
     var body: some View {
-        let preparingToSyncDialogSubtitle = model.isAIChatSyncEnabled ? UserText.preparingToSyncDialogSubTitleUpdated : UserText.preparingToSyncDialogSubTitle
         SyncDialog(spacing: 20.0, bottomText: UserText.preparingToSyncDialogAction) {
             VStack(alignment: .center, spacing: 20) {
-                Image(.sync96)
-                SyncUIViews.TextHeader(text: UserText.preparingToSyncDialogTitle)
-                    .fixedSize(horizontal: false, vertical: /*@START_MENU_TOKEN@*/true/*@END_MENU_TOKEN@*/)
-                    .multilineTextAlignment(.center)
-                SyncUIViews.TextDetailMultiline(text: preparingToSyncDialogSubtitle)
+                Image(model.isAppRebranded ? .sync96 : .sync96Legacy)
+                switch mode {
+                case .singleDeviceOrRecovery:
+                    let preparingToSyncDialogSubtitle = model.isAIChatSyncEnabled
+                        ? UserText.preparingToSyncDialogSubTitleUpdated
+                        : UserText.preparingToSyncDialogSubTitle
+                    SyncUIViews.TextHeader(text: UserText.preparingToSyncDialogTitle)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .multilineTextAlignment(.center)
+                    SyncUIViews.TextDetailMultiline(text: preparingToSyncDialogSubtitle)
+                case .twoDevicePairing:
+                    SyncUIViews.TextHeader(text: UserText.preparingToSyncTwoDeviceDialogTitle)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .multilineTextAlignment(.center)
+                }
             }
             .frame(width: 320)
         } buttons: {
@@ -45,7 +56,7 @@ struct RecoverSyncedDataView: View {
     var body: some View {
         SyncDialog(spacing: 20.0) {
             VStack(alignment: .center, spacing: 20) {
-                Image(.syncPair96)
+                Image(model.isAppRebranded ? .syncPair96 : .syncPair96Legacy)
                 SyncUIViews.TextHeader(text: UserText.reciverSyncedDataDialogTitle)
                 SyncUIViews.TextDetailMultiline(text: UserText.reciverSyncedDataDialogSubitle)
             }
@@ -54,11 +65,11 @@ struct RecoverSyncedDataView: View {
             Button(UserText.cancel) {
                 model.cancelPressed()
             }
-            .buttonStyle(DismissActionButtonStyle())
+            .buttonStyle(DismissActionButtonStyle(stateColors: .themedDismissButton))
             Button(UserText.reciverSyncedDataDialogButton) {
                 model.delegate?.enterRecoveryCodePressed()
             }
-            .buttonStyle(DefaultActionButtonStyle(enabled: true))
+            .buttonStyle(DefaultActionButtonStyle(enabled: true, stateColors: .themedActionButton))
         }
     }
 

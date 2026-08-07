@@ -36,7 +36,13 @@
          location = "group:ScreenTimeDataCleaner">
       </FileRef>
       <FileRef
+         location = "group:SERPInstallOrigin">
+      </FileRef>
+      <FileRef
          location = "group:SERPSettings">
+      </FileRef>
+      <FileRef
+         location = "group:SnapshotTestingSupport">
       </FileRef>
       <FileRef
          location = "group:UIComponents">

@@ -22,6 +22,7 @@ import Common
 import FoundationExtensions
 import DataBrokerProtectionCore
 import DataBrokerProtection_iOS
+import DebugServer
 import Core
 import Subscription
 import PixelKit
@@ -109,6 +110,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         case runAllPendingJobs
         case fireWeeklyPixel
         case resetAllPIRNotifications
+        case debugServer
 
         var title: String {
             switch self {
@@ -128,6 +130,8 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
                 return "Test Firing Weekly Pixels"
             case .resetAllPIRNotifications:
                 return "Reset All PIR Notifications"
+            case .debugServer:
+                return "Debug Server"
             }
         }
     }
@@ -501,6 +505,26 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
             return cell
 
         case .debugActions:
+            if DebugActionRows(rawValue: indexPath.row) == .debugServer {
+                let cell = dequeueCell(identifier: CellType.subtitle.rawValue, style: .subtitle)
+                cell.textLabel?.text = DebugActionRows.debugServer.title
+                cell.selectionStyle = .none
+
+                let toggle = UISwitch()
+                toggle.addTarget(self, action: #selector(debugServerToggled(_:)), for: .valueChanged)
+                if let port = debuggingDelegate?.debugServerPort {
+                    toggle.isOn = true
+                    cell.detailTextLabel?.numberOfLines = 0
+                    let host = DebugServerNetworkInterface.wiFiAddress() ?? "127.0.0.1"
+                    cell.detailTextLabel?.text = "http://\(host):\(port)/api"
+                } else {
+                    toggle.isOn = false
+                    cell.detailTextLabel?.text = nil
+                }
+                cell.accessoryView = toggle
+                return cell
+            }
+
             let cell = dequeueCell(identifier: identifier, style: section.cellType(for: indexPath.row))
 
             let row = DebugActionRows(rawValue: indexPath.row)
@@ -689,6 +713,24 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         case .resetAllPIRNotifications:
             debuggingDelegate?.resetAllNotificationStatesForDebug()
             presentAlert(message: "All PIR notification states reset.")
+        case .debugServer:
+            break // toggled via the cell's switch, not by row tap
+        }
+    }
+
+    @objc private func debugServerToggled(_ sender: UISwitch) {
+        if sender.isOn {
+            Task { @MainActor in
+                guard await debuggingDelegate?.startDebugServer() == true else {
+                    sender.setOn(false, animated: true)
+                    presentAlert(title: "Debug Server", message: "Failed to start the debug server.")
+                    return
+                }
+                tableView.reloadSections(IndexSet(integer: Sections.debugActions.rawValue), with: .none)
+            }
+        } else {
+            debuggingDelegate?.stopDebugServer()
+            tableView.reloadSections(IndexSet(integer: Sections.debugActions.rawValue), with: .none)
         }
     }
 

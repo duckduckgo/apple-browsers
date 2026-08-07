@@ -98,6 +98,15 @@ public final class SubscriptionManagerMock: SubscriptionManager {
         resultTokenContainer != nil
     }
 
+    public var localTokenStateResult: LocalSubscriptionTokenState?
+    public func localTokenState() -> LocalSubscriptionTokenState {
+        if let localTokenStateResult {
+            return localTokenStateResult
+        }
+
+        return resultTokenContainer == nil ? .missing : .present
+    }
+
     public var userEmail: String? {
         resultTokenContainer?.decodedAccessToken.email
     }

@@ -1,0 +1,17 @@
+// Voice search session outcome pixels
+{
+    "voice_search_error": {
+        "description": "Fires when a voice search session ends with a recognition or audio-session error and no usable transcription, so neither a done nor a cancelled pixel is sent. Signals recording/recognition failures behind the auto-close reports.",
+        "owners": ["Bunn"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "errorDomain", "errorCode", "underlyingErrorDomain", "underlyingErrorCode"]
+    },
+    "voice_search_no_speech": {
+        "description": "Fires when a voice search session finishes on silence with no recognized words, so neither a done nor a cancelled pixel is sent. Completes the open->done funnel.",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion"]
+    }
+}

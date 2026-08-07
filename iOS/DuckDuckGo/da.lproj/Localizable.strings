@@ -103,6 +103,9 @@
 /* Cancel action - button shown in alert */
 "action.title.cancel" = "Annullér";
 
+/* Open the native Duck.ai chat history sheet from the browser menu. */
+"action.title.chats" = "Chats";
+
 /* Copy action */
 "action.title.copy" = "Kopi";
 
@@ -212,7 +215,7 @@
 "action.title.vpn" = "VPN";
 
 /* Description of the Ad Blocking feature in settings */
-"ad.blocking.description" = "Vi blokerer invasive trackere, før de indlæses, hvilket effektivt eliminerer annoncer, der er afhængige af sporing";
+"ad.blocking.description" = "Vi blokerer invasive trackere, før de indlæses, hvilket effektivt eliminerer annoncer, der er afhængige af sporing.";
 
 /* Section header for YouTube-specific ad blocking settings */
 "ad.blocking.youtube.section.header" = "Blokering af YouTube-annoncer";
@@ -280,6 +283,9 @@
 /* Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message. */
 "aichat.attachment.image.turn.limit" = "Du kan kun vedhæfte %d billeder ad gangen.";
 
+/* Top-level attachment menu option to attach the current page content to an AI chat message */
+"aichat.attachment.option.ask.about.page" = "Spørg om siden";
+
 /* Top-level attachment menu option to add a file to an AI chat message */
 "aichat.attachment.option.attach.file" = "Tilføj fil";
 
@@ -310,6 +316,9 @@
 /* Title for the New Fire Tab row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newFireTab" = "Ny Fire-fane";
 
+/* Title for the New Image row in the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode */
+"aichat.header.plusMenu.newImage" = "Nyt billede";
+
 /* Title for the New Search row in the Duck.ai tab header Plus (+) menu — opens a new tab and forces search mode for that entry */
 "aichat.header.plusMenu.newSearch" = "Ny søgning";
 
@@ -318,6 +327,75 @@
 
 /* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newVoiceChat" = "Ny stemmechat";
+
+/* Error toast shown when a Duck.ai chat download fails and nothing was saved. */
+"aiChat.history.download.failed.message" = "Kunne ikke downloade. Prøv igen.";
+
+/* Primary button on the empty Duck.ai chat-history screen; opens the Duck.ai web chat. */
+"aiChat.history.emptyState.openDuckAi" = "Åbn Duck.ai";
+
+/* Title shown when the user has no Duck.ai chat history yet. */
+"aiChat.history.emptyState.title" = "Ingen nylige chats";
+
+/* Message of the alert shown when Duck.ai chat history fails to load. */
+"aiChat.history.loadError.message" = "Noget gik galt under indlæsning af dine Duck.ai-chats. Prøv igen senere.";
+
+/* Title of the alert shown when Duck.ai chat history fails to load. */
+"aiChat.history.loadError.title" = "Kunne ikke indlæse chats";
+
+/* Accessibility label for the overflow (three dots) menu button in the Duck.ai chat history navigation bar. */
+"aiChat.history.menu.a11y" = "Mere";
+
+/* Menu item opening Duck.ai Chat Protection settings from the Duck.ai chat history list. */
+"aiChat.history.menu.chatProtection" = "Chatbeskyttelse";
+
+/* Menu item that starts multi-selecting chats in the Duck.ai chat history list. */
+"aiChat.history.menu.selectChats" = "Vælg Chats";
+
+/* Shown inside the Duck.ai chat history list when the user's search query returns no matching chats. */
+"aiChat.history.noSearchResults.title" = "Ingen match fundet";
+
+/* Long-press row menu item that deletes a Duck.ai chat. */
+"aiChat.history.rowMenu.delete" = "Slet";
+
+/* Long-press row menu item that downloads a Duck.ai chat. */
+"aiChat.history.rowMenu.download" = "Download";
+
+/* Long-press row menu item that pins a Duck.ai chat. */
+"aiChat.history.rowMenu.pin" = "Fastgør";
+
+/* Long-press row menu item that starts multi-selecting chats in the Duck.ai chat history list. */
+"aiChat.history.rowMenu.select" = "Vælg";
+
+/* Long-press row menu item that unpins a Duck.ai chat. */
+"aiChat.history.rowMenu.unpin" = "Frigør";
+
+/* Accessibility label for the search button in the Duck.ai chat history navigation bar. */
+"aiChat.history.search.a11y" = "Søg";
+
+/* Placeholder for the search bar at the top of the Duck.ai chat history list. */
+"aiChat.history.searchBar.placeholder" = "Søgning";
+
+/* Section header above the user's pinned chats in the Duck.ai chat history list. */
+"aiChat.history.section.pinned" = "Fastgjort";
+
+/* Section header above the user's recent (unpinned) chats in the Duck.ai chat history list. */
+"aiChat.history.section.recent" = "Nylig";
+
+/* Multi-select toolbar button that deletes all chats when none are individually selected. */
+"aiChat.history.selection.deleteAll" = "Slet alle";
+
+/* Accessibility label for the delete action revealed by swiping a Duck.ai chat row. */
+"aiChat.history.swipe.delete.a11y" = "Slet chat";
+
+/* Accessibility label for the download action revealed by swiping a Duck.ai chat row. */
+"aiChat.history.swipe.download.a11y" = "Download chat";
+
+/* Accessibility label for the pin action revealed by leading-swiping a Duck.ai chat row in the Recent section. */
+"aiChat.history.swipe.pin.a11y" = "Fastgør chat";
+
+/* Accessibility label for the unpin action revealed by leading-swiping a Duck.ai chat row in the Pinned section. */
+"aiChat.history.swipe.unpin.a11y" = "Frigør chat";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Til analytiske opgaver";
@@ -337,18 +415,6 @@
 /* Title for the reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.reasoning.title" = "Ræsonnement";
 
-/* Body of the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. ** markers indicate bold text and should be preserved around the translated equivalents of the menu options Settings, Sync & Backup, and Sync With Another Device. */
-"aiChat.syncIntroSheet.body" = "Find QR-koden i DuckDuckGo-appen på din anden enhed ved at gå til **Indstillinger** › **Sync & Backup** › **Synkroniser med en anden enhed**.";
-
-/* Secondary button on the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
-"aiChat.syncIntroSheet.notNow" = "Ikke nu";
-
-/* Primary button on the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
-"aiChat.syncIntroSheet.scan.button" = "Scan QR-kode";
-
-/* Title of the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
-"aiChat.syncIntroSheet.title" = "Lad os synkronisere dine chats på tværs af dine enheder!";
-
 /* Primary button of the sync promo card shown above the Duck.ai recent chats list. */
 "aiChat.syncPromo.button" = "Synkroniser med en anden enhed";
 
@@ -357,6 +423,27 @@
 
 /* Headline of the sync promo card shown above the Duck.ai recent chats list. */
 "aiChat.syncPromo.title" = "Få adgang til dine chats på tværs af dine enheder ved hjælp af Sync & Backup.";
+
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a regular text conversation. */
+"aiChat.tabSwitcher.card.chip.chat" = "Chat";
+
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as the transcript of a finished voice conversation. */
+"aiChat.tabSwitcher.card.chip.transcript" = "Transskription";
+
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a live voice session. */
+"aiChat.tabSwitcher.card.chip.voice" = "Stemmechat";
+
+/* Title shown on a Duck.ai tab grid card when the chat has no title yet. */
+"aiChat.tabSwitcher.card.untitledChat" = "Ny chat";
+
+/* Status label at the top of the Duck.ai tab grid card for a tab with a live voice session in progress. A leading microphone glyph is shown next to it in the UI. */
+"aiChat.tabSwitcher.card.voice.listening" = "Lytter …";
+
+/* VoiceOver label for the Duck.ai tab grid card of a tab with a live voice session — same as the visible status without the decorative emoji. */
+"aiChat.tabSwitcher.card.voice.listening.accessibilityLabel" = "Lytter …";
+
+/* Subtitle for the customize responses action in the unified input tools menu */
+"aichat.toolbar.tools.customizeResponses.subtitle" = "Indstil tonen, længden og adfærden";
 
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Tilpas svar";
@@ -376,6 +463,15 @@
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Eksisterende bogmærker duplikeres ikke.";
 
+/* Button title for Sync error shown when both devices are already paired with the same account */
+"alert.sync-already-paired-with-account-button" = "Forstået";
+
+/* Description for Sync error shown when both devices are already paired with the same account */
+"alert.sync-already-paired-with-account-description" = "Disse enheder er allerede forbundet til Sync & Backup.";
+
+/* Title for Sync error shown when both devices are already paired with the same account */
+"alert.sync-already-paired-with-account-title" = "Allerede synkroniseret.";
+
 /* Description for alert shown when sync error occurs because of bad bookmarks data */
 "alert.sync-bookmarks-bad-data-error-description" = "Nogle bogmærker er formateret forkert eller er for lange og blev ikke synkroniseret.";
 
@@ -384,6 +480,21 @@
 
 /* Title for alert shown when sync bookmarks paused for too many items */
 "alert.sync-bookmarks-paused-title" = "Bogmærkesynkronisering er sat på pause";
+
+/* Button title for Sync error shown when setup is canceled from the other device */
+"alert.sync-cancelled-from-other-device-button" = "Forstået";
+
+/* Description for Sync error shown when setup is canceled from the other device */
+"alert.sync-cancelled-from-other-device-description" = "Prøv igen.";
+
+/* Title for Sync error shown when setup is canceled from the other device */
+"alert.sync-cancelled-from-other-device-title" = "Synkronisering annulleret fra din anden enhed.";
+
+/* Description for Sync error shown when a third-party recovery code can only be used with Duck.ai */
+"alert.sync-code-only-compatible-with-duckai-description" = "Gå til Duck.ai i din browser, gå til Settings, og vælg derefter \"Turn On“ under \"Sync & Backup“ og derefter \"Sync with another device“.";
+
+/* Title for Sync error shown when a third-party recovery code can only be used with Duck.ai */
+"alert.sync-code-only-compatible-with-duckai-title" = "Scan denne kode med en anden browser end DuckDuckGo.";
 
 /* Description for alert shown when sync error occurs because of bad credentials data */
 "alert.sync-credentials-bad-data-error-description" = "Nogle adgangskoder er formateret forkert eller er for lange og blev ikke synkroniseret.";
@@ -409,6 +520,15 @@
 /* Sync error alert action button title, takes the user to the sync settings page. */
 "alert.sync-error-action" = "Synkroniseringsindstillinger";
 
+/* Description for generic Sync setup failure alerts */
+"alert.sync-failed-description" = "Prøv igen.";
+
+/* Title for generic Sync setup failure alerts */
+"alert.sync-failed-title" = "Synkroniseringen mislykkedes.";
+
+/* Description for Sync error shown when a third-party account already has a native DuckDuckGo Sync credential */
+"alert.sync-from-another-connected-device-description" = "Synkronisér denne enhed fra en allerede tilsluttet DuckDuckGo-browser på en anden enhed.";
+
 /* Description for alert shown when user logged off from sync */
 "alert.sync-invalid-login-error-description" = "Synkroniseringen er blevet sat på pause. Hvis du vil fortsætte med at synkronisere denne enhed, skal du oprette forbindelse igen ved hjælp af en anden enhed eller din gendannelseskode.";
 
@@ -430,6 +550,9 @@
 /* Title for alert shown when sync paused for an error */
 "alert.sync-paused-title" = "Synkronisering er sat på pause";
 
+/* Button title for Sync setup error alerts */
+"alert.sync-setup-error-got-it-button" = "Forstået";
+
 /* Switch account button in alert */
 "alert.sync-switch-account-button" = "Skift synkronisering";
 
@@ -441,6 +564,9 @@
 
 /* Description for alert shown when sync error occurs because of too many requests */
 "alert.sync-too-many-requests-error-description" = "Sync & Backup er midlertidigt utilgængelig.";
+
+/* Title for Sync error shown when the app version does not support the scanned Sync code */
+"alert.sync-update-required-title" = "Opdatér DuckDuckGo-browseren, og prøv igen.";
 
 /* Title of the warning message that tells the user that there was an error with the sync feature. */
 "alert.sync.warning.sync-error" = "Synkroniseringsfejl";
@@ -473,13 +599,13 @@
 "alert.unable-to-remove-device-description" = "Denne enhed kunne ikke fjernes fra synkronisering og sikkerhedskopiering.";
 
 /* Description for unable to scan qr code error */
-"alert.unable-to-scan-qr-code-description" = "Beklager, denne kode er ugyldig. Sørg for, at den korrekte kode er indtastet eller scannet.";
+"alert.unable-to-scan-qr-code-description" = "Sørg for, at den korrekte kode er indtastet eller scannet.";
+
+/* Title for unable to scan qr code error */
+"alert.unable-to-scan-qr-code-title" = "Dette er ikke en gyldig synkroniseringskode.";
 
 /* Description for unable to sync to server error */
 "alert.unable-to-sync-to-server-description" = "Kan ikke oprette forbindelse til serveren.";
-
-/* Description for unable to sync with another device error */
-"alert.unable-to-sync-with-other-device-description" = "Kan ikke synkronisere med en anden enhed.";
 
 /* Description for unable to turn sync off error */
 "alert.unable-to-turn-sync-off-description" = "Synkronisering og sikkerhedskopiering kunne ikke slås fra.";
@@ -489,6 +615,9 @@
 
 /* Shown on authentication screen */
 "app.authentication.unlock" = "Lås DuckDuckGo op.";
+
+/* Instruction shown on authentication screen after authentication fails */
+"app.authentication.unlock.instructions" = "Tryk hvor som helst for at låse op";
 
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Log ind";
@@ -820,6 +949,12 @@
 /* Login name label for login details on autofill */
 "autofill.logins.details.login-name" = "Titel";
 
+/* Message for alert when attempting to save a password that has neither a website nor a username */
+"autofill.logins.details.missing-website-or-username-alert.message" = "Indtast et websted eller brugernavn for at gemme denne adgangskode.";
+
+/* Title for alert when attempting to save a password that has neither a website nor a username */
+"autofill.logins.details.missing-website-or-username-alert.title" = "Websted eller brugernavn påkrævet";
+
 /* Title when adding new autofill login */
 "autofill.logins.details.new-title" = "Tilføj adgangskode";
 
@@ -1023,12 +1158,6 @@
 
 /* Title displayed on modal asking for the user to save the login for the first time */
 "autofill.save-login.new-user.title" = "Gem denne adgangskode?";
-
-/* CTA displayed on modal asking if the user wants to dismiss the save login action for now */
-"autofill.save-login.no-thanks.CTA" = "Nej tak.";
-
-/* CTA displayed on modal allowing the user to dismiss the save login prompt for now */
-"autofill.save-login.not-now.CTA" = "Ikke nu";
 
 /* Message displayed on modal asking for the user to save the login for the first time */
 "autofill.save-login.security.message" = "Gem din adgangskode sikkert på enheden med DuckDuckGo Passwords & Autofill.";
@@ -1359,6 +1488,39 @@
 
 /* Third paragraph of the Control Center Widget Education screen */
 "control.center.widget.education.paragraph.3" = "Tryk på **Tilføj en kontrol** nederst på skærmen";
+
+/* Small 'NEW' badge shown above the Cookie Pop-up Protection opt-in dialog header */
+"cookie-popup-protection.opt-in.badge" = "Ny";
+
+/* Confirm button in the Cookie Pop-up Protection opt-in dialog */
+"cookie-popup-protection.opt-in.confirm" = "Bekræft";
+
+/* Body of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.body" = "Vores mål er at afvise så mange cookies som muligt. Hvis der ikke er en afvisningsmulighed, sparer vi dig for et klik og accepterer disse cookies for dig.";
+
+/* Primary (recommended) option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.primary-option" = "Afvis når muligt eller acceptér for mig";
+
+/* Secondary option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.secondary-option" = "Jeg vil fortsætte med at håndtere dem selv";
+
+/* Title of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.title" = "Er du træt af pop op-vinduer om cookies, der ikke vil lade dig være i fred?";
+
+/* Body of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.body" = "Vi kan spare dig for et klik og acceptere disse cookies for dig.";
+
+/* Primary (recommended) option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.primary-option" = "Acceptér cookies, der ikke kan fravælges";
+
+/* Secondary option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.secondary-option" = "Jeg vil fortsætte med at acceptere dem selv";
+
+/* Title of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.title" = "Træt af cookie-pop-ups, der ikke lader dig fravælge?";
+
+/* Footer text in the Cookie Pop-up Protection opt-in dialog. The text between ** ** is rendered bold. */
+"cookie-popup-protection.opt-in.footer" = "Du kan altid justere det senere i\n**Indstillinger** > **Beskyttelse mod pop op-beskeder om cookies**.";
 
 /* Crash Report always send button title */
 "crash.report.dialog.always.send" = "Send altid fejlrapporter";
@@ -1842,6 +2004,246 @@
 
 /* Title for the Duck.ai Siri education screen */
 "duckai.siri.education.screen.title" = "Tal med Duck.ai ved hjælp af Siri!";
+
+/* Suggested prompt chip: cast and crew */
+"duckai.suggestion.cast-crew.label" = "Rollebesætning og filmhold";
+
+/* Suggested prompt submitted text: cast and crew */
+"duckai.suggestion.cast-crew.prompt" = "Hvem er de vigtigste skuespillere og filmfolk, og hvad er de ellers kendt for?";
+
+/* Suggested prompt chip: counterarguments */
+"duckai.suggestion.counterarguments.label" = "Hvad er modargumenterne?";
+
+/* Suggested prompt submitted text: counterarguments */
+"duckai.suggestion.counterarguments.prompt" = "Hvad er de vigtigste modargumenter eller kritikpunkter af dette?";
+
+/* Suggested prompt chip: course learning outcomes */
+"duckai.suggestion.course-learn.label" = "Hvad vil jeg lære?";
+
+/* Suggested prompt submitted text: course learning outcomes */
+"duckai.suggestion.course-learn.prompt" = "Hvad er de vigtigste ting, jeg vil lære på dette kursus?";
+
+/* Suggested prompt chip: is a course worth taking */
+"duckai.suggestion.course-worth.label" = "Er det værd at tage?";
+
+/* Suggested prompt submitted text: is a course worth taking */
+"duckai.suggestion.course-worth.prompt" = "Er dette kursus værd at tage på baggrund af denne side?";
+
+/* Suggested prompt chip: draft a cover letter */
+"duckai.suggestion.cover-letter.label" = "Skriv en ansøgning";
+
+/* Suggested prompt submitted text: draft a cover letter */
+"duckai.suggestion.cover-letter.prompt" = "Lav et udkast til en ansøgning til dette job.";
+
+/* Suggested prompt chip: event details */
+"duckai.suggestion.event-details.label" = "Hvad er de vigtigste detaljer?";
+
+/* Suggested prompt submitted text: event details */
+"duckai.suggestion.event-details.prompt" = "Sammenfat de vigtigste detaljer om denne begivenhed.";
+
+/* Suggested prompt chip: explain the top answer */
+"duckai.suggestion.explain-answer.label" = "Forklar det øverste svar";
+
+/* Suggested prompt submitted text: explain the top answer */
+"duckai.suggestion.explain-answer.prompt" = "Forklar det accepterede svar i simple termer.";
+
+/* Suggested prompt chip: explain a research paper */
+"duckai.suggestion.explain-paper.label" = "Forklar denne artikel";
+
+/* Suggested prompt submitted text: explain a research paper */
+"duckai.suggestion.explain-paper.prompt" = "Forklar denne forskningsartikel i et letforståeligt sprog.";
+
+/* Suggested prompt chip: explain a code repository */
+"duckai.suggestion.explain-repo.label" = "Forklar dette repo";
+
+/* Suggested prompt submitted text: explain a code repository */
+"duckai.suggestion.explain-repo.prompt" = "Forklar, hvad dette kodelager gør, og hvordan du bruger det.";
+
+/* Suggested prompt chip: explain the content simply */
+"duckai.suggestion.explain-simply.label" = "Forklar dette enkelt";
+
+/* Suggested prompt submitted text: explain the content simply */
+"duckai.suggestion.explain-simply.prompt" = "Forklar dette i et enkelt og letforståeligt sprog.";
+
+/* Suggested prompt chip: what an FAQ page answers */
+"duckai.suggestion.faq-answer.label" = "Hvad svarer dette på?";
+
+/* Suggested prompt submitted text: what an FAQ page answers */
+"duckai.suggestion.faq-answer.prompt" = "Hvad er de vigtigste spørgsmål, denne side besvarer?";
+
+/* Suggested prompt chip: summarize FAQ Q&As */
+"duckai.suggestion.faq-summary.label" = "Sammenfat spørgsmål og svar";
+
+/* Suggested prompt submitted text: summarize FAQ Q&As */
+"duckai.suggestion.faq-summary.prompt" = "Sammenfat spørgsmålene og svarene på denne side.";
+
+/* Suggested prompt chip: product alternatives */
+"duckai.suggestion.find-alternatives.label" = "Find alternativer til mig";
+
+/* Suggested prompt submitted text: product alternatives */
+"duckai.suggestion.find-alternatives.prompt" = "Foreslå nogle alternativer til dette produkt.";
+
+/* Suggested prompt chip: how-to materials */
+"duckai.suggestion.howto-materials.label" = "Hvad skal jeg bruge?";
+
+/* Suggested prompt submitted text: how-to materials */
+"duckai.suggestion.howto-materials.prompt" = "Angiv de værktøjer, materialer eller forudsætninger, jeg har brug for til dette.";
+
+/* Suggested prompt chip: how-to steps */
+"duckai.suggestion.howto-steps.label" = "Gennemgå trinnene med mig";
+
+/* Suggested prompt submitted text: how-to steps */
+"duckai.suggestion.howto-steps.prompt" = "Opdel dette i klare, nummererede trin.";
+
+/* Suggested prompt chip: interview prep */
+"duckai.suggestion.interview-prep.label" = "Hjælp mig med at forberede mig til jobsamtalen";
+
+/* Suggested prompt submitted text: interview prep */
+"duckai.suggestion.interview-prep.prompt" = "Hvilke spørgsmål kan blive stillet under jobsamtalen til denne stilling?";
+
+/* Suggested prompt chip: key takeaways of an article */
+"duckai.suggestion.key-takeaways.label" = "Hvad er de vigtigste pointer?";
+
+/* Suggested prompt submitted text: key takeaways of an article */
+"duckai.suggestion.key-takeaways.prompt" = "Hvad er de vigtigste pointer fra denne artikel?";
+
+/* Suggested prompt chip: restaurant menu highlights */
+"duckai.suggestion.menu-highlights.label" = "Hvad skal jeg bestille?";
+
+/* Suggested prompt submitted text: restaurant menu highlights */
+"duckai.suggestion.menu-highlights.prompt" = "Hvilke retter bør man prøve her?";
+
+/* Suggested prompt chip: paper contributions */
+"duckai.suggestion.paper-contributions.label" = "Hvad er de vigtigste bidrag?";
+
+/* Suggested prompt submitted text: paper contributions */
+"duckai.suggestion.paper-contributions.prompt" = "Hvad er de vigtigste bidrag fra denne artikel?";
+
+/* Suggested prompt chip: summarize a person's background */
+"duckai.suggestion.person-background.label" = "Sammenfat personens baggrund";
+
+/* Suggested prompt submitted text: summarize a person's background */
+"duckai.suggestion.person-background.prompt" = "Sammenfat denne persons baggrund og bemærkelsesværdige arbejde.";
+
+/* Suggested prompt chip: place hours and location */
+"duckai.suggestion.place-hours.label" = "Hvad er åbningstiderne og placeringen?";
+
+/* Suggested prompt submitted text: place hours and location */
+"duckai.suggestion.place-hours.prompt" = "Hvad er åbningstiderne, placeringen og kontaktoplysningerne for dette sted?";
+
+/* Suggested prompt chip: place reputation */
+"duckai.suggestion.place-reviews.label" = "Er det her sted godt?";
+
+/* Suggested prompt submitted text: place reputation */
+"duckai.suggestion.place-reviews.prompt" = "Er det her sted godt? Sammenfat dets omdømme baseret på anmeldelser og vurderinger.";
+
+/* Suggested prompt chip: product pros and cons */
+"duckai.suggestion.product-pros-cons.label" = "Hvad er fordelene og ulemperne?";
+
+/* Suggested prompt submitted text: product pros and cons */
+"duckai.suggestion.product-pros-cons.prompt" = "Hvad er fordelene og ulemperne ved dette produkt?";
+
+/* Suggested prompt chip: recipe nutrition */
+"duckai.suggestion.recipe-nutrition.label" = "Vurder ernæringen";
+
+/* Suggested prompt submitted text: recipe nutrition */
+"duckai.suggestion.recipe-nutrition.prompt" = "Vurder næringsindholdet for denne opskrift.";
+
+/* Suggested prompt chip: related articles */
+"duckai.suggestion.related-articles.label" = "Foreslå relaterede artikler at udforske";
+
+/* Suggested prompt submitted text: related articles */
+"duckai.suggestion.related-articles.prompt" = "Foreslå relaterede artikler eller emner, der er værd at udforske som det næste.";
+
+/* Suggested prompt chip: summarize reviews */
+"duckai.suggestion.review-summary.label" = "Sammenfat anmeldelserne";
+
+/* Suggested prompt submitted text: summarize reviews */
+"duckai.suggestion.review-summary.prompt" = "Sammenfat hvad anmeldelserne siger.";
+
+/* Suggested prompt chip: review verdict */
+"duckai.suggestion.review-verdict.label" = "Hvad er dommen?";
+
+/* Suggested prompt submitted text: review verdict */
+"duckai.suggestion.review-verdict.prompt" = "Hvad er den samlede vurdering og bedømmelse af dette?";
+
+/* Suggested prompt chip: scale a recipe */
+"duckai.suggestion.scale-recipe.label" = "Tilpas portionerne";
+
+/* Suggested prompt submitted text: scale a recipe */
+"duckai.suggestion.scale-recipe.prompt" = "Omskriv denne opskrift, så den passer til et andet antal portioner.";
+
+/* Suggested prompt chip: shopping list from a recipe */
+"duckai.suggestion.shopping-list.label" = "Generér en indkøbsliste";
+
+/* Suggested prompt submitted text: shopping list from a recipe */
+"duckai.suggestion.shopping-list.prompt" = "Opret en indkøbsliste med mængder fra denne opskrift.";
+
+/* Suggested prompt chip: similar books */
+"duckai.suggestion.similar-books.label" = "Anbefal lignende bøger";
+
+/* Suggested prompt submitted text: similar books */
+"duckai.suggestion.similar-books.prompt" = "Anbefal lignende bøger.";
+
+/* Suggested prompt chip: similar movies or shows */
+"duckai.suggestion.similar-titles.label" = "Anbefal lignende titler";
+
+/* Suggested prompt submitted text: similar movies or shows */
+"duckai.suggestion.similar-titles.prompt" = "Anbefal lignende film eller serier.";
+
+/* Suggested prompt chip: summarize a book */
+"duckai.suggestion.summarize-book.label" = "Sammenfat denne bog";
+
+/* Suggested prompt submitted text: summarize a book */
+"duckai.suggestion.summarize-book.prompt" = "Sammenfat denne bog.";
+
+/* Suggested prompt chip: summarize the current page */
+"duckai.suggestion.summarize-page.label" = "Sammenfat denne side";
+
+/* Suggested prompt submitted text: summarize the current page */
+"duckai.suggestion.summarize-page.prompt" = "Sammenfat denne side.";
+
+/* Suggested prompt chip: summarize a discussion thread */
+"duckai.suggestion.summarize-thread.label" = "Sammenfat denne diskussion";
+
+/* Suggested prompt submitted text: summarize a discussion thread */
+"duckai.suggestion.summarize-thread.prompt" = "Sammenfat denne diskussionstråd.";
+
+/* Suggested prompt chip: summarize a video */
+"duckai.suggestion.summarize-video.label" = "Sammenfat denne video";
+
+/* Suggested prompt submitted text: summarize a video */
+"duckai.suggestion.summarize-video.prompt" = "Sammenfat denne video.";
+
+/* Suggested prompt chip: tailor a resume to a job */
+"duckai.suggestion.tailor-resume.label" = "Tilpas mit CV";
+
+/* Suggested prompt submitted text: tailor a resume to a job */
+"duckai.suggestion.tailor-resume.prompt" = "Hjælp mig med at tilpasse mit CV til dette job.";
+
+/* Suggested prompt chip: translate the current page */
+"duckai.suggestion.translate-page.label" = "Oversæt denne side";
+
+/* Suggested prompt submitted text: translate the page. %@ is replaced with the name of the user's language. */
+"duckai.suggestion.translate-page.prompt" = "Oversæt denne side til %@.";
+
+/* Suggested prompt chip: video key points */
+"duckai.suggestion.video-key-points.label" = "Hvad er de vigtigste pointer?";
+
+/* Suggested prompt submitted text: video key points */
+"duckai.suggestion.video-key-points.prompt" = "Hvad er hovedpunkterne i denne video?";
+
+/* Suggested prompt chip: person background */
+"duckai.suggestion.who-is-this.label" = "Hvem er denne person?";
+
+/* Suggested prompt submitted text: person background */
+"duckai.suggestion.who-is-this.prompt" = "Giv mig en hurtig oversigt om denne persons baggrund.";
+
+/* Suggested prompt chip: is a movie/show worth watching */
+"duckai.suggestion.worth-watching.label" = "Er dette værd at se?";
+
+/* Suggested prompt submitted text: is a movie/show worth watching */
+"duckai.suggestion.worth-watching.prompt" = "Er dette værd at se? Giv mig en vurdering uden spoilere.";
 
 /* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. */
 "duckai.welcome.message" = "Alle chats er %@ private";
@@ -2476,27 +2878,6 @@
 /* Title shown on the Fire Mode empty state screen */
 "fire.mode.empty.state.title" = "Fire-faner";
 
-/* Badge label on the Fire Mode promotion entry in the browsing menu */
-"fire.mode.menu.promotion.badge" = "Ny";
-
-/* Description for the Fire Mode promotion card shown on the new tab page */
-"fire.mode.ntp.promotion.description" = "Nyt! Gennemse uden at gemme lokal historik eller logge ind på websteder med en anden konto.";
-
-/* Dismiss button on the Fire Mode promotion card on the new tab page */
-"fire.mode.ntp.promotion.dismiss" = "Ikke nu";
-
-/* Primary action button on the Fire Mode promotion card that opens Fire Mode */
-"fire.mode.ntp.promotion.primary.action" = "Prøv Fire-faner";
-
-/* Title for promotion element for pushing users to try fire mode. */
-"fire.mode.promotion.title" = "Prøv Fire-faner";
-
-/* Description for the Fire Tabs popover tip shown on the tab switcher picker */
-"fire.mode.tab.switcher.tip.description" = "Prøv Fire-faner for at surfe uden at gemme lokal historik.";
-
-/* Title for the Fire Tabs popover tip shown on the tab switcher picker */
-"fire.mode.tab.switcher.tip.title" = "Nyt: Fire-faner";
-
 /* Title shown on the Fire tab empty state screen */
 "fire.tab.empty.state.title" = "Fire-fane";
 
@@ -2659,11 +3040,20 @@
 /* No comment provided by engineer. */
 "keyCommandReload" = "Genindlæs";
 
+/* Hardware keyboard shortcut label for resetting page text zoom to the default level */
+"keyCommandResetZoom" = "Nulstil zoom";
+
 /* No comment provided by engineer. */
 "keyCommandSelect" = "Vælg";
 
 /* No comment provided by engineer. */
 "keyCommandShowAllTabs" = "Vis alle faner";
+
+/* Hardware keyboard shortcut label for increasing page text zoom */
+"keyCommandZoomIn" = "Zoom ind";
+
+/* Hardware keyboard shortcut label for decreasing page text zoom */
+"keyCommandZoomOut" = "Zoom ud";
 
 /* No comment provided by engineer. */
 "Last Processed: %@" = "Sidst behandlet: %@";
@@ -2881,6 +3271,9 @@
 /* Message label text for the status view when VPN is disconnected */
 "network.protection.status.header.message.on" = "Al internettrafik på enheden er sikret\ngennem VPN-forbindelsen.";
 
+/* Status view message shown while the VPN is on but Strict routing is off */
+"network.protection.status.header.message.strict.routing.off" = "Noget trafik kan omgå VPN'en, mens streng routing er slået fra. Streng routing anbefales til offentlige netværk.";
+
 /* Header title label text for the status view when VPN is disconnected */
 "network.protection.status.header.title.off" = "DuckDuckGo VPN er slået fra";
 
@@ -2923,8 +3316,29 @@
 /* Label shown on the title of the settings section in NetworkProtection's status view. */
 "network.protection.status.view.settings.section.title" = "Administrer";
 
+/* Label for the status pill shown while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.off" = "Streng routing: Fra";
+
+/* Label for the status pill shown while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.on" = "Streng routing: Til";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.tooltip.off" = "Streng routing anbefales til offentlige netværk.";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.tooltip.on" = "Nogle apps virker muligvis ikke, mens streng routing er slået til.";
+
 /* Title label text for the status view when netP is disconnected */
 "network.protection.status.view.title" = "VPN";
+
+/* Title of the Troubleshooting section in the VPN status screen. */
+"network.protection.status.view.troubleshooting.section.title" = "Fejlfinding";
+
+/* The body of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.body" = "Noget trafik kan omgå VPN'en, mens den er slået fra. Streng routing anbefales til offentlige netværk.";
+
+/* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.title" = "Streng routing er slået fra";
 
 /* The body of the notification shown when VPN reconnects successfully */
 "network.protection.success.notification.body" = "DuckDuckGo VPN er tændt. Din placering og onlineaktivitet er beskyttet.";
@@ -2955,6 +3369,12 @@
 
 /* Title for the data volume section in the VPN status screen */
 "network.protection.vpn.data-volume" = "Datamængde";
+
+/* Footer text for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Omgå VPN'en for operatørtjenester, såsom wi-fi-opkald og telefonsvarer.";
+
+/* Title for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.title" = "Udeluk Carrier Services";
 
 /* Footer text for the Exclude Local Networks setting item. */
 "network.protection.vpn.exclude.local.networks.setting.footer" = "Lad lokal trafik omgå VPN'en og oprette forbindelse til enheder på dit lokale netværk, f.eks. en printer.";
@@ -3004,6 +3424,18 @@
 /* Footer text for the DNS server setting item. */
 "network.protection.vpn.secure.dns.setting.footer" = "DuckDuckGo dirigerer DNS-forespørgsler gennem vores DNS-servere, så din internetudbyder ikke kan se, hvilke hjemmesider du besøger.";
 
+/* Title for the row that copies VPN diagnostic information to the clipboard. */
+"network.protection.vpn.settings.copy-diagnostics" = "Kopiér VPN-diagnostik";
+
+/* Caption beneath the Copy VPN Diagnostics row, explaining what it does. */
+"network.protection.vpn.settings.copy-diagnostics.caption" = "Vedhæft en kopi af disse anonymiserede VPN-diagnosticeringsdata, når du kontakter supporten, så vi kan hjælpe med at fejlfinde din forbindelse.";
+
+/* Temporary title for the row after VPN diagnostic information is copied to the clipboard. */
+"network.protection.vpn.settings.copy-diagnostics.copied-to-clipboard" = "Kopieret til udklipsholder";
+
+/* Temporary title for the row when VPN diagnostic information could not be copied to the clipboard. */
+"network.protection.vpn.settings.copy-diagnostics.failed-to-copy-to-clipboard" = "Kunne ikke kopiere til udklipsholder";
+
 /* Title for the FAQ row in the VPN status screen. */
 "network.protection.vpn.settings.faq" = "Ofte stillede spørgsmål og support";
 
@@ -3015,6 +3447,12 @@
 
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Genveje";
+
+/* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
+"network.protection.vpn.strict.routing.setting.footer" = "Bloker apps fra at omgå VPN'en. Hvis du har problemer med wi-fi-funktioner (såsom AirDrop eller iPhone-spejling), kan det hjælpe at slå det fra. Stærkt anbefalet på netværk, du ikke har tillid til, såsom offentligt wi-fi. [Læs mere](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack).";
+
+/* Title for the Strict Routing setting item. */
+"network.protection.vpn.strict.routing.setting.title" = "Aktivér streng routing (anbefales)";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Bekræft";
@@ -3095,7 +3533,7 @@
 "omnibar.notification.trackers-blocked" = "%d Trackers";
 
 /* Text displayed on notification appearing in the address bar when YouTube ad blocking is active */
-"omnibar.notification.youtube-ad-block-on" = "Blokering af YouTube-annoncer slået til";
+"omnibar.notification.youtube-ad-block-on" = "Annonceblokering er slået til";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Forstået";
@@ -3133,8 +3571,8 @@
 /* Message of the last screen of the onboarding to the browser app for the Duck.ai flow. 'Duck.ai' is a brand name and should not be translated. '[[chat_icon]]' is a placeholder and should not be translated. */
 "onboarding.duckai.contextual.end-of-journey.message" = "Start en privat AI-chat med Duck.ai, eller vælg Søg efter beskyttet browsing.\n\nDu kan bruge Duck.ai fra alle steder, hvor du ser chatikonet [[chat_icon]]";
 
-/* Body text of the subscription promo shown at the end of the Duck.ai onboarding flow. Describes the paid Duck.ai subscription. 'GPT', 'Claude', and 'Llama' are brand names and should not be translated. */
-"onboarding.duckai.contextual.subscription.message" = "Vi tilbyder også et betalt abonnement med avancerede AI-modeller med højere chatgrænser fra GPT, Claude og Llama, en sikker VPN og meget mere.";
+/* Body text of the subscription promo shown at the end of the Duck.ai onboarding flow. Describes the paid Duck.ai subscription. 'GPT', 'Claude' are brand names and should not be translated. */
+"onboarding.duckai.contextual.subscription.message" = "Vi tilbyder også et betalt abonnement med avancerede AI-modeller med højere chatgrænser fra GPT og Claude, en sikker VPN og meget mere.";
 
 /* Title shown on the Duck.ai query screen in the Duck.ai onboarding flow, prompting the user to try their first AI chat. */
 "onboarding.duckai.duckAIQuery.title" = "Prøv nu en privat AI-chat!";
@@ -3192,6 +3630,36 @@
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
 "onboarding.highlights.browsers.title" = "Beskyttelse aktiveret!";
+
+/* Completion onboarding message shown after finishing Fire onboarding in Duck.ai flow. '[[chat_icon]]' is a placeholder and should not be translated. */
+"onboarding.highlights.duckAIQuery.completion.message" = "Brug adresselinjen til at søge efter og besøge websteder, eller skift til privat AI-chat med Duck.ai.\n\nDu kan bruge Duck.ai alle steder, hvor du ser chatikonet [[chat_icon]]";
+
+/* Fire onboarding message shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.message" = "Private AI-chats du kan slette når som helst med Fire Button. Prøv det! 🔥";
+
+/* Fire onboarding title shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.title" = "Sådan er Duck.ai!";
+
+/* Placeholder for AI query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.ai" = "Spørg om hvad som helst privat";
+
+/* Placeholder for search query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.search" = "Søg privat";
+
+/* First suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option1" = "Forklar aktiemarkedet, som om jeg er 10 år gammel";
+
+/* Second suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option2" = "Planlæg en perfekt dag i London";
+
+/* Prompt submitted when user taps the third suggestion in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option3.prompt" = "Giv mig 10 fascinerende fakta på tværs af videnskab, natur og historie?";
+
+/* Title for the onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.title" = "Er du klar til at komme i gang?\nPrøv at søge eller AI-chat!";
+
+/* Label for the AI Chat option in the Search/Ask AI toggle on the onboarding screen. */
+"onboarding.highlights.duckAIQuery.toggle.ai" = "Spørg AI";
 
 /* The title of the fire button CTA to skip erasing the data. */
 "onboarding.highlights.fireDialog.cta.skip" = "Spring over";
@@ -3503,6 +3971,9 @@
 "preserveLogins.remove.all.ok" = "Okay";
 
 /* No comment provided by engineer. */
+"Previews" = "Forhåndsvisninger";
+
+/* No comment provided by engineer. */
 "Primary / First Action" = "Primær/første handling";
 
 /* No comment provided by engineer. */
@@ -3594,6 +4065,9 @@
 
 /* Button to delete all tabs and data in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.all.button" = "Slet alle";
+
+/* Button to delete all chats in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.chats.button" = "Slet chats";
 
 /* Button to delete a single tab and its site data in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.tab.button" = "Slet fane";
@@ -3727,9 +4201,6 @@
 /* Settings picker label for what to show when returning after inactivity */
 "settings.afterInactivity.v2.label" = "Efter inaktivitet";
 
-/* Footer under the AI picker, descriptive sentence without link */
-"settings.ai.new.picker.footer" = "Prøv den nye mulighed for at skifte mellem søgning og Duck.ai i adresselinjen.";
-
 /* Settings row that opens Duck.ai in a new tab */
 "settings.aichat.duckai.settings" = "Duck.ai-indstillinger";
 
@@ -3745,8 +4216,20 @@
 /* Settings screen footer text for showing AI Chat in the input box */
 "settings.aichat.shortcuts.input.footer" = "Søg på nettet eller spørg Duck.ai direkte fra adresselinjen";
 
-/* Title of search assist settings link */
-"settings.aifeatures.assist" = "Indstillinger for Search Assist";
+/* Search Assist frequency option: never show AI-assisted answers */
+"settings.aifeatures.assist.never" = "Aldrig";
+
+/* Search Assist frequency option: often show AI-assisted answers */
+"settings.aifeatures.assist.often" = "Ofte";
+
+/* Search Assist frequency option: show AI-assisted answers on demand */
+"settings.aifeatures.assist.ondemand" = "On demand";
+
+/* Search Assist frequency option: sometimes show AI-assisted answers */
+"settings.aifeatures.assist.sometimes" = "Nogle gange";
+
+/* Title of the native Search Assist setting control */
+"settings.aifeatures.assist.title" = "Search Assist";
 
 /* Settings screen cell subtitle for enabling automatic page content attachment */
 "settings.aifeatures.automatic.context.subtitle" = "Send automatisk sideindhold til Duck.ai";
@@ -3757,11 +4240,29 @@
 /* Settings screen cell title for enabling chat suggestions */
 "settings.aifeatures.chat.suggestions.title" = "Chatforslag";
 
+/* Button that turns off all AI features */
+"settings.aifeatures.disable.all" = "Brug DuckDuckGo uden AI";
+
+/* Footer text below the disable all AI features button */
+"settings.aifeatures.disable.all.footer" = "Deaktiverer Duck.ai, skjuler AI-assisterede svar i søgninger og filtrerer kendte AI-spamsider fra i billedsøgeresultater.";
+
+/* Footer text shown once all AI features are already disabled */
+"settings.aifeatures.disable.all.footer.disabled" = "AI er i øjeblikket deaktiveret i browseren, så du ikke længere får vist AI-assisterede svar og vil se færre AI-genererede billeder i billedsøgeresultater.";
+
+/* Section header for the Duck.ai settings group on the AI Features screen */
+"settings.aifeatures.duckai.section.header" = "Duck.ai";
+
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Skjul AI-genererede billeder";
 
-/* Description of what the hide AI-generated images feature does */
-"settings.aifeatures.hide.ai.generated.images.subtitle" = "Filtrerer AI-genererede billeder fra billedsøgeresultater";
+/* Hide AI-Generated Images option: off (images shown) */
+"settings.aifeatures.hide.ai.generated.images.off" = "Fra";
+
+/* Hide AI-Generated Images option: on (images hidden) */
+"settings.aifeatures.hide.ai.generated.images.on" = "Til";
+
+/* Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link) */
+"settings.aifeatures.hide.ai.generated.images.subtitle" = "Filtrerer kendte AI-spamsider fra billedsøgeresultater. [Få mere at vide](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Altid aktiv";
@@ -3771,6 +4272,12 @@
 
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Placering af adresselinje";
+
+/* Settings screen toggle (iPad only) that hides the tab bar and address bar while scrolling */
+"settings.appearance.hide.tab.bar.while.scrolling" = "Skjul fanebjælken, mens du scroller";
+
+/* Footer (iPad only) shown below the Hide Tab Bar While Scrolling toggle, explaining where the behavior applies */
+"settings.appearance.hide.tab.bar.while.scrolling.footer" = "Tilgængelig på de fleste websteder. Duck.ai, kort og spil kan muligvis holde fanebjælken synlig.";
 
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Åbn links i tilknyttede apps";
@@ -3874,14 +4381,26 @@
 /* The name of the settings section containing options to set up the app */
 "settings.complete.setup" = "Færdiggør opsætningen";
 
+/* Explanation below the auto-manage cookie pop-ups toggle in settings */
+"settings.cookie.auto-manage.explanation" = "Vi vil forsøge kun at vælge de mest private cookieindstillinger for dig og derefter lukke disse pop op-vinduer.";
+
+/* Title for the auto-manage cookie pop-ups toggle in settings */
+"settings.cookie.auto-manage.title" = "Administrer automatisk pop op-beskeder om cookies";
+
 /* The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups */
 "settings.cookie.pop-up-protection.protection" = "Beskyttelse mod pop op-beskeder om cookies";
 
 /* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo vil forsøge at vælge de mest private indstillinger og skjule disse pop op-vinduer for dig.\n[Læs mere](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-management)";
+"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo kan automatisk administrere dine cookiepræferencer for at maksimere fortrolighed, minimere cookies og lukke disse pop op-vinduer.\n[Læs mere](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
 
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Administrer cookie pop op-vinduer";
+
+/* Explanation below the pop-ups without opt-outs toggle in settings */
+"settings.cookie.popups-without-opt-outs.explanation" = "Lad også DuckDuckGo spare dig for et klik ved at acceptere cookies på dine vegne for at lukke pop op-vinduer, hvor du ikke kan fravælge dem.";
+
+/* Title for the pop-ups without opt-outs toggle in settings */
+"settings.cookie.popups-without-opt-outs.title" = "Pop op-vinduer uden fravalgsmulighed";
 
 /* Label for customizable toolbar button that deletes tabs and data */
 "settings.customizable.button.delete.tabs.and.data" = "Slet faner og data";
@@ -4014,6 +4533,9 @@
 
 /* The name of a settings category listing next steps */
 "settings.next.steps" = "Næste trin";
+
+/* Accessibility label / title for the button that hides the Settings Next Steps section */
+"settings.next.steps.hide" = "Skjul";
 
 /* Label describing a feature which is turned off */
 "settings.off" = "Fra";
@@ -4209,6 +4731,12 @@
 
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Ubeskyttede websteder";
+
+/* Description shown above the list of unprotected sites */
+"settings.unprotected.sites.description" = "Disse websteder vil ikke blive forbedret ved Beskyttelse af privatlivet.";
+
+/* Message shown when there are no unprotected sites */
+"settings.unprotected.sites.empty.state" = "Databeskyttelse aktiveret for alle websteder";
 
 /* Settings cell for Version */
 "settings.version" = "Version";
@@ -4567,6 +5095,21 @@
 /* Title of the dialog to confirm deleting Sync server data */
 "sync.delete.all.confirm.title" = "Slet serverdata?";
 
+/* Caption for a button to confirm sync setup with another device */
+"sync.pairing-v2.confirmation.action" = "Synkronisér nu";
+
+/* Message for the dialog to confirm sync setup with another DuckDuckGo device */
+"sync.pairing-v2.confirmation.ddg.message" = "\"%@\" vil kunne tilgå dine synkroniserede DuckDuckGo-adgangskoder, autofyldningsdata og Duck.ai-chats.";
+
+/* Message for the dialog to confirm sync setup with a third-party device */
+"sync.pairing-v2.confirmation.third-party.message" = "\"%@\" vil kunne tilgå dine synkroniserede Duck.ai-chats.";
+
+/* Title of the dialog to confirm sync setup with another device */
+"sync.pairing-v2.confirmation.title" = "Synkronisér ny enhed?";
+
+/* Fallback device name for confirmation dialogs */
+"sync.pairing-v2.unknown-peer-name" = "den anden enhed";
+
 /* Message for the Sync Promotion banner when user has bookmarks that can be synced */
 "sync.promo.bookmarks.message" = "En konto er ikke nødvendig. End-to-end-krypteret betyder, at ingen andre end dig kan se dine bogmærker, ikke engang os.";
 
@@ -4630,11 +5173,8 @@
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Fjern enhed?";
 
-/* Toast message shown after copying sync code to clipboard */
-"sync.simplified.code.copied.toast" = "Kode kopieret";
-
 /* Toast message shown after sync is enabled by connecting with another device */
-"sync.simplified.device-synced.toast" = "Enheden er synkroniseret!";
+"sync.simplified.device-synced.toast" = "Ny enhed tilføjet!";
 
 /* Toast message shown after sync is successfully enabled */
 "sync.simplified.enabled.toast" = "Sync & Backup aktiveret";
@@ -4653,15 +5193,6 @@
 
 /* Alert title when turning off sync */
 "sync.simplified.turn.off.title" = "Slå Sync & Backup fra?";
-
-/* Caption for a button to remove current device from Sync */
-"sync.turn.off.confirm.action" = "Fjern";
-
-/* Message for the dialog to confirm turning off Sync */
-"sync.turn.off.confirm.message" = "Denne enhed vil ikke længere have adgang til dine synkroniserede data.";
-
-/* Title of the dialog to confirm turning off Sync */
-"sync.turn.off.confirm.title" = "Slå synkronisering fra?";
 
 /* Reason for auth when setting up Sync */
 "sync.user.auth.reason" = "Lås enheden op for at konfigurere synkronisering og sikkerhedskopiering.";
@@ -4788,6 +5319,12 @@
 
 /* No comment provided by engineer. */
 "UIAlert" = "UIAdvarsler";
+
+/* Toast shown when a tapped .vcf contact link can't be parsed (e.g. malformed RFC 6350 content) */
+"vcard.add-contact.parse-failure" = "Kan ikke tilføje kontakt. Prøv i stedet at åbne kontaktfilen fra downloads.";
+
+/* Toast shown after the user successfully adds a contact from a .vcf contact link to their Contacts */
+"vcard.contact-added" = "Kontakt tilføjet";
 
 /* No comment provided by engineer. */
 "Version: %@" = "Version: %@";
@@ -5120,10 +5657,10 @@
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Få DuckDuckGo til Windows!";
 
 /* Body text of the bottom sheet asking the user to send an anonymous breakage report */
-"youtube.ad.blocking.breakage-report.message" = "Send en anonym rapport om nedbrud til DuckDuckGo. Hjælp med at gøre blokering af annoncer bedre for alle!";
+"youtube.ad.blocking.breakage-report.message" = "Send en anonym rapport til DuckDuckGo og hjælp med at gøre blokering af annoncer bedre for alle!";
 
 /* Primary action sending an anonymous YouTube ad-blocking breakage report */
-"youtube.ad.blocking.breakage-report.send" = "Send rapport om nedbrud";
+"youtube.ad.blocking.breakage-report.send" = "Send anonym rapport";
 
 /* Title of the bottom sheet asking the user to send an anonymous breakage report after disabling YouTube ad blocking */
 "youtube.ad.blocking.breakage-report.title" = "Virker YouTube annonceblokering ikke?";
@@ -5168,7 +5705,7 @@
 "youtube.ad.blocking.unavailable.got-it" = "Forstået";
 
 /* Body text of the bottom sheet shown when YouTube ad blocking has been remotely disabled */
-"youtube.ad.blocking.unavailable.message" = "Annonceblokering er påvirket af de seneste ændringer i YouTube. Vi arbejder på at løse disse problemer og sætter pris på din forståelse";
+"youtube.ad.blocking.unavailable.message" = "Annonceblokering er påvirket af de seneste ændringer i YouTube. Vi arbejder på at løse disse problemer og sætter pris på din forståelse.";
 
 /* Title of the bottom sheet shown when YouTube ad blocking has been remotely disabled */
 "youtube.ad.blocking.unavailable.title" = "Blokering af YouTube-annoncer ikke tilgængelig";

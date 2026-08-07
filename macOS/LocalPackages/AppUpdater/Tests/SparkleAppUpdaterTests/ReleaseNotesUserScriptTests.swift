@@ -217,6 +217,7 @@ private final class MockURLWebView: WKWebView {
 private final class StubSparkleUpdateController: NSObject, SparkleUpdateControlling {
 
     var isAtRestartCheckpoint = false
+    var shouldAutoCheckOnReleaseNotesLoad = true
     var shouldForceUpdateCheck = false
     var useLegacyAutoRestartLogic = false
 
@@ -278,6 +279,7 @@ private final class CapturingPixelFiring: PixelFiring {
               includeAppVersionParameter: Bool,
               withAdditionalParameters: [String: String]?,
               withNamePrefix: String?,
+              doNotEnforcePrefix: Bool,
               onComplete: @escaping PixelKit.CompletionBlock) {
         firedEvents.append(event)
     }

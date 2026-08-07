@@ -37,13 +37,12 @@ import Combine
 import PrivacyConfig
 import AIChatTestingUtilities
 
-// swiftlint:disable force_try
-
 private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibilityManaging {
     func isFeatureAvailable() -> Bool { false }
     func isEligibleForNTPAfterIdle() -> Bool { false }
     func effectiveAfterInactivityOption() -> AfterInactivityOption { .lastUsedTab }
     func idleThresholdSeconds() -> Int { 60 }
+    func ntpAfterIdleState() -> NTPAfterIdleState { .notEligible }
 }
 
  @MainActor
@@ -53,7 +52,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
     private var contextualOnboardingLogicMock: ContextualOnboardingLogicMock!
 
     let mockWebsiteDataManager = MockWebsiteDataManager()
-    let keyValueStore: ThrowingKeyValueStoring = try! MockKeyValueFileStore()
+    let keyValueStore: ThrowingKeyValueStoring = MockKeyValueFileStore()
 
     override func setUpWithError() throws {
         try super.setUpWithError()
@@ -95,7 +94,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
         let onboardingPixelReporter = OnboardingPixelReporterMock()
         let tabsPersistence = TabsModelPersistence(normalStore: keyValueStore, fireStore: MockKeyValueFileStore(), legacyStore: MockKeyValueStore())
         let variantManager = MockVariantManager()
-        let daxDialogsFactory = DefaultContextualDaxDialogsFactory(contextualOnboardingLogic: contextualOnboardingLogicMock,
+        let daxDialogsFactory = ContextualDaxDialogFactory(contextualOnboardingLogic: contextualOnboardingLogicMock,
                                                                       contextualOnboardingPixelReporter: onboardingPixelReporter)
         let contextualOnboardingPresenter = ContextualOnboardingPresenter(variantManager: variantManager, daxDialogsFactory: daxDialogsFactory)
         let mockConfigManager = MockPrivacyConfigurationManager()
@@ -137,7 +136,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
                                     maliciousSiteProtectionPreferencesManager: MockMaliciousSiteProtectionPreferencesManager(),
                                     featureDiscovery: DefaultFeatureDiscovery(wasUsedBeforeStorage: UserDefaults.standard),
                                     keyValueStore: MockKeyValueFileStore(),
-                                    daxDialogsManager: DummyDaxDialogsManager(),
+                                    daxDialogsManager: MockDaxDialogsManager(),
                                     aiChatSettings: aiChatSettings,
                                     productSurfaceTelemetry: MockProductSurfaceTelemetry(),
                                     privacyStats: MockPrivacyStats(),
@@ -148,7 +147,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
         )
         let fireExecutor = FireExecutor(tabManager: tabManager,
                                         websiteDataManager: mockWebsiteDataManager,
-                                        daxDialogsManager: DummyDaxDialogsManager(),
+                                        daxDialogsManager: MockDaxDialogsManager(),
                                         syncService: syncService,
                                         bookmarksDatabaseCleaner: bookmarkDatabaseCleaner,
                                         fireproofing: fireproofing,
@@ -198,7 +197,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
             keyValueStore: keyValueStore,
             customConfigurationURLProvider: MockCustomURLProvider(),
             systemSettingsPiPTutorialManager: MockSystemSettingsPiPTutorialManager(),
-            daxDialogsManager: DummyDaxDialogsManager(),
+            daxDialogsManager: MockDaxDialogsManager(),
             dbpIOSPublicInterface: nil,
             freemiumPIREligibilityChecker: DefaultFreemiumPIREligibilityChecker(
                 featureFlagger: featureFlagger,
@@ -208,6 +207,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
             ),
             freemiumPIRDebugSettings: freemiumPIRDebugSettings,
             freemiumDBPUserStateManager: freemiumDBPUserStateManager,
+            profileStateManager: DefaultDBPProfileStateManager(keyValueStore: freemiumDBPUserDefaults),
             launchSourceManager: LaunchSourceManager(),
             winBackOfferVisibilityManager: MockWinBackOfferVisibilityManager(),
             mobileCustomization: MobileCustomization(keyValueStore: MockThrowingKeyValueStore()),
@@ -220,7 +220,8 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
             privacyStats: MockPrivacyStats(),
             whatsNewRepository: MockWhatsNewMessageRepository(scheduledRemoteMessage: nil),
             darkReaderFeatureSettings: MockDarkReaderFeatureSettings(),
-            onboardingManager: OnboardingManagerMock()
+            onboardingManager: OnboardingManagerMock(),
+            newTabPagePromoCoordinator: MockNewTabPagePromoCoordinator()
         )
         let window = UIWindow(frame: UIScreen.main.bounds)
         window.rootViewController = UIViewController()
@@ -279,5 +280,3 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
     }
 
 }
-
-// swiftlint:enable force_try

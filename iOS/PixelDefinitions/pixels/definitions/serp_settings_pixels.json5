@@ -12,7 +12,20 @@
         "owners": ["jotaemepereira"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "errorDomain",
+            "errorCode",
+            "underlyingErrorDomain",
+            "underlyingErrorCode",
+            {
+                "key": "reason",
+                "description": "Which read operation failed: reading the raw value from the key-value store, or decoding the stored JSON blob into [String: String]",
+                "type": "string",
+                "enum": ["storeRead", "decode"]
+            }
+        ]
     },
     "m_serp_settings_keyvalue_store_write_error": {
         "description": "Fired when writing SERP settings to persistent storage fails",

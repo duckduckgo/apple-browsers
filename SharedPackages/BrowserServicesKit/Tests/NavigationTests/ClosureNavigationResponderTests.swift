@@ -35,12 +35,12 @@ class ClosureNavigationResponderTests: DistributedNavigationDelegateTestsBase {
         server.middleware = [{ [urls, data] request in
             guard request.path == "/" else { return nil }
             return .raw(301, "Moved", ["Location": urls.local3.path]) { writer in
-                try! writer.write(data.empty)
+                try writer.write(data.empty)
             }
         }, { [data] request in
             guard request.headers["authorization"] == nil else { return nil }
             return .raw(401, "Unauthorized", ["WWW-Authenticate": "Basic"]) { writer in
-                try! writer.write(data.html)
+                try writer.write(data.html)
             }
         }, { [data] request in
             return .ok(.data(data.html))

@@ -103,6 +103,9 @@
 /* Cancel action - button shown in alert */
 "action.title.cancel" = "Отменить";
 
+/* Open the native Duck.ai chat history sheet from the browser menu. */
+"action.title.chats" = "Чаты";
+
 /* Copy action */
 "action.title.copy" = "Копировать";
 
@@ -212,7 +215,7 @@
 "action.title.vpn" = "VPN";
 
 /* Description of the Ad Blocking feature in settings */
-"ad.blocking.description" = "Блокирует навязчивые трекеры до их загрузки, устраняя рекламу с отслеживанием";
+"ad.blocking.description" = "Блокирует трекеры, следящие за вашей активностью, еще до их загрузки, фактически устраняя рекламу на основе отслеживания.";
 
 /* Section header for YouTube-specific ad blocking settings */
 "ad.blocking.youtube.section.header" = "Блокировка рекламы на YouTube";
@@ -280,6 +283,9 @@
 /* Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message. */
 "aichat.attachment.image.turn.limit" = "Число изображений, прикрепляемых за один раз, ограничено: максимум %d.";
 
+/* Top-level attachment menu option to attach the current page content to an AI chat message */
+"aichat.attachment.option.ask.about.page" = "Задать вопрос о странице";
+
 /* Top-level attachment menu option to add a file to an AI chat message */
 "aichat.attachment.option.attach.file" = "Добавить файл";
 
@@ -310,6 +316,9 @@
 /* Title for the New Fire Tab row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newFireTab" = "Новая Fire-вкладка";
 
+/* Title for the New Image row in the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode */
+"aichat.header.plusMenu.newImage" = "Новое изображение";
+
 /* Title for the New Search row in the Duck.ai tab header Plus (+) menu — opens a new tab and forces search mode for that entry */
 "aichat.header.plusMenu.newSearch" = "Новый поиск";
 
@@ -318,6 +327,75 @@
 
 /* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newVoiceChat" = "Новый голосовой чат";
+
+/* Error toast shown when a Duck.ai chat download fails and nothing was saved. */
+"aiChat.history.download.failed.message" = "Не удалось загрузить. Повторите попытку.";
+
+/* Primary button on the empty Duck.ai chat-history screen; opens the Duck.ai web chat. */
+"aiChat.history.emptyState.openDuckAi" = "Открыть Duck.ai";
+
+/* Title shown when the user has no Duck.ai chat history yet. */
+"aiChat.history.emptyState.title" = "Нет недавних чатов";
+
+/* Message of the alert shown when Duck.ai chat history fails to load. */
+"aiChat.history.loadError.message" = "Произошла ошибка при загрузке ваших чатов Duck.ai. Повторите попытку позже.";
+
+/* Title of the alert shown when Duck.ai chat history fails to load. */
+"aiChat.history.loadError.title" = "Не удалось загрузить чаты";
+
+/* Accessibility label for the overflow (three dots) menu button in the Duck.ai chat history navigation bar. */
+"aiChat.history.menu.a11y" = "Ещё";
+
+/* Menu item opening Duck.ai Chat Protection settings from the Duck.ai chat history list. */
+"aiChat.history.menu.chatProtection" = "Защита чата";
+
+/* Menu item that starts multi-selecting chats in the Duck.ai chat history list. */
+"aiChat.history.menu.selectChats" = "Выбрать чаты";
+
+/* Shown inside the Duck.ai chat history list when the user's search query returns no matching chats. */
+"aiChat.history.noSearchResults.title" = "Ничего не найдено";
+
+/* Long-press row menu item that deletes a Duck.ai chat. */
+"aiChat.history.rowMenu.delete" = "Удалить";
+
+/* Long-press row menu item that downloads a Duck.ai chat. */
+"aiChat.history.rowMenu.download" = "Скачать";
+
+/* Long-press row menu item that pins a Duck.ai chat. */
+"aiChat.history.rowMenu.pin" = "Закрепить";
+
+/* Long-press row menu item that starts multi-selecting chats in the Duck.ai chat history list. */
+"aiChat.history.rowMenu.select" = "Выбрать";
+
+/* Long-press row menu item that unpins a Duck.ai chat. */
+"aiChat.history.rowMenu.unpin" = "Открепить";
+
+/* Accessibility label for the search button in the Duck.ai chat history navigation bar. */
+"aiChat.history.search.a11y" = "Поиск";
+
+/* Placeholder for the search bar at the top of the Duck.ai chat history list. */
+"aiChat.history.searchBar.placeholder" = "Поиск";
+
+/* Section header above the user's pinned chats in the Duck.ai chat history list. */
+"aiChat.history.section.pinned" = "Закреплено";
+
+/* Section header above the user's recent (unpinned) chats in the Duck.ai chat history list. */
+"aiChat.history.section.recent" = "Недавние";
+
+/* Multi-select toolbar button that deletes all chats when none are individually selected. */
+"aiChat.history.selection.deleteAll" = "Удалить все";
+
+/* Accessibility label for the delete action revealed by swiping a Duck.ai chat row. */
+"aiChat.history.swipe.delete.a11y" = "Удалить чат";
+
+/* Accessibility label for the download action revealed by swiping a Duck.ai chat row. */
+"aiChat.history.swipe.download.a11y" = "Скачать чат";
+
+/* Accessibility label for the pin action revealed by leading-swiping a Duck.ai chat row in the Recent section. */
+"aiChat.history.swipe.pin.a11y" = "Закрепить чат";
+
+/* Accessibility label for the unpin action revealed by leading-swiping a Duck.ai chat row in the Pinned section. */
+"aiChat.history.swipe.unpin.a11y" = "Открепить чат";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Для аналитических задач";
@@ -337,18 +415,6 @@
 /* Title for the reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.reasoning.title" = "Рассуждения";
 
-/* Body of the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. ** markers indicate bold text and should be preserved around the translated equivalents of the menu options Settings, Sync & Backup, and Sync With Another Device. */
-"aiChat.syncIntroSheet.body" = "Найдите QR-код в приложении DuckDuckGo на другом устройстве: для этого перейдите в **Настройки** › раздел **Sync & Backup** › **Синхронизация с другим устройством**.";
-
-/* Secondary button on the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
-"aiChat.syncIntroSheet.notNow" = "Не сейчас";
-
-/* Primary button on the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
-"aiChat.syncIntroSheet.scan.button" = "Сканировать QR-код";
-
-/* Title of the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
-"aiChat.syncIntroSheet.title" = "Давайте синхронизируем ваши чаты на всех ваших устройствах!";
-
 /* Primary button of the sync promo card shown above the Duck.ai recent chats list. */
 "aiChat.syncPromo.button" = "Синхронизировать с другим устройством";
 
@@ -357,6 +423,27 @@
 
 /* Headline of the sync promo card shown above the Duck.ai recent chats list. */
 "aiChat.syncPromo.title" = "Получите доступ к своим чатам на всех устройствах благодаря опции Sync & Backup.";
+
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a regular text conversation. */
+"aiChat.tabSwitcher.card.chip.chat" = "Чат";
+
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as the transcript of a finished voice conversation. */
+"aiChat.tabSwitcher.card.chip.transcript" = "Расшифровка";
+
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a live voice session. */
+"aiChat.tabSwitcher.card.chip.voice" = "Голосовой чат";
+
+/* Title shown on a Duck.ai tab grid card when the chat has no title yet. */
+"aiChat.tabSwitcher.card.untitledChat" = "Новый чат";
+
+/* Status label at the top of the Duck.ai tab grid card for a tab with a live voice session in progress. A leading microphone glyph is shown next to it in the UI. */
+"aiChat.tabSwitcher.card.voice.listening" = "Слушаю…";
+
+/* VoiceOver label for the Duck.ai tab grid card of a tab with a live voice session — same as the visible status without the decorative emoji. */
+"aiChat.tabSwitcher.card.voice.listening.accessibilityLabel" = "Слушаю…";
+
+/* Subtitle for the customize responses action in the unified input tools menu */
+"aichat.toolbar.tools.customizeResponses.subtitle" = "Задайте тон, продолжительность и правила поведения";
 
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Настрой ответы";
@@ -376,6 +463,15 @@
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Существующие закладки дублироваться не будут.";
 
+/* Button title for Sync error shown when both devices are already paired with the same account */
+"alert.sync-already-paired-with-account-button" = "Понятно";
+
+/* Description for Sync error shown when both devices are already paired with the same account */
+"alert.sync-already-paired-with-account-description" = "Эти устройства уже подключены к Sync & Backup.";
+
+/* Title for Sync error shown when both devices are already paired with the same account */
+"alert.sync-already-paired-with-account-title" = "Уже синхронизировано.";
+
 /* Description for alert shown when sync error occurs because of bad bookmarks data */
 "alert.sync-bookmarks-bad-data-error-description" = "Некоторые закладки не синхронизируются из-за неверного формата или превышения ограничений по длине.";
 
@@ -384,6 +480,21 @@
 
 /* Title for alert shown when sync bookmarks paused for too many items */
 "alert.sync-bookmarks-paused-title" = "Синхронизация закладок приостановлена";
+
+/* Button title for Sync error shown when setup is canceled from the other device */
+"alert.sync-cancelled-from-other-device-button" = "Понятно";
+
+/* Description for Sync error shown when setup is canceled from the other device */
+"alert.sync-cancelled-from-other-device-description" = "Повторите попытку.";
+
+/* Title for Sync error shown when setup is canceled from the other device */
+"alert.sync-cancelled-from-other-device-title" = "Синхронизация отменена с другого устройства.";
+
+/* Description for Sync error shown when a third-party recovery code can only be used with Duck.ai */
+"alert.sync-code-only-compatible-with-duckai-description" = "Откройте страницу duck.ai в другом вашем браузере, перейдите в «Настройки», затем в разделе «Sync & Backup» нажмите «Включить», а затем «Синхронизировать с другим устройством».";
+
+/* Title for Sync error shown when a third-party recovery code can only be used with Duck.ai */
+"alert.sync-code-only-compatible-with-duckai-title" = "Отсканируйте этот код с помощью другого браузера (не DuckDuckGo).";
 
 /* Description for alert shown when sync error occurs because of bad credentials data */
 "alert.sync-credentials-bad-data-error-description" = "Некоторые пароли не синхронизируются из-за неверного формата или превышения ограничений по длине.";
@@ -409,6 +520,15 @@
 /* Sync error alert action button title, takes the user to the sync settings page. */
 "alert.sync-error-action" = "Синхронизация настроек";
 
+/* Description for generic Sync setup failure alerts */
+"alert.sync-failed-description" = "Повторите попытку.";
+
+/* Title for generic Sync setup failure alerts */
+"alert.sync-failed-title" = "Ошибка синхронизации.";
+
+/* Description for Sync error shown when a third-party account already has a native DuckDuckGo Sync credential */
+"alert.sync-from-another-connected-device-description" = "Синхронизируйте это устройство с уже подключённым браузером DuckDuckGo на другом устройстве.";
+
 /* Description for alert shown when user logged off from sync */
 "alert.sync-invalid-login-error-description" = "Синхронизация приостановлена. Чтобы возобновить ее, выполните повторную привязку, используя другое устройство или код восстановления.";
 
@@ -430,6 +550,9 @@
 /* Title for alert shown when sync paused for an error */
 "alert.sync-paused-title" = "Синхронизация приостановлена";
 
+/* Button title for Sync setup error alerts */
+"alert.sync-setup-error-got-it-button" = "Понятно";
+
 /* Switch account button in alert */
 "alert.sync-switch-account-button" = "Переключить синхронизацию";
 
@@ -441,6 +564,9 @@
 
 /* Description for alert shown when sync error occurs because of too many requests */
 "alert.sync-too-many-requests-error-description" = "Функция «Синхронизация и резервное копирование» временно недоступна.";
+
+/* Title for Sync error shown when the app version does not support the scanned Sync code */
+"alert.sync-update-required-title" = "Обновите браузер DuckDuckGo и повторите попытку.";
 
 /* Title of the warning message that tells the user that there was an error with the sync feature. */
 "alert.sync.warning.sync-error" = "Ошибка синхронизации";
@@ -473,13 +599,13 @@
 "alert.unable-to-remove-device-description" = "Не удалось удалить устройство из списка синхронизации и резервного копирования.";
 
 /* Description for unable to scan qr code error */
-"alert.unable-to-scan-qr-code-description" = "К сожалению, этот код недействителен. Введите или отсканируйте правильный код.";
+"alert.unable-to-scan-qr-code-description" = "Введите или отсканируйте правильный код.";
+
+/* Title for unable to scan qr code error */
+"alert.unable-to-scan-qr-code-title" = "Недействительный код синхронизации.";
 
 /* Description for unable to sync to server error */
 "alert.unable-to-sync-to-server-description" = "Не удалось подключиться к серверу.";
-
-/* Description for unable to sync with another device error */
-"alert.unable-to-sync-with-other-device-description" = "Не удалось выполнить синхронизацию с другим устройством.";
 
 /* Description for unable to turn sync off error */
 "alert.unable-to-turn-sync-off-description" = "Не удалось отключить синхронизацию и резервное копирование.";
@@ -489,6 +615,9 @@
 
 /* Shown on authentication screen */
 "app.authentication.unlock" = "Разблокируйте DuckDuckGo.";
+
+/* Instruction shown on authentication screen after authentication fails */
+"app.authentication.unlock.instructions" = "Чтобы разблокировать, нажмите в любом месте";
 
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Войти";
@@ -820,6 +949,12 @@
 /* Login name label for login details on autofill */
 "autofill.logins.details.login-name" = "Название";
 
+/* Message for alert when attempting to save a password that has neither a website nor a username */
+"autofill.logins.details.missing-website-or-username-alert.message" = "Чтобы сохранить этот пароль, введите веб-сайт или имя пользователя.";
+
+/* Title for alert when attempting to save a password that has neither a website nor a username */
+"autofill.logins.details.missing-website-or-username-alert.title" = "Укажите веб-сайт или имя пользователя";
+
 /* Title when adding new autofill login */
 "autofill.logins.details.new-title" = "Добавление пароля";
 
@@ -1023,12 +1158,6 @@
 
 /* Title displayed on modal asking for the user to save the login for the first time */
 "autofill.save-login.new-user.title" = "Сохранить пароль?";
-
-/* CTA displayed on modal asking if the user wants to dismiss the save login action for now */
-"autofill.save-login.no-thanks.CTA" = "Нет, спасибо";
-
-/* CTA displayed on modal allowing the user to dismiss the save login prompt for now */
-"autofill.save-login.not-now.CTA" = "Не сейчас";
 
 /* Message displayed on modal asking for the user to save the login for the first time */
 "autofill.save-login.security.message" = "Вы можете сохранить этот пароль на устройстве под надежной защитой функции «Пароли и автозаполнение» от DuckDuckGo.";
@@ -1359,6 +1488,39 @@
 
 /* Third paragraph of the Control Center Widget Education screen */
 "control.center.widget.education.paragraph.3" = "Внизу экрана нажмите **Добавить элемент управления**.";
+
+/* Small 'NEW' badge shown above the Cookie Pop-up Protection opt-in dialog header */
+"cookie-popup-protection.opt-in.badge" = "Новое";
+
+/* Confirm button in the Cookie Pop-up Protection opt-in dialog */
+"cookie-popup-protection.opt-in.confirm" = "Подтвердить";
+
+/* Body of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.body" = "Мы постараемся отклонить как можно больше файлов cookie. Если возможности отказаться от отслеживания нет, мы сэкономим ваше время и примем эти файлы cookie за вас.";
+
+/* Primary (recommended) option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.primary-option" = "Отклонять, когда это возможно, или принимать за меня";
+
+/* Secondary option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.secondary-option" = "Я продолжу управлять файлами cookie самостоятельно";
+
+/* Title of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.title" = "Устали от всплывающих окон с уведомлениями о файлах cookie, которые не дают вам покоя?";
+
+/* Body of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.body" = "Мы можем сэкономить вам время и примем эти файлы cookie за вас.";
+
+/* Primary (recommended) option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.primary-option" = "Принимать файлы cookie, от которых нельзя отказаться";
+
+/* Secondary option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.secondary-option" = "Я продолжу принимать их самостоятельно";
+
+/* Title of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.title" = "Устали от всплывающих окон с уведомлениями о файлах cookie, от которых вы не можете отказаться?";
+
+/* Footer text in the Cookie Pop-up Protection opt-in dialog. The text between ** ** is rendered bold. */
+"cookie-popup-protection.opt-in.footer" = "Эту настройку всегда можно изменить позже в разделе\n**«Настройки»** > **«Защита от всплывающих окон cookie»**.";
 
 /* Crash Report always send button title */
 "crash.report.dialog.always.send" = "Всегда отправлять отчеты о сбоях";
@@ -1842,6 +2004,246 @@
 
 /* Title for the Duck.ai Siri education screen */
 "duckai.siri.education.screen.title" = "Запуск Duck.ai с помощью Siri";
+
+/* Suggested prompt chip: cast and crew */
+"duckai.suggestion.cast-crew.label" = "Актеры и съемочная группа";
+
+/* Suggested prompt submitted text: cast and crew */
+"duckai.suggestion.cast-crew.prompt" = "Кто входит в основной актерский состав и съемочную группу и чем еще они известны?";
+
+/* Suggested prompt chip: counterarguments */
+"duckai.suggestion.counterarguments.label" = "Какие есть контраргументы?";
+
+/* Suggested prompt submitted text: counterarguments */
+"duckai.suggestion.counterarguments.prompt" = "Каковы основные контраргументы или критические замечания по этому поводу?";
+
+/* Suggested prompt chip: course learning outcomes */
+"duckai.suggestion.course-learn.label" = "Чему я научусь?";
+
+/* Suggested prompt submitted text: course learning outcomes */
+"duckai.suggestion.course-learn.prompt" = "Чему я научусь на этом курсе?";
+
+/* Suggested prompt chip: is a course worth taking */
+"duckai.suggestion.course-worth.label" = "Стоит попробовать?";
+
+/* Suggested prompt submitted text: is a course worth taking */
+"duckai.suggestion.course-worth.prompt" = "Стоит ли проходить этот курс, судя по этой странице?";
+
+/* Suggested prompt chip: draft a cover letter */
+"duckai.suggestion.cover-letter.label" = "Подготовь сопроводительное письмо";
+
+/* Suggested prompt submitted text: draft a cover letter */
+"duckai.suggestion.cover-letter.prompt" = "Подготовь сопроводительное письмо для этой вакансии.";
+
+/* Suggested prompt chip: event details */
+"duckai.suggestion.event-details.label" = "Каковы основные детали?";
+
+/* Suggested prompt submitted text: event details */
+"duckai.suggestion.event-details.prompt" = "Кратко изложи основные детали этого события.";
+
+/* Suggested prompt chip: explain the top answer */
+"duckai.suggestion.explain-answer.label" = "Объясни ответ вверху";
+
+/* Suggested prompt submitted text: explain the top answer */
+"duckai.suggestion.explain-answer.prompt" = "Объясни принятый ответ простыми словами.";
+
+/* Suggested prompt chip: explain a research paper */
+"duckai.suggestion.explain-paper.label" = "Объясни эту статью";
+
+/* Suggested prompt submitted text: explain a research paper */
+"duckai.suggestion.explain-paper.prompt" = "Объясни эту научную статью простым языком.";
+
+/* Suggested prompt chip: explain a code repository */
+"duckai.suggestion.explain-repo.label" = "Расскажи про этот репозиторий";
+
+/* Suggested prompt submitted text: explain a code repository */
+"duckai.suggestion.explain-repo.prompt" = "Объясни, что делает этот репозиторий и как им пользоваться.";
+
+/* Suggested prompt chip: explain the content simply */
+"duckai.suggestion.explain-simply.label" = "Объясни это просто";
+
+/* Suggested prompt submitted text: explain the content simply */
+"duckai.suggestion.explain-simply.prompt" = "Объясни это простым и понятным языком.";
+
+/* Suggested prompt chip: what an FAQ page answers */
+"duckai.suggestion.faq-answer.label" = "Ответы на какие вопросы здесь можно найти?";
+
+/* Suggested prompt submitted text: what an FAQ page answers */
+"duckai.suggestion.faq-answer.prompt" = "На какие основные вопросы отвечает эта страница?";
+
+/* Suggested prompt chip: summarize FAQ Q&As */
+"duckai.suggestion.faq-summary.label" = "Кратко изложи вопросы и ответы";
+
+/* Suggested prompt submitted text: summarize FAQ Q&As */
+"duckai.suggestion.faq-summary.prompt" = "Кратко изложи вопросы и ответы на этой странице.";
+
+/* Suggested prompt chip: product alternatives */
+"duckai.suggestion.find-alternatives.label" = "Найди альтернативы";
+
+/* Suggested prompt submitted text: product alternatives */
+"duckai.suggestion.find-alternatives.prompt" = "Предложи альтернативы этому продукту.";
+
+/* Suggested prompt chip: how-to materials */
+"duckai.suggestion.howto-materials.label" = "Что мне понадобится?";
+
+/* Suggested prompt submitted text: how-to materials */
+"duckai.suggestion.howto-materials.prompt" = "Перечисли инструменты, материалы или условия, которые мне для этого понадобятся.";
+
+/* Suggested prompt chip: how-to steps */
+"duckai.suggestion.howto-steps.label" = "Поэтапно проведи меня по инструкции";
+
+/* Suggested prompt submitted text: how-to steps */
+"duckai.suggestion.howto-steps.prompt" = "Разбей это на понятные пронумерованные шаги.";
+
+/* Suggested prompt chip: interview prep */
+"duckai.suggestion.interview-prep.label" = "Помоги подготовиться к собеседованию";
+
+/* Suggested prompt submitted text: interview prep */
+"duckai.suggestion.interview-prep.prompt" = "Какие вопросы могут возникнуть на собеседовании на эту должность?";
+
+/* Suggested prompt chip: key takeaways of an article */
+"duckai.suggestion.key-takeaways.label" = "Какие основные выводы?";
+
+/* Suggested prompt submitted text: key takeaways of an article */
+"duckai.suggestion.key-takeaways.prompt" = "Какие основные выводы из этой статьи?";
+
+/* Suggested prompt chip: restaurant menu highlights */
+"duckai.suggestion.menu-highlights.label" = "Что мне заказать?";
+
+/* Suggested prompt submitted text: restaurant menu highlights */
+"duckai.suggestion.menu-highlights.prompt" = "Что здесь стоит попробовать?";
+
+/* Suggested prompt chip: paper contributions */
+"duckai.suggestion.paper-contributions.label" = "Каковы основные положения?";
+
+/* Suggested prompt submitted text: paper contributions */
+"duckai.suggestion.paper-contributions.prompt" = "Каковы основные положения этой статьи?";
+
+/* Suggested prompt chip: summarize a person's background */
+"duckai.suggestion.person-background.label" = "Кратко изложи биографию этого человека";
+
+/* Suggested prompt submitted text: summarize a person's background */
+"duckai.suggestion.person-background.prompt" = "Расскажи вкратце об этом человеке и его известных работах.";
+
+/* Suggested prompt chip: place hours and location */
+"duckai.suggestion.place-hours.label" = "Где находится это место и каков его график работы?";
+
+/* Suggested prompt submitted text: place hours and location */
+"duckai.suggestion.place-hours.prompt" = "Какие здесь часы работы, адрес и контактные данные?";
+
+/* Suggested prompt chip: place reputation */
+"duckai.suggestion.place-reviews.label" = "Это хорошее место?";
+
+/* Suggested prompt submitted text: place reputation */
+"duckai.suggestion.place-reviews.prompt" = "Это хорошее место? Кратко изложи, какая у него репутация на основе отзывов и оценок.";
+
+/* Suggested prompt chip: product pros and cons */
+"duckai.suggestion.product-pros-cons.label" = "В чем плюсы и минусы?";
+
+/* Suggested prompt submitted text: product pros and cons */
+"duckai.suggestion.product-pros-cons.prompt" = "В чем плюсы и минусы этого продукта?";
+
+/* Suggested prompt chip: recipe nutrition */
+"duckai.suggestion.recipe-nutrition.label" = "Оцени пищевую ценность";
+
+/* Suggested prompt submitted text: recipe nutrition */
+"duckai.suggestion.recipe-nutrition.prompt" = "Оцени пищевую ценность блюда по рецепту.";
+
+/* Suggested prompt chip: related articles */
+"duckai.suggestion.related-articles.label" = "Предложи похожие статьи";
+
+/* Suggested prompt submitted text: related articles */
+"duckai.suggestion.related-articles.prompt" = "Предложи похожие статьи или темы, которые стоит рассмотреть далее.";
+
+/* Suggested prompt chip: summarize reviews */
+"duckai.suggestion.review-summary.label" = "Подытожь отзывы";
+
+/* Suggested prompt submitted text: summarize reviews */
+"duckai.suggestion.review-summary.prompt" = "Обобщи, что пишут в отзывах.";
+
+/* Suggested prompt chip: review verdict */
+"duckai.suggestion.review-verdict.label" = "Каков вердикт?";
+
+/* Suggested prompt submitted text: review verdict */
+"duckai.suggestion.review-verdict.prompt" = "Каков общий вердикт и оценка?";
+
+/* Suggested prompt chip: scale a recipe */
+"duckai.suggestion.scale-recipe.label" = "Измени количество порций";
+
+/* Suggested prompt submitted text: scale a recipe */
+"duckai.suggestion.scale-recipe.prompt" = "Пересчитай этот рецепт на другое количество порций.";
+
+/* Suggested prompt chip: shopping list from a recipe */
+"duckai.suggestion.shopping-list.label" = "Составь список покупок";
+
+/* Suggested prompt submitted text: shopping list from a recipe */
+"duckai.suggestion.shopping-list.prompt" = "Создай список покупок с указанием количества ингредиентов из этого рецепта.";
+
+/* Suggested prompt chip: similar books */
+"duckai.suggestion.similar-books.label" = "Посоветуй похожие книги";
+
+/* Suggested prompt submitted text: similar books */
+"duckai.suggestion.similar-books.prompt" = "Посоветуй похожие книги.";
+
+/* Suggested prompt chip: similar movies or shows */
+"duckai.suggestion.similar-titles.label" = "Посоветуй похожее";
+
+/* Suggested prompt submitted text: similar movies or shows */
+"duckai.suggestion.similar-titles.prompt" = "Посоветуй похожие фильмы или сериалы.";
+
+/* Suggested prompt chip: summarize a book */
+"duckai.suggestion.summarize-book.label" = "Кратко изложи содержимое книги";
+
+/* Suggested prompt submitted text: summarize a book */
+"duckai.suggestion.summarize-book.prompt" = "Кратко изложи содержимое книги.";
+
+/* Suggested prompt chip: summarize the current page */
+"duckai.suggestion.summarize-page.label" = "Кратко изложи содержимое страницы";
+
+/* Suggested prompt submitted text: summarize the current page */
+"duckai.suggestion.summarize-page.prompt" = "Кратко изложи содержимое страницы.";
+
+/* Suggested prompt chip: summarize a discussion thread */
+"duckai.suggestion.summarize-thread.label" = "Кратко изложи суть обсуждения";
+
+/* Suggested prompt submitted text: summarize a discussion thread */
+"duckai.suggestion.summarize-thread.prompt" = "Кратко изложи суть этой ветки обсуждения.";
+
+/* Suggested prompt chip: summarize a video */
+"duckai.suggestion.summarize-video.label" = "Кратко изложи содержимое видео";
+
+/* Suggested prompt submitted text: summarize a video */
+"duckai.suggestion.summarize-video.prompt" = "Кратко изложи содержимое видео.";
+
+/* Suggested prompt chip: tailor a resume to a job */
+"duckai.suggestion.tailor-resume.label" = "Адаптируй мое резюме";
+
+/* Suggested prompt submitted text: tailor a resume to a job */
+"duckai.suggestion.tailor-resume.prompt" = "Помоги мне адаптировать мое резюме для этой вакансии.";
+
+/* Suggested prompt chip: translate the current page */
+"duckai.suggestion.translate-page.label" = "Переведи эту страницу";
+
+/* Suggested prompt submitted text: translate the page. %@ is replaced with the name of the user's language. */
+"duckai.suggestion.translate-page.prompt" = "Переведи эту страницу на %@.";
+
+/* Suggested prompt chip: video key points */
+"duckai.suggestion.video-key-points.label" = "Какие основные моменты?";
+
+/* Suggested prompt submitted text: video key points */
+"duckai.suggestion.video-key-points.prompt" = "Какие основные моменты освещаются в этом видео?";
+
+/* Suggested prompt chip: person background */
+"duckai.suggestion.who-is-this.label" = "Кто этот человек?";
+
+/* Suggested prompt submitted text: person background */
+"duckai.suggestion.who-is-this.prompt" = "Расскажи вкратце об этом человеке.";
+
+/* Suggested prompt chip: is a movie/show worth watching */
+"duckai.suggestion.worth-watching.label" = "Стоит ли это смотреть?";
+
+/* Suggested prompt submitted text: is a movie/show worth watching */
+"duckai.suggestion.worth-watching.prompt" = "Стоит ли это смотреть? Дай отзыв без спойлеров.";
 
 /* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. */
 "duckai.welcome.message" = "Все чаты %@ конфиденциальны";
@@ -2476,27 +2878,6 @@
 /* Title shown on the Fire Mode empty state screen */
 "fire.mode.empty.state.title" = "Fire-вкладки";
 
-/* Badge label on the Fire Mode promotion entry in the browsing menu */
-"fire.mode.menu.promotion.badge" = "Новый";
-
-/* Description for the Fire Mode promotion card shown on the new tab page */
-"fire.mode.ntp.promotion.description" = "Новинка! Просматривайте сайты, не сохраняя локальную историю, или входите на сайты с другой учетной записью.";
-
-/* Dismiss button on the Fire Mode promotion card on the new tab page */
-"fire.mode.ntp.promotion.dismiss" = "Не сейчас";
-
-/* Primary action button on the Fire Mode promotion card that opens Fire Mode */
-"fire.mode.ntp.promotion.primary.action" = "Попробуйте Fire-вкладки";
-
-/* Title for promotion element for pushing users to try fire mode. */
-"fire.mode.promotion.title" = "Попробуйте Fire-вкладки";
-
-/* Description for the Fire Tabs popover tip shown on the tab switcher picker */
-"fire.mode.tab.switcher.tip.description" = "Используйте вкладки Fire Tab, чтобы просматривать веб-страницы без сохранения локальной истории.";
-
-/* Title for the Fire Tabs popover tip shown on the tab switcher picker */
-"fire.mode.tab.switcher.tip.title" = "Новинка: вкладки Fire Tab";
-
 /* Title shown on the Fire tab empty state screen */
 "fire.tab.empty.state.title" = "Fire-вкладка";
 
@@ -2659,11 +3040,20 @@
 /* No comment provided by engineer. */
 "keyCommandReload" = "Перезагрузить";
 
+/* Hardware keyboard shortcut label for resetting page text zoom to the default level */
+"keyCommandResetZoom" = "Сбросить масштаб";
+
 /* No comment provided by engineer. */
 "keyCommandSelect" = "Выбрать";
 
 /* No comment provided by engineer. */
 "keyCommandShowAllTabs" = "Показать все вкладки";
+
+/* Hardware keyboard shortcut label for increasing page text zoom */
+"keyCommandZoomIn" = "Увеличить масштаб";
+
+/* Hardware keyboard shortcut label for decreasing page text zoom */
+"keyCommandZoomOut" = "Уменьшить масштаб";
 
 /* No comment provided by engineer. */
 "Last Processed: %@" = "Последняя обработка: %@";
@@ -2881,6 +3271,9 @@
 /* Message label text for the status view when VPN is disconnected */
 "network.protection.status.header.message.on" = "Трафик всех устройств \nзащищен по VPN.";
 
+/* Status view message shown while the VPN is on but Strict routing is off */
+"network.protection.status.header.message.strict.routing.off" = "Часть трафика может идти в обход VPN, пока строгая маршрутизация отключена. Строгая маршрутизация рекомендуется для общедоступных сетей.";
+
 /* Header title label text for the status view when VPN is disconnected */
 "network.protection.status.header.title.off" = "DuckDuckGo VPN отключен";
 
@@ -2923,8 +3316,29 @@
 /* Label shown on the title of the settings section in NetworkProtection's status view. */
 "network.protection.status.view.settings.section.title" = "Настроить";
 
+/* Label for the status pill shown while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.off" = "Строгая маршрутизация: выкл.";
+
+/* Label for the status pill shown while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.on" = "Строгая маршрутизация: вкл.";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.tooltip.off" = "Строгая маршрутизация рекомендуется для общедоступных сетей.";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.tooltip.on" = "При включенной строгой маршрутизации некоторые приложения могут не работать.";
+
 /* Title label text for the status view when netP is disconnected */
 "network.protection.status.view.title" = "VPN";
+
+/* Title of the Troubleshooting section in the VPN status screen. */
+"network.protection.status.view.troubleshooting.section.title" = "Устранение неполадок";
+
+/* The body of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.body" = "Часть трафика может идти в обход VPN, пока строгая маршрутизация отключена. Строгая маршрутизация рекомендуется для общедоступных сетей.";
+
+/* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.title" = "Строгая маршрутизация ВЫКЛЮЧЕНА";
 
 /* The body of the notification shown when VPN reconnects successfully */
 "network.protection.success.notification.body" = "DuckDuckGo VPN включен. Ваши геопозиция и онлайн-активность скрыты от посторонних глаз.";
@@ -2955,6 +3369,12 @@
 
 /* Title for the data volume section in the VPN status screen */
 "network.protection.vpn.data-volume" = "Объем трафика";
+
+/* Footer text for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Разрешите сервисам оператора связи, таким как звонки по Wi-Fi и голосовая почта, обходить VPN.";
+
+/* Title for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.title" = "Исключить службы связи";
 
 /* Footer text for the Exclude Local Networks setting item. */
 "network.protection.vpn.exclude.local.networks.setting.footer" = "Настройте локальный трафик так, чтобы он поступал в обход VPN на устройства локальной сети, например, на принтер.";
@@ -3004,6 +3424,18 @@
 /* Footer text for the DNS server setting item. */
 "network.protection.vpn.secure.dns.setting.footer" = "DuckDuckGo направляет DNS-запросы через собственные DNS-серверы, поэтому ваш интернет-провайдер не увидит, какие сайты вы посещаете.";
 
+/* Title for the row that copies VPN diagnostic information to the clipboard. */
+"network.protection.vpn.settings.copy-diagnostics" = "Копировать данные диагностики VPN";
+
+/* Caption beneath the Copy VPN Diagnostics row, explaining what it does. */
+"network.protection.vpn.settings.copy-diagnostics.caption" = "Приложите копию этих анонимных данных диагностики VPN при обращении в службу поддержки, чтобы мы могли помочь вам устранить неполадки с подключением.";
+
+/* Temporary title for the row after VPN diagnostic information is copied to the clipboard. */
+"network.protection.vpn.settings.copy-diagnostics.copied-to-clipboard" = "Скопировано в буфер обмена";
+
+/* Temporary title for the row when VPN diagnostic information could not be copied to the clipboard. */
+"network.protection.vpn.settings.copy-diagnostics.failed-to-copy-to-clipboard" = "Не удалось скопировать в буфер обмена";
+
 /* Title for the FAQ row in the VPN status screen. */
 "network.protection.vpn.settings.faq" = "ЧаВо и поддержка";
 
@@ -3015,6 +3447,12 @@
 
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Ярлыки";
+
+/* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
+"network.protection.vpn.strict.routing.setting.footer" = "Запретить приложениям обходить VPN. Если у вас возникли проблемы с работоспособностью функций Wi-Fi (например, AirDrop или iPhone Mirroring), попробуйте выключить эту опцию. Настоятельно рекомендуется использовать в сетях, которым вы не доверяете — например, в общественных сетях Wi-Fi. [Подробнее](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack).";
+
+/* Title for the Strict Routing setting item. */
+"network.protection.vpn.strict.routing.setting.title" = "Принудительно включить строгую маршрутизацию (рекомендуется)";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Подтвердить";
@@ -3095,7 +3533,7 @@
 "omnibar.notification.trackers-blocked" = "%d Trackers";
 
 /* Text displayed on notification appearing in the address bar when YouTube ad blocking is active */
-"omnibar.notification.youtube-ad-block-on" = "Блокировка рекламы на YouTube включена";
+"omnibar.notification.youtube-ad-block-on" = "Блокировка рекламы";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Понятно";
@@ -3133,8 +3571,8 @@
 /* Message of the last screen of the onboarding to the browser app for the Duck.ai flow. 'Duck.ai' is a brand name and should not be translated. '[[chat_icon]]' is a placeholder and should not be translated. */
 "onboarding.duckai.contextual.end-of-journey.message" = "Начните приватный чат с ИИ через Duck.ai или переключитесь на поиск для защищенного просмотра веб-страниц.\n\nDuck.ai можно использовать в любом месте, где вы видите значок чата [[chat_icon]]";
 
-/* Body text of the subscription promo shown at the end of the Duck.ai onboarding flow. Describes the paid Duck.ai subscription. 'GPT', 'Claude', and 'Llama' are brand names and should not be translated. */
-"onboarding.duckai.contextual.subscription.message" = "Мы также предлагаем платную подписку, включающую расширенные ИИ-модели с более высокими лимитами чатов с GPT, Claude и Llama, безопасный VPN и многое другое.";
+/* Body text of the subscription promo shown at the end of the Duck.ai onboarding flow. Describes the paid Duck.ai subscription. 'GPT', 'Claude' are brand names and should not be translated. */
+"onboarding.duckai.contextual.subscription.message" = "Мы также предлагаем платную подписку, включающую расширенные ИИ-модели с более высокими лимитами чатов с GPT и Claude, безопасный VPN и многое другое.";
 
 /* Title shown on the Duck.ai query screen in the Duck.ai onboarding flow, prompting the user to try their first AI chat. */
 "onboarding.duckai.duckAIQuery.title" = "Попробуйте создать приватный чат с ИИ!";
@@ -3155,7 +3593,7 @@
 "onboarding.duckduckgo.subscription.promo.message.advanced-private-ai-bold" = "приватные чаты с передовыми ИИ-моделями";
 
 /* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
-"onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold" = "платной подписке";
+"onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold" = "платная подписка";
 
 /* Bold text 'VPN'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag. */
 "onboarding.duckduckgo.subscription.promo.message.vpn-two-more-bold" = "VPN";
@@ -3193,6 +3631,36 @@
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
 "onboarding.highlights.browsers.title" = "Защита включена";
 
+/* Completion onboarding message shown after finishing Fire onboarding in Duck.ai flow. '[[chat_icon]]' is a placeholder and should not be translated. */
+"onboarding.highlights.duckAIQuery.completion.message" = "Ищите и открывайте сайты в адресной строке или переключитесь на приватный чат с ИИ.\n\nDuck.ai можно использовать везде, где есть значок чата: [[chat_icon]].";
+
+/* Fire onboarding message shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.message" = "Приватные чаты с ИИ всегда можно стереть с помощью кнопки Fire Button. Убедитесь сами! 🔥";
+
+/* Fire onboarding title shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.title" = "Это Duck.ai!";
+
+/* Placeholder for AI query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.ai" = "Задавайте любые вопросы, сохраняя конфиденциальность";
+
+/* Placeholder for search query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.search" = "Конфиденциальный поиск";
+
+/* First suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option1" = "Объясни, как работает фондовый рынок, так, чтобы понял 10-летний ребенок";
+
+/* Second suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option2" = "Спланируйте идеальный день в Лондоне";
+
+/* Prompt submitted when user taps the third suggestion in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option3.prompt" = "Приведи 10 любопытных фактов о науке, природе и истории";
+
+/* Title for the onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.title" = "Ну что, приступим?\nПопробуйте поиск или чат с ИИ";
+
+/* Label for the AI Chat option in the Search/Ask AI toggle on the onboarding screen. */
+"onboarding.highlights.duckAIQuery.toggle.ai" = "Спросить ИИ";
+
 /* The title of the fire button CTA to skip erasing the data. */
 "onboarding.highlights.fireDialog.cta.skip" = "Пропустить";
 
@@ -3212,7 +3680,7 @@
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Настройки > Функции ИИ";
 
 /* Title for the search and Duck.ai option in onboarding picker. */
-"onboarding.highlights.searchExperience.searchAndDuckAI" = "Переключатель между \nобычным поиском и Duck.ai";
+"onboarding.highlights.searchExperience.searchAndDuckAI" = "Выбор между\nпоиском и Duck.ai";
 
 /* Title for the search-only option in onboarding picker. */
 "onboarding.highlights.searchExperience.searchOnly" = "Только поиск";
@@ -3503,6 +3971,9 @@
 "preserveLogins.remove.all.ok" = "Хорошо";
 
 /* No comment provided by engineer. */
+"Previews" = "Предпросмотр";
+
+/* No comment provided by engineer. */
 "Primary / First Action" = "Основное/первое действие";
 
 /* No comment provided by engineer. */
@@ -3594,6 +4065,9 @@
 
 /* Button to delete all tabs and data in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.all.button" = "Удалить все";
+
+/* Button to delete all chats in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.chats.button" = "Удалить чаты";
 
 /* Button to delete a single tab and its site data in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.tab.button" = "Удалить вкладку";
@@ -3727,9 +4201,6 @@
 /* Settings picker label for what to show when returning after inactivity */
 "settings.afterInactivity.v2.label" = "После бездействия";
 
-/* Footer under the AI picker, descriptive sentence without link */
-"settings.ai.new.picker.footer" = "Новая функция! Теперь в адресной строке можно переключаться между обычным поиском и Duck.ai.";
-
 /* Settings row that opens Duck.ai in a new tab */
 "settings.aichat.duckai.settings" = "Настройки Duck.ai";
 
@@ -3745,8 +4216,20 @@
 /* Settings screen footer text for showing AI Chat in the input box */
 "settings.aichat.shortcuts.input.footer" = "Выполнить поиск в интернете или задать вопрос ИИ-ассистенту Duck.ai можно прямо из адресной строки.";
 
-/* Title of search assist settings link */
-"settings.aifeatures.assist" = "Настройки Search Assist";
+/* Search Assist frequency option: never show AI-assisted answers */
+"settings.aifeatures.assist.never" = "Никогда";
+
+/* Search Assist frequency option: often show AI-assisted answers */
+"settings.aifeatures.assist.often" = "Часто";
+
+/* Search Assist frequency option: show AI-assisted answers on demand */
+"settings.aifeatures.assist.ondemand" = "По запросу";
+
+/* Search Assist frequency option: sometimes show AI-assisted answers */
+"settings.aifeatures.assist.sometimes" = "Иногда";
+
+/* Title of the native Search Assist setting control */
+"settings.aifeatures.assist.title" = "Search Assist";
 
 /* Settings screen cell subtitle for enabling automatic page content attachment */
 "settings.aifeatures.automatic.context.subtitle" = "Автоматически отправлять содержимое страницы в Duck.ai";
@@ -3757,11 +4240,29 @@
 /* Settings screen cell title for enabling chat suggestions */
 "settings.aifeatures.chat.suggestions.title" = "Рекомендации в чате";
 
+/* Button that turns off all AI features */
+"settings.aifeatures.disable.all" = "Использовать DuckDuckGo без ИИ";
+
+/* Footer text below the disable all AI features button */
+"settings.aifeatures.disable.all.footer" = "Отключает Duck.ai, скрывает ответы с использованием ИИ в поиске и фильтрует известные сайты с ИИ-спамом в результатах поиска изображений.";
+
+/* Footer text shown once all AI features are already disabled */
+"settings.aifeatures.disable.all.footer.disabled" = "ИИ сейчас отключен в браузере, поэтому ответы с использованием ИИ больше не будут отображаться, а в результатах поиска изображений будет меньше изображений, созданных ИИ.";
+
+/* Section header for the Duck.ai settings group on the AI Features screen */
+"settings.aifeatures.duckai.section.header" = "Duck.ai";
+
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Скрыть ИИ-картинки";
 
-/* Description of what the hide AI-generated images feature does */
-"settings.aifeatures.hide.ai.generated.images.subtitle" = "Исключает из результатов поиска изображения, созданные нейросетью";
+/* Hide AI-Generated Images option: off (images shown) */
+"settings.aifeatures.hide.ai.generated.images.off" = "Выключено";
+
+/* Hide AI-Generated Images option: on (images hidden) */
+"settings.aifeatures.hide.ai.generated.images.on" = "Включено";
+
+/* Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link) */
+"settings.aifeatures.hide.ai.generated.images.subtitle" = "Фильтрует известные сайты с ИИ-спамом из результатов поиска изображений. [Узнать больше](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Всегда включено";
@@ -3771,6 +4272,12 @@
 
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Положение адресной строки";
+
+/* Settings screen toggle (iPad only) that hides the tab bar and address bar while scrolling */
+"settings.appearance.hide.tab.bar.while.scrolling" = "Скрывать панель вкладок при прокрутке";
+
+/* Footer (iPad only) shown below the Hide Tab Bar While Scrolling toggle, explaining where the behavior applies */
+"settings.appearance.hide.tab.bar.while.scrolling.footer" = "Доступно на большинстве сайтов. Duck.ai, карты и игры могут оставлять панель вкладок видимой.";
 
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Открывать ссылки в связанных приложениях";
@@ -3874,14 +4381,26 @@
 /* The name of the settings section containing options to set up the app */
 "settings.complete.setup" = "Завершение настройки";
 
+/* Explanation below the auto-manage cookie pop-ups toggle in settings */
+"settings.cookie.auto-manage.explanation" = "Мы постараемся выбрать для вас только максимально конфиденциальные настройки файлов cookie, а затем закроем эти окна.";
+
+/* Title for the auto-manage cookie pop-ups toggle in settings */
+"settings.cookie.auto-manage.title" = "Автоматическое управление окнами выбора файлов cookie";
+
 /* The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups */
 "settings.cookie.pop-up-protection.protection" = "Защита от всплывающих окон куки";
 
 /* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo по возможности откажется от куки-файлов и скроет подобные окна.\n[Подробнее...](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-management)";
+"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo может автоматически управлять настройками файлов cookie, чтобы обеспечить максимальную конфиденциальность, минимизировать использование cookie и закрывать соответствующие всплывающие окна.\n[Подробнее](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
 
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Управление окнами выбора куки-файлов";
+
+/* Explanation below the pop-ups without opt-outs toggle in settings */
+"settings.cookie.popups-without-opt-outs.explanation" = "Также разрешите DuckDuckGo экономить вам время, принимая файлы cookie за вас, чтобы закрывать всплывающие окна без возможности отказа.";
+
+/* Title for the pop-ups without opt-outs toggle in settings */
+"settings.cookie.popups-without-opt-outs.title" = "Всплывающие окна без возможности отказа";
 
 /* Label for customizable toolbar button that deletes tabs and data */
 "settings.customizable.button.delete.tabs.and.data" = "Удалить вкладки и данные";
@@ -4014,6 +4533,9 @@
 
 /* The name of a settings category listing next steps */
 "settings.next.steps" = "Дальнейшие шаги";
+
+/* Accessibility label / title for the button that hides the Settings Next Steps section */
+"settings.next.steps.hide" = "Скрыть";
 
 /* Label describing a feature which is turned off */
 "settings.off" = "Выключено";
@@ -4209,6 +4731,12 @@
 
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Незащищенные сайты";
+
+/* Description shown above the list of unprotected sites */
+"settings.unprotected.sites.description" = "Сайты без защиты конфиденциальности.";
+
+/* Message shown when there are no unprotected sites */
+"settings.unprotected.sites.empty.state" = "Защита конфиденциальности включена на всех сайтах";
 
 /* Settings cell for Version */
 "settings.version" = "Версия";
@@ -4567,6 +5095,21 @@
 /* Title of the dialog to confirm deleting Sync server data */
 "sync.delete.all.confirm.title" = "Удалить данные с сервера?";
 
+/* Caption for a button to confirm sync setup with another device */
+"sync.pairing-v2.confirmation.action" = "Синхронизировать";
+
+/* Message for the dialog to confirm sync setup with another DuckDuckGo device */
+"sync.pairing-v2.confirmation.ddg.message" = "«%@» сможет получить доступ к синхронизированным паролям DuckDuckGo, данным автозаполнения и чатам Duck.ai.";
+
+/* Message for the dialog to confirm sync setup with a third-party device */
+"sync.pairing-v2.confirmation.third-party.message" = "«%@» сможет получить доступ к вашим синхронизированным чатам Duck.ai.";
+
+/* Title of the dialog to confirm sync setup with another device */
+"sync.pairing-v2.confirmation.title" = "Синхронизировать новое устройство?";
+
+/* Fallback device name for confirmation dialogs */
+"sync.pairing-v2.unknown-peer-name" = "другое устройство";
+
 /* Message for the Sync Promotion banner when user has bookmarks that can be synced */
 "sync.promo.bookmarks.message" = "Учетная запись не требуется. Сквозное шифрование означает, что ваши закладки видны только вам. Даже у нас нет к ним доступа.";
 
@@ -4630,11 +5173,8 @@
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Удалить устройство?";
 
-/* Toast message shown after copying sync code to clipboard */
-"sync.simplified.code.copied.toast" = "Код скопирован";
-
 /* Toast message shown after sync is enabled by connecting with another device */
-"sync.simplified.device-synced.toast" = "Устройство успешно синхронизировано!";
+"sync.simplified.device-synced.toast" = "Добавлено новое устройство!";
 
 /* Toast message shown after sync is successfully enabled */
 "sync.simplified.enabled.toast" = "Sync & Backup включено";
@@ -4653,15 +5193,6 @@
 
 /* Alert title when turning off sync */
 "sync.simplified.turn.off.title" = "Отключить Sync & Backup?";
-
-/* Caption for a button to remove current device from Sync */
-"sync.turn.off.confirm.action" = "Удалить";
-
-/* Message for the dialog to confirm turning off Sync */
-"sync.turn.off.confirm.message" = "Это устройство утратит доступ к вашим синхронизированным данным.";
-
-/* Title of the dialog to confirm turning off Sync */
-"sync.turn.off.confirm.title" = "Отключить синхронизацию?";
 
 /* Reason for auth when setting up Sync */
 "sync.user.auth.reason" = "Для настройки синхронизации и резервного копирования нужно разблокировать устройство.";
@@ -4788,6 +5319,12 @@
 
 /* No comment provided by engineer. */
 "UIAlert" = "UIAlert";
+
+/* Toast shown when a tapped .vcf contact link can't be parsed (e.g. malformed RFC 6350 content) */
+"vcard.add-contact.parse-failure" = "Не удалось добавить контакт. Попробуйте открыть файл контакта из загрузок.";
+
+/* Toast shown after the user successfully adds a contact from a .vcf contact link to their Contacts */
+"vcard.contact-added" = "Добавлен контакт";
 
 /* No comment provided by engineer. */
 "Version: %@" = "Версия: %@";
@@ -5120,10 +5657,10 @@
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "DuckDuckGo для Windows!";
 
 /* Body text of the bottom sheet asking the user to send an anonymous breakage report */
-"youtube.ad.blocking.breakage-report.message" = "Отправьте анонимное сообщение о проблеме в DuckDuckGo. Помогите улучшить блокировку рекламы для всех!";
+"youtube.ad.blocking.breakage-report.message" = "Отправьте анонимные сведения в DuckDuckGo и помогите улучшить блокировку рекламы для всех!";
 
 /* Primary action sending an anonymous YouTube ad-blocking breakage report */
-"youtube.ad.blocking.breakage-report.send" = "Сообщить о проблеме";
+"youtube.ad.blocking.breakage-report.send" = "Отправить анонимный отчет";
 
 /* Title of the bottom sheet asking the user to send an anonymous breakage report after disabling YouTube ad blocking */
 "youtube.ad.blocking.breakage-report.title" = "Блокировка рекламы на YouTube не работает?";

@@ -20,6 +20,7 @@
 import Core
 import SwiftUI
 import DesignResourcesKit
+import WebExtensions
 
 struct CookiePopUpProtectionView: View {
 
@@ -41,7 +42,11 @@ struct CookiePopUpProtectionView: View {
                                     displayMode: .inline,
                                     viewModel: viewModel)
         .onForwardNavigationAppear {
-            Pixel.fire(pixel: .settingsAutoconsentShown)
+            if viewModel.isCookiePopupPreferenceSettingEnabled {
+                Pixel.fire(pixel: .autoconsentSettingsShown)
+            } else {
+                Pixel.fire(pixel: .settingsAutoconsentShown)
+            }
         }
     }
 }
@@ -50,11 +55,28 @@ struct CookiePopUpProtectionViewSettings: View {
 
     @EnvironmentObject var viewModel: SettingsViewModel
 
+    private var isAutoManageEnabled: Bool {
+        viewModel.autoManageCookiePopupsBinding.wrappedValue
+    }
+
     var body: some View {
-        Section {
-            // Let DuckDuckGo manage cookie consent pop-ups
-            SettingsCellView(label: UserText.letDuckDuckGoManageCookieConsentPopups,
-                             accessory: .toggle(isOn: viewModel.autoconsentBinding))
+        if viewModel.isCookiePopupPreferenceSettingEnabled {
+            Section(footer: Text(UserText.autoManageCookiePopupsExplanation)) {
+                SettingsCellView(label: UserText.autoManageCookiePopupsTitle,
+                                 accessory: .toggle(isOn: viewModel.autoManageCookiePopupsBinding))
+            }
+
+            if isAutoManageEnabled {
+                Section(footer: Text(UserText.popUpsWithoutOptOutsExplanation)) {
+                    SettingsCellView(label: UserText.popUpsWithoutOptOutsTitle,
+                                     accessory: .toggle(isOn: viewModel.popUpsWithoutOptOutsBinding))
+                }
+            }
+        } else {
+            Section {
+                SettingsCellView(label: UserText.letDuckDuckGoManageCookieConsentPopups,
+                                 accessory: .toggle(isOn: viewModel.autoconsentBinding))
+            }
         }
     }
 }

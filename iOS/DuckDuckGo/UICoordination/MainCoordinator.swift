@@ -34,6 +34,7 @@ import PrivacyStats
 import Networking
 import WebExtensions
 import Onboarding
+import FeatureFlags_iOS
 
 @MainActor
 protocol URLHandling: AnyObject {
@@ -68,7 +69,7 @@ final class MainCoordinator {
 
     private let subscriptionManager: any SubscriptionManager
     private let featureFlagger: FeatureFlagger
-    private let modalPromptCoordinationService: ModalPromptCoordinationService
+    private let promoCoordinationService: PromoCoordinationService
     private let launchSourceManager: LaunchSourceManaging
     private let keyValueStore: ThrowingKeyValueStoring
     private let onboardingSearchExperienceSelectionHandler: OnboardingSearchExperienceSelectionHandler
@@ -128,7 +129,8 @@ final class MainCoordinator {
          freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking,
          freemiumPIRDebugSettings: FreemiumPIRDebugSettings,
          freemiumDBPUserStateManager: FreemiumDBPUserStateManaging,
-         modalPromptCoordinationService: ModalPromptCoordinationService,
+         profileStateManager: DBPProfileStateManaging,
+         promoCoordinationService: PromoCoordinationService,
          mobileCustomization: MobileCustomization,
          productSurfaceTelemetry: ProductSurfaceTelemetry,
          whatsNewRepository: WhatsNewMessageRepository,
@@ -142,7 +144,7 @@ final class MainCoordinator {
         self.keyValueStore = keyValueStore
         self.darkReaderFeatureSettings = AppDarkReaderFeatureSettings(featureFlagger: featureFlagger,
                                                                       privacyConfigurationManager: privacyConfigurationManager)
-        self.modalPromptCoordinationService = modalPromptCoordinationService
+        self.promoCoordinationService = promoCoordinationService
         self.wideEvent = wideEvent
         self.onboardingManager = onboardingManager
         self.voiceSessionStateManager = VoiceSessionStateManager()
@@ -150,20 +152,19 @@ final class MainCoordinator {
         FireModeCapability.resolve(using: featureFlagger)
         UnifiedToggleInputFeature.resolve(using: featureFlagger)
         let fireModeCapability = FireModeCapability.create()
-        let fireModePromotionsCoordinator = FireModePromotionsCoordinator(fireModeCapability: fireModeCapability)
         let homePageConfiguration = HomePageConfiguration(variantManager: AppDependencyProvider.shared.variantManager,
                                                           remoteMessagingStore: remoteMessagingService.remoteMessagingClient.store,
                                                           subscriptionDataReporter: reportingService.subscriptionDataReporter,
-                                                          fireModePromotionEligibility: fireModePromotionsCoordinator,
                                                           isStillOnboarding: { daxDialogsManager.isStillOnboarding() })
         let previewsSource = DefaultTabPreviewsSource()
         let tabsPersistence = try TabsModelPersistence()
         let tabsModelProvider = try Self.prepareTabsModel(previewsSource: previewsSource, tabsPersistence: tabsPersistence)
         let historyManager = try Self.makeHistoryManager(tabsModel: tabsModelProvider.aggregateTabsModel)
         reportingService.subscriptionDataReporter.injectTabsModel(tabsModelProvider.aggregateTabsModel)
-        let daxDialogsFactory = ContextualDaxDialogsProvider(featureFlagger: featureFlagger,
-                                                         contextualOnboardingLogic: daxDialogs,
-                                                         contextualOnboardingPixelReporter: reportingService.onboardingPixelReporter)
+        let daxDialogsFactory = ContextualDaxDialogFactory(
+            contextualOnboardingLogic: daxDialogs,
+            contextualOnboardingPixelReporter: reportingService.onboardingPixelReporter
+        )
         let contextualOnboardingPresenter = ContextualOnboardingPresenter(variantManager: variantManager, daxDialogsFactory: daxDialogsFactory)
         let textZoomCoordinatorProvider = Self.makeTextZoomCoordinatorProvider()
         let autoconsentManagementProvider = AutoconsentManagementProvider()
@@ -218,7 +219,6 @@ final class MainCoordinator {
                                 duckAiNativeStorageHandler: contentBlockingService.duckAiNativeStorageHandler,
                                 duckAiFireModeStorageHandler: contentBlockingService.duckAiFireModeStorageHandler,
                                 toggleModeStorage: toggleModeStorage,
-                                fireModePromotionEligibility: fireModePromotionsCoordinator,
                                 adBlockingAvailability: contentBlockingService.adBlockingAvailability)
         let fireExecutor = FireExecutor(tabManager: tabManager,
                                         websiteDataManager: websiteDataManager,
@@ -298,6 +298,7 @@ final class MainCoordinator {
                                         freemiumPIREligibilityChecker: freemiumPIREligibilityChecker,
                                         freemiumPIRDebugSettings: freemiumPIRDebugSettings,
                                         freemiumDBPUserStateManager: freemiumDBPUserStateManager,
+                                        profileStateManager: profileStateManager,
                                         launchSourceManager: launchSourceManager,
                                         winBackOfferVisibilityManager: winBackOfferService.visibilityManager,
                                         mobileCustomization: mobileCustomization,
@@ -311,8 +312,9 @@ final class MainCoordinator {
                                         whatsNewRepository: whatsNewRepository,
                                         darkReaderFeatureSettings: darkReaderFeatureSettings,
                                         toggleModeStorage: toggleModeStorage,
-                                        fireModePromotionEligibility: fireModePromotionsCoordinator,
-                                        onboardingManager: onboardingManager)
+                                        onboardingManager: onboardingManager,
+                                        newTabPagePromoCoordinator: promoCoordinationService,
+                                        recentModalPromptStatusProvider: promoCoordinationService)
 
         setupWebExtensions(privacyConfigurationManager: privacyConfigurationManager)
 
@@ -429,7 +431,10 @@ final class MainCoordinator {
         )
         self.webExtensionManager = webExtensionManager
 
-        let lifecycleCoordinator = WebExtensionLifecycleCoordinator(manager: webExtensionManager) { [weak self] in
+        let lifecycleCoordinator = WebExtensionLifecycleCoordinator(
+            manager: webExtensionManager,
+            pixelFiring: iOSWebExtensionPixelFiring()
+        ) { [weak self] in
             self?.enabledEmbeddedExtensionTypes() ?? []
         }
         self.webExtensionLifecycleCoordinator = lifecycleCoordinator
@@ -639,8 +644,12 @@ final class MainCoordinator {
         controller.segueToDuckDuckGoSubscription(origin: origin)
     }
 
-    func presentNetworkProtectionStatusSettingsModal(origin: SubscriptionFunnelOrigin) {
-        controller.presentNetworkProtectionStatusSettingsModal(origin: origin)
+    func segueToSubscriptionWelcome() {
+        controller.segueToSubscriptionWelcome()
+    }
+
+    func presentNetworkProtectionStatusSettingsModal(entryPoint: VPNEntryPoint, scrollToStrictRouting: Bool = false) {
+        controller.presentNetworkProtectionStatusSettingsModal(entryPoint: entryPoint, scrollToStrictRouting: scrollToStrictRouting)
     }
 
     func presentDataBrokerProtectionDashboard() {
@@ -648,7 +657,7 @@ final class MainCoordinator {
     }
 
     func presentModalPromptIfNeeded() {
-        modalPromptCoordinationService.presentModalPromptIfNeeded(from: controller)
+        promoCoordinationService.presentModalPromptIfNeeded(from: controller)
     }
 
     // MARK: App Lifecycle handling
@@ -728,7 +737,10 @@ extension MainCoordinator: URLHandling {
 
         fireMediumWidgetPixelIfNeeded(url: url)
 
-        if url.scheme != AppDeepLinkSchemes.openVPN.url.scheme
+        let syncPairingInfo = featureFlagger.isFeatureOn(.canInterceptSyncSetupUrls) ? PairingInfo(url: url) : nil
+
+        if syncPairingInfo == nil
+            && url.scheme != AppDeepLinkSchemes.openVPN.url.scheme
             && url.scheme != AppDeepLinkSchemes.openAIChat.url.scheme
             && url.scheme != AppDeepLinkSchemes.openAIVoiceChat.url.scheme {
             controller.clearNavigationStack()
@@ -752,7 +764,7 @@ extension MainCoordinator: URLHandling {
         case .newEmail:
             controller.newEmailAddress()
         case .openVPN:
-            presentNetworkProtectionStatusSettingsModal(origin: .widgetVPN)
+            presentNetworkProtectionStatusSettingsModal(entryPoint: .widget)
         case .openPasswords:
             handleOpenPasswords(url: url)
         case .openAIChat:
@@ -764,8 +776,8 @@ extension MainCoordinator: URLHandling {
         case .customProductPage:
             AppStoreCustomProductPageDeepLinkHandler().handleDeepLink(url, on: controller)
         default:
-            if featureFlagger.isFeatureOn(.canInterceptSyncSetupUrls), let pairingInfo = PairingInfo(url: url) {
-                controller.segueToSettingsSync(with: nil, pairingInfo: pairingInfo)
+            if let syncPairingInfo {
+                controller.segueToSettingsSync(with: nil, pairingInfo: syncPairingInfo)
                 return true
             }
             return false
@@ -821,7 +833,7 @@ extension MainCoordinator: ShortcutItemHandling {
         } else if item.type == ShortcutKey.passwords {
             handleSearchPassword()
         } else if item.type == ShortcutKey.openVPNSettings {
-            controller.presentNetworkProtectionStatusSettingsModal(origin: .shortcutVPN)
+            controller.presentNetworkProtectionStatusSettingsModal(entryPoint: .shortcut)
         } else if item.type == ShortcutKey.aiChat {
             handleAIChatAppIconShortuct()
         } else if item.type == ShortcutKey.voiceSearch {

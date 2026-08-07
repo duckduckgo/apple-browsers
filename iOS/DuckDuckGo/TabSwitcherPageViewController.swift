@@ -67,12 +67,16 @@ class TabSwitcherPageViewController: UIViewController {
     private weak var previewsSource: TabPreviewsSource?
     private let tabSwitcherSettings: TabSwitcherSettings
     private var isFireModeEnabled: Bool
+    private let isTabSwitcherJuly2026Enabled: Bool
     private var tabObserverCancellable: AnyCancellable?
     private var trackerCountViewModel: TabSwitcherTrackerCountViewModel?
     private var trackerCountCancellable: AnyCancellable?
     private var lastAppliedTrackerCountState: TabSwitcherTrackerCountViewModel.State?
     private var trackerInfoModel: InfoPanelView.Model?
     private var fireModeEmptyStateHostingController: UIHostingController<FireModeEmptyStateView>?
+    private let duckAIGridContentProvider: DuckAIGridContentProviding?
+    private let duckAIVoiceSessionTracker: DuckAIVoiceSessionTracking?
+    private var voiceSessionChangesCancellable: AnyCancellable?
 
     var canUpdateCollection = true
 
@@ -85,14 +89,20 @@ class TabSwitcherPageViewController: UIViewController {
          previewsSource: TabPreviewsSource,
          tabSwitcherSettings: TabSwitcherSettings,
          trackerCountViewModel: TabSwitcherTrackerCountViewModel?,
-         isFireModeEnabled: Bool) {
+         isFireModeEnabled: Bool,
+         isTabSwitcherJuly2026Enabled: Bool = false,
+         duckAIGridContentProvider: DuckAIGridContentProviding?,
+         duckAIVoiceSessionTracker: DuckAIVoiceSessionTracking?) {
         self.browsingMode = browsingMode
         self.tabsModel = tabsModel
         self.previewsSource = previewsSource
         self.tabSwitcherSettings = tabSwitcherSettings
         self.trackerCountViewModel = trackerCountViewModel
         self.isFireModeEnabled = isFireModeEnabled
+        self.isTabSwitcherJuly2026Enabled = isTabSwitcherJuly2026Enabled
         self.currentSelection = tabsModel.currentIndex
+        self.duckAIGridContentProvider = duckAIGridContentProvider
+        self.duckAIVoiceSessionTracker = duckAIVoiceSessionTracker
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -146,6 +156,7 @@ class TabSwitcherPageViewController: UIViewController {
         collectionView.backgroundView = backgroundView
         
         subscribeToTabChanges()
+        subscribeToVoiceSessionChanges()
         bindTrackerCount()
         trackerCountViewModel?.refresh()
         setupFireModeEmptyState()
@@ -190,14 +201,23 @@ class TabSwitcherPageViewController: UIViewController {
         view.addSubview(hostingController.view)
         hostingController.didMove(toParent: self)
 
+        let topConstraint = isTabSwitcherJuly2026Enabled
+            ? hostingController.view.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor,
+                                                          constant: FireModeEmptyStateMetrics.floatingNavigationBarClearance)
+            : hostingController.view.topAnchor.constraint(equalTo: view.topAnchor)
+
         NSLayoutConstraint.activate([
-            hostingController.view.topAnchor.constraint(equalTo: view.topAnchor),
+            topConstraint,
             hostingController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             hostingController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             hostingController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
         ])
 
         fireModeEmptyStateHostingController = hostingController
+    }
+
+    private enum FireModeEmptyStateMetrics {
+        static let floatingNavigationBarClearance: CGFloat = 60
     }
 
     func updateEmptyStateVisibility() {
@@ -230,7 +250,7 @@ class TabSwitcherPageViewController: UIViewController {
         trackerInfoModel = .trackerInfoPanel(
             state: state,
             onTap: { },
-            onInfo: { [weak self] in
+            onDismiss: { [weak self] in
                 self?.presentHideTrackerCountAlert()
             }
         )
@@ -333,6 +353,42 @@ class TabSwitcherPageViewController: UIViewController {
         guard gesture.tappedInWhitespaceAtEndOfCollectionView(collectionView) else { return }
         pageDelegate?.pageDidRequestDismiss(self)
     }
+
+    /// Resolves the rich-card grid item for `tab`, or `nil` for non-AI tabs and
+    /// when no provider is wired in (release builds without an explicit injection).
+    /// `nil` keeps the cell on the existing screenshot path.
+    private func duckAIGridItem(for tab: Tab) -> DuckAIGridItem? {
+        guard tab.isAITab else { return nil }
+        let liveVoiceActive = duckAIVoiceSessionTracker?.isVoiceSessionActive(for: tab) ?? false
+        return duckAIGridContentProvider?.gridItem(for: tab, liveVoiceActive: liveVoiceActive)
+    }
+
+    /// Applies the current tab state (preview/rich card) to `cell`.
+    private func configure(_ cell: TabViewCell, with tab: Tab) {
+        cell.update(withTab: tab,
+                    isSelectionModeEnabled: pageDelegate?.isEditing ?? false,
+                    preview: previewsSource?.preview(for: tab),
+                    isFireModeEnabled: isFireModeEnabled,
+                    duckAIGridItem: duckAIGridItem(for: tab),
+                    thumbnailLoader: duckAIGridContentProvider)
+    }
+
+    /// Refreshes visible Duck.ai cells when a voice session starts/ends (end-timing lives in `DuckAIVoiceSessionTracker`).
+    private func subscribeToVoiceSessionChanges() {
+        voiceSessionChangesCancellable = duckAIVoiceSessionTracker?.changes
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in self?.refreshVisibleAITabCells() }
+    }
+
+    private func refreshVisibleAITabCells() {
+        for indexPath in collectionView.indexPathsForVisibleItems {
+            guard indexPath.row < tabsModel.count,
+                  let tab = tabsModel.get(tabAt: indexPath.row),
+                  tab.isAITab,
+                  let cell = collectionView.cellForItem(at: indexPath) as? TabViewCell else { continue }
+            configure(cell, with: tab)
+        }
+    }
 }
 
 // MARK: - UICollectionViewDataSource
@@ -359,10 +415,7 @@ extension TabSwitcherPageViewController: UICollectionViewDataSource {
            let tab = tabsModel.get(tabAt: indexPath.row) {
             tab.removeObserver(self)
             tab.addObserver(self)
-            cell.update(withTab: tab,
-                        isSelectionModeEnabled: pageDelegate?.isEditing ?? false,
-                        preview: previewsSource?.preview(for: tab),
-                        isFireModeEnabled: isFireModeEnabled)
+            configure(cell, with: tab)
         }
 
         return cell
@@ -525,10 +578,7 @@ extension TabSwitcherPageViewController: TabObserver {
             DailyPixel.fireDaily(.debugTabSwitcherDidChangeInvalidState)
             return
         }
-        cell.update(withTab: tab,
-                    isSelectionModeEnabled: pageDelegate?.isEditing ?? false,
-                    preview: previewsSource?.preview(for: tab),
-                    isFireModeEnabled: isFireModeEnabled)
+        configure(cell, with: tab)
     }
 }
 

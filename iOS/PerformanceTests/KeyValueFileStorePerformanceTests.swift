@@ -52,7 +52,8 @@ class KeyValueFileStorePerformanceTests: XCTestCase {
 
             let tab = Tab(uid: "\(i)",
                           link: .init(title: UUID().uuidString, url: URL(string: "https://example.com")!),
-                          viewed: true)
+                          viewed: true,
+                          fireTab: false)
 
             tabs.append(tab)
         }

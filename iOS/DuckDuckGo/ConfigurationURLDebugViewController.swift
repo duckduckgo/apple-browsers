@@ -71,7 +71,7 @@ final class ConfigurationURLDebugViewController: UITableViewController {
     private func configureCell(_ cell: ConfigurationURLTableViewCell, for item: DebugScreensViewModel.ConfigurationItem, at indexPath: IndexPath) {
         cell.title.text = item.title
         cell.subtitle.text = viewModel?.getURL(for: item.configuration) ?? ""
-        cell.subtitle.textColor = viewModel?.getCustomURL(for: item.configuration) != nil ? UIColor(designSystemColor: .accent) : .label
+        cell.subtitle.textColor = viewModel?.getCustomURL(for: item.configuration) != nil ? UIColor(designSystemColor: .accentPrimary) : .label
         
         if let lastUpdate = viewModel?.getLastConfigurationUpdateDate() {
             cell.ternary.text = dateFormatter.string(from: lastUpdate)
@@ -153,6 +153,6 @@ final class ConfigurationURLTableViewCell: UITableViewCell {
 
     override func awakeFromNib() {
         super.awakeFromNib()
-        subtitle.textColor = UIColor(designSystemColor: .accent)
+        subtitle.textColor = UIColor(designSystemColor: .accentPrimary)
     }
 }

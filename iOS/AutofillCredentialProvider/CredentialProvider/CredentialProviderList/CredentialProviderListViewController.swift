@@ -165,7 +165,7 @@ final class CredentialProviderListViewController: UIViewController {
         view.backgroundColor = UIColor(designSystemColor: .background)
         tableView.backgroundColor = UIColor(designSystemColor: .background)
         tableView.separatorColor = UIColor(designSystemColor: .lines)
-        tableView.sectionIndexColor = UIColor(designSystemColor: .accent)
+        tableView.sectionIndexColor = UIColor(designSystemColor: .accentPrimary)
 
         navigationController?.navigationBar.barTintColor = UIColor(designSystemColor: .panel)
         navigationController?.navigationBar.tintColor = UIColor(designSystemColor: .textPrimary)
@@ -320,7 +320,7 @@ extension CredentialProviderListViewController: UITableViewDataSource {
                 fatalError("Could not dequeue cell")
             }
             cell.item = items[indexPath.row]
-            cell.backgroundColor = UIColor(designSystemColor: .surface)
+            cell.backgroundColor = UIColor(singleUseColor: .groupedListContentBackground)
 
             cell.disclosureButtonTapped = { [weak self] in
                 let item = items[indexPath.row]

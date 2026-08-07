@@ -27,6 +27,10 @@ import VPN
 import StoreKit
 import PrivacyConfig
 import Networking
+import UserNotifications
+import UIComponents
+import Lottie
+import FeatureFlags_iOS
 
 final class SubscriptionDebugViewController: UITableViewController {
 
@@ -62,6 +66,8 @@ final class SubscriptionDebugViewController: UITableViewController {
         Sections.pixels: "Promo Pixel Parameters",
         Sections.metadata: "StoreKit Metadata",
         Sections.regionOverride: "Region override for App Store Sandbox",
+        Sections.expirationReminder: "Expiration Reminder Notification",
+        Sections.onboarding: "Onboarding",
     ]
 
     enum Sections: Int, CaseIterable {
@@ -73,6 +79,8 @@ final class SubscriptionDebugViewController: UITableViewController {
         case pixels
         case metadata
         case regionOverride
+        case expirationReminder
+        case onboarding
     }
 
     enum AuthorizationRows: Int, CaseIterable {
@@ -114,6 +122,21 @@ final class SubscriptionDebugViewController: UITableViewController {
     enum RegionOverrideRows: Int, CaseIterable {
         case currentRegionOverride
     }
+
+    enum ExpirationReminderRows: Int, CaseIterable {
+        case currentStatus
+        case triggerMockNotification
+    }
+
+    enum OnboardingRows: Int, CaseIterable {
+        case welcome
+        case vpn
+        case duckAI
+        case tapAllowHint
+    }
+
+    private var notificationAuthStatusText: String = "Loading"
+    private var subscriptionStatusText: String = "Loading"
     
 
     private var storefrontID = "Loading"
@@ -126,6 +149,12 @@ final class SubscriptionDebugViewController: UITableViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         loadStoreKitMetadata()
+        loadExpirationReminderStatus()
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        loadExpirationReminderStatus()
     }
 
     override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
@@ -211,7 +240,7 @@ final class SubscriptionDebugViewController: UITableViewController {
                 cell.textLabel?.numberOfLines = 0
             case .reset:
                 cell.textLabel?.text = "Edit Custom URL"
-                cell.textLabel?.textColor = UIColor(designSystemColor: .accent)
+                cell.textLabel?.textColor = UIColor(designSystemColor: .accentPrimary)
             case .none:
                 break
             }
@@ -233,6 +262,21 @@ final class SubscriptionDebugViewController: UITableViewController {
             case .countryCode:
                 cell.textLabel?.text = "Country Code"
                 cell.detailTextLabel?.text = storefrontCountryCode
+            case .none:
+                break
+            }
+
+        case .expirationReminder:
+            switch ExpirationReminderRows(rawValue: indexPath.row) {
+            case .currentStatus:
+                cell.textLabel?.attributedText = Self.makeStatusAttributedText(
+                    notifications: notificationAuthStatusText,
+                    subscription: subscriptionStatusText
+                )
+                cell.textLabel?.numberOfLines = 0
+                cell.selectionStyle = .none
+            case .triggerMockNotification:
+                cell.textLabel?.text = "Trigger Mock Notification…"
             case .none:
                 break
             }
@@ -276,6 +320,24 @@ final class SubscriptionDebugViewController: UITableViewController {
                 break
             }
 
+        case .onboarding:
+            switch OnboardingRows(rawValue: indexPath.row) {
+            case .welcome:
+                cell.textLabel?.text = "Welcome"
+                cell.accessoryType = .disclosureIndicator
+            case .vpn:
+                cell.textLabel?.text = "VPN"
+                cell.accessoryType = .disclosureIndicator
+            case .duckAI:
+                cell.textLabel?.text = "Duck.ai"
+                cell.accessoryType = .disclosureIndicator
+            case .tapAllowHint:
+                cell.textLabel?.text = "Tap Allow Hint Overlay"
+                cell.accessoryType = .disclosureIndicator
+            case .none:
+                break
+            }
+
         case .none:
             break
         }
@@ -293,6 +355,8 @@ final class SubscriptionDebugViewController: UITableViewController {
         case .pixels: return PixelsRows.allCases.count
         case .metadata: return MetadataRows.allCases.count
         case .regionOverride: return RegionOverrideRows.allCases.count
+        case .expirationReminder: return ExpirationReminderRows.allCases.count
+        case .onboarding: return OnboardingRows.allCases.count
         case .none: return 0
         }
     }
@@ -336,6 +400,19 @@ final class SubscriptionDebugViewController: UITableViewController {
             break
         case .regionOverride:
             break
+        case .expirationReminder:
+            switch ExpirationReminderRows(rawValue: indexPath.row) {
+            case .triggerMockNotification: triggerMockExpirationReminder()
+            default: break
+            }
+        case .onboarding:
+            switch OnboardingRows(rawValue: indexPath.row) {
+            case .welcome: showWelcomeOnboarding()
+            case .vpn: showVPNOnboarding()
+            case .duckAI: showDuckAIOnboarding()
+            case .tapAllowHint: showTapAllowHintPlayground()
+            default: break
+            }
         case .none:
             break
         }
@@ -618,6 +695,100 @@ final class SubscriptionDebugViewController: UITableViewController {
         }
     }
 
+    // MARK: - Expiration reminder (debug)
+
+    /// Prompts for a delay relative to now, then runs the production scheduler with a `timeBeforeCancel`
+    /// derived from the current subscription's expiry so the notification fires N seconds from now.
+    private func triggerMockExpirationReminder() {
+        let alert = UIAlertController(title: "Trigger Expiration Reminder",
+                                      message: "Fire how many seconds from now?",
+                                      preferredStyle: .alert)
+        weak var secondsTextField: UITextField?
+        alert.addTextField { field in
+            field.keyboardType = .numberPad
+            field.placeholder = "Seconds from now"
+            field.text = "5"
+            secondsTextField = field
+        }
+        alert.addAction(UIAlertAction(title: "Schedule", style: .default) { [weak self] _ in
+            guard let raw = secondsTextField?.text, let secondsFromNow = TimeInterval(raw), secondsFromNow > 0 else {
+                self?.showAlert(title: "Invalid value", message: "Enter a positive number of seconds.")
+                return
+            }
+            Task { @MainActor in
+                guard let self else { return }
+                let subscription: DuckDuckGoSubscription?
+                do {
+                    subscription = try await self.subscriptionManager.getSubscription(forceRefresh: true)
+                } catch {
+                    self.showAlert(title: "Failed to load subscription", message: error.localizedDescription)
+                    return
+                }
+                guard let subscription else {
+                    self.showAlert(title: "No active subscription", message: "Sign in with an active subscription before triggering the reminder.")
+                    return
+                }
+                guard subscription.hasActiveTrialOffer else {
+                    self.showAlert(title: "Subscription not on free trial",
+                                   message: "The expiration reminder is only scheduled for free-trial subscribers — the production scheduler will silently skip this call. Sign in with a trial subscription to test the firing path.")
+                    return
+                }
+                let remaining = subscription.expiresOrRenewsAt.timeIntervalSinceNow
+                guard remaining > 0 else {
+                    self.showAlert(title: "Subscription already expired",
+                                   message: "expiresOrRenewsAt is in the past.")
+                    return
+                }
+                let timeBeforeCancel = remaining - secondsFromNow
+                guard timeBeforeCancel > 0 else {
+                    self.showAlert(title: "Cannot schedule",
+                                   message: "Subscription expires in \(Int(remaining))s — pick a smaller delay.")
+                    return
+                }
+                await AppDependencyProvider.shared.subscriptionExpirationReminderScheduler
+                    .scheduleReminder(timeBeforeCancel: timeBeforeCancel)
+                self.showAlert(title: "Scheduler invoked",
+                               message: "Reminder will fire in ~\(Int(secondsFromNow))s if all production guards pass.")
+            }
+        })
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        present(alert, animated: true)
+    }
+
+    /// Builds a two-line attributed string with each label in `.footnote` + secondary color
+    /// and each value in `.body` + primary color, so labels and values are visually distinguishable.
+    private static func makeStatusAttributedText(notifications: String, subscription: String) -> NSAttributedString {
+        let labelAttrs: [NSAttributedString.Key: Any] = [
+            .font: UIFont.preferredFont(forTextStyle: .footnote),
+            .foregroundColor: UIColor.secondaryLabel
+        ]
+        let valueAttrs: [NSAttributedString.Key: Any] = [
+            .font: UIFont.preferredFont(forTextStyle: .body),
+            .foregroundColor: UIColor.label
+        ]
+        let attributed = NSMutableAttributedString()
+        attributed.append(NSAttributedString(string: "Notifications: ", attributes: labelAttrs))
+        attributed.append(NSAttributedString(string: notifications, attributes: valueAttrs))
+        attributed.append(NSAttributedString(string: "\nSubscription: ", attributes: labelAttrs))
+        attributed.append(NSAttributedString(string: subscription, attributes: valueAttrs))
+        return attributed
+    }
+
+    private func loadExpirationReminderStatus() {
+        Task { @MainActor in
+            let authStatus = await UNUserNotificationCenter.current().authorizationStatus()
+            notificationAuthStatusText = authStatus.stringValue
+
+            do {
+                let subscription = try await subscriptionManager.getSubscription(forceRefresh: true)
+                subscriptionStatusText = subscription?.status.rawValue ?? "No subscription"
+            } catch {
+                subscriptionStatusText = "Error: \(error.localizedDescription)"
+            }
+            tableView.reloadSections(IndexSet(integer: Sections.expirationReminder.rawValue), with: .none)
+        }
+    }
+
     private func showBuyProductionSubscriptions() {
         // Create the subscription selection handler that routes to the appropriate feature method
         let handler: SubscriptionSelectionHandler = { productId, changeType in
@@ -663,7 +834,8 @@ final class SubscriptionDebugViewController: UITableViewController {
                 wideEvent: AppDependencyProvider.shared.wideEvent,
                 pendingTransactionHandler: pendingTransactionHandler,
                 subscriptionFlowsExecuter: subscriptionFlowsExecuter,
-                requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager)
+                requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager),
+                isExpirationReminderFeatureEnabled: { AppDependencyProvider.shared.featureFlagger.isFeatureOn(.subscriptionExpirationReminderNotification) }
             )
 
             // Create params matching what the web would send
@@ -683,10 +855,67 @@ final class SubscriptionDebugViewController: UITableViewController {
         let hostingController = UIHostingController(rootView: ProductionSubscriptionPurchaseDebugView(subscriptionSelectionHandler: handler))
         navigationController?.pushViewController(hostingController, animated: true)
     }
+
+    private func showWelcomeOnboarding() {
+        let hostingController = UIHostingController(
+            rootView: SubscriptionOnboardingWelcomeView(onClose: { [weak self] in self?.dismiss(animated: true) })
+                .subscriptionOnboardingNavigationContainer())
+        present(hostingController, animated: true)
+    }
+
+    private func showVPNOnboarding() {
+        let hostingController = UIHostingController(
+            rootView: SubscriptionOnboardingVPNActivationView(
+                viewModel: SubscriptionOnboardingVPNActivationViewModel(prefetcher: SubscriptionOnboardingPrefetcher(), delegate: self))
+                .subscriptionOnboardingNavigationContainer()
+                .graphicLottieRenderer(Self.onboardingLottieRenderer))
+        present(hostingController, animated: true)
+    }
+
+    private func showDuckAIOnboarding() {
+        let hostingController = UIHostingController(
+            rootView: SubscriptionOnboardingDuckAIView(
+                viewModel: SubscriptionOnboardingDuckAIViewModel(prefetcher: SubscriptionOnboardingPrefetcher(), delegate: self))
+                .subscriptionOnboardingNavigationContainer())
+        present(hostingController, animated: true)
+    }
+
+    private func showTapAllowHintPlayground() {
+        let hostingController = UIHostingController(
+            rootView: TapAllowHintOverlayPlaygroundView(onClose: { [weak self] in self?.dismiss(animated: true) }))
+        hostingController.modalPresentationStyle = .overFullScreen
+        hostingController.view.backgroundColor = .clear
+        present(hostingController, animated: true)
+    }
+
+    private static let onboardingLottieRenderer = GraphicLottieRenderer { name, playback in
+        AnyView(
+            Lottie.LottieView(animation: .named(name))
+                .playbackMode(playback == .playOnce
+                    ? .playing(.fromProgress(0, toProgress: 1, loopMode: .playOnce))
+                    : .paused(at: .progress(playback == .frozenAtEnd ? 1 : 0)))
+        )
+    }
 }
 
 extension Bool {
     fileprivate var toString: String {
         String(self)
+    }
+}
+
+extension SubscriptionDebugViewController: SubscriptionOnboardingSectionDelegate {
+    func sectionDidComplete(_ section: SubscriptionOnboardingSection) {}
+
+    func sectionDidRequestDuckAIChat(modelID: String?) {
+        SubscriptionOnboardingDuckAIChatLauncher().launch(from: self, modelID: modelID)
+    }
+
+    func sectionDidRequestAdvance() {
+        dismiss(animated: true)
+    }
+
+    func sectionDidRequestGoBack() {
+        dismiss(animated: true)
     }
 }

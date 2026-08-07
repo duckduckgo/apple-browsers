@@ -32,6 +32,7 @@ final class MainWindowController: NSWindowController {
     private var cancellables: Set<AnyCancellable> = []
     private static var knownFullScreenMouseDetectionWindows = Set<NSValue>()
     let fireWindowSession: FireWindowSession?
+    let fireWindowOpenTrigger: FireWindowOpenTrigger?
     private let appearancePreferences: AppearancePreferences = NSApp.delegateTyped.appearancePreferences
     let fullscreenController = FullscreenController()
 
@@ -52,6 +53,7 @@ final class MainWindowController: NSWindowController {
     init(window: NSWindow? = nil,
          mainViewController: MainViewController,
          fireWindowSession: FireWindowSession? = nil,
+         fireWindowOpenTrigger: FireWindowOpenTrigger? = nil,
          fireViewModel: FireViewModel,
          themeManager: ThemeManaging,
          featureFlagger: FeatureFlagger? = nil) {
@@ -71,6 +73,7 @@ final class MainWindowController: NSWindowController {
 
         assert(!mainViewController.isBurner || fireWindowSession != nil)
         self.fireWindowSession = fireWindowSession
+        self.fireWindowOpenTrigger = fireWindowOpenTrigger
         fireWindowSession?.addWindow(window)
 
         self.themeManager = themeManager
@@ -87,6 +90,7 @@ final class MainWindowController: NSWindowController {
         subscribeToKeyWindow()
         subscribeToThemeChanges()
         subscribeToEffectiveAppearance()
+        subscribeToWindowOcclusion()
 
         applyThemeStyle()
 
@@ -127,6 +131,7 @@ final class MainWindowController: NSWindowController {
                 // Set onboarding settings so state is persisted across app re-launches during UI Tests
                 if isOnboardingCompleted {
                     OnboardingActionsManager.isOnboardingFinished = true
+                    OnboardingActionsManager.applyAdBlockingRolloutDuckPlayerDefaultIfNeeded(featureFlagger: Application.appDelegate.featureFlagger)
                 }
                 return !isOnboardingCompleted
             }
@@ -142,6 +147,7 @@ final class MainWindowController: NSWindowController {
         if !AppVersion.runType.allowsOnboarding {
             Application.appDelegate.onboardingContextualDialogsManager.state = .onboardingCompleted
             OnboardingActionsManager.isOnboardingFinished = true
+            OnboardingActionsManager.applyAdBlockingRolloutDuckPlayerDefaultIfNeeded(featureFlagger: Application.appDelegate.featureFlagger)
             return false
         } else {
             if AppVersion.runType == .uiTestsOnboarding {
@@ -183,6 +189,21 @@ final class MainWindowController: NSWindowController {
         NSApp.publisher(for: \.effectiveAppearance)
             .dropFirst()
             .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.applyThemeStyle()
+            }
+            .store(in: &cancellables)
+    }
+
+    private func subscribeToWindowOcclusion() {
+        // A window occluded by a full screen Space — either another window's native Full Screen or a
+        // WKFullScreenWindowController video — doesn't reliably repaint its titlebar strip when the
+        // system appearance changes while it's off screen: subscribeToEffectiveAppearance() runs, but
+        // the layer color assignment doesn't stick until the window is on screen again. Re-apply the
+        // theme when the window becomes visible, when its effective appearance is guaranteed current.
+        guard AppVersion.isLiquidGlassSupported, let window else { return }
+        NotificationCenter.default.publisher(for: NSWindow.didChangeOcclusionStateNotification, object: window)
+            .filter { ($0.object as? NSWindow)?.occlusionState.contains(.visible) == true }
             .sink { [weak self] _ in
                 self?.applyThemeStyle()
             }
@@ -265,13 +286,29 @@ final class MainWindowController: NSWindowController {
 
     private var burningDataCancellable: AnyCancellable?
     private var delayedBlockingWorkItem: DispatchWorkItem?
+    private var didMoveTabBarForFireAnimation = false
 
     private func subscribeToBurningData() {
         burningDataCancellable = fireViewModel.fire.burningDataPublisher
             .dropFirst()
             .removeDuplicates()
             .sink { [weak self] burningData in
-                self?.moveTabBarView(toTitlebarView: burningData == nil)
+                guard let self else { return }
+                // The tab bar is only moved out of the titlebar so the fire animation can cover it.
+                // Site-level burns (e.g. from the New Tab Page) don't play the full-screen animation, so
+                // we're leaving the tab bar in place to avoid a flash from needlessly reparenting it.
+                if let burningData, burningData.shouldPlayFireAnimation(decider: fireViewModel.fire.visualizeFireAnimationDecider) {
+                    moveTabBarView(toTitlebarView: false)
+                    // The titlebar has an opaque background (see applyThemeStyle) and sits above the
+                    // full-window fire animation. With the tab bar moved out, that leaves a blank bar
+                    // over the animation — clear it so the animation shows through, and restore it after.
+                    setTitlebarBackgroundColor(.clear)
+                    didMoveTabBarForFireAnimation = true
+                } else if burningData == nil, didMoveTabBarForFireAnimation {
+                    moveTabBarView(toTitlebarView: true)
+                    setTitlebarBackgroundColor(theme.colorsProvider.baseBackgroundColor)
+                    didMoveTabBarForFireAnimation = false
+                }
             }
     }
 
@@ -333,6 +370,17 @@ final class MainWindowController: NSWindowController {
         NSLayoutConstraint.activate(constraints)
     }
 
+    /// Sets the titlebar view's layer background color on Liquid Glass, where the titlebar has an
+    /// opaque background (see `applyThemeStyle`). Used both to apply the theme background and to
+    /// clear it during the fire animation so the full-window animation shows through the titlebar.
+    private func setTitlebarBackgroundColor(_ color: NSColor) {
+        guard AppVersion.isLiquidGlassSupported, let titlebarView = window?.titlebarView else { return }
+        titlebarView.wantsLayer = true
+        titlebarView.effectiveAppearance.performAsCurrentDrawingAppearance {
+            titlebarView.layer?.backgroundColor = color.cgColor
+        }
+    }
+
     override func showWindow(_ sender: Any?) {
         window?.makeKeyAndOrderFront(sender)
         register()
@@ -375,12 +423,7 @@ extension MainWindowController: ThemeUpdateListening {
         // leaving a thin strip above it that shows through to whatever is behind the titlebarView.
         // In fullscreen the titlebarView lives in an auxiliary window whose contentView is opaque
         // white, so coloring the titlebarView's layer itself is the only way to fill that strip.
-        if AppVersion.isLiquidGlassSupported, let titlebarView = window?.titlebarView {
-            titlebarView.wantsLayer = true
-            titlebarView.effectiveAppearance.performAsCurrentDrawingAppearance {
-                titlebarView.layer?.backgroundColor = theme.colorsProvider.baseBackgroundColor.cgColor
-            }
-        }
+        setTitlebarBackgroundColor(theme.colorsProvider.baseBackgroundColor)
     }
 }
 

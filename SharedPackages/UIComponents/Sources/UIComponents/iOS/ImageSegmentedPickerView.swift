@@ -37,6 +37,7 @@ public struct ImageSegmentedPickerConfiguration {
     public var outerHeight: CGFloat
     public var innerHeight: CGFloat
     public var innerHorizontalPadding: CGFloat
+    public var textLineLimit: Int?
 
     /// Creates a new configuration for the image segmented picker.
     ///
@@ -49,6 +50,7 @@ public struct ImageSegmentedPickerConfiguration {
     ///   - outerHeight: The total height of the picker. Defaults to 38.
     ///   - innerHeight: The height of the selected indicator pill. Defaults to 34.
     ///   - innerHorizontalPadding: The horizontal padding between the outer edge and the pill. Defaults to 2.
+    ///   - textLineLimit: Maximum number of lines for text labels. Defaults to nil (no limit).
     public init(
         font: Font = .system(size: 14, weight: .medium), /// Color not specified in the design system
         itemContentSpacing: CGFloat = 6,
@@ -58,7 +60,8 @@ public struct ImageSegmentedPickerConfiguration {
         selectedBackgroundColor: Color = .init(designSystemColor: .controlsRaisedFillPrimary),
         outerHeight: CGFloat = 38,
         innerHeight: CGFloat = 34,
-        innerHorizontalPadding: CGFloat = 2
+        innerHorizontalPadding: CGFloat = 2,
+        textLineLimit: Int? = nil
     ) {
         self.font = font
         self.itemContentSpacing = itemContentSpacing
@@ -69,6 +72,7 @@ public struct ImageSegmentedPickerConfiguration {
         self.outerHeight = outerHeight
         self.innerHeight = innerHeight
         self.innerHorizontalPadding = innerHorizontalPadding
+        self.textLineLimit = textLineLimit
     }
 }
 
@@ -285,6 +289,8 @@ private struct CustomPickerButton: View {
                     Text(text)
                         .font(configuration.font)
                         .foregroundColor(isSelected ? configuration.selectedTextColor : configuration.unselectedTextColor)
+                        .lineLimit(configuration.textLineLimit)
+                        .minimumScaleFactor(0.7)
                 }
             }
             .contentShape(Rectangle())

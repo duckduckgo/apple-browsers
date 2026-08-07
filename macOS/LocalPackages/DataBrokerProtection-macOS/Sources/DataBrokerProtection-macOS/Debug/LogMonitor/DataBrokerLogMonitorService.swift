@@ -24,10 +24,19 @@ import DataBrokerProtectionCore
 public class DataBrokerLogMonitorService {
     private var lastLogPosition: OSLogPosition?
 
+    private static let defaultLookback: TimeInterval = 5 * 60
+
     public init() {}
 
     var currentPosition: OSLogPosition? {
         return lastLogPosition
+    }
+
+    func fetchLogs(matching predicate: NSPredicate, since: Date?) throws -> [LogEntry] {
+        let store = try OSLogStore.local()
+        let start = since ?? Date().addingTimeInterval(-Self.defaultLookback)
+        let position = store.position(date: start)
+        return try store.getEntries(at: position, matching: predicate).compactMap(LogEntry.init(from:))
     }
 
     func fetchRecentLogs(matching predicate: NSPredicate, since lastPosition: OSLogPosition? = nil) async throws -> [LogEntry] {

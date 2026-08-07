@@ -243,6 +243,13 @@ final class SubscriptionURLTests: XCTestCase {
         XCTAssertEqual(url.forComparison(), expectedURL)
     }
 
+    func testURLForComparisonRemovesMonthlyFreeTrialExperimentCohort() throws {
+        let url = URL(string: "https://duckduckgo.com/subscriptions?experiment_mobileannualtrials_ios=control")!
+        let expectedURL = URL(string: "https://duckduckgo.com/subscriptions")!
+
+        XCTAssertEqual(url.forComparison(), expectedURL)
+    }
+
     func testCustomBaseSubscriptionURLForProduction() throws {
         // Given
         let customBaseURL = URL(string: "https://dax.duck.co/subscriptions-test")!

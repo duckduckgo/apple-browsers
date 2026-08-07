@@ -481,7 +481,7 @@ extension DownloadsViewController: NSMenuDelegate {
             case #selector(removeDownloadAction(_:)):
                 menuItem.isHidden = !(item.state.progress == nil)
             case #selector(restartDownloadAction(_:)):
-                menuItem.isHidden = !(item.state.error != nil)
+                menuItem.isHidden = !(item.state.error?.isRetryable == true)
 
             case #selector(clearDownloadsAction(_:)):
                 continue

@@ -54,6 +54,22 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         XCTAssertFalse(sut.isToolbarSubmitEnabled)
     }
 
+    func test_flankedPillCentresTrailingButtonsOnItsTallerCard() throws {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        let sut = UnifiedToggleInputView(handler: handler)
+        sut.frame = CGRect(x: 0, y: 0, width: 402, height: 120)
+
+        let buttons = try XCTUnwrap(firstDescendant(of: SwitchBarButtonsView.self, in: sut))
+
+        sut.applyCardLayout(.collapsed, animated: false)
+        sut.layoutIfNeeded()
+        XCTAssertEqual(buttons.center.y, 22, accuracy: 0.5)
+
+        sut.applyCardLayout(.flanked, animated: false)
+        sut.layoutIfNeeded()
+        XCTAssertEqual(buttons.center.y, 24, accuracy: 0.5)
+    }
+
     func test_dismissPoseFadesAttachmentsStripOutSoItAnimatesWithTheCollapse() throws {
         let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
         let sut = UnifiedToggleInputView(handler: handler)
@@ -119,6 +135,55 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         flushMainQueue()
 
         XCTAssertEqual(scrollView.contentOffset.x, 0, accuracy: 1)
+    }
+
+    func test_attachmentStripShowsPageContextChipWithoutAddingAttachment() throws {
+        let sut = UnifiedToggleInputAttachmentsStripView()
+
+        sut.setPageContextChipState(.attached(title: "DuckDuckGo", favicon: nil))
+        sut.setPageContextChipVisible(true)
+
+        XCTAssertTrue(sut.attachments.isEmpty)
+        XCTAssertTrue(sut.hasVisiblePageContext)
+        XCTAssertNotNil(firstDescendant(of: AIChatContextChipView.self, in: sut))
+    }
+
+    func test_attachmentStripPageContextRemoveDoesNotRemoveFileAttachment() throws {
+        let sut = UnifiedToggleInputAttachmentsStripView()
+        var removeCount = 0
+        sut.onPageContextRemove = { removeCount += 1 }
+        sut.addAttachment(makeFileAttachment())
+        sut.setPageContextChipState(.attached(title: "DuckDuckGo", favicon: nil))
+        sut.setPageContextChipVisible(true)
+
+        let removeButton = try XCTUnwrap(findButton(accessibilityIdentifier: "AIChat.ContextChip.RemoveButton", in: sut))
+        removeButton.sendActions(for: .touchUpInside)
+
+        XCTAssertEqual(removeCount, 1)
+        XCTAssertEqual(sut.attachments.count, 1)
+        XCTAssertTrue(sut.hasVisiblePageContext)
+    }
+
+    @MainActor
+    func test_visiblePageContextShowsAttachmentStripButDoesNotEnableAttachmentOnlySubmit() throws {
+        let originatingURL = CurrentValueSubject<URL?, Never>(URL(string: "https://duckduckgo.com"))
+        let viewModel = UnifiedToggleInputPageContextChipViewModel(
+            originatingURLPublisher: originatingURL.eraseToAnyPublisher(),
+            initialAttachedContext: nil,
+            isAutoAttachEnabled: { true }
+        )
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        let sut = UnifiedToggleInputView(handler: handler)
+        sut.bindPageContextChip(to: viewModel)
+        sut.applyCardLayout(.expanded(showsToggle: true, showsToolbar: true), animated: false)
+
+        viewModel.setAttached(makePageContext(title: "DuckDuckGo", url: "https://duckduckgo.com"))
+        flushMainQueue()
+
+        let strip = try XCTUnwrap(firstDescendant(of: UnifiedToggleInputAttachmentsStripView.self, in: sut))
+        XCTAssertEqual(strip.alpha, 1, accuracy: 0.001)
+        XCTAssertTrue(sut.currentAttachments.isEmpty)
+        XCTAssertFalse(sut.isToolbarSubmitEnabled)
     }
 
     @MainActor
@@ -311,10 +376,14 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         XCTAssertEqual(handler.currentText, "he\nllo")
     }
 
-    func test_topAIChatTextEntryDoesNotGrowOnFirstFloatingReturnNewline() {
+    func test_topAIChatTextEntryDoesNotGrowOnFirstFloatingReturnNewlineAndLegacyUXIsEnabled() {
         let expectedTopAIChatMinimumHeight: CGFloat = 68
-        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
-        handler.updateBarPosition(isTop: true)
+        let handler = LegacyTextEntryMockHandler(
+            currentToggleState: .aiChat,
+            isTopBarPosition: true,
+            isUsingFadeOutAnimation: false,
+            usesExpandedAIChatTextEntryLayout: true
+        )
         let sut = SwitchBarTextEntryView(handler: handler)
         sut.isExpandable = true
         prepareForFitting(sut)
@@ -342,6 +411,7 @@ final class UnifiedToggleInputViewTests: XCTestCase {
 
         XCTAssertFalse(placeholderLabel.isHidden)
         XCTAssertEqual(placeholderLabel.frame.minY, expectedPlaceholderMinY, accuracy: 1)
+        XCTAssertEqual(textView.textContainerInset.left, 16, accuracy: 1)
     }
 
     func test_collapsedAIChatPlaceholderStaysVerticallyCenteredInPill() throws {
@@ -425,6 +495,7 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         XCTAssertEqual(height, 68, accuracy: 1)
         XCTAssertFalse(placeholderLabel.isHidden)
         XCTAssertEqual(placeholderLabel.frame.minY, expectedPlaceholderMinY, accuracy: 1)
+        XCTAssertEqual(textView.textContainerInset.left, 12, accuracy: 1)
     }
 
     func test_barPositionChangeRefreshesExpandedAIChatPose() {
@@ -439,7 +510,7 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         handler.updateBarPosition(isTop: true)
         sut.updatePoseForCurrentState()
 
-        XCTAssertEqual(applyFittingHeight(to: sut), 68, accuracy: 1)
+        XCTAssertEqual(applyFittingHeight(to: sut), 51, accuracy: 1)
     }
 
     func test_expandedPlaceholderAlignmentUpdatesWhenToggleSwitchesMode() throws {
@@ -544,6 +615,63 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         assertColor(rimShadowLayer.shadowColor, equals: expectedShadowColor)
     }
 
+    private let longURL = "https://www.cinemark.com/theatres/ca-playa-vista/cinemark-playa-vista-and-xd?showDate=2026-06-12"
+
+    // A long URL expands to multiple lines once the user taps in, so the caret can reach its end to
+    // edit — in search mode too (the single-line gating from #5373/#5429 was reverted; see isUnexpandedURL).
+    func test_urlExpandsHeightInSearchModeAfterUserTap() {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        handler.setToggleState(.search)
+        let sut = SwitchBarTextEntryView(handler: handler)
+        sut.style = .singleLine // UnifiedToggleInputView sets singleLine for search mode
+        sut.isExpandable = true
+        prepareForFitting(sut)
+        sut.setQueryText(longURL)
+        let singleLineHeight = applyFittingHeight(to: sut)
+
+        sut.hasBeenInteractedWith = true
+        sut.updatePoseForCurrentState()
+        let heightAfterTap = applyFittingHeight(to: sut)
+
+        XCTAssertEqual(heightAfterTap, singleLineHeight, accuracy: 1)
+    }
+
+    func test_urlCanExpandInAIChatModeAfterUserTap() {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        handler.setToggleState(.aiChat)
+        let sut = SwitchBarTextEntryView(handler: handler)
+        sut.isExpandable = true
+        prepareForFitting(sut)
+        sut.setQueryText(longURL)
+        let singleLineHeight = applyFittingHeight(to: sut)
+
+        sut.hasBeenInteractedWith = true
+        sut.updatePoseForCurrentState()
+        let heightAfterTap = applyFittingHeight(to: sut)
+
+        XCTAssertGreaterThan(heightAfterTap, singleLineHeight)
+    }
+
+    // Search-only: UTI shown without a toggle (AI chat unavailable), but the handler keeps its
+    // `.aiChat` default toggle state. A tapped URL expands to multiple lines so the user can edit
+    // its end — matching AI chat mode. (The single-line gating for this case was reverted; see
+    // isUnexpandedURL.)
+    func test_urlExpandsHeightInSearchOnlyModeAfterUserTap() {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false, isToggleEnabled: false)
+        let sut = SwitchBarTextEntryView(handler: handler)
+        sut.style = .singleLine // UnifiedToggleInputView sets singleLine for toggle-disabled mode
+        sut.isExpandable = true
+        prepareForFitting(sut)
+        sut.setQueryText(longURL)
+        let singleLineHeight = applyFittingHeight(to: sut)
+
+        sut.hasBeenInteractedWith = true
+        sut.updatePoseForCurrentState()
+        let heightAfterTap = applyFittingHeight(to: sut)
+
+        XCTAssertEqual(heightAfterTap, singleLineHeight, accuracy: 1)
+    }
+
     private func flushMainQueue() {
         let expectation = expectation(description: "main queue flushed")
         DispatchQueue.main.async {
@@ -595,6 +723,11 @@ final class UnifiedToggleInputViewTests: XCTestCase {
                 pageCount: 1
             )
         )
+    }
+
+    private func makePageContext(title: String, url: String) -> AIChatPageContext {
+        let data = AIChatPageContextData(title: title, favicon: [], url: url, content: "", truncated: false, fullContentLength: 0)
+        return AIChatPageContext(contextData: data, favicon: nil)
     }
 
     private func firstDescendant<T: UIView>(of type: T.Type, in view: UIView) -> T? {
@@ -680,6 +813,7 @@ private final class LegacyTextEntryMockHandler: SwitchBarHandling {
     var isUsingExpandedBottomBarHeight: Bool = false
     var isUsingFadeOutAnimation: Bool
     var usesExpandedAIChatTextEntryLayout: Bool
+    var usesLegacyLayoutMetrics: Bool
     var shouldDisableAutocorrectOnEmpty: Bool = false
     var hidesVoiceButton: Bool = false
     var hasSubmittedPrompt: Bool = false
@@ -698,11 +832,13 @@ private final class LegacyTextEntryMockHandler: SwitchBarHandling {
     init(currentToggleState: TextEntryMode,
          isTopBarPosition: Bool,
          isUsingFadeOutAnimation: Bool,
-         usesExpandedAIChatTextEntryLayout: Bool = false) {
+         usesExpandedAIChatTextEntryLayout: Bool = false,
+         usesLegacyLayoutMetrics: Bool = true) {
         self.currentToggleState = currentToggleState
         self.isTopBarPosition = isTopBarPosition
         self.isUsingFadeOutAnimation = isUsingFadeOutAnimation
         self.usesExpandedAIChatTextEntryLayout = usesExpandedAIChatTextEntryLayout
+        self.usesLegacyLayoutMetrics = usesLegacyLayoutMetrics
     }
 
     func updateCurrentText(_ text: String) {

@@ -21,42 +21,113 @@ import Foundation
 /// Represents the origin point from which the user enters the subscription funnel in the macOS app.
 enum SubscriptionFunnelOrigin: String {
     /// User entered the funnel via the App Settings screen.
+    /// https://app.asana.com/1/137249556945/project/1207260194172075/task/1210468753388392
     case appSettings = "funnel_appsettings_macos"
 
     /// User entered the funnel via the App More Menu.
+    /// https://app.asana.com/1/137249556945/project/1207260194172075/task/1210468753388401
     case appMenu = "funnel_appmenu_macos"
 
     /// User entered the funnel via the Free Scan feature.
+    /// https://app.asana.com/1/137249556945/project/1207260194172075/task/1210468753388402
     case freeScan = "funnel_freescan_macos"
 
     // MARK: - Win-Back Offer Origins
 
     /// User entered via win-back offer launch prompt
+    /// https://app.asana.com/1/137249556945/project/1207260194172075/task/1213998044482808
     case winBackLaunch = "funnel_applaunch_macos_winback"
 
     /// User entered via win-back offer in App More Menu
+    /// https://app.asana.com/1/137249556945/project/1207260194172075/task/1213998044482808
     case winBackMenu = "funnel_appmenu_macos_winback"
 
     /// User entered via win-back offer in App Settings
+    /// https://app.asana.com/1/137249556945/project/1207260194172075/task/1213998044482808
     case winBackSettings = "funnel_appsettings_macos_winback"
 
     /// User entered via win-back offer in New Tab Page
+    /// https://app.asana.com/1/137249556945/project/1207260194172075/task/1213998044482808
     case winBackNewTabPage = "funnel_newtab_macos_winback"
 
     /// User entered the funnel via the New Tab Page next steps card.
+    /// https://app.asana.com/1/137249556945/project/1207260194172075/task/1213994750860324
     case newTabPageNextStepsCard = "funnel_onboarding_macOS__nextstepscard"
 
     /// User entered the funnel via the subscription promo on the Fire Window home page.
+    /// https://app.asana.com/1/137249556945/project/1207260194172075/task/1214355390442152
     case fireWindowPromo = "funnel_newtab_macos__firewindowvpn"
 
     /// User entered the funnel via the VPN toolbar button upsell popover.
+    /// https://app.asana.com/1/137249556945/project/1207260194172075/task/1213994750860320
     case vpnToolbarUpsell = "funnel_toolbar_macos__subscriptionvpnupsell"
 
     /// User entered the funnel via the VPN toolbar button popover when their subscription was revoked.
+    /// https://app.asana.com/1/137249556945/project/1207260194172075/task/1214811710571517
     case vpnToolbarRevoked = "funnel_toolbar_macos__subscriptionvpnrevoked"
 
     /// User entered the funnel via the VPN menu-bar status item popover when their subscription was revoked.
+    /// https://app.asana.com/1/137249556945/project/1207260194172075/task/1214811710571517
     case vpnMenuBarRevoked = "funnel_menubar_macos__subscriptionvpnrevoked"
+
+    // MARK: - Duck.ai Omnibar Origins
+
+    /// User entered the funnel by tapping a gated model in the address bar's duck.ai model picker.
+    /// https://app.asana.com/1/137249556945/project/1208671677432066/task/1215275657171787
+    case addressBarModelPicker = "funnel_addressbar_macos__modelpicker"
+
+    /// User entered the funnel by tapping a gated reasoning effort in the address bar's duck.ai omnibar.
+    /// https://app.asana.com/1/137249556945/project/1208671677432066/task/1215275657171787
+    case addressBarReasoningDropdown = "funnel_addressbar_macos__reasoningdropdown"
+
+    /// User entered the funnel by tapping a gated model in duck.ai's own model picker.
+    /// https://app.asana.com/1/137249556945/project/1208671677432066/task/1215275657171787
+    case duckAIModelPicker = "funnel_duckai_macos__modelpicker"
+
+    /// User entered the funnel by tapping a gated reasoning effort in duck.ai's own omnibar.
+    /// https://app.asana.com/1/137249556945/project/1208671677432066/task/1215275657171787
+    case duckAIReasoningDropdown = "funnel_duckai_macos__reasoningdropdown"
+
+    /// User entered the funnel by tapping a gated model or reasoning effort in the New Tab Page's duck.ai omnibar.
+    /// https://app.asana.com/1/137249556945/task/1216424447885172
+    case newTabPageOmnibar = "funnel_newtab_macos__omnibar"
+
+    /// Gated model in the New Tab Page omnibar's model picker.
+    case newTabPageModelPicker = "funnel_newtab_macos__modelpicker"
+
+    /// Gated reasoning effort in the New Tab Page omnibar's reasoning picker.
+    case newTabPageReasoningDropdown = "funnel_newtab_macos__reasoningdropdown"
+
+    /// Gated model shown in the Prompt Bar's model picker. Impression only — gated rows aren't
+    /// interactive on this surface, so nothing routes into the purchase flow from here.
+    case promptBarModelPicker = "funnel_promptbar_macos__modelpicker"
+
+    /// Gated reasoning effort shown in the Prompt Bar's reasoning picker. Impression only, as above.
+    case promptBarReasoningDropdown = "funnel_promptbar_macos__reasoningdropdown"
+
+    // MARK: - Duck.ai Funnel Origins (frontend-reported)
+
+    /// Entry points shown in the duck.ai web frontend; reported over the `reportMetric` bridge because
+    /// the frontend suppresses its own website pixel in-app. Native then fires the funnel pixel.
+    /// https://app.asana.com/1/137249556945/task/1216395339071571
+    case duckAIAiSidebar = "funnel_duckai_macos__aisidebar"
+    case duckAIActivateSubscription = "funnel_duckai_macos__activatesubscription"
+    case duckAIFreeLabel = "funnel_duckai_macos__freelabel"
+    case duckAIFreeLimit = "funnel_duckai_macos__freelimit"
+    case duckAIImageGenerationLimit = "funnel_duckai_macos__imagegenerationlimit"
+    case duckAIPlusLimit = "funnel_duckai_macos__pluslimit"
+    case duckAIPromotionCard = "funnel_duckai_macos__promotioncard"
+    case duckAISettings = "funnel_duckai_macos__settings"
+    case duckAIDisclaimerBanner = "funnel_duckai_macos__disclaimerbanner"
+    case duckAIVoiceChatLimit = "funnel_duckai_macos__voicechatlimit"
+    case duckAIVoiceChatDurationLimit = "funnel_duckai_macos__voicechatdurationlimit"
+
+    /// The model switcher under a chat response. Only ever reported as a modal's `source` — the surface
+    /// itself is frontend-only, so nothing native fires this on its own.
+    case duckAISwitchModel = "funnel_duckai_macos__switchmodel"
+
+    /// The frontend opened a modal without attributing it to an entry point.
+    case duckAIUnknown = "funnel_duckai_macos__unknown"
 }
 
 /// Represents the origin point from which the user enters the subscription restore funnel in the macOS app.

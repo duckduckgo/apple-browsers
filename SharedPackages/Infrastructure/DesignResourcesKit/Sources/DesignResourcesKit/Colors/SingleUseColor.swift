@@ -20,6 +20,16 @@
 ///
 /// - Important: When used in multiple places, it should be proposed to promote the color to `DesignSystemColor`.
 public enum SingleUseColor {
+
+    // Fire View
+    case fireModeAccent
+
+#if os(iOS)
+    /// Background for grouped-list rows and visually associated inline cards.
+    /// Temporary compatibility token; replace with `.surfaceTertiary` when the
+    /// legacy palette and app-rebranding feature flag are removed.
+    case groupedListContentBackground
+
     case controlWidgetBackground
     case unifiedFeedbackFieldBackground
     case privacyDashboardBackground
@@ -27,11 +37,17 @@ public enum SingleUseColor {
     /// Color used for separator line between text input and content
     case inputContentSeparator
 
+    /// Resting background fill for the floating address bar field (composites over the toolbar's Liquid Glass capsule)
+    case floatingAddressBarBackground
+
     /// Color used for what's New background
     case whatsNewBackground
 
     /// Duck.ai contextual background color
     case duckAIContextualSheetBackground
+
+    /// Duck.ai web view background color (#FFFFFF light / #111111 dark)
+    case duckAIWebViewBackground
 
     /// Card background for the unified toggle input bar (white in light, #3D3D3D in dark)
     case unifiedToggleInputCardBackground
@@ -54,12 +70,26 @@ public enum SingleUseColor {
     case toolbarButton
 
     // Fire Mode
-    case fireModeAccent
     case fireModeAccentDark
     case fireModeAccentTertiary
     case fireModeBackground
     case fireModeCardBackground
+
+    // Duck.ai Grid Cell
+    case duckAIVoiceCellBackground
+
+#elseif os(macOS)
+
+    case fireButtonGradientStart
+    case fireButtonGradientEnd
+    case fireButtonPressedGradientStart
+    case fireButtonPressedGradientEnd
+
+#endif
+
 }
+
+#if os(iOS)
 
 // MARK: - Onboarding Rebranding 2026
 
@@ -75,21 +105,18 @@ public extension SingleUseColor {
         case accentPrimaryText
         case accentGlowPrimary
 
-        case accentAltPrimary
-        case accentAltGlowPrimary
-
         case backdrop
-
-        case surfaceTertiary
 
         case buttonsPrimaryDefault
         case buttonsPrimaryPressed
         case buttonsPrimaryText
+        case buttonsContentDisabled
 
         case buttonsSecondaryDefault
         case buttonsSecondaryPressed
         case buttonsSecondaryText
-        case backgroundAccent // This in Figma is accentAltGlowPrimary but in the components screen default value is different than onboarding value
+        case buttonsSecondaryDisabledBackground
+        case buttonsSecondaryDisabledText
 
         case destructivePrimary
         case destructivePrimaryPressed
@@ -97,11 +124,15 @@ public extension SingleUseColor {
         case destructiveGlowPrimary
 
         case controlsFillPrimary
+        case controlBorderTertiary
 
         case decorationPrimary
         case decorationSecondary
 
         case alertGreen
+        case calendarStripYellow
     }
 
 }
+
+#endif

@@ -29,7 +29,7 @@ private protocol FilePresenterDelegate: AnyObject {
     func accommodatePresentedItemEviction() throws
 }
 
-public class FilePresenter {
+public class FilePresenter: @unchecked Sendable {
 
     private static let dispatchSourceQueue = DispatchQueue(label: "CoordinatedFile.dispatchSourceQueue")
     private static let presentedItemOperationQueue: OperationQueue = {

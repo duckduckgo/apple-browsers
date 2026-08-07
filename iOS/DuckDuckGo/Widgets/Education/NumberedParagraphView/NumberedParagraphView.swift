@@ -132,7 +132,7 @@ private struct NumberedCircle: View {
 
 private extension Color {
     static let circle = Color(designSystemColor: .textSelectionFill)
-    static let numbers = Color(designSystemColor: .textLink)
+    static let numbers = Color(designSystemColor: .accentTextPrimary)
 }
 
 private enum Const {

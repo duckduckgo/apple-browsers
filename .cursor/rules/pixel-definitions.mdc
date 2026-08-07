@@ -124,6 +124,8 @@ To define a custom inline parameter, use an object instead:
 
 Use `key` or `keyPattern`, not both.
 
+**Always anchor `keyPattern` regexes with both `^` and `$`** unless you deliberately need a partial match. The validator matches a `keyPattern` as an unanchored substring, so an unterminated pattern over-matches longer sibling keys that share its prefix. For example, an unanchored `feature.data.ext.passwords_status` also matches the key `feature.data.ext.passwords_status_reason`, so that key gets validated against the `_status` enum instead of its own `_status_reason` enum and a valid value is rejected. The trailing `$` is the part that prevents this suffix over-match; the leading `^` guards against prefix over-match. Write `"^pattern$"`, not `"pattern"`.
+
 ## Suffixes
 
 A suffix is a string appended to the base pixel name to create distinct variants of the same pixel. For example, a pixel with the `"daily"` suffix set will produce a variant with `_daily` appended to the name (e.g. `m_mac_default-browser_daily`). When a pixel has multiple suffix sets, PixelKit generates all combinations — so `["first_daily_count", "platform", "form_factor"]` produces variants like `m_pixel_count_ios_phone`, `m_pixel_daily_ios_tablet`, etc.

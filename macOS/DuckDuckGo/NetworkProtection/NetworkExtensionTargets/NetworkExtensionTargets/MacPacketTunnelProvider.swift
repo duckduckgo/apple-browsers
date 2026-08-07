@@ -510,6 +510,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
 #else
         let defaults = UserDefaults.netP
 #endif
+        let loopDetector = ConnectionFailureLoopDetector(store: defaults)
 
         let osVersion = ProcessInfo.processInfo.operatingSystemVersion
         let trimmedOSVersion = "\(osVersion.majorVersion).\(osVersion.minorVersion)"
@@ -542,9 +543,15 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
         let tokenStore = NetworkProtectionKeychainTokenStore(keychainType: Bundle.keychainType,
                                                                  serviceName: Self.tokenContainerServiceName,
                                                                  errorEventsHandler: debugEvents)
+        let authV2RefreshInstrumentation = DefaultAuthV2TokenRefreshInstrumentation(
+            wideEvent: self.wideEvent,
+            isFeatureEnabled: { true },
+            shouldSuppressFailure: {
+                loopDetector.shouldSuppressCurrentAttemptTelemetry
+            })
         let authClient = DefaultOAuthClient(tokensStorage: tokenStore,
                                             authService: authService,
-                                            refreshEventMapping: AuthV2TokenRefreshWideEventData.authV2RefreshEventMapping(wideEvent: self.wideEvent, isFeatureEnabled: { true }))
+                                            refreshEventMapping: authV2RefreshInstrumentation.eventMapping)
 
         let subscriptionEndpointService = DefaultSubscriptionEndpointService(apiService: APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: UserAgent.duckDuckGoUserAgent()),
                                                                                  baseURL: subscriptionEnvironment.serviceEnvironment.url)
@@ -556,7 +563,8 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
                                                                pixelHandler: pixelHandler,
                                                                initForPurchase: false,
                                                                wideEvent: self.wideEvent,
-                                                               isAuthV2WideEventEnabled: { return subscriptionEnvironment.serviceEnvironment == .production })
+                                                               isAuthV2WideEventEnabled: { return subscriptionEnvironment.serviceEnvironment == .production },
+                                                               authV2TokenRefreshInstrumentation: authV2RefreshInstrumentation)
 
         let entitlementsCheck: (() async -> Result<Bool, Error>) = {
             Logger.networkProtection.log("Subscription Entitlements check...")
@@ -575,7 +583,6 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
 
         // MARK: -
 
-        let loopDetector = ConnectionFailureLoopDetector(store: defaults)
         let heartbeatStore = TunnelHeartbeatStore(store: defaults)
 
         let tunnelHealthStore = NetworkProtectionTunnelHealthStore(notificationCenter: notificationCenter)

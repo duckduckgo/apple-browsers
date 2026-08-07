@@ -18,6 +18,7 @@
 //
 
 import UIKit
+import FeatureFlags_iOS
 
 extension MainViewController {
     
@@ -56,7 +57,15 @@ extension MainViewController {
                 UIKeyCommand(title: "", action: #selector(keyboardNoOperation), input: "tap link", modifierFlags: [.command, .shift],
                              discoverabilityTitle: UserText.keyCommandOpenInNewTab),
                 UIKeyCommand(title: "", action: #selector(keyboardNoOperation), input: "tap link", modifierFlags: [.command],
-                             discoverabilityTitle: UserText.keyCommandOpenInNewBackgroundTab)
+                             discoverabilityTitle: UserText.keyCommandOpenInNewBackgroundTab),
+                UIKeyCommand(title: "", action: #selector(keyboardZoomIn), input: "=", modifierFlags: [.command],
+                             discoverabilityTitle: UserText.keyCommandZoomIn),
+                UIKeyCommand(title: "", action: #selector(keyboardZoomIn), input: "+", modifierFlags: [.command],
+                             discoverabilityTitle: UserText.keyCommandZoomIn),
+                UIKeyCommand(title: "", action: #selector(keyboardZoomOut), input: "-", modifierFlags: [.command],
+                             discoverabilityTitle: UserText.keyCommandZoomOut),
+                UIKeyCommand(title: "", action: #selector(keyboardZoomReset), input: "0", modifierFlags: [.command],
+                             discoverabilityTitle: UserText.keyCommandResetZoom)
             ]
         }
         
@@ -141,6 +150,21 @@ extension MainViewController {
         self.currentTab?.refresh()
     }
 
+    @objc func keyboardZoomIn() {
+        guard isShortcutEnabled() else { return }
+        currentTab?.zoomIn()
+    }
+
+    @objc func keyboardZoomOut() {
+        guard isShortcutEnabled() else { return }
+        currentTab?.zoomOut()
+    }
+
+    @objc func keyboardZoomReset() {
+        guard isShortcutEnabled() else { return }
+        currentTab?.resetTextZoom()
+    }
+
     @objc func keyboardFindNext() {
         self.findInPageView?.findInPage?.next()
     }
@@ -168,7 +192,11 @@ extension MainViewController {
     
     @objc func keyboardEscape() {
         guard tabSwitcherController == nil else { return }
-        findInPageView?.done()
+        if #available(iOS 16.0, *), featureFlagger.isFeatureOn(.systemFindInPage) {
+            dismissSystemFindNavigator(for: currentTab)
+        } else {
+            findInPageView?.done()
+        }
         hideSuggestionTray()
         performCancel()
     }
@@ -258,7 +286,7 @@ extension MainViewController {
     @objc func keyboardNoOperation() { }
 
     private func isShortcutEnabled() -> Bool {
-        !experimentDuckAIFireOnboardingFlow.controlsLocked
+        !duckAIFireOnboardingFlow.controlsLocked
     }
 
     private func saveBookmark(favorite: Bool) {

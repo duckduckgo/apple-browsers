@@ -55,5 +55,12 @@
         "triggers": ["other"],
         "suffixes": ["daily"],
         "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_settings_auto-clear_on": {
+        "description": "Fires once per day when the user has the Burn-On-Exit (auto-clear data on quit) setting enabled.",
+        "owners": ["alessandroboron"],
+        "triggers": ["other"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
     }
 }

@@ -63,7 +63,7 @@ struct ListBasedPickerWithHeaderImage<T: Hashable>: View {
                     headerImage
                     Spacer()
                 }
-                .listRowBackground(Color(designSystemColor: .surface))
+                .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
 
                 ForEach(options, id: \.self) { option in
                     HStack {
@@ -77,10 +77,10 @@ struct ListBasedPickerWithHeaderImage<T: Hashable>: View {
 
                         Spacer()
                         Image(uiImage: DesignSystemImages.Glyphs.Size24.checkSmall)
-                            .foregroundStyle(Color(designSystemColor: .accent))
+                            .foregroundStyle(Color(designSystemColor: .accentPrimary))
                             .opacity(selectedOption == option ? 1 : 0)
                     }
-                    .listRowBackground(Color(designSystemColor: .surface))
+                    .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
                 }
                 .navigationTitle(Text(title))
             }

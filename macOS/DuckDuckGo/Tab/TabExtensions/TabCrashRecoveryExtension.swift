@@ -137,11 +137,12 @@ extension TabCrashRecoveryExtension: NavigationResponder {
             NSUnderlyingErrorKey: NSError(domain: WKErrorDomain, code: terminationReason)
         ])
 
-        if webView.url?.isDuckAIURL == true || content?.urlForWebView?.isDuckAIURL == true {
+        let isDuckAITab = webView.url?.isDuckAIURL == true || content?.urlForWebView?.isDuckAIURL == true
+        if isDuckAITab {
             PixelKit.fire(AIChatPixel.aiChatTabDidTerminate(error: error), frequency: .dailyAndCount, includeAppVersionParameter: true)
         }
 
-        attemptTabCrashRecovery(for: error, in: webView)
+        attemptTabCrashRecovery(for: error, in: webView, isDuckAITab: isDuckAITab)
 
         let now = Date()
         let lastFireTime = lastPixelFireTime ?? Date.distantPast
@@ -162,7 +163,7 @@ extension TabCrashRecoveryExtension: NavigationResponder {
         }
     }
 
-    private func attemptTabCrashRecovery(for error: WKError, in webView: WKWebView) {
+    private func attemptTabCrashRecovery(for error: WKError, in webView: WKWebView, isDuckAITab: Bool) {
         let crashTimestamp = crashLoopDetector.currentDate()
         let isCrashLoop = crashLoopDetector.isCrashLoop(for: crashTimestamp, lastCrashTimestamp: lastCrashedAt)
         tabDidCrashSubject.send(isCrashLoop ? .crashLoop : .single)
@@ -173,6 +174,10 @@ extension TabCrashRecoveryExtension: NavigationResponder {
 
             Task.detached(priority: .utility) {
                 self.firePixel(GeneralPixel.webKitTerminationLoop, [:])
+            }
+
+            if isDuckAITab {
+                PixelKit.fire(AIChatPixel.aiChatTabTerminationLoop(error: error), frequency: .dailyAndCount, includeAppVersionParameter: true)
             }
         }
 

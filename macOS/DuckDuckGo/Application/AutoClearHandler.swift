@@ -42,6 +42,7 @@ final class AutoClearHandler: ApplicationTerminationDecider {
     private let aiChatSyncCleaner: AIChatSyncCleaning?
     private let alertPresenter: AutoClearAlertPresenting
     private let dataClearingWideEventService: DataClearingWideEventService
+    private let pixelFiring: PixelFiring?
 
     init(dataClearingPreferences: DataClearingPreferences,
          startupPreferences: StartupPreferences,
@@ -49,6 +50,7 @@ final class AutoClearHandler: ApplicationTerminationDecider {
          stateRestorationManager: AppStateRestorationManaging,
          aiChatSyncCleaner: AIChatSyncCleaning?,
          wideEvent: WideEventManaging,
+         pixelFiring: PixelFiring?,
          alertPresenter: AutoClearAlertPresenting = DefaultAutoClearAlertPresenter()) {
         self.dataClearingPreferences = dataClearingPreferences
         self.startupPreferences = startupPreferences
@@ -57,6 +59,7 @@ final class AutoClearHandler: ApplicationTerminationDecider {
         self.aiChatSyncCleaner = aiChatSyncCleaner
         self.alertPresenter = alertPresenter
         self.dataClearingWideEventService = DataClearingWideEventService(wideEvent: wideEvent)
+        self.pixelFiring = pixelFiring
     }
 
     @MainActor
@@ -131,6 +134,8 @@ final class AutoClearHandler: ApplicationTerminationDecider {
                 await aiChatSyncCleaner?.recordLocalClear(date: Date())
             }
         }
+        pixelFiring?.fire(FireDialogPixel.fireStarted, frequency: .dailyAndCount, doNotEnforcePrefix: true)
+        pixelFiring?.fire(FireDialogPixel.fireStartedOnExit, frequency: .dailyAndCount, doNotEnforcePrefix: true)
         await fireViewModel.fire.burnAll(isBurnOnExit: true,
                                          includeChatHistory: dataClearingPreferences.isAutoClearAIChatHistoryEnabled,
                                          isAutoClear: true,
@@ -150,6 +155,8 @@ final class AutoClearHandler: ApplicationTerminationDecider {
         let shouldBurnOnStart = dataClearingPreferences.isAutoClearEnabled && !appTerminationHandledCorrectly
         guard shouldBurnOnStart else { return false }
 
+        pixelFiring?.fire(FireDialogPixel.fireStarted, frequency: .dailyAndCount, doNotEnforcePrefix: true)
+        pixelFiring?.fire(FireDialogPixel.fireStartedOnStartup, frequency: .dailyAndCount, doNotEnforcePrefix: true)
         fireViewModel.fire.burnAll(includeChatHistory: dataClearingPreferences.isAutoClearAIChatHistoryEnabled,
                                    isAutoClear: true,
                                    dataClearingWideEventService: dataClearingWideEventService)

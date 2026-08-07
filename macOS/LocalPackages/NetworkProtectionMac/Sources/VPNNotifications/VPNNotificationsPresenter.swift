@@ -64,8 +64,15 @@ public final class VPNNotificationsPresenter: NSObject, VPNNotificationsPresenti
 
     // MARK: - Setup
 
-    public func requestAuthorization() {
+    /// Registers this presenter as the notification center's delegate so taps on delivered
+    /// notifications are routed to `didReceive`. Must be called before the app finishes launching,
+    /// and has no permission-prompt side effect. Safe to call repeatedly.
+    public func registerAsNotificationCenterDelegate() {
         userNotificationCenter.delegate = self
+    }
+
+    public func requestAuthorization() {
+        registerAsNotificationCenterDelegate()
         requestAlertAuthorization()
     }
 
@@ -114,6 +121,12 @@ public final class VPNNotificationsPresenter: NSObject, VPNNotificationsPresenti
         let content = notificationContent(title: UserText.vpnConnectionSuccessNotificationTitle,
                                           subtitle: subtitle)
         showNotification(.connected, content)
+    }
+
+    public func showStrictRoutingReminderNotification() {
+        let content = notificationContent(title: UserText.vpnStrictRoutingReminderNotificationTitle,
+                                          subtitle: UserText.vpnStrictRoutingReminderNotificationSubtitle)
+        showNotification(.strictRoutingReminder, content)
     }
 
     public func showReconnectingNotification() {
@@ -181,6 +194,7 @@ public enum VPNNotificationIdentifier: String {
     case expiredEntitlement = "ddg-vpn.notification.expired-entitlement"
     case test = "ddg-vpn.notification.test"
     case debug = "ddg-vpn.notification.debug"
+    case strictRoutingReminder = "ddg-vpn.notification.strict-routing-reminder"
 }
 
 extension VPNNotificationsPresenter: UNUserNotificationCenterDelegate {
@@ -191,7 +205,17 @@ extension VPNNotificationsPresenter: UNUserNotificationCenterDelegate {
 
     public func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
 
-        try? await appLauncher.launchApp(withCommand: VPNAppLaunchCommand.showStatus)
+        // The strict-routing reminder is about a setting, so take the user to the VPN settings pane.
+        // Every other VPN notification opens the status view.
+        let command: VPNAppLaunchCommand
+        switch VPNNotificationIdentifier(rawValue: response.notification.request.identifier) {
+        case .strictRoutingReminder:
+            command = .showSettings
+        default:
+            command = .showStatus
+        }
+
+        try? await appLauncher.launchApp(withCommand: command)
     }
 
 }

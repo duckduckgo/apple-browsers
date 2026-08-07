@@ -65,6 +65,22 @@ final class MockAIChatMessageHandler: AIChatMessageHandling {
         setDataCalls.append(.init(data, type))
         setData(data, type)
     }
+
+    var appendSelectionContextCalls: [AIChatSelectionContextData] = []
+    var clearSelectionContextsCallCount = 0
+    var getSelectionContextsImpl: () -> [AIChatSelectionContextData] = { [] }
+
+    func appendSelectionContext(_ selection: AIChatSelectionContextData) {
+        appendSelectionContextCalls.append(selection)
+    }
+
+    func getSelectionContexts() -> [AIChatSelectionContextData] {
+        getSelectionContextsImpl()
+    }
+
+    func clearSelectionContexts() {
+        clearSelectionContextsCallCount += 1
+    }
 }
 
 // swiftlint:disable inclusive_language
@@ -135,6 +151,26 @@ struct AIChatUserScriptHandlerTests {
     func testThatGetAIChatNativePromptCallsMessageHandler() async {
         _ = await handler.getAIChatNativePrompt(params: [], message: WKScriptMessage.mock())
         #expect(messageHandler.getDataForMessageTypeCalls == [.nativePrompt])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("getAIChatSelectionContext returns the stored selections", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatGetAIChatSelectionContextReturnsStoredSelections() {
+        let selection = AIChatSelectionContextData(id: "id-1", title: "Text selection", url: "https://example.com", content: "hi", truncated: false, fullContentLength: 2, wordCount: 1)
+        messageHandler.getSelectionContextsImpl = { [selection] }
+
+        let response = handler.getAIChatSelectionContext(params: [], message: WKScriptMessage.mock()) as? SelectionContextResponse
+
+        #expect(response?.selections == [selection])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("submitting a prompt clears the stored selections", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatSubmittingPromptClearsSelectionStore() {
+        handler.didReportMetric(.init(metricName: .userDidSubmitPrompt))
+        #expect(messageHandler.clearSelectionContextsCallCount == 1)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -502,6 +538,172 @@ struct AIChatUserScriptHandlerTests {
         #expect(testPixelFiring.actualFireCalls.isEmpty)
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("didReportMetric fires the subscription-funnel impression pixel with the matching origin", .timeLimit(.minutes(1)), arguments: [
+        (AIChatMetricName.userDidViewAiSidebarUpgradeButton, "funnel_duckai_macos__aisidebar"),
+        (.userDidViewActivateSubscriptionBanner, "funnel_duckai_macos__activatesubscription"),
+        (.userDidViewFreePlanBadge, "funnel_duckai_macos__freelabel"),
+        (.userDidViewFreeLimitMessage, "funnel_duckai_macos__freelimit"),
+        (.userDidViewImageGenerationLimitMessage, "funnel_duckai_macos__imagegenerationlimit"),
+        (.userDidViewPlusLimitMessage, "funnel_duckai_macos__pluslimit"),
+        (.userDidViewPromotionCard, "funnel_duckai_macos__promotioncard"),
+        (.userDidViewSettingsSubscribeButton, "funnel_duckai_macos__settings"),
+        (.userDidViewProUpgradeDisclaimerBanner, "funnel_duckai_macos__disclaimerbanner"),
+        (.userDidViewVoiceChatLimitModal, "funnel_duckai_macos__voicechatlimit"),
+        (.userDidViewVoiceChatDurationLimitModal, "funnel_duckai_macos__voicechatdurationlimit")
+    ])
+    @MainActor
+    func testFunnelImpressionMetricFiresImpressionPixelWithOrigin(metric: AIChatMetricName, origin: String) async {
+        pixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatSubscriptionFunnelImpression(origin: origin), frequency: .dailyAndCount)]
+
+        await withCheckedContinuation { continuation in
+            handler.didReportMetric(.init(metricName: metric)) {
+                continuation.resume()
+            }
+        }
+
+        #expect(pixelFiring.expectedFireCalls == pixelFiring.actualFireCalls)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("didReportMetric fires the subscription-funnel click pixel with the matching origin", .timeLimit(.minutes(1)), arguments: [
+        (AIChatMetricName.userDidClickAiSidebarUpgradeButton, "funnel_duckai_macos__aisidebar"),
+        (.userDidClickActivateSubscriptionButton, "funnel_duckai_macos__activatesubscription"),
+        (.userDidClickFreePlanUpgradeButton, "funnel_duckai_macos__freelabel"),
+        (.userDidClickFreeLimitSubscribeLink, "funnel_duckai_macos__freelimit"),
+        (.userDidClickImageGenerationLimitSubscribeButton, "funnel_duckai_macos__imagegenerationlimit"),
+        (.userDidClickPlusLimitUpgradeLink, "funnel_duckai_macos__pluslimit"),
+        (.userDidClickPromotionCardButton, "funnel_duckai_macos__promotioncard"),
+        (.userDidClickSettingsSubscribeButton, "funnel_duckai_macos__settings"),
+        (.userDidClickProUpgradeDisclaimerBannerButton, "funnel_duckai_macos__disclaimerbanner"),
+        (.userDidClickVoiceChatLimitModalSubscribeButton, "funnel_duckai_macos__voicechatlimit"),
+        (.userDidClickVoiceChatDurationLimitModalSubscribeButton, "funnel_duckai_macos__voicechatdurationlimit")
+    ])
+    @MainActor
+    func testFunnelClickMetricFiresClickPixelWithOrigin(metric: AIChatMetricName, origin: String) async {
+        pixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatSubscriptionFunnelClick(origin: origin), frequency: .dailyAndCount)]
+
+        await withCheckedContinuation { continuation in
+            handler.didReportMetric(.init(metricName: metric)) {
+                continuation.resume()
+            }
+        }
+
+        #expect(pixelFiring.expectedFireCalls == pixelFiring.actualFireCalls)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("didReportMetric fires the matching modal pixel for each modal metric", .timeLimit(.minutes(1)), arguments: [
+        (AIChatMetricName.userDidOpenSubscribeModal,
+         AIChatPixel.aiChatSubscriptionFunnelSubscribeModalImpression(origin: "funnel_duckai_macos__freelimit")),
+        (.userDidClickSubscribeOnSubscribeModal,
+         .aiChatSubscriptionFunnelSubscribeModalSubscribeClick(origin: "funnel_duckai_macos__freelimit")),
+        (.userDidClickActivateOnSubscribeModal,
+         .aiChatSubscriptionFunnelSubscribeModalActivateClick(origin: "funnel_duckai_macos__freelimit")),
+        (.userDidOpenUpgradeToProModal,
+         .aiChatSubscriptionFunnelUpgradeToProModalImpression(origin: "funnel_duckai_macos__freelimit")),
+        (.userDidClickUpgradeOnUpgradeToProModal,
+         .aiChatSubscriptionFunnelUpgradeToProModalUpgradeClick(origin: "funnel_duckai_macos__freelimit"))
+    ])
+    @MainActor
+    func testModalMetricFiresMatchingModalPixel(metric: AIChatMetricName, expectedPixel: AIChatPixel) async {
+        pixelFiring.expectedFireCalls = [.init(pixel: expectedPixel, frequency: .dailyAndCount)]
+
+        await withCheckedContinuation { continuation in
+            handler.didReportMetric(.init(metricName: metric, source: "freelimit")) {
+                continuation.resume()
+            }
+        }
+
+        #expect(pixelFiring.expectedFireCalls == pixelFiring.actualFireCalls)
+    }
+
+    // Pins the names against the aichat_pixels.json5 keys; the firing tests build both sides from
+    // the same enum, so they can't catch a wrong name.
+    @available(iOS 16, macOS 13, *)
+    @Test("Modal funnel pixels use the agreed names and carry the origin parameter", .timeLimit(.minutes(1)), arguments: [
+        (AIChatPixel.aiChatSubscriptionFunnelSubscribeModalImpression(origin: "funnel_duckai_macos__freelimit"),
+         "aichat_subscription-funnel_subscribe-modal_impression"),
+        (.aiChatSubscriptionFunnelSubscribeModalSubscribeClick(origin: "funnel_duckai_macos__freelimit"),
+         "aichat_subscription-funnel_subscribe-modal_subscribe_click"),
+        (.aiChatSubscriptionFunnelSubscribeModalActivateClick(origin: "funnel_duckai_macos__freelimit"),
+         "aichat_subscription-funnel_subscribe-modal_activate_click"),
+        (.aiChatSubscriptionFunnelUpgradeToProModalImpression(origin: "funnel_duckai_macos__freelimit"),
+         "aichat_subscription-funnel_upgrade-to-pro-modal_impression"),
+        (.aiChatSubscriptionFunnelUpgradeToProModalUpgradeClick(origin: "funnel_duckai_macos__freelimit"),
+         "aichat_subscription-funnel_upgrade-to-pro-modal_upgrade_click")
+    ])
+    @MainActor
+    func testModalFunnelPixelNameAndParameters(pixel: AIChatPixel, expectedName: String) {
+        #expect(pixel.name == expectedName)
+        #expect(pixel.parameters == ["origin": "funnel_duckai_macos__freelimit"])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("didReportMetric maps every allowed modal source to its funnel origin", .timeLimit(.minutes(1)), arguments: [
+        ("activatesubscription", "funnel_duckai_macos__activatesubscription"),
+        ("aisidebar", "funnel_duckai_macos__aisidebar"),
+        ("disclaimerbanner", "funnel_duckai_macos__disclaimerbanner"),
+        ("freelabel", "funnel_duckai_macos__freelabel"),
+        ("freelimit", "funnel_duckai_macos__freelimit"),
+        ("imagegenerationlimit", "funnel_duckai_macos__imagegenerationlimit"),
+        ("modelpicker", "funnel_duckai_macos__modelpicker"),
+        ("pluslimit", "funnel_duckai_macos__pluslimit"),
+        ("promotioncard", "funnel_duckai_macos__promotioncard"),
+        ("reasoningdropdown", "funnel_duckai_macos__reasoningdropdown"),
+        ("switchmodel", "funnel_duckai_macos__switchmodel"),
+        ("voicechatdurationlimit", "funnel_duckai_macos__voicechatdurationlimit"),
+        ("voicechatlimit", "funnel_duckai_macos__voicechatlimit"),
+        ("unknown", "funnel_duckai_macos__unknown")
+    ])
+    @MainActor
+    func testModalMetricMapsSourceToOrigin(source: String, origin: String) async {
+        pixelFiring.expectedFireCalls = [
+            .init(pixel: AIChatPixel.aiChatSubscriptionFunnelSubscribeModalImpression(origin: origin), frequency: .dailyAndCount)
+        ]
+
+        await withCheckedContinuation { continuation in
+            handler.didReportMetric(.init(metricName: .userDidOpenSubscribeModal, source: source)) {
+                continuation.resume()
+            }
+        }
+
+        #expect(pixelFiring.expectedFireCalls == pixelFiring.actualFireCalls)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("didReportMetric fires no modal pixel when the source is missing or unrecognised", .timeLimit(.minutes(1)), arguments: [
+        nil, "", "somethingnew", "funnel_duckai_macos__freelimit"
+    ] as [String?])
+    @MainActor
+    func testModalMetricWithoutUsableSourceFiresNothing(source: String?) async {
+        await withCheckedContinuation { continuation in
+            handler.didReportMetric(.init(metricName: .userDidOpenSubscribeModal, source: source)) {
+                continuation.resume()
+            }
+        }
+
+        #expect(pixelFiring.actualFireCalls.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("reportMetric decodes source off the wire and fires the modal pixel", .timeLimit(.minutes(1)))
+    @MainActor
+    func testReportMetricDecodesModalSource() async {
+        pixelFiring.expectedFireCalls = [
+            .init(pixel: AIChatPixel.aiChatSubscriptionFunnelSubscribeModalImpression(origin: "funnel_duckai_macos__pluslimit"),
+                  frequency: .dailyAndCount)
+        ]
+
+        _ = await handler.reportMetric(
+            params: ["metricName": "userDidOpenSubscribeModal", "source": "pluslimit"],
+            message: WKScriptMessage.mock()
+        )
+
+        #expect(pixelFiring.expectedFireCalls == pixelFiring.actualFireCalls)
+        #expect(userScriptErrorEventMapper.events.isEmpty)
+    }
+
     // MARK: - Sync tests
 
     @available(iOS 16, macOS 13, *)
@@ -788,11 +990,13 @@ struct AIChatUserScriptHandlerTests {
 
     private func makeFeatureFlagger(aiChatSyncEnabled: Bool = false,
                                     aiChatNativeStorageEnabled: Bool = false,
-                                    aiChatNativeVoicePermissionFlowEnabled: Bool = false) -> MockFeatureFlagger {
+                                    aiChatNativeVoicePermissionFlowEnabled: Bool = false,
+                                    aiChatTabAttachmentLimitEnabled: Bool = false) -> MockFeatureFlagger {
         let featureFlagger = MockFeatureFlagger()
         featureFlagger.featuresStub["aiChatSync"] = aiChatSyncEnabled
         featureFlagger.featuresStub["aiChatNativeStorage"] = aiChatNativeStorageEnabled
         featureFlagger.featuresStub["aiChatNativeVoicePermissionFlow"] = aiChatNativeVoicePermissionFlowEnabled
+        featureFlagger.featuresStub["aiChatTabAttachmentLimit"] = aiChatTabAttachmentLimitEnabled
         return featureFlagger
     }
 
@@ -1011,6 +1215,32 @@ struct AIChatUserScriptHandlerTests {
         #expect(handler.getNativeConfigValues(isFireWindow: false).supportsNativeVoicePermissionHandler == false)
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("When aiChatTabAttachmentLimit is enabled, attachmentLimits.tabs carries the native cap", .timeLimit(.minutes(1)))
+    func testWhenTabAttachmentLimitEnabledThenAttachmentLimitsCarriesTabCap() {
+        let featureFlagger = makeFeatureFlagger(aiChatTabAttachmentLimitEnabled: true)
+        let handler = AIChatMessageHandler(featureFlagger: featureFlagger,
+                                           promptHandler: AIChatPromptHandler.shared,
+                                           installDateProvider: { nil },
+                                           installTypeProvider: { .new })
+
+        let config = handler.getNativeConfigValues(isFireWindow: false)
+
+        #expect(config.attachmentLimits?.tabs?.maxAttached == AIChatOmnibarController.maxTabAttachments)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("When aiChatTabAttachmentLimit is disabled, attachmentLimits is omitted", .timeLimit(.minutes(1)))
+    func testWhenTabAttachmentLimitDisabledThenAttachmentLimitsIsNil() {
+        let featureFlagger = makeFeatureFlagger(aiChatTabAttachmentLimitEnabled: false)
+        let handler = AIChatMessageHandler(featureFlagger: featureFlagger,
+                                           promptHandler: AIChatPromptHandler.shared,
+                                           installDateProvider: { nil },
+                                           installTypeProvider: { .new })
+
+        #expect(handler.getNativeConfigValues(isFireWindow: false).attachmentLimits == nil)
+    }
+
     // MARK: - voiceChatStartFailed flag gating
 
     @available(iOS 16, macOS 13, *)
@@ -1079,10 +1309,16 @@ final class MockDuckAiVoiceChatFailureHandling: DuckAiVoiceChatFailureHandling {
         let sourceWebView: WKWebView?
     }
     private(set) var handleCalls: [HandleCall] = []
+    private(set) var dictationHandleCalls: [HandleCall] = []
 
     @MainActor
     func handleVoiceChatStartFailed(reason: String, sourceWebView: WKWebView?) {
         handleCalls.append(HandleCall(reason: reason, sourceWebView: sourceWebView))
+    }
+
+    @MainActor
+    func handleDictationStartFailed(reason: String, sourceWebView: WKWebView?) {
+        dictationHandleCalls.append(HandleCall(reason: reason, sourceWebView: sourceWebView))
     }
 }
 

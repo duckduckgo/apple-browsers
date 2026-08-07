@@ -27,6 +27,7 @@ import PrivacyConfig
 import DuckPlayer
 import os.log
 import Combine
+import FeatureFlags_iOS
 
 /// Handles navigation and interactions related to Duck Player within the app.
 final class WebDuckPlayerNavigationHandler: NSObject {
@@ -442,7 +443,7 @@ final class WebDuckPlayerNavigationHandler: NSObject {
             webView.load(URLRequest(url: newURL))
         }
 
-        Logger.duckPlayer.debug("DP: loadWithDuckPlayerParameters: \(newURL.absoluteString)")
+        Logger.duckPlayer.debug("DP: loadWithDuckPlayerParameters: \(newURL.shortDescription)")
 
     }
 
@@ -786,7 +787,7 @@ extension WebDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
                 self.redirectToDuckPlayerVideo(url: url, webView: webView)
             })
             lastURLChangeHandling = Date()
-            Logger.duckPlayer.debug("Handling URL change for \(webView.url?.absoluteString ?? "")")
+            Logger.duckPlayer.debug("Handling URL change for \(webView.url?.shortDescription ?? "")")
             return .handled(.duckPlayerEnabled)
         } else {
 

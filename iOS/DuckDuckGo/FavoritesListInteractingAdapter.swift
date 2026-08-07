@@ -33,7 +33,13 @@ final class FavoritesListInteractingAdapter: NewTabPageFavoriteDataSource {
     init(favoritesListInteracting: FavoritesListInteracting, appSettings: AppSettings = AppDependencyProvider.shared.appSettings) {
         self.favoritesListInteracting = favoritesListInteracting
         self.appSettings = appSettings
-        self.externalUpdates = favoritesListInteracting.externalUpdates.merge(with: displayModeSubject).eraseToAnyPublisher()
+        // Include `localUpdates` so every consumer of a shared model (e.g. the background NTP and the
+        // unified-input embedded NTP) refreshes on an in-process favorites change, not just the one
+        // that made it. The model now refreshes its array before emitting, so the read is fresh.
+        self.externalUpdates = favoritesListInteracting.externalUpdates
+            .merge(with: favoritesListInteracting.localUpdates)
+            .merge(with: displayModeSubject)
+            .eraseToAnyPublisher()
 
         NotificationCenter.default.publisher(for: AppUserDefaults.Notifications.favoritesDisplayModeChange)
             .receive(on: DispatchQueue.main)

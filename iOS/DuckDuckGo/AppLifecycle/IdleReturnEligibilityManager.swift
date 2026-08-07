@@ -21,6 +21,15 @@ import Foundation
 import Core
 import Persistence
 import PrivacyConfig
+import FeatureFlags_iOS
+
+/// Combined NTP-after-idle state: eligibility folded together with return-to-tab-card visibility.
+/// Raw values are the strings used by the `ntpAfterIdleState` RMF matching attribute.
+enum NTPAfterIdleState: String {
+    case notEligible
+    case eligibleCardShown
+    case eligibleCardHidden
+}
 
 protocol IdleReturnEligibilityManaging {
     /// True when the feature flag is on and onboarding is complete, regardless
@@ -33,6 +42,10 @@ protocol IdleReturnEligibilityManaging {
     func effectiveAfterInactivityOption() -> AfterInactivityOption
 
     func idleThresholdSeconds() -> Int
+
+    /// The user's combined NTP-after-idle state (eligibility + return-to-tab-card visibility),
+    /// used to target the after-idle message and vary its copy.
+    func ntpAfterIdleState() -> NTPAfterIdleState
 }
 
 final class IdleReturnEligibilityManager: IdleReturnEligibilityManaging {
@@ -42,6 +55,7 @@ final class IdleReturnEligibilityManager: IdleReturnEligibilityManaging {
     private let thresholdResolver: IdleReturnThresholdResolver
     private let tutorialSettings: TutorialSettings
     private let isStillOnboarding: () -> Bool
+    private let returnToTabCardEnabledProvider: () -> Bool
 
     init(featureFlagger: FeatureFlagger,
          keyValueStore: ThrowingKeyValueStoring,
@@ -53,6 +67,10 @@ final class IdleReturnEligibilityManager: IdleReturnEligibilityManaging {
         self.tutorialSettings = tutorialSettings
         self.isStillOnboarding = isStillOnboarding
         let storage: any ThrowingKeyedStoring<AfterInactivitySettingKeys> = keyValueStore.throwingKeyedStoring()
+        self.returnToTabCardEnabledProvider = {
+            // The card is hidden only when the user has turned the shortcut off.
+            (try? storage.lastTabShortcutEnabled) ?? true
+        }
         self.effectiveOptionResolver = AfterInactivityEffectiveOptionResolver(storage: storage, featureFlagger: featureFlagger)
         self.thresholdResolver = IdleReturnThresholdResolver(
             privacyConfigurationManager: privacyConfigurationManager,
@@ -65,12 +83,14 @@ final class IdleReturnEligibilityManager: IdleReturnEligibilityManaging {
          effectiveOptionResolver: AfterInactivityEffectiveOptionResolving,
          thresholdResolver: IdleReturnThresholdResolver,
          tutorialSettings: TutorialSettings = DefaultTutorialSettings(),
-         isStillOnboarding: @escaping () -> Bool = { false }) {
+         isStillOnboarding: @escaping () -> Bool = { false },
+         returnToTabCardEnabled: @escaping () -> Bool = { true }) {
         self.featureFlagger = featureFlagger
         self.effectiveOptionResolver = effectiveOptionResolver
         self.thresholdResolver = thresholdResolver
         self.tutorialSettings = tutorialSettings
         self.isStillOnboarding = isStillOnboarding
+        self.returnToTabCardEnabledProvider = returnToTabCardEnabled
     }
 
     func isFeatureAvailable() -> Bool {
@@ -89,5 +109,10 @@ final class IdleReturnEligibilityManager: IdleReturnEligibilityManaging {
 
     func idleThresholdSeconds() -> Int {
         thresholdResolver.thresholdSeconds()
+    }
+
+    func ntpAfterIdleState() -> NTPAfterIdleState {
+        guard isEligibleForNTPAfterIdle() else { return .notEligible }
+        return returnToTabCardEnabledProvider() ? .eligibleCardShown : .eligibleCardHidden
     }
 }

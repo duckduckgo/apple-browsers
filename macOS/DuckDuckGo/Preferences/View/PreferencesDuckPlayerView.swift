@@ -85,6 +85,7 @@ extension Preferences {
 
                     }, label: {})
                     .pickerStyle(.radioGroup)
+                    .rebrandedControlTint()
                     .offset(x: PreferencesUI_macOS.Const.pickerHorizontalOffset)
 
                     TextMenuItemCaption(UserText.duckPlayerExplanation)

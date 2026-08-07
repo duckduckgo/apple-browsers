@@ -26,6 +26,7 @@ import os.log
 import PrivacyConfig
 import Networking
 import Persistence
+import FeatureFlags_iOS
 
 /// Status for the cancel-downgrade overlay
 enum CancelDowngradeOverlayStatus {
@@ -335,7 +336,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
         let setStatus: (SubscriptionTransactionStatus) -> Void = { [weak self] in self?.setCancelDowngradeStatus($0) }
         await subscriptionFlowsExecuter.performTierChange(to: productId,
                                                           changeType: "upgrade",
-                                                          contextName: SubscriptionFunnelOrigin.cancelDowngrade.rawValue,
+                                                          contextName: SubscriptionPlanChangeOrigin.cancelDowngrade.rawValue,
                                                           setTransactionStatus: setStatus,
                                                           setTransactionError: setError,
                                                           pushPurchaseUpdate: nil)

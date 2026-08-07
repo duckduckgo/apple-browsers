@@ -83,7 +83,7 @@ extension DataBrokerRunCustomJSONViewModel: DebugModeEmailConfirming {
                     emailConfirmationDataService: self.emailConfirmationDataService,
                     captchaService: self.captchaService,
                     featureFlagger: self.featureFlagger,
-                    applicationNameForUserAgent: self.applicationNameForUserAgent,
+                    applicationNameForUserAgentProvider: self.applicationNameForUserAgentProvider,
                     stageCalculator: stageCalculator,
                     pixelHandler: fakePixelHandler,
                     executionConfig: .init(),
@@ -91,8 +91,7 @@ extension DataBrokerRunCustomJSONViewModel: DebugModeEmailConfirming {
                     shouldRunNextStep: { true }
                 )
 
-                try await runner.optOut(profileQuery: brokerProfileQueryData,
-                                        extractedProfile: scanResult.extractedProfile,
+                try await runner.optOut(extractedProfile: scanResult.extractedProfile,
                                         showWebView: true) { true }
 
                 addOptOutConfirmedEvent(for: scanResult)

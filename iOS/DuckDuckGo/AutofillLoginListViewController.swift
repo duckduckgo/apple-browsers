@@ -158,16 +158,6 @@ final class AutofillLoginListViewController: UIViewController {
     private var syncPromoPresented: Bool = false
     private var extensionPromoPresented: Bool = false
 
-    private lazy var lockedViewBottomConstraint: NSLayoutConstraint = {
-        NSLayoutConstraint(item: tableView,
-                           attribute: .bottom,
-                           relatedBy: .equal,
-                           toItem: lockedView,
-                           attribute: .bottom,
-                           multiplier: 1,
-                           constant: 144)
-    }()
-
     private lazy var emptySearchViewCenterYConstraint: NSLayoutConstraint = {
         NSLayoutConstraint(item: emptySearchView,
                            attribute: .centerY,
@@ -279,7 +269,6 @@ final class AutofillLoginListViewController: UIViewController {
         super.viewWillTransition(to: size, with: coordinator)
 
         coordinator.animate(alongsideTransition: { _ in
-            self.updateConstraintConstants()
             if self.view.subviews.contains(self.noAuthAvailableView) {
                 self.noAuthAvailableView.refreshConstraints()
             }
@@ -870,8 +859,6 @@ final class AutofillLoginListViewController: UIViewController {
         lockedView.translatesAutoresizingMaskIntoConstraints = false
         noAuthAvailableView.translatesAutoresizingMaskIntoConstraints = false
 
-        updateConstraintConstants()
-
         NSLayoutConstraint.activate([
             tableView.leftAnchor.constraint(equalTo: view.leftAnchor),
             tableView.rightAnchor.constraint(equalTo: view.rightAnchor),
@@ -884,9 +871,9 @@ final class AutofillLoginListViewController: UIViewController {
             emptySearchView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.padding),
 
             lockedView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            lockedView.centerYAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerYAnchor),
             lockedView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.padding),
             lockedView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.padding),
-            lockedViewBottomConstraint,
 
             noAuthAvailableView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             noAuthAvailableView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
@@ -895,22 +882,13 @@ final class AutofillLoginListViewController: UIViewController {
         ])
     }
 
-    private func updateConstraintConstants() {
-        let isIPhoneLandscape = traitCollection.containsTraits(in: UITraitCollection(verticalSizeClass: .compact))
-        if isIPhoneLandscape {
-            lockedViewBottomConstraint.constant = (view.frame.height / 2.0 - max(lockedView.frame.height, 120.0) / 2.0)
-        } else {
-            lockedViewBottomConstraint.constant = view.frame.height * 0.15
-        }
-    }
-
     // MARK: Cell Methods
 
     private func credentialCell(for tableView: UITableView, item: AutofillLoginItem, indexPath: IndexPath) -> AutofillListItemTableViewCell {
         let cell = tableView.dequeueCell(ofType: AutofillListItemTableViewCell.self, for: indexPath)
         cell.item = item
         cell.accessoryType = .disclosureIndicator
-        cell.backgroundColor = UIColor(designSystemColor: .surface)
+        cell.backgroundColor = UIColor(singleUseColor: .groupedListContentBackground)
         return cell
     }
 
@@ -927,7 +905,7 @@ final class AutofillLoginListViewController: UIViewController {
             Pixel.fire(pixel: .autofillLoginsReportConfirmationPromptDisplayed)
         })
         cell.embed(in: self, withView: contentView)
-        cell.backgroundColor = UIColor(designSystemColor: .surface)
+        cell.backgroundColor = UIColor(singleUseColor: .groupedListContentBackground)
         cell.selectionStyle = .none
         return cell
     }

@@ -35,7 +35,7 @@ jobs:
     steps:
 
       - name: Register SSH keys for private repos
-        uses: webfactory/ssh-agent@v0.9.1
+        uses: webfactory/ssh-agent@v0.10.0
         with:
           ssh-private-key: |
             ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
@@ -132,13 +132,13 @@ jobs:
           echo "dsyms_path=${{ github.workspace }}/iOS/${{ env.dsyms_filename }}" >> $GITHUB_ENV
 
       - name: Upload IPA artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ env.ipa_filename }}
           path: ${{ env.ipa_path }}
 
       - name: Upload dSYMs artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ env.dsyms_filename }}
           path: ${{ env.dsyms_path }}

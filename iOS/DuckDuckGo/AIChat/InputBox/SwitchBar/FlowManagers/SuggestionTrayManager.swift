@@ -52,7 +52,6 @@ protocol SuggestionTrayManagerDelegate: AnyObject {
     func suggestionTrayManager(_ manager: SuggestionTrayManager, requestsEditFavorite favorite: BookmarkEntity)
     func suggestionTrayManager(_ manager: SuggestionTrayManager, requestsSwitchToTab tab: Tab)
     func suggestionTrayManagerDidRequestTabSwitcher(_ manager: SuggestionTrayManager)
-    func suggestionTrayManagerDidRequestTryFireMode(_ manager: SuggestionTrayManager)
     func suggestionTrayManagerDidUpdateVisibility(_ manager: SuggestionTrayManager)
 }
 
@@ -375,9 +374,5 @@ extension SuggestionTrayManager: NewTabPageControllerDelegate {
 
     func newTabPageDidRequestTabSwitcher(_ controller: NewTabPageViewController) {
         delegate?.suggestionTrayManagerDidRequestTabSwitcher(self)
-    }
-
-    func newTabPageDidRequestTryFireMode(_ controller: NewTabPageViewController) {
-        delegate?.suggestionTrayManagerDidRequestTryFireMode(self)
     }
 }

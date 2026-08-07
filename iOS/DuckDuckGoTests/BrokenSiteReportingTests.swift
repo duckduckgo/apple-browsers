@@ -74,6 +74,61 @@ final class BrokenSiteReportingTests: XCTestCase {
         waitForExpectations(timeout: 10, handler: nil)
     }
 
+    func testBrokenSiteReportIncludesCPMDiagnostics() {
+        let report = BrokenSiteReport(siteUrl: URL(string: "https://example.com")!,
+                                      category: "test",
+                                      description: nil,
+                                      osVersion: "18",
+                                      manufacturer: "Apple",
+                                      upgradedHttps: false,
+                                      tdsETag: "abc123",
+                                      configVersion: "123456789",
+                                      blockedTrackerDomains: [],
+                                      installedSurrogates: [],
+                                      isGPCEnabled: false,
+                                      ampURL: "",
+                                      urlParametersRemoved: false,
+                                      protectionsState: true,
+                                      reportFlow: .dashboard,
+                                      siteType: .mobile,
+                                      model: "iPhone",
+                                      errors: nil,
+                                      httpStatusCodes: nil,
+                                      openerContext: nil,
+                                      vpnOn: false,
+                                      jsPerformance: nil,
+                                      userRefreshCount: 0,
+                                      variant: "",
+                                      cookieConsentInfo: CookieConsentInfo(
+                                        consentManaged: true,
+                                        cosmetic: true,
+                                        optoutFailed: false,
+                                        selftestFailed: false,
+                                        consentReloadLoop: false,
+                                        consentRule: "test-cmp",
+                                        consentHeuristicEnabled: true,
+                                        cpmExtensionDroppedCallbacks: 3,
+                                        cpmExtensionLoaded: true,
+                                        cpmDashboardState: .applied,
+                                        cpmStage: .popupFound,
+                                        cpmErrors: "multiple_cmps,tab_refreshDashboardState",
+                                        cpmQueueSize: 2,
+                                        cpmConfigVersion: "123"),
+                                      debugFlags: "",
+                                      privacyExperiments: "",
+                                      isPirEnabled: nil,
+                                      isForceDarkModeEnabled: nil)
+
+        let params = report.requestParameters
+        XCTAssertEqual(params["cpmExtensionDroppedCallbacks"], "3")
+        XCTAssertEqual(params["cpmExtensionLoaded"], "1")
+        XCTAssertEqual(params["cpmDashboardState"], "applied")
+        XCTAssertEqual(params["cpmStage"], "popup_found")
+        XCTAssertEqual(params["cpmErrors"], "multiple_cmps,tab_refreshDashboardState")
+        XCTAssertEqual(params["cpmQueueSize"], "2")
+        XCTAssertEqual(params["cpmConfigVersion"], "123")
+    }
+
     private func runReferenceTests(onTestExecuted: XCTestExpectation) throws {
 
         guard let test = referenceTests.popLast() else {

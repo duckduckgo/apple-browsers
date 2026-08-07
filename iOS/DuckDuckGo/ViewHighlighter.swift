@@ -95,8 +95,6 @@ class ViewHighlighter {
 private extension ViewHighlighter {
 
     private static func makeColorProvider(featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) -> ColorValueProvider? {
-        // If Onboarding rebranding is disabled, no need to override the animation color
-        guard featureFlagger.isFeatureOn(.onboardingRebranding) else { return nil }
         let lottieColor = UIColor(singleUseColor: .rebranding(.accentPrimary)).lottieColorValue
         return ColorValueProvider(lottieColor)
     }

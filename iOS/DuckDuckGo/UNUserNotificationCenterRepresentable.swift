@@ -34,7 +34,9 @@ protocol UNUserNotificationCenterRepresentable: AnyObject {
     func authorizationStatus() async -> UNAuthorizationStatus
     func requestAuthorization(options: UNAuthorizationOptions) async throws -> Bool
     func add(_ request: UNNotificationRequest) async throws
+    func pendingNotificationRequests() async -> [UNNotificationRequest]
     func removePendingNotificationRequests(withIdentifiers identifiers: [String])
+    func setNotificationCategories(_ categories: Set<UNNotificationCategory>)
 }
 
 // MARK: - UNUserNotificationCenter Extension

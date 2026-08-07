@@ -18,6 +18,7 @@
 
 import Common
 import SwiftUIExtensions
+import DesignResourcesKit
 
 struct HistoryViewDeleteDialog: ModalView {
 
@@ -26,7 +27,7 @@ struct HistoryViewDeleteDialog: ModalView {
 
     var body: some View {
         VStack(spacing: 16) {
-            Image(.historyBurn)
+            Image(DesignSystemRebrand.isAppRebranded() ? .historyBurn : .historyBurnLegacy)
 
             VStack(spacing: 12) {
                 Text(model.title)

@@ -133,7 +133,7 @@ final class CurrentMoreOptionsMenuIcons: MoreOptionsMenuIconsProviding {
     let enterFullscreenIcon: NSImage = DesignSystemImages.Glyphs.Size12.expand
     let changeDefaultZoomIcon: NSImage = DesignSystemImages.Glyphs.Size12.accessibility
     let bookmarksIcon: NSImage = DesignSystemImages.Glyphs.Size12.bookmarks
-    let downloadsIcon: NSImage = DesignSystemImages.Glyphs.Size12.downloads
+    let downloadsIcon: NSImage = DesignSystemImages.Glyphs.Size12.download
     let historyIcon: NSImage = DesignSystemImages.Glyphs.Size12.history
     let passwordsIcon: NSImage = DesignSystemImages.Glyphs.Size12.keyLogin
     var syncIcon: NSImage = DesignSystemImages.Glyphs.Size12.sync
@@ -142,7 +142,7 @@ final class CurrentMoreOptionsMenuIcons: MoreOptionsMenuIconsProviding {
     let subscriptionIcon: NSImage = DesignSystemImages.Glyphs.Size12.subscription
     let fireproofSiteIcon: NSImage = DesignSystemImages.Glyphs.Size12.fireproof
     let removeFireproofIcon: NSImage = DesignSystemImages.Glyphs.Size12.fire
-    let findInPageIcon: NSImage = DesignSystemImages.Glyphs.Size12.findSearch
+    let findInPageIcon: NSImage = DesignSystemImages.Glyphs.Size12.searchFind
     let shareIcon: NSImage = DesignSystemImages.Glyphs.Size12.shareApple
     let printIcon: NSImage = DesignSystemImages.Glyphs.Size12.print
     let helpIcon: NSImage = DesignSystemImages.Glyphs.Size12.help

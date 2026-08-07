@@ -102,6 +102,18 @@ class AIChatSettingsTests: XCTestCase {
         XCTAssertTrue(settings.isAIChatBrowsingMenuUserSettingsEnabled)
     }
 
+    func testAIChatBrowsingMenuUserSettingsDisabledWhenAIChatIsDisabled() {
+        let settings = AIChatSettings(privacyConfigurationManager: mockPrivacyConfigurationManager,
+                                      debugSettings: mockAIChatDebugSettings,
+                                      keyValueStore: mockKeyValueStore,
+                                      notificationCenter: mockNotificationCenter)
+
+        settings.enableAIChatBrowsingMenuUserSettings(enable: true)
+        settings.enableAIChat(enable: false)
+
+        XCTAssertFalse(settings.isAIChatBrowsingMenuUserSettingsEnabled)
+    }
+
     func testEnableAIChatAddressBarUserSettings() {
         let settings = AIChatSettings(privacyConfigurationManager: mockPrivacyConfigurationManager,
                                       debugSettings: mockAIChatDebugSettings,

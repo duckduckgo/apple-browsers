@@ -32,10 +32,6 @@ extension WebExtensionManager {
     }
 }
 
-// MARK: - AutoconsentPreferencesProviding
-
-extension CookiePopupProtectionPreferences: AutoconsentPreferencesProviding {}
-
 // MARK: - Factory
 
 @available(macOS 15.4, *)

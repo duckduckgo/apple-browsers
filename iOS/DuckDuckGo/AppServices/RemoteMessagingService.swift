@@ -52,9 +52,11 @@ final class RemoteMessagingService: RemoteMessagingDebugHandling {
          winBackOfferService: WinBackOfferService,
          freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking,
          freemiumDBPUserStateManager: FreemiumDBPUserStateManaging,
+         profileStateManager: DBPProfileStateManaging,
          subscriptionDataReporter: SubscriptionDataReporting,
          remoteMessagingImageLoader: RemoteMessagingImageLoading,
-         dbpRunPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate? = nil
+         idleReturnEligibilityManager: IdleReturnEligibilityManaging,
+         dbpRunPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?
     ) {
         remoteMessagingActionHandler = RemoteMessagingActionHandler(
             lastSearchStateRefresher: RemoteMessagingSurveyLastSearchStateRefresher()
@@ -83,6 +85,8 @@ final class RemoteMessagingService: RemoteMessagingDebugHandling {
             winBackOfferService: winBackOfferService,
             freemiumPIREligibilityChecker: freemiumPIREligibilityChecker,
             freemiumDBPUserStateManager: freemiumDBPUserStateManager,
+            profileStateManager: profileStateManager,
+            idleReturnEligibilityManager: idleReturnEligibilityManager,
             dbpRunPrerequisitesDelegate: dbpRunPrerequisitesDelegate
         )
         remoteMessagingClient.registerBackgroundRefreshTaskHandler()

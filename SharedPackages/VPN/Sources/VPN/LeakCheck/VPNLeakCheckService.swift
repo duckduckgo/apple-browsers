@@ -40,11 +40,26 @@ private enum LeakCheckIPError: Error, CustomNSError {
 
 private enum LeakCheckStatusReason {
     static let checkInterrupted = "check_interrupted"
+    static let unexpectedInterface = "unexpected_tunnel_interface"
+}
+
+/// The outcome of resolving the tunnel's `NWInterface` for a leak check.
+public enum LeakCheckTunnelInterface: Sendable {
+    /// A tunnel interface was resolved; leak probes are pinned to it.
+    case resolved(NWInterface)
+
+    /// Resolution produced an interface that isn't the tunnel (not a `utun`). The tunnel was likely
+    /// rebound underneath us, so the check is recorded as UNKNOWN rather than run against a
+    /// non-tunnel interface — which would manufacture a false leak.
+    case unexpectedInterface
+
+    /// No interface could be resolved; the check is skipped without firing an event.
+    case unavailable
 }
 
 public actor VPNLeakCheckService {
 
-    public typealias TunnelInterfaceProvider = @Sendable () async -> NWInterface?
+    public typealias TunnelInterfaceProvider = @Sendable () async -> LeakCheckTunnelInterface
     public typealias EgressInfoProvider = @Sendable () async -> LeakCheckEgressInfo?
     public typealias TunnelPathGenerationProvider = @Sendable () async -> UInt64
 
@@ -225,7 +240,19 @@ public actor VPNLeakCheckService {
             Logger.networkProtectionIPLeakCheck.log("🔴 Skipping leak check — egress info unavailable (trigger: \(trigger.rawValue, privacy: .public))")
             return
         }
-        guard let tunnelInterfaceSnapshot = await tunnelInterface() else {
+        let tunnelInterfaceSnapshot: NWInterface
+        switch await tunnelInterface() {
+        case .resolved(let interface):
+            tunnelInterfaceSnapshot = interface
+        case .unexpectedInterface:
+            Logger.networkProtectionIPLeakCheck.log("🔴 Leak check resolved an unexpected (non-tunnel) interface — recording UNKNOWN (trigger: \(trigger.rawValue, privacy: .public))")
+            let data = VPNIPLeakCheckWideEventData(trigger: trigger)
+            data.egressServerName = egressInfoSnapshot.name
+            wideEvent.startFlow(data)
+            data.statusReason = LeakCheckStatusReason.unexpectedInterface
+            wideEvent.completeFlow(data, status: .unknown(reason: LeakCheckStatusReason.unexpectedInterface), onComplete: { _, _ in })
+            return
+        case .unavailable:
             Logger.networkProtectionIPLeakCheck.log("🔴 Skipping leak check — tunnel interface unavailable (trigger: \(trigger.rawValue, privacy: .public))")
             return
         }

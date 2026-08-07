@@ -33,6 +33,7 @@ final class TabManagerTests: XCTestCase {
 
     override func tearDown() {
         UserDefaults.app.removeObject(forKey: FireModeCapability.isFireModeEnabledKey)
+        UserDefaults.app.removeObject(forKey: UserDefaultsWrapper<Bool>.Key.faviconTabsCacheNeedsCleanup.rawValue)
         super.tearDown()
     }
 
@@ -126,7 +127,22 @@ final class TabManagerTests: XCTestCase {
         XCTAssertEqual(mockHistoryManager.removeTabHistoryCalls.count, 1)
         XCTAssertEqual(Set(mockHistoryManager.removeTabHistoryCalls.first ?? []), Set(tabIDs))
     }
-    
+
+    func testWhenTabRemoved_ThenTabsFaviconCacheMarkedForCleanup() throws {
+        let tabsModel = TabsModel(desktop: false)
+        let tabToRemove = Tab(link: Link(title: "example", url: URL(string: "https://example.com")!))
+        tabsModel.insert(tab: tabToRemove, placement: .atEnd, selectNewTab: true)
+
+        let manager = try makeManager(tabsModel)
+
+        manager.tabsCacheNeedsCleanup = false
+
+        manager.remove(tab: tabToRemove)
+
+        XCTAssertTrue(manager.tabsCacheNeedsCleanup,
+                      "Removing a tab should flag the tabs favicon cache for cleanup so orphaned favicons are swept on next launch")
+    }
+
     func testWhenViewModelRequested_ThenReturnsViewModelForTab() throws {
         let tabsModel = TabsModel(desktop: false)
         let tab = try XCTUnwrap(tabsModel.get(tabAt: 0))
@@ -299,9 +315,7 @@ final class TabManagerTests: XCTestCase {
         let tabsModel = TabsModel(desktop: false)
         tabsModel.insert(tab: Tab(link: Link(title: "a", url: URL(string: "https://a.com")!)),
                          placement: .atEnd, selectNewTab: false)
-        let flagger = MockFeatureFlagger()
-        flagger.enabledFeatureFlags = [.tabsSaveOptimization]
-        let manager = try makeManager(tabsModel, featureFlagger: flagger, normalStore: countingStore)
+        let manager = try makeManager(tabsModel, normalStore: countingStore)
 
         for _ in 0..<10 {
             manager.save()
@@ -320,9 +334,7 @@ final class TabManagerTests: XCTestCase {
         let tabsModel = TabsModel(desktop: false)
         tabsModel.insert(tab: Tab(link: Link(title: "a", url: URL(string: "https://a.com")!)),
                          placement: .atEnd, selectNewTab: false)
-        let flagger = MockFeatureFlagger()
-        flagger.enabledFeatureFlags = [.tabsSaveOptimization]
-        let manager = try makeManager(tabsModel, featureFlagger: flagger, normalStore: countingStore)
+        let manager = try makeManager(tabsModel, normalStore: countingStore)
 
         // Drive save() faster than the debounce window for ~1.5 s.
         let start = Date()
@@ -352,9 +364,7 @@ final class TabManagerTests: XCTestCase {
         let tabsModel = TabsModel(desktop: false)
         tabsModel.insert(tab: Tab(link: Link(title: "a", url: URL(string: "https://a.com")!)),
                          placement: .atEnd, selectNewTab: false)
-        let flagger = MockFeatureFlagger()
-        flagger.enabledFeatureFlags = [.tabsSaveOptimization]
-        let manager = try makeManager(tabsModel, featureFlagger: flagger, normalStore: countingStore)
+        let manager = try makeManager(tabsModel, normalStore: countingStore)
 
         manager.save()
         // No wait. flushPendingSave should drain synchronously.
@@ -364,13 +374,33 @@ final class TabManagerTests: XCTestCase {
                                     "flushPendingSave should write synchronously without waiting for debounce")
     }
 
+    func testWhenMemoryWarningIsReceivedThenTabTerminationTelemetryIsNotified() throws {
+        let telemetry = MockTabTerminationTelemetry()
+        let manager = try makeManager(TabsModel(desktop: false), tabTerminationTelemetry: telemetry)
+
+        NotificationCenter.default.post(name: UIApplication.didReceiveMemoryWarningNotification, object: nil)
+
+        XCTAssertEqual(telemetry.memoryWarningCallCount, 1)
+        withExtendedLifetime(manager) {}
+    }
+
+    func testWhenWebContentProcessTerminatesThenTabTerminationTelemetryIsNotified() throws {
+        let telemetry = MockTabTerminationTelemetry()
+        let manager = try makeManager(TabsModel(desktop: false), tabTerminationTelemetry: telemetry)
+
+        manager.webContentProcessDidTerminate()
+
+        XCTAssertEqual(telemetry.webContentProcessTerminationActiveTabCounts, [0])
+    }
+
     func makeManager(_ model: TabsModel,
                      fireModel: TabsModel? = nil,
                      previewsSource: TabPreviewsSource = MockTabPreviewsSource(),
                      historyManager: MockHistoryManager = MockHistoryManager(),
                      featureFlagger: MockFeatureFlagger = MockFeatureFlagger(),
                      launchSourceManager: LaunchSourceManaging = MockLaunchSourceManager(),
-                     normalStore: ThrowingKeyValueStoring? = nil) throws -> TabManager {
+                     normalStore: ThrowingKeyValueStoring? = nil,
+                     tabTerminationTelemetry: (any TabTerminationTelemetry)? = nil) throws -> TabManager {
         FireModeCapability.resolve(using: featureFlagger)
         let normalStore = try normalStore ?? MockKeyValueFileStore(throwOnInit: nil)
         let tabsPersistence = TabsModelPersistence(normalStore: normalStore,
@@ -403,14 +433,15 @@ final class TabManagerTests: XCTestCase {
                           maliciousSiteProtectionPreferencesManager: MockMaliciousSiteProtectionPreferencesManager(),
                           featureDiscovery: MockFeatureDiscovery(),
                           keyValueStore: MockKeyValueFileStore(),
-                          daxDialogsManager: DummyDaxDialogsManager(),
+                          daxDialogsManager: MockDaxDialogsManager(),
                           aiChatSettings: MockAIChatSettingsProvider(),
                           productSurfaceTelemetry: MockProductSurfaceTelemetry(),
                           privacyStats: MockPrivacyStats(),
                           voiceSearchHelper: MockVoiceSearchHelper(),
                           launchSourceManager: launchSourceManager,
                           darkReaderFeatureSettings: MockDarkReaderFeatureSettings(),
-                          adBlockingAvailability: StubAdBlockingAvailability())
+                          adBlockingAvailability: StubAdBlockingAvailability(),
+                          tabTerminationTelemetry: tabTerminationTelemetry)
     }
 
 }
@@ -438,5 +469,19 @@ private final class CountingThrowingKeyValueStore: ThrowingKeyValueStoring, @unc
         lock.lock()
         storedValue = nil
         lock.unlock()
+    }
+}
+
+@MainActor
+private final class MockTabTerminationTelemetry: TabTerminationTelemetry {
+    private(set) var memoryWarningCallCount = 0
+    private(set) var webContentProcessTerminationActiveTabCounts: [Int] = []
+
+    func webContentProcessDidTerminate(activeTabCount: Int) {
+        webContentProcessTerminationActiveTabCounts.append(activeTabCount)
+    }
+
+    func didReceiveMemoryWarning() {
+        memoryWarningCallCount += 1
     }
 }

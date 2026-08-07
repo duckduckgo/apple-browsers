@@ -48,20 +48,6 @@
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
     },
-    "m_aichat_contextual_page_context_placeholder_shown": {
-        "description": "Fired when the placeholder context chip is shown to the user (auto-context setting disabled)",
-        "owners": ["aataraxiaa"],
-        "triggers": ["other"],
-        "suffixes": ["first_daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion"]
-    },
-    "m_aichat_contextual_page_context_placeholder_tapped": {
-        "description": "Fired when the user taps the placeholder chip to attach page content",
-        "owners": ["aataraxiaa"],
-        "triggers": ["other"],
-        "suffixes": ["first_daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion"]
-    },
     "m_aichat_contextual_page_context_auto_attached": {
         "description": "Fired when page context is automatically attached to an AI Chat prompt (auto-context setting enabled)",
         "owners": ["aataraxiaa"],
@@ -160,6 +146,13 @@
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion", "is_enabled"]
     },
+    "m_aichat_contextual_quick_action_ask_about_page_shown": {
+        "description": "Fired when the Ask about page quick action chip is shown to the user in the contextual sheet",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
     "m_aichat_contextual_quick_action_ask_about_page_selected": {
         "description": "Fired when the user selects the Ask about page quick action chip in the contextual sheet",
         "owners": ["SabrinaTardio"],
@@ -185,6 +178,101 @@
         "description": "Fired when the user taps View all chats in the recent chats popup to open duck.ai in a new tab",
         "owners": ["SabrinaTardio"],
         "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "aichat_contextual_suggestion_selected": {
+        "description": "Fired when the user taps a suggested-prompt chip on the contextual sheet start surface. Under contextualSuggestedPrompts this also represents the Ask about page quick action, which additionally fires the legacy m_aichat_contextual_quick_action_ask_about_page_selected pixel.",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "suggestionId",
+                "description": "Catalog key of the selected suggestion (e.g. summarize-page, translate-page, ask-about-page).",
+                "type": "string"
+            },
+            {
+                "key": "pageType",
+                "description": "Coarse page-type bucket computed natively from page-type signals. Never a URL, domain or page content.",
+                "type": "string",
+                "enum": [
+                    "recipe",
+                    "product",
+                    "article",
+                    "video",
+                    "job",
+                    "book",
+                    "event",
+                    "place",
+                    "forum",
+                    "code",
+                    "course",
+                    "review",
+                    "person",
+                    "howto",
+                    "faq",
+                    "none"
+                ]
+            }
+        ]
+    },
+    "aichat_contextual_suggestions_viewed": {
+        "description": "Fired when the contextual sheet start surface renders suggested-prompt chips to the user; every render (sheet presentation or navigation re-resolve) counts as an impression",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "isSmart",
+                "description": "Whether the shown suggestions were smart (page-tailored) rather than generic defaults.",
+                "type": "boolean"
+            },
+            {
+                "key": "pageType",
+                "description": "Coarse page-type bucket computed natively from page-type signals. Never a URL, domain or page content.",
+                "type": "string",
+                "enum": [
+                    "recipe",
+                    "product",
+                    "article",
+                    "video",
+                    "job",
+                    "book",
+                    "event",
+                    "place",
+                    "forum",
+                    "code",
+                    "course",
+                    "review",
+                    "person",
+                    "howto",
+                    "faq",
+                    "none"
+                ]
+            }
+        ]
+    },
+    "aichat_contextual_header_title_tapped": {
+        "description": "Fired when the user taps the Duck.ai title in the contextual sheet header to expand into full AI Chat",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "debug_aichat_contextual_suggestions_catalog_load_failed": {
+        "description": "Fired when the bundled PageSuggestionsCatalog.json is missing or fails to decode and the suggested-prompts matcher falls back to the single Summarize this page floor",
+        "owners": ["pikorddg"],
+        "triggers": ["exception"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "debug_aichat_contextual_suggestions_context_collection_timed_out": {
+        "description": "Fired when page-type signal collection times out and contextual suggested prompts fall back to generic defaults",
+        "owners": ["pikorddg"],
+        "triggers": ["exception"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
     }

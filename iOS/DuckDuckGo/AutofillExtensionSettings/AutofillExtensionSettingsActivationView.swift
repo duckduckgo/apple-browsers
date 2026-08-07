@@ -19,6 +19,7 @@
 
 import SwiftUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import DuckUI
 
 struct AutofillExtensionSettingsActivationView: View {
@@ -64,9 +65,10 @@ struct AutofillExtensionSettingsActivationView: View {
 
         var body: some View {
             LottieView(
-                lottieFile: "confirmation-prompt-128",
+                lottieFile: AppRebrand.isAppRebranded() ? "confirmation-prompt-128" :  "confirmation-prompt-128-legacy",
                 loopMode: .mode(.repeat(1.0)),
-                isAnimating: $isAnimating
+                isAnimating: $isAnimating,
+                contentSize: CGSize(width: 128, height: 128)
             )
             .frame(width: 128, height: 128)
             .padding(.top, 64)

@@ -22,7 +22,6 @@ import Bookmarks
 import Persistence
 import CoreData
 @testable import Core
-@testable import DuckDuckGo
 
 func tempDBDir() -> URL {
     FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)

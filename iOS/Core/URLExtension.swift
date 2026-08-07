@@ -38,7 +38,8 @@ extension URL {
     }
 
     public func isCustomURLScheme() -> Bool {
-        return scheme != nil && !absoluteString.hasPrefix(URLProtocol.http.scheme) && !absoluteString.hasPrefix(URLProtocol.https.scheme)
+        guard let navigationalScheme else { return false }
+        return !NavigationalScheme.hypertextSchemes.contains(navigationalScheme)
     }
 
     // MARK: static
@@ -46,14 +47,12 @@ extension URL {
     public static func webUrl(from text: String) -> URL? {
         guard var url = URL(string: text) else { return nil }
 
-        switch url.scheme {
-        case URLProtocol.http.rawValue,
-            URLProtocol.https.rawValue,
-            NavigationalScheme.duck.rawValue: // duck:// internal scheme
+        switch url.navigationalScheme {
+        case .http, .https, .duck:
             break
         case .none:
             // assume http by default
-            guard let urlWithScheme = URL(string: URLProtocol.http.scheme + text), let host = urlWithScheme.host else {
+            guard let urlWithScheme = URL(string: NavigationalScheme.http.separated() + text), let host = urlWithScheme.host else {
                 return nil
             }
             // only allow 2nd+ level domains or "localhost" without scheme

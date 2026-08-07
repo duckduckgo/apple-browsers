@@ -66,10 +66,6 @@ public final class DBPUIViewModel {
         self.contentScopeProperties = contentScopeProperties
 
         self.editablePartialProfile = .init()
-        let profile = try? databaseDelegate.getUserProfile()
-        if let profile = profile {
-            self.editablePartialProfile = .init(from: profile)
-        }
     }
 
     @MainActor func setupCommunicationLayer() -> WKWebViewConfiguration {
@@ -127,13 +123,16 @@ extension DBPUIViewModel: DBPUICommunicationDelegate {
     
     public func getUserProfile() -> DBPUIUserProfile? {
         do {
-            let profile = try databaseDelegate?.getUserProfile()
-
-            guard let profile = profile else { return nil }
+            guard let profile = try databaseDelegate?.getUserProfile() else { return nil }
             return DBPUIUserProfile(from: profile)
         } catch {
             return nil
         }
+    }
+
+    func updatePartialProfile() {
+        guard let profile = try? databaseDelegate?.getUserProfile() else { return }
+        editablePartialProfile = .init(from: profile)
     }
     
     public func deleteProfileData() throws {

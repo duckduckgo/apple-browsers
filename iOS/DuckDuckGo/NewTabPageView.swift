@@ -86,11 +86,29 @@ struct NewTabPageView: View {
 struct NewTabPageLayoutConfiguration {
     let expandsEscapeHatchToAvailableWidth: Bool
     let escapeHatchHorizontalPadding: CGFloat
+    /// When true, the per-section top nudge is folded into the content's top inset, so the favorites
+    /// grid sits at the same top inset as the escape hatch. The unified toggle input needs this so the
+    /// focused embedded NTP (favorites only) and the unfocused NTP (hatch + favorites) compose alike.
+    let favoritesShareHatchTopInset: Bool
+    /// Fixed top inset for the content (nil = the width-based default). The unified toggle input pins it
+    /// to the focused hatch's distance from the bar so the NTP hatch lands exactly on the focused hatch.
+    let contentTopInsetOverride: CGFloat?
+    /// Spacing between sections (hatch → favorites). The unified toggle input matches the focused chrome's
+    /// reserved hatch-to-content spacing so the NTP favorites land exactly on the focused favorites
+    /// (= chrome top inset 6 + bottom inset 16, plus ~4 for the pill-vs-hatch-height difference).
+    let interSectionSpacing: CGFloat
 
     static let standard = NewTabPageLayoutConfiguration(expandsEscapeHatchToAvailableWidth: false,
-                                                        escapeHatchHorizontalPadding: Metrics.updatedNonGridSectionHorizontalPadding)
+                                                        escapeHatchHorizontalPadding: Metrics.updatedNonGridSectionHorizontalPadding,
+                                                        favoritesShareHatchTopInset: false,
+                                                        contentTopInsetOverride: nil,
+                                                        interSectionSpacing: Metrics.sectionSpacing)
     static let unifiedToggleInput = NewTabPageLayoutConfiguration(expandsEscapeHatchToAvailableWidth: true,
-                                                                  escapeHatchHorizontalPadding: 0)
+                                                                  // Aligns the resting hatch with the focused `FocusedChromeView` hatch so it doesn't resize on dismiss.
+                                                                  escapeHatchHorizontalPadding: Metrics.updatedNonGridSectionHorizontalPadding,
+                                                                  favoritesShareHatchTopInset: true,
+                                                                  contentTopInsetOverride: 10,
+                                                                  interSectionSpacing: 26)
 }
 
 private extension NewTabPageView {
@@ -99,11 +117,11 @@ private extension NewTabPageView {
     private var sectionsView: some View {
         GeometryReader { proxy in
             ScrollView {
-                LazyVStack(spacing: Metrics.sectionSpacing) {
+                LazyVStack(spacing: layoutConfiguration.interSectionSpacing) {
                     escapeHatchSectionView
 
                     messagesSectionView
-                        .padding(.top, Metrics.nonGridSectionTopPadding)
+                        .padding(.top, sectionTopNudge)
                         .padding(.horizontal, Metrics.updatedNonGridSectionHorizontalPadding)
 
                     if let title = viewModel.sectionTitle, !title.isEmpty {
@@ -117,8 +135,10 @@ private extension NewTabPageView {
 
                     FavoritesView(model: favoritesViewModel)
                         .fixedSize(horizontal: false, vertical: true)
+                        .opacity(viewModel.isFavoritesHidden ? 0 : 1)
                 }
-                .padding(.vertical, sectionsViewPadding(in: proxy))
+                .padding(.top, contentTopInset(in: proxy))
+                .padding(.bottom, sectionsViewPadding(in: proxy))
                 .padding(.horizontal, sectionsViewHorizontalPadding(in: proxy))
                 .background(Color(designSystemColor: .background))
             }
@@ -155,15 +175,16 @@ private extension NewTabPageView {
                     .allowsHitTesting(false)
 
                 ScrollView {
-                    VStack(spacing: Metrics.sectionSpacing) {
+                    VStack(spacing: layoutConfiguration.interSectionSpacing) {
                         escapeHatchSectionView
 
                         messagesSectionView
-                            .padding(.top, Metrics.nonGridSectionTopPadding)
+                            .padding(.top, sectionTopNudge)
                             .padding(.horizontal, Metrics.updatedNonGridSectionHorizontalPadding)
                     }
                     .frame(maxWidth: .infinity, alignment: .top)
-                    .padding(.vertical, sectionsViewPadding(in: proxy))
+                    .padding(.top, contentTopInset(in: proxy))
+                    .padding(.bottom, sectionsViewPadding(in: proxy))
                     .padding(.horizontal, sectionsViewHorizontalPadding(in: proxy))
                 }
                 .if(dismissKeyboardOnScroll, transform: {
@@ -178,7 +199,7 @@ private extension NewTabPageView {
 
     private var shouldShowLogoInEmptyState: Bool {
         guard !viewModel.isLogoHidden else { return false }
-        guard messagesModel.homeMessageViewModels.isEmpty && !messagesModel.isFirePromotionVisible else { return false }
+        guard messagesModel.homeMessageViewModels.isEmpty else { return false }
         if viewModel.escapeHatch != nil && isLandscapeOrientation { return false }
         if viewModel.escapeHatch != nil && isFocussedState { return false }
         return true
@@ -201,32 +222,12 @@ private extension NewTabPageView {
         if let escapeHatch = viewModel.escapeHatch {
             EscapeHatchView(model: escapeHatch)
                 .frame(maxWidth: escapeHatchMaxWidth)
-                .padding(.top, Metrics.nonGridSectionTopPadding)
+                .padding(.top, sectionTopNudge)
                 .padding(.horizontal, layoutConfiguration.escapeHatchHorizontalPadding)
         }
     }
 
-    @ViewBuilder
     private var messagesSectionView: some View {
-        if messagesModel.isFirePromotionVisible {
-            FireModePromotionCardView(
-                onTryFireTabs: {
-                    Task { await messagesModel.firePromotionTryFireTabsTapped() }
-                },
-                onDismiss: {
-                    Task { await messagesModel.firePromotionDismissed() }
-                },
-                onClose: {
-                    Task { await messagesModel.firePromotionClosed() }
-                },
-                onDidAppear: {
-                    messagesModel.firePromotionDidAppear()
-                }
-            )
-            .frame(maxWidth: horizontalSizeClass == .regular ? Metrics.messageMaximumWidthPad : Metrics.messageMaximumWidth)
-            .transition(.scale.combined(with: .opacity))
-        }
-
         ForEach(messagesModel.homeMessageViewModels, id: \.messageId) { messageModel in
             HomeMessageView(viewModel: messageModel)
                 .frame(maxWidth: horizontalSizeClass == .regular ? Metrics.messageMaximumWidthPad : Metrics.messageMaximumWidth)
@@ -244,6 +245,22 @@ private extension NewTabPageView {
 
     private func sectionsViewPadding(in geometry: GeometryProxy) -> CGFloat {
         geometry.frame(in: .local).width > Metrics.verySmallScreenWidth ? Metrics.regularPadding : Metrics.smallPadding
+    }
+
+    /// The top nudge applied to each non-grid section, unless folded into the content inset.
+    private var sectionTopNudge: CGFloat {
+        layoutConfiguration.favoritesShareHatchTopInset ? 0 : Metrics.nonGridSectionTopPadding
+    }
+
+    /// Top inset above the content stack. When the section nudge is folded in, the first section —
+    /// hatch or favorites — sits at the nudged inset, so favorites align with the hatch. A config can pin
+    /// it to a fixed value so the NTP content lands exactly on the focused surface's content.
+    private func contentTopInset(in geometry: GeometryProxy) -> CGFloat {
+        if let override = layoutConfiguration.contentTopInsetOverride {
+            return override
+        }
+        let folded = layoutConfiguration.favoritesShareHatchTopInset ? Metrics.nonGridSectionTopPadding : 0
+        return sectionsViewPadding(in: geometry) + folded
     }
 }
 
@@ -288,7 +305,8 @@ private struct Metrics {
                 homeMessages: []
             ),
             messageActionHandler: RemoteMessagingActionHandler(),
-            imageLoader: PreviewImageLoader()
+            imageLoader: PreviewImageLoader(),
+            promoCoordinator: PreviewNewTabPagePromoCoordinator()
         ),
         favoritesViewModel: FavoritesPreviewModel()
     )
@@ -313,7 +331,8 @@ private struct Metrics {
                 ]
             ),
             messageActionHandler: RemoteMessagingActionHandler(),
-            imageLoader: PreviewImageLoader()
+            imageLoader: PreviewImageLoader(),
+            promoCoordinator: PreviewNewTabPagePromoCoordinator()
         ),
         favoritesViewModel: FavoritesPreviewModel()
     )
@@ -327,7 +346,8 @@ private struct Metrics {
                 homeMessages: []
             ),
             messageActionHandler: RemoteMessagingActionHandler(),
-            imageLoader: PreviewImageLoader()
+            imageLoader: PreviewImageLoader(),
+            promoCoordinator: PreviewNewTabPagePromoCoordinator()
         ),
         favoritesViewModel: FavoritesPreviewModel(favorites: [])
     )
@@ -341,10 +361,32 @@ private struct Metrics {
                 homeMessages: []
             ),
             messageActionHandler: RemoteMessagingActionHandler(),
-            imageLoader: PreviewImageLoader()
+            imageLoader: PreviewImageLoader(),
+            promoCoordinator: PreviewNewTabPagePromoCoordinator()
         ),
         favoritesViewModel: FavoritesPreviewModel()
     )
+}
+
+/// An inert, always-disabled promo coordinator for SwiftUI previews.
+@MainActor
+private final class PreviewNewTabPagePromoCoordinator: NewTabPagePromoCoordinating {
+    let promoQueueFeatureState = PromoQueueFeatureState.disabled
+
+    func admitVisiblePromo(_ identity: VisiblePromoIdentity) -> VisiblePromoAdmissionResult {
+        .featureDisabled
+    }
+
+    func releaseVisiblePromoLease(_ lease: PromoQueueVisiblePromoLease) {
+        lease.release()
+    }
+
+    func registerVisiblePromoRetry(
+        for surfaceID: UUID,
+        target: NewTabPagePromoRetrying
+    ) -> NewTabPagePromoRetryRegistration {
+        NewTabPagePromoRetryRegistration()
+    }
 }
 
 private final class PreviewMessagesConfiguration: HomePageMessagesConfiguration {

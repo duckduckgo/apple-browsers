@@ -20,7 +20,7 @@ let specificDir = tmpDirURL.appendingPathComponent("sparkle-updates")
 let appcastFilePath = specificDir.appendingPathComponent("appcast2.xml")
 let backupAppcastFilePath = "\(tmpDir)/appcast.xml.backup"
 let backupFileURL = URL(fileURLWithPath: backupAppcastFilePath)
-let lastCatalinaBuildVersion = "1.55.0"
+let lastBigSurBuildVersion = "736" // 1.193.1 – last build shipped with minimumSystemVersion 11.4 (Big Sur)
 
 // MARK: - Arguments
 
@@ -874,8 +874,8 @@ func runGenerateAppcast(with versionNumber: String, channel: String? = nil, roll
     print("✅ generate_appcast command executed successfully.")
 
     // Verify presense of old builds
-    if !verifyAppcastContainsBuild(lastCatalinaBuildVersion, in: appcastFilePath) {
-        print("❌ Error: Appcast does not contain the build (\(lastCatalinaBuildVersion)).")
+    if !verifyAppcastContainsBuild(lastBigSurBuildVersion, in: appcastFilePath) {
+        print("❌ Error: Appcast does not contain the build (\(lastBigSurBuildVersion)).")
         exit(1)
     }
 

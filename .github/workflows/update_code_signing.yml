@@ -26,7 +26,7 @@ jobs:
     steps:
 
       - name: Register SSH keys for access to certificates
-        uses: webfactory/ssh-agent@v0.9.1
+        uses: webfactory/ssh-agent@v0.10.0
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
 

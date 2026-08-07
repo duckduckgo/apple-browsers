@@ -22,6 +22,7 @@ public protocol SubscriptionSurveyDataProviding {
     var subscriptionStatus: String? { get }
     var subscriptionPlatform: String? { get }
     var subscriptionBilling: String? { get }
+    var subscriptionTier: String? { get }
     var subscriptionStartDate: Date? { get }
     var subscriptionExpiryDate: Date? { get }
     var subscriptionTrialActive: Bool? { get }

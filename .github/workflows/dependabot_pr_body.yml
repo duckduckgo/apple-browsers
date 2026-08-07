@@ -10,7 +10,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Prepend CI instructions to PR body
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const prefix = `> **Dependabot SSH access Workaround:**

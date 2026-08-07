@@ -21,6 +21,7 @@ import UIKit
 import AIChat
 import Core
 import PrivacyConfig
+import FeatureFlags_iOS
 
 protocol UserInterfaceIdiomProviding {
     var userInterfaceIdiom: UIUserInterfaceIdiom { get }
@@ -64,7 +65,6 @@ struct AIChatAddressBarExperience: AIChatAddressBarExperienceProviding {
 
     var isIPadAIToggleExperienceEnabled: Bool {
         userInterfaceIdiomProvider.userInterfaceIdiom == .pad
-            && featureFlagger.isFeatureOn(.iPadAIToggle)
     }
 
     private var isIPadChromeShortcutInPlay: Bool {

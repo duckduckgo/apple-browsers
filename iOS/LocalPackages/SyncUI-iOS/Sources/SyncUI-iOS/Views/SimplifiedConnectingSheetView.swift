@@ -24,14 +24,23 @@ import DesignResourcesKitIcons
 
 public struct SimplifiedConnectingSheetView: View {
 
-    public init() {}
+    public enum Context {
+        case syncingDevices
+        case recoveringData
+    }
+
+    private let context: Context
+
+    public init(context: Context = .syncingDevices) {
+        self.context = context
+    }
 
     public var body: some View {
         VStack(spacing: 24) {
             Image(rebrandable: "Sync-128")
                 .padding(.top, 40)
 
-            Text(UserText.simplifiedConnectingTitle)
+            Text(title)
                 .daxTitle3()
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
@@ -50,5 +59,14 @@ public struct SimplifiedConnectingSheetView: View {
         }
         .frame(maxWidth: .infinity)
         .background(Color(designSystemColor: .backgroundSheets).ignoresSafeArea())
+    }
+
+    private var title: String {
+        switch context {
+        case .syncingDevices:
+            return UserText.simplifiedConnectingTitle
+        case .recoveringData:
+            return UserText.preparingToSyncTitle
+        }
     }
 }

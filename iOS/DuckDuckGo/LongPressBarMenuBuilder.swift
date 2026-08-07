@@ -52,7 +52,7 @@ final class LongPressBarMenuBuilder {
         var sections = [UIMenuElement]()
 
         if let url = context.currentURL, !context.isAITab {
-            let copyTitle = copyTitle(for: url, isPrivacyProtectionEnabled: context.isPrivacyProtectionEnabled)
+            let copyTitle = UserText.copyLinkTitle(for: url, isPrivacyProtectionEnabled: context.isPrivacyProtectionEnabled)
             sections.append(UIMenu(title: "", options: .displayInline, children: [
                 UIAction(title: UserText.actionShare, image: Glyphs.shareApple) { [weak self] _ in
                     self?.dailyPixelFiring.fireDailyAndCount(.longPressBarActionShare, error: nil, withAdditionalParameters: [:])
@@ -88,13 +88,6 @@ final class LongPressBarMenuBuilder {
 
     func fireOmniBarMenuOpenPixel() {
         dailyPixelFiring.fireDailyAndCount(.longPressBarOpen, error: nil, withAdditionalParameters: [:])
-    }
-
-    private func copyTitle(for url: URL, isPrivacyProtectionEnabled: Bool) -> String {
-        if !url.isDuckDuckGo, isPrivacyProtectionEnabled {
-            return UserText.actionCopyCleanLink
-        }
-        return UserText.actionCopyLink
     }
 
     private func isSupportedNonEditingOmniBarStateForLongPressMenu(_ state: OmniBarState) -> Bool {

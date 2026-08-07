@@ -15,6 +15,7 @@ let package = Package(
     dependencies: [
         .package(path: "../PreferencesUI-macOS"),
         .package(path: "../SwiftUIExtensions"),
+        .package(path: "../../../SharedPackages/Infrastructure/DesignResourcesKit"),
     ],
     targets: [
         .target(
@@ -22,6 +23,7 @@ let package = Package(
             dependencies: [
                 .product(name: "PreferencesUI-macOS", package: "PreferencesUI-macOS"),
                 .product(name: "SwiftUIExtensions", package: "SwiftUIExtensions"),
+                .product(name: "DesignResourcesKit", package: "DesignResourcesKit"),
             ],
             resources: [
                 .process("Resources")

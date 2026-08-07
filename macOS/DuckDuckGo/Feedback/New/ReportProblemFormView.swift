@@ -51,6 +51,8 @@ final class ReportProblemFormViewController: NSHostingController<ReportProblemFo
 struct ReportProblemFormFlowView: View {
     @StateObject private var viewModel: ReportProblemFormViewModel
 
+    let isAppRebranded: Bool
+
     var onClose: () -> Void
     var onSeeWhatsNew: () -> Void
     var onResize: (CGFloat, CGFloat) -> Void
@@ -60,6 +62,7 @@ struct ReportProblemFormFlowView: View {
         onReportBrokenSite: (() -> Void)?,
         preselectedCategory: ProblemCategory? = nil,
         preselectedSubCategory: SubCategory? = nil,
+        isAppRebranded: Bool,
         onClose: @escaping () -> Void,
         onSeeWhatsNew: @escaping () -> Void,
         onResize: @escaping (CGFloat, CGFloat) -> Void
@@ -70,6 +73,7 @@ struct ReportProblemFormFlowView: View {
             preselectedCategory: preselectedCategory,
             preselectedSubCategory: preselectedSubCategory
         ))
+        self.isAppRebranded = isAppRebranded
         self.onClose = onClose
         self.onSeeWhatsNew = onSeeWhatsNew
         self.onResize = onResize
@@ -112,6 +116,7 @@ struct ReportProblemFormFlowView: View {
             } else if viewModel.isShowingCategorySelection {
                 ProblemCategoriesView(
                     viewModel: viewModel,
+                    isAppRebranded: isAppRebranded,
                     onClose: onClose
                 )
                 .onAppear {
@@ -131,6 +136,7 @@ struct ReportProblemFormFlowView: View {
 
 struct ProblemCategoriesView: View {
     @ObservedObject var viewModel: ReportProblemFormViewModel
+    let isAppRebranded: Bool
     var onClose: () -> Void
 
     var body: some View {
@@ -145,7 +151,7 @@ struct ProblemCategoriesView: View {
 
     private func header() -> some View {
         HStack(spacing: 12) {
-            Image(.feedbackAsk)
+            Image(isAppRebranded ? .feedbackNegative56 : .feedbackAsk)
 
             VStack(alignment: .leading, spacing: 8) {
                 Text(UserText.reportBrowserProblem)
@@ -197,6 +203,7 @@ struct ProblemCategoriesView: View {
         VStack(spacing: 0) {
             ForEach(Array(viewModel.availableCategories.enumerated()), id: \.element.id) { _, category in
                 ProblemCategoryView(
+                    isAppRebranded: isAppRebranded,
                     category: category,
                     shouldShowDivider: shouldShowDivider(for: category),
                     isTopCategory: category.id == viewModel.availableCategories.first?.id,
@@ -214,7 +221,7 @@ struct ProblemCategoriesView: View {
             }
         }
         .background(
-            RoundedRectangle(cornerRadius: 6)
+            RoundedRectangle(cornerRadius: isAppRebranded ? 16 : 6)
                 .stroke(Color.divider, lineWidth: 1)
         )
         .padding([.leading, .trailing], AppVersion.isLiquidGlassSupported ? 20 : 24)
@@ -223,10 +230,10 @@ struct ProblemCategoriesView: View {
 
     private func footer() -> some View {
         VStack(alignment: .leading, spacing: 16) {
-            Divider()
-                .background(Color.divider)
-                .frame(maxWidth: .infinity)
+            Rectangle()
+                .fill(Color(.separatorColor))
                 .frame(height: 1)
+                .frame(maxWidth: .infinity)
 
             Text(UserText.feedbackDisclaimer)
                 .caption2()
@@ -249,6 +256,7 @@ struct ProblemCategoriesView: View {
 // MARK: - Problem Category Row View
 
 struct ProblemCategoryView: View {
+    let isAppRebranded: Bool
     let category: ProblemCategory
     let shouldShowDivider: Bool
     let isTopCategory: Bool
@@ -276,20 +284,22 @@ struct ProblemCategoryView: View {
         .buttonStyle(.plain)
         .background(isHovered ? Color.controlsFillPrimary : Color.clear)
         .if(isTopCategory) { view in
-            view.cornerRadius(6, corners: [.topLeft, .topRight])
+            view.cornerRadius(isAppRebranded ? 16 : 6, corners: [.topLeft, .topRight])
         }
         .if(isLastCategory) { view in
-            view.cornerRadius(6, corners: [.bottomLeft, .bottomRight])
+            view.cornerRadius(isAppRebranded ? 16 : 6, corners: [.bottomLeft, .bottomRight])
         }
         .onHover { hovering in
             isHovered = hovering
             onHoverChanged(category.id, hovering)
         }
 
-        Rectangle()
-            .stroke(shouldShowDivider ? Color.divider : Color.clear, lineWidth: 1)
-            .frame(height: 1)
-            .padding(.horizontal, 8)
+        if !isLastCategory {
+            Rectangle()
+                .fill(shouldShowDivider ? Color.divider : Color.clear)
+                .frame(height: 1)
+                .padding(.horizontal, 8)
+        }
     }
 }
 
@@ -423,10 +433,10 @@ struct ProblemDetailFormView: View {
 
     private func footer() -> some View {
         VStack(alignment: .leading, spacing: 16) {
-            Divider()
-                .background(Color.divider)
-                .frame(maxWidth: .infinity)
+            Rectangle()
+                .fill(Color(.separatorColor))
                 .frame(height: 1)
+                .frame(maxWidth: .infinity)
 
             Text(UserText.feedbackDisclaimer)
                 .caption2()

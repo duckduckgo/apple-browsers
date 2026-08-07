@@ -55,6 +55,7 @@ public enum OnboardingPixelParameter {
     public enum Flow: String {
         case `default` = "default"
         case duckAI = "duckai"
+        case tailoredByDownloadReason = "tailored_download_reason"
     }
 
     /// Pixel parameter for the variant of the onboarding flow the user enters after a branching step during onboarding.
@@ -157,11 +158,12 @@ public enum OnboardingSharedPixelEvent: PixelKitEvent, Equatable {
     case welcome(EngagementEvent)
     case skipOnboarding(EngagementEvent) // iOS only
     case setDefault(EngagementEvent)
-    case aiComparison(EngagementEvent) // iOS only (AI Protections Activated!)
+    case aiIntro(EngagementEvent) // iOS only (AI Protections Activated!)
     case addToDock(EngagementEvent)
     case appIconColor(AppIconColorEvent) // iOS only
     case addressBarPosition(AddressBarPositionEvent) // iOS only
     case importData(EngagementEvent) // macOS only
+    case chromeExtensionInstall(EngagementEvent) // macOS only
     case duckPlayer(EngagementEvent) // macOS only
     case customization(CustomizeEvent) // macOS only
     case searchExperience(SearchExperienceEvent)
@@ -241,6 +243,7 @@ public enum OnboardingSharedPixelEvent: PixelKitEvent, Equatable {
             case blue
             case purple
             case black
+            case white
         }
 
         case shown
@@ -290,11 +293,12 @@ private extension OnboardingSharedPixelEvent {
         case .welcome: return "welcome"
         case .skipOnboarding: return "skip-onboarding"
         case .setDefault: return "set-default"
-        case .aiComparison: return "ai-intro"
+        case .aiIntro: return "ai-intro"
         case .addToDock: return "add-to-dock"
         case .appIconColor: return "app-icon-color"
         case .addressBarPosition: return "address-bar-position"
         case .importData: return "import-data"
+        case .chromeExtensionInstall: return "chrome-extension-install"
         case .duckPlayer: return "duck-player"
         case .customization: return "customization"
         case .searchExperience: return "search-experience"
@@ -320,9 +324,10 @@ private extension OnboardingSharedPixelEvent {
         switch self {
         case .welcome(let event),
                 .setDefault(let event),
-                .aiComparison(let event),
+                .aiIntro(let event),
                 .addToDock(let event),
                 .importData(let event),
+                .chromeExtensionInstall(let event),
                 .duckPlayer(let event),
                 .skipOnboarding(let event),
                 .searchResults(let event),
@@ -388,9 +393,10 @@ private extension OnboardingSharedPixelEvent {
         switch self {
         case .welcome(let event),
                 .setDefault(let event),
-                .aiComparison(let event),
+                .aiIntro(let event),
                 .addToDock(let event),
                 .importData(let event),
+                .chromeExtensionInstall(let event),
                 .duckPlayer(let event),
                 .skipOnboarding(let event),
                 .searchResults(let event),

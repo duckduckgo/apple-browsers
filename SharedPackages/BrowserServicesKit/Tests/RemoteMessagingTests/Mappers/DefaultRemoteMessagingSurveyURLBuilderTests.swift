@@ -73,6 +73,26 @@ class DefaultRemoteMessagingSurveyURLBuilderTests: XCTestCase {
         XCTAssertEqual(finalURL.absoluteString, "https://duckduckgo.com?ppro_status=auto_renewable&ppro_platform=apple&ppro_platform=apple")
     }
 
+    func testAddingSubscriptionTierParameter() {
+        let builder = buildRemoteMessagingSurveyURLBuilder(subscriptionTier: "pro")
+        let baseURL = URL(string: "https://duckduckgo.com")!
+        let finalURL = builder.add(parameters: [.subscriptionTier], to: baseURL)
+
+        XCTAssertEqual(finalURL.absoluteString, "https://duckduckgo.com?ppro_tier=pro")
+    }
+
+    func testSubscriptionTierParameterIsOmittedWhenUnknown() {
+        let builder = buildRemoteMessagingSurveyURLBuilder(subscriptionTier: nil)
+        let baseURL = URL(string: "https://duckduckgo.com")!
+        let finalURL = builder.add(parameters: [.subscriptionTier], to: baseURL)
+
+        let tierValue = URLComponents(string: finalURL.absoluteString)?
+            .queryItems?
+            .first { $0.name == RemoteMessagingSurveyActionParameter.subscriptionTier.rawValue }?
+            .value
+        XCTAssertNil(tierValue)
+    }
+
     func testAddingVPNUsageParameters() {
         let builder = buildRemoteMessagingSurveyURLBuilder(vpnDaysSinceActivation: 10, vpnDaysSinceLastActive: 5)
         let baseURL = URL(string: "https://duckduckgo.com")!
@@ -176,7 +196,8 @@ class DefaultRemoteMessagingSurveyURLBuilderTests: XCTestCase {
         vpnDaysSinceLastActive: Int = 1,
         locale: Locale = Locale(identifier: "en_US"),
         lastSearchDate: Date? = nil,
-        subscriptionTrialActive: Bool = false
+        subscriptionTrialActive: Bool = false,
+        subscriptionTier: String? = "pro"
     ) -> DefaultRemoteMessagingSurveyURLBuilder {
 
         let mockStatisticsStore = MockStatisticsStore()
@@ -192,6 +213,7 @@ class DefaultRemoteMessagingSurveyURLBuilderTests: XCTestCase {
         mockSubscription.billing = "monthly"
         mockSubscription.platform = "apple"
         mockSubscription.status = "auto_renewable"
+        mockSubscription.tier = subscriptionTier
         mockSubscription.started = Date(timeIntervalSince1970: 1000)
         mockSubscription.expiry = Date(timeIntervalSince1970: 2000)
         mockSubscription.trialActive = subscriptionTrialActive
@@ -234,6 +256,7 @@ private final class MockDuckDuckGoSubscription: SubscriptionSurveyDataProviding 
     var status: String?
     var platform: String?
     var billing: String?
+    var tier: String?
     var started: Date?
     var expiry: Date?
     var trialActive: Bool?
@@ -248,6 +271,10 @@ private final class MockDuckDuckGoSubscription: SubscriptionSurveyDataProviding 
 
     public var subscriptionBilling: String? {
         return billing
+    }
+
+    public var subscriptionTier: String? {
+        return tier
     }
 
     public var subscriptionStartDate: Date? {

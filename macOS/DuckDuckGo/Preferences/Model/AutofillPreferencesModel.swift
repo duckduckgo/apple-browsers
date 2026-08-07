@@ -157,12 +157,14 @@ final class AutofillPreferencesModel: ObservableObject {
         persistor: AutofillPreferencesPersistor = AutofillPreferences(),
         userAuthenticator: UserAuthenticating = DeviceAuthenticator.shared,
         bitwardenManager: BWManagement? = Application.appDelegate.bitwardenManager,
-        neverPromptWebsitesManager: AutofillNeverPromptWebsitesManager = AutofillNeverPromptWebsitesManager.shared
+        neverPromptWebsitesManager: AutofillNeverPromptWebsitesManager = AutofillNeverPromptWebsitesManager.shared,
+        isAppRebranded: Bool = Application.appDelegate.themeManager.isAppRebranded
     ) {
         self.persistor = persistor
         self.userAuthenticator = userAuthenticator
         self.bitwardenManager = bitwardenManager
         self.neverPromptWebsitesManager = neverPromptWebsitesManager
+        self.isAppRebranded = isAppRebranded
 
         isAutoLockEnabled = persistor.isAutoLockEnabled
         autoLockThreshold = persistor.autoLockThreshold
@@ -184,7 +186,9 @@ final class AutofillPreferencesModel: ObservableObject {
     private let bitwardenManager: BWManagement?
     private let neverPromptWebsitesManager: AutofillNeverPromptWebsitesManager
     private lazy var syncPromoManager: SyncPromoManaging = SyncPromoManager()
-    lazy var syncPromoViewModel: SyncPromoViewModel = SyncPromoViewModel(touchpointType: .autofill,
+    private let isAppRebranded: Bool
+    lazy var syncPromoViewModel: SyncPromoViewModel = SyncPromoViewModel(isAppRebranded: isAppRebranded,
+                                                                         touchpointType: .autofill,
                                                                          primaryButtonAction: { [weak self] in
         self?.syncPromoManager.goToSyncSettings(for: .autofill)
     },

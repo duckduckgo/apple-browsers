@@ -20,21 +20,35 @@
 import PrivacyConfig
 import Core
 import Combine
+import FeatureFlags_iOS
 
 final class MockFeatureFlagger: FeatureFlagger {
-
-    private(set) var didCallResolveCohort: Bool = false
 
     var internalUserDecider: InternalUserDecider
     var localOverrides: FeatureFlagLocalOverriding?
 
-    var mockActiveExperiments: [String: ExperimentData] = [:]
-
     var enabledFeatureFlags: [FeatureFlag] = []
 
-    var cohortToReturn: (any FeatureFlagCohortDescribing)?
+    private let updatesSubject = PassthroughSubject<Void, Never>()
+
+    /// The number of subscriptions established on `updatesPublisher`.
+    ///
+    /// Driven by Combine when a subscriber actually attaches, not by reads of `updatesPublisher`,
+    /// so storing the publisher and subscribing twice counts twice, while composing a chain that
+    /// reads the property once and subscribes once counts once.
+    private(set) var updatesPublisherSubscriptionCount = 0
+
     var updatesPublisher: AnyPublisher<Void, Never> {
-        PassthroughSubject().eraseToAnyPublisher()
+        updatesSubject
+            .handleEvents(receiveSubscription: { [weak self] _ in
+                self?.updatesPublisherSubscriptionCount += 1
+            })
+            .eraseToAnyPublisher()
+    }
+
+    /// Call this method in tests to trigger the updates publisher
+    func triggerUpdate() {
+        updatesSubject.send()
     }
 
     public init(internalUserDecider: InternalUserDecider = DefaultInternalUserDecider(store: MockInternalUserStoring()),
@@ -57,13 +71,17 @@ final class MockFeatureFlagger: FeatureFlagger {
         return nil
     }
 
+    private(set) var didCallResolveCohort: Bool = false
+
     func resolveCohort<Flag>(for featureFlag: Flag, allowOverride: Bool) -> (any FeatureFlagCohortDescribing)? where Flag: FeatureFlagDescribing {
         didCallResolveCohort = true
-        return cohortToReturn
+        return nil
     }
 
-    var allActiveExperiments: Experiments {
-        mockActiveExperiments
+    func assignedCohort<Flag: FeatureFlagDescribing>(for featureFlag: Flag, allowOverride: Bool) -> (any FeatureFlagCohortDescribing)? {
+        return nil
     }
+
+    var allActiveExperiments: Experiments { [:] }
 
 }

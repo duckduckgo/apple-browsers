@@ -59,14 +59,15 @@ class RemoteMessagingStoreTests: XCTestCase {
         defaults = MockKeyValueStore()
     }
 
-    override func tearDownWithError() throws {
+    override func tearDown() async throws {
+        await store?.waitForStoreInitiatedTasks()
         store = nil
 
         try? remoteMessagingDatabase.tearDown(deleteStores: true)
         remoteMessagingDatabase = nil
         try? FileManager.default.removeItem(at: location)
 
-        try super.tearDownWithError()
+        try await super.tearDown()
     }
 
     // Tests:
@@ -650,6 +651,28 @@ class RemoteMessagingStoreTests: XCTestCase {
         XCTAssertNil(result)
     }
 
+    func testWhenExpiredMessageIsFetchedThenWaitingForStoreInitiatedTasksCompletesTheDismissal() async throws {
+        let context = store.context
+        try context.performAndWait {
+            let message = RemoteMessageManagedObject(context: context)
+            message.id = "auto-dismiss-pending"
+            message.status = NSNumber(value: 0)
+            message.shown = true
+            message.firstShownDate = Calendar.current.date(byAdding: .day, value: -5, to: Date())
+            message.message = """
+              {"isMetricsEnabled":true,"content":{"small":{"titleText":"t","descriptionText":"d"}},"id":"auto-dismiss-pending","exclusionRules":[],"matchingRules":[],"displayConditions":{"dismissAfterDaysShown":2}}
+              """
+            context.insert(message)
+            try context.save()
+        }
+
+        XCTAssertNil(store.fetchScheduledRemoteMessage(surfaces: .allCases))
+
+        await store.waitForStoreInitiatedTasks()
+
+        XCTAssertEqual(store.fetchDismissedRemoteMessageIDs(), ["auto-dismiss-pending"])
+    }
+
     func testWhenMessageHasNilFirstShownDateThenItIsReturned() async throws {
         let context = store.context
         try context.performAndWait {
@@ -885,6 +908,7 @@ private extension RemoteMessagingStoreTests {
                     subscriptionDaysSinceSubscribed: -1,
                     subscriptionDaysUntilExpiry: -1,
                     subscriptionPurchasePlatform: nil,
+                    subscriptionTier: nil,
                     isSubscriptionActive: false,
                     isSubscriptionExpiring: false,
                     isSubscriptionExpired: false,

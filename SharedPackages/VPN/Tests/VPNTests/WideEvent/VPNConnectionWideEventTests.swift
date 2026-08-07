@@ -17,7 +17,9 @@
 //
 
 import XCTest
+import Networking
 import PixelKit
+import Subscription
 @testable import VPN
 
 final class VPNConnectionWideEventTests: XCTestCase {
@@ -112,6 +114,23 @@ final class VPNConnectionWideEventTests: XCTestCase {
         XCTAssertEqual(parameters["feature.data.ext.tunnel_start_error.domain"], "TunnelError")
         XCTAssertEqual(parameters["feature.data.ext.tunnel_start_error.code"], "200")
         XCTAssertEqual(parameters["feature.data.ext.tunnel_start_error.description"], "TunnelStartFailed")
+    }
+
+    func testPixelParameters_withEntryContext() {
+        let eventData = VPNConnectionWideEventData(
+            extensionType: .app,
+            startupMethod: .manualByMainApp,
+            entryContext: .init(
+                source: .subscriptionSettings,
+                tokenState: .missing
+            ),
+            contextData: WideEventContextData(name: "Test-Context")
+        )
+
+        let parameters = eventData.pixelParameters()
+
+        XCTAssertEqual(parameters["feature.data.ext.vpn_screen_source"], "subscription_settings")
+        XCTAssertEqual(parameters["feature.data.ext.vpn_screen_entry_token_state"], "missing")
     }
 
     // MARK: - Abandoned and Delayed Flows
@@ -312,6 +331,25 @@ final class VPNConnectionWideEventTests: XCTestCase {
         // Second underlying error
         XCTAssertEqual(parameters["feature.data.ext.controller_start_error.underlying_domain2"], "Domain2")
         XCTAssertEqual(parameters["feature.data.ext.controller_start_error.underlying_code2"], "2")
+    }
+
+    func testAddStepError_withSubscriptionManagerTokenRetrievalErrorIncludesWrappedUnderlyingError() {
+        let eventData = VPNConnectionWideEventData(
+            extensionType: .app,
+            startupMethod: .manualByMainApp,
+            contextData: WideEventContextData(name: "Test-Context")
+        )
+
+        let wrappedError = OAuthClientError.unauthenticated
+        let error = SubscriptionManagerError.errorRetrievingTokenContainer(error: wrappedError)
+        eventData.oauthError = WideEventErrorData(error: error)
+
+        let parameters = eventData.pixelParameters()
+
+        XCTAssertEqual(parameters["feature.data.ext.oauth_error.domain"], "com.duckduckgo.subscription.SubscriptionManagerError")
+        XCTAssertEqual(parameters["feature.data.ext.oauth_error.code"], "12001")
+        XCTAssertEqual(parameters["feature.data.ext.oauth_error.underlying_domain"], "com.duckduckgo.networking.OAuthClientError")
+        XCTAssertEqual(parameters["feature.data.ext.oauth_error.underlying_code"], "11002")
     }
 
     // MARK: - transformErrorKey

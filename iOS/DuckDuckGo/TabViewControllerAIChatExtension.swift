@@ -92,7 +92,9 @@ extension TabViewController: AITabController {
 
     /// Submits a start chat action to initiate a new AI Chat conversation.
     func submitStartChatAction() {
-        aiChatContentHandler.submitStartChatAction()
+        Task { @MainActor in
+            await aiChatContentHandler.submitStartChatAction()
+        }
     }
 
     /// Submits an open settings action to open the AI Chat settings.
@@ -126,6 +128,10 @@ extension TabViewController: AITabController {
     func openSettingsInNewTab() {
         let url = AIChatURLParameters.settingsOpenURL(from: aiChatSettings.aiChatURL)
         delegate?.tab(self, didRequestNewTabForUrl: url, openedByPage: false, inheritingAttribution: nil)
+    }
+
+    func submitOpenChatProtectionAction() {
+        aiChatContentHandler.submitOpenChatProtectionAction()
     }
 
     /// Reloads the full mode AI Chat tab if this is an AI tab.

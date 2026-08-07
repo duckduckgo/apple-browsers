@@ -62,17 +62,14 @@ struct AutofillExtensionPromotionHeaderView: View {
                 dismissButtonAction?()
             } label: {
                 Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
-                    .foregroundColor(.primary)
             }
-            .frame(width: 44, height: 44)
-            .contentShape(Rectangle())
-            .padding(.trailing, 4)
-            .padding(.top, 4)
+            .buttonStyle(CloseButtonStyle())
             .accessibilityIdentifier("Button_DismissExtensionPromo")
+            .padding(ContainerMetrics.closeButtonPadding - CloseButtonStyle.Constant.padding)
         }
         .background(
             RoundedRectangle(cornerRadius: ContainerMetrics.cornerRadius)
-                .foregroundColor(Color(designSystemColor: .surface))
+                .foregroundColor(Color(singleUseColor: .groupedListContentBackground))
                 .shadow(color: .black.opacity(0.08), radius: 12, x: 0, y: 8)
         )
         .onAppear {
@@ -86,14 +83,19 @@ struct AutofillExtensionPromotionHeaderView: View {
         @Environment(\.colorScheme) private var colorScheme
 
         private var lottieFileName: String {
-            colorScheme == .dark ? "autofill-extension-dark" : "autofill-extension-light"
+            if AppRebrand.isAppRebranded() {
+                colorScheme == .dark ? "autofill-extension-dark" : "autofill-extension-light"
+            } else {
+                colorScheme == .dark ? "autofill-extension-dark-legacy" : "autofill-extension-light-legacy"
+            }
         }
 
         var body: some View {
             LottieView(
                 lottieFile: lottieFileName,
                 loopMode: .mode(.loop),
-                isAnimating: $isAnimating
+                isAnimating: $isAnimating,
+                contentSize: CGSize(width: 320, height: 140)
             )
             .frame(width: 320)
             .aspectRatio(contentMode: .fit)

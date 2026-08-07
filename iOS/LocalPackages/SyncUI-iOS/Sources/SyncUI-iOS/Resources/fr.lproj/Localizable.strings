@@ -1,9 +1,6 @@
 /* No comment provided by engineer. */
 "%@\n%@" = "%@\n%@";
 
-/* Auto-Restore - Description */
-"auto.restore.description" = "Rétablissez automatiquement vos données sur cet appareil si vous réinstallez l'application.";
-
 /* Auto-Restore Ready Sheet - Description */
 "auto.restore.ready.description" = "Reprenez votre session Sync & Backup pour rétablir vos signets, mots de passe et autres, ou continuez avec une nouvelle configuration.";
 
@@ -31,12 +28,6 @@
 /* Auto-Restore Settings Row - On */
 "auto.restore.settings.row.on" = "Activé";
 
-/* Auto-restore section - Footer */
-"auto.restore.toggle.footer" = "Rétablissez automatiquement vos données si vous réinstallez l'application. Les données Sync & Backup ne peuvent pas être récupérées après 18 mois d'inactivité.";
-
-/* Auto-Restore - Toggle Label */
-"auto.restore.toggle.label" = "Rétablir lors de la réinstallation de l'application";
-
 /* Standard Buttons - Back Button */
 "back.button" = "Retour";
 
@@ -58,32 +49,11 @@
 /* Camera View - Permission Required */
 "camera.permission.required" = "L'autorisation d'accès à l'appareil photo est requise";
 
-/* Camera View - Point Camera Indication */
-"camera.point.camera.indication" = "Dirigez l'appareil photo vers le code QR pour synchroniser";
-
 /* No comment provided by engineer. */
 "Cancel" = "Annuler";
 
 /* Standard Buttons - Cancel Button */
 "cancel.button" = "Annuler";
-
-/* Connect With Server Sheet - Button */
-"connect.with.server.sheet.button" = "Activer Synchronisation et sauvegarde";
-
-/* Connect With Server Sheet - Description Part 1 */
-"connect.with.server.sheet.description.part1" = "Cela crée une sauvegarde cryptée de vos signets et données de saisie automatique sur le serveur sécurisé de DuckDuckGo, qui peut être synchronisée avec vos autres appareils.";
-
-/* Connect With Server Sheet - Description Part 1 */
-"connect.with.server.sheet.description.part1-updated" = "Cela crée une sauvegarde cryptée de vos signets, mots de passe, cartes bancaires et discussions Duck.ai enregistrés sur le serveur sécurisé de DuckDuckGo, qui peut être synchronisée avec vos autres appareils.";
-
-/* Connect With Server Sheet - Description Part 2 */
-"connect.with.server.sheet.description.part2" = "La clé de chiffrement n'est stockée que sur votre appareil ; DuckDuckGo ne peut pas y accéder.";
-
-/* Connect With Server Sheet - Footer */
-"connect.with.server.sheet.footer" = "Vous pourrez effectuer une synchronisation avec vos autres appareils ultérieurement.";
-
-/* Connect With Server Sheet - Title */
-"connect.with.server.sheet.title" = "Synchroniser et sauvegarder cet appareil";
 
 /* Standard Buttons - Copy Button */
 "copy.button" = "Copier";
@@ -100,17 +70,8 @@
 /* Alert title for invalid credit cards being filtered out of synced data */
 "creditCards.invalid.objects.present.title" = "Certaines cartes bancaires ne se synchronisent pas à cause de la longueur excessive du contenu de certains champs.";
 
-/* Delete Server Data - Button */
-"delete.server.data" = "Désactiver et supprimer les données du serveur…";
-
 /* No comment provided by engineer. */
 "Dev environment" = "Environnement de développement";
-
-/* Device SyncedSheet Button to go get DuckDuckGo on other devices */
-"device.synced.sheet.button.get.other.devices" = "Installer DuckDuckGo sur d'autres appareils";
-
-/* Device SyncedSheet - Title */
-"device.synced.sheet.title" = "Vos données sont synchronisées !";
 
 /* Standard Buttons - Done Button */
 "done.button" = "Terminé";
@@ -130,38 +91,17 @@
 /* Fetch Favicons Onboarding - Title */
 "fetch.favicons.onboarding.title" = "Télécharger les icônes manquantes ?";
 
-/* Options - Fetch Favicons Description */
-"fetch.favicons.option.caption" = "Téléchargez automatiquement les icônes de vos signets synchronisés. Les téléchargements d'icônes sont visibles sur votre réseau.";
-
 /* Options - Fetch Favicons Title */
 "fetch.favicons.option.title" = "Icônes de téléchargement automatique";
 
 /* No comment provided by engineer. */
 "Keep Development" = "Rester sur le développement";
 
-/* Manually Enter Code View - Instruction with sync menu path and view text code menu item inserted */
-"manually.enter.code.instruction.attributed" = "Accédez à %1$@ et sélectionnez %2$@ dans l'application DuckDuckGo sur un autre appareil synchronisé et collez le code ici pour synchroniser cet appareil.";
-
 /* Manually Enter Code View - Title */
 "manually.enter.code.title" = "Saisir manuellement le code";
 
-/* Manually Enter Code View - Validating Code Action */
-"manually.enter.code.validating.code.action" = "Validation du code";
-
-/* Manually Enter Code View - Validating Code Failed Action */
-"manually.enter.code.validating.code.failed.action" = "Code non valide.";
-
-/* Standard Buttons - Next Button */
-"next.button" = "Suivant";
-
 /* Standard Buttons - Not Now Button */
 "not.now.button" = "Pas maintenant";
-
-/* Options - Section Header */
-"options.section.header" = "Options";
-
-/* Section header for other syncing options */
-"other.options.section.header" = "Autres options";
 
 /* Standard Buttons - Paste Button */
 "paste.button" = "Coller";
@@ -175,20 +115,8 @@
 /* Button title for sync credit cards limits exceeded warning to go to manage credit cards */
 "prefrences.sync.credit-cards-limit-exceeded-action" = "Gérez les cartes bancaires…";
 
-/* Preparing To Sync Sheet - Description */
-"preparing.to.sync.sheet.description" = "Vos signets et données de saisie automatique sont en cours de préparation pour la synchronisation. Cela ne devrait prendre qu'un instant.";
-
-/* Preparing To Sync Sheet - Description */
-"preparing.to.sync.sheet.description-updated" = "Vos favoris, mots de passe et discussions Duck.ai sont en cours de préparation pour la synchronisation. Cela ne devrait prendre qu'un instant.";
-
-/* Preparing To Sync Sheet - Footer */
-"preparing.to.sync.sheet.footer" = "Connexion…";
-
-/* Preparing To Sync Sheet - Title */
-"preparing.to.sync.sheet.title" = "Configuration de Synchronisation et sauvegarde";
-
-/* Link label for recovering synced data */
-"recover.synced.data.link" = "Récupérer les données synchronisées";
+/* Preparing to sync title */
+"preparing.to.sync.title" = "Préparation à la synchronisation";
 
 /* Recover Synced Data Sheet - Button */
 "recover.synced.data.sheet.button" = "Récupérer les données synchronisées";
@@ -217,86 +145,8 @@
 /* Remove Device View - Title */
 "remove.device.title" = "Supprimer l'appareil ?";
 
-/* Save Recovery Code Sheet - Card Title */
-"save.recovery.code.card.title" = "Code de récupération";
-
-/* Save Recovery Code Sheet - Copy Code Toast */
-"save.recovery.code.code.copied.button" = "Code de récupération copié dans le presse-papiers";
-
-/* Save Recovery Code Sheet - Copy Code Button */
-"save.recovery.code.copy.code.button" = "Copier le code";
-
-/* Save Recovery Code Sheet - Save as PDF Button */
-"save.recovery.code.save.as.pdf.button" = "Télécharger au format PDF";
-
-/* Save Recovery Code Sheet - Footer */
-"save.recovery.code.sheet.footer" = "Toute personne ayant accès à ce code peut accéder à vos données synchronisées. Veuillez donc le garder en lieu sûr.";
-
-/* Recovery Code Sheet - Description */
-"save.recovery.key.body" = "Enregistrez ce code afin de pouvoir récupérer vos données si vous perdez l'accès à cet appareil ; gardez-le en lieu sûr.";
-
-/* Recovery Code Sheet - Title */
-"save.recovery.key.title" = "Récupérer facilement vos données";
-
-/* Save RecoveryPDF - Button */
-"save.recovery.pdf.button" = "Enregistrer le fichier PDF de récupération";
-
-/* Save RecoveryPDF - Footer + Learn More, with markdown link */
-"save.recovery.pdf.footer" = "Utilisez ce code pour rétablir vos données si vous perdez l'accès à cet appareil. Les données Sync & Backup ne peuvent pas être récupérées après 18 mois d'inactivité. [En savoir plus](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)";
-
-/* Scan Or Enter Code To Recover Synced Data View - Enter Code Link */
-"scan.code.to.recover.synced.data.enter.code.link" = "Saisir manuellement le code texte";
-
-/* Scan Or Enter Code To Recover Synced Data View - Explanation */
-"scan.code.to.recover.synced.data.explanation" = "Scannez le code QR sur votre PDF de récupération ou sur un autre appareil synchronisé pour récupérer vos données.";
-
-/* Scan Or Enter Code To Recover Synced Data View - Footer */
-"scan.code.to.recover.synced.data.footer" = "Vous ne parvenez pas à scanner ?";
-
-/* Scan Or Enter Code To Recover Synced Data View - Title */
-"scan.code.to.recover.synced.data.title" = "Récupérer les données synchronisées";
-
-/* Scan or See Code View - Footer */
-"scan.or.see.code.footer" = "Vous ne parvenez pas à scanner ?";
-
-/* Scan or See Code View - Instruction */
-"scan.or.see.code.instruction" = "Accédez à Réglages › Synchronisation et sauvegarde dans le navigateur DuckDuckGo d'un autre appareil, puis sélectionnez « Synchroniser avec un autre appareil ».";
-
-/* Scan or See Code View - Instruction with syncMenuPath */
-"scan.or.see.code.instruction.attributed" = "Accédez à %@ dans le navigateur DuckDuckGo d'un autre appareil, puis sélectionnez « Synchroniser avec un autre appareil ».";
-
-/* Scan or See Code View - Manually Enter Code Link */
-"scan.or.see.code.manually.enter.code.link" = "Saisir manuellement le code";
-
-/* Scan or See Code View - Instruction with syncMenuPath */
-"scan.or.see.code.other.device.instruction.attributed" = "Ouvrez l'application DuckDuckGo sur votre autre appareil et accédez à %@.";
-
-/* Scan or See Code View - Scan Code Instructions Body */
-"scan.or.see.code.scan.code.instructions.body" = "Scannez ce code avec un autre appareil pour le synchroniser.";
-
-/* Scan or See Code View - Scan Code Instructions Title */
-"scan.or.see.code.scan.code.instructions.title" = "De mobile à mobile ?";
-
-/* Scan or See Code View - Scan Code Instructions Body */
-"scan.or.see.code.scan.code.qr.instructions.body" = "Ouvrez DuckDuckGo sur votre autre appareil et scannez ce code pour synchroniser.";
-
-/* Scan or See Code View - Scan Code Instructions Title */
-"scan.or.see.code.scan.code.qr.instructions.title" = "Ou scannez avec DuckDuckGo sur votre autre appareil";
-
-/* Scan or See Code View - Share Code Link */
-"scan.or.see.code.share.code.link" = "Partager le code texte";
-
-/* Scan or See Code View - Title */
-"scan.or.see.code.title" = "Scanner le code QR";
-
 /* No comment provided by engineer. */
 "Switch to Production" = "Passer à la production";
-
-/* Link label for syncing and backing up the device */
-"sync.and.backup.this.device.link" = "Synchroniser et sauvegarder cet appareil";
-
-/* Button to get DuckDuckGo on other devices */
-"sync.get.other.devices" = "Installer DuckDuckGo sur d'autres appareils";
 
 /* Button title to share link for downloading DuckDuckGo on other devices */
 "sync.get.other.devices.card.button.title" = "Partager le lien de téléchargement";
@@ -312,9 +162,6 @@
 
 /* Message included when sharing a url via the system share sheet */
 "sync.get.other.devices.share.link.message" = "Installez le navigateur DuckDuckGo sur vos appareils pour commencer à synchroniser en toute sécurité vos signets et vos données de saisie automatique :";
-
-/* Sync Menu Path */
-"sync.menu.path" = "Réglages > Synchronisation et sauvegarde > Synchroniser avec un autre appareil";
 
 /* Sync passcode required alert - button */
 "sync.passcode.required.alert.go.to.settings.button" = "Accéder à Paramètres";
@@ -343,6 +190,12 @@
 /* Prompt title after enabling sync */
 "sync.simplified.another.device.title" = "Synchroniser vos données avec un autre appareil ?";
 
+/* Body on the sync-setup prompt explaining the sync-another-device option */
+"sync.simplified.another.device.v2.body" = "Nous t’aiderons à synchroniser tes appareils.";
+
+/* Title on the sync-setup prompt asking whether to sync with another device or just this device */
+"sync.simplified.another.device.v2.title" = "Synchronise cet appareil avec un ordinateur à proximité.";
+
 /* Caption displayed on 'auto-download bookmarks icons' toggle. */
 "sync.simplified.bookmarks.section.fetch-favicons.caption" = "Charge les icônes des sites que vous avez enregistrés en signets. Les téléchargements d'icônes sont visibles sur votre réseau.";
 
@@ -355,14 +208,56 @@
 /* Text shown next to toggle while sync is being set up */
 "sync.simplified.connecting" = "Connexion en cours…";
 
+/* Title shown on the connecting screen while Sync & Backup is being set up on this device */
+"sync.simplified.connecting.v2.title" = "Sync & Backup est crypté de bout en bout sur tous vos appareils.";
+
 /* Sync settings 'Copy Recovery Code' button */
 "sync.simplified.copy.recovery.code.button" = "Copier le code de récupération";
 
 /* Sync settings action button title to turn off sync and delete server data */
 "sync.simplified.delete.sync.data.button" = "Désactiver la synchronisation et supprimer les données du serveur";
 
+/* Description on the device-added success screen explaining what the recovery code is for */
+"sync.simplified.device.added.v2.description" = "Utilisez ce code pour rétablir vos données si vous perdez l'accès à vos appareils. Gardez-le en lieu sûr.";
+
+/* Fallback subject used in the device-added success title when the current device's name is unavailable. Substituted as %@ in simplifiedDeviceAddedV2Title. */
+"sync.simplified.device.added.v2.fallback.device.name" = "Cet appareil";
+
+/* Title on the success screen shown after a device joins Sync & Backup. %@ is the name of the current device that was just added. */
+"sync.simplified.device.added.v2.title" = "%@ a été ajouté à Sync & Backup.";
+
 /* Sync settings 'Download Recovery Code' button */
 "sync.simplified.download.recovery.code.button" = "Télécharger le code de récupération";
+
+/* Section header above the get-desktop-browser option in sync setup */
+"sync.simplified.download.section.header" = "Télécharger";
+
+/* Button to download the recovery code on the recover-your-data screen */
+"sync.simplified.download.your.recovery.code.button" = "Télécharger votre code de récupération";
+
+/* Description shown when Sync & Backup is enabled (when AI chat sync is available) */
+"sync.simplified.enabled.header.message" = "Vos signets, vos données de remplissage automatique et vos discussions Duck.ai sont synchronisés et sauvegardés avec un cryptage de bout en bout.";
+
+/* Description shown when Sync & Backup is enabled */
+"sync.simplified.enabled.header.message.basic" = "Vos signets et données de remplissage automatique sont en cours de synchronisation avec un cryptage de bout en bout.";
+
+/* Sync & Backup screen title shown when Sync is enabled */
+"sync.simplified.enabled.header.title" = "La synchronisation de DuckDuckGo est activée";
+
+/* Label above the example sync code placeholder on the enter-code tab */
+"sync.simplified.enter.code.example.label" = "Code d'exemple :";
+
+/* First part of the enter-code instructions, followed by a DuckDuckGo app chip */
+"sync.simplified.enter.code.open" = "Ouvrez votre autre";
+
+/* Button to paste the sync code on the enter-code tab */
+"sync.simplified.enter.code.paste.button" = "Coller le code de synchronisation";
+
+/* Second part of the enter-code instructions. **...** marks the parts shown in the primary text color. */
+"sync.simplified.enter.code.steps" = "Accédez à **Sync & Backup** › **Synchroniser avec un autre appareil** › **Copier le code texte**.";
+
+/* Title on the enter-code tab of the V2 scan screen */
+"sync.simplified.enter.code.title" = "Saisissez le code de synchronisation.";
 
 /* Button subtitle to get the DuckDuckGo desktop browser */
 "sync.simplified.get.desktop.browser.subtitle" = "DuckDuckGo pour Mac et Windows";
@@ -370,11 +265,53 @@
 /* Button title to get the DuckDuckGo desktop browser. */
 "sync.simplified.get.desktop.browser.title" = "Télécharger le navigateur de bureau";
 
+/* Row label to get the DuckDuckGo desktop browser */
+"sync.simplified.get.our.desktop.browser.title" = "Télécharger notre navigateur de bureau";
+
+/* Sync setup row label to recover synced data using an existing recovery code */
+"sync.simplified.have.recovery.code.button" = "J'ai un code de récupération";
+
 /* Description of the Sync & Backup feature (when AI chat sync is available) */
 "sync.simplified.header.message" = "Sauvegardez vos signets, données de remplissage automatique et discussions Duck.ai, et synchronisez-les entre vos appareils avec un cryptage de bout en bout.";
 
 /* Description of the Sync & Backup feature */
 "sync.simplified.header.message.basic" = "Sauvegardez vos signets et vos données de remplissage automatique, et synchronisez-les entre vos appareils avec un cryptage de bout en bout.";
+
+/* Description of the Sync & Backup feature */
+"sync.simplified.header.message.basic.v2" = "Synchronisez vos données de remplissage automatique et vos signets, cryptés de bout en bout sur toutes vos applications DuckDuckGo.";
+
+/* Description of the Sync & Backup feature (when AI chat sync is available) */
+"sync.simplified.header.message.v2" = "Synchronisez et sauvegardez vos données de remplissage automatique, vos signets et vos discussions Duck.ai, cryptés de bout en bout sur toutes vos applications DuckDuckGo.";
+
+/* Sync & Backup screen title */
+"sync.simplified.header.title" = "Garder la synchronisation de DuckDuckGo activée";
+
+/* Footer caption shown under the Remove Device button on the manage device screen */
+"sync.simplified.manage.device.remove.footer" = "Cet appareil ne pourra plus accéder à vos données synchronisées si vous le supprimez.";
+
+/* Status label shown under a device name on the manage device screen when the device is synced */
+"sync.simplified.manage.device.status.synced" = "Synchronisé";
+
+/* Footer caption shown under the Sync & Backup This Device toggle on the manage this device screen */
+"sync.simplified.manage.device.turn.off.footer" = "Cet appareil ne pourra plus accéder à vos données synchronisées si cette option est désactivée.";
+
+/* My Devices section header shown when Sync & Backup is enabled */
+"sync.simplified.my.devices.section.header" = "Mes appareils";
+
+/* Section header above the recovery-code option in sync setup */
+"sync.simplified.recover.synced.data.section.header" = "Récupérer les données synchronisées";
+
+/* Title shown on the connecting screen while a device's synced data is being recovered */
+"sync.simplified.recovering.data.v2.title" = "Récupération des données";
+
+/* Label above the recovery code on the recover-your-data screen */
+"sync.simplified.recovery.code.label" = "Code de récupération";
+
+/* Description on the success screen shown after synced data has been recovered on this device */
+"sync.simplified.recovery.complete.v2.description" = "Cryptage de bout en bout sur tous vos appareils.";
+
+/* Title on the success screen shown after synced data has been recovered on this device */
+"sync.simplified.recovery.complete.v2.title" = "Sync & Backup activé";
 
 /* Sync settings data recovery section footer. %@ is replaced with the URL. */
 "sync.simplified.recovery.section.footer" = "Utilisez ce code pour rétablir vos données si vous perdez l'accès à cet appareil. Les données Sync & Backup ne peuvent pas être récupérées après 18 mois d'inactivité. [En savoir plus](%@)";
@@ -388,8 +325,14 @@
 /* Status text when connecting devices to sync */
 "sync.simplified.scan-or-view-code.connecting.status" = "Connexion en cours…";
 
-/* Instruction shown during sync setup flow */
-"sync.simplified.scan-or-view-code.connecting.title" = "Garde DuckDuckGo ouvert sur les deux appareils";
+/* Instruction shown during sync setup flow. */
+"sync.simplified.scan-or-view-code.connecting.title" = "Chiffrement de bout en bout sur tous vos appareils.";
+
+/* Message of the reminder shown after the user copies the sync code. */
+"sync.simplified.scan-or-view-code.copy-confirmation.message" = "Revenez sur cet appareil après avoir collé le code.";
+
+/* Title of the reminder shown after the user copies the sync code. */
+"sync.simplified.scan-or-view-code.copy-confirmation.title" = "Collez le code sur votre autre appareil";
 
 /* Button to navigate to manual sync code entry */
 "sync.simplified.scan-or-view-code.manually.enter.code" = "Saisir manuellement le code";
@@ -419,10 +362,58 @@
 "sync.simplified.scan-or-view-code.title" = "Synchronisez vos appareils";
 
 /* Instructions on sync QR code display screen (will be shown above the DuckDuckGo app icon and name) */
-"sync.simplified.scan-or-view-code.view.instructions" = "Scannez ou collez ce code sur votre autre";
+"sync.simplified.scan-or-view-code.view.instructions" = "Scannez ou collez ce code sur votre autre appareil";
+
+/* Close button in the V2 scan screen navigation bar */
+"sync.simplified.scan.v2.close.button" = "Fermer";
+
+/* Chip label on the scan-QR tab referring to the DuckDuckGo desktop app */
+"sync.simplified.scan.v2.qr.app.name" = "DuckDuckGo pour ordinateur";
+
+/* Heading overlaid on the camera on the scan-QR tab of the V2 scan screen */
+"sync.simplified.scan.v2.qr.heading" = "Scannez le code QR pour synchroniser.";
+
+/* First part of the scan-QR instructions, followed by a DuckDuckGo app chip */
+"sync.simplified.scan.v2.qr.open" = "Ouvrir";
+
+/* Button on the scan-QR intro animation that dismisses the animation and reveals the camera */
+"sync.simplified.scan.v2.qr.ready.button" = "Je suis prêt(e) à scanner";
+
+/* Second part of the scan-QR instructions. **...** marks the parts shown in the primary text color. */
+"sync.simplified.scan.v2.qr.steps" = "et accédez à **Sync & Backup** › **Synchroniser avec un autre appareil**";
+
+/* V2 segmented control tab title for entering a code */
+"sync.simplified.scan.v2.tab.enter.code" = "Saisir le code";
+
+/* V2 segmented control tab title for scanning a QR code */
+"sync.simplified.scan.v2.tab.scan.qr" = "Scanner le code QR";
+
+/* Status label shown next to the title when Sync & Backup is disabled */
+"sync.simplified.status.off" = "Désactivé";
+
+/* Status label shown next to the title when Sync & Backup is enabled */
+"sync.simplified.status.on" = "Activé";
+
+/* Button to copy the text sync code on the sync-code sheet */
+"sync.simplified.sync.code.copy.button" = "Copier le code texte";
+
+/* First part of the sync-code sheet instructions, followed by a DuckDuckGo app chip */
+"sync.simplified.sync.code.sheet.open" = "Sur un autre appareil, ouvrez";
+
+/* Second part of the sync-code sheet instructions. **...** marks the parts shown in the primary text color. */
+"sync.simplified.sync.code.sheet.scan" = "Allez dans **Sync & Backup** › **Synchroniser avec un autre appareil** et scannez ce code :";
+
+/* Navigation title of the sheet that shows this device's sync QR code */
+"sync.simplified.sync.code.sheet.title" = "Scanner ou copier le code";
+
+/* Button on the sync-setup prompt to enable Sync & Backup on the current device only, without pairing another device */
+"sync.simplified.this.device.only" = "Synchroniser cet appareil uniquement";
 
 /* Sync & Backup enabled / disabled toggle title */
 "sync.simplified.toggle.title" = "Synchronisation et sauvegarde";
+
+/* Sync & Backup enabled / disabled toggle title, referring to the current device */
+"sync.simplified.toggle.title.this.device" = "Synchroniser cet appareil";
 
 /* Use Recovery Code sync setup button label */
 "sync.simplified.use.recovery.code.button" = "Utiliser le code de récupération";
@@ -442,47 +433,14 @@
 /* Title of the warning message */
 "sync.warning.sync.unavailable" = "Synchronisation et sauvegarde n'est pas disponible";
 
-/* Button label for syncing with another device */
-"sync.with.another.device.button" = "Synchroniser avec un autre appareil";
-
-/* Footer message for syncing with another device */
-"sync.with.another.device.footer" = "Vos données sont cryptées de bout en bout et DuckDuckGo n'a pas accès à la clé de chiffrement.";
-
-/* Message for syncing with another device */
-"sync.with.another.device.message" = "Synchronisez en toute sécurité les signets et mots de passe entre vos appareils.";
-
-/* Message for syncing with another device */
-"sync.with.another.device.message-updated" = "Synchronisez en toute sécurité vos signets, données de remplissage automatique et discussions Duck.ai entre vos appareils.";
-
-/* Title for syncing with another device */
-"sync.with.another.device.title" = "Lancer la synchronisation";
-
 /* Synced Devices - Section Header */
 "synced.devices.section.header" = "Appareils synchronisés";
-
-/* Synced Devices - Sync with Another Device Label */
-"synced.devices.sync.with.another.device.label" = "Synchroniser avec un autre appareil";
 
 /* Synced Devices - This Device Label */
 "synced.devices.this.device.label" = "Cet appareil";
 
-/* Turn Sync Off - Button */
-"turn.sync.off" = "Désactiver Synchronisation et sauvegarde…";
-
-/* Sync enabled - footer description of data that is syncing */
-"turn.sync.off.section.footer" = "Les signets, les données de remplissage automatique et les discussions Duck.ai sont actuellement synchronisés sur vos appareils.";
-
-/* Turn Sync Off - Section Header */
-"turn.sync.off.section.header" = "Synchronisation activée";
-
-/* Options - Unify Favorites Instruction */
-"unified.favorites.instruction" = "Utilisez les mêmes signets favoris sur tous vos appareils. Laissez désactivé pour séparer les favoris sur mobile et ceux sur ordinateur de bureau.";
-
 /* Options - Unify Favorites Title */
 "unified.favorites.title" = "Unifier les favoris sur tous les appareils";
-
-/* View Text Code menu item */
-"view.text.code.menu.item" = "Afficher le code texte";
 
 /* No comment provided by engineer. */
 "You're using Sync Development environment" = "Vous utilisez l'environnement Sync Development";

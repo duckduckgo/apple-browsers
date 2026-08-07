@@ -29,7 +29,7 @@ struct ConfigurationStore: ConfigurationStoring {
         case unsupportedConfig
     }
 
-    private var defaults: KeyValueStoring
+    private let defaults: KeyValueStoring
 
     private var privacyConfigurationEtagKey: String {
         return "privacyConfiguration"
@@ -38,7 +38,7 @@ struct ConfigurationStore: ConfigurationStoring {
         get {
             defaults.object(forKey: privacyConfigurationEtagKey) as? String
         }
-        set {
+        nonmutating set {
             defaults.set(newValue, forKey: privacyConfigurationEtagKey)
         }
     }
@@ -60,9 +60,7 @@ struct ConfigurationStore: ConfigurationStoring {
             do {
                 data = try Data(contentsOf: fileUrl)
             } catch {
-                let nserror = error as NSError
-
-                if nserror.domain != NSCocoaErrorDomain || nserror.code != NSFileReadNoSuchFileError {
+                if !Configuration.isExpectedFileReadError(error) {
                     let pixel = Pixel.Event.couldNotLoadConfiguration(configuration: configuration, target: .vpn)
                     DailyPixel.fireDailyAndCount(pixel: pixel, error: error)
                 }
@@ -89,7 +87,7 @@ struct ConfigurationStore: ConfigurationStoring {
         return AppPrivacyConfigurationDataProvider.Constants.embeddedDataETag
     }
     
-    mutating func saveData(_ data: Data, for configuration: Configuration) throws {
+    func saveData(_ data: Data, for configuration: Configuration) throws {
         guard configuration == .privacyConfiguration else { throw Error.unsupportedConfig }
         let file = fileUrl(for: configuration)
         var coordinatorError: NSError?
@@ -107,7 +105,7 @@ struct ConfigurationStore: ConfigurationStoring {
         }
     }
     
-    mutating func saveEtag(_ etag: String, for configuration: Configuration) throws {
+    func saveEtag(_ etag: String, for configuration: Configuration) throws {
         guard configuration == .privacyConfiguration else { throw Error.unsupportedConfig }
 
         privacyConfigurationEtag = etag

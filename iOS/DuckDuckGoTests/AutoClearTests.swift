@@ -47,6 +47,16 @@ class AutoClearTests: XCTestCase {
         func burnChat(chatID: String, isFireMode: Bool) async -> Result<Void, Error> {
             .success(())
         }
+
+        func burnChats(chatIDs: [String], isFireMode: Bool) async -> Result<Void, Error> {
+            .success(())
+        }
+
+        func burnAllChats(isFireMode: Bool) async -> Result<Void, Error> {
+            .success(())
+        }
+
+        func scheduleSync() { }
     }
     
     private var mockFireExecutor: MockFireExecutor!

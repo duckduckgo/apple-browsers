@@ -1,7 +1,11 @@
 appId: com.duckduckgo.mobile.ios
+# TEMPORARILY DISABLED from gating CI: the `release` tag (which the e2e job includes) is removed
+# on purpose. This flow is non-deterministic — it races a live backend for the "Stop generating"
+# button and depends on the Duck.ai web consent which only appears intermittently. Re-enable by
+# restoring the `- release` tag once it no longer depends on live generation / web consent
+# (follow-up task to be created).
 tags:
     - iphone
-    - release
     - unified_toggle_input
 name: test_chat_tab_stop_generating
 

@@ -2,7 +2,7 @@
 //  OnboardingView+AppIconPickerContent.swift
 //  DuckDuckGo
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,67 +17,76 @@
 //  limitations under the License.
 //
 
-import SwiftUI
 import DuckUI
 import Onboarding
+import SwiftUI
 
 extension OnboardingView {
 
+    /// Figma: https://www.figma.com/design/YPE94Xkcrk2uqiF2l4VmSv/Onboarding--2026-?node-id=12191-45897
     struct AppIconPickerContent: View {
 
-        private var animateTitle: Binding<Bool>
-        private var animateMessage: Binding<Bool>
-        private var showContent: Binding<Bool>
-        private var isSkipped: Binding<Bool>
+        @Environment(\.onboardingTheme) private var onboardingTheme
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+        @State private var shouldStartTyping = false
+        @State private var showContent = false
+        @Binding var isVisible: Bool
+        private let content: OnboardingAppIconColorContent
         private let action: () -> Void
 
         init(
-            animateTitle: Binding<Bool> = .constant(true),
-            animateMessage: Binding<Bool> = .constant(true),
-            showContent: Binding<Bool> = .constant(false),
-            isSkipped: Binding<Bool>,
+            content: OnboardingAppIconColorContent,
+            isVisible: Binding<Bool> = .constant(false),
             action: @escaping () -> Void
         ) {
-            self.animateTitle = animateTitle
-            self.animateMessage = animateMessage
-            self.showContent = showContent
-            self.isSkipped = isSkipped
+            self.content = content
+            self._isVisible = isVisible
             self.action = action
         }
 
         var body: some View {
-            VStack(spacing: 16.0) {
-                AnimatableTypingText(UserText.Onboarding.AppIconSelection.title, startAnimating: animateTitle, skipAnimation: isSkipped) {
-                    animateMessage.wrappedValue = true
-                }
-                .foregroundColor(.primary)
-                .font(Metrics.titleFont)
-
-                AnimatableTypingText(UserText.Onboarding.AppIconSelection.message, startAnimating: animateMessage, skipAnimation: isSkipped) {
-                    withAnimation {
-                        showContent.wrappedValue = true
-                    }
-                }
-                .foregroundColor(.primary)
-                .font(Metrics.messageFont)
-
-                VStack(spacing: 24) {
-                    AppIconPicker()
-
+            LinearDialogContentContainer(
+                metrics: .init(
+                    outerSpacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing,
+                    textSpacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing,
+                    contentSpacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing,
+                    actionsSpacing: onboardingTheme.linearOnboardingMetrics.actionsSpacing
+                ),
+                message: AnyView(
+                    Text(content.message)
+                        .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                        .font(onboardingTheme.typography.body)
+                        .multilineTextAlignment(.center)
+                ),
+                content: AnyView(
+                    OnboardingView.AppIconPicker()
+                ),
+                showContent: $showContent,
+                title: {
+                    TypingText(
+                        content.title,
+                        startAnimating: $shouldStartTyping,
+                        onTypingFinished: { [reduceMotion] in
+                            if reduceMotion {
+                                showContent = true
+                            } else {
+                                withAnimation { showContent = true }
+                            }
+                        }
+                    )
+                    .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                    .font(onboardingTheme.typography.title)
+                    .multilineTextAlignment(.center)
+                },
+                actions: {
                     Button(action: action) {
-                        Text(UserText.Onboarding.AppIconSelection.cta)
+                        Text(content.primaryCTA)
                     }
-                    .buttonStyle(PrimaryButtonStyle())
+                    .buttonStyle(onboardingTheme.primaryButtonStyle.style)
                 }
-                .visibility(showContent.wrappedValue ? .visible : .invisible)
-            }
+            )
+            .onBubbleVisibilityChanged(isVisible: $isVisible, shouldStartTyping: $shouldStartTyping, showContent: $showContent)
         }
-
     }
-
-}
-
-private enum Metrics {
-    static let titleFont = Font.system(size: 20, weight: .semibold)
-    static let messageFont = Font.system(size: 16)
 }

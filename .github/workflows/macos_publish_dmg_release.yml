@@ -91,7 +91,7 @@ jobs:
       - name: Download stop_workflow flag artifact
         id: download-stop-workflow
         continue-on-error: true
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: stop_workflow
           path: .github
@@ -133,7 +133,7 @@ jobs:
         # Only look for the tag artifact when the tag input is empty
         if: github.event.inputs.tag == null || github.event.inputs.tag == ''
         continue-on-error: true
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: tag
           path: .github
@@ -209,13 +209,13 @@ jobs:
         env:
           DMG_NAME: duckduckgo-${{ steps.verify-tag.outputs.release-version }}.dmg
         run: |
-          # Public release doesn't need fetching a DMG (it's already uploaded to S3)
-          if [[ "${RELEASE_TYPE}" != 'public' ]]; then
-            DMG_URL="${{ vars.DMG_URL_ROOT }}${DMG_NAME}"
-            curl -fLSs -o "$DMG_NAME" "$DMG_URL"
-          fi
+          DMG_URL="${{ vars.DMG_URL_ROOT }}${DMG_NAME}"
+          curl -fLSs -o "$DMG_NAME" "$DMG_URL"
           echo "dmg-name=$DMG_NAME" >> $GITHUB_OUTPUT
           echo "dmg-path=$DMG_NAME" >> $GITHUB_OUTPUT
+
+      - name: Validate release DMG before publishing to Sparkle
+        run: ./scripts/validate_release_artifact.sh dmg "${{ steps.fetch-dmg.outputs.dmg-path }}" "${{ steps.verify-tag.outputs.release-version }}"
 
       - name: Generate appcast
         id: appcast
@@ -258,7 +258,7 @@ jobs:
           echo "appcast-patch-name=${appcast_patch_name}" >> $GITHUB_OUTPUT
 
       - name: Upload appcast diff artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ steps.appcast.outputs.appcast-patch-name }}
           path: ${{ env.SPARKLE_DIR }}/${{ steps.appcast.outputs.appcast-patch-name }}

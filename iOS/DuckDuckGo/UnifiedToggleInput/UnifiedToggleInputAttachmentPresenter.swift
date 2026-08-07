@@ -39,54 +39,86 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
     var onFilePicked: ((AIChatFileAttachment, FileMetadata) -> Void)?
     var onFileValidationFailed: ((String, FileMetadata) -> Void)?
     var fileMetadataValidationMessage: ((FileMetadata) -> String?)?
+    /// Supplies the UTI surface for attachment pixels. Set by the coordinator; defaults to `.addressBar`.
+    var pixelSurfaceProvider: (() -> UnifiedToggleInputPixelSurface)?
 
     nonisolated static func recoverFileAttachment(from metadata: FileMetadata, id: UUID = UUID()) -> AIChatFileAttachment? {
         fileAttachment(from: metadata, id: id)
+    }
+
+    /// Builds a file attachment from already-loaded bytes with PDF inspection; shared by the picker and paste flows.
+    nonisolated static func makeFileAttachment(
+        data: Data,
+        fileName: String,
+        mimeType: String,
+        fileSizeBytes: Int? = nil,
+        id: UUID = UUID()
+    ) -> AIChatFileAttachment {
+        let pdfInspection = AIChatPDFInspector.inspect(data: data, mimeType: mimeType)
+        return AIChatFileAttachment(
+            id: id,
+            data: data,
+            fileName: fileName,
+            mimeType: mimeType,
+            fileSizeBytes: fileSizeBytes ?? data.count,
+            pageCount: pdfInspection.pageCount,
+            isEncrypted: pdfInspection.isEncrypted
+        )
     }
 
     func makeAttachmentMenu(
         presenterProvider: @escaping () -> UIViewController?,
         photoSelectionLimit: Int,
         canAttachFile: Bool,
-        allowedFileTypes: [UTType]
+        allowedFileTypes: [UTType],
+        showsPageContextAction: Bool = false,
+        pageContextActionHandler: (() -> Void)? = nil
     ) -> UIMenu? {
         let canAttachPhoto = photoSelectionLimit > 0
-        guard canAttachPhoto || canAttachFile else { return nil }
+        let canTakePhoto = canAttachPhoto && UIImagePickerController.isSourceTypeAvailable(.camera)
+        let canAttachAllowedFile = canAttachFile && !allowedFileTypes.isEmpty
+        let canAttachPageContext = pageContextActionHandler != nil
+        guard canTakePhoto || canAttachPhoto || canAttachAllowedFile || showsPageContextAction else { return nil }
 
-        var actions = [UIAction]()
-
-        if canAttachPhoto {
-            if UIImagePickerController.isSourceTypeAvailable(.camera) {
-                actions.append(
-                    UIAction(
-                        title: UserText.aiChatAttachmentOptionTakePhoto,
-                        image: DesignSystemImages.Glyphs.Size24.camera
-                    ) { [weak self] _ in
-                        guard let presenter = presenterProvider() else { return }
-                        self?.presentCamera(from: presenter)
-                    }
-                )
+        var actions = [
+            UIAction(
+                title: UserText.aiChatAttachmentOptionTakePhoto,
+                image: DesignSystemImages.Glyphs.Size16.camera,
+                attributes: canTakePhoto ? [] : .disabled
+            ) { [weak self] _ in
+                guard canTakePhoto else { return }
+                guard let presenter = presenterProvider() else { return }
+                self?.presentCamera(from: presenter)
+            },
+            UIAction(
+                title: UserText.aiChatAttachmentOptionAttachPhoto,
+                image: DesignSystemImages.Glyphs.Size16.image,
+                attributes: canAttachPhoto ? [] : .disabled
+            ) { [weak self] _ in
+                guard canAttachPhoto else { return }
+                guard let presenter = presenterProvider() else { return }
+                self?.presentPhotoPicker(from: presenter, selectionLimit: photoSelectionLimit)
+            },
+            UIAction(
+                title: UserText.aiChatAttachmentOptionAttachFile,
+                image: DesignSystemImages.Glyphs.Size16.folder,
+                attributes: canAttachAllowedFile ? [] : .disabled
+            ) { [weak self] _ in
+                guard canAttachAllowedFile else { return }
+                guard let presenter = presenterProvider() else { return }
+                self?.presentDocumentPicker(from: presenter, allowedFileTypes: allowedFileTypes)
             }
+        ]
 
+        if showsPageContextAction {
             actions.append(
                 UIAction(
-                    title: UserText.aiChatAttachmentOptionAttachPhoto,
-                    image: DesignSystemImages.Glyphs.Size24.image
-                ) { [weak self] _ in
-                    guard let presenter = presenterProvider() else { return }
-                    self?.presentPhotoPicker(from: presenter, selectionLimit: photoSelectionLimit)
-                }
-            )
-        }
-
-        if canAttachFile, !allowedFileTypes.isEmpty {
-            actions.append(
-                UIAction(
-                    title: UserText.aiChatAttachmentOptionAttachFile,
-                    image: DesignSystemImages.Glyphs.Size24.folder
-                ) { [weak self] _ in
-                    guard let presenter = presenterProvider() else { return }
-                    self?.presentDocumentPicker(from: presenter, allowedFileTypes: allowedFileTypes)
+                    title: UserText.aiChatAttachmentOptionAskAboutPage,
+                    image: DesignSystemImages.Glyphs.Size16.tabContent,
+                    attributes: canAttachPageContext ? [] : .disabled
+                ) { _ in
+                    guard canAttachPageContext else { return }
+                    pageContextActionHandler?()
                 }
             )
         }
@@ -96,23 +128,6 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
 }
 
 private extension UnifiedToggleInputAttachmentPresenter {
-
-    enum PDFInspectionResult: Sendable {
-        case notPDF
-        case readable(pageCount: Int)
-        case encrypted
-        case unreadable
-
-        var pageCount: Int? {
-            guard case .readable(let pageCount) = self else { return nil }
-            return pageCount
-        }
-
-        var isEncrypted: Bool {
-            guard case .encrypted = self else { return false }
-            return true
-        }
-    }
 
     func presentCamera(from presenter: UIViewController) {
         let picker = UIImagePickerController()
@@ -174,36 +189,18 @@ private extension UnifiedToggleInputAttachmentPresenter {
             let data = try Data(contentsOf: metadata.url)
             guard !Task.isCancelled else { return nil }
 
-            let pdfInspection = Self.inspectPDF(data: data, mimeType: metadata.mimeType)
-
-            return AIChatFileAttachment(
-                id: id,
+            return makeFileAttachment(
                 data: data,
                 fileName: metadata.fileName,
                 mimeType: metadata.mimeType,
-                fileSizeBytes: metadata.fileSizeBytes ?? data.count,
-                pageCount: pdfInspection.pageCount,
-                isEncrypted: pdfInspection.isEncrypted
+                fileSizeBytes: metadata.fileSizeBytes,
+                id: id
             )
         } catch {
             return nil
         }
     }
 
-    nonisolated static func inspectPDF(data: Data, mimeType: String) -> PDFInspectionResult {
-        guard mimeType == "application/pdf" else { return .notPDF }
-        guard let provider = CGDataProvider(data: data as CFData),
-              let document = CGPDFDocument(provider) else {
-            return .unreadable
-        }
-        guard document.isEncrypted == false || document.isUnlocked else {
-            return .encrypted
-        }
-
-        let pageCount = document.numberOfPages
-        guard pageCount > 0 else { return .unreadable }
-        return .readable(pageCount: pageCount)
-    }
 }
 
 extension UnifiedToggleInputAttachmentPresenter: PHPickerViewControllerDelegate {
@@ -221,9 +218,10 @@ extension UnifiedToggleInputAttachmentPresenter: PHPickerViewControllerDelegate 
                 guard let image = object as? UIImage else { return }
 
                 Task { @MainActor in
+                    let surface = self?.pixelSurfaceProvider?() ?? .addressBar
                     DailyPixel.fireDailyAndCount(
                         pixel: .unifiedToggleInputImageAttached,
-                        withAdditionalParameters: ["source": "photo_library"]
+                        withAdditionalParameters: ["source": "photo_library", "surface": surface.rawValue]
                     )
                     self?.onImagePicked?(image, suggestedName)
                 }
@@ -240,7 +238,7 @@ extension UnifiedToggleInputAttachmentPresenter: UIImagePickerControllerDelegate
         guard let image = info[.originalImage] as? UIImage else { return }
         DailyPixel.fireDailyAndCount(
             pixel: .unifiedToggleInputImageAttached,
-            withAdditionalParameters: ["source": "camera"]
+            withAdditionalParameters: ["source": "camera", "surface": (pixelSurfaceProvider?() ?? .addressBar).rawValue]
         )
         onImagePicked?(image, "photo")
     }

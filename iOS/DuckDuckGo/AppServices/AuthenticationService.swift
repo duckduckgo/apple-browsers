@@ -77,7 +77,7 @@ extension AuthenticationService: AuthenticationServiceProtocol {
     }
 
     private func showAuthenticationScreen() -> AuthenticationViewController {
-        let authenticationViewController = AuthenticationViewController.loadFromStoryboard()
+        let authenticationViewController = AuthenticationViewController()
         authenticationViewController.delegate = self
         overlayWindowManager.displayOverlay(with: authenticationViewController)
         return authenticationViewController

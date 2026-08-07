@@ -617,8 +617,8 @@ final class LocalBookmarkStore: BookmarkStore {
                     assertionFailure("Object index not found in its parent")
                     continue
                 }
-                allChildren.remove(at: currentIndex)
                 guard currentIndex != insertionIndex else { continue }
+                allChildren.remove(at: currentIndex)
                 // decrement insertion index if moving object within the same folder to a higher index
                 if insertionIndex > currentIndex {
                     insertionIndexShift -= 1
@@ -831,6 +831,15 @@ final class LocalBookmarkStore: BookmarkStore {
         var favorites: [(BookmarkEntity, Int?)] = []
 
         for bookmarkOrFolder in bookmarks {
+
+            // Drop bookmarks/favorites whose URL uses an unsafe scheme (e.g. javascript:/data:), which
+            // would execute content rather than navigate if the bookmark were later activated. Folders
+            // are exempt (mirrors iOS BookmarkOrFolder.isInvalidBookmark) so a folder is never dropped
+            // along with its children even if it carries a stray URL string.
+            if !bookmarkOrFolder.isFolder, bookmarkOrFolder.urlString?.hasUnsafeBookmarkImportScheme() == true {
+                total.failed += 1
+                continue
+            }
 
             let bookmarkManagedObject: BookmarkEntity
             if bookmarkOrFolder.isFolder {

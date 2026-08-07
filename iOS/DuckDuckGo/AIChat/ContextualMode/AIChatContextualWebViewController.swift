@@ -39,6 +39,16 @@ protocol AIChatContextualWebViewControllerDelegate: AnyObject {
 
 final class AIChatContextualWebViewController: UIViewController {
 
+    private struct PendingRichPrompt {
+        let prompt: String
+        let images: [AIChatNativePrompt.NativePromptImage]?
+        let files: [AIChatNativePrompt.NativePromptFile]?
+        let modelId: String?
+        let tools: [AIChatRAGTool]?
+        let pageContext: AIChatPageContextData?
+        let reasoningEffort: AIChatReasoningEffort?
+    }
+
     // MARK: - Properties
 
     weak var delegate: AIChatContextualWebViewControllerDelegate?
@@ -70,14 +80,18 @@ final class AIChatContextualWebViewController: UIViewController {
     private var pendingPrompt: String?
     /// Page context bundled with a pending prompt submission (consumed together in `submitPromptNow`).
     private var pendingPageContext: AIChatPageContextData?
+    private var pendingRichPrompt: PendingRichPrompt?
     /// Standalone page context for the "Attach Page Content" chip, buffered when WebView isn't ready yet.
     private var pendingChipContext: AIChatPageContextData?
     private var hasPendingChipContext = false
     /// Set to true when WKWebView finishes loading HTML (`didFinish` navigation). Does not guarantee the frontend JS app is ready.
     private var isPageReady = false
     private var isContentHandlerReady = false
-    /// Set to true when the Duck.ai web app has initialized and registered its JS message handlers (signaled by `getAIChatPageContext`).
-    private var isFrontendReady = false
+    /// The Duck.ai initialization handshake is signaled by `getAIChatPageContext`.
+    private let frontendReadinessGate = AIChatFrontendReadinessGate()
+    private var canDeliverPrompt: Bool {
+        isPageReady && isContentHandlerReady
+    }
     private var urlObservation: NSKeyValueObservation?
     private var lastContextualChatURL: URL?
 
@@ -134,7 +148,7 @@ final class AIChatContextualWebViewController: UIViewController {
          isFireTab: Bool = false,
          duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
          downloadHandler: DownloadHandling,
-         getPageContext: ((PageContextRequestReason) -> AIChatPageContextData?)?,
+         getPageContext: PageContextAsyncProvider?,
          pixelHandler: AIChatContextualModePixelFiring,
          debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
          userAgentManager: UserAgentManaging = DefaultUserAgentManager.shared,
@@ -174,7 +188,7 @@ final class AIChatContextualWebViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        Logger.aiChat.debug("[ContextualWebVC] viewDidLoad - initialURL: \(String(describing: self.initialURL?.absoluteString))")
+        Logger.aiChat.debug("[ContextualWebVC] viewDidLoad - initialURL: \(self.initialURL?.shortDescription ?? "nil")")
         setupUI()
         if shouldInstallUTIHost, let utiHostInstaller {
             utiHost = utiHostInstaller(self)
@@ -183,7 +197,7 @@ final class AIChatContextualWebViewController: UIViewController {
         setupURLObservation()
         setupDownloadHandler()
         if let url = initialURL {
-            Logger.aiChat.debug("[ContextualWebVC] Loading initialURL: \(url.absoluteString)")
+            Logger.aiChat.debug("[ContextualWebVC] Loading initialURL: \(url.shortDescription)")
             loadChatURL(url)
         } else {
             Logger.aiChat.debug("[ContextualWebVC] No initialURL, loading default AI chat")
@@ -201,9 +215,9 @@ final class AIChatContextualWebViewController: UIViewController {
     func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil) {
         Logger.aiChat.debug("[ContextualWebVC] submitPrompt called - isPageReady: \(self.isPageReady), isContentHandlerReady: \(self.isContentHandlerReady)")
         if pageContext != nil {
-            utiHost?.markPromptSubmitted()
+            utiHost?.notifyPromptDelivered()
         }
-        if isPageReady && isContentHandlerReady {
+        if canDeliverPrompt {
             Logger.aiChat.debug("[ContextualWebVC] Submitting prompt immediately")
             let didSendBridgeMessage = aiChatContentHandler.canDispatchBridgeMessages
             aiChatContentHandler.submitPrompt(prompt, pageContext: pageContext)
@@ -216,15 +230,46 @@ final class AIChatContextualWebViewController: UIViewController {
         }
     }
 
+    func submitPrompt(_ prompt: String,
+                      images: [AIChatNativePrompt.NativePromptImage]?,
+                      files: [AIChatNativePrompt.NativePromptFile]?,
+                      modelId: String?,
+                      tools: [AIChatRAGTool]?,
+                      pageContext: AIChatPageContextData? = nil,
+                      reasoningEffort: AIChatReasoningEffort?) {
+        Logger.aiChat.debug("[ContextualWebVC] submit rich prompt called - isPageReady: \(self.isPageReady), isContentHandlerReady: \(self.isContentHandlerReady)")
+        if canDeliverPrompt {
+            let didSendBridgeMessage = aiChatContentHandler.canDispatchBridgeMessages
+            aiChatContentHandler.submitPrompt(prompt, images: images, files: files, modelId: modelId, tools: tools, pageContext: pageContext, reasoningEffort: reasoningEffort)
+            utiHost?.promptDeliveryUpdated(wasQueued: false, didSendBridgeMessage: didSendBridgeMessage)
+        } else {
+            utiHost?.promptDeliveryUpdated(wasQueued: true, didSendBridgeMessage: nil)
+            pendingRichPrompt = PendingRichPrompt(prompt: prompt,
+                                                  images: images,
+                                                  files: files,
+                                                  modelId: modelId,
+                                                  tools: tools,
+                                                  pageContext: pageContext,
+                                                  reasoningEffort: reasoningEffort)
+            pendingPrompt = nil
+            pendingPageContext = nil
+        }
+    }
+
+    func waitUntilFrontendReady(timeout: TimeInterval) async -> Bool {
+        await frontendReadinessGate.waitUntilReady(timeout: timeout)
+    }
+
     /// Called by the delegate chain when the Frontend requests content, indicating it has initialized.
     func markFrontendAsReady() {
-        guard !isFrontendReady else { return }
-        isFrontendReady = true
+        frontendReadinessGate.markReady()
         submitPendingIfReady()
     }
 
     func startNewChat() {
-        aiChatContentHandler.submitStartChatAction()
+        Task { @MainActor in
+            await aiChatContentHandler.submitStartChatAction()
+        }
     }
 
     func pushPageContext(_ context: AIChatPageContextData?) {
@@ -241,7 +286,7 @@ final class AIChatContextualWebViewController: UIViewController {
     func reload() {
         isPageReady = false
         isContentHandlerReady = false
-        isFrontendReady = false
+        frontendReadinessGate.reset()
         webView.reload()
     }
 
@@ -255,11 +300,12 @@ final class AIChatContextualWebViewController: UIViewController {
 
     func loadChatURL(_ url: URL) {
         let urlToLoad = chatURLForLoading(url)
-        Logger.aiChat.debug("[ContextualWebVC] loadChatURL - resetting page ready flag and loading: \(urlToLoad.absoluteString)")
+        Logger.aiChat.debug("[ContextualWebVC] loadChatURL - resetting page ready flag and loading: \(urlToLoad.shortDescription)")
         isPageReady = false
-        isFrontendReady = false
+        frontendReadinessGate.reset()
         pendingPrompt = nil
         pendingPageContext = nil
+        pendingRichPrompt = nil
         hasPendingChipContext = false
         pendingChipContext = nil
         loadingView.startAnimating()
@@ -342,17 +388,20 @@ final class AIChatContextualWebViewController: UIViewController {
 
     /// Handles edge case where user submits or pushes context before preloaded web view is fully ready.
     private func submitPendingIfReady() {
-        Logger.aiChat.debug("[ContextualWebVC] submitPendingIfReady - pendingPrompt: \(self.pendingPrompt != nil), hasPendingChipContext: \(self.hasPendingChipContext), isPageReady: \(self.isPageReady), isContentHandlerReady: \(self.isContentHandlerReady), isFrontendReady: \(self.isFrontendReady)")
-        guard isPageReady, isContentHandlerReady else { return }
+        Logger.aiChat.debug("[ContextualWebVC] submitPendingIfReady - pendingPrompt: \(self.pendingPrompt != nil), pendingRichPrompt: \(self.pendingRichPrompt != nil), hasPendingChipContext: \(self.hasPendingChipContext), isPageReady: \(self.isPageReady), isContentHandlerReady: \(self.isContentHandlerReady), isFrontendReady: \(self.frontendReadinessGate.isReady)")
+        guard canDeliverPrompt else { return }
 
-        if let prompt = pendingPrompt {
+        if let richPrompt = pendingRichPrompt {
+            pendingRichPrompt = nil
+            submitPromptNow(richPrompt)
+        } else if let prompt = pendingPrompt {
             let pageContext = pendingPageContext
             pendingPrompt = nil
             pendingPageContext = nil
             submitPromptNow(prompt, pageContext: pageContext)
         }
 
-        if hasPendingChipContext, isFrontendReady {
+        if hasPendingChipContext, frontendReadinessGate.isReady {
             let context = pendingChipContext
             hasPendingChipContext = false
             pendingChipContext = nil
@@ -364,6 +413,19 @@ final class AIChatContextualWebViewController: UIViewController {
         Logger.aiChat.debug("[ContextualWebVC] Submitting pending prompt now")
         let didSendBridgeMessage = aiChatContentHandler.canDispatchBridgeMessages
         aiChatContentHandler.submitPrompt(prompt, pageContext: pageContext)
+        utiHost?.promptDeliveryUpdated(wasQueued: nil, didSendBridgeMessage: didSendBridgeMessage)
+    }
+
+    private func submitPromptNow(_ richPrompt: PendingRichPrompt) {
+        Logger.aiChat.debug("[ContextualWebVC] Submitting pending rich prompt now")
+        let didSendBridgeMessage = aiChatContentHandler.canDispatchBridgeMessages
+        aiChatContentHandler.submitPrompt(richPrompt.prompt,
+                                         images: richPrompt.images,
+                                         files: richPrompt.files,
+                                         modelId: richPrompt.modelId,
+                                         tools: richPrompt.tools,
+                                         pageContext: richPrompt.pageContext,
+                                         reasoningEffort: richPrompt.reasoningEffort)
         utiHost?.promptDeliveryUpdated(wasQueued: nil, didSendBridgeMessage: didSendBridgeMessage)
     }
 
@@ -450,7 +512,7 @@ extension AIChatContextualWebViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        Logger.aiChat.debug("[ContextualWebVC] didFinish navigation - URL: \(String(describing: webView.url?.absoluteString))")
+        Logger.aiChat.debug("[ContextualWebVC] didFinish navigation - URL: \(webView.url?.shortDescription ?? "nil")")
         loadingView.stopAnimating()
         isPageReady = true
         submitPendingIfReady()

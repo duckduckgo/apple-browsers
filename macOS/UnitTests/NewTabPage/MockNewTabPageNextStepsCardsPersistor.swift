@@ -25,6 +25,8 @@ final class MockNewTabPageNextStepsCardsPersistor: NewTabPageNextStepsCardsPersi
     private var timesDismissedStorage: [NewTabPageDataModel.CardID: Int] = [:]
 
     var orderedCardIDs: [NewTabPageDataModel.CardID]?
+    var dailyVisibleStack: [NewTabPageDataModel.CardID]?
+    var visibleStackDayIdentifier: Int?
     var firstCardLevel: NewTabPageDataModel.CardLevel = .level1
     var isFirstSession: Bool = true
     var ntpImpressionCount: Int = 0
@@ -59,6 +61,8 @@ final class MockNewTabPageNextStepsCardsPersistor: NewTabPageNextStepsCardsPersi
         timesShownStorage.removeAll()
         timesDismissedStorage.removeAll()
         orderedCardIDs = nil
+        dailyVisibleStack = nil
+        visibleStackDayIdentifier = nil
         firstCardLevel = .level1
         isFirstSession = true
         ntpImpressionCount = 0

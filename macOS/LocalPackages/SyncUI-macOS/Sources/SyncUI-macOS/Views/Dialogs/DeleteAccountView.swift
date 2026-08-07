@@ -28,7 +28,7 @@ struct DeleteAccountView: View {
     var body: some View {
         SyncDialog {
             VStack(spacing: 20.0) {
-                Image(.syncRemoveDeviceDesktop)
+                Image(model.isAppRebranded ? .syncRemoveDeviceDesktop : .syncRemoveDeviceDesktopLegacy)
                 SyncUIViews.TextHeader(text: UserText.deleteAccountTitle)
                 SyncUIViews.TextDetailMultiline(text: UserText.deleteAccountMessage)
             }
@@ -42,11 +42,15 @@ struct DeleteAccountView: View {
             Button(UserText.cancel) {
                 model.cancelPressed()
             }
-            .buttonStyle(DismissActionButtonStyle())
+            .buttonStyle(DismissActionButtonStyle(stateColors: .themedDismissButton))
             Button(UserText.deleteAccountButton) {
                 model.delegate?.deleteAccount()
             }
-            .buttonStyle(DestructiveActionButtonStyle(enabled: true))
+            .buttonStyle(DestructiveActionButtonStyle(
+                enabled: true,
+                backgroundColor: Color(designSystemColor: .destructivePrimary),
+                backgroundPressedColor: Color(designSystemColor: .destructiveSecondary)
+            ))
         }
         .frame(width: 360,
                // Grow with the number of devices, up to a point

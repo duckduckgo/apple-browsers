@@ -29,7 +29,7 @@ final class UnifiedToggleInputToolbarView: UIView {
 
     private enum Constants {
         static let topPadding: CGFloat = 4
-        static let bottomPadding: CGFloat = 8
+        static let bottomPadding: CGFloat = 4
         static let horizontalPadding: CGFloat = 8
         static let toolButtonSize: CGFloat = 40
         static let selectedToolIconSize: CGFloat = 24
@@ -49,6 +49,8 @@ final class UnifiedToggleInputToolbarView: UIView {
     var onVoiceTapped: (() -> Void)?
     var onStopGeneratingTapped: (() -> Void)?
     var onReturnKeyTapped: (() -> Void)?
+    var onModelPickerShown: (() -> Void)?
+    var onReasoningPickerShown: (() -> Void)?
 
     // MARK: - State
 
@@ -125,6 +127,8 @@ final class UnifiedToggleInputToolbarView: UIView {
     /// otherwise.
     @discardableResult
     func presentModelPickerMenu() -> Bool {
+        guard modelPickerMenu != nil else { return false }
+
         if #available(iOS 17.4, *) {
             modelChipButton.performPrimaryAction()
             return true
@@ -192,6 +196,15 @@ final class UnifiedToggleInputToolbarView: UIView {
         set { returnKeyButton.isHidden = newValue }
     }
 
+    var isEditing: Bool = false {
+        didSet {
+            guard oldValue != isEditing else { return }
+            leftControlsGroup.isHidden = isEditing
+            secondaryTrailingGroup.isHidden = isEditing
+            updateSubmitButtonAppearance()
+        }
+    }
+
     private var modelChipExplicitlyHidden = false
 
     // MARK: - UI Components
@@ -202,11 +215,17 @@ final class UnifiedToggleInputToolbarView: UIView {
         action: nil
     )
 
-    private(set) lazy var imageButton: UIButton = makeToolButton(
-        image: DesignSystemImages.Glyphs.Size24.attach,
-        accessibilityLabel: UserText.aiChatToolbarAttachButtonAccessibilityLabel,
-        action: nil
-    )
+    private(set) lazy var imageButton: UIButton = {
+        let button = makeToolButton(
+            image: DesignSystemImages.Glyphs.Size24.attach,
+            accessibilityLabel: UserText.aiChatToolbarAttachButtonAccessibilityLabel,
+            action: nil
+        )
+        if #available(iOS 16.0, *) {
+            button.preferredMenuElementOrder = .fixed
+        }
+        return button
+    }()
 
     private lazy var reasoningButton: UIButton = {
         let button = makeToolButton(
@@ -219,6 +238,7 @@ final class UnifiedToggleInputToolbarView: UIView {
         if #available(iOS 16.0, *) {
             button.preferredMenuElementOrder = .fixed
         }
+        button.addTarget(self, action: #selector(reasoningPickerShown), for: .touchDown)
         return button
     }()
 
@@ -252,6 +272,7 @@ final class UnifiedToggleInputToolbarView: UIView {
         if #available(iOS 16.0, *) {
             button.preferredMenuElementOrder = .fixed
         }
+        button.addTarget(self, action: #selector(modelPickerShown), for: .touchDown)
         button.translatesAutoresizingMaskIntoConstraints = false
         button.setContentHuggingPriority(.defaultLow, for: .horizontal)
         button.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
@@ -342,6 +363,7 @@ final class UnifiedToggleInputToolbarView: UIView {
         button.setContentHuggingPriority(.required, for: .horizontal)
         button.setContentCompressionResistancePriority(.required, for: .horizontal)
         button.accessibilityLabel = UserText.aiChatToolbarSubmitButtonAccessibilityLabel
+        button.accessibilityIdentifier = "AIChat.Toolbar.Button.Submit"
         button.addTarget(self, action: #selector(submitTapped), for: .touchUpInside)
         NSLayoutConstraint.activate([
             button.widthAnchor.constraint(equalToConstant: Constants.toolButtonSize),
@@ -373,6 +395,24 @@ final class UnifiedToggleInputToolbarView: UIView {
         return button
     }()
 
+    private lazy var leftControlsGroup: UIStackView = {
+        let stack = UIStackView(arrangedSubviews: [imageButton, toolsButton, selectedToolChipView])
+        stack.axis = .horizontal
+        stack.spacing = Constants.leftGroupSpacing
+        stack.alignment = .center
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        return stack
+    }()
+
+    private lazy var secondaryTrailingGroup: UIStackView = {
+        let stack = UIStackView(arrangedSubviews: [reasoningButton, modelChipButton])
+        stack.axis = .horizontal
+        stack.spacing = Constants.rightGroupSpacing
+        stack.alignment = .center
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        return stack
+    }()
+
     // MARK: - Initialization
 
     override init(frame: CGRect) {
@@ -388,18 +428,12 @@ final class UnifiedToggleInputToolbarView: UIView {
 private extension UnifiedToggleInputToolbarView {
 
     private func setupUI() {
-        let leftGroup = UIStackView(arrangedSubviews: [imageButton, toolsButton, selectedToolChipView])
-        leftGroup.axis = .horizontal
-        leftGroup.spacing = Constants.leftGroupSpacing
-        leftGroup.alignment = .center
-        leftGroup.translatesAutoresizingMaskIntoConstraints = false
-
         let spacer = UIView()
         spacer.translatesAutoresizingMaskIntoConstraints = false
         spacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
         spacer.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
-        let rightGroup = UIStackView(arrangedSubviews: [reasoningButton, modelChipButton, returnKeyButton, submitButton, stopButton])
+        let rightGroup = UIStackView(arrangedSubviews: [secondaryTrailingGroup, returnKeyButton, submitButton, stopButton])
         rightGroup.axis = .horizontal
         rightGroup.spacing = Constants.rightGroupSpacing
         rightGroup.alignment = .center
@@ -407,7 +441,7 @@ private extension UnifiedToggleInputToolbarView {
         rightGroup.setContentHuggingPriority(.required, for: .horizontal)
         rightGroup.setContentCompressionResistancePriority(.required, for: .horizontal)
 
-        let outerStack = UIStackView(arrangedSubviews: [leftGroup, spacer, rightGroup])
+        let outerStack = UIStackView(arrangedSubviews: [leftControlsGroup, spacer, rightGroup])
         outerStack.axis = .horizontal
         outerStack.alignment = .center
         outerStack.translatesAutoresizingMaskIntoConstraints = false
@@ -479,7 +513,7 @@ private extension UnifiedToggleInputToolbarView {
     }
 
     func updateSubmitButtonAppearance() {
-        let showVoice = isAIVoiceChatActive && !isSubmitEnabled
+        let showVoice = isAIVoiceChatActive && !isSubmitEnabled && !isEditing
         let usesReturnKeyStyle = usesNewPromptSubmitStyle || preservesSubmitStyleDuringDismissal
         let icon: UIImage? = {
             if showVoice {
@@ -524,6 +558,14 @@ private extension UnifiedToggleInputToolbarView {
 
     @objc private func selectedToolClearTapped() { onSelectedToolClearTapped?() }
     @objc private func returnKeyTapped() { onReturnKeyTapped?() }
+    @objc private func modelPickerShown() {
+        guard modelPickerMenu != nil else { return }
+        onModelPickerShown?()
+    }
+    @objc private func reasoningPickerShown() {
+        guard reasoningPickerMenu != nil else { return }
+        onReasoningPickerShown?()
+    }
     @objc private func submitTapped() {
         if isAIVoiceChatActive && !isSubmitEnabled {
             onVoiceTapped?()
@@ -532,31 +574,4 @@ private extension UnifiedToggleInputToolbarView {
         }
     }
     @objc private func stopGeneratingTapped() { onStopGeneratingTapped?() }
-}
-
-private extension AIChatRAGTool {
-
-    var toolbarChipIcon: DesignSystemImage? {
-        switch self {
-        case .webSearch:
-            return DesignSystemImages.Glyphs.Size24.globe
-        case .imageGeneration:
-            return DesignSystemImages.Glyphs.Size24.images
-        case .newsSearch, .videosSearch, .localSearch, .relatedSearchTerms, .weatherForecast:
-            // Not surfaced in the unified-input tools menu — defensive fallback only.
-            return nil
-        }
-    }
-
-    var toolbarChipAccessibilityLabel: String? {
-        switch self {
-        case .webSearch:
-            return UserText.aiChatToolbarWebSearchToolTitle
-        case .imageGeneration:
-            return UserText.aiChatToolbarImageGenerationToolTitle
-        case .newsSearch, .videosSearch, .localSearch, .relatedSearchTerms, .weatherForecast:
-            // Not surfaced in the unified-input tools menu — defensive fallback only.
-            return nil
-        }
-    }
 }

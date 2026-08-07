@@ -116,15 +116,26 @@ extension NewTabPageActionsManager {
         )
         let omnibarActionHandler = NewTabPageOmnibarActionsHandler(
             windowControllersManager: windowControllersManager,
-            tabsPreferences: tabsPreferences
+            tabsPreferences: tabsPreferences,
+            historyCoordinator: historyCoordinator,
+            aiChatDeleter: AIChatDeleter(historyCleaner: HistoryCleaner(
+                featureFlagger: featureFlagger,
+                privacyConfig: contentBlocking.privacyConfigurationManager,
+                nativeStorageHandler: NSApp.delegateTyped.duckAiNativeStorageHandler,
+                featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger)
+            ))
         )
         let omnibarConfigProvider = NewTabPageOmnibarConfigProvider(
             keyValueStore: keyValueStore,
             aiChatShortcutSettingProvider: newTabPageAIChatShortcutSettingProvider,
             featureFlagger: featureFlagger,
             aiChatPreferencesPersistor: NSApp.delegateTyped.aiChatPreferencesPersistor,
-            searchPreferences: NSApp.delegateTyped.searchPreferences
+            searchPreferences: NSApp.delegateTyped.searchPreferences,
+            windowControllersManager: windowControllersManager
         )
+        omnibarActionHandler.onCustomizeResponsesChanged = { [weak omnibarConfigProvider] in
+            omnibarConfigProvider?.notifyCustomizeResponsesChanged()
+        }
         let aiChatsProvider = NewTabPageOmnibarAiChatsProvider(
             featureFlagger: featureFlagger,
             configProvider: omnibarConfigProvider,
@@ -150,28 +161,28 @@ extension NewTabPageActionsManager {
             appearancePreferences: appearancePreferences,
             installDateProvider: { LocalStatisticsStore().installDate }
         )
-        let nextStepsCardsFacade = NewTabPageNextStepsCardsProviderFacade(
-            featureFlagger: featureFlagger,
-            dataImportProvider: dataImportProvider,
-            subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
-            legacyPersistor: homePageContinueSetUpModelPersistor,
-            pixelHandler: nextStepsPixelHandler,
-            cardActionsHandler: NewTabPageNextStepsCardsActionHandler(
+        let nextStepsCardsProvider = NewTabPageNextStepsSingleCardProvider(
+            cardActionHandler: NewTabPageNextStepsCardsActionHandler(
                 defaultBrowserProvider: SystemDefaultBrowserProvider(),
                 dockCustomizer: dockCustomization,
                 dataImportProvider: dataImportProvider,
                 tabOpener: NewTabPageTabOpener(),
                 privacyConfigurationManager: contentBlocking.privacyConfigurationManager,
                 pixelHandler: nextStepsPixelHandler,
-                newTabPageNavigator: DefaultNewTabPageNavigator(),
-                featureFlagger: featureFlagger
+                newTabPageNavigator: DefaultNewTabPageNavigator()
             ),
-            appearancePreferences: appearancePreferences,
-            legacySubscriptionCardPersistor: subscriptionCardPersistor,
+            pixelHandler: nextStepsPixelHandler,
             persistor: nextStepsCardsPersistor,
+            legacyPersistor: homePageContinueSetUpModelPersistor,
+            legacySubscriptionCardPersistor: subscriptionCardPersistor,
+            appearancePreferences: appearancePreferences,
+            featureFlagger: featureFlagger,
+            defaultBrowserProvider: SystemDefaultBrowserProvider(),
+            dockCustomizer: dockCustomization,
+            dataImportProvider: dataImportProvider,
             duckPlayerPreferences: duckPlayerPreferences,
+            subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
             syncService: syncService,
-            dockCustomization: dockCustomization,
             adBlockingAvailability: NSApp.delegateTyped.adBlockingAvailability
         )
         let buildType = StandardApplicationBuildType()
@@ -199,7 +210,7 @@ extension NewTabPageActionsManager {
             )
             promoService.setDelegate(for: PromoServiceFactory.freemiumDBP.id, delegate: delegate)
 
-            let nextStepsDelegate = NextStepsCardsPromoDelegate(cardsProvider: nextStepsCardsFacade)
+            let nextStepsDelegate = NextStepsCardsPromoDelegate(cardsProvider: nextStepsCardsProvider)
             promoService.setDelegate(for: PromoServiceFactory.nextSteps.id, delegate: nextStepsDelegate)
         }
 
@@ -214,12 +225,13 @@ extension NewTabPageActionsManager {
                 customBackgroundProvider: customizationProvider,
                 linkOpener: NewTabPageLinkOpener(),
                 eventMapper: NewTabPageConfigurationEventHandler(),
-                stateProvider: stateProvider
+                stateProvider: stateProvider,
+                isRebrandEnabled: featureFlagger.isFeatureOn(.newTabPageRebranding)
             ),
             NewTabPageCustomBackgroundClient(model: customizationProvider),
             NewTabPageRMFClient(remoteMessageProvider: activeRemoteMessageModel),
             NewTabPageFreemiumDBPClient(provider: freemiumDBPBannerProvider),
-            NewTabPageNextStepsCardsClient(model: nextStepsCardsFacade),
+            NewTabPageNextStepsCardsClient(model: nextStepsCardsProvider),
             NewTabPageFavoritesClient(favoritesModel: favoritesModel, preferredFaviconSize: Int(Favicon.SizeCategory.medium.rawValue)),
             NewTabPageProtectionsReportClient(model: protectionsReportModel),
             NewTabPagePrivacyStatsClient(model: privacyStatsModel),
@@ -227,8 +239,13 @@ extension NewTabPageActionsManager {
             NewTabPageOmnibarClient(configProvider: omnibarConfigProvider,
                                     suggestionsProvider: suggestionsProvider,
                                     aiChatsProvider: aiChatsProvider,
-                                    modelsProvider: NewTabPageOmnibarModelsProvider(),
-                                    actionHandler: omnibarActionHandler),
+                                    modelsProvider: NewTabPageOmnibarModelsProvider(featureFlagger: featureFlagger),
+                                    actionHandler: omnibarActionHandler,
+                                    tabsProvider: NewTabPageOmnibarTabsProvider(windowControllersManager: windowControllersManager),
+                                    subscriptionDialogPresenter: NewTabPageOmnibarSubscriptionDialogPresenter(
+                                        coordinator: Application.appDelegate.subscriptionNavigationCoordinator,
+                                        subscriptionManager: Application.appDelegate.subscriptionManager
+                                    )),
             NewTabPageWinBackOfferClient(provider: winBackOfferBannerProvider)
         ])
     }

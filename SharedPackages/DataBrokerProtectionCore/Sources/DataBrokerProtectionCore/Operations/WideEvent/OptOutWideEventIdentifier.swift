@@ -18,21 +18,24 @@
 
 import Foundation
 import BrowserServicesKit
-import PixelKit
 
 /// We want a stable ID for different opt-out attempts associated with an extracted profile,
 /// so we can measure the time spent to successfully submit/confirm an opt-out request
 struct OptOutWideEventIdentifier {
-    let profileIdentifier: String?
     let brokerId: Int64
     let profileQueryId: Int64
     let extractedProfileId: Int64
 
-    /// Ideally we use the profile identifier on the broker (which falls back to the profile URL),
-    /// but we need another fallback in case it's nil, so that we won't under count wide events
-    ///
+    /// Returns UUID-shaped string
     /// These only need to be locally unique as they aren't sent with the wide events.
     var toGlobalId: String {
-        profileIdentifier?.sha256 ?? "\(brokerId)-\(profileQueryId)-\(extractedProfileId)"
+        let hash = "\(brokerId)-\(profileQueryId)-\(extractedProfileId)".sha256
+        return [
+            String(hash.prefix(8)),
+            String(hash.dropFirst(8).prefix(4)),
+            String(hash.dropFirst(12).prefix(4)),
+            String(hash.dropFirst(16).prefix(4)),
+            String(hash.dropFirst(20).prefix(12))
+        ].joined(separator: "-")
     }
 }

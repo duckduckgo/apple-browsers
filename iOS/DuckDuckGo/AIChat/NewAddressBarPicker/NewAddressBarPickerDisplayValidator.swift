@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import FoundationExtensions
 import os.log
 import BrowserServicesKit
 import Core
@@ -25,6 +26,7 @@ import Persistence
 import PrivacyConfig
 import AIChat
 import RemoteMessaging
+import FeatureFlags_iOS
 
 protocol NewAddressBarPickerDisplayValidating {
     func shouldDisplayNewAddressBarPicker() -> Bool

@@ -1,8 +1,9 @@
 # ai-chat-settings.yaml
 # Validates the "Duck.ai Settings" row in Settings > AI Features:
-#  - it is shown below the Duck.ai toggle when Duck.ai is enabled
-#  - it is hidden when the Duck.ai toggle is disabled
+#  - it is shown in the "Duck.ai" section when Duck.ai is enabled
+#  - it is hidden when the Duck.ai toggle is disabled (the whole section collapses)
 #  - tapping it dismisses Settings and opens duck.ai in a new tab
+
 appId: com.duckduckgo.mobile.ios
 tags:
     - iphone
@@ -22,21 +23,37 @@ tags:
     direction: DOWN
 - tapOn: "AI Features"
 
-# Duck.ai is enabled by default - the new row should be visible below the toggle
+# Duck.ai is enabled by default - the row should be visible in the Duck.ai section
+- scrollUntilVisible:
+    element:
+        id: "Settings.AIFeatures.DuckAISettings"
+    direction: DOWN
+    centerElement: true
 - assertVisible:
     id: "Settings.AIFeatures.DuckAISettings"
 - assertVisible: "Duck.ai Settings"
 
-# Disable the main Duck.ai toggle - the row should be hidden
+# Disable the main Duck.ai toggle (back at the top) - the section should collapse
+- scrollUntilVisible:
+    element:
+        id: "Settings.AIFeatures.EnableToggle"
+    direction: UP
 - tapOn:
     id: "Settings.AIFeatures.EnableToggle"
+- waitForAnimationToEnd
 - assertNotVisible:
     id: "Settings.AIFeatures.DuckAISettings"
 - assertNotVisible: "Duck.ai Settings"
 
-# Re-enable the main Duck.ai toggle - the row should reappear
+# Re-enable the main Duck.ai toggle - the Duck.ai section should reappear
 - tapOn:
     id: "Settings.AIFeatures.EnableToggle"
+- waitForAnimationToEnd
+- scrollUntilVisible:
+    element:
+        id: "Settings.AIFeatures.DuckAISettings"
+    direction: DOWN
+    centerElement: true
 - assertVisible:
     id: "Settings.AIFeatures.DuckAISettings"
 

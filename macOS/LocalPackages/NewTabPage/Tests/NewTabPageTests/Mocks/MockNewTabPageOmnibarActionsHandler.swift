@@ -16,13 +16,18 @@
 //  limitations under the License.
 //
 
+import AppKit
 import NewTabPage
 
 final class MockNewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
     var submitSearchHandler: ((String, NewTabPageDataModel.OpenTarget) -> Void)?
     var openSuggestionHandler: ((NewTabPageDataModel.Suggestion, NewTabPageDataModel.OpenTarget) -> Void)?
-    var submitChatHandler: ((String, NewTabPageDataModel.OpenTarget, String?, [NewTabPageDataModel.SubmitChatImage]?, String?, [String]?, String?) -> Void)?
+    var submitChatHandler: ((String, NewTabPageDataModel.OpenTarget, String?, [NewTabPageDataModel.SubmitChatImage]?, String?, [String]?, String?, [NewTabPageDataModel.OmnibarPageContext]?, [NewTabPageDataModel.OmnibarPromptFile]?) -> Void)?
     var openAiChatHandler: ((String, Bool, NewTabPageDataModel.OpenAiChatTrigger, NewTabPageDataModel.OpenTarget) -> Void)?
+    var confirmDeleteAiChatHandler: ((String, String, NSWindow?) async -> Bool)?
+    var removeSuggestionHandler: ((String) -> Void)?
+    var openCustomizeResponsesHandler: (() -> Void)?
+    var setCustomizeResponsesActiveHandler: ((Bool) -> Void)?
 
     @MainActor
     func submitSearch(_ term: String, target: NewTabPageDataModel.OpenTarget) {
@@ -41,8 +46,10 @@ final class MockNewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandlin
                     images: [NewTabPageDataModel.SubmitChatImage]?,
                     mode: String?,
                     toolChoice: [String]?,
-                    reasoningEffort: String?) {
-        submitChatHandler?(chat, target, modelId, images, mode, toolChoice, reasoningEffort)
+                    reasoningEffort: String?,
+                    pageContexts: [NewTabPageDataModel.OmnibarPageContext]?,
+                    files: [NewTabPageDataModel.OmnibarPromptFile]?) {
+        submitChatHandler?(chat, target, modelId, images, mode, toolChoice, reasoningEffort, pageContexts, files)
     }
 
     @MainActor
@@ -53,5 +60,25 @@ final class MockNewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandlin
     @MainActor
     func viewAllAiChats(target: NewTabPage.NewTabPageDataModel.OpenTarget) {
 
+    }
+
+    @MainActor
+    func confirmDeleteAiChat(chatId: String, title: String, sourceWindow: NSWindow?) async -> Bool {
+        await confirmDeleteAiChatHandler?(chatId, title, sourceWindow) ?? false
+    }
+
+    @MainActor
+    func removeSuggestion(_ url: String) {
+        removeSuggestionHandler?(url)
+    }
+
+    @MainActor
+    func openCustomizeResponses() {
+        openCustomizeResponsesHandler?()
+    }
+
+    @MainActor
+    func setCustomizeResponsesActive(_ active: Bool) {
+        setCustomizeResponsesActiveHandler?(active)
     }
 }

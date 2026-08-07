@@ -97,6 +97,10 @@ public struct DefaultRemoteMessagingSurveyURLBuilder: RemoteMessagingSurveyActio
                 if let billing = subscriptionDataProvider?.subscriptionBilling {
                     queryItems.append(URLQueryItem(name: parameter.rawValue, value: billing))
                 }
+            case .subscriptionTier:
+                if let tier = subscriptionDataProvider?.subscriptionTier {
+                    queryItems.append(URLQueryItem(name: parameter.rawValue, value: tier))
+                }
             case .subscriptionTrialActive:
                 if let trialActive = subscriptionDataProvider?.subscriptionTrialActive {
                     queryItems.append(URLQueryItem(name: parameter.rawValue, value: String(trialActive)))

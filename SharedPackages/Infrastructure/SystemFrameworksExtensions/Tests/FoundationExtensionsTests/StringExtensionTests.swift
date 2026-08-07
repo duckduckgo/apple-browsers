@@ -66,27 +66,6 @@ final class StringExtensionTests: XCTestCase {
         XCTAssertEqual(normalizedString, "dax")
     }
 
-    func testHashedSuffix() {
-        XCTAssertEqual("http://localhost:8084/#navlink".hashedSuffix, "#navlink")
-        XCTAssertEqual("http://localhost:8084/#navlink#1".hashedSuffix, "#navlink#1")
-        XCTAssertEqual("http://localhost:8084/#".hashedSuffix, "#")
-        XCTAssertEqual("http://localhost:8084/##".hashedSuffix, "##")
-        XCTAssertNil("http://localhost:8084/".hashedSuffix)
-        XCTAssertNil("http://localhost:8084".hashedSuffix)
-    }
-
-    func testDroppingHashedSuffix() {
-        XCTAssertEqual("http://localhost:8084/#navlink".droppingHashedSuffix(), "http://localhost:8084/")
-        XCTAssertEqual("http://localhost:8084/#navlink#1".droppingHashedSuffix(), "http://localhost:8084/")
-        // The 3 assertions below rely on a `String.url` test helper that uses
-        // `URL(trimmedAddressBarString:)` from URLExtension.swift. URLExtension
-        // is deferred from the BSK→SFE move (TLD coupling); restore these once
-        // URLExtension lands in FoundationExtensions.
-        // XCTAssertEqual("about://blank/#navlink1".url!.absoluteString.droppingHashedSuffix(), "about://blank/")
-        // XCTAssertEqual("about:blank/#navlink1".url!.absoluteString.droppingHashedSuffix(), "about:blank/")
-        // XCTAssertEqual("about:blank#navlink1".url!.absoluteString.droppingHashedSuffix(), "about:blank")
-    }
-
     func testToIPv4Host() {
         XCTAssertEqual("1.1.1.1".toIPv4Host, "1.1.1.1")
         XCTAssertEqual("1".toIPv4Host, "0.0.0.1")
@@ -433,6 +412,78 @@ final class StringExtensionTests: XCTestCase {
         XCTAssertEqual(result.count, "before  after".count + largeValue.count)
         XCTAssertTrue(result.hasPrefix("before "))
         XCTAssertTrue(result.hasSuffix(" after"))
+    }
+
+    // MARK: - truncated(to:position:ellipsis:trimmingWhitespace:)
+
+    // MARK: Short / equal-length strings pass through unchanged
+
+    func testWhenStringIsShorterThanMaxLengthThenTruncatedReturnsOriginal() {
+        XCTAssertEqual("hello".truncated(to: 10), "hello")
+    }
+
+    func testWhenStringEqualsMaxLengthThenTruncatedReturnsOriginal() {
+        XCTAssertEqual("hello".truncated(to: 5), "hello")
+    }
+
+    // MARK: Middle truncation (default)
+
+    func testWhenMiddleTruncationNeededThenExactOutputMatches() {
+        // maxLength 11: usable=10, headLength=5, tailLength=5  →  "abcde" + "…" + "qrstu" = 11 chars
+        XCTAssertEqual("abcdefghijklmnopqrstu".truncated(to: 11), "abcde…qrstu")
+    }
+
+    func testWhenMiddleTruncationNeededWithEvenMaxLengthThenHeadIsOneLongerThanTail() {
+        // maxLength 10: usable=9, headLength=5, tailLength=4  →  "abcde" + "…" + "rstu" = 10 chars
+        XCTAssertEqual("abcdefghijklmnopqrstu".truncated(to: 10), "abcde…rstu")
+    }
+
+    func testWhenMaxLengthIsOneAndMiddleTruncationNeededThenReturnsEllipsis() {
+        XCTAssertEqual("hello".truncated(to: 1), "…")
+    }
+
+    func testWhenMiddleTruncationUsesCustomEllipsisThenExactOutputMatches() {
+        // maxLength 11, ellipsis "...", usable=8, headLength=4, tailLength=4  →  "abcd" + "..." + "rstu" = 11 chars
+        XCTAssertEqual("abcdefghijklmnopqrstu".truncated(to: 11, ellipsis: "..."), "abcd...rstu")
+    }
+
+    // MARK: Tail truncation
+
+    func testWhenTailTruncationNeededThenExactOutputMatches() {
+        // maxLength 8: usable=7  →  "abcdefg" + "…" = 8 chars
+        XCTAssertEqual("abcdefghijklmnopqrstu".truncated(to: 8, position: .tail), "abcdefg…")
+    }
+
+    func testWhenTailTruncationNeededWithCustomEllipsisThenExactOutputMatches() {
+        // maxLength 8, ellipsis "...": usable=5  →  "abcde" + "..." = 8 chars
+        XCTAssertEqual("abcdefghijklmnopqrstu".truncated(to: 8, position: .tail, ellipsis: "..."), "abcde...")
+    }
+
+    func testWhenStringEqualsMaxLengthThenTailTruncatedReturnsOriginal() {
+        XCTAssertEqual("abcde".truncated(to: 5, position: .tail), "abcde")
+    }
+
+    // MARK: Whitespace trimming
+
+    func testWhenTrimmingWhitespaceAndMiddleTruncationNeededThenHeadAndTailAreStripped() {
+        // Without trimming: head = "abcde     " → trimmed to "abcde", tail = "     vwxyz" → trimmed to "vwxyz"
+        // maxLength 20: usable=19, headLength=10, tailLength=9
+        // head raw = "abcde     " → trimmed "abcde", tail raw = "     vwxyz" → trimmed "vwxyz"
+        let s = "abcde     " + String(repeating: "x", count: 200) + "     vwxyz"
+        XCTAssertEqual(s.truncated(to: 20, trimmingWhitespace: true), "abcde…vwxyz")
+    }
+
+    func testWhenTrimmingWhitespaceAndTailTruncationNeededThenHeadIsStripped() {
+        // maxLength 10: usable=9  →  raw head = "abcde    " → trimmed "abcde"  →  "abcde…"
+        let s = "abcde    " + String(repeating: "x", count: 200)
+        XCTAssertEqual(s.truncated(to: 10, position: .tail, trimmingWhitespace: true), "abcde…")
+    }
+
+    func testWhenNoTrimmingAndMiddleTruncationNeededThenWhitespaceIsKept() {
+        // Without trimming the spaces should be preserved in head/tail
+        let s = "abcde     " + String(repeating: "x", count: 200) + "     vwxyz"
+        let result = s.truncated(to: 20, trimmingWhitespace: false)
+        XCTAssertEqual(result, "abcde     …    vwxyz")
     }
 
 }

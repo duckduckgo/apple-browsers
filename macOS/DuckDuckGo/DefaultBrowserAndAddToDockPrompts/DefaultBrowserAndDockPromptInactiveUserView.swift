@@ -19,6 +19,10 @@
 import SwiftUI
 import Utilities
 
+#if DEBUG
+import PreviewSnapshots
+#endif
+
 final class DefaultBrowserAndDockPromptInactiveUserViewModel {
     let message: String
     let image: NSImage
@@ -134,56 +138,26 @@ private enum Metrics {
     static let height: CGFloat = 508
 }
 
-#Preview("Set As Default (Light)") {
-    let setAsDefault = DefaultBrowserAndDockPromptInactiveUserViewModel(
-        message: UserText.setAsDefaultInactiveUserPromptMessage,
-        image: .daxSearch,
-        primaryButtonLabel: UserText.setAsDefaultInactiveUserPrimaryAction,
-        dismissButtonLabel: UserText.setAsDefaultAndAddToDockInactiveUserDismissAction,
-        primaryButtonAction: {},
-        dismissButtonAction: {})
-    return DefaultBrowserAndDockPromptInactiveUserView(
-        viewModel: setAsDefault,
-        browsersComparisonChart: AnyView(DefaultBrowserAndDockPromptUIProvider().makeBrowserComparisonChart()))
-        .preferredColorScheme(.light)
-}
+#if DEBUG
+struct DefaultBrowserAndDockPromptInactiveUserView_Previews: PreviewProvider {
+    typealias State = DefaultBrowserAndDockPromptInactiveUserViewModel
 
-#Preview("Set As Default (Dark)") {
-    let setAsDefault = DefaultBrowserAndDockPromptInactiveUserViewModel(
-        message: UserText.setAsDefaultInactiveUserPromptMessage,
-        image: .daxSearch,
-        primaryButtonLabel: UserText.setAsDefaultInactiveUserPrimaryAction,
-        dismissButtonLabel: UserText.setAsDefaultAndAddToDockInactiveUserDismissAction,
-        primaryButtonAction: {},
-        dismissButtonAction: {})
-    return DefaultBrowserAndDockPromptInactiveUserView(
-        viewModel: setAsDefault,
-        browsersComparisonChart: AnyView(DefaultBrowserAndDockPromptUIProvider().makeBrowserComparisonChart()))
-        .preferredColorScheme(.dark)
-}
+    static var previews: some View {
+        snapshots.previews
+    }
 
-#Preview("Add To Dock") {
-    let addToDock = DefaultBrowserAndDockPromptInactiveUserViewModel(
-        message: UserText.addToDockInactiveUserPromptMessage,
-        image: .daxSearch,
-        primaryButtonLabel: UserText.addToDockInactiveUserPrimaryAction,
-        dismissButtonLabel: UserText.setAsDefaultAndAddToDockInactiveUserDismissAction,
-        primaryButtonAction: {},
-        dismissButtonAction: {})
-    return DefaultBrowserAndDockPromptInactiveUserView(
-        viewModel: addToDock,
-        browsersComparisonChart: AnyView(DefaultBrowserAndDockPromptUIProvider().makeBrowserComparisonChart()))
+    static let snapshots = PreviewSnapshots<State>(
+        configurations: [
+            .init(name: "Set As Default", state: .setAsDefault),
+            .init(name: "Add To Dock", state: .addToDock),
+            .init(name: "Add & Set As Default", state: .addToDockAndSetAsDefault)
+        ],
+        configure: {
+            DefaultBrowserAndDockPromptInactiveUserView(
+                viewModel: $0,
+                browsersComparisonChart: AnyView(DefaultBrowserAndDockPromptUIProvider().makeBrowserComparisonChart())
+            )
+        }
+    )
 }
-
-#Preview("Add & Set As Default") {
-    let addToDockAndSetAsDefault = DefaultBrowserAndDockPromptInactiveUserViewModel(
-        message: UserText.bothSetAsDefaultAndAddToDockInactiveUserPromptMessage,
-        image: .daxSearch,
-        primaryButtonLabel: UserText.bothSetAsDefaultAndAddToDockInactiveUserPrimaryAction,
-        dismissButtonLabel: UserText.setAsDefaultAndAddToDockInactiveUserDismissAction,
-        primaryButtonAction: {},
-        dismissButtonAction: {})
-    return DefaultBrowserAndDockPromptInactiveUserView(
-        viewModel: addToDockAndSetAsDefault,
-        browsersComparisonChart: AnyView(DefaultBrowserAndDockPromptUIProvider().makeBrowserComparisonChart()))
-}
+#endif

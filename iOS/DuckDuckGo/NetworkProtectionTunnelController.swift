@@ -27,6 +27,7 @@ import NetworkExtension
 import VPN
 import Subscription
 import PixelKit
+import FeatureFlags_iOS
 
 enum VPNConfigurationRemovalReason: String {
     case didBecomeActiveCheck
@@ -35,7 +36,7 @@ enum VPNConfigurationRemovalReason: String {
     case debugMenu
 }
 
-final class NetworkProtectionTunnelController: TunnelController, TunnelSessionProvider {
+final class NetworkProtectionTunnelController: VPNConnectionContextProvidingTunnelController, TunnelSessionProvider {
     static var shouldSimulateFailure: Bool = false
 
     private let featureFlagger: FeatureFlagger
@@ -48,8 +49,28 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     private var previousStatus: NEVPNStatus = .invalid
     private let persistentPixel: PersistentPixelFiring
     private let settings: VPNSettings
+    private lazy var startupMonitor = VPNStartupMonitor()
     private var cancellables = Set<AnyCancellable>()
-    
+
+    /// Carries user-facing messages for controller-side (pre-session) start failures.
+    ///
+    /// The status view surfaces connection errors through the tunnel session, but failures that abort
+    /// before the session is created (e.g. a missing auth token) never reach that observer. This subject
+    /// gives those pre-session failures a channel to the UI; `nil` means "no error to show".
+    private let controllerErrorSubject = CurrentValueSubject<String?, Never>(nil)
+    var controllerErrorPublisher: AnyPublisher<String?, Never> {
+        controllerErrorSubject.eraseToAnyPublisher()
+    }
+
+    /// Signals that the customer declined the system prompt to add the VPN configuration.
+    ///
+    /// Kept separate from `controllerErrorPublisher` because a denial is an intentional user action. It fires only so screens that need
+    /// to react to a denial can observe it.
+    private let configurationDeniedSubject = PassthroughSubject<Void, Never>()
+    var configurationDeniedPublisher: AnyPublisher<Void, Never> {
+        configurationDeniedSubject.eraseToAnyPublisher()
+    }
+
     // Wide Event
     private let wideEvent: WideEventManaging
     private var connectionWideEventData: VPNConnectionWideEventData?
@@ -171,12 +192,22 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         subscribeToSnoozeTimingChanges()
         subscribeToStatusChanges()
         subscribeToConfigurationChanges()
+        subscribeToSettingsChanges()
     }
 
     /// Starts the VPN connection used for Network Protection
     ///
     func start() async {
-        setupAndStartConnectionWideEvent()
+        await start(with: nil)
+    }
+
+    func start(entryContext: VPNConnectionWideEventData.EntryContext) async {
+        await start(with: entryContext)
+    }
+
+    private func start(with entryContext: VPNConnectionWideEventData.EntryContext?) async {
+        setupAndStartConnectionWideEvent(entryContext: entryContext)
+        controllerErrorSubject.send(nil)
         persistentPixel.fire(
             pixel: .networkProtectionControllerStartAttempt,
             error: nil,
@@ -186,6 +217,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
         do {
             try await startWithError()
+            completeAndCleanupConnectionWideEvent()
 
             persistentPixel.fire(
                 pixel: .networkProtectionControllerStartSuccess,
@@ -194,9 +226,13 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
                 withAdditionalParameters: [:],
                 onComplete: { _ in })
         } catch {
-            // Top level catch-all
+            if let message = userFacingControllerErrorMessage(for: error) {
+                controllerErrorSubject.send(message)
+            }
+
             completeAndCleanupConnectionWideEvent(with: error, description: error.contextualizedDescription())
             if case StartError.configSystemPermissionsDenied = error {
+                configurationDeniedSubject.send()
                 return
             }
 
@@ -213,6 +249,29 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         }
     }
 
+    /// Maps a start failure to the user-facing message the status view should show, reusing the existing
+    /// `VPNConnectionError` copy. Returns `nil` for failures the user should not see a banner for:
+    /// `configSystemPermissionsDenied` (the user deliberately declined the system prompt) and
+    /// `startVPNFailed` (which happens after the tunnel session exists, so the session-based error
+    /// observer already surfaces it).
+    private func userFacingControllerErrorMessage(for error: Error) -> String? {
+        guard let startError = error as? StartError else {
+            return nil
+        }
+
+        let connectionError: VPNConnectionError
+        switch startError {
+        case .noAuthToken, .failedToFetchAuthToken:
+            connectionError = .authenticationFailed
+        case .loadFromPreferencesFailed, .saveToPreferencesFailed, .simulateControllerFailureError:
+            connectionError = .connectionFailed
+        case .configSystemPermissionsDenied, .startVPNFailed:
+            return nil
+        }
+
+        return connectionError.localizedMessage
+    }
+
     func stop() async {
         guard let tunnelManager = await self.tunnelManager else {
             return
@@ -227,6 +286,18 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         }
 
         tunnelManager.connection.stopVPNTunnel()
+    }
+
+    func restart() async {
+        guard let internalManager else {
+            await stop()
+            return
+        }
+
+        await stop()
+        await startupMonitor.waitForStop(internalManager)
+        await start()
+        try? await enableOnDemand(tunnelManager: internalManager)
     }
 
     func command(_ command: VPNCommand) async throws {
@@ -259,6 +330,16 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     var isInstalled: Bool {
         get async {
             return await self.tunnelManager != nil
+        }
+    }
+
+    /// A fresh "is a VPN configuration installed?" check.
+    /// `isInstalled` can report a stale `true` after a config is removed from
+    /// system Settings, because `subscribeToConfigurationChanges` only clears the cache when the reload
+    /// throws or reports `.invalid`, which a Settings removal doesn't always surface.
+    var isConfigurationInstalled: Bool {
+        get async {
+            (try? await NETunnelProviderManager.loadAllFromPreferences())?.isEmpty == false
         }
     }
 
@@ -311,6 +392,8 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     }
 
     private func start(_ tunnelManager: NETunnelProviderManager) async throws {
+        settings.updateExcludeCGNAT(isFeatureEnabled: featureFlagger.isFeatureOn(.vpnExcludeCGNATToggle))
+
         var options = [String: NSObject]()
 
         if Self.shouldSimulateFailure {
@@ -339,6 +422,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         do {
             self.connectionWideEventData?.tunnelStartDuration = WideEvent.MeasuredInterval.startingNow()
             try tunnelManager.connection.startVPNTunnel(options: options)
+            try await startupMonitor.waitForStartSuccess(tunnelManager)
             UniquePixel.fire(pixel: .networkProtectionNewUser, includedParameters: [.appVersion]) { error in
                 guard error != nil else { return }
                 UserDefaults.networkProtectionGroupDefaults.vpnFirstEnabled = Pixel.Event.networkProtectionNewUser.lastFireDate(
@@ -395,6 +479,12 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
     @MainActor
     private func setup(_ tunnelManager: NETunnelProviderManager) {
+        // Scrub a stale enforceRoutes value before it reaches the protocol config, so it can't
+        // persist after the Strict routing flag is withdrawn. This is the authoritative reset: it
+        // runs on every connect, regardless of whether the user ever opens VPN settings.
+        settings.resetEnforceRoutesIfUnavailable(
+            strictRoutingAvailable: featureFlagger.isFeatureOn(.vpnStrictRoutingToggle))
+
         tunnelManager.applyDuckDuckGoConfiguration(from: settings)
     }
 
@@ -424,6 +514,84 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             .store(in: &cancellables)
     }
 
+    // MARK: - Handling Settings Changes
+
+    private func subscribeToSettingsChanges() {
+        settings.changePublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] change in
+                guard let self else { return }
+                Task {
+                    // Handle the settings change right in the controller
+                    try? await self.handleSettingsChange(change)
+                }
+            }
+            .store(in: &cancellables)
+    }
+
+    /// This is where the tunnel owner has a chance to handle the settings change locally.
+    ///
+    /// The extension can also handle these changes so not everything needs to be handled here.
+    ///
+    private func handleSettingsChange(_ change: VPNSettings.Change) async throws {
+        switch change {
+        case .setIncludeAllNetworks(let includeAllNetworks):
+            try await handleSetIncludeAllNetworks(includeAllNetworks)
+        case .setEnforceRoutes(let enforceRoutes):
+            try await handleSetEnforceRoutes(enforceRoutes)
+        case .setExcludeLocalNetworks(let excludeLocalNetworks):
+            try await handleSetExcludeLocalNetworks(excludeLocalNetworks)
+        case .setConnectOnLogin,
+                .setExcludeCGNAT,
+                .setExcludeAPNs,
+                .setExcludeCellularServices,
+                .setExcludeDeviceCommunication,
+                .setNotifyStatusChanges,
+                .setRegistrationKeyValidity,
+                .setSelectedServer,
+                .setSelectedEnvironment,
+                .setSelectedLocation,
+                .setDNSSettings,
+                .setShowInMenuBar,
+                .setDisableRekeying:
+            // Intentional no-op as this is handled by the extension or applied on the next connect
+            break
+        }
+    }
+
+    private func handleSetIncludeAllNetworks(_ includeAllNetworks: Bool) async throws {
+        guard let tunnelManager = await tunnelManager,
+              tunnelManager.protocolConfiguration?.includeAllNetworks == !includeAllNetworks else {
+            return
+        }
+
+        try await setupAndSave(tunnelManager)
+    }
+
+    private func handleSetEnforceRoutes(_ enforceRoutes: Bool) async throws {
+        guard let tunnelManager = await tunnelManager,
+              tunnelManager.protocolConfiguration?.enforceRoutes == !enforceRoutes else {
+            return
+        }
+
+        try await setupAndSave(tunnelManager)
+
+        // enforceRoutes is bound to the NECP session when it's created, so re-saving the protocol
+        // only affects the next connection. If a tunnel is currently up, fully restart it so the
+        // new value takes effect now rather than on the next connect.
+        if await isConnected {
+            await restart()
+        }
+    }
+
+    private func handleSetExcludeLocalNetworks(_ excludeLocalNetworks: Bool) async throws {
+        guard let tunnelManager = await tunnelManager else {
+            return
+        }
+
+        try await setupAndSave(tunnelManager)
+    }
+
     // MARK: - Observing Status Changes
 
     private func subscribeToStatusChanges() {
@@ -447,25 +615,11 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
             switch session.status {
             case .connected:
-                completeAndCleanupConnectionWideEvent()
                 try await enableOnDemand(tunnelManager: manager)
-            case .disconnected, .invalid:
-                let disconnectError = await lastDisconnectError(from: session)
-                completeConnectionWideEventAsObservedFailure(with: disconnectError)
             default:
                 break
             }
 
-        }
-    }
-
-    private func lastDisconnectError(from session: NETunnelProviderSession) async -> Error? {
-        guard #available(iOS 16, *) else { return nil }
-        do {
-            try await session.fetchLastDisconnectError()
-            return nil
-        } catch {
-            return error
         }
     }
 
@@ -502,10 +656,11 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
 private extension NetworkProtectionTunnelController {
     
-    func setupAndStartConnectionWideEvent() {
+    func setupAndStartConnectionWideEvent(entryContext: VPNConnectionWideEventData.EntryContext?) {
         let data = VPNConnectionWideEventData(
             extensionType: .app,
             startupMethod: .manualByMainApp,
+            entryContext: entryContext,
             contextData: WideEventContextData(name: NetworkProtectionFunnelOrigin.appSettings.rawValue)
         )
         self.connectionWideEventData = data
@@ -536,16 +691,6 @@ private extension NetworkProtectionTunnelController {
         } else {
             wideEvent.completeFlow(data, status: .success, onComplete: { _, _ in })
         }
-        self.connectionWideEventData = nil
-    }
-
-    func completeConnectionWideEventAsObservedFailure(with error: Error? = nil) {
-        guard let data = self.connectionWideEventData else { return }
-        data.overallDuration?.complete()
-        if let error {
-            data.errorData = .init(error: error)
-        }
-        wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
         self.connectionWideEventData = nil
     }
 }

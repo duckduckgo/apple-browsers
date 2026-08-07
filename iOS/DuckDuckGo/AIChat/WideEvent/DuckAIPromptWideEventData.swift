@@ -29,7 +29,7 @@ final class DuckAIPromptWideEventData: WideEventData {
         featureName: "duckai-prompt",
         mobileMetaType: "ios-duckai-prompt",
         desktopMetaType: "macos-duckai-prompt",
-        version: "1.0.0"
+        version: "1.1.0"
     )
 
     var globalData: WideEventGlobalData
@@ -49,6 +49,7 @@ final class DuckAIPromptWideEventData: WideEventData {
     var frontendDeliveryPath: FrontendDeliveryPath
     var frontendDeliveryQueued: Bool
     var didSendBridgeMessage: Bool?
+    var didAttemptDelivery: Bool = false
 
     var hasPageContext: Bool
     var toolsSelected: Bool
@@ -160,6 +161,10 @@ final class DuckAIPromptWideEventData: WideEventData {
         /// Another prompt submission started in the same tab or contextual
         /// sheet before this flow reached a terminal outcome.
         case supersededByNewSubmission = "superseded_by_new_submission"
+        /// The submitted text was interpreted as a URL and loaded as a web page
+        /// instead of being sent to Duck.ai, so the started flow never became a
+        /// real prompt submission.
+        case interpretedAsURL = "interpreted_as_url"
     }
 
     enum InputMode: String, Codable {
@@ -221,6 +226,7 @@ extension DuckAIPromptWideEventData {
         parameters[WideEventParameter.DuckAIPromptFeature.isFirstPrompt] = isFirstPrompt
         parameters[WideEventParameter.DuckAIPromptFeature.frontendDeliveryQueued] = frontendDeliveryQueued
         parameters[WideEventParameter.DuckAIPromptFeature.didReceiveBridgeMessage] = frontendSubmissionAckInterval.end != nil
+        parameters[WideEventParameter.DuckAIPromptFeature.didAttemptDelivery] = didAttemptDelivery
         parameters[WideEventParameter.DuckAIPromptFeature.hasPageContext] = hasPageContext
         parameters[WideEventParameter.DuckAIPromptFeature.toolsSelected] = toolsSelected
         parameters[WideEventParameter.DuckAIPromptFeature.attachmentsSelected] = attachmentsSelected
@@ -245,6 +251,7 @@ extension WideEventParameter {
         static let frontendDeliveryQueued = "feature.data.ext.delivery.queued"
         static let didSendBridgeMessage = "feature.data.ext.delivery.did_send_bridge_message"
         static let didReceiveBridgeMessage = "feature.data.ext.delivery.did_receive_bridge_message"
+        static let didAttemptDelivery = "feature.data.ext.delivery.did_attempt_delivery"
         static let hasPageContext = "feature.data.ext.prompt.has_page_context"
         static let toolsSelected = "feature.data.ext.prompt.tools_selected"
         static let attachmentsSelected = "feature.data.ext.prompt.attachments_selected"

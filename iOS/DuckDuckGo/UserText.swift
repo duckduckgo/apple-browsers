@@ -29,6 +29,9 @@ public struct UserText {
     public static let addressBarPositionBottom = NSLocalizedString("address.bar.bottom", value: "Bottom", comment: "Settings label for bottom position for the address bar")
 
     public static let appUnlock = NSLocalizedString("app.authentication.unlock", value: "Unlock DuckDuckGo.", comment: "Shown on authentication screen")
+    public static let appUnlockInstructions = NSLocalizedString("app.authentication.unlock.instructions",
+                                                                value: "Tap anywhere to unlock",
+                                                                comment: "Instruction shown on authentication screen after authentication fails")
     public static let searchDuckDuckGo = NSLocalizedString("search.hint.duckduckgo", value: "Search or enter address", comment: "")
     public static let webSaveBookmarkDone = NSLocalizedString("web.url.save.bookmark.done", value: "Bookmark added", comment: "Confirmation message")
     public static let webBookmarkAlreadySaved = NSLocalizedString("web.url.save.bookmark.exists", value: "Bookmark already saved", comment: "Floating Info message")
@@ -58,6 +61,7 @@ public struct UserText {
     public static let scopedFireConfirmationAlertFireModeTitle = NSLocalizedString("scoped.fire.confirmation.alert.fireMode.title", value: "Delete Fire Tabs and their data?", comment: "Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data")
     public static let scopedFireConfirmationAlertTitleWithAIChat = NSLocalizedString("scoped.fire.confirmation.alert.title.with.aichat", value: "Delete tabs, site data, and chats?", comment: "Title for scoped fire confirmation dialog when AI chat clearing is enabled")
     public static let scopedFireConfirmationDeleteAllButton = NSLocalizedString("scoped.fire.confirmation.delete.all.button", value: "Delete All", comment: "Button to delete all tabs and data in scoped fire confirmation dialog")
+    public static let scopedFireConfirmationDeleteChatsButton = NSLocalizedString("scoped.fire.confirmation.delete.chats.button", value: "Delete Chats", comment: "Button to delete all chats in scoped fire confirmation dialog")
     public static let scopedFireConfirmationDeleteThisTabButton = NSLocalizedString("scoped.fire.confirmation.delete.this.tab.button", value: "Delete This Tab", comment: "Button to delete only the current tab in scoped fire confirmation dialog")
     public static let scopedFireConfirmationAlertSingleTabTitle = NSLocalizedString("scoped.fire.confirmation.alert.single.tab.title", value: "Delete tab and site data?", comment: "Title for fire confirmation dialog asking user to delete a single tab and its site data")
     public static let scopedFireConfirmationDeleteTabButton = NSLocalizedString("scoped.fire.confirmation.delete.tab.button", value: "Delete Tab", comment: "Button to delete a single tab and its site data in scoped fire confirmation dialog")
@@ -84,22 +88,6 @@ public struct UserText {
     public static let fireModeEmptyStateBulletTroubleshoot = NSLocalizedString("fire.mode.empty.state.bullet.troubleshoot", value: "Troubleshoot websites", comment: "Bullet point describing Fire Tab benefit on the empty state screen")
     public static let fireModeEmptyStateDescription = NSLocalizedString("fire.mode.empty.state.description", value: "Fire Tabs are isolated from other browser data. Their data is burned when you close them all. They give you the same tracking protection as other tabs.", comment: "Description explaining how Fire Tabs work on the empty state screen")
     public static let fireModeEmptyStateNewFireTab = NSLocalizedString("fire.mode.empty.state.new.fire.tab", value: "New Fire Tab", comment: "Button label to create a new Fire Tab on the empty state screen")
-
-    // MARK: Fire Mode NTP Promotion
-
-    public static let fireModePromotionTitle = NSLocalizedString("fire.mode.promotion.title", value: "Try Fire Tabs", comment: "Title for promotion element for pushing users to try fire mode.")
-    public static let fireModeNTPPromotionDescription = NSLocalizedString("fire.mode.ntp.promotion.description", value: "New! Browse without saving local history or sign in to sites with a different account.", comment: "Description for the Fire Mode promotion card shown on the new tab page")
-    public static let fireModeNTPPromotionPrimaryAction = NSLocalizedString("fire.mode.ntp.promotion.primary.action", value: "Try Fire Tabs", comment: "Primary action button on the Fire Mode promotion card that opens Fire Mode")
-    public static let fireModeNTPPromotionDismiss = NSLocalizedString("fire.mode.ntp.promotion.dismiss", value: "Not Now", comment: "Dismiss button on the Fire Mode promotion card on the new tab page")
-
-    // MARK: Fire Mode Tab Switcher Tip
-
-    public static let fireModeTabSwitcherTipTitle = NSLocalizedString("fire.mode.tab.switcher.tip.title", value: "New: Fire Tabs", comment: "Title for the Fire Tabs popover tip shown on the tab switcher picker")
-    public static let fireModeTabSwitcherTipDescription = NSLocalizedString("fire.mode.tab.switcher.tip.description", value: "Try Fire Tabs to browse without saving local history.", comment: "Description for the Fire Tabs popover tip shown on the tab switcher picker")
-
-    // MARK: Fire Mode Menu Promotion
-
-    public static let fireModeMenuPromotionBadge = NSLocalizedString("fire.mode.menu.promotion.badge", value: "New", comment: "Badge label on the Fire Mode promotion entry in the browsing menu")
 
     // MARK: - Tab Switcher Fire Mode
     public static let openNewTab = NSLocalizedString("tab.open.new", value: "Open new tab", comment: "Accessibility label on tab cell")
@@ -135,28 +123,51 @@ public struct UserText {
     public static let actionDuckAIVoice = NSLocalizedString("action.title.duckai.voice", value: "Duck.ai Voice", comment: "Open Duck.ai Voice mode action")
     public static let actionNewAIChat = NSLocalizedString("action.title.aiChat.new", value: "New Chat", comment: "Start new AI Chat action in the menu list")
     public static let actionAIChatHistory = NSLocalizedString("action.title.aiChat.history", value: "Duck.ai Chats", comment: "Open AI Chat history action in the menu list")
-    public static let actionChats = NotLocalizedString("action.title.chats", value: "Chats", comment: "Open the native Duck.ai chat history sheet from the browser menu. Not translated; final copy will land in a follow-up PR.")
-    public static let aiChatHistoryEmptyStateTitle = NotLocalizedString("aiChat.history.emptyState.title", value: "No recent chats", comment: "Title shown when the user has no Duck.ai chat history yet. Not translated; final copy will land in a follow-up PR.")
-    public static let aiChatHistoryEmptyStateOpenDuckAi = NotLocalizedString("aiChat.history.emptyState.openDuckAi", value: "Open Duck.ai", comment: "Primary button on the empty Duck.ai chat-history screen; opens the Duck.ai web chat. Not translated; final copy will land in a follow-up PR.")
-    public static let aiChatHistorySearchBarPlaceholder = NotLocalizedString("aiChat.history.searchBar.placeholder", value: "Search", comment: "Placeholder for the search bar at the top of the Duck.ai chat history list. Not translated; final copy will land in a follow-up PR.")
-    public static let aiChatHistoryPinnedSectionTitle = NotLocalizedString("aiChat.history.section.pinned", value: "PINNED", comment: "Section header above the user's pinned chats in the Duck.ai chat history list. Not translated; final copy will land in a follow-up PR.")
-    public static let aiChatHistoryRecentSectionTitle = NotLocalizedString("aiChat.history.section.recent", value: "RECENT", comment: "Section header above the user's recent (unpinned) chats in the Duck.ai chat history list. Not translated; final copy will land in a follow-up PR.")
-    public static let aiChatHistoryNoSearchResultsTitle = NotLocalizedString("aiChat.history.noSearchResults.title", value: "No matches found", comment: "Shown inside the Duck.ai chat history list when the user's search query returns no matching chats. Matches Bookmarks' no-results copy. Not translated; final copy will land in a follow-up PR.")
-    public static let aiChatHistoryLoadErrorTitle = NotLocalizedString("aiChat.history.loadError.title", value: "Couldn't load chats", comment: "Title of the alert shown when Duck.ai chat history fails to load. Not translated; final copy will land in a follow-up PR.")
-    public static let aiChatHistoryLoadErrorMessage = NotLocalizedString("aiChat.history.loadError.message", value: "Something went wrong loading your Duck.ai chats. Please try again later.", comment: "Message of the alert shown when Duck.ai chat history fails to load. Not translated; final copy will land in a follow-up PR.")
-    public static let aiChatHistoryDeleteSwipeAccessibilityLabel = NotLocalizedString("aiChat.history.swipe.delete.a11y", value: "Delete chat", comment: "Accessibility label for the delete action revealed by swiping a Duck.ai chat row. Not translated; final copy will land in a follow-up PR.")
-    public static let aiChatHistoryDownloadSwipeAccessibilityLabel = NotLocalizedString("aiChat.history.swipe.download.a11y", value: "Download chat", comment: "Accessibility label for the download action revealed by swiping a Duck.ai chat row. Not translated; final copy will land in a follow-up PR.")
+    public static let actionChats = NSLocalizedString("action.title.chats", value: "Chats", comment: "Open the native Duck.ai chat history sheet from the browser menu.")
+    public static let aiChatHistoryEmptyStateTitle = NSLocalizedString("aiChat.history.emptyState.title", value: "No recent chats", comment: "Title shown when the user has no Duck.ai chat history yet.")
+    public static let aiChatHistoryEmptyStateOpenDuckAi = NSLocalizedString("aiChat.history.emptyState.openDuckAi", value: "Open Duck.ai", comment: "Primary button on the empty Duck.ai chat-history screen; opens the Duck.ai web chat.")
+    public static let aiChatHistorySearchBarPlaceholder = NSLocalizedString("aiChat.history.searchBar.placeholder", value: "Search", comment: "Placeholder for the search bar at the top of the Duck.ai chat history list.")
+    public static let aiChatHistoryPinnedSectionTitle = NSLocalizedString("aiChat.history.section.pinned", value: "Pinned", comment: "Section header above the user's pinned chats in the Duck.ai chat history list.")
+    public static let aiChatHistoryRecentSectionTitle = NSLocalizedString("aiChat.history.section.recent", value: "Recent", comment: "Section header above the user's recent (unpinned) chats in the Duck.ai chat history list.")
+    public static let aiChatHistoryNoSearchResultsTitle = NSLocalizedString("aiChat.history.noSearchResults.title", value: "No matches found", comment: "Shown inside the Duck.ai chat history list when the user's search query returns no matching chats.")
+    public static let aiChatHistoryLoadErrorTitle = NSLocalizedString("aiChat.history.loadError.title", value: "Couldn't load chats", comment: "Title of the alert shown when Duck.ai chat history fails to load.")
+    public static let aiChatHistoryLoadErrorMessage = NSLocalizedString("aiChat.history.loadError.message", value: "Something went wrong loading your Duck.ai chats. Please try again later.", comment: "Message of the alert shown when Duck.ai chat history fails to load.")
+    public static let aiChatHistoryDeleteSwipeAccessibilityLabel = NSLocalizedString("aiChat.history.swipe.delete.a11y", value: "Delete chat", comment: "Accessibility label for the delete action revealed by swiping a Duck.ai chat row.")
+    public static let aiChatHistoryDownloadSwipeAccessibilityLabel = NSLocalizedString("aiChat.history.swipe.download.a11y", value: "Download chat", comment: "Accessibility label for the download action revealed by swiping a Duck.ai chat row.")
+    public static let aiChatHistoryPinSwipeAccessibilityLabel = NSLocalizedString("aiChat.history.swipe.pin.a11y", value: "Pin chat", comment: "Accessibility label for the pin action revealed by leading-swiping a Duck.ai chat row in the Recent section.")
+    public static let aiChatHistoryUnpinSwipeAccessibilityLabel = NSLocalizedString("aiChat.history.swipe.unpin.a11y", value: "Unpin chat", comment: "Accessibility label for the unpin action revealed by leading-swiping a Duck.ai chat row in the Pinned section.")
+    public static let aiChatHistoryMenuSelectChats = NSLocalizedString("aiChat.history.menu.selectChats", value: "Select Chats", comment: "Menu item that starts multi-selecting chats in the Duck.ai chat history list.")
+    public static let aiChatHistoryRowMenuSelect = NSLocalizedString("aiChat.history.rowMenu.select", value: "Select", comment: "Long-press row menu item that starts multi-selecting chats in the Duck.ai chat history list.")
+    public static let aiChatHistoryRowMenuPin = NSLocalizedString("aiChat.history.rowMenu.pin", value: "Pin", comment: "Long-press row menu item that pins a Duck.ai chat.")
+    public static let aiChatHistoryRowMenuUnpin = NSLocalizedString("aiChat.history.rowMenu.unpin", value: "Unpin", comment: "Long-press row menu item that unpins a Duck.ai chat.")
+    public static let aiChatHistoryRowMenuDownload = NSLocalizedString("aiChat.history.rowMenu.download", value: "Download", comment: "Long-press row menu item that downloads a Duck.ai chat.")
+    public static let aiChatHistoryRowMenuDelete = NSLocalizedString("aiChat.history.rowMenu.delete", value: "Delete", comment: "Long-press row menu item that deletes a Duck.ai chat.")
+    public static let aiChatHistoryDeleteAll = NSLocalizedString("aiChat.history.selection.deleteAll", value: "Delete All", comment: "Multi-select toolbar button that deletes all chats when none are individually selected.")
+    public static let aiChatHistoryMenuChatProtection = NSLocalizedString("aiChat.history.menu.chatProtection", value: "Chat Protection", comment: "Menu item opening Duck.ai Chat Protection settings from the Duck.ai chat history list.")
+    public static let aiChatHistorySearchAccessibilityLabel = NSLocalizedString("aiChat.history.search.a11y", value: "Search", comment: "Accessibility label for the search button in the Duck.ai chat history navigation bar.")
+    public static let aiChatHistoryMenuAccessibilityLabel = NSLocalizedString("aiChat.history.menu.a11y", value: "More", comment: "Accessibility label for the overflow (three dots) menu button in the Duck.ai chat history navigation bar.")
+    public static func aiChatHistoryDeleteAllConfirmationTitle(count: Int) -> String {
+        let format = Bundle.main.localizedString(forKey: "aiChat.history.deleteAll.confirmation.title", value: nil, table: nil)
+        return String.localizedStringWithFormat(format, count)
+    }
+    public static func aiChatHistoryDownloadCompleteMessage(count: Int) -> String {
+        let format = Bundle.main.localizedString(forKey: "aiChat.history.download.complete.message", value: nil, table: nil)
+        return String.localizedStringWithFormat(format, count)
+    }
+    public static let aiChatHistoryDownloadFailedMessage = NSLocalizedString("aiChat.history.download.failed.message", value: "Couldn't download. Please try again.", comment: "Error toast shown when a Duck.ai chat download fails and nothing was saved.")
     public static let actionAIChatSettings = NSLocalizedString("action.title.aiChat.settings", value: "Duck.ai Settings", comment: "Open AI Chat settings action in the menu list")
     public static let sectionTitleSuggestions = NotLocalizedString("section.title.suggestions", value: "Suggestions", comment: "Section header title above search suggestions")
     public static let aiChatSuggestedChatsTitle = NotLocalizedString("aiChat.suggestedChats.title", value: "Chats", comment: "Section header title above suggested Duck.ai chats")
+    public static let aiChatTabSwitcherCardChipChat = NSLocalizedString("aiChat.tabSwitcher.card.chip.chat", value: "Chat", comment: "Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a regular text conversation.")
+    public static let aiChatTabSwitcherCardChipTranscript = NSLocalizedString("aiChat.tabSwitcher.card.chip.transcript", value: "Transcript", comment: "Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as the transcript of a finished voice conversation.")
+    public static let aiChatTabSwitcherCardVoiceListening = NSLocalizedString("aiChat.tabSwitcher.card.voice.listening", value: "Listening…", comment: "Status label at the top of the Duck.ai tab grid card for a tab with a live voice session in progress. A leading microphone glyph is shown next to it in the UI.")
+    public static let aiChatTabSwitcherCardVoiceListeningAccessibilityLabel = NSLocalizedString("aiChat.tabSwitcher.card.voice.listening.accessibilityLabel", value: "Listening…", comment: "VoiceOver label for the Duck.ai tab grid card of a tab with a live voice session — same as the visible status without the decorative emoji.")
+    public static let aiChatTabSwitcherCardChipVoice = NSLocalizedString("aiChat.tabSwitcher.card.chip.voice", value: "Voice Chat", comment: "Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a live voice session.")
+    public static let aiChatTabSwitcherCardUntitledChat = NSLocalizedString("aiChat.tabSwitcher.card.untitledChat", value: "New Chat", comment: "Title shown on a Duck.ai tab grid card when the chat has no title yet.")
 
     public static let aiChatSyncPromoTitle = NSLocalizedString("aiChat.syncPromo.title", value: "Access your chats across your devices using Sync & Backup.", comment: "Headline of the sync promo card shown above the Duck.ai recent chats list.")
     public static let aiChatSyncPromoButton = NSLocalizedString("aiChat.syncPromo.button", value: "Sync With Another Device", comment: "Primary button of the sync promo card shown above the Duck.ai recent chats list.")
     public static let aiChatSyncPromoCloseAccessibilityLabel = NSLocalizedString("aiChat.syncPromo.close.accessibility.label", value: "Dismiss sync promotion", comment: "Accessibility label for the close button on the Duck.ai sync promo card.")
-    public static let aiChatSyncIntroSheetTitle = NSLocalizedString("aiChat.syncIntroSheet.title", value: "Let’s sync your chats across your devices!", comment: "Title of the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai.")
-    public static let aiChatSyncIntroSheetBody = NSLocalizedString("aiChat.syncIntroSheet.body", value: "Find the QR Code on the DuckDuckGo app on your other device by going to **Settings** › **Sync & Backup** › **Sync With Another Device**.", comment: "Body of the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. ** markers indicate bold text and should be preserved around the translated equivalents of the menu options Settings, Sync & Backup, and Sync With Another Device.")
-    public static let aiChatSyncIntroSheetScanButton = NSLocalizedString("aiChat.syncIntroSheet.scan.button", value: "Scan QR Code", comment: "Primary button on the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai.")
-    public static let aiChatSyncIntroSheetNotNow = NSLocalizedString("aiChat.syncIntroSheet.notNow", value: "Not Now", comment: "Secondary button on the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai.")
 
     public static let actionOpenBookmarks = NSLocalizedString("action.title.bookmarks", value: "Bookmarks", comment: "Button: Open bookmarks list")
     public static let actionOpenPasswords = NSLocalizedString("action.title.passwords", value: "Passwords", comment: "Button: Open passwords list")
@@ -301,6 +312,9 @@ public struct UserText {
     public static let keyCommandFindPrevious = NSLocalizedString("keyCommandFindPrevious", value: "Find Previous", comment: "")
     public static let keyCommandReload = NSLocalizedString("keyCommandReload", value: "Reload", comment: "")
     public static let keyCommandPrint = NSLocalizedString("keyCommandPrint", value: "Print", comment: "")
+    public static let keyCommandZoomIn = NSLocalizedString("keyCommandZoomIn", value: "Zoom In", comment: "Hardware keyboard shortcut label for increasing page text zoom")
+    public static let keyCommandZoomOut = NSLocalizedString("keyCommandZoomOut", value: "Zoom Out", comment: "Hardware keyboard shortcut label for decreasing page text zoom")
+    public static let keyCommandResetZoom = NSLocalizedString("keyCommandResetZoom", value: "Reset Zoom", comment: "Hardware keyboard shortcut label for resetting page text zoom to the default level")
     public static let keyCommandAddBookmark = NSLocalizedString("keyCommandAddBookmark", value: "Add Bookmark", comment: "")
     public static let keyCommandAddFavorite = NSLocalizedString("keyCommandAddFavorite", value: "Add Favorite", comment: "")
     public static let keyCommandOpenInNewTab = NSLocalizedString("keyCommandOpenInNewTab", value: "Open Link in New Tab", comment: "")
@@ -362,6 +376,12 @@ public struct UserText {
 
     public static let deselectAllTabs = NSLocalizedString("tab.select.none", value: "Deselect All", comment: "Deselect all tabs")
 
+    // Needs to be localised later.
+    public static let tabSwitcherGridViewMenuTitle = NotLocalizedString("tab.switcher.grid.view.menu.title", value: "Grid", comment: "Menu item that switches the tab switcher to a grid layout")
+
+    // Needs to be localised later.
+    public static let tabSwitcherListViewMenuTitle = NotLocalizedString("tab.switcher.list.view.menu.title", value: "List", comment: "Menu item that switches the tab switcher to a list layout")
+
     public static func alertTitleBookmarkSelectedTabs(withCount count: Int) -> String {
         let format = Bundle.main.localizedString(forKey: "alertTitleBookmarkSelectedTabs.withCount", value: nil, table: nil)
         return String.localizedStringWithFormat(format, count)
@@ -369,6 +389,11 @@ public struct UserText {
 
     public static func closeTabs(withCount count: Int) -> String {
         let format = Bundle.main.localizedString(forKey: "tab.close", value: nil, table: nil)
+        return String.localizedStringWithFormat(format, count)
+    }
+
+    public static func tabSwitcherCloseTabsButtonTitle(withCount count: Int) -> String {
+        let format = Bundle.main.localizedString(forKey: "tab.switcher.close-tabs.button.withCount", value: nil, table: nil)
         return String.localizedStringWithFormat(format, count)
     }
 
@@ -488,6 +513,21 @@ public struct UserText {
     public static let autoconsentEnabled = NSLocalizedString("autoconsent.enabled", value: "Enabled", comment: "Autoconsent for Cookie Management Setting state")
     public static let autoconsentDisabled = NSLocalizedString("autoconsent.disabled", value: "Disabled", comment: "Autoconsent for Cookie Management Setting state")
     public static let autoconsentInfoText = NSLocalizedString("autoconsent.info.header", value: "When DuckDuckGo detects cookie consent pop-ups on sites you visit, we can try to automatically set your cookie preferences to minimize cookies and maximize privacy, then close the pop-ups. Some sites don't provide an option to manage cookie preferences, so we can only hide pop-ups like these.", comment: "")
+
+    // MARK: - Cookie Pop-up Protection Opt-In Dialog
+    public static let cookiePopupProtectionOptInBadge = NSLocalizedString("cookie-popup-protection.opt-in.badge", value: "New", comment: "Small 'NEW' badge shown above the Cookie Pop-up Protection opt-in dialog header")
+    public static let cookiePopupProtectionOptInConfirm = NSLocalizedString("cookie-popup-protection.opt-in.confirm", value: "Confirm", comment: "Confirm button in the Cookie Pop-up Protection opt-in dialog")
+    public static let cookiePopupProtectionOptInFooter = NSLocalizedString("cookie-popup-protection.opt-in.footer", value: "You can always adjust later in\n**Settings** > **Cookie Pop-Up Protection**.", comment: "Footer text in the Cookie Pop-up Protection opt-in dialog. The text between ** ** is rendered bold.")
+    // Variant shown when Cookie Pop-up Protection is already ON
+    public static let cookiePopupProtectionOptInEnabledTitle = NSLocalizedString("cookie-popup-protection.opt-in.enabled.title", value: "Tired of cookie pop-ups that don't let you opt out?", comment: "Title of the opt-in dialog when cookie pop-up protection is already enabled")
+    public static let cookiePopupProtectionOptInEnabledBody = NSLocalizedString("cookie-popup-protection.opt-in.enabled.body", value: "We can save you a click and accept these cookies for you.", comment: "Body of the opt-in dialog when cookie pop-up protection is already enabled")
+    public static let cookiePopupProtectionOptInEnabledPrimaryOption = NSLocalizedString("cookie-popup-protection.opt-in.enabled.primary-option", value: "Accept cookies that can't be rejected", comment: "Primary (recommended) option when cookie pop-up protection is already enabled")
+    public static let cookiePopupProtectionOptInEnabledSecondaryOption = NSLocalizedString("cookie-popup-protection.opt-in.enabled.secondary-option", value: "I'll keep accepting them myself", comment: "Secondary option when cookie pop-up protection is already enabled")
+    // Variant shown when Cookie Pop-up Protection is OFF
+    public static let cookiePopupProtectionOptInDisabledTitle = NSLocalizedString("cookie-popup-protection.opt-in.disabled.title", value: "Tired of cookie pop-ups that won't leave you alone?", comment: "Title of the opt-in dialog when cookie pop-up protection is off")
+    public static let cookiePopupProtectionOptInDisabledBody = NSLocalizedString("cookie-popup-protection.opt-in.disabled.body", value: "We'll aim to reject as many cookies as possible. If there's no reject option, we'll save you a click and accept these cookies for you.", comment: "Body of the opt-in dialog when cookie pop-up protection is off")
+    public static let cookiePopupProtectionOptInDisabledPrimaryOption = NSLocalizedString("cookie-popup-protection.opt-in.disabled.primary-option", value: "Reject when possible or accept for me", comment: "Primary (recommended) option when cookie pop-up protection is off")
+    public static let cookiePopupProtectionOptInDisabledSecondaryOption = NSLocalizedString("cookie-popup-protection.opt-in.disabled.secondary-option", value: "I'll keep handling them myself", comment: "Secondary option when cookie pop-up protection is off")
 
     public static let emailBrowsingMenuUseNewDuckAddress = NSLocalizedString("email.browsingMenu.useNewDuckAddress", value: "Generate Private Duck Address", comment: "Email option title in the browsing menu")
     public static let emailBrowsingMenuAlert = NSLocalizedString("email.browsingMenu.alert", value: "New address copied to your clipboard", comment: "Title for the email copy browsing menu alert")
@@ -633,10 +673,6 @@ public struct UserText {
     public static let autofillOnboardingKeyFeaturesSecureStorageDescription = NSLocalizedString("autofill.onboarding.key-features.secure-storage.description", value: "Passwords are encrypted, stored on device, and locked with Face ID or passcode.", comment: "Description of autofill onboarding prompt's secure storage feature")
     public static let autofillOnboardingKeyFeaturesSyncTitle = NSLocalizedString("autofill.onboarding.key-features.sync.title", value: "Sync between devices", comment: "Title of autofill onboarding prompt's sync feature")
     public static let autofillOnboardingKeyFeaturesSyncDescription = NSLocalizedString("autofill.onboarding.key-features.sync.description", value: "End-to-end encrypted and easy to set up when you’re ready.", comment: "Description of autofill onboarding prompt's sync feature")
-    public static let autofillSaveLoginNoThanksCTA = NSLocalizedString("autofill.save-login.no-thanks.CTA", value: "No Thanks", comment: "CTA displayed on modal asking if the user wants to dismiss the save login action for now")
-
-    public static let autofillSaveLoginNotNowCTA = NSLocalizedString("autofill.save-login.not-now.CTA", value: "Not Now", comment: "CTA displayed on modal allowing the user to dismiss the save login prompt for now")
-
     public static let autofillSavePasswordSaveCTA = NSLocalizedString("autofill.save-password.save.CTA", value: "Save Password", comment: "Confirm CTA displayed on modal asking for the user to save the password")
     public static let autofillUpdatePasswordSaveCTA = NSLocalizedString("autofill.update-password.save.CTA", value: "Update Password", comment: "Confirm CTA displayed on modal asking for the user to update the password")
     public static let autofillShowPassword = NSLocalizedString("autofill.show-password", value: "Show Password", comment: "Accessibility title for a Show Password button displaying actial password instead of *****")
@@ -751,9 +787,19 @@ public struct UserText {
     static let netPStatusViewConnectionDetails = NSLocalizedString("network.protection.status.view.connection.details", value: "Connection Details", comment: "Connection details label shown in NetworkProtection's status view.")
     static let netPStatusViewCustomDNS = NSLocalizedString("network.protection.status.view.custom.dns", value: "DNS Server", comment: "Custom DNS label shown in NetworkProtection's status view.")
     static let netPStatusViewSettingsSectionTitle = NSLocalizedString("network.protection.status.view.settings.section.title", value: "Manage", comment: "Label shown on the title of the settings section in NetworkProtection's status view.")
+    static let netPStrictRoutingPillOn = NSLocalizedString("network.protection.status.view.strict.routing.pill.on", value: "Strict routing: On", comment: "Label for the status pill shown while the VPN's Strict routing setting is on")
+    static let netPStrictRoutingPillOff = NSLocalizedString("network.protection.status.view.strict.routing.pill.off", value: "Strict routing: Off", comment: "Label for the status pill shown while the VPN's Strict routing setting is off")
+    static let netPStrictRoutingPillTooltipOn = NSLocalizedString("network.protection.status.view.strict.routing.pill.tooltip.on", value: "Some apps may not work while Strict Routing is on.", comment: "Tooltip shown for the status pill while the VPN's Strict routing setting is on")
+    static let netPStrictRoutingPillTooltipOff = NSLocalizedString("network.protection.status.view.strict.routing.pill.tooltip.off", value: "Strict Routing is recommended for public networks.", comment: "Tooltip shown for the status pill while the VPN's Strict routing setting is off")
+    static let netPStatusHeaderMessageStrictRoutingOff = NSLocalizedString("network.protection.status.header.message.strict.routing.off", value: "Some traffic may bypass the VPN while Strict Routing is off. Strict Routing is recommended for public networks.", comment: "Status view message shown while the VPN is on but Strict routing is off")
     static let netPVPNSettingsTitle = NSLocalizedString("network.protection.vpn.settings.title", value: "VPN Settings", comment: "Title for the VPN Settings screen.")
     static let netPVPNSettingsFAQ = NSLocalizedString("network.protection.vpn.settings.faq", value: "FAQs and Support", comment: "Title for the FAQ row in the VPN status screen.")
     static let netPVPNSettingsShareFeedback = NSLocalizedString("network.protection.vpn.settings.share-feedback", value: "Share VPN Feedback", comment: "Title for the feedback row in the VPN status screen.")
+    static let netPStatusViewTroubleshootingSectionTitle = NSLocalizedString("network.protection.status.view.troubleshooting.section.title", value: "Troubleshooting", comment: "Title of the Troubleshooting section in the VPN status screen.")
+    static let netPVPNSettingsCopyDiagnostics = NSLocalizedString("network.protection.vpn.settings.copy-diagnostics", value: "Copy VPN Diagnostics", comment: "Title for the row that copies VPN diagnostic information to the clipboard.")
+    static let netPVPNSettingsCopyDiagnosticsCaption = NSLocalizedString("network.protection.vpn.settings.copy-diagnostics.caption", value: "Include a copy of these anonymized VPN diagnostics when contacting Support to help us troubleshoot your connection.", comment: "Caption beneath the Copy VPN Diagnostics row, explaining what it does.")
+    static let netPVPNSettingsCopyDiagnosticsCopiedToClipboard = NSLocalizedString("network.protection.vpn.settings.copy-diagnostics.copied-to-clipboard", value: "Copied to clipboard", comment: "Temporary title for the row after VPN diagnostic information is copied to the clipboard.")
+    static let netPVPNSettingsCopyDiagnosticsFailedToCopyToClipboard = NSLocalizedString("network.protection.vpn.settings.copy-diagnostics.failed-to-copy-to-clipboard", value: "Couldn't copy to clipboard", comment: "Temporary title for the row when VPN diagnostic information could not be copied to the clipboard.")
     static func netPVPNSettingsLocationSubtitleFormattedCityAndCountry(city: String, country: String) -> String {
         let localized = NSLocalizedString("network.protection.vpn.location.subtitle.formatted.city.and.country", value: "%@, %@", comment: "Subtitle for the preferred location item that formats a city and country. E.g Chicago, United States")
         return localized.format(arguments: city, country)
@@ -785,6 +831,11 @@ public struct UserText {
     static let netPExcludeLocalNetworksSettingTitle = NSLocalizedString("network.protection.vpn.exclude.local.networks.setting.title", value: "Exclude Local Networks", comment: "Title for the Exclude Local Networks setting item.")
     static let netPExcludeLocalNetworksSettingHeader = NSLocalizedString("network.protection.vpn.exclude.local.networks.setting.header", value: "General", comment: "Header text for the Exclude Local Networks setting item.")
     static let netPExcludeLocalNetworksSettingFooter = NSLocalizedString("network.protection.vpn.exclude.local.networks.setting.footer", value: "Let local traffic bypass the VPN and connect to devices on your local network, like a printer.", comment: "Footer text for the Exclude Local Networks setting item.")
+    static let netPStrictRoutingSettingTitle = NSLocalizedString("network.protection.vpn.strict.routing.setting.title", value: "Enforce Strict Routing (Recommended)", comment: "Title for the Strict Routing setting item.")
+    static let netPStrictRoutingSettingFooter = NSLocalizedString("network.protection.vpn.strict.routing.setting.footer", value: "Block apps from bypassing the VPN. If you have problems with Wi-Fi features (such as AirDrop or iPhone Mirroring), turning it off may help. Strongly recommended on networks you don’t trust, such as public Wi-Fi. [Learn more](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack).", comment: "Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link.")
+
+    static let netPExcludeCGNATSettingTitle = NSLocalizedString("network.protection.vpn.exclude.cgnat.setting.title", value: "Exclude Carrier Services", comment: "Title for the Exclude CGNAT setting item.")
+    static let netPExcludeCGNATSettingFooter = NSLocalizedString("network.protection.vpn.exclude.cgnat.setting.footer", value: "Bypass the VPN for carrier services, such as Wi-Fi calling and voicemail.", comment: "Footer text for the Exclude CGNAT setting item.")
     static let netPSecureDNSSettingFooter = NSLocalizedString("network.protection.vpn.secure.dns.setting.footer", value: "DuckDuckGo routes DNS queries through our DNS servers so your internet provider can't see what websites you visit.", comment: "Footer text for the DNS server setting item.")
     static let netPTurnOnNotificationsButtonTitle = NSLocalizedString("network.protection.turn.on.notifications.button.title", value: "Turn On Notifications", comment: "Title for the button to link to the iOS app settings and enable notifications app-wide.")
     static let netPTurnOnNotificationsSectionFooter = NSLocalizedString("network.protection.turn.on.notifications.section.footer", value: "Allow DuckDuckGo to notify you if your connection drops or VPN status changes.", comment: "Footer text under the button to link to the iOS app settings and enable notifications app-wide.")
@@ -946,6 +997,11 @@ public struct UserText {
     /// https://app.asana.com/1/137249556945/project/38424471409662/task/1211224788080468
     public static let inactivityNotificationTitle = NotLocalizedString("inactivity.notification.title", value: "Control your online experience", comment: "Title for inactivity notification. Used on for en_US locale only.")
     public static let inactivityNotificationBody = NotLocalizedString("inactivity.notification.body", value: "Use DuckDuckGo to avoid the ads that track you around the web and reduce your online footprint.", comment: "Body for inactivity notification. Used on for en_US locale only.")
+    public static func subscriptionExpirationReminderNotificationTitle(daysUntilTrialEnds: Int) -> String {
+        let unit = daysUntilTrialEnds == 1 ? "day" : "days"
+        return "Your trial ends in \(daysUntilTrialEnds) \(unit)"
+    }
+    public static let subscriptionExpirationReminderNotificationBody = NotLocalizedString("subscription.expiration-reminder.notification.body", value: "Try all your new premium protections before your trial ends!", comment: "Body for the Privacy Pro free-trial expiration reminder notification. Used for en_US locale only.")
 
     // MARK: Settings Screen
 
@@ -1186,6 +1242,8 @@ public struct UserText {
     public static let autofillLoginDetailsSaveDuplicateLoginAlertTitle = NSLocalizedString("autofill.logins.details.save-duplicate-alert.title", value: "Duplicate Password", comment: "Title for alert when attempting to save a duplicate login")
     public static let autofillLoginDetailsSaveDuplicateLoginAlertMessage = NSLocalizedString("autofill.logins.details.save-duplicate-alert.message", value: "You already have a password saved for this username and website.", comment: "Message for alert when attempting to save a duplicate login")
     public static let autofillLoginDetailsSaveDuplicateLoginAlertAction = NSLocalizedString("autofill.logins.details.save-duplicate-alert.action", value: "OK", comment: "Action text for alert when attempting to save a duplicate login")
+    public static let autofillLoginDetailsNoteRequiresDomainAlertTitle = NSLocalizedString("autofill.logins.details.missing-website-or-username-alert.title", value: "Website or Username Required", comment: "Title for alert when attempting to save a password that has neither a website nor a username")
+    public static let autofillLoginDetailsNoteRequiresDomainAlertMessage = NSLocalizedString("autofill.logins.details.missing-website-or-username-alert.message", value: "To save this password, enter a website or username.", comment: "Message for alert when attempting to save a password that has neither a website nor a username")
 
     public static let autofillNavigationButtonItemTitleClose = NSLocalizedString("autofill.logins.list.close-title", value: "Close", comment: "Title for close navigation button")
 
@@ -1261,14 +1319,11 @@ public struct UserText {
         return String.localizedStringWithFormat(omnibarNotificationTrackersBlockedFormat, count)
     }
 
-    public static let omnibarNotificationYouTubeAdBlockOn = NSLocalizedString("omnibar.notification.youtube-ad-block-on", value: "YouTube Ad Block On", comment: "Text displayed on notification appearing in the address bar when YouTube ad blocking is active")
+    public static let omnibarNotificationYouTubeAdBlockOn = NSLocalizedString("omnibar.notification.youtube-ad-block-on", value: "Ad Blocking On", comment: "Text displayed on notification appearing in the address bar when YouTube ad blocking is active")
 
     // MARK: Sync
 
     public static let syncUserUserAuthenticationReason = NSLocalizedString("sync.user.auth.reason", value: "Unlock device to set up Sync & Backup", comment: "Reason for auth when setting up Sync")
-    public static let syncTurnOffConfirmTitle = NSLocalizedString("sync.turn.off.confirm.title", value: "Turn Off Sync?", comment: "Title of the dialog to confirm turning off Sync")
-    public static let syncTurnOffConfirmMessage = NSLocalizedString("sync.turn.off.confirm.message", value: "This Device will no longer be able to access your synced data.", comment: "Message for the dialog to confirm turning off Sync")
-    public static let syncTurnOffConfirmAction = NSLocalizedString("sync.turn.off.confirm.action", value: "Remove", comment: "Caption for a button to remove current device from Sync")
     public static let syncDeleteAllConfirmTitle = NSLocalizedString("sync.delete.all.confirm.title", value: "Delete server data?", comment: "Title of the dialog to confirm deleting Sync server data")
     public static let syncDeleteAllConfirmMessage = NSLocalizedString("sync.delete.all.confirm.message", value: "Your backup will be deleted from the server. All devices will be disconnected from sync, but nothing will be deleted from any device.", comment: "Message for the dialog to confirm deleting Sync server data")
     public static let syncDeleteAllConfirmAction = NSLocalizedString("sync.delete.all.confirm.action", value: "Delete Server Data", comment: "Caption for a button to delete Sync server data")
@@ -1279,16 +1334,32 @@ public struct UserText {
     }
     public static let syncRemoveDeviceConfirmAction = NSLocalizedString("sync.remove-device.action", value: "Remove", comment: "Caption for a button to remove device from Sync")
     public static let syncCodeCopied = NSLocalizedString("sync.code.copied", value: "Recovery code copied to clipboard", comment: "Message confirming that recovery code was copied to clipboard")
+    public static let syncPairingV2ConfirmationTitle = NSLocalizedString("sync.pairing-v2.confirmation.title", value: "Sync new device?", comment: "Title of the dialog to confirm sync setup with another device")
+    public static let syncPairingV2ConfirmationAction = NSLocalizedString("sync.pairing-v2.confirmation.action", value: "Sync Now", comment: "Caption for a button to confirm sync setup with another device")
+    public static let syncPairingV2UnknownPeerName = NSLocalizedString("sync.pairing-v2.unknown-peer-name", value: "the other device", comment: "Fallback device name for confirmation dialogs")
+    public static func syncPairingV2ConfirmationMessage(_ deviceName: String, isThirdPartyPeer: Bool) -> String {
+        let message = isThirdPartyPeer ? NSLocalizedString(
+            "sync.pairing-v2.confirmation.third-party.message",
+            value: "\"%@\" will be able to access your synced Duck.ai chats.",
+            comment: "Message for the dialog to confirm sync setup with a third-party device")
+        : NSLocalizedString(
+            "sync.pairing-v2.confirmation.ddg.message",
+            value: "\"%@\" will be able to access your synced DuckDuckGo passwords, autofill data, and Duck.ai chats.",
+            comment: "Message for the dialog to confirm sync setup with another DuckDuckGo device")
+        return message.format(arguments: deviceName)
+    }
 
     // Simplified Sync
     public static let simplifiedSyncEnabledToast = NSLocalizedString("sync.simplified.enabled.toast", value: "Sync & Backup enabled", comment: "Toast message shown after sync is successfully enabled")
-    public static let simplifiedDeviceSyncedSuccessfullyToast = NSLocalizedString("sync.simplified.device-synced.toast", value: "Device synced successfully!", comment: "Toast message shown after sync is enabled by connecting with another device")
+    public static let simplifiedDeviceSyncedSuccessfullyToast = NSLocalizedString("sync.simplified.device-synced.toast", value: "New device added!", comment: "Toast message shown after sync is enabled by connecting with another device")
     public static let simplifiedSyncTurnOffTitle = NSLocalizedString("sync.simplified.turn.off.title", value: "Turn Off Sync & Backup?", comment: "Alert title when turning off sync")
     public static let simplifiedSyncTurnOffMessage = NSLocalizedString("sync.simplified.turn.off.message", value: "Your bookmarks and passwords on this device won't be affected.", comment: "Alert message when turning off sync")
     public static let simplifiedSyncTurnOffAction = NSLocalizedString("sync.simplified.turn.off.action", value: "Turn Off", comment: "Alert button to confirm turning off sync")
-    public static let simplifiedCodeCopiedToast = NSLocalizedString("sync.simplified.code.copied.toast", value: "Code copied", comment: "Toast message shown after copying sync code to clipboard")
     public static let simplifiedRecoveryCodeCopiedToast = NSLocalizedString("sync.simplified.recovery.code.copied.toast", value: "Recovery code copied", comment: "Toast message shown after copying recovery code to clipboard from settings")
     public static let simplifiedSyncSetupFailedToast = NSLocalizedString("sync.simplified.setup.failed.toast", value: "Couldn't enable Sync & Backup", comment: "Toast message shown when sync setup fails")
+    public static let simplifiedSyncDeleteAllConfirmTitle = NotLocalizedString("sync.simplified.delete.all.confirm.title", value: "Turn Off Sync & Backup and Delete Server Data?", comment: "Title of the dialog to confirm turning off sync and deleting server data")
+    public static let simplifiedSyncDeleteAllConfirmMessage = NotLocalizedString("sync.simplified.delete.all.confirm.message", value: "All devices using Sync & Backup will be disconnected and your synced data will be deleted from the server.", comment: "Message for the dialog to confirm turning off sync and deleting server data")
+    public static let simplifiedSyncDataDeletedToast = NotLocalizedString("sync.simplified.data-deleted.toast", value: "Server Data Deleted", comment: "Toast message shown after synced server data is deleted")
 
     // MARK: Sync Errors
     static let syncLimitExceededTitle = NSLocalizedString("prefrences.sync.limit-exceeded-title", value: "Sync Paused", comment: "Title for sync limits exceeded warning")
@@ -1332,15 +1403,28 @@ public struct UserText {
     }
     public static let syncAlertSyncNewDeviceButton = NSLocalizedString("alert.sync-new-device.button", value: "Sync Now", comment: "Sync Now button in alert asking if they would like to sync with another device")
     public static let syncErrorAlertTitle = NSLocalizedString("alert.sync-error", value: "Sync & Backup Error", comment: "Title for sync error alert")
+    public static let syncFailedTitle = NSLocalizedString("alert.sync-failed-title", value: "Sync failed.", comment: "Title for generic Sync setup failure alerts")
+    public static let syncFailedDescription = NSLocalizedString("alert.sync-failed-description", value: "Please try again.", comment: "Description for generic Sync setup failure alerts")
     public static let unableToSyncToServerDescription = NSLocalizedString("alert.unable-to-sync-to-server-description", value: "Unable to connect to the server.", comment: "Description for unable to sync to server error")
-    public static let unableToSyncWithOtherDeviceDescription = NSLocalizedString("alert.unable-to-sync-with-other-device-description", value: "Unable to Sync with another device.", comment: "Description for unable to sync with another device error")
     public static let unableToMergeTwoAccountsErrorDescription = NSLocalizedString("alert.unable-to-merge-two-accounts-description", value: "To pair these devices, turn off Sync & Backup on one device then tap \"Sync With Another Device\" on the other device.", comment: "Description for unable to merge two accounts error")
     public static let unableToUpdateDeviceNameDescription = NSLocalizedString("alert.unable-to-update-device-name-description", value: "Unable to update the device name.", comment: "Description for unable to update device name error")
     public static let unableToTurnSyncOffDescription = NSLocalizedString("alert.unable-to-turn-sync-off-description", value: "Unable to turn Sync & Backup off.", comment: "Description for unable to turn sync off error")
     public static let unableToDeleteDataDescription = NSLocalizedString("alert.unable-to-delete-data-description", value: "Unable to delete data on the server.", comment: "Description for unable to delete data error")
     public static let unableToRemoveDeviceDescription = NSLocalizedString("alert.unable-to-remove-device-description", value: "Unable to remove this device from Sync & Backup.", comment: "Description for unable to remove device error")
     public static let unableToCreateRecoveryPDF = NSLocalizedString("alert.unable-to-create-recovery-pdf-description", value: "Unable to create the recovery PDF.", comment: "Description for unable to create recovery pdf error")
-    public static let unableToRecognizeCode = NSLocalizedString("alert.unable-to-scan-qr-code-description", value: "Sorry, this code is invalid. Please make sure the correct code was entered or scanned.", comment: "Description for unable to scan qr code error")
+    public static let unableToRecognizeCodeTitle = NSLocalizedString("alert.unable-to-scan-qr-code-title", value: "This is not a valid Sync code.", comment: "Title for unable to scan qr code error")
+    public static let unableToRecognizeCode = NSLocalizedString("alert.unable-to-scan-qr-code-description", value: "Please make sure the correct code was entered or scanned.", comment: "Description for unable to scan qr code error")
+    public static let syncUpdateRequiredTitle = NSLocalizedString("alert.sync-update-required-title", value: "Update the DuckDuckGo browser and try again.", comment: "Title for Sync error shown when the app version does not support the scanned Sync code")
+    public static let syncUnsupportedThirdPartyRecoveryCodeTitle = NSLocalizedString("alert.sync-code-only-compatible-with-duckai-title", value: "Scan this code using a browser other than DuckDuckGo.", comment: "Title for Sync error shown when a third-party recovery code can only be used with Duck.ai")
+    public static let syncUnsupportedThirdPartyRecoveryCodeDescription = NSLocalizedString("alert.sync-code-only-compatible-with-duckai-description", value: "In your other browser, visit Duck.ai, go to Settings, then under “Sync & Backup” select “Turn On” and then “Sync with another device”.", comment: "Description for Sync error shown when a third-party recovery code can only be used with Duck.ai")
+    public static let syncThirdPartyAccountAlreadyUpgradedDescription = NSLocalizedString("alert.sync-from-another-connected-device-description", value: "Please Sync this device from an already-connected DuckDuckGo browser on another device.", comment: "Description for Sync error shown when a third-party account already has a native DuckDuckGo Sync credential")
+    public static let syncAlreadyPairedWithAccountTitle = NSLocalizedString("alert.sync-already-paired-with-account-title", value: "Already synced.", comment: "Title for Sync error shown when both devices are already paired with the same account")
+    public static let syncAlreadyPairedWithAccountDescription = NSLocalizedString("alert.sync-already-paired-with-account-description", value: "These devices are already connected to Sync & Backup.", comment: "Description for Sync error shown when both devices are already paired with the same account")
+    public static let syncAlreadyPairedWithAccountButton = NSLocalizedString("alert.sync-already-paired-with-account-button", value: "Got It", comment: "Button title for Sync error shown when both devices are already paired with the same account")
+    public static let syncSetupErrorGotItButton = NSLocalizedString("alert.sync-setup-error-got-it-button", value: "Got It", comment: "Button title for Sync setup error alerts")
+    public static let syncCancelledFromOtherDeviceTitle = NSLocalizedString("alert.sync-cancelled-from-other-device-title", value: "Sync canceled from your other device.", comment: "Title for Sync error shown when setup is canceled from the other device")
+    public static let syncCancelledFromOtherDeviceDescription = NSLocalizedString("alert.sync-cancelled-from-other-device-description", value: "Please try again.", comment: "Description for Sync error shown when setup is canceled from the other device")
+    public static let syncCancelledFromOtherDeviceButton = NSLocalizedString("alert.sync-cancelled-from-other-device-button", value: "Got It", comment: "Button title for Sync error shown when setup is canceled from the other device")
     static let syncUnavailableMessage = NSLocalizedString("sync.warning.data.syncing.disabled", value: "Sorry, but Sync & Backup is currently unavailable. Please try again later.", comment: "Data syncing unavailable warning message")
     static let syncUnavailableMessageUpgradeRequired = NSLocalizedString("sync.warning.data.syncing.disabled.upgrade.required", value: "Sorry, but Sync & Backup is no longer available in this app version. Please update DuckDuckGo to the latest version to continue.", comment: "Data syncing unavailable warning message")
 
@@ -1404,6 +1488,8 @@ public struct UserText {
     // MARK: VPN
 
     static let networkProtectionNotificationsTitle = NSLocalizedString("network.protection.notification.title", value: "DuckDuckGo", comment: "The title of the notifications shown from VPN")
+    static let networkProtectionStrictRoutingReminderNotificationTitle = NSLocalizedString("network.protection.strict.routing.reminder.notification.title", value: "Strict Routing is OFF", comment: "The title of the notification reminding the user to turn the VPN Strict routing setting back on")
+    static let networkProtectionStrictRoutingReminderNotificationBody = NSLocalizedString("network.protection.strict.routing.reminder.notification.body", value: "Some traffic may bypass the VPN while off. Strict Routing is recommended for public networks.", comment: "The body of the notification reminding the user to turn the VPN Strict routing setting back on")
     static let networkProtectionConnectionSuccessNotificationBody = NSLocalizedString("network.protection.success.notification.body", value: "DuckDuckGo VPN is On. Your location and online activity are protected.", comment: "The body of the notification shown when VPN reconnects successfully")
     static func networkProtectionConnectionSuccessNotificationBody(serverLocation: String) -> String {
         let localized = NSLocalizedString(
@@ -1449,7 +1535,7 @@ public struct UserText {
     // Privacy Protections
     public static let privateSearchExplanation = NSLocalizedString("settings.private.search.explanation", value: "DuckDuckGo Private Search is your default search engine, so you can search the web without being tracked.", comment: "Explanation in Settings how the private search feature works")
     public static let webTrackingProtectionExplanation = NSLocalizedString("settings.web.tracking.protection.explanation", value: "DuckDuckGo automatically blocks hidden trackers as you browse the web.\n[Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/)", comment: "Explanation in Settings how the web tracking protection feature works")
-    public static let cookiePopUpProtectionExplanation = NSLocalizedString("settings.cookie.pop.up.protection.explanation", value: "DuckDuckGo will try to select the most private settings available and hide these pop-ups for you.\n[Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-management)", comment: "Explanation in Settings how the cookie pop up protection feature works")
+    public static let cookiePopUpProtectionExplanation = NSLocalizedString("settings.cookie.pop.up.protection.explanation", value: "DuckDuckGo can auto-manage cookie preferences to maximize privacy, minimize cookies, and close these pop-ups.\n[Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)", comment: "Explanation in Settings how the cookie pop up protection feature works")
     public static let emailProtectionExplanation = NSLocalizedString("settings.email.protection.explanation", value: "Block email trackers and hide your address without switching your email provider.\n[Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/email-protection/what-is-duckduckgo-email-protection/)", comment: "Explanation in Settings how the email protection feature works")
     public static let emailProtectionSigningOutAlert = NSLocalizedString("settings.email.protection.signing.out.alert", value: "Signing out of your Email Protection account will disable Duck Address autofill in this browser. You can still use these addresses and receive forwarded email as usual.", comment: "Alert presented to user after clicking on 'Sign out' in Email Protection Settings")
     public static let defaultBrowser = NSLocalizedString("settings.default.browser", value: "Default Browser", comment: "The name of Settings category in Privacy Features related to configuration of the default browser")
@@ -1502,6 +1588,10 @@ public struct UserText {
 
     public static let cookiePopUpProtection = NSLocalizedString("settings.cookie.pop-up-protection.protection", value: "Cookie Pop-Up Protection", comment: "The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups")
     public static let letDuckDuckGoManageCookieConsentPopups = NSLocalizedString("settings.let.duckduckgo.manage.cookie.consent.popups", value: "Let DuckDuckGo manage cookie consent pop-ups", comment: "Switch button label.")
+    public static let autoManageCookiePopupsTitle = NSLocalizedString("settings.cookie.auto-manage.title", value: "Auto-Manage Cookie Pop-Ups", comment: "Title for the auto-manage cookie pop-ups toggle in settings")
+    public static let autoManageCookiePopupsExplanation = NSLocalizedString("settings.cookie.auto-manage.explanation", value: "We'll aim to only select the most private cookie options available for you, then close these pop-ups.", comment: "Explanation below the auto-manage cookie pop-ups toggle in settings")
+    public static let popUpsWithoutOptOutsTitle = NSLocalizedString("settings.cookie.popups-without-opt-outs.title", value: "Pop-Ups Without Opt-Outs", comment: "Title for the pop-ups without opt-outs toggle in settings")
+    public static let popUpsWithoutOptOutsExplanation = NSLocalizedString("settings.cookie.popups-without-opt-outs.explanation", value: "Also let DuckDuckGo save you a click by accepting cookies on your behalf to close pop-ups that don’t let you opt out.", comment: "Explanation below the pop-ups without opt-outs toggle in settings")
 
     static let threatProtection = NSLocalizedString("preferences.threat-protection", value: "Threat Protection", comment: "Title of the option to show the Threat Protection preferences")
     static let threatProtectionCaption = NSLocalizedString("preferences.threat-protection.caption", value: "DuckDuckGo's enhanced protections stop common threats while keeping your connection secure.\n[Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)", comment: "Caption of the option to show the Threat Protection preferences")
@@ -1530,6 +1620,7 @@ public struct UserText {
 
     // Next Steps
     public static let nextSteps = NSLocalizedString("settings.next.steps", value: "Next Steps", comment: "The name of a settings category listing next steps")
+    public static let nextStepsHide = NSLocalizedString("settings.next.steps.hide", value: "Hide", comment: "Accessibility label / title for the button that hides the Settings Next Steps section")
     public static let settingsAddToDock = NSLocalizedString("settings.add.to.dock", value: "Add App to Your Dock", comment: "Settings screen cell text for adding the app to the dock")
     public static let settingsAddWidget = NSLocalizedString("settings.add.widget", value: "Add Widget to Home Screen", comment: "Settings screen cell text for add widget to the home screen")
     public static let settingsAddVPNWidget = NSLocalizedString("settings.add.widget.vpn", value: "Add DuckDuckGo VPN Widget to Your Home Screen", comment: "Title for the settings VPN subsection where the user can learn how to add the VPN to their home screen")
@@ -1558,6 +1649,8 @@ public struct UserText {
     public static let settingsCustomizableButtonDeleteTabsAndData = NSLocalizedString("settings.customizable.button.delete.tabs.and.data", value: "Delete Tabs and Data", comment: "Label for customizable toolbar button that deletes tabs and data")
     public static let settingsText = NSLocalizedString("settings.text.size", value: "Default Text Zoom", comment: "Settings screen cell text for text size")
     public static let settingsAddressBarPosition = NSLocalizedString("settings.appearance.address.bar", value: "Address Bar Position", comment: "Settings screen cell text for addess bar position")
+    public static let settingsHideTabBarWhileScrolling = NSLocalizedString("settings.appearance.hide.tab.bar.while.scrolling", value: "Hide Tab Bar While Scrolling", comment: "Settings screen toggle (iPad only) that hides the tab bar and address bar while scrolling")
+    public static let settingsHideTabBarWhileScrollingFooter = NSLocalizedString("settings.appearance.hide.tab.bar.while.scrolling.footer", value: "Available on most websites. Duck.ai, maps, and games may keep the tab bar visible.", comment: "Footer (iPad only) shown below the Hide Tab Bar While Scrolling toggle, explaining where the behavior applies")
     public static let settingsFullURL = NSLocalizedString("settings.address.full.url", value: "Show Full Site Address", comment: "Settings screen cell title for toggling full URL visibility in address bar")
     public static let tabSwitcherShowTrackerCount = NSLocalizedString("settings.tab.switcher.show.tracker.count", value: "Show in Tabs Manager", comment: "Settings screen cell title for toggling tracker blocking animation in tabs manager")
     public static let settingsTrackersBlockedAnimation = NSLocalizedString("settings.address.trackers.animation", value: "Show in Address Bar", comment: "Settings screen cell title for toggling tracker blocking animation in address bar")
@@ -1593,6 +1686,8 @@ public struct UserText {
     public static let settingsGPC = NSLocalizedString("settings.gpc", value: "Global Privacy Control (GPC)", comment: "Settings screen cell text for GPC")
     public static let settingsCookiePopups = NSLocalizedString("settings.cookie.popups", value: "Manage Cookie Pop-ups", comment: "Settings screen cell text for Cookie popups")
     public static let settingsUnprotectedSites = NSLocalizedString("settings.unprotected.sites", value: "Unprotected Sites", comment: "Settings screen cell text for Unprotected Sites")
+    public static let settingsUnprotectedSitesDescription = NSLocalizedString("settings.unprotected.sites.description", value: "These sites will not be enhanced by Privacy Protection.", comment: "Description shown above the list of unprotected sites")
+    public static let settingsUnprotectedSitesEmptyState = NSLocalizedString("settings.unprotected.sites.empty.state", value: "Privacy Protection enabled for all sites", comment: "Message shown when there are no unprotected sites")
     public static let settingsFireproofedSites = NSLocalizedString("settings.fireproofed.sites", value: "Fireproofed Sites", comment: "Settings screen cell text for Fireproofed Sites")
     public static func settingsFireproofedSitesSubtitle(withCount count: Int) -> String {
         let format = Bundle.main.localizedString(forKey: "settings.fireproofed.sites.subtitle", value: nil, table: nil)
@@ -1644,8 +1739,8 @@ public struct UserText {
     public static let settingsAfterInactivityIntervalLabel = NSLocalizedString("settings.afterInactivity.interval.label", value: "Inactivity Timer", comment: "Settings picker label for the inactivity duration before showing New Tab")
     public static let settingsAfterInactivityIdleIntervalNone = NSLocalizedString("settings.afterInactivity.idle.interval.none", value: "None", comment: "Idle interval option meaning the New Tab Page is shown every time the user returns (no inactivity threshold)")
     public static let settingsAfterInactivityFooterNone = NSLocalizedString("settings.afterInactivity.footer.none", value: "Choose what you see when you return to DuckDuckGo.", comment: "Section footer when no inactivity timer is set or the Last Used Tab option is selected")
-    public static let settingsLastTabShortcutLabel = NotLocalizedString("settings.lastTabShortcut.label", value: "Last Tab Shortcut", comment: "Settings toggle label for showing a shortcut back to the last used tab on the New Tab Page after inactivity. Not translated; final copy will land in a follow-up PR.")
-    public static let settingsLastTabShortcutSubtitle = NotLocalizedString("settings.lastTabShortcut.subtitle", value: "Displays a link to quickly revisit the last opened tab when you launch the app after inactivity.", comment: "Settings toggle subtitle describing the Last Tab Shortcut option. Not translated; final copy will land in a follow-up PR.")
+    public static let settingsLastTabShortcutLabel = NotLocalizedString("settings.lastTabShortcut.label", value: "Last Used Tab Shortcut", comment: "Settings toggle label for showing a shortcut back to the last used tab on the New Tab Page after inactivity. Not translated; final copy will land in a follow-up PR.")
+    public static let settingsLastTabShortcutSubtitle = NotLocalizedString("settings.lastTabShortcut.subtitle", value: "Displays a link to return to the last used tab when you launch the app after inactivity.", comment: "Settings toggle subtitle describing the Last Used Tab Shortcut option. Not translated; final copy will land in a follow-up PR.")
 
     // Escape Hatch (Return to Tab Card)
     public static let escapeHatchReturnToLabel = NSLocalizedString("escapeHatch.returnTo.label", value: "Return to…", comment: "Label shown on the escape hatch card above the tab title")
@@ -1657,9 +1752,9 @@ public struct UserText {
     public static let escapeHatchMenuReturnToTab = NSLocalizedString("escapeHatch.menu.returnToTab", value: "Return to Tab", comment: "Menu item that returns the user to the open tab from the escape hatch card")
     public static let escapeHatchMenuCloseTab = NSLocalizedString("escapeHatch.menu.closeTab", value: "Close Tab", comment: "Menu item that closes the open tab referenced by the escape hatch card")
     public static let escapeHatchMenuDeleteTab = NSLocalizedString("escapeHatch.menu.deleteTab", value: "Delete Tab", comment: "Menu item that deletes (closes and clears data for) the tab referenced by the escape hatch card")
-    public static let escapeHatchMenuDontShowThis = NotLocalizedString("escapeHatch.menu.dontShowThis", value: "Don’t Show This", comment: "Menu item that hides the 'Return to tab' shortcut so only the tab switcher is shown after inactivity. Not translated; final copy will land in a follow-up PR.")
+    public static let escapeHatchMenuHideTheseShortcuts = NotLocalizedString("escapeHatch.menu.dontShowThis", value: "Hide These Shortcuts", comment: "Menu item that hides the 'Return to tab' shortcut so only the tab switcher is shown after inactivity. Not translated; final copy will land in a follow-up PR.")
     public static let escapeHatchTabSwitcherPrivateTabsLabel = NSLocalizedString("escapeHatch.tabSwitcher.privateTabs.label", value: "Private Tabs", comment: "Label shown next to the tab count when the escape hatch's tab switcher pill is in its expanded form")
-
+    
     // Subscription Section
     public static let settingsSubscriptionSection = NSLocalizedString("settings.subscription.Section", value: "DuckDuckGo Subscription", comment: "Product name for the subscription bundle")
     public static let settingsPProSectionFooter = NSLocalizedString("settings.ppro.footer", value: "Privacy Policy and Terms of Service", comment: "Title for Link in the Footer of Privacy Pro section")
@@ -1691,9 +1786,9 @@ public struct UserText {
 
     public static let settingsPProVPNTitle = NSLocalizedString("settings.subscription.VPN.title", value: "VPN", comment: "VPN cell title for privacy pro")
     public static let settingsPProDBPTitle = NSLocalizedString("settings.subscription.DBP.title", value: "Personal Information Removal", comment: "Data Broker protection cell title for privacy pro")
-    public static let settingsPProOtherProtectionsSection = NotLocalizedString("settings.subscription.otherProtections.section", value: "Other Protections", comment: "Freemium PIR section title for eligible users")
     public static let settingsPProFreemiumDBPSubtitle = NotLocalizedString("settings.subscription.DBP.freemium.subtitle", value: "Find your personal info on sites that sell it.", comment: "Freemium PIR subtitle for eligible users")
-    public static let settingsPProFreemiumDBPFreeScanCTA = NotLocalizedString("settings.subscription.DBP.freemium.freeScan", value: "Free Scan", comment: "Freemium PIR CTA for eligible users")
+    public static let settingsPProFreemiumDBPFreeScanCTA = NotLocalizedString("settings.subscription.DBP.freemium.freeScan", value: "Start Free Scan", comment: "Freemium PIR CTA for eligible users")
+    public static let settingsPProFreemiumDBPShowResultsCTA = NotLocalizedString("settings.subscription.DBP.freemium.showResults", value: "View Scan Results", comment: "Freemium PIR CTA shown once the user's first scan has completed")
     public static let settingsSubscriptionAiChatTitle = NSLocalizedString("settings.subscription.AIChat.title", value: "Duck.ai", comment: "Paid AIChat protection cell title for subscription")
     public static let settingsPProDBPSubTitle = NSLocalizedString("settings.subscription.DBP.subtitle", value: "Remove your info from sites that sell it", comment: "Data Broker protection cell subtitle for privacy pro")
     public static let settingsPProITRTitle = NSLocalizedString("settings.subscription.ITR.title", value: "Identity Theft Restoration", comment: "Identity theft restoration cell title for privacy pro")
@@ -2058,6 +2153,9 @@ public struct UserText {
     public static let duckPlayerOptInPillTitle = NSLocalizedString("duckplayer.opt-in.pill.title", value: "Play this video in Duck Player", comment: "Button text to play a video in Duck Player")
     public static let duckPlayerOptInPillSubtitle = NSLocalizedString("duckplayer.opt-in.pill.subtitle", value: "Watch without targeted ads", comment: "Subtitle explaining Duck Player blocks targeted ads")
 
+    // Opt-in mode - Floating Entry Pill
+    public static let duckPlayerFloatingPillTitle = NotLocalizedString("duckplayer.floating.pill.title", value: "Play in Duck Player", comment: "Button text to play a video in Duck Player")
+
     // Opt-in mode - Welcome message
     public static let duckPlayerOptInWelcomeMessageTitle = NSLocalizedString("duckplayer.opt-in.message.title", value: "YouTube, but with fewer ads and more privacy", comment: "Title for Duck Player opt-in message")
     public static let duckPlayerOptInWelcomeMessageContent = NSLocalizedString("duckplayer.opt-in.message.content", value: "Duck Player blocks targeted ads and keeps your viewing history protected.", comment: "Content for Duck Player opt-in message")
@@ -2068,7 +2166,7 @@ public struct UserText {
 
     // YouTube Ad Blocking
     public static let youTubeAdBlockingTitle = NSLocalizedString("youtube.ad.blocking.title", value: "Ad Blocking", comment: "Settings screen title for Ad Blocking")
-    public static let adBlockingDescription = NSLocalizedString("ad.blocking.description", value: "Blocks invasive trackers before they load, effectively eliminating ads that rely on tracking", comment: "Description of the Ad Blocking feature in settings")
+    public static let adBlockingDescription = NSLocalizedString("ad.blocking.description", value: "Blocks invasive trackers before they load, effectively eliminating ads that rely on tracking.", comment: "Description of the Ad Blocking feature in settings")
     public static let adBlockingYouTubeSectionHeader = NSLocalizedString("ad.blocking.youtube.section.header", value: "YouTube Ad Blocking", comment: "Section header for YouTube-specific ad blocking settings")
     public static let youTubeAdBlockingExplanation = NSLocalizedString("youtube.ad.blocking.explanation", value: "DuckDuckGo blocks video ads on YouTube, so you can watch videos without interruption.", comment: "Explanation text for YouTube Ad Blocking feature")
     public static let youTubeAdBlockingToggle = NSLocalizedString("youtube.ad.blocking.toggle", value: "Block ads on YouTube", comment: "Toggle label for enabling/disabling YouTube ad blocking")
@@ -2085,12 +2183,12 @@ public struct UserText {
 
     // YouTube Ad Blocking — breakage report prompt
     public static let youTubeAdBlockingBreakageReportTitle = NSLocalizedString("youtube.ad.blocking.breakage-report.title", value: "YouTube Ad Blocking not working?", comment: "Title of the bottom sheet asking the user to send an anonymous breakage report after disabling YouTube ad blocking")
-    public static let youTubeAdBlockingBreakageReportMessage = NSLocalizedString("youtube.ad.blocking.breakage-report.message", value: "Send an anonymous breakage report to DuckDuckGo. Help make ad blocking better for everyone!", comment: "Body text of the bottom sheet asking the user to send an anonymous breakage report")
-    public static let youTubeAdBlockingBreakageReportSend = NSLocalizedString("youtube.ad.blocking.breakage-report.send", value: "Send Breakage Report", comment: "Primary action sending an anonymous YouTube ad-blocking breakage report")
+    public static let youTubeAdBlockingBreakageReportMessage = NSLocalizedString("youtube.ad.blocking.breakage-report.message", value: "Send an anonymous report to DuckDuckGo and help make ad blocking better for everyone!", comment: "Body text of the bottom sheet asking the user to send an anonymous breakage report")
+    public static let youTubeAdBlockingBreakageReportSend = NSLocalizedString("youtube.ad.blocking.breakage-report.send", value: "Send Anonymous Report", comment: "Primary action sending an anonymous YouTube ad-blocking breakage report")
 
     // YouTube Ad Blocking — feature-unavailable notice
     public static let youTubeAdBlockingUnavailableTitle = NSLocalizedString("youtube.ad.blocking.unavailable.title", value: "YouTube Ad Blocking Unavailable", comment: "Title of the bottom sheet shown when YouTube ad blocking has been remotely disabled")
-    public static let youTubeAdBlockingUnavailableMessage = NSLocalizedString("youtube.ad.blocking.unavailable.message", value: "Ad Blocking has been affected by recent changes to YouTube. We're working to fix these issues and appreciate your understanding", comment: "Body text of the bottom sheet shown when YouTube ad blocking has been remotely disabled")
+    public static let youTubeAdBlockingUnavailableMessage = NSLocalizedString("youtube.ad.blocking.unavailable.message", value: "Ad Blocking has been affected by recent changes to YouTube. We're working to fix these issues and appreciate your understanding.", comment: "Body text of the bottom sheet shown when YouTube ad blocking has been remotely disabled")
     public static let youTubeAdBlockingUnavailableGotIt = NSLocalizedString("youtube.ad.blocking.unavailable.got-it", value: "Got It", comment: "Acknowledgement button on the YouTube ad-blocking unavailable bottom sheet")
 
     public static let youTubeAdBlockingDisabledUntilRelaunch = NSLocalizedString("youtube.ad.blocking.disabled-until-relaunch", value: "Disabled until relaunch", comment: "Settings cell subtitle indicating YouTube ad blocking will re-enable on next app launch")
@@ -2119,6 +2217,7 @@ public struct UserText {
     public static let aiChatToolbarSearchButtonAccessibilityLabel = NotLocalizedString("aichat.toolbar.search.button.accessibility.label", value: "Search web", comment: "Accessibility label for the search/globe button in the Duck.ai native input toolbar")
     public static let aiChatToolbarCustomizeResponsesButtonAccessibilityLabel = NotLocalizedString("aichat.toolbar.customizeResponses.button.accessibility.label", value: "Customize Responses", comment: "Accessibility label for the customize responses button in the Duck.ai native input toolbar")
     public static let aiChatToolbarCustomizeResponsesMenuTitle = NSLocalizedString("aichat.toolbar.tools.customizeResponses.title", value: "Customize Responses", comment: "Title for the customize responses action in the unified input tools menu")
+    public static let aiChatToolbarCustomizeResponsesMenuSubtitle = NSLocalizedString("aichat.toolbar.tools.customizeResponses.subtitle", value: "Set tone, length and behavior", comment: "Subtitle for the customize responses action in the unified input tools menu")
     public static let aiChatToolbarToolsButtonAccessibilityLabel = NotLocalizedString("aichat.toolbar.tools.button.accessibility.label", value: "Tools", comment: "Accessibility label for the tools button in the unified input toolbar")
     public static let aiChatToolbarClearSelectedToolAccessibilityLabel = NotLocalizedString("aichat.toolbar.tools.clear.button.accessibility.label", value: "Clear selected tool", comment: "Accessibility label for the button that clears the selected Duck.ai tool in unified input")
     public static let aiChatToolbarAttachButtonAccessibilityLabel = NotLocalizedString("aichat.toolbar.attach.button.accessibility.label", value: "Attach", comment: "Accessibility label for the attachment button in the Duck.ai native input toolbar")
@@ -2139,6 +2238,7 @@ public struct UserText {
     public static let aiChatAttachmentOptionAttachPhoto = NSLocalizedString("aichat.attachment.option.attach.photo", value: "Add Image", comment: "Top-level attachment menu option to add an image to an AI chat message")
     public static let aiChatAttachmentOptionAttachFile = NSLocalizedString("aichat.attachment.option.attach.file", value: "Add File", comment: "Top-level attachment menu option to add a file to an AI chat message")
     public static let aiChatAttachmentOptionTakePhoto = NSLocalizedString("aichat.attachment.option.take.photo", value: "Take Photo", comment: "Top-level attachment menu option to take a photo using the device camera for attaching to an AI chat message")
+    public static let aiChatAttachmentOptionAskAboutPage = NSLocalizedString("aichat.attachment.option.ask.about.page", value: "Ask About Page", comment: "Top-level attachment menu option to attach the current page content to an AI chat message")
     public static func aiChatAttachmentFileTooLarge(maxFileSizeMB: Int) -> String {
         let message = NSLocalizedString("aichat.attachment.file.too.large", value: "This file is too large. The maximum file size is %d MB.", comment: "Error message displayed when the user tries to attach a file that exceeds the maximum allowed size. Parameter is the backend-provided size limit in megabytes.")
         return message.format(arguments: maxFileSizeMB)
@@ -2197,11 +2297,14 @@ public struct UserText {
     public static let aiChatHeaderFreePlan = NotLocalizedString("aichat.header.freePlan", value: "Free Plan", comment: "Label shown in the Duck.ai tab header for free plan users")
     public static let aiChatHeaderUpgrade = NotLocalizedString("aichat.header.upgrade", value: "Upgrade", comment: "Label shown in the Duck.ai tab header prompting free users to upgrade")
     public static let aiChatHeaderPaidTitle = NotLocalizedString("aichat.header.paidTitle", value: "Duck.ai", comment: "Label shown in the Duck.ai tab header for paid subscribers")
+    public static let aiChatHeaderEditMessageTitle = NotLocalizedString("aichat.header.editMessage", value: "Edit Message", comment: "Title shown in the Duck.ai tab header while editing a previously sent message")
+    public static let aiChatEditReplaceResponseDisclaimer = NotLocalizedString("aichat.edit.replaceResponseDisclaimer", value: "Editing will replace the response with a new one.", comment: "Caption shown below the input while editing a message, warning that submitting the edit replaces the existing response")
     public static let aiChatHeaderRecentChatsAccessibilityLabel = NotLocalizedString("aichat.header.recentChats.a11y", value: "Recent chats", comment: "Accessibility label for the chat-list / recent-chats button in the Duck.ai tab header")
     public static let aiChatHeaderCloseTabAccessibilityLabel = NotLocalizedString("aichat.header.closeTab.a11y", value: "Close tab", comment: "Accessibility label for the close-tab button in the Duck.ai tab header")
     public static let aiChatHeaderNewChatAccessibilityLabel = NotLocalizedString("aichat.header.newChat.a11y", value: "New chat", comment: "Accessibility label for the new-chat button in the Duck.ai tab header")
     public static let aiChatHeaderPlusMenuAccessibilityLabel = NSLocalizedString("aichat.header.plusMenu.a11y", value: "New", comment: "Accessibility label for the Plus (+) button in the Duck.ai tab header that opens a menu of new-chat and new-tab actions")
     public static let aiChatHeaderNewVoiceChatTitle = NSLocalizedString("aichat.header.plusMenu.newVoiceChat", value: "New Voice Chat", comment: "Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu")
+    public static let aiChatHeaderNewImageTitle = NSLocalizedString("aichat.header.plusMenu.newImage", value: "New Image", comment: "Title for the New Image row in the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode")
     public static let aiChatHeaderNewTabTitle = NSLocalizedString("aichat.header.plusMenu.newTab", value: "New Tab", comment: "Title for the New Tab row in the Duck.ai tab header Plus (+) menu")
     public static let aiChatHeaderNewSearchTitle = NSLocalizedString("aichat.header.plusMenu.newSearch", value: "New Search", comment: "Title for the New Search row in the Duck.ai tab header Plus (+) menu — opens a new tab and forces search mode for that entry")
     public static let aiChatHeaderNewFireTabTitle = NSLocalizedString("aichat.header.plusMenu.newFireTab", value: "New Fire Tab", comment: "Title for the New Fire Tab row in the Duck.ai tab header Plus (+) menu")
@@ -2228,13 +2331,27 @@ public struct UserText {
 
     public static let settingsChatSuggestionsTitle = NSLocalizedString("settings.aifeatures.chat.suggestions.title", value: "Chat Suggestions", comment: "Settings screen cell title for enabling chat suggestions")
 
-    public static let settingsAiFeaturesSearchAssist = NSLocalizedString("settings.aifeatures.assist", value: "Search Assist Settings", comment: "Title of search assist settings link")
-
     public static let settingsAiFeaturesSearchAssistSubtitle = NSLocalizedString("settings.features.assist.subtitle", value: "Choose how often you want AI-assisted answers to appear in your searches", comment: "A description of what the AI Chat toggle does")
 
     public static let settingsAiFeaturesHideAIGeneratedImages = NSLocalizedString("settings.aifeatures.hide.ai.generated.images", value: "Hide AI-Generated Images", comment: "Title of hide AI-generated images settings link")
 
-    public static let settingsAiFeaturesHideAIGeneratedImagesSubtitle = NSLocalizedString("settings.aifeatures.hide.ai.generated.images.subtitle", value: "Filters out AI-Generated images from image search results", comment: "Description of what the hide AI-generated images feature does")
+    public static let settingsAiFeaturesHideAIGeneratedImagesSubtitle = NSLocalizedString("settings.aifeatures.hide.ai.generated.images.subtitle", value: "Filters out known AI spam sites from image search results. [Learn more](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)", comment: "Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link)")
+
+    public static let settingsAiFeaturesSearchAssistTitle = NSLocalizedString("settings.aifeatures.assist.title", value: "Search Assist", comment: "Title of the native Search Assist setting control")
+
+    public static let settingsAiFeaturesSearchAssistNever = NSLocalizedString("settings.aifeatures.assist.never", value: "Never", comment: "Search Assist frequency option: never show AI-assisted answers")
+    public static let settingsAiFeaturesSearchAssistOnDemand = NSLocalizedString("settings.aifeatures.assist.ondemand", value: "On demand", comment: "Search Assist frequency option: show AI-assisted answers on demand")
+    public static let settingsAiFeaturesSearchAssistSometimes = NSLocalizedString("settings.aifeatures.assist.sometimes", value: "Sometimes", comment: "Search Assist frequency option: sometimes show AI-assisted answers")
+    public static let settingsAiFeaturesSearchAssistOften = NSLocalizedString("settings.aifeatures.assist.often", value: "Often", comment: "Search Assist frequency option: often show AI-assisted answers")
+
+    public static let settingsAiFeaturesHideAIGeneratedImagesOn = NSLocalizedString("settings.aifeatures.hide.ai.generated.images.on", value: "On", comment: "Hide AI-Generated Images option: on (images hidden)")
+    public static let settingsAiFeaturesHideAIGeneratedImagesOff = NSLocalizedString("settings.aifeatures.hide.ai.generated.images.off", value: "Off", comment: "Hide AI-Generated Images option: off (images shown)")
+
+    public static let settingsAiFeaturesDisableAIFeatures = NSLocalizedString("settings.aifeatures.disable.all", value: "Use DuckDuckGo Without AI", comment: "Button that turns off all AI features")
+    public static let settingsAiFeaturesDisableAllFooter = NSLocalizedString("settings.aifeatures.disable.all.footer", value: "Disables Duck.ai, hides AI-assisted answers in search, and filters known AI spam sites in image search results.", comment: "Footer text below the disable all AI features button")
+    public static let settingsAiFeaturesDisableAllFooterDisabled = NSLocalizedString("settings.aifeatures.disable.all.footer.disabled", value: "AI is currently disabled in the Browser so you’ll no longer see AI-assisted answers and see fewer AI-generated images in image search results.", comment: "Footer text shown once all AI features are already disabled")
+
+    public static let settingsDuckAiSectionHeader = NSLocalizedString("settings.aifeatures.duckai.section.header", value: "Duck.ai", comment: "Section header for the Duck.ai settings group on the AI Features screen")
 
     public static let settingsAiChatShortcuts = NSLocalizedString("settings.aichat.shortcuts", value: "Duck.ai Shortcuts", comment: "Settings screen text for showing AI Chat in various places in the app")
 
@@ -2319,6 +2436,8 @@ public struct UserText {
 
     public static let aiChatFollowUpPlaceholder = NSLocalizedString("input.field.placeholder.duckai.followup", value: "Reply...", comment: "Placeholder text for the duck.ai input field when a chat is already active")
 
+    public static let aiChatImageGenerationPlaceholder = NotLocalizedString("input.field.placeholder.duckai.imageGeneration", value: "Create images privately", comment: "Placeholder text for the duck.ai input field when the image generation tool is selected")
+
     // MARK: - AI Chat Welcome Message
     public static let aiChatWelcomeMessage = NSLocalizedString("duckai.welcome.message", value: "All chats are %@ private", comment: "Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon.")
 
@@ -2339,13 +2458,6 @@ public struct UserText {
     // MARK: - AI Chat Context Chip
     public static let aiChatAttachPageContent = NSLocalizedString("duckai.attach.page.content", value: "Attach Page Content", comment: "Menu option to attach current page content to Duck.ai chat")
     public static let aiChatContextChipInfoFooter = NSLocalizedString("duckai.context.chip.info", value: "Sent with your message to Duck.ai", comment: "Info text shown below the context chip explaining that content will be sent with the message")
-
-    // MARK: - AI Features Picker Footer
-    public static let settingsAIPickerFooterDescription = NSLocalizedString(
-        "settings.ai.new.picker.footer",
-        value: "Try the new option to toggle between search and Duck.ai in the Address Bar.",
-        comment: "Footer under the AI picker, descriptive sentence without link"
-    )
 
     // MARK: - New Address Bar Picker
     public static let newAddressBarPickerTitle = NSLocalizedString("new.address.bar.picker.title", value: "Address bar option", comment: "Title for the new address bar picker modal")
@@ -2397,7 +2509,70 @@ public struct UserText {
             public static let skipCTA = NSLocalizedString("onboarding.intro.cta.skip", value: "I’ve been here before", comment: "Button to skip the onboarding process")
 
             enum Debug {
-                public static let skip = NotLocalizedString("onboarding.intro.debug.skip", value: "Skip", comment: "Button to skip the onboarding process")
+                public static let skip = NotLocalizedString("onboarding.intro.debug.skip", value: "Skip Onboarding", comment: "Button to skip the onboarding process")
+            }
+        }
+
+        public enum DownloadReason {
+            public static let title = NotLocalizedString("onboarding.downloadReason.title", value: "Set things up your way", comment: "Title of the onboarding screen asking why the user downloaded the app.")
+            public static let message = NotLocalizedString("onboarding.downloadReason.message", value: "Choose what interests you most, and we’ll start there.", comment: "Subtitle of the onboarding screen asking why the user downloaded the app.")
+            public static let browsePrivately = NotLocalizedString("onboarding.downloadReason.browsePrivately", value: "Search and browse privately", comment: "Label for the option to set up the app for private searching and browsing.")
+            public static let chatWithAI = NotLocalizedString("onboarding.downloadReason.chatWithAI", value: "Chat with AI privately", comment: "Label for the option to set up the app for private AI chat.")
+            public static let removeAI = NotLocalizedString("onboarding.downloadReason.removeAI", value: "Remove AI from search results", comment: "Label for the option to set up the app without AI in search results.")
+            public static let blockAds = NotLocalizedString("onboarding.downloadReason.blockAds", value: "Block ads and pop-ups", comment: "Label for the option to set up the app to block ads and pop-ups.")
+            public static let cta = NotLocalizedString("onboarding.downloadReason.cta", value: "Next", comment: "Button to continue to the next onboarding screen after choosing a reason.")
+        }
+
+        public enum Personalization {
+
+            public enum Search {
+                public static let title = NotLocalizedString("onboarding.personalization.search.title", value: "Your search, your way.", comment: "Title of the onboarding search personalization screen.")
+                public static let recentlyVisitedSitesTitle = NotLocalizedString("onboarding.personalization.search.recentlyVisitedSites.title", value: "Recently visited sites", comment: "Title for the recently visited sites option on the onboarding search personalization screen.")
+                public static let recentlyVisitedSitesSubtitle = NotLocalizedString("onboarding.personalization.search.recentlyVisitedSites.subtitle", value: "Show when searching. Private, only on your device.", comment: "Subtitle for the recently visited sites option on the onboarding search personalization screen.")
+                public static let safeSearchTitle = NotLocalizedString("onboarding.personalization.search.safeSearch.title", value: "Safe search", comment: "Title for the safe search option on the onboarding search personalization screen.")
+                public static let safeSearchSubtitle = NotLocalizedString("onboarding.personalization.search.safeSearch.subtitle", value: "Omit questionable (mostly adult) material in results.", comment: "Subtitle for the safe search option on the onboarding search personalization screen.")
+                public static let cta = NotLocalizedString("onboarding.personalization.search.cta", value: "Next", comment: "Button to continue to the next onboarding screen from the search personalization screen.")
+            }
+
+            public enum AIModel {
+                public static let title = NotLocalizedString("onboarding.personalization.aiModel.title", value: "Your chats, your way.", comment: "Title of the onboarding AI model personalization screen.")
+                public static let message = NotLocalizedString("onboarding.personalization.aiModel.message", value: "Change your default AI now, or anytime during chat.", comment: "Message of the onboarding AI model personalization screen.")
+                public static let cta = NotLocalizedString("onboarding.personalization.aiModel.cta", value: "Next", comment: "Button to continue to the next onboarding screen from the AI model personalization screen.")
+            }
+
+            public enum AddressBarToggle {
+                public static let title = NotLocalizedString("onboarding.personalization.addressBarToggle.title", value: "Want new tabs to open with AI chat?", comment: "Title of the onboarding address bar toggle mode personalization screen.")
+                public static let footer = NotLocalizedString("onboarding.personalization.addressBarToggle.footer", value: "You can switch to Search with one tap", comment: "Footer of the onboarding address bar toggle mode personalization screen.")
+                public static let primaryCTA = NotLocalizedString("onboarding.personalization.addressBarToggle.cta.primary", value: "Open tabs with AI chat", comment: "Primary button to open new tabs with AI chat on the onboarding address bar toggle mode personalization screen.")
+                public static let secondaryCTA = NotLocalizedString("onboarding.personalization.addressBarToggle.cta.secondary", value: "Not Now", comment: "Secondary button to dismiss the onboarding address bar toggle mode personalization screen.")
+            }
+
+            public enum AISearch {
+                public static let title = NotLocalizedString("onboarding.personalization.aiSearch.title", value: "Search without AI", comment: "Title of the onboarding AI search personalization screen.")
+                public static let searchAssistTitle = NotLocalizedString("onboarding.personalization.aiSearch.searchAssist.title", value: "Search Assist", comment: "Title for the Search Assist option on the onboarding AI search personalization screen.")
+                public static let searchAssistSubtitle = NotLocalizedString("onboarding.personalization.aiSearch.searchAssist.subtitle", value: "AI-generated answers within search results", comment: "Subtitle for the Search Assist option on the onboarding AI search personalization screen.")
+                public static let hideAIGeneratedImagesTitle = NotLocalizedString("onboarding.personalization.aiSearch.hideAIGeneratedImages.title", value: "Hide AI-generated images", comment: "Title for the hide AI-generated images option on the onboarding AI search personalization screen.")
+                public static let hideAIGeneratedImagesSubtitle = NotLocalizedString("onboarding.personalization.aiSearch.hideAIGeneratedImages.subtitle", value: "Filters out known AI spam sites from image search results", comment: "Subtitle for the hide AI-generated images option on the onboarding AI search personalization screen.")
+                public static let cta = NotLocalizedString("onboarding.personalization.aiSearch.cta", value: "Next", comment: "Button to continue to the next onboarding screen from the AI search personalization screen.")
+            }
+
+            public enum DuckAIEnabled {
+                public static let title = NotLocalizedString("onboarding.personalization.duckAIEnabled.title", value: "Want the option to chat privately with popular AIs?", comment: "Title of the onboarding Duck.ai enabled personalization screen.")
+                public static let message = NotLocalizedString("onboarding.personalization.duckAIEnabled.message", value: "In Duck.ai, your chats are anonymized by us and never used to train AI.", comment: "Message of the onboarding Duck.ai enabled personalization screen.")
+                public static let primaryCTA = NotLocalizedString("onboarding.personalization.duckAIEnabled.cta.primary", value: "Keep Duck.ai On", comment: "Primary button to keep Duck.ai on from the onboarding Duck.ai enabled personalization screen.")
+                public static let secondaryCTA = NotLocalizedString("onboarding.personalization.duckAIEnabled.cta.secondary", value: "Turn Duck.ai Off", comment: "Secondary button to turn Duck.ai off from the onboarding Duck.ai enabled personalization screen.")
+            }
+
+            public enum YouTube {
+                public static let title = NotLocalizedString("onboarding.personalization.youTube.title", value: "YouTube, without the noise.", comment: "Title of the onboarding YouTube personalization screen.")
+                public static let adBlockingTitle = NotLocalizedString("onboarding.personalization.youTube.adBlocking.title", value: "YouTube ad blocking", comment: "Title for the YouTube ad blocking option on the onboarding YouTube personalization screen.")
+                public static let duckPlayerTitle = NotLocalizedString("onboarding.personalization.youTube.duckPlayer.title", value: "Duck Player", comment: "Title for the Duck Player option on the onboarding YouTube personalization screen.")
+                public static let duckPlayerSubtitle = NotLocalizedString("onboarding.personalization.youTube.duckPlayer.subtitle", value: "Opens YouTube videos in theater mode", comment: "Subtitle for the Duck Player option on the onboarding YouTube personalization screen.")
+                public static let cta = NotLocalizedString("onboarding.personalization.youTube.cta", value: "Next", comment: "Button to continue to the next onboarding screen from the YouTube personalization screen.")
+            }
+
+            public enum DuckAIQuery {
+                public static let privateSearchTitle = NotLocalizedString("onboarding.personalization.duckAIQuery.privateSearch.title", value: "Now, try a private search!", comment: "Title for the private search Duck.ai query onboarding screen.")
             }
         }
 
@@ -2418,6 +2593,8 @@ public struct UserText {
         public enum BrowsersComparison {
             public static let title = NSLocalizedString("onboarding.highlights.browsers.title", value: "Protections activated!", comment: "The title of the dialog to show the privacy features that DuckDuckGo offers")
             public static let cta = NSLocalizedString("onboarding.browsers.cta", value: "Choose Your Browser", comment: "Button to change the default browser")
+
+            public static let titleDownloadExperiment = NotLocalizedString("onboarding.downloadReason.comparison.title", value: "You’re in the right place!", comment: "Heading shown above the browser comparison chart during onboarding, shared across all download-reason variants.")
         }
 
         enum AppIconSelection {
@@ -2484,58 +2661,58 @@ public struct UserText {
             }
         }
 
-        enum DuckAIQueryExperiment {
-            public static let toggleAILabel = NotLocalizedString(
-                "onboarding.highlights.duckAIQueryExperiment.toggle.ai",
+        enum DuckAIQuery {
+            public static let toggleAILabel = NSLocalizedString(
+                "onboarding.highlights.duckAIQuery.toggle.ai",
                 value: "Ask AI",
-                comment: "Label for the AI Chat option in the Search/Ask AI toggle on the onboarding experiment screen."
+                comment: "Label for the AI Chat option in the Search/Ask AI toggle on the onboarding screen."
             )
-            public static let title = NotLocalizedString(
-                "onboarding.highlights.duckAIQueryExperiment.title",
+            public static let title = NSLocalizedString(
+                "onboarding.highlights.duckAIQuery.title",
                 value: "Ready to get started?\nTry a search or AI chat!",
-                comment: "Title for the onboarding Duck.ai query experiment screen."
+                comment: "Title for the onboarding Duck.ai query selection screen."
             )
-            public static let aiPlaceholder = NotLocalizedString(
-                "onboarding.highlights.duckAIQueryExperiment.placeholder.ai",
+            public static let aiPlaceholder = NSLocalizedString(
+                "onboarding.highlights.duckAIQuery.placeholder.ai",
                 value: "Ask anything privately",
-                comment: "Placeholder for AI query input in onboarding Duck.ai query experiment screen."
+                comment: "Placeholder for AI query input in onboarding Duck.ai query selection screen."
             )
-            public static let searchPlaceholder = NotLocalizedString(
-                "onboarding.highlights.duckAIQueryExperiment.placeholder.search",
+            public static let searchPlaceholder = NSLocalizedString(
+                "onboarding.highlights.duckAIQuery.placeholder.search",
                 value: "Search privately",
-                comment: "Placeholder for search query input in onboarding Duck.ai query experiment screen."
+                comment: "Placeholder for search query input in onboarding Duck.ai query selection screen."
             )
-            public static let suggestionOption1 = NotLocalizedString(
-                "onboarding.highlights.duckAIQueryExperiment.suggestion.option1",
+            public static let suggestionOption1 = NSLocalizedString(
+                "onboarding.highlights.duckAIQuery.suggestion.option1",
                 value: "Explain the stock market like I'm 10",
-                comment: "First suggestion chip label in onboarding Duck.ai query experiment screen."
+                comment: "First suggestion chip label in onboarding Duck.ai query selection screen."
             )
-            public static let suggestionOption2 = NotLocalizedString(
-                "onboarding.highlights.duckAIQueryExperiment.suggestion.option2",
+            public static let suggestionOption2 = NSLocalizedString(
+                "onboarding.highlights.duckAIQuery.suggestion.option2",
                 value: "Plan a perfect day in London",
-                comment: "Second suggestion chip label in onboarding Duck.ai query experiment screen."
+                comment: "Second suggestion chip label in onboarding Duck.ai query selection screen."
             )
             public static let suggestionOption3VisibleTitle = Onboarding.ContextualOnboarding.tryASearchOptionSurpriseMeTitle
-            public static let suggestionOption3Prompt = NotLocalizedString(
-                "onboarding.highlights.duckAIQueryExperiment.suggestion.option3.prompt",
+            public static let suggestionOption3Prompt = NSLocalizedString(
+                "onboarding.highlights.duckAIQuery.suggestion.option3.prompt",
                 value: "What are 10 fascinating facts across science, nature, and history?",
-                comment: "Prompt submitted when user taps the third suggestion in onboarding Duck.ai query experiment screen."
+                comment: "Prompt submitted when user taps the third suggestion in onboarding Duck.ai query selection screen."
             )
 
-            public static let fireOnboardingTitle = NotLocalizedString(
-                "onboarding.highlights.duckAIQueryExperiment.fire.title",
+            public static let fireOnboardingTitle = NSLocalizedString(
+                "onboarding.highlights.duckAIQuery.fire.title",
                 value: "That’s Duck.ai!",
-                comment: "Experiment-only fire onboarding title shown after the first Duck.ai response."
+                comment: "Fire onboarding title shown after the first Duck.ai response."
             )
-            public static let fireOnboardingMessage = NotLocalizedString(
-                "onboarding.highlights.duckAIQueryExperiment.fire.message",
+            public static let fireOnboardingMessage = NSLocalizedString(
+                "onboarding.highlights.duckAIQuery.fire.message",
                 value: "Private AI chats you can delete anytime with the Fire Button. Give it a try! 🔥",
-                comment: "Experiment-only fire onboarding message shown after the first Duck.ai response."
+                comment: "Fire onboarding message shown after the first Duck.ai response."
             )
-            public static let completionOnboardingMessage = NotLocalizedString(
-                "onboarding.highlights.duckAIQueryExperiment.completion.message",
+            public static let completionOnboardingMessage = NSLocalizedString(
+                "onboarding.highlights.duckAIQuery.completion.message",
                 value: "Use the address bar to search and visit sites or toggle to Duck.ai for private AI chat.\n\nYou can use Duck.ai from anywhere you see the chat icon [[chat_icon]]",
-                comment: "Experiment-only completion onboarding message shown after finishing Fire onboarding in Duck.ai flow."
+                comment: "Completion onboarding message shown after finishing Fire onboarding in Duck.ai flow. '[[chat_icon]]' is a placeholder and should not be translated."
             )
         }
 
@@ -2637,8 +2814,8 @@ public struct UserText {
                 )
                 static let subscriptionMessage = NSLocalizedString(
                     "onboarding.duckai.contextual.subscription.message",
-                    value: "We also offer a paid subscription featuring advanced AI models with higher chat limits from GPT, Claude, and Llama, a secure VPN, and more.",
-                    comment: "Body text of the subscription promo shown at the end of the Duck.ai onboarding flow. Describes the paid Duck.ai subscription. 'GPT', 'Claude', and 'Llama' are brand names and should not be translated."
+                    value: "We also offer a paid subscription featuring advanced AI models with higher chat limits from GPT and Claude, a secure VPN, and more.",
+                    comment: "Body text of the subscription promo shown at the end of the Duck.ai onboarding flow. Describes the paid Duck.ai subscription. 'GPT', 'Claude' are brand names and should not be translated."
                 )
             }
         }
@@ -2686,6 +2863,7 @@ public struct UserText {
         public enum Promo {
             static let title = NSLocalizedString("contextual.onboarding.addToDock.promo.title", value: "Add me to your Dock!", comment: "The title of the onboarding dialog popup that promotes adding the DDG browser icon to the dock.")
             static let introMessage = NSLocalizedString("contextual.onboarding.addToDock.promo.intro.message", value: "I’ll nest in easy reach for all your daily browsing.", comment: "The message of the onboarding dialog popup that promotes adding the DDG browser icon to the dock.")
+            static let introMessageNew = NotLocalizedString("onboarding.addToDock.promo.intro.message", value: "I'll nest in easy reach for quick access.", comment: "The message of the onboarding dialog popup that promotes adding the DDG browser icon to the dock.")
             static let contextualMessage = NSLocalizedString("contextual.onboarding.addToDock.promo.contextual.message", value: "Remember, every time you browse with me a creepy ad loses its wings.\n\nSo keep me in your Dock for daily browsing.", comment: "Message of the last screen of the onboarding that promotes adding the DDG browser icon to the dock.")
         }
 
@@ -2949,9 +3127,20 @@ public struct UserText {
     public static let icsAddToCalendarParseFailure = NSLocalizedString("ics.add-to-calendar.parse-failure", value: "This file can't be processed. Try opening the downloaded file instead.", comment: "Toast shown when a tapped .ics calendar link can't be parsed (e.g. malformed RFC 5545 content)")
     public static let icsEventAddedToCalendar = NSLocalizedString("ics.event-added-to-calendar", value: "Event added to Apple Calendar", comment: "Toast shown after the user successfully adds an event from a .ics calendar link to their Apple Calendar")
 
+    // MARK: - vCard Contact Links
+    public static let vcardAddContactParseFailure = NSLocalizedString("vcard.add-contact.parse-failure", value: "Unable to add contact. Try opening the contact file from Downloads instead.", comment: "Toast shown when a tapped .vcf contact link can't be parsed (e.g. malformed RFC 6350 content)")
+    public static let vcardContactAdded = NSLocalizedString("vcard.contact-added", value: "Contact added", comment: "Toast shown after the user successfully adds a contact from a .vcf contact link to their Contacts")
+
     // MARK: - OmniBar Long Press Menu
     public static let omnibarLongPressMoveToBottom = NSLocalizedString("omnibar.menu.move-to-bottom", value: "Move Address Bar to Bottom", comment: "Label for moving the address bar to the bottom of the screen")
     public static let omnibarLongPressMoveToTop = NSLocalizedString("omnibar.menu.move-to-top", value: "Move Address Bar to Top", comment: "Label for moving the address bar to the top of the screen")
     public static let actionCopyLink = NSLocalizedString("action.title.copy.link", value: "Copy Link", comment: "Copy link action")
     public static let actionCopyCleanLink = NSLocalizedString("action.title.copy.clean.link", value: "Copy Clean Link", comment: "Copy clean link action")
+
+    public static func copyLinkTitle(for url: URL, isPrivacyProtectionEnabled: Bool) -> String {
+        if !url.isDuckDuckGo, isPrivacyProtectionEnabled {
+            return actionCopyCleanLink
+        }
+        return actionCopyLink
+    }
 }

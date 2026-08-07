@@ -24,7 +24,9 @@ import BrowserServicesKit
 import Networking
 import PixelKit
 import PixelExperimentKit
+import PrivacyConfig
 import os.log
+import FeatureFlags_iOS
 
 public class StatisticsLoader {
 
@@ -46,8 +48,15 @@ public class StatisticsLoader {
     init(statisticsStore: StatisticsStore = StatisticsUserDefaults(),
          returnUserMeasurement: ReturnUserMeasurement = KeychainReturnUserMeasurement(),
          usageSegmentation: UsageSegmenting = UsageSegmentation(pixelEvents: UsageSegmentation.pixelEvents),
-         fireAppRetentionExperimentPixels: @escaping () -> Void = PixelKit.fireAppRetentionExperimentPixels,
-         fireSearchExperimentPixels: @escaping () -> Void = PixelKit.fireSearchExperimentPixels,
+         fireAppRetentionExperimentPixels: @escaping () -> Void = {
+            PixelKit.fireAppRetentionExperimentPixels()
+            StatisticsLoader.fireSearchTokenExperimentPixels(metric: "app_use")
+         },
+         fireSearchExperimentPixels: @escaping () -> Void = {
+            PixelKit.fireSearchExperimentPixels()
+            StatisticsLoader.fireLegacySearchRetentionExperimentPixels()
+            StatisticsLoader.fireSearchTokenExperimentPixels(metric: "search")
+         },
          fireOSDistributionPixel: @escaping (OSDistributionPixel.Metric) -> Void = PixelKit.fireOSDistributionPixel(metric:),
          pixelFiring: PixelFiring.Type = Pixel.self,
          isPad: Bool = UIDevice.current.userInterfaceIdiom == .pad) {
@@ -59,6 +68,40 @@ public class StatisticsLoader {
         self.fireOSDistributionPixel = fireOSDistributionPixel
         self.pixelFiring = pixelFiring
         self.isPad = isPad
+    }
+
+    /// Fires the d1-4 conversion-window metric scoped to the search-token experiment only.
+    static func fireSearchTokenExperimentPixels(metric: String) {
+        for threshold in [1, 4, 6, 11, 21, 30] {
+            PixelKit.fireExperimentPixelIfThresholdReached(
+                for: iOSBrowserConfigSubfeature.searchTokenExperimentV2.rawValue,
+                metric: metric,
+                conversionWindowDays: 1...4,
+                threshold: threshold
+            )
+        }
+    }
+
+    /// Transitional: preserves the previous 8-15 search window for experiments already running when
+    /// the canonical window was shortened to 8-14, so their in-flight analysis keeps the window it
+    /// started with. Drop each experiment as it is cleaned up, and delete this once none remain.
+    static func fireLegacySearchRetentionExperimentPixels() {
+        let inProgressExperiments = [
+            iOSBrowserConfigSubfeature.searchTokenExperimentV2.rawValue,
+            iOSBrowserConfigSubfeature.onboardingFlowByDownloadReasonExperiment.rawValue,
+            PrivacyProSubfeature.monthlyFreeTrialExperiment.rawValue,
+            AutoconsentSubfeature.cookiePopupOptInDialogExperiment.rawValue
+        ]
+        for subfeatureID in inProgressExperiments {
+            for threshold in [4, 6, 11, 21, 30] {
+                PixelKit.fireExperimentPixelIfThresholdReached(
+                    for: subfeatureID,
+                    metric: "search",
+                    conversionWindowDays: 8...15,
+                    threshold: threshold
+                )
+            }
+        }
     }
 
     public func load(shouldRefreshAtb: Bool = true, completion: @escaping Completion = {}) {
@@ -198,6 +241,8 @@ public class StatisticsLoader {
             group.enter()
             group.enter()
 
+            // The refreshSearchRetentionAtb call below fires the `.searches` OS-distribution pixel
+            // for a Duck.ai prompt, so Duck.ai usage is included in our search + AI-query traffic count.
             self.refreshSearchRetentionAtb {
                 group.leave()
             }
@@ -214,8 +259,6 @@ public class StatisticsLoader {
 
     private func refreshDuckAIRetentionAtb(completion: @escaping Completion = {}) {
         dispatchPrecondition(condition: .onQueue(.main))
-
-        fireOSDistributionPixel(.searches)
 
         guard !isDuckAIRetentionRequestInProgress else {
             completion()

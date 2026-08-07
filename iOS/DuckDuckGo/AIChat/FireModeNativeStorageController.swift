@@ -25,6 +25,7 @@ import Foundation
 import os.log
 import Persistence
 import PrivacyConfig
+import FeatureFlags_iOS
 /// Owns the iOS fire-mode Duck.ai native storage handler and rotates it on burn.
 ///
 /// The underlying disk-backed handler lives at
@@ -89,7 +90,8 @@ final class FireModeNativeStorageController: DuckAiNativeStorageHandling {
                     migrationKey: "com.duckduckgo.duckai.nativeStorage.fireModeMigratedFromAppGroup",
                     label: .fireMode,
                     keyValueStore: keyValueStore,
-                    pixelFiring: DuckAiNativeStorageContainerMigrationPixelAdapter()
+                    pixelFiring: DuckAiNativeStorageContainerMigrationPixelAdapter(),
+                    lockedLaunchFixEnabled: featureFlagger.isFeatureOn(.duckAINativeStorageMigrationLockedLaunchFix)
                 ).run()
                 if outcome == .skip {
                     return nil

@@ -34,9 +34,7 @@ struct RecoveryKeyTransmitter: RecoveryKeyTransmitting {
             throw SyncError.noToken
         }
 
-        let recoveryKey = try JSONEncoder.snakeCaseKeys.encode(
-            SyncCode(recovery: SyncCode.RecoveryKey(userId: account.userId, primaryKey: account.primaryKey))
-        )
+        let recoveryKey = try SyncCode(recovery: .v1(.init(userId: account.userId, primaryKey: account.primaryKey))).toJSON()
 
         let encryptedRecoveryKey = try crypter.seal(recoveryKey, secretKey: code.secretKey)
 

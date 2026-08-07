@@ -751,6 +751,7 @@ private final class DummyAIChatHistoryCleaner: AIChatHistoryCleaning {
     var shouldDisplayCleanAIChatHistoryOption: Bool = false
     var shouldDisplayCleanAIChatHistoryOptionPublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }
     @MainActor func cleanAIChatHistory() async -> Result<Void, Error> { .success(()) }
+    func allChats() -> [DuckAiChat] { [] }
 }
 
 class DummyAIChatConfig: AIChatMenuVisibilityConfigurable {
@@ -763,6 +764,7 @@ class DummyAIChatConfig: AIChatMenuVisibilityConfigurable {
     var shouldOpenAIChatInSidebar = false
     var shouldDisplaySummarizationMenuItem = false
     var shouldDisplayTranslationMenuItem = false
+    var shouldDisplaySelectionContextMenuItem = false
     var shouldAutomaticallySendPageContext = false
     var shouldAutomaticallySendPageContextTelemetryValue: Bool?
 

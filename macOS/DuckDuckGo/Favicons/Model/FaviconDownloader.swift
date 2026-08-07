@@ -193,7 +193,7 @@ extension FaviconDownloader: WKDownloadDelegate {
             task.continuation.resume(with: result)
         }
 
-        Logger.favicons.debug("FaviconDownloader: Download failed for \(task.url.absoluteString): \(error.localizedDescription)")
+        Logger.favicons.debug("FaviconDownloader: Download failed for \(task.url.shortDescription): \(error.localizedDescription)")
 
         // Clean up temporary file if it exists
         if let destinationURL = task.destinationURL {

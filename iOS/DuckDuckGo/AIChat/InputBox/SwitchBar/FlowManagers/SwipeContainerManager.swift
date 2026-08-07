@@ -118,16 +118,6 @@ final class SwipeContainerManager: NSObject {
         manager.installInContainerView(chatPageContainer, parentViewController: containerViewController)
     }
 
-    /// Installs the Duck.ai multi-section suggestions coordinator in the chat page container.
-    /// Used by `UnifiedInputContentContainerViewController` (UTI path).
-    @MainActor
-    func installDuckAISuggestions<P: Publisher>(using coordinator: DuckAISuggestionsCoordinator,
-                                                textPublisher: P) where P.Output == String, P.Failure == Never {
-        coordinator.start(in: chatPageContainer,
-                          parentViewController: containerViewController,
-                          textPublisher: textPublisher)
-    }
-
     /// Overlays the search page on the visible area, or returns it to its natural position.
     func setSearchPageVisible(_ visible: Bool, animated: Bool) {
         if usesFadeOutTransition {

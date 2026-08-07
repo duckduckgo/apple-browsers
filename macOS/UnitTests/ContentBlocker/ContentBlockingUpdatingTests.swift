@@ -64,6 +64,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
                                               fireproofDomains: MockFireproofDomains(),
                                               faviconManagement: FaviconManagerMock(),
                                               windowControllersManager: windowControllersManager,
+                                              dataClearingPreferences: Application.appDelegate.dataClearingPreferences,
                                               pixelFiring: nil,
                                               historyProvider: MockHistoryViewDataProvider())
 
@@ -77,7 +78,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
                                        configStorage: MockConfigurationStore(),
                                        webTrackingProtectionPreferences: preferences,
                                        cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: WindowControllersManagerMock()),
-                                       duckPlayer: DuckPlayer(preferencesPersistor: DuckPlayerPreferencesPersistorMock(), privacyConfigurationManager: privacyConfigurationManager, internalUserDecider: featureFlagger.internalUserDecider, featureFlagger: featureFlagger),
+                                       duckPlayer: DuckPlayer(preferencesPersistor: DuckPlayerPreferencesPersistorMock(), privacyConfigurationManager: privacyConfigurationManager, internalUserDecider: featureFlagger.internalUserDecider),
                                        experimentManager: MockContentScopeExperimentManager(),
                                        tld: TLD(),
                                        featureFlagger: featureFlagger,

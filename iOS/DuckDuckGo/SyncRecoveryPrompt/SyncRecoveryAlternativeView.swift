@@ -41,7 +41,7 @@ struct SyncRecoveryAlternativeView: View {
                     }
                     .frame(height: 56)
 
-                    Image(rebrandable: "Sync-Recover-128")
+                    SyncUIImages.recover
                         .padding(24)
 
                     Text(UserText.syncRecoveryAlternativePromptTitle)
@@ -91,7 +91,7 @@ struct SyncRecoveryAlternativeView: View {
 
         do {
             var attributedString = try AttributedString(markdown: markdownString)
-            attributedString.foregroundColor = Color(designSystemColor: .accent)
+            attributedString.foregroundColor = Color(designSystemColor: .accentPrimary)
 
             return attributedString
         } catch {

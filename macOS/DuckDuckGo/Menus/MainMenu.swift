@@ -24,7 +24,7 @@ import Common
 import ConcurrencyExtensions
 import Configuration
 import DesignResourcesKitIcons
-import FeatureFlags
+import FeatureFlags_macOS
 import FoundationExtensions
 import History
 import OSLog
@@ -169,7 +169,7 @@ final class MainMenu: NSMenu {
     let toggleShareShortcutMenuItem = NSMenuItem(title: UserText.shareMenuItem, action: #selector(MainViewController.toggleShareShortcut), keyEquivalent: "")
         .withImage(DesignSystemImages.Glyphs.Size12.shareApple)
     let toggleDownloadsShortcutMenuItem = NSMenuItem(title: UserText.mainMenuViewShowDownloadsShortcut, action: #selector(MainViewController.toggleDownloadsShortcut), keyEquivalent: "J")
-        .withImage(DesignSystemImages.Glyphs.Size12.downloads)
+        .withImage(DesignSystemImages.Glyphs.Size12.download)
     let toggleAutofillShortcutMenuItem = NSMenuItem(title: UserText.mainMenuViewShowAutofillShortcut, action: #selector(MainViewController.toggleAutofillShortcut), keyEquivalent: "A")
         .withImage(DesignSystemImages.Glyphs.Size12.keyLogin)
     let toggleBookmarksShortcutMenuItem = NSMenuItem(title: UserText.mainMenuViewShowBookmarksShortcut, action: #selector(MainViewController.toggleBookmarksShortcut), keyEquivalent: "K")
@@ -466,7 +466,7 @@ final class MainMenu: NSMenu {
             toggleBookmarksBarMenuItem
 
             NSMenuItem(title: UserText.openDownloads, action: #selector(MainViewController.toggleDownloads), keyEquivalent: "j")
-                .withImage(DesignSystemImages.Glyphs.Size12.downloads)
+                .withImage(DesignSystemImages.Glyphs.Size12.download)
             NSMenuItem.separator()
 
             homeButtonMenuItem
@@ -690,18 +690,24 @@ final class MainMenu: NSMenu {
     private var folderDelegates: [LazyBookmarkFolderMenuDelegate] = []
 
     var faviconsCancellable: AnyCancellable?
+    var faviconsCacheUpdateCancellable: AnyCancellable?
     @MainActor
     private func subscribeToFavicons(faviconManager: FaviconManagement) {
         faviconsCancellable = faviconManager.faviconsLoadedPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] loaded in
                 guard let self, loaded else { return }
-                if self.isLazyMenuRebuild {
-                    self.bookmarkFaviconsNeedUpdate = true
-                } else {
-                    self.updateFavicons(in: bookmarksMenu)
-                    self.updateFavicons(in: favoritesMenu)
-                }
+                self.bookmarkFaviconsNeedUpdate = true
+            }
+
+        // `faviconsLoadedPublisher` fires when favicon metadata loads, before the
+        // images are decoded. Favicon images become available lazily and post
+        // `.faviconCacheUpdated`, so also refresh the menus on that notification.
+        faviconsCacheUpdateCancellable = NotificationCenter.default.publisher(for: .faviconCacheUpdated)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                self.bookmarkFaviconsNeedUpdate = true
             }
     }
 
@@ -881,15 +887,26 @@ final class MainMenu: NSMenu {
     private func updateDuckAIChromeButtonMenuItems() {
         let shouldShowDuckAIChromeItems = featureFlagger.isFeatureOn(.aiChatChromeSidebar)
             && aiChatMenuConfig.shouldDisplayAnyAIChatFeature
-        toggleDuckAISidebarMenuItem.isHidden = !shouldShowDuckAIChromeItems
-        toggleDuckAISidebarSeparatorMenuItem.isHidden = !shouldShowDuckAIChromeItems
+        // Menu-button layout: no separate sidebar button, the Duck.ai item is reworded to "Ask Duck.ai",
+        // and "Show Duck.ai Sidebar" is dropped — its ⌘⌥L shortcut is reused by Duck.ai → Ask About Page.
+        let isMenuButtonLayout = shouldShowDuckAIChromeItems && featureFlagger.isFeatureOn(.aiChatChromeMenuButton)
+        toggleDuckAISidebarMenuItem.isHidden = !shouldShowDuckAIChromeItems || isMenuButtonLayout
+        toggleDuckAISidebarSeparatorMenuItem.isHidden = !shouldShowDuckAIChromeItems || isMenuButtonLayout
+        // ⌥⌘L moves to Ask About Page in menu-button layout; drop it here so the duplicate doesn't
+        // suppress the shortcut's display / capture the key event on this hidden item.
+        toggleDuckAISidebarMenuItem.keyEquivalent = isMenuButtonLayout ? "" : "l"
+        toggleDuckAISidebarMenuItem.keyEquivalentModifierMask = isMenuButtonLayout ? [] : [.option, .command]
         toggleDuckAIChromeButtonMenuItem.isHidden = !shouldShowDuckAIChromeItems
-        toggleDuckAIChromeSidebarButtonMenuItem.isHidden = !shouldShowDuckAIChromeItems
+        toggleDuckAIChromeSidebarButtonMenuItem.isHidden = !shouldShowDuckAIChromeItems || isMenuButtonLayout
         duckAIChromeButtonsSeparatorMenuItem.isHidden = !shouldShowDuckAIChromeItems
 
         let isDuckAIButtonHidden = duckAIChromeButtonsVisibilityManager.isHidden(.duckAI)
         let isSidebarButtonHidden = duckAIChromeButtonsVisibilityManager.isHidden(.sidebar)
-        toggleDuckAIChromeButtonMenuItem.title = isDuckAIButtonHidden ? UserText.aiChatChromeShowDuckAIButton : UserText.aiChatChromeHideDuckAIButton
+        if isMenuButtonLayout {
+            toggleDuckAIChromeButtonMenuItem.title = isDuckAIButtonHidden ? UserText.aiChatChromeShowAskDuckAIButton : UserText.aiChatChromeHideAskDuckAIButton
+        } else {
+            toggleDuckAIChromeButtonMenuItem.title = isDuckAIButtonHidden ? UserText.aiChatChromeShowDuckAIButton : UserText.aiChatChromeHideDuckAIButton
+        }
         toggleDuckAIChromeSidebarButtonMenuItem.title = isSidebarButtonHidden ? UserText.aiChatChromeShowSidebarButton : UserText.aiChatChromeHideSidebarButton
     }
 
@@ -910,6 +927,10 @@ final class MainMenu: NSMenu {
 
             // All items below will be automatically sorted alphabetically
             NSMenuItem(title: "Clear WebKit Cache", action: #selector(AppDelegate.debugClearWebViewCache)).withAccessibilityIdentifier("MainMenu.clearWebKitCache")
+            NSMenuItem(title: "Favicons") {
+                NSMenuItem(title: "Clear In-Memory Cache", action: #selector(AppDelegate.debugClearFaviconsCache)).withAccessibilityIdentifier("MainMenu.clearFaviconsCache")
+                NSMenuItem(title: "Inspect", action: #selector(MainViewController.inspectFavicons(_:))).withAccessibilityIdentifier("MainMenu.inspectFavicons")
+            }
             NSMenuItem(title: "Open Vanilla Browser", action: #selector(MainViewController.openVanillaBrowser)).withAccessibilityIdentifier("MainMenu.openVanillaBrowser")
             NSMenuItem(title: "Skip Onboarding", action: #selector(AppDelegate.skipOnboarding)).withAccessibilityIdentifier("MainMenu.skipOnboarding")
             NSMenuItem(title: "Performance Debugging") {
@@ -919,17 +940,23 @@ final class MainMenu: NSMenu {
             NSMenuItem(title: "New Tab Page") {
                 NSMenuItem(title: "Reset Next Steps", action: #selector(AppDelegate.debugResetContinueSetup))
                     .withAccessibilityIdentifier(AccessibilityIdentifiers.NewTabPage.resetNextStepsMenuItem)
-                NSMenuItem(title: "Shift top card by 10 impressions", action: #selector(MainViewController.debugShiftCardImpression))
+                NSMenuItem(title: "Shift top card by \(NewTabPageNextStepsSingleCardProvider.Constants.maxTimesCardShown) impressions", action: #selector(MainViewController.debugShiftCardImpression))
                 NSMenuItem(title: "Shift New Tab daily impression", action: #selector(MainViewController.debugShiftNewTabOpeningDate))
                 shiftNextStepsDaysMenuItem
                     .withAccessibilityIdentifier(AccessibilityIdentifiers.NewTabPage.shiftMaxDaysMenuItem)
             }.withAccessibilityIdentifier(AccessibilityIdentifiers.NewTabPage.newTabPageDebugMenu)
             NSMenuItem(title: "CPM") {
-                NSMenuItem(title: "Show feature awareness dialog for NTP widget", action: #selector(AppDelegate.debugShowFeatureAwarenessDialogForNTPWidget))
-                NSMenuItem(title: "Increment Autoconsent Stats", action: #selector(AppDelegate.debugIncrementAutoconsentStats))
-                NSMenuItem(title: "Clear blockedCookiesPopoverSeen flag", action: #selector(AppDelegate.debugClearBlockedCookiesPopoverSeenFlag))
-                NSMenuItem(title: "Reset widgetNewLabelFirstShownDate", action: #selector(AppDelegate.debugResetWidgetNewLabelFirstShownDateKey))
-                NSMenuItem(title: "Set widgetNewLabelFirstShownDate to 10 days ago", action: #selector(AppDelegate.debugSetWidgetNewLabelFirstShownDateTo10DaysAgo))
+                NSMenuItem(title: "Opt-in dialog") {
+                    NSMenuItem(title: "Show opt-in dialog", action: #selector(MainViewController.debugShowCookiePopupProtectionOptInDialog))
+                    NSMenuItem(title: "Reset app launch flag", action: #selector(MainViewController.debugResetCookiePopupProtectionOptInLaunchFlag))
+                }
+                NSMenuItem(title: "NTP widget") {
+                    NSMenuItem(title: "Show feature awareness dialog for NTP widget", action: #selector(AppDelegate.debugShowFeatureAwarenessDialogForNTPWidget))
+                    NSMenuItem(title: "Increment Autoconsent Stats", action: #selector(AppDelegate.debugIncrementAutoconsentStats))
+                    NSMenuItem(title: "Clear blockedCookiesPopoverSeen flag", action: #selector(AppDelegate.debugClearBlockedCookiesPopoverSeenFlag))
+                    NSMenuItem(title: "Reset widgetNewLabelFirstShownDate", action: #selector(AppDelegate.debugResetWidgetNewLabelFirstShownDateKey))
+                    NSMenuItem(title: "Set widgetNewLabelFirstShownDate to 10 days ago", action: #selector(AppDelegate.debugSetWidgetNewLabelFirstShownDateTo10DaysAgo))
+                }
             }
             NSMenuItem(title: "History")
                 .submenu(HistoryDebugMenu(historyCoordinator: historyCoordinator, featureFlagger: featureFlagger))
@@ -949,7 +976,6 @@ final class MainMenu: NSMenu {
                 NSMenuItem(title: "Reset Pinned Tabs", action: #selector(AppDelegate.resetPinnedTabs))
                 NSMenuItem(title: "Reset New Tab Page Customizations", action: #selector(AppDelegate.resetNewTabPageCustomization))
                 NSMenuItem(title: "Reset YouTube Overlay Interactions", action: #selector(AppDelegate.resetDuckPlayerOverlayInteractions))
-                NSMenuItem(title: "Reset MakeDuckDuckYours user settings", action: #selector(AppDelegate.resetMakeDuckDuckGoYoursUserSettings))
                 NSMenuItem(title: "Experiment Install Date more than 5 days ago", action: #selector(AppDelegate.changePixelExperimentInstalledDateToLessMoreThan5DayAgo(_:)))
                 NSMenuItem(title: "Change Activation Date") {
                     NSMenuItem(title: "Today", action: #selector(AppDelegate.changeInstallDateToToday))
@@ -1269,7 +1295,14 @@ final class MainMenu: NSMenu {
             windowControllersManager: Application.appDelegate.windowControllersManager,
             aiChatSyncCleaner: { Application.appDelegate.aiChatSyncCleaner }
         )
-        return AIChatMenu(suggestionsReader: aiChatSuggestionsReader, actions: actions, maxChatItems: 8)
+        let featureFlagger = self.featureFlagger
+        return AIChatMenu(suggestionsReader: aiChatSuggestionsReader, actions: actions, maxChatItems: 8, shouldShowAskAboutPage: {
+            featureFlagger.isFeatureOn(.aiChatChromeSidebar) && featureFlagger.isFeatureOn(.aiChatChromeMenuButton)
+        }, isCurrentPageAttachable: {
+            Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.mainViewController.tabBarViewController.isCurrentPageAttachableForAIChat ?? false
+        }, isChatPresented: {
+            Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.mainViewController.tabBarViewController.isDuckAIChatPresented ?? false
+        })
     }
 
     private func setupAIChatMenu() {

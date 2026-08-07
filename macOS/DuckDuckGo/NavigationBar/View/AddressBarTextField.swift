@@ -29,6 +29,7 @@ import Subscription
 import os.log
 import UIComponents
 import AIChat
+import DesignResourcesKit
 
 protocol AddressBarTextFieldFocusDelegate: AnyObject {
     func addressBarDidFocus(_ addressBarTextField: AddressBarTextField)
@@ -225,8 +226,7 @@ final class AddressBarTextField: NSTextField {
         perfAIModeTerminatorCancellable?.cancel()
         perfAIModeTerminatorCancellable = nil
 
-        guard Application.appDelegate.featureFlagger.isFeatureOn(.aiChatOmnibarToggle),
-              let sharedTextState else { return }
+        guard let sharedTextState else { return }
 
         perfAIModeTerminatorCancellable = sharedTextState.$isInDuckAIMode
             .dropFirst()
@@ -313,7 +313,7 @@ final class AddressBarTextField: NSTextField {
             let barStyleProvider = themeManager.theme.addressBarStyleProvider
             let newTabFontSize = barStyleProvider.newTabOrHomePageAddressBarFontSize
             let defaultFontSize = barStyleProvider.defaultAddressBarFontSize
-            let hideSuffix = !isFirstResponder || (Application.appDelegate.featureFlagger.isFeatureOn(.aiChatOmnibarToggle) && Application.appDelegate.featureFlagger.isFeatureOn(.aiChatOmnibarCluster))
+            let hideSuffix = !isFirstResponder
 
             if let attributedString = value.toAttributedString(size: isHomePage ? newTabFontSize : defaultFontSize, isBurner: isBurner, hideSuffix: hideSuffix) {
                 self.attributedStringValue = attributedString
@@ -580,6 +580,7 @@ final class AddressBarTextField: NSTextField {
     override func becomeFirstResponder() -> Bool {
         let result = super.becomeFirstResponder()
         if result {
+            suggestionContainerViewModel?.prewarmRemoteSuggestionsConnection()
             reconcilePerformanceCoordinator()
             performanceCoordinator?.resetForNewInteraction()
             focusDelegate?.addressBarDidFocus(self)
@@ -741,9 +742,21 @@ final class AddressBarTextField: NSTextField {
     }
 
     enum SuggestionWindowSizes {
-        static let padding = CGPoint(x: -20, y: 1)
-        /// Vertical offset to align suggestions panel with the AI Chat omnibar toggle
-        static let aiChatToggleVerticalOffset: CGFloat = 4
+
+        private enum Metrics {
+            static let shadowOffset: CGFloat = -2
+            static let windowOffset = CGPoint(x: -20, y: -3)
+            static let legacyShadowOffset: CGFloat = 5
+            static let legacyWindowOffset = CGPoint(x: -20, y: 5)
+        }
+
+        static func shadowOffset(isAppRebranded: Bool) -> CGFloat {
+            isAppRebranded ? Metrics.shadowOffset : Metrics.legacyShadowOffset
+        }
+
+        static func windowOffset(isAppRebranded: Bool) -> CGPoint {
+            isAppRebranded ? Metrics.windowOffset : Metrics.legacyWindowOffset
+        }
     }
 
     @objc dynamic private var suggestionWindowController: NSWindowController?
@@ -751,7 +764,6 @@ final class AddressBarTextField: NSTextField {
         NSStoryboard.suggestion.instantiateController(identifier: "SuggestionViewController") { coder in
             let suggestionViewController = SuggestionViewController(coder: coder,
                                                                     suggestionContainerViewModel: self.suggestionContainerViewModel!,
-                                                                    isBurner: self.isBurner,
                                                                     themeManager: self.themeManager,
                                                                     aiChatPreferencesStorage: self.aiChatPreferences ?? DefaultAIChatPreferencesStorage(),
                                                                     featureFlagger: Application.appDelegate.featureFlagger)
@@ -838,10 +850,8 @@ final class AddressBarTextField: NSTextField {
             return
         }
 
-        let basePadding = SuggestionWindowSizes.padding
-        /// Move suggestions panel up to vertically align the toggle
-        let yOffset: CGFloat = Application.appDelegate.featureFlagger.isFeatureOn(.aiChatOmnibarToggle) ? SuggestionWindowSizes.aiChatToggleVerticalOffset : 0
-        let padding = CGPoint(x: basePadding.x, y: basePadding.y + yOffset)
+        /// Shift the panel so its top edge clears the AI Chat omnibar toggle / aligns with the focused bar.
+        let padding = SuggestionWindowSizes.windowOffset(isAppRebranded: themeManager.isAppRebranded)
 
         suggestionWindow.setFrame(NSRect(x: 0, y: 0, width: superview.frame.width - 2 * padding.x, height: 0), display: true)
 
@@ -1137,11 +1147,12 @@ extension AddressBarTextField {
         case openTab(URL)
 
         func toAttributedString(size: CGFloat, isBurner: Bool) -> NSAttributedString {
-            let suffixColor = isBurner ? NSColor.burnerAccent : NSColor(designSystemColor: .accentTextPrimary)
+            let suffixColor: DesignSystemColor = isBurner ? .accentFireTextPrimary : .accentTextPrimary
             let attrs: [NSAttributedString.Key: Any] = [
                 .font: NSFont.systemFont(ofSize: size, weight: .light),
-                .foregroundColor: suffixColor
+                .foregroundColor: NSColor(designSystemColor: suffixColor)
             ]
+
             return NSAttributedString(string: string, attributes: attrs)
         }
 
@@ -1401,7 +1412,6 @@ extension AddressBarTextField: NSTextViewDelegate {
         }
 
         let featureFlagger = Application.appDelegate.featureFlagger
-        let isAIChatOmnibarToggleEnabled = featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
         let isChromeSidebarEnabled = featureFlagger.isFeatureOn(.aiChatChromeSidebar)
         let isGlobalAIEnabled = AIChatPreferences().isAIFeaturesEnabled
 
@@ -1411,10 +1421,10 @@ extension AddressBarTextField: NSTextViewDelegate {
         ]
 
         if isGlobalAIEnabled && !isChromeSidebarEnabled {
-            additionalMenuItems.append(.toggleAIChatAddressMenuItem(isOmnibarToggleEnabled: isAIChatOmnibarToggleEnabled))
+            additionalMenuItems.append(.toggleAIChatAddressMenuItem())
         }
 
-        if isGlobalAIEnabled && isAIChatOmnibarToggleEnabled {
+        if isGlobalAIEnabled {
             additionalMenuItems.append(.toggleAIChatToggleMenuItem)
         }
 
@@ -1493,8 +1503,8 @@ private extension NSMenuItem {
         return menuItem
     }
 
-    static func toggleAIChatAddressMenuItem(isOmnibarToggleEnabled: Bool) -> NSMenuItem {
-        let title = isOmnibarToggleEnabled ? UserText.showAIChatShortcutInAddress : UserText.showAIChatInAddress
+    static func toggleAIChatAddressMenuItem() -> NSMenuItem {
+        let title = UserText.showAIChatShortcutInAddress
         let menuItem = NSMenuItem(
             title: title,
             action: #selector(AddressBarTextField.toggleAIChatAddress(_:)),

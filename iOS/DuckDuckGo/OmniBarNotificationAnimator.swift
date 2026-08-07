@@ -66,6 +66,8 @@ final class OmniBarNotificationAnimator: NSObject {
                 // Create cancellable work item for completion
                 let completionWorkItem = DispatchWorkItem {
                     omniBar.notificationContainer.removePreviousNotification()
+                    // Floating bottom mode can lose the field's opaque fill during the animation; re-assert it.
+                    omniBar.restoreFloatingFieldAppearance()
                     completion?()
                 }
 
@@ -96,6 +98,7 @@ final class OmniBarNotificationAnimator: NSObject {
         omniBar.notificationContainer.alpha = 0
         omniBar.textField.alpha = 1
         omniBar.privacyInfoContainer.alpha = 1
+        omniBar.restoreFloatingFieldAppearance()
     }
 }
 

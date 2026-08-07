@@ -378,11 +378,14 @@ final class DownloadListCoordinator {
             }
 
             if item == nil,
-                case .failure(let failure) = result, !failure.isCancelled,
-                let fileName = task.selectedDestinationURL?.lastPathComponent {
+               case .failure(let error) = result, !error.isCancelled {
+                let fileName = task.selectedDestinationURL?.lastPathComponent
+                ?? (error.underlyingError as NSError?)?.userInfo[NSFilePathErrorKey] as? String
+                ?? "<unknown>"
+
                 // add instantly failed downloads to the list (not user-cancelled)
                 item = initialItem
-                item?.fileName = fileName
+                item?.fileName = fileName.lastPathComponent
             }
 
             item?.progress = nil

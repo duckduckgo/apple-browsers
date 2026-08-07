@@ -50,13 +50,13 @@ final class ContentBlockerReferenceTests: XCTestCase {
 
         let tdsRaw = String(
             data: loader.fromJsonFile(
-                "Resources/privacy-reference-tests/tracker-radar-tests/TR-domain-matching/tracker_radar_reference.json"
+                "Res/privacy-reference-tests/tracker-radar-tests/TR-domain-matching/tracker_radar_reference.json"
             ),
             encoding: .utf8
         )!
         let testsRaw = String(
             data: loader.fromJsonFile(
-                "Resources/privacy-reference-tests/tracker-radar-tests/TR-domain-matching/domain_matching_tests.json"
+                "Res/privacy-reference-tests/tracker-radar-tests/TR-domain-matching/domain_matching_tests.json"
             ),
             encoding: .utf8
         )!
@@ -73,7 +73,7 @@ final class ContentBlockerReferenceTests: XCTestCase {
         // Keep original names for failure messages.
         let originalNames = try JSONDecoder()
             .decode(RefTests.self, from: loader.fromJsonFile(
-                "Resources/privacy-reference-tests/tracker-radar-tests/TR-domain-matching/domain_matching_tests.json"
+                "Res/privacy-reference-tests/tracker-radar-tests/TR-domain-matching/domain_matching_tests.json"
             ))
             .domainTests.tests.map(\.name)
 

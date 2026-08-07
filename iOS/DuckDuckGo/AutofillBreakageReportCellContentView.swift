@@ -50,7 +50,7 @@ struct AutofillBreakageReportCellContentView: View {
                     HStack {
                         Text(UserText.autofillSettingsReportNotWorkingButtonTitle)
                             .daxBodyRegular()
-                            .foregroundColor(Color(designSystemColor: .accent))
+                            .foregroundColor(Color(designSystemColor: .accentPrimary))
                         Spacer()
                     }
                 }

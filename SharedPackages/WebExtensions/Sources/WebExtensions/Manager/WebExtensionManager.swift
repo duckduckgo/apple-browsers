@@ -65,6 +65,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     /// consumed by a reload.
     private var unloadedExtensionsCache: [String: WKWebExtension] = [:]
 
+    /// See `WebExtensionUnloadGuard`. Settable only so tests can inject a controlled clock.
+    var unloadGuard: WebExtensionUnloadGuard
+
     /// Pixel firing for analytics.
     let pixelFiring: WebExtensionPixelFiring
 
@@ -105,6 +108,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         self.messageRouter = messageRouter ?? WebExtensionMessageRouter()
         self.handlerProvider = handlerProvider
         self.scriptletConfiguration = scriptletConfiguration
+        self.unloadGuard = WebExtensionUnloadGuard()
 
         super.init()
 
@@ -165,6 +169,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
         do {
             let loadResult = try await loader.loadWebExtension(identifier: identifier, into: controller)
+            await unloadGuard.recordLoad(of: identifier)
 
             let installedExtension = InstalledWebExtension(
                 uniqueIdentifier: identifier,
@@ -321,10 +326,19 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     public func reloadExtension(identifier: String) async throws {
         Logger.webExtensions.debug("🔄 Reloading extension '\(identifier)'")
 
-        try loader.unloadExtension(identifier: identifier, from: controller)
-        unregisterHandlers(for: identifier)
+        await unloadGuard.awaitSettled(context(for: identifier))
 
-        _ = try await loader.loadWebExtension(identifier: identifier, into: controller)
+        try loader.unloadExtension(identifier: identifier, from: controller)
+
+        // loadWebExtension re-registers the handlers itself, so unregistering up front only opens a
+        // window with no handlers — and leaves none at all if the reload throws. Clean up on failure.
+        do {
+            _ = try await loader.loadWebExtension(identifier: identifier, into: controller)
+            unloadGuard.recordLoad(of: identifier)
+        } catch {
+            unregisterHandlers(for: identifier)
+            throw error
+        }
 
         Logger.webExtensions.info("✅ Reloaded extension '\(identifier)'")
         notifyUpdate()
@@ -353,6 +367,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             switch result {
             case .success:
                 Logger.webExtensions.debug("✅ Loaded extension `\(installedExtension.name ?? "")` v\(installedExtension.version ?? "unknown") | \(installedExtension.filename) | \(installedExtension.uniqueIdentifier)")
+                unloadGuard.recordLoad(of: installedExtension.uniqueIdentifier)
                 successCount += 1
             case .failure(let failure):
                 Logger.webExtensions.error("❌ Failed to load web extension \(installedExtension.filename) (\(installedExtension.uniqueIdentifier)): \(failure.localizedDescription)")
@@ -430,6 +445,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             await Task.yield()
             do {
                 try await loader.reloadWebExtension(webExtension, identifier: identifier, into: controller)
+                unloadGuard.recordLoad(of: identifier)
                 successCount += 1
             } catch {
                 Logger.webExtensions.error("❌ Failed to reload web extension '\(identifier)': \(error.localizedDescription)")

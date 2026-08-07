@@ -18,6 +18,7 @@
 //
 
 import SwiftUI
+import UIComponents
 import DesignResourcesKit
 import DesignResourcesKitIcons
 
@@ -69,7 +70,7 @@ struct SettingsDescriptionView: View {
                     .daxBodyRegular()
                     .multilineTextAlignment(.center)
                     .foregroundColor(.init(designSystemColor: .textSecondary))
-                    .tintIfAvailable(Color(designSystemColor: .accent))
+                    .tintIfAvailable(Color(designSystemColor: .accentPrimary))
                     .padding(.horizontal, 32)
                     .padding(.top, 8)
             }

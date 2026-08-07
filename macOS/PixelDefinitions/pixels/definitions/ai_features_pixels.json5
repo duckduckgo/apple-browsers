@@ -1,0 +1,92 @@
+// AI Features telemetry for the "Make Disabling AI Clearer" settings.
+{
+    "m_mac_ai_features_state": {
+        "description": "Daily snapshot of the three AI settings and whether the user is fully in the No-AI state, fired on app foreground across the active base",
+        "owners": ["dus7"],
+        "triggers": ["startup"],
+        "suffixes": ["daily"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "duck_ai",
+                "description": "Whether Duck.ai is enabled.",
+                "type": "boolean"
+            },
+            {
+                "key": "search_assist",
+                "description": "Search Assist frequency (kbe raw value): 0 never, 1 on demand, 2 sometimes, 3 often.",
+                "type": "string",
+                "enum": ["0", "1", "2", "3"]
+            },
+            {
+                "key": "hide_ai_images",
+                "description": "Whether AI-generated images are hidden.",
+                "type": "string",
+                "enum": ["on", "off"]
+            },
+            {
+                "key": "no_ai",
+                "description": "Derived: Duck.ai off AND Search Assist never AND Hide AI Images on.",
+                "type": "boolean"
+            }
+        ]
+    },
+    "m_mac_ai_features_disabled": {
+        "description": "Fired when the user taps the Disable AI Features button (disables all AI at once)",
+        "owners": ["dus7"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_ai_features_search_assist_never": {
+        "description": "Fired when the user sets Search Assist to never",
+        "owners": ["dus7"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_ai_features_search_assist_on_demand": {
+        "description": "Fired when the user sets Search Assist to on demand",
+        "owners": ["dus7"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_ai_features_search_assist_sometimes": {
+        "description": "Fired when the user sets Search Assist to sometimes",
+        "owners": ["dus7"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_ai_features_search_assist_often": {
+        "description": "Fired when the user sets Search Assist to often",
+        "owners": ["dus7"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_ai_features_hide_images_on": {
+        "description": "Fired when the user turns Hide AI-Generated Images on",
+        "owners": ["dus7"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_ai_features_hide_images_off": {
+        "description": "Fired when the user turns Hide AI-Generated Images off",
+        "owners": ["dus7"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_serp_settings_unrecognized_value": {
+        "description": "Fired when a stored SERP setting value cannot be decoded into the native enum (SERP/native contract mismatch)",
+        "owners": ["dus7"],
+        "triggers": ["other"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    }
+}

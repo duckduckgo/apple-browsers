@@ -19,6 +19,7 @@
 
 import DesignResourcesKitIcons
 import SwiftUI
+import UIComponents
 
 struct SettingsCellDemoDebugView: View {
 

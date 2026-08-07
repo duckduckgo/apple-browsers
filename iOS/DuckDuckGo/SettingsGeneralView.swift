@@ -20,6 +20,7 @@
 import Core
 import SwiftUI
 import DesignResourcesKit
+import FeatureFlags_iOS
 
 enum AfterInactivityOption: String, CaseIterable, CustomStringConvertible {
     case newTab
@@ -84,11 +85,9 @@ struct SettingsGeneralView: View {
                                                options: AfterInactivityIdleInterval.allCases,
                                                selectedOption: viewModel.afterInactivityIdleIntervalBinding)
 
-                        if viewModel.shouldShowLastTabShortcutSetting {
-                            SettingsCellView(label: UserText.settingsLastTabShortcutLabel,
-                                             subtitle: UserText.settingsLastTabShortcutSubtitle,
-                                             accessory: .toggle(isOn: viewModel.lastTabShortcutEnabledBinding))
-                        }
+                        SettingsCellView(label: UserText.settingsLastTabShortcutLabel,
+                                         subtitle: UserText.settingsLastTabShortcutSubtitle,
+                                         accessory: .toggle(isOn: viewModel.lastTabShortcutEnabledBinding))
                     }
                 }
             }
@@ -155,6 +154,7 @@ struct SettingsGeneralView: View {
                     SettingsCellView(label: UserText.settingsAutoplayLabel,
                                      accessory: .rightDetail(viewModel.state.autoplayBlockingMode.description))
                 }
+                .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
             }
 
         }

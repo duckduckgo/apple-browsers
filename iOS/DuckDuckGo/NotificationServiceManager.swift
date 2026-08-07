@@ -27,14 +27,24 @@ import DataBrokerProtection_iOS
 protocol NotificationServiceManaging: UNUserNotificationCenterDelegate {}
 
 final class NotificationServiceManager: NSObject, NotificationServiceManaging {
-    
+
     private let mainCoordinator: MainCoordinator
-    
-    init(mainCoordinator: MainCoordinator) {
+
+    static let notificationCategories: Set<UNNotificationCategory> = [
+        DefaultSubscriptionExpirationReminderScheduler.notificationCategory
+    ]
+
+    init(mainCoordinator: MainCoordinator,
+         notificationCenter: UNUserNotificationCenterRepresentable = UNUserNotificationCenter.current()) {
         self.mainCoordinator = mainCoordinator
         super.init()
+        Self.registerNotificationCategories(on: notificationCenter)
     }
-    
+
+    static func registerNotificationCategories(on notificationCenter: UNUserNotificationCenterRepresentable) {
+        notificationCenter.setNotificationCategories(notificationCategories)
+    }
+
     /// https://stackoverflow.com/questions/73750724/how-can-usernotificationcenter-didreceive-cause-a-crash-even-with-nothing-in
     /// TL;DR: The async UNUserNotificationCenterDelegate methods (`willPresent`, `didReceive`) can be invoked off the main thread, leading to occasional crashes during app activation.
     /// Marking this delegate @MainActor ensures they always run on the main thread. This appears to be an iOS bug.
@@ -43,19 +53,27 @@ final class NotificationServiceManager: NSObject, NotificationServiceManaging {
                                 willPresent notification: UNNotification) async -> UNNotificationPresentationOptions {
         return [.banner, .list]
     }
-    
+
     @MainActor
     func userNotificationCenter(_ center: UNUserNotificationCenter,
                                 didReceive response: UNNotificationResponse) async {
-        
-        guard response.actionIdentifier == UNNotificationDefaultActionIdentifier else { return }
-        
+
         let id = response.notification.request.identifier
+
+        if id == DefaultSubscriptionExpirationReminderScheduler.notificationIdentifier {
+            handleSubscriptionExpirationReminder(actionIdentifier: response.actionIdentifier)
+            return
+        }
+
+        guard response.actionIdentifier == UNNotificationDefaultActionIdentifier else { return }
+
         switch id {
         case InactivityNotificationSchedulerService.Constants.notificationIdentifier:
             handleInactivityNotification(for: response)
         case let raw where NetworkProtectionNotificationIdentifier(rawValue: raw) != nil:
-            handleVPNNotification()
+            if let identifier = NetworkProtectionNotificationIdentifier(rawValue: raw) {
+                handleVPNNotification(identifier: identifier)
+            }
         case let raw where DataBrokerProtectionNotificationIdentifier(rawValue: raw) != nil:
             if let identifier = DataBrokerProtectionNotificationIdentifier(rawValue: raw) {
                 handleDataBrokerProtectionNotification(identifier: identifier)
@@ -78,8 +96,23 @@ private extension NotificationServiceManager {
     }
     
     @MainActor
-    func handleVPNNotification() {
-        mainCoordinator.presentNetworkProtectionStatusSettingsModal(origin: .notificationVPN)
+    func handleVPNNotification(identifier: NetworkProtectionNotificationIdentifier) {
+        let scrollToStrictRouting = identifier == .strictRoutingReminder
+        mainCoordinator.presentNetworkProtectionStatusSettingsModal(entryPoint: .notification,
+                                                                    scrollToStrictRouting: scrollToStrictRouting)
+    }
+
+    @MainActor
+    func handleSubscriptionExpirationReminder(actionIdentifier: String) {
+        switch actionIdentifier {
+        case UNNotificationDefaultActionIdentifier:
+            Pixel.fire(pixel: .subscriptionExpirationReminderNotificationTapped)
+            mainCoordinator.segueToSubscriptionWelcome()
+        case UNNotificationDismissActionIdentifier:
+            Pixel.fire(pixel: .subscriptionExpirationReminderNotificationDismissed)
+        default:
+            break
+        }
     }
 
     @MainActor

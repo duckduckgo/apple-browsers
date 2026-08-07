@@ -18,10 +18,12 @@
 //
 
 import Core
+import WebExtensions
 import BrowserServicesKit
 import Persistence
 import PrivacyConfig
 import SwiftUI
+import UIComponents
 import Common
 import FoundationExtensions
 import Combine
@@ -36,7 +38,7 @@ import DataBrokerProtection_iOS
 import SystemSettingsPiPTutorial
 import SERPSettings
 import Networking
-import WebExtensions
+import FeatureFlags_iOS
 
 enum YouTubeAdBlockingStorageKeys: String, StorageKeyDescribing {
     case youTubeAdBlockingEnabled = "com_duckduckgo_ios_youTubeAdBlockingEnabled"
@@ -69,7 +71,9 @@ final class SettingsViewModel: ObservableObject {
     private(set) var historyManager: HistoryManaging
     let subscriptionDataReporter: SubscriptionDataReporting?
     let aiChatSettings: AIChatSettingsProvider
-    let serpSettings: SERPSettingsProviding
+    // `var` because the SERP setting accessors have mutating setters (non-class protocol);
+    // the conformer is a class, so writes go to the shared instance.
+    var serpSettings: SERPSettingsProviding
     let maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging
     private let tabSwitcherSettings: TabSwitcherSettings
     private let autoplaySettings: AutoplaySettings
@@ -82,6 +86,8 @@ final class SettingsViewModel: ObservableObject {
     private weak var runPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?
     var dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?
     private let freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking
+    private let profileStateManager: DBPProfileStateManaging
+    private let freemiumDBPUserStateManager: FreemiumDBPUserStateManaging
     weak var autoClearActionDelegate: SettingsAutoClearActionDelegate?
     let mobileCustomization: MobileCustomization
     let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
@@ -140,7 +146,7 @@ final class SettingsViewModel: ObservableObject {
     let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
     
     // Properties
-    private lazy var isPad = UIDevice.current.userInterfaceIdiom == .pad
+    lazy var isPad = UIDevice.current.userInterfaceIdiom == .pad
     private var cancellables = Set<AnyCancellable>()
 
     // App Data State Notification Observer
@@ -199,10 +205,18 @@ final class SettingsViewModel: ObservableObject {
             && dataBrokerProtectionViewControllerProvider != nil
     }
 
-    var dbpMeetsProfileRunPrequisite: Bool {
-        get {
-            (try? runPrerequisitesDelegate?.meetsProfileRunPrequisite) ?? false
+    var dbpProfileStatusIndicator: StatusIndicator? {
+        switch profileStateManager.profileState {
+        case .hasProfile: return .on
+        case .noProfile: return .off
+        case .unknown: return nil
         }
+    }
+
+    /// True once the user's first freemium scan has finished (results exist, even if no
+    /// matches). Used to switch the entry-point CTA from "start scan" to "show results".
+    var hasCompletedFreemiumScan: Bool {
+        freemiumDBPUserStateManager.firstScanResult != nil
     }
 
     var isDefaultOmnibarModeEnabled: Bool {
@@ -248,6 +262,13 @@ final class SettingsViewModel: ObservableObject {
 
     @Published var shouldShowSetAsDefaultBrowser: Bool = false
     @Published var shouldShowImportPasswords: Bool = false
+
+    @Published var shouldShowAddToDockNextStep: Bool = true
+    @Published var shouldShowAddWidgetNextStep: Bool = true
+    @Published var shouldShowSetAddressBarPositionNextStep: Bool = true
+    @Published var shouldShowEnableVoiceSearchNextStep: Bool = true
+    @Published var nextStepsSectionHidden: Bool = false
+    @Published var shouldShowNextStepsHideButton: Bool = false
 
     // MARK: - Deep linking
     // Used to automatically navigate to a specific section
@@ -331,6 +352,19 @@ final class SettingsViewModel: ObservableObject {
         )
     }
 
+    var hideTabBarWhileScrollingOnIPadBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: {
+                !self.appSettings.keepAddressBarVisibleOnIPad
+            },
+            set: { hideWhileScrolling in
+                Pixel.fire(pixel: hideWhileScrolling ? .settingsHideTabBarWhileScrollingOn : .settingsHideTabBarWhileScrollingOff)
+                let keepVisible = !hideWhileScrolling
+                self.appSettings.keepAddressBarVisibleOnIPad = keepVisible
+            }
+        )
+    }
+
     var refreshButtonPositionBinding: Binding<RefreshButtonPosition> {
         Binding<RefreshButtonPosition>(
             get: {
@@ -393,10 +427,6 @@ final class SettingsViewModel: ObservableObject {
 
     var shouldShowNTPAfterIdleSetting: Bool {
         featureFlagger.isFeatureOn(.showNTPAfterIdleReturn)
-    }
-
-    var shouldShowLastTabShortcutSetting: Bool {
-        featureFlagger.isFeatureOn(.escapeHatchHideShortcut)
     }
 
     var lastTabShortcutEnabledBinding: Binding<Bool> {
@@ -518,6 +548,10 @@ final class SettingsViewModel: ObservableObject {
         )
     }
 
+    var isCookiePopupPreferenceSettingEnabled: Bool {
+        featureFlagger.isFeatureOn(.cookiePopupPreferenceSetting)
+    }
+
     var autoconsentBinding: Binding<Bool> {
         Binding<Bool>(
             get: { self.state.autoconsentEnabled },
@@ -531,6 +565,38 @@ final class SettingsViewModel: ObservableObject {
                 }
             }
         )
+    }
+
+    var autoManageCookiePopupsBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.state.cookiePopupPreference.isAutoManageCookiePopupsEnabled },
+            set: { isEnabled in
+                let popUpsWithoutOptOuts = isEnabled ? self.state.cookiePopupPreference.isPopUpsWithoutOptOutsEnabled : false
+                self.setCookiePopupPreference(.preference(
+                    autoManageEnabled: isEnabled,
+                    popUpsWithoutOptOutsEnabled: popUpsWithoutOptOuts
+                ))
+                Pixel.fire(pixel: isEnabled ? .autoconsentSettingsOn : .autoconsentSettingsOff)
+            }
+        )
+    }
+
+    var popUpsWithoutOptOutsBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.state.cookiePopupPreference.isPopUpsWithoutOptOutsEnabled },
+            set: { isEnabled in
+                self.setCookiePopupPreference(.preference(
+                    autoManageEnabled: true,
+                    popUpsWithoutOptOutsEnabled: isEnabled
+                ))
+                Pixel.fire(pixel: isEnabled ? .autoconsentSettingsMax : .autoconsentSettingsDefault)
+            }
+        )
+    }
+
+    private func setCookiePopupPreference(_ preference: CookiePopupPreference) {
+        appSettings.cookiePopupPreference = preference
+        state.cookiePopupPreference = preference
     }
 
     var voiceSearchEnabledBinding: Binding<Bool> {
@@ -922,7 +988,7 @@ final class SettingsViewModel: ObservableObject {
     }
 
     var cookiePopUpProtectionStatus: StatusIndicator {
-        return appSettings.autoconsentEnabled ? .on : .off
+        return appSettings.cookiePopupPreference.isBlockingEnabled ? .on : .off
     }
     
     var emailProtectionStatus: StatusIndicator {
@@ -976,6 +1042,8 @@ final class SettingsViewModel: ObservableObject {
          runPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?,
          dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
          freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking,
+         profileStateManager: DBPProfileStateManaging,
+         freemiumDBPUserStateManager: FreemiumDBPUserStateManaging,
          winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
          mobileCustomization: MobileCustomization,
          userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
@@ -1019,6 +1087,8 @@ final class SettingsViewModel: ObservableObject {
         self.runPrerequisitesDelegate = runPrerequisitesDelegate
         self.dataBrokerProtectionViewControllerProvider = dataBrokerProtectionViewControllerProvider
         self.freemiumPIREligibilityChecker = freemiumPIREligibilityChecker
+        self.profileStateManager = profileStateManager
+        self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
         self.mobileCustomization = mobileCustomization
         self.userScriptsDependencies = userScriptsDependencies
@@ -1030,6 +1100,7 @@ final class SettingsViewModel: ObservableObject {
         self.adBlockingAvailability = adBlockingAvailability
         setupNotificationObservers()
         updateRecentlyVisitedSitesVisibility()
+        refreshNextStepsVisibility(animated: false)
         startForwardingAdapterWillChangeEvents(afterInactivityOptionAdapter)
         startForwardingAdapterWillChangeEvents(lastTabShortcutAdapter)
     }
@@ -1084,7 +1155,7 @@ extension SettingsViewModel {
             mobileCustomization: mobileCustomization.state,
             forceWebsiteDarkMode: darkReaderFeatureSettings.isForceDarkModeEnabled,
             sendDoNotSell: appSettings.sendDoNotSell,
-            autoconsentEnabled: appSettings.autoconsentEnabled,
+            cookiePopupPreference: appSettings.cookiePopupPreference,
             autoClearAIChatHistory: appSettings.autoClearAIChatHistory,
             applicationLock: privacyStore.authenticationEnabled,
             autocomplete: appSettings.autocomplete,
@@ -1164,6 +1235,7 @@ extension SettingsViewModel {
             .store(in: &cancellables)
 
         updateRecentlyVisitedSitesVisibility()
+        refreshNextStepsVisibility(animated: false)
 
         if #available(iOS 18.2, *) {
             updateCompleteSetupSectionVisiblity()
@@ -1346,6 +1418,16 @@ extension SettingsViewModel {
         static let didDismissSetAsDefaultBrowserKey = "com.duckduckgo.settings.setup.browser-default-dismissed"
         static let didDismissImportPasswordsKey = "com.duckduckgo.settings.setup.import-passwords-dismissed"
         static let shouldCheckIfDefaultBrowserKey = "com.duckduckgo.settings.setup.check-browser-default"
+
+        // Next Steps section: timestamp (Double, timeIntervalSinceReferenceDate) of the first tap on each item.
+        static let didTapAddToDockNextStepKey = "com.duckduckgo.settings.next-steps.add-to-dock-tapped-at"
+        static let didTapAddWidgetNextStepKey = "com.duckduckgo.settings.next-steps.add-widget-tapped-at"
+        // How long after tapping an instructional Next Steps item (Add to Dock / Add Widget) it stays visible.
+        static let nextStepTapDismissalInterval: TimeInterval = 24 * 60 * 60 // 1 day
+        // Whether the user has permanently hidden the entire Next Steps section.
+        static let nextStepsSectionHiddenKey = "com.duckduckgo.settings.next-steps.section-hidden"
+        // How long after install the "Hide" affordance for the Next Steps section becomes available.
+        static let nextStepsHideMinimumInstallAge: TimeInterval = 14 * 24 * 60 * 60 // 14 days
     }
 
     func onFirstAppear() {
@@ -1356,6 +1438,7 @@ extension SettingsViewModel {
     }
 
     func onSubsequentAppear() {
+        refreshNextStepsVisibility(animated: false)
         Task {
             await setupSubscriptionEnvironment()
         }
@@ -1384,6 +1467,78 @@ extension SettingsViewModel {
     func dismissImportPasswords() {
         try? keyValueStore.set(true, forKey: Constants.didDismissImportPasswordsKey)
         updateCompleteSetupSectionVisiblity()
+    }
+
+    // MARK: Next Steps section
+
+    var shouldShowNextStepsSection: Bool {
+        !nextStepsSectionHidden && (
+            shouldShowAddToDockNextStep
+                || shouldShowAddWidgetNextStep
+                || shouldShowSetAddressBarPositionNextStep
+                || shouldShowEnableVoiceSearchNextStep
+        )
+    }
+
+    func refreshNextStepsVisibility(animated: Bool) {
+        let apply = {
+            self.nextStepsSectionHidden = (try? self.keyValueStore.object(forKey: Constants.nextStepsSectionHiddenKey) as? Bool) ?? false
+            self.shouldShowSetAddressBarPositionNextStep = !self.isPad && self.appSettings.currentAddressBarPosition == .top
+            self.shouldShowEnableVoiceSearchNextStep = self.voiceSearchHelper.isSpeechRecognizerAvailable
+                && !self.voiceSearchHelper.isVoiceSearchEnabled
+            self.shouldShowAddToDockNextStep = !Self.hasTapDismissalElapsed(
+                tappedAt: try? self.keyValueStore.object(forKey: Constants.didTapAddToDockNextStepKey) as? Double,
+                interval: Constants.nextStepTapDismissalInterval)
+            self.shouldShowAddWidgetNextStep = !Self.hasTapDismissalElapsed(
+                tappedAt: try? self.keyValueStore.object(forKey: Constants.didTapAddWidgetNextStepKey) as? Double,
+                interval: Constants.nextStepTapDismissalInterval)
+            self.shouldShowNextStepsHideButton = Self.hasInstallGracePeriodElapsed(
+                installDate: StatisticsUserDefaults().installDate,
+                requiredInterval: Constants.nextStepsHideMinimumInstallAge)
+        }
+        if animated {
+            withAnimation { apply() }
+        } else {
+            apply()
+        }
+    }
+
+    func hideNextStepsSection() {
+        try? keyValueStore.set(true, forKey: Constants.nextStepsSectionHiddenKey)
+        withAnimation { nextStepsSectionHidden = true }
+    }
+
+    func recordAddToDockNextStepTapped() {
+        recordNextStepTapIfNeeded(forKey: Constants.didTapAddToDockNextStepKey)
+    }
+
+    func recordAddWidgetNextStepTapped() {
+        recordNextStepTapIfNeeded(forKey: Constants.didTapAddWidgetNextStepKey)
+    }
+
+    private func recordNextStepTapIfNeeded(forKey key: String) {
+        Self.recordFirstTap(forKey: key, in: keyValueStore)
+    }
+
+    static func recordFirstTap(forKey key: String,
+                               in keyValueStore: ThrowingKeyValueStoring,
+                               now: TimeInterval = Date().timeIntervalSinceReferenceDate) {
+        guard (try? keyValueStore.object(forKey: key) as? Double) == nil else { return }
+        try? keyValueStore.set(now, forKey: key)
+    }
+
+    static func hasTapDismissalElapsed(tappedAt: Double?,
+                                       now: TimeInterval = Date().timeIntervalSinceReferenceDate,
+                                       interval: TimeInterval) -> Bool {
+        guard let tappedAt else { return false }
+        return now - tappedAt >= interval
+    }
+
+    static func hasInstallGracePeriodElapsed(installDate: Date?,
+                                             now: Date = Date(),
+                                             requiredInterval: TimeInterval) -> Bool {
+        guard let installDate else { return false }
+        return now.timeIntervalSince(installDate) >= requiredInterval
     }
 
     @MainActor func shouldPresentAutofillViewWith(accountDetails: SecureVaultModels.WebsiteAccount?, card: SecureVaultModels.CreditCard?, showCreditCardManagement: Bool, showSettingsScreen: AutofillSettingsDestination? = nil, source: AutofillSettingsSource? = nil) {
@@ -1583,7 +1738,8 @@ extension SettingsViewModel: DataImportViewControllerDelegate {
 extension SettingsViewModel {
 
     enum SettingsDeepLinkSection: Identifiable, Equatable {
-        case netP
+        case netP(source: VPNConnectionWideEventData.ScreenSource,
+                  scrollToStrictRouting: Bool = false)
         case dbp
         case itr
         case subscriptionFlow(redirectURLComponents: URLComponents? = nil)
@@ -1593,6 +1749,7 @@ extension SettingsViewModel {
         case aiChat
         case privateSearch
         case subscriptionSettings
+        case subscriptionWelcome
         case customizeToolbarButton
         case customizeAddressBarButton
         case appearance
@@ -1601,7 +1758,7 @@ extension SettingsViewModel {
 
         var id: String {
             switch self {
-            case .netP: return "netP"
+            case let .netP(source, _): return "netP-\(source.rawValue)"
             case .dbp: return "dbp"
             case .itr: return "itr"
             case .subscriptionFlow: return "subscriptionFlow"
@@ -1611,6 +1768,7 @@ extension SettingsViewModel {
             case .aiChat: return "aiChat"
             case .privateSearch: return "privateSearch"
             case .subscriptionSettings: return "subscriptionSettings"
+            case .subscriptionWelcome: return "subscriptionWelcome"
             case .customizeToolbarButton: return "customizeToolbarButton"
             case .customizeAddressBarButton: return "customizeAddressButton"
             case .appearance: return "appearance"
@@ -1623,9 +1781,16 @@ extension SettingsViewModel {
         // Default to .sheet, specify .push where needed
         var type: DeepLinkType {
             switch self {
-            case .netP, .dbp, .itr, .subscriptionFlow, .subscriptionPlanChangeFlow, .restoreFlow, .duckPlayer, .aiChat, .privateSearch, .subscriptionSettings, .customizeToolbarButton, .customizeAddressBarButton, .appearance, .general:
+            case .netP, .dbp, .itr, .subscriptionFlow, .subscriptionPlanChangeFlow, .restoreFlow, .duckPlayer, .aiChat, .privateSearch, .subscriptionSettings, .subscriptionWelcome, .customizeToolbarButton, .customizeAddressBarButton, .appearance, .general:
                 return .navigationLink
             }
+        }
+
+        // A subscription purchase flow launched from onboarding (carries the onboarding funnel origin).
+        var isOnboardingSubscriptionFlow: Bool {
+            guard case .subscriptionFlow(let redirectURLComponents) = self else { return false }
+            let origin = redirectURLComponents?.queryItems?.first { $0.name == AttributionParameter.origin }?.value
+            return origin == SubscriptionFunnelOrigin.onboarding.rawValue
         }
     }
 
@@ -1742,6 +1907,8 @@ extension SettingsViewModel {
                                                                   object: nil,
                                                                   queue: .main, using: { [weak self] _ in
             guard let self = self else { return }
+            self.mobileCustomization.refreshAvailability()
+            self.state.mobileCustomization = self.mobileCustomization.state
             Task { @MainActor in
                 self.refreshAutoClearOptionsIfNeeded()
             }
@@ -1932,6 +2099,56 @@ extension SettingsViewModel {
                 self.aiChatSettings.setDefaultOmnibarMode(newValue)
             }
         )
+    }
+
+    var searchAssistFrequencyBinding: Binding<SearchAssistFrequency> {
+        Binding<SearchAssistFrequency>(
+            get: { self.serpSettings.searchAssistFrequency },
+            set: { newValue in
+                guard newValue != self.serpSettings.searchAssistFrequency else { return }
+                self.objectWillChange.send()
+                self.serpSettings.searchAssistFrequency = newValue
+                DailyPixel.fireDailyAndCount(pixel: Self.searchAssistPixel(for: newValue))
+            }
+        )
+    }
+
+    var hideAIImagesBinding: Binding<HideAIImagesOption> {
+        Binding<HideAIImagesOption>(
+            get: { HideAIImagesOption(hidden: self.serpSettings.hideAIGeneratedImages) },
+            set: { newValue in
+                guard newValue.hidden != self.serpSettings.hideAIGeneratedImages else { return }
+                self.objectWillChange.send()
+                self.serpSettings.hideAIGeneratedImages = newValue.hidden
+                DailyPixel.fireDailyAndCount(pixel: newValue.hidden ? .aiFeaturesHideImagesOn : .aiFeaturesHideImagesOff)
+            }
+        )
+    }
+
+    /// Maps a Search Assist frequency to its value-in-name AI Features pixel.
+    private static func searchAssistPixel(for frequency: SearchAssistFrequency) -> Pixel.Event {
+        switch frequency {
+        case .never: return .aiFeaturesSearchAssistNever
+        case .onDemand: return .aiFeaturesSearchAssistOnDemand
+        case .sometimes: return .aiFeaturesSearchAssistSometimes
+        case .often: return .aiFeaturesSearchAssistOften
+        }
+    }
+
+    /// True when Duck.ai is off and both SERP AI settings are at their most-restrictive values.
+    /// Hides the "Disable AI Features" button once everything is already disabled.
+    var isAllAIDisabled: Bool {
+        !aiChatSettings.isAIChatEnabled
+            && serpSettings.searchAssistFrequency == .never
+            && serpSettings.hideAIGeneratedImages
+    }
+
+    func disableAllAI() {
+        objectWillChange.send()
+        aiChatSettings.enableAIChat(enable: false)
+        serpSettings.searchAssistFrequency = .never
+        serpSettings.hideAIGeneratedImages = true
+        DailyPixel.fireDailyAndCount(pixel: .aiFeaturesDisabled)
     }
 
     var isChatSuggestionsEnabled: Binding<Bool> {

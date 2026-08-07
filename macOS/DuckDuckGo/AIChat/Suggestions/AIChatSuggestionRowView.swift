@@ -29,20 +29,41 @@ protocol SuggestionRowThemeProviding {
     var accentPrimaryColor: NSColor { get }
     var selectedTintColor: NSColor { get }
     var suggestionHighlightCornerRadius: CGFloat { get }
+    var suffixTextColor: NSColor { get }
+    var suffixSelectedTextColor: NSColor { get }
 }
 
 /// Default implementation that uses the app's theme manager.
 struct DefaultSuggestionRowThemeProvider: SuggestionRowThemeProviding {
+    let themeManager: ThemeManaging
+    let isBurner: Bool
+
     var accentPrimaryColor: NSColor {
-        NSApp.delegateTyped.themeManager.theme.palette.accentPrimary
+        themeManager.theme.colorsProvider.suggestionsHighlightBackgroundColor
     }
 
     var selectedTintColor: NSColor {
-        NSApp.delegateTyped.themeManager.theme.palette.accentContentPrimary
+        themeManager.theme.colorsProvider.suggestionsHighlightTextColor
     }
 
     var suggestionHighlightCornerRadius: CGFloat {
-        NSApp.delegateTyped.themeManager.theme.addressBarStyleProvider.suggestionHighlightCornerRadius
+        themeManager.theme.addressBarStyleProvider.suggestionHighlightCornerRadius
+    }
+
+    var suffixTextColor: NSColor {
+        guard themeManager.isAppRebranded else {
+            return accentPrimaryColor
+        }
+
+        return themeManager.theme.colorsProvider.suggestionsSuffixColor(isBurner: isBurner)
+    }
+
+    var suffixSelectedTextColor: NSColor {
+        guard themeManager.isAppRebranded else {
+            return selectedTintColor
+        }
+
+        return themeManager.theme.colorsProvider.suggestionsHighlightSuffixColor(isBurner: isBurner)
     }
 }
 
@@ -54,10 +75,13 @@ struct DefaultSuggestionRowThemeProvider: SuggestionRowThemeProviding {
 final class AIChatSuggestionRowView: NSView {
 
     private enum Constants {
-        static let rowHeight: CGFloat = 32
-        static let horizontalPadding: CGFloat = 12
+        static let rowHeight: CGFloat = 34
+        static let legacyRowHeight: CGFloat = 32
+        static let horizontalPadding: CGFloat = 14
+        static let legacyHorizontalPadding: CGFloat = 12
         static let iconSize: CGFloat = 16
-        static let iconTitleSpacing: CGFloat = 6
+        static let iconTitleSpacing: CGFloat = 8
+        static let legacyIconTitleSpacing: CGFloat = 6
 
         // Colors matching SuggestionTableCellView
         static let iconColor: NSColor = .suggestionIcon
@@ -65,6 +89,8 @@ final class AIChatSuggestionRowView: NSView {
     }
 
     // MARK: - UI Components
+
+    private let themeManager: ThemeManaging
 
     private let iconImageView: NSImageView = {
         let imageView = NSImageView()
@@ -129,9 +155,10 @@ final class AIChatSuggestionRowView: NSView {
 
     // MARK: - Initialization
 
-    init(suggestion: AIChatSuggestion, themeProvider: SuggestionRowThemeProviding = DefaultSuggestionRowThemeProvider()) {
+    init(suggestion: AIChatSuggestion, isBurner: Bool = false, themeManager: ThemeManaging = NSApp.delegateTyped.themeManager, themeProvider: SuggestionRowThemeProviding? = nil) {
         self.suggestion = suggestion
-        self.themeProvider = themeProvider
+        self.themeManager = themeManager
+        self.themeProvider = themeProvider ?? DefaultSuggestionRowThemeProvider(themeManager: themeManager, isBurner: isBurner)
         super.init(frame: .zero)
         setupView()
         configure(with: suggestion)
@@ -158,19 +185,23 @@ final class AIChatSuggestionRowView: NSView {
         addSubview(titleLabel)
         addSubview(deleteButton)
 
-        NSLayoutConstraint.activate([
-            heightAnchor.constraint(equalToConstant: Constants.rowHeight),
+        let rowHeight = themeManager.isAppRebranded ? Constants.rowHeight : Constants.legacyRowHeight
+        let iconPadding = themeManager.isAppRebranded ? Constants.horizontalPadding : Constants.legacyHorizontalPadding
+        let titlePadding = themeManager.isAppRebranded ? Constants.iconTitleSpacing : Constants.legacyIconTitleSpacing
 
-            iconImageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.horizontalPadding),
+        NSLayoutConstraint.activate([
+            heightAnchor.constraint(equalToConstant: rowHeight),
+
+            iconImageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: iconPadding),
             iconImageView.centerYAnchor.constraint(equalTo: centerYAnchor),
             iconImageView.widthAnchor.constraint(equalToConstant: Constants.iconSize),
             iconImageView.heightAnchor.constraint(equalToConstant: Constants.iconSize),
 
-            titleLabel.leadingAnchor.constraint(equalTo: iconImageView.trailingAnchor, constant: Constants.iconTitleSpacing),
-            titleLabel.trailingAnchor.constraint(equalTo: deleteButton.leadingAnchor, constant: -Constants.iconTitleSpacing),
+            titleLabel.leadingAnchor.constraint(equalTo: iconImageView.trailingAnchor, constant: titlePadding),
+            titleLabel.trailingAnchor.constraint(equalTo: deleteButton.leadingAnchor, constant: -titlePadding),
             titleLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
 
-            deleteButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.horizontalPadding),
+            deleteButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -iconPadding),
             deleteButton.centerYAnchor.constraint(equalTo: centerYAnchor),
             deleteButton.widthAnchor.constraint(equalToConstant: Constants.iconSize),
             deleteButton.heightAnchor.constraint(equalToConstant: Constants.iconSize),
@@ -187,7 +218,7 @@ final class AIChatSuggestionRowView: NSView {
         // persisted model on the Duck.ai stored record), everything else uses the chat bubble.
         let icon: NSImage
         if suggestion.isPinned {
-            icon = DesignSystemImages.Glyphs.Size16.pin
+            icon = DesignSystemImages.Glyphs.Size16.chatPinned
         } else {
             switch suggestion.kind {
             case .voice:

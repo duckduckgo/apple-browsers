@@ -27,14 +27,14 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
 
     private var originatingURL: CurrentValueSubject<URL?, Never>!
     private var sut: UnifiedToggleInputPageContextChipViewModel!
-    private var attachCalls: [URL] = []
+    private var attachCalls: Int = 0
     private var removeCalls: Int = 0
     private var autoAttachEnabled = false
 
     override func setUp() async throws {
         try await super.setUp()
         originatingURL = .init(nil)
-        attachCalls = []
+        attachCalls = 0
         removeCalls = 0
         autoAttachEnabled = false
     }
@@ -49,7 +49,7 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
             initialAttachmentDeliveryState: initialAttachmentDeliveryState,
             isAutoAttachEnabled: { [weak self] in self?.autoAttachEnabled ?? false }
         )
-        sut.onAttachActionRequested = { [weak self] url in self?.attachCalls.append(url) }
+        sut.onAttachActionRequested = { [weak self] in self?.attachCalls += 1 }
         sut.onRemoveActionRequested = { [weak self] in self?.removeCalls += 1 }
     }
 
@@ -78,29 +78,74 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
         XCTAssertEqualState(sut.state, .placeholder)
     }
 
-    func test_autoAttachOff_navigationAway_invokesRemoveCallback() {
-        // Regression: nav-away clearing must propagate through onRemoveActionRequested so the
-        // host clears the FE-side cached page context. Otherwise the next prompt would ship
-        // stale context even though the chip displays placeholder.
+    func test_autoAttachOff_navigationAway_keepsManualPendingAttachmentSticky() {
         let attachedUrl = "https://en.wikipedia.org/wiki/Cat"
         originatingURL.send(URL(string: attachedUrl))
-        makeSUT(initialAttachedContext: makeContext(title: "Cat", url: attachedUrl))
+        makeSUT(initialAttachedContext: makeContext(title: "Cat", url: attachedUrl), initialAttachmentDeliveryState: .pendingSubmit)
         XCTAssertEqual(removeCalls, 0)
+        XCTAssertEqualState(sut.state, .attached(title: "Cat", favicon: nil))
+        XCTAssertTrue(sut.isVisible)
 
         originatingURL.send(URL(string: "https://en.wikipedia.org/wiki/Dog"))
-        XCTAssertEqual(removeCalls, 1)
+        XCTAssertEqual(removeCalls, 0)
+        XCTAssertEqualState(sut.state, .attached(title: "Cat", favicon: nil))
+        XCTAssertTrue(sut.isVisible)
     }
 
-    func test_autoAttachOn_navigationAway_doesNotInvokeRemoveCallback() {
-        // With auto-attach ON, the attachment is preserved while the host re-collects, so
-        // the remove callback must NOT fire on nav-away.
+    func test_autoAttachOff_navigationAway_keepsManualDeliveredAttachmentStickyAndHidden() {
+        let attachedUrl = "https://en.wikipedia.org/wiki/Cat"
+        originatingURL.send(URL(string: attachedUrl))
+        makeSUT(initialAttachedContext: makeContext(title: "Cat", url: attachedUrl), initialAttachmentDeliveryState: .delivered)
+        XCTAssertEqualState(sut.state, .attached(title: "Cat", favicon: nil))
+        XCTAssertFalse(sut.isVisible)
+
+        originatingURL.send(URL(string: "https://en.wikipedia.org/wiki/Dog"))
+        XCTAssertEqualState(sut.state, .attached(title: "Cat", favicon: nil))
+        XCTAssertFalse(sut.isVisible)
+    }
+
+    func test_showAttachAffordance_preservesDeliveredAttachmentAndKeepsPlaceholderHidden() {
+        let attachedUrl = "https://en.wikipedia.org/wiki/Cat"
+        originatingURL.send(URL(string: attachedUrl))
+        makeSUT(initialAttachedContext: makeContext(title: "Cat", url: attachedUrl), initialAttachmentDeliveryState: .delivered)
+        XCTAssertFalse(sut.isVisible)
+
+        sut.showAttachAffordance()
+
+        XCTAssertEqualState(sut.state, .placeholder)
+        XCTAssertFalse(sut.isVisible)
+        XCTAssertNil(sut.pendingAttachedContextData)
+
+        sut.tapToAttach()
+        XCTAssertEqual(attachCalls, 1)
+
+        sut.setAttached(makeContext(title: "Dog", url: "https://en.wikipedia.org/wiki/Dog"))
+        XCTAssertEqualState(sut.state, .attached(title: "Dog", favicon: nil))
+        XCTAssertEqual(sut.pendingAttachedContextData?.url, "https://en.wikipedia.org/wiki/Dog")
+    }
+
+    func test_showAttachAffordance_doesNotOverridePendingAttachment() {
+        let attachedUrl = "https://en.wikipedia.org/wiki/Cat"
+        originatingURL.send(URL(string: attachedUrl))
+        makeSUT(initialAttachedContext: makeContext(title: "Cat", url: attachedUrl), initialAttachmentDeliveryState: .pendingSubmit)
+
+        sut.showAttachAffordance()
+
+        XCTAssertEqualState(sut.state, .attached(title: "Cat", favicon: nil))
+        XCTAssertTrue(sut.isVisible)
+        XCTAssertEqual(sut.pendingAttachedContextData?.url, attachedUrl)
+    }
+
+    func test_autoAttachOn_navigationAway_preservesAttachment() {
         autoAttachEnabled = true
         let attachedUrl = "https://en.wikipedia.org/wiki/Cat"
         originatingURL.send(URL(string: attachedUrl))
-        makeSUT(initialAttachedContext: makeContext(title: "Cat", url: attachedUrl))
+        makeSUT(initialAttachedContext: makeContext(title: "Cat", url: attachedUrl), initialAttachmentDeliveryState: .pendingSubmit)
 
         originatingURL.send(URL(string: "https://en.wikipedia.org/wiki/Dog"))
         XCTAssertEqual(removeCalls, 0)
+        XCTAssertEqualState(sut.state, .attached(title: "Cat", favicon: nil))
+        XCTAssertTrue(sut.isVisible)
     }
 
     func test_autoAttachOn_originatingURLChangesAwayThenBack_attachmentPreservedInternally() {
@@ -121,19 +166,17 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
         XCTAssertEqualState(sut.state, .attached(title: "Cat", favicon: nil))
     }
 
-    func test_autoAttachOff_originatingURLAwayThenBack_doesNotRestoreAttached() {
-        // Manual mode: leaving the page clears the attachment. Navigating back does NOT restore
-        // — the user must tap the placeholder to re-attach.
+    func test_autoAttachOff_originatingURLAwayThenBack_keepsManualAttachmentSticky() {
         let attachedUrl = "https://en.wikipedia.org/wiki/Cat"
         originatingURL.send(URL(string: attachedUrl))
-        makeSUT(initialAttachedContext: makeContext(title: "Cat", url: attachedUrl))
+        makeSUT(initialAttachedContext: makeContext(title: "Cat", url: attachedUrl), initialAttachmentDeliveryState: .pendingSubmit)
         XCTAssertEqualState(sut.state, .attached(title: "Cat", favicon: nil))
 
         originatingURL.send(URL(string: "https://en.wikipedia.org/wiki/Dog"))
-        XCTAssertEqualState(sut.state, .placeholder)
+        XCTAssertEqualState(sut.state, .attached(title: "Cat", favicon: nil))
 
         originatingURL.send(URL(string: attachedUrl))
-        XCTAssertEqualState(sut.state, .placeholder)
+        XCTAssertEqualState(sut.state, .attached(title: "Cat", favicon: nil))
     }
 
     // MARK: - Tap handling
@@ -143,29 +186,35 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
         let url = URL(string: "https://example.com/a")!
         originatingURL.send(url)
         sut.tapToAttach()
-        XCTAssertEqual(attachCalls, [url])
+        XCTAssertEqual(attachCalls, 1)
     }
 
-    func test_tapToAttach_noOriginatingURL_doesNotCallOnAttach() {
+    func test_tapToAttach_noOriginatingURL_callsOnAttach() {
         makeSUT()
         sut.tapToAttach()
-        XCTAssertTrue(attachCalls.isEmpty)
+        XCTAssertEqual(attachCalls, 1)
     }
 
-    func test_tapToRemove_callsOnRemove() {
-        makeSUT()
+    func test_tapToRemove_clearsChipAndCallsOnRemove() {
+        let url = "https://en.wikipedia.org/wiki/Cat"
+        originatingURL.send(URL(string: url))
+        makeSUT(initialAttachedContext: makeContext(title: "Cat", url: url))
         sut.tapToRemove()
+
+        XCTAssertEqualState(sut.state, .placeholder)
+        XCTAssertFalse(sut.isVisible)
+        XCTAssertNil(sut.pendingAttachedContextData)
         XCTAssertEqual(removeCalls, 1)
     }
 
     // MARK: - Visibility (manual mode)
 
-    func test_visibility_manual_coldStart_noCarryOver_visiblePlaceholder() {
-        // 1. Open chat fresh on page X with no carry-over → show placeholder so user can attach.
+    func test_visibility_manual_coldStart_noCarryOver_hiddenPlaceholder() {
+        // 1. Open chat fresh on page X with no carry-over → keep placeholder hidden.
         let url = "https://en.wikipedia.org/wiki/Cat"
         originatingURL.send(URL(string: url))
         makeSUT()
-        XCTAssertTrue(sut.isVisible)
+        XCTAssertFalse(sut.isVisible)
         XCTAssertEqualState(sut.state, .placeholder)
     }
 
@@ -179,12 +228,12 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
     }
 
     func test_visibility_manual_attachLands_visibleAttachedAsFeedback() {
-        // 3. User taps placeholder, host pushes the collected context. Show .attached as
+        // 3. User attaches from the menu, host pushes the collected context. Show .attached as
         // feedback so the user sees what they just attached, until they submit.
         let url = "https://en.wikipedia.org/wiki/Cat"
         originatingURL.send(URL(string: url))
         makeSUT()
-        XCTAssertTrue(sut.isVisible)
+        XCTAssertFalse(sut.isVisible)
 
         sut.setAttached(makeContext(title: "Cat", url: url))
         XCTAssertTrue(sut.isVisible)
@@ -200,7 +249,7 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
         sut.setAttached(makeContext(title: "Cat", url: url))
         XCTAssertTrue(sut.isVisible)
 
-        sut.markPromptSubmitted()
+        sut.setAttached(makeContext(title: "Cat", url: url), deliveryState: .delivered)
         XCTAssertFalse(sut.isVisible)
         XCTAssertEqualState(sut.state, .attached(title: "Cat", favicon: nil))
     }
@@ -212,7 +261,7 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
         originatingURL.send(URL(string: url))
         makeSUT()
         sut.setAttached(makeContext(title: "Cat", url: url))
-        sut.markPromptSubmitted()
+        sut.setAttached(makeContext(title: "Cat", url: url), deliveryState: .delivered)
         XCTAssertFalse(sut.isVisible)
 
         sut.clearAttached()
@@ -220,42 +269,39 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
         XCTAssertTrue(sut.isVisible)
     }
 
-    func test_visibility_manual_navigateAway_visiblePlaceholder() {
-        // 4. Navigate away → manual clears attachment → show placeholder for the new page.
+    func test_visibility_manual_navigateAway_keepsAttachedState() {
+        // Manual mode is sticky: navigation does not clear or replace an existing attachment.
         let url = "https://en.wikipedia.org/wiki/Cat"
         originatingURL.send(URL(string: url))
-        makeSUT(initialAttachedContext: makeContext(title: "Cat", url: url))
-        XCTAssertFalse(sut.isVisible)
+        makeSUT(initialAttachedContext: makeContext(title: "Cat", url: url), initialAttachmentDeliveryState: .pendingSubmit)
+        XCTAssertTrue(sut.isVisible)
 
         originatingURL.send(URL(string: "https://en.wikipedia.org/wiki/Dog"))
         XCTAssertTrue(sut.isVisible)
-        XCTAssertEqualState(sut.state, .placeholder)
+        XCTAssertEqualState(sut.state, .attached(title: "Cat", favicon: nil))
     }
 
-    func test_visibility_manual_userDetachesViaX_visiblePlaceholder() {
-        // 5. After X-tap (host calls clearAttached()) → no attachment → show placeholder so
-        // the user can re-attach if they change their mind.
+    func test_visibility_manual_userDetachesViaX_hiddenPlaceholder() {
+        // 5. After X-tap (host calls clearAttached()) → no attachment → keep placeholder hidden.
         let url = "https://en.wikipedia.org/wiki/Cat"
         originatingURL.send(URL(string: url))
         makeSUT(initialAttachedContext: makeContext(title: "Cat", url: url))
         XCTAssertFalse(sut.isVisible)
 
         sut.clearAttached()
-        XCTAssertTrue(sut.isVisible)
+        XCTAssertFalse(sut.isVisible)
         XCTAssertEqualState(sut.state, .placeholder)
     }
 
     // MARK: - Visibility (auto mode)
 
-    func test_visibility_auto_optedOutInHalfSheet_visiblePlaceholder() {
-        // Auto mode + user opted out at the half-sheet (no carry-over) → show placeholder.
-        // The half-sheet is where the user exercises their attach/skip agency; the chat is
-        // not a "waiting for first attach" surface, so we never hide an empty auto state.
+    func test_visibility_auto_optedOutInHalfSheet_hiddenPlaceholder() {
+        // Auto mode + user opted out at the half-sheet (no carry-over) → keep placeholder hidden.
         autoAttachEnabled = true
         let url = "https://en.wikipedia.org/wiki/Cat"
         originatingURL.send(URL(string: url))
         makeSUT()
-        XCTAssertTrue(sut.isVisible)
+        XCTAssertFalse(sut.isVisible)
         XCTAssertEqualState(sut.state, .placeholder)
     }
 
@@ -309,38 +355,36 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
         XCTAssertTrue(sut.isVisible)
         XCTAssertEqualState(sut.state, .attached(title: "Dog", favicon: nil))
 
-        sut.markPromptSubmitted()
+        sut.setAttached(makeContext(title: "Dog", url: newURL), deliveryState: .delivered)
         XCTAssertFalse(sut.isVisible)
     }
 
-    func test_visibility_auto_userDetachesViaX_visiblePlaceholder() {
-        // Auto mode + user X-taps after at least one attachment in the session → show
-        // placeholder so they can re-attach manually. (The initial cold-start wait is the
-        // only time we hide auto + no attachment.)
+    func test_visibility_auto_userDetachesViaX_hiddenPlaceholder() {
+        // Auto mode + user X-taps after at least one attachment in the session → keep
+        // placeholder hidden so re-attach goes through the attachment menu.
         autoAttachEnabled = true
         let url = "https://en.wikipedia.org/wiki/Cat"
         originatingURL.send(URL(string: url))
         makeSUT(initialAttachedContext: makeContext(title: "Cat", url: url))
 
         sut.clearAttached()
-        XCTAssertTrue(sut.isVisible)
+        XCTAssertFalse(sut.isVisible)
         XCTAssertEqualState(sut.state, .placeholder)
     }
 
     func test_visibility_auto_attachThenSubmitThenDetach_returnsToPlaceholder() {
-        // After auto-attach lands and the user submits, then X-taps, the placeholder reappears
-        // so they can re-attach manually.
+        // After auto-attach lands and the user submits, then X-taps, the placeholder stays hidden.
         autoAttachEnabled = true
         let url = "https://en.wikipedia.org/wiki/Cat"
         originatingURL.send(URL(string: url))
         makeSUT()
 
         sut.setAttached(makeContext(title: "Cat", url: url))
-        sut.markPromptSubmitted()
+        sut.setAttached(makeContext(title: "Cat", url: url), deliveryState: .delivered)
         XCTAssertFalse(sut.isVisible)
 
         sut.clearAttached()
-        XCTAssertTrue(sut.isVisible)
+        XCTAssertFalse(sut.isVisible)
         XCTAssertEqualState(sut.state, .placeholder)
     }
 
@@ -359,15 +403,15 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
         XCTAssertEqual(sut.pendingAttachedContextData?.title, "Cat")
     }
 
-    func test_pendingAttachedContextData_afterMarkPromptSubmitted_returnsNil() {
-        // Once the chip flips to `.delivered`, every
+    func test_pendingAttachedContextData_afterDeliveredPush_returnsNil() {
+        // Once the session state pushes the attachment as `.delivered`, every
         // subsequent prompt must ship `pageContext: nil` — otherwise duck.ai renders a
         // "Page content from..." attribution beneath each follow-up prompt.
         let url = "https://en.wikipedia.org/wiki/Cat"
         originatingURL.send(URL(string: url))
         makeSUT()
         sut.setAttached(makeContext(title: "Cat", url: url))
-        sut.markPromptSubmitted()
+        sut.setAttached(makeContext(title: "Cat", url: url), deliveryState: .delivered)
         XCTAssertNil(sut.pendingAttachedContextData)
     }
 
@@ -400,7 +444,7 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
         originatingURL.send(URL(string: url))
         makeSUT()
         sut.setAttached(makeContext(title: "Cat", url: url))
-        sut.markPromptSubmitted()
+        sut.setAttached(makeContext(title: "Cat", url: url), deliveryState: .delivered)
         XCTAssertNil(sut.pendingAttachedContextData)
 
         sut.clearAttached()

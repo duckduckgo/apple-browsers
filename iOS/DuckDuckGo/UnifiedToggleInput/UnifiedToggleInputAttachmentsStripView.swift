@@ -23,7 +23,7 @@ import UIKit
 final class UnifiedToggleInputAttachmentsStripView: UIView {
 
     enum Constants {
-        static let spacing: CGFloat = 4
+        static let spacing: CGFloat = 10
         static let horizontalPadding: CGFloat = 12
         static let topPadding: CGFloat = 8
         static let stripHeight: CGFloat = topPadding + UnifiedToggleInputAttachmentThumbnailView.Constants.chipHeight
@@ -32,6 +32,9 @@ final class UnifiedToggleInputAttachmentsStripView: UIView {
     private(set) var attachments: [UnifiedToggleInputAttachment] = []
     var onAttachmentRemoved: ((UUID, UnifiedToggleInputAttachment, Bool) -> Void)?
     var onAttachmentsChanged: (() -> Void)?
+    var onPageContextRemove: (() -> Void)?
+
+    private(set) var hasVisiblePageContext = false
 
     private let scrollView: UIScrollView = {
         let scrollView = UIScrollView()
@@ -50,6 +53,8 @@ final class UnifiedToggleInputAttachmentsStripView: UIView {
         stack.translatesAutoresizingMaskIntoConstraints = false
         return stack
     }()
+
+    private let pageContextChip = AIChatContextChipView()
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -98,16 +103,43 @@ final class UnifiedToggleInputAttachmentsStripView: UIView {
 
     func removeAllAttachments() {
         attachments.removeAll()
-        stackView.arrangedSubviews.forEach {
-            stackView.removeArrangedSubview($0)
-            $0.removeFromSuperview()
+        stackView.arrangedSubviews
+            .compactMap { $0 as? UnifiedToggleInputAttachmentThumbnailView }
+            .forEach {
+                stackView.removeArrangedSubview($0)
+                $0.removeFromSuperview()
+            }
+        onAttachmentsChanged?()
+    }
+
+    func setPageContextChipState(_ state: AIChatContextChipView.State) {
+        pageContextChip.configure(state: state)
+    }
+
+    func setPageContextChipVisible(_ isVisible: Bool) {
+        guard hasVisiblePageContext != isVisible else { return }
+        let shouldAutoScroll = shouldAutoScrollAfterAddingAttachment()
+        hasVisiblePageContext = isVisible
+
+        if isVisible {
+            stackView.addArrangedSubview(pageContextChip)
+            if shouldAutoScroll {
+                scheduleScrollToTrailingEdge()
+            }
+        } else {
+            stackView.removeArrangedSubview(pageContextChip)
+            pageContextChip.removeFromSuperview()
         }
+
         onAttachmentsChanged?()
     }
 
     private func setupUI() {
         translatesAutoresizingMaskIntoConstraints = false
         clipsToBounds = false
+        pageContextChip.onRemove = { [weak self] in
+            self?.onPageContextRemove?()
+        }
         addSubview(scrollView)
         scrollView.addSubview(stackView)
         let bottomConstraint = scrollView.bottomAnchor.constraint(equalTo: bottomAnchor)

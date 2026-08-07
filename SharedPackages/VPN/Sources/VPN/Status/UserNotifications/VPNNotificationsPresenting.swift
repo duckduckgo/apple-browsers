@@ -25,6 +25,10 @@ public protocol VPNNotificationsPresenting {
     /// Present a "connected" notification to the user.
     func showConnectedNotification(serverLocation: String?, snoozeEnded: Bool)
 
+    /// Present a notice reminding the user to turn Strict routing back on.
+    /// Shown right after the "connected" notification while Strict routing is off.
+    func showStrictRoutingReminderNotification()
+
     /// Present a "reconnecting" notification to the user.
     func showReconnectingNotification()
 

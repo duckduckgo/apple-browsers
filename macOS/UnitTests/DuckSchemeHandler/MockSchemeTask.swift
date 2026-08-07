@@ -26,6 +26,9 @@ class MockSchemeTask: NSObject, WKURLSchemeTask {
     var didFinishCalled = false
     var error: Error?
 
+    /// Invoked on `didFinish()` or `didFailWithError(_:)`, so tests can await an async handler.
+    var onCompletion: (() -> Void)?
+
     public init(request: URLRequest ) {
         self.request = request
     }
@@ -40,9 +43,11 @@ class MockSchemeTask: NSObject, WKURLSchemeTask {
 
     func didFinish() {
         didFinishCalled = true
+        onCompletion?()
     }
 
     func didFailWithError(_ error: Error) {
         self.error = error
+        onCompletion?()
     }
 }

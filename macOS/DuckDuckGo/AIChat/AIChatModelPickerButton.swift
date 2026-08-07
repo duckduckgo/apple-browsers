@@ -26,11 +26,18 @@ final class AIChatModelPickerButton: NSView {
 
     private enum Constants {
         static let height: CGFloat = 28
-        static let horizontalPadding: CGFloat = 10
+        static let horizontalPadding: CGFloat = 13
+        static let legacyHorizontalPadding: CGFloat = 10
         static let iconTextSpacing: CGFloat = 3
         static let chevronSize: CGFloat = 16
         static let fontSize: CGFloat = 12
         static let cornerRadius: CGFloat = 14
+    }
+
+    private let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
+
+    private var horizontalPadding: CGFloat {
+        themeManager.isAppRebranded ? Constants.horizontalPadding : Constants.legacyHorizontalPadding
     }
 
     private let nameLabel: NSTextField = {
@@ -114,7 +121,7 @@ final class AIChatModelPickerButton: NSView {
 
     override var intrinsicContentSize: NSSize {
         let labelWidth = nameLabel.intrinsicContentSize.width
-        let totalWidth = Constants.horizontalPadding + labelWidth + Constants.iconTextSpacing + Constants.chevronSize + Constants.horizontalPadding
+        let totalWidth = horizontalPadding + labelWidth + Constants.iconTextSpacing + Constants.chevronSize + horizontalPadding
         return NSSize(width: totalWidth, height: Constants.height)
     }
 
@@ -135,14 +142,39 @@ final class AIChatModelPickerButton: NSView {
 
     override func becomeFirstResponder() -> Bool {
         let didBecome = super.becomeFirstResponder()
-        if didBecome { setFocusRingHidden(false) }
+        if didBecome { isFocused = true }
         return didBecome
     }
 
     override func resignFirstResponder() -> Bool {
         let didResign = super.resignFirstResponder()
-        if didResign { setFocusRingHidden(true) }
+        if didResign {
+            isFocused = false
+            wantsFocusRing = false
+        }
         return didResign
+    }
+
+    func takeKeyboardFocus() {
+        wantsFocusRing = true
+        window?.makeFirstResponder(self)
+    }
+
+    private var isFocused = false {
+        didSet { applyFocusRingVisibility() }
+    }
+
+    /// AppKit promotes any clicked view that accepts first responder, so focus can't gate the ring.
+    private var wantsFocusRing = false {
+        didSet { applyFocusRingVisibility() }
+    }
+
+    var isFocusRingSuppressed = false {
+        didSet { applyFocusRingVisibility() }
+    }
+
+    private func applyFocusRingVisibility() {
+        setFocusRingHidden(!isFocused || !wantsFocusRing || isFocusRingSuppressed)
     }
 
     private func setFocusRingHidden(_ hidden: Bool) {
@@ -176,7 +208,7 @@ final class AIChatModelPickerButton: NSView {
         addSubview(chevronImageView)
 
         NSLayoutConstraint.activate([
-            nameLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.horizontalPadding),
+            nameLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: horizontalPadding),
             nameLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
 
             chevronImageView.leadingAnchor.constraint(equalTo: nameLabel.trailingAnchor, constant: Constants.iconTextSpacing),
@@ -270,6 +302,7 @@ final class AIChatModelPickerButton: NSView {
     }
 
     override func mouseDown(with event: NSEvent) {
+        wantsFocusRing = false
         isMouseDown = true
     }
 
@@ -320,3 +353,5 @@ final class AIChatModelPickerButton: NSView {
         addCursorRect(bounds, cursor: .arrow)
     }
 }
+
+extension AIChatModelPickerButton: FocusRingControlling {}

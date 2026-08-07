@@ -23,6 +23,7 @@ import BrowserServicesKit
 import Networking
 import PixelKit
 import PixelExperimentKit
+import PrivacyConfig
 import os.log
 
 final class StatisticsLoader {
@@ -50,7 +51,10 @@ final class StatisticsLoader {
         usageSegmentation: UsageSegmenting = UsageSegmentation(pixelEvents: UsageSegmentation.pixelEvents),
         dockCustomization: DockCustomization = Application.appDelegate.dockCustomization,
         fireAppRetentionExperimentPixels: @escaping () -> Void = PixelKit.fireAppRetentionExperimentPixels,
-        fireSearchExperimentPixels: @escaping () -> Void = PixelKit.fireSearchExperimentPixels
+        fireSearchExperimentPixels: @escaping () -> Void = {
+            PixelKit.fireSearchExperimentPixels()
+            StatisticsLoader.fireLegacySearchRetentionExperimentPixels()
+        }
     ) {
         self.statisticsStore = statisticsStore
         self.emailManager = emailManager
@@ -59,6 +63,27 @@ final class StatisticsLoader {
         self.dockCustomization = dockCustomization
         self.fireSearchExperimentPixels = fireSearchExperimentPixels
         self.fireAppRetentionExperimentPixels = fireAppRetentionExperimentPixels
+    }
+
+    /// Transitional: preserves the previous 8-15 search window for experiments already running when
+    /// the canonical window was shortened to 8-14, so their in-flight analysis keeps the window it
+    /// started with. Drop each experiment as it is cleaned up, and delete this once none remain.
+    static func fireLegacySearchRetentionExperimentPixels() {
+        let inProgressExperiments = [
+            MacOSBrowserConfigSubfeature.onboardingChromeExtension.rawValue,
+            AutoconsentSubfeature.heuristicAction.rawValue,
+            AutoconsentSubfeature.cookiePopupOptInDialogExperiment.rawValue
+        ]
+        for subfeatureID in inProgressExperiments {
+            for threshold in [4, 6, 11, 21, 30] {
+                PixelKit.fireExperimentPixelIfThresholdReached(
+                    for: subfeatureID,
+                    metric: "search",
+                    conversionWindowDays: 8...15,
+                    threshold: threshold
+                )
+            }
+        }
     }
 
     func refreshRetentionAtbOnNavigation(isSearch: Bool,
@@ -103,6 +128,8 @@ final class StatisticsLoader {
             group.enter()
             group.enter()
 
+            // The refreshSearchRetentionAtb call below fires the `.searches` OS-distribution pixel
+            // for a Duck.ai prompt, so Duck.ai usage is included in our search + AI-query traffic count.
             self.refreshSearchRetentionAtb {
                 group.leave()
             }
@@ -279,8 +306,6 @@ final class StatisticsLoader {
 
     func refreshDuckAIRetentionAtb(completion: @escaping Completion = {}) {
         dispatchPrecondition(condition: .onQueue(.main))
-
-        PixelKit.fireOSDistributionPixel(metric: .searches)
 
         guard !isDuckAIRetentionRequestInProgress else {
             completion()

@@ -278,7 +278,6 @@ open class TransparentProxyProvider: NETransparentProxyProvider {
 
     @MainActor
     private func startOrphanDetection() {
-        guard settings.isOrphanProxyDetectionEnabled else { return }
         guard heartbeatStore != nil else { return }
         proxyStartedAt = Date()
         orphanFiredForCurrentEpisode = false
@@ -300,7 +299,6 @@ open class TransparentProxyProvider: NETransparentProxyProvider {
 
     @MainActor
     private func scheduleOrphanCheckAfterWake() {
-        guard settings.isOrphanProxyDetectionEnabled else { return }
         guard heartbeatStore != nil, proxyStartedAt != nil else { return }
 
         // The grace period defers *engaging* the bypass after wake, so the tunnel has time to write
@@ -329,7 +327,7 @@ open class TransparentProxyProvider: NETransparentProxyProvider {
         guard let decision = OrphanProxyTester.decision(
             proxyAge: proxyAge,
             heartbeatAge: lastHeartbeat.map { now.timeIntervalSince($0) },
-            bypassEnabled: settings.isOrphanProxyBypassEnabled,
+            bypassEnabled: true,
             isFullBypassEnabled: isFullBypassEnabled,
             orphanFiredForCurrentEpisode: orphanFiredForCurrentEpisode,
             proxyAgeThreshold: Self.orphanProxyAgeThreshold,
@@ -574,8 +572,17 @@ open class TransparentProxyProvider: NETransparentProxyProvider {
     }
 
     private func isExcludedDomain(_ hostname: String) -> Bool {
-        settings.excludedDomains.contains { excludedDomain in
-            hostname.hasSuffix(excludedDomain)
+        Self.isExcludedDomain(hostname, excludedDomains: settings.excludedDomains)
+    }
+
+    /// Whether `hostname` should be excluded from the VPN given the list of excluded domains.
+    ///
+    /// A hostname matches an excluded domain only when it's exactly equal to it or is a subdomain of it
+    /// (i.e. ends with `.<excludedDomain>`). This prevents an excluded `bank.com` from also matching an
+    /// unrelated `evilbank.com`, which would steer that traffic around the tunnel.
+    static func isExcludedDomain(_ hostname: String, excludedDomains: [String]) -> Bool {
+        excludedDomains.contains { excludedDomain in
+            hostname == excludedDomain || hostname.hasSuffix(".\(excludedDomain)")
         }
     }
 

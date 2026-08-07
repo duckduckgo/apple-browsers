@@ -18,6 +18,7 @@
 
 import Combine
 import Common
+import CryptoKit
 import XCTest
 
 @testable import DDGSync
@@ -118,6 +119,67 @@ final class DDGSyncTests: XCTestCase {
     }
 
     // MARK: - Tests
+
+    func testRecoveryCodeWhenScopedAccessCredentialsAndPairingV2CodeAreEnabledReturnsV2Code() throws {
+        dependencies.isScopedAccessCredentialsEnabled = { true }
+        dependencies.isPairingV2CodeEnabled = { true }
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+
+        let recoveryCode = try XCTUnwrap(syncService.recoveryCode)
+        let syncCode = try SyncCode.decodeBase64URLString(recoveryCode)
+        let expectedSyncCode = try SyncCode.decodeBase64String(try XCTUnwrap(SyncAccount.mock.recoveryCodeV2))
+
+        XCTAssertEqual(syncCode.recovery, expectedSyncCode.recovery)
+        guard case .v2(let payload) = syncCode.recovery else {
+            XCTFail("Expected v2 recovery payload")
+            return
+        }
+        XCTAssertEqual(payload.cid, SyncCredentialID.defaultCredential)
+        XCTAssertEqual(Base64URL.decode(payload.secret), SyncAccount.mock.primaryKey)
+    }
+
+    func testRecoveryCodeWhenPairingV2CodeIsDisabledReturnsLegacyV1Code() throws {
+        dependencies.isScopedAccessCredentialsEnabled = { true }
+        dependencies.isPairingV2CodeEnabled = { false }
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+
+        let recoveryCode = try XCTUnwrap(syncService.recoveryCode)
+        let syncCode = try SyncCode.decodeBase64String(recoveryCode)
+        let expectedSyncCode = try SyncCode.decodeBase64String(try XCTUnwrap(SyncAccount.mock.legacyRecoveryCodeV1))
+
+        XCTAssertEqual(syncCode.recovery, expectedSyncCode.recovery)
+        XCTAssertNoThrow(try XCTUnwrap(syncCode.recovery).defaultCredentialRecoveryKey())
+    }
+
+    func testRecoveryCodeWhenPairingV2CodeIsEnabledAndPairingV2ScanningIsDisabledReturnsLegacyV1Code() throws {
+        dependencies.isPairingV2CodeEnabled = { true }
+        dependencies.isPairingV2ScanningEnabled = { false }
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+
+        let recoveryCode = try XCTUnwrap(syncService.recoveryCode)
+        let syncCode = try SyncCode.decodeBase64String(recoveryCode)
+        let expectedSyncCode = try SyncCode.decodeBase64String(try XCTUnwrap(SyncAccount.mock.legacyRecoveryCodeV1))
+
+        XCTAssertEqual(syncCode.recovery, expectedSyncCode.recovery)
+        XCTAssertNoThrow(try XCTUnwrap(syncCode.recovery).defaultCredentialRecoveryKey())
+    }
+
+    func testRecoveryCodeWhenScopedAccessCredentialsAreDisabledAndPairingV2CodeIsEnabledReturnsV2Code() throws {
+        dependencies.isScopedAccessCredentialsEnabled = { false }
+        dependencies.isPairingV2CodeEnabled = { true }
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+
+        let recoveryCode = try XCTUnwrap(syncService.recoveryCode)
+        let syncCode = try SyncCode.decodeBase64URLString(recoveryCode)
+        let expectedSyncCode = try SyncCode.decodeBase64String(try XCTUnwrap(SyncAccount.mock.recoveryCodeV2))
+
+        XCTAssertEqual(syncCode.recovery, expectedSyncCode.recovery)
+        guard case .v2(let payload) = syncCode.recovery else {
+            XCTFail("Expected v2 recovery payload")
+            return
+        }
+        XCTAssertEqual(payload.cid, SyncCredentialID.defaultCredential)
+    }
 
     func testThatRegularSyncOperationsAreSerialized() {
         let dataProvider = DataProvidingMock(feature: .init(name: "bookmarks"))
@@ -522,5 +584,348 @@ final class DDGSyncTests: XCTestCase {
         XCTAssertEqual(syncService.authState, .active)
         XCTAssertNotNil((dependencies.secureStore as! SecureStorageStub).theAccount)
         XCTAssertEqual((dependencies.errorEvents as! MockErrorHandler).handledErrors, [])
+    }
+
+    func testWhenLoginResponseContainsProtectedKeysThenAllKeysAreCached() async throws {
+        (dependencies.secureStore as? SecureStorageStub)?.theAccount = nil
+        let protectedKeys = [
+            makeProtectedKey(kid: "key-3party", encryptedWith: "3party"),
+            makeProtectedKey(kid: "key-ddg", encryptedWith: "ddg"),
+            makeProtectedKey(kid: "key-ddg", encryptedWith: "ddg"),
+            makeProtectedKey(kid: "key-ddg-secondary", encryptedWith: "ddg")
+        ]
+        (dependencies.account as? AccountManagingMock)?.loginStub = LoginResult(account: .mock,
+                                                                                devices: [],
+                                                                                keys: protectedKeys)
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+
+        _ = try await syncService.login(.init(userId: "userId", primaryKey: Data()),
+                                        deviceName: "iPhone",
+                                        deviceType: "iOS")
+
+        let cachedProtectedKeysData = try XCTUnwrap((dependencies.secureStore as? SecureStorageStub)?.theProtectedKeysData)
+        let cachedProtectedKeys = try JSONDecoder.snakeCaseKeys.decode([ProtectedKey].self, from: cachedProtectedKeysData)
+
+        XCTAssertEqual(Set(cachedProtectedKeys.map(\.kid)), Set(["key-3party", "key-ddg", "key-ddg-secondary"]))
+        XCTAssertEqual(Set(cachedProtectedKeys.map(\.encryptedWith)), Set(["3party", "ddg"]))
+        XCTAssertEqual(cachedProtectedKeys.count, 3)
+    }
+
+    func testWhenScopedPasswordRecoveryFailsDuringLoginThenNativeLoginStillSucceeds() async throws {
+        (dependencies.secureStore as? SecureStorageStub)?.theAccount = nil
+        (dependencies.secureStore as? SecureStorageStub)?.theScopedPassword = Data(repeating: 9, count: 32)
+        (dependencies.account as? AccountManagingMock)?.loginStub = LoginResult(
+            account: .mock,
+            devices: [.mock],
+            accessCredentials: [AccessCredential(id: "3party", scope: "sync", encrypted3PartyCredential: "invalid")]
+        )
+        let scopedAccess = try XCTUnwrap(dependencies.scopedAccess as? ScopedAccessCredentialManagingMock)
+        scopedAccess.recoverScopedPasswordError = SyncError.invalidDataInResponse("broken scoped credential")
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+
+        let devices = try await syncService.login(.init(userId: "userId", primaryKey: Data()),
+                                                  deviceName: "iPhone",
+                                                  deviceType: "iOS")
+
+        XCTAssertEqual(devices.map(\.id), [RegisteredDevice.mock.id])
+        XCTAssertNotNil((dependencies.secureStore as? SecureStorageStub)?.theAccount)
+        XCTAssertNil((dependencies.secureStore as? SecureStorageStub)?.theScopedPassword)
+        XCTAssertEqual(scopedAccess.recoverScopedPasswordCalls.count, 1)
+    }
+
+    func testWhenScopedPasswordRecoveryFeatureFlagIsDisabledDuringLoginThenRecoveryIsSkipped() async throws {
+        dependencies.isScopedAccessCredentialsEnabled = { false }
+        (dependencies.secureStore as? SecureStorageStub)?.theAccount = nil
+        (dependencies.account as? AccountManagingMock)?.loginStub = LoginResult(
+            account: .mock,
+            devices: [.mock],
+            accessCredentials: [AccessCredential(id: "3party", scope: "sync", encrypted3PartyCredential: "encrypted")]
+        )
+        let scopedAccess = try XCTUnwrap(dependencies.scopedAccess as? ScopedAccessCredentialManagingMock)
+        scopedAccess.recoverScopedPasswordStub = Data(repeating: 8, count: 32)
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+
+        _ = try await syncService.login(.init(userId: "userId", primaryKey: Data()),
+                                        deviceName: "iPhone",
+                                        deviceType: "iOS")
+
+        XCTAssertTrue(scopedAccess.recoverScopedPasswordCalls.isEmpty)
+        XCTAssertNil((dependencies.secureStore as? SecureStorageStub)?.theScopedPassword)
+    }
+
+    func testWhenLoginResponseContainsRecoverableScopedPasswordThenScopedPasswordIsCached() async throws {
+        (dependencies.secureStore as? SecureStorageStub)?.theAccount = nil
+        let scopedPassword = Data(repeating: 8, count: 32)
+        (dependencies.account as? AccountManagingMock)?.loginStub = LoginResult(
+            account: .mock,
+            devices: [.mock],
+            accessCredentials: [AccessCredential(id: "3party", scope: "sync", encrypted3PartyCredential: "encrypted")]
+        )
+        let scopedAccess = try XCTUnwrap(dependencies.scopedAccess as? ScopedAccessCredentialManagingMock)
+        scopedAccess.recoverScopedPasswordStub = scopedPassword
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+
+        _ = try await syncService.login(.init(userId: "userId", primaryKey: Data()),
+                                        deviceName: "iPhone",
+                                        deviceType: "iOS")
+
+        XCTAssertEqual((dependencies.secureStore as? SecureStorageStub)?.theScopedPassword, scopedPassword)
+        XCTAssertEqual(scopedAccess.recoverScopedPasswordCalls.count, 1)
+    }
+
+    func testWhenRefreshResponseContainsRecoverableScopedPasswordThenScopedPasswordIsCached() async throws {
+        let scopedPassword = Data(repeating: 7, count: 32)
+        (dependencies.account as? AccountManagingMock)?.refreshTokenStub = LoginResult(
+            account: .mock,
+            devices: [.mock],
+            accessCredentials: [AccessCredential(id: "3party", scope: "sync", encrypted3PartyCredential: "encrypted")]
+        )
+        let scopedAccess = try XCTUnwrap(dependencies.scopedAccess as? ScopedAccessCredentialManagingMock)
+        scopedAccess.recoverScopedPasswordStub = scopedPassword
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+
+        _ = try await syncService.updateDeviceName("Updated iPhone")
+
+        XCTAssertEqual((dependencies.secureStore as? SecureStorageStub)?.theScopedPassword, scopedPassword)
+        XCTAssertEqual(scopedAccess.recoverScopedPasswordCalls.count, 1)
+    }
+
+    func testWhenDisconnectRemovesAccountThenScopedPasswordAndProtectedKeysAreCleared() async throws {
+        let protectedKey = makeProtectedKey(kid: "key-ddg", encryptedWith: "ddg")
+        let protectedKeysData = try JSONEncoder.snakeCaseKeys.encode([protectedKey])
+        (dependencies.secureStore as? SecureStorageStub)?.theAccount = .mock
+        (dependencies.secureStore as? SecureStorageStub)?.theScopedPassword = Data(repeating: 6, count: 32)
+        (dependencies.secureStore as? SecureStorageStub)?.theProtectedKeysData = protectedKeysData
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+
+        try await syncService.disconnect()
+
+        XCTAssertNil((dependencies.secureStore as? SecureStorageStub)?.theAccount)
+        XCTAssertNil((dependencies.secureStore as? SecureStorageStub)?.theScopedPassword)
+        XCTAssertNil((dependencies.secureStore as? SecureStorageStub)?.theProtectedKeysData)
+    }
+
+    func testWhenPreparingThirdPartyRecoveryCodeAndCredentialExistsThenRecoveredScopedPasswordIsUsed() async throws {
+        let scopedPassword = Data(repeating: 8, count: 32)
+        let scopedAccess = try XCTUnwrap(dependencies.scopedAccess as? ScopedAccessCredentialManagingMock)
+        scopedAccess.ensureThirdPartyScopedPasswordStub = EnsuredThirdPartyCredential(scopedPassword: scopedPassword,
+                                                                                     protectedKeysToCache: [])
+        let secureStore = try XCTUnwrap(dependencies.secureStore as? SecureStorageStub)
+        let scopedPasswordCached = expectation(description: "Scoped password cached")
+        secureStore.persistScopedPasswordCalled = {
+            scopedPasswordCached.fulfill()
+        }
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+
+        let code = try await syncService.prepareThirdPartyRecoveryCode(purpose: "ai_chats")
+        let decoded = try SyncCode.decodeBase64URLString(code)
+        await fulfillment(of: [scopedPasswordCached], timeout: 5.0)
+
+        XCTAssertEqual(scopedAccess.ensureThirdPartyScopedPasswordCalls.count, 1)
+        XCTAssertEqual(secureStore.theScopedPassword, scopedPassword)
+        guard case .v2(let payload) = decoded.recovery else {
+            XCTFail("Expected v2 recovery payload")
+            return
+        }
+        XCTAssertEqual(Base64URL.decode(payload.secret), scopedPassword)
+    }
+
+    func testWhenPreparingThirdPartyRecoveryCodeAndScopedPasswordCacheWriteFailsThenRecoveryCodeIsPrepared() async throws {
+        let scopedPassword = Data(repeating: 8, count: 32)
+        let scopedAccess = try XCTUnwrap(dependencies.scopedAccess as? ScopedAccessCredentialManagingMock)
+        scopedAccess.ensureThirdPartyScopedPasswordStub = EnsuredThirdPartyCredential(scopedPassword: scopedPassword,
+                                                                                     protectedKeysToCache: [])
+        let secureStore = try XCTUnwrap(dependencies.secureStore as? SecureStorageStub)
+        secureStore.mockWriteError = .failedToWriteSecureStore(status: -1)
+        let scopedPasswordCacheAttempted = expectation(description: "Scoped password cache attempted")
+        secureStore.persistScopedPasswordCalled = {
+            scopedPasswordCacheAttempted.fulfill()
+        }
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+
+        let code = try await syncService.prepareThirdPartyRecoveryCode(purpose: "ai_chats")
+        let decoded = try SyncCode.decodeBase64URLString(code)
+        await fulfillment(of: [scopedPasswordCacheAttempted], timeout: 5.0)
+
+        XCTAssertEqual(scopedAccess.ensureThirdPartyScopedPasswordCalls.count, 1)
+        XCTAssertNil(secureStore.theScopedPassword)
+        guard case .v2(let payload) = decoded.recovery else {
+            XCTFail("Expected v2 recovery payload")
+            return
+        }
+        XCTAssertEqual(Base64URL.decode(payload.secret), scopedPassword)
+    }
+
+    func testWhenPreparingThirdPartyRecoveryCodeAndCredentialDoesNotExistThenScopedPasswordIsGenerated() async throws {
+        let scopedAccess = try XCTUnwrap(dependencies.scopedAccess as? ScopedAccessCredentialManagingMock)
+        let scopedPassword = Data(repeating: 6, count: 32)
+        scopedAccess.ensureThirdPartyScopedPasswordStub = EnsuredThirdPartyCredential(scopedPassword: scopedPassword,
+                                                                                     protectedKeysToCache: [])
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+
+        _ = try await syncService.prepareThirdPartyRecoveryCode(purpose: "ai_chats")
+
+        XCTAssertEqual(scopedAccess.ensureThirdPartyScopedPasswordCalls.count, 1)
+        XCTAssertEqual(scopedPassword.count, 32)
+    }
+
+    func testWhenPreparingThirdPartyRecoveryCodeAndScopedAccessFeatureIsDisabledThenRecoveryCodeIsPrepared() async throws {
+        dependencies.isScopedAccessCredentialsEnabled = { false }
+        let scopedPassword = Data(repeating: 8, count: 32)
+        let scopedAccess = try XCTUnwrap(dependencies.scopedAccess as? ScopedAccessCredentialManagingMock)
+        scopedAccess.ensureThirdPartyScopedPasswordStub = EnsuredThirdPartyCredential(scopedPassword: scopedPassword,
+                                                                                     protectedKeysToCache: [])
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+
+        let code = try await syncService.prepareThirdPartyRecoveryCode(purpose: "ai_chats")
+        let decoded = try SyncCode.decodeBase64URLString(code)
+
+        XCTAssertEqual(scopedAccess.ensureThirdPartyScopedPasswordCalls.count, 1)
+        guard case .v2(let payload) = decoded.recovery else {
+            XCTFail("Expected v2 recovery payload")
+            return
+        }
+        XCTAssertEqual(Base64URL.decode(payload.secret), scopedPassword)
+    }
+
+    func testWhenPreparingThirdPartyRecoveryCodeAndNewProtectedKeysAreReturnedThenKeysAreCached() async throws {
+        let scopedAccess = try XCTUnwrap(dependencies.scopedAccess as? ScopedAccessCredentialManagingMock)
+        let protectedKey = makeProtectedKey(kid: "key-ddg", encryptedWith: "ddg")
+        scopedAccess.ensureThirdPartyScopedPasswordStub = EnsuredThirdPartyCredential(scopedPassword: Data(repeating: 6, count: 32),
+                                                                                     protectedKeysToCache: [protectedKey])
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+
+        _ = try await syncService.prepareThirdPartyRecoveryCode(purpose: "ai_chats")
+
+        let cachedProtectedKeysData = try XCTUnwrap((dependencies.secureStore as? SecureStorageStub)?.theProtectedKeysData)
+        let cachedProtectedKeys = try JSONDecoder.snakeCaseKeys.decode([ProtectedKey].self, from: cachedProtectedKeysData)
+        XCTAssertEqual(cachedProtectedKeys.map(\.kid), ["key-ddg"])
+    }
+
+    func testWhenUpgradingThirdPartyAccountAndScopedAccessFeatureIsDisabledThenAccountIsUpgraded() async throws {
+        dependencies.isScopedAccessCredentialsEnabled = { false }
+        (dependencies.secureStore as? SecureStorageStub)?.theAccount = nil
+        let upgradeCoordinator = ThirdPartyAccountUpgradeCoordinatingMock()
+        dependencies.createThirdPartyAccountUpgradeCoordinatorStub = upgradeCoordinator
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+
+        let devices = try await syncService.upgradeThirdPartyAccountToDefaultCredential("third-party-recovery-code",
+                                                                                       deviceName: "Mac",
+                                                                                       deviceType: "desktop")
+
+        XCTAssertEqual(upgradeCoordinator.upgradeThirdPartyAccountCalls.map(\.recoveryCode), ["third-party-recovery-code"])
+        XCTAssertEqual(devices.map(\.id), [RegisteredDevice.mock.id])
+        XCTAssertEqual((dependencies.secureStore as? SecureStorageStub)?.theAccount?.userId, SyncAccount.mock.userId)
+    }
+
+    func testWhenGeneratingThirdPartyRecoveryCodeThenPayloadMatchesV2Spec() throws {
+        let scopedPassword = Data(repeating: 7, count: 32)
+
+        let code = try XCTUnwrap(ScopedAccessCredentialManager(endpoints: Endpoints(baseURL: URL(string: "https://example.com")!),
+                                                               api: RemoteAPIRequestCreatingMock(),
+                                                               crypter: CryptingMock())
+            .makeRecoveryCode(for: .mock, scopedPassword: scopedPassword))
+        let decoded = try SyncCode.decodeBase64URLString(code)
+
+        guard case .v2(let payload) = decoded.recovery else {
+            XCTFail("Expected v2 recovery payload")
+            return
+        }
+
+        XCTAssertEqual(payload.userId, "userId")
+        XCTAssertEqual(payload.cid, "3party")
+        XCTAssertEqual(payload.v, "2.0")
+        XCTAssertFalse(payload.secret.isEmpty)
+        // `secret` is base64URL(no padding) of the raw SP bytes.
+        XCTAssertEqual(Base64URL.decode(payload.secret), scopedPassword)
+    }
+
+    func testWhenDecodingV2RecoveryCodeWithoutSecretThenDecodingFails() throws {
+        let json = """
+        {
+          "recovery": {
+            "user_id": "userId",
+            "cid": "3party",
+            "v": "2.0"
+          }
+        }
+        """
+        let code = Base64URL.encode(Data(json.utf8))
+
+        XCTAssertThrowsError(try SyncCode.decodeBase64URLString(code))
+    }
+
+    func testWhenDecodingV2RecoveryCodeWithNewMinorVersionThenDecodingSucceeds() throws {
+        let json = """
+        {
+          "recovery": {
+            "user_id": "userId",
+            "secret": "secret",
+            "cid": "3party",
+            "v": "2.1"
+          }
+        }
+        """
+        let code = Base64URL.encode(Data(json.utf8))
+
+        let decoded = try SyncCode.decodeBase64URLString(code)
+
+        guard case .v2(let payload) = decoded.recovery else {
+            XCTFail("Expected v2 recovery payload")
+            return
+        }
+        XCTAssertEqual(payload.v, "2.1")
+    }
+
+    func testWhenDecodingV2RecoveryCodeWithUnsupportedMajorVersionThenDecodingFails() throws {
+        let json = """
+        {
+          "recovery": {
+            "user_id": "userId",
+            "secret": "secret",
+            "cid": "3party",
+            "v": "3.0"
+          }
+        }
+        """
+        let code = Base64URL.encode(Data(json.utf8))
+
+        XCTAssertThrowsError(try SyncCode.decodeBase64URLString(code)) { error in
+            XCTAssertEqual(error as? SyncCode.RecoveryCodeVersionError, .unsupported("3.0"))
+        }
+    }
+
+    func testWhenDecodingV2RecoveryCodeWithMalformedVersionThenDecodingFails() throws {
+        let json = """
+        {
+          "recovery": {
+            "user_id": "userId",
+            "secret": "secret",
+            "cid": "3party",
+            "v": "-1"
+          }
+        }
+        """
+        let code = Base64URL.encode(Data(json.utf8))
+
+        XCTAssertThrowsError(try SyncCode.decodeBase64URLString(code)) { error in
+            XCTAssertEqual(error as? SyncCode.RecoveryCodeVersionError, .malformed("-1"))
+        }
+    }
+
+    private func makeProtectedKey(kid: String, encryptedWith: String) -> ProtectedKey {
+        ProtectedKey(kid: kid,
+                     encryptedPrivateKey: "encrypted-private-key",
+                     publicKey: .mock,
+                     encryptedWith: encryptedWith,
+                     purpose: "browser")
+    }
+
+    private func scopedAccessMainKey(from secret: Data, userID: String) -> Data {
+        let derivedKey = HKDF<SHA256>.deriveKey(inputKeyMaterial: SymmetricKey(data: secret),
+                                                salt: Data(userID.utf8),
+                                                info: Data("Main Key".utf8),
+                                                outputByteCount: 32)
+        return derivedKey.withUnsafeBytes { Data($0) }
     }
 }

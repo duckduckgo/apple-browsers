@@ -111,7 +111,7 @@ final class NetworkProtectionIPCTunnelController {
     // MARK: - Login Items Manager
 
     private func enableLoginItems() async throws {
-        try loginItemsManager.throwingEnableLoginItems(LoginItemsManager.vpnLoginItems)
+        try await loginItemsManager.throwingEnableLoginItems(LoginItemsManager.vpnLoginItems)
     }
 }
 

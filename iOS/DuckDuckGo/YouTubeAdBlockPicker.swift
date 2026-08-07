@@ -97,7 +97,7 @@ struct YouTubeAdBlockPickerView: View {
             HStack(spacing: 20) {
                 Image(uiImage: DesignSystemImages.Glyphs.Size24.check)
                     .renderingMode(.template)
-                    .foregroundColor(Color(designSystemColor: .accent))
+                    .foregroundColor(Color(designSystemColor: .accentPrimary))
                     .opacity(mode == selection ? 1 : 0)
                 Text(mode.title)
                     .font(.body)

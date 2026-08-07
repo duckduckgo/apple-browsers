@@ -20,8 +20,6 @@ import AppKit
 import Foundation
 
 /// Receives lifecycle and navigation callbacks from a bookmarks-bar menu popover.
-/// Implemented by both the legacy `NSPopover`-based and the custom `NSPanel`-based
-/// implementations, so the bar view controller doesn't need to know which is active.
 protocol BookmarksBarMenuPopoverDelegate: AnyObject {
     func bookmarksBarMenuPopoverShouldClose(_ popover: any BookmarksBarMenuPopoverPresenting) -> Bool
     func bookmarksBarMenuPopoverDidClose(_ popover: any BookmarksBarMenuPopoverPresenting)
@@ -34,9 +32,7 @@ extension BookmarksBarMenuPopoverDelegate {
     func bookmarksBarMenuPopoverDidClose(_ popover: any BookmarksBarMenuPopoverPresenting) {}
 }
 
-/// Common API the bookmarks-bar code uses to drive a bookmarks menu popover,
-/// abstracting over the two backing implementations:
-/// `BookmarksBarMenuPopover` (NSPopover subclass) and
+/// Common API the bookmarks-bar code uses to drive a bookmarks menu popover, backed by
 /// `BookmarksBarMenuCustomPopover` (NSResponder backed by `BookmarksBarMenuWindow`).
 protocol BookmarksBarMenuPopoverPresenting: AnyObject {
 
@@ -57,8 +53,7 @@ protocol BookmarksBarMenuPopoverPresenting: AnyObject {
     func show(positionedAsSubmenuAgainst positioningView: NSView)
 
     /// Called by the view controller when its `preferredContentSize`/`preferredContentOffset`
-    /// changes. Resizes the custom window if applicable; no-op for the NSPopover-backed
-    /// legacy implementation (NSPopover updates its own frame).
+    /// changes. Resizes the custom window to match.
     func updatePresentedFrameIfNeeded()
 }
 

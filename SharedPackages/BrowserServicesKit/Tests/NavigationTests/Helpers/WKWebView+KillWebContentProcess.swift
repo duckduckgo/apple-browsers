@@ -20,13 +20,16 @@ import WebKit
 
 extension WKWebView {
 
-    func killWebContentProcess() {
+    var pid: pid_t? {
         let webContentProcessInfo = (WKProcessPool.perform(Selector(("_webContentProcessInfo"))).takeUnretainedValue() as? [NSObject])!
         guard let processInfo = webContentProcessInfo.first(where: {
             ($0.value(forKey: "webViews") as? [WKWebView])?.contains(self) == true
-        }) else { return }
-        let pid = processInfo.value(forKey: "pid") as! pid_t
+        }) else { return nil }
+        return processInfo.value(forKey: "pid") as! pid_t
+    }
 
+    func killWebContentProcess() {
+        guard let pid else { return }
         kill(pid, SIGTERM)
     }
 

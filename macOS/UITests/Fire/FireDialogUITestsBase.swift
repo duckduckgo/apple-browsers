@@ -205,4 +205,19 @@ extension FireDialogUITests {
             "Fire animation didn't finish and cease existing in a reasonable timeframe."
         )
     }
+
+    /// Verifies a fresh New Tab Page is showing after a burn completes.
+    ///
+    /// Only the web view is asserted, not the `tabs["New Tab"]` title: a Delete-All-history burn
+    /// replaces the tab with a `.contentFromURL` tab whose tab-bar title stays stale (it doesn't
+    /// reset to "New Tab"), so the title is not a reliable post-burn signal. Callers running in a
+    /// flow where the title does reset can assert `app.tabs["New Tab"]` in addition to this.
+    func verifyNewTabPageIsOpen(file: StaticString = #file, line: UInt = #line) {
+        XCTAssertTrue(
+            app.webViews["New Tab Page"].waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "New Tab Page should be open after burning tabs",
+            file: file,
+            line: line
+        )
+    }
 }

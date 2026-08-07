@@ -153,7 +153,7 @@ class StatisticsLoaderTests: XCTestCase {
                       "Expected searches OS-distribution pixel. Fired: \(firedPixelNames)")
     }
 
-    func testRefreshDuckAIRetentionAtbFiresSearchesOSDistributionPixel() {
+    func testRefreshDuckAIRetentionAtbDoesNotFireSearchesOSDistributionPixel() {
         var firedPixelNames: [String] = []
         let capturingPixelKit = PixelKit(dryRun: false,
                                          appVersion: "1.0.0",
@@ -175,8 +175,36 @@ class StatisticsLoaderTests: XCTestCase {
         }
         waitForExpectations(timeout: 5)
 
-        XCTAssertTrue(firedPixelNames.contains { $0.hasPrefix("os_distribution_searches_major_version_") },
-                      "Expected searches OS-distribution pixel. Fired: \(firedPixelNames)")
+        // The searches pixel is emitted once via refreshSearchRetentionAtb on the prompt path,
+        // so refreshDuckAIRetentionAtb must NOT also fire it (that would double-count one prompt).
+        XCTAssertFalse(firedPixelNames.contains { $0.hasPrefix("os_distribution_searches_major_version_") },
+                       "refreshDuckAIRetentionAtb must not fire the searches pixel. Fired: \(firedPixelNames)")
+    }
+
+    func testRefreshRetentionAtbOnDuckAiPromptSubmissionFiresExactlyOneSearchesOSDistributionPixel() {
+        var firedPixelNames: [String] = []
+        let capturingPixelKit = PixelKit(dryRun: false,
+                                         appVersion: "1.0.0",
+                                         defaultHeaders: [:],
+                                         defaults: UserDefaults(suiteName: "test_\(UUID().uuidString)")!,
+                                         fireRequest: { name, _, _, _, _, onComplete in
+                                             firedPixelNames.append(name)
+                                             onComplete(true, nil)
+                                         })
+        PixelKit.setSharedForTesting(pixelKit: capturingPixelKit)
+
+        mockStatisticsStore.atb = "atb"
+        mockStatisticsStore.variant = "test"
+        loadSuccessfulUpdateAtbStub()
+
+        let expect = expectation(description: #function)
+        testee.refreshRetentionAtbOnDuckAiPromptSubmition {
+            expect.fulfill()
+        }
+        waitForExpectations(timeout: 5)
+
+        XCTAssertEqual(firedPixelNames.filter { $0.hasPrefix("os_distribution_searches_major_version_") }.count, 1,
+                       "A Duck.ai prompt must fire exactly one searches OS-distribution pixel. Fired: \(firedPixelNames)")
     }
 
     func testWhenSearchRefreshHasSuccessfulUpdateAtbRequestThenSearchRetentionAtbUpdated() {

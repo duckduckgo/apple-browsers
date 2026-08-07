@@ -20,13 +20,14 @@
 import Foundation
 import DuckPlayer
 import AIChat
+import Common
 import Core
 
 struct AddressDisplayHelper {
 
     static func addressForDisplay(url: URL,
                                   showsFullURL: Bool,
-                                  aichatIPadTabFeature: AIChatIPadTabFeatureProviding = AIChatIPadTabFeature()) -> NSAttributedString {
+                                  isIpad: Bool = DevicePlatform.isIpad) -> NSAttributedString {
 
         if url.isDuckPlayer,
            let playerURL = getDuckPlayerURL(url: url, showsFullURL: showsFullURL) {
@@ -34,7 +35,7 @@ struct AddressDisplayHelper {
         }
 
         if url.isDuckAIURL, !showsFullURL,
-           aichatIPadTabFeature.isAvailable {
+           isIpad {
             return NSAttributedString(
                 string: UserText.omnibarFullAIChatModeDisplayTitle,
                 attributes: [.foregroundColor: ThemeManager.shared.currentTheme.searchBarTextColor])

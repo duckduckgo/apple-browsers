@@ -39,7 +39,7 @@ import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
 import DDGSync
 import DuckAiDataStore
-import FeatureFlags
+import FeatureFlags_macOS
 import FoundationExtensions
 import Freemium
 import History
@@ -54,6 +54,7 @@ import os.log
 import Persistence
 import PixelExperimentKit
 import PixelKit
+import SERPSettings
 import PrivacyConfig
 import PrivacyStats
 import RemoteMessaging
@@ -101,6 +102,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let tabDragAndDropManager: TabDragAndDropManager
     let pinnedTabsManagerProvider: PinnedTabsManagerProvider
     private(set) var stateRestorationManager: AppStateRestorationManager!
+    let applicationUpdateDetector: ApplicationUpdateDetector
+    private(set) var uncleanExitRestartSourceResolver: UncleanExitRestartSourceResolver!
     private var grammarFeaturesManager = GrammarFeaturesManager()
     let internalUserDecider: InternalUserDecider
     private var isInternalUserSharingCancellable: AnyCancellable?
@@ -121,6 +124,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private(set) var autofillPixelReporter: AutofillPixelReporter?
     private var passwordsStatusBarMenu: PasswordsStatusBarMenu?
     private var passwordsMenuBarCancellable: AnyCancellable?
+    private var promptBarMenuBarController: PromptBarMenuBarController?
+    private var promptBarMenuBarCancellable: AnyCancellable?
+    private var promptBarCoordinator: PromptBarCoordinator?
 
     private(set) var syncDataProviders: SyncDataProvidersSource?
     private(set) var syncService: DDGSyncing?
@@ -148,6 +154,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     let tabCrashAggregator = TabCrashAggregator()
     let windowControllersManager: WindowControllersManager
+    private let fireWindowOpenPixelReporter: FireWindowOpenPixelReporter
     let tabSuspensionService: TabSuspensionService
     let subscriptionNavigationCoordinator: SubscriptionNavigationCoordinator
 
@@ -244,6 +251,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
     let aiChatSessionStore: AIChatSessionStoring
     let aiChatPreferences: AIChatPreferences
+    let promptBarPreferences: PromptBarPreferences
     private(set) var aiChatHistoryCleaner: AIChatHistoryCleaning!
 
     /// Shared across the native address-bar omnibar and the New Tab Page omnibar so that model-selection
@@ -466,8 +474,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let startupProfiler: StartupProfiler
     private var startupMetricsReporter: PerformanceMetricsReporter?
 
-    let displaysTabsAnimations: Bool
-
     /// The date this app instance was launched, used for computing uptime in memory pixels.
     private let appLaunchDate = Date()
 
@@ -638,8 +644,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         self.featureFlagger = featureFlagger
 
-        displaysTabsAnimations = AnimationsAvailabilityDecider(featureFlagger: featureFlagger).displaysTabsAnimations
-
         webExtensionAvailability = WebExtensionAvailability(
             featureFlagger: featureFlagger,
             webExtensionManagerProvider: { [webExtensionManagerHolder] in
@@ -727,16 +731,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                           frequency: .legacyDailyAndCount)
         }
 
-        let authRefreshWideEventMapper = AuthV2TokenRefreshWideEventData.authV2RefreshEventMapping(wideEvent: wideEvent, isFeatureEnabled: {
+        let isAuthV2WideEventEnabled = {
 #if DEBUG
-            return true // Allow the refresh event when using staging in debug mode, for easier testing
+            return true
 #else
             return subscriptionEnvironment.serviceEnvironment == .production
 #endif
-        })
+        }
+        let authV2RefreshInstrumentation = DefaultAuthV2TokenRefreshInstrumentation(wideEvent: wideEvent,
+                                                                                    isFeatureEnabled: isAuthV2WideEventEnabled)
         let authClient = DefaultOAuthClient(tokensStorage: tokenStorage,
                                             authService: authService,
-                                            refreshEventMapping: authRefreshWideEventMapper)
+                                            refreshEventMapping: authV2RefreshInstrumentation.eventMapping)
         Logger.general.log("Configuring Subscription")
         var apiServiceForSubscription = APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: UserAgent.duckDuckGoUserAgent())
         let subscriptionEndpointService = DefaultSubscriptionEndpointService(apiService: apiServiceForSubscription,
@@ -749,7 +755,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
             if tokenContainer.decodedAccessToken.isExpired() {
                 Logger.OAuth.debug("Refreshing tokens")
-                let tokens = try await authClient.getTokens(policy: .localForceRefresh)
+                let tokens = try await authClient.getTokens(policy: .localForceRefresh, trigger: .backend)
                 return tokens.accessToken
             } else {
                 Logger.general.debug("Trying to refresh valid token, using the old one")
@@ -780,7 +786,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                                     subscriptionEndpointService: subscriptionEndpointService,
                                                                     subscriptionEnvironment: subscriptionEnvironment,
                                                                     pixelHandler: pixelHandler,
-                                                                    isInternalUserEnabled: isInternalUserEnabled)
+                                                                    isInternalUserEnabled: isInternalUserEnabled,
+                                                                    wideEvent: wideEvent,
+                                                                    isAuthV2WideEventEnabled: isAuthV2WideEventEnabled,
+                                                                    authV2TokenRefreshInstrumentation: authV2RefreshInstrumentation)
 
         // Expired refresh token recovery
         let restoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: defaultSubscriptionManager,
@@ -819,6 +828,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         autoplayPreferences = AutoplayPreferences()
         windowControllersManager.tabsPreferences = tabsPreferences
         self.windowControllersManager = windowControllersManager
+        self.fireWindowOpenPixelReporter = FireWindowOpenPixelReporter(
+            didRegisterWindowController: windowControllersManager.didRegisterWindowController.eraseToAnyPublisher()
+        )
 
         pinnedTabsManagerProvider.tabsPreferences = tabsPreferences
         pinnedTabsManagerProvider.windowControllersManager = windowControllersManager
@@ -826,11 +838,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         contentScopePreferences = ContentScopePreferences(windowControllersManager: windowControllersManager)
         webTrackingProtectionPreferences = WebTrackingProtectionPreferences(persistor: WebTrackingProtectionPreferencesUserDefaultsPersistor(), windowControllersManager: windowControllersManager)
         cookiePopupProtectionPreferences = CookiePopupProtectionPreferences(persistor: CookiePopupProtectionPreferencesUserDefaultsPersistor(), windowControllersManager: windowControllersManager)
+        promptBarPreferences = PromptBarPreferences(persistor: PromptBarPreferencesUserDefaultsPersistor(keyValueStore: keyValueStore),
+                                                    aiChatMenuConfiguration: aiChatMenuConfiguration)
         aiChatPreferences = AIChatPreferences(
             storage: DefaultAIChatPreferencesStorage(),
             aiChatMenuConfiguration: aiChatMenuConfiguration,
             windowControllersManager: windowControllersManager,
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            promptBarPreferences: promptBarPreferences
         )
 
         let subscriptionNavigationCoordinator = SubscriptionNavigationCoordinator(
@@ -839,22 +854,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         self.subscriptionNavigationCoordinator = subscriptionNavigationCoordinator
 
-        themeManager = ThemeManager(appearancePreferences: appearancePreferences, featureFlagger: featureFlagger, displaysTabsAnimations: displaysTabsAnimations)
+        themeManager = ThemeManager(appearancePreferences: appearancePreferences, featureFlagger: featureFlagger)
 
         let voiceChatPermissionOverride = DuckAiVoiceChatPermissionOverride(featureFlagger: featureFlagger)
 #if DEBUG
         if AppVersion.runType.requiresEnvironment {
             fireproofDomains = FireproofDomains(store: FireproofDomainsStore(database: database.db, tableName: "FireproofDomains"), tld: tld)
-            faviconManager = FaviconManager(cacheType: .standard(database.db), bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains, privacyConfigurationManager: privacyConfigurationManager)
+            faviconManager = FaviconManager(cacheType: .standard(database.db), bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains, privacyConfigurationManager: privacyConfigurationManager, featureFlagger: featureFlagger)
             permissionManager = PermissionManager(store: LocalPermissionStore(database: database.db), decisionOverride: voiceChatPermissionOverride)
         } else {
             fireproofDomains = FireproofDomains(store: FireproofDomainsStore(context: nil), tld: tld)
-            faviconManager = FaviconManager(cacheType: .inMemory, bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains, privacyConfigurationManager: privacyConfigurationManager)
+            faviconManager = FaviconManager(cacheType: .inMemory, bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains, privacyConfigurationManager: privacyConfigurationManager, featureFlagger: featureFlagger)
             permissionManager = PermissionManager(store: LocalPermissionStore(database: nil), decisionOverride: voiceChatPermissionOverride)
         }
 #else
         fireproofDomains = FireproofDomains(store: FireproofDomainsStore(database: database.db, tableName: "FireproofDomains"), tld: tld)
-        faviconManager = FaviconManager(cacheType: .standard(database.db), bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains, privacyConfigurationManager: privacyConfigurationManager)
+        faviconManager = FaviconManager(cacheType: .standard(database.db), bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains, privacyConfigurationManager: privacyConfigurationManager, featureFlagger: featureFlagger)
         permissionManager = PermissionManager(store: LocalPermissionStore(database: database.db), decisionOverride: voiceChatPermissionOverride)
 #endif
         notificationService = UserNotificationAuthorizationService()
@@ -926,8 +941,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         duckPlayer = DuckPlayer(
             preferencesPersistor: DuckPlayerPreferencesUserDefaultsPersistor(),
             privacyConfigurationManager: privacyConfigurationManager,
-            internalUserDecider: internalUserDecider,
-            featureFlagger: featureFlagger
+            internalUserDecider: internalUserDecider
         )
         newTabPageCustomizationModel = NewTabPageCustomizationModel(appearancePreferences: appearancePreferences)
 
@@ -939,6 +953,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                           fireproofDomains: fireproofDomains,
                                           faviconManagement: faviconManager,
                                           windowControllersManager: windowControllersManager,
+                                          dataClearingPreferences: dataClearingPreferences,
                                           pixelFiring: PixelKit.shared,
                                           wideEventManaging: wideEvent,
                                           aiChatSyncCleaner: { Application.appDelegate.aiChatSyncCleaner })
@@ -1237,6 +1252,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             memoryProvider: MemoryUsageMonitor.residentMemorySize(forPID:)
         )
 
+        applicationUpdateDetector = ApplicationUpdateDetector(settings: UserDefaults.standard.throwingKeyedStoring())
+
         super.init()
 
         webExtensionManagerHolder.appDelegate = self
@@ -1300,12 +1317,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         APIRequest.Headers.setUserAgent(UserAgent.duckDuckGoUserAgent())
 
+        let buildType = StandardApplicationBuildType()
+        uncleanExitRestartSourceResolver = UncleanExitRestartSourceResolver(
+            updateControllerSettings: UserDefaults.standard.throwingKeyedStoring(),
+            crashReportDetecting: MainBrowserCrashReportDetector(
+                settings: UserDefaults.standard.throwingKeyedStoring(),
+                buildType: buildType
+            ),
+            buildType: buildType
+        )
+
         stateRestorationManager = AppStateRestorationManager(fileStore: fileStore,
                                                              startupPreferences: startupPreferences,
                                                              tabsPreferences: tabsPreferences,
                                                              keyValueStore: keyValueStore,
                                                              sessionRestorePromptCoordinator: sessionRestorePromptCoordinator,
+                                                             applicationUpdateDetecting: applicationUpdateDetector,
+                                                             restartSourceResolver: uncleanExitRestartSourceResolver,
                                                              pixelFiring: PixelKit.shared)
+
+        uncleanExitRestartSourceResolver.captureSparklePendingUpdateSnapshot()
 
         initializeUpdateController()
 
@@ -1407,7 +1438,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 activeRemoteMessageModel: activeRemoteMessageModel,
                 defaultBrowserAndDockPromptService: defaultBrowserAndDockPromptService,
                 sessionRestoreCoordinator: sessionRestorePromptCoordinator,
-                subscriptionPromoDelegate: subscriptionPromoDelegate
+                subscriptionPromoDelegate: subscriptionPromoDelegate,
+                featureFlagger: featureFlagger,
+                cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
+                windowControllersManager: windowControllersManager
             )
             promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
             NotificationCenter.default.post(name: .promoServiceAppLaunched, object: nil)
@@ -1421,9 +1455,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             // Use startup window preferences if not restoring previous session
             if !startupPreferences.restorePreviousSession {
                 let burnerMode = startupPreferences.startupBurnerMode()
-                WindowsManager.openNewWindow(burnerMode: burnerMode, lazyLoadTabs: true)
+                WindowsManager.openNewWindow(burnerMode: burnerMode, isOpenedAutomatically: true, lazyLoadTabs: true)
             } else {
-                WindowsManager.openNewWindow(lazyLoadTabs: true)
+                WindowsManager.openNewWindow(isOpenedAutomatically: true, lazyLoadTabs: true)
             }
         }
 
@@ -1465,6 +1499,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         setUpAutofillPixelReporter()
         setUpPasswordsMenuBarVisibility()
+        setUpPromptBar()
+        setUpPromptBarMenuBarVisibility()
 
         remoteMessagingClient?.startRefreshingRemoteMessages()
 
@@ -1541,7 +1577,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         fireDailyActiveUserPixels()
         fireDailyFireWindowConfigurationPixels()
         fireDailyAIChatEnabledPixel()
+        fireDailyAIFeaturesStatePixel()
+        fireDailyPromptBarStatePixel()
         fireDailyAdBlockingPixel()
+        fireDailyAutoClearOnExitEnabledPixel()
 
         fireAutoconsentDailyPixel()
         fireThemeDailyPixel()
@@ -1590,6 +1629,37 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func fireDailyAIChatEnabledPixel() {
         PixelKit.fire(AIChatPixel.aiChatIsEnabled(isEnabled: aiChatPreferences.isAIFeaturesEnabled), frequency: .daily)
+    }
+
+    /// The settings toggles only cover users who touch a setting; this sizes the enabled base.
+    @MainActor
+    private func fireDailyPromptBarStatePixel() {
+        guard featureFlagger.isFeatureOn(.promptBar) else { return }
+
+        PixelKit.fire(PromptBarPixel.state(shortcutEnabled: promptBarPreferences.isKeyboardShortcutEnabled,
+                                           menuBarIconEnabled: promptBarPreferences.isMenuBarIconVisible),
+                      frequency: .daily)
+    }
+
+    /// Once-daily snapshot of the three AI settings + the derived "no AI" state, across the active base.
+    private func fireDailyAIFeaturesStatePixel() {
+        let serpSettings = SERPSettingsProvider()
+        let duckAIEnabled = aiChatPreferences.isAIFeaturesEnabled
+        let searchAssist = serpSettings.searchAssistFrequency
+        let hideAIImages = serpSettings.hideAIGeneratedImages
+        let noAI = !duckAIEnabled && searchAssist == .never && hideAIImages
+
+        PixelKit.fire(AIChatPixel.aiFeaturesState(duckAI: duckAIEnabled,
+                                                  searchAssist: searchAssist.rawValue,
+                                                  hideAIImages: hideAIImages,
+                                                  noAI: noAI),
+                      frequency: .daily,
+                      includeAppVersionParameter: true)
+    }
+
+    private func fireDailyAutoClearOnExitEnabledPixel() {
+        guard dataClearingPreferences.isAutoClearEnabled else { return }
+        PixelKit.fire(GeneralPixel.dailyAutoClearOnExitEnabled, frequency: .daily, doNotEnforcePrefix: true)
     }
 
     private func fireDailyAdBlockingPixel() {
@@ -1679,6 +1749,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 pixelFiring: PixelKit.shared,
                 notificationPresenter: notificationPresenter,
                 keyValueStore: UserDefaults.standard,
+                applicationUpdateDetector: applicationUpdateDetector,
                 allowCustomUpdateFeed: allowCustomUpdateFeed,
                 isAutoUpdatePaused: { [featureFlagger] in
                     if buildType.isDebugBuild {
@@ -1863,7 +1934,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
            case .normal = AppVersion.runType {
             // Use startup window preferences when reopening from dock
             let burnerMode = startupPreferences.startupBurnerMode()
-            WindowsManager.openNewWindow(burnerMode: burnerMode)
+            WindowsManager.openNewWindow(burnerMode: burnerMode, isOpenedAutomatically: true)
             return true
         }
         return true
@@ -1980,7 +2051,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             )
             self.webExtensionManager = webExtensionManager
 
-            let coordinator = WebExtensionLifecycleCoordinator(manager: webExtensionManager) { [weak self] in
+            let coordinator = WebExtensionLifecycleCoordinator(
+                manager: webExtensionManager,
+                pixelFiring: MacOSWebExtensionPixelFiring()
+            ) { [weak self] in
                 self?.enabledEmbeddedExtensionTypes() ?? []
             }
             self.webExtensionLifecycleCoordinator = coordinator
@@ -2008,7 +2082,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         self.webExtensionManager = webExtensionManager
 
-        let coordinator = WebExtensionLifecycleCoordinator(manager: webExtensionManager) { [weak self] in
+        let coordinator = WebExtensionLifecycleCoordinator(
+            manager: webExtensionManager,
+            pixelFiring: MacOSWebExtensionPixelFiring()
+        ) { [weak self] in
             self?.enabledEmbeddedExtensionTypes() ?? []
         }
         self.webExtensionLifecycleCoordinator = coordinator
@@ -2118,7 +2195,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             errorEvents: SyncErrorHandler(),
             privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
             keyValueStore: keyValueStore,
-            environment: environment
+            environment: environment,
+            syncFeatureFlags: SyncFeatureFlagProvider(
+                isScopedAccessCredentialsEnabled: { [featureFlagger] in
+                    featureFlagger.isFeatureOn(.syncScopedAccessCredentials)
+                },
+                isPairingV2ScanningEnabled: { [featureFlagger] in
+                    featureFlagger.isFeatureOn(.syncCanUseV2ConnectFlow)
+                },
+                isPairingV2CodeEnabled: { [featureFlagger] in
+                    featureFlagger.isFeatureOn(.syncCanShowV2ConnectCode)
+                }
+            )
         )
         let aiChatSyncCleaner = AIChatSyncCleaner(
             sync: syncService,
@@ -2278,7 +2366,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                 fireViewModel: fireCoordinator.fireViewModel,
                                                 stateRestorationManager: self.stateRestorationManager,
                                                 aiChatSyncCleaner: aiChatSyncCleaner,
-                                                wideEvent: wideEvent)
+                                                wideEvent: wideEvent,
+                                                pixelFiring: PixelKit.shared)
         self.autoClearHandler = autoClearHandler
         DispatchQueue.main.async {
             autoClearHandler.handleAppLaunch()
@@ -2349,6 +2438,59 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     } else {
                         self?.passwordsStatusBarMenu?.hide()
                     }
+                }
+            }
+    }
+
+    /// Must run before `setUpPromptBarMenuBarVisibility()`, which hands the icon's click to the coordinator.
+    @MainActor
+    private func setUpPromptBar() {
+        guard featureFlagger.isFeatureOn(.promptBar) else {
+            promptBarCoordinator = nil
+            return
+        }
+
+        let promptSubmitter = PromptBarPromptSubmitter(aiChatTabOpener: aiChatTabOpener,
+                                                       windowControllersManager: windowControllersManager)
+        let content = PromptBarContentFactory.makeContent(promptSubmitter: promptSubmitter,
+                                                          themeManager: themeManager,
+                                                          aiChatTabOpener: aiChatTabOpener,
+                                                          duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+                                                          preferences: aiChatPreferencesPersistor)
+        let coordinator = PromptBarCoordinator(
+            featureFlagger: featureFlagger,
+            preferences: promptBarPreferences,
+            shortcutRegistrar: CarbonGlobalShortcutRegistrar(),
+            presenter: PromptBarPresenter(content: content)
+        )
+        coordinator.start()
+        promptBarCoordinator = coordinator
+    }
+
+    @MainActor
+    private func setUpPromptBarMenuBarVisibility() {
+        guard featureFlagger.isFeatureOn(.promptBar) else {
+            promptBarMenuBarController?.hide()
+            promptBarMenuBarController = nil
+            promptBarMenuBarCancellable = nil
+            return
+        }
+
+        if promptBarMenuBarController == nil {
+            promptBarMenuBarController = PromptBarMenuBarController()
+        }
+        promptBarMenuBarController?.onClick = { [weak self] in
+            self?.promptBarCoordinator?.togglePromptBar(source: .menuBarIcon)
+        }
+
+        // Applied synchronously: a deferred first update lets the icon appear at
+        // launch before a hide lands.
+        promptBarMenuBarCancellable = promptBarPreferences.isMenuBarIconEffectivelyVisiblePublisher
+            .sink { [weak self] isVisible in
+                if isVisible {
+                    self?.promptBarMenuBarController?.show()
+                } else {
+                    self?.promptBarMenuBarController?.hide()
                 }
             }
     }

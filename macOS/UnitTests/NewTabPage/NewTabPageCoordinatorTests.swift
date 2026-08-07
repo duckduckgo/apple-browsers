@@ -126,14 +126,24 @@ final class NewTabPageCoordinatorTests: XCTestCase {
             contextualOnboardingPublisher: Just(false).eraseToAnyPublisher()
         )
 
+        let fireproofDomains = MockFireproofDomains()
+        let faviconManager = FaviconManagerMock()
+        let dataClearingPreferences = DataClearingPreferences(persistor: MockFireButtonPreferencesPersistor(),
+                                                              fireproofDomains: fireproofDomains,
+                                                              faviconManager: faviconManager,
+                                                              windowControllersManager: windowControllersManager,
+                                                              featureFlagger: featureFlagger,
+                                                              aiChatHistoryCleaner: MockAIChatHistoryCleaner())
+
         let fireCoordinator = FireCoordinator(tld: TLD(),
-                                              featureFlagger: Application.appDelegate.featureFlagger,
+                                              featureFlagger: featureFlagger,
                                               historyCoordinating: HistoryCoordinatingMock(),
                                               visualizeFireAnimationDecider: nil,
                                               onboardingContextualDialogsManager: nil,
-                                              fireproofDomains: MockFireproofDomains(),
-                                              faviconManagement: FaviconManagerMock(),
+                                              fireproofDomains: fireproofDomains,
+                                              faviconManagement: faviconManager,
                                               windowControllersManager: windowControllersManager,
+                                              dataClearingPreferences: dataClearingPreferences,
                                               pixelFiring: nil,
                                               wideEventManaging: WideEventMock(),
                                               historyProvider: MockHistoryViewDataProvider())

@@ -21,182 +21,127 @@ import XCTest
 
 final class AIChatModelSectionBuilderTests: XCTestCase {
 
-    private let advancedHeader = "Advanced Models"
-    private let basicHeader = "Basic Models"
+    // MARK: - groupByAccess
 
-    // MARK: - Free User
-
-    func testWhenFreeUserThenAccessibleModelsInFirstSectionAndPremiumInSecond() {
+    func testWhenModelsAreAccessibleThenGroupByAccessPutsThemInAccessible() {
         let models = [
             makeModel(id: "free-1", entityHasAccess: true, accessTier: ["free"]),
             makeModel(id: "free-2", entityHasAccess: true, accessTier: ["free"]),
+        ]
+
+        let (accessible, gated) = AIChatModelSectionBuilder.groupByAccess(models: models)
+
+        XCTAssertEqual(accessible.map(\.id), ["free-1", "free-2"])
+        XCTAssertTrue(gated.isEmpty)
+    }
+
+    /// A gated model must stay visible (with its required tier attached), not be dropped.
+    func testWhenModelIsNotAccessibleThenGroupByAccessPutsItInGatedWithRequiredTier() {
+        let models = [
+            makeModel(id: "free-1", entityHasAccess: true, accessTier: ["free"]),
             makeModel(id: "premium-1", entityHasAccess: false, accessTier: ["plus", "pro"]),
         ]
 
-        let sections = AIChatModelSectionBuilder.buildSections(
-            models: models,
-            hasActiveSubscription: false,
-            advancedSectionHeader: advancedHeader,
-            basicSectionHeader: basicHeader
-        )
+        let (accessible, gated) = AIChatModelSectionBuilder.groupByAccess(models: models)
 
-        XCTAssertEqual(sections.count, 2)
-
-        // First section: accessible models, no header
-        XCTAssertNil(sections[0].header)
-        XCTAssertEqual(sections[0].items.map(\.id), ["free-1", "free-2"])
-
-        // Second section: premium models with header
-        XCTAssertEqual(sections[1].header, advancedHeader)
-        XCTAssertEqual(sections[1].items.map(\.id), ["premium-1"])
+        XCTAssertEqual(accessible.map(\.id), ["free-1"])
+        XCTAssertEqual(gated.map(\.model.id), ["premium-1"])
+        XCTAssertEqual(gated.first?.requiredTier, .plus)
     }
 
-    func testWhenFreeUserHasNoPremiumModelsThenSingleSectionReturned() {
+    // MARK: - Ordering (PoC recommended-first)
+
+    func testWhenFreeUserThenNanoMiniAndHaikuAreHoistedInThatOrderRestKeepAPIOrder() {
         let models = [
-            makeModel(id: "free-1", entityHasAccess: true, accessTier: ["free"]),
+            makeModel(id: "mistral", name: "Mistral Large", entityHasAccess: true, accessTier: ["free"]),
+            makeModel(id: "nano", name: "GPT-5 nano", entityHasAccess: true, accessTier: ["free"]),
+            makeModel(id: "opus", name: "Claude Opus", entityHasAccess: true, accessTier: ["free"]),
+            makeModel(id: "mini", name: "GPT-5 mini", entityHasAccess: true, accessTier: ["free"]),
+            makeModel(id: "haiku", name: "Claude Haiku", entityHasAccess: true, accessTier: ["free"]),
         ]
 
-        let sections = AIChatModelSectionBuilder.buildSections(
-            models: models,
-            hasActiveSubscription: false,
-            advancedSectionHeader: advancedHeader,
-            basicSectionHeader: basicHeader
-        )
+        let ordered = AIChatModelSectionBuilder.orderedAccessibleModels(models, userTier: .free)
 
-        XCTAssertEqual(sections.count, 1)
-        XCTAssertNil(sections[0].header)
-        XCTAssertEqual(sections[0].items.map(\.id), ["free-1"])
+        XCTAssertEqual(ordered.map(\.id), ["nano", "mini", "haiku", "mistral", "opus"])
     }
 
-    func testWhenFreeUserHasOnlyPremiumModelsThenSingleSectionWithHeaderReturned() {
+    func testWhenPlusUserThenFullGPTAndSonnetAreHoistedAndMiniNanoStayInRest() {
         let models = [
-            makeModel(id: "premium-1", entityHasAccess: false, accessTier: ["plus"]),
+            makeModel(id: "gptmini", name: "GPT-5 mini", entityHasAccess: true, accessTier: ["free", "plus"]),
+            makeModel(id: "gpt5", name: "GPT-5", entityHasAccess: true, accessTier: ["free", "plus"]),
+            makeModel(id: "sonnet", name: "Claude Sonnet", entityHasAccess: true, accessTier: ["free", "plus"]),
+            makeModel(id: "opus", name: "Claude Opus", entityHasAccess: true, accessTier: ["free", "plus"]),
+            makeModel(id: "gptnano", name: "GPT-5 nano", entityHasAccess: true, accessTier: ["free", "plus"]),
         ]
 
-        let sections = AIChatModelSectionBuilder.buildSections(
-            models: models,
-            hasActiveSubscription: false,
-            advancedSectionHeader: advancedHeader,
-            basicSectionHeader: basicHeader
-        )
+        let ordered = AIChatModelSectionBuilder.orderedAccessibleModels(models, userTier: .plus)
 
-        XCTAssertEqual(sections.count, 1)
-        XCTAssertEqual(sections[0].header, advancedHeader)
-        XCTAssertEqual(sections[0].items.map(\.id), ["premium-1"])
+        // isFullGPT excludes the mini/nano variants, so plain "GPT-5" leads, then Sonnet.
+        XCTAssertEqual(ordered.map(\.id), ["gpt5", "sonnet", "gptmini", "opus", "gptnano"])
     }
 
-    // MARK: - Subscribed User
-
-    func testWhenSubscribedUserThenAdvancedModelsFirstAndBasicSecond() {
+    func testWhenProUserThenFullGPTAndOpusAreHoisted() {
         let models = [
-            makeModel(id: "basic-1", entityHasAccess: true, accessTier: ["free", "plus"]),
-            makeModel(id: "advanced-1", entityHasAccess: true, accessTier: ["plus", "pro"]),
-            makeModel(id: "advanced-2", entityHasAccess: true, accessTier: ["plus"]),
+            makeModel(id: "opus", name: "Claude Opus", entityHasAccess: true, accessTier: ["pro"]),
+            makeModel(id: "gpt5", name: "GPT-5", entityHasAccess: true, accessTier: ["pro"]),
+            makeModel(id: "sonnet", name: "Claude Sonnet", entityHasAccess: true, accessTier: ["pro"]),
         ]
 
-        let sections = AIChatModelSectionBuilder.buildSections(
-            models: models,
-            hasActiveSubscription: true,
-            advancedSectionHeader: advancedHeader,
-            basicSectionHeader: basicHeader
-        )
+        let ordered = AIChatModelSectionBuilder.orderedAccessibleModels(models, userTier: .pro)
 
-        XCTAssertEqual(sections.count, 2)
-
-        // First section: advanced models, no header
-        XCTAssertNil(sections[0].header)
-        XCTAssertEqual(sections[0].items.map(\.id), ["advanced-1", "advanced-2"])
-
-        // Second section: basic models with header
-        XCTAssertEqual(sections[1].header, basicHeader)
-        XCTAssertEqual(sections[1].items.map(\.id), ["basic-1"])
+        XCTAssertEqual(ordered.map(\.id), ["gpt5", "opus", "sonnet"])
     }
 
-    func testWhenSubscribedPlusUserThenProOnlyModelsAreHidden() {
+    func testWhenInternalUserThenUsesSamePlusMatchers() {
         let models = [
-            makeModel(id: "basic-1", entityHasAccess: true, accessTier: ["free", "plus"]),
-            makeModel(id: "plus-model", entityHasAccess: true, accessTier: ["plus", "pro"]),
-            makeModel(id: "pro-only", entityHasAccess: false, accessTier: ["pro"]),
+            makeModel(id: "sonnet", name: "Claude Sonnet", entityHasAccess: true, accessTier: ["internal"]),
+            makeModel(id: "gpt5", name: "GPT-5", entityHasAccess: true, accessTier: ["internal"]),
         ]
 
-        let sections = AIChatModelSectionBuilder.buildSections(
-            models: models,
-            hasActiveSubscription: true,
-            advancedSectionHeader: advancedHeader,
-            basicSectionHeader: basicHeader
-        )
+        let ordered = AIChatModelSectionBuilder.orderedAccessibleModels(models, userTier: .`internal`)
 
-        // pro-only model should be hidden entirely
-        let allIds = sections.flatMap { $0.items.map(\.id) }
-        XCTAssertFalse(allIds.contains("pro-only"))
-        XCTAssertTrue(allIds.contains("plus-model"))
-        XCTAssertTrue(allIds.contains("basic-1"))
+        XCTAssertEqual(ordered.map(\.id), ["gpt5", "sonnet"])
     }
 
-    func testWhenSubscribedUserHasOnlyBasicModelsThenSingleSectionWithHeaderReturned() {
+    func testWhenNoModelMatchesThenOriginalOrderIsPreserved() {
         let models = [
-            makeModel(id: "basic-1", entityHasAccess: true, accessTier: ["free", "plus"]),
+            makeModel(id: "mistral", name: "Mistral Large", entityHasAccess: true, accessTier: ["free"]),
+            makeModel(id: "cohere", name: "Cohere Command", entityHasAccess: true, accessTier: ["free"]),
         ]
 
-        let sections = AIChatModelSectionBuilder.buildSections(
-            models: models,
-            hasActiveSubscription: true,
-            advancedSectionHeader: advancedHeader,
-            basicSectionHeader: basicHeader
-        )
+        let ordered = AIChatModelSectionBuilder.orderedAccessibleModels(models, userTier: .free)
 
-        XCTAssertEqual(sections.count, 1)
-        XCTAssertEqual(sections[0].header, basicHeader)
-        XCTAssertEqual(sections[0].items.map(\.id), ["basic-1"])
+        XCTAssertEqual(ordered.map(\.id), ["mistral", "cohere"])
     }
 
-    // MARK: - Edge Cases
-
-    func testWhenModelsAreEmptyThenEmptySectionsReturned() {
-        let freeSections = AIChatModelSectionBuilder.buildSections(
-            models: [],
-            hasActiveSubscription: false,
-            advancedSectionHeader: advancedHeader,
-            basicSectionHeader: basicHeader
-        )
-        XCTAssertTrue(freeSections.isEmpty)
-
-        let subscribedSections = AIChatModelSectionBuilder.buildSections(
-            models: [],
-            hasActiveSubscription: true,
-            advancedSectionHeader: advancedHeader,
-            basicSectionHeader: basicHeader
-        )
-        XCTAssertTrue(subscribedSections.isEmpty)
-    }
-
-    func testWhenBuildingSectionsThenModelOrderIsPreserved() {
+    func testWhenTwoModelsMatchAMatcherThenOnlyTheFirstIsHoisted() {
         let models = [
-            makeModel(id: "z-model", entityHasAccess: true, accessTier: ["free"]),
-            makeModel(id: "a-model", entityHasAccess: true, accessTier: ["free"]),
-            makeModel(id: "m-model", entityHasAccess: true, accessTier: ["free"]),
+            makeModel(id: "plain", name: "Plain One", entityHasAccess: true, accessTier: ["free"]),
+            makeModel(id: "nano-a", name: "GPT nano A", entityHasAccess: true, accessTier: ["free"]),
+            makeModel(id: "nano-b", name: "GPT nano B", entityHasAccess: true, accessTier: ["free"]),
         ]
 
-        let sections = AIChatModelSectionBuilder.buildSections(
-            models: models,
-            hasActiveSubscription: false,
-            advancedSectionHeader: advancedHeader,
-            basicSectionHeader: basicHeader
-        )
+        let ordered = AIChatModelSectionBuilder.orderedAccessibleModels(models, userTier: .free)
 
-        XCTAssertEqual(sections[0].items.map(\.id), ["z-model", "a-model", "m-model"])
+        // Only the first nano match is hoisted; the second keeps its place in the remainder.
+        XCTAssertEqual(ordered.map(\.id), ["nano-a", "plain", "nano-b"])
+    }
+
+    func testWhenModelsAreEmptyThenOrderingReturnsEmpty() {
+        XCTAssertTrue(AIChatModelSectionBuilder.orderedAccessibleModels([], userTier: .free).isEmpty)
     }
 
     // MARK: - Helpers
 
     private func makeModel(
         id: String,
+        name: String? = nil,
         entityHasAccess: Bool,
         accessTier: [String]
     ) -> AIChatModel {
         AIChatModel(
             id: id,
-            name: id,
+            name: name ?? id,
             shortName: id,
             provider: .openAI,
             supportsImageUpload: false,

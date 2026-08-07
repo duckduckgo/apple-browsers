@@ -18,7 +18,12 @@ tags:
 
 # Test
 - tapOn: "run"
-# Should navigate to duckduckgo.com without any spoofed HTML document content.
+# Wait for the redirect navigation to land before reading the address bar.
+- extendedWaitUntil:
+    visible:
+        id: "searchEntry"
+        text: "duckduckgo.com"
+    timeout: 10000
 - copyTextFrom:
     id: "searchEntry"
 - assertTrue: ${maestro.copiedText == "duckduckgo.com"}

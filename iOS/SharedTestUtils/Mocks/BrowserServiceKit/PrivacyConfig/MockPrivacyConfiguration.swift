@@ -78,7 +78,10 @@ class MockPrivacyConfiguration: PrivacyConfiguration {
         return .disabled(.disabledInConfig)
     }
 
-    func isFeature(_ feature: PrivacyFeature, enabledForDomain: String?) -> Bool { true }
+    var isFeatureEnabledForDomainCheck: ((PrivacyFeature, String?) -> Bool)?
+    func isFeature(_ feature: PrivacyFeature, enabledForDomain: String?) -> Bool {
+        isFeatureEnabledForDomainCheck?(feature, enabledForDomain) ?? true
+    }
     func isProtected(domain: String?) -> Bool { true }
     func isUserUnprotected(domain: String?) -> Bool { false }
     func isTempUnprotected(domain: String?) -> Bool { false }

@@ -552,6 +552,16 @@
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
+               BlueprintIdentifier = "BWManagementTests"
+               BuildableName = "BWManagementTests"
+               BlueprintName = "BWManagementTests"
+               ReferencedContainer = "container:LocalPackages/BWIntegration">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
                BlueprintIdentifier = "CrashReportingTests"
                BuildableName = "CrashReportingTests"
                BlueprintName = "CrashReportingTests"

@@ -52,6 +52,12 @@ let package = Package(
             ]
         ),
         .testTarget(
+            name: "BWManagementTests",
+            dependencies: [
+                "BWManagement"
+            ]
+        ),
+        .testTarget(
             name: "BWManagementSharedTests",
             dependencies: [
                 "BWManagementShared",

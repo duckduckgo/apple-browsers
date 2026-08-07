@@ -50,7 +50,7 @@ jobs:
       steps:
 
       - name: Register SSH keys for private repos
-        uses: webfactory/ssh-agent@v0.9.1
+        uses: webfactory/ssh-agent@v0.10.0
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
 
@@ -77,7 +77,7 @@ jobs:
 
       - name: Cache SPM
         if: env.cache_key_hash
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: SharedPackages/DataBrokerProtectionCore/DerivedData/SourcePackages
           key: ${{ runner.os }}-dbp-spm-${{ env.cache_key_hash }}
@@ -124,7 +124,7 @@ jobs:
           test-outcome: ${{ steps.run-unit-tests.outcome }}
 
       - name: Publish Unit Tests Report
-        uses: mikepenz/action-junit-report@v4
+        uses: mikepenz/action-junit-report@v6
         if: always()
         with:
           check_name: DBP Test Report (macOS)
@@ -153,7 +153,7 @@ jobs:
             | xargs -L 1 ${{ github.workspace }}/scripts/report-failed-unit-test.sh -s ${{ vars.APPLE_CI_FAILING_TESTS_DBP_FAILED_TESTS_SECTION_ID }}
 
       - name: Upload logs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         if: always()
         with:
           name: BuildLogs
@@ -184,7 +184,7 @@ jobs:
       steps:
 
       - name: Register SSH keys for private repos
-        uses: webfactory/ssh-agent@v0.9.1
+        uses: webfactory/ssh-agent@v0.10.0
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
 
@@ -210,7 +210,7 @@ jobs:
 
       - name: Cache SPM
         if: env.cache_key_hash
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: SharedPackages/DataBrokerProtectionCore/DerivedData/SourcePackages
           key: ${{ runner.os }}-dbp-spm-ios-${{ env.cache_key_hash }}
@@ -279,7 +279,7 @@ jobs:
           test-outcome: ${{ steps.run-unit-tests.outcome }}
 
       - name: Publish Unit Tests Report
-        uses: mikepenz/action-junit-report@v4
+        uses: mikepenz/action-junit-report@v6
         if: always()
         with:
           check_name: DBP Test Report (iOS)
@@ -308,7 +308,7 @@ jobs:
             | xargs -L 1 ${{ github.workspace }}/scripts/report-failed-unit-test.sh -s ${{ vars.APPLE_CI_FAILING_TESTS_DBP_FAILED_TESTS_SECTION_ID }}
 
       - name: Upload logs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         if: always()
         with:
           name: ios-build-log.txt
@@ -321,7 +321,7 @@ jobs:
           ls -l ~/Library/Logs/DiagnosticReports
 
       - name: Upload crash reports
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         if: failure()
         with:
           name: "dbp-crash-reports-iOS"

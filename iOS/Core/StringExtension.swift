@@ -22,10 +22,6 @@ import BrowserServicesKit
 
 extension String {
 
-    public func truncated(length: Int, trailing: String = "…") -> String {
-      return (self.count > length) ? self.prefix(length) + trailing : self
-    }
-
     /// Useful if loaded from UserText, for example
     public func format(arguments: CVarArg...) -> String {
         return String(format: self, arguments: arguments)

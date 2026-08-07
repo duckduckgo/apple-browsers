@@ -31,7 +31,7 @@ protocol SafariRedirectHandling: AnyObject {
     @discardableResult
     func handleRedirect(to url: URL) -> Bool
 
-    /// Full reset including the redirect-detected flag. Called on new top-level navigation.
+    /// Full reset including converted load attempts. Called on new top-level navigation.
     func reset()
 }
 
@@ -44,11 +44,15 @@ final class SafariRedirectHandler: SafariRedirectHandling {
 
     private enum Constants {
         static let safariHTTPSRedirectScheme = "x-safari-https"
+        static let maximumConvertedLoadAttempts = 3
     }
 
     private struct HostState {
-        var isSafariRedirectSuppressed: Bool = false
-        var loopErrorPageShown: Bool = false
+        var convertedLoadAttemptCount: Int = 0
+
+        var isSafariRedirectSuppressed: Bool {
+            convertedLoadAttemptCount > 0
+        }
     }
 
     private let tld: TLD
@@ -71,14 +75,12 @@ final class SafariRedirectHandler: SafariRedirectHandling {
         guard let host = domain(for: url) else { return false }
         var state = hostStates[host, default: HostState()]
 
-        if state.isSafariRedirectSuppressed {
-            // Second time through we're obviously in a loop
+        if state.convertedLoadAttemptCount >= Constants.maximumConvertedLoadAttempts {
             delegate?.safariRedirectHandler(self, didRequestShowSafariRedirectLoopErrorForURL: url)
         } else {
-            state.isSafariRedirectSuppressed = true
+            state.convertedLoadAttemptCount += 1
             hostStates[host] = state
 
-            // First time through try to show the https version
             convertAndLoad(url: url)
         }
         

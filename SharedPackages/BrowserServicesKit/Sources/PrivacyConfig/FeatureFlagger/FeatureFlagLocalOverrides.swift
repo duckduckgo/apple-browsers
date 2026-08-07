@@ -298,7 +298,6 @@ public final class FeatureFlagLocalOverrides: FeatureFlagLocalOverriding {
     }
 
     public func currentExperimentCohort<Flag: FeatureFlagDescribing>(for featureFlag: Flag) -> (any FeatureFlagCohortDescribing)? {
-        guard let flagger = featureFlagger as? CurrentExperimentCohortProviding else { return nil }
-        return flagger.assignedCohort(for: featureFlag)
+        return featureFlagger?.assignedCohort(for: featureFlag)
     }
 }

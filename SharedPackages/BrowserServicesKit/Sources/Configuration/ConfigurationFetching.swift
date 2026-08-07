@@ -39,7 +39,7 @@ public final class ConfigurationFetcher: ConfigurationFetching {
 
     }
 
-    private var store: ConfigurationStoring
+    private let store: ConfigurationStoring
     private let validator: ConfigurationValidating
     private let configurationURLProvider: ConfigurationURLProviding
     private let sessionProvider: () -> URLSession

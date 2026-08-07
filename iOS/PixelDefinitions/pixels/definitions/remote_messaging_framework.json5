@@ -270,7 +270,7 @@
     },
     "m_remote_message_image_load_success": {
         "description": "Triggered when a remote message image is successfully loaded and displayed",
-        "owners": ["edulpn"],
+        "owners": ["samsymons"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
         "parameters": [
@@ -284,7 +284,7 @@
     },
     "m_remote_message_image_load_failed": {
         "description": "Triggered when a remote message image fails to load",
-        "owners": ["edulpn"],
+        "owners": ["samsymons"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
         "parameters": [

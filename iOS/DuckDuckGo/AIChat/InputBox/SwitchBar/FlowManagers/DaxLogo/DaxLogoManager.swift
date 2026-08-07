@@ -23,14 +23,6 @@ import UIComponents
 import SwiftUI
 import DesignResourcesKit
 
-struct HomeDaxInputs {
-    let hasContent: Bool
-    let shouldDisplayFavoritesOverlay: Bool
-    let hasEscapeHatch: Bool
-    let hasFavorites: Bool
-    let hasRemoteMessages: Bool
-}
-
 /// Manages the Dax logo view display and positioning
 final class DaxLogoManager {
     
@@ -48,6 +40,7 @@ final class DaxLogoManager {
 
     private var isHomeDaxVisible: Bool = false
     private var isAIDaxVisible: Bool = false
+    private var committedMode: TextEntryMode = .search
     private var forcedHidden: Bool = false
 
     private(set) var currentProgress: CGFloat = 0
@@ -97,13 +90,21 @@ final class DaxLogoManager {
         parentView.bringSubviewToFront(logoContainerView)
     }
 
-    func updateVisibility(isHomeDaxVisible: Bool, isAIDaxVisible: Bool) {
+    func updateVisibility(isHomeDaxVisible: Bool, isAIDaxVisible: Bool, committedMode: TextEntryMode) {
         self.isHomeDaxVisible = isHomeDaxVisible
         self.isAIDaxVisible = isAIDaxVisible
+        self.committedMode = committedMode
         self.isSwipeInProgress = false
+        // Settle the morph to the committed mode — the single source of truth for which logo shows.
+        // Skipped mid-morph so an in-flight transition isn't stomped.
+        if !isAnimatingLogoTransition {
+            currentProgress = committedProgress
+        }
 
         updateState()
     }
+
+    private var committedProgress: CGFloat { committedMode == .aiChat ? 1 : 0 }
 
     /// The Lottie animation's current frame progress (0 = search, 1 = duck.ai).
     var lottieProgress: CGFloat {
@@ -123,6 +124,14 @@ final class DaxLogoManager {
         logoContainerView.alpha > 0 && !forcedHidden
     }
 
+    /// Whether the logo should be visible for the committed state, independent of its scrubbed
+    /// alpha. The single-active-logo alpha is `currentProgress`-scaled, so a stale progress can
+    /// read alpha 0 even when the logo should show — callers deciding to morph must use this.
+    var isLogoActiveForCurrentState: Bool {
+        guard !forcedHidden else { return false }
+        return committedMode == .aiChat ? isAIDaxVisible : isHomeDaxVisible
+    }
+
     /// Plays the Lottie transition to the given mode.
     /// Call after `updateVisibility` has set the new state — this method restores
     /// the previous Lottie progress and animates to the target. If the logo was
@@ -137,6 +146,9 @@ final class DaxLogoManager {
 
         guard wasLogoVisible else {
             daxLogoView.updateProgress(targetProgress)
+            // Keep currentProgress aligned with the committed mode even when snapping, or the
+            // single-active-logo alpha (scaled by currentProgress) would read 0 next render.
+            currentProgress = targetProgress
             return
         }
 
@@ -144,6 +156,10 @@ final class DaxLogoManager {
         let token = UUID()
         pendingTransitionToken = token
         daxLogoView.updateProgress(previousProgress)
+        // Hold the container at full alpha for the whole morph; otherwise the single-active-logo
+        // alpha left by `updateVisibility` (scaled by a not-yet-advanced currentProgress) keeps it
+        // hidden until completion — the morph would play invisibly and only "appear at the end".
+        updateState()
         // Token-gated: Lottie reports `finished == false` on interruption, so gating on
         // `finished` alone would leave the flag stuck across UTI sessions.
         daxLogoView.animateProgress(to: targetProgress) { [weak self] _ in
@@ -153,15 +169,6 @@ final class DaxLogoManager {
             self?.currentProgress = targetProgress
             self?.updateState()
         }
-    }
-
-    /// Home Dax is shown when the content pane is empty, unless the favorites overlay covers it —
-    /// exception: when the escape hatch is the only thing on screen (no favorites, no remote messages),
-    /// we still show Dax beneath the hatch.
-    func shouldShowHomeDax(_ inputs: HomeDaxInputs) -> Bool {
-        guard !inputs.hasContent else { return false }
-        let hasEscapeHatchOnly = inputs.hasEscapeHatch && !inputs.hasFavorites && !inputs.hasRemoteMessages
-        return !inputs.shouldDisplayFavoritesOverlay || hasEscapeHatchOnly
     }
 
     func setForcedHidden(_ hidden: Bool) {
@@ -342,18 +349,15 @@ final class DaxLogoManager {
             // A programmatic logo transition is in flight — don't stomp the Lottie.
             resolvedAlpha = 1
         } else if isHomeDaxVisible != isAIDaxVisible {
-            daxLogoView.updateProgress(isAIDaxVisible ? 1 : 0)
-
-            let homeLogoProgress = 1 - currentProgress
-            let aiLogoProgress = currentProgress
-
-            let homeDaxAlphaCoefficient: CGFloat = isHomeDaxVisible ? 1 : 0
-            let aiDaxAlphaCoefficient: CGFloat = isAIDaxVisible ? 1 : 0
-
-            let daxAlpha = homeDaxAlphaCoefficient * homeLogoProgress
-            let aiAlpha = aiDaxAlphaCoefficient * aiLogoProgress
-
+            // One logo active: visible only when its side matches the committed `currentProgress`.
+            // When hidden, leave the lottie frame so the visible logo fades out instead of snapping.
+            let daxAlpha = (isHomeDaxVisible ? 1 : 0) * (1 - currentProgress)
+            let aiAlpha = (isAIDaxVisible ? 1 : 0) * currentProgress
             resolvedAlpha = max(daxAlpha, aiAlpha)
+
+            if resolvedAlpha > 0 {
+                daxLogoView.updateProgress(currentProgress)
+            }
         } else if isHomeDaxVisible && isAIDaxVisible {
             daxLogoView.updateProgress(currentProgress)
 

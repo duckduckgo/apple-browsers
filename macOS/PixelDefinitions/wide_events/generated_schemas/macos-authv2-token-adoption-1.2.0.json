@@ -1,0 +1,156 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "description": "Sent when AuthV2 has completed a token adoption event",
+    "$comment": "{\"owners\":[\"samsymons\"]}",
+    "type": "object",
+    "required": ["meta", "global", "feature", "app"],
+    "additionalProperties": false,
+    "properties": {
+        "meta": {
+            "type": "object",
+            "required": ["type", "version"],
+            "additionalProperties": false,
+            "properties": { "type": { "const": "macos-authv2-token-adoption" }, "version": { "const": "1.2.0" } }
+        },
+        "app": {
+            "type": "object",
+            "required": ["name", "version"],
+            "additionalProperties": false,
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "The name of the app sending the event, taken from CFBundleName. Varies across build configurations and the target (main app, VPN agent, PIR agent, network extension). Extend this enum when adding wide events fired from other macOS targets.",
+                    "enum": [
+                        "DuckDuckGo",
+                        "DuckDuckGo Alpha",
+                        "DuckDuckGo Review",
+                        "DuckDuckGo App Store",
+                        "DuckDuckGo VPN",
+                        "DuckDuckGo VPN Alpha",
+                        "DuckDuckGo VPN Review",
+                        "DuckDuckGo VPN App Store",
+                        "DuckDuckGo Personal Information Removal",
+                        "DuckDuckGo Personal Information Removal App Store",
+                        "NetworkProtectionAppExtension",
+                        "com.duckduckgo.macos.vpn.network-extension",
+                        "com.duckduckgo.macos.vpn.network-extension.debug",
+                        "com.duckduckgo.macos.vpn.network-extension.review",
+                        "com.duckduckgo.macos.vpn.network-extension.alpha",
+                        "com.duckduckgo.mobile.ios.vpn.agent.network-extension"
+                    ]
+                },
+                "version": { "type": "string", "description": "The version of the application", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" }
+            }
+        },
+        "global": {
+            "type": "object",
+            "required": ["platform", "type", "sample_rate"],
+            "additionalProperties": false,
+            "properties": {
+                "platform": { "type": "string", "description": "The platform the app is running on", "enum": ["macOS"] },
+                "type": { "type": "string", "description": "The type of application", "enum": ["app"] },
+                "sample_rate": { "type": "number", "description": "Sample rate for this event", "minimum": 0, "maximum": 1 },
+                "is_first_daily_occurrence": {
+                    "type": "boolean",
+                    "description": "Whether this is the first occurrence of this event today. Only included when true."
+                }
+            }
+        },
+        "feature": {
+            "type": "object",
+            "required": ["name", "status", "data"],
+            "additionalProperties": false,
+            "properties": {
+                "name": { "type": "string", "description": "The feature name for this event", "enum": ["authv2-token-adoption"] },
+                "status": {
+                    "type": "string",
+                    "description": "The overall status of the operation",
+                    "enum": ["SUCCESS", "FAILURE", "UNKNOWN"]
+                },
+                "data": {
+                    "type": "object",
+                    "required": ["ext"],
+                    "additionalProperties": false,
+                    "properties": {
+                        "ext": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                                "status_reason": {
+                                    "type": "string",
+                                    "description": "The reason provided when the status is UNKNOWN",
+                                    "enum": ["partial_data"]
+                                },
+                                "failing_step": {
+                                    "type": "string",
+                                    "description": "The step that the event failed on, if relevant.",
+                                    "enum": ["token_adoption", "token_refresh"]
+                                },
+                                "adoption_source": {
+                                    "type": "string",
+                                    "description": "What caused the token to be adopted, when known.",
+                                    "enum": ["web_restore", "vpn"]
+                                },
+                                "error": {
+                                    "type": "object",
+                                    "description": "Shared wide-event error details",
+                                    "properties": {
+                                        "domain": { "type": "string", "description": "The top level error domain" },
+                                        "code": { "type": "integer", "description": "The top level error code" },
+                                        "error_description": { "type": "string", "description": "Additional error description" },
+                                        "underlying_domain": { "type": "string", "description": "The underlying error domain" },
+                                        "underlying_code": { "type": "integer", "description": "The underlying error code" },
+                                        "underlying_domain2": {
+                                            "type": "string",
+                                            "description": "The second nested underlying error domain"
+                                        },
+                                        "underlying_code2": { "type": "integer", "description": "The second nested underlying error code" },
+                                        "underlying_domain3": {
+                                            "type": "string",
+                                            "description": "The third nested underlying error domain"
+                                        },
+                                        "underlying_code3": { "type": "integer", "description": "The third nested underlying error code" },
+                                        "underlying_domain4": {
+                                            "type": "string",
+                                            "description": "The fourth nested underlying error domain"
+                                        },
+                                        "underlying_code4": { "type": "integer", "description": "The fourth nested underlying error code" },
+                                        "underlying_domain5": {
+                                            "type": "string",
+                                            "description": "The fifth nested underlying error domain"
+                                        },
+                                        "underlying_code5": { "type": "integer", "description": "The fifth nested underlying error code" },
+                                        "underlying_domain6": {
+                                            "type": "string",
+                                            "description": "The sixth nested underlying error domain"
+                                        },
+                                        "underlying_code6": { "type": "integer", "description": "The sixth nested underlying error code" },
+                                        "underlying_domain7": {
+                                            "type": "string",
+                                            "description": "The seventh nested underlying error domain"
+                                        },
+                                        "underlying_code7": {
+                                            "type": "integer",
+                                            "description": "The seventh nested underlying error code"
+                                        },
+                                        "underlying_domain8": {
+                                            "type": "string",
+                                            "description": "The eighth nested underlying error domain"
+                                        },
+                                        "underlying_code8": { "type": "integer", "description": "The eighth nested underlying error code" },
+                                        "underlying_domain9": {
+                                            "type": "string",
+                                            "description": "The ninth nested underlying error domain"
+                                        },
+                                        "underlying_code9": { "type": "integer", "description": "The ninth nested underlying error code" }
+                                    },
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

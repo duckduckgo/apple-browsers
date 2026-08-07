@@ -26,6 +26,7 @@ import Persistence
 import Bookmarks
 import DDGSync
 import PrivacyConfig
+import FeatureFlags_iOS
 
 protocol DataImportViewControllerDelegate: AnyObject {
     func dataImportViewControllerDidFinish(_ controller: DataImportViewController)
@@ -137,7 +138,6 @@ final class DataImportViewController: UIViewController {
     private func presentSummary(for summary: DataImportSummary) {
         summaryPresented = true
         AutofillLoginImportState(keyValueStore: keyValueStore).hasImportedLogins = true
-        AutofillOnboardingExperimentPixelReporter().fireImportCompleted()
 
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }

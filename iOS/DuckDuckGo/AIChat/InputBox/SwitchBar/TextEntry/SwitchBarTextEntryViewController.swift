@@ -21,6 +21,8 @@ import UIKit
 import SwiftUI
 import Combine
 import UIComponents
+import DesignResourcesKitIcons
+import MetricBuilder
 
 final class SwitchBarTextEntryButtonsContainerView: UIView {
     override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
@@ -80,7 +82,11 @@ class SwitchBarTextEntryViewController: UIViewController {
         super.viewDidLoad()
         setupViews()
         setupConstraints()
-        setupPasteAndGo()
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        updateContainerCornerRadius()
     }
 
     func refreshFireMode(fireMode: Bool) {
@@ -115,14 +121,19 @@ class SwitchBarTextEntryViewController: UIViewController {
 
     private func setupContainerViewAppearance() {
 
-        containerView.layer.cornerRadius = Metrics.containerCornerRadius
         containerView.layer.masksToBounds = false
-
-        textEntryView.layer.cornerRadius = Metrics.containerCornerRadius
         textEntryView.layer.masksToBounds = true
+        updateContainerCornerRadius()
 
         applyContainerBackground(isFireTab: handler.isFireTab)
         containerView.applyActiveShadow()
+    }
+
+    private func updateContainerCornerRadius() {
+        let radius = Metrics.containerCornerRadius(forHeight: containerView.bounds.height,
+                                                   maximum: ContainerMetrics.cornerRadius)
+        containerView.layer.cornerRadius = radius
+        textEntryView.layer.cornerRadius = radius
     }
 
     private func applyContainerBackground(isFireTab: Bool) {
@@ -156,27 +167,6 @@ class SwitchBarTextEntryViewController: UIViewController {
         ])
     }
 
-    private func setupPasteAndGo() {
-        let title = UserText.actionPasteAndGo
-        UIMenuController.shared.menuItems = [UIMenuItem(title: title, action: #selector(self.pasteURLAndGo))]
-    }
-
-    // MARK: - Action Handlers
-    @objc private func pasteURLAndGo(sender: UIMenuItem) {
-        guard let pastedText = UIPasteboard.general.string,
-              !pastedText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
-        handler.updateCurrentText(pastedText)
-        handleSend()
-    }
-
-    private func handleSend() {
-        let currentText = handler.currentText
-        if !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            handler.submitText(currentText)
-            handler.clearText()
-        }
-    }
-
     // MARK: - Public Methods
     @discardableResult
     override func becomeFirstResponder() -> Bool {
@@ -197,6 +187,11 @@ class SwitchBarTextEntryViewController: UIViewController {
     }
 
     private struct Metrics {
-        static let containerCornerRadius: CGFloat = 16
+        static let legacyCornerRadius: CGFloat = 16
+
+        static func containerCornerRadius(forHeight height: CGFloat, maximum: CGFloat) -> CGFloat {
+            guard AppRebrand.isAppRebranded() else { return legacyCornerRadius }
+            return min(height / 2, maximum)
+        }
     }
 }

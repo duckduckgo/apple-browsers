@@ -105,6 +105,62 @@
         "suffixes": ["form_factor", "daily"],
         "parameters": ["appVersion"]
     },
+    "m_settings_autoconsent_shown": {
+        "description": "Fires when the user opens the Cookie Pop-up Protection settings screen while the legacy single-toggle UI is shown.",
+        "owners": ["sammacbeth"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_settings_autoconsent_on": {
+        "description": "Fires when the user turns on cookie pop-up protection in the legacy single-toggle settings UI.",
+        "owners": ["sammacbeth"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_settings_autoconsent_off": {
+        "description": "Fires when the user turns off cookie pop-up protection in the legacy single-toggle settings UI.",
+        "owners": ["sammacbeth"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "autoconsent_settings_shown": {
+        "description": "Fires when the user opens the Cookie Pop-up Protection settings screen while the two-toggle UI is shown.",
+        "owners": ["sammacbeth"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "autoconsent_settings_on": {
+        "description": "Fires when the user turns on the Auto-Manage Cookie Pop-Ups setting.",
+        "owners": ["sammacbeth"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "autoconsent_settings_off": {
+        "description": "Fires when the user turns off the Auto-Manage Cookie Pop-Ups setting.",
+        "owners": ["sammacbeth"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "autoconsent_settings_default": {
+        "description": "Fires when the user turns off the Pop-Ups Without Opt-Outs setting.",
+        "owners": ["sammacbeth"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "autoconsent_settings_max": {
+        "description": "Fires when the user turns on the Pop-Ups Without Opt-Outs setting.",
+        "owners": ["sammacbeth"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
     "m_autoconsent_summary": {
         "description": "Fires periodically with counts of autoconsent metrics.",
         "owners": ["sammacbeth"],

@@ -1,0 +1,72 @@
+appId: com.duckduckgo.mobile.ios
+tags:
+    - iphone
+    - release
+    - unified_toggle_input
+name: test_contextual_web_uti_auto_attach_regression
+
+---
+
+# Same first-submit web UTI setup as the manual-attach regression, but with automatic
+# context attachment enabled. After navigating and reopening the active contextual
+# chat, the UTI chip should attach the new page automatically.
+
+- launchApp:
+    appId: "com.duckduckgo.mobile.ios"
+    clearState: true
+    clearKeychain: true
+    arguments:
+        isOnboardingCompleted: ${ONBOARDING_COMPLETED}
+        currentAppVariant: ${APP_VARIANT}
+        isRunningUITests: true
+        ff.unifiedToggleInput: "true"
+        ff.contextualDuckAIMode: "true"
+        ff.aiChatContextualUnifiedToggleInput: "false"
+        ff.aiChatAutoAttachContextByDefault: "true"
+
+- runFlow:
+    file: ../shared/dismiss_chat_open_modals.yaml
+
+- tapOn:
+    id: "searchEntry"
+- inputText: "https://privacy-test-pages.site"
+- pressKey: Enter
+- assertVisible: ".*Privacy Test Pages.*"
+
+- tapOn:
+    id: "Browser.OmniBar.Button.AIChat"
+- assertVisible:
+    id: "AIChat.ContextualSheet"
+- assertVisible:
+    id: "AIChatNativeInputView.submitButton"
+
+- tapOn:
+    id: "AIChatNativeInputView.textView"
+- inputText: "First contextual prompt"
+- tapOn:
+    id: "AIChatNativeInputView.submitButton"
+
+- runFlow:
+    file: ../shared/dismiss_chat_open_modals.yaml
+- extendedWaitUntil:
+    visible: "We don't track you.*"
+    timeout: 30000
+
+- tapOn:
+    id: "AIChat.ContextualSheet.CloseButton"
+- waitForAnimationToEnd:
+    timeout: 3000
+
+- tapOn:
+    id: "searchEntry"
+- inputText: "https://privacy-test-pages.site/security/address-bar-spoofing/index.html"
+- pressKey: Enter
+- assertVisible: ".*Address Bar Spoofing.*"
+
+- tapOn:
+    id: "Browser.OmniBar.Button.AIChat"
+- assertVisible:
+    id: "AIChat.ContextualSheet"
+- extendedWaitUntil:
+    notVisible: "Attach Page Content"
+    timeout: 10000

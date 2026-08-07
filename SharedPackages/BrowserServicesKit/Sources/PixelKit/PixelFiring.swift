@@ -23,6 +23,7 @@ public protocol PixelFiring {
               includeAppVersionParameter: Bool,
               withAdditionalParameters: [String: String]?,
               withNamePrefix: String?,
+              doNotEnforcePrefix: Bool,
               onComplete: @escaping PixelKit.CompletionBlock)
 }
 
@@ -33,32 +34,38 @@ extension PixelFiring {
 
     public func fire(_ event: PixelKitEvent,
                      frequency: PixelKit.Frequency) {
-        fire(event, frequency: frequency, includeAppVersionParameter: true, withAdditionalParameters: nil, withNamePrefix: nil, onComplete: { _, _ in })
+        fire(event, frequency: frequency, includeAppVersionParameter: true, withAdditionalParameters: nil, withNamePrefix: nil, doNotEnforcePrefix: false, onComplete: { _, _ in })
+    }
+
+    public func fire(_ event: PixelKitEvent,
+                     frequency: PixelKit.Frequency,
+                     doNotEnforcePrefix: Bool) {
+        fire(event, frequency: frequency, includeAppVersionParameter: true, withAdditionalParameters: nil, withNamePrefix: nil, doNotEnforcePrefix: doNotEnforcePrefix, onComplete: { _, _ in })
     }
 
     public func fire(_ event: PixelKitEvent,
                      frequency: PixelKit.Frequency,
                      includeAppVersionParameter: Bool) {
-        fire(event, frequency: frequency, includeAppVersionParameter: includeAppVersionParameter, withAdditionalParameters: nil, withNamePrefix: nil, onComplete: { _, _ in })
+        fire(event, frequency: frequency, includeAppVersionParameter: includeAppVersionParameter, withAdditionalParameters: nil, withNamePrefix: nil, doNotEnforcePrefix: false, onComplete: { _, _ in })
     }
 
     public func fire(_ event: PixelKitEvent,
                      frequency: PixelKit.Frequency,
                      onComplete: @escaping PixelKit.CompletionBlock) {
-        fire(event, frequency: frequency, includeAppVersionParameter: true, withAdditionalParameters: nil, withNamePrefix: nil, onComplete: onComplete)
+        fire(event, frequency: frequency, includeAppVersionParameter: true, withAdditionalParameters: nil, withNamePrefix: nil, doNotEnforcePrefix: false, onComplete: onComplete)
     }
 
     public func fire(_ event: PixelKitEvent,
                      frequency: PixelKit.Frequency,
                      withAdditionalParameters parameters: [String: String]?) {
-        fire(event, frequency: frequency, includeAppVersionParameter: true, withAdditionalParameters: parameters, withNamePrefix: nil, onComplete: { _, _ in })
+        fire(event, frequency: frequency, includeAppVersionParameter: true, withAdditionalParameters: parameters, withNamePrefix: nil, doNotEnforcePrefix: false, onComplete: { _, _ in })
     }
 
     public func fire(_ event: PixelKitEvent,
                      frequency: PixelKit.Frequency,
                      withAdditionalParameters parameters: [String: String]?,
                      withNamePrefix namePrefix: String?) {
-        fire(event, frequency: frequency, includeAppVersionParameter: true, withAdditionalParameters: parameters, withNamePrefix: namePrefix, onComplete: { _, _ in })
+        fire(event, frequency: frequency, includeAppVersionParameter: true, withAdditionalParameters: parameters, withNamePrefix: namePrefix, doNotEnforcePrefix: false, onComplete: { _, _ in })
     }
 }
 
@@ -68,8 +75,9 @@ extension PixelKit: PixelFiring {
                      includeAppVersionParameter: Bool,
                      withAdditionalParameters parameters: [String: String]?,
                      withNamePrefix namePrefix: String?,
+                     doNotEnforcePrefix: Bool,
                      onComplete: @escaping PixelKit.CompletionBlock) {
         fire(event, frequency: frequency, withHeaders: nil, withAdditionalParameters: parameters,
-             withNamePrefix: namePrefix, includeAppVersionParameter: includeAppVersionParameter, onComplete: onComplete)
+             withNamePrefix: namePrefix, includeAppVersionParameter: includeAppVersionParameter, doNotEnforcePrefix: doNotEnforcePrefix, onComplete: onComplete)
     }
 }

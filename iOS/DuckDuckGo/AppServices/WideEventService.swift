@@ -37,11 +37,15 @@ actor WideEventService {
 
     nonisolated func resume() {
         Task {
-            await sendPendingEvents(trigger: .appLaunch)
+            // A warm foreground is NOT a launch: the process that started any in-flight flow is still
+            // alive, so launch-only events (e.g. AuthV2 token refresh / invalid-token recovery) must not
+            // be reconciled here, or we'd close a journey that may still be running. They are completed
+            // only on cold launch, when a restarted process proves the prior journey is genuinely stalled.
+            await sendPendingEvents(trigger: .appLaunch, includingLaunchOnlyEvents: false)
         }
     }
 
-    func sendPendingEvents(trigger: WideEventCompletionTrigger) async {
+    func sendPendingEvents(trigger: WideEventCompletionTrigger, includingLaunchOnlyEvents: Bool = true) async {
         guard !isProcessing else { return }
         isProcessing = true
 
@@ -50,6 +54,11 @@ actor WideEventService {
         await processSubscriptionPurchaseCompletion(trigger: trigger)
         await processCompletion(DataImportWideEventData.self, trigger: trigger)
         await processCompletion(PostIdleSessionWideEventData.self, trigger: trigger)
+
+        if includingLaunchOnlyEvents {
+            // Launch-only: only a cold launch proves a still-pending refresh is genuinely stalled.
+            await processCompletion(AuthV2TokenRefreshWideEventData.self, trigger: trigger)
+        }
 
         isProcessing = false
     }

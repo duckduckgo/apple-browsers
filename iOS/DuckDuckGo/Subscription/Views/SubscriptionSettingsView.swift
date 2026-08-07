@@ -117,14 +117,14 @@ struct SubscriptionSettingsViewV2: View {
                     .daxBodyRegular()
                     .foregroundColor(Color(designSystemColor: .textPrimary))
             }
-            .listRowBackground(Color(designSystemColor: .surface))
+            .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
 
             // Row 2: Upgrade button with chevron
             if let tierName = viewModel.firstAvailableUpgradeTier {
                 SettingsCustomCell(content: {
                     Text(UserText.subscriptionUpgradeButton(tierName: tierName))
                         .daxBodyRegular()
-                        .foregroundColor(Color(designSystemColor: .accent))
+                        .foregroundColor(Color(designSystemColor: .accentPrimary))
                         .padding(.leading, 36) // 24 (icon) + 12 (spacing) to align with text
                 },
                 action: { viewModel.navigateToPlans(tier: tierName) },
@@ -149,7 +149,7 @@ struct SubscriptionSettingsViewV2: View {
             SettingsCustomCell(content: {
                 Text(UserText.subscriptionAddToDeviceButton)
                     .daxBodyRegular()
-                    .foregroundColor(Color.init(designSystemColor: .accent))
+                    .foregroundColor(Color.init(designSystemColor: .accentPrimary))
             }, action: { isShowingActivationView = true },
                                disclosureIndicator: true, isButton: true)
         }
@@ -163,7 +163,7 @@ struct SubscriptionSettingsViewV2: View {
                 viewModel.displayLearnMoreView(true)
                 return .handled
             })
-            .tint(Color(designSystemColor: .accent))
+            .tint(Color(designSystemColor: .accentPrimary))
     }
 
     private var manageSection: some View {
@@ -181,17 +181,17 @@ struct SubscriptionSettingsViewV2: View {
                         if active {
                             Text(viewModel.subscriptionManageButtonText)
                                 .daxBodyRegular()
-                                .foregroundColor(Color.init(designSystemColor: .accent))
+                                .foregroundColor(Color.init(designSystemColor: .accentPrimary))
                         } else if isEligibleForWinBackCampaign {
                             resubscribeWithWinBackOfferView
                         } else if settingsViewModel.isBlackFridayCampaignEnabled {
                             Text(UserText.blackFridayCampaignViewPlansCTA(discountPercent: settingsViewModel.blackFridayDiscountPercent))
                                 .daxBodyRegular()
-                                .foregroundColor(Color.init(designSystemColor: .accent))
+                                .foregroundColor(Color.init(designSystemColor: .accentPrimary))
                         } else {
                             Text(UserText.subscriptionRestoreNotFoundPlans)
                                 .daxBodyRegular()
-                                .foregroundColor(Color.init(designSystemColor: .accent))
+                                .foregroundColor(Color.init(designSystemColor: .accentPrimary))
                         }
                     } else {
                         SwiftUI.ProgressView()
@@ -240,7 +240,7 @@ struct SubscriptionSettingsViewV2: View {
             SettingsCustomCell(content: {
                 Text(UserText.subscriptionViewAllPlans)
                     .daxBodyRegular()
-                    .foregroundColor(Color(designSystemColor: .accent))
+                    .foregroundColor(Color(designSystemColor: .accentPrimary))
             },
                                action: { viewModel.navigateToPlans() },
                                disclosureIndicator: true,
@@ -253,7 +253,7 @@ struct SubscriptionSettingsViewV2: View {
         SettingsCustomCell(content: {
             Text(UserText.subscriptionRemoveFromDevice)
                 .daxBodyRegular()
-            .foregroundColor(Color.init(designSystemColor: .accent))},
+            .foregroundColor(Color.init(designSystemColor: .accentPrimary))},
                            action: { viewModel.displayRemovalNotice(true) },
                            isButton: true)
         .alert(isPresented: $isShowingRemovalNotice) {
@@ -276,7 +276,7 @@ struct SubscriptionSettingsViewV2: View {
         SettingsCustomCell(content: {
             Text(text)
                 .daxBodyRegular()
-            .foregroundColor(Color.init(designSystemColor: .accent)) },
+            .foregroundColor(Color.init(designSystemColor: .accentPrimary)) },
                            action: {
             Task { await settingsViewModel.restoreAccountPurchase() }
         },
@@ -322,7 +322,7 @@ struct SubscriptionSettingsViewV2: View {
             SettingsCustomCell(content: {
                 Text(UserText.settingsPProSectionFooter)
                     .daxBodyRegular()
-                    .foregroundColor(Color(designSystemColor: .accent))
+                    .foregroundColor(Color(designSystemColor: .accentPrimary))
             },
                                action: { viewModel.showTermsOfService() },
                                disclosureIndicator: false,
@@ -336,7 +336,7 @@ struct SubscriptionSettingsViewV2: View {
         SettingsCustomCell(content: {
             Text(UserText.subscriptionFAQ)
                 .daxBodyRegular()
-                .foregroundColor(Color(designSystemColor: .accent))
+                .foregroundColor(Color(designSystemColor: .accentPrimary))
         },
                            action: { viewModel.displayFAQView(true) },
                            disclosureIndicator: false,
@@ -348,7 +348,7 @@ struct SubscriptionSettingsViewV2: View {
         SettingsCustomCell(content: {
             Text(UserText.subscriptionFeedback)
                 .daxBodyRegular()
-                .foregroundColor(Color(designSystemColor: .accent))
+                .foregroundColor(Color(designSystemColor: .accentPrimary))
         },
                            action: { isShowingSupportView = true },
                            disclosureIndicator: true,
@@ -451,7 +451,7 @@ struct SubscriptionSettingsViewV2: View {
                 .padding(.vertical, -10)
             if viewModel.state.cancelPendingDowngradeDetails != nil {
                 downgradeBanner
-                    .listRowBackground(Color(designSystemColor: .surface))
+                    .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
             }
             if viewModel.shouldShowUpgrade {
                 upgradeSection
@@ -604,20 +604,20 @@ struct SubscriptionSettingsViewV2: View {
             Section {
                 // Row 1: Icon + Description
                 HStack(alignment: .top, spacing: 12) {
-                    Image(uiImage: DesignSystemImages.Color.Size24.info)
+                    Image(uiImage: DesignSystemImages.Glyphs.Size24.infoRecolorable)
                         .resizable()
                         .frame(width: 24, height: 24)
                     Text(details)
                         .daxBodyRegular()
                         .foregroundColor(Color(designSystemColor: .textPrimary))
                 }
-                .listRowBackground(Color(designSystemColor: .surface))
+                .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
 
                 // Row 2: Cancel downgrade button
                 SettingsCustomCell(content: {
                     Text(UserText.cancelDowngradeButton)
                         .daxBodyRegular()
-                        .foregroundColor(Color(designSystemColor: .accent))
+                        .foregroundColor(Color(designSystemColor: .accentPrimary))
                         .padding(.leading, 36) // 24 (icon) + 12 (spacing) to align with text
                 },
                                    action: { viewModel.cancelPendingDowngrade() },
@@ -642,7 +642,7 @@ private var resubscribeWithWinBackOfferView: some View {
         HStack {
             Text(UserText.winBackCampaignSubscriptionSettingsPageResubscribeCTA)
                 .daxBodyRegular()
-                .foregroundColor(Color.init(designSystemColor: .accent))
+                .foregroundColor(Color.init(designSystemColor: .accentPrimary))
             BadgeView(text: UserText.winBackCampaignMenuBadgeText)
         }
         Text(UserText.winBackCampaignSubscriptionSettingsPageResubscribeSubtitle)

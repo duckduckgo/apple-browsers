@@ -159,7 +159,8 @@ extension TabExtensionsBuilder {
             SpecialErrorPageTabExtension(webViewPublisher: args.webViewFuture,
                                          scriptsPublisher: userScripts.compactMap { $0 },
                                          closeTab: args.closeTab,
-                                         maliciousSiteDetector: dependencies.maliciousSiteDetector)
+                                         maliciousSiteDetector: dependencies.maliciousSiteDetector,
+                                         acceptsInsecureCertificates: LaunchOptionsHandler().acceptsInsecureCertificates)
         }
 
         add {
@@ -321,6 +322,8 @@ extension TabExtensionsBuilder {
                                     contentPublisher: args.contentPublisher,
                                     tabID: args.tabID,
                                     featureFlagger: dependencies.featureFlagger,
+                                    privacyConfigurationManager: dependencies.privacyFeatures.contentBlocking.privacyConfigurationManager,
+                                    extractionPixelHandler: PageContextExtractionPixelHandler(),
                                     aiChatSessionStore: dependencies.aiChatSessionStore,
                                     aiChatMenuConfiguration: dependencies.aiChatMenuConfiguration,
                                     isLoadedInSidebar: args.isTabLoadedInSidebar,

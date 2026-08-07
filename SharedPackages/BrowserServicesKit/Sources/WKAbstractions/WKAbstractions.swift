@@ -79,7 +79,7 @@ public struct HTTPCookieStoreWrapper: DDGHTTPCookieStore {
     //  bridge between this wrapper and another for subscriptions
     public let wrapped: WKHTTPCookieStore
 
-    public init(wrapped: WKHTTPCookieStore) {
+    public nonisolated init(wrapped: WKHTTPCookieStore) {
         self.wrapped = wrapped
     }
 

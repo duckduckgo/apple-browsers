@@ -30,6 +30,8 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     private(set) var isTopBarPosition: Bool = false
     let isUsingExpandedBottomBarHeight: Bool = false
     let usesExpandedAIChatTextEntryLayout: Bool = true
+    /// The UTI uses the new layout metrics (insets / heights), never the legacy ones.
+    let usesLegacyLayoutMetrics: Bool = false
     /// The fadeOutOnToggle experiment applies only to the OmniBar editing state, not here.
     let isUsingFadeOutAnimation: Bool = false
     let shouldDisableAutocorrectOnEmpty: Bool = true
@@ -45,6 +47,7 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     @Published private(set) var isCurrentTextValidURL: Bool = false
     @Published var hasSubmittedPrompt: Bool = false
     @Published var submitsAIChatOnKeyboardReturn: Bool = false
+    @Published var usesReturnKeySubmitButtonStyle: Bool = false
 
     var hasSubmittedPromptPublisher: AnyPublisher<Bool, Never> {
         $hasSubmittedPrompt.eraseToAnyPublisher()
@@ -52,6 +55,10 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
 
     var submitsAIChatOnKeyboardReturnPublisher: AnyPublisher<Bool, Never> {
         $submitsAIChatOnKeyboardReturn.eraseToAnyPublisher()
+    }
+
+    var usesReturnKeySubmitButtonStylePublisher: AnyPublisher<Bool, Never> {
+        $usesReturnKeySubmitButtonStyle.eraseToAnyPublisher()
     }
 
     var isGenerating: Bool = false {
@@ -110,6 +117,8 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
             updateButtonState()
         }
     }
+
+    var isImageGenerationSelected: Bool = false
 
     // MARK: - SwitchBarHandling — Publishers
 

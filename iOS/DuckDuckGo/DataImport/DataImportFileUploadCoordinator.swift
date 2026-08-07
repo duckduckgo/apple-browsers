@@ -28,6 +28,7 @@ import DDGSync
 import Persistence
 import PrivacyConfig
 import os.log
+import FeatureFlags_iOS
 
 protocol DataImportFileUploadFlowOwner: AnyObject {
     func dataImportUploadDidCompleteSummary()
@@ -254,7 +255,6 @@ private extension DataImportFileUploadCoordinator {
         recordImportedDataTypes(from: summary)
 
         AutofillLoginImportState(keyValueStore: keyValueStore).hasImportedLogins = true
-        AutofillOnboardingExperimentPixelReporter().fireImportCompleted()
 
         let summaryViewController = DataImportSummaryViewController(
             summary: summary,

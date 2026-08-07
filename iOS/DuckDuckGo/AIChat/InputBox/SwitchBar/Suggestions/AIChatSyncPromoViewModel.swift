@@ -19,6 +19,13 @@
 
 import Core
 
+/// Whether a coordinated launch modal was already shown earlier in this session, so the Duck.ai
+/// sync promo can yield to it. See Asana 1216108902675922.
+@MainActor
+protocol RecentModalPromptStatusProviding {
+    var wasModalPromptRecentlyPresented: Bool { get }
+}
+
 @MainActor
 final class AIChatSyncPromoViewModel {
 
@@ -27,17 +34,21 @@ final class AIChatSyncPromoViewModel {
     }
 
     private let syncPromoManager: SyncPromoManaging
+    private let recentModalPromptStatusProvider: RecentModalPromptStatusProviding?
     private let pixelFiring: any PixelFiring.Type
     private var impressionRecorded = false
 
     init(syncPromoManager: SyncPromoManaging,
+         recentModalPromptStatusProvider: RecentModalPromptStatusProviding? = nil,
          pixelFiring: any PixelFiring.Type = Pixel.self) {
         self.syncPromoManager = syncPromoManager
+        self.recentModalPromptStatusProvider = recentModalPromptStatusProvider
         self.pixelFiring = pixelFiring
     }
 
     func shouldShowPromo(isQueryActive: Bool, chatCount: Int) -> Bool {
         guard !isQueryActive else { return false }
+        guard recentModalPromptStatusProvider?.wasModalPromptRecentlyPresented != true else { return false }
         return syncPromoManager.shouldPresentPromoFor(.aiChat, count: chatCount)
     }
 

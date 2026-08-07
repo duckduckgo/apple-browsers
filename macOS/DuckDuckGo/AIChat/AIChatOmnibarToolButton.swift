@@ -26,13 +26,29 @@ private final class NonInteractiveImageView: NSImageView {
     }
 }
 
+/// A control whose focus ring shows for keyboard focus only.
+@MainActor
+protocol FocusRingControlling: AnyObject {
+
+    /// Opts into the ring, unlike a plain `makeFirstResponder` — so a click never rings the control.
+    func takeKeyboardFocus()
+
+    var isFocusRingSuppressed: Bool { get set }
+}
+
 /// A reusable toolbar button for the AI Chat omnibar with circular hover background effect.
 final class AIChatOmnibarToolButton: NSView {
 
     private enum Constants {
         static let buttonSize: CGFloat = 28
         static let iconSize: CGFloat = 16
+        static let labelTrailingPadding: CGFloat = 28
+        static let legacyLabelTrailingPadding: CGFloat = 18
+        static let iconLeadingInset: CGFloat = 11
+        static let legacyIconLeadingInset: CGFloat = 6
     }
+
+    private let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
 
     private let iconImageView: NonInteractiveImageView = {
         let imageView = NonInteractiveImageView()
@@ -203,7 +219,10 @@ final class AIChatOmnibarToolButton: NSView {
     override var intrinsicContentSize: NSSize {
         if let label, !label.isEmpty {
             let labelWidth = textLabel.intrinsicContentSize.width
-            var width = Constants.iconSize + labelWidth + 18
+            let labelTrailingPadding = (themeManager.isAppRebranded && !textLabel.isHidden)
+                ? Constants.labelTrailingPadding
+                : Constants.legacyLabelTrailingPadding
+            var width = Constants.iconSize + labelWidth + labelTrailingPadding
             if trailingImage != nil {
                 width += Self.trailingImageSize + 4
             }
@@ -229,14 +248,39 @@ final class AIChatOmnibarToolButton: NSView {
 
     override func becomeFirstResponder() -> Bool {
         let didBecome = super.becomeFirstResponder()
-        if didBecome { setFocusRingHidden(false) }
+        if didBecome { isFocused = true }
         return didBecome
     }
 
     override func resignFirstResponder() -> Bool {
         let didResign = super.resignFirstResponder()
-        if didResign { setFocusRingHidden(true) }
+        if didResign {
+            isFocused = false
+            wantsFocusRing = false
+        }
         return didResign
+    }
+
+    func takeKeyboardFocus() {
+        wantsFocusRing = true
+        window?.makeFirstResponder(self)
+    }
+
+    private var isFocused = false {
+        didSet { applyFocusRingVisibility() }
+    }
+
+    /// AppKit promotes any clicked view that accepts first responder, so focus can't gate the ring.
+    private var wantsFocusRing = false {
+        didSet { applyFocusRingVisibility() }
+    }
+
+    var isFocusRingSuppressed = false {
+        didSet { applyFocusRingVisibility() }
+    }
+
+    private func applyFocusRingVisibility() {
+        setFocusRingHidden(!isFocused || !wantsFocusRing || isFocusRingSuppressed)
     }
 
     private func setFocusRingHidden(_ hidden: Bool) {
@@ -271,7 +315,8 @@ final class AIChatOmnibarToolButton: NSView {
 
         iconCenterXConstraint = iconImageView.centerXAnchor.constraint(equalTo: centerXAnchor)
         iconCenterXConstraint?.isActive = true
-        iconLeadingConstraint = iconImageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 6)
+        let iconLeadingInset = themeManager.isAppRebranded ? Constants.iconLeadingInset : Constants.legacyIconLeadingInset
+        iconLeadingConstraint = iconImageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: iconLeadingInset)
         iconLeadingConstraint?.isActive = false
 
         trailingImageTrailingConstraint = trailingImageView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -8)
@@ -422,6 +467,7 @@ final class AIChatOmnibarToolButton: NSView {
     }
 
     override func mouseDown(with event: NSEvent) {
+        wantsFocusRing = false
         isMouseDown = true
     }
 
@@ -477,3 +523,5 @@ final class AIChatOmnibarToolButton: NSView {
         addCursorRect(bounds, cursor: .arrow)
     }
 }
+
+extension AIChatOmnibarToolButton: FocusRingControlling {}

@@ -31,6 +31,7 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import DuckPlayer
 import UIComponents
+import FeatureFlags_iOS
 
 extension TabViewController {
 
@@ -111,7 +112,7 @@ extension TabViewController {
             entries.append(printEntry)
         }
 
-        if let domain = self.privacyInfo?.domain {
+        if let domain = Self.privacyProtectionToggleDomain(for: privacyInfo) {
             entries.append(self.buildToggleProtectionEntry(forDomain: domain))
         }
 
@@ -159,7 +160,12 @@ extension TabViewController {
             // Settings lives in the header tiles; Zoom/Find/Print and site-utility items are omitted.
             entries.append(buildNewAIChatEntry(withSmallIcon: useSmallIcon))
             entries.append(buildAINewVoiceChatEntry(useSmallIcon: useSmallIcon))
-            entries.append(buildAIChatsEntry(useSmallIcon: useSmallIcon))
+            // Native sheet on iPhone when the flag is on; Duck.ai web sidebar otherwise.
+            if isNativeChatHistoryAvailable {
+                entries.append(buildDuckAiChatsEntry(withSmallIcon: useSmallIcon))
+            } else {
+                entries.append(buildAIChatsEntry(useSmallIcon: useSmallIcon))
+            }
             entries.append(buildAIChatSettingsEntry(useSmallIcon: useSmallIcon, useAIGlyph: true))
 
             entries.append(.separator)
@@ -240,10 +246,12 @@ extension TabViewController {
     }
 
     private func buildDownloadsEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry {
-        .regular(name: UserText.actionDownloads,
-                 image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.downloads : DesignSystemImages.Glyphs.Size24.downloads,
-                 showNotificationDot: AppDependencyProvider.shared.downloadManager.unseenDownloadsAvailable,
-                 action: { [weak self] in
+        let downloadManager = AppDependencyProvider.shared.downloadManager
+
+        return .regular(name: UserText.actionDownloads,
+                        image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.downloads : DesignSystemImages.Glyphs.Size24.downloads,
+                        showNotificationDot: downloadManager.hasDownloadsNeedingAttention,
+                        action: { [weak self] in
             self?.onOpenDownloadsAction()
         })
     }
@@ -296,7 +304,7 @@ extension TabViewController {
             entries.append(.separator)
         }
 
-        if featureFlagger.isFeatureOn(.aiChatNativeChatHistory) {
+        if isNativeChatHistoryAvailable {
             entries.append(buildDuckAiChatsEntry())
         }
 
@@ -414,6 +422,17 @@ extension TabViewController {
             let addressBarBottom = strongSelf.appSettings.currentAddressBarPosition.isBottom
             ActionMessageView.present(message: UserText.actionCopyMessage,
                                       presentationLocation: .withBottomBar(andAddressBarBottom: addressBarBottom))
+        })
+    }
+
+    private func buildCopyLinkEntry(for url: URL) -> BrowsingMenuEntry {
+        let title = UserText.copyLinkTitle(for: url, isPrivacyProtectionEnabled: privacyConfigurationManager.privacyConfig.isProtected(domain: url.host))
+        return BrowsingMenuEntry.regular(name: title,
+                                         image: DesignSystemImages.Glyphs.Size24.link,
+                                         action: { [weak self] in
+            guard let self else { return }
+            self.onCopyAction(forUrl: url)
+            Pixel.fire(pixel: .browsingMenuCopy)
         })
     }
 
@@ -554,14 +573,19 @@ extension TabViewController {
     }
 
     private func buildDuckAiChatsEntry(withSmallIcon smallIcon: Bool = true) -> BrowsingMenuEntry {
-        .regular(name: UserText.actionChats,
-                 accessibilityLabel: UserText.actionChats,
-                 image: smallIcon ? DesignSystemImages.Glyphs.Size16.aiChatHistory : DesignSystemImages.Glyphs.Size24.aiChatHistory,
-                 action: { [weak self] in
+        // Size24 `chats` forced to `.alwaysTemplate` so it tints in dark mode; Size16 falls back
+        // to `aiChatHistory` (no `chats` glyph at 16px).
+        let image = smallIcon
+            ? DesignSystemImages.Glyphs.Size16.aiChatHistory
+            : DesignSystemImages.Glyphs.Size24.chats.withRenderingMode(.alwaysTemplate)
+        return .regular(name: UserText.actionChats,
+                        accessibilityLabel: UserText.actionChats,
+                        image: image,
+                        action: { [weak self] in
             self?.openAIChatHistory()
         })
     }
-    
+
     /// Mirrors the Plus-menu "New Voice Chat": starts a Duck.ai voice session.
     private func buildAINewVoiceChatEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry {
         .regular(name: UserText.aiChatHeaderNewVoiceChatTitle,
@@ -838,7 +862,20 @@ extension TabViewController {
     }
 
     private func openAIChatHistory() {
-        delegate?.tabDidRequestAIChatHistory(tab: self)
+        delegate?.tabDidRequestAIChatHistory(tab: self, source: .browserMenu)
+    }
+
+    /// The domain the "Disable/Enable Privacy Protection" browsing-menu toggle applies to,
+    /// or `nil` when the toggle should not be offered.
+    ///
+    /// The toggle is suppressed on the DuckDuckGo SERP to match the Privacy Dashboard, which is
+    /// also unavailable there (see `MainViewController.onPrivacyIconPressed` and
+    /// `PrivacyIconLogic.privacyIcon(for:)`, which shows the Dax logo instead of a shield on the
+    /// SERP). Offering a way to disable protection with no dashboard to re-enable it from is
+    /// confusing, and DuckDuckGo Search does not track the user regardless.
+    static func privacyProtectionToggleDomain(for privacyInfo: PrivacyInfo?) -> String? {
+        guard let privacyInfo, !privacyInfo.url.isDuckDuckGoSearch else { return nil }
+        return privacyInfo.domain
     }
 
     private func buildToggleProtectionEntry(forDomain domain: String, useSmallIcon: Bool = true) -> BrowsingMenuEntry {
@@ -1029,8 +1066,13 @@ extension TabViewController: BrowsingMenuEntryBuilding {
         }
     }
 
+    /// The native AI chat history sheet is an iPhone-only experience; iPad keeps the existing Duck.ai web entrypoints.
+    private var isNativeChatHistoryAvailable: Bool {
+        UIDevice.current.userInterfaceIdiom != .pad && featureFlagger.isFeatureOn(.aiChatNativeChatHistory)
+    }
+
     func makeDuckAiChatsEntry() -> BrowsingMenuEntry? {
-        guard featureFlagger.isFeatureOn(.aiChatNativeChatHistory) else { return nil }
+        guard shouldShowAIChatInMenu, isNativeChatHistoryAvailable else { return nil }
         return buildDuckAiChatsEntry(withSmallIcon: false)
     }
 
@@ -1040,8 +1082,8 @@ extension TabViewController: BrowsingMenuEntryBuilding {
     func makeDuckAIMenuItems() -> [BrowsingMenuEntry] {
         guard unifiedToggleInputFeature.isAvailable, shouldShowAIChatInMenu else { return [] }
 
-        // Native sheet when the flag is on; Duck.ai web sidebar otherwise.
-        let chatsEntry: BrowsingMenuEntry = featureFlagger.isFeatureOn(.aiChatNativeChatHistory)
+        // Native sheet on iPhone when the flag is on; Duck.ai web sidebar on iPad or when the flag is off.
+        let chatsEntry: BrowsingMenuEntry = isNativeChatHistoryAvailable
             ? buildDuckAiChatsEntry(withSmallIcon: false)
             : buildOpenChatListEntry(useSmallIcon: false)
         return [
@@ -1058,6 +1100,11 @@ extension TabViewController: BrowsingMenuEntryBuilding {
     
     func makeShareEntry() -> BrowsingMenuEntry {
         buildShareEntry(useSmallIcon: false)
+    }
+
+    func makeCopyLinkEntry() -> BrowsingMenuEntry? {
+        guard let link = validLink else { return nil }
+        return buildCopyLinkEntry(for: link.url)
     }
     
     func makePrintEntry() -> BrowsingMenuEntry {
@@ -1117,7 +1164,7 @@ extension TabViewController: BrowsingMenuEntryBuilding {
     }
     
     func makeToggleProtectionEntry() -> BrowsingMenuEntry? {
-        guard let domain = privacyInfo?.domain else { return nil }
+        guard let domain = Self.privacyProtectionToggleDomain(for: privacyInfo) else { return nil }
         return buildToggleProtectionEntry(forDomain: domain, useSmallIcon: false)
     }
     
@@ -1133,19 +1180,6 @@ extension TabViewController: BrowsingMenuEntryBuilding {
     func makeKeepSignInEntry() -> BrowsingMenuEntry? {
         guard let link = validLink else { return nil }
         return buildKeepSignInEntry(forLink: link, useSmallIcon: false)
-    }
-
-    func makeFireModePromotionEntry() -> BrowsingMenuEntry? {
-        guard !tabModel.fireTab,
-              fireModePromotionCoordinator?.isMenuPromotionEligible == true else { return nil }
-        fireModePromotionCoordinator?.markMenuPromotionShown()
-        return .regular(name: UserText.fireModePromotionTitle,
-                        image: DesignSystemImages.Glyphs.Size24.fireTabs,
-                        detailBadge: UserText.fireModeMenuPromotionBadge) { [weak self] in
-            self?.fireModePromotionCoordinator?.markMenuPromotionEngaged()
-            guard let self else { return }
-            self.delegate?.tabDidRequestFireMode(tab: self)
-        }
     }
 
     func makeYouTubeAdBlockToggleEntry() -> BrowsingMenuEntry? {
@@ -1171,5 +1205,15 @@ extension TabViewController: BrowsingMenuEntryBuilding {
                 self.delegate?.tabDidRequestSetYouTubeAdBlockingEnabled(true, tab: self)
             }
         })
+    }
+}
+
+extension URL {
+
+    var urlForCopyLinkAction: URL {
+        guard isDuckPlayer, let (videoID, timestamp) = youtubeVideoParams else {
+            return self
+        }
+        return .youtube(videoID, timestamp: timestamp)
     }
 }

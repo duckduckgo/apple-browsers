@@ -59,6 +59,7 @@ class VoiceSearchFeedbackViewModel: ObservableObject {
     weak var delegate: VoiceSearchFeedbackViewModelDelegate?
     private let speechRecognizer: SpeechRecognizerProtocol
     private var isSilent = true
+    private var hasCompleted = false
     private let aiChatSettings: AIChatSettingsProvider
     private let maxWordsCount = 30
     private var recognizedWords: String? {
@@ -94,11 +95,19 @@ class VoiceSearchFeedbackViewModel: ObservableObject {
     func startSpeechRecognizer() {
         speechRecognizer.startRecording { [weak self] text, error, speechDidFinish in
             DispatchQueue.main.async {
-                guard let self = self else { return }
+                guard let self = self, !self.hasCompleted else { return }
 
                 self.recognizedWords = text
 
                 if speechDidFinish || error != nil || self.hasReachedWordLimit(text) {
+                    if (text ?? "").isEmpty {
+                        // Session ended with no usable transcription: fires no done/cancelled pixel otherwise
+                        if let error {
+                            DailyPixel.fireDailyAndCount(pixel: .voiceSearchError, error: error)
+                        } else {
+                            DailyPixel.fireDailyAndCount(pixel: .voiceSearchNoSpeech)
+                        }
+                    }
                     self.finish()
                 }
             }
@@ -146,12 +155,18 @@ class VoiceSearchFeedbackViewModel: ObservableObject {
 
     func cancel() {
         assert(Thread.isMainThread)
+        guard !hasCompleted else { return }
+        hasCompleted = true
+        speechRecognizer.stopRecording()
         Pixel.fire(pixel: .voiceSearchCancelled)
         delegate?.voiceSearchFeedbackViewModel(self, didFinishQuery: nil, target: searchTarget)
     }
 
     func finish() {
         assert(Thread.isMainThread)
+        guard !hasCompleted else { return }
+        hasCompleted = true
+        speechRecognizer.stopRecording()
         delegate?.voiceSearchFeedbackViewModel(self, didFinishQuery: recognizedWords, target: searchTarget)
     }
 }

@@ -18,6 +18,8 @@
 //
 
 import Core
+import Onboarding
+import Persistence
 import PersistenceTestingUtils
 import PrivacyConfig
 import SetDefaultBrowserTestSupport
@@ -274,7 +276,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         sut.startOnboardingAction(isResumingOnboarding: true)
 
         // THEN
-        XCTAssertEqual(sut.state, .onboarding(.init(type: .browsersComparisonDialog(content: .mock), step: .init(currentStep: 1, totalSteps: 5))))
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .setDefaultBrowserDialog(content: .mockBrowser), step: .init(currentStep: 1, totalSteps: 5))))
     }
 
     func testWhenConfirmSkipOnboarding_andIsIphoneFlow_ThenDismissOnboardingAndDisableDaxDialogs() throws {
@@ -299,7 +301,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
     func testWhenSetDefaultBrowserActionIsCalledAndIsIphoneFlowThenViewStateChangesToAddToDockPromoDialogAndProgressIs2Of5() {
         // GIVEN
         onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
-        let sut = makeSUT(currentOnboardingStep: .browserComparison)
+        let sut = makeSUT(currentOnboardingStep: .setDefaultBrowser)
 
         // WHEN
         sut.setDefaultBrowserAction()
@@ -311,7 +313,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
     func testWhenCancelSetDefaultBrowserActionIsCalledAndIsIphoneFlowThenViewStateChangesToAddToDockPromoDialogAndProgressIs2Of5() {
         // GIVEN
         onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
-        let sut = makeSUT(currentOnboardingStep: .browserComparison)
+        let sut = makeSUT(currentOnboardingStep: .setDefaultBrowser)
 
         // WHEN
         sut.cancelSetDefaultBrowserAction()
@@ -426,7 +428,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         sut.startOnboardingAction(isResumingOnboarding: true)
 
         // THEN
-        XCTAssertEqual(sut.state, .onboarding(.init(type: .browsersComparisonDialog(content: .mock), step: .init(currentStep: 1, totalSteps: 2))))
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .setDefaultBrowserDialog(content: .mockBrowser), step: .init(currentStep: 1, totalSteps: 2))))
     }
 
     func testWhenConfirmSkipOnboarding_andIsIpadFlow_ThenDismissOnboardingAndDisableDaxDialogs() throws {
@@ -458,13 +460,13 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         sut.startOnboardingAction()
 
         // THEN
-        XCTAssertEqual(sut.state, .onboarding(.init(type: .browsersComparisonDialog(content: .mock), step: .init(currentStep: 1, totalSteps: 2))))
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .setDefaultBrowserDialog(content: .mockBrowser), step: .init(currentStep: 1, totalSteps: 2))))
     }
 
     func testWhenSetDefaultBrowserActionIsCalledAndIsIpadFlowThenViewStateChangesToChooseAppIconDialogAndProgressIs2Of3() {
         // GIVEN
         onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPadSteps(isReturningUser: false)
-        let sut = makeSUT(currentOnboardingStep: .browserComparison)
+        let sut = makeSUT(currentOnboardingStep: .setDefaultBrowser)
 
         // WHEN
         sut.setDefaultBrowserAction()
@@ -476,7 +478,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
     func testWhenCancelSetDefaultBrowserActionIsCalledAndIsIpadFlowThenViewStateChangesToChooseAppIconDialogAndProgressIs2Of3() {
         // GIVEN
         onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPadSteps(isReturningUser: false)
-        let sut = makeSUT(currentOnboardingStep: .browserComparison)
+        let sut = makeSUT(currentOnboardingStep: .setDefaultBrowser)
 
         // WHEN
         sut.cancelSetDefaultBrowserAction()
@@ -516,23 +518,23 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         sut.startOnboardingAction()
 
         // THEN
-        XCTAssertEqual(sut.state, .onboarding(.init(type: .aiComparisonDialog(content: .mock), step: .init(currentStep: 1, totalSteps: 5))))
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .aiIntroDialog(content: .mockAI), step: .init(currentStep: 1, totalSteps: 5))))
     }
 
-    func testWhenAIComparisonActionIsCalled_AndIsDuckAIFlow_ThenViewStateChangesToDuckAIQueryExperimentDialogAndProgressIs2Of5() {
+    func testWhenAIComparisonActionIsCalled_AndIsDuckAIFlow_ThenViewStateChangesToDuckAIQuerySelectionDialogAndProgressIs2Of5() {
         // GIVEN
         onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedDuckAISteps(isReturningUser: false)
         onboardingManagerMock.currentOnboardingFlow = .duckAI
-        let sut = makeSUT(currentOnboardingStep: .aiComparison)
+        let sut = makeSUT(currentOnboardingStep: .aiIntro)
 
         // WHEN
-        sut.aiComparisonAction()
+        sut.aiIntroAction()
 
         // THEN
-        XCTAssertEqual(sut.state, .onboarding(.init(type: .duckAIQueryExperimentDialog(content: .mock, defaultMode: .duckAI), step: .init(currentStep: 2, totalSteps: 5))))
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .duckAIQueryDialog(content: .mock), step: .init(currentStep: 2, totalSteps: 5))))
     }
 
-    func testWhenSelectDuckAIQueryExperimentActionIsCalled_AndIsDuckAIFlow_ThenFiresInterludeCallbackAndDoesNotMutateState() {
+    func testWhenSelectDuckAIQueryActionIsCalled_AndIsDuckAIFlow_ThenFiresInterludeCallbackAndDoesNotMutateState() {
         // GIVEN
         onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedDuckAISteps(isReturningUser: false)
         onboardingManagerMock.currentOnboardingFlow = .duckAI
@@ -546,7 +548,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         }
 
         // WHEN
-        sut.selectDuckAIQueryExperimentAction(selection: .duckAI)
+        sut.selectDuckAIQueryAction(selection: .duckAI)
 
         // THEN
         XCTAssertTrue(didFireInterludeCallback)
@@ -578,14 +580,14 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         sut.addToDockContinueAction(isShowingAddToDockTutorial: false)
 
         // THEN
-        XCTAssertEqual(sut.state, .onboarding(.init(type: .browsersComparisonDialog(content: .mock), step: .init(currentStep: 4, totalSteps: 5))))
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .setDefaultBrowserDialog(content: .mockBrowser), step: .init(currentStep: 4, totalSteps: 5))))
     }
 
     func testWhenSetDefaultBrowserActionIsCalled_AndIsDuckAIFlow_ThenViewStateChangesToChooseAddressBarPositionDialogAndProgressIs5Of5() {
         // GIVEN
         onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedDuckAISteps(isReturningUser: false)
         onboardingManagerMock.currentOnboardingFlow = .duckAI
-        let sut = makeSUT(currentOnboardingStep: .browserComparison)
+        let sut = makeSUT(currentOnboardingStep: .setDefaultBrowser)
 
         // WHEN
         sut.setDefaultBrowserAction()
@@ -598,7 +600,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         // GIVEN
         onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedDuckAISteps(isReturningUser: false)
         onboardingManagerMock.currentOnboardingFlow = .duckAI
-        let sut = makeSUT(currentOnboardingStep: .browserComparison)
+        let sut = makeSUT(currentOnboardingStep: .setDefaultBrowser)
 
         // WHEN
         sut.cancelSetDefaultBrowserAction()
@@ -626,22 +628,6 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         XCTAssertTrue(didCallOnCompletingOnboardingIntro)
     }
 
-    func testWhenIsDuckAIFlow_AndReachingDuckAIQueryExperimentDialog_ThenUserIsNotEnrolledInExperiment() {
-        // GIVEN
-        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedDuckAISteps(isReturningUser: false)
-        onboardingManagerMock.currentOnboardingFlow = .duckAI
-        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.onboardingDuckAIQueryTrackersDemoExperiment])
-        featureFlagger.cohortToReturn = FeatureFlag.DuckAIQueryExperimentCohort.treatmentA
-        let sut = makeSUT(currentOnboardingStep: .aiComparison, featureFlagger: featureFlagger)
-        XCTAssertFalse(featureFlagger.didCallResolveCohort)
-
-        // WHEN
-        sut.aiComparisonAction()
-
-        // THEN
-        XCTAssertFalse(featureFlagger.didCallResolveCohort)
-    }
-
     // MARK: - Pixels
 
     func testWhenOnAppearIsCalledThenPixelReporterMeasureOnboardingIntroImpression() {
@@ -659,13 +645,13 @@ final class OnboardingIntroViewModelTests: XCTestCase {
     func testWhenStartOnboardingActionIsCalledThenPixelReporterMeasureBrowserComparisonImpression() {
         // GIVEN
         let sut = makeSUT()
-        XCTAssertFalse(pixelReporterMock.didCallMeasureBrowserComparisonImpression)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureSetDefaultBrowserImpression)
 
         // WHEN
         sut.startOnboardingAction()
 
         // THEN
-        XCTAssertTrue(pixelReporterMock.didCallMeasureBrowserComparisonImpression)
+        XCTAssertTrue(pixelReporterMock.didCallMeasureSetDefaultBrowserImpression)
     }
 
     func testWhenSetDefaultBrowserActionThenPixelReporterMeasureChooseBrowserCTAAction() {
@@ -683,8 +669,8 @@ final class OnboardingIntroViewModelTests: XCTestCase {
     func testWhenAppIconScreenPresentedThenPixelReporterMeasureAppIconImpression() {
         // GIVEN
         onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPadSteps(isReturningUser: false)
-        let sut = makeSUT(currentOnboardingStep: .browserComparison)
-        XCTAssertFalse(pixelReporterMock.didCallMeasureBrowserComparisonImpression)
+        let sut = makeSUT(currentOnboardingStep: .setDefaultBrowser)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureSetDefaultBrowserImpression)
 
         // WHEN
         sut.setDefaultBrowserAction()
@@ -847,7 +833,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
 
     func testWhenStateChangesToAddToDockPromoThenPixelReporterMeasureAddToDockPromoImpression() {
         // GIVEN
-        let sut = makeSUT(currentOnboardingStep: .browserComparison)
+        let sut = makeSUT(currentOnboardingStep: .setDefaultBrowser)
         XCTAssertFalse(pixelReporterMock.didCallMeasureAddToDockPromoImpression)
 
         // WHEN
@@ -1041,108 +1027,37 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         XCTAssertTrue(didCallOnCompletingOnboardingIntro)
     }
 
-    // MARK: - Duck.ai Query Experiment Tests
+    // MARK: - Duck.ai Query Selection Step Tests
 
-    func testWhenFeatureFlagIsOffThenSelectingAIChatDoesNotInsertExperimentStep() {
+    func testWhenDefaultFlowAndSelectingAIChatThenQuerySelectionStepIsAlwaysInserted() {
+        // The duck.ai query selection step is inserted for all new default-flow
+        // users who choose AI chat on the search experience screen.
         // GIVEN
         let mockSearchExperienceProvider = MockOnboardingSearchExperienceProvider()
         mockSearchExperienceProvider.didEnableAIChatSearchInputDuringOnboarding = true
         onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPadStepsWithSearchExperience(isReturningUser: false)
-        let featureFlagger = MockFeatureFlagger() // experiment flag not enabled
         let sut = makeSUT(currentOnboardingStep: .searchExperienceSelection,
-                          onboardingSearchExperienceProvider: mockSearchExperienceProvider,
-                          featureFlagger: featureFlagger)
-        var didComplete = false
-        sut.onCompletingOnboardingIntro = { didComplete = true }
+                          onboardingSearchExperienceProvider: mockSearchExperienceProvider)
 
         // WHEN
         sut.onAppear()
         sut.selectSearchExperienceAction()
 
-        // THEN: no experiment step inserted → onboarding completes
-        XCTAssertTrue(didComplete)
-        XCTAssertFalse(sut.state == .onboarding(.init(type: .duckAIQueryExperimentDialog(content: .mock, defaultMode: .duckAI), step: .hidden)))
-    }
-
-    func testWhenCohortIsControlThenSelectingAIChatDoesNotInsertExperimentStep() {
-        // GIVEN
-        let mockSearchExperienceProvider = MockOnboardingSearchExperienceProvider()
-        mockSearchExperienceProvider.didEnableAIChatSearchInputDuringOnboarding = true
-        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPadStepsWithSearchExperience(isReturningUser: false)
-        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.onboardingDuckAIQueryTrackersDemoExperiment])
-        featureFlagger.cohortToReturn = FeatureFlag.DuckAIQueryExperimentCohort.control
-        let sut = makeSUT(currentOnboardingStep: .searchExperienceSelection,
-                          onboardingSearchExperienceProvider: mockSearchExperienceProvider,
-                          featureFlagger: featureFlagger)
-        var didComplete = false
-        sut.onCompletingOnboardingIntro = { didComplete = true }
-
-        // WHEN
-        sut.onAppear()
-        sut.selectSearchExperienceAction()
-
-        // THEN: control cohort → no experiment step → onboarding completes
-        XCTAssertTrue(didComplete)
-    }
-
-    func testWhenCohortIsTreatmentAThenSelectingAIChatInsertsExperimentStep() {
-        // GIVEN
-        let mockSearchExperienceProvider = MockOnboardingSearchExperienceProvider()
-        mockSearchExperienceProvider.didEnableAIChatSearchInputDuringOnboarding = true
-        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPadStepsWithSearchExperience(isReturningUser: false)
-        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.onboardingDuckAIQueryTrackersDemoExperiment])
-        featureFlagger.cohortToReturn = FeatureFlag.DuckAIQueryExperimentCohort.treatmentA
-        let sut = makeSUT(currentOnboardingStep: .searchExperienceSelection,
-                          onboardingSearchExperienceProvider: mockSearchExperienceProvider,
-                          featureFlagger: featureFlagger)
-
-        // WHEN
-        sut.onAppear()
-        sut.selectSearchExperienceAction()
-
-        // THEN: treatmentA → experiment step inserted, state transitions to it with .duckAI default
-        if case .onboarding(let intro) = sut.state,
-           case .duckAIQueryExperimentDialog(_, let mode) = intro.type {
-            XCTAssertEqual(mode, .duckAI)
+        // THEN: the query selection step is inserted (its mode/toggle are covered in OnboardingIntroContentProviderTests).
+        if case .duckAIQueryDialog = sut.state.intro?.type {
+            // OK
         } else {
-            XCTFail("Expected duckAIQueryExperimentDialog state with .duckAI default mode, got \(sut.state)")
+            XCTFail("Expected duckAIQueryDialog, got \(String(describing: sut.state.intro?.type))")
         }
     }
 
-    func testWhenCohortIsTreatmentBThenSelectingAIChatInsertsExperimentStep() {
-        // GIVEN
-        let mockSearchExperienceProvider = MockOnboardingSearchExperienceProvider()
-        mockSearchExperienceProvider.didEnableAIChatSearchInputDuringOnboarding = true
-        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPadStepsWithSearchExperience(isReturningUser: false)
-        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.onboardingDuckAIQueryTrackersDemoExperiment])
-        featureFlagger.cohortToReturn = FeatureFlag.DuckAIQueryExperimentCohort.treatmentB
-        let sut = makeSUT(currentOnboardingStep: .searchExperienceSelection,
-                          onboardingSearchExperienceProvider: mockSearchExperienceProvider,
-                          featureFlagger: featureFlagger)
-
-        // WHEN
-        sut.onAppear()
-        sut.selectSearchExperienceAction()
-
-        // THEN: treatmentB → experiment step inserted, default mode is .search
-        if case .onboarding(let intro) = sut.state,
-           case .duckAIQueryExperimentDialog(_, let mode) = intro.type {
-            XCTAssertEqual(mode, .search)
-        } else {
-            XCTFail("Expected duckAIQueryExperimentDialog state with .search default mode, got \(sut.state)")
-        }
-    }
-
-    func testWhenSelectingSearchOnlyThenExperimentStepIsNotInserted() {
+    func testWhenSelectingSearchOnlyThenQuerySelectionStepIsNotInserted() {
         // GIVEN
         let mockSearchExperienceProvider = MockOnboardingSearchExperienceProvider()
         mockSearchExperienceProvider.didEnableAIChatSearchInputDuringOnboarding = false
         onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPadStepsWithSearchExperience(isReturningUser: false)
-        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.onboardingDuckAIQueryTrackersDemoExperiment])
-        featureFlagger.cohortToReturn = FeatureFlag.DuckAIQueryExperimentCohort.treatmentA
         let sut = makeSUT(currentOnboardingStep: .searchExperienceSelection,
-                          onboardingSearchExperienceProvider: mockSearchExperienceProvider,
-                          featureFlagger: featureFlagger)
+                          onboardingSearchExperienceProvider: mockSearchExperienceProvider)
         var didComplete = false
         sut.onCompletingOnboardingIntro = { didComplete = true }
 
@@ -1150,79 +1065,54 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         sut.onAppear()
         sut.selectSearchExperienceAction()
 
-        // THEN: search-only → no experiment step → onboarding completes
+        // THEN: search-only path skips the step → onboarding completes immediately
         XCTAssertTrue(didComplete)
     }
 
     // MARK: Pixels
 
-    func testWhenSelectDuckAIQueryExperimentChooseDuckAI_AndCohortEnrolled_ThenCorrectPixelFires() {
+    func testWhenSelectDuckAIQueryChooseDuckAIThenCorrectPixelFires() {
         // GIVEN
         onboardingManagerMock.onboardingSteps = [.duckAIQuerySelection]
-        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.onboardingDuckAIQueryTrackersDemoExperiment])
-        featureFlagger.cohortToReturn = FeatureFlag.DuckAIQueryExperimentCohort.treatmentA
-        let sut = makeSUT(currentOnboardingStep: .duckAIQuerySelection, featureFlagger: featureFlagger)
-        XCTAssertFalse(pixelReporterMock.didCallMeasureDuckAIQueryExperimentChooseAIChat)
+        let sut = makeSUT(currentOnboardingStep: .duckAIQuerySelection)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureDuckAIQueryChooseAIChat)
 
         // WHEN
-        sut.selectDuckAIQueryExperimentAction(selection: .duckAI)
+        sut.selectDuckAIQueryAction(selection: .duckAI)
 
         // THEN
-        XCTAssertTrue(pixelReporterMock.didCallMeasureDuckAIQueryExperimentChooseAIChat)
-        XCTAssertFalse(pixelReporterMock.didCallMeasureDuckAIQueryExperimentChooseSearchOnly)
+        XCTAssertTrue(pixelReporterMock.didCallMeasureDuckAIQueryChooseAIChat)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureDuckAIQueryChooseSearchOnly)
     }
 
-    func testWhenSelectDuckAIQueryExperimentChooseSearch_AndCohortEnrolled_ThenCorrectPixelFires() {
+    func testWhenSelectDuckAIQueryChooseSearchThenCorrectPixelFires() {
         // GIVEN
         onboardingManagerMock.onboardingSteps = [.duckAIQuerySelection]
-        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.onboardingDuckAIQueryTrackersDemoExperiment])
-        featureFlagger.cohortToReturn = FeatureFlag.DuckAIQueryExperimentCohort.treatmentA
-        let sut = makeSUT(currentOnboardingStep: .duckAIQuerySelection, featureFlagger: featureFlagger)
-        XCTAssertFalse(pixelReporterMock.didCallMeasureDuckAIQueryExperimentChooseSearchOnly)
+        let sut = makeSUT(currentOnboardingStep: .duckAIQuerySelection)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureDuckAIQueryChooseSearchOnly)
 
         // WHEN
-        sut.selectDuckAIQueryExperimentAction(selection: .search)
+        sut.selectDuckAIQueryAction(selection: .search)
 
         // THEN
-        XCTAssertTrue(pixelReporterMock.didCallMeasureDuckAIQueryExperimentChooseSearchOnly)
-        XCTAssertFalse(pixelReporterMock.didCallMeasureDuckAIQueryExperimentChooseAIChat)
+        XCTAssertTrue(pixelReporterMock.didCallMeasureDuckAIQueryChooseSearchOnly)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureDuckAIQueryChooseAIChat)
     }
 
-    func testWhenStateChangesToDuckAIQueryExperimentDialog_AndCohortEnrolled_ThenExperimentImpressionPixelFires() {
+    func testWhenStateChangesToDuckAIQuerySelectionDialogThenImpressionPixelFires() {
         // GIVEN
         let mockSearchExperienceProvider = MockOnboardingSearchExperienceProvider()
         mockSearchExperienceProvider.didEnableAIChatSearchInputDuringOnboarding = true
         onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPadStepsWithSearchExperience(isReturningUser: false)
-        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.onboardingDuckAIQueryTrackersDemoExperiment])
-        featureFlagger.cohortToReturn = FeatureFlag.DuckAIQueryExperimentCohort.treatmentA
         let sut = makeSUT(currentOnboardingStep: .searchExperienceSelection,
-                          onboardingSearchExperienceProvider: mockSearchExperienceProvider,
-                          featureFlagger: featureFlagger)
-        XCTAssertFalse(pixelReporterMock.didCallMeasureDuckAIQueryExperimentSelectionImpression)
+                          onboardingSearchExperienceProvider: mockSearchExperienceProvider)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureDuckAIQuerySelectionImpression)
 
         // WHEN
         sut.onAppear()
         sut.selectSearchExperienceAction()
 
         // THEN
-        XCTAssertTrue(pixelReporterMock.didCallMeasureDuckAIQueryExperimentSelectionImpression)
-        XCTAssertFalse(pixelReporterMock.didCallMeasureDuckAIQuerySelectionImpression)
-    }
-
-    func testWhenStateChangesToDuckAIQueryExperimentDialog_AndDuckAITailoredFlow_ThenOnlyPlainImpressionPixelFires() {
-        // GIVEN: Duck.ai tailored flow reuses the same view state but the user is NOT in the
-        // experiment cohort — experiment-flavoured pixels would pollute the experiment funnel.
-        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedDuckAISteps(isReturningUser: false)
-        onboardingManagerMock.currentOnboardingFlow = .duckAI
-        let sut = makeSUT(currentOnboardingStep: .duckAIQuerySelection)
-        XCTAssertFalse(pixelReporterMock.didCallMeasureDuckAIQueryExperimentSelectionImpression)
-        XCTAssertFalse(pixelReporterMock.didCallMeasureDuckAIQuerySelectionImpression)
-
-        // WHEN
-        sut.onAppear()
-
-        // THEN: only the plain selection-impression fires; experiment pixels must NOT fire.
-        XCTAssertFalse(pixelReporterMock.didCallMeasureDuckAIQueryExperimentSelectionImpression)
         XCTAssertTrue(pixelReporterMock.didCallMeasureDuckAIQuerySelectionImpression)
     }
 
@@ -1231,64 +1121,27 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedDuckAISteps(isReturningUser: false)
         onboardingManagerMock.currentOnboardingFlow = .duckAI
         let sut = makeSUT()
-        XCTAssertFalse(pixelReporterMock.didCallMeasureAiComparisonImpression)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureAiIntroImpression)
 
         // WHEN: advancing into the AI Comparison step.
         sut.startOnboardingAction()
 
         // THEN
-        XCTAssertTrue(pixelReporterMock.didCallMeasureAiComparisonImpression)
+        XCTAssertTrue(pixelReporterMock.didCallMeasureAiIntroImpression)
     }
 
     func testWhenAiComparisonActionIsCalledThenCTAPixelFires() {
         // GIVEN
         onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedDuckAISteps(isReturningUser: false)
         onboardingManagerMock.currentOnboardingFlow = .duckAI
-        let sut = makeSUT(currentOnboardingStep: .aiComparison)
-        XCTAssertFalse(pixelReporterMock.didCallMeasureAiComparisonCTAAction)
+        let sut = makeSUT(currentOnboardingStep: .aiIntro)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureAiIntroCTAAction)
 
         // WHEN
-        sut.aiComparisonAction()
+        sut.aiIntroAction()
 
         // THEN
-        XCTAssertTrue(pixelReporterMock.didCallMeasureAiComparisonCTAAction)
-    }
-
-    // MARK: Duck.ai Pixel routing
-
-    func testWhenMeasureDuckAIQuerySubmissionAndCohortEnrolledThenForwardsToExperimentSubmission() {
-        // GIVEN: default flow + experiment flag on + cohort resolved → user is enrolled.
-        onboardingManagerMock.currentOnboardingFlow = .default
-        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.onboardingDuckAIQueryTrackersDemoExperiment])
-        featureFlagger.cohortToReturn = FeatureFlag.DuckAIQueryExperimentCohort.treatmentA
-        let sut = makeSUT(featureFlagger: featureFlagger)
-
-        // WHEN
-        sut.measureDuckAIQuerySubmission(selection: .search, promptSource: .option2)
-
-        // THEN: view-model routes to the experiment submission with the caller's selection/source,
-        // and does NOT call the plain submission method directly.
-        XCTAssertTrue(pixelReporterMock.didCallMeasureDuckAIQueryExperimentQuerySubmission)
-        XCTAssertEqual(pixelReporterMock.didCaptureDuckAIQueryExperimentSelection, .search)
-        XCTAssertEqual(pixelReporterMock.didCaptureDuckAIQueryExperimentPromptSourceValue, DuckAIQueryPromptSource.option2.rawValue)
-        XCTAssertFalse(pixelReporterMock.didCallMeasureDuckAIQuerySubmission)
-    }
-
-    func testWhenMeasureDuckAIQuerySubmissionAndDuckAITailoredFlowThenForwardsToPlainSubmission() {
-        // GIVEN: Duck.ai tailored flow makes resolveDuckAIQueryExperimentCohortID() return nil even with the flag on.
-        onboardingManagerMock.currentOnboardingFlow = .duckAI
-        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.onboardingDuckAIQueryTrackersDemoExperiment])
-        featureFlagger.cohortToReturn = FeatureFlag.DuckAIQueryExperimentCohort.treatmentA
-        let sut = makeSUT(featureFlagger: featureFlagger)
-
-        // WHEN: caller passes .search to assert the view-model overrides it to .duckAI for the tailored flow.
-        sut.measureDuckAIQuerySubmission(selection: .duckAI, promptSource: .option1)
-
-        // THEN: experiment method is skipped
-        XCTAssertFalse(pixelReporterMock.didCallMeasureDuckAIQueryExperimentQuerySubmission)
-        XCTAssertTrue(pixelReporterMock.didCallMeasureDuckAIQuerySubmission)
-        XCTAssertEqual(pixelReporterMock.capturedDuckAIQuerySubmissionSelection, .duckAI)
-        XCTAssertEqual(pixelReporterMock.capturedDuckAIQuerySubmissionPromptSourceValue, DuckAIQueryPromptSource.option1.rawValue)
+        XCTAssertTrue(pixelReporterMock.didCallMeasureAiIntroCTAAction)
     }
 
 }
@@ -1314,7 +1167,7 @@ extension OnboardingIntroViewModelTests {
         let sut = makeSUT(resumeStepStore: store)
         sut.onAppear()
         sut.startOnboardingAction()
-        XCTAssertEqual(resumeStepRawValue(in: store), OnboardingResumeStep.browserComparison.rawValue)
+        XCTAssertEqual(resumeStepRawValue(in: store), OnboardingResumeStep.setDefaultBrowser.rawValue)
     }
 
     func testWhenAdvancingToAIComparisonThenResumeStepIsPersisted() {
@@ -1323,13 +1176,13 @@ extension OnboardingIntroViewModelTests {
         let sut = makeSUT(resumeStepStore: store)
         sut.onAppear()
         sut.startOnboardingAction()
-        XCTAssertEqual(resumeStepRawValue(in: store), OnboardingResumeStep.aiComparison.rawValue)
+        XCTAssertEqual(resumeStepRawValue(in: store), OnboardingResumeStep.aiIntro.rawValue)
     }
 
     func testWhenAdvancingToAddToDockPromoThenResumeStepIsPersisted() {
         let store = MockKeyValueStore()
         onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
-        let sut = makeSUT(currentOnboardingStep: .browserComparison, resumeStepStore: store)
+        let sut = makeSUT(currentOnboardingStep: .setDefaultBrowser, resumeStepStore: store)
         sut.onAppear()
         sut.setDefaultBrowserAction()
         XCTAssertEqual(resumeStepRawValue(in: store), OnboardingResumeStep.addToDockPromo.rawValue)
@@ -1368,7 +1221,7 @@ extension OnboardingIntroViewModelTests {
         onboardingManagerMock.currentOnboardingFlow = .duckAI
         let sut = makeSUT(currentOnboardingStep: .duckAIQuerySelection, resumeStepStore: store)
         sut.onAppear()
-        sut.selectDuckAIQueryExperimentAction(selection: .duckAI)
+        sut.selectDuckAIQueryAction(selection: .duckAI)
         XCTAssertEqual(resumeStepRawValue(in: store), OnboardingResumeStep.interludeDuckAI.rawValue)
     }
 
@@ -1376,20 +1229,20 @@ extension OnboardingIntroViewModelTests {
 
     func testWhenResumeStepIsBrowserComparisonThenOnAppearShowsBrowserComparison() {
         let store = MockKeyValueStore()
-        setResumeStep(.browserComparison, in: store)
+        setResumeStep(.setDefaultBrowser, in: store)
         onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
         let sut = makeSUT(resumeStepStore: store)
         sut.onAppear()
-        XCTAssertEqual(sut.state.intro?.type, .browsersComparisonDialog(content: .mock))
+        XCTAssertEqual(sut.state.intro?.type, .setDefaultBrowserDialog(content: .mockBrowser))
     }
 
     func testWhenResumeStepIsAIComparisonThenOnAppearShowsAIComparison() {
         let store = MockKeyValueStore()
-        setResumeStep(.aiComparison, in: store)
+        setResumeStep(.aiIntro, in: store)
         onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedDuckAISteps(isReturningUser: false)
         let sut = makeSUT(resumeStepStore: store)
         sut.onAppear()
-        XCTAssertEqual(sut.state.intro?.type, .aiComparisonDialog(content: .mock))
+        XCTAssertEqual(sut.state.intro?.type, .aiIntroDialog(content: .mockAI))
     }
 
     func testWhenResumeStepIsAddToDockPromoThenOnAppearShowsAddToDock() {
@@ -1437,18 +1290,16 @@ extension OnboardingIntroViewModelTests {
         XCTAssertNil(resumeStepRawValue(in: store))
     }
 
-    func testWhenResumeStepIsDuckAIQuerySelection_AndIsDefaultFlow_AndExperimentFlagIsOn_ThenOnAppearShowsDuckAIQuery() {
+    func testWhenResumeStepIsDuckAIQuerySelection_AndIsDefaultFlow_ThenOnAppearShowsDuckAIQuery() {
         let store = MockKeyValueStore()
         setResumeStep(.duckAIQuerySelection, in: store)
         onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
-        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.onboardingDuckAIQueryTrackersDemoExperiment])
-        featureFlagger.cohortToReturn = FeatureFlag.DuckAIQueryExperimentCohort.treatmentA
-        let sut = makeSUT(featureFlagger: featureFlagger, resumeStepStore: store)
+        let sut = makeSUT(resumeStepStore: store)
         sut.onAppear()
-        if case .duckAIQueryExperimentDialog = sut.state.intro?.type {
+        if case .duckAIQueryDialog = sut.state.intro?.type {
             // OK
         } else {
-            XCTFail("Expected duckAIQueryExperimentDialog, got \(String(describing: sut.state.intro?.type))")
+            XCTFail("Expected duckAIQueryDialog, got \(String(describing: sut.state.intro?.type))")
         }
     }
 
@@ -1461,24 +1312,24 @@ extension OnboardingIntroViewModelTests {
         onboardingManagerMock.currentOnboardingFlow = .duckAI
         let sut = makeSUT(featureFlagger: MockFeatureFlagger(), resumeStepStore: store)
         sut.onAppear()
-        if case .duckAIQueryExperimentDialog = sut.state.intro?.type {
+        if case .duckAIQueryDialog = sut.state.intro?.type {
             // OK
         } else {
-            XCTFail("Expected duckAIQueryExperimentDialog, got \(String(describing: sut.state.intro?.type))")
+            XCTFail("Expected duckAIQueryDialog, got \(String(describing: sut.state.intro?.type))")
         }
         XCTAssertEqual(resumeStepRawValue(in: store), OnboardingResumeStep.duckAIQuerySelection.rawValue)
     }
 
     // MARK: Step counter visibility on the Duck.ai query screen
 
-    func testWhenResumeStepIsDuckAIQuerySelection_AndIsDefaultFlow_AndExperimentFlagIsOn_ThenStepIsHidden() {
-        // GIVEN — experiment-inserted step in the default flow; counter hidden so the A/B insertion isn't exposed.
+    func testWhenResumeStepIsDuckAIQuerySelection_AndIsDefaultFlow_ThenStepIsHidden() {
+        // The query selection step is inserted dynamically in the default flow; the step counter
+        // is always hidden there so the total count isn't thrown off.
+        // GIVEN
         let store = MockKeyValueStore()
         setResumeStep(.duckAIQuerySelection, in: store)
         onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
-        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.onboardingDuckAIQueryExperiment])
-        featureFlagger.cohortToReturn = FeatureFlag.DuckAIQueryExperimentCohort.treatmentA
-        let sut = makeSUT(featureFlagger: featureFlagger, resumeStepStore: store)
+        let sut = makeSUT(resumeStepStore: store)
 
         // WHEN
         sut.onAppear()
@@ -1491,10 +1342,10 @@ extension OnboardingIntroViewModelTests {
         // GIVEN — Duck.ai query screen is a regular step in the tailored flow; counter visible.
         onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedDuckAISteps(isReturningUser: false)
         onboardingManagerMock.currentOnboardingFlow = .duckAI
-        let sut = makeSUT(currentOnboardingStep: .aiComparison)
+        let sut = makeSUT(currentOnboardingStep: .aiIntro)
 
         // WHEN
-        sut.aiComparisonAction()
+        sut.aiIntroAction()
 
         // THEN
         XCTAssertNotEqual(sut.state.intro?.step, .hidden)
@@ -1537,24 +1388,93 @@ extension OnboardingIntroViewModelTests {
         XCTAssertNil(resumeStepRawValue(in: store))
     }
 
-    func testWhenResumeStepIsDuckAIQuerySelection_AndIsDefaultFlow_AndExperimentFlagIsOff_ThenStoreIsCleared() {
-        let store = MockKeyValueStore()
-        setResumeStep(.duckAIQuerySelection, in: store)
-        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
-        onboardingManagerMock.currentOnboardingFlow = .default
-        _ = makeSUT(featureFlagger: MockFeatureFlagger(), resumeStepStore: store)
-        XCTAssertNil(resumeStepRawValue(in: store))
-    }
-
 }
 
 extension OnboardingIntroViewModelTests {
+
+    // MARK: - Download Reason Experiment
+
+    func testWhenCurrentStepIsDownloadReasonThenViewStateIsDownloadReasonDialogWithHiddenProgress() {
+        // GIVEN
+        onboardingManagerMock.onboardingSteps = [.introDialog(isReturningUser: false), .downloadReasonSelection]
+        let sut = makeSUT(currentOnboardingStep: .downloadReasonSelection)
+
+        // WHEN
+        sut.onAppear()
+
+        // THEN
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .downloadReasonDialog(content: .mock), step: .hidden)))
+    }
+
+    func testWhenSelectDownloadReasonThenPersistsReasonSplicesRemainingStepsAndAdvances() {
+        // GIVEN
+        onboardingManagerMock.onboardingSteps = [.introDialog(isReturningUser: false), .downloadReasonSelection]
+        onboardingManagerMock.stubbedRemainingSteps = [.setDefaultBrowser, .appIconSelection]
+        let sut = makeSUT(currentOnboardingStep: .downloadReasonSelection)
+        sut.onAppear()
+
+        // WHEN
+        sut.selectDownloadReasonAction(.blockAds)
+
+        // THEN
+        XCTAssertTrue(onboardingManagerMock.didCallSelectDownloadReason)
+        XCTAssertEqual(onboardingManagerMock.capturedDownloadReason, .blockAds)
+        // Advances to the first spliced step; the Download Screen is excluded from the progress count.
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .setDefaultBrowserDialog(content: .mockBrowser), step: .init(currentStep: 1, totalSteps: 2))))
+    }
+
+    func testWhenSelectDownloadReasonIsCalledOffTheDownloadScreenThenItIsANoOp() {
+        // GIVEN — already advanced past the Download Screen (e.g. a repeated tap)
+        onboardingManagerMock.onboardingSteps = [.introDialog(isReturningUser: false), .downloadReasonSelection, .setDefaultBrowser]
+        let sut = makeSUT(currentOnboardingStep: .setDefaultBrowser)
+        sut.onAppear()
+        let stateBefore = sut.state
+
+        // WHEN
+        sut.selectDownloadReasonAction(.blockAds)
+
+        // THEN — nothing happens: no persistence and no advance
+        XCTAssertFalse(onboardingManagerMock.didCallSelectDownloadReason)
+        XCTAssertEqual(sut.state, stateBefore)
+    }
+
+    func testWhenResumeStepIsDownloadReasonThenRestoresToDownloadReasonStep() {
+        // GIVEN
+        onboardingManagerMock.onboardingSteps = [.introDialog(isReturningUser: false), .downloadReasonSelection]
+        let resumeStore = MockKeyValueStore()
+        let keyedResumeStore: any KeyedStoring<OnboardingStoringKeys> = resumeStore.keyedStoring()
+        keyedResumeStore.resumeStep = .downloadReasonSelection
+        let sut = makeSUT(currentOnboardingStep: .introDialog(isReturningUser: false), resumeStepStore: resumeStore)
+
+        // WHEN
+        sut.onAppear()
+
+        // THEN
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .downloadReasonDialog(content: .mock), step: .hidden)))
+    }
+
+    func testWhenResumeStepIsTailoredStepThenRestoresToThatStep() {
+        // GIVEN
+        onboardingManagerMock.onboardingSteps = [.introDialog(isReturningUser: false), .downloadReasonSelection, .aiModelSelection, .toggleInputModeSelection]
+        let resumeStore = MockKeyValueStore()
+        let keyedResumeStore: any KeyedStoring<OnboardingStoringKeys> = resumeStore.keyedStoring()
+        keyedResumeStore.resumeStep = .aiModelSelection
+        let sut = makeSUT(currentOnboardingStep: .introDialog(isReturningUser: false), resumeStepStore: resumeStore)
+
+        // WHEN
+        sut.onAppear()
+
+        // THEN
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .aiModelDialog(content: contentProviderMock.aiModelPersonalizationContent, options: [], selectedID: nil), step: .init(currentStep: 1, totalSteps: 2))))
+    }
 
     func makeSUT(
         currentOnboardingStep: OnboardingIntroStep = .introDialog(isReturningUser: false),
         onboardingSearchExperienceProvider: OnboardingSearchExperienceProvider = MockOnboardingSearchExperienceProvider(),
         restorePromptHandler: OnboardingRestorePromptHandling = MockRestorePromptHandler(),
         featureFlagger: FeatureFlagger = MockFeatureFlagger(),
+        personalizationManager: OnboardingPersonalizationManaging = MockOnboardingPersonalizationManager(),
+        aiModelsPrefetcher: OnboardingAIModelsPrefetching = MockOnboardingAIModelsPrefetcher(),
         resumeStepStore: MockKeyValueStore? = nil
     ) -> OnboardingIntroViewModel {
         OnboardingIntroViewModel(
@@ -1571,8 +1491,314 @@ extension OnboardingIntroViewModelTests {
             restorePromptHandler: restorePromptHandler,
             tutorialSettings: tutorialSettingsMock,
             contentProvider: contentProviderMock,
+            personalizationManager: personalizationManager,
+            aiModelsPrefetcher: aiModelsPrefetcher,
             onboardingResumeStepStore: (resumeStepStore ?? MockKeyValueStore()).keyedStoring()
         )
+    }
+}
+
+// MARK: - AI model step populates its options and initial selection
+
+extension OnboardingIntroViewModelTests {
+
+    private func aiModelCatalog() -> OnboardingAIModelResponse {
+        OnboardingAIModelResponse(
+            models: [
+                OnboardingAIModelOption(id: "openai-1", provider: .openai, modelShortName: "GPT"),
+                OnboardingAIModelOption(id: "claude-1", provider: .anthropic, modelShortName: "Claude")
+            ],
+            defaultModelId: "openai-1"
+        )
+    }
+
+    func testAIModelStepPopulatesResolvedOptionsAndPreselectsPersistedModel() {
+        // GIVEN a persisted model that is part of the resolved catalog
+        let prefetcher = MockOnboardingAIModelsPrefetcher()
+        prefetcher.resolvedModel = aiModelCatalog()
+        let personalizationManager = MockOnboardingPersonalizationManager()
+        personalizationManager.selectedAIChatModelID = "claude-1"
+        let sut = makeSUT(currentOnboardingStep: .aiModelSelection, personalizationManager: personalizationManager, aiModelsPrefetcher: prefetcher)
+        sut.onAppear()
+
+        // WHEN
+        guard case let .aiModelDialog(_, options, selectedID) = sut.state.intro?.type else {
+            return XCTFail("Expected aiModelDialog state, got \(String(describing: sut.state.intro?.type))")
+        }
+
+        // THEN both fields are populated: options come from the resolved catalog, selection = the persisted model
+        XCTAssertEqual(options, aiModelCatalog().models)
+        XCTAssertEqual(selectedID, "claude-1")
+    }
+
+    func testAIModelStepPreselectsCatalogDefaultWhenNothingPersisted() {
+        // GIVEN no persisted model
+        let prefetcher = MockOnboardingAIModelsPrefetcher()
+        prefetcher.resolvedModel = aiModelCatalog()
+        let personalizationManager = MockOnboardingPersonalizationManager()
+        personalizationManager.selectedAIChatModelID = nil
+        let sut = makeSUT(currentOnboardingStep: .aiModelSelection, personalizationManager: personalizationManager, aiModelsPrefetcher: prefetcher)
+        sut.onAppear()
+
+        // WHEN
+        guard case let .aiModelDialog(_, options, selectedID) = sut.state.intro?.type else {
+            return XCTFail("Expected aiModelDialog state, got \(String(describing: sut.state.intro?.type))")
+        }
+
+        // THEN options still populate and the selection falls back to the catalog default
+        XCTAssertEqual(options, aiModelCatalog().models)
+        XCTAssertEqual(selectedID, "openai-1")
+    }
+
+    func testAIModelStepPreselectsCatalogDefaultWhenPersistedModelNoLongerOffered() {
+        // GIVEN a persisted model that is no longer offered in the catalog
+        let prefetcher = MockOnboardingAIModelsPrefetcher()
+        prefetcher.resolvedModel = aiModelCatalog()
+        let personalizationManager = MockOnboardingPersonalizationManager()
+        personalizationManager.selectedAIChatModelID = "deprecated-model"
+        let sut = makeSUT(currentOnboardingStep: .aiModelSelection, personalizationManager: personalizationManager, aiModelsPrefetcher: prefetcher)
+        sut.onAppear()
+
+        // WHEN
+        guard case let .aiModelDialog(_, options, selectedID) = sut.state.intro?.type else {
+            return XCTFail("Expected aiModelDialog state, got \(String(describing: sut.state.intro?.type))")
+        }
+
+        // THEN it falls back to the catalog default rather than leaving nothing selected
+        XCTAssertEqual(options, aiModelCatalog().models)
+        XCTAssertEqual(selectedID, "openai-1")
+    }
+}
+
+// MARK: - Post-download-selection personalization setup
+
+extension OnboardingIntroViewModelTests {
+
+    func testWhenSelectDownloadReasonThenPersonalizationDefaultsAreAppliedForThatReason() {
+        // GIVEN
+        let personalizationManager = MockOnboardingPersonalizationManager()
+        onboardingManagerMock.onboardingSteps = [.introDialog(isReturningUser: false), .downloadReasonSelection]
+        onboardingManagerMock.stubbedRemainingSteps = [.setDefaultBrowser]
+        let sut = makeSUT(currentOnboardingStep: .downloadReasonSelection, personalizationManager: personalizationManager)
+        sut.onAppear()
+
+        // WHEN
+        sut.selectDownloadReasonAction(.blockAds)
+
+        // THEN
+        XCTAssertEqual(personalizationManager.applyDefaultsCallCount, 1)
+        XCTAssertEqual(personalizationManager.capturedApplyDefaultsReason, .blockAds)
+    }
+
+    func testWhenSelectDownloadReasonIsPrivateAIChatThenAIChatSearchInputChoiceIsStoredEnabledAndModelsArePrefetched() {
+        // GIVEN
+        let searchExperienceProvider = MockOnboardingSearchExperienceProvider()
+        let prefetcher = MockOnboardingAIModelsPrefetcher()
+        onboardingManagerMock.onboardingSteps = [.introDialog(isReturningUser: false), .downloadReasonSelection]
+        onboardingManagerMock.stubbedRemainingSteps = [.setDefaultBrowser]
+        let sut = makeSUT(
+            currentOnboardingStep: .downloadReasonSelection,
+            onboardingSearchExperienceProvider: searchExperienceProvider,
+            aiModelsPrefetcher: prefetcher
+        )
+        sut.onAppear()
+        XCTAssertFalse(searchExperienceProvider.storeAIChatSearchInputDuringOnboardingChoiceCalled)
+        XCTAssertEqual(prefetcher.prefetchCallCount, 0)
+
+        // WHEN
+        sut.selectDownloadReasonAction(.privateAIChat)
+
+        // THEN
+        XCTAssertTrue(searchExperienceProvider.storeAIChatSearchInputDuringOnboardingChoiceCalled)
+        XCTAssertEqual(searchExperienceProvider.lastStoredValue, true)
+        XCTAssertEqual(prefetcher.prefetchCallCount, 1)
+    }
+
+    func testWhenSelectDownloadReasonIsNotPrivateAIChatThenAIChatSearchInputChoiceIsNotStoredAndModelsAreNotPrefetched() {
+        for reason in [OnboardingDownloadReason.browserPrivately, .noAI, .blockAds] {
+            // GIVEN
+            let searchExperienceProvider = MockOnboardingSearchExperienceProvider()
+            let prefetcher = MockOnboardingAIModelsPrefetcher()
+            onboardingManagerMock = OnboardingManagerMock()
+            onboardingManagerMock.onboardingSteps = [.introDialog(isReturningUser: false), .downloadReasonSelection]
+            onboardingManagerMock.stubbedRemainingSteps = [.setDefaultBrowser]
+            let sut = makeSUT(
+                currentOnboardingStep: .downloadReasonSelection,
+                onboardingSearchExperienceProvider: searchExperienceProvider,
+                aiModelsPrefetcher: prefetcher
+            )
+            sut.onAppear()
+
+            // WHEN
+            sut.selectDownloadReasonAction(reason)
+
+            // THEN
+            XCTAssertFalse(searchExperienceProvider.storeAIChatSearchInputDuringOnboardingChoiceCalled, "reason: \(reason)")
+            XCTAssertEqual(prefetcher.prefetchCallCount, 0, "reason: \(reason)")
+        }
+    }
+}
+
+// MARK: - Reason-tailored step side effects
+
+extension OnboardingIntroViewModelTests {
+
+    func testWhenKeepDuckAIContinueActionWithIsEnabledTrueThenStoresChoiceEnabledAndAdvances() {
+        // GIVEN
+        let searchExperienceProvider = MockOnboardingSearchExperienceProvider()
+        onboardingManagerMock.onboardingSteps = [.keepDuckAISelection, .addressBarPositionSelection]
+        let sut = makeSUT(currentOnboardingStep: .keepDuckAISelection, onboardingSearchExperienceProvider: searchExperienceProvider)
+        sut.onAppear()
+
+        // WHEN
+        sut.keepDuckAIContinueAction(isEnabled: true)
+
+        // THEN
+        XCTAssertTrue(searchExperienceProvider.storeAIChatSearchInputDuringOnboardingChoiceCalled)
+        XCTAssertEqual(searchExperienceProvider.lastStoredValue, true)
+        XCTAssertEqual(sut.state.intro?.type, .chooseAddressBarPositionDialog(content: .mock))
+    }
+
+    func testWhenKeepDuckAIContinueActionWithIsEnabledFalseThenStoresChoiceDisabledAndAdvances() {
+        // GIVEN
+        let searchExperienceProvider = MockOnboardingSearchExperienceProvider()
+        onboardingManagerMock.onboardingSteps = [.keepDuckAISelection, .addressBarPositionSelection]
+        let sut = makeSUT(currentOnboardingStep: .keepDuckAISelection, onboardingSearchExperienceProvider: searchExperienceProvider)
+        sut.onAppear()
+
+        // WHEN
+        sut.keepDuckAIContinueAction(isEnabled: false)
+
+        // THEN
+        XCTAssertTrue(searchExperienceProvider.storeAIChatSearchInputDuringOnboardingChoiceCalled)
+        XCTAssertEqual(searchExperienceProvider.lastStoredValue, false)
+        XCTAssertEqual(sut.state.intro?.type, .chooseAddressBarPositionDialog(content: .mock))
+    }
+
+}
+
+// MARK: - Reason-tailored flow sequencing
+
+extension OnboardingIntroViewModelTests {
+
+    /// Puts the view model on the Download Screen for a treatment user, with the manager returning the
+    /// real reason-tailored steps from the shared helper (`OnboardingManagerTests` pins that helper
+    /// against the real `OnboardingManager`, so these walks exercise the true ordering end-to-end).
+    private func makeSUTOnDownloadScreen(for reason: OnboardingDownloadReason) -> OnboardingIntroViewModel {
+        onboardingManagerMock.currentOnboardingFlow = .default
+        onboardingManagerMock.onboardingSteps = [.introDialog(isReturningUser: false), .downloadReasonSelection]
+        onboardingManagerMock.stubbedRemainingSteps = OnboardingStepsHelper.expectedRemainingSteps(for: reason)
+        let sut = makeSUT(currentOnboardingStep: .downloadReasonSelection)
+        sut.onAppear()
+        return sut
+    }
+
+    func testBrowsePrivatelyFlowAdvancesThroughItsStepsInOrder() {
+        // GIVEN a treatment user picking "browse privately" on the Download Screen
+        let sut = makeSUTOnDownloadScreen(for: .browserPrivately)
+
+        // WHEN / THEN each action advances to the next screen of the real browse-privately sequence
+        sut.selectDownloadReasonAction(.browserPrivately)
+        XCTAssertEqual(sut.state.intro?.type, .setDefaultBrowserDialog(content: .mockBrowser))
+
+        sut.setDefaultBrowserAction()
+        XCTAssertEqual(sut.state.intro?.type, .searchPrivacySettingsDialog(content: .mock))
+
+        sut.searchPrivacySettingsContinueAction()
+        XCTAssertEqual(sut.state.intro?.type, .chooseSearchExperienceDialog(content: .mock))
+
+        sut.selectSearchExperienceAction()
+        XCTAssertEqual(sut.state.intro?.type, .chooseAddressBarPositionDialog(content: .mock))
+
+        sut.selectAddressBarPositionAction()
+        XCTAssertEqual(sut.state.intro?.type, .addToDockPromoDialog(content: .mock))
+
+        sut.addToDockContinueAction(isShowingAddToDockTutorial: false)
+        XCTAssertEqual(sut.state.intro?.type, .chooseAppIconDialog(content: .mock))
+
+        sut.appIconPickerContinueAction()
+        XCTAssertEqual(sut.state.intro?.type, .duckAIQueryDialog(content: .mock))
+    }
+
+    func testPrivateAIChatFlowAdvancesThroughItsStepsInOrder() {
+        // GIVEN a treatment user picking "chat with AI" on the Download Screen
+        let sut = makeSUTOnDownloadScreen(for: .privateAIChat)
+
+        // WHEN / THEN each action advances to the next screen of the real private-AI-chat sequence
+        sut.selectDownloadReasonAction(.privateAIChat)
+        XCTAssertEqual(sut.state.intro?.type, .setDefaultBrowserDialog(content: .mockBrowser))
+
+        sut.setDefaultBrowserAction()
+        XCTAssertEqual(sut.state.intro?.type, .aiModelDialog(content: .mock, options: [], selectedID: nil))
+
+        sut.aiModelContinueAction()
+        XCTAssertEqual(sut.state.intro?.type, .toggleInputModeDialog(content: .mock))
+
+        sut.toggleInputModeContinueAction()
+        XCTAssertEqual(sut.state.intro?.type, .chooseAddressBarPositionDialog(content: .mock))
+
+        sut.selectAddressBarPositionAction()
+        XCTAssertEqual(sut.state.intro?.type, .addToDockPromoDialog(content: .mock))
+
+        sut.addToDockContinueAction(isShowingAddToDockTutorial: false)
+        XCTAssertEqual(sut.state.intro?.type, .chooseAppIconDialog(content: .mock))
+
+        sut.appIconPickerContinueAction()
+        XCTAssertEqual(sut.state.intro?.type, .duckAIQueryDialog(content: .mock))
+    }
+
+    func testNoAIFlowAdvancesThroughItsStepsInOrder() {
+        // GIVEN a treatment user picking "remove AI" on the Download Screen
+        let sut = makeSUTOnDownloadScreen(for: .noAI)
+
+        // WHEN / THEN each action advances to the next screen of the real no-AI sequence
+        sut.selectDownloadReasonAction(.noAI)
+        XCTAssertEqual(sut.state.intro?.type, .setDefaultBrowserDialog(content: .mockBrowser))
+
+        sut.setDefaultBrowserAction()
+        XCTAssertEqual(sut.state.intro?.type, .aiSearchSettingsDialog(content: .mock))
+
+        sut.aiSearchSettingsContinueAction()
+        XCTAssertEqual(sut.state.intro?.type, .keepDuckAIDialog(content: .mock))
+
+        sut.keepDuckAIContinueAction(isEnabled: true)
+        XCTAssertEqual(sut.state.intro?.type, .chooseAddressBarPositionDialog(content: .mock))
+
+        sut.selectAddressBarPositionAction()
+        XCTAssertEqual(sut.state.intro?.type, .addToDockPromoDialog(content: .mock))
+
+        sut.addToDockContinueAction(isShowingAddToDockTutorial: false)
+        XCTAssertEqual(sut.state.intro?.type, .chooseAppIconDialog(content: .mock))
+
+        sut.appIconPickerContinueAction()
+        XCTAssertEqual(sut.state.intro?.type, .duckAIQueryDialog(content: .mock))
+    }
+
+    func testBlockAdsFlowAdvancesThroughItsStepsInOrder() {
+        // GIVEN a treatment user picking "block ads" on the Download Screen
+        let sut = makeSUTOnDownloadScreen(for: .blockAds)
+
+        // WHEN / THEN each action advances to the next screen of the real block-ads sequence
+        sut.selectDownloadReasonAction(.blockAds)
+        XCTAssertEqual(sut.state.intro?.type, .setDefaultBrowserDialog(content: .mockBrowser))
+
+        sut.setDefaultBrowserAction()
+        XCTAssertEqual(sut.state.intro?.type, .duckPlayerDialog(content: .mock))
+
+        sut.duckPlayerContinueAction()
+        XCTAssertEqual(sut.state.intro?.type, .chooseSearchExperienceDialog(content: .mock))
+
+        sut.selectSearchExperienceAction()
+        XCTAssertEqual(sut.state.intro?.type, .chooseAddressBarPositionDialog(content: .mock))
+
+        sut.selectAddressBarPositionAction()
+        XCTAssertEqual(sut.state.intro?.type, .addToDockPromoDialog(content: .mock))
+
+        sut.addToDockContinueAction(isShowingAddToDockTutorial: false)
+        XCTAssertEqual(sut.state.intro?.type, .chooseAppIconDialog(content: .mock))
+
+        sut.appIconPickerContinueAction()
+        XCTAssertEqual(sut.state.intro?.type, .duckAIQueryDialog(content: .mock))
     }
 }
 

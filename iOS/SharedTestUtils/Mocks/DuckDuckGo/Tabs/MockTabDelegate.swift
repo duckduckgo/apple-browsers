@@ -61,6 +61,8 @@ final class MockTabDelegate: TabDelegate {
 
     func tab(_ tab: DuckDuckGo.TabViewController, didRequestNewTabForUrl url: URL, openedByPage: Bool, inheritingAttribution: BrowserServicesKit.AdClickAttributionLogic.State?) {}
 
+    func tab(_ tab: DuckDuckGo.TabViewController, didRequestReopenClosedTabAt url: URL) {}
+
     func tab(_ tab: DuckDuckGo.TabViewController, didRequestNewBackgroundTabForUrl url: URL, inheritingAttribution: BrowserServicesKit.AdClickAttributionLogic.State?) {}
 
     func tab(_ tab: DuckDuckGo.TabViewController, didRequestNewFireTabForUrl url: URL, inheritingAttribution: BrowserServicesKit.AdClickAttributionLogic.State?) {}
@@ -87,7 +89,7 @@ final class MockTabDelegate: TabDelegate {
 
     func tabDidRequestAIChat(tab: TabViewController) {}
 
-    func tabDidRequestAIChatHistory(tab: TabViewController) {}
+    func tabDidRequestAIChatHistory(tab: TabViewController, source: AIChatHistorySource) {}
 
     func tabDidRequestNewPrivateEmailAddress(tab: TabViewController) {}
 
@@ -156,8 +158,6 @@ final class MockTabDelegate: TabDelegate {
     
     func tab(_ tab: DuckDuckGo.TabViewController, didExtractDaxEasterEggLogoURL logoURL: String?) {}
 
-    func tabDidRequestFireMode(tab: DuckDuckGo.TabViewController) {}
-
     func tabDidRequestYouTubeAdBlockPicker(tab: DuckDuckGo.TabViewController) {}
 
     func tabDidRequestSetYouTubeAdBlockingEnabled(_ enabled: Bool, tab: DuckDuckGo.TabViewController) {}
@@ -198,7 +198,7 @@ extension TabViewController {
             specialErrorPageNavigationHandler: DummySpecialErrorPageNavigationHandler(),
             featureDiscovery: MockFeatureDiscovery(),
             keyValueStore: MockKeyValueFileStore(),
-            daxDialogsManager: DummyDaxDialogsManager(),
+            daxDialogsManager: MockDaxDialogsManager(),
             aiChatSettings: MockAIChatSettingsProvider(),
             productSurfaceTelemetry: MockProductSurfaceTelemetry(),
             privacyStats: MockPrivacyStats(),

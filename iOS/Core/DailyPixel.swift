@@ -30,6 +30,7 @@ import Persistence
 /// The 'onComplete' closure is always called - even when no pixel is fired.
 /// In those scenarios a 'DailyPixelError' is returned denoting the reason.
 /// 
+/// *** Deprecated. Use PixelKit (`.daily` frequency) for new pixels. ***
 public final class DailyPixel {
 
     public enum Error: Swift.Error {
@@ -140,7 +141,7 @@ public final class DailyPixel {
     private static func hasBeenFiredToday(forKey key: String, dailyPixelStore: ThrowingKeyValueStoring) -> Bool {
         do {
             if let lastFireDate = try dailyPixelStore.object(forKey: key) as? Date {
-                return Date().isSameDay(lastFireDate)
+                return Calendar.current.isDateInToday(lastFireDate)
             }
             return false
         } catch {

@@ -1,12 +1,15 @@
 {
   "images" : [
     {
-      "filename" : "NewTab-Options.svg",
+      "filename" : "NewTab-Options-96.svg",
       "idiom" : "universal"
     }
   ],
   "info" : {
     "author" : "xcode",
     "version" : 1
+  },
+  "properties" : {
+    "preserves-vector-representation" : true
   }
 }

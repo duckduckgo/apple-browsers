@@ -18,7 +18,7 @@
 
 import AIChat
 import Combine
-import FeatureFlags
+import FeatureFlags_macOS
 import XCTest
 import Persistence
 import PersistenceTestingUtils
@@ -566,6 +566,68 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
 
         searchPreferences.showAutocompleteSuggestions = false
         searchPreferences.showAutocompleteSuggestions = true
+
+        cancellable.cancel()
+        XCTAssertEqual(events, [false, true])
+    }
+
+    // MARK: - chat/suggestion deletion
+
+    @MainActor
+    func testIsAIChatDeletionEnabled_reflectsFeatureFlag() throws {
+        let store = try makeStore()
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.featuresStub = ["aiChatNtpSuggestionsDeletion": true]
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger, searchPreferences: makeSearchPreferences())
+
+        XCTAssertTrue(provider.isAIChatDeletionEnabled)
+
+        featureFlagger.featuresStub = ["aiChatNtpSuggestionsDeletion": false]
+        XCTAssertFalse(provider.isAIChatDeletionEnabled)
+    }
+
+    @MainActor
+    func testIsAIChatDeletionEnabledPublisher_emitsOnFlaggerUpdate() throws {
+        let store = try makeStore()
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.featuresStub = ["aiChatNtpSuggestionsDeletion": false]
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger, searchPreferences: makeSearchPreferences())
+
+        var events: [Bool] = []
+        let cancellable = provider.isAIChatDeletionEnabledPublisher.sink { events.append($0) }
+
+        featureFlagger.featuresStub = ["aiChatNtpSuggestionsDeletion": true]
+        featureFlagger.triggerUpdate()
+
+        cancellable.cancel()
+        XCTAssertEqual(events, [false, true])
+    }
+
+    @MainActor
+    func testIsSearchSuggestionDeletionEnabled_reflectsFeatureFlag() throws {
+        let store = try makeStore()
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.featuresStub = ["ntpSearchSuggestionsDeletion": true]
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger, searchPreferences: makeSearchPreferences())
+
+        XCTAssertTrue(provider.isSearchSuggestionDeletionEnabled)
+
+        featureFlagger.featuresStub = ["ntpSearchSuggestionsDeletion": false]
+        XCTAssertFalse(provider.isSearchSuggestionDeletionEnabled)
+    }
+
+    @MainActor
+    func testIsSearchSuggestionDeletionEnabledPublisher_emitsOnFlaggerUpdate() throws {
+        let store = try makeStore()
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.featuresStub = ["ntpSearchSuggestionsDeletion": false]
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger, searchPreferences: makeSearchPreferences())
+
+        var events: [Bool] = []
+        let cancellable = provider.isSearchSuggestionDeletionEnabledPublisher.sink { events.append($0) }
+
+        featureFlagger.featuresStub = ["ntpSearchSuggestionsDeletion": true]
+        featureFlagger.triggerUpdate()
 
         cancellable.cancel()
         XCTAssertEqual(events, [false, true])

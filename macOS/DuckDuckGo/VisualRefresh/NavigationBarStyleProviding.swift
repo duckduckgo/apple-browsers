@@ -22,21 +22,13 @@ protocol NavigationBarStyleProviding {
     var topCornerRadius: CGFloat? { get }
 }
 
-final class DefaultNavigationBarStyleProviding: NavigationBarStyleProviding {
-    let topCornerRadius: CGFloat? = 10
-}
-
 final class RefreshNavigationBarStyleProviding: NavigationBarStyleProviding {
     let topCornerRadius: CGFloat? = 12
 }
 
 struct NavigationBarStyleProvidingFactory {
 
-    static func buildStyleProvider(displaysTabsAnimations: Bool) -> NavigationBarStyleProviding {
-        if displaysTabsAnimations {
-            return RefreshNavigationBarStyleProviding()
-        }
-
-        return DefaultNavigationBarStyleProviding()
+    static func buildStyleProvider() -> NavigationBarStyleProviding {
+        RefreshNavigationBarStyleProviding()
     }
 }

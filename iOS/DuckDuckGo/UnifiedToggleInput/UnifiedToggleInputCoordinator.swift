@@ -756,8 +756,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     func beginEditMode(prompt: String, attachments: [UnifiedToggleInputAttachment] = []) {
         isEditing = true
         showExpanded(prefilledText: prompt, inputMode: .aiChat, activatesInput: true)
-        viewController.removeAllAttachments()
-        attachments.forEach { viewController.addAttachment($0) }
+        attachmentController.replaceAllAttachments(with:attachments)
     }
 
     /// Exits edit mode back to a normal input: clears the flag (restoring host chrome) and resets
@@ -776,18 +775,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         viewController.setEditMode(isEditing)
         delegate?.unifiedToggleInputDidChangeEditMode(isEditing)
     }
-
-#if DEBUG
-    /// Debug-only sample attachments (a generated image) so edit mode can be exercised from the
-    /// app without the FE. Used by the "/editdebug" trigger.
-    private func makeDebugEditAttachments() -> [UnifiedToggleInputAttachment] {
-        let image = UIGraphicsImageRenderer(size: CGSize(width: 48, height: 48)).image { context in
-            UIColor.systemBlue.setFill()
-            context.fill(CGRect(x: 0, y: 0, width: 48, height: 48))
-        }
-        return [.image(AIChatImageAttachment(image: image, fileName: "debug.png"))]
-    }
-#endif
 
     func hide() {
         keyboardMonitor.disarm()
@@ -1479,15 +1466,6 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             delegate?.unifiedToggleInputDidSubmitQuery(text)
             didSubmitQuery.send(text)
         case .aiChat:
-#if DEBUG
-            // Debug-only: submit "/editdebug" in an AI chat to enter edit mode with sample
-            // content, so the edit-mode UI can be exercised without the FE.
-            if text == "/editdebug" {
-                setText("")
-                beginEditMode(prompt: "Debug: edit me", attachments: makeDebugEditAttachments())
-                return
-            }
-#endif
             let userScript = boundUserScript
             let tools = toolsController.selectedToolsForSubmission()
 

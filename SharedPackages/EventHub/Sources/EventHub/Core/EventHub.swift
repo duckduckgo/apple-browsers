@@ -82,8 +82,8 @@ public final class EventHub: EventHubManaging {
     /// How often pending (dirty) pixel state is persisted, absent a period boundary sooner than that.
     private static let flushInterval: Int64 = 10_000 // milliseconds
 
-    private let store: EventHubStore
-    private let parser: EventHubConfigParsing
+    private let store: EventHubKeyValueStore
+    private let parser: EventHubConfigParser
     private let scheduler: EventHubScheduler
     private let pixelFiring: EventHubPixelFiring
     private let queue: DispatchQueue
@@ -121,8 +121,8 @@ public final class EventHub: EventHubManaging {
     }
 
     public init(
-        store: EventHubStore,
-        parser: EventHubConfigParsing,
+        store: EventHubKeyValueStore,
+        parser: EventHubConfigParser,
         settings: EventHubSettingsProviding,
         scheduler: EventHubScheduler,
         pixelFiring: EventHubPixelFiring,

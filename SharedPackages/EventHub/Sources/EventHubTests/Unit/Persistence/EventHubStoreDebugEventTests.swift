@@ -40,7 +40,7 @@ struct EventHubStoreDebugEventTests {
 
     private let capture = CapturingEventMapping()
     private let store = ThrowingKeyValueStore()
-    private let repository: EventHubStore
+    private let repository: EventHubKeyValueStore
 
     init() {
         repository = EventHubKeyValueStore(store: store, parser: EventHubConfigParser(), eventMapping: capture.eventMapping)

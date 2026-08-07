@@ -21,28 +21,20 @@ import os.log
 
 /// Parses the remote `eventHub` feature settings JSON into validated telemetry pixel configs, and
 /// serialises a single config back to JSON for persistence as a period's config snapshot.
-public protocol EventHubConfigParsing {
-    /// Parses the `telemetry` map from the feature settings, returning only valid, fully-formed pixel
-    /// configs. Malformed or invalid input yields an empty list (never throws). Takes the settings in the
-    /// `[String: Any]` shape remote config already holds them in (BSK's `settings(for:)`), so no JSON
-    /// round trip is needed to reach the parser.
-    func parseTelemetry(_ settings: [String: Any]) -> [TelemetryPixelConfig]
-
-    /// Parses a single serialised pixel config (as produced by `serializePixelConfig`), returning `nil`
-    /// if it is malformed or invalid.
-    func parseSinglePixelConfig(name: String, json: String) -> TelemetryPixelConfig?
-
-    /// Serialises a pixel config to JSON for persistence, or `nil` if serialisation fails.
-    func serializePixelConfig(_ config: TelemetryPixelConfig) -> String?
-}
-
-public final class EventHubConfigParser: EventHubConfigParsing {
+///
+/// Deliberately concrete, with no protocol in front of it: parsing is pure, so tests exercise the real
+/// thing rather than a substitute.
+public final class EventHubConfigParser {
     /// The feature-settings key holding the per-pixel telemetry map. Also read by `EventHubSettings`,
     /// which strips consent-gated entries out of it.
     static let telemetryKey = "telemetry"
 
     public init() {}
 
+    /// Parses the `telemetry` map from the feature settings, returning only valid, fully-formed pixel
+    /// configs. Malformed or invalid input yields an empty list (never throws). Takes the settings in the
+    /// `[String: Any]` shape remote config already holds them in (BSK's `settings(for:)`), so no JSON
+    /// round trip is needed to reach the parser.
     public func parseTelemetry(_ settings: [String: Any]) -> [TelemetryPixelConfig] {
         // An absent `telemetry` key is the normal pre-rollout state ("eventHub enabled, nothing configured
         // yet"), not malformed settings, so it must stay distinguishable from the failures below.
@@ -63,6 +55,8 @@ public final class EventHubConfigParser: EventHubConfigParsing {
         }
     }
 
+    /// Parses a single serialised pixel config (as produced by `serializePixelConfig`), returning `nil`
+    /// if it is malformed or invalid.
     public func parseSinglePixelConfig(name: String, json: String) -> TelemetryPixelConfig? {
         guard let data = json.data(using: .utf8),
               let pixel = try? JSONDecoder().decode(PixelDTO.self, from: data) else {
@@ -71,6 +65,7 @@ public final class EventHubConfigParser: EventHubConfigParsing {
         return Self.toPixelConfig(name: name, pixel: pixel)
     }
 
+    /// Serialises a pixel config to JSON for persistence, or `nil` if serialisation fails.
     public func serializePixelConfig(_ config: TelemetryPixelConfig) -> String? {
         guard let data = try? JSONEncoder().encode(Self.toDTO(config)) else { return nil }
         return String(data: data, encoding: .utf8)

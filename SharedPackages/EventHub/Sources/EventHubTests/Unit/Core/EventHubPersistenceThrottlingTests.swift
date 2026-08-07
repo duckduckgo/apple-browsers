@@ -97,7 +97,7 @@ struct EventHubPersistenceThrottlingTests {
 private final class FailableStoreHarness {
     let store = ThrowingKeyValueStore()
     let scheduler = ManualEventHubScheduler(startMillis: 1_780_000_000_000)
-    let repository: EventHubStore
+    let repository: EventHubKeyValueStore
     let manager: EventHub
 
     init(settingsJSON: String) {

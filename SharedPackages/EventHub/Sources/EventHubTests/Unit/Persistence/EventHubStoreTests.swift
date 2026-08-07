@@ -38,7 +38,7 @@ struct EventHubStoreTests {
         ])
 
     let store = InMemoryKeyValueStore()
-    let repository: EventHubStore
+    let repository: EventHubKeyValueStore
 
     init() {
         repository = EventHubKeyValueStore(store: store, parser: EventHubConfigParser())
@@ -188,7 +188,7 @@ struct EventHubStoreTests {
 
     @Test("a nil backing store reports absence and drops writes without failing")
     func nilBackingStoreReportsAbsenceAndDropsWrites() {
-        let repository: EventHubStore = EventHubKeyValueStore(store: nil, parser: EventHubConfigParser())
+        let repository = EventHubKeyValueStore(store: nil, parser: EventHubConfigParser())
         let state = PixelState(pixelName: "testPixel", periodStartMillis: 0, periodEndMillis: 86_400_000,
                                 config: Self.sampleConfig, params: ["count": ParamState(value: 3)])
 

@@ -36,14 +36,14 @@ final class EventHubFixture {
     let manager: EventHub
 
     private let backingStore: InMemoryKeyValueStore
-    private let backingRepository: EventHubStore
+    private let backingRepository: EventHubKeyValueStore
     private let spyPixelFiring = SpyPixelFiring()
 
     // The manager mutates all three of these on its own queue, asynchronously, so every test-side read
     // fences first. Reading `state(of:)`/`count(of:)` needs no such treatment: `activePixelStates` is
     // itself a `queue.sync`.
     var store: InMemoryKeyValueStore { manager.settle(); return backingStore }
-    var repository: EventHubStore { manager.settle(); return backingRepository }
+    var repository: EventHubKeyValueStore { manager.settle(); return backingRepository }
     var fired: [FiredPixel] { manager.settle(); return spyPixelFiring.fired }
 
     private let enabledSubject: CurrentValueSubject<Bool, Never>

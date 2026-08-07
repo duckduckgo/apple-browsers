@@ -50,7 +50,7 @@ struct EventHubConfigParserTests {
     }
     """)
 
-    let parser: EventHubConfigParsing = EventHubConfigParser()
+    let parser = EventHubConfigParser()
 
     @Test("settings JSON parses the pixel correctly")
     func settingsJSONParsesPixelCorrectly() {

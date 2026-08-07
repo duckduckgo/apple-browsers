@@ -21,52 +21,29 @@ import Common
 import Persistence
 import os.log
 
-/// Persists per-pixel EventHub runtime state across app restarts. State survives the fire button and
-/// is only cleared by EventHub itself (period fire, config disable). Backed by the key-value store.
-public protocol EventHubStore {
-    /// Returns the persisted state for the named pixel, or `nil` if absent or corrupt.
-    func pixelState(named name: String) -> PixelState?
-
-    /// Returns all persisted pixel states, skipping any whose stored config cannot be parsed.
-    func allPixelStates() -> [PixelState]
-
-    /// Persists (inserts or replaces) the states for a set of pixels in a single write.
-    ///
-    /// - Returns: `false` only when the store rejected the write, meaning the caller should keep the
-    ///   states pending and try again. States whose config or params cannot be serialised are skipped
-    ///   and do not fail the batch: that failure is permanent, so retrying could never clear it.
-    @discardableResult
-    func savePixelStates(_ states: [PixelState]) -> Bool
-
-    /// Removes the persisted state for the named pixel, if any.
-    func deletePixelState(named name: String)
-
-    /// Removes all persisted pixel state.
-    func deleteAllPixelStates()
-}
-
-public extension EventHubStore {
-    @discardableResult
-    func savePixelState(_ state: PixelState) -> Bool { savePixelStates([state]) }
-}
-
-/// Backs `EventHubStore` with a `ThrowingKeyValueStoring`. All persisted pixel states live under a
-/// single composite key (`storageKey`) as a `[String: EventHubStoredPixelState]` map, JSON-encoded to
-/// `Data`. Read/write/parse failures are treated as absence rather than propagated: a corrupt entry is
-/// skipped, not thrown — but every such boundary is logged to `Logger.eventHub`, and the ones that lose
-/// state also fire `EventHubDebugEvent.pixelStatePersistenceFailed` through `eventMapping`.
-public final class EventHubKeyValueStore: EventHubStore {
+/// Persists per-pixel EventHub runtime state across app restarts, over a `ThrowingKeyValueStoring`.
+/// State survives the fire button and is only cleared by EventHub itself (period fire, config disable).
+///
+/// All persisted pixel states live under a single composite key (`storageKey`) as a
+/// `[String: EventHubStoredPixelState]` map, JSON-encoded to `Data`. Read/write/parse failures are
+/// treated as absence rather than propagated: a corrupt entry is skipped, not thrown — but every such
+/// boundary is logged to `Logger.eventHub`, and the ones that lose state also fire
+/// `EventHubDebugEvent.pixelStatePersistenceFailed` through `eventMapping`.
+///
+/// Deliberately concrete, with no protocol in front of it: the swappable seam is the injected
+/// `ThrowingKeyValueStoring`, which is what tests and both platforms actually vary.
+public final class EventHubKeyValueStore {
     /// The single key under which the map of pixel-name to `EventHubStoredPixelState` is stored.
     public static let storageKey = "eventhub_pixel_states"
 
     /// `nil` when the platform could not open its store: reads report absence, writes are dropped.
     private let store: ThrowingKeyValueStoring?
-    private let parser: EventHubConfigParsing
+    private let parser: EventHubConfigParser
     private let eventMapping: EventMapping<EventHubDebugEvent>?
 
     public init(
         store: ThrowingKeyValueStoring?,
-        parser: EventHubConfigParsing,
+        parser: EventHubConfigParser,
         eventMapping: EventMapping<EventHubDebugEvent>? = nil
     ) {
         self.store = store
@@ -74,14 +51,21 @@ public final class EventHubKeyValueStore: EventHubStore {
         self.eventMapping = eventMapping
     }
 
+    /// Returns the persisted state for the named pixel, or `nil` if absent or corrupt.
     public func pixelState(named name: String) -> PixelState? {
         readMap()[name].flatMap { toPixelState(name: name, entry: $0) }
     }
 
+    /// Returns all persisted pixel states, skipping any whose stored config cannot be parsed.
     public func allPixelStates() -> [PixelState] {
         readMap().compactMap { name, entry in toPixelState(name: name, entry: entry) }
     }
 
+    /// Persists (inserts or replaces) the states for a set of pixels in a single write.
+    ///
+    /// - Returns: `false` only when the store rejected the write, meaning the caller should keep the
+    ///   states pending and try again. States whose config or params cannot be serialised are skipped
+    ///   and do not fail the batch: that failure is permanent, so retrying could never clear it.
     @discardableResult
     public func savePixelStates(_ states: [PixelState]) -> Bool {
         let entries = states.compactMap { state in serialise(state).map { (state.pixelName, $0) } }
@@ -108,12 +92,17 @@ public final class EventHubKeyValueStore: EventHubStore {
             paramsJSON: paramsJSON, configJSON: configJSON)
     }
 
+    @discardableResult
+    public func savePixelState(_ state: PixelState) -> Bool { savePixelStates([state]) }
+
+    /// Removes the persisted state for the named pixel, if any.
     public func deletePixelState(named name: String) {
         var map = readMap()
         guard map.removeValue(forKey: name) != nil else { return }
         writeMap(map)
     }
 
+    /// Removes all persisted pixel state.
     public func deleteAllPixelStates() {
         do {
             try store?.removeObject(forKey: Self.storageKey)

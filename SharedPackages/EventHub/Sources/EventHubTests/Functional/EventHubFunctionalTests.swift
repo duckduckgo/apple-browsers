@@ -80,7 +80,7 @@ struct EventHubFunctionalTests {
     /// and `handler` can share reference semantics with the rest of the harness.
     private final class Harness {
         let scheduler = ManualEventHubScheduler(startMillis: 1_780_000_000_000)
-        let repository: EventHubStore
+        let repository: EventHubKeyValueStore
         let manager: EventHub
         let handler: WebEventsHandler
         private let spyPixelFiring = SpyPixelFiring()

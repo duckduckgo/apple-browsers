@@ -86,6 +86,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         static let legacyContainerTopPadding: CGFloat = 0
         static let contentLeadingInset: CGFloat = 2
         static let legacyContentLeadingInset: CGFloat = 0
+        /// How far the inner border sits inside the outer one. Also the difference between their
+        /// corner radii — see `innerBorderCornerRadius(for:)`.
+        static let innerBorderInset: CGFloat = 1
     }
 
     private let backgroundView = MouseBlockingBackgroundView()
@@ -655,6 +658,19 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         omnibarController.surface.drawsOwnChrome
     }
 
+    /// Radius the inner border needs to stay concentric with the outer one.
+    ///
+    /// Both borders are `CALayer` strokes drawn along a rounded-rect path. Sharing one radius while
+    /// the inner rect is inset by `innerBorderInset` leaves the arcs non-concentric: the inner arc's
+    /// centre shifts diagonally, so through the corner sweep the two strokes drift to
+    /// `inset * sqrt(2)` apart against `inset` along the straight edges, and the pair reads as one
+    /// thickened, misplaced outline. Shrinking the radius by the inset keeps the arcs parallel.
+    ///
+    /// Only the bottom corners are rounded in the rebranded theme, which is where the artefact shows.
+    static func innerBorderCornerRadius(for outerRadius: CGFloat) -> CGFloat {
+        max(0, outerRadius - Constants.innerBorderInset)
+    }
+
     private func applyTopClipMask() {
         view.wantsLayer = true
         guard !hostDrawsChrome else {
@@ -831,10 +847,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             backgroundView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             backgroundView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
 
-            innerBorderView.topAnchor.constraint(equalTo: backgroundView.topAnchor, constant: 1),
-            innerBorderView.leadingAnchor.constraint(equalTo: backgroundView.leadingAnchor, constant: 1),
-            innerBorderView.trailingAnchor.constraint(equalTo: backgroundView.trailingAnchor, constant: -1),
-            innerBorderView.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor, constant: -1),
+            innerBorderView.topAnchor.constraint(equalTo: backgroundView.topAnchor, constant: Constants.innerBorderInset),
+            innerBorderView.leadingAnchor.constraint(equalTo: backgroundView.leadingAnchor, constant: Constants.innerBorderInset),
+            innerBorderView.trailingAnchor.constraint(equalTo: backgroundView.trailingAnchor, constant: -Constants.innerBorderInset),
+            innerBorderView.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor, constant: -Constants.innerBorderInset),
 
             containerView.topAnchor.constraint(equalTo: backgroundView.topAnchor),
             containerView.leadingAnchor.constraint(equalTo: backgroundView.leadingAnchor),
@@ -2084,7 +2100,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
         innerBorderView.borderColor = hostDrawsChrome ? .clear : NSColor(named: "AddressBarInnerBorderColor")
         innerBorderView.backgroundColor = NSColor.clear
-        innerBorderView.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions
+        innerBorderView.cornerRadius = Self.innerBorderCornerRadius(
+            for: barStyleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions
+        )
 
         if isAppRebranding {
             innerBorderView.roundedCorners = [.bottomLeft, .bottomRight]

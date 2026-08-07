@@ -949,6 +949,12 @@
 /* Login name label for login details on autofill */
 "autofill.logins.details.login-name" = "Cím";
 
+/* Message for alert when attempting to save a password that has neither a website nor a username */
+"autofill.logins.details.missing-website-or-username-alert.message" = "A jelszó mentéséhez adj meg egy webhelyet vagy felhasználónevet.";
+
+/* Title for alert when attempting to save a password that has neither a website nor a username */
+"autofill.logins.details.missing-website-or-username-alert.title" = "Webhely vagy felhasználónév szükséges";
+
 /* Title when adding new autofill login */
 "autofill.logins.details.new-title" = "Jelszó hozzáadása";
 

@@ -900,35 +900,22 @@ final class ContextualMenuTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenAskingRootItemAndReorderByNameIsDisabledThenReorderItemAndItsSeparatorAreOmitted() {
+    func testWhenAskingRootItemAndReorderByNameIsDisabledThenMenuIsEmpty() {
         // GIVEN
         let bookmark = Bookmark(id: "b", url: URL.duckDuckGo.absoluteString, title: "DDG", isFavorite: false)
         let entities: [BaseBookmarkEntity] = [bookmark]
 
         // WHEN
-        let items = BookmarksContextMenu.rootMenuItems(topLevelEntities: entities)
+        let items = BookmarksContextMenu.rootMenuItems(topLevelEntities: entities, isReorderByNameEnabled: false)
 
         // THEN
-        XCTAssertEqual(items.count, 4)
-        assertMenuItem(
-            items[0],
-            withTitle: UserText.openAllInNewTabs,
-            selector: #selector(FolderMenuItemSelectors.openInNewTabs(_:)),
-            representedObject: BookmarksRootMenuItem(topLevelEntities: entities))
-        assertMenuItem(
-            items[1],
-            withTitle: UserText.openAllTabsInNewWindow,
-            selector: #selector(FolderMenuItemSelectors.openAllInNewWindow(_:)),
-            representedObject: BookmarksRootMenuItem(topLevelEntities: entities))
-        XCTAssertTrue(items[2].isSeparatorItem) // Separator
-        assertMenuItem(items[3], withTitle: UserText.addFolder, selector: #selector(FolderMenuItemSelectors.newFolder(_:)))
-        XCTAssertFalse(items.contains(where: { $0.title == UserText.bookmarksBarContextMenuReorderByName }))
+        XCTAssertTrue(items.isEmpty)
     }
 
     @MainActor
     func testWhenAskingEmptyRootItem_OpenAllItemsShouldBeDisabled() {
         // WHEN
-        let items = BookmarksContextMenu.rootMenuItems(topLevelEntities: [])
+        let items = BookmarksContextMenu.rootMenuItems(topLevelEntities: [], isReorderByNameEnabled: true)
 
         // THEN
         assertMenuItem(
@@ -952,7 +939,7 @@ final class ContextualMenuTests: XCTestCase {
         let entities: [BaseBookmarkEntity] = [BookmarkFolder(id: "f", title: "Folder", children: [nested])]
 
         // WHEN
-        let items = BookmarksContextMenu.rootMenuItems(topLevelEntities: entities)
+        let items = BookmarksContextMenu.rootMenuItems(topLevelEntities: entities, isReorderByNameEnabled: true)
 
         // THEN
         assertMenuItem(
@@ -976,7 +963,7 @@ final class ContextualMenuTests: XCTestCase {
         let entities: [BaseBookmarkEntity] = [BookmarkFolder(id: "f", title: "Folder"), bookmark]
 
         // WHEN
-        let items = BookmarksContextMenu.rootMenuItems(topLevelEntities: entities)
+        let items = BookmarksContextMenu.rootMenuItems(topLevelEntities: entities, isReorderByNameEnabled: true)
 
         // THEN
         XCTAssertTrue(items[0].isEnabled)
@@ -1033,7 +1020,7 @@ final class ContextualMenuTests: XCTestCase {
     func testWhenRootItemFiresAddFolderActionThenFolderDialogIsPresented() throws {
         // GIVEN
         let bookmark = Bookmark(id: "b", url: URL.duckDuckGo.absoluteString, title: "DDG", isFavorite: false)
-        let menu = BookmarksContextMenu.rootMenu(topLevelEntities: [bookmark])
+        let menu = BookmarksContextMenu.rootMenu(topLevelEntities: [bookmark], isReorderByNameEnabled: true)
         let delegate = try XCTUnwrap(menu.delegate as? MockBookmarksContextMenuDelegate)
         let menuItem = try XCTUnwrap(menu.items.first(where: { $0.title == UserText.addFolder }))
 
@@ -1050,7 +1037,7 @@ final class ContextualMenuTests: XCTestCase {
         let bookmark = Bookmark(id: "b", url: URL.duckDuckGo.absoluteString, title: "DDG", isFavorite: true)
 
         // WHEN
-        let menu = BookmarksContextMenu.rootMenu(topLevelEntities: [bookmark], pseudoFolder: .favorites)
+        let menu = BookmarksContextMenu.rootMenu(topLevelEntities: [bookmark], pseudoFolder: .favorites, isReorderByNameEnabled: true)
 
         // THEN
         XCTAssertTrue(menu.items.isEmpty)
@@ -1063,7 +1050,7 @@ final class ContextualMenuTests: XCTestCase {
         let bookmark2 = Bookmark(id: "b2", url: "data:text/html,<html>test2</html>", title: "Test 2", isFavorite: false)
         let nested = Bookmark(id: "b3", url: "data:text/html,<html>nested</html>", title: "Nested", isFavorite: false, parentFolderUUID: "f")
         let folder = BookmarkFolder(id: "f", title: "Folder", children: [nested])
-        let menu = BookmarksContextMenu.rootMenu(topLevelEntities: [bookmark1, folder, bookmark2])
+        let menu = BookmarksContextMenu.rootMenu(topLevelEntities: [bookmark1, folder, bookmark2], isReorderByNameEnabled: true)
         guard let menuItem = menu.items.first(where: { $0.title == UserText.openAllInNewTabs }) else {
             XCTFail("No item")
             return
@@ -1089,7 +1076,7 @@ final class ContextualMenuTests: XCTestCase {
         let bookmark2 = Bookmark(id: "b2", url: "data:text/html,<html>test2</html>", title: "Test 2", isFavorite: false)
         let nested = Bookmark(id: "b3", url: "data:text/html,<html>nested</html>", title: "Nested", isFavorite: false, parentFolderUUID: "f")
         let folder = BookmarkFolder(id: "f", title: "Folder", children: [nested])
-        let menu = BookmarksContextMenu.rootMenu(topLevelEntities: [bookmark1, folder, bookmark2])
+        let menu = BookmarksContextMenu.rootMenu(topLevelEntities: [bookmark1, folder, bookmark2], isReorderByNameEnabled: true)
         guard let menuItem = menu.items.first(where: { $0.title == UserText.openAllTabsInNewWindow }) else {
             XCTFail("No item")
             return

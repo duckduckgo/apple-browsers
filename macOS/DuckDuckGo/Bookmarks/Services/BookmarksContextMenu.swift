@@ -86,10 +86,14 @@ final class BookmarksContextMenu: NSMenu {
 
         // the Bookmarks root is represented by a PseudoFolder, so it has no BaseBookmarkEntity to build a menu from
         if isBookmarksRootTheOnlySelectedItem(in: selectedItems) {
+            guard featureFlagger.isFeatureOn(.bookmarksReorderByName) else {
+                items = []
+                return
+            }
+
             items = Self.rootMenuItems(
                 topLevelEntities: bookmarkManager.list?.topLevelEntities ?? [],
-                target: self,
-                includeReorderByNameItem: featureFlagger.isFeatureOn(.bookmarksReorderByName)
+                target: self
             )
             return
         }
@@ -263,26 +267,20 @@ extension BookmarksContextMenu {
     ///   - target: The target to associate to the `NSMenuItem`
     static func rootMenuItems(
         topLevelEntities: [BaseBookmarkEntity],
-        target: AnyObject?,
-        includeReorderByNameItem: Bool
+        target: AnyObject?
     ) -> [NSMenuItem] {
         let root = BookmarksRootMenuItem(topLevelEntities: topLevelEntities)
         // disable "Open All" if no Bookmarks stored directly at the root
         let hasBookmarks = !root.bookmarks.isEmpty
 
-        var items = [
+        return [
             openInNewTabsMenuItem(root: root, target: target, enabled: hasBookmarks),
             openAllInNewWindowMenuItem(root: root, target: target, enabled: hasBookmarks),
             NSMenuItem.separator(),
+            reorderByNameMenuItem(root: root, target: target),
+            NSMenuItem.separator(),
+            addNewFolderMenuItem(entity: nil, target: target),
         ]
-
-        if includeReorderByNameItem {
-            items.append(reorderByNameMenuItem(root: root, target: target))
-            items.append(NSMenuItem.separator())
-        }
-        items.append(addNewFolderMenuItem(entity: nil, target: target))
-
-        return items
     }
 
     // MARK: - Single Bookmark Menu Items

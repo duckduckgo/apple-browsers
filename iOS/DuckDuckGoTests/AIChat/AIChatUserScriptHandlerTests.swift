@@ -198,7 +198,8 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         mockFeatureFlagger.enabledFeatureFlags = []
         let params: [String: Any] = ["prompt": "hi", "hasResponsesToLose": false]
 
-        let reply = try XCTUnwrap(await aiChatUserScriptHandler.editPrompt(params: params, message: MockUserScriptMessage(name: "test", body: [:])) as? EditPromptReply)
+        let result = await aiChatUserScriptHandler.editPrompt(params: params, message: MockUserScriptMessage(name: "test", body: [:]))
+        let reply = try XCTUnwrap(result as? EditPromptReply)
 
         guard case .cancelled = reply else { return XCTFail("Expected .cancelled when the flag is off") }
     }
@@ -206,9 +207,46 @@ class AIChatUserScriptHandlerTests: XCTestCase {
     func testWhenEditPromptParamsAreInvalidThenReturnsCancelled() async throws {
         mockFeatureFlagger.enabledFeatureFlags = [.nativeAIPromptEditing]
 
-        let reply = try XCTUnwrap(await aiChatUserScriptHandler.editPrompt(params: ["foo": "bar"], message: MockUserScriptMessage(name: "test", body: [:])) as? EditPromptReply)
+        let result = await aiChatUserScriptHandler.editPrompt(params: ["foo": "bar"], message: MockUserScriptMessage(name: "test", body: [:]))
+        let reply = try XCTUnwrap(result as? EditPromptReply)
 
         guard case .cancelled = reply else { return XCTFail("Expected .cancelled for invalid params") }
+    }
+
+    func testWhenFlagOnAndParamsValidThenEditPromptForwardsDecodedRequestAndReturnsInputBoxReply() async throws {
+        mockFeatureFlagger.enabledFeatureFlags = [.nativeAIPromptEditing]
+        let inputBox = MockAIChatInputBox()
+        inputBox.editPromptResult = .submit(prompt: "edited", images: nil, files: nil)
+        aiChatUserScriptHandler.setAIChatInputBoxHandler(inputBox)
+
+        let params: [String: Any] = ["prompt": "original", "hasResponsesToLose": true]
+        let result = await aiChatUserScriptHandler.editPrompt(params: params, message: MockUserScriptMessage(name: "test", body: [:]))
+        let reply = try XCTUnwrap(result as? EditPromptReply)
+
+        XCTAssertEqual(inputBox.receivedRequest?.prompt, "original")
+        XCTAssertEqual(inputBox.receivedRequest?.hasResponsesToLose, true)
+        guard case .submit(let prompt, _, _) = reply else { return XCTFail("Expected the input box's .submit reply") }
+        XCTAssertEqual(prompt, "edited")
+    }
+
+    func testWhenFlagOnButNoInputBoxAttachedThenEditPromptReturnsCancelled() async throws {
+        mockFeatureFlagger.enabledFeatureFlags = [.nativeAIPromptEditing]
+        aiChatUserScriptHandler.setAIChatInputBoxHandler(nil)
+
+        let params: [String: Any] = ["prompt": "original", "hasResponsesToLose": false]
+        let result = await aiChatUserScriptHandler.editPrompt(params: params, message: MockUserScriptMessage(name: "test", body: [:]))
+        let reply = try XCTUnwrap(result as? EditPromptReply)
+
+        guard case .cancelled = reply else { return XCTFail("Expected .cancelled when no input box is attached") }
+    }
+
+    func testWhenCancelEditThenForwardsToInputBox() async {
+        let inputBox = MockAIChatInputBox()
+        aiChatUserScriptHandler.setAIChatInputBoxHandler(inputBox)
+
+        _ = await aiChatUserScriptHandler.cancelEdit(params: [:], message: MockUserScriptMessage(name: "test", body: [:]))
+
+        XCTAssertEqual(inputBox.cancelEditCallCount, 1)
     }
 
     func testWhenNativeStorageFeatureIsOnAndBridgeIsUnavailableThenSupportsNativeStorageIsFalse() {
@@ -1149,5 +1187,39 @@ extension AIChatUserScriptHandlerTests {
             XCTAssertEqual(PixelFiringMock.lastPixelName, testCase.pixel.name, testCase.metricName)
             XCTAssertEqual(PixelFiringMock.lastParams, ["origin": testCase.origin], testCase.metricName)
         }
+    }
+}
+
+private final class MockAIChatInputBox: AIChatInputBoxHandling {
+    let didPressFireButton = PassthroughSubject<Void, Never>()
+    let didPressNewChatButton = PassthroughSubject<Void, Never>()
+    let didSubmitPrompt = PassthroughSubject<String, Never>()
+    let didSubmitQuery = PassthroughSubject<String, Never>()
+    let didPressStopGeneratingButton = PassthroughSubject<Void, Never>()
+    let didPressCustomizeResponsesButton = PassthroughSubject<Void, Never>()
+
+    var persistedModelId: String?
+    var persistedReasoningEffort: AIChatReasoningEffort?
+
+    @Published var aiChatStatus: AIChatStatusValue = .unknown
+    var aiChatStatusPublisher: Published<AIChatStatusValue>.Publisher { $aiChatStatus }
+    @Published var aiChatInputBoxVisibility: AIChatInputBoxVisibility = .unknown
+    var aiChatInputBoxVisibilityPublisher: Published<AIChatInputBoxVisibility>.Publisher { $aiChatInputBoxVisibility }
+
+    var isSubmitBlockedByRecoveryCard = false
+
+    @Published var attachmentUsage: AIChatAttachmentUsage?
+    var attachmentUsagePublisher: Published<AIChatAttachmentUsage?>.Publisher { $attachmentUsage }
+
+    private(set) var receivedRequest: EditPromptRequest?
+    var editPromptResult: EditPromptReply = .cancelled
+    func editPrompt(_ request: EditPromptRequest) async -> EditPromptReply {
+        receivedRequest = request
+        return editPromptResult
+    }
+
+    private(set) var cancelEditCallCount = 0
+    func cancelEdit() {
+        cancelEditCallCount += 1
     }
 }

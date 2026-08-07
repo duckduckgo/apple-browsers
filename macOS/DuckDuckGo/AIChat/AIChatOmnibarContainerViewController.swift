@@ -82,6 +82,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         /// Total panel height the carousel + below-spacing reserves when populated.
         static let attachmentsCarouselTotalPanelReservation: CGFloat = AIChatAttachmentsCarouselView.expandedHeight + (attachmentsCarouselBottomSpacing - AIChatAttachmentsCarouselView.shadowMargin)
         static let suggestionsBottomPadding: CGFloat = 4
+        static let rebrandedExpandedSuggestionsBottomPadding: CGFloat = 6
         static let containerTopPadding: CGFloat = 5
         static let legacyContainerTopPadding: CGFloat = 0
         static let contentLeadingInset: CGFloat = 2
@@ -121,6 +122,32 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     /// Constraint for suggestions view height
     private var suggestionsHeightConstraint: NSLayoutConstraint?
+
+    /// Gap below the suggestions list, driven in step with the height by
+    /// `applySuggestionsBottomPadding(forHeight:)`.
+    private var suggestionsBottomConstraint: NSLayoutConstraint?
+
+    /// The gap is dead space while the list is collapsed: it pads the bottom of a zero-height view,
+    /// so the tools row clears the container by 12pt against an 8pt trailing inset. Dropped to zero
+    /// in the rebranded theme to even those up. The legacy theme's trailing inset is 13pt, where the
+    /// same change would make the mismatch worse, so it keeps the padding unconditionally.
+    private var collapsedSuggestionsBottomPadding: CGFloat {
+        themeManager.isAppRebranded ? 0 : Constants.suggestionsBottomPadding
+    }
+
+    /// Gap below the list while it's showing. `AIChatSuggestionsView` only reserves 2pt inside its own
+    /// height, so the original 4pt here left the last row crowding the panel's bottom edge. Legacy
+    /// reserves 4pt internally and isn't part of the report, so it keeps the original gap.
+    private var expandedSuggestionsBottomPadding: CGFloat {
+        themeManager.isAppRebranded
+            ? Constants.rebrandedExpandedSuggestionsBottomPadding
+            : Constants.suggestionsBottomPadding
+    }
+
+    private func applySuggestionsBottomPadding(forHeight height: CGFloat) {
+        let padding = height > 0 ? expandedSuggestionsBottomPadding : collapsedSuggestionsBottomPadding
+        suggestionsBottomConstraint?.constant = -padding
+    }
 
     /// Unified attachments carousel height constraint — 0 when both image and tab attachment
     /// lists are empty, `attachmentsCarouselRowHeight + attachmentsCarouselBottomSpacing` otherwise.
@@ -284,8 +311,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     var totalPassthroughHeight: CGFloat {
         var height = suggestionsHeight
         if suggestionsHeight > 0 {
-            // Add bottom padding when there are suggestions
-            height += Constants.suggestionsBottomPadding
+            // Same source as the constraint, so the panel reserves exactly the gap it draws.
+            height += expandedSuggestionsBottomPadding
         }
         if omnibarController.isOmnibarToolsEnabled || !imageUploadButton.isHidden {
             // Add tool buttons area: button size + spacing above suggestions
@@ -914,10 +941,14 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         let heightConstraint = suggestionsView.heightAnchor.constraint(equalToConstant: 0)
         suggestionsHeightConstraint = heightConstraint
 
+        let bottomConstraint = suggestionsView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor)
+        suggestionsBottomConstraint = bottomConstraint
+        applySuggestionsBottomPadding(forHeight: heightConstraint.constant)
+
         NSLayoutConstraint.activate([
             suggestionsView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
             suggestionsView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
-            suggestionsView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -Constants.suggestionsBottomPadding),
+            bottomConstraint,
             heightConstraint,
 
             // Submit button sits above suggestions
@@ -1025,6 +1056,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
         suggestionsHeight = effectiveHeight
         suggestionsHeightConstraint?.constant = effectiveHeight
+        applySuggestionsBottomPadding(forHeight: effectiveHeight)
 
         // Notify about height change for container resize
         onSuggestionsHeightChanged?(effectiveHeight)
@@ -1076,6 +1108,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         lastKnownSuggestionsHeight = 0
         suggestionsHeight = 0
         suggestionsHeightConstraint?.constant = 0
+        applySuggestionsBottomPadding(forHeight: 0)
     }
 
     private func addShadowToWindow() {

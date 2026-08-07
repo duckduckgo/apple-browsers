@@ -113,6 +113,29 @@ final class PromptBarOmnibarContentLayoutTests: XCTestCase {
         }
     }
 
+    /// The suggestions list is collapsed on this surface, and its bottom padding used to apply anyway
+    /// — leaving the controls row 12pt clear of a container whose trailing inset is 8pt.
+    func testWhenSuggestionsAreCollapsedThenTheSubmitButtonClearsTheBottomEdgeByItsTrailingInset() {
+        content = makeContent(isAppRebranded: true)
+        _ = layOutAndMeasureGap(prompt: "what is a duck")
+
+        XCTAssertEqual(containerViewController.suggestionsHeight, 0,
+                       "This measurement only holds while the suggestions list is collapsed")
+
+        let host = containerViewController.view
+        guard let submit = firstDescendant(of: host, ofType: AIChatSubmitButton.self) else {
+            return XCTFail("No submit button in the hierarchy")
+        }
+
+        let frame = host.convert(submit.bounds, from: submit)
+        let bottomInset = host.isFlipped ? host.bounds.maxY - frame.maxY : frame.minY - host.bounds.minY
+        let trailingInset = host.bounds.maxX - frame.maxX
+
+        XCTAssertGreaterThan(bottomInset, 0, "A zero inset means the panel never got laid out")
+        XCTAssertEqual(bottomInset, trailingInset, accuracy: 0.5,
+                       "The submit button no longer clears the bottom and trailing edges equally")
+    }
+
     func testWhenTheDuckAILogoIsLaidOutThenItCentresOnTheToolRowsLeadingButton() {
         let view = content.view
         _ = layOutAndMeasureGap(prompt: "what is a duck")
@@ -231,8 +254,9 @@ final class PromptBarOmnibarContentLayoutTests: XCTestCase {
 
     // MARK: - Assembly
 
-    private func makeContent() -> PromptBarOmnibarContentViewController {
+    private func makeContent(isAppRebranded: Bool = false) -> PromptBarOmnibarContentViewController {
         let featureFlagger = MockFeatureFlagger()
+        featureFlagger.featuresStub[FeatureFlag.appRebranding.rawValue] = isAppRebranded
         let appearancePreferences = AppearancePreferences(
             persistor: AppearancePreferencesPersistorMock(),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),

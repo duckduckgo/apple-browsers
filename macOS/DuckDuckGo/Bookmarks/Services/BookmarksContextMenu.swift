@@ -85,9 +85,7 @@ final class BookmarksContextMenu: NSMenu {
         let selectedItems = bookmarksContextMenuDelegate?.selectedItems() ?? []
 
         // the Bookmarks root is represented by a PseudoFolder, so it has no BaseBookmarkEntity to build a menu from
-        if selectedItems.count == 1,
-           let pseudoFolder = ((selectedItems[0] as? BookmarkNode)?.representedObject ?? selectedItems[0]) as? PseudoFolder,
-           pseudoFolder == .bookmarks {
+        if isBookmarksRootTheOnlySelectedItem(in: selectedItems) {
             items = Self.rootMenuItems(
                 topLevelEntities: bookmarkManager.list?.topLevelEntities ?? [],
                 target: self,
@@ -103,6 +101,19 @@ final class BookmarksContextMenu: NSMenu {
             includeManageBookmarksItem: bookmarksContextMenuDelegate?.shouldIncludeManageBookmarksItem ?? true,
             includeReorderByNameItem: featureFlagger.isFeatureOn(.bookmarksReorderByName)
         )
+    }
+
+    private func isBookmarksRootTheOnlySelectedItem(in selectedItems: [Any]) -> Bool {
+        guard selectedItems.count == 1, let selectedItem = selectedItems.first else {
+            return false
+        }
+
+        let representedObject = (selectedItem as? BookmarkNode)?.representedObject ?? selectedItem
+        guard let pseudoFolder = representedObject as? PseudoFolder else {
+            return false
+        }
+
+        return pseudoFolder == .bookmarks
     }
 
 }

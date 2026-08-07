@@ -765,8 +765,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func beginEditMode(prompt: String, attachments: [UnifiedToggleInputAttachment] = [], hasResponsesToLose: Bool = false) {
+        let wasEditing = isEditing
         editHasResponsesToLose = hasResponsesToLose
         isEditing = true
+        // A re-entrant edit leaves `isEditing` already true, so its `didSet` skips
+        // `applyEditMode()`; refresh here so the disclaimer reflects the new request.
+        if wasEditing { applyEditMode() }
         showExpanded(prefilledText: prompt, inputMode: .aiChat, activatesInput: true)
         attachmentController.replaceAllAttachments(with: attachments)
     }

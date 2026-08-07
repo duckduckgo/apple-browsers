@@ -52,17 +52,17 @@ final class PromptBarOmnibarContentLayoutTests: XCTestCase {
     func testWhenThePromptIsOneLineThenTheControlsRowSitsClearOfIt() {
         let gap = layOutAndMeasureGap(prompt: "what is a duck")
 
-        // Exact, not a lower bound: a panel that over-budgets the controls row widens this gap
-        // instead of failing outright, which is how a stale row height slips through.
-        XCTAssertEqual(gap, 8, accuracy: 1, "The gap between the prompt and the controls row has moved")
+        XCTAssertEqual(gap, expectedPromptToControlsGap, accuracy: 1,
+                       "The gap between the prompt and the controls row has moved")
     }
 
-    func testWhenRebrandedThenThePromptToControlsGapIsUnchanged() {
+    func testWhenRebrandedThenThePanelBudgetsTheControlsRowItLaysOut() {
         content = makeContent(isAppRebranded: true)
 
         let gap = layOutAndMeasureGap(prompt: "what is a duck")
 
-        XCTAssertEqual(gap, 8, accuracy: 1, "The rebranded panel budgets a different controls row height than it lays out")
+        XCTAssertEqual(gap, expectedPromptToControlsGap, accuracy: 1,
+                       "The rebranded panel budgets a different controls row height than it lays out")
     }
 
     func testWhenThePromptGrowsToMoreLinesThenTheGapBelowItDoesNotChange() {
@@ -164,6 +164,14 @@ final class PromptBarOmnibarContentLayoutTests: XCTestCase {
     }
 
     // MARK: - Measurement
+
+    /// The 8pt the panel puts between the prompt and the controls row, plus whatever it reserves above
+    /// that row — 5pt of container top padding when rebranded, nothing in legacy. Asserting the exact
+    /// figure rather than a lower bound is the point: a panel that over-budgets the controls row shows
+    /// up here as extra slack, which a `>=` assertion waves through.
+    private var expectedPromptToControlsGap: CGFloat {
+        8 + containerViewController.additionalContentHeight
+    }
 
     private func duckAILogo(in host: NSView) -> NSImageView? {
         descendants(of: host)

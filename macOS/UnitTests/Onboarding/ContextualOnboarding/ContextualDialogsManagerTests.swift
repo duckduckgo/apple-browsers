@@ -18,7 +18,7 @@
 
 import XCTest
 import Testing
-import FeatureFlags
+import FeatureFlags_macOS
 import PrivacyDashboard
 @testable import DuckDuckGo_Privacy_Browser
 

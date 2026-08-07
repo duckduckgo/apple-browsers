@@ -16,7 +16,7 @@
 //  limitations under the License.
 //
 
-import FeatureFlags
+import FeatureFlags_macOS
 import Onboarding
 import PixelExperimentKit
 import PixelKit

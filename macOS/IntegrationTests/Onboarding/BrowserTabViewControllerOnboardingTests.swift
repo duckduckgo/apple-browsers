@@ -228,6 +228,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
             schemeHandler = nil
             expectation = nil
             pixelReporter = nil
+            upsellMetrics = nil
         }
     }
 
@@ -553,11 +554,12 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
     @MainActor
     func testWhenNavigationRemovesAVisibleUpsellThenDismissalIsReported() throws {
         presentDialog(.subscriptionUpsell)
+        let destination = try XCTUnwrap(URL(string: "https://example.com"))
 
         dialogProvider.dialog = nil
         let expectation = self.expectation(description: "dialogTypeForTab")
         dialogProvider.dialogTypeForTabExpectation = expectation
-        tab.navigateFromOnboarding(to: URL.duckDuckGo)
+        tab.navigateFromOnboarding(to: destination)
         wait(for: [expectation], timeout: 5.0)
 
         XCTAssertEqual(upsellMetrics.reported, [.upsellDismissed])
@@ -567,11 +569,12 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
     @MainActor
     func testWhenAnEarlierDialogIsRemovedByNavigationThenNoDismissalIsReported() throws {
         presentDialog(.tryFireButton)
+        let destination = try XCTUnwrap(URL(string: "https://example.com"))
 
         dialogProvider.dialog = nil
         let expectation = self.expectation(description: "dialogTypeForTab")
         dialogProvider.dialogTypeForTabExpectation = expectation
-        tab.navigateFromOnboarding(to: URL.duckDuckGo)
+        tab.navigateFromOnboarding(to: destination)
         wait(for: [expectation], timeout: 5.0)
 
         XCTAssertTrue(upsellMetrics.reported.isEmpty)

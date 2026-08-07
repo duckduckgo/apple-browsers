@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import ConcurrencyExtensions
 import DesignResourcesKit
 
 /// An image view that doesn't intercept mouse events, allowing its superview to handle them.
@@ -34,6 +35,33 @@ protocol FocusRingControlling: AnyObject {
     func takeKeyboardFocus()
 
     var isFocusRingSuppressed: Bool { get set }
+
+    /// Drops the press fill and re-derives hover from the pointer's real position.
+    func resetTransientFillState()
+}
+
+extension FocusRingControlling {
+
+    /// Modal menu tracking swallows `mouseExited`, and `popUp` returns only after AppKit's flash
+    /// and dismissal animations — so reset on this notification, which lands at the user's click.
+    func sendMenuOpeningAction(_ sendAction: () -> Void) {
+        let observer = NotificationCenter.default.addObserver(
+            forName: NSMenu.didEndTrackingNotification,
+            object: nil,
+            queue: nil
+        ) { [weak self] notification in
+            // Submenus post this too, under a still-open parent; only the root menu means done.
+            guard (notification.object as? NSMenu)?.supermenu == nil else { return }
+            // `queue: nil` posts synchronously, and menu tracking runs on the main thread.
+            MainActor.assumeMainThread {
+                self?.resetTransientFillState()
+            }
+        }
+        sendAction()
+        NotificationCenter.default.removeObserver(observer)
+        // Covers an action that popped no menu, so posted no notification.
+        resetTransientFillState()
+    }
 }
 
 /// A reusable toolbar button for the AI Chat omnibar with circular hover background effect.
@@ -451,6 +479,23 @@ final class AIChatOmnibarToolButton: NSView {
         )
         addTrackingArea(newTrackingArea)
         trackingArea = newTrackingArea
+
+        // A new tracking area reports nothing about a pointer already outside it.
+        refreshHoverState()
+    }
+
+    /// For the cases where the tracking area can't be trusted — see `sendMenuOpeningAction`.
+    private func refreshHoverState() {
+        guard let window else {
+            isHovered = false
+            return
+        }
+        isHovered = bounds.contains(convert(window.mouseLocationOutsideOfEventStream, from: nil))
+    }
+
+    func resetTransientFillState() {
+        isMouseDown = false
+        refreshHoverState()
     }
 
     override func mouseEntered(with event: NSEvent) {
@@ -483,7 +528,10 @@ final class AIChatOmnibarToolButton: NSView {
                 isToggled.toggle()
             }
             if let action, let target {
-                NSApp.sendAction(action, to: target, from: self)
+                sendMenuOpeningAction {
+                    NSApp.sendAction(action, to: target, from: self)
+                }
+                return
             }
         }
         isMouseDown = false

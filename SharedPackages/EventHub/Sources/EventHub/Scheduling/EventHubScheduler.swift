@@ -18,20 +18,17 @@
 
 import Foundation
 
-/// The manager's notion of "now", expressed as UTC epoch milliseconds (mirrors the Windows
-/// `ISchedulers.DefaultScheduler.Now`, which the manager reads for both period-window arithmetic and
-/// `attributionPeriod`).
-public protocol EventHubClock {
-    /// Callable from any thread: `EventHub` samples it both on its own queue and, for the event entry
-    /// points, on the caller's thread before dispatching (see `EventHub.handleWebEvent`).
-    func nowMillis() -> Int64
-}
-
 /// A single consolidated timer — never one per pixel (see the Tech Design's rejection of a per-pixel
 /// `[String: Timer]` map). `arm(atMillis:_:)` replaces whatever was previously armed; passing `nil`
 /// cancels without arming a new one. `EventHub` recomputes "the earlier of the earliest period end
 /// across all telemetries, or the next write-behind flush deadline" and re-arms on every state change.
-public protocol EventHubScheduler: EventHubClock {
+public protocol EventHubScheduler {
+    /// The manager's notion of "now", as UTC epoch milliseconds (mirrors the Windows
+    /// `ISchedulers.DefaultScheduler.Now`, read for both period-window arithmetic and
+    /// `attributionPeriod`). Callable from any thread: `EventHub` samples it both on its own queue and,
+    /// for the event entry points, on the caller's thread before dispatching.
+    func nowMillis() -> Int64
+
     func arm(atMillis dateMillis: Int64?, _ action: @escaping () -> Void)
 }
 

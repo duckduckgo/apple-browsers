@@ -207,8 +207,10 @@ public final class EventHub: EventHubManaging {
         for config in latestConfigs where config.isEnabled && config.trigger.isImmediate && config.trigger.source == source {
             var params: [String: String] = [:]
             for (paramName, paramConfig) in config.parameters where paramConfig.isData {
-                if let parameter = ParameterFactory.makeData(paramConfig), parameter.handle(data: data, tabID: .empty),
-                   let value = parameter.queryValue() {
+                // Transient: an immediate pixel has no period and no dedup, so this parameter reports the
+                // triggering event's own payload and is discarded straight after firing.
+                let parameter = DataParameter(dataKey: paramConfig.dataKey)
+                if parameter.handle(data: data, tabID: .empty), let value = parameter.queryValue() {
                     params[paramName] = value
                 }
             }

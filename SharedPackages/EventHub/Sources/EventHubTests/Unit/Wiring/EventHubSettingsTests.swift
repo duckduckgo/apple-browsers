@@ -30,6 +30,16 @@ struct EventHubSettingsTests {
     } }
     """)
 
+    /// Two separately-gated pixels plus an ungated one, so each requirement's gate can be observed
+    /// independently of the other's.
+    static let twoGatedSettings = settingsDictionary("""
+    { "telemetry": {
+        "gated_a":       { "state": "enabled", "trigger": { "type": "period", "period": { "seconds": 60 } } },
+        "gated_b":       { "state": "enabled", "trigger": { "type": "period", "period": { "seconds": 60 } } },
+        "ungated_pixel": { "state": "enabled", "trigger": { "type": "period", "period": { "seconds": 60 } } }
+    } }
+    """)
+
     private static func telemetryKeys(_ settings: [String: Any]?) -> [String] {
         let telemetry = settings?[EventHubConfigParser.telemetryKey] as? [String: Any] ?? [:]
         return telemetry.keys.sorted()
@@ -37,9 +47,13 @@ struct EventHubSettingsTests {
 
     private final class FakeConsentRequirement: EventHubConsentRequirement {
         let consentID = "test"
-        let configNames: Set<String> = ["gated_pixel"]
+        let configNames: Set<String>
         let granted = CurrentValueSubject<Bool, Never>(false)
         var isGrantedPublisher: AnyPublisher<Bool, Never> { granted.eraseToAnyPublisher() }
+
+        init(configNames: Set<String> = ["gated_pixel"]) {
+            self.configNames = configNames
+        }
     }
 
     @Test("removes the gated config while consent is withheld")
@@ -58,6 +72,35 @@ struct EventHubSettingsTests {
 
         requirement.granted.send(true)
         #expect(Self.telemetryKeys(latest) == ["gated_pixel", "ungated_pixel"])
+    }
+
+    // The single-requirement test above never folds: with one requirement the combine is the identity.
+    // This one covers the fold — every consent state is combined, and each requirement gates only its
+    // own names.
+    @Test("several requirements each gate only their own configs")
+    func severalRequirementsEachGateOnlyTheirOwnConfigs() {
+        let first = FakeConsentRequirement(configNames: ["gated_a"])
+        let second = FakeConsentRequirement(configNames: ["gated_b"])
+        let subject = EventHubSettings(
+            featureEnabledPublisher: Just(true).eraseToAnyPublisher(),
+            featureSettingsPublisher: Just(Self.twoGatedSettings as [String: Any]?).eraseToAnyPublisher(),
+            consentRequirements: [first, second])
+
+        var latest: [String: Any]?
+        let cancellable = subject.settingsPublisher.sink { latest = $0 }
+        defer { cancellable.cancel() }
+
+        #expect(Self.telemetryKeys(latest) == ["ungated_pixel"])
+
+        first.granted.send(true)
+        #expect(Self.telemetryKeys(latest) == ["gated_a", "ungated_pixel"])
+
+        second.granted.send(true)
+        #expect(Self.telemetryKeys(latest) == ["gated_a", "gated_b", "ungated_pixel"])
+
+        // Re-withholding must strip it again — the combine stays live rather than latching.
+        first.granted.send(false)
+        #expect(Self.telemetryKeys(latest) == ["gated_b", "ungated_pixel"])
     }
 
     // Regression guard: "eventHub enabled, nothing configured yet" is the normal pre-rollout state. It

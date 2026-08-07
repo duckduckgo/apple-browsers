@@ -4131,6 +4131,9 @@ class MainViewController: UIViewController {
                 AIChatPromptHandler.shared.setData(prompt)
             }
             loadUrlInNewTab(chatURL, inheritedAttribution: nil) { [weak self] in
+                if let modelId {
+                    self?.unifiedToggleInputCoordinator?.updateSelectedModel(modelId)
+                }
                 if let payload {
                     self?.currentTab?.aiChatContentHandler.setPayload(payload: payload)
                 }
@@ -4139,6 +4142,9 @@ class MainViewController: UIViewController {
         }
 
         load(query, autoSend: autoSend, payload: payload, flowType: flowType, tools: tools, modelId: modelId, reasoningEffort: reasoningEffort, images: images, files: files)
+        if let modelId {
+            unifiedToggleInputCoordinator?.updateSelectedModel(modelId)
+        }
     }
 
     /// Executes the closure if the current tab is an AI tab

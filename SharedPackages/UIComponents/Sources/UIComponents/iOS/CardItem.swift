@@ -99,12 +99,33 @@ public struct CardItemText {
     public let font: CardItemFont
     public let color: Color?
     public let modifier: AnyViewModifier?
+    /// An optional second run appended inline after `text`in the same
+    /// `font` coloured `secondaryColor`. Honored by a card item's body text run.
+    /// The defaults keep every existing call site unchanged.
+    public let secondaryText: String?
+    public let secondaryColor: Color?
 
-    public init(_ text: String, font: CardItemFont, color: Color? = nil, modifier: AnyViewModifier? = nil) {
+    public init(_ text: String, font: CardItemFont, color: Color? = nil, modifier: AnyViewModifier? = nil,
+                secondaryText: String? = nil, secondaryColor: Color? = nil) {
         self.text = text
         self.font = font
         self.color = color
         self.modifier = modifier
+        self.secondaryText = secondaryText
+        self.secondaryColor = secondaryColor
+    }
+}
+
+extension CardItemText {
+    /// The text as a SwiftUI `Text`: the main run in `font` coloured `color` (falling back to
+    /// `defaultColor`), plus — when `secondaryText` is set — an inline second run in the same `font`
+    /// coloured `secondaryColor` (or `defaultColor`). The caller applies the modifier.
+    func styledText(defaultColor: Color) -> Text {
+        let main = Text(text).font(font.font).foregroundColor(color ?? defaultColor)
+        guard let secondaryText else { return main }
+        return main + Text(" " + secondaryText)
+            .font(font.font)
+            .foregroundColor(secondaryColor ?? defaultColor)
     }
 }
 
@@ -203,7 +224,7 @@ private extension CardItem {
     var textBlock: some View {
         VStack(alignment: .leading, spacing: 0) {
             if let overline {
-                Text(verbatim: overline.text)
+                Text(overline.text)
                     .font(overline.font.font)
                     .foregroundColor(overline.color ?? Color(designSystemColor: .textPrimary))
                     .applyingModifier(overline.modifier)
@@ -211,9 +232,7 @@ private extension CardItem {
             VStack(alignment: .leading, spacing: titleTextSpacing) {
                 titleLine
                 if let text {
-                    Text(verbatim: text.text)
-                        .font(text.font.font)
-                        .foregroundColor(text.color ?? Color(designSystemColor: .textSecondary))
+                    text.styledText(defaultColor: Color(designSystemColor: .textSecondary))
                         .fixedSize(horizontal: false, vertical: true)
                         .applyingModifier(text.modifier)
                 }
@@ -227,13 +246,13 @@ private extension CardItem {
         if title != nil || !titleDetails.isEmpty {
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 if let title {
-                    Text(verbatim: title.text)
+                    Text(title.text)
                         .font(title.font.font)
                         .foregroundColor(title.color ?? Color(designSystemColor: .textPrimary))
                         .applyingModifier(title.modifier)
                 }
                 ForEach(Array(titleDetails.enumerated()), id: \.offset) { _, detail in
-                    Text(verbatim: detail.text)
+                    Text(detail.text)
                         .font(detail.font.font)
                         .foregroundColor(detail.color ?? Color(designSystemColor: .textSecondary))
                         .applyingModifier(detail.modifier)
@@ -388,6 +407,29 @@ private struct CardItemModifierSamples: View {
     }
 }
 
+private struct CardItemSecondaryTextSamples: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            CardItem(
+                icon: CardItemIcon(position: .leading, visual: .image(Image(systemName: "location.fill")), size: .size24),
+                overline: CardItemText("NEW IP ADDRESS", font: .footnoteRegular),
+                title: CardItemText("45.132.71.9", font: .bodyRegular),
+                text: CardItemText("🇪🇸 Valencia, Spain", font: .footnoteRegular,
+                                   color: Color(designSystemColor: .textPrimary),
+                                   secondaryText: "(Nearest)",
+                                   secondaryColor: Color(designSystemColor: .textSecondary)))
+
+            CardItem(
+                icon: CardItemIcon(position: .leading, visual: .image(Image(systemName: "location.fill")), size: .size24),
+                overline: CardItemText("NEW IP ADDRESS", font: .footnoteRegular),
+                title: CardItemText("45.132.71.9", font: .bodyRegular),
+                text: CardItemText("🇪🇸 Valencia, Spain", font: .footnoteRegular,
+                                   color: Color(designSystemColor: .textPrimary)))
+        }
+        .padding()
+    }
+}
+
 #Preview("Light") {
     CardItemPreviewSamples()
 }
@@ -408,6 +450,10 @@ private struct CardItemModifierSamples: View {
 
 #Preview("Modifiers") {
     CardItemModifierSamples()
+}
+
+#Preview("Secondary text") {
+    CardItemSecondaryTextSamples()
 }
 
 #endif

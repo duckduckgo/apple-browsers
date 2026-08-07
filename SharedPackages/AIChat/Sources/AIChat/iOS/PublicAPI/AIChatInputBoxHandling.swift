@@ -47,12 +47,17 @@ public protocol AIChatInputBoxHandling {
     /// bridge handler: the input prefills from the stored message, enters edit mode, and this
     /// call suspends until the user submits or cancels, returning the resulting `EditPromptReply`.
     func editPrompt(_ request: EditPromptRequest) async -> EditPromptReply
+
+    /// Called by the `cancelEdit` bridge handler when the FE cancels an in-progress edit from
+    /// its side. The input exits edit mode; any pending `editPrompt` resolves as cancelled.
+    func cancelEdit()
 }
 
 public extension AIChatInputBoxHandling {
     /// Default no-op so conformers that don't yet implement native editing still compile and
     /// safely report a cancel (the FE then restores its own message bubble).
     func editPrompt(_ request: EditPromptRequest) async -> EditPromptReply { .cancelled }
+    func cancelEdit() {}
 }
 
 public enum AIChatStatusValue: String, Codable {

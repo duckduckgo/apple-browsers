@@ -102,6 +102,14 @@ extension TabViewController: AITabController {
         aiChatContentHandler.submitOpenSettingsAction()
     }
 
+#if DEBUG
+    /// Debug-only: fires the `editPrompt` bridge round-trip against this tab's AI Chat user
+    /// script (see `AIChatUserScript.debugSimulateEditPromptRoundTrip`).
+    func debugSimulateEditPrompt() {
+        userScripts?.aiChatUserScript.debugSimulateEditPromptRoundTrip()
+    }
+#endif
+
     /// Submits a toggle sidebar action to open/close the sidebar.
     func submitToggleSidebarAction() {
         aiChatContentHandler.submitToggleSidebarAction()

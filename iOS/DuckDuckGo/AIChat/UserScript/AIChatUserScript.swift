@@ -260,6 +260,8 @@ final class AIChatUserScript: NSObject, Subfeature {
             return { [weak self] params, message in
                 await self?.handler.editPrompt(params: params, message: message)
             }
+        case .cancelEdit:
+            return handler.cancelEdit
         default:
             return nil
         }
@@ -320,6 +322,48 @@ final class AIChatUserScript: NSObject, Subfeature {
 
         handler.setAIChatInputBoxHandler(inputBoxHandler)
     }
+
+#if DEBUG
+    // MARK: - Debug editing harness
+
+    /// Debug-only: drives the `editPrompt` bridge exactly as the FE would — builds a preset
+    /// request (prompt + one image + one file) and routes it through the real message handler,
+    /// then logs the reply native would send back once the user submits or cancels. Lets the
+    /// full round-trip be exercised end-to-end without the FE by borrowing an existing header
+    /// control as the trigger.
+    func debugSimulateEditPromptRoundTrip() {
+        let params: [String: Any] = [
+            "prompt": "Debug edit: change me and tap send",
+            "hasResponsesToLose": true,
+            "images": [["data": Self.debugPNGBase64, "format": "png"]],
+            "files": [["data": Self.debugTextBase64, "fileName": "notes.txt", "mimeType": "text/plain"]]
+        ]
+        Task { @MainActor in
+            let reply = await handler.editPrompt(params: params, message: DebugEditUserScriptMessage())
+            let json = (reply as? EditPromptReply).flatMap(Self.debugEditReplyJSON) ?? String(describing: reply)
+            Logger.aiChat.debug("[editPrompt debug] reply → FE: \(json, privacy: .public)")
+        }
+    }
+
+    private static func debugEditReplyJSON(_ reply: EditPromptReply) -> String? {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        return (try? encoder.encode(reply)).flatMap { String(data: $0, encoding: .utf8) }
+    }
+
+    /// 1×1 transparent PNG.
+    private static let debugPNGBase64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M8AAAMCAYAAAABzoDgAAAAASUVORK5CYII="
+    /// "Debug file contents" as UTF-8.
+    private static let debugTextBase64 = "RGVidWcgZmlsZSBjb250ZW50cw=="
+
+    private struct DebugEditUserScriptMessage: UserScriptMessage {
+        var messageName: String { AIChatUserScriptMessages.editPrompt.rawValue }
+        var messageBody: Any { [:] }
+        var messageHost: String { "duckduckgo.com" }
+        var isMainFrame: Bool { true }
+        var messageWebView: WKWebView? { nil }
+    }
+#endif
 
     // MARK: - AI Chat Actions
 

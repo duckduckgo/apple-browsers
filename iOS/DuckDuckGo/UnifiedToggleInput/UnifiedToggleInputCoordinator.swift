@@ -763,6 +763,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         return await withCheckedContinuation { editContinuation = $0 }
     }
 
+    /// Bridge entry: the FE cancelled the edit from its side. Exit edit mode; the pending
+    /// `editPrompt` resolves as cancelled via `endEditMode`.
+    func cancelEdit() {
+        endEditMode()
+    }
+
     func beginEditMode(prompt: String, attachments: [UnifiedToggleInputAttachment] = [], hasResponsesToLose: Bool = false) {
         editHasResponsesToLose = hasResponsesToLose
         isEditing = true

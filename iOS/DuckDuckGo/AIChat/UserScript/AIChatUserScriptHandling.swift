@@ -187,6 +187,7 @@ protocol AIChatUserScriptHandling: AnyObject {
     func enableChatInput(params: Any, message: UserScriptMessage) async -> Encodable?
     func focusChatInput(params: Any, message: UserScriptMessage) async -> Encodable?
     func editPrompt(params: Any, message: UserScriptMessage) async -> Encodable?
+    func cancelEdit(params: Any, message: UserScriptMessage) async -> Encodable?
 
     // Sync
     func getSyncStatus(params: Any, message: UserScriptMessage) -> Encodable?
@@ -563,6 +564,12 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         // user submits or cancels. Returns .cancelled when no input is attached.
         guard let inputBoxHandler else { return EditPromptReply.cancelled }
         return await inputBoxHandler.editPrompt(request)
+    }
+
+    @MainActor
+    func cancelEdit(params: Any, message: UserScriptMessage) async -> Encodable? {
+        inputBoxHandler?.cancelEdit()
+        return nil
     }
 
     func storeMigrationData(params: Any, message: UserScriptMessage) -> Encodable? {

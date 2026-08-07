@@ -94,6 +94,11 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
     /// Posted by the FE to request editing functionality from the native input (it will await for a submission or cancel response).
     case editPrompt
 
+    /// Posted by the FE to cancel an in-progress `editPrompt` from its side (e.g. the user
+    /// dismissed the edit affordance in the transcript). Native exits edit mode; the pending
+    /// `editPrompt` resolves as cancelled.
+    case cancelEdit
+
     // Sync
     case getSyncStatus
     case getScopedSyncAuthToken

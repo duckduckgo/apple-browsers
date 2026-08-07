@@ -21,13 +21,6 @@ import Foundation
 public protocol OnboardingNavigationDelegate: AnyObject {
     func searchFromOnboarding(for query: String)
     func navigateFromOnboarding(to url: URL)
-    func navigateFromOnboardingInNewTab(to url: URL)
-}
-
-public extension OnboardingNavigationDelegate {
-    func navigateFromOnboardingInNewTab(to url: URL) {
-        navigateFromOnboarding(to: url)
-    }
 }
 
 public struct OnboardingSearchSuggestionsViewModel {

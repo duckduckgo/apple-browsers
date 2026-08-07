@@ -96,8 +96,7 @@ final class OnboardingSubscriptionUpsellMetricsTests: XCTestCase {
 
         dialog.acceptAction()
         XCTAssertEqual(metrics.reported, [.tryForFreeClick])
-        XCTAssertNotNil(delegate.purchasePageURL)
-        XCTAssertFalse(delegate.didNavigateInCurrentTab)
+        XCTAssertTrue(delegate.didNavigateToPurchasePage)
 
         metrics.reported = []
         dialog.declineAction()
@@ -117,8 +116,7 @@ final class OnboardingSubscriptionUpsellMetricsTests: XCTestCase {
 
         dialog.acceptAction()
         XCTAssertEqual(metrics.reported, [.tryForFreeClick])
-        XCTAssertNotNil(delegate.purchasePageURL)
-        XCTAssertFalse(delegate.didNavigateInCurrentTab)
+        XCTAssertTrue(delegate.didNavigateToPurchasePage)
 
         metrics.reported = []
         dialog.declineAction()
@@ -175,16 +173,11 @@ private final class SpyUpsellMetricsReporter: OnboardingSubscriptionUpsellMetric
 }
 
 private final class MockOnboardingNavigationDelegate: OnboardingNavigationDelegate {
-    var purchasePageURL: URL?
-    var didNavigateInCurrentTab = false
+    var didNavigateToPurchasePage = false
 
     func searchFromOnboarding(for query: String) {}
 
     func navigateFromOnboarding(to url: URL) {
-        didNavigateInCurrentTab = true
-    }
-
-    func navigateFromOnboardingInNewTab(to url: URL) {
-        purchasePageURL = url
+        didNavigateToPurchasePage = true
     }
 }

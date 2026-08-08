@@ -414,6 +414,19 @@ final class UTIAttachmentController {
         view.showValidationError(message)
     }
 
+    /// For something the input refused that isn't an attachment — currently the text-selection cap.
+    func presentRejectionBanner(_ message: String) {
+        presentTransientValidationError(message)
+    }
+
+    /// Needed because `presentRejectionBanner` deliberately survives re-syncs, so nothing else clears
+    /// it. Falls back to any attachment-derived message rather than blanking the banner outright.
+    func clearRejectionBanner() {
+        guard transientValidationMessage != nil else { return }
+        transientValidationMessage = nil
+        syncValidationErrorForCurrentMode()
+    }
+
     /// Shows a limit/rejection banner that survives async re-syncs, unlike an attachment-derived one which `syncValidationError` recomputes from the current attachments.
     private func presentTransientValidationError(_ message: String) {
         transientValidationMessage = message

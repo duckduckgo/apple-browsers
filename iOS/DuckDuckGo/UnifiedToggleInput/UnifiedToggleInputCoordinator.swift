@@ -1264,6 +1264,15 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         isVoiceSessionActive = false
     }
 
+    /// Surfaces a rejection in the input's validation banner. Currently the text-selection cap.
+    func presentRejectionBanner(_ message: String) {
+        attachmentController.presentRejectionBanner(message)
+    }
+
+    func clearRejectionBanner() {
+        attachmentController.clearRejectionBanner()
+    }
+
     func updateSelectedModel(_ modelId: String) {
         modelSelector.updateSelectedModel(modelId)
     }

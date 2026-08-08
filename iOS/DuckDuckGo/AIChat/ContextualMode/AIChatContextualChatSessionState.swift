@@ -121,8 +121,7 @@ final class AIChatContextualChatSessionState {
     private(set) var contextualChatURL: URL?
     private(set) var latestContext: AIChatPageContext?
 
-    /// Text selections attached from the page's selection menu, in attach order. Independent of
-    /// `latestContext`: page context is *trimmed*, so a selection isn't guaranteed to be inside it.
+    /// Text selections attached from the page's selection menu, in attach order.
     private(set) var attachedSelections: [AIChatSelectionContextData] = []
 
     /// URL included in the last submitted prompt with no navigation since; used to spot a stale auto-attach echo.
@@ -328,9 +327,8 @@ final class AIChatContextualChatSessionState {
         rebuildViewState()
     }
 
-    /// Clears the selections a prompt has taken ownership of. Unlike `clearAttachedSelections()` this
-    /// runs while a payload is being built, where re-rendering would fight the submit transition — so
-    /// the caller refreshes the chips.
+    /// Clears the selections a prompt has taken ownership of. Unlike `clearAttachedSelections()` it does
+    /// not re-render; the caller refreshes the chips.
     func consumeAttachedSelections() {
         guard !attachedSelections.isEmpty else { return }
         attachedSelections = []

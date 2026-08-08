@@ -236,8 +236,7 @@ final class AIChatContextualSheetCoordinator {
     }
 
     /// Attaches text selected on the page and presents the sheet, submitting nothing. At the cap the
-    /// selection is refused and the reason shown, but the sheet still presents so the user can act on
-    /// the chips they already have.
+    /// selection is refused with a banner and the sheet still presents.
     func attachSelection(text: String,
                          url: URL?,
                          faviconBase64: String?,
@@ -469,9 +468,7 @@ private extension AIChatContextualSheetCoordinator {
         return host
     }
 
-    /// Re-renders one chip per attached selection. Shows a text-selection glyph rather than the source
-    /// page's favicon, which is what the page-context chip means and made a selection look like a
-    /// second copy of the page.
+    /// Re-renders one chip per attached selection.
     func refreshSelectionChips() {
         guard let host = persistentUTIHost else { return }
         let icon = DesignSystemImages.Glyphs.Size24.textSelect.withRenderingMode(.alwaysTemplate)

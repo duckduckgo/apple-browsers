@@ -414,7 +414,7 @@ final class UTIAttachmentController {
         view.showValidationError(message)
     }
 
-    /// For something the input refused that isn't an attachment — currently the text-selection cap.
+    /// For something the input refused that isn't an attachment.
     func presentRejectionBanner(_ message: String) {
         presentTransientValidationError(message)
     }

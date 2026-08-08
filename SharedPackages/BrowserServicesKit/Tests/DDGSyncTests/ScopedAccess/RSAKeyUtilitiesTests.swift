@@ -7,7 +7,7 @@
 //  you may not use this file except in compliance with the License.
 //  You may obtain a copy of the License at
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
+//  http://www.apache.org/licenses/LICENSE-2.0
 //
 //  Unless required by applicable law or agreed to in writing, software
 //  distributed under the License is distributed on an "AS IS" BASIS,
@@ -25,7 +25,8 @@ import Testing
 @Suite("RSA key utilities")
 struct RSAKeyUtilitiesTests {
 
-    @Test("RSA-3072 PKCS#8 import produces matching public and private keys")
+    @available(iOS 16, macOS 13, *)
+    @Test("RSA-3072 PKCS#8 import produces matching public and private keys", .timeLimit(.minutes(1)))
     func testWhenImportingRSA3072PKCS8ThenPublicAndPrivateKeysMatch() throws {
         let keyMaterial = try ScopedAccessKeyFactory.makeRSAKeyMaterial(keySizeInBits: 3072)
 
@@ -42,7 +43,8 @@ struct RSAKeyUtilitiesTests {
         #expect(derivedPublicKeyData == publicKeyData)
     }
 
-    @Test("Public keys with unsupported metadata are rejected")
+    @available(iOS 16, macOS 13, *)
+    @Test("Public keys with unsupported metadata are rejected", .timeLimit(.minutes(1)))
     func testWhenImportingPublicKeyWithUnsupportedMetadataThenThrowsUnsupportedPublicKey() throws {
         let publicKey = try ScopedAccessKeyFactory.makeRSAKeyMaterial().publicKeyJWK
         let unsupportedPublicKeys = [
@@ -83,7 +85,8 @@ struct RSAKeyUtilitiesTests {
         }
     }
 
-    @Test("Public keys with missing or malformed components are rejected")
+    @available(iOS 16, macOS 13, *)
+    @Test("Public keys with missing or malformed components are rejected", .timeLimit(.minutes(1)))
     func testWhenImportingPublicKeyWithMissingOrMalformedComponentsThenThrowsInvalidPublicKey() throws {
         let publicKey = try ScopedAccessKeyFactory.makeRSAKeyMaterial().publicKeyJWK
         let invalidPublicKeys = [
@@ -124,19 +127,22 @@ struct RSAKeyUtilitiesTests {
         }
     }
 
-    @Test("Malformed PKCS#8 is rejected")
+    @available(iOS 16, macOS 13, *)
+    @Test("Malformed PKCS#8 is rejected", .timeLimit(.minutes(1)))
     func testWhenImportingMalformedPKCS8ThenThrowsInvalidPrivateKey() {
         assertInvalidPrivateKey(Data([0x30, 0x82, 0x01]))
     }
 
-    @Test("Truncated PKCS#8 is rejected")
+    @available(iOS 16, macOS 13, *)
+    @Test("Truncated PKCS#8 is rejected", .timeLimit(.minutes(1)))
     func testWhenImportingTruncatedPKCS8ThenThrowsInvalidPrivateKey() throws {
         let keyMaterial = try ScopedAccessKeyFactory.makeRSAKeyMaterial()
 
         assertInvalidPrivateKey(Data(keyMaterial.privateKeyPKCS8.dropLast()))
     }
 
-    @Test("PKCS#8 with trailing bytes is rejected")
+    @available(iOS 16, macOS 13, *)
+    @Test("PKCS#8 with trailing bytes is rejected", .timeLimit(.minutes(1)))
     func testWhenImportingPKCS8WithTrailingBytesThenThrowsInvalidPrivateKey() throws {
         let keyMaterial = try ScopedAccessKeyFactory.makeRSAKeyMaterial()
         var privateKeyPKCS8 = keyMaterial.privateKeyPKCS8
@@ -145,7 +151,8 @@ struct RSAKeyUtilitiesTests {
         assertInvalidPrivateKey(privateKeyPKCS8)
     }
 
-    @Test("Unsigned public-key components have canonical leading zeros")
+    @available(iOS 16, macOS 13, *)
+    @Test("Unsigned public-key components have canonical leading zeros", .timeLimit(.minutes(1)))
     func testWhenEncodingUnsignedPublicKeyComponentsThenLeadingZerosAreCanonicalized() throws {
         let publicKeyPKCS1 = RSAKeyDER.makeRSAPublicKeyPKCS1(
             modulus: Data([0x00, 0x00, 0x80, 0x01]),

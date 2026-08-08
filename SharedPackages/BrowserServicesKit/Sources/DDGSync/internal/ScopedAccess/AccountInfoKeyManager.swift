@@ -62,7 +62,10 @@ actor AccountInfoKeyManager: AccountInfoKeyManaging {
                 let key = try await makeAccountInfoKey(from: protectedKeys, account: account)
                 Logger.sync.debug("Sync-UnifiedDevices: loaded account_info key from secure storage")
                 return key
+            } catch is CancellationError {
+                throw CancellationError()
             } catch {
+                try Task.checkCancellation()
                 // Preserve structurally valid cached keys until an authoritative refresh succeeds.
             }
         }

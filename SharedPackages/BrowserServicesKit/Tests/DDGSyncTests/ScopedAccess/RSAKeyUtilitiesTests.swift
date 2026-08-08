@@ -16,29 +16,33 @@
 //  limitations under the License.
 //
 
+import Foundation
 import Security
-import XCTest
+import Testing
 
 @testable import DDGSync
 
-final class RSAKeyUtilitiesTests: XCTestCase {
+@Suite("RSA key utilities")
+struct RSAKeyUtilitiesTests {
 
+    @Test("RSA-3072 PKCS#8 import produces matching public and private keys")
     func testWhenImportingRSA3072PKCS8ThenPublicAndPrivateKeysMatch() throws {
         let keyMaterial = try ScopedAccessKeyFactory.makeRSAKeyMaterial(keySizeInBits: 3072)
 
         // RSA-3072 makes the outer PKCS#8 sequence use DER's multi-byte length form.
-        XCTAssertNotEqual(keyMaterial.privateKeyPKCS8[1] & 0x80, 0)
+        #expect(keyMaterial.privateKeyPKCS8[1] & 0x80 != 0)
 
         let publicKey = try RSAKeyImporter.makePublicKey(from: keyMaterial.publicKeyJWK)
         let privateKey = try RSAKeyImporter.makePrivateKey(fromPKCS8: keyMaterial.privateKeyPKCS8)
-        let derivedPublicKey = try XCTUnwrap(SecKeyCopyPublicKey(privateKey))
-        let publicKeyData = try XCTUnwrap(SecKeyCopyExternalRepresentation(publicKey, nil) as Data?)
-        let derivedPublicKeyData = try XCTUnwrap(SecKeyCopyExternalRepresentation(derivedPublicKey, nil) as Data?)
+        let derivedPublicKey = try #require(SecKeyCopyPublicKey(privateKey))
+        let publicKeyData = try #require(SecKeyCopyExternalRepresentation(publicKey, nil) as Data?)
+        let derivedPublicKeyData = try #require(SecKeyCopyExternalRepresentation(derivedPublicKey, nil) as Data?)
 
-        XCTAssertEqual(SecKeyGetBlockSize(privateKey), 384)
-        XCTAssertEqual(derivedPublicKeyData, publicKeyData)
+        #expect(SecKeyGetBlockSize(privateKey) == 384)
+        #expect(derivedPublicKeyData == publicKeyData)
     }
 
+    @Test("Public keys with unsupported metadata are rejected")
     func testWhenImportingPublicKeyWithUnsupportedMetadataThenThrowsUnsupportedPublicKey() throws {
         let publicKey = try ScopedAccessKeyFactory.makeRSAKeyMaterial().publicKeyJWK
         let unsupportedPublicKeys = [
@@ -73,12 +77,13 @@ final class RSAKeyUtilitiesTests: XCTestCase {
         ]
 
         for unsupportedPublicKey in unsupportedPublicKeys {
-            XCTAssertThrowsError(try RSAKeyImporter.makePublicKey(from: unsupportedPublicKey)) { error in
-                XCTAssertEqual(error as? RSAKeyImportError, .unsupportedPublicKey)
+            #expect(throws: RSAKeyImportError.unsupportedPublicKey) {
+                try RSAKeyImporter.makePublicKey(from: unsupportedPublicKey)
             }
         }
     }
 
+    @Test("Public keys with missing or malformed components are rejected")
     func testWhenImportingPublicKeyWithMissingOrMalformedComponentsThenThrowsInvalidPublicKey() throws {
         let publicKey = try ScopedAccessKeyFactory.makeRSAKeyMaterial().publicKeyJWK
         let invalidPublicKeys = [
@@ -113,22 +118,25 @@ final class RSAKeyUtilitiesTests: XCTestCase {
         ]
 
         for invalidPublicKey in invalidPublicKeys {
-            XCTAssertThrowsError(try RSAKeyImporter.makePublicKey(from: invalidPublicKey)) { error in
-                XCTAssertEqual(error as? RSAKeyImportError, .invalidPublicKey)
+            #expect(throws: RSAKeyImportError.invalidPublicKey) {
+                try RSAKeyImporter.makePublicKey(from: invalidPublicKey)
             }
         }
     }
 
+    @Test("Malformed PKCS#8 is rejected")
     func testWhenImportingMalformedPKCS8ThenThrowsInvalidPrivateKey() {
         assertInvalidPrivateKey(Data([0x30, 0x82, 0x01]))
     }
 
+    @Test("Truncated PKCS#8 is rejected")
     func testWhenImportingTruncatedPKCS8ThenThrowsInvalidPrivateKey() throws {
         let keyMaterial = try ScopedAccessKeyFactory.makeRSAKeyMaterial()
 
         assertInvalidPrivateKey(Data(keyMaterial.privateKeyPKCS8.dropLast()))
     }
 
+    @Test("PKCS#8 with trailing bytes is rejected")
     func testWhenImportingPKCS8WithTrailingBytesThenThrowsInvalidPrivateKey() throws {
         let keyMaterial = try ScopedAccessKeyFactory.makeRSAKeyMaterial()
         var privateKeyPKCS8 = keyMaterial.privateKeyPKCS8
@@ -137,6 +145,7 @@ final class RSAKeyUtilitiesTests: XCTestCase {
         assertInvalidPrivateKey(privateKeyPKCS8)
     }
 
+    @Test("Unsigned public-key components have canonical leading zeros")
     func testWhenEncodingUnsignedPublicKeyComponentsThenLeadingZerosAreCanonicalized() throws {
         let publicKeyPKCS1 = RSAKeyDER.makeRSAPublicKeyPKCS1(
             modulus: Data([0x00, 0x00, 0x80, 0x01]),
@@ -144,15 +153,13 @@ final class RSAKeyUtilitiesTests: XCTestCase {
 
         let components = try RSAKeyDER.parseRSAPublicKeyComponents(fromPKCS1DER: publicKeyPKCS1)
 
-        XCTAssertEqual(components.modulus, Data([0x00, 0x80, 0x01]))
-        XCTAssertEqual(components.exponent, Data([0x00, 0x80, 0x01]))
+        #expect(components.modulus == Data([0x00, 0x80, 0x01]))
+        #expect(components.exponent == Data([0x00, 0x80, 0x01]))
     }
 
-    private func assertInvalidPrivateKey(_ privateKeyPKCS8: Data,
-                                         file: StaticString = #filePath,
-                                         line: UInt = #line) {
-        XCTAssertThrowsError(try RSAKeyImporter.makePrivateKey(fromPKCS8: privateKeyPKCS8), file: file, line: line) { error in
-            XCTAssertEqual(error as? RSAKeyImportError, .invalidPrivateKey, file: file, line: line)
+    private func assertInvalidPrivateKey(_ privateKeyPKCS8: Data) {
+        #expect(throws: RSAKeyImportError.invalidPrivateKey) {
+            try RSAKeyImporter.makePrivateKey(fromPKCS8: privateKeyPKCS8)
         }
     }
 }

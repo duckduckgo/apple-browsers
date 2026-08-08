@@ -25,7 +25,6 @@ import AppKit
 }
 
 @objc protocol BookmarkMenuItemSelectors: BookmarksMenuItemSelectors {
-
     func openBookmarkInNewTab(_ sender: NSMenuItem)
     func openBookmarkInNewWindow(_ sender: NSMenuItem)
     func openBookmarkInNewFireWindow(_ sender: NSMenuItem)
@@ -38,16 +37,14 @@ import AppKit
 }
 
 @objc protocol FolderMenuItemSelectors: BookmarksMenuItemSelectors {
-
     func editFolder(_ sender: NSMenuItem)
     func deleteFolder(_ sender: NSMenuItem)
     func openInNewTabs(_ sender: NSMenuItem)
     func openAllInNewWindow(_ sender: NSMenuItem)
-
+    func reorderByName(_ sender: NSMenuItem)
 }
 
 @objc protocol BookmarkSearchMenuItemSelectors {
-
     func showInFolder(_ sender: NSMenuItem)
 }
 

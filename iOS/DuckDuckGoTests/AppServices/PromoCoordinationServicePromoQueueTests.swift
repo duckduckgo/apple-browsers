@@ -21,6 +21,7 @@ import UIKit
 import Foundation
 import Combine
 import Core
+import FeatureFlags_iOS
 import PrivacyConfig
 import Testing
 import PersistenceTestingUtils

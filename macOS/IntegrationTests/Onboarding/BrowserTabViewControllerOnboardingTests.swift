@@ -20,7 +20,7 @@ import AIChat
 import Combine
 import Common
 import FoundationExtensions
-import FeatureFlags
+import FeatureFlags_macOS
 import History
 import HistoryView
 import Onboarding

@@ -39,7 +39,7 @@ import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
 import DDGSync
 import DuckAiDataStore
-import FeatureFlags
+import FeatureFlags_macOS
 import FoundationExtensions
 import Freemium
 import History
@@ -1434,6 +1434,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             let dependencies = PromoDependencies(
                 keyValueStore: keyValueStore,
                 isExternallyActivated: urlEventHandlerResult.willOpenWindows,
+                isNewUserProvider: { AppDelegate.isNewUser },
                 isOnboardingCompletedProvider: { OnboardingActionsManager.isOnboardingFinished },
                 activeRemoteMessageModel: activeRemoteMessageModel,
                 defaultBrowserAndDockPromptService: defaultBrowserAndDockPromptService,

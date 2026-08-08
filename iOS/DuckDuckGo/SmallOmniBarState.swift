@@ -20,6 +20,7 @@
 import Foundation
 import Core
 import BrowserServicesKit
+import FeatureFlags_iOS
 struct SmallOmniBarState {
 
     struct HomeEmptyEditingState: OmniBarState, OmniBarLoadingBearerStateCreating {

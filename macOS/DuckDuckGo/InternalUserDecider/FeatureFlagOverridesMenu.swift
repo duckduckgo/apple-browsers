@@ -17,7 +17,7 @@
 //
 
 import AppKit
-import FeatureFlags
+import FeatureFlags_macOS
 import PrivacyConfig
 
 final class FeatureFlagOverridesMenu: NSMenu {

@@ -54,6 +54,22 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         XCTAssertFalse(sut.isToolbarSubmitEnabled)
     }
 
+    func test_flankedPillCentresTrailingButtonsOnItsTallerCard() throws {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        let sut = UnifiedToggleInputView(handler: handler)
+        sut.frame = CGRect(x: 0, y: 0, width: 402, height: 120)
+
+        let buttons = try XCTUnwrap(firstDescendant(of: SwitchBarButtonsView.self, in: sut))
+
+        sut.applyCardLayout(.collapsed, animated: false)
+        sut.layoutIfNeeded()
+        XCTAssertEqual(buttons.center.y, 22, accuracy: 0.5)
+
+        sut.applyCardLayout(.flanked, animated: false)
+        sut.layoutIfNeeded()
+        XCTAssertEqual(buttons.center.y, 24, accuracy: 0.5)
+    }
+
     func test_dismissPoseFadesAttachmentsStripOutSoItAnimatesWithTheCollapse() throws {
         let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
         let sut = UnifiedToggleInputView(handler: handler)

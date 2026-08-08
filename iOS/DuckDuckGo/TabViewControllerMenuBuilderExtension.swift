@@ -31,6 +31,7 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import DuckPlayer
 import UIComponents
+import FeatureFlags_iOS
 
 extension TabViewController {
 

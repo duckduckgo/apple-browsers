@@ -70,9 +70,8 @@ struct SubscriptionOnboardingHeaderView: View {
 }
 
 private extension SubscriptionOnboardingHeaderView {
-    /// The explanation renders Markdown (so `[label](url)` becomes a tappable link). Every link leads to
-    /// the current section's info screen, so any tap fires `onInfoLinkTap`; when it's nil the tap defers to
-    /// the system URL handler.
+    /// Renders Markdown, and since every link leads to the section's info screen any tap fires
+    /// `onInfoLinkTap` — falling back to the system URL handler when that's nil.
     func explanationView(_ explanation: String) -> some View {
         Text(.init("\(explanation)"))
             .daxSubheadRegular()

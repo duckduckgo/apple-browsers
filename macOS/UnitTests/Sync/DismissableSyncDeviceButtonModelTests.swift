@@ -18,7 +18,7 @@
 
 import Combine
 import DDGSync
-import FeatureFlags
+import FeatureFlags_macOS
 import Persistence
 import PersistenceTestingUtils
 import PrivacyConfig

@@ -27,7 +27,8 @@ struct AccountInfoKeyManagerTests {
     private let account = SyncAccount.mock
     private let crypter = CryptingMock()
 
-    @Test("A cached default-credential key loads without fetching")
+    @available(iOS 16, macOS 13, *)
+    @Test("A cached default-credential key loads without fetching", .timeLimit(.minutes(1)))
     func testWhenDefaultCredentialKeyIsCachedThenLoadsWithoutFetching() async throws {
         let protectedKey = try makeDefaultCredentialProtectedKey()
         let secureStore = SecureStorageStub()
@@ -43,7 +44,8 @@ struct AccountInfoKeyManagerTests {
         #expect(scopedAccess.fetchProtectedKeysCalls.isEmpty)
     }
 
-    @Test("A corrupt cache is replaced with server keys")
+    @available(iOS 16, macOS 13, *)
+    @Test("A corrupt cache is replaced with server keys", .timeLimit(.minutes(1)))
     func testWhenCacheIsCorruptThenFetchesAndCachesServerKeys() async throws {
         let protectedKey = try makeDefaultCredentialProtectedKey()
         let secureStore = SecureStorageStub()
@@ -63,7 +65,8 @@ struct AccountInfoKeyManagerTests {
         #expect(cachedKeys.map(\.kid) == [protectedKey.kid])
     }
 
-    @Test("A cached third-party wrapper loads using the scoped password")
+    @available(iOS 16, macOS 13, *)
+    @Test("A cached third-party wrapper loads using the scoped password", .timeLimit(.minutes(1)))
     func testWhenOnlyThirdPartyWrapperIsCachedThenLoadsUsingScopedPassword() async throws {
         let scopedPassword = Data(repeating: 0x03, count: 32)
         let protectedKey = try makeThirdPartyCredentialProtectedKey(scopedPassword: scopedPassword)
@@ -81,7 +84,8 @@ struct AccountInfoKeyManagerTests {
         #expect(scopedAccess.fetchProtectedKeysCalls.isEmpty)
     }
 
-    @Test("A failed default wrapper falls back to the third-party wrapper")
+    @available(iOS 16, macOS 13, *)
+    @Test("A failed default wrapper falls back to the third-party wrapper", .timeLimit(.minutes(1)))
     func testWhenDefaultWrapperCannotBeUnwrappedThenFallsBackToThirdPartyWrapper() async throws {
         let scopedPassword = Data(repeating: 0x03, count: 32)
         let protectedKeys = try makeDualWrappedProtectedKeys(scopedPassword: scopedPassword)
@@ -108,7 +112,8 @@ struct AccountInfoKeyManagerTests {
         #expect(scopedAccess.fetchAccessCredentialsCalls.isEmpty)
     }
 
-    @Test("The default wrapper is preferred without recovering a scoped password")
+    @available(iOS 16, macOS 13, *)
+    @Test("The default wrapper is preferred without recovering a scoped password", .timeLimit(.minutes(1)))
     func testWhenBothWrappersAreCachedThenPrefersDefaultWithoutRecoveringScopedPassword() async throws {
         let scopedPassword = Data(repeating: 0x03, count: 32)
         let protectedKeys = try makeDualWrappedProtectedKeys(scopedPassword: scopedPassword)
@@ -130,7 +135,8 @@ struct AccountInfoKeyManagerTests {
         #expect(scopedAccess.recoverScopedPasswordCalls.isEmpty)
     }
 
-    @Test("A missing scoped password is recovered and cached")
+    @available(iOS 16, macOS 13, *)
+    @Test("A missing scoped password is recovered and cached", .timeLimit(.minutes(1)))
     func testWhenThirdPartyWrapperIsCachedWithoutScopedPasswordThenRecoversAndCachesPassword() async throws {
         let scopedPassword = Data(repeating: 0x03, count: 32)
         let protectedKey = try makeThirdPartyCredentialProtectedKey(scopedPassword: scopedPassword)
@@ -153,7 +159,29 @@ struct AccountInfoKeyManagerTests {
         #expect(secureStore.theScopedPassword == scopedPassword)
     }
 
-    @Test("Transient refresh failures preserve the protected-key cache")
+    @available(iOS 16, macOS 13, *)
+    @Test("Cancellation during cached-key recovery does not trigger a refresh", .timeLimit(.minutes(1)))
+    func testWhenCachedKeyRecoveryIsCancelledThenDoesNotRefresh() async throws {
+        let scopedPassword = Data(repeating: 0x03, count: 32)
+        let protectedKey = try makeThirdPartyCredentialProtectedKey(scopedPassword: scopedPassword)
+        let secureStore = SecureStorageStub()
+        secureStore.theProtectedKeysData = try JSONEncoder.snakeCaseKeys.encode([protectedKey])
+        let scopedAccess = ScopedAccessCredentialManagingMock()
+        scopedAccess.fetchAccessCredentialsError = CancellationError()
+        let manager = AccountInfoKeyManager(secureStore: secureStore,
+                                            scopedAccess: scopedAccess,
+                                            crypter: crypter)
+
+        await #expect(throws: CancellationError.self) {
+            try await manager.loadKey(for: account)
+        }
+
+        #expect(scopedAccess.fetchAccessCredentialsCalls.map(\.userId) == [account.userId])
+        #expect(scopedAccess.fetchProtectedKeysCalls.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Transient refresh failures preserve the protected-key cache", .timeLimit(.minutes(1)))
     func testWhenCachedThirdPartyKeyAndRefreshFailTransientlyThenPreservesProtectedKeyCache() async throws {
         let scopedPassword = Data(repeating: 0x03, count: 32)
         let accountInfoKey = try makeThirdPartyCredentialProtectedKey(scopedPassword: scopedPassword)
@@ -185,7 +213,8 @@ struct AccountInfoKeyManagerTests {
         #expect(scopedAccess.fetchProtectedKeysCalls.map(\.userId) == [account.userId])
     }
 
-    @Test("Inconsistent public keys are rejected")
+    @available(iOS 16, macOS 13, *)
+    @Test("Inconsistent public keys are rejected", .timeLimit(.minutes(1)))
     func testWhenAccountInfoWrappersDescribeDifferentPublicKeysThenThrowsInvalidProtectedKeySet() async throws {
         let protectedKey = try makeDefaultCredentialProtectedKey()
         let differentPublicKey = try ScopedAccessKeyFactory.makeRSAKeyMaterial().publicKeyJWK
@@ -198,7 +227,8 @@ struct AccountInfoKeyManagerTests {
         await assertRefreshing([protectedKey, inconsistentWrapper], expectedError: .invalidProtectedKeySet)
     }
 
-    @Test("Unsupported wrappers are rejected")
+    @available(iOS 16, macOS 13, *)
+    @Test("Unsupported wrappers are rejected", .timeLimit(.minutes(1)))
     func testWhenAccountInfoKeyHasUnsupportedWrapperThenThrowsUnavailableWrappingKey() async {
         let protectedKey = ProtectedKey(kid: "account-info-key",
                                         encryptedPrivateKey: "unused",
@@ -209,7 +239,8 @@ struct AccountInfoKeyManagerTests {
         await assertRefreshing([protectedKey], expectedError: .unavailableWrappingKey)
     }
 
-    @Test("Malformed default wrappers are rejected")
+    @available(iOS 16, macOS 13, *)
+    @Test("Malformed default wrappers are rejected", .timeLimit(.minutes(1)))
     func testWhenDefaultWrapperIsNotBase64URLThenThrowsUnableToUnwrapPrivateKey() async {
         let protectedKey = ProtectedKey(kid: "account-info-key",
                                         encryptedPrivateKey: "%",
@@ -220,7 +251,8 @@ struct AccountInfoKeyManagerTests {
         await assertRefreshing([protectedKey], expectedError: .unableToUnwrapPrivateKey)
     }
 
-    @Test("A private key that does not match the public key is rejected")
+    @available(iOS 16, macOS 13, *)
+    @Test("A private key that does not match the public key is rejected", .timeLimit(.minutes(1)))
     func testWhenPrivateKeyDoesNotMatchPublicKeyThenThrowsPublicKeyMismatch() async throws {
         let privateKeyMaterial = try ScopedAccessKeyFactory.makeRSAKeyMaterial()
         let publicKeyMaterial = try ScopedAccessKeyFactory.makeRSAKeyMaterial()
@@ -234,7 +266,8 @@ struct AccountInfoKeyManagerTests {
         await assertRefreshing([protectedKey], expectedError: .publicKeyMismatch)
     }
 
-    @Test("A missing account info key is reported")
+    @available(iOS 16, macOS 13, *)
+    @Test("A missing account info key is reported", .timeLimit(.minutes(1)))
     func testWhenServerHasNoAccountInfoKeyThenThrows() async throws {
         let secureStore = SecureStorageStub()
         let scopedAccess = ScopedAccessCredentialManagingMock()

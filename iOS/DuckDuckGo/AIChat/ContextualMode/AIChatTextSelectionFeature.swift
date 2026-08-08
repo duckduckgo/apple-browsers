@@ -50,22 +50,27 @@ struct AIChatTextSelectionFeature: AIChatTextSelectionFeatureProviding {
         self.devicePlatform = devicePlatform
     }
 
-    /// Gated on Duck.ai being enabled at all: a user who has turned AI features off must see nothing
-    /// AI-related. Deliberately not the browsing-menu shortcut setting, which only hides one entry point.
+    /// The feature's kill switch and platform scope, shared by both items.
+    private var isEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatTextActions) && devicePlatform.isIphone
+    }
+
+    /// Additionally gated on Duck.ai being enabled at all: a user who has turned AI features off must see
+    /// nothing AI-related. Deliberately not the browsing-menu shortcut setting, which only hides one entry
+    /// point.
     ///
     /// Also requires everything the unified input's attachment strip needs, since that is where an
     /// attached selection appears — without it a selection would attach invisibly and still be submitted.
     var isAskAvailable: Bool {
-        isSearchAvailable
+        isEnabled
             && aiChatSettings.isAIChatEnabled
             && featureFlagger.isFeatureOn(.aiChatContextualUnifiedToggleInput)
             && unifiedToggleInputFeature.isAvailable
     }
 
     /// Not an AI action, so deliberately independent of the Duck.ai setting and of the unified input —
-    /// searching a selection still works for someone who has Duck.ai switched off. Scoped to iPhone with
-    /// the rest of the feature.
+    /// searching a selection still works for someone who has Duck.ai switched off.
     var isSearchAvailable: Bool {
-        featureFlagger.isFeatureOn(.aiChatTextActions) && devicePlatform.isIphone
+        isEnabled
     }
 }

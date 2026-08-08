@@ -26,8 +26,7 @@ final class WebView: WKWebView {
     private var customAccesoryView: UIView?
     private(set) var inputAccessoryViewHidden = false
 
-    /// An item offered on a text selection. Gated separately: Search is not an AI action, so it survives
-    /// Duck.ai being switched off.
+    /// An item offered on a text selection.
     enum TextSelectionMenuItem: Equatable {
         case askAIChat
         case searchWithDuckDuckGo
@@ -105,11 +104,9 @@ final class WebView: WKWebView {
 
     /// Adds our items to the text-selection menu.
     ///
-    /// Overridden on the subclass because `WKWebView` consumes `buildMenu(with:)` rather than propagating
-    /// it up the responder chain since iOS 18.2. Anchored after `.standardEdit` so the items sit beside
-    /// Copy — appending to the root menu was verified on device to put them in the overflow menu only.
-    /// Ask is the only AI action offered: a Translate lookalike beside the system's own invites a mis-tap
-    /// that sends the selection to AI.
+    /// Overridden on the subclass because `WKWebView` consumes `buildMenu(with:)` rather than propagating it
+    /// up the responder chain since iOS 18.2. Anchored after `.standardEdit` so the items sit beside Copy —
+    /// appending to the root menu was verified on device to put them in the overflow menu only.
     override func buildMenu(with builder: UIMenuBuilder) {
         super.buildMenu(with: builder)
 

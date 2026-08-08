@@ -76,6 +76,53 @@ final class AccountInfoKeyManagerTests: XCTestCase {
         XCTAssertTrue(scopedAccess.fetchProtectedKeysCalls.isEmpty)
     }
 
+    func testWhenDefaultWrapperCannotBeUnwrappedThenFallsBackToThirdPartyWrapper() async throws {
+        let scopedPassword = Data(repeating: 0x03, count: 32)
+        let protectedKeys = try makeDualWrappedProtectedKeys(scopedPassword: scopedPassword)
+        let malformedDefaultWrapper = ProtectedKey(kid: protectedKeys.defaultCredential.kid,
+                                                    encryptedPrivateKey: "%",
+                                                    publicKey: protectedKeys.defaultCredential.publicKey,
+                                                    encryptedWith: SyncCredentialID.defaultCredential,
+                                                    purpose: ProtectedKeyPurpose.accountInfo)
+        let secureStore = SecureStorageStub()
+        secureStore.theScopedPassword = scopedPassword
+        secureStore.theProtectedKeysData = try JSONEncoder.snakeCaseKeys.encode([
+            malformedDefaultWrapper,
+            protectedKeys.thirdParty
+        ])
+        let scopedAccess = ScopedAccessCredentialManagingMock()
+        let manager = AccountInfoKeyManager(secureStore: secureStore,
+                                            scopedAccess: scopedAccess,
+                                            crypter: crypter)
+
+        let key = try await manager.loadKey(for: account)
+
+        XCTAssertEqual(key.kid, protectedKeys.thirdParty.kid)
+        XCTAssertTrue(scopedAccess.fetchProtectedKeysCalls.isEmpty)
+        XCTAssertTrue(scopedAccess.fetchAccessCredentialsCalls.isEmpty)
+    }
+
+    func testWhenBothWrappersAreCachedThenPrefersDefaultWithoutRecoveringScopedPassword() async throws {
+        let scopedPassword = Data(repeating: 0x03, count: 32)
+        let protectedKeys = try makeDualWrappedProtectedKeys(scopedPassword: scopedPassword)
+        let secureStore = SecureStorageStub()
+        secureStore.theProtectedKeysData = try JSONEncoder.snakeCaseKeys.encode([
+            protectedKeys.thirdParty,
+            protectedKeys.defaultCredential
+        ])
+        let scopedAccess = ScopedAccessCredentialManagingMock()
+        let manager = AccountInfoKeyManager(secureStore: secureStore,
+                                            scopedAccess: scopedAccess,
+                                            crypter: crypter)
+
+        let key = try await manager.loadKey(for: account)
+
+        XCTAssertEqual(key.kid, protectedKeys.defaultCredential.kid)
+        XCTAssertTrue(scopedAccess.fetchProtectedKeysCalls.isEmpty)
+        XCTAssertTrue(scopedAccess.fetchAccessCredentialsCalls.isEmpty)
+        XCTAssertTrue(scopedAccess.recoverScopedPasswordCalls.isEmpty)
+    }
+
     func testWhenThirdPartyWrapperIsCachedWithoutScopedPasswordThenRecoversAndCachesPassword() async throws {
         let scopedPassword = Data(repeating: 0x03, count: 32)
         let protectedKey = try makeThirdPartyCredentialProtectedKey(scopedPassword: scopedPassword)
@@ -229,5 +276,26 @@ final class AccountInfoKeyManagerTests: XCTestCase {
                             publicKey: keyMaterial.publicKeyJWK,
                             encryptedWith: SyncCredentialID.thirdParty,
                             purpose: ProtectedKeyPurpose.accountInfo)
+    }
+
+    private func makeDualWrappedProtectedKeys(scopedPassword: Data) throws -> (defaultCredential: ProtectedKey, thirdParty: ProtectedKey) {
+        let keyMaterial = try ScopedAccessKeyFactory.makeRSAKeyMaterial()
+        let kid = UUID().uuidString
+        let encryptedDefaultPrivateKey = try crypter.encrypt(keyMaterial.privateKeyPKCS8, using: account.secretKey)
+        let thirdPartyMainKey = ScopedAccessKeyDerivation.mainKey(from: scopedPassword, userID: account.userId)
+        let encryptedThirdPartyPrivateKey = try JWECompactCodec().encryptDirect(payload: keyMaterial.privateKeyPKCS8,
+                                                                                contentEncryptionKey: thirdPartyMainKey,
+                                                                                kid: SyncCredentialID.thirdParty)
+        return (
+            defaultCredential: ProtectedKey(kid: kid,
+                                            encryptedPrivateKey: Base64URL.encode(encryptedDefaultPrivateKey),
+                                            publicKey: keyMaterial.publicKeyJWK,
+                                            encryptedWith: SyncCredentialID.defaultCredential,
+                                            purpose: ProtectedKeyPurpose.accountInfo),
+            thirdParty: ProtectedKey(kid: kid,
+                                     encryptedPrivateKey: encryptedThirdPartyPrivateKey,
+                                     publicKey: keyMaterial.publicKeyJWK,
+                                     encryptedWith: SyncCredentialID.thirdParty,
+                                     purpose: ProtectedKeyPurpose.accountInfo))
     }
 }

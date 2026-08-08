@@ -26,6 +26,7 @@ final class RSAKeyUtilitiesTests: XCTestCase {
     func testWhenImportingRSA3072PKCS8ThenPublicAndPrivateKeysMatch() throws {
         let keyMaterial = try ScopedAccessKeyFactory.makeRSAKeyMaterial(keySizeInBits: 3072)
 
+        // RSA-3072 makes the outer PKCS#8 sequence use DER's multi-byte length form.
         XCTAssertNotEqual(keyMaterial.privateKeyPKCS8[1] & 0x80, 0)
 
         let publicKey = try RSAKeyImporter.makePublicKey(from: keyMaterial.publicKeyJWK)
@@ -36,6 +37,86 @@ final class RSAKeyUtilitiesTests: XCTestCase {
 
         XCTAssertEqual(SecKeyGetBlockSize(privateKey), 384)
         XCTAssertEqual(derivedPublicKeyData, publicKeyData)
+    }
+
+    func testWhenImportingPublicKeyWithUnsupportedMetadataThenThrowsUnsupportedPublicKey() throws {
+        let publicKey = try ScopedAccessKeyFactory.makeRSAKeyMaterial().publicKeyJWK
+        let unsupportedPublicKeys = [
+            ProtectedKeyPublicKey(alg: "RS256",
+                                  e: publicKey.e,
+                                  ext: publicKey.ext,
+                                  keyOps: publicKey.keyOps,
+                                  kty: publicKey.kty,
+                                  n: publicKey.n,
+                                  use: publicKey.use),
+            ProtectedKeyPublicKey(alg: publicKey.alg,
+                                  e: publicKey.e,
+                                  ext: publicKey.ext,
+                                  keyOps: publicKey.keyOps,
+                                  kty: "EC",
+                                  n: publicKey.n,
+                                  use: publicKey.use),
+            ProtectedKeyPublicKey(alg: publicKey.alg,
+                                  e: publicKey.e,
+                                  ext: publicKey.ext,
+                                  keyOps: publicKey.keyOps,
+                                  kty: publicKey.kty,
+                                  n: publicKey.n,
+                                  use: "sig"),
+            ProtectedKeyPublicKey(alg: publicKey.alg,
+                                  e: publicKey.e,
+                                  ext: publicKey.ext,
+                                  keyOps: ["verify"],
+                                  kty: publicKey.kty,
+                                  n: publicKey.n,
+                                  use: publicKey.use)
+        ]
+
+        for unsupportedPublicKey in unsupportedPublicKeys {
+            XCTAssertThrowsError(try RSAKeyImporter.makePublicKey(from: unsupportedPublicKey)) { error in
+                XCTAssertEqual(error as? RSAKeyImportError, .unsupportedPublicKey)
+            }
+        }
+    }
+
+    func testWhenImportingPublicKeyWithMissingOrMalformedComponentsThenThrowsInvalidPublicKey() throws {
+        let publicKey = try ScopedAccessKeyFactory.makeRSAKeyMaterial().publicKeyJWK
+        let invalidPublicKeys = [
+            ProtectedKeyPublicKey(alg: publicKey.alg,
+                                  e: publicKey.e,
+                                  ext: publicKey.ext,
+                                  keyOps: publicKey.keyOps,
+                                  kty: publicKey.kty,
+                                  n: nil,
+                                  use: publicKey.use),
+            ProtectedKeyPublicKey(alg: publicKey.alg,
+                                  e: publicKey.e,
+                                  ext: publicKey.ext,
+                                  keyOps: publicKey.keyOps,
+                                  kty: publicKey.kty,
+                                  n: "%",
+                                  use: publicKey.use),
+            ProtectedKeyPublicKey(alg: publicKey.alg,
+                                  e: nil,
+                                  ext: publicKey.ext,
+                                  keyOps: publicKey.keyOps,
+                                  kty: publicKey.kty,
+                                  n: publicKey.n,
+                                  use: publicKey.use),
+            ProtectedKeyPublicKey(alg: publicKey.alg,
+                                  e: "%",
+                                  ext: publicKey.ext,
+                                  keyOps: publicKey.keyOps,
+                                  kty: publicKey.kty,
+                                  n: publicKey.n,
+                                  use: publicKey.use)
+        ]
+
+        for invalidPublicKey in invalidPublicKeys {
+            XCTAssertThrowsError(try RSAKeyImporter.makePublicKey(from: invalidPublicKey)) { error in
+                XCTAssertEqual(error as? RSAKeyImportError, .invalidPublicKey)
+            }
+        }
     }
 
     func testWhenImportingMalformedPKCS8ThenThrowsInvalidPrivateKey() {

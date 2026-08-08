@@ -16,15 +16,18 @@
 //  limitations under the License.
 //
 
-import XCTest
+import Foundation
+import Testing
 
 @testable import DDGSync
 
-final class AccountInfoKeyManagerTests: XCTestCase {
+@Suite("Account info key manager")
+struct AccountInfoKeyManagerTests {
 
     private let account = SyncAccount.mock
     private let crypter = CryptingMock()
 
+    @Test("A cached default-credential key loads without fetching")
     func testWhenDefaultCredentialKeyIsCachedThenLoadsWithoutFetching() async throws {
         let protectedKey = try makeDefaultCredentialProtectedKey()
         let secureStore = SecureStorageStub()
@@ -36,10 +39,11 @@ final class AccountInfoKeyManagerTests: XCTestCase {
 
         let key = try await manager.loadKey(for: account)
 
-        XCTAssertEqual(key.kid, protectedKey.kid)
-        XCTAssertTrue(scopedAccess.fetchProtectedKeysCalls.isEmpty)
+        #expect(key.kid == protectedKey.kid)
+        #expect(scopedAccess.fetchProtectedKeysCalls.isEmpty)
     }
 
+    @Test("A corrupt cache is replaced with server keys")
     func testWhenCacheIsCorruptThenFetchesAndCachesServerKeys() async throws {
         let protectedKey = try makeDefaultCredentialProtectedKey()
         let secureStore = SecureStorageStub()
@@ -52,13 +56,14 @@ final class AccountInfoKeyManagerTests: XCTestCase {
 
         let key = try await manager.loadKey(for: account)
 
-        let cachedData = try XCTUnwrap(secureStore.theProtectedKeysData)
+        let cachedData = try #require(secureStore.theProtectedKeysData)
         let cachedKeys = try JSONDecoder.snakeCaseKeys.decode([ProtectedKey].self, from: cachedData)
-        XCTAssertEqual(key.kid, protectedKey.kid)
-        XCTAssertEqual(scopedAccess.fetchProtectedKeysCalls.map(\.userId), [account.userId])
-        XCTAssertEqual(cachedKeys.map(\.kid), [protectedKey.kid])
+        #expect(key.kid == protectedKey.kid)
+        #expect(scopedAccess.fetchProtectedKeysCalls.map(\.userId) == [account.userId])
+        #expect(cachedKeys.map(\.kid) == [protectedKey.kid])
     }
 
+    @Test("A cached third-party wrapper loads using the scoped password")
     func testWhenOnlyThirdPartyWrapperIsCachedThenLoadsUsingScopedPassword() async throws {
         let scopedPassword = Data(repeating: 0x03, count: 32)
         let protectedKey = try makeThirdPartyCredentialProtectedKey(scopedPassword: scopedPassword)
@@ -72,10 +77,11 @@ final class AccountInfoKeyManagerTests: XCTestCase {
 
         let key = try await manager.loadKey(for: account)
 
-        XCTAssertEqual(key.kid, protectedKey.kid)
-        XCTAssertTrue(scopedAccess.fetchProtectedKeysCalls.isEmpty)
+        #expect(key.kid == protectedKey.kid)
+        #expect(scopedAccess.fetchProtectedKeysCalls.isEmpty)
     }
 
+    @Test("A failed default wrapper falls back to the third-party wrapper")
     func testWhenDefaultWrapperCannotBeUnwrappedThenFallsBackToThirdPartyWrapper() async throws {
         let scopedPassword = Data(repeating: 0x03, count: 32)
         let protectedKeys = try makeDualWrappedProtectedKeys(scopedPassword: scopedPassword)
@@ -97,11 +103,12 @@ final class AccountInfoKeyManagerTests: XCTestCase {
 
         let key = try await manager.loadKey(for: account)
 
-        XCTAssertEqual(key.kid, protectedKeys.thirdParty.kid)
-        XCTAssertTrue(scopedAccess.fetchProtectedKeysCalls.isEmpty)
-        XCTAssertTrue(scopedAccess.fetchAccessCredentialsCalls.isEmpty)
+        #expect(key.kid == protectedKeys.thirdParty.kid)
+        #expect(scopedAccess.fetchProtectedKeysCalls.isEmpty)
+        #expect(scopedAccess.fetchAccessCredentialsCalls.isEmpty)
     }
 
+    @Test("The default wrapper is preferred without recovering a scoped password")
     func testWhenBothWrappersAreCachedThenPrefersDefaultWithoutRecoveringScopedPassword() async throws {
         let scopedPassword = Data(repeating: 0x03, count: 32)
         let protectedKeys = try makeDualWrappedProtectedKeys(scopedPassword: scopedPassword)
@@ -117,12 +124,13 @@ final class AccountInfoKeyManagerTests: XCTestCase {
 
         let key = try await manager.loadKey(for: account)
 
-        XCTAssertEqual(key.kid, protectedKeys.defaultCredential.kid)
-        XCTAssertTrue(scopedAccess.fetchProtectedKeysCalls.isEmpty)
-        XCTAssertTrue(scopedAccess.fetchAccessCredentialsCalls.isEmpty)
-        XCTAssertTrue(scopedAccess.recoverScopedPasswordCalls.isEmpty)
+        #expect(key.kid == protectedKeys.defaultCredential.kid)
+        #expect(scopedAccess.fetchProtectedKeysCalls.isEmpty)
+        #expect(scopedAccess.fetchAccessCredentialsCalls.isEmpty)
+        #expect(scopedAccess.recoverScopedPasswordCalls.isEmpty)
     }
 
+    @Test("A missing scoped password is recovered and cached")
     func testWhenThirdPartyWrapperIsCachedWithoutScopedPasswordThenRecoversAndCachesPassword() async throws {
         let scopedPassword = Data(repeating: 0x03, count: 32)
         let protectedKey = try makeThirdPartyCredentialProtectedKey(scopedPassword: scopedPassword)
@@ -139,12 +147,13 @@ final class AccountInfoKeyManagerTests: XCTestCase {
 
         let key = try await manager.loadKey(for: account)
 
-        XCTAssertEqual(key.kid, protectedKey.kid)
-        XCTAssertEqual(scopedAccess.fetchAccessCredentialsCalls.map(\.userId), [account.userId])
-        XCTAssertEqual(scopedAccess.recoverScopedPasswordCalls.map(\.userID), [account.userId])
-        XCTAssertEqual(secureStore.theScopedPassword, scopedPassword)
+        #expect(key.kid == protectedKey.kid)
+        #expect(scopedAccess.fetchAccessCredentialsCalls.map(\.userId) == [account.userId])
+        #expect(scopedAccess.recoverScopedPasswordCalls.map(\.userID) == [account.userId])
+        #expect(secureStore.theScopedPassword == scopedPassword)
     }
 
+    @Test("Transient refresh failures preserve the protected-key cache")
     func testWhenCachedThirdPartyKeyAndRefreshFailTransientlyThenPreservesProtectedKeyCache() async throws {
         let scopedPassword = Data(repeating: 0x03, count: 32)
         let accountInfoKey = try makeThirdPartyCredentialProtectedKey(scopedPassword: scopedPassword)
@@ -166,16 +175,17 @@ final class AccountInfoKeyManagerTests: XCTestCase {
 
         do {
             _ = try await manager.loadKey(for: account)
-            XCTFail("Expected transient key loading error")
+            Issue.record("Expected transient key loading error")
         } catch {
-            XCTAssertEqual((error as? URLError)?.code, transientError.code)
+            #expect((error as? URLError)?.code == transientError.code)
         }
 
-        XCTAssertEqual(secureStore.theProtectedKeysData, cachedData)
-        XCTAssertEqual(scopedAccess.fetchAccessCredentialsCalls.map(\.userId), [account.userId])
-        XCTAssertEqual(scopedAccess.fetchProtectedKeysCalls.map(\.userId), [account.userId])
+        #expect(secureStore.theProtectedKeysData == cachedData)
+        #expect(scopedAccess.fetchAccessCredentialsCalls.map(\.userId) == [account.userId])
+        #expect(scopedAccess.fetchProtectedKeysCalls.map(\.userId) == [account.userId])
     }
 
+    @Test("Inconsistent public keys are rejected")
     func testWhenAccountInfoWrappersDescribeDifferentPublicKeysThenThrowsInvalidProtectedKeySet() async throws {
         let protectedKey = try makeDefaultCredentialProtectedKey()
         let differentPublicKey = try ScopedAccessKeyFactory.makeRSAKeyMaterial().publicKeyJWK
@@ -188,6 +198,7 @@ final class AccountInfoKeyManagerTests: XCTestCase {
         await assertRefreshing([protectedKey, inconsistentWrapper], expectedError: .invalidProtectedKeySet)
     }
 
+    @Test("Unsupported wrappers are rejected")
     func testWhenAccountInfoKeyHasUnsupportedWrapperThenThrowsUnavailableWrappingKey() async {
         let protectedKey = ProtectedKey(kid: "account-info-key",
                                         encryptedPrivateKey: "unused",
@@ -198,6 +209,7 @@ final class AccountInfoKeyManagerTests: XCTestCase {
         await assertRefreshing([protectedKey], expectedError: .unavailableWrappingKey)
     }
 
+    @Test("Malformed default wrappers are rejected")
     func testWhenDefaultWrapperIsNotBase64URLThenThrowsUnableToUnwrapPrivateKey() async {
         let protectedKey = ProtectedKey(kid: "account-info-key",
                                         encryptedPrivateKey: "%",
@@ -208,6 +220,7 @@ final class AccountInfoKeyManagerTests: XCTestCase {
         await assertRefreshing([protectedKey], expectedError: .unableToUnwrapPrivateKey)
     }
 
+    @Test("A private key that does not match the public key is rejected")
     func testWhenPrivateKeyDoesNotMatchPublicKeyThenThrowsPublicKeyMismatch() async throws {
         let privateKeyMaterial = try ScopedAccessKeyFactory.makeRSAKeyMaterial()
         let publicKeyMaterial = try ScopedAccessKeyFactory.makeRSAKeyMaterial()
@@ -221,6 +234,7 @@ final class AccountInfoKeyManagerTests: XCTestCase {
         await assertRefreshing([protectedKey], expectedError: .publicKeyMismatch)
     }
 
+    @Test("A missing account info key is reported")
     func testWhenServerHasNoAccountInfoKeyThenThrows() async throws {
         let secureStore = SecureStorageStub()
         let scopedAccess = ScopedAccessCredentialManagingMock()
@@ -231,16 +245,18 @@ final class AccountInfoKeyManagerTests: XCTestCase {
 
         do {
             _ = try await manager.loadKey(for: account)
-            XCTFail("Expected missing protected key error")
+            Issue.record("Expected missing protected key error")
         } catch {
-            XCTAssertEqual(error as? AccountInfoKeyManagerError, .missingProtectedKey)
+            #expect((error as? AccountInfoKeyManagerError) == .missingProtectedKey)
         }
     }
 
     private func assertRefreshing(_ protectedKeys: [ProtectedKey],
                                   expectedError: AccountInfoKeyManagerError,
-                                  file: StaticString = #filePath,
-                                  line: UInt = #line) async {
+                                  sourceLocation: SourceLocation = SourceLocation(fileID: #fileID,
+                                                                                 filePath: #filePath,
+                                                                                 line: #line,
+                                                                                 column: #column)) async {
         let scopedAccess = ScopedAccessCredentialManagingMock()
         scopedAccess.fetchProtectedKeysStub = protectedKeys
         let manager = AccountInfoKeyManager(secureStore: SecureStorageStub(),
@@ -249,9 +265,9 @@ final class AccountInfoKeyManagerTests: XCTestCase {
 
         do {
             _ = try await manager.refreshKey(for: account)
-            XCTFail("Expected key refresh to fail", file: file, line: line)
+            Issue.record("Expected key refresh to fail", sourceLocation: sourceLocation)
         } catch {
-            XCTAssertEqual(error as? AccountInfoKeyManagerError, expectedError, file: file, line: line)
+            #expect((error as? AccountInfoKeyManagerError) == expectedError, sourceLocation: sourceLocation)
         }
     }
 

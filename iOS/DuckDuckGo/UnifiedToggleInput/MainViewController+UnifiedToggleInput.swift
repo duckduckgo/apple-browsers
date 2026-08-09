@@ -451,8 +451,6 @@ private extension MainViewController {
         setDuckAITranscriptDimmedForEditing(isEditing)
         aiChatTabChatHeaderView?.isHidden = isEditing
         aiChatEditHeaderView?.isHidden = !isEditing
-        // The card's full expanded shadow reads as a stray line over the flat edit whiteout.
-        unifiedToggleInputCoordinator?.viewController.setUsesCompactExpandedShadow(isEditing)
     }
 
     private func setDuckAITranscriptDimmedForEditing(_ isEditing: Bool) {

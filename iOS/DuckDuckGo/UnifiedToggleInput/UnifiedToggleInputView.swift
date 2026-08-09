@@ -512,19 +512,6 @@ final class UnifiedToggleInputView: UIView {
         return view
     }()
 
-    /// While set, the expanded card drops its large halo for the compact shadow — the full halo
-    /// reads as a stray line over the flat full-tab edit whiteout.
-    var usesCompactExpandedShadow = false {
-        didSet {
-            guard oldValue != usesCompactExpandedShadow, !expandedShadowView.isHidden else { return }
-            expandedShadowView.updateShadows(expandedShadowSet(for: currentLayout))
-        }
-    }
-
-    private func expandedShadowSet(for layout: UnifiedToggleInputCardLayout) -> [CompositeShadowView.Shadow] {
-        (usesCompactExpandedShadow || layout == .flanked) ? flankedShadows : expandedShadows
-    }
-
     // MARK: - Dynamic Colors
 
     private var cardShadowColor: CGColor {
@@ -661,7 +648,7 @@ final class UnifiedToggleInputView: UIView {
             cardView.layer.shadowColor = cardShadowColor
             // Resync the stored shadows so `CompositeShadowView`'s own trait handler doesn't
             // revert dynamic colors to the init-time config.
-            expandedShadowView.shadows = expandedShadowSet(for: currentLayout)
+            expandedShadowView.shadows = currentLayout == .flanked ? flankedShadows : expandedShadows
             // The disclaimer card's shadowColor is a snapshotted cgColor; re-resolve it here.
             editReplaceDisclaimerCard.layer.shadowColor = UIColor(designSystemColor: .shadowSecondary).cgColor
             if isExpanded {
@@ -960,7 +947,7 @@ final class UnifiedToggleInputView: UIView {
 
         let useCompositeShadow = expanded || layout == .flanked
         // In-place mutation preserves the in-flight cornerRadius CAAnimation.
-        expandedShadowView.updateShadows(expandedShadowSet(for: layout))
+        expandedShadowView.updateShadows(layout == .flanked ? flankedShadows : expandedShadows)
         expandedShadowView.isHidden = !useCompositeShadow
         cardView.layer.shadowOpacity = useCompositeShadow ? 0 : 1.0
         let dimensions = Self.cardDimensions(for: layout)

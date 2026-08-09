@@ -323,6 +323,10 @@ final class UnifiedToggleInputViewController: UIViewController {
         inputBarView.setAITabCollapsedFooterPoseActive(active)
     }
 
+    func setUsesCompactExpandedShadow(_ compact: Bool) {
+        inputBarView.usesCompactExpandedShadow = compact
+    }
+
     func prepareForOmnibarEditingShow() {
         inputBarView.prepareForOmnibarEditingShow()
     }

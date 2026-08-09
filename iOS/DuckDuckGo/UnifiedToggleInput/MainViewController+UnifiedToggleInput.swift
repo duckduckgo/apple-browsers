@@ -1436,14 +1436,9 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
     }
 
     func aiChatTabChatHeaderDidTapNewChat() {
-#if DEBUG
-        // Temporary internal E2E hook: borrow this button to drive the editPrompt round-trip.
-        currentTab?.debugSimulateEditPrompt()
-#else
         unifiedToggleInputCoordinator?.startNewChat()
         unifiedToggleInputCoordinator?.showExpanded(inputMode: .aiChat)
         currentTab?.submitStartChatAction()
-#endif
     }
 
     func aiChatTabChatHeaderDidTapNewVoiceChat() {

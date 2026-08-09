@@ -323,42 +323,6 @@ final class AIChatUserScript: NSObject, Subfeature {
         handler.setAIChatInputBoxHandler(inputBoxHandler)
     }
 
-#if DEBUG
-    // MARK: - Debug editing harness
-
-    /// Debug-only: drives the `editPrompt` bridge like the FE would and logs the reply.
-    func debugSimulateEditPromptRoundTrip() {
-        let params: [String: Any] = [
-            "prompt": "Debug edit: change me and tap send",
-            "hasResponsesToLose": true,
-            "images": [["data": Self.debugPNGBase64, "format": "png"]],
-            "files": [["data": Self.debugPDFBase64, "fileName": "notes.pdf", "mimeType": "application/pdf"]]
-        ]
-        Task { @MainActor in
-            let reply = await handler.editPrompt(params: params, message: DebugEditUserScriptMessage())
-            let json = (reply as? EditPromptReply).flatMap(Self.debugEditReplyJSON) ?? String(describing: reply)
-            Logger.aiChat.debug("[editPrompt debug] reply → FE: \(json, privacy: .public)")
-        }
-    }
-
-    private static func debugEditReplyJSON(_ reply: EditPromptReply) -> String? {
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-        return (try? encoder.encode(reply)).flatMap { String(data: $0, encoding: .utf8) }
-    }
-
-    private static let debugPNGBase64 = "iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAIAAABt+uBvAAAArElEQVR42u3bQQ0AIAwDwHnijSCsYHqY2IM0l1RAd99mtU6PpO8eyW99ChAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECFAEUOphU30AAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAZQAZDi2rgAABAgQIECBAgAABAgQIECBAgAABAgQIECBA/sUMh4AAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAigB4/LNWF1N0KpwAAAABJRU5ErkJggg=="
-    private static let debugPDFBase64 = "JVBERi0xLjQKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUl0gL0NvdW50IDEgPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCAzMDAgMjAwXSAvUmVzb3VyY2VzIDw8IC9Gb250IDw8IC9GMSA0IDAgUiA+PiA+PiAvQ29udGVudHMgNSAwIFIgPj4KZW5kb2JqCjQgMCBvYmoKPDwgL1R5cGUgL0ZvbnQgL1N1YnR5cGUgL1R5cGUxIC9CYXNlRm9udCAvSGVsdmV0aWNhID4+CmVuZG9iago1IDAgb2JqCjw8IC9MZW5ndGggNDAgPj4Kc3RyZWFtCkJUIC9GMSAyNCBUZiA2MCAxMDAgVGQgKERlYnVnIFBERikgVGogRVQKZW5kc3RyZWFtCmVuZG9iagp4cmVmCjAgNgowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDkgMDAwMDAgbiAKMDAwMDAwMDA1OCAwMDAwMCBuIAowMDAwMDAwMTE1IDAwMDAwIG4gCjAwMDAwMDAyNDEgMDAwMDAgbiAKMDAwMDAwMDMxMSAwMDAwMCBuIAp0cmFpbGVyCjw8IC9TaXplIDYgL1Jvb3QgMSAwIFIgPj4Kc3RhcnR4cmVmCjQwMQolJUVPRg=="
-
-    private struct DebugEditUserScriptMessage: UserScriptMessage {
-        var messageName: String { AIChatUserScriptMessages.editPrompt.rawValue }
-        var messageBody: Any { [:] }
-        var messageHost: String { "duckduckgo.com" }
-        var isMainFrame: Bool { true }
-        var messageWebView: WKWebView? { nil }
-    }
-#endif
-
     // MARK: - AI Chat Actions
 
     var canDispatchBridgeMessages: Bool {

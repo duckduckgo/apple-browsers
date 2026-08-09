@@ -45,7 +45,6 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
     /// Fires on every prompt delivery so the session state can mark context delivered and re-render the chip.
     var onPromptDelivered: (() -> Void)?
     var onAIVoiceChatRequested: (() -> Void)?
-    /// Fires when the input enters/exits edit mode so the sheet can apply its edit chrome.
     var onEditModeChange: ((Bool) -> Void)?
 
     var attachedContextURL: URL? {
@@ -230,7 +229,6 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
         coordinator.viewController.deactivateInput()
     }
 
-    /// Exits edit mode if active. Safe to call unconditionally (no-op when not editing).
     func endEditMode() {
         coordinator.endEditMode()
     }

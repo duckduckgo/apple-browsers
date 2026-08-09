@@ -38,9 +38,9 @@ final class AIChatEditHeaderView: UIView {
 
     weak var delegate: AIChatEditHeaderViewDelegate?
 
-    /// Own height when set; when nil the header is sized by the caller's constraints (e.g. pinned to
-    /// a host header of a different height, as in the contextual sheet).
     private let preferredHeight: CGFloat?
+
+    private var isHostEmbedded: Bool { preferredHeight == nil }
 
     private lazy var cancelPill = AIChatHeaderGlassPill(cornerRadius: Constants.buttonSize / 2)
 
@@ -95,17 +95,17 @@ final class AIChatEditHeaderView: UIView {
     }
 
     private func setupUI() {
-        backgroundColor = UIColor(designSystemColor: .surfaceCanvas)
+        // Embedded in a host header: transparent and separator-free so it inherits the host chrome.
+        backgroundColor = isHostEmbedded ? .clear : UIColor(designSystemColor: .surfaceCanvas)
         addSubview(cancelPill)
         addSubview(titleLabel)
-        addSubview(bottomSeparator)
         cancelPill.contentView.addSubview(cancelButton)
 
         if let preferredHeight {
             heightAnchor.constraint(equalToConstant: preferredHeight).isActive = true
         }
 
-        NSLayoutConstraint.activate([
+        var constraints: [NSLayoutConstraint] = [
             cancelPill.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.horizontalPadding),
             cancelPill.centerYAnchor.constraint(equalTo: centerYAnchor),
             cancelPill.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
@@ -120,12 +120,19 @@ final class AIChatEditHeaderView: UIView {
             titleLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
             titleLabel.leadingAnchor.constraint(greaterThanOrEqualTo: cancelPill.trailingAnchor, constant: Constants.titleEdgeSpacing),
             titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -Constants.horizontalPadding),
+        ]
 
-            bottomSeparator.leadingAnchor.constraint(equalTo: leadingAnchor),
-            bottomSeparator.trailingAnchor.constraint(equalTo: trailingAnchor),
-            bottomSeparator.bottomAnchor.constraint(equalTo: bottomAnchor),
-            bottomSeparator.heightAnchor.constraint(equalToConstant: 1.0 / UIScreen.main.scale),
-        ])
+        if !isHostEmbedded {
+            addSubview(bottomSeparator)
+            constraints += [
+                bottomSeparator.leadingAnchor.constraint(equalTo: leadingAnchor),
+                bottomSeparator.trailingAnchor.constraint(equalTo: trailingAnchor),
+                bottomSeparator.bottomAnchor.constraint(equalTo: bottomAnchor),
+                bottomSeparator.heightAnchor.constraint(equalToConstant: 1.0 / UIScreen.main.scale),
+            ]
+        }
+
+        NSLayoutConstraint.activate(constraints)
     }
 
     @objc private func cancelTapped() {

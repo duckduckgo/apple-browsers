@@ -190,7 +190,6 @@ final class AIChatContextualSheetViewController: UIViewController {
         return view
     }()
 
-    /// Swaps in over `headerView` while editing a message (✕ + "Edit Message"), sized to match it.
     private lazy var aiChatEditHeaderView: AIChatEditHeaderView = {
         let header = AIChatEditHeaderView(preferredHeight: nil)
         header.delegate = self
@@ -1133,7 +1132,6 @@ private extension AIChatContextualSheetViewController {
 private extension AIChatContextualSheetViewController {
 
     func prepareForDismissal() {
-        // End any in-progress message edit so its chrome doesn't linger if the sheet reopens.
         persistentUTIHost?.endEditMode()
         guard canProcessSuggestionSubmission else { return }
         canProcessSuggestionSubmission = false
@@ -1365,7 +1363,6 @@ private extension AIChatContextualSheetViewController {
         persistentUTIHost?.deactivateInput()
     }
 
-    /// Swaps the sheet header for the edit header and fades the chat out while editing a message.
     private func setEditMode(_ editing: Bool) {
         headerView.isHidden = editing
         aiChatEditHeaderView.isHidden = !editing

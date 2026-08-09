@@ -885,7 +885,6 @@ private class CapturingOnboardingPixelReporter: OnboardingPixelReporting {
      func resetData() { }
  }
 
-
 final class SpyUpsellMetricsReporter: OnboardingSubscriptionUpsellMetricsReporting {
     var reported: [OnboardingSubscriptionUpsellMetric] = []
 

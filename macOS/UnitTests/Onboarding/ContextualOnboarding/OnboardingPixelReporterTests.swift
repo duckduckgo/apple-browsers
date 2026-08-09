@@ -331,7 +331,6 @@ class MockContextualOnboardingState: ContextualOnboardingStateUpdater, Contextua
     func gotItPressed() {
     }
 
-
     func fireButtonUsed() {
     }
 

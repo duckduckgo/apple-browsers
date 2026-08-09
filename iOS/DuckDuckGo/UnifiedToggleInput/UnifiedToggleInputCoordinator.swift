@@ -796,7 +796,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         for image in request.images ?? [] {
             guard let data = Data(base64Encoded: image.data), let uiImage = UIImage(data: data) else { continue }
             let fileName = "image.\(image.format == "png" ? "png" : "jpg")"
-            attachments.append(.image(AIChatImageAttachment(image: uiImage, fileName: fileName)))
+            attachments.append(.image(AIChatImageAttachment(image: uiImage,
+                                                            fileName: fileName,
+                                                            originalEncodedData: data,
+                                                            originalFormat: image.format)))
         }
         for file in request.files ?? [] {
             guard let data = Data(base64Encoded: file.data) else { continue }

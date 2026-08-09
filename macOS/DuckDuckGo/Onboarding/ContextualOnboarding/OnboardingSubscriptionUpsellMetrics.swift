@@ -61,7 +61,7 @@ struct OnboardingSubscriptionUpsellMetricsReporter: OnboardingSubscriptionUpsell
     private static func conversionWindows(for metric: OnboardingSubscriptionUpsellMetric) -> [ConversionWindow] {
         switch metric {
         case .trialStarted:
-            // A trial can start after onboarding day, so it is measured over the first week too.
+            // A subscription can complete after onboarding day, so it is measured over the first week too.
             [ConversionWindows.sameDay, ConversionWindows.firstWeek]
         case .upsellShown, .tryForFreeClick, .noThanksClick, .upsellDismissed:
             [ConversionWindows.sameDay]

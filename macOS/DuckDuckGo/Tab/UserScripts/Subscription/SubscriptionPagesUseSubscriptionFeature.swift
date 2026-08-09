@@ -406,7 +406,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
                 saveSubscriptionUpgradeTimestampIfFreemiumActivated()
                 PixelKit.fire(SubscriptionPixel.subscriptionActivated, frequency: .uniqueByName)
                 subscriptionSuccessPixelHandler.fireSuccessfulSubscriptionAttributionPixel(freeTrial: freeTrialEligible)
-                await reportOnboardingUpsellTrialStartedIfNeeded(origin: origin)
+                reportOnboardingUpsellSubscriptionSuccessIfNeeded(origin: origin)
                 sendSubscriptionUpgradeFromFreemiumNotificationIfFreemiumActivated()
                 notificationCenter.post(name: .subscriptionDidChange, object: self)
                 await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: purchaseUpdate)
@@ -647,7 +647,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
         } else {
             PixelKit.fire(SubscriptionPixel.subscriptionPurchaseStripeSuccess, frequency: .legacyDailyAndCount)
             subscriptionSuccessPixelHandler.fireSuccessfulSubscriptionAttributionPixel(freeTrial: false)
-            await reportOnboardingUpsellTrialStartedIfNeeded(origin: origin)
+            reportOnboardingUpsellSubscriptionSuccessIfNeeded(origin: origin)
         }
 
         sendFreemiumSubscriptionPixelIfFreemiumActivated()
@@ -899,14 +899,10 @@ private extension SubscriptionPagesUseSubscriptionFeature {
         }
     }
 
-    /// `freeTrialEligible` is captured before purchase and only says a trial was on offer, so it can't
-    /// stand in for one actually starting — the no-trial monthly SKUs make that a real false positive.
-    /// Windows filters on the completed purchase, so this reads the resulting subscription. App Store
-    /// has already ingested it; Stripe clears the cache before this read, so it fetches the new result.
-    func reportOnboardingUpsellTrialStartedIfNeeded(origin: String?) async {
-        guard origin == SubscriptionFunnelOrigin.onboardingSubscriptionUpsell.rawValue,
-              let subscription = try? await subscriptionManager.getSubscription(),
-              subscription.hasActiveTrialOffer else { return }
+    /// Windows names this shared conversion metric `trialStarted`; on macOS it represents any successful
+    /// subscription from this flow because App Store purchases do not necessarily include a trial.
+    func reportOnboardingUpsellSubscriptionSuccessIfNeeded(origin: String?) {
+        guard origin == SubscriptionFunnelOrigin.onboardingSubscriptionUpsell.rawValue else { return }
         subscriptionUpsellMetrics.report(.trialStarted)
     }
 

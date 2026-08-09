@@ -389,6 +389,8 @@ class MainViewController: UIViewController {
     var aiChatEditHeaderView: AIChatEditHeaderView?
     /// The web view whitened for the current edit, so it can be restored even if the tab changes.
     weak var whitenedTranscriptWebView: WKWebView?
+    /// The whitened web view's container background, captured so it can be restored after the edit.
+    var whitenedContainerOriginalBackground: UIColor?
 
     /// Tracks live Duck.ai voice sessions per tab. Created in `setUpDuckAIVoiceSessionTracker()`.
     var duckAIVoiceSessionTracker: DuckAIVoiceSessionTracker?

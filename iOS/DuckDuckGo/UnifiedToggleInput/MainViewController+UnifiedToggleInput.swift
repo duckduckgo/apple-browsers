@@ -457,11 +457,17 @@ private extension MainViewController {
         if isEditing {
             guard currentTab?.isAITab == true, let webView = currentTab?.webView else { return }
             whitenedTranscriptWebView = webView
+            // Fading the web view reveals its container behind it; tint that to the contextual chat
+            // tone so the input card blends into one surface instead of sitting on a colour edge.
+            whitenedContainerOriginalBackground = webView.superview?.backgroundColor
+            webView.superview?.backgroundColor = UIColor(singleUseColor: .duckAIContextualSheetBackground)
             UIView.animate(withDuration: 0.2) { webView.alpha = 0 }
         } else {
             // Restore the exact web view we whitened, not `currentTab`'s — the tab may have changed.
             let webView = whitenedTranscriptWebView
             whitenedTranscriptWebView = nil
+            webView?.superview?.backgroundColor = whitenedContainerOriginalBackground
+            whitenedContainerOriginalBackground = nil
             UIView.animate(withDuration: 0.2) { webView?.alpha = 1 }
         }
     }

@@ -456,9 +456,6 @@ private extension MainViewController {
     private func setDuckAITranscriptDimmedForEditing(_ isEditing: Bool) {
         if isEditing {
             guard currentTab?.isAITab == true, let webView = currentTab?.webView else { return }
-            // Fading the web view reveals its container behind it; tint that to the contextual chat
-            // tone so the input card blends into one surface instead of sitting on a colour edge.
-            // Capture the real original only on the first whiten so a re-entrant edit can't save the tint.
             if whitenedTranscriptWebView !== webView {
                 whitenedContainerOriginalBackground = webView.superview?.backgroundColor
             }

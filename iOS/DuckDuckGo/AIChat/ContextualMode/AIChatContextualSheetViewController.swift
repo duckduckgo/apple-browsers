@@ -432,8 +432,6 @@ final class AIChatContextualSheetViewController: UIViewController {
         super.viewDidDisappear(animated)
         areSuggestionsVisible = false
         if isBeingDismissed {
-            // End edit mode only once the sheet has actually left the screen; a cancelled
-            // swipe-to-dismiss never reaches here, so it can't tear down an in-progress edit.
             persistentUTIHost?.endEditMode()
             prepareForDismissal()
             delegate?.aiChatContextualSheetViewControllerDidDismiss(self)

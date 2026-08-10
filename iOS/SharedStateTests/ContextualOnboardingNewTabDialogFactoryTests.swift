@@ -92,12 +92,11 @@ class ContextualOnboardingNewTabDialogFactoryTests: XCTestCase {
         // Given
         let expectation = XCTestExpectation(description: "action triggered")
         contextualOnboardingLogicMock.expectation = expectation
-        var onDismissedRun = false
-        let homeDialog = DaxDialogs.HomeScreenSpec.final
-        let onDimsiss: (Bool) -> Void = { _ in onDismissedRun = true }
+        var onActionRun = false
+        let onAction: (OnboardingEndOfJourneyAction) -> Void = { _ in onActionRun = true }
 
         // When
-        let view = factory.createDaxDialog(for: homeDialog, onCompletion: onDimsiss, onManualDismiss: { })
+        let view = factory.createEndOfJourneyDialog(content: .mock, onAction: onAction)
         let host = UIHostingController(rootView: view)
         window.rootViewController = host
         XCTAssertNotNil(host.view)
@@ -105,8 +104,8 @@ class ContextualOnboardingNewTabDialogFactoryTests: XCTestCase {
         // Then
         let finalDialog = find(OnboardingRebranding.OnboardingEndOfJourneyDialog.self, in: host)
         XCTAssertNotNil(finalDialog)
-        finalDialog?.dismissAction()
-        XCTAssertTrue(onDismissedRun)
+        finalDialog?.onAction(.completeAndActivateSearch)
+        XCTAssertTrue(onActionRun)
         wait(for: [expectation], timeout: 5.0)
         XCTAssertTrue(contextualOnboardingLogicMock.didCallSetFinalOnboardingDialogSeen)
     }
@@ -146,22 +145,42 @@ class ContextualOnboardingNewTabDialogFactoryTests: XCTestCase {
 
     func testWhenOnboardingFinalDialogAppearForTheFirstTime_ThenFireExpectedPixel() {
         // GIVEN
-        let spec = DaxDialogs.HomeScreenSpec.final
         let pixelEvent = Pixel.Event.daxDialogsEndOfJourneyNewTabUnique
-        // TEST
-        testDialogDefinedBy(spec: spec, firesEvent: pixelEvent)
+        let expectation = self.expectation(description: #function)
+        let content = OnboardingEndOfJourneyContent.mock
+        XCTAssertFalse(pixelReporterMock.didCallMeasureScreenImpressionCalled)
+        XCTAssertNil(pixelReporterMock.capturedScreenImpression)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureSharedOnboardingScreenImpression)
+        XCTAssertNil(pixelReporterMock.capturedSharedOnboardingScreenImpression)
+
+        // WHEN
+        let view = factory.createEndOfJourneyDialog(content: content, onAction: { _ in })
+        let host = OnboardingHostingControllerMock(rootView: AnyView(view))
+        host.onAppearExpectation = expectation
+        window.rootViewController = host
+        XCTAssertNotNil(host.view)
+
+        // THEN
+        waitForExpectations(timeout: 2.0)
+
+
+        // THEN
+        XCTAssertTrue(self.pixelReporterMock.didCallMeasureScreenImpressionCalled)
+        XCTAssertEqual(self.pixelReporterMock.capturedScreenImpression, pixelEvent)
+        XCTAssertTrue(self.pixelReporterMock.didCallMeasureSharedOnboardingScreenImpression)
+        XCTAssertEqual(self.pixelReporterMock.capturedSharedOnboardingScreenImpression, Self.expectedSharedScreenImpression(forLegacyPixel: pixelEvent))
     }
 
     func testWhenOnboardingFinalDialogCTAIsTapped_ThenFireExpectedPixel() throws {
         // GIVEN
-        let view = factory.createDaxDialog(for: DaxDialogs.HomeScreenSpec.final, onCompletion: { _ in }, onManualDismiss: { })
+        let view = factory.createEndOfJourneyDialog(content: .mock, onAction: { _ in })
         let host = UIHostingController(rootView: view)
         window.rootViewController = host
         let finalDialog = try XCTUnwrap(find(OnboardingRebranding.OnboardingEndOfJourneyDialog.self, in: host))
         XCTAssertFalse(pixelReporterMock.didCallMeasureEndOfJourneyDialogDismiss)
 
         // WHEN
-        finalDialog.dismissAction()
+        finalDialog.onAction(.completeAndActivateSearch)
 
         // THEN
         XCTAssertTrue(pixelReporterMock.didCallMeasureEndOfJourneyDialogDismiss)
@@ -216,9 +235,27 @@ class ContextualOnboardingNewTabDialogFactoryTests: XCTestCase {
     // MARK: - Final Dialog
 
     func testWhenFinalDialogAppears_ThenFiresStandardEOJPixel() {
-        let spec = DaxDialogs.HomeScreenSpec.final
+        // GIVEN
         let pixelEvent = Pixel.Event.daxDialogsEndOfJourneyNewTabUnique
-        testDialogDefinedBy(spec: spec, firesEvent: pixelEvent)
+        let expectation = self.expectation(description: #function)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureScreenImpressionCalled)
+        XCTAssertNil(pixelReporterMock.capturedScreenImpression)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureSharedOnboardingScreenImpression)
+        XCTAssertNil(pixelReporterMock.capturedSharedOnboardingScreenImpression)
+
+        // WHEN
+        let view = factory.createEndOfJourneyDialog(content: .mock, onAction: { _ in })
+        let host = OnboardingHostingControllerMock(rootView: AnyView(view))
+        host.onAppearExpectation = expectation
+        window.rootViewController = host
+        XCTAssertNotNil(host.view)
+
+        // THEN
+        waitForExpectations(timeout: 2.0)
+        XCTAssertTrue(self.pixelReporterMock.didCallMeasureScreenImpressionCalled)
+        XCTAssertEqual(self.pixelReporterMock.capturedScreenImpression, pixelEvent)
+        XCTAssertTrue(self.pixelReporterMock.didCallMeasureSharedOnboardingScreenImpression)
+        XCTAssertEqual(self.pixelReporterMock.capturedSharedOnboardingScreenImpression, Self.expectedSharedScreenImpression(forLegacyPixel: pixelEvent))
     }
 
     func testWhenFinalDialogAppears_ThenSetsFinalOnboardingDialogSeen() {
@@ -226,7 +263,7 @@ class ContextualOnboardingNewTabDialogFactoryTests: XCTestCase {
         contextualOnboardingLogicMock.expectation = expectation(description: "setFinalOnboardingDialogSeen called")
 
         // WHEN
-        let view = factory.createDaxDialog(for: .final, onCompletion: { _ in }, onManualDismiss: { })
+        let view = factory.createEndOfJourneyDialog(content: .mock, onAction: { _ in })
         let host = OnboardingHostingControllerMock(rootView: AnyView(view))
         window.rootViewController = host
 
@@ -296,4 +333,18 @@ class CapturingOnboardingNavigationDelegate: OnboardingNavigationDelegate {
     func navigateFromOnboarding(to url: URL) {
         urlToNavigateTo = url
     }
+}
+
+extension OnboardingEndOfJourneyContent {
+    static let mock = OnboardingEndOfJourneyContent(
+        icon: nil,
+        title: "",
+        message: "",
+        primaryCTA: "",
+        primaryAction: .skip,
+        secondaryCTA: nil,
+        secondaryAction: nil,
+        daxAnimation: nil,
+        isManuallyDismissable: false
+    )
 }

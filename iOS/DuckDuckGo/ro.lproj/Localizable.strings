@@ -2956,6 +2956,12 @@
 /* Title for the Import Passwords Promotion banner */
 "import.passwords.promo.title" = "Importă-ți parolele în DuckDuckGo";
 
+/* Body for the notification sent after a period of inactivity. */
+"inactivity.notification.body" = "Folosește DuckDuckGo ca să eviți reclamele care te urmăresc pe web și să-ți reduci amprenta online.";
+
+/* Title for the notification sent after a period of inactivity. */
+"inactivity.notification.title" = "Controlează-ți experiența online";
+
 /* Placeholder text for the duck.ai input field */
 "input.field.placeholder.duckai" = "Întreabă orice în mod privat";
 

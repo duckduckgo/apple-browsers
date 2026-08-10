@@ -1,0 +1,52 @@
+// App return: per-foreground snapshot of time away and capability exposure.
+{
+    "m_app_return": {
+        "description": "Fires on every foreground transition, ungated and launch-action-independent. Reports how long the user was away, the resolved idle threshold, and which Duck.ai capabilities are available.",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor", "first_daily_count"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "time_away_bucket",
+                "description": "Time away before reopening: cold_start (no prior background date), lt_1m, 1_5m, 5_15m, 15_30m, 30_60m, gt_60m",
+                "type": "string"
+            },
+            {
+                "key": "exceeded_idle_threshold",
+                "description": "Whether the time away exceeded the resolved idle threshold, reported even when the after-inactivity feature is ineligible: true or false",
+                "type": "boolean"
+            },
+            {
+                "key": "idle_threshold_seconds",
+                "description": "The resolved idle threshold in seconds (debug override, user preference, or remote config; e.g. 1800)",
+                "type": "integer"
+            },
+            {
+                "key": "after_inactivity_option",
+                "description": "The effective after-inactivity opening setting: new_tab or last_used_tab",
+                "type": "string"
+            },
+            {
+                "key": "feature_eligible",
+                "description": "Whether the NTP-after-idle feature is available (flag on and onboarding complete): true or false",
+                "type": "boolean"
+            },
+            {
+                "key": "unified_input_available",
+                "description": "Whether the Unified Toggle Input experience is available on this device: true or false",
+                "type": "boolean"
+            },
+            {
+                "key": "toggle_enabled",
+                "description": "Whether the Search/Duck.ai toggle user setting is enabled: true or false",
+                "type": "boolean"
+            },
+            {
+                "key": "launch_source",
+                "description": "What triggered this foreground: standard, url, shortcut, or user_activity",
+                "type": "string"
+            }
+        ]
+    }
+}

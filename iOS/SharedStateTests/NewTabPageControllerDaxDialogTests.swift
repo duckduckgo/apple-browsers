@@ -304,6 +304,10 @@ class CapturingNewTabDaxDialogProvider: NewTabDaxDialogProviding {
     func createDuckAIFireOnboardingCompletionDialog(message: String, onDismiss: @escaping () -> Void) -> AnyView {
         AnyView(EmptyView())
     }
+
+    func createEndOfJourneyDialog(content: OnboardingEndOfJourneyContent, onAction: @escaping (OnboardingEndOfJourneyAction) -> Void) -> AnyView {
+        AnyView(EmptyView())
+    }
 }
 
 final class MockOnboardingFlowProvider: OnboardingFlowProviding {

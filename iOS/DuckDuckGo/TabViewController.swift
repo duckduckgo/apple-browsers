@@ -32,6 +32,7 @@ import Persistence
 import Common
 import FoundationExtensions
 import DDGSync
+import EventHub
 import PrivacyDashboard
 import UserScript
 import ContentBlocking
@@ -247,6 +248,10 @@ class TabViewController: UIViewController {
     private var scrollViewAdjustmentBehaviorBeforeFloatingUI: WebViewScrollViewInsetUpdater.AdjustmentBehavior?
     private lazy var appRatingPrompt: AppRatingPrompt = AppRatingPrompt(featureFlagger: self.featureFlagger)
     let unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding
+    lazy var aiChatTextSelectionFeature: AIChatTextSelectionFeatureProviding =
+        AIChatTextSelectionFeature(featureFlagger: featureFlagger,
+                                   aiChatSettings: aiChatSettings,
+                                   unifiedToggleInputFeature: unifiedToggleInputFeature)
     public weak var privacyDashboard: PrivacyDashboardViewController?
     
     private var storageCache: StorageCache = AppDependencyProvider.shared.storageCache
@@ -559,6 +564,7 @@ class TabViewController: UIViewController {
                                    duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
                                    duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
                                    adBlockingAvailability: AdBlockingAvailabilityProviding,
+                                   eventHub: EventHubManaging,
                                    pixelFiring: (any PixelKitFiring)? = PixelKit.shared) -> TabViewController {
 
         return TabViewController(tabModel: model,
@@ -595,6 +601,7 @@ class TabViewController: UIViewController {
                                  duckAiNativeStorageHandler: duckAiNativeStorageHandler,
                                  duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
                                  adBlockingAvailability: adBlockingAvailability,
+                                 eventHub: eventHub,
                                  pixelFiring: pixelFiring)
     }
 
@@ -605,6 +612,18 @@ class TabViewController: UIViewController {
 
     let historyManager: HistoryManaging
     let adBlockingAvailability: AdBlockingAvailabilityProviding
+
+    let eventHub: EventHubManaging
+
+    /// This tab's EventHub identity. Derived from the tab model's UUID string, so it is stable for the
+    /// tab's lifetime and unique per tab — which is what EventHub's per-tab web-event dedup keys off.
+    private let eventHubTabID: EventHubTabID
+
+    /// Owns this tab's `webEvents` subfeature. Held here rather than on `UserScripts` because
+    /// `UserScripts` is rebuilt on every content-blocking update and carries no tab identity of its own.
+    /// The handler is stateless, so re-registering the same instance with each new content scope script
+    /// is all that is needed.
+    private let eventHubWebEventsHandler: WebEventsHandler
 
     private(set) lazy var adBlockingNavigationHandler: AdBlockingNavigationHandling = {
         return AdBlockingNavigationHandler(
@@ -745,6 +764,7 @@ class TabViewController: UIViewController {
          duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
          addressBarURLFilter: AddressBarURLFiltering = AddressBarURLFilter(),
          adBlockingAvailability: AdBlockingAvailabilityProviding,
+         eventHub: EventHubManaging,
          pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
 
         self.tabModel = tabModel
@@ -796,6 +816,12 @@ class TabViewController: UIViewController {
         self.duckAiFireModeStorageHandler = duckAiFireModeStorageHandler
         self.addressBarURLFilter = addressBarURLFilter
         self.adBlockingAvailability = adBlockingAvailability
+        self.eventHub = eventHub
+
+        // Captured by value so the handler's provider closure doesn't retain the controller.
+        let eventHubTabID = EventHubTabID(rawValue: UUID(uuidString: tabModel.uid) ?? UUID())
+        self.eventHubTabID = eventHubTabID
+        self.eventHubWebEventsHandler = WebEventsHandler(manager: eventHub, tabIDProvider: { _ in eventHubTabID })
 
         self.productSurfaceTelemetry = productSurfaceTelemetry
 
@@ -1102,6 +1128,39 @@ class TabViewController: UIViewController {
         }
     }
 
+    /// Neither item is offered on Duck.ai tabs, matching macOS: there is no page there to select text from.
+    var isAskAIChatSelectionItemAvailable: Bool {
+        !isAITab && aiChatTextSelectionFeature.isAskAvailable
+    }
+
+    var isSearchSelectionItemAvailable: Bool {
+        !isAITab && aiChatTextSelectionFeature.isSearchAvailable
+    }
+
+    /// Wired on the tab's own web view rather than the contextual sheet's, so the Duck.ai conversation
+    /// itself stays menu-free.
+    private func configureTextSelectionMenu(on webView: WebView?) {
+        guard let webView else { return }
+
+        webView.isAskAIChatItemAvailable = { [weak self] in
+            self?.isAskAIChatSelectionItemAvailable ?? false
+        }
+
+        webView.isSearchWithDuckDuckGoItemAvailable = { [weak self] in
+            self?.isSearchSelectionItemAvailable ?? false
+        }
+
+        webView.askAIChatHandler = { [weak self] text in
+            guard let self else { return }
+            self.delegate?.tab(self, didRequestAIChatForSelectedText: text)
+        }
+
+        webView.searchWithDuckDuckGoHandler = { [weak self] text in
+            guard let self else { return }
+            self.delegate?.tab(self, didRequestSearchForSelectedText: text)
+        }
+    }
+
     // The `consumeCookies` is legacy behaviour from the previous Fireproofing implementation. Cookies no longer need to be consumed after invocations
     // of the Fire button, but the app still does so in the event that previously persisted cookies have not yet been consumed.
     func attachWebView(configuration: WKWebViewConfiguration,
@@ -1162,6 +1221,8 @@ class TabViewController: UIViewController {
             webView.scrollView.alwaysBounceVertical = false
             (webView as? WebView)?.setInputAccessoryViewHidden(true)
         }
+
+        configureTextSelectionMenu(on: webView as? WebView)
 
         updateContentMode()
 
@@ -1987,6 +2048,7 @@ class TabViewController: UIViewController {
 
     deinit {
         rulesCompilationMonitor.tabWillClose(tabModel.uid)
+        eventHub.onTabClosed(tabID: eventHubTabID)
         removeObservers()
         temporaryDownloadForPreviewedFile?.cancel()
         cleanUpBeforeClosing()
@@ -2240,6 +2302,8 @@ extension TabViewController: WKNavigationDelegate {
         referrerTrimming.onBeginNavigation(to: webView.url)
         adClickAttributionDetection.onStartNavigation(url: webView.url)
         adClickExternalOpenDetector.startNavigation()
+        // Resets this tab's per-tab web-event dedup when the URL changes.
+        eventHub.onNavigationStarted(tabID: eventHubTabID, url: webView.url?.absoluteString ?? "")
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
@@ -3989,6 +4053,7 @@ extension TabViewController: UserContentControllerDelegate {
         userScripts.autoconsentUserScript.delegate = self
         userScripts.autoconsentUserScript.management = autoconsentManagement
         userScripts.contentScopeUserScript.delegate = self
+        userScripts.registerEventHubSubfeature(eventHubWebEventsHandler)
         userScripts.serpSettingsUserScript.delegate = self
         userScripts.serpSettingsUserScript.setStore(keyValueStore)
         userScripts.serpSettingsUserScript.webView = webView

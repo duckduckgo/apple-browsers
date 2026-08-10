@@ -949,6 +949,12 @@
 /* Login name label for login details on autofill */
 "autofill.logins.details.login-name" = "Titel";
 
+/* Message for alert when attempting to save a password that has neither a website nor a username */
+"autofill.logins.details.missing-website-or-username-alert.message" = "Indtast et websted eller brugernavn for at gemme denne adgangskode.";
+
+/* Title for alert when attempting to save a password that has neither a website nor a username */
+"autofill.logins.details.missing-website-or-username-alert.title" = "Websted eller brugernavn påkrævet";
+
 /* Title when adding new autofill login */
 "autofill.logins.details.new-title" = "Tilføj adgangskode";
 

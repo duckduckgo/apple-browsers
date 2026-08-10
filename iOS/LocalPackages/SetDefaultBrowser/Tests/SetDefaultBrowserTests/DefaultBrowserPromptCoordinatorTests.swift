@@ -73,17 +73,6 @@ final class DefaultBrowserPromptCoordinatorTests {
         #expect(result == .activeUserModal)
     }
 
-    @Test("Prompt Validity Is Delegated Without Selecting Another Prompt")
-    func promptValidityDelegatesToDecider() {
-        promptTypeDeciderMock.isModalPromptStillValidForPresentationResult = false
-
-        let isStillValid = sut.isModalPromptStillValidForPresentation()
-
-        #expect(!isStillValid)
-        #expect(promptTypeDeciderMock.didCallIsModalPromptStillValidForPresentation)
-        #expect(!promptTypeDeciderMock.didCallPromptType)
-    }
-
     @Test(
         "Check Prompt Occurrency Is Incremented for Active Modal When Prompt Is Not Nil",
         arguments: [

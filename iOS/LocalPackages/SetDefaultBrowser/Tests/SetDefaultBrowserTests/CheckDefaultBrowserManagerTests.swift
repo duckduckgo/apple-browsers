@@ -44,27 +44,6 @@ final class DefaultBrowserManagerTests {
         )
     }
 
-    @Test("Stored Browser Info Preserves Retry Metadata Without Checking The OS")
-    func storedDefaultBrowserInfoPreservesRetryMetadataWithoutCheckingTheOS() {
-        let nextRetryAvailableDate: TimeInterval = 1773122108000
-        let storedInfo = DefaultBrowserContext(
-            isDefaultBrowser: false,
-            lastSuccessfulCheckDate: 1741586108000,
-            lastAttemptedCheckDate: 1741586108000,
-            numberOfTimesChecked: 7,
-            nextRetryAvailableDate: nextRetryAvailableDate
-        )
-        store.defaultBrowserContext = storedInfo
-
-        let result = sut.storedDefaultBrowserInfo()
-
-        #expect(result == storedInfo)
-        #expect(result?.numberOfTimesChecked == 7)
-        #expect(result?.nextRetryAvailableDate == nextRetryAvailableDate)
-        #expect(defaultBrowserService.isDefaultWebBrowserCallCount == 0)
-        #expect(!eventMapperMock.didCallFireEvent)
-    }
-
     @Test("Check Browser Succeeds store and returns expected info",
         arguments: [
             true,

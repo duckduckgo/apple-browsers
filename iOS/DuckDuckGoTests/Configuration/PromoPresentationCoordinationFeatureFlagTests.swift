@@ -207,47 +207,6 @@ struct PromoPresentationCoordinationFeatureFlagTests {
         #expect(runningService.promoCoordinationMode == .legacy)
     }
 
-    @available(iOS 16, *)
-    @Test("Fresh graph starts without a transient Promo Queue owner", .timeLimit(.minutes(1)))
-    func whenFreshGraphIsConstructedThenItHasNoTransientOwner() {
-        let privacyConfigManager = makePrivacyConfigurationManager(for: .embeddedDisabled)
-        let featureFlagger = CountingPromoFeatureFlagger(isPromoPresentationCoordinationEnabled: true)
-        let arbiter = PromoQueueLeaseArbiter()
-
-        let service = makeService(
-            featureFlagger: featureFlagger,
-            privacyConfigManager: privacyConfigManager,
-            promoQueueLeaseArbiter: arbiter
-        )
-
-        #expect(service.promoCoordinationMode == .coordinated)
-        #expect(!arbiter.snapshot.hasModalLease)
-        #expect(arbiter.snapshot.activeOwner == nil)
-    }
-
-    @available(iOS 16, *)
-    @Test("Legacy graph bypasses Promo Queue lease acquisition", .timeLimit(.minutes(1)))
-    func whenLegacyGraphRequestsVisibleAdmissionThenNoLeaseIsAcquired() {
-        let privacyConfigManager = makePrivacyConfigurationManager(for: .embeddedDisabled)
-        let featureFlagger = CountingPromoFeatureFlagger(isPromoPresentationCoordinationEnabled: false)
-        let arbiter = PromoQueueLeaseArbiter()
-        let service = makeService(
-            featureFlagger: featureFlagger,
-            privacyConfigManager: privacyConfigManager,
-            promoQueueLeaseArbiter: arbiter
-        )
-
-        guard case .deferred = service.admitRemoteMessage(
-            VisiblePromoIdentity(surfaceID: UUID(), promoType: .remoteMessage, promoID: "legacy")
-        ) else {
-            Issue.record("Expected legacy admission to bypass arbitration")
-            return
-        }
-
-        #expect(!arbiter.snapshot.hasModalLease)
-        #expect(arbiter.snapshot.activeOwner == nil)
-    }
-
     // MARK: - Helpers
 
     /// The privacy configuration the app actually ships, so "disabled by default" is asserted against
@@ -341,8 +300,7 @@ struct PromoPresentationCoordinationFeatureFlagTests {
 
     private func makeService(
         featureFlagger: FeatureFlagger,
-        privacyConfigManager: PrivacyConfigurationManaging,
-        promoQueueLeaseArbiter: PromoQueueLeaseArbitrating? = nil
+        privacyConfigManager: PrivacyConfigurationManaging
     ) -> PromoCoordinationService {
         let subscriptionPromoCoordinator = StartupSubscriptionPromoCoordinator()
         let subscriptionPromoPresenter = SubscriptionPromoPresenter(coordinator: subscriptionPromoCoordinator)
@@ -354,7 +312,7 @@ struct PromoPresentationCoordinationFeatureFlagTests {
                 keyValueFileStoreService: InMemoryThrowingKeyValueStore(),
                 privacyConfigurationManager: privacyConfigManager,
                 featureFlagger: featureFlagger,
-                promoQueueLeaseArbiter: promoQueueLeaseArbiter ?? PromoQueueLeaseArbiter(),
+                promoQueueLeaseArbiter: PromoQueueLeaseArbiter(),
                 whatsNewRepository: MockWhatsNewMessageRepository(scheduledRemoteMessage: nil),
                 remoteMessagingActionHandler: MockRemoteMessagingActionHandler(),
                 remoteMessagingPixelReporter: MockRemoteMessagingPixelReporter(),

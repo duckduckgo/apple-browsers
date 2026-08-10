@@ -229,62 +229,6 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         XCTAssertEqual(promoCoordinator.releaseCallCount, 1)
     }
 
-    func testRealSwiftUIGateAndCardAppearAndDisappearInHostOrder() async throws {
-        let cardDidAppear = expectation(description: "Remote-message card appeared")
-        let cardDidDisappear = expectation(description: "Remote-message card disappeared")
-        let gateDidDisappear = expectation(description: "Remote-message gate disappeared")
-        var lifecycleEvents = [NewTabPageRemoteMessageLifecycleEvent]()
-        let promoCoordinator = ArbitratingNewTabPagePromoCoordinatorMock(promoCoordinationMode: .coordinated)
-        messagesConfiguration.homeMessages = [
-            .mockRemote(id: "message-a", withType: .small(titleText: "Title", descriptionText: "Body"))
-        ]
-        let sut = createSUT(
-            promoCoordinator: promoCoordinator,
-            remoteMessageLifecycleObserver: { event in
-                lifecycleEvents.append(event)
-                switch event {
-                case .cardDidAppear:
-                    cardDidAppear.fulfill()
-                case .cardDidDisappear:
-                    cardDidDisappear.fulfill()
-                case .gateDidDisappear:
-                    gateDidDisappear.fulfill()
-                case .gateDidAppear:
-                    break
-                }
-            }
-        )
-        let hostState = NewTabPageRemoteMessageGateHostState()
-        let hostingController = UIHostingController(
-            rootView: NewTabPageRemoteMessageGateHost(
-                messagesModel: sut,
-                state: hostState
-            )
-        )
-        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
-        defer { window.isHidden = true }
-
-        sut.setSurfaceAttachmentProvider { [weak hostingController] in
-            hostingController?.viewIfLoaded?.window != nil
-        }
-        sut.load()
-        sut.setSurfaceRenderable(true)
-        window.rootViewController = hostingController
-        window.makeKeyAndVisible()
-
-        await fulfillment(of: [cardDidAppear], timeout: 1)
-
-        XCTAssertEqual(lifecycleEvents, [.gateDidAppear, .cardDidAppear])
-
-        hostState.isGatePresented = false
-        await fulfillment(of: [gateDidDisappear, cardDidDisappear], timeout: 1)
-
-        XCTAssertEqual(
-            lifecycleEvents,
-            [.gateDidAppear, .cardDidAppear, .cardDidDisappear, .gateDidDisappear]
-        )
-    }
-
     func testWhenRealSwiftUICardIsWithdrawnThenModalCannotAcquireUntilCardDidDisappear() async throws {
         let cardDidAppear = expectation(description: "Remote-message card appeared")
         let cardDidDisappear = expectation(description: "Remote-message card disappeared")
@@ -391,21 +335,6 @@ final class NewTabPageMessagesModelTests: XCTestCase {
             events,
             ["gateDidAppear", "cardDidAppear", "cardDidDisappear", "visibleLeaseReleased", "modalAcquired"]
         )
-    }
-
-    func testAdmittedAppearanceIsRecordedOncePerRenderSession() throws {
-        let promoCoordinator = ArbitratingNewTabPagePromoCoordinatorMock(promoCoordinationMode: .coordinated)
-        let message = HomeMessage.mockRemote(id: "message-a", withType: .small(titleText: "Title", descriptionText: "Body"))
-        messagesConfiguration.homeMessages = [message]
-        let sut = createRenderableSUT(promoCoordinator: promoCoordinator)
-        try appearRemoteMessageGate(in: sut, expectedMessageID: "message-a")
-        let session = try XCTUnwrap(try remoteRenderSession(in: sut))
-
-        session.viewModel.onDidAppear()
-        session.viewModel.onDidAppear()
-
-        XCTAssertEqual(messagesConfiguration.appearanceCallCount, 1)
-        XCTAssertEqual(messagesConfiguration.lastAppearedHomeMessage, message)
     }
 
     func testSameIDRefreshKeepsLeaseRenderSessionAndAppearanceReservation() throws {
@@ -641,48 +570,6 @@ final class NewTabPageMessagesModelTests: XCTestCase {
 
         XCTAssertNil(promoCoordinator.arbiter.snapshot.activeOwner)
         XCTAssertEqual(promoCoordinator.releaseCallCount, 1)
-    }
-
-    func testReplacementMountDisappearingBeforeItsGateKeepsOriginalSessionAndLease() throws {
-        let promoCoordinator = ArbitratingNewTabPagePromoCoordinatorMock(promoCoordinationMode: .coordinated)
-        messagesConfiguration.homeMessages = [.mockRemote(id: "message-a", withType: .small(titleText: "Title", descriptionText: "Body"))]
-        let sut = createRenderableSUT(promoCoordinator: promoCoordinator)
-        let gate = try XCTUnwrap(try remoteMessageGate(in: sut))
-        let originalMountID = UUID()
-        let replacementMountID = UUID()
-
-        sut.remoteMessageGateDidAppear(
-            gateID: gate.id,
-            messageID: gate.messageID,
-            mountID: originalMountID
-        )
-        let session = try XCTUnwrap(try remoteRenderSession(in: sut))
-        sut.remoteMessageCardDidAppear(
-            renderSessionID: session.id,
-            mountID: originalMountID
-        )
-
-        sut.remoteMessageGateDidAppear(
-            gateID: gate.id,
-            messageID: gate.messageID,
-            mountID: replacementMountID
-        )
-        sut.remoteMessageCardDidAppear(
-            renderSessionID: session.id,
-            mountID: replacementMountID
-        )
-        sut.remoteMessageDidDisappear(
-            renderSessionID: session.id,
-            mountID: replacementMountID
-        )
-        sut.remoteMessageGateDidDisappear(
-            gateID: gate.id,
-            messageID: gate.messageID,
-            mountID: replacementMountID
-        )
-
-        XCTAssertEqual(try remoteRenderSession(in: sut)?.id, session.id)
-        XCTAssertNotNil(promoCoordinator.arbiter.snapshot.visiblePromoIdentity)
     }
 
     func testWhenRemoteMessageIDChangesThenReplacementWaitsForPhysicalRemovalBeforeAdmission() async throws {

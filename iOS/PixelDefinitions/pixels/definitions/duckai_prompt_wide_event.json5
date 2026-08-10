@@ -109,6 +109,32 @@
                 "enum": ["omnibar", "ai_tab", "contextual_chat"]
             },
             {
+                "key": "feature.data.ext.prompt.origin",
+                "type": "string",
+                "description": "How the user reached the surface the prompt was typed on, as opposed to entry_point, which is the surface itself. An m_aichat_entry_point source value. Absent when the opening entry is unknown.",
+                "enum": [
+                    "address_bar_prompt",
+                    "address_bar_icon",
+                    "address_bar_shortcut_chip",
+                    "address_bar_editing_state",
+                    "suggestion_ask_ai",
+                    "ipad_toggle_prompt",
+                    "browsing_menu_ntp",
+                    "browsing_menu_webpage",
+                    "tab_switcher",
+                    "tabs_bar_button",
+                    "chat_history_new_chat",
+                    "chat_history_open_chat",
+                    "voice",
+                    "onboarding",
+                    "direct_url",
+                    "icon_shortcut",
+                    "restored_tab",
+                    "contextual_chat",
+                    "deep_link_other"
+                ]
+            },
+            {
                 "key": "feature.data.ext.prompt.input_mode",
                 "type": "string",
                 "description": "How the user produced the prompt text. `keyboard` = typed/pasted in the composer; `voice` = voice-search transcription submitted directly. Additional values (suggestion tap, address-bar Duck.ai shortcut, URL scheme/Intent) will be added as those paths are instrumented.",

@@ -349,7 +349,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             return UTIPixelContext(
                 surface: self.pixelSurface,
                 isDuckAISurfaceForAttribution: self.isDuckAISurfaceForAttribution,
-                inputMode: self.inputMode
+                inputMode: self.inputMode,
+                isToggleVisible: self.isToggleVisible
             )
         })
         wideEventReporter = UTIWideEventReporter(

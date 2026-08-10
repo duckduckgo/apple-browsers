@@ -76,8 +76,8 @@ final class PromoCoordinationService {
     private let promoQueueLeaseArbiter: PromoQueueLeaseArbitrating
     private var remoteMessageRetryRegistrations = [WeakRemoteMessageRetryRegistration]()
     private var isRetryingRemoteMessageRegistrations = false
-    private var isApplicationActive = true
-    private var isWaitingForForegroundInteractionReadiness = false
+    private var isApplicationActive = false
+    private var isWaitingForForegroundInteractionReadiness = true
     private var foregroundReadinessToken = PromoCoordinationForegroundReadinessToken()
 
     let promoCoordinationMode: PromoCoordinationMode

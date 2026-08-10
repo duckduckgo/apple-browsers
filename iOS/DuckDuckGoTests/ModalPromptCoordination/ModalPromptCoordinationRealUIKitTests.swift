@@ -314,6 +314,7 @@ final class ModalPromptCoordinationRealUIKitTests {
         )
 
         let launchAction = LaunchAction.standardLaunch(lastBackgroundDate: nil, isFirstForeground: true)
+        service.applicationDidBecomeActive()
         let readinessToken = service.captureForegroundReadinessToken()
         await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
             interactionManager.start(

@@ -93,7 +93,8 @@ actor AccountInfoKeyManager: AccountInfoKeyManaging {
     }
 
     private func cache(_ protectedKeys: [ProtectedKey]) {
-        guard let encodedKeys = try? JSONEncoder.snakeCaseKeys.encode(protectedKeys) else {
+        let protectedKeysToCache = protectedKeys.preservingCachedWrappersForMatchingKeys(cachedProtectedKeys() ?? [])
+        guard let encodedKeys = try? JSONEncoder.snakeCaseKeys.encode(protectedKeysToCache) else {
             return
         }
         try? secureStore.persistProtectedKeys(encodedKeys)

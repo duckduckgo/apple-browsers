@@ -81,8 +81,6 @@ protocol PromoQueueLeaseArbitrating: AnyObject {
     /// Acquires a visible-promo lease, which succeeds only when there is no modal lease and the identity's
     /// `(surfaceID, promoType)` slot is free, so several surfaces may hold leases concurrently but one slot may not hold two.
     func acquireVisiblePromoLease(for identity: VisiblePromoIdentity) -> PromoQueueVisiblePromoLeaseAcquisitionResult
-    /// Clears every lease, so outstanding tokens become no-ops. Used on a live feature-flag transition.
-    func invalidateAllLeases()
 }
 
 @MainActor
@@ -211,22 +209,6 @@ final class PromoQueueLeaseArbiter: PromoQueueLeaseArbitrating {
         return .acquired(lease)
     }
 
-    func invalidateAllLeases() {
-        let hadModalLease = modalLease != nil
-        let visiblePromoLeaseCount = visiblePromoLeases.count
-        modalLease = nil
-        visiblePromoLeases.removeAll()
-
-        guard hadModalLease || visiblePromoLeaseCount > 0 else { return }
-
-        Logger.modalPrompt.debug(
-            """
-            [Promo Queue] - Invalidated leases \
-            (modal: \(hadModalLease, privacy: .public), visible promos: \(visiblePromoLeaseCount, privacy: .public)).
-            """
-        )
-    }
-
     /// Reclaims leases whose token deallocated without `release()`, so a dropped token cannot wedge the arbiter for the
     /// rest of the session: one leaked visible-promo token would otherwise block every launch modal, and a leaked modal
     /// token would block every visible promo, with no timeout and no recovery.
@@ -255,7 +237,7 @@ final class PromoQueueLeaseArbiter: PromoQueueLeaseArbitrating {
 
     private func releaseModalLease(attemptIdentity: PromoQueueModalAttemptIdentity) {
         // `attemptIdentity` is minted per acquisition, so matching it proves the stored record is this token's. A token
-        // whose record was cleared, by release or by an invalidation, cannot match whatever replaced it.
+        // whose record was cleared by release cannot match whatever replaced it.
         guard let modalLease,
               modalLease.attemptIdentity == attemptIdentity else {
             return

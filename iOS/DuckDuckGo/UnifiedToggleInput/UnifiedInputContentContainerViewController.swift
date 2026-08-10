@@ -148,7 +148,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private var isSyncPromoCardVisible = false
 
     private var notificationCancellable: AnyCancellable?
-    private var promoQueueFeatureStateCancellable: AnyCancellable?
 
     private weak var contentAnimator: UIViewPropertyAnimator?
 
@@ -202,7 +201,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         installComponents()
         setupSubscriptions()
         observeRemoteMessagesChanges()
-        observePromoQueueFeatureStateChanges()
         observeAddressBarPositionChanges()
 
         refreshSyncPromoIfActive()
@@ -834,26 +832,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             .sink { [weak self] _ in
                 self?.refreshVisibleContent(animateContentUpdates: false)
             }
-    }
-
-    private func observePromoQueueFeatureStateChanges() {
-        guard let promoCoordinator = suggestionTrayDependencies?.newTabPageDependencies.promoCoordinator else {
-            return
-        }
-
-        promoQueueFeatureStateCancellable = promoQueueEnablementPublisher(promoCoordinator.promoQueueFeatureStatePublisher)
-            .sink { [weak self] in
-                guard let self else { return }
-                refreshRemoteMessagesForPromoQueue()
-                refreshVisibleContent(animateContentUpdates: false)
-            }
-    }
-
-    private func refreshRemoteMessagesForPromoQueue() {
-        suggestionTrayDependencies?.newTabPageDependencies.homePageMessagesConfiguration.refresh(
-            openedAfterIdle: sessionOpenedAfterIdle
-        )
-        activationResolveTrigger.send(())
     }
 
     private func markNeedsVisibleRefresh() {

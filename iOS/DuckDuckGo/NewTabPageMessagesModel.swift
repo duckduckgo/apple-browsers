@@ -53,6 +53,16 @@ struct NewTabPageRemoteMessageRenderSession {
     let viewModel: HomeMessageViewModel
 }
 
+/// Test-observable lifecycle callbacks emitted by the real SwiftUI gate and card mount.
+///
+/// The observer is optional and does not participate in coordination decisions.
+enum NewTabPageRemoteMessageLifecycleEvent: Equatable {
+    case gateDidAppear
+    case cardDidAppear
+    case cardDidDisappear
+    case gateDidDisappear
+}
+
 @MainActor
 final class NewTabPageMessagesModel: ObservableObject {
     // MARK: - Published State
@@ -82,6 +92,15 @@ final class NewTabPageMessagesModel: ObservableObject {
         var message: HomeMessage
         var viewModel: HomeMessageViewModel
         var appearanceRecorded: Bool
+        var visibleCardMountIDs: Set<UUID>
+        var pendingCardMountIDs: Set<UUID>
+    }
+
+    private struct OutgoingAdmittedRemoteMessageSession {
+        let session: AdmittedRemoteMessageSession
+        var remainingCardMountIDs: Set<UUID>
+        var pendingCardMountIDs: Set<UUID>
+        var scheduledReleaseID: UUID?
     }
 
     private struct RemoteMessageGateIdentity {
@@ -101,6 +120,7 @@ final class NewTabPageMessagesModel: ObservableObject {
     private var visibleRemoteMessageGateID: UUID?
     private var visibleRemoteMessageGateMountIDs = Set<UUID>()
     private var admittedRemoteMessageSession: AdmittedRemoteMessageSession?
+    private var outgoingAdmittedRemoteMessageSessions = [UUID: OutgoingAdmittedRemoteMessageSession]()
     private var featureTransitionTarget: PromoQueueFeatureTargetState?
 
     // MARK: - Dependencies
@@ -113,6 +133,7 @@ final class NewTabPageMessagesModel: ObservableObject {
     private let imageLoader: RemoteMessagingImageLoading
     private let pixelReporter: RemoteMessagingPixelReporting?
     private let promoCoordinator: NewTabPagePromoCoordinating
+    private let remoteMessageLifecycleObserver: ((NewTabPageRemoteMessageLifecycleEvent) -> Void)?
     private let isOpenedAfterIdle: () -> Bool
 
     // MARK: - Initialization
@@ -126,6 +147,7 @@ final class NewTabPageMessagesModel: ObservableObject {
          imageLoader: RemoteMessagingImageLoading,
          pixelReporter: RemoteMessagingPixelReporting? = nil,
          promoCoordinator: NewTabPagePromoCoordinating,
+         remoteMessageLifecycleObserver: ((NewTabPageRemoteMessageLifecycleEvent) -> Void)? = nil,
          isOpenedAfterIdle: @escaping () -> Bool = { false }) {
         self.homePageMessagesConfiguration = homePageMessagesConfiguration
         self.surfaceID = surfaceID
@@ -136,6 +158,7 @@ final class NewTabPageMessagesModel: ObservableObject {
         self.imageLoader = imageLoader
         self.pixelReporter = pixelReporter
         self.promoCoordinator = promoCoordinator
+        self.remoteMessageLifecycleObserver = remoteMessageLifecycleObserver
         self.isOpenedAfterIdle = isOpenedAfterIdle
     }
 
@@ -222,7 +245,21 @@ final class NewTabPageMessagesModel: ObservableObject {
 
     // MARK: - Gate Mount Lifecycle
 
-    func remoteMessageGateDidAppear(gateID: UUID, messageID: String, mountID: UUID) {
+    func remoteMessageGateDidAppear(
+        gateID: UUID,
+        messageID: String,
+        mountID: UUID,
+        renderSessionID: UUID? = nil
+    ) {
+        remoteMessageLifecycleObserver?(.gateDidAppear)
+
+        if let renderSessionID {
+            retainLeaseForPendingCardMount(
+                renderSessionID: renderSessionID,
+                mountID: mountID
+            )
+        }
+
         guard remoteMessageCandidate?.remoteMessageID == messageID,
               remoteMessageGateIdentity?.id == gateID,
               remoteMessageGateIdentity?.messageID == messageID else {
@@ -235,6 +272,11 @@ final class NewTabPageMessagesModel: ObservableObject {
     }
 
     func remoteMessageGateDidDisappear(gateID: UUID, messageID: String, mountID: UUID) {
+        remoteMessageLifecycleObserver?(.gateDidDisappear)
+        defer {
+            completePhysicalRemovalForGateMount(mountID)
+        }
+
         guard remoteMessageGateIdentity?.id == gateID,
               remoteMessageGateIdentity?.messageID == messageID,
               visibleRemoteMessageGateID == gateID else {
@@ -251,21 +293,32 @@ final class NewTabPageMessagesModel: ObservableObject {
         withdrawAdmittedRemoteMessage()
     }
 
-    func remoteMessageDidDisappear(renderSessionID: UUID, mountID: UUID) {
-        if admittedRemoteMessageSession?.id == renderSessionID {
-            guard visibleRemoteMessageGateMountIDs.count == 1,
-                  visibleRemoteMessageGateMountIDs.contains(mountID) else {
-                return
-            }
+    func remoteMessageCardDidAppear(renderSessionID: UUID, mountID: UUID) {
+        remoteMessageLifecycleObserver?(.cardDidAppear)
 
-            guard let session = admittedRemoteMessageSession else {
-                return
-            }
-            admittedRemoteMessageSession = nil
-            publishRenderItems()
-            promoCoordinator.releaseVisiblePromoLease(session.lease)
-            scheduleAdmissionAfterPhysicalRemoval()
+        if var session = admittedRemoteMessageSession,
+           session.id == renderSessionID {
+            session.pendingCardMountIDs.remove(mountID)
+            session.visibleCardMountIDs.insert(mountID)
+            admittedRemoteMessageSession = session
+        } else if var outgoingSession = outgoingAdmittedRemoteMessageSessions[renderSessionID] {
+            outgoingSession.pendingCardMountIDs.remove(mountID)
+            outgoingSession.remainingCardMountIDs.insert(mountID)
+            outgoingSession.scheduledReleaseID = nil
+            outgoingAdmittedRemoteMessageSessions[renderSessionID] = outgoingSession
         }
+    }
+
+    func remoteMessageDidDisappear(renderSessionID: UUID, mountID: UUID) {
+        remoteMessageLifecycleObserver?(.cardDidDisappear)
+        completePhysicalRemovalFromCurrentSession(
+            matching: renderSessionID,
+            mountID: mountID
+        )
+        completePhysicalRemovalFromOutgoingSession(
+            matching: renderSessionID,
+            mountID: mountID
+        )
     }
 
     // MARK: - Message Actions
@@ -322,9 +375,7 @@ final class NewTabPageMessagesModel: ObservableObject {
 
         publishRenderItems()
 
-        if previousMessageID != newMessageID {
-            scheduleAdmissionAfterPhysicalRemoval()
-        } else if shouldAttemptAdmission {
+        if previousMessageID == newMessageID, shouldAttemptAdmission {
             attemptRemoteMessageAdmission()
         }
     }
@@ -606,7 +657,9 @@ final class NewTabPageMessagesModel: ObservableObject {
                 lease: lease,
                 message: message,
                 viewModel: viewModel,
-                appearanceRecorded: false
+                appearanceRecorded: false,
+                visibleCardMountIDs: [],
+                pendingCardMountIDs: []
             )
             publishRenderItems()
 
@@ -620,20 +673,136 @@ final class NewTabPageMessagesModel: ObservableObject {
             return
         }
 
+        removeAdmittedRemoteMessageSession(matching: session.id)
+    }
+
+    private func removeAdmittedRemoteMessageSession(matching renderSessionID: UUID) {
+        guard let session = admittedRemoteMessageSession,
+              session.id == renderSessionID else {
+            return
+        }
+
         admittedRemoteMessageSession = nil
+        let outgoingSession = OutgoingAdmittedRemoteMessageSession(
+            session: session,
+            remainingCardMountIDs: session.visibleCardMountIDs,
+            pendingCardMountIDs: session.pendingCardMountIDs,
+            scheduledReleaseID: nil
+        )
+        outgoingAdmittedRemoteMessageSessions[session.id] = outgoingSession
         publishRenderItems()
-        // SwiftUI removes the card in the transaction triggered above. The next-turn release
-        // bounds any physical-removal overlap to that single animation.
-        let promoCoordinator = promoCoordinator
-        DispatchQueue.main.async { [weak self, promoCoordinator, session] in
-            promoCoordinator.releaseVisiblePromoLease(session.lease)
-            self?.attemptRemoteMessageAdmission()
+
+        guard outgoingSession.remainingCardMountIDs.isEmpty,
+              outgoingSession.pendingCardMountIDs.isEmpty else {
+            return
+        }
+
+        scheduleReleaseAfterPhysicalRemoval(of: session.id)
+    }
+
+    private func completePhysicalRemovalFromCurrentSession(
+        matching renderSessionID: UUID?,
+        mountID: UUID
+    ) {
+        guard var session = admittedRemoteMessageSession,
+              renderSessionID == nil || session.id == renderSessionID,
+              session.visibleCardMountIDs.remove(mountID) != nil
+                || session.pendingCardMountIDs.remove(mountID) != nil else {
+            return
+        }
+
+        admittedRemoteMessageSession = session
+        guard session.visibleCardMountIDs.isEmpty,
+              session.pendingCardMountIDs.isEmpty else {
+            return
+        }
+
+        removeAdmittedRemoteMessageSession(matching: session.id)
+    }
+
+    private func completePhysicalRemovalFromOutgoingSession(
+        matching renderSessionID: UUID,
+        mountID: UUID
+    ) {
+        guard var outgoingSession = outgoingAdmittedRemoteMessageSessions[renderSessionID] else {
+            return
+        }
+
+        let removedCardMount = outgoingSession.remainingCardMountIDs.remove(mountID) != nil
+        let removedPendingMount = outgoingSession.pendingCardMountIDs.remove(mountID) != nil
+        guard removedCardMount || removedPendingMount else {
+            return
+        }
+
+        outgoingAdmittedRemoteMessageSessions[renderSessionID] = outgoingSession
+        if outgoingSession.remainingCardMountIDs.isEmpty,
+           outgoingSession.pendingCardMountIDs.isEmpty {
+            scheduleReleaseAfterPhysicalRemoval(of: renderSessionID)
         }
     }
 
-    private func scheduleAdmissionAfterPhysicalRemoval() {
-        DispatchQueue.main.async { [weak self] in
-            self?.attemptRemoteMessageAdmission()
+    private func retainLeaseForPendingCardMount(
+        renderSessionID: UUID,
+        mountID: UUID
+    ) {
+        if var session = admittedRemoteMessageSession,
+           session.id == renderSessionID,
+           !session.visibleCardMountIDs.contains(mountID) {
+            session.pendingCardMountIDs.insert(mountID)
+            admittedRemoteMessageSession = session
+        }
+
+        if var outgoingSession = outgoingAdmittedRemoteMessageSessions[renderSessionID],
+           !outgoingSession.remainingCardMountIDs.contains(mountID) {
+            outgoingSession.pendingCardMountIDs.insert(mountID)
+            outgoingSession.scheduledReleaseID = nil
+            outgoingAdmittedRemoteMessageSessions[renderSessionID] = outgoingSession
+        }
+    }
+
+    private func completePhysicalRemovalForGateMount(_ mountID: UUID) {
+        completePhysicalRemovalFromCurrentSession(matching: nil, mountID: mountID)
+
+        let matchingOutgoingSessionIDs = outgoingAdmittedRemoteMessageSessions.compactMap { renderSessionID, outgoingSession in
+            outgoingSession.remainingCardMountIDs.contains(mountID)
+                || outgoingSession.pendingCardMountIDs.contains(mountID)
+                ? renderSessionID
+                : nil
+        }
+        for renderSessionID in matchingOutgoingSessionIDs {
+            completePhysicalRemovalFromOutgoingSession(
+                matching: renderSessionID,
+                mountID: mountID
+            )
+        }
+    }
+
+    private func scheduleReleaseAfterPhysicalRemoval(of renderSessionID: UUID) {
+        guard var outgoingSession = outgoingAdmittedRemoteMessageSessions[renderSessionID],
+              outgoingSession.remainingCardMountIDs.isEmpty,
+              outgoingSession.pendingCardMountIDs.isEmpty,
+              outgoingSession.scheduledReleaseID == nil else {
+            return
+        }
+
+        let scheduledReleaseID = UUID()
+        outgoingSession.scheduledReleaseID = scheduledReleaseID
+        outgoingAdmittedRemoteMessageSessions[renderSessionID] = outgoingSession
+
+        // The coordinated card has an identity transition. Its matching card/gate disappearance is therefore
+        // the physical-removal point; retain the lease through the following main turn so the host settles.
+        let promoCoordinator = promoCoordinator
+        DispatchQueue.main.async { [self, promoCoordinator] in
+            guard let outgoingSession = outgoingAdmittedRemoteMessageSessions[renderSessionID],
+                  outgoingSession.scheduledReleaseID == scheduledReleaseID,
+                  outgoingSession.remainingCardMountIDs.isEmpty,
+                  outgoingSession.pendingCardMountIDs.isEmpty else {
+                return
+            }
+
+            outgoingAdmittedRemoteMessageSessions[renderSessionID] = nil
+            promoCoordinator.releaseVisiblePromoLease(outgoingSession.session.lease)
+            attemptRemoteMessageAdmission()
         }
     }
 

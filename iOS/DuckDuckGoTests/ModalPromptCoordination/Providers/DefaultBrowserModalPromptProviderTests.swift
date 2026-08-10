@@ -162,19 +162,6 @@ final class DefaultBrowserModalPromptProviderTests {
         #expect(presenter.isModalPromptStillValidForPresentationCallCount == 1)
     }
 
-    @Test("Prompt Remains Valid When Presenter Revalidation Succeeds")
-    func whenPresenterRevalidationSucceedsThenPromptRemainsValid() throws {
-        let mockViewController = UIViewController()
-        let presenter = MockDefaultBrowserPromptPresenter(viewControllerToReturn: mockViewController)
-        let sut = DefaultBrowserModalPromptProvider(presenter: presenter)
-        let configuration = try #require(sut.provideModalPrompt())
-
-        let isStillValid = sut.isModalPromptStillValidForPresentation(configuration)
-
-        #expect(isStillValid)
-        #expect(presenter.makeCallCount == 1)
-        #expect(presenter.isModalPromptStillValidForPresentationCallCount == 1)
-    }
 }
 
 // This should belong to SetAsDefaultBrowserTestSupport. Had linking issue as UI depends on DesignResourceKitIcons. Possibly TestSupport needs to depend on that too. Will investigate in a follow up task

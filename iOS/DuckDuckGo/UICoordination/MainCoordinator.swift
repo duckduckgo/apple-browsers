@@ -34,6 +34,7 @@ import PrivacyStats
 import Networking
 import WebExtensions
 import Onboarding
+import FeatureFlags_iOS
 
 @MainActor
 protocol URLHandling: AnyObject {
@@ -91,6 +92,7 @@ final class MainCoordinator {
     private let darkReaderFeatureSettings: DarkReaderFeatureSettings
     private var darkReaderCancellables = Set<AnyCancellable>()
     private var youTubeAdBlockingCancellable: AnyCancellable?
+    private let nativeMessagingSupport = NativeMessagingSupport()
     private var webExtensionLoadTask: Task<Void, Never>?
     private var isWebExtensionLoadPending = false
     private var protectedDataCancellable: AnyCancellable?
@@ -556,7 +558,7 @@ final class MainCoordinator {
     @available(iOS 18.4, *)
     private func enabledEmbeddedExtensionTypes() -> Set<DuckDuckGoWebExtensionType> {
         var enabledTypes: Set<DuckDuckGoWebExtensionType> = []
-        if featureFlagger.isFeatureOn(.embeddedExtension) {
+        if featureFlagger.isFeatureOn(.embeddedExtension), nativeMessagingSupport.isSupported {
             enabledTypes.insert(.embedded)
         }
         if darkReaderFeatureSettings.isForceDarkModeEnabled == true {

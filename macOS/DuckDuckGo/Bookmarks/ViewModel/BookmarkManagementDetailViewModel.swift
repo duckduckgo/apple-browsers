@@ -17,7 +17,7 @@
 //
 
 import Foundation
-import FeatureFlags
+import FeatureFlags_macOS
 import PrivacyConfig
 
 enum BookmarksContentState: Equatable {

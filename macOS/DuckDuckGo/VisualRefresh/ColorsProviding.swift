@@ -154,11 +154,11 @@ final class CurrentColorsProviding: ColorsProviding {
     }
 
     func activeAddressBarBackgroundColor(isBurner: Bool) -> NSColor {
-        isBurner ? palette.unifiedInputFireFieldFillPrimary : palette.unifiedInputFieldFillPrimary
+        palette.unifiedInputFieldFillPrimary
     }
 
     func inactiveAddressBarBackgroundColor(isBurner: Bool) -> NSColor {
-        isBurner ? palette.unifiedInputFireFieldFillSecondary : palette.unifiedInputFieldFillSecondary
+        palette.unifiedInputFieldFillSecondary
     }
 
     // MARK: - Bookmarks
@@ -182,7 +182,7 @@ final class CurrentColorsProviding: ColorsProviding {
     var suggestionsTextColor: NSColor { palette.textPrimary }
     var suggestionsSuffixColor: NSColor { palette.accentTextPrimary }
     var suggestionsHighlightSuffixColor: NSColor { palette.accentTextPrimary }
-    var suggestionsHighlightBackgroundColor: NSColor { palette.controlsFillPrimary }
+    var suggestionsHighlightBackgroundColor: NSColor { palette.accentAltPrimary }
     var suggestionsHighlightTextColor: NSColor { palette.textPrimary }
 
     func suggestionsBackgroundColor(isBurner: Bool) -> NSColor {
@@ -216,11 +216,11 @@ final class CurrentColorsProviding: ColorsProviding {
 
     // MARK: - Unified Input
     func unifiedInputToggleBackground(isBurner: Bool) -> NSColor {
-        isBurner ? palette.unifiedInputFireControlFillSecondary : palette.unifiedInputControlFillSecondary
+        palette.unifiedInputControlFillSecondary
     }
 
     func unifiedInputToggleSelectionBackground(isBurner: Bool) -> NSColor {
-        isBurner ? palette.unifiedInputFireControlFillPrimary : palette.unifiedInputControlFillPrimary
+        palette.unifiedInputControlFillPrimary
     }
 
     /// Fire shares the standard shadow token — there is no Fire-specific variant in the palette.

@@ -19,7 +19,7 @@
 import SwiftUI
 import BrowserServicesKit
 import DataBrokerProtectionCore
-import FeatureFlags
+import FeatureFlags_macOS
 
 struct DataBrokerRunCustomJSONView: View {
     private enum Constants {

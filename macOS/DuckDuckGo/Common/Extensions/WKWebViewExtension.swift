@@ -329,11 +329,17 @@ extension WKWebView {
             return self.value(forKey: NSStringFromSelector(Selector.addsVisitedLinks)) as? Bool ?? false
         }
         set {
-            guard self.responds(to: Selector.addsVisitedLinks) else {
+            // `perform(_:with:)` would pass the boxed value as a pointer where WebKit expects a BOOL,
+            // leaving the flag set to the low byte of that pointer instead of `true`.
+            guard self.responds(to: Selector.setAddsVisitedLinks),
+                  let method = class_getInstanceMethod(object_getClass(self), Selector.setAddsVisitedLinks) else {
                 assertionFailure("WKWebView doesn‘t respond to _setAddsVisitedLinks:")
                 return
             }
-            self.perform(Selector.setAddsVisitedLinks, with: newValue ? true : nil)
+            let imp = method_getImplementation(method)
+            typealias SetAddsVisitedLinksType = @convention(c) (WKWebView, ObjectiveC.Selector, ObjCBool) -> Void
+            let setAddsVisitedLinks = unsafeBitCast(imp, to: SetAddsVisitedLinksType.self)
+            setAddsVisitedLinks(self, Selector.setAddsVisitedLinks, ObjCBool(newValue))
         }
     }
 

@@ -21,13 +21,13 @@
                                 <rect key="frame" x="0.0" y="0.0" width="1675" height="68"/>
                             </customView>
                             <stackView distribution="fill" orientation="horizontal" alignment="centerY" spacing="0.0" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="eEh-kf-smR">
-                                <rect key="frame" x="12" y="18" width="128" height="32"/>
+                                <rect key="frame" x="14" y="18" width="128" height="32"/>
                                 <subviews>
                                     <customView hidden="YES" translatesAutoresizingMaskIntoConstraints="NO" id="3o5-MS-AWl">
-                                        <rect key="frame" x="0.0" y="0.0" width="21" height="32"/>
+                                        <rect key="frame" x="0.0" y="0.0" width="23" height="32"/>
                                         <subviews>
                                             <box horizontalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="X5m-gH-M1N">
-                                                <rect key="frame" x="8" y="6" width="5" height="20"/>
+                                                <rect key="frame" x="9" y="6" width="5" height="20"/>
                                                 <constraints>
                                                     <constraint firstAttribute="height" constant="20" id="1Cr-jJ-dOQ"/>
                                                 </constraints>
@@ -37,7 +37,7 @@
                                             <constraint firstItem="X5m-gH-M1N" firstAttribute="centerY" secondItem="3o5-MS-AWl" secondAttribute="centerY" id="4kH-wN-unK"/>
                                             <constraint firstAttribute="height" constant="32" id="7rc-fw-YoZ"/>
                                             <constraint firstItem="X5m-gH-M1N" firstAttribute="centerX" secondItem="3o5-MS-AWl" secondAttribute="centerX" id="tIx-7L-jDt"/>
-                                            <constraint firstAttribute="width" constant="21" id="zPT-KA-4vC"/>
+                                            <constraint firstAttribute="width" constant="23" id="zPT-KA-4vC"/>
                                         </constraints>
                                     </customView>
                                     <button translatesAutoresizingMaskIntoConstraints="NO" id="kky-0N-Cfd" customClass="LongPressButton" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
@@ -401,7 +401,7 @@
                             <constraint firstItem="aWu-Jm-Oaz" firstAttribute="centerY" secondItem="hYV-nu-QIp" secondAttribute="centerY" id="8Jg-mH-CHM"/>
                             <constraint firstAttribute="bottom" secondItem="bSB-ca-LaM" secondAttribute="bottom" id="Exa-XS-C2I"/>
                             <constraint firstAttribute="height" constant="68" id="KjG-nj-hqf"/>
-                            <constraint firstItem="eEh-kf-smR" firstAttribute="leading" secondItem="hYV-nu-QIp" secondAttribute="leading" constant="12" id="MQ7-vv-adb"/>
+                            <constraint firstItem="eEh-kf-smR" firstAttribute="leading" secondItem="hYV-nu-QIp" secondAttribute="leading" constant="14" id="MQ7-vv-adb"/>
                             <constraint firstAttribute="trailing" secondItem="aWu-Jm-Oaz" secondAttribute="trailing" constant="12" id="UeG-qO-bD2"/>
                             <constraint firstItem="bSB-ca-LaM" firstAttribute="leading" secondItem="hYV-nu-QIp" secondAttribute="leading" id="Vx4-mN-uKA"/>
                             <constraint firstAttribute="bottom" secondItem="gIy-el-24l" secondAttribute="bottom" constant="6" id="Xaz-X5-bmg"/>

@@ -22,7 +22,7 @@ import ConcurrencyExtensions
 import ContentScopeScripts
 import DataBrokerProtectionCore
 import enum UserScript.UserScriptError
-import FeatureFlags
+import FeatureFlags_macOS
 import Foundation
 import FoundationExtensions
 import os.log

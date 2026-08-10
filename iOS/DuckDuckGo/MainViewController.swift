@@ -53,6 +53,7 @@ import VPN
 import WebExtensions
 import WebKit
 import WidgetKit
+import FeatureFlags_iOS
 
 struct StartupOnboardingDecision {
     let shouldShowOnboarding: Bool
@@ -311,6 +312,8 @@ class MainViewController: UIViewController {
     let experimentalAIChatManager: ExperimentalAIChatManager
     let daxDialogsManager: DaxDialogsManaging
     let onboardingSearchExperienceSettingsResolver: OnboardingSearchExperienceSettingsResolver
+    // Used to suppress the post-fire search-focus keyboard for that dialog, which must appear with the keyboard down.
+    private let onboardingCompletionDialogDecider: OnboardingEndOfJourneyTryAIDialogDeciding = OnboardingEndOfJourneyTryAIProvider()
     let dbpIOSPublicInterface: DBPIOSInterface.PublicInterface?
     let freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking
     let freemiumPIRDebugSettings: FreemiumPIRDebugSettings
@@ -384,6 +387,10 @@ class MainViewController: UIViewController {
     var unifiedToggleInputFloatingReturnKeyKeyboardBottomConstraint: NSLayoutConstraint?
     var unifiedToggleInputFloatingReturnKeyInputTopConstraint: NSLayoutConstraint?
     var aiChatTabChatHeaderView: AIChatTabChatHeaderView?
+    /// Minimal header shown in place of `aiChatTabChatHeaderView` while editing a message.
+    var aiChatEditHeaderView: AIChatEditHeaderView?
+    /// The web view whitened for the current edit, so it can be restored even if the tab changes.
+    weak var whitenedTranscriptWebView: WKWebView?
 
     /// Tracks live Duck.ai voice sessions per tab. Created in `setUpDuckAIVoiceSessionTracker()`.
     var duckAIVoiceSessionTracker: DuckAIVoiceSessionTracker?
@@ -1279,7 +1286,9 @@ class MainViewController: UIViewController {
         viewCoordinator.updateMinimalChromeBottomAnchor(pinnedToScreenBottom: pinToBottom)
         if pinToBottom {
             // Bar dropped to the screen bottom: clear the keyboard-driven layout left from omnibar editing.
-            currentTab?.webView.scrollView.contentInset.bottom = 0
+            if !isFloatingUIEnabled {
+                currentTab?.webView.scrollView.contentInset.bottom = 0
+            }
             currentTab?.borderView.bottomOffset = 0
             if appSettings.currentAddressBarPosition.isBottom,
                let ntp = newTabPageViewController,
@@ -1692,7 +1701,9 @@ class MainViewController: UIViewController {
             // Web keyboard. Leave bar at rest so keyboard hides it.
             viewCoordinator.constraints.navigationBarContainerHeight.constant = omniBarHeight
             if let currentTab {
-                currentTab.webView.scrollView.contentInset.bottom = 0
+                if !isFloatingUIEnabled {
+                    currentTab.webView.scrollView.contentInset.bottom = 0
+                }
                 currentTab.borderView.bottomOffset = 0
             }
             UIView.animate(withDuration: duration, delay: 0, options: animationCurve) {
@@ -1711,12 +1722,16 @@ class MainViewController: UIViewController {
         if isAnyAITabUTIState, let currentTab {
             // The web view is anchored to the input bar's top (.unifiedToggleInput mode),
             // so it never extends behind the input — no bottom inset is needed.
-            if currentTab.webView.scrollView.contentInset.bottom != 0 {
+            if isFloatingUIEnabled {
+                currentTab.updateWebViewBottomAnchor(for: currentBarsVisibility)
+            } else if currentTab.webView.scrollView.contentInset.bottom != 0 {
                 currentTab.webView.scrollView.contentInset = .init(top: 0, left: 0, bottom: 0, right: 0)
             }
         } else if appSettings.currentAddressBarPosition.isBottom, let currentTab {
             let inset = intersection.height > 0 ? omniBarHeight : 0
-            currentTab.webView.scrollView.contentInset = .init(top: 0, left: 0, bottom: inset, right: 0)
+            if !isFloatingUIEnabled {
+                currentTab.webView.scrollView.contentInset = .init(top: 0, left: 0, bottom: inset, right: 0)
+            }
 
             let bottomOffset = intersection.height > 0 ? containerHeight - omniBarHeight : 0
             currentTab.borderView.bottomOffset = -bottomOffset
@@ -2131,7 +2146,9 @@ class MainViewController: UIViewController {
                     if wasContextualFireOnboardingDialogVisible {
                         contextualOnboardingPixelReporter.measureFireButtonOnboardingDeleteConfirmed()
                     }
-                    forgetAllWithAnimation(request: fireRequest) {}
+                    // The EOJ Try AI dialog must appear with the keyboard down.
+                    let suppressPostFireKeyboard = wasContextualFireOnboardingDialogVisible && onboardingCompletionDialogDecider.shouldPresentTryAIDialog
+                    forgetAllWithAnimation(request: fireRequest, suppressPostFireKeyboard: suppressPostFireKeyboard)
                 },
                 onCancel: { [weak self] in
                     guard let self else { return }
@@ -2283,9 +2300,11 @@ class MainViewController: UIViewController {
     /// - Parameters:
     ///   - query: The search query to be loaded.
     ///   - reuseExisting: The policy for reusing an existing tab. Defaults to `none`, meaning no reuse.
-    func loadQueryInNewTab(_ query: String, reuseExisting: ExistingTabReusePolicy? = .none, fromExternalLink: Bool = false) {
+    /// - Parameter forceSearchQuery: Search for `query` even when it looks like a URL. Callers acting on
+    ///   an explicit "search for this" choice should pass true, or a URL-shaped input navigates instead.
+    func loadQueryInNewTab(_ query: String, reuseExisting: ExistingTabReusePolicy? = .none, fromExternalLink: Bool = false, forceSearchQuery: Bool = false) {
         dismissOmniBar()
-        guard let url = URL.makeSearchURL(query: query, useUnifiedLogic: isUnifiedURLPredictionEnabled) else {
+        guard let url = URL.makeSearchURL(query: query, useUnifiedLogic: isUnifiedURLPredictionEnabled, forceSearchQuery: forceSearchQuery) else {
             Logger.lifecycle.error("Couldn't form URL for query: \(query, privacy: .public)")
             return
         }
@@ -3205,6 +3224,10 @@ class MainViewController: UIViewController {
     /// clipping (keeps the pill shadow and below-bar overflow) and tints the exposed container darker
     /// so the notch shows.
     private func updateWindowedAddressBarCorners() {
+        // Runs every layout pass; on iPhone it can only repaint the container over the unified
+        // toggle input chrome, which owns it there.
+        guard AppWidthObserver.shared.isPad else { return }
+
         // Floating UI and the move animation own the container background; don't fight them. Both
         // re-run this via decorate().
         guard !isFloatingUIEnabled, !isAddressBarMoveInProgress else { return }
@@ -4130,6 +4153,9 @@ class MainViewController: UIViewController {
                 AIChatPromptHandler.shared.setData(prompt)
             }
             loadUrlInNewTab(chatURL, inheritedAttribution: nil) { [weak self] in
+                if let modelId {
+                    self?.unifiedToggleInputCoordinator?.updateSelectedModel(modelId)
+                }
                 if let payload {
                     self?.currentTab?.aiChatContentHandler.setPayload(payload: payload)
                 }
@@ -4138,6 +4164,9 @@ class MainViewController: UIViewController {
         }
 
         load(query, autoSend: autoSend, payload: payload, flowType: flowType, tools: tools, modelId: modelId, reasoningEffort: reasoningEffort, images: images, files: files)
+        if let modelId {
+            unifiedToggleInputCoordinator?.updateSelectedModel(modelId)
+        }
     }
 
     /// Executes the closure if the current tab is an AI tab
@@ -5927,6 +5956,9 @@ extension MainViewController: NewTabPageControllerDelegate {
 
 extension MainViewController: TabDelegate {
 
+    /// Far longer than any real search, short enough to keep the URL well inside server limits.
+    private static let maxSelectionSearchQueryLength = 500
+
     func searchToken(for tab: TabViewController) -> String? {
         if let token = searchTokenFetcher.retrieveToken() {
             return token
@@ -6278,6 +6310,18 @@ extension MainViewController: TabDelegate {
             newTab(allowingKeyboard: false)
         }
         openAIChat()
+    }
+
+    func tab(_ tab: TabViewController, didRequestAIChatForSelectedText text: String) {
+        Task { @MainActor in
+            await tab.presentContextualAIChatSheet(withSelectedText: text, from: self)
+        }
+    }
+
+    /// Selections are uncapped by design, but on this path the query *is* the payload — select-all on a
+    /// long article would otherwise build a URL no server accepts.
+    func tab(_ tab: TabViewController, didRequestSearchForSelectedText text: String) {
+        loadQueryInNewTab(String(text.prefix(Self.maxSelectionSearchQueryLength)), forceSearchQuery: true)
     }
 
     func tabDidRequestAIChatHistory(tab: TabViewController, source: AIChatHistorySource) {
@@ -6812,7 +6856,8 @@ extension MainViewController {
 
     func forgetAllWithAnimation(request: FireRequest,
                                 transitionCompletion: (() -> Void)? = nil,
-                                showNextDaxDialog: Bool = false) {
+                                showNextDaxDialog: Bool = false,
+                                suppressPostFireKeyboard: Bool = false) {
         let spid = Instruments.shared.startTimedEvent(.clearingData)
         let tabsCount = tabsCount(for: request.scope)
 
@@ -6834,7 +6879,7 @@ extension MainViewController {
             // Ideally this should happen once data clearing has finished AND the animation is finished
             if showNextDaxDialog {
                 self.newTabPageViewController?.showNextDaxDialog()
-            } else if request.options.contains(.tabs) && KeyboardSettings().onNewTab && !self.isEscapeHatchBurn(request) {
+            } else if request.options.contains(.tabs) && KeyboardSettings().onNewTab && !self.isEscapeHatchBurn(request) && !suppressPostFireKeyboard {
                 // Escape-hatch burns restore focus in `restoreFocusModeAfterBurnIfNeeded`.
                 let showKeyboardAfterFireButton = DispatchWorkItem {
                     // A burned Duck.ai chat reopens as a new chat that owns its input; don't focus search over it.

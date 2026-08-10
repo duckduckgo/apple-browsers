@@ -108,4 +108,25 @@ final class OnboardingPersonalizationAppSettingsTests {
         // THEN
         #expect(!sut.isDuckPlayerEnabled)
     }
+
+    // MARK: - Legacy-migration guard
+
+    @Test("Native settings start unmapped, so the legacy migration would otherwise run")
+    func nativeSettingsStartUnmapped() {
+        // THEN
+        #expect(!sut.duckPlayerNativeUISettingsMapped)
+    }
+
+    // Writing the Duck Player toggle must set that flag so the migration treats the value as established.
+    @Test("Writing Duck Player marks native settings as mapped so the legacy migration won't override it", arguments: [true, false])
+    func writingDuckPlayerMarksNativeSettingsMapped(enabled: Bool) {
+        // GIVEN native settings have not been mapped yet
+        #expect(!sut.duckPlayerNativeUISettingsMapped)
+
+        // WHEN onboarding writes the Duck Player choice
+        sut.isDuckPlayerEnabled = enabled
+
+        // THEN the mapping flag is set, so mapLegacySettings() skips remapping over the onboarding value
+        #expect(sut.duckPlayerNativeUISettingsMapped)
+    }
 }

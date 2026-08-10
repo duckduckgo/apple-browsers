@@ -949,6 +949,12 @@
 /* Login name label for login details on autofill */
 "autofill.logins.details.login-name" = "Otsikko";
 
+/* Message for alert when attempting to save a password that has neither a website nor a username */
+"autofill.logins.details.missing-website-or-username-alert.message" = "Tallenna tämä salasana antamalla verkkosivusto tai käyttäjätunnus.";
+
+/* Title for alert when attempting to save a password that has neither a website nor a username */
+"autofill.logins.details.missing-website-or-username-alert.title" = "Verkkosivusto tai käyttäjätunnus vaaditaan";
+
 /* Title when adding new autofill login */
 "autofill.logins.details.new-title" = "Lisää salasana";
 
@@ -2949,6 +2955,12 @@
 
 /* Title for the Import Passwords Promotion banner */
 "import.passwords.promo.title" = "Tuo salasanasi DuckDuckGohon";
+
+/* Body for the notification sent after a period of inactivity. */
+"inactivity.notification.body" = "Käytä DuckDuckGo välttääksesi sinua verkossa seuraavat mainokset ja pienentääksesi digitaalista jalanjälkeäsi.";
+
+/* Title for the notification sent after a period of inactivity. */
+"inactivity.notification.title" = "Hallinnoi verkkokokemustasi";
 
 /* Placeholder text for the duck.ai input field */
 "input.field.placeholder.duckai" = "Kysy mitä tahansa yksityisesti";

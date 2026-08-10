@@ -52,6 +52,8 @@ public protocol OnboardingSearchPersonalizing: AnyObject {
 
 /// The first `.privateAIChat` setup step to select an AI model.
 public protocol OnboardingAIChatModelPersonalizing: AnyObject {
+    /// The id of the already-persisted AI chat model, or `nil` when none has been chosen.
+    var selectedAIChatModelID: String? { get }
     /// Persists `model` as the user's selected AI chat model.
     func setAIChatModel(_ model: OnboardingAIModel)
 }

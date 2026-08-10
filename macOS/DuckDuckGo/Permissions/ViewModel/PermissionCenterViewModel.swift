@@ -19,7 +19,7 @@
 import AppKit
 import Combine
 import DesignResourcesKit
-import FeatureFlags
+import FeatureFlags_macOS
 import Foundation
 import PixelKit
 import PrivacyConfig
@@ -191,7 +191,7 @@ final class PermissionCenterViewModel: ObservableObject {
     private let grantPermission: ((PermissionAuthorizationQuery) -> Void)?
     private let reloadPage: (() -> Void)?
     private let setPermissionsNeedReload: (() -> Void)?
-    private let openSettingsPane: ((PreferencePaneIdentifier) -> Void)?
+    private let openSettings: ((PreferencesDestination) -> Void)?
     private let pixelFiring: PixelFiring?
     private var cancellables = Set<AnyCancellable>()
     private var removedPermissions = Set<PermissionType>()
@@ -234,7 +234,7 @@ final class PermissionCenterViewModel: ObservableObject {
         grantPermission: ((PermissionAuthorizationQuery) -> Void)? = nil,
         reloadPage: (() -> Void)? = nil,
         setPermissionsNeedReload: (() -> Void)? = nil,
-        openSettingsPane: ((PreferencePaneIdentifier) -> Void)? = nil,
+        openSettings: ((PreferencesDestination) -> Void)? = nil,
         hasTemporaryPopupAllowance: Bool = false,
         pageInitiatedPopupOpened: Bool = false,
         displaysAutoplayPolicy: Bool = false,
@@ -259,7 +259,7 @@ final class PermissionCenterViewModel: ObservableObject {
         self.grantPermission = grantPermission
         self.reloadPage = reloadPage
         self.setPermissionsNeedReload = setPermissionsNeedReload
-        self.openSettingsPane = openSettingsPane
+        self.openSettings = openSettings
         self.hasTemporaryPopupAllowance = hasTemporaryPopupAllowance
         self.pageInitiatedPopupOpened = pageInitiatedPopupOpened
         self.displaysAutoplayPolicy = displaysAutoplayPolicy
@@ -451,13 +451,13 @@ final class PermissionCenterViewModel: ObservableObject {
         displaysAutoplayDiscovery && permissionItems.contains { $0.permissionType == .autoplayPolicy }
     }
 
-    /// Opens the General settings pane, where the all-sites autoplay preference lives
+    /// Opens the General settings pane, scrolled to the Permissions section where the all-sites autoplay preference lives
     func openAutoplaySettings() {
         if displaysAutoplayDiscovery {
             pixelFiring?.fire(AutoplayPromoPixel.settingsLinkClicked)
         }
 
-        openSettingsPane?(.general)
+        openSettings?(.generalPermissions)
         dismissPopover()
     }
 

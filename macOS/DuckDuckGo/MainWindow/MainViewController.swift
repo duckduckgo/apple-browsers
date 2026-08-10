@@ -311,7 +311,8 @@ final class MainViewController: NSViewController {
             tabCollectionViewModel: tabCollectionViewModel,
             bookmarkManager: bookmarkManager,
             dragDropManager: bookmarkDragDropManager,
-            pinningManager: pinningManager
+            pinningManager: pinningManager,
+            featureFlagger: featureFlagger
         )
 
         // Create the shared AI Chat omnibar controller
@@ -612,6 +613,13 @@ final class MainViewController: NSViewController {
     /// Delegates to the standard visibility path so the panel reappears with the preserved draft / tool / attachments.
     func showAIChatOmnibarPanelForRefocus() {
         updateAIChatOmnibarContainerVisibility(visible: true, shouldKeepSelection: false, shouldFetchSuggestions: false)
+    }
+
+    /// Insertion only shows the pane synchronously for a *new* tab.
+    /// Reusing an existing Settings tab swaps panes asynchronously, so the destination is applied here instead of waiting on that.
+    func openSettings(at destination: PreferencesDestination) {
+        tabCollectionViewModel.insertOrAppendNewTab(.settings(pane: destination.pane))
+        browserTabViewController.navigateSettings(to: destination)
     }
 
     func openNewDuckAIChatTab() {

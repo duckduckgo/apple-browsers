@@ -24,6 +24,7 @@ import Subscription
 import Common
 import FoundationExtensions
 import PrivacyConfig
+import FeatureFlags_iOS
 
 typealias DaxDialogsFlowCoordinator = ContextualOnboardingLogic & SubscriptionPromotionCoordinating
 
@@ -49,6 +50,11 @@ protocol NewTabDaxDialogProviding {
     ///
     /// - Returns: Type-erased completion dialog view.
     func createDuckAIFireOnboardingCompletionDialog(message: String, onDismiss: @escaping () -> Void) -> AnyView
+
+
+    /// Renders an End-Of-Journey dialog from content. Button taps and manual dismiss are forwarded through `onAction`
+    /// All EoJ variants (standard / Try-AI / privateAIChat) are content, so this is the single entrypoint for `.final`.
+    func createEndOfJourneyDialog(content: OnboardingEndOfJourneyContent, onAction: @escaping (OnboardingEndOfJourneyAction) -> Void) -> AnyView
 }
 
 final class NewTabDaxDialogFactory: NewTabDaxDialogProviding {
@@ -85,7 +91,12 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProviding {
         case .subsequent:
             createSubsequentDialog(onManualDismiss: onManualDismiss)
         case .final:
-            createFinalDialog(onCompletion: onCompletion, onManualDismiss: onManualDismiss)
+            // `.final` is intercepted in NewTabPageViewController and rendered via `createEndOfJourneyDialog`
+            // (content-driven), so it never reaches this switch.
+            // swiftlint:disable redundant_discardable_let
+            let _ = assertionFailure("Should not be reached.")
+            // swiftlint:enable redundant_discardable_let
+            EmptyView()
         case .subscriptionPromotion:
             // Re-use same dismiss closure as dismissing the final dialog will set onboarding completed true
             createSubscriptionPromoDialog(proceedButtonText: onboardingSubscriptionPromotionHelper.proceedButtonText, onDismiss: onCompletion)
@@ -156,6 +167,33 @@ extension NewTabDaxDialogFactory {
         )
     }
 
+    // The single content-driven end-of-journey entrypoint. The content provider decides the variant
+    // (standard / Try-AI / privateAIChat); this renders it and dispatches taps through the uniform `onAction`.
+    func createEndOfJourneyDialog(content: OnboardingEndOfJourneyContent, onAction: @escaping (OnboardingEndOfJourneyAction) -> Void) -> AnyView {
+        AnyView(
+            FadeInView {
+                ScrollView(.vertical, showsIndicators: false) {
+                    OnboardingRebranding.OnboardingEndOfJourneyDialog(content: content) { [weak self] action in
+                        switch action {
+                        case .completeAndActivateSearch, .tryDuckAI:
+                            self?.onboardingPixelReporter.measureEndOfJourneyDialogCTAAction()
+                        case .skip, .manualDismiss:
+                            self?.onboardingPixelReporter.measureEndOfJourneyDialogNewTabDismissButtonTapped()
+                        }
+                        onAction(action)
+                    }
+                }
+                .scrollIfNeeded()
+            }
+            .applyNewTabOnboardingBackground(backgroundType: .endOfJourneyNTP)
+            .onFirstAppear { [weak self] in
+                self?.daxDialogsFlowCoordinator.setFinalOnboardingDialogSeen()
+                self?.onboardingPixelReporter.measureScreenImpression(event: .daxDialogsEndOfJourneyNewTabUnique)
+                self?.onboardingPixelReporter.measureScreenImpression(.end(.shown))
+            }
+        )
+    }
+
 }
 
 // MARK: - Subsequent Dialog (Try Visiting A Site!)
@@ -209,38 +247,6 @@ private extension NewTabDaxDialogFactory {
             OnboardingRebranding.OnboardingAddFavorite(message: message)
         }
         .applyNewTabOnboardingBackground(backgroundType: .tryVisitingASiteNTP)
-    }
-
-}
-
-// MARK: - Final Dialog (You've Got This! / Chat-Path Completion)
-
-private extension NewTabDaxDialogFactory {
-
-    func createFinalDialog(onCompletion: @escaping (_ activateSearch: Bool) -> Void, onManualDismiss: @escaping () -> Void) -> some View {
-        return FadeInView {
-            ScrollView(.vertical, showsIndicators: false) {
-                OnboardingRebranding.OnboardingEndOfJourneyDialog(
-                    message: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenMessage,
-                    cta: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenButton,
-                    dismissAction: { [weak self] in
-                        self?.onboardingPixelReporter.measureEndOfJourneyDialogCTAAction()
-                        onCompletion(true)
-                    },
-                    onManualDismiss: { [weak self] in
-                        self?.onboardingPixelReporter.measureEndOfJourneyDialogNewTabDismissButtonTapped()
-                        onManualDismiss()
-                    }
-                )
-            }
-            .scrollIfNeeded()
-        }
-        .applyNewTabOnboardingBackground(backgroundType: .endOfJourneyNTP)
-        .onFirstAppear { [weak self] in
-            self?.daxDialogsFlowCoordinator.setFinalOnboardingDialogSeen()
-            self?.onboardingPixelReporter.measureScreenImpression(event: .daxDialogsEndOfJourneyNewTabUnique)
-            self?.onboardingPixelReporter.measureScreenImpression(.end(.shown))
-        }
     }
 
 }

@@ -16,14 +16,8 @@
 /* Class = "UILabel"; text = "Label"; ObjectID = "dud-qo-Ces"; */
 "dud-qo-Ces.text" = "Label";
 
-/* Class = "UINavigationItem"; title = "App Icon"; ObjectID = "eMH-uv-Kms"; */
-"eMH-uv-Kms.title" = "Ikona aplikacije";
-
 /* Class = "UITableViewController"; title = "Global Privacy Control (GPC)"; ObjectID = "fV3-86-QQj"; */
 "fV3-86-QQj.title" = "Globalna kontrola privatnosti (GPC)";
-
-/* Class = "UICollectionViewController"; title = "Icon"; ObjectID = "jbD-Oy-Cmw"; */
-"jbD-Oy-Cmw.title" = "Ikona";
 
 /* Class = "UILabel"; text = "Let DuckDuckGo manage cookie consent pop-ups"; ObjectID = "nX1-F1-Frd"; */
 "nX1-F1-Frd.text" = "Neka DuckDuckGo upravlja skočnim prozorima za pristanak na kolačiće";

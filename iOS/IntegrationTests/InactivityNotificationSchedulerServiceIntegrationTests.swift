@@ -18,6 +18,7 @@
 //
 
 import XCTest
+import PersistenceTestingUtils
 @testable import DuckDuckGo
 @testable import Core
 @testable import BrowserServicesKit
@@ -25,33 +26,37 @@ import XCTest
 final class MockNotificationServiceManager: NSObject, NotificationServiceManaging {}
 
 final class InactivityNotificationSchedulerServiceTests: XCTestCase {
-    
+
     var mockFeatureFlagger: MockFeatureFlagger!
     var mockPrivacyConfigManager: PrivacyConfigurationManagerMock!
     var mockNotificationServiceManager: MockNotificationServiceManager!
     var userNotificationCenter: UNUserNotificationCenterRepresentable!
+    var stateStore: InactivityNotificationStateStoring!
     var service: InactivityNotificationSchedulerService!
-    
+
     override func setUp() {
         super.setUp()
         mockPrivacyConfigManager = PrivacyConfigurationManagerMock()
         mockFeatureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.inactivityNotification])
         mockNotificationServiceManager = MockNotificationServiceManager()
         userNotificationCenter = UNUserNotificationCenter.current()
-        
+        stateStore = InactivityNotificationStateStore(keyValueStore: MockKeyValueFileStore())
+
         service = InactivityNotificationSchedulerService(
             featureFlagger: mockFeatureFlagger,
             notificationServiceManager: mockNotificationServiceManager,
             privacyConfigurationManager: mockPrivacyConfigManager,
+            stateStore: stateStore,
             userNotificationCenter: userNotificationCenter
         )
     }
-    
+
     override func tearDown() {
         mockPrivacyConfigManager = nil
         mockFeatureFlagger = nil
         mockNotificationServiceManager = nil
         userNotificationCenter = nil
+        stateStore = nil
         service = nil
         super.tearDown()
     }
@@ -66,7 +71,7 @@ final class InactivityNotificationSchedulerServiceTests: XCTestCase {
 
         // Then
         let status = await userNotificationCenter.authorizationStatus()
-        guard status == .provisional else {
+        guard status == .provisional || status == .authorized else {
             let pending = await UNUserNotificationCenter.current().pendingNotificationRequests()
             XCTAssertEqual(pending.filter { $0.identifier == targetId }.count, 0)
             return
@@ -88,7 +93,7 @@ final class InactivityNotificationSchedulerServiceTests: XCTestCase {
 
         // Then
         let status = await userNotificationCenter.authorizationStatus()
-        guard status == .provisional else {
+        guard status == .provisional || status == .authorized else {
             let pending = await UNUserNotificationCenter.current().pendingNotificationRequests()
             XCTAssertEqual(pending.filter { $0.identifier == targetId }.count, 0)
             return

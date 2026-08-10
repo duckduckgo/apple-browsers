@@ -34,7 +34,20 @@ update_localizable_strings() {
 		return 1
 	fi
 
-	if ! iconv -f UTF-16 -t UTF8 "${generated_strings}" > "${tmp_utf8_strings}"; then
+	# `extractLocStrings` writes UTF-16LE with a leading byte-order mark. Decode it
+	# with an explicit little-endian encoding instead of `iconv -f UTF-16`: the latter
+	# infers endianness from the BOM, but macOS iconv can lose that inferred byte order
+	# at an internal buffer boundary and byte-swap the rest of the file, corrupting
+	# non-BMP characters (e.g. emoji like U+1F525, encoded as a surrogate pair) and
+	# every entry after them. Strip the 2-byte BOM so the result matches the committed
+	# (BOM-less) Localizable.strings and the `cmp` check below stays meaningful.
+	bom=$(od -An -tx1 -N2 "${generated_strings}" | tr -d ' \n')
+	if [ "${bom}" != "fffe" ]; then
+		echo "error: expected UTF-16LE BOM (fffe) at the start of ${generated_strings}, found '${bom}'" >&2
+		return 1
+	fi
+
+	if ! tail -c +3 "${generated_strings}" | iconv -f UTF-16LE -t UTF8 > "${tmp_utf8_strings}"; then
 		rm -f "${tmp_utf8_strings}"
 		echo "error: Failed to convert ${generated_strings} to UTF-8" >&2
 		return 1

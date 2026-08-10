@@ -30,6 +30,7 @@ import BrowserServicesKit
 import Subscription
 import RemoteMessaging
 import WebExtensions
+import FeatureFlags_iOS
 
 /// Represents the transient state where the app is being prepared for user interaction after being launched by the system.
 /// - Usage:
@@ -356,13 +357,20 @@ struct Launching: LaunchingHandling {
         remoteMessagingService.messageNavigator = DefaultMessageNavigator(delegate: mainCoordinator.controller)
         omniBarFocuser.focuser = mainCoordinator.controller
 
-        let notificationServiceManager = NotificationServiceManager(mainCoordinator: mainCoordinator)
+        let inactivityStateStore = InactivityNotificationStateStore(
+            keyValueStore: appKeyValueFileStoreService.keyValueFilesStore
+        )
+        let notificationServiceManager = NotificationServiceManager(
+            mainCoordinator: mainCoordinator,
+            inactivityStateStore: inactivityStateStore
+        )
 
         let vpnService = VPNService(mainCoordinator: mainCoordinator, notificationServiceManager: notificationServiceManager)
         let inactivityNotificationSchedulerService = InactivityNotificationSchedulerService(
             featureFlagger: featureFlagger,
             notificationServiceManager: notificationServiceManager,
-            privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager
+            privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager,
+            stateStore: inactivityStateStore
         )
 
         winBackOfferService.setURLHandler(mainCoordinator)

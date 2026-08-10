@@ -22,12 +22,14 @@ import BrowserServicesKit
 import Combine
 import Common
 import ConcurrencyExtensions
+import DesignResourcesKitIcons
 import FoundationExtensions
 import Core
 import os.log
 import PrivacyConfig
 import UIKit
 import WebKit
+import FeatureFlags_iOS
 
 /// Underlying-tab URL publishers the contextual chat needs.
 struct AIChatTabURLPublishers {
@@ -230,6 +232,30 @@ final class AIChatContextualSheetCoordinator {
             presentExistingSheet(sheetViewController, from: presentingViewController)
         } else {
             presentNewSheet(from: presentingViewController, restoreURL: restoreURL)
+        }
+    }
+
+    /// Attaches text selected on the page and presents the sheet, submitting nothing. At the cap the
+    /// selection is refused with a banner and the sheet still presents.
+    func attachSelection(text: String,
+                         url: URL?,
+                         faviconBase64: String?,
+                         restoreURL: URL? = nil,
+                         from presentingViewController: UIViewController) async {
+        let selection = AIChatSelectionContextBuilder.makeSelection(
+            text: text,
+            url: url,
+            faviconBase64: faviconBase64
+        )
+        let didHitCap = !sessionState.attachSelection(selection)
+
+        await presentSheet(from: presentingViewController, restoreURL: restoreURL)
+        refreshSelectionChips()
+
+        if didHitCap {
+            persistentUTIHost?.presentRejectionBanner(
+                UserText.aiChatTextSelectionLimitReached(AIChatSelectionContextBuilder.maxAttachedSelections)
+            )
         }
     }
 
@@ -442,6 +468,24 @@ private extension AIChatContextualSheetCoordinator {
         return host
     }
 
+    /// Re-renders one chip per attached selection.
+    func refreshSelectionChips() {
+        guard let host = persistentUTIHost else { return }
+        let icon = DesignSystemImages.Glyphs.Size24.textSelect.withRenderingMode(.alwaysTemplate)
+        let items = sessionState.attachedSelections.map {
+            (id: $0.id,
+             title: AIChatSelectionContextBuilder.displayTitle(for: $0),
+             favicon: icon)
+        }
+        host.setSelectionChips(items) { [weak self] removedID in
+            guard let self else { return }
+            self.sessionState.removeAttachedSelection(id: removedID)
+            // Removing frees capacity, and the cap banner is transient by design — nothing else clears it.
+            self.persistentUTIHost?.clearRejectionBanner()
+            self.refreshSelectionChips()
+        }
+    }
+
     func startObservingContextUpdates() {
         guard contextUpdateCancellable == nil else { return }
 
@@ -618,7 +662,7 @@ private extension AIChatContextualSheetCoordinator {
 
         sessionTimer = AIChatSessionTimer(durationInSeconds: sessionDuration) { [weak self] in
             Task { @MainActor in
-                self?.resetToNativeInputState()
+                self?.resetToNativeInputState(preservingSelections: true)
             }
         }
         sessionTimer?.start()
@@ -632,12 +676,14 @@ private extension AIChatContextualSheetCoordinator {
     }
 
     /// Resets the chat session to native input state.
-    /// Called when the session timer expires or when the user taps "New Chat".
-    func resetToNativeInputState() {
+    /// Called when the session timer expires or when the user taps "New Chat". Only the timer preserves
+    /// selections — inactivity must not throw away text the user collected across pages.
+    func resetToNativeInputState(preservingSelections: Bool = false) {
         Logger.aiChat.debug("[Contextual] Resetting to native input")
 
-        sessionState.resetToNoChat()
+        sessionState.resetToNoChat(preservingSelections: preservingSelections)
         persistentUTIHost?.prepareForNewChat()
+        refreshSelectionChips()
 
         if shouldCollectSignalsOnly {
             Logger.aiChat.debug("[PageContext] New chat - collecting signals-only")

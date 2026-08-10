@@ -1127,6 +1127,7 @@ extension Pixel {
         case syncAutoRestorePreservedAccountClearFailed
 
         case syncSetupBarcodeScreenShown
+        case syncSetupScanQRScreenShown
         case syncSetupBarcodeScannerSuccess
         case syncSetupBarcodeScannerFailed
         case syncSetupBarcodeCodeCopied
@@ -1767,7 +1768,6 @@ extension Pixel {
         case aiChatNewAddressBarPickerV2Confirmed
         
         // MARK: Experimental Omnibar Metrics
-        case aiChatExperimentalOmnibarShown
         case aiChatExperimentalOmnibarPromptSubmitted
         case aiChatExperimentalOmnibarQuerySubmitted
         case aiChatExperimentalOmnibarModeSwitched
@@ -3212,6 +3212,7 @@ extension Pixel.Event {
         case .syncAutoRestorePreservedAccountClearFailed: return "sync-auto-restore_preserved_account_clear_failed"
 
         case .syncSetupBarcodeScreenShown: return "sync_setup_barcode_screen_shown"
+        case .syncSetupScanQRScreenShown: return "sync_setup_scan_qr_screen_shown"
         case .syncSetupBarcodeScannerSuccess: return "sync_setup_barcode_scanner_success"
         case .syncSetupBarcodeScannerFailed: return "sync_setup_barcode_scanner_failed"
         case .syncSetupBarcodeCodeCopied: return "sync_setup_barcode_code_copied"
@@ -3706,7 +3707,6 @@ extension Pixel.Event {
         case .aiChatNewAddressBarPickerV2Confirmed: return "m_aichat_new_address_bar_picker_v2_confirmed"
         
         // MARK: Experimental Omnibar Metrics
-        case .aiChatExperimentalOmnibarShown: return "m_aichat_experimental_omnibar_shown"
         case .aiChatExperimentalOmnibarPromptSubmitted: return "m_aichat_experimental_omnibar_prompt_submitted"
         case .aiChatExperimentalOmnibarQuerySubmitted: return "m_aichat_experimental_omnibar_query_submitted"
         case .aiChatExperimentalOmnibarModeSwitched: return "m_aichat_experimental_omnibar_mode_switched"

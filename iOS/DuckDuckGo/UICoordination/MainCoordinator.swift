@@ -660,8 +660,15 @@ final class MainCoordinator {
         controller.presentDataBrokerProtectionDashboard()
     }
 
-    func presentModalPromptIfNeeded() {
-        promoCoordinationService.presentModalPromptIfNeeded(from: controller)
+    func capturePromoCoordinationForegroundReadinessToken() -> PromoCoordinationForegroundReadinessToken {
+        promoCoordinationService.captureForegroundReadinessToken()
+    }
+
+    func presentModalPromptIfNeeded(readinessToken: PromoCoordinationForegroundReadinessToken) {
+        promoCoordinationService.presentModalPromptIfNeeded(
+            from: controller,
+            readinessToken: readinessToken
+        )
     }
 
     func prepareModalPromptCoordinationForForeground() {

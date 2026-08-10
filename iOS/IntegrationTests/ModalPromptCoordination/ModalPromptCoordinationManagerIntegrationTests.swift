@@ -417,7 +417,10 @@ final class ModalPromptCoordinationManagerIntegrationTests {
             promoQueueLeaseArbiter: promoQueueLeaseArbiter
         )
 
-        service.presentModalPromptIfNeeded(from: presenterMock)
+        service.presentModalPromptIfNeeded(
+            from: presenterMock,
+            readinessToken: service.captureForegroundReadinessToken()
+        )
 
         guard case .committed = manager.modalAttemptPhase else {
             Issue.record("Expected the modal to retain the global owner through its scheduled presentation window")
@@ -476,7 +479,10 @@ final class ModalPromptCoordinationManagerIntegrationTests {
         #expect(messagesConfiguration.appearanceCallCount == 0)
         #expect(promoQueueLeaseArbiter.snapshot.activeOwner == nil)
 
-        service.presentModalPromptIfNeeded(from: presenterMock)
+        service.presentModalPromptIfNeeded(
+            from: presenterMock,
+            readinessToken: service.captureForegroundReadinessToken()
+        )
 
         let expectedIdentity = VisiblePromoIdentity(
             surfaceID: surfaceID,

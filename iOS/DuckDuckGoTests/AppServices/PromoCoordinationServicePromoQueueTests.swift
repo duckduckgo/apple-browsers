@@ -52,7 +52,7 @@ final class PromoCoordinationServicePromoQueueTests {
         presenterMock.presentedViewController = nil
         makeSUT()
 
-        sut.presentModalPromptIfNeeded(from: presenterMock)
+        presentModalPromptIfNeeded()
 
         #expect(managerMock.capturedModalLease != nil)
         guard let attemptIdentity = managerMock.capturedModalLease?.attemptIdentity else {
@@ -92,7 +92,7 @@ final class PromoCoordinationServicePromoQueueTests {
             promoQueueLeaseArbiter: promoQueueLeaseArbiter
         )
 
-        sut.presentModalPromptIfNeeded(from: presenterMock)
+        presentModalPromptIfNeeded()
 
         #expect(!provider.didCallProvideModalPrompt)
         #expect(!presenterMock.didCallPresent)
@@ -107,7 +107,7 @@ final class PromoCoordinationServicePromoQueueTests {
         presenterMock.presentedViewController = nil
         makeSUT(mode: .legacy)
 
-        sut.presentModalPromptIfNeeded(from: presenterMock)
+        presentModalPromptIfNeeded()
 
         #expect(managerMock.didCallPresentModalPromptIfNeeded)
         #expect(managerMock.capturedModalLease == nil)
@@ -127,7 +127,7 @@ final class PromoCoordinationServicePromoQueueTests {
         let firstRegistration = sut.registerRemoteMessageRetry(for: UUID(), target: firstTarget)
         let secondRegistration = sut.registerRemoteMessageRetry(for: UUID(), target: secondTarget)
 
-        sut.presentModalPromptIfNeeded(from: presenterMock)
+        presentModalPromptIfNeeded()
 
         #expect(firstTarget.retryCount == 1)
         #expect(secondTarget.retryCount == 1)
@@ -170,7 +170,7 @@ final class PromoCoordinationServicePromoQueueTests {
         }
         let registration = sut.registerRemoteMessageRetry(for: identity.surfaceID, target: target)
 
-        sut.presentModalPromptIfNeeded(from: presenterMock)
+        presentModalPromptIfNeeded()
 
         #expect(target.retryCount == 2)
         #expect(retainedAdmission != nil)
@@ -308,7 +308,7 @@ final class PromoCoordinationServicePromoQueueTests {
             promoQueueLeaseArbiter: promoQueueLeaseArbiter
         )
 
-        sut.presentModalPromptIfNeeded(from: presenterMock)
+        presentModalPromptIfNeeded()
         scheduler.executeScheduledBlock()
 
         let replacementIdentity = makeIdentity(promoID: "replacement")
@@ -643,7 +643,7 @@ final class PromoCoordinationServicePromoQueueTests {
             return
         }
 
-        sut.presentModalPromptIfNeeded(from: presenterMock)
+        presentModalPromptIfNeeded()
 
         #expect(waiter.retryCount == 1)
         #expect(waiter.retainedAdmission != nil)
@@ -653,8 +653,8 @@ final class PromoCoordinationServicePromoQueueTests {
     }
 
     @available(iOS 16, *)
-    @Test("Inactive Stale Readiness Cannot Open The Next Foreground", .timeLimit(.minutes(1)))
-    func whenStaleReadinessArrivesInBackgroundThenNextForegroundStillWaitsForItsOwnReadiness() {
+    @Test("Stale Readiness Cannot Open An Active Next Foreground", .timeLimit(.minutes(1)))
+    func whenStaleReadinessArrivesAfterNextForegroundBecomesActiveThenItCannotOpenAdmission() {
         launchSourceManagerMock.source = .standard
         presenterMock.presentedViewController = nil
         makeSUT()
@@ -662,25 +662,27 @@ final class PromoCoordinationServicePromoQueueTests {
         let waiter = MockNewTabPagePromoRetryTarget()
         waiter.identityToAdmitOnRetry = waiterIdentity
         let registration = sut.registerRemoteMessageRetry(for: waiterIdentity.surfaceID, target: waiter)
+        let staleReadinessToken = sut.captureForegroundReadinessToken()
 
         sut.applicationDidEnterBackground()
-        sut.presentModalPromptIfNeeded(from: presenterMock)
-
-        #expect(waiter.retryCount == 0)
-        guard case .deferred = sut.admitRemoteMessage(waiterIdentity) else {
-            Issue.record("Expected direct admission to remain closed after stale background readiness")
-            return
-        }
-
+        let currentReadinessToken = sut.captureForegroundReadinessToken()
         sut.applicationDidBecomeActive()
+        sut.presentModalPromptIfNeeded(
+            from: presenterMock,
+            readinessToken: staleReadinessToken
+        )
 
         #expect(waiter.retryCount == 0)
+        #expect(managerMock.reconcilePresentedModalCallCount == 0)
         guard case .deferred = sut.admitRemoteMessage(waiterIdentity) else {
-            Issue.record("Expected the new foreground to wait for its own full readiness")
+            Issue.record("Expected the active foreground to reject readiness from the previous foreground")
             return
         }
 
-        sut.presentModalPromptIfNeeded(from: presenterMock)
+        sut.presentModalPromptIfNeeded(
+            from: presenterMock,
+            readinessToken: currentReadinessToken
+        )
 
         #expect(waiter.retryCount == 1)
         #expect(waiter.retainedAdmission != nil)
@@ -750,6 +752,13 @@ final class PromoCoordinationServicePromoQueueTests {
             modalPromptCoordinationManager: managerMock,
             promoCoordinationMode: mode,
             promoQueueLeaseArbiter: promoQueueLeaseArbiter
+        )
+    }
+
+    private func presentModalPromptIfNeeded() {
+        sut.presentModalPromptIfNeeded(
+            from: presenterMock,
+            readinessToken: sut.captureForegroundReadinessToken()
         )
     }
 

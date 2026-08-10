@@ -65,7 +65,7 @@ final class PromoCoordinationServiceTests {
         )
 
         // WHEN
-        sut.presentModalPromptIfNeeded(from: presenterMock)
+        presentModalPromptIfNeeded()
 
         // THEN
         #expect(!managerMock.didCallPresentModalPromptIfNeeded)
@@ -84,7 +84,7 @@ final class PromoCoordinationServiceTests {
         )
 
         // WHEN
-        sut.presentModalPromptIfNeeded(from: presenterMock)
+        presentModalPromptIfNeeded()
 
         // THEN
         #expect(managerMock.didCallPresentModalPromptIfNeeded)
@@ -107,7 +107,7 @@ final class PromoCoordinationServiceTests {
         )
 
         // WHEN
-        sut.presentModalPromptIfNeeded(from: presenterMock)
+        presentModalPromptIfNeeded()
 
         // THEN
         #expect(!managerMock.didCallPresentModalPromptIfNeeded)
@@ -126,7 +126,7 @@ final class PromoCoordinationServiceTests {
         )
 
         // WHEN
-        sut.presentModalPromptIfNeeded(from: presenterMock)
+        presentModalPromptIfNeeded()
 
         // THEN
         #expect(managerMock.didCallPresentModalPromptIfNeeded)
@@ -147,7 +147,7 @@ final class PromoCoordinationServiceTests {
         )
 
         // WHEN
-        sut.presentModalPromptIfNeeded(from: presenterMock)
+        presentModalPromptIfNeeded()
 
         // THEN
         #expect(managerMock.didCallPresentModalPromptIfNeeded)
@@ -168,7 +168,7 @@ final class PromoCoordinationServiceTests {
         )
 
         // WHEN
-        sut.presentModalPromptIfNeeded(from: presenterMock)
+        presentModalPromptIfNeeded()
 
         // THEN
         #expect(managerMock.didCallPresentModalPromptIfNeeded)
@@ -187,7 +187,7 @@ final class PromoCoordinationServiceTests {
         )
 
         // WHEN
-        sut.presentModalPromptIfNeeded(from: presenterMock)
+        presentModalPromptIfNeeded()
 
         // THEN
         #expect(!managerMock.didCallPresentModalPromptIfNeeded)
@@ -234,7 +234,7 @@ final class PromoCoordinationServiceTests {
         )
 
         // WHEN
-        sut.presentModalPromptIfNeeded(from: presenterMock)
+        presentModalPromptIfNeeded()
 
         // THEN All providers up to and including the target should be checked
         for providerPriority in ProviderPriority.allCases {
@@ -247,7 +247,12 @@ final class PromoCoordinationServiceTests {
         }
     }
 
-
+    private func presentModalPromptIfNeeded() {
+        sut.presentModalPromptIfNeeded(
+            from: presenterMock,
+            readinessToken: sut.captureForegroundReadinessToken()
+        )
+    }
 }
 
 extension ModalPromptProviders {

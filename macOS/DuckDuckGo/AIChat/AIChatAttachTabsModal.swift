@@ -28,6 +28,7 @@ struct AIChatAttachTabsModal: ModalView {
         static let rowHeight: CGFloat = 22
         static let rowSpacing: CGFloat = 4
         static let maxListHeight: CGFloat = 234
+        static let blockedRowOpacity: CGFloat = 0.4
         /// Row inset wide enough that titles and the checkbox hit area clear the scroller lane.
         static let listTrailingInset: CGFloat = 34
     }
@@ -39,6 +40,10 @@ struct AIChatAttachTabsModal: ModalView {
     private let currentTabId: String?
     private let maxSelection: Int
     private let onAttach: ([AIChatTabAttachment]) -> Void
+
+    /// Set when the dialog opens and not recalculated: confirming can remove tabs as well as add
+    /// them, so a session that began with attachments updates them however the boxes end up.
+    private let opensWithAttachments: Bool
 
     @State private var selectedIds: Set<String>
     @State private var searchQuery: String = ""
@@ -60,6 +65,7 @@ struct AIChatAttachTabsModal: ModalView {
         self.currentTabId = currentTabId
         self.maxSelection = maxSelection
         self.onAttach = onAttach
+        self.opensWithAttachments = !preselectedIds.isEmpty
         _selectedIds = State(initialValue: preselectedIds)
     }
 
@@ -124,11 +130,14 @@ struct AIChatAttachTabsModal: ModalView {
                     onAttach(tabs.filter { selectedIds.contains($0.id) })
                     dismiss()
                 } label: {
-                    Text(UserText.aiChatAttachTabsModalAttachButton)
+                    Text(opensWithAttachments ? UserText.aiChatAttachTabsModalUpdateButton : UserText.aiChatAttachTabsModalAttachButton)
                         .frame(maxWidth: .infinity)
                         .frame(height: 28)
                 }
-                .buttonStyle(DefaultActionButtonStyle(enabled: true, topPadding: 0, bottomPadding: 0, pillShape: true))
+                // Nothing selected means nothing to add or update, whether it started that way or
+                // ended that way; cancelling is all that's left.
+                .buttonStyle(DefaultActionButtonStyle(enabled: !selectedIds.isEmpty, topPadding: 0, bottomPadding: 0, pillShape: true))
+                .disabled(selectedIds.isEmpty)
                 .keyboardShortcut(.defaultAction)
             }
             .padding(20)
@@ -196,6 +205,9 @@ struct AIChatAttachTabsModal: ModalView {
 
     private func row(for tab: AIChatTabAttachment) -> some View {
         let isSelected = selectedIds.contains(tab.id)
+        // At the limit, picking a different tab means unchecking one first — the row says so by
+        // greying out. `disabled` alone leaves the favicon and the explicitly coloured suffix lit.
+        let isBlockedByLimit = !isSelected && selectedIds.count >= maxSelection
         return Toggle(isOn: Binding(
             get: { isSelected },
             set: { isOn in
@@ -221,9 +233,10 @@ struct AIChatAttachTabsModal: ModalView {
                 Spacer(minLength: 0)
             }
             .help(tab.url.absoluteString)
+            .opacity(isBlockedByLimit ? Layout.blockedRowOpacity : 1)
         }
         .toggleStyle(.checkbox)
-        .disabled(!isSelected && selectedIds.count >= maxSelection)
+        .disabled(isBlockedByLimit)
     }
 
     @ViewBuilder

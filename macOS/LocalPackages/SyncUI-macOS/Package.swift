@@ -16,6 +16,7 @@ let package = Package(
         .package(path: "../PreferencesUI-macOS"),
         .package(path: "../SwiftUIExtensions"),
         .package(path: "../../../SharedPackages/Infrastructure/DesignResourcesKit"),
+        .package(path: "../../../SharedPackages/SnapshotTestingSupport"),
     ],
     targets: [
         .target(
@@ -24,6 +25,7 @@ let package = Package(
                 .product(name: "PreferencesUI-macOS", package: "PreferencesUI-macOS"),
                 .product(name: "SwiftUIExtensions", package: "SwiftUIExtensions"),
                 .product(name: "DesignResourcesKit", package: "DesignResourcesKit"),
+                .product(name: "PreviewSnapshots", package: "SnapshotTestingSupport"),
             ],
             resources: [
                 .process("Assets.xcassets"),
@@ -34,9 +36,10 @@ let package = Package(
             ]
         ),
         .testTarget(
-            name: "SyncUITests",
+            name: "SyncUI-macOSTests",
             dependencies: [
                 "SyncUI-macOS",
+                .product(name: "SnapshotTestingSupport", package: "SnapshotTestingSupport"),
             ]
         ),
     ]

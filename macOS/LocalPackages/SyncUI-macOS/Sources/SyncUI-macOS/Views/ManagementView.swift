@@ -20,6 +20,10 @@ import PreferencesUI_macOS
 import SwiftUI
 import SwiftUIExtensions
 
+#if DEBUG
+import PreviewSnapshots
+#endif
+
 enum Const {
     enum Fonts {
         static let preferencePaneTitle: Font = .title2.weight(.semibold)
@@ -45,7 +49,9 @@ public struct ManagementView<ViewModel>: View where ViewModel: ManagementViewMod
             TextMenuItemHeader(UserText.sync)
                 .padding(.bottom, -22)
 
-            StatusIndicatorView(status: syncStatus, isLarge: true)
+            if model.isSimplifiedSyncSetupV2Enabled {
+                StatusIndicatorView(status: syncStatus, isLarge: true)
+            }
 
             if model.isSyncEnabled {
                 SyncEnabledView<ViewModel>()
@@ -62,18 +68,26 @@ public struct ManagementView<ViewModel>: View where ViewModel: ManagementViewMod
 }
 
 #if DEBUG
-#Preview("Enabled") {
-    let devices = [
-        SyncDevice(kind: .current, name: "My Mac", id: "current-device"),
-        SyncDevice(kind: .desktop, name: "MacBook Pro", id: "desktop-device"),
-        SyncDevice(kind: .mobile, name: "iPhone", id: "mobile-device")
-    ]
+struct ManagementView_Previews: PreviewProvider {
+    typealias State = PreviewManagementViewModel
 
-    return ScrollView {
-        ManagementView(model: PreviewManagementViewModel(isSyncEnabled: false, devices: devices))
-            .frame(width: 544)
-            .padding()
+    static var previews: some View {
+        snapshots.previews
     }
-    .frame(height: 800)
+
+    static let snapshots = PreviewSnapshots<State>(
+        configurations: [
+            .init(name: "Disabled", state: .disabled),
+            .init(name: "Enabled", state: .enabled)
+        ],
+        configure: { model in
+            ScrollView {
+                ManagementView(model: model)
+                    .padding()
+            }
+            .frame(width: 600, height: 900)
+            .background(Color(nsColor: .windowBackgroundColor))
+        }
+    )
 }
 #endif

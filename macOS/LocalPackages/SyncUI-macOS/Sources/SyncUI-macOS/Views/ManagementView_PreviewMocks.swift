@@ -1,5 +1,5 @@
 //
-//  PreviewManagementViewModel.swift
+//  ManagementView_PreviewMocks.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -97,5 +97,36 @@ final class PreviewManagementViewModel: ManagementViewModel {
     func syncWithServerPressed() async {}
     func recoverDataPressed() async {}
     func turnOffSyncPressed() {}
+}
+
+extension PreviewManagementViewModel {
+    static let disabled = PreviewManagementViewModel(
+        isSyncEnabled: false,
+        isSimplifiedSyncSetupV2Enabled: true,
+        devices: previewDevices
+    )
+
+    static let enabled = PreviewManagementViewModel(
+        isSyncEnabled: true,
+        isSimplifiedSyncSetupV2Enabled: true,
+        devices: previewDevices
+    )
+
+    static let syncPaused = PreviewManagementViewModel(
+        isSyncEnabled: true,
+        isSyncPaused: true,
+        syncPausedTitle: "Sync & Backup is Paused",
+        syncPausedMessage: "Your data is not currently syncing. Try again to resume Sync & Backup.",
+        syncPausedButtonTitle: "Try Again",
+        isSimplifiedSyncSetupV2Enabled: true,
+        devices: [SyncDevice(kind: .current, name: "My Mac", id: "current-device")]
+    )
+
+    private static let previewDevices = [
+        SyncDevice(kind: .current, name: "My Mac", id: "current-device"),
+        SyncDevice(kind: .desktop, name: "MacBook Pro", id: "desktop-device"),
+        SyncDevice(kind: .mobile, name: "iPhone", id: "mobile-device"),
+        SyncDevice(kind: .mobile, name: "Android", id: "third-party-device")
+    ]
 }
 #endif

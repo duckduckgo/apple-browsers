@@ -248,7 +248,7 @@ final class ModalPromptCoordinationRealUIKitTests {
             Issue.record("Expected visible promo admission after the dismissed modal detached")
             return
         }
-        #expect(promoQueueLeaseArbiter.snapshot.visiblePromoIdentities == [waitingPromoIdentity])
+        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .visible(waitingPromoIdentity))
         _ = visiblePromoLease
     }
 

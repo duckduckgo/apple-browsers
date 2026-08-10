@@ -84,7 +84,7 @@ final class UnifiedInputContentContainerViewControllerTests: XCTestCase {
         let cachedTarget = fixture.promoCoordinator.retryTarget
         XCTAssertNotNil(cachedTarget)
         XCTAssertTrue(cachedTarget?.isActiveForPromoRetry == true)
-        let firstOwner = fixture.promoCoordinator.arbiter.snapshot.visiblePromoIdentities.first
+        let firstOwner = fixture.promoCoordinator.arbiter.snapshot.visiblePromoIdentity
         XCTAssertNotNil(firstOwner)
 
         let firstRelease = expectation(description: "Query hid the unified favorites RMF and released its slot")
@@ -97,11 +97,11 @@ final class UnifiedInputContentContainerViewControllerTests: XCTestCase {
 
         XCTAssertTrue(fixture.promoCoordinator.retryTarget === cachedTarget)
         XCTAssertFalse(cachedTarget?.isActiveForPromoRetry == true)
-        XCTAssertTrue(fixture.promoCoordinator.arbiter.snapshot.visiblePromoIdentities.isEmpty)
+        XCTAssertNil(fixture.promoCoordinator.arbiter.snapshot.activeOwner)
         let hiddenAttemptCount = fixture.promoCoordinator.admissionAttemptCount
-        cachedTarget?.retryVisiblePromoAdmission(using: fixture.promoCoordinator.admitVisiblePromo)
+        cachedTarget?.retryRemoteMessageAdmission(using: fixture.promoCoordinator.admitRemoteMessage)
         XCTAssertEqual(fixture.promoCoordinator.admissionAttemptCount, hiddenAttemptCount)
-        XCTAssertTrue(fixture.promoCoordinator.arbiter.snapshot.visiblePromoIdentities.isEmpty)
+        XCTAssertNil(fixture.promoCoordinator.arbiter.snapshot.activeOwner)
 
         let secondAdmission = expectation(description: "Clearing the query reacquired the unified favorites RMF slot")
         fixture.promoCoordinator.onVisibleLeaseAcquired = { _ in
@@ -113,7 +113,7 @@ final class UnifiedInputContentContainerViewControllerTests: XCTestCase {
 
         XCTAssertTrue(fixture.promoCoordinator.retryTarget === cachedTarget)
         XCTAssertTrue(cachedTarget?.isActiveForPromoRetry == true)
-        XCTAssertEqual(fixture.promoCoordinator.arbiter.snapshot.visiblePromoIdentities.first, firstOwner)
+        XCTAssertEqual(fixture.promoCoordinator.arbiter.snapshot.visiblePromoIdentity, firstOwner)
 
         let secondRelease = expectation(description: "Fire mode released the unified favorites RMF slot")
         fixture.promoCoordinator.onVisibleLeaseReleased = {
@@ -124,11 +124,11 @@ final class UnifiedInputContentContainerViewControllerTests: XCTestCase {
         fixture.promoCoordinator.onVisibleLeaseReleased = nil
 
         XCTAssertFalse(cachedTarget?.isActiveForPromoRetry == true)
-        XCTAssertTrue(fixture.promoCoordinator.arbiter.snapshot.visiblePromoIdentities.isEmpty)
+        XCTAssertNil(fixture.promoCoordinator.arbiter.snapshot.activeOwner)
         let fireModeAttemptCount = fixture.promoCoordinator.admissionAttemptCount
-        cachedTarget?.retryVisiblePromoAdmission(using: fixture.promoCoordinator.admitVisiblePromo)
+        cachedTarget?.retryRemoteMessageAdmission(using: fixture.promoCoordinator.admitRemoteMessage)
         XCTAssertEqual(fixture.promoCoordinator.admissionAttemptCount, fireModeAttemptCount)
-        XCTAssertTrue(fixture.promoCoordinator.arbiter.snapshot.visiblePromoIdentities.isEmpty)
+        XCTAssertNil(fixture.promoCoordinator.arbiter.snapshot.activeOwner)
 
         let thirdAdmission = expectation(description: "Leaving fire mode reacquired the unified favorites RMF slot")
         fixture.promoCoordinator.onVisibleLeaseAcquired = { _ in
@@ -139,7 +139,7 @@ final class UnifiedInputContentContainerViewControllerTests: XCTestCase {
         fixture.promoCoordinator.onVisibleLeaseAcquired = nil
 
         XCTAssertTrue(cachedTarget?.isActiveForPromoRetry == true)
-        XCTAssertEqual(fixture.promoCoordinator.arbiter.snapshot.visiblePromoIdentities.first, firstOwner)
+        XCTAssertEqual(fixture.promoCoordinator.arbiter.snapshot.visiblePromoIdentity, firstOwner)
 
         let thirdRelease = expectation(description: "Inactive unified input released the favorites RMF slot")
         fixture.promoCoordinator.onVisibleLeaseReleased = {
@@ -150,7 +150,7 @@ final class UnifiedInputContentContainerViewControllerTests: XCTestCase {
         fixture.promoCoordinator.onVisibleLeaseReleased = nil
 
         XCTAssertFalse(cachedTarget?.isActiveForPromoRetry == true)
-        XCTAssertTrue(fixture.promoCoordinator.arbiter.snapshot.visiblePromoIdentities.isEmpty)
+        XCTAssertNil(fixture.promoCoordinator.arbiter.snapshot.activeOwner)
         XCTAssertEqual(fixture.promoCoordinator.successfulAdmissionCount, 3)
         XCTAssertEqual(fixture.promoCoordinator.releaseCount, 3)
     }
@@ -229,7 +229,7 @@ final class NewTabPagePromoHostWiringTests: XCTestCase {
         let retryTarget = fixture.promoCoordinator.retryTarget
         XCTAssertNotNil(retryTarget)
         XCTAssertFalse(retryTarget?.isActiveForPromoRetry == true)
-        XCTAssertTrue(fixture.promoCoordinator.arbiter.snapshot.visiblePromoIdentities.isEmpty)
+        XCTAssertNil(fixture.promoCoordinator.arbiter.snapshot.activeOwner)
 
         let firstAdmission = expectation(description: "Standard NTP RMF acquired its surface slot")
         fixture.promoCoordinator.onVisibleLeaseAcquired = { _ in
@@ -240,7 +240,7 @@ final class NewTabPagePromoHostWiringTests: XCTestCase {
         fixture.promoCoordinator.onVisibleLeaseAcquired = nil
 
         XCTAssertTrue(retryTarget?.isActiveForPromoRetry == true)
-        let firstOwner = fixture.promoCoordinator.arbiter.snapshot.visiblePromoIdentities.first
+        let firstOwner = fixture.promoCoordinator.arbiter.snapshot.visiblePromoIdentity
         XCTAssertNotNil(firstOwner)
 
         let firstRelease = expectation(description: "Inactive standard NTP released its RMF slot")
@@ -250,14 +250,14 @@ final class NewTabPagePromoHostWiringTests: XCTestCase {
         sut.setPromoSurfaceActive(false)
 
         XCTAssertFalse(retryTarget?.isActiveForPromoRetry == true)
-        XCTAssertEqual(fixture.promoCoordinator.arbiter.snapshot.visiblePromoIdentities.first, firstOwner)
+        XCTAssertEqual(fixture.promoCoordinator.arbiter.snapshot.visiblePromoIdentity, firstOwner)
         await fulfillment(of: [firstRelease], timeout: 1)
         fixture.promoCoordinator.onVisibleLeaseReleased = nil
-        XCTAssertTrue(fixture.promoCoordinator.arbiter.snapshot.visiblePromoIdentities.isEmpty)
+        XCTAssertNil(fixture.promoCoordinator.arbiter.snapshot.activeOwner)
         let hiddenAttemptCount = fixture.promoCoordinator.admissionAttemptCount
-        retryTarget?.retryVisiblePromoAdmission(using: fixture.promoCoordinator.admitVisiblePromo)
+        retryTarget?.retryRemoteMessageAdmission(using: fixture.promoCoordinator.admitRemoteMessage)
         XCTAssertEqual(fixture.promoCoordinator.admissionAttemptCount, hiddenAttemptCount)
-        XCTAssertTrue(fixture.promoCoordinator.arbiter.snapshot.visiblePromoIdentities.isEmpty)
+        XCTAssertNil(fixture.promoCoordinator.arbiter.snapshot.activeOwner)
 
         let secondAdmission = expectation(description: "Reactivated standard NTP reacquired its RMF slot")
         fixture.promoCoordinator.onVisibleLeaseAcquired = { _ in
@@ -266,7 +266,7 @@ final class NewTabPagePromoHostWiringTests: XCTestCase {
         sut.setPromoSurfaceActive(true)
         await fulfillment(of: [secondAdmission], timeout: 1)
         fixture.promoCoordinator.onVisibleLeaseAcquired = nil
-        XCTAssertEqual(fixture.promoCoordinator.arbiter.snapshot.visiblePromoIdentities.first, firstOwner)
+        XCTAssertEqual(fixture.promoCoordinator.arbiter.snapshot.visiblePromoIdentity, firstOwner)
 
         let secondRelease = expectation(description: "Detached standard NTP released its RMF slot")
         fixture.promoCoordinator.onVisibleLeaseReleased = {
@@ -277,7 +277,7 @@ final class NewTabPagePromoHostWiringTests: XCTestCase {
         fixture.promoCoordinator.onVisibleLeaseReleased = nil
 
         XCTAssertFalse(retryTarget?.isActiveForPromoRetry == true)
-        XCTAssertTrue(fixture.promoCoordinator.arbiter.snapshot.visiblePromoIdentities.isEmpty)
+        XCTAssertNil(fixture.promoCoordinator.arbiter.snapshot.activeOwner)
         XCTAssertEqual(fixture.promoCoordinator.successfulAdmissionCount, 2)
         XCTAssertEqual(fixture.promoCoordinator.releaseCount, 2)
     }
@@ -347,7 +347,7 @@ final class NewTabPagePromoHostWiringTests: XCTestCase {
         let cachedTarget = fixture.promoCoordinator.retryTarget
         XCTAssertNotNil(cachedTarget)
         XCTAssertTrue(cachedTarget?.isActiveForPromoRetry == true)
-        let firstOwner = fixture.promoCoordinator.arbiter.snapshot.visiblePromoIdentities.first
+        let firstOwner = fixture.promoCoordinator.arbiter.snapshot.visiblePromoIdentity
         XCTAssertNotNil(firstOwner)
 
         let firstRelease = expectation(description: "Tray autocomplete released the cached favorites RMF slot")
@@ -359,14 +359,14 @@ final class NewTabPagePromoHostWiringTests: XCTestCase {
         XCTAssertTrue(sut.isShowingFavorites)
         XCTAssertTrue(fixture.promoCoordinator.retryTarget === cachedTarget)
         XCTAssertFalse(cachedTarget?.isActiveForPromoRetry == true)
-        XCTAssertEqual(fixture.promoCoordinator.arbiter.snapshot.visiblePromoIdentities.first, firstOwner)
+        XCTAssertEqual(fixture.promoCoordinator.arbiter.snapshot.visiblePromoIdentity, firstOwner)
         await fulfillment(of: [firstRelease], timeout: 1)
         fixture.promoCoordinator.onVisibleLeaseReleased = nil
-        XCTAssertTrue(fixture.promoCoordinator.arbiter.snapshot.visiblePromoIdentities.isEmpty)
+        XCTAssertNil(fixture.promoCoordinator.arbiter.snapshot.activeOwner)
         let hiddenAttemptCount = fixture.promoCoordinator.admissionAttemptCount
-        cachedTarget?.retryVisiblePromoAdmission(using: fixture.promoCoordinator.admitVisiblePromo)
+        cachedTarget?.retryRemoteMessageAdmission(using: fixture.promoCoordinator.admitRemoteMessage)
         XCTAssertEqual(fixture.promoCoordinator.admissionAttemptCount, hiddenAttemptCount)
-        XCTAssertTrue(fixture.promoCoordinator.arbiter.snapshot.visiblePromoIdentities.isEmpty)
+        XCTAssertNil(fixture.promoCoordinator.arbiter.snapshot.activeOwner)
 
         let secondAdmission = expectation(description: "Returning to tray favorites reacquired the RMF slot")
         fixture.promoCoordinator.onVisibleLeaseAcquired = { _ in
@@ -379,7 +379,7 @@ final class NewTabPagePromoHostWiringTests: XCTestCase {
 
         XCTAssertTrue(fixture.promoCoordinator.retryTarget === cachedTarget)
         XCTAssertTrue(cachedTarget?.isActiveForPromoRetry == true)
-        XCTAssertEqual(fixture.promoCoordinator.arbiter.snapshot.visiblePromoIdentities.first, firstOwner)
+        XCTAssertEqual(fixture.promoCoordinator.arbiter.snapshot.visiblePromoIdentity, firstOwner)
 
         let secondRelease = expectation(description: "Hidden tray released the favorites RMF slot")
         fixture.promoCoordinator.onVisibleLeaseReleased = {
@@ -391,7 +391,7 @@ final class NewTabPagePromoHostWiringTests: XCTestCase {
 
         XCTAssertFalse(cachedTarget?.isActiveForPromoRetry == true)
         XCTAssertNil(fixture.promoCoordinator.retryTarget)
-        XCTAssertTrue(fixture.promoCoordinator.arbiter.snapshot.visiblePromoIdentities.isEmpty)
+        XCTAssertNil(fixture.promoCoordinator.arbiter.snapshot.activeOwner)
         XCTAssertEqual(fixture.promoCoordinator.successfulAdmissionCount, 2)
         XCTAssertEqual(fixture.promoCoordinator.releaseCount, 2)
     }
@@ -514,34 +514,26 @@ private final class ArbitratingPromoHostCoordinator: NewTabPagePromoCoordinating
 
     private var retryRegistrationID: UUID?
 
-    func admitVisiblePromo(_ identity: VisiblePromoIdentity) -> VisiblePromoAdmissionResult {
+    func admitRemoteMessage(_ identity: VisiblePromoIdentity) -> PromoQueueRemoteMessageAdmissionResult {
         admissionAttemptCount += 1
 
         switch arbiter.acquireVisiblePromoLease(for: identity) {
         case .acquired(let lease):
             successfulAdmissionCount += 1
             onVisibleLeaseAcquired?(identity)
-            return .acquired(lease)
-        case .blockedByModal:
-            return .blockedByModal
-        case .occupiedSurfaceSlot(let identity):
-            return .occupiedSurfaceSlot(identity)
+            return .acquired(PromoQueueRemoteMessageAdmission { [weak self, lease] in
+                guard lease.release() else {
+                    return
+                }
+                self?.releaseCount += 1
+                self?.onVisibleLeaseReleased?()
+            })
+        case .blockedByModal, .blockedByVisiblePromo:
+            return .deferred
         }
     }
 
-    func releaseVisiblePromoLease(_ lease: PromoQueueVisiblePromoLease) {
-        let visiblePromoCountBeforeRelease = arbiter.snapshot.visiblePromoCount
-        lease.release()
-
-        guard arbiter.snapshot.visiblePromoCount < visiblePromoCountBeforeRelease else {
-            return
-        }
-
-        releaseCount += 1
-        onVisibleLeaseReleased?()
-    }
-
-    func registerVisiblePromoRetry(
+    func registerRemoteMessageRetry(
         for surfaceID: UUID,
         target: NewTabPagePromoRetrying
     ) -> NewTabPagePromoRetryRegistration {

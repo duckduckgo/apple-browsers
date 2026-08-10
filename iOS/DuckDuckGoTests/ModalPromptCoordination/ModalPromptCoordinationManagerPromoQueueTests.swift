@@ -72,6 +72,12 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
             modalPromptScheduling: schedulerMock
         )
+        var releaseNotificationCount = 0
+        var ownerAtReleaseNotification: PromoQueueActiveOwnerSnapshot?
+        sut.setCoordinatedAttemptReleaseHandler { [promoQueueLeaseArbiter] in
+            releaseNotificationCount += 1
+            ownerAtReleaseNotification = promoQueueLeaseArbiter.snapshot.activeOwner
+        }
         let lease = try acquireModalLease()
 
         let disposition = sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
@@ -80,6 +86,8 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
         #expect(!promoQueueLeaseArbiter.snapshot.hasModalLease)
         #expect(provider.didCallProvideModalPrompt)
         #expect(!sut.hasActiveOrPendingModalAttempt)
+        #expect(releaseNotificationCount == 1)
+        #expect(ownerAtReleaseNotification == nil)
     }
 
     @available(iOS 16, *)
@@ -391,7 +399,7 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
         #expect(!sut.hasActiveOrPendingModalAttempt)
         #expect(sut.modalAttemptPhase == .idle)
         #expect(!promoQueueLeaseArbiter.snapshot.hasModalLease)
-        #expect(promoQueueLeaseArbiter.snapshot.visiblePromoCount == 0)
+        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == nil)
     }
 
     @available(iOS 16, *)
@@ -751,7 +759,7 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
         #expect(sut.modalAttemptPhase == .idle)
         #expect(sut.hasActiveOrPendingModalAttempt)
         #expect(!promoQueueLeaseArbiter.snapshot.hasModalLease)
-        #expect(promoQueueLeaseArbiter.snapshot.visiblePromoIdentities == [visibleIdentity])
+        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .visible(visibleIdentity))
         #expect(!sut.didActuallyPresentModalPromptThisSession)
         #expect(provider.didPresentModalCallCount == 0)
         #expect(cooldownManagerMock.recordLastPromptPresentationTimestampCallCount == 0)

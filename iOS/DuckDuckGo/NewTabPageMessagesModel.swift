@@ -88,7 +88,7 @@ final class NewTabPageMessagesModel: ObservableObject {
         let id: UUID
         let gateID: UUID
         let identity: VisiblePromoIdentity
-        let lease: PromoQueueVisiblePromoLease
+        let admission: PromoQueueRemoteMessageAdmission
         var message: HomeMessage
         var viewModel: HomeMessageViewModel
         var appearanceRecorded: Bool
@@ -179,7 +179,7 @@ final class NewTabPageMessagesModel: ObservableObject {
         }
 
         isLoaded = true
-        retryRegistration = promoCoordinator.registerVisiblePromoRetry(
+        retryRegistration = promoCoordinator.registerRemoteMessageRetry(
             for: surfaceID,
             target: self
         )
@@ -253,7 +253,7 @@ final class NewTabPageMessagesModel: ObservableObject {
         remoteMessageLifecycleObserver?(.gateDidAppear)
 
         if let renderSessionID {
-            retainLeaseForPendingCardMount(
+            retainAdmissionForPendingCardMount(
                 renderSessionID: renderSessionID,
                 mountID: mountID
             )
@@ -609,11 +609,11 @@ final class NewTabPageMessagesModel: ObservableObject {
             return
         }
 
-        attemptRemoteMessageAdmission(using: promoCoordinator.admitVisiblePromo)
+        attemptRemoteMessageAdmission(using: promoCoordinator.admitRemoteMessage)
     }
 
     private func attemptRemoteMessageAdmission(
-        using admissionHandler: VisiblePromoAdmissionHandler
+        using admissionHandler: PromoQueueRemoteMessageAdmissionHandler
     ) {
         guard isLoaded,
               !isTornDown,
@@ -641,9 +641,9 @@ final class NewTabPageMessagesModel: ObservableObject {
 
         let admissionResult = admissionHandler(identity)
         switch admissionResult {
-        case .acquired(let lease):
+        case .acquired(let admission):
             guard case .remoteMessage(let remoteMessage) = message else {
-                promoCoordinator.releaseVisiblePromoLease(lease)
+                admission.release()
                 return
             }
             let renderSessionID = UUID()
@@ -652,14 +652,14 @@ final class NewTabPageMessagesModel: ObservableObject {
                 message: message,
                 renderSessionID: renderSessionID
             ) else {
-                promoCoordinator.releaseVisiblePromoLease(lease)
+                admission.release()
                 return
             }
             admittedRemoteMessageSession = AdmittedRemoteMessageSession(
                 id: renderSessionID,
                 gateID: gateIdentity.id,
                 identity: identity,
-                lease: lease,
+                admission: admission,
                 message: message,
                 viewModel: viewModel,
                 appearanceRecorded: false,
@@ -668,7 +668,7 @@ final class NewTabPageMessagesModel: ObservableObject {
             )
             publishRenderItems()
 
-        case .blockedByModal, .occupiedSurfaceSlot, .featureDisabled:
+        case .deferred:
             break
         }
     }
@@ -746,7 +746,7 @@ final class NewTabPageMessagesModel: ObservableObject {
         }
     }
 
-    private func retainLeaseForPendingCardMount(
+    private func retainAdmissionForPendingCardMount(
         renderSessionID: UUID,
         mountID: UUID
     ) {
@@ -795,9 +795,8 @@ final class NewTabPageMessagesModel: ObservableObject {
         outgoingAdmittedRemoteMessageSessions[renderSessionID] = outgoingSession
 
         // The coordinated card has an identity transition. Its matching card/gate disappearance is therefore
-        // the physical-removal point; retain the lease through the following main turn so the host settles.
-        let promoCoordinator = promoCoordinator
-        DispatchQueue.main.async { [self, promoCoordinator] in
+        // the physical-removal point; retain the admission through the following main turn so the host settles.
+        DispatchQueue.main.async { [self] in
             guard let outgoingSession = outgoingAdmittedRemoteMessageSessions[renderSessionID],
                   outgoingSession.scheduledReleaseID == scheduledReleaseID,
                   outgoingSession.remainingCardMountIDs.isEmpty,
@@ -806,7 +805,7 @@ final class NewTabPageMessagesModel: ObservableObject {
             }
 
             outgoingAdmittedRemoteMessageSessions[renderSessionID] = nil
-            promoCoordinator.releaseVisiblePromoLease(outgoingSession.session.lease)
+            outgoingSession.session.admission.release()
             attemptRemoteMessageAdmission()
         }
     }
@@ -847,7 +846,7 @@ extension NewTabPageMessagesModel: NewTabPagePromoRetrying {
             && attachedToWindowProvider()
     }
 
-    func retryVisiblePromoAdmission(using admissionHandler: VisiblePromoAdmissionHandler) {
+    func retryRemoteMessageAdmission(using admissionHandler: PromoQueueRemoteMessageAdmissionHandler) {
         refresh(shouldAttemptAdmission: false)
         attemptRemoteMessageAdmission(using: admissionHandler)
     }

@@ -55,7 +55,7 @@ struct ModalPromptProviders {
 /// are retried when a slot may be free. The process-wide coordination mode is immutable for this service's lifetime.
 @MainActor
 final class PromoCoordinationService {
-    private final class WeakPromoRetryRegistration {
+    private final class WeakRemoteMessageRetryRegistration {
         let id: UUID
         let surfaceID: UUID
         weak var target: NewTabPagePromoRetrying?
@@ -70,8 +70,10 @@ final class PromoCoordinationService {
     private let modalPromptCoordinationManager: ModalPromptCoordinationManaging
     private let launchSourceManager: LaunchSourceManaging
     private let promoQueueLeaseArbiter: PromoQueueLeaseArbitrating
-    private var promoRetryRegistrations = [WeakPromoRetryRegistration]()
-    private var isRetryingVisiblePromoRegistrations = false
+    private var remoteMessageRetryRegistrations = [WeakRemoteMessageRetryRegistration]()
+    private var isRetryingRemoteMessageRegistrations = false
+    private var isApplicationActive = true
+    private var isWaitingForForegroundInteractionReadiness = false
 
     let promoCoordinationMode: PromoCoordinationMode
 
@@ -139,26 +141,43 @@ final class PromoCoordinationService {
             guard self?.promoCoordinationMode == .coordinated else {
                 return
             }
-            self?.retryActiveVisiblePromoRegistrations()
+            self?.retryActiveRemoteMessageRegistrations()
         }
     }
 
     func applicationWillResignActive() {
+        isApplicationActive = false
         modalPromptCoordinationManager.applicationWillResignActive()
     }
 
     func applicationDidBecomeActive() {
+        isApplicationActive = true
         modalPromptCoordinationManager.applicationDidBecomeActive()
+
+        guard !isWaitingForForegroundInteractionReadiness else {
+            return
+        }
+        retryActiveRemoteMessageRegistrations()
     }
 
     func applicationDidEnterBackground() {
+        isApplicationActive = false
+        isWaitingForForegroundInteractionReadiness = true
         modalPromptCoordinationManager.applicationDidEnterBackground()
     }
 
     func presentModalPromptIfNeeded(from viewController: ModalPromptPresenter) {
         if promoCoordinationMode == .coordinated {
+            // `onAppReadyForInteractions` is asynchronous and can finish after this foreground has already moved to
+            // the background. Such a stale callback must not open admission for the next foreground before that
+            // foreground reaches its own full-interaction-readiness checkpoint.
+            guard isApplicationActive else {
+                return
+            }
+
+            isWaitingForForegroundInteractionReadiness = false
             _ = modalPromptCoordinationManager.reconcilePresentedModal()
-            retryActiveVisiblePromoRegistrations()
+            retryActiveRemoteMessageRegistrations()
         }
 
         guard launchSourceManager.source == .standard else {
@@ -197,106 +216,139 @@ final class PromoCoordinationService {
             case .released:
                 Logger.modalPrompt.debug("[Modal Prompt Coordination] - The coordinated modal attempt released the slot without presenting.")
             }
-        case .blockedByModal:
-            Logger.modalPrompt.debug("[Modal Prompt Coordination] - Skipping modal prompt - A coordinated modal attempt already owns the slot.")
-        case .blockedByVisiblePromos:
-            Logger.modalPrompt.debug("[Modal Prompt Coordination] - Skipping modal prompt - One or more visible promos own the slot.")
+        case .blockedByModal(let attemptIdentity):
+            Logger.modalPrompt.debug(
+                "[Modal Prompt Coordination] - Skipping modal prompt - Modal attempt \(attemptIdentity.debugIdentifier, privacy: .public) owns the global slot."
+            )
+        case .blockedByVisiblePromo(let identity):
+            Logger.modalPrompt.debug(
+                "[Modal Prompt Coordination] - Skipping modal prompt - Visible promo \(identity.promoID, privacy: .public) owns the global slot."
+            )
         }
     }
 
-    private func admitCoordinatedVisiblePromo(_ identity: VisiblePromoIdentity) -> VisiblePromoAdmissionResult {
+    private func admitCoordinatedRemoteMessage(_ identity: VisiblePromoIdentity) -> PromoQueueRemoteMessageAdmissionResult {
         let didReleaseModalLease = modalPromptCoordinationManager.reconcilePresentedModal()
-        let result: VisiblePromoAdmissionResult
+        let result: PromoQueueRemoteMessageAdmissionResult
         switch promoQueueLeaseArbiter.acquireVisiblePromoLease(for: identity) {
         case .acquired(let lease):
-            result = .acquired(lease)
-        case .blockedByModal:
-            result = .blockedByModal
-        case .occupiedSurfaceSlot(let occupyingIdentity):
-            result = .occupiedSurfaceSlot(occupyingIdentity)
+            result = .acquired(makeRemoteMessageAdmission(
+                lease: lease,
+                surfaceID: identity.surfaceID
+            ))
+        case .blockedByModal(let attemptIdentity):
+            Logger.modalPrompt.debug(
+                "[Promo Queue] - Deferring RMF while modal attempt \(attemptIdentity.debugIdentifier, privacy: .public) owns the global slot."
+            )
+            result = .deferred
+        case .blockedByVisiblePromo(let occupyingIdentity):
+            Logger.modalPrompt.debug(
+                "[Promo Queue] - Deferring RMF while visible promo \(occupyingIdentity.promoID, privacy: .public) owns the global slot."
+            )
+            result = .deferred
         }
 
         if didReleaseModalLease {
             // Excludes the *requesting* surface, whose admission this call has just completed, rather than any identity
             // carried back by the arbiter's answer.
-            retryActiveVisiblePromoRegistrations(excluding: identity.surfaceID)
+            retryActiveRemoteMessageRegistrations(excluding: identity.surfaceID)
         }
         return result
     }
 
-    private func deregisterVisiblePromoRetry(for surfaceID: UUID, registrationID: UUID) {
-        promoRetryRegistrations.removeAll {
+    private func makeRemoteMessageAdmission(
+        lease: PromoQueueVisiblePromoLease,
+        surfaceID: UUID
+    ) -> PromoQueueRemoteMessageAdmission {
+        PromoQueueRemoteMessageAdmission { [weak self, lease] in
+            guard lease.release() else {
+                return
+            }
+            self?.offerRemoteMessageReleaseHandoff(excluding: surfaceID)
+        }
+    }
+
+    private func deregisterRemoteMessageRetry(for surfaceID: UUID, registrationID: UUID) {
+        remoteMessageRetryRegistrations.removeAll {
             $0.surfaceID == surfaceID && $0.id == registrationID
         }
     }
 
-    private func retryActiveVisiblePromoRegistrations(excluding excludedSurfaceID: UUID? = nil) {
-        retryActiveVisiblePromoRegistrations(
+    private func retryActiveRemoteMessageRegistrations(excluding excludedSurfaceID: UUID? = nil) {
+        retryActiveRemoteMessageRegistrations(
             excluding: excludedSurfaceID,
-            using: admitVisiblePromo
+            using: admitRemoteMessage
         )
     }
 
-    private func retryActiveVisiblePromoRegistrations(
+    private func retryActiveRemoteMessageRegistrations(
         excluding excludedSurfaceID: UUID?,
-        using admissionHandler: VisiblePromoAdmissionHandler
+        using admissionHandler: PromoQueueRemoteMessageAdmissionHandler
     ) {
-        guard !isRetryingVisiblePromoRegistrations else {
+        guard promoCoordinationMode == .coordinated,
+              isApplicationActive,
+              !isWaitingForForegroundInteractionReadiness,
+              !isRetryingRemoteMessageRegistrations else {
             return
         }
 
-        isRetryingVisiblePromoRegistrations = true
+        isRetryingRemoteMessageRegistrations = true
         defer {
-            isRetryingVisiblePromoRegistrations = false
-            promoRetryRegistrations.removeAll { $0.target == nil }
+            isRetryingRemoteMessageRegistrations = false
+            remoteMessageRetryRegistrations.removeAll { $0.target == nil }
         }
 
-        let registrationsSnapshot = promoRetryRegistrations
+        let registrationsSnapshot = remoteMessageRetryRegistrations
         for registration in registrationsSnapshot {
             guard registration.surfaceID != excludedSurfaceID,
-                  promoRetryRegistrations.contains(where: { $0.id == registration.id }),
+                  remoteMessageRetryRegistrations.contains(where: { $0.id == registration.id }),
                   let target = registration.target,
                   target.isActiveForPromoRetry else {
                 continue
             }
-            target.retryVisiblePromoAdmission(using: admissionHandler)
+            target.retryRemoteMessageAdmission(using: admissionHandler)
         }
+    }
+
+    private func offerRemoteMessageReleaseHandoff(excluding surfaceID: UUID) {
+        retryActiveRemoteMessageRegistrations(excluding: surfaceID)
     }
 
 }
 
 extension PromoCoordinationService: NewTabPagePromoCoordinating {
-    func admitVisiblePromo(_ identity: VisiblePromoIdentity) -> VisiblePromoAdmissionResult {
+    func admitRemoteMessage(_ identity: VisiblePromoIdentity) -> PromoQueueRemoteMessageAdmissionResult {
         switch promoCoordinationMode {
         case .legacy:
-            return .featureDisabled
+            return .deferred
         case .coordinated:
             break
         }
 
-        return admitCoordinatedVisiblePromo(identity)
+        guard isApplicationActive,
+              !isWaitingForForegroundInteractionReadiness else {
+            return .deferred
+        }
+
+        return admitCoordinatedRemoteMessage(identity)
     }
 
-    func releaseVisiblePromoLease(_ lease: PromoQueueVisiblePromoLease) {
-        lease.release()
-    }
-
-    func registerVisiblePromoRetry(
+    func registerRemoteMessageRetry(
         for surfaceID: UUID,
         target: NewTabPagePromoRetrying
     ) -> NewTabPagePromoRetryRegistration {
         let registrationID = UUID()
-        let registration = WeakPromoRetryRegistration(
+        let registration = WeakRemoteMessageRetryRegistration(
             id: registrationID,
             surfaceID: surfaceID,
             target: target
         )
 
-        promoRetryRegistrations.removeAll { $0.surfaceID == surfaceID || $0.target == nil }
-        promoRetryRegistrations.append(registration)
+        remoteMessageRetryRegistrations.removeAll { $0.surfaceID == surfaceID || $0.target == nil }
+        remoteMessageRetryRegistrations.append(registration)
 
         return NewTabPagePromoRetryRegistration { [weak self] in
-            self?.deregisterVisiblePromoRetry(
+            self?.deregisterRemoteMessageRetry(
                 for: surfaceID,
                 registrationID: registrationID
             )

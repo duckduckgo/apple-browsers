@@ -450,15 +450,11 @@ private func makePreviewMessagesModel(homeMessages: [HomeMessage]) -> NewTabPage
 private final class PreviewNewTabPagePromoCoordinator: NewTabPagePromoCoordinating {
     let promoCoordinationMode = PromoCoordinationMode.legacy
 
-    func admitVisiblePromo(_ identity: VisiblePromoIdentity) -> VisiblePromoAdmissionResult {
-        .featureDisabled
+    func admitRemoteMessage(_ identity: VisiblePromoIdentity) -> PromoQueueRemoteMessageAdmissionResult {
+        .deferred
     }
 
-    func releaseVisiblePromoLease(_ lease: PromoQueueVisiblePromoLease) {
-        lease.release()
-    }
-
-    func registerVisiblePromoRetry(
+    func registerRemoteMessageRetry(
         for surfaceID: UUID,
         target: NewTabPagePromoRetrying
     ) -> NewTabPagePromoRetryRegistration {

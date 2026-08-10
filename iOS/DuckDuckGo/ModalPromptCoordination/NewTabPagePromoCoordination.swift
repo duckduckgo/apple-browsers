@@ -19,20 +19,41 @@
 
 import Foundation
 
-enum VisiblePromoAdmissionResult {
-    /// Admitted: the caller owns the lease and must release it.
-    case acquired(PromoQueueVisiblePromoLease)
-    /// A coordinated modal attempt owns the slot.
-    case blockedByModal
-    /// The requesting surface's `(surfaceID, promoType)` slot already holds a lease; carries the occupying identity.
-    case occupiedSurfaceSlot(VisiblePromoIdentity)
-    /// This process selected legacy mode at construction, so admission is not arbitrated.
-    case featureDisabled
+enum PromoQueueRemoteMessageAdmissionResult {
+    /// Admitted: the caller owns the identity-bound admission and must release it.
+    case acquired(PromoQueueRemoteMessageAdmission)
+    /// The retained candidate can be reconsidered at a later checkpoint.
+    case deferred
 }
 
-typealias VisiblePromoAdmissionHandler = @MainActor (VisiblePromoIdentity) -> VisiblePromoAdmissionResult
+/// Strongly owns one raw visible lease and releases it at most once. Q2 deliberately records no appearance history.
+@MainActor
+final class PromoQueueRemoteMessageAdmission {
+    private enum State {
+        case active
+        case released
+    }
 
-/// A mounted NTP surface that can refresh and retry its retained visible-promo candidate.
+    private var state = State.active
+    private let releaseHandler: () -> Void
+
+    init(releaseHandler: @escaping () -> Void) {
+        self.releaseHandler = releaseHandler
+    }
+
+    func release() {
+        guard case .active = state else {
+            return
+        }
+
+        state = .released
+        releaseHandler()
+    }
+}
+
+typealias PromoQueueRemoteMessageAdmissionHandler = @MainActor (VisiblePromoIdentity) -> PromoQueueRemoteMessageAdmissionResult
+
+/// A mounted NTP surface that can refresh and retry its retained remote-message candidate.
 @MainActor
 protocol NewTabPagePromoRetrying: AnyObject {
     var isActiveForPromoRetry: Bool { get }
@@ -40,7 +61,7 @@ protocol NewTabPagePromoRetrying: AnyObject {
     /// Refreshes the retained candidate and retries it through the admission route supplied by the coordination owner.
     ///
     /// The handler is synchronous and nonescaping so the coordination owner controls admission for the entire retry.
-    func retryVisiblePromoAdmission(using admissionHandler: VisiblePromoAdmissionHandler)
+    func retryRemoteMessageAdmission(using admissionHandler: PromoQueueRemoteMessageAdmissionHandler)
 }
 
 /// An idempotently removable registration for NTP visible-promo retries.
@@ -59,14 +80,13 @@ final class NewTabPagePromoRetryRegistration {
     }
 }
 
-/// Coordinates NTP visible-promo admission, lease release, and retry registration.
+/// Coordinates NTP remote-message admission and retry registration.
 @MainActor
 protocol NewTabPagePromoCoordinating: AnyObject {
     var promoCoordinationMode: PromoCoordinationMode { get }
 
-    func admitVisiblePromo(_ identity: VisiblePromoIdentity) -> VisiblePromoAdmissionResult
-    func releaseVisiblePromoLease(_ lease: PromoQueueVisiblePromoLease)
-    func registerVisiblePromoRetry(
+    func admitRemoteMessage(_ identity: VisiblePromoIdentity) -> PromoQueueRemoteMessageAdmissionResult
+    func registerRemoteMessageRetry(
         for surfaceID: UUID,
         target: NewTabPagePromoRetrying
     ) -> NewTabPagePromoRetryRegistration

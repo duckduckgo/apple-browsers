@@ -23,27 +23,21 @@ import Foundation
 @MainActor
 final class MockNewTabPagePromoCoordinator: NewTabPagePromoCoordinating {
     var promoCoordinationMode: PromoCoordinationMode
-    var admitVisiblePromoResult: VisiblePromoAdmissionResult = .featureDisabled
+    var admitRemoteMessageResult: PromoQueueRemoteMessageAdmissionResult = .deferred
 
     private(set) var admittedIdentities = [VisiblePromoIdentity]()
-    private(set) var releasedLeases = [PromoQueueVisiblePromoLease]()
     private(set) var registeredRetrySurfaceIDs = [UUID]()
 
     init(promoCoordinationMode: PromoCoordinationMode = .legacy) {
         self.promoCoordinationMode = promoCoordinationMode
     }
 
-    func admitVisiblePromo(_ identity: VisiblePromoIdentity) -> VisiblePromoAdmissionResult {
+    func admitRemoteMessage(_ identity: VisiblePromoIdentity) -> PromoQueueRemoteMessageAdmissionResult {
         admittedIdentities.append(identity)
-        return admitVisiblePromoResult
+        return admitRemoteMessageResult
     }
 
-    func releaseVisiblePromoLease(_ lease: PromoQueueVisiblePromoLease) {
-        releasedLeases.append(lease)
-        lease.release()
-    }
-
-    func registerVisiblePromoRetry(
+    func registerRemoteMessageRetry(
         for surfaceID: UUID,
         target: NewTabPagePromoRetrying
     ) -> NewTabPagePromoRetryRegistration {

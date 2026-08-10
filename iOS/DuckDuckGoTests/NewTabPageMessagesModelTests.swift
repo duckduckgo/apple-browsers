@@ -303,7 +303,7 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         sut.load()
         sut.setSurfaceRenderable(true)
         window.rootViewController = hostingController
-        window.makeKeyAndVisible()
+        window.isHidden = false
 
         await fulfillment(of: [cardDidAppear], timeout: 1)
 

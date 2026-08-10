@@ -599,7 +599,7 @@ final class ModalPromptCoordinationManagerIntegrationTests {
         firstModel.setSurfaceRenderable(true)
         secondModel.setSurfaceRenderable(true)
         window.rootViewController = hostingController
-        window.makeKeyAndVisible()
+        window.isHidden = false
 
         guard await lifecycle.wait(for: .firstCardDidAppear) else {
             Issue.record("Timed out waiting for the first mounted RMF card to appear")

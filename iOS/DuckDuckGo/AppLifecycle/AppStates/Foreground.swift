@@ -46,6 +46,7 @@ struct Foreground: ForegroundHandling {
     private let launchActionHandler: LaunchActionHandler
     private let interactionManager: UIInteractionManager
     private let lastBackgroundDateStorage: any ThrowingKeyedStoring<IdleReturnLastBackgroundDateKeys>
+    private let appReturnInstrumentation: AppReturnInstrumentation
 
     init(stateContext: Connected.StateContext, actionToHandle: AppAction?,
          lastBackgroundDateStorage: any ThrowingKeyedStoring<IdleReturnLastBackgroundDateKeys>) {
@@ -89,6 +90,10 @@ struct Foreground: ForegroundHandling {
             isStillOnboarding: { daxDialogsManager.isStillOnboarding() }
         )
         let idleReturnEvaluator = IdleReturnEvaluator(eligibilityManager: idleReturnEligibilityManager)
+        appReturnInstrumentation = DefaultAppReturnInstrumentation(
+            eligibilityManager: idleReturnEligibilityManager,
+            isToggleEnabled: { appDependencies.aiChatSettings.isAIChatSearchInputUserSettingsEnabled }
+        )
         launchActionHandler = LaunchActionHandler(
             urlHandler: appDependencies.mainCoordinator,
             shortcutItemHandler: appDependencies.mainCoordinator,
@@ -172,6 +177,11 @@ struct Foreground: ForegroundHandling {
         switchBarRetentionMetrics.checkDailyAndSendPixelIfApplicable()
 
         fireAIFeaturesStateDailyPixel()
+
+        appReturnInstrumentation.recordAppForeground(
+            lastBackgroundDate: (try? lastBackgroundDateStorage.lastBackgroundDate) ?? nil,
+            launchAction: launchAction
+        )
     }
 
     /// Once-daily snapshot of the three AI settings + the derived "no AI" state, across the active base.

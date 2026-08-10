@@ -108,6 +108,10 @@ public protocol SyncFeatureFlagProviding {
     func isPairingV2ScanningEnabled() -> Bool
     /// Allows this client to present Pairing V2 codes to peers.
     func isPairingV2CodeEnabled() -> Bool
+    /// Allows this client to create and register account_info keys for the unified device list.
+    func canWriteUnifiedDeviceList() -> Bool
+    /// Allows this client to read decrypted metadata from the unified device list.
+    func canReadUnifiedDeviceList() -> Bool
 }
 
 public struct SyncFeatureFlagProvider: SyncFeatureFlagProviding {
@@ -115,13 +119,19 @@ public struct SyncFeatureFlagProvider: SyncFeatureFlagProviding {
     private let isScopedAccessCredentialsEnabledCallback: () -> Bool
     private let isPairingV2ScanningEnabledCallback: () -> Bool
     private let isPairingV2CodeEnabledCallback: () -> Bool
+    private let canWriteUnifiedDeviceListCallback: () -> Bool
+    private let canReadUnifiedDeviceListCallback: () -> Bool
 
     public init(isScopedAccessCredentialsEnabled: @escaping () -> Bool,
                 isPairingV2ScanningEnabled: @escaping () -> Bool,
-                isPairingV2CodeEnabled: @escaping () -> Bool) {
+                isPairingV2CodeEnabled: @escaping () -> Bool,
+                canWriteUnifiedDeviceList: @escaping () -> Bool,
+                canReadUnifiedDeviceList: @escaping () -> Bool) {
         self.isScopedAccessCredentialsEnabledCallback = isScopedAccessCredentialsEnabled
         self.isPairingV2ScanningEnabledCallback = isPairingV2ScanningEnabled
         self.isPairingV2CodeEnabledCallback = isPairingV2CodeEnabled
+        self.canWriteUnifiedDeviceListCallback = canWriteUnifiedDeviceList
+        self.canReadUnifiedDeviceListCallback = canReadUnifiedDeviceList
     }
 
     public func isScopedAccessCredentialsEnabled() -> Bool {
@@ -134,5 +144,13 @@ public struct SyncFeatureFlagProvider: SyncFeatureFlagProviding {
 
     public func isPairingV2CodeEnabled() -> Bool {
         isPairingV2CodeEnabledCallback()
+    }
+
+    public func canWriteUnifiedDeviceList() -> Bool {
+        canWriteUnifiedDeviceListCallback()
+    }
+
+    public func canReadUnifiedDeviceList() -> Bool {
+        canReadUnifiedDeviceListCallback()
     }
 }

@@ -2956,6 +2956,12 @@
 /* Title for the Import Passwords Promotion banner */
 "import.passwords.promo.title" = "Uvezi svoje lozinke u DuckDuckGo";
 
+/* Body for the notification sent after a period of inactivity. */
+"inactivity.notification.body" = "Koristi DuckDuckGo da izbjegneš oglase koji te prate po cijelom webu i smanjiš svoj digitalni trag.";
+
+/* Title for the notification sent after a period of inactivity. */
+"inactivity.notification.title" = "Kontroliraj svoje online iskustvo";
+
 /* Placeholder text for the duck.ai input field */
 "input.field.placeholder.duckai" = "Privatno pitaj bilo što";
 

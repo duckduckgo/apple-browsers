@@ -90,6 +90,10 @@ final class MockTabDelegate: TabDelegate {
 
     func tabDidRequestAIChat(tab: TabViewController) {}
 
+    func tab(_ tab: TabViewController, didRequestAIChatForSelectedText text: String) {}
+
+    func tab(_ tab: TabViewController, didRequestSearchForSelectedText text: String) {}
+
     func tabDidRequestAIChatHistory(tab: TabViewController, source: AIChatHistorySource) {}
 
     func tabDidRequestNewPrivateEmailAddress(tab: TabViewController) {}
@@ -173,10 +177,11 @@ extension TabViewController {
         contextualOnboardingPresenter: ContextualOnboardingPresenting = ContextualOnboardingPresenterMock(),
         contextualOnboardingLogic: ContextualOnboardingLogic = ContextualOnboardingLogicMock(),
         contextualOnboardingPixelReporter: OnboardingCustomInteractionPixelReporting = OnboardingPixelReporterMock(),
-        featureFlagger: MockFeatureFlagger = MockFeatureFlagger()
+        featureFlagger: MockFeatureFlagger = MockFeatureFlagger(),
+        link: Link = Link(title: nil, url: .ddg)
     ) -> TabViewController {
         let tab = TabViewController.loadFromStoryboard(
-            model: .init(link: Link(title: nil, url: .ddg)),
+            model: .init(link: link),
             privacyConfigurationManager: PrivacyConfigurationManagerMock(),
             appSettings: AppSettingsMock(),
             bookmarksDatabase: CoreDataDatabase.bookmarksMock,

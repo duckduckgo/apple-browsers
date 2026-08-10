@@ -248,6 +248,10 @@ class TabViewController: UIViewController {
     private var scrollViewAdjustmentBehaviorBeforeFloatingUI: WebViewScrollViewInsetUpdater.AdjustmentBehavior?
     private lazy var appRatingPrompt: AppRatingPrompt = AppRatingPrompt(featureFlagger: self.featureFlagger)
     let unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding
+    lazy var aiChatTextSelectionFeature: AIChatTextSelectionFeatureProviding =
+        AIChatTextSelectionFeature(featureFlagger: featureFlagger,
+                                   aiChatSettings: aiChatSettings,
+                                   unifiedToggleInputFeature: unifiedToggleInputFeature)
     public weak var privacyDashboard: PrivacyDashboardViewController?
     
     private var storageCache: StorageCache = AppDependencyProvider.shared.storageCache
@@ -1124,6 +1128,39 @@ class TabViewController: UIViewController {
         }
     }
 
+    /// Neither item is offered on Duck.ai tabs, matching macOS: there is no page there to select text from.
+    var isAskAIChatSelectionItemAvailable: Bool {
+        !isAITab && aiChatTextSelectionFeature.isAskAvailable
+    }
+
+    var isSearchSelectionItemAvailable: Bool {
+        !isAITab && aiChatTextSelectionFeature.isSearchAvailable
+    }
+
+    /// Wired on the tab's own web view rather than the contextual sheet's, so the Duck.ai conversation
+    /// itself stays menu-free.
+    private func configureTextSelectionMenu(on webView: WebView?) {
+        guard let webView else { return }
+
+        webView.isAskAIChatItemAvailable = { [weak self] in
+            self?.isAskAIChatSelectionItemAvailable ?? false
+        }
+
+        webView.isSearchWithDuckDuckGoItemAvailable = { [weak self] in
+            self?.isSearchSelectionItemAvailable ?? false
+        }
+
+        webView.askAIChatHandler = { [weak self] text in
+            guard let self else { return }
+            self.delegate?.tab(self, didRequestAIChatForSelectedText: text)
+        }
+
+        webView.searchWithDuckDuckGoHandler = { [weak self] text in
+            guard let self else { return }
+            self.delegate?.tab(self, didRequestSearchForSelectedText: text)
+        }
+    }
+
     // The `consumeCookies` is legacy behaviour from the previous Fireproofing implementation. Cookies no longer need to be consumed after invocations
     // of the Fire button, but the app still does so in the event that previously persisted cookies have not yet been consumed.
     func attachWebView(configuration: WKWebViewConfiguration,
@@ -1184,6 +1221,8 @@ class TabViewController: UIViewController {
             webView.scrollView.alwaysBounceVertical = false
             (webView as? WebView)?.setInputAccessoryViewHidden(true)
         }
+
+        configureTextSelectionMenu(on: webView as? WebView)
 
         updateContentMode()
 

@@ -2158,6 +2158,153 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         )
         return AIChatPageContext(contextData: contextData, favicon: nil)
     }
+
+    private func makeSelection(_ content: String = "selected text") -> AIChatSelectionContextData {
+        AIChatSelectionContextBuilder.makeSelection(text: content, url: URL(string: "https://example.com/article"))
+    }
+
+    // MARK: - Attached Text Selections
+
+    func testAttachSelectionAppendsAndReportsSuccess() {
+        XCTAssertTrue(sessionState.attachSelection(makeSelection("first")))
+        XCTAssertTrue(sessionState.attachSelection(makeSelection("second")))
+
+        XCTAssertEqual(sessionState.attachedSelections.map(\.content), ["first", "second"])
+    }
+
+    func testSelectionsAccumulateUpToTheCap() {
+        for index in 0..<AIChatSelectionContextBuilder.maxAttachedSelections {
+            XCTAssertTrue(sessionState.attachSelection(makeSelection("selection \(index)")))
+        }
+
+        XCTAssertEqual(sessionState.attachedSelections.count, AIChatSelectionContextBuilder.maxAttachedSelections)
+    }
+
+    /// Refused rather than displacing, so nothing already collected disappears without asking.
+    func testAttachSelectionBeyondTheCapIsRefusedAndKeepsExistingSelections() {
+        for index in 0..<AIChatSelectionContextBuilder.maxAttachedSelections {
+            sessionState.attachSelection(makeSelection("selection \(index)"))
+        }
+        let before = sessionState.attachedSelections.map(\.id)
+
+        XCTAssertFalse(sessionState.attachSelection(makeSelection("one too many")))
+
+        XCTAssertEqual(sessionState.attachedSelections.map(\.id), before)
+    }
+
+    /// Two omnibar taps can each read the same passage; the chips would be indistinguishable.
+    func testAttachingIdenticalTextFromTheSamePageIsDeduplicated() {
+        let url = URL(string: "https://example.com/article")
+
+        XCTAssertTrue(sessionState.attachSelection(AIChatSelectionContextBuilder.makeSelection(text: "same", url: url)))
+        XCTAssertTrue(sessionState.attachSelection(AIChatSelectionContextBuilder.makeSelection(text: "same", url: url)))
+
+        XCTAssertEqual(sessionState.attachedSelections.count, 1)
+    }
+
+    /// The same words selected on a different page are a different attachment.
+    func testIdenticalTextFromADifferentPageIsAttachedSeparately() {
+        sessionState.attachSelection(AIChatSelectionContextBuilder.makeSelection(text: "same", url: URL(string: "https://example.com/a")))
+        sessionState.attachSelection(AIChatSelectionContextBuilder.makeSelection(text: "same", url: URL(string: "https://example.com/b")))
+
+        XCTAssertEqual(sessionState.attachedSelections.count, 2)
+    }
+
+    /// The dedupe must not swallow a genuinely different passage from the same page.
+    func testDifferentTextFromTheSamePageIsAttachedSeparately() {
+        sessionState.attachSelection(makeSelection("first"))
+        sessionState.attachSelection(makeSelection("second"))
+
+        XCTAssertEqual(sessionState.attachedSelections.map(\.content), ["first", "second"])
+    }
+
+    func testRemoveAttachedSelectionRemovesOnlyThatSelection() {
+        let first = makeSelection("first")
+        let second = makeSelection("second")
+        sessionState.attachSelection(first)
+        sessionState.attachSelection(second)
+
+        sessionState.removeAttachedSelection(id: first.id)
+
+        XCTAssertEqual(sessionState.attachedSelections.map(\.id), [second.id])
+    }
+
+    func testRemovingAnUnknownSelectionIsANoOp() {
+        let selection = makeSelection()
+        sessionState.attachSelection(selection)
+
+        sessionState.removeAttachedSelection(id: "not-attached")
+
+        XCTAssertEqual(sessionState.attachedSelections.map(\.id), [selection.id])
+    }
+
+    func testRemovingASelectionFreesCapacityAtTheCap() {
+        for index in 0..<AIChatSelectionContextBuilder.maxAttachedSelections {
+            sessionState.attachSelection(makeSelection("selection \(index)"))
+        }
+        let removed = sessionState.attachedSelections[0]
+
+        sessionState.removeAttachedSelection(id: removed.id)
+
+        XCTAssertTrue(sessionState.attachSelection(makeSelection("replacement")))
+        XCTAssertEqual(sessionState.attachedSelections.count, AIChatSelectionContextBuilder.maxAttachedSelections)
+    }
+
+    func testConsumeAttachedSelectionsClearsTheList() {
+        sessionState.attachSelection(makeSelection())
+
+        sessionState.consumeAttachedSelections()
+
+        XCTAssertTrue(sessionState.attachedSelections.isEmpty)
+    }
+
+    func testClearAttachedSelectionsClearsTheList() {
+        sessionState.attachSelection(makeSelection())
+
+        sessionState.clearAttachedSelections()
+
+        XCTAssertTrue(sessionState.attachedSelections.isEmpty)
+    }
+
+    func testResetToNoChatClearsSelectionsByDefault() {
+        sessionState.attachSelection(makeSelection())
+
+        sessionState.resetToNoChat()
+
+        XCTAssertTrue(sessionState.attachedSelections.isEmpty)
+    }
+
+    /// The inactivity timer ends the chat but must not destroy text gathered across pages.
+    func testResetToNoChatCanPreserveSelections() {
+        let selection = makeSelection()
+        sessionState.attachSelection(selection)
+
+        sessionState.resetToNoChat(preservingSelections: true)
+
+        XCTAssertEqual(sessionState.attachedSelections.map(\.id), [selection.id])
+    }
+
+    /// Page context is trimmed, so the two are independent and both survive.
+    func testAttachingASelectionLeavesPageContextAttached() {
+        sessionState.attachContextFromSuggestionTap(makeTestContext())
+
+        sessionState.attachSelection(makeSelection())
+
+        guard case .attached = sessionState.chipState else {
+            return XCTFail("page context should still be attached")
+        }
+        XCTAssertEqual(sessionState.attachedSelections.count, 1)
+    }
+
+    /// Passages are gathered across pages and asked about at the end.
+    func testSelectionsSurviveNavigation() {
+        let selection = makeSelection()
+        sessionState.attachSelection(selection)
+
+        sessionState.notifyPageChanged(pageURL: URL(string: "https://example.com/other")!)
+
+        XCTAssertEqual(sessionState.attachedSelections.map(\.id), [selection.id])
+    }
 }
 
 // MARK: - Mock Pixel Handler

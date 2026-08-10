@@ -3,5 +3,6 @@ appId: com.duckduckgo.mobile.ios
 
 - scrollUntilVisible:
     element: All debug options
+    centerElement: true
 - assertVisible: All debug options
 - tapOn: All debug options

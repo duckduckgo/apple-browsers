@@ -1768,7 +1768,6 @@ extension Pixel {
         case aiChatNewAddressBarPickerV2Confirmed
         
         // MARK: Experimental Omnibar Metrics
-        case aiChatExperimentalOmnibarShown
         case aiChatExperimentalOmnibarPromptSubmitted
         case aiChatExperimentalOmnibarQuerySubmitted
         case aiChatExperimentalOmnibarModeSwitched
@@ -3687,7 +3686,6 @@ extension Pixel.Event {
         case .aiChatNewAddressBarPickerV2Confirmed: return "m_aichat_new_address_bar_picker_v2_confirmed"
         
         // MARK: Experimental Omnibar Metrics
-        case .aiChatExperimentalOmnibarShown: return "m_aichat_experimental_omnibar_shown"
         case .aiChatExperimentalOmnibarPromptSubmitted: return "m_aichat_experimental_omnibar_prompt_submitted"
         case .aiChatExperimentalOmnibarQuerySubmitted: return "m_aichat_experimental_omnibar_query_submitted"
         case .aiChatExperimentalOmnibarModeSwitched: return "m_aichat_experimental_omnibar_mode_switched"

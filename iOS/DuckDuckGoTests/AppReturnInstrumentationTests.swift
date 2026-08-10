@@ -60,7 +60,8 @@ struct AppReturnInstrumentationTests {
 
     // MARK: - Firing is ungated
 
-    @Test("When feature is unavailable then the pixel still fires with feature_eligible false")
+    @available(iOS 16, *)
+    @Test("When feature is unavailable then the pixel still fires with feature_eligible false", .timeLimit(.minutes(1)))
     func whenFeatureUnavailableThenPixelStillFires() {
         let (sut, collector) = makeSUT(featureAvailable: false)
 
@@ -74,7 +75,8 @@ struct AppReturnInstrumentationTests {
 
     // MARK: - Time away buckets
 
-    @Test("When there is no prior background date then the bucket is cold_start")
+    @available(iOS 16, *)
+    @Test("When there is no prior background date then the bucket is cold_start", .timeLimit(.minutes(1)))
     func whenNoBackgroundDateThenColdStart() {
         let (sut, collector) = makeSUT()
 
@@ -85,7 +87,8 @@ struct AppReturnInstrumentationTests {
         #expect(collector.fired.first?.params["exceeded_idle_threshold"] == "false")
     }
 
-    @Test("Bucket boundaries resolve to the expected values")
+    @available(iOS 16, *)
+    @Test("Bucket boundaries resolve to the expected values", .timeLimit(.minutes(1)))
     func bucketBoundaries() {
         #expect(DefaultAppReturnInstrumentation.timeAwayBucket(for: nil) == "cold_start")
         #expect(DefaultAppReturnInstrumentation.timeAwayBucket(for: 59) == "lt_1m")
@@ -102,7 +105,8 @@ struct AppReturnInstrumentationTests {
 
     // MARK: - Idle threshold
 
-    @Test("When time away meets the threshold then exceeded_idle_threshold is true even when ineligible")
+    @available(iOS 16, *)
+    @Test("When time away meets the threshold then exceeded_idle_threshold is true even when ineligible", .timeLimit(.minutes(1)))
     func whenTimeAwayMeetsThresholdThenExceededTrueEvenWhenIneligible() {
         let (sut, collector) = makeSUT(featureAvailable: false, thresholdSeconds: 1800)
 
@@ -113,7 +117,8 @@ struct AppReturnInstrumentationTests {
         #expect(collector.fired.first?.params["idle_threshold_seconds"] == "1800")
     }
 
-    @Test("When time away is below the threshold then exceeded_idle_threshold is false")
+    @available(iOS 16, *)
+    @Test("When time away is below the threshold then exceeded_idle_threshold is false", .timeLimit(.minutes(1)))
     func whenTimeAwayBelowThresholdThenExceededFalse() {
         let (sut, collector) = makeSUT(thresholdSeconds: 1800)
 
@@ -125,7 +130,8 @@ struct AppReturnInstrumentationTests {
 
     // MARK: - Setting and capability params
 
-    @Test("The after-inactivity option is reported in snake_case")
+    @available(iOS 16, *)
+    @Test("The after-inactivity option is reported in snake_case", .timeLimit(.minutes(1)))
     func afterInactivityOptionReportedSnakeCase() {
         let (newTabSUT, newTabCollector) = makeSUT(effectiveOption: .newTab)
         newTabSUT.recordAppForeground(lastBackgroundDate: nil,
@@ -138,7 +144,8 @@ struct AppReturnInstrumentationTests {
         #expect(lutCollector.fired.first?.params["after_inactivity_option"] == "last_used_tab")
     }
 
-    @Test("Capability flags reflect the injected providers")
+    @available(iOS 16, *)
+    @Test("Capability flags reflect the injected providers", .timeLimit(.minutes(1)))
     func capabilityFlagsReflectProviders() {
         let (sut, collector) = makeSUT(unifiedInputAvailable: true, toggleEnabled: true)
 
@@ -151,7 +158,8 @@ struct AppReturnInstrumentationTests {
 
     // MARK: - Launch source
 
-    @Test("Launch actions map to the expected launch_source values")
+    @available(iOS 16, *)
+    @Test("Launch actions map to the expected launch_source values", .timeLimit(.minutes(1)))
     func launchSourceMapping() throws {
         #expect(DefaultAppReturnInstrumentation.launchSource(for: .standardLaunch(lastBackgroundDate: nil, isFirstForeground: true)) == "standard")
         let url = try #require(URL(string: "https://duckduckgo.com"))

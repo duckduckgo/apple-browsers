@@ -1,5 +1,4 @@
-// App return: ungated per-foreground snapshot of time away and capability exposure.
-// The app-open denominator for "% of app opens" metrics.
+// App return: per-foreground snapshot of time away and capability exposure.
 {
     "m_app_return": {
         "description": "Fires on every foreground transition, ungated and launch-action-independent. Reports how long the user was away, the resolved idle threshold, and which Duck.ai capabilities are available.",

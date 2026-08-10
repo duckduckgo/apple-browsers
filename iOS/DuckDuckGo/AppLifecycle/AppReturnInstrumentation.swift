@@ -20,7 +20,6 @@
 import Foundation
 import PixelKit
 
-/// Fires as `m_app_return`; the `m_` prefix plus the platform suffix are applied by PixelKit.
 enum AppReturnPixel: PixelKitEvent, PixelKitEventWithCustomPrefix {
 
     case appReturn
@@ -34,9 +33,6 @@ enum AppReturnPixel: PixelKitEvent, PixelKitEventWithCustomPrefix {
     var namePrefix: String { "m_" }
 }
 
-/// Ungated per-foreground snapshot: time away, resolved idle threshold, and capability exposure.
-/// Fired from `Foreground.onTransition()` so URL, shortcut and user-activity opens count too,
-/// making it the app-open denominator for "% of app opens" metrics.
 protocol AppReturnInstrumentation {
     func recordAppForeground(lastBackgroundDate: Date?, launchAction: LaunchAction)
 }

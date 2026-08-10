@@ -22,15 +22,15 @@ import Foundation
 
 @MainActor
 final class MockNewTabPagePromoCoordinator: NewTabPagePromoCoordinating {
-    var promoQueueFeatureState: PromoQueueFeatureState
+    var promoCoordinationMode: PromoCoordinationMode
     var admitVisiblePromoResult: VisiblePromoAdmissionResult = .featureDisabled
 
     private(set) var admittedIdentities = [VisiblePromoIdentity]()
     private(set) var releasedLeases = [PromoQueueVisiblePromoLease]()
     private(set) var registeredRetrySurfaceIDs = [UUID]()
 
-    init(promoQueueFeatureState: PromoQueueFeatureState = .disabled) {
-        self.promoQueueFeatureState = promoQueueFeatureState
+    init(promoCoordinationMode: PromoCoordinationMode = .legacy) {
+        self.promoCoordinationMode = promoCoordinationMode
     }
 
     func admitVisiblePromo(_ identity: VisiblePromoIdentity) -> VisiblePromoAdmissionResult {

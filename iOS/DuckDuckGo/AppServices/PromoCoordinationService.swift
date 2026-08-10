@@ -17,12 +17,10 @@
 //  limitations under the License.
 //
 
-import Combine
 import Core
 import Persistence
 import PrivacyConfig
 import UIKit
-import FeatureFlags_iOS
 
 // MARK: - Modal Prompt Presenter
 
@@ -53,8 +51,8 @@ struct ModalPromptProviders {
 
 /// Coordinates app-launch modal prompts with visible new-tab promos.
 ///
-/// The transitioning state blocks admission while leases and manager state are reset. Foreground and promo-admission
-/// checkpoints reconcile dismissed modals, then weakly registered active promo surfaces are retried when a slot may be free.
+/// Foreground and promo-admission checkpoints reconcile dismissed modals, then weakly registered active promo surfaces
+/// are retried when a slot may be free. The process-wide coordination mode is immutable for this service's lifetime.
 @MainActor
 final class PromoCoordinationService {
     private final class WeakPromoRetryRegistration {
@@ -72,14 +70,10 @@ final class PromoCoordinationService {
     private let modalPromptCoordinationManager: ModalPromptCoordinationManaging
     private let launchSourceManager: LaunchSourceManaging
     private let promoQueueLeaseArbiter: PromoQueueLeaseArbitrating
-    private let featureFlagger: FeatureFlagger
-    private var promoQueueFeatureStateCancellable: AnyCancellable?
-    private var pendingPromoQueueFeatureTargetState: PromoQueueFeatureTargetState?
     private var promoRetryRegistrations = [WeakPromoRetryRegistration]()
     private var isRetryingVisiblePromoRegistrations = false
-    private let promoQueueFeatureStateSubject: CurrentValueSubject<PromoQueueFeatureState, Never>
 
-    private(set) var promoQueueFeatureState: PromoQueueFeatureState
+    let promoCoordinationMode: PromoCoordinationMode
 
     convenience init(
         launchSourceManager: LaunchSourceManaging,
@@ -87,7 +81,7 @@ final class PromoCoordinationService {
         contextualOnboardingStatusProvider: ContextualDaxDialogStatusProvider,
         privacyConfigManager: PrivacyConfigurationManaging,
         providers: ModalPromptProviders,
-        featureFlagger: FeatureFlagger,
+        promoCoordinationMode: PromoCoordinationMode,
         promoQueueLeaseArbiter: PromoQueueLeaseArbitrating
     ) {
 
@@ -119,14 +113,13 @@ final class PromoCoordinationService {
         let modalPromptCoordinationManager = ModalPromptCoordinationManager(
             providers: providers,
             cooldownManager: cooldownManager,
-            onboardingStatusProvider: contextualOnboardingStatusProvider,
-            promoQueueLeaseArbiter: promoQueueLeaseArbiter
+            onboardingStatusProvider: contextualOnboardingStatusProvider
         )
 
         self.init(
             launchSourceManager: launchSourceManager,
             modalPromptCoordinationManager: modalPromptCoordinationManager,
-            featureFlagger: featureFlagger,
+            promoCoordinationMode: promoCoordinationMode,
             promoQueueLeaseArbiter: promoQueueLeaseArbiter
         )
     }
@@ -134,25 +127,20 @@ final class PromoCoordinationService {
     init(
         launchSourceManager: LaunchSourceManaging,
         modalPromptCoordinationManager: ModalPromptCoordinationManaging,
-        featureFlagger: FeatureFlagger,
+        promoCoordinationMode: PromoCoordinationMode,
         promoQueueLeaseArbiter: PromoQueueLeaseArbitrating
     ) {
         self.launchSourceManager = launchSourceManager
         self.modalPromptCoordinationManager = modalPromptCoordinationManager
-        self.featureFlagger = featureFlagger
+        self.promoCoordinationMode = promoCoordinationMode
         self.promoQueueLeaseArbiter = promoQueueLeaseArbiter
 
-        let initialTargetState = PromoQueueFeatureTargetState(isEnabled: featureFlagger.isFeatureOn(.promoPresentationCoordination))
-        let initialFeatureState = PromoQueueFeatureState(targetState: initialTargetState)
-        promoQueueFeatureState = initialFeatureState
-        promoQueueFeatureStateSubject = CurrentValueSubject(initialFeatureState)
         modalPromptCoordinationManager.setCoordinatedAttemptReleaseHandler { [weak self] in
-            guard self?.promoQueueFeatureState == .enabled else {
+            guard self?.promoCoordinationMode == .coordinated else {
                 return
             }
             self?.retryActiveVisiblePromoRegistrations()
         }
-        subscribeToPromoQueueFeatureState(initialTargetState: initialTargetState)
     }
 
     func applicationWillResignActive() {
@@ -168,12 +156,7 @@ final class PromoCoordinationService {
     }
 
     func presentModalPromptIfNeeded(from viewController: ModalPromptPresenter) {
-        guard !promoQueueFeatureState.isTransitioning else {
-            Logger.modalPrompt.debug("[Modal Prompt Coordination] - Skipping modal prompt during promo queue feature transition.")
-            return
-        }
-
-        if promoQueueFeatureState == .enabled {
+        if promoCoordinationMode == .coordinated {
             _ = modalPromptCoordinationManager.reconcilePresentedModal()
             retryActiveVisiblePromoRegistrations()
         }
@@ -201,7 +184,7 @@ final class PromoCoordinationService {
         }
         Logger.modalPrompt.info("[Modal Prompt Coordination] - ✓ \(presentationStatusMessage, privacy: .public)")
 
-        guard promoQueueFeatureState == .enabled else {
+        guard promoCoordinationMode == .coordinated else {
             modalPromptCoordinationManager.presentModalPromptIfNeeded(from: viewController)
             return
         }
@@ -239,66 +222,6 @@ final class PromoCoordinationService {
             retryActiveVisiblePromoRegistrations(excluding: identity.surfaceID)
         }
         return result
-    }
-
-    private func subscribeToPromoQueueFeatureState(initialTargetState: PromoQueueFeatureTargetState) {
-        promoQueueFeatureStateCancellable = featureFlagger.updatesPublisher
-            .receive(on: DispatchQueue.main)
-            .map { [featureFlagger] in
-                PromoQueueFeatureTargetState(isEnabled: featureFlagger.isFeatureOn(.promoPresentationCoordination))
-            }
-            .prepend(initialTargetState)
-            .removeDuplicates()
-            .dropFirst()
-            .sink { [weak self] targetState in
-                self?.transitionPromoQueueFeature(to: targetState)
-            }
-
-        // Re-read after the subscriber is attached so a flag update emitted while the subscription was being
-        // established cannot leave the initial seed stale.
-        let subscribedTargetState = PromoQueueFeatureTargetState(isEnabled: featureFlagger.isFeatureOn(.promoPresentationCoordination))
-        transitionPromoQueueFeature(to: subscribedTargetState)
-    }
-
-    private func transitionPromoQueueFeature(to targetState: PromoQueueFeatureTargetState) {
-        guard !promoQueueFeatureState.isTransitioning else {
-            pendingPromoQueueFeatureTargetState = targetState
-            return
-        }
-
-        guard promoQueueFeatureState != PromoQueueFeatureState(targetState: targetState) else {
-            return
-        }
-
-        updatePromoQueueFeatureState(.transitioning(to: targetState))
-        defer {
-            // Keep the public barrier up through manager and NTP callbacks. Publish the completed state before draining
-            // a reentrant flag update so the pending transition starts from a stable source state and its result cannot
-            // be overwritten by this transition.
-            updatePromoQueueFeatureState(PromoQueueFeatureState(targetState: targetState))
-            if let pendingTargetState = pendingPromoQueueFeatureTargetState {
-                pendingPromoQueueFeatureTargetState = nil
-                transitionPromoQueueFeature(to: pendingTargetState)
-            }
-        }
-
-        modalPromptCoordinationManager.promoQueueWillTransition(to: targetState)
-        let registrationsSnapshot = promoRetryRegistrations
-        for registration in registrationsSnapshot {
-            registration.target?.promoQueueWillTransition(to: targetState)
-        }
-
-        promoQueueLeaseArbiter.invalidateAllLeases()
-
-        modalPromptCoordinationManager.promoQueueDidTransition(to: targetState)
-        for registration in registrationsSnapshot {
-            registration.target?.promoQueueDidTransition(to: targetState)
-        }
-    }
-
-    private func updatePromoQueueFeatureState(_ state: PromoQueueFeatureState) {
-        promoQueueFeatureState = state
-        promoQueueFeatureStateSubject.send(state)
     }
 
     private func deregisterVisiblePromoRetry(for surfaceID: UUID, registrationID: UUID) {
@@ -343,17 +266,11 @@ final class PromoCoordinationService {
 }
 
 extension PromoCoordinationService: NewTabPagePromoCoordinating {
-    var promoQueueFeatureStatePublisher: AnyPublisher<PromoQueueFeatureState, Never> {
-        promoQueueFeatureStateSubject.eraseToAnyPublisher()
-    }
-
     func admitVisiblePromo(_ identity: VisiblePromoIdentity) -> VisiblePromoAdmissionResult {
-        switch promoQueueFeatureState {
-        case .disabled:
+        switch promoCoordinationMode {
+        case .legacy:
             return .featureDisabled
-        case .transitioning:
-            return .unavailableDuringTransition
-        case .enabled:
+        case .coordinated:
             break
         }
 

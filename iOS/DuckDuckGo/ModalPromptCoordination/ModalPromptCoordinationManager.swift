@@ -30,8 +30,6 @@ protocol ModalPromptCoordinationManaging {
         with lease: PromoQueueModalLease
     ) -> ModalPromptLeaseDisposition
     func reconcilePresentedModal() -> Bool
-    func promoQueueWillTransition(to targetState: PromoQueueFeatureTargetState)
-    func promoQueueDidTransition(to targetState: PromoQueueFeatureTargetState)
     func applicationWillResignActive()
     func applicationDidBecomeActive()
     func applicationDidEnterBackground()
@@ -173,7 +171,6 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
     private let cooldownManager: PromptCooldownManaging
     private let scheduler: ModalPromptScheduling
     private let onboardingStatusProvider: ContextualDaxDialogStatusProvider
-    private let promoQueueLeaseArbiter: PromoQueueLeaseArbitrating
     private let rootAttachmentChecker: ModalPromptRootAttachmentChecking
 
     // MARK: - State
@@ -184,9 +181,6 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
     private var attachmentVerificationTask: ModalPromptScheduledTask?
     private var attachmentVerificationRequestID: UUID?
     private var legacyActiveAttemptIDs = Set<UUID>()
-    /// The latest exact root handed to UIKit, used to adopt an attached presentation when coordination enables.
-    private weak var lastPresentedExactRoot: UIViewController?
-    private var isPromoQueueEnabled = false
     /// Safe to seed as active: the app state machine runs `Foreground.didReturn()` synchronously right after
     /// `onTransition()`, so `applicationDidBecomeActive()` lands before a scheduled presentation's 0.1s delay
     /// can reach its fire-time validation.
@@ -222,7 +216,6 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
         providers: [any ModalPromptProvider],
         cooldownManager: PromptCooldownManaging,
         onboardingStatusProvider: ContextualDaxDialogStatusProvider,
-        promoQueueLeaseArbiter: PromoQueueLeaseArbitrating,
         // Optional rather than a default argument: `ModalPromptScheduler` is `@MainActor`, and default
         // argument expressions are evaluated in a nonisolated context.
         modalPromptScheduling: ModalPromptScheduling? = nil,
@@ -231,38 +224,11 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
         self.providers = providers
         self.cooldownManager = cooldownManager
         self.onboardingStatusProvider = onboardingStatusProvider
-        self.promoQueueLeaseArbiter = promoQueueLeaseArbiter
         self.scheduler = modalPromptScheduling ?? ModalPromptScheduler()
         self.rootAttachmentChecker = rootAttachmentChecker ?? ModalPromptRootAttachmentChecker()
     }
 
     // MARK: - Lifecycle
-
-    /// Clears legacy and coordinated bookkeeping before either feature-state transition direction.
-    func promoQueueWillTransition(to targetState: PromoQueueFeatureTargetState) {
-        isPromoQueueEnabled = false
-        latchActualPresentationHistoryIfModalIsAttached()
-        pendingPreparedItem = nil
-        legacyActiveAttemptIDs.removeAll()
-        releaseCoordinationAttempt()
-    }
-
-    func promoQueueDidTransition(to targetState: PromoQueueFeatureTargetState) {
-        isPromoQueueEnabled = targetState == .enabled
-        guard targetState == .enabled,
-              let lastPresentedExactRoot,
-              isExactRootAttached(lastPresentedExactRoot),
-              case .acquired(let lease) = promoQueueLeaseArbiter.acquireModalLease() else {
-            return
-        }
-
-        attemptState = .presentationActive(
-            PresentationActiveAttempt(
-                attempt: CoordinatedAttempt(lease: lease),
-                state: .accepted(WeakPresentedRoot(lastPresentedExactRoot))
-            )
-        )
-    }
 
     func applicationWillResignActive() {
         isApplicationActive = false
@@ -339,7 +305,6 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
             return .released
         }
 
-        isPromoQueueEnabled = true
         let attempt = CoordinatedAttempt(lease: lease)
         attemptState = .evaluating(attempt)
 
@@ -540,10 +505,6 @@ private extension ModalPromptCoordinationManager {
     }
 
     private func validatePrePresentation(_ committedAttempt: CommittedAttempt) -> PrePresentationValidationResult {
-        guard isPromoQueueEnabled else {
-            return .terminalFailure
-        }
-
         guard isApplicationActive else {
             return .recoverableFailure
         }
@@ -605,7 +566,6 @@ private extension ModalPromptCoordinationManager {
             state: .verifying(presentation)
         )
         attemptState = .presentationActive(activeAttempt)
-        rememberPresentedRoot(exactRoot)
         let attemptIdentity = committedAttempt.attempt.lease.attemptIdentity
 
         performPresentation(
@@ -637,7 +597,6 @@ private extension ModalPromptCoordinationManager {
                 state: .accepted(WeakPresentedRoot(exactRoot))
             )
         )
-        rememberPresentedRoot(exactRoot)
         recordPresentation(for: committedAttempt.preparedItem)
     }
 
@@ -756,19 +715,13 @@ private extension ModalPromptCoordinationManager {
     ) {
         if let presented = presenter.presentedViewController, presented is OmniBarEditingStateViewController, !presented.isBeingDismissed {
             Logger.modalPrompt.debug("[Modal Prompt Coordination] - Presenting modal on top of OmniBarEditingStateViewController")
-            rememberPresentedRoot(modalPromptConfiguration.viewController)
             presented.present(modalPromptConfiguration.viewController, animated: modalPromptConfiguration.animated, completion: completion)
         } else {
-            rememberPresentedRoot(modalPromptConfiguration.viewController)
             presenter.present(modalPromptConfiguration.viewController, animated: modalPromptConfiguration.animated, completion: completion)
         }
     }
 
     // MARK: - Reconciliation and Accounting
-
-    private func rememberPresentedRoot(_ exactRoot: UIViewController) {
-        lastPresentedExactRoot = exactRoot
-    }
 
     private func reconcileVerifyingPresentation(_ activeAttempt: PresentationActiveAttempt) -> Bool {
         guard isApplicationActive,
@@ -851,16 +804,6 @@ private extension ModalPromptCoordinationManager {
             attemptState = .idle
             activeAttempt.attempt.lease.release()
         }
-    }
-
-    /// Preserves session history before a feature transition forgets an exact root that UIKit attached.
-    private func latchActualPresentationHistoryIfModalIsAttached() {
-        guard let lastPresentedExactRoot,
-              isExactRootAttached(lastPresentedExactRoot) else {
-            return
-        }
-
-        didActuallyPresentModalPromptThisSession = true
     }
 
     private func cancelScheduledPresentation() {

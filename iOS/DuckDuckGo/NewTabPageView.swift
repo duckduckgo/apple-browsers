@@ -448,7 +448,7 @@ private func makePreviewMessagesModel(homeMessages: [HomeMessage]) -> NewTabPage
 
 @MainActor
 private final class PreviewNewTabPagePromoCoordinator: NewTabPagePromoCoordinating {
-    let promoQueueFeatureState = PromoQueueFeatureState.disabled
+    let promoCoordinationMode = PromoCoordinationMode.legacy
 
     func admitVisiblePromo(_ identity: VisiblePromoIdentity) -> VisiblePromoAdmissionResult {
         .featureDisabled

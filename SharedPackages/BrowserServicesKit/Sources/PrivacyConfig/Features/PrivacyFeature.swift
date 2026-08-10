@@ -604,6 +604,8 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case scopedAccessCredentials
     case canUseV2ConnectFlow
     case canShowV2ConnectCode
+    case canWriteUnifiedDeviceList
+    case canReadUnifiedDeviceList
     case simplifiedSyncSetupV2
 }
 

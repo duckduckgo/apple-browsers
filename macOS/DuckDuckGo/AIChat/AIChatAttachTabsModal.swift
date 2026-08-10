@@ -217,17 +217,21 @@ struct AIChatAttachTabsModal: ModalView {
         }
     }
 
-    /// The checkmark marks the point where picking more means unpicking something first.
+    /// A count out of a cap, so it says nothing worth showing when the limit is switched off. The
+    /// checkmark marks the point where picking more means unpicking something first.
+    @ViewBuilder
     private var selectionCount: some View {
-        HStack(spacing: 2) {
-            if selectedIds.count >= maxSelection {
-                Image(nsImage: DesignSystemImages.Glyphs.Size12.check)
-                    .renderingMode(.template)
+        if maxSelection < Int.max {
+            HStack(spacing: 2) {
+                if selectedIds.count >= maxSelection {
+                    Image(nsImage: DesignSystemImages.Glyphs.Size12.check)
+                        .renderingMode(.template)
+                }
+                Text(UserText.aiChatAttachTabsModalCount(selected: selectedIds.count, maximum: maxSelection))
+                    .font(.system(size: 13))
             }
-            Text(UserText.aiChatAttachTabsModalCount(selected: selectedIds.count, maximum: maxSelection))
-                .font(.system(size: 13))
+            .foregroundColor(Color(designSystemColor: .textSecondary))
         }
-        .foregroundColor(Color(designSystemColor: .textSecondary))
     }
 
     private func row(for tab: AIChatTabAttachment) -> some View {

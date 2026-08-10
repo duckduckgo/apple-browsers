@@ -26,6 +26,7 @@ let package = Package(
                 .product(name: "DesignResourcesKit", package: "DesignResourcesKit"),
             ],
             resources: [
+                .process("Assets.xcassets"),
                 .process("Resources")
             ],
             swiftSettings: [

@@ -96,6 +96,15 @@ struct SyncSetupView<ViewModel>: View where ViewModel: ManagementViewModel {
     }
 }
 
+#if DEBUG
+#Preview {
+    SyncSetupView<PreviewManagementViewModel>()
+        .environmentObject(PreviewManagementViewModel(isSyncEnabled: false))
+        .frame(width: 544, height: 800, alignment: .top)
+        .padding()
+}
+#endif
+
 private struct SyncWithAnotherDeviceButtonStyle: ButtonStyle {
 
     public let enabled: Bool

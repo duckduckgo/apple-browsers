@@ -265,3 +265,21 @@ struct SyncEnabledView<ViewModel>: View where ViewModel: ManagementViewModel {
         case identities
     }
 }
+
+#if DEBUG
+#Preview {
+    let devices = [
+        SyncDevice(kind: .current, name: "My Mac", id: "current-device"),
+        SyncDevice(kind: .desktop, name: "MacBook Pro", id: "desktop-device"),
+        SyncDevice(kind: .mobile, name: "iPhone", id: "mobile-device"),
+        SyncDevice(kind: .mobile, name: "Android", id: "third-party-device")
+    ]
+
+    return ScrollView {
+        SyncEnabledView<PreviewManagementViewModel>()
+            .environmentObject(PreviewManagementViewModel(isSyncEnabled: true, devices: devices))
+            .padding()
+    }
+    .frame(height: 800)
+}
+#endif

@@ -92,6 +92,7 @@ final class PromoCoordinationServicePromoQueueTests {
             promoQueueLeaseArbiter: promoQueueLeaseArbiter
         )
 
+        sut.applicationDidBecomeActive()
         presentModalPromptIfNeeded()
 
         #expect(!provider.didCallProvideModalPrompt)
@@ -149,6 +150,7 @@ final class PromoCoordinationServicePromoQueueTests {
         }
         let registration = sut.registerRemoteMessageRetry(for: identity.surfaceID, target: target)
 
+        sut.applicationDidBecomeActive()
         presentModalPromptIfNeeded()
 
         #expect(target.retryCount == 2)
@@ -287,6 +289,7 @@ final class PromoCoordinationServicePromoQueueTests {
             promoQueueLeaseArbiter: promoQueueLeaseArbiter
         )
 
+        sut.applicationDidBecomeActive()
         presentModalPromptIfNeeded()
         scheduler.executeScheduledBlock()
 
@@ -352,6 +355,7 @@ final class PromoCoordinationServicePromoQueueTests {
             promoCoordinationMode: .coordinated,
             promoQueueLeaseArbiter: promoQueueLeaseArbiter
         )
+        makeReadyForInteractions()
         let ownerIdentity = makeIdentity(promoID: "owner")
         let waiterIdentity = makeIdentity(promoID: "waiter")
         let waiter = MockNewTabPagePromoRetryTarget()
@@ -564,6 +568,42 @@ final class PromoCoordinationServicePromoQueueTests {
     // MARK: - Readiness
 
     @available(iOS 16, *)
+    @Test("Cold Start Keeps Admission Closed Until Full Interaction Readiness", .timeLimit(.minutes(1)))
+    func whenColdStartBecomesActiveThenAdmissionWaitsForInteractionReadiness() {
+        launchSourceManagerMock.source = .standard
+        presenterMock.presentedViewController = nil
+        makeSUT(readyForInteractions: false)
+        let identity = makeIdentity(promoID: "cold-start-waiter")
+        let waiter = MockNewTabPagePromoRetryTarget()
+        waiter.identityToAdmitOnRetry = identity
+        let registration = sut.registerRemoteMessageRetry(for: identity.surfaceID, target: waiter)
+        let readinessToken = sut.captureForegroundReadinessToken()
+
+        guard case .deferred = sut.admitRemoteMessage(identity) else {
+            Issue.record("Expected cold-start direct admission to remain closed")
+            return
+        }
+        sut.applicationDidBecomeActive()
+        guard case .deferred = sut.admitRemoteMessage(identity) else {
+            Issue.record("Expected becoming active alone to keep direct admission closed")
+            return
+        }
+
+        #expect(waiter.retryCount == 0)
+        #expect(managerMock.reconcilePresentedModalCallCount == 0)
+        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == nil)
+
+        sut.presentModalPromptIfNeeded(from: presenterMock, readinessToken: readinessToken)
+
+        #expect(waiter.retryCount == 1)
+        #expect(waiter.retainedAdmission != nil)
+        #expect(managerMock.reconcilePresentedModalCallCount == 2)
+        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .visible(identity))
+        #expect(!managerMock.didCallPresentModalPromptIfNeeded)
+        _ = registration
+    }
+
+    @available(iOS 16, *)
     @Test("Temporary Inactivity Defers Admission And Successful Release Handoff Until Active", .timeLimit(.minutes(1)))
     func whenOwnerReleasesDuringTemporaryInactivityThenReturnPerformsHandoff() {
         makeSUT()
@@ -725,13 +765,28 @@ final class PromoCoordinationServicePromoQueueTests {
         _ = registration
     }
 
-    private func makeSUT(mode: PromoCoordinationMode = .coordinated) {
+    private func makeSUT(mode: PromoCoordinationMode = .coordinated, readyForInteractions: Bool = true) {
         sut = PromoCoordinationService(
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: managerMock,
             promoCoordinationMode: mode,
             promoQueueLeaseArbiter: promoQueueLeaseArbiter
         )
+
+        guard mode == .coordinated, readyForInteractions else {
+            return
+        }
+
+        makeReadyForInteractions()
+        managerMock.resetRecordedInteractions()
+    }
+
+    private func makeReadyForInteractions() {
+        let launchSource = launchSourceManagerMock.source
+        launchSourceManagerMock.source = .URL
+        sut.applicationDidBecomeActive()
+        presentModalPromptIfNeeded()
+        launchSourceManagerMock.source = launchSource
     }
 
     private func presentModalPromptIfNeeded() {

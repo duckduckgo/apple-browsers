@@ -417,6 +417,7 @@ final class ModalPromptCoordinationManagerIntegrationTests {
             promoQueueLeaseArbiter: promoQueueLeaseArbiter
         )
 
+        service.applicationDidBecomeActive()
         service.presentModalPromptIfNeeded(
             from: presenterMock,
             readinessToken: service.captureForegroundReadinessToken()
@@ -520,6 +521,11 @@ final class ModalPromptCoordinationManagerIntegrationTests {
             modalPromptCoordinationManager: manager,
             promoCoordinationMode: .coordinated,
             promoQueueLeaseArbiter: promoQueueLeaseArbiter
+        )
+        service.applicationDidBecomeActive()
+        service.presentModalPromptIfNeeded(
+            from: presenterMock,
+            readinessToken: service.captureForegroundReadinessToken()
         )
         let firstSurfaceID = UUID()
         let secondSurfaceID = UUID()

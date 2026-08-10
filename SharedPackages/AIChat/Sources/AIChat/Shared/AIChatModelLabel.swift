@@ -36,6 +36,16 @@ public enum AIChatModelLabel: Equatable, Sendable {
         case .unknown(let rawValue): return rawValue
         }
     }
+
+    #if os(iOS)
+    public var localizedText: String? {
+        switch self {
+        case .everydayUse: return UserText.modelPickerLabelEverydayUse
+        case .usesLimitsFaster: return UserText.modelPickerLabelUsesLimitsFaster
+        case .unknown: return nil
+        }
+    }
+    #endif
 }
 
 extension AIChatModelLabel: Decodable {

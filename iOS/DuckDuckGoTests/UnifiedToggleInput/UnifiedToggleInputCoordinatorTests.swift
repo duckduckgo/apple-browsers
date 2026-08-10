@@ -48,7 +48,8 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
             isToggleEnabled: true,
             preferences: mockPreferences,
             toggleModeStorage: mockToggleModeStorage,
-            switchBarSubmissionMetrics: mockSubmissionMetrics
+            switchBarSubmissionMetrics: mockSubmissionMetrics,
+            updatedModelPickerFeature: MockUpdatedModelPickerFeature(isAvailable: false)
         )
         mockDelegate = MockUnifiedToggleInputDelegate()
         sut.delegate = mockDelegate
@@ -172,6 +173,30 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     }
 
     // MARK: - Model Picker (showModelPicker)
+
+    func testWhenUpdatedModelPickerIsAvailableThenCoordinatorEnablesUpdatedPresentation() {
+        let coordinator = UnifiedToggleInputCoordinator(
+            host: .omnibar,
+            isToggleEnabled: true,
+            preferences: mockPreferences,
+            updatedModelPickerFeature: MockUpdatedModelPickerFeature(isAvailable: true)
+        )
+
+        XCTAssertTrue(coordinator.viewController.usesUpdatedModelPickerPresentation)
+        XCTAssertNotNil(coordinator.viewController.onUpdatedModelPickerTapped)
+    }
+
+    func testWhenUpdatedModelPickerIsUnavailableThenCoordinatorKeepsNativePresentation() {
+        let coordinator = UnifiedToggleInputCoordinator(
+            host: .omnibar,
+            isToggleEnabled: true,
+            preferences: mockPreferences,
+            updatedModelPickerFeature: MockUpdatedModelPickerFeature(isAvailable: false)
+        )
+
+        XCTAssertFalse(coordinator.viewController.usesUpdatedModelPickerPresentation)
+        XCTAssertNil(coordinator.viewController.onUpdatedModelPickerTapped)
+    }
 
     func test_modelChip_isHidden_duringActiveChat_byDefault() {
         _ = sut.prepareExternalPromptSubmission()
@@ -2872,6 +2897,10 @@ private final class MockToggleModeStorage: ToggleModeStoring {
     private var storedMode: TextEntryMode?
     func save(_ mode: TextEntryMode) { storedMode = mode }
     func restore() -> TextEntryMode? { storedMode }
+}
+
+private struct MockUpdatedModelPickerFeature: UpdatedModelPickerFeatureProviding {
+    let isAvailable: Bool
 }
 
 final class MockSwitchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding {

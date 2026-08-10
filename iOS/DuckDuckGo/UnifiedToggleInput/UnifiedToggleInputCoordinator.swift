@@ -178,6 +178,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private var pixelReporter: UTIPixelReporter!
     private var wideEventReporter: UTIWideEventReporter!
     private var modelSelector: UTIModelSelector!
+    private let isUpdatedModelPickerAvailable: Bool
+    private let modelPickerPresenter = UnifiedToggleInputModelPickerPresenter()
     private var attachmentController: UTIAttachmentController!
     private var isContentOverlaySuppressed = false
     /// Forces the model chip visible mid-chat for the FE's `showModelPicker` flow; cleared on prompt
@@ -288,11 +290,13 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         duckAIWideEventFlowScope: DuckAIWideEventFlowScope? = nil,
         pixelFiring: UTIPixelFiring = .live,
         contextualStartsPreSubmit: Bool = false,
-        attachmentPasteEnabled: Bool = false
+        attachmentPasteEnabled: Bool = false,
+        updatedModelPickerFeature: UpdatedModelPickerFeatureProviding = UpdatedModelPickerFeature()
     ) {
         self.host = host
         self.isToggleEnabled = isToggleEnabled
         self.hidesToggleOnDuckAITab = hidesToggleOnDuckAITab
+        self.isUpdatedModelPickerAvailable = updatedModelPickerFeature.isAvailable
         self.switchBarSubmissionMetrics = switchBarSubmissionMetrics
         self.aiChatSettings = aiChatSettings
         self.sessionMonitor = UTISessionMonitor(
@@ -393,6 +397,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 onModelApplied: { [weak self] in self?.notifyFrontendOfActiveChatModelChange($0) }
             )
         )
+        if isUpdatedModelPickerAvailable {
+            viewController.usesUpdatedModelPickerPresentation = true
+            viewController.onUpdatedModelPickerTapped = { [weak self] in
+                self?.presentUpdatedModelPicker()
+            }
+        }
         attachmentController = UTIAttachmentController(
             pixelReporter: pixelReporter,
             view: .init(
@@ -1697,6 +1707,31 @@ private extension UnifiedToggleInputCoordinator {
         }
         guard let scene = viewController.view.window?.windowScene else { return nil }
         return scene.keyWindow?.rootViewController
+    }
+
+    func presentUpdatedModelPicker() {
+        guard isUpdatedModelPickerAvailable,
+              let presentingViewController = attachmentPresenterViewController,
+              viewController.modelPickerSourceView.window != nil else {
+            return
+        }
+
+        let content = UnifiedToggleInputModelPickerContent(
+            models: modelStore.models,
+            selectedModelID: modelStore.persistedModelId,
+            userTier: modelStore.subscriptionState.userTier
+        )
+        modelPickerPresenter.present(
+            content: content,
+            from: presentingViewController,
+            sourceView: viewController.modelPickerSourceView,
+            onSelect: { [weak self] modelID in
+                self?.modelSelector.handleModelSelection(modelID)
+            },
+            onCallToAction: { [weak self] requiredTier in
+                self?.modelSelector.handleModelPickerSubscriptionCallToAction(requiredTier: requiredTier)
+            }
+        )
     }
 
     func makeFloatingReturnKeyState() -> UnifiedToggleInputFloatingReturnKeyState {

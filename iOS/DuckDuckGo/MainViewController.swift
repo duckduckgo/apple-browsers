@@ -4286,12 +4286,16 @@ extension MainViewController: BrowserChromeDelegate {
         } else {
             applyBarsVisibilityState(percent, postChromeVisibilityNotification: postNotification)
 
-            // Calling this here is important as it causes the layout to run immediately inside current run loop,
-            // instead of deferring it until next update block.
-            // Late layout after change here could potentially cause a scroll offset update right before the next one,
-            // which may cause an infitie loop layout loop in certain scenarios.
-            // See https://app.asana.com/1/137249556945/project/414709148257752/task/1208671955053442 for details.
-            self.view.layoutIfNeeded()
+            if isFloatingUIEnabled, percent > 0, percent < 1 {
+                self.view.setNeedsLayout()
+            } else {
+                // Calling this here is important as it causes the layout to run immediately inside current run loop,
+                // instead of deferring it until next update block.
+                // Late layout after change here could potentially cause a scroll offset update right before the next one,
+                // which may cause an infitie loop layout loop in certain scenarios.
+                // See https://app.asana.com/1/137249556945/project/414709148257752/task/1208671955053442 for details.
+                self.view.layoutIfNeeded()
+            }
         }
     }
 

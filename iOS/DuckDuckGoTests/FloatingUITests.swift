@@ -392,6 +392,39 @@ final class WebViewScrollViewInsetUpdaterTests: XCTestCase {
         XCTAssertEqual(scrollView.verticalScrollIndicatorInsets, .zero)
         XCTAssertEqual(scrollView.horizontalScrollIndicatorInsets, .zero)
     }
+
+    func testWhenChromeTransitionIsInProgressThenPreviouslyAppliedInsetsAreKept() {
+        XCTAssertFalse(
+            WebViewScrollViewInsetUpdater.shouldUpdateDuringChromeTransition(
+                barsVisibilityPercent: 0.5,
+                hasAppliedInsets: true
+            )
+        )
+    }
+
+    func testWhenChromeTransitionReachesEndpointsThenInsetsAreUpdated() {
+        XCTAssertTrue(
+            WebViewScrollViewInsetUpdater.shouldUpdateDuringChromeTransition(
+                barsVisibilityPercent: 0,
+                hasAppliedInsets: true
+            )
+        )
+        XCTAssertTrue(
+            WebViewScrollViewInsetUpdater.shouldUpdateDuringChromeTransition(
+                barsVisibilityPercent: 1,
+                hasAppliedInsets: true
+            )
+        )
+    }
+
+    func testWhenInsetsHaveNotBeenAppliedThenTheyAreUpdatedDuringChromeTransition() {
+        XCTAssertTrue(
+            WebViewScrollViewInsetUpdater.shouldUpdateDuringChromeTransition(
+                barsVisibilityPercent: 0.5,
+                hasAppliedInsets: false
+            )
+        )
+    }
 }
 
 final class FloatingSwipePreviewGeometryTests: XCTestCase {

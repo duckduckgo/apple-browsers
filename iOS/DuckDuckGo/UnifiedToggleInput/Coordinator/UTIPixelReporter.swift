@@ -20,13 +20,17 @@
 import AIChat
 import Core
 import Foundation
+import PixelKit
 
-/// Injectable pixel-firing seam: bundles the two standard firers (`PixelFiring` for one-off pixels,
-/// `DailyPixelFiring` for daily-and-count) behind one value so UTI pixel firing has a single
-/// injection point. `.live` fires for real; tests pass `PixelFiringMock` to assert what was fired.
+/// Injectable pixel-firing seam: bundles the legacy firers (`Core.PixelFiring` for one-off pixels,
+/// `DailyPixelFiring` for daily-and-count) and PixelKit behind one value so UTI pixel firing has a single
+/// injection point. `.live` fires for real; tests pass `PixelFiringMock`/`PixelKitMock` to assert what was fired.
 struct UTIPixelFiring {
-    var pixel: PixelFiring.Type = Pixel.self
+    var pixel: Core.PixelFiring.Type = Pixel.self
     var daily: DailyPixelFiring.Type = DailyPixel.self
+    /// A closure, not a `PixelFiring`: the `PixelKit` class shadows its module so the protocol can't be
+    /// named here, and bare `PixelFiring` would collide with `Core.PixelFiring` above.
+    var pixelKit: (PixelKitEvent, PixelKit.Frequency) -> Void = { PixelKit.fire($0, frequency: $1) }
 
     static let live = UTIPixelFiring()
 
@@ -36,6 +40,10 @@ struct UTIPixelFiring {
 
     func fireDailyAndCount(_ event: Pixel.Event, _ parameters: [String: String] = [:]) {
         daily.fireDailyAndCount(event, error: nil, withAdditionalParameters: parameters)
+    }
+
+    func fire(_ event: PixelKitEvent, frequency: PixelKit.Frequency) {
+        pixelKit(event, frequency)
     }
 }
 
@@ -69,7 +77,7 @@ final class UTIPixelReporter {
     /// The pair fired whenever the unified input surface first appears in the omnibar host.
     func reportOmnibarInputSurfaceShown() {
         firing.fireDailyAndCount(.aiChatInternalSwitchBarDisplayed)
-        withContext { firing.fireDailyAndCount(.aiChatExperimentalOmnibarShown, ["toggle_visible": String($0.isToggleVisible)]) }
+        withContext { firing.fire(ExperimentalOmnibarPixel.omnibarShown(isToggleVisible: $0.isToggleVisible), frequency: .dailyAndCount) }
     }
 
     func reportBackButtonPressed() {

@@ -20,7 +20,32 @@
 import AIChat
 import Core
 import Foundation
+import PixelKit
 import Subscription
+
+/// PixelKit home for the experimental omnibar pixels, fired from both the UTI coordinator and the legacy
+/// switch-bar editing state so a single daily ledger covers the whole pixel.
+enum ExperimentalOmnibarPixel: PixelKitEvent, PixelKitEventWithCustomPrefix {
+
+    /// `isToggleVisible`: whether the Search/Duck.ai toggle was on screen when the surface appeared.
+    case omnibarShown(isToggleVisible: Bool)
+
+    var name: String {
+        switch self {
+        case .omnibarShown: "aichat_experimental_omnibar_shown"
+        }
+    }
+
+    var parameters: [String: String]? {
+        switch self {
+        case .omnibarShown(let isToggleVisible): ["toggle_visible": String(isToggleVisible)]
+        }
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? { [.pixelSource] }
+
+    var namePrefix: String { "m_" }
+}
 
 /// The UTI surface a pixel is fired from, sent as the `surface` param (`voice_tapped` reuses `source`).
 enum UnifiedToggleInputPixelSurface: String {

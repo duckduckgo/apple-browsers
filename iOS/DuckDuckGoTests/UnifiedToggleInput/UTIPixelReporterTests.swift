@@ -19,24 +19,34 @@
 
 import AIChat
 import Core
+import PixelKit
+import PixelKitTestingUtilities
 import XCTest
 @testable import DuckDuckGo
 
 @MainActor
 final class UTIPixelReporterTests: XCTestCase {
 
+    private var pixelKitMock: PixelKitMock!
+
     override func setUp() {
         super.setUp()
         PixelFiringMock.tearDown()
+        pixelKitMock = PixelKitMock()
     }
 
     override func tearDown() {
         PixelFiringMock.tearDown()
+        pixelKitMock = nil
         super.tearDown()
     }
 
     private func makeReporter(context: @escaping () -> UTIPixelContext?) -> UTIPixelReporter {
-        UTIPixelReporter(firing: UTIPixelFiring(pixel: PixelFiringMock.self, daily: PixelFiringMock.self),
+        UTIPixelReporter(firing: UTIPixelFiring(pixel: PixelFiringMock.self,
+                                                daily: PixelFiringMock.self,
+                                                pixelKit: { [unowned self] event, frequency in
+                                                    pixelKitMock.fire(event, frequency: frequency)
+                                                }),
                          context: context)
     }
 
@@ -57,8 +67,10 @@ final class UTIPixelReporterTests: XCTestCase {
 
         reporter.reportOmnibarInputSurfaceShown()
 
-        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.pixelName, Pixel.Event.aiChatExperimentalOmnibarShown.name)
-        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.params, ["toggle_visible": "true"])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.count, 1)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.first?.pixel.name, "aichat_experimental_omnibar_shown")
+        XCTAssertEqual(pixelKitMock.actualFireCalls.first?.pixel.parameters, ["toggle_visible": "true"])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.first?.frequency, .dailyAndCount)
     }
 
     func testWhenOmnibarSurfaceShownWithToggleHiddenThenPixelReportsToggleVisibleFalse() {
@@ -66,7 +78,7 @@ final class UTIPixelReporterTests: XCTestCase {
 
         reporter.reportOmnibarInputSurfaceShown()
 
-        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.params, ["toggle_visible": "false"])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.first?.pixel.parameters, ["toggle_visible": "false"])
     }
 
     // MARK: - Mode switch (non-trivial params, passed per call)

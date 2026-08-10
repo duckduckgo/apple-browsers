@@ -208,7 +208,6 @@ struct FireDialogView: ModalView {
 
                 footerView
                     .zIndex(10)
-                    .background(Color(designSystemColor: .surfaceSecondary, palette: themeManager.designColorPalette))
             }
             .readSize { size in
                 // Set exact content height to avoid content shifting and animation jumping when sheet resizes
@@ -260,7 +259,7 @@ struct FireDialogView: ModalView {
         .animation(.easeOut(duration: NSAnimationContext.current.duration),
                    value: isAnimatingSitesOverlay || isAnimatingChatsOverlay || isAnimatingHistoryOverlay)
         .frame(width: Constants.viewSize.width, height: viewHeight, alignment: .top)
-        .background(Color(designSystemColor: .surfaceSecondary))
+        .background(Color(designSystemColor: .surfacePrimary, palette: themeManager.designColorPalette))
         .accessibilityElement(children: .contain)
         .accessibilityLabel(viewModel.mode.dialogTitle)
     }
@@ -953,6 +952,7 @@ struct FireDialogView: ModalView {
                 Toggle(tabsSubtitle, isOn: $viewModel.includeTabsAndWindows)
                     .toggleStyle(.checkbox)
                     .tint(style.knobFillColor)
+                    .foregroundColor(Color(designSystemColor: .textSecondary))
                     .accessibilityLabel(tabsSubtitle)
                     .accessibilityIdentifier("FireDialogView.tabsToggle")
                     .accessibilityHidden(isShowingAnyOverlay)
@@ -1114,7 +1114,7 @@ private struct FireDialogTabButton: View {
             .padding(20)
             .background(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(isSelected ? Color(designSystemColor: .surfaceTertiary) : Color(designSystemColor: .containerFillSecondary))
+                    .fill(isSelected ? Color(singleUseColor: .fireDialogTabBackgroundSelected) : Color(singleUseColor: .fireDialogTabBackground))
                     .shadow(color: isSelected ? Color(singleUseColor: .fireDialogTabShadowPrimary) : .clear, radius: 4, x: 0, y: 1)
                     .shadow(color: isSelected ? Color(singleUseColor: .fireDialogTabShadowSecondary) : .clear, radius: 1, x: 0, y: 0.25)
             )

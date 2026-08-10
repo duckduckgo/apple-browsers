@@ -359,10 +359,14 @@ extension SharedColorPaletteDefinition {
             return DynamicColor(staticColor: RebrandingColor.Mandarin.mandarin60)
         case .fireButtonPressedGradientEnd:
             return DynamicColor(staticColor: RebrandingColor.Red.red70)
+        case .fireDialogTabBackground:
+            return DynamicColor(lightColor: Color(designSystemColor: .containerFillSecondary), darkColor: Color(designSystemColor: .surfaceCanvas))
+        case .fireDialogTabBackgroundSelected:
+            return DynamicColor(lightColor: Color(designSystemColor: .surfaceTertiary), darkColor: Color(designSystemColor: .surfaceSecondary))
         case .fireDialogTabShadowPrimary:
-            return DynamicColor(lightColor: Color.init(designSystemColor: .shadowPrimary), darkColor: .shade(0.06))
+            return DynamicColor(lightColor: Color(designSystemColor: .shadowPrimary), darkColor: .shade(0.06))
         case .fireDialogTabShadowSecondary:
-            return DynamicColor(lightColor: Color.init(designSystemColor: .shadowTertiary), darkColor: .shade(0.16))
+            return DynamicColor(lightColor: Color(designSystemColor: .shadowTertiary), darkColor: .shade(0.16))
         }
     }
 }

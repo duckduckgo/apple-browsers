@@ -84,6 +84,8 @@ public enum SingleUseColor {
     case fireButtonGradientEnd
     case fireButtonPressedGradientStart
     case fireButtonPressedGradientEnd
+    case fireDialogTabBackground
+    case fireDialogTabBackgroundSelected
     case fireDialogTabShadowPrimary
     case fireDialogTabShadowSecondary
 

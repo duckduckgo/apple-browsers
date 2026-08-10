@@ -23,6 +23,7 @@ import Core
 import Onboarding
 import Persistence
 import PrivacyConfig
+import FeatureFlags_iOS
 
 enum OnboardingUserType: String, Equatable, CaseIterable, CustomStringConvertible {
     case notSet
@@ -412,16 +413,15 @@ private extension OnboardingManager {
     }
 
     var downloadReasonExperimentCohort: FeatureFlag.OnboardingFlowByDownloadReasonExperimentCohort? {
-        // The experiment targets new installers on iPhone. Locale/region targeting is handled remotely
-        // via the feature flag rollout, so it isn't gated here.
-        guard isIphone, isNewUser else { return nil }
-        return featureFlagger.resolveCohort(for: FeatureFlag.onboardingFlowByDownloadReasonExperiment) as? FeatureFlag.OnboardingFlowByDownloadReasonExperimentCohort
+        featureFlagger.assignedCohort(for: FeatureFlag.onboardingFlowByDownloadReasonExperiment) as? FeatureFlag.OnboardingFlowByDownloadReasonExperimentCohort
     }
 
     /// Enrolls default-flow users in the download-reason experiment.
     func enrollInDownloadReasonExperimentIfNeeded(resolvedFlow: OnboardingFlowType) {
-        guard resolvedFlow == .default else { return }
-        _ = downloadReasonExperimentCohort
+        // The experiment targets new installers on iPhone. Locale/region targeting is handled remotely
+        // via the feature flag rollout, so it isn't gated here.
+        guard resolvedFlow == .default, isIphone, isNewUser else { return }
+        _ = featureFlagger.resolveCohort(for: FeatureFlag.onboardingFlowByDownloadReasonExperiment) as? FeatureFlag.OnboardingFlowByDownloadReasonExperimentCohort
     }
 
     /// Persist the flow and source for onboarding pixels based on the evaluated context.

@@ -19,7 +19,7 @@
 import XCTest
 import Combine
 import AIChat
-import FeatureFlags
+import FeatureFlags_macOS
 import PrivacyConfig
 import SubscriptionTestingUtilities
 @testable import DuckDuckGo_Privacy_Browser
@@ -1985,12 +1985,12 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         setUserTier(.plus)
 
         // When
-        controller.presentSubscriptionUpsell(requiredTier: .pro, origin: .addressBarReasoningPicker)
+        controller.presentSubscriptionUpsell(requiredTier: .pro, origin: .addressBarReasoningDropdown)
 
         // Then
         XCTAssertTrue(mockSubscriptionUpsellPresenter.routeGatedSelectionCalled)
         XCTAssertEqual(mockSubscriptionUpsellPresenter.lastRequiredTier, .pro)
-        XCTAssertEqual(mockSubscriptionUpsellPresenter.lastOrigin, .addressBarReasoningPicker)
+        XCTAssertEqual(mockSubscriptionUpsellPresenter.lastOrigin, .addressBarReasoningDropdown)
     }
 
     func testWhenRequiredTierForGatedModel_ThenReturnsModelsLowestPublicAccessTier() async {

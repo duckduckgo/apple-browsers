@@ -21,6 +21,7 @@ import Common
 import Core
 import Foundation
 import PrivacyConfig
+import FeatureFlags_iOS
 
 enum MonthlyFreeTrialExperiment {
     static let cohortParameterName = "experiment_mobileannualtrials_ios"

@@ -949,6 +949,12 @@
 /* Login name label for login details on autofill */
 "autofill.logins.details.login-name" = "Název";
 
+/* Message for alert when attempting to save a password that has neither a website nor a username */
+"autofill.logins.details.missing-website-or-username-alert.message" = "Aby se heslo uložilo, zadej web nebo uživatelské jméno.";
+
+/* Title for alert when attempting to save a password that has neither a website nor a username */
+"autofill.logins.details.missing-website-or-username-alert.title" = "Je nutný web nebo uživatelské jméno";
+
 /* Title when adding new autofill login */
 "autofill.logins.details.new-title" = "Přidat heslo";
 

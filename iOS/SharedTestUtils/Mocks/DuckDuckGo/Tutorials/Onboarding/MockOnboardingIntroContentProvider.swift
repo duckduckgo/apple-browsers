@@ -24,6 +24,12 @@ class MockOnboardingIntroContentProvider: OnboardingIntroContentProviding {
     var landingContent: OnboardingLandingContent = .mock
     var introStepContent: OnboardingIntroStepContent = .mock
     var downloadReasonContent: OnboardingDownloadReasonContent = .mock
+    var serpPersonalizationContent: OnboardingPersonalizationContent = .mock
+    var aiModelPersonalizationContent: OnboardingAIModelContent = .mock
+    var addressBarToggleModePersonalizationContent: OnboardingAddressBarToggleModeContent = .mock
+    var aiSearchPersonalizationContent: OnboardingPersonalizationContent = .mock
+    var aiChatEnabledPersonalizationContent: OnboardingDuckAIEnabledPersonalizationContent = .mock
+    var youTubePersonalizationContent: OnboardingPersonalizationContent = .mock
     var setDefaultBrowserContent: OnboardingComparisonContent = .mockBrowser
     var aiIntroContent: OnboardingComparisonContent = .mockAI
     var addToDockContent: OnboardingAddToDockContent = .mock
@@ -47,13 +53,56 @@ extension OnboardingDownloadReasonContent {
         title: "Download Reason Title",
         message: "Download Reason Message",
         options: [
-            .init(reason: .browserPrivately, icon: .init(name: "", bundle: .main), title: "Search and browse privately"),
-            .init(reason: .privateAIChat, icon: .init(name: "", bundle: .main), title: "Chat with AI privately"),
-            .init(reason: .noAI, icon: .init(name: "", bundle: .main), title: "Remove AI from search results"),
-            .init(reason: .blockAds, icon: .init(name: "", bundle: .main), title: "Block ads and pop-ups")
+            .init(reason: .browserPrivately, animation: .search, title: "Search and browse privately"),
+            .init(reason: .privateAIChat, animation: .duckAIChat, title: "Chat with AI privately"),
+            .init(reason: .noAI, animation: .noAI, title: "Remove AI from search results"),
+            .init(reason: .blockAds, animation: .imageSweep, title: "Block ads and pop-ups")
         ],
         primaryCTA: "Download Reason Primary",
         daxAnimation: .wingBottom
+    )
+}
+
+extension OnboardingPersonalizationContent {
+    static let mock = OnboardingPersonalizationContent(
+        title: "Personalization Title",
+        message: "Personalization Message",
+        items: [
+            .init(type: .recentlyVisitedSites, title: "Personalization Item Title", subtitle: "Personalization Item Subtitle")
+        ],
+        primaryCTA: "Personalization Primary",
+        daxAnimation: .wingBottom
+    )
+}
+
+extension OnboardingAIModelContent {
+    static let mock = OnboardingAIModelContent(
+        title: "AI Model Title",
+        message: "AI Model Message",
+        primaryCTA: "AI Model Primary",
+        daxAnimation: .wingBottom
+    )
+}
+
+extension OnboardingAddressBarToggleModeContent {
+    static let mock = OnboardingAddressBarToggleModeContent(
+        title: "Address Bar Toggle Title",
+        icon: .init(name: "", bundle: .main),
+        footer: "Address Bar Toggle Footer",
+        primaryCTA: "Address Bar Toggle Primary",
+        secondaryCTA: "Address Bar Toggle Secondary",
+        daxAnimation: nil
+    )
+}
+
+extension OnboardingDuckAIEnabledPersonalizationContent {
+    static let mock = OnboardingDuckAIEnabledPersonalizationContent(
+        icon: .init(name: "", bundle: .main),
+        title: "Duck.ai Enabled Title",
+        message: "Duck.ai Enabled Message",
+        primaryCTA: "Duck.ai Enabled Primary",
+        secondaryCTA: "Duck.ai Enabled Secondary",
+        daxAnimation: nil
     )
 }
 
@@ -155,6 +204,7 @@ extension OnboardingDuckAIQueryContent {
         searchPlaceholder: "Search Placeholder",
         aiPlaceholder: "AI Placeholder",
         isToggleVisible: true,
+        defaultMode: .search,
         daxAnimation: nil
     )
 }

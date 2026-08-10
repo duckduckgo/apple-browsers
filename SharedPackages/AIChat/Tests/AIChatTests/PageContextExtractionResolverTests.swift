@@ -41,15 +41,15 @@ final class PageContextExtractionResolverTests: XCTestCase {
 
     func testWhenResolveWithNoRequestThenReturnsNil() {
         var resolver = PageContextExtractionResolver()
-        XCTAssertNil(resolver.resolve(pageContext: nonEmptyContext()))
+        XCTAssertNil(resolver.resolve(.collected(nonEmptyContext())))
     }
 
     func testWhenExtraResultArrivesAfterDrainingThenReturnsNil() {
         var resolver = PageContextExtractionResolver()
         resolver.requested(trigger: .navigation)
-        XCTAssertNotNil(resolver.resolve(pageContext: nonEmptyContext()))
+        XCTAssertNotNil(resolver.resolve(.collected(nonEmptyContext())))
         // A second (duplicate) result with nothing pending is skipped — the over-count fix.
-        XCTAssertNil(resolver.resolve(pageContext: nonEmptyContext()))
+        XCTAssertNil(resolver.resolve(.collected(nonEmptyContext())))
     }
 
     // MARK: - Reset on navigation
@@ -65,7 +65,7 @@ final class PageContextExtractionResolverTests: XCTestCase {
         XCTAssertFalse(resolver.hasPendingCollections)
         // A previous page's result arriving after reset has nothing to pair with, so it can't
         // mis-attribute the next page's telemetry.
-        XCTAssertNil(resolver.resolve(pageContext: nonEmptyContext()))
+        XCTAssertNil(resolver.resolve(.collected(nonEmptyContext())))
     }
 
     // MARK: - Outcome derivation
@@ -73,13 +73,13 @@ final class PageContextExtractionResolverTests: XCTestCase {
     func testWhenNonEmptyContextThenSuccess() {
         var resolver = PageContextExtractionResolver()
         resolver.requested(trigger: .navigation)
-        XCTAssertEqual(resolver.resolve(pageContext: nonEmptyContext())?.outcome, .success)
+        XCTAssertEqual(resolver.resolve(.collected(nonEmptyContext()))?.outcome, .success)
     }
 
     func testWhenEmptyContextThenEmptyContentFailure() {
         var resolver = PageContextExtractionResolver()
         resolver.requested(trigger: .auto)
-        XCTAssertEqual(resolver.resolve(pageContext: emptyContext())?.outcome, .failure(.emptyContent))
+        XCTAssertEqual(resolver.resolve(.collected(emptyContext()))?.outcome, .failure(.emptyContent))
     }
 
     /// A page title alone (e.g. a page whose content extraction found nothing) is not a
@@ -87,13 +87,34 @@ final class PageContextExtractionResolverTests: XCTestCase {
     func testWhenTitledContextHasEmptyContentThenEmptyContentFailure() {
         var resolver = PageContextExtractionResolver()
         resolver.requested(trigger: .userRequest)
-        XCTAssertEqual(resolver.resolve(pageContext: titleOnlyContext())?.outcome, .failure(.emptyContent))
+        XCTAssertEqual(resolver.resolve(.collected(titleOnlyContext()))?.outcome, .failure(.emptyContent))
     }
 
-    func testWhenNilContextThenDeserializeFailedFailure() {
+    func testWhenDecodeFailedThenDeserializeFailedFailure() {
         var resolver = PageContextExtractionResolver()
         resolver.requested(trigger: .auto)
-        XCTAssertEqual(resolver.resolve(pageContext: nil)?.outcome, .failure(.deserializeFailed))
+        XCTAssertEqual(resolver.resolve(.decodeFailed)?.outcome, .failure(.deserializeFailed))
+    }
+
+    /// A collection that threw in the page must be reported as such, not as a timeout — the script
+    /// did answer, so the pending entry is resolved immediately with its own reason and latency.
+    func testWhenScriptErrorThenScriptErrorFailureWithLatency() {
+        var resolver = PageContextExtractionResolver()
+        resolver.requested(trigger: .userRequest, at: time(10))
+
+        let resolution = resolver.resolve(.scriptError, now: time(10.2))
+
+        XCTAssertEqual(resolution?.outcome, .failure(.scriptError))
+        XCTAssertEqual(resolution?.trigger, .userRequest)
+        XCTAssertEqual(resolution?.latency, .under1s)
+        XCTAssertFalse(resolver.hasPendingCollections)
+    }
+
+    func testWhenScriptErrorResolvesRequestThenItCannotAlsoExpireAsTimeout() {
+        var resolver = PageContextExtractionResolver()
+        resolver.requested(trigger: .auto, at: time(0))
+        _ = resolver.resolve(.scriptError, now: time(1))
+        XCTAssertTrue(resolver.expireCollections(olderThan: 30, now: time(40)).isEmpty)
     }
 
     // MARK: - FIFO trigger attribution
@@ -103,9 +124,9 @@ final class PageContextExtractionResolverTests: XCTestCase {
         resolver.requested(trigger: .navigation)
         resolver.requested(trigger: .userRequest)
 
-        XCTAssertEqual(resolver.resolve(pageContext: nonEmptyContext())?.trigger, .navigation)
-        XCTAssertEqual(resolver.resolve(pageContext: nonEmptyContext())?.trigger, .userRequest)
-        XCTAssertNil(resolver.resolve(pageContext: nonEmptyContext()))
+        XCTAssertEqual(resolver.resolve(.collected(nonEmptyContext()))?.trigger, .navigation)
+        XCTAssertEqual(resolver.resolve(.collected(nonEmptyContext()))?.trigger, .userRequest)
+        XCTAssertNil(resolver.resolve(.collected(nonEmptyContext())))
     }
 
     /// The review scenario: the eager pre-markup collect returns empty and the post-markup collect
@@ -115,11 +136,11 @@ final class PageContextExtractionResolverTests: XCTestCase {
         resolver.requested(trigger: .navigation)
         resolver.requested(trigger: .navigation)
 
-        let eager = resolver.resolve(pageContext: emptyContext())
+        let eager = resolver.resolve(.collected(emptyContext()))
         XCTAssertEqual(eager?.outcome, .failure(.emptyContent))
         XCTAssertEqual(eager?.trigger, .navigation)
 
-        let real = resolver.resolve(pageContext: nonEmptyContext())
+        let real = resolver.resolve(.collected(nonEmptyContext()))
         XCTAssertEqual(real?.outcome, .success)
         XCTAssertEqual(real?.trigger, .navigation)
     }
@@ -129,25 +150,25 @@ final class PageContextExtractionResolverTests: XCTestCase {
     func testWhenUnderOneSecondThenUnder1sBucket() {
         var resolver = PageContextExtractionResolver()
         resolver.requested(trigger: .navigation, at: time(10))
-        XCTAssertEqual(resolver.resolve(pageContext: nonEmptyContext(), now: time(10.5))?.latency, .under1s)
+        XCTAssertEqual(resolver.resolve(.collected(nonEmptyContext()), now: time(10.5))?.latency, .under1s)
     }
 
     func testWhenExactlyOneSecondThenOneToFiveBucket() {
         var resolver = PageContextExtractionResolver()
         resolver.requested(trigger: .navigation, at: time(10))
-        XCTAssertEqual(resolver.resolve(pageContext: nonEmptyContext(), now: time(11))?.latency, .oneToFiveSeconds)
+        XCTAssertEqual(resolver.resolve(.collected(nonEmptyContext()), now: time(11))?.latency, .oneToFiveSeconds)
     }
 
     func testWhenExactlyFiveSecondsThenOneToFiveBucket() {
         var resolver = PageContextExtractionResolver()
         resolver.requested(trigger: .navigation, at: time(10))
-        XCTAssertEqual(resolver.resolve(pageContext: nonEmptyContext(), now: time(15))?.latency, .oneToFiveSeconds)
+        XCTAssertEqual(resolver.resolve(.collected(nonEmptyContext()), now: time(15))?.latency, .oneToFiveSeconds)
     }
 
     func testWhenOverFiveSecondsThenOver5sBucket() {
         var resolver = PageContextExtractionResolver()
         resolver.requested(trigger: .navigation, at: time(10))
-        XCTAssertEqual(resolver.resolve(pageContext: nonEmptyContext(), now: time(16))?.latency, .over5s)
+        XCTAssertEqual(resolver.resolve(.collected(nonEmptyContext()), now: time(16))?.latency, .over5s)
     }
 
     func testWhenTwoRequestsThenEachGetsItsOwnLatency() {
@@ -156,9 +177,9 @@ final class PageContextExtractionResolverTests: XCTestCase {
         resolver.requested(trigger: .userRequest, at: time(14))
 
         // First request started at 10; resolved at 10.4 → under 1s.
-        XCTAssertEqual(resolver.resolve(pageContext: nonEmptyContext(), now: time(10.4))?.latency, .under1s)
+        XCTAssertEqual(resolver.resolve(.collected(nonEmptyContext()), now: time(10.4))?.latency, .under1s)
         // Second request started at 14; resolved at 20 → over 5s (not measured from the first start).
-        XCTAssertEqual(resolver.resolve(pageContext: nonEmptyContext(), now: time(20))?.latency, .over5s)
+        XCTAssertEqual(resolver.resolve(.collected(nonEmptyContext()), now: time(20))?.latency, .over5s)
     }
 
     // MARK: - hasPendingCollections
@@ -168,7 +189,7 @@ final class PageContextExtractionResolverTests: XCTestCase {
         XCTAssertFalse(resolver.hasPendingCollections)
         resolver.requested(trigger: .navigation)
         XCTAssertTrue(resolver.hasPendingCollections)
-        _ = resolver.resolve(pageContext: nonEmptyContext())
+        _ = resolver.resolve(.collected(nonEmptyContext()))
         XCTAssertFalse(resolver.hasPendingCollections)
     }
 
@@ -208,13 +229,13 @@ final class PageContextExtractionResolverTests: XCTestCase {
         // At t=6 only the first (age 6) is past the 5s timeout; the second (age 2) stays pending.
         XCTAssertEqual(resolver.expireCollections(olderThan: 5, now: time(6)).map(\.trigger), [.navigation])
         XCTAssertTrue(resolver.hasPendingCollections)
-        XCTAssertEqual(resolver.resolve(pageContext: nonEmptyContext(), now: time(6))?.trigger, .userRequest)
+        XCTAssertEqual(resolver.resolve(.collected(nonEmptyContext()), now: time(6))?.trigger, .userRequest)
     }
 
     func testWhenResolvedBeforeTimeoutThenExpiryIsNoOp() {
         var resolver = PageContextExtractionResolver()
         resolver.requested(trigger: .navigation, at: time(0))
-        _ = resolver.resolve(pageContext: nonEmptyContext(), now: time(1))
+        _ = resolver.resolve(.collected(nonEmptyContext()), now: time(1))
         XCTAssertTrue(resolver.expireCollections(olderThan: 5, now: time(10)).isEmpty)
     }
 }

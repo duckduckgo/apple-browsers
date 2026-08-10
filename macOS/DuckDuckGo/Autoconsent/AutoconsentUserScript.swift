@@ -24,7 +24,7 @@ import PrivacyConfig
 import PrivacyDashboard
 import UserScript
 import WebKit
-import FeatureFlags
+import FeatureFlags_macOS
 import WebExtensions
 
 protocol AutoconsentUserScriptDelegate: AnyObject {

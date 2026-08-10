@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import FeatureFlags_iOS
 import Foundation
 import PersistenceTestingUtils
 

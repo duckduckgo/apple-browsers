@@ -949,6 +949,12 @@
 /* Login name label for login details on autofill */
 "autofill.logins.details.login-name" = "Naslov";
 
+/* Message for alert when attempting to save a password that has neither a website nor a username */
+"autofill.logins.details.missing-website-or-username-alert.message" = "Za spremanje ove lozinke unesi web-mjesto ili korisničko ime.";
+
+/* Title for alert when attempting to save a password that has neither a website nor a username */
+"autofill.logins.details.missing-website-or-username-alert.title" = "Potrebno je web-mjesto ili korisničko ime";
+
 /* Title when adding new autofill login */
 "autofill.logins.details.new-title" = "Dodaj lozinku";
 

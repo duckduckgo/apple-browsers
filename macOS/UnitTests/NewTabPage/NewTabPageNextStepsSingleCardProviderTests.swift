@@ -19,7 +19,7 @@
 import BrowserServicesKit
 import Combine
 import DDGSync
-import FeatureFlags
+import FeatureFlags_macOS
 import NewTabPage
 import PersistenceTestingUtils
 import PixelKit

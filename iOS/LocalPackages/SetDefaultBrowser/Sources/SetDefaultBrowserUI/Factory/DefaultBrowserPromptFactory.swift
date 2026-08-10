@@ -35,17 +35,20 @@ public enum DefaultBrowserPromptFactory {
         promptUserInteractionEventMapper: any DefaultBrowserPromptEventMapping<DefaultBrowserPromptEvent>,
         uiProvider: any DefaultBrowserPromptUIProviding,
         installDateProvider: @escaping () -> Date?,
-        currentDateProvider: @escaping () -> Date
+        currentDateProvider: @escaping () -> Date,
+        defaultBrowserChecker: CheckDefaultBrowserService? = nil
     ) -> DefaultBrowserPromptPresenting {
 
         let featureFlagger = DefaultBrowserPromptFeatureFlag(
             settingsProvider: featureFlagSettingsProvider
         )
 
+        let browserChecker = defaultBrowserChecker ?? SystemCheckDefaultBrowserService(application: UIApplication.shared)
         let defaultBrowserManager = DefaultBrowserManager(
             defaultBrowserInfoStore: checkDefaultBrowserContextStorage,
             defaultBrowserEventMapper: checkDefaultBrowserDebugEventMapper,
-            defaultBrowserChecker: SystemCheckDefaultBrowserService(application: UIApplication.shared))
+            defaultBrowserChecker: browserChecker
+        )
 
         let promptTypeDecider = DefaultBrowserPromptTypeDecider(
             featureFlagger: featureFlagger,

@@ -106,65 +106,68 @@ final class DefaultBrowserPromptDeciderTests {
         #expect(!defaultBrowserManagerMock.didCallDefaultBrowserInfo)
     }
 
-    @Test("Retained Prepared Prompt Is Invalid When Browser Became Default")
-    func retainedPreparedPromptIsInvalidWhenCurrentBrowserStatusIsDefault() {
+    @Test("Retained Prepared Prompt Uses Cached Eligible Status")
+    func retainedPreparedPromptIsValidWhenCachedBrowserStatusIsNotDefault() {
         defaultBrowserManagerMock.storedInfoToReturn = makeDefaultBrowserContext(isDefaultBrowser: false)
         defaultBrowserManagerMock.resultToReturn = .successful(isDefaultBrowser: true)
         makeSUT()
 
         let isStillValid = sut.isRetainedPreparedPromptStillValid()
 
-        #expect(!isStillValid)
-        #expect(defaultBrowserManagerMock.didCallDefaultBrowserInfo)
-        #expect(!defaultBrowserManagerMock.didCallStoredDefaultBrowserInfo)
+        #expect(isStillValid)
+        #expect(defaultBrowserManagerMock.didCallStoredDefaultBrowserInfo)
+        #expect(!defaultBrowserManagerMock.didCallDefaultBrowserInfo)
     }
 
-    @Test("Retained Prepared Prompt Remains Valid When Browser Is Currently Not Default")
-    func retainedPreparedPromptIsValidWhenCurrentBrowserStatusIsNotDefault() {
+    @Test("Retained Prepared Prompt Uses Cached Ineligible Status")
+    func retainedPreparedPromptIsInvalidWhenCachedBrowserStatusIsDefault() {
         defaultBrowserManagerMock.storedInfoToReturn = makeDefaultBrowserContext(isDefaultBrowser: true)
         defaultBrowserManagerMock.resultToReturn = .successful(isDefaultBrowser: false)
         makeSUT()
 
         let isStillValid = sut.isRetainedPreparedPromptStillValid()
 
+        #expect(!isStillValid)
+        #expect(defaultBrowserManagerMock.didCallStoredDefaultBrowserInfo)
+        #expect(!defaultBrowserManagerMock.didCallDefaultBrowserInfo)
+    }
+
+    @Test("Retained Prepared Prompt Remains Valid When No Status Is Cached")
+    func retainedPreparedPromptIsValidWhenNoBrowserStatusIsCached() {
+        defaultBrowserManagerMock.storedInfoToReturn = nil
+        defaultBrowserManagerMock.resultToReturn = .successful(isDefaultBrowser: true)
+        makeSUT()
+
+        let isStillValid = sut.isRetainedPreparedPromptStillValid()
+
         #expect(isStillValid)
+        #expect(defaultBrowserManagerMock.didCallStoredDefaultBrowserInfo)
+        #expect(!defaultBrowserManagerMock.didCallDefaultBrowserInfo)
+    }
+
+    @Test("Initial Selection Preserves Fresh Rate-Limit Failure")
+    func promptSelectionDoesNotUseEligibleCacheWhenFreshCheckIsRateLimited() {
+        let eligibleCachedStatus = makeDefaultBrowserContext(isDefaultBrowser: false)
+        defaultBrowserManagerMock.storedInfoToReturn = eligibleCachedStatus
+        defaultBrowserManagerMock.resultToReturn = .failure(.rateLimitReached(updatedStoredInfo: eligibleCachedStatus))
+        let inactiveUserPromptDecider = MockDefaultBrowserPromptTypeDecider()
+        inactiveUserPromptDecider.promptToReturn = .inactive
+        let activeUserPromptDecider = MockDefaultBrowserPromptTypeDecider()
+        sut = DefaultBrowserPromptTypeDecider(
+            featureFlagger: featureFlaggerMock,
+            store: storeMock,
+            activeUserPromptDecider: activeUserPromptDecider,
+            inactiveUserPromptDecider: inactiveUserPromptDecider,
+            defaultBrowserManager: defaultBrowserManagerMock,
+            installDateProvider: { nil },
+            dateProvider: dateProviderMock.getDate
+        )
+
+        let prompt = sut.promptType()
+
+        #expect(prompt == nil)
         #expect(defaultBrowserManagerMock.didCallDefaultBrowserInfo)
         #expect(!defaultBrowserManagerMock.didCallStoredDefaultBrowserInfo)
-    }
-
-    @Test("Retained Prepared Prompt Falls Back To Stored Status When The Fresh Check Fails")
-    func retainedPreparedPromptRemainsValidWhenCheckFailsAndStoredStatusIsNotDefault() {
-        defaultBrowserManagerMock.resultToReturn = .failure(.rateLimitReached(updatedStoredInfo: makeDefaultBrowserContext(isDefaultBrowser: false)))
-        defaultBrowserManagerMock.storedInfoToReturn = makeDefaultBrowserContext(isDefaultBrowser: false)
-        makeSUT()
-
-        let isStillValid = sut.isRetainedPreparedPromptStillValid()
-
-        #expect(isStillValid)
-        #expect(defaultBrowserManagerMock.didCallDefaultBrowserInfo)
-        #expect(defaultBrowserManagerMock.didCallStoredDefaultBrowserInfo)
-    }
-
-    @Test("Retained Prepared Prompt Is Invalid When Failed Check Falls Back To A Default-Browser Status")
-    func retainedPreparedPromptIsInvalidWhenCheckFailsAndStoredStatusIsDefault() {
-        defaultBrowserManagerMock.resultToReturn = .failure(.rateLimitReached(updatedStoredInfo: makeDefaultBrowserContext(isDefaultBrowser: true)))
-        defaultBrowserManagerMock.storedInfoToReturn = makeDefaultBrowserContext(isDefaultBrowser: true)
-        makeSUT()
-
-        let isStillValid = sut.isRetainedPreparedPromptStillValid()
-
-        #expect(!isStillValid)
-    }
-
-    @Test("Retained Prepared Prompt Remains Valid When The Fresh Check Fails With No Stored Status")
-    func retainedPreparedPromptRemainsValidWhenCheckFailsWithNoStoredStatus() {
-        defaultBrowserManagerMock.resultToReturn = .failure(.rateLimitReached(updatedStoredInfo: nil))
-        defaultBrowserManagerMock.storedInfoToReturn = nil
-        makeSUT()
-
-        let isStillValid = sut.isRetainedPreparedPromptStillValid()
-
-        #expect(isStillValid)
     }
 
     @Test("Check Inactive User Modal Has Priority Over Active User Modal")

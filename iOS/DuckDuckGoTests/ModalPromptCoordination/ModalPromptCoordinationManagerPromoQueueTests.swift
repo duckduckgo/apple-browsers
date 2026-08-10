@@ -17,9 +17,13 @@
 //  limitations under the License.
 //
 
-import UIKit
 import Foundation
+import SetDefaultBrowserCore
+import SetDefaultBrowserTestSupport
+import SetDefaultBrowserUI
+import SwiftUI
 import Testing
+import UIKit
 @testable import DuckDuckGo
 
 @MainActor
@@ -445,6 +449,73 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
     }
 
     @available(iOS 16, *)
+    @Test("Default Browser Pending Retries Reuse Selection Status Check", .timeLimit(.minutes(1)))
+    func whenDefaultBrowserPromptIsRetriedFromPendingThenSystemStatusIsCheckedOnce() throws {
+        cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
+        let browserChecker = MockCheckDefaultBrowserService()
+        browserChecker.resultToReturn = .success(false)
+        let browserInfoStore = MockDefaultBrowserInfoStore()
+        let promptStore = MockDefaultBrowserPromptStore()
+        let userActivityManager = MockDefaultBrowserPromptUserActivityManager()
+        let currentDate = Date(timeIntervalSince1970: 1_775_347_200)
+        let installDate = currentDate.addingTimeInterval(-2 * 24 * 60 * 60)
+        let defaultBrowserPresenter = DefaultBrowserPromptFactory.makeDefaultBrowserPromptPresenter(
+            featureFlagSettingsProvider: DefaultBrowserRetryFeatureSettingsProvider(),
+            promptActivityStore: promptStore,
+            userTypeProviding: MockDefaultBrowserPromptUserTypeProvider(),
+            userActivityManager: userActivityManager,
+            checkDefaultBrowserContextStorage: browserInfoStore,
+            defaultBrowserSettingsNavigator: MockDefaultBrowserPromptSettingsNavigating(),
+            checkDefaultBrowserDebugEventMapper: MockDefaultBrowserPromptEventMapping<DefaultBrowserManagerDebugEvent>(),
+            promptUserInteractionEventMapper: MockDefaultBrowserPromptEventMapping<DefaultBrowserPromptEvent>(),
+            uiProvider: DefaultBrowserRetryUIProvider(),
+            installDateProvider: { installDate },
+            currentDateProvider: { currentDate },
+            defaultBrowserChecker: browserChecker
+        )
+        let provider = DefaultBrowserModalPromptProvider(presenter: defaultBrowserPresenter)
+        sut = ModalPromptCoordinationManager(
+            providers: [provider],
+            cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            modalPromptScheduling: schedulerMock
+        )
+
+        let initialLease = try acquireModalLease()
+        let initialDisposition = sut.presentModalPromptIfNeeded(from: presenterMock, with: initialLease)
+        let cachedStatus = try #require(browserInfoStore.defaultBrowserContext)
+
+        #expect(initialDisposition == .retained)
+        #expect(browserChecker.isDefaultWebBrowserCallCount == 1)
+        #expect(!cachedStatus.isDefaultBrowser)
+        #expect(cachedStatus.numberOfTimesChecked == 1)
+        #expect(promptStore.modalShownOccurrences == 1)
+
+        // The external status changes after selection. Retained work deliberately uses the cached decision so
+        // recoverable retries do not consume additional rate-limited system checks.
+        browserChecker.resultToReturn = .success(true)
+        sut.applicationDidEnterBackground()
+        sut.applicationDidBecomeActive()
+
+        for _ in 1...3 {
+            let retryLease = try acquireModalLease()
+            let disposition = sut.presentModalPromptIfNeeded(from: presenterMock, with: retryLease)
+
+            #expect(disposition == .retained)
+            #expect(browserChecker.isDefaultWebBrowserCallCount == 1)
+            #expect(browserInfoStore.defaultBrowserContext == cachedStatus)
+            #expect(promptStore.modalShownOccurrences == 1)
+
+            sut.applicationDidEnterBackground()
+            sut.applicationDidBecomeActive()
+        }
+
+        #expect(browserChecker.isDefaultWebBrowserCallCount == 1)
+        #expect(!promoQueueLeaseArbiter.snapshot.hasModalLease)
+        #expect(sut.shouldSuppressOtherSessionPromos)
+    }
+
+    @available(iOS 16, *)
     @Test("Background Moves Committed Work To Pending And Cancelled Delay Cannot Present", .timeLimit(.minutes(1)))
     func whenAppBackgroundsDuringDelayThenPreparedItemIsRetriedBeforeProviders() throws {
         cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
@@ -855,6 +926,20 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
 
 private enum TestError: Error {
     case expectedAcquiredLease
+}
+
+private struct DefaultBrowserRetryFeatureSettingsProvider: DefaultBrowserPromptFeatureFlagSettingsProvider {
+    let defaultBrowserPromptFeatureSettings: [String: Any] = [:]
+}
+
+private struct DefaultBrowserRetryUIProvider: DefaultBrowserPromptUIProviding {
+    func makeBackground() -> EmptyView {
+        EmptyView()
+    }
+
+    func makeBrowserComparisonChart() -> EmptyView {
+        EmptyView()
+    }
 }
 
 /// A scheduler that drops its scheduled block as soon as it has run.

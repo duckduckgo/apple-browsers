@@ -3167,28 +3167,40 @@ class MainViewController: UIViewController {
     }
     
     private func showSuggestionTray(_ type: SuggestionTrayViewController.SuggestionType) {
-        newTabPageViewController?.setPromoSurfaceActive(false)
-        suggestionTrayController?.show(for: type)
-        applyWidthToTrayController()
-        if !isUsingSingleBar {
-            if !daxDialogsManager.shouldShowFireButtonPulse {
-                ViewHighlighter.hideAll()
+        NewTabPagePromoSurfaceHandoff.showHostedSurface(
+            deactivateNewTabPage: {
+                newTabPageViewController?.setPromoSurfaceActive(false)
+            },
+            showHostedSurface: {
+                suggestionTrayController?.show(for: type)
+                applyWidthToTrayController()
+                if !isUsingSingleBar {
+                    if !daxDialogsManager.shouldShowFireButtonPulse {
+                        ViewHighlighter.hideAll()
+                    }
+                    if type.hideOmnibarSeparator() && appSettings.currentAddressBarPosition != .bottom {
+                        viewCoordinator.omniBar.hideSeparator()
+                    }
+                }
+                viewCoordinator.suggestionTrayContainer.isHidden = false
+                currentTab?.webView.accessibilityElementsHidden = true
             }
-            if type.hideOmnibarSeparator() && appSettings.currentAddressBarPosition != .bottom {
-                viewCoordinator.omniBar.hideSeparator()
-            }
-        }
-        viewCoordinator.suggestionTrayContainer.isHidden = false
-        currentTab?.webView.accessibilityElementsHidden = true
+        )
     }
     
     func hideSuggestionTray() {
-        viewCoordinator.omniBar.showSeparator()
-        viewCoordinator.suggestionTrayContainer.isHidden = true
-        currentTab?.webView.accessibilityElementsHidden = false
-        suggestionTrayController?.didHide(animated: false)
-        let isCoveredByUnifiedInput = unifiedToggleInputCoordinator?.computeRenderState().isContentVisible == true
-        newTabPageViewController?.setPromoSurfaceActive(!isCoveredByUnifiedInput)
+        NewTabPagePromoSurfaceHandoff.showNewTabPage(
+            hideHostedSurface: {
+                viewCoordinator.omniBar.showSeparator()
+                viewCoordinator.suggestionTrayContainer.isHidden = true
+                currentTab?.webView.accessibilityElementsHidden = false
+                suggestionTrayController?.didHide(animated: false)
+            },
+            activateNewTabPage: {
+                let isCoveredByUnifiedInput = unifiedToggleInputCoordinator?.computeRenderState().isContentVisible == true
+                newTabPageViewController?.setPromoSurfaceActive(!isCoveredByUnifiedInput)
+            }
+        )
     }
     
     func launchAutofillLogins(with currentTabUrl: URL? = nil, currentTabUid: String? = nil, openSearch: Bool = false, source: AutofillSettingsSource, selectedAccount: SecureVaultModels.WebsiteAccount? = nil, extensionPromotionManager: AutofillExtensionPromotionManaging? = nil) {
@@ -6699,25 +6711,25 @@ extension MainViewController: TabSwitcherDelegate {
 
     private func animateLogoAppearance() {
         guard let newTabPageViewController else { return }
-        newTabPageViewController.setPromoSurfaceVisible(false)
+        let visibilityGeneration = newTabPageViewController.setPromoSurfaceVisible(false)
         newTabPageViewController.view.transform = CGAffineTransform().scaledBy(x: 0.5, y: 0.5)
         newTabPageViewController.view.alpha = 0.0
         UIView.animate(withDuration: 0.2, delay: 0.1, options: [.curveEaseInOut, .beginFromCurrentState]) {
             newTabPageViewController.view.transform = .identity
             newTabPageViewController.view.alpha = 1.0
-        } completion: { _ in
-            newTabPageViewController.setPromoSurfaceVisible(true)
+        } completion: { [weak newTabPageViewController] _ in
+            newTabPageViewController?.restorePromoSurfaceVisibility(ifCurrent: visibilityGeneration)
         }
     }
 
     private func deferNTPAppearance() {
         guard let newTabPageViewController else { return }
-        newTabPageViewController.setPromoSurfaceVisible(false)
+        let visibilityGeneration = newTabPageViewController.setPromoSurfaceVisible(false)
         newTabPageViewController.view.alpha = 0.0
         UIView.animate(withDuration: 0.2, delay: 0.2, options: [.curveEaseInOut, .beginFromCurrentState]) {
             newTabPageViewController.view.alpha = 1.0
-        } completion: { _ in
-            newTabPageViewController.setPromoSurfaceVisible(true)
+        } completion: { [weak newTabPageViewController] _ in
+            newTabPageViewController?.restorePromoSurfaceVisibility(ifCurrent: visibilityGeneration)
         }
     }
 

@@ -23,28 +23,31 @@ import Foundation
 import PixelKit
 import Subscription
 
-/// PixelKit home for the experimental omnibar pixels, fired from both the UTI coordinator and the legacy
-/// switch-bar editing state so a single daily ledger covers the whole pixel.
+/// The schedule suffix is part of the name, fired with frequencies that append nothing, so PixelKit's
+/// platform suffix lands after it and the wire name stays `..._daily_ios_phone` as the legacy pixel reports it.
 enum ExperimentalOmnibarPixel: PixelKitEvent, PixelKitEventWithCustomPrefix {
 
     /// `isToggleVisible`: whether the Search/Duck.ai toggle was on screen when the surface appeared.
-    case omnibarShown(isToggleVisible: Bool)
+    case omnibarShownDaily(isToggleVisible: Bool)
+    case omnibarShownCount(isToggleVisible: Bool)
 
     var name: String {
         switch self {
-        case .omnibarShown: "aichat_experimental_omnibar_shown"
+        case .omnibarShownDaily: "m_aichat_experimental_omnibar_shown_daily"
+        case .omnibarShownCount: "m_aichat_experimental_omnibar_shown_count"
         }
     }
 
     var parameters: [String: String]? {
         switch self {
-        case .omnibarShown(let isToggleVisible): ["toggle_visible": String(isToggleVisible)]
+        case .omnibarShownDaily(let isToggleVisible), .omnibarShownCount(let isToggleVisible):
+            ["toggle_visible": String(isToggleVisible)]
         }
     }
 
     var standardParameters: [PixelKitStandardParameter]? { [.pixelSource] }
 
-    var namePrefix: String { "m_" }
+    var namePrefix: String { "" }
 }
 
 /// The UTI surface a pixel is fired from, sent as the `surface` param (`voice_tapped` reuses `source`).

@@ -24,13 +24,12 @@ import PixelKit
 
 /// Injectable pixel-firing seam: bundles the legacy firers (`Core.PixelFiring` for one-off pixels,
 /// `DailyPixelFiring` for daily-and-count) and PixelKit behind one value so UTI pixel firing has a single
-/// injection point. `.live` fires for real; tests pass `PixelFiringMock`/`PixelKitMock` to assert what was fired.
+/// injection point. `.live` fires for real; tests pass `PixelFiringMock`/`PixelKitMock`.
 struct UTIPixelFiring {
     var pixel: Core.PixelFiring.Type = Pixel.self
     var daily: DailyPixelFiring.Type = DailyPixel.self
-    /// A closure, not a `PixelFiring`: the `PixelKit` class shadows its module so the protocol can't be
-    /// named here, and bare `PixelFiring` would collide with `Core.PixelFiring` above.
-    var pixelKit: (PixelKitEvent, PixelKit.Frequency) -> Void = { PixelKit.fire($0, frequency: $1) }
+    /// Resolved at fire time so it picks up `PixelKit.setUp` regardless of when this value was created.
+    var pixelKit: () -> (any PixelKitFiring)? = { PixelKit.shared }
 
     static let live = UTIPixelFiring()
 
@@ -43,7 +42,7 @@ struct UTIPixelFiring {
     }
 
     func fire(_ event: PixelKitEvent, frequency: PixelKit.Frequency) {
-        pixelKit(event, frequency)
+        pixelKit()?.fire(event, frequency: frequency)
     }
 }
 
@@ -77,7 +76,10 @@ final class UTIPixelReporter {
     /// The pair fired whenever the unified input surface first appears in the omnibar host.
     func reportOmnibarInputSurfaceShown() {
         firing.fireDailyAndCount(.aiChatInternalSwitchBarDisplayed)
-        withContext { firing.fire(ExperimentalOmnibarPixel.omnibarShown(isToggleVisible: $0.isToggleVisible), frequency: .dailyAndCount) }
+        withContext {
+            firing.fire(ExperimentalOmnibarPixel.omnibarShownDaily(isToggleVisible: $0.isToggleVisible), frequency: .legacyDailyNoSuffix)
+            firing.fire(ExperimentalOmnibarPixel.omnibarShownCount(isToggleVisible: $0.isToggleVisible), frequency: .standard)
+        }
     }
 
     func reportBackButtonPressed() {

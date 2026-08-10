@@ -232,8 +232,9 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         super.viewDidAppear(animated)
 
         DailyPixel.fireDailyAndCount(pixel: .aiChatInternalSwitchBarDisplayed)
-        PixelKit.fire(ExperimentalOmnibarPixel.omnibarShown(isToggleVisible: switchBarHandler.isToggleEnabled),
-                      frequency: .dailyAndCount)
+        let isToggleVisible = switchBarHandler.isToggleEnabled
+        PixelKit.fire(ExperimentalOmnibarPixel.omnibarShownDaily(isToggleVisible: isToggleVisible), frequency: .legacyDailyNoSuffix)
+        PixelKit.fire(ExperimentalOmnibarPixel.omnibarShownCount(isToggleVisible: isToggleVisible), frequency: .standard)
     }
 
     override func viewDidDisappear(_ animated: Bool) {

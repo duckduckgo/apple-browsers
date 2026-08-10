@@ -44,9 +44,7 @@ final class UTIPixelReporterTests: XCTestCase {
     private func makeReporter(context: @escaping () -> UTIPixelContext?) -> UTIPixelReporter {
         UTIPixelReporter(firing: UTIPixelFiring(pixel: PixelFiringMock.self,
                                                 daily: PixelFiringMock.self,
-                                                pixelKit: { [unowned self] event, frequency in
-                                                    pixelKitMock.fire(event, frequency: frequency)
-                                                }),
+                                                pixelKit: { [unowned self] in pixelKitMock }),
                          context: context)
     }
 
@@ -67,10 +65,13 @@ final class UTIPixelReporterTests: XCTestCase {
 
         reporter.reportOmnibarInputSurfaceShown()
 
-        XCTAssertEqual(pixelKitMock.actualFireCalls.count, 1)
-        XCTAssertEqual(pixelKitMock.actualFireCalls.first?.pixel.name, "aichat_experimental_omnibar_shown")
+        XCTAssertEqual(pixelKitMock.actualFireCalls.count, 2)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.first?.pixel.name, "m_aichat_experimental_omnibar_shown_daily")
+        XCTAssertEqual(pixelKitMock.actualFireCalls.first?.frequency, .legacyDailyNoSuffix)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name, "m_aichat_experimental_omnibar_shown_count")
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.frequency, .standard)
         XCTAssertEqual(pixelKitMock.actualFireCalls.first?.pixel.parameters, ["toggle_visible": "true"])
-        XCTAssertEqual(pixelKitMock.actualFireCalls.first?.frequency, .dailyAndCount)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.parameters, ["toggle_visible": "true"])
     }
 
     func testWhenOmnibarSurfaceShownWithToggleHiddenThenPixelReportsToggleVisibleFalse() {

@@ -25,7 +25,7 @@ import UserNotifications
 final class NotificationServiceManagerInactivityTests: XCTestCase {
 
     private var stateStore: MockInactivityNotificationStateStore!
-    private let daysInactiveKey = InactivityNotificationSchedulerService.Constants.daysInactiveSettingKey
+    private let daysInactiveKey = InactivityNotificationSchedulerService.Settings.daysInactive.rawValue
     private let tappedPixelName = Pixel.Event.inactiveUserProvisionalPushNotificationTapped.name
 
     override func setUp() {
@@ -129,10 +129,16 @@ final class NotificationServiceManagerInactivityTests: XCTestCase {
 
 final class MockInactivityNotificationStateStore: InactivityNotificationStateStoring {
     private(set) var recordInteractionCallCount = 0
+    private(set) var resetCallCount = 0
     var interactionCount: Int = 0
 
     func recordInteraction() {
         recordInteractionCallCount += 1
         interactionCount += 1
+    }
+
+    func reset() {
+        resetCallCount += 1
+        interactionCount = 0
     }
 }

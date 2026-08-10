@@ -369,7 +369,8 @@ struct Launching: LaunchingHandling {
         let inactivityNotificationSchedulerService = InactivityNotificationSchedulerService(
             featureFlagger: featureFlagger,
             notificationServiceManager: notificationServiceManager,
-            privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager
+            privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager,
+            stateStore: inactivityStateStore
         )
 
         winBackOfferService.setURLHandler(mainCoordinator)

@@ -24,6 +24,7 @@ import Core
 protocol InactivityNotificationStateStoring: AnyObject {
     var interactionCount: Int { get }
     func recordInteraction()
+    func reset()
 }
 
 final class InactivityNotificationStateStore: InactivityNotificationStateStoring {
@@ -47,6 +48,14 @@ final class InactivityNotificationStateStore: InactivityNotificationStateStoring
             try keyValueStore.set(next, forKey: StorageKey.interactionCount)
         } catch {
             Logger.pushNotification.error("Inactivity notification recordInteraction failed with \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
+    func reset() {
+        do {
+            try keyValueStore.set(nil, forKey: StorageKey.interactionCount)
+        } catch {
+            Logger.pushNotification.error("Inactivity notification reset failed with \(error.localizedDescription, privacy: .public)")
         }
     }
 

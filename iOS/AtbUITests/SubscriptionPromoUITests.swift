@@ -1270,7 +1270,7 @@ final class SubscriptionPromoUITests: XCTestCase {
         XCUIDevice.shared.press(.home)
         app.activate()
 
-        // The manager enforces a same-session cooldown (`didPresentModalPromptThisSession`),
+        // The manager reports same-session suppression (`shouldSuppressOtherSessionPromos`),
         // so the existing-user promo must not appear immediately in this session.
         XCTAssertFalse(
             promoSheet.waitForExistence(timeout: 2),

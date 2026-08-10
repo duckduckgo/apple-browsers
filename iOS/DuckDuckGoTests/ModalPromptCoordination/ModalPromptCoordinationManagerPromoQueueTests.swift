@@ -85,7 +85,7 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
         #expect(disposition == .released)
         #expect(!promoQueueLeaseArbiter.snapshot.hasModalLease)
         #expect(provider.didCallProvideModalPrompt)
-        #expect(!sut.hasActiveOrPendingModalAttempt)
+        #expect(!sut.shouldSuppressOtherSessionPromos)
         #expect(releaseNotificationCount == 1)
         #expect(ownerAtReleaseNotification == nil)
     }
@@ -152,7 +152,7 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
         #expect(!provider.didCallProvideModalPrompt)
         #expect(!promoQueueLeaseArbiter.snapshot.hasModalLease)
         #expect(sut.modalAttemptPhase == .idle)
-        #expect(!sut.hasActiveOrPendingModalAttempt)
+        #expect(!sut.shouldSuppressOtherSessionPromos)
         #expect(!schedulerMock.didCallSchedule)
     }
 
@@ -174,7 +174,7 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
         #expect(disposition == .retained)
         #expect(sut.modalAttemptPhase == .committed(lease.attemptIdentity))
         #expect(!sut.didActuallyPresentModalPromptThisSession)
-        #expect(sut.didPresentModalPromptThisSession)
+        #expect(sut.shouldSuppressOtherSessionPromos)
 
         schedulerMock.executeScheduledBlock()
 
@@ -354,13 +354,13 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
         #expect(presentedRoot === exactRoot)
         #expect(sut.modalAttemptPhase == .presentationActive(lease.attemptIdentity))
         #expect(!sut.didActuallyPresentModalPromptThisSession)
-        #expect(sut.didPresentModalPromptThisSession)
+        #expect(sut.shouldSuppressOtherSessionPromos)
 
         deferredPresenter.completePendingPresentation()
 
         #expect(sut.modalAttemptPhase == .presentationActive(lease.attemptIdentity))
         #expect(sut.didActuallyPresentModalPromptThisSession)
-        #expect(sut.didPresentModalPromptThisSession)
+        #expect(sut.shouldSuppressOtherSessionPromos)
         #expect(provider.didCallDidPresentModal)
         #expect(promoQueueLeaseArbiter.snapshot.modalAttemptIdentity == lease.attemptIdentity)
         #expect(deferredPresenter.capturedViewController === presentedRoot)
@@ -396,7 +396,8 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
         #expect(presenterMock.didCallPresent)
         #expect(presenterMock.capturedViewController === exactRoot)
         #expect(provider.didPresentModalCallCount == 1)
-        #expect(!sut.hasActiveOrPendingModalAttempt)
+        #expect(sut.didActuallyPresentModalPromptThisSession)
+        #expect(sut.shouldSuppressOtherSessionPromos)
         #expect(sut.modalAttemptPhase == .idle)
         #expect(!promoQueueLeaseArbiter.snapshot.hasModalLease)
         #expect(promoQueueLeaseArbiter.snapshot.activeOwner == nil)
@@ -425,7 +426,7 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
 
         #expect(!presenterMock.didCallPresent)
         #expect(sut.modalAttemptPhase == .idle)
-        #expect(sut.hasActiveOrPendingModalAttempt)
+        #expect(sut.shouldSuppressOtherSessionPromos)
         #expect(!promoQueueLeaseArbiter.snapshot.hasModalLease)
         #expect(releaseNotificationCount == 1)
 
@@ -465,7 +466,7 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
         sut.applicationDidEnterBackground()
 
         #expect(sut.modalAttemptPhase == .idle)
-        #expect(sut.hasActiveOrPendingModalAttempt)
+        #expect(sut.shouldSuppressOtherSessionPromos)
         #expect(!promoQueueLeaseArbiter.snapshot.hasModalLease)
         #expect(!provider.didCallDidPresentModal)
 
@@ -547,7 +548,7 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
         #expect(provider.isRetainedPreparedModalPromptStillValidCallCount == 1)
         #expect(provider.provideReplacementModalPromptCallCount == 1)
         #expect(!presenterMock.didCallPresent)
-        #expect(!sut.hasActiveOrPendingModalAttempt)
+        #expect(!sut.shouldSuppressOtherSessionPromos)
         #expect(!promoQueueLeaseArbiter.snapshot.hasModalLease)
     }
 
@@ -612,7 +613,7 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
         #expect(!presenterMock.didCallPresent)
         #expect(!provider.didCallDidPresentModal)
         #expect(!cooldownManagerMock.didCallRecordLastPromptPresentationTimestamp)
-        #expect(!sut.hasActiveOrPendingModalAttempt)
+        #expect(!sut.shouldSuppressOtherSessionPromos)
         #expect(!promoQueueLeaseArbiter.snapshot.hasModalLease)
         #expect(releaseNotificationCount == 1)
     }
@@ -639,7 +640,7 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
         #expect(provider.capturedIsOnboardingComplete == false)
         #expect(provider.isPreparedModalPromptStillValidCallCount == 0)
         #expect(!presenterMock.didCallPresent)
-        #expect(!sut.hasActiveOrPendingModalAttempt)
+        #expect(!sut.shouldSuppressOtherSessionPromos)
         #expect(!promoQueueLeaseArbiter.snapshot.hasModalLease)
     }
 
@@ -757,7 +758,7 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
         }
 
         #expect(sut.modalAttemptPhase == .idle)
-        #expect(sut.hasActiveOrPendingModalAttempt)
+        #expect(sut.shouldSuppressOtherSessionPromos)
         #expect(!promoQueueLeaseArbiter.snapshot.hasModalLease)
         #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .visible(visibleIdentity))
         #expect(!sut.didActuallyPresentModalPromptThisSession)
@@ -831,7 +832,7 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
         schedulerMock.executeNextMainTurnBlock()
 
         #expect(sut.modalAttemptPhase == .idle)
-        #expect(sut.hasActiveOrPendingModalAttempt)
+        #expect(sut.shouldSuppressOtherSessionPromos)
         #expect(!promoQueueLeaseArbiter.snapshot.hasModalLease)
         #expect(releaseNotificationCount == 1)
     }

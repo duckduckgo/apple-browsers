@@ -357,5 +357,5 @@ extension PromoCoordinationService: NewTabPagePromoCoordinating {
 }
 
 extension PromoCoordinationService: RecentModalPromptStatusProviding {
-    var wasModalPromptRecentlyPresented: Bool { modalPromptCoordinationManager.didPresentModalPromptThisSession }
+    var shouldSuppressOtherSessionPromos: Bool { modalPromptCoordinationManager.shouldSuppressOtherSessionPromos }
 }

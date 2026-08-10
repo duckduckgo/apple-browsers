@@ -23,6 +23,28 @@ import DataBrokerProtectionCoreTestsUtils
 
 final class DataBrokerJobTests: XCTestCase {
 
+    func testWhenTerminalCallbacksRace_thenOnlyOneTakesTheContinuation() async throws {
+        let continuationState = SubJobRunnerContinuationState<Int>()
+        let claimCountLock = NSLock()
+        var claimCount = 0
+
+        let result = try await withCheckedThrowingContinuation { continuation in
+            continuationState.install(continuation)
+
+            DispatchQueue.concurrentPerform(iterations: 2) { index in
+                guard let continuation = continuationState.take() else { return }
+
+                claimCountLock.withLock {
+                    claimCount += 1
+                }
+                continuation.resume(returning: index)
+            }
+        }
+
+        XCTAssertTrue(result == 0 || result == 1)
+        XCTAssertEqual(claimCountLock.withLock { claimCount }, 1)
+    }
+
     func testWhenScanJobEncounters404_thenNextActionIsExecuted() async throws {
         // Given
         let sut = scanJob

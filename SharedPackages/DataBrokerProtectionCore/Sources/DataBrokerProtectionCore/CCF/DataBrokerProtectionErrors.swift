@@ -32,11 +32,13 @@ public enum DataBrokerProtectionError: Error, Equatable, Codable {
     case noOptOutStep
     case captchaServiceError(CaptchaServiceError)
     case emailError(EmailError?)
+    /// The scan or opt-out stopped because its parent operation or task was cancelled.
     case cancelled
     case solvingCaptchaWithCallbackError
     case cantCalculatePreferredRunDate
     case httpError(code: Int)
     case dataNotInDatabase
+    /// The configured execution deadline for the entire scan or opt-out job expired. Individual action timeouts use `actionFailed`.
     case jobTimeout
     case webContentProcessTerminated
     case secureVaultNotInitialized

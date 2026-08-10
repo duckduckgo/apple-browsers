@@ -297,7 +297,9 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
             return try await operation()
         }
 
-        return try await withTimeout(timeout, do: operation)
+        return try await withTimeout(timeout,
+                                     throwing: DataBrokerProtectionError.jobTimeout,
+                                     do: operation)
     }
 
     @MainActor

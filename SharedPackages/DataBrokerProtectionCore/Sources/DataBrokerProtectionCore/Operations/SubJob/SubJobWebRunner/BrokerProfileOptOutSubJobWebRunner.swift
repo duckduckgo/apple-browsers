@@ -67,7 +67,7 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
     public let stageCalculator: StageDurationCalculator
     public var webViewHandler: WebViewHandler?
     public var actionsHandler: ActionsHandler?
-    public var continuation: CheckedContinuation<Void, Error>?
+    public let runnerContinuation = SubJobRunnerContinuationState<Void>()
     public var extractedProfile: ExtractedProfile?
     private let operationAwaitTime: TimeInterval
     public let runnerCancellation: SubJobRunnerCancellationState
@@ -134,7 +134,7 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
         try await withTaskCancellationHandler {
             try await withCheckedThrowingContinuation { continuation in
                 self.extractedProfile = inputValue.merge(with: context.profileQuery)
-                self.continuation = continuation
+                self.runnerContinuation.install(continuation)
 
                 guard self.shouldRunNextStep() else {
                     failed(with: DataBrokerProtectionError.cancelled)

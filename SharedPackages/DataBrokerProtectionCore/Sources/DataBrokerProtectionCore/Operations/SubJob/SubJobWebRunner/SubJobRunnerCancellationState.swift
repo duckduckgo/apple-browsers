@@ -40,7 +40,7 @@ public final class SubJobRunnerCancellationState {
         !isCancelled && shouldRunNextStepHandler()
     }
 
-    /// Returns `true` only for the first caller, so cancellation teardown runs exactly once.
+    /// Returns `true` only when cancellation transitions from `false` to `true`.
     public func markCancelled() -> Bool {
         lock.withLock {
             guard !cancelled else { return false }

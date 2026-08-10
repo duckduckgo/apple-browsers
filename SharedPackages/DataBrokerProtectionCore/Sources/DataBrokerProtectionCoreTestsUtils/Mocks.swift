@@ -2914,6 +2914,7 @@ public final class MockScanSubJobWebRunner: BrokerProfileScanSubJobWebRunning {
     public var shouldScanThrow = false
     public var scanResults = [ExtractedProfile]()
     public var wasScanCalled = false
+    public var scanHandler: (() async throws -> [ExtractedProfile])?
 
     public init() { }
 
@@ -2921,7 +2922,9 @@ public final class MockScanSubJobWebRunner: BrokerProfileScanSubJobWebRunning {
                      shouldRunNextStep: @escaping () -> Bool) async throws -> [ExtractedProfile] {
         wasScanCalled = true
 
-        if shouldScanThrow {
+        if let scanHandler {
+            return try await scanHandler()
+        } else if shouldScanThrow {
             throw DataBrokerProtectionError.unknown("Test error")
         } else {
             return scanResults
@@ -2932,6 +2935,7 @@ public final class MockScanSubJobWebRunner: BrokerProfileScanSubJobWebRunning {
         shouldScanThrow = false
         scanResults.removeAll()
         wasScanCalled = false
+        scanHandler = nil
     }
 }
 
@@ -2939,6 +2943,7 @@ public final class MockOptOutSubJobWebRunner: BrokerProfileOptOutSubJobWebProtoc
     public var shouldOptOutThrow: (Int) -> Bool = { _ in false }
     public var wasOptOutCalled = false
     public var attemptCount = 0
+    public var optOutHandler: (() async throws -> Void)?
 
     public init() { }
 
@@ -2948,7 +2953,9 @@ public final class MockOptOutSubJobWebRunner: BrokerProfileOptOutSubJobWebProtoc
         wasOptOutCalled = true
         attemptCount += 1
 
-        if shouldOptOutThrow(attemptCount) {
+        if let optOutHandler {
+            try await optOutHandler()
+        } else if shouldOptOutThrow(attemptCount) {
             throw DataBrokerProtectionError.unknown("Test error")
         }
     }
@@ -2969,6 +2976,7 @@ public final class MockOptOutSubJobWebRunner: BrokerProfileOptOutSubJobWebProtoc
         shouldOptOutThrow = { _ in false }
         wasOptOutCalled = false
         attemptCount = 0
+        optOutHandler = nil
     }
 }
 

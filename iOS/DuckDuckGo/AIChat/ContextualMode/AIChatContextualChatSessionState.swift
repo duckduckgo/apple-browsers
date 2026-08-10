@@ -124,13 +124,9 @@ final class AIChatContextualChatSessionState {
     private(set) var contextualChatURL: URL?
     private(set) var latestContext: AIChatPageContext?
 
-    /// Kept out of `latestContext` so a page collected without being attached cannot reach the paths
-    /// that would attach it.
-    private(set) var latestSignalsOnlyContext: AIChatPageContext?
-
-    private var contextForSuggestions: AIChatPageContext? {
-        latestContext ?? latestSignalsOnlyContext
-    }
+    /// Most recent page read, attached or not. Suggestions resolve against this; keeping it out of
+    /// `latestContext` stops an unattached page reaching the paths that would attach it.
+    private(set) var lastCollectedContext: AIChatPageContext?
 
     /// Text selections attached from the page's selection menu, in attach order.
     private(set) var attachedSelections: [AIChatSelectionContextData] = []
@@ -363,7 +359,7 @@ final class AIChatContextualChatSessionState {
         if !preservingSelections {
             attachedSelections = []
         }
-        latestSignalsOnlyContext = nil
+        lastCollectedContext = nil
         frontendState = .noChat
         chipState = .placeholder
         contextualChatURL = nil
@@ -449,14 +445,10 @@ final class AIChatContextualChatSessionState {
         }
     }
 
-    /// Called when a selection is attached, removed or cleared: the page-scoped and selection-scoped
-    /// sets are different catalog entries, so the row has to be resolved again.
     private func resolveSuggestionsForScopeChange() {
         guard frontendState == .noChat, showsSuggestionsStartSurface, !hasActiveChat else { return }
-        // Via `beginLoadingSuggestions` so the old scope's chips are cleared: the loading view is
-        // inserted beside them, not over them.
         beginLoadingSuggestions()
-        resolveSuggestionsIfLoading(from: contextForSuggestions)
+        resolveSuggestionsIfLoading(from: lastCollectedContext)
     }
 
     func refreshForAttachmentChange() {
@@ -541,9 +533,10 @@ final class AIChatContextualChatSessionState {
         if pendingSignalsOnlyCollection {
             pendingSignalsOnlyCollection = false
             isProcessingNavigation = false
+            // Assigned even when nil, so a page that returned nothing drops the previous page's signals
+            // rather than leaving suggestions resolving against it.
+            lastCollectedContext = context
             if let context {
-                // Not `latestContext`: that feeds the paths that attach a page, and this one must not be.
-                latestSignalsOnlyContext = context
                 let payload = signalsOnlyPayload(from: context.contextData)
                 emit(.deliverPageContext(payload, targets: .frontendBridge))
             }
@@ -559,7 +552,7 @@ final class AIChatContextualChatSessionState {
             }
             Logger.aiChat.debug("[SessionState] Context collection returned nil/empty - clearing context and downgrading to placeholder")
             latestContext = nil
-            latestSignalsOnlyContext = nil
+            lastCollectedContext = nil
             chipState = .placeholder
             // Clear the persistent UTI host chip
             emit(.deliverPageContext(nil, targets: .utiChip))
@@ -569,6 +562,7 @@ final class AIChatContextualChatSessionState {
         }
 
         latestContext = context
+        lastCollectedContext = context
         Logger.aiChat.debug("[SessionState] Context updated: \(context.title)")
 
         if isManualAttachInProgress {
@@ -621,7 +615,7 @@ final class AIChatContextualChatSessionState {
 
         chipState = .placeholder
         latestContext = nil
-        latestSignalsOnlyContext = nil
+        lastCollectedContext = nil
         userDowngradedToPlaceholder = false
         rebuildViewState()
         Logger.aiChat.debug("[SessionState] Cleared stale manual context on sheet present")

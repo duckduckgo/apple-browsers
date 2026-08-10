@@ -218,10 +218,15 @@ final class AIChatContextualSheetCoordinator {
 
         startObservingContextUpdates()
 
-        if skippingAutoAttach, currentPageURL != nil {
-            // No page chip, but the signals the suggestions need still arrive.
-            sessionState.markPendingSignalsOnlyCollection()
-            pageContextHandler.triggerContextCollection(trigger: .tabContent)
+        if skippingAutoAttach {
+            // An already-attached page keeps its own signals, and pushing the stripped signals-only
+            // payload over it would clear the attached context on the frontend.
+            if currentPageURL != nil, sessionState.intendedAttachedContext == nil {
+                sessionState.markPendingSignalsOnlyCollection()
+                pageContextHandler.triggerContextCollection(trigger: .tabContent)
+            } else {
+                pageContextHandler.reportAttachabilityMeasurement(trigger: .navigation)
+            }
         } else if currentPageURL != nil, sessionState.shouldTriggerAutoCollect(for: currentPageURL) {
             if sessionState.showsSuggestionsStartSurface {
                 sessionState.beginLoadingSuggestions()
@@ -246,9 +251,8 @@ final class AIChatContextualSheetCoordinator {
 
     /// Runs a Duck.ai action on text selected in the page, presenting the sheet either way.
     ///
-    /// `ask` attaches the selection and submits nothing; at the cap it is refused with a banner and the
-    /// sheet still presents. The submitting actions carry the text in their own payload, so they attach
-    /// nothing and clear any selections already attached, matching macOS on submit.
+    /// `ask` attaches the selection; at the cap it is refused with a banner and the sheet still presents.
+    /// The submitting actions attach nothing and clear any selections already attached.
     func handleSelectionAction(_ action: AIChatTextSelectionAction,
                                selection selectedText: AIChatPageTextSelection,
                                restoreURL: URL? = nil,

@@ -217,6 +217,19 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         XCTAssertNotNil(sut.sheetViewController)
     }
 
+    /// The signals-only payload is content-free and marked unattached, so pushing it while a page is
+    /// attached would clear that page on the frontend while the chip still shows it.
+    @MainActor
+    func testSelectionActionDoesNotCollectSignalsWhileAPageIsAttached() async {
+        sut.sessionState.attachContextFromSuggestionTap(makeTestContext(title: "Attached"))
+        mockPageContextHandler.triggerContextCollectionCallCount = 0
+
+        await sut.handleSelectionAction(.ask, selection: .init(text: "selected text", url: URL(string: "https://example.com"), faviconBase64: nil), from: mockPresentingVC)
+
+        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 0)
+        XCTAssertNotNil(sut.sessionState.intendedAttachedContext)
+    }
+
     /// Reading a selection suspends, so two taps on the omnibar icon can both reach here with the same
     /// text. Each would otherwise mint its own id and burn a second cap slot on one passage.
     @MainActor

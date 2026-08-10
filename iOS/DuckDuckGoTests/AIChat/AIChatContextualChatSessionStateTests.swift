@@ -2171,7 +2171,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         sessionState.updateContext(makeTestContext())
 
         // Must not land in `latestContext`, which feeds the paths that would attach the page.
-        XCTAssertNotNil(sessionState.latestSignalsOnlyContext)
+        XCTAssertNotNil(sessionState.lastCollectedContext)
         XCTAssertNil(sessionState.latestContext)
         XCTAssertNil(sessionState.intendedAttachedContext)
     }

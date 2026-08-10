@@ -28,17 +28,13 @@ struct AIChatPageTextSelection {
 
 /// The Duck.ai actions that can be taken on a text selection.
 ///
-/// Only `ask` is offered in the selection edit menu — see `WebView.buildMenu`. Summarize and translate
-/// are offered inside the sheet instead, once the user has already chosen to involve Duck.ai.
+/// Only `ask` is offered in the selection edit menu; the others are offered inside the sheet.
 enum AIChatTextSelectionAction: String, CaseIterable, Equatable {
     case summarize
     case ask
     case translate
 
-    /// Whether picking this action submits a prompt straight away.
-    ///
-    /// Matches macOS: summarize acts immediately, while ask only attaches the selection and waits for
-    /// the user to write their own question.
+    /// Ask only attaches the selection and waits for the user's own question.
     var autoSubmits: Bool {
         switch self {
         case .summarize, .translate: return true
@@ -46,14 +42,12 @@ enum AIChatTextSelectionAction: String, CaseIterable, Equatable {
         }
     }
 
-    /// Only ask does: the submitting actions carry the text with them, so attaching it as well would
-    /// send the model the same passage twice.
+    /// The submitting actions carry the text themselves, so attaching it too would send it twice.
     var attachesSelection: Bool {
         !autoSubmits
     }
 
-    /// Catalog id of the suggestion that performs this action on an attached selection. Ask has none: it
-    /// is what attaches the selection in the first place.
+    /// Catalog id of the suggestion for this action. Ask has none: it is what attaches the selection.
     var selectionSuggestionID: String? {
         switch self {
         case .summarize: return "summarize-selection"

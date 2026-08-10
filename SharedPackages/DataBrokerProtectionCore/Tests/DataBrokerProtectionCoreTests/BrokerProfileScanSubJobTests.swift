@@ -1329,6 +1329,31 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         }
     }
 
+    func testWhenScannedProfileHasNoIdentifier_thenNoStoredProfileIsRefreshed() async {
+        do {
+            let storedProfile = ExtractedProfile(id: 1, name: "Some name", extras: ["county": "Sangamon"])
+            let scrapedProfile = ExtractedProfile(name: "Some other name")
+            mockDatabase.extractedProfilesFromBroker = [storedProfile]
+            mockScanRunner.scanResults = [scrapedProfile]
+
+            _ = try await sut.runScan(
+                brokerProfileQueryData: .init(
+                    dataBroker: .mock,
+                    profileQuery: .mock,
+                    scanJobData: .mock,
+                    optOutJobData: [OptOutJobData.mock(with: storedProfile)]
+                ),
+                showWebView: false,
+                isManual: false,
+                shouldRunNextStep: { true }
+            )
+
+            XCTAssertTrue(mockDatabase.updatedExtractedProfiles.isEmpty)
+        } catch {
+            XCTFail("Should not throw")
+        }
+    }
+
     func testWhenScannedProfileIsAlreadyInTheDatabaseAndWasRemoved_thenTheRemovedDateIsSetBackToNil() async {
         do {
             mockDatabase.extractedProfilesFromBroker = [.mockWithRemovedDate]

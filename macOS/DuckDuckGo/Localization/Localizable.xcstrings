@@ -2877,6 +2877,18 @@
         }
       }
     },
+    "aichat.attach-tabs-modal.count" : {
+      "comment" : "Counter in the header of the AI chat add-tabs modal, reading e.g. '2 of 3'. First parameter is how many tabs are selected, second is the maximum allowed.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$d of %2$d"
+          }
+        }
+      }
+    },
     "aichat.attach-tabs-modal.search-placeholder" : {
       "comment" : "Placeholder in the search field of the AI chat add-tabs modal, filters the list of open tabs",
       "extractionState" : "extracted_with_value",

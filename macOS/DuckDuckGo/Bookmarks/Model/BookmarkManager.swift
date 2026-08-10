@@ -27,7 +27,6 @@ import PixelKit
 import os.log
 
 protocol BookmarkManager: AnyObject {
-
     func isUrlBookmarked(url: URL) -> Bool
     func isAnyUrlVariantBookmarked(url: URL) -> Bool
     func isUrlFavorited(url: URL) -> Bool
@@ -115,12 +114,17 @@ final class LocalBookmarkManager: BookmarkManager {
         foldersStore: BookmarkFoldersStore = UserDefaultsBookmarkFoldersStore(),
         sortRepository: SortBookmarksRepository = SortBookmarksUserDefaults(),
         appearancePreferences: AppearancePreferences,
-        pixelFiring: PixelFiring? = PixelKit.shared
+        pixelFiring: PixelFiring? = PixelKit.shared,
+        bookmarksCountPixelScheduler: @escaping (@escaping () -> Void) -> Void = { firePixel in
+            let randomDelay = Double.random(in: 0.5...5)
+            DispatchQueue.global().asyncAfter(deadline: .now() + randomDelay, execute: firePixel)
+        }
     ) {
         self.foldersStore = foldersStore
         self.bookmarkStore = bookmarkStore
         self.sortRepository = sortRepository
         self.pixelFiring = pixelFiring
+        self.bookmarksCountPixelScheduler = bookmarksCountPixelScheduler
 
         subscribeToFavoritesDisplayMode(with: appearancePreferences)
         sortMode = sortRepository.storedSortMode
@@ -152,6 +156,7 @@ final class LocalBookmarkManager: BookmarkManager {
     private let sortRepository: SortBookmarksRepository
     private let foldersStore: BookmarkFoldersStore
     private let pixelFiring: PixelFiring?
+    private let bookmarksCountPixelScheduler: (@escaping () -> Void) -> Void
 
     private var favoritesDisplayMode: FavoritesDisplayMode = .displayNative(.desktop)
     private var favoritesDisplayModeCancellable: AnyCancellable?
@@ -190,7 +195,10 @@ final class LocalBookmarkManager: BookmarkManager {
     }
 
     private func fireBookmarksCountPixel(bookmarksCount: Int) {
-        BookmarksPixel.count(.init(bookmarksCount)).fire(pixelFiring: pixelFiring)
+        let pixel = BookmarksPixel.count(.init(bookmarksCount))
+        bookmarksCountPixelScheduler { [pixelFiring = pixelFiring] in
+            pixel.fire(pixelFiring: pixelFiring)
+        }
     }
 
     func isUrlBookmarked(url: URL) -> Bool {

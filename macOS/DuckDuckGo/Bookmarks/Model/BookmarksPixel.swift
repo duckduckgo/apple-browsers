@@ -25,7 +25,8 @@ enum BookmarksPixel: PixelKitEvent {
     /**
      * Event Trigger: Bookmark data finishes loading successfully.
      *
-     * > Note: This is a daily pixel. The exact bookmark count is never sent; it is mapped to a privacy-preserving bucket.
+     * > Note: This is a daily pixel fired after a randomized 0.5-5 second delay to prevent temporal correlation with other startup pixels.
+     * > The exact bookmark count is never sent; it is mapped to a privacy-preserving bucket.
      *
      * Anomaly Investigation:
      * - An anomaly may indicate a change in the distribution of bookmark counts or an issue loading or reporting bookmarks.

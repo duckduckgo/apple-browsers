@@ -163,9 +163,27 @@ struct FireDialogView: ModalView {
                         VStack(spacing: 0) {
                             detailsDisclosureView
                                 .accessibilityHidden(isShowingAnyOverlay)
-                            if viewModel.isSectionsExpanded {
-                                sectionsView
+                            // Self-clipping slot: it grows from zero height, revealing the top-anchored rows,
+                            // so the sheet resize reads as a reveal rather than a snap. Deliberately no
+                            // `.move` transition — that offsets the departing rows up over the disclosure
+                            // row, and since `.clipped()` doesn‘t clip hit testing, a transition SwiftUI
+                            // fails to tear down leaves invisible rows swallowing clicks on the chevron.
+                            ZStack(alignment: .top) {
+                                if viewModel.isSectionsExpanded {
+                                    sectionsView
+                                        .transition(.opacity)
+                                }
                             }
+                            // pin the width, otherwise the slot‘s frame interpolates from zero in *both*
+                            // axes and the clip wipes the rows open from the centre outwards
+                            .frame(width: Constants.sectionRowWidth)
+                            .clipped()
+                            // belt and braces: a lingering collapsed slot can‘t steal clicks or show up in
+                            // the accessibility tree
+                            .allowsHitTesting(viewModel.isSectionsExpanded)
+                            .accessibilityHidden(!viewModel.isSectionsExpanded)
+                            // outside the clip, so the last row‘s press highlight doesn‘t get cut off
+                            .padding(.bottom, viewModel.isSectionsExpanded ? -10 : 0)
                         }
                     }
                     .padding(Constants.boxContentPadding)
@@ -457,7 +475,6 @@ struct FireDialogView: ModalView {
             }
         }
         .padding(.top, 4)
-        .padding(.bottom, -10)
         .fixedSize(horizontal: false, vertical: true)
     }
 

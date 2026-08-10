@@ -995,8 +995,8 @@ public struct UserText {
 
     public static let macWaitlistAvailableNotificationTitle = NSLocalizedString("mac-waitlist.available.notification.title", value: "DuckDuckGo for Mac is ready!", comment: "Title for the macOS waitlist notification")
     /// https://app.asana.com/1/137249556945/project/38424471409662/task/1211224788080468
-    public static let inactivityNotificationTitle = NotLocalizedString("inactivity.notification.title", value: "Control your online experience", comment: "Title for inactivity notification. Used on for en_US locale only.")
-    public static let inactivityNotificationBody = NotLocalizedString("inactivity.notification.body", value: "Use DuckDuckGo to avoid the ads that track you around the web and reduce your online footprint.", comment: "Body for inactivity notification. Used on for en_US locale only.")
+    public static let inactivityNotificationTitle = NSLocalizedString("inactivity.notification.title", value: "Control your online experience", comment: "Title for the notification sent after a period of inactivity.")
+    public static let inactivityNotificationBody = NSLocalizedString("inactivity.notification.body", value: "Use DuckDuckGo to avoid the ads that track you around the web and reduce your online footprint.", comment: "Body for the notification sent after a period of inactivity.")
     public static func subscriptionExpirationReminderNotificationTitle(daysUntilTrialEnds: Int) -> String {
         let unit = daysUntilTrialEnds == 1 ? "day" : "days"
         return "Your trial ends in \(daysUntilTrialEnds) \(unit)"

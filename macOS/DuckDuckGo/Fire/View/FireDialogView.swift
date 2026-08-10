@@ -95,8 +95,6 @@ struct FireDialogView: ModalView {
     }
     @State private var isAnimatingHistoryOverlay: Bool = false
 
-    private let historyDateFormatter: HistoryViewDateFormatting = DefaultHistoryViewDateFormatter()
-
     private var isShowingAnyOverlay: Bool {
         isShowingSitesOverlay || isShowingChatsOverlay || isShowingHistoryOverlay
     }
@@ -796,7 +794,7 @@ struct FireDialogView: ModalView {
             .frame(maxWidth: .infinity, alignment: .leading)
             .help(visitViewModel.title)
 
-            Text(historyDateFormatter.timeString(for: visit.date))
+            Text(viewModel.historyDateFormatter.shortString(for: visit.date))
                 .font(.system(size: 11))
                 .foregroundColor(Color(designSystemColor: .textTertiary))
                 .fixedSize()

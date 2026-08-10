@@ -4160,7 +4160,7 @@ class MainViewController: UIViewController {
     }
 
     func fireAIChatEntryPointPixel(source: AIChatEntryPointSource, opensNewTab: Bool, hasPrompt: Bool) {
-        DailyPixel.fireDailyAndCount(pixel: .aiChatEntryPoint, withAdditionalParameters: [
+        PixelKit.fire(AIChatEntryPointPixel.entryPoint, frequency: .dailyAndCount, withAdditionalParameters: [
             PixelParameters.source: source.rawValue,
             "duckai_enabled": String(aiChatSettings.isAIChatEnabled),
             "toggle_enabled": String(aiChatSettings.isAIChatSearchInputUserSettingsEnabled),

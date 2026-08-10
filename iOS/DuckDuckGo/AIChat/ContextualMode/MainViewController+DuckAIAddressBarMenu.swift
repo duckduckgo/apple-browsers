@@ -101,6 +101,6 @@ extension MainViewController {
     /// a prompt whenever the field is being edited, and New Chat must always open empty.
     private func openFreshDuckAIChatFromAddressBarMenu() {
         omniBar.endEditing()
-        openAIChat()
+        openAIChat(source: .addressBarIcon)
     }
 }

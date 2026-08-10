@@ -18,6 +18,21 @@
 //
 
 import Foundation
+import PixelKit
+
+/// Fires as `m_aichat_entry_point`; the `m_` prefix plus the platform suffix are applied by PixelKit.
+enum AIChatEntryPointPixel: PixelKitEvent, PixelKitEventWithCustomPrefix {
+
+    case entryPoint
+
+    var name: String { "aichat_entry_point" }
+
+    var parameters: [String: String]? { nil }
+
+    var standardParameters: [PixelKitStandardParameter]? { nil }
+
+    var namePrefix: String { "m_" }
+}
 
 /// Where a Duck.ai entry began. Reported as `source` on `m_aichat_entry_point`;
 /// the raw values are a dashboard contract — renaming one breaks its series.

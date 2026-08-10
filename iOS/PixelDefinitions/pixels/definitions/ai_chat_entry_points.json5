@@ -4,7 +4,7 @@
         "description": "Fires when the user enters Duck.ai, with the entry path as a source param. Threaded through openAIChat(source:) with no default so the compiler enumerates every call site; the per-surface legacy pixels remain as a rollout cross-check.",
         "owners": ["fbunn"],
         "triggers": ["other"],
-        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "suffixes": ["platform", "form_factor", "first_daily_count"],
         "parameters": [
             "appVersion",
             {

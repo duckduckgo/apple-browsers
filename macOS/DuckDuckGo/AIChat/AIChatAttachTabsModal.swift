@@ -47,7 +47,8 @@ struct AIChatAttachTabsModal: ModalView {
 
     @State private var selectedIds: Set<String>
     @State private var searchQuery: String = ""
-    /// Row the arrow keys are on. Nil until the first arrow press, so typing a space still types.
+    /// Row the arrow keys are on. Nil until an arrow press and again as soon as the query changes,
+    /// so space types into the search field except while walking the list.
     @State private var highlightedId: String?
     @State private var keyMonitor: Any?
     @State private var sheetWindow: NSWindow?
@@ -89,6 +90,9 @@ struct AIChatAttachTabsModal: ModalView {
             TextField(UserText.aiChatAttachTabsModalSearchPlaceholder, text: $searchQuery)
                 .textFieldStyle(.themed)
                 .padding(.horizontal, 20)
+                // Typing hands the keyboard back to the field: the highlighted row is likely
+                // filtered out anyway, and space has to type again rather than toggle.
+                .onChange(of: searchQuery) { _ in highlightedId = nil }
 
             Divider()
                 .padding(.top, 14)
@@ -150,7 +154,7 @@ struct AIChatAttachTabsModal: ModalView {
         }
         .frame(width: 340)
         .background(Color(designSystemColor: .surfaceSecondary, palette: themeManager.designColorPalette))
-        .background(WindowReader { sheetWindow = $0 })
+        .background(WindowReader { if sheetWindow !== $0 { sheetWindow = $0 } })
         .onAppear { startKeyMonitor() }
         .onDisappear { stopKeyMonitor() }
     }

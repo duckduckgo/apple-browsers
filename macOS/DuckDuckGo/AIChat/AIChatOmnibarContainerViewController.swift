@@ -1496,9 +1496,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     @objc private func recentTabClicked(_ sender: NSMenuItem) {
         guard let candidate = sender.representedObject as? AIChatTabAttachment else { return }
-        didMutateDuringAttachMenuSession = true
         let wasAttached = omnibarController.activeTabAttachments.contains { $0.id == candidate.id }
+        // Only a toggle that took counts as a mutation; a rejected stale row changed nothing.
         guard omnibarController.togglePickedTabAttachment(candidate) else { return }
+        didMutateDuringAttachMenuSession = true
         omnibarController.pixelHandler.fire(wasAttached ? .tabAttachmentRemoved : .tabChosen)
         updateAttachmentsLayout()
     }

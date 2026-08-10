@@ -50,6 +50,7 @@ final class AIChatAttachedTabsTracker {
     /// observer, and that prompt still has to lose the card when the tab is closed.
     private let seenStores = NSHashTable<AnyObject>.weakObjects()
     private var tabListCancellable: AnyCancellable?
+    private var windowListCancellable: AnyCancellable?
 
     init(origin: (any DuckAIPromptOriginProviding)?, windowControllersManager: (any WindowControllersManagerProtocol)?) {
         self.origin = origin
@@ -70,17 +71,32 @@ final class AIChatAttachedTabsTracker {
     // MARK: - Closed tabs
 
     private func watchTabListForClosedTabs() {
-        guard let collection = origin?.originTabCollectionViewModel else { return }
-        let pinnedTabs = collection.pinnedTabsCollection?.$tabs.eraseToAnyPublisher()
-            ?? Just([]).eraseToAnyPublisher()
-        // The origin window's own lists, plus every other window's: an attached tab can be closed
-        // from the window it lives in, which isn't necessarily this one.
-        let ownTabs = Publishers.CombineLatest(collection.tabCollection.$tabs, pinnedTabs)
-            // Nothing has closed at subscription time; only later changes can strand an attachment.
-            .dropFirst()
-            .map { _, _ in () }
-        let otherWindows = windowControllersManager?.tabsChanged ?? Empty().eraseToAnyPublisher()
-        tabListCancellable = ownTabs.merge(with: otherWindows)
+        guard let windowControllersManager else {
+            watchTabLists()
+            return
+        }
+        // Windows come and go; each brings tab lists of its own to watch.
+        windowListCancellable = Publishers.Merge(windowControllersManager.didRegisterWindowController.asVoid(),
+                                                 windowControllersManager.didUnregisterWindowController.asVoid())
+            .sink { [weak self] in
+                self?.watchTabLists()
+            }
+        watchTabLists()
+    }
+
+    /// Both lists of every window an attachment can live in. `tabsChanged` on the window manager
+    /// isn't enough: it reaches each window's unpinned collection only, so a pinned tab closed in
+    /// another window — which has its own collection under `PinnedTabsMode.separate` — goes unseen.
+    private func watchTabLists() {
+        let lists: [AnyPublisher<Void, Never>] = attachableCollections.flatMap { collection -> [AnyPublisher<Void, Never>] in
+            // Each list replays on subscription; nothing has closed at that point.
+            var lists = [collection.tabCollection.$tabs.dropFirst().asVoid().eraseToAnyPublisher()]
+            if let pinnedTabs = collection.pinnedTabsCollection {
+                lists.append(pinnedTabs.$tabs.dropFirst().asVoid().eraseToAnyPublisher())
+            }
+            return lists
+        }
+        tabListCancellable = Publishers.MergeMany(lists)
             // Moves between collections are two mutations; read the lists once both landed.
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
@@ -190,7 +206,8 @@ final class AIChatAttachedTabsTracker {
 
     /// The windows an attachment can live in — see `AIChatTabPickerSource`.
     private var attachableCollections: [TabCollectionViewModel] {
-        guard let origin = origin?.originTabCollectionViewModel, let windowControllersManager else { return [] }
+        guard let origin = origin?.originTabCollectionViewModel else { return [] }
+        guard let windowControllersManager else { return [origin] }
         return AIChatTabPickerSource.tabCollections(forOrigin: origin, in: windowControllersManager)
     }
 

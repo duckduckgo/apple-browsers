@@ -217,11 +217,12 @@ struct AIChatAttachTabsModal: ModalView {
         }
     }
 
-    /// A count out of a cap, so it says nothing worth showing when the limit is switched off. The
-    /// checkmark marks the point where picking more means unpicking something first.
+    /// A count out of a cap, so it says nothing worth showing when the limit is switched off or when
+    /// there aren't enough tabs to reach it. The checkmark marks the point where picking more means
+    /// unpicking something first.
     @ViewBuilder
     private var selectionCount: some View {
-        if maxSelection < Int.max {
+        if maxSelection < Int.max, tabs.count >= maxSelection {
             HStack(spacing: 2) {
                 if selectedIds.count >= maxSelection {
                     Image(nsImage: DesignSystemImages.Glyphs.Size12.check)

@@ -1115,8 +1115,8 @@ private struct FireDialogTabButton: View {
             .background(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .fill(isSelected ? Color(designSystemColor: .surfaceTertiary) : Color(designSystemColor: .containerFillSecondary))
-                    .shadow(color: isSelected ? Color(designSystemColor: .shadowPrimary) : .clear, radius: 4, x: 0, y: 1)
-                    .shadow(color: isSelected ? Color(designSystemColor: .shadowTertiary) : .clear, radius: 1, x: 0, y: 0.25)
+                    .shadow(color: isSelected ? Color(singleUseColor: .fireDialogTabShadowPrimary) : .clear, radius: 4, x: 0, y: 1)
+                    .shadow(color: isSelected ? Color(singleUseColor: .fireDialogTabShadowSecondary) : .clear, radius: 1, x: 0, y: 0.25)
             )
         }
         .buttonStyle(.plain)

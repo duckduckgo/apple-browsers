@@ -359,6 +359,10 @@ extension SharedColorPaletteDefinition {
             return DynamicColor(staticColor: RebrandingColor.Mandarin.mandarin60)
         case .fireButtonPressedGradientEnd:
             return DynamicColor(staticColor: RebrandingColor.Red.red70)
+        case .fireDialogTabShadowPrimary:
+            return DynamicColor(lightColor: Color.init(designSystemColor: .shadowPrimary), darkColor: .shade(0.06))
+        case .fireDialogTabShadowSecondary:
+            return DynamicColor(lightColor: Color.init(designSystemColor: .shadowTertiary), darkColor: .shade(0.16))
         }
     }
 }

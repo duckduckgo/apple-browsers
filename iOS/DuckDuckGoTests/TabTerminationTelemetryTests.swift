@@ -21,6 +21,7 @@ import FeatureFlags_iOS
 import Persistence
 import PersistenceTestingUtils
 import PixelKit
+import PrivacyConfigTestsUtils
 import UIKit
 import XCTest
 @testable import DuckDuckGo
@@ -41,7 +42,7 @@ final class TabTerminationTelemetryTests: XCTestCase {
         let pixelFiring = MockTabTerminationPixelFiring()
         let telemetry = makeTelemetry(featureEnabled: false, pixelFiring: pixelFiring)
 
-        telemetry.didReceiveMemoryWarning()
+        telemetry.didReceiveMemoryWarning(activeTabCount: 1)
         telemetry.webContentProcessDidTerminate(activeTabCount: 1)
 
         XCTAssertTrue(pixelFiring.calls.isEmpty)
@@ -145,7 +146,7 @@ final class TabTerminationTelemetryTests: XCTestCase {
     func testWhenMemoryWarningOccurredThenElapsedTimePixelFires() {
         let pixelFiring = MockTabTerminationPixelFiring()
         let telemetry = makeTelemetry(pixelFiring: pixelFiring)
-        telemetry.didReceiveMemoryWarning()
+        telemetry.didReceiveMemoryWarning(activeTabCount: 1)
         date.addTimeInterval(6)
 
         telemetry.webContentProcessDidTerminate(activeTabCount: 1)
@@ -153,10 +154,60 @@ final class TabTerminationTelemetryTests: XCTestCase {
         XCTAssertEqual(pixelFiring.call(named: "debug_webkit_termination_time-since-memory-warning_10")?.frequency, .standard)
     }
 
+    func testWhenMemoryWarningOccursThenActiveTabsAndRollingOccurrencePixelsFire() {
+        let pixelFiring = MockTabTerminationPixelFiring()
+        let telemetry = makeTelemetry(pixelFiring: pixelFiring, memoryWarningTelemetryWindow: 60)
+
+        telemetry.didReceiveMemoryWarning(activeTabCount: 7)
+        date.addTimeInterval(30)
+        telemetry.didReceiveMemoryWarning(activeTabCount: 7)
+        date.addTimeInterval(31)
+        telemetry.didReceiveMemoryWarning(activeTabCount: 7)
+
+        XCTAssertEqual(pixelFiring.calls.filter { $0.event.name.hasPrefix("debug_memory_warning_active-tabs_") }.map(\.event.name), [
+            "debug_memory_warning_active-tabs_6-10",
+            "debug_memory_warning_active-tabs_6-10",
+            "debug_memory_warning_active-tabs_6-10"
+        ])
+        XCTAssertEqual(pixelFiring.calls.filter { $0.event.name.hasPrefix("debug_memory_warning_occurrence-in-window_") }.map(\.event.name), [
+            "debug_memory_warning_occurrence-in-window_1",
+            "debug_memory_warning_occurrence-in-window_2",
+            "debug_memory_warning_occurrence-in-window_2"
+        ])
+        XCTAssertEqual(pixelFiring.call(named: "debug_memory_warning_active-tabs_6-10")?.frequency, .dailyAndCount)
+        XCTAssertEqual(pixelFiring.call(named: "debug_memory_warning_occurrence-in-window_1")?.frequency, .standard)
+    }
+
+    func testTabEvictionSettingsReadRemoteValues() {
+        let settings = makeSettings(json: "{\"memoryWarningTelemetryWindowSeconds\": 30, \"maxCapacityPhone\": 12, \"maxCapacityPad\": 8}")
+
+        XCTAssertEqual(settings.memoryWarningTelemetryWindow, 30)
+        XCTAssertEqual(settings.maximumCapacity(isPad: false), 12)
+        XCTAssertEqual(settings.maximumCapacity(isPad: true), 8)
+    }
+
+    func testTabEvictionSettingsFallBackForInvalidValues() {
+        let invalidSettings = [
+            nil,
+            "not json",
+            "{}",
+            "{\"memoryWarningTelemetryWindowSeconds\": 0, \"maxCapacityPhone\": -1, \"maxCapacityPad\": 2.5}",
+            "{\"memoryWarningTelemetryWindowSeconds\": \"60\", \"maxCapacityPhone\": true, \"maxCapacityPad\": \"10\"}"
+        ]
+
+        for json in invalidSettings {
+            let settings = makeSettings(json: json)
+            XCTAssertEqual(settings.memoryWarningTelemetryWindow, 60)
+            XCTAssertEqual(settings.maximumCapacity(isPad: false), 20)
+            XCTAssertEqual(settings.maximumCapacity(isPad: true), 10)
+        }
+    }
+
     private func makeTelemetry(featureEnabled: Bool = true,
                                pixelFiring: MockTabTerminationPixelFiring,
                                applicationState: UIApplication.State = .active,
-                               memoryFootprint: UInt64? = 100 * 1_048_576) -> DefaultTabTerminationTelemetry {
+                               memoryFootprint: UInt64? = 100 * 1_048_576,
+                               memoryWarningTelemetryWindow: TimeInterval = 60) -> DefaultTabTerminationTelemetry {
         let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: featureEnabled ? [.tabTerminationTelemetry] : [])
         return DefaultTabTerminationTelemetry(
             featureFlagger: featureFlagger,
@@ -164,7 +215,16 @@ final class TabTerminationTelemetryTests: XCTestCase {
             pixelFiring: pixelFiring,
             applicationState: { applicationState },
             memoryFootprint: { memoryFootprint },
+            memoryWarningTelemetryWindow: { memoryWarningTelemetryWindow },
             date: { self.date })
+    }
+
+    private func makeSettings(json: String?) -> TabEvictionSettings {
+        let config = MockPrivacyConfiguration()
+        config.subfeatureSettings = json
+        let manager = MockPrivacyConfigurationManager()
+        manager.privacyConfig = config
+        return TabEvictionSettings(privacyConfigurationManager: manager)
     }
 }
 

@@ -34,14 +34,50 @@ final class UnifiedToggleInputModelPickerTests: XCTestCase {
         XCTAssertEqual(content.gatedItems.map(\.id), ["plus", "pro"])
     }
 
-    func testWhenFreeModelsAreBuiltThenExistingRecommendedOrderIsUsed() {
+    func testWhenAvailableModelsHaveRecommendationLabelsThenContentGroupsThemInBackendOrder() {
         let content = makeContent(models: [
-            makeModel(id: "mistral", name: "Mistral Small", entityHasAccess: true, accessTier: ["free"]),
-            makeModel(id: "mini", name: "GPT-5 mini", entityHasAccess: true, accessTier: ["free"]),
-            makeModel(id: "nano", name: "GPT-5 nano", entityHasAccess: true, accessTier: ["free"]),
+            makeModel(id: "without-1", entityHasAccess: true, accessTier: ["free"]),
+            makeModel(id: "with-1", entityHasAccess: true, accessTier: ["free"], label: .everydayUse),
+            makeModel(id: "unknown", entityHasAccess: true, accessTier: ["free"], label: .unknown("FUTURE_LABEL")),
+            makeModel(id: "without-2", entityHasAccess: true, accessTier: ["free"]),
         ])
 
-        XCTAssertEqual(content.availableItems.map(\.id), ["nano", "mini", "mistral"])
+        XCTAssertEqual(content.itemsWithRecommendationLabel.map(\.id), ["with-1", "unknown"])
+        XCTAssertEqual(content.itemsWithoutRecommendationLabel.map(\.id), ["without-1", "without-2"])
+        XCTAssertEqual(content.availableItems.map(\.id), ["with-1", "unknown", "without-1", "without-2"])
+        XCTAssertNil(content.itemsWithRecommendationLabel.last?.subtitle)
+    }
+
+    func testWhenFreeOrPlusUserHasBothAvailableGroupsThenContentDoesNotShowAvailableSeparator() {
+        let models = [
+            makeModel(id: "with", entityHasAccess: true, accessTier: ["free", "plus"], label: .everydayUse),
+            makeModel(id: "without", entityHasAccess: true, accessTier: ["free", "plus"]),
+        ]
+
+        XCTAssertFalse(makeContent(models: models, userTier: .free).showsAvailableItemsSeparator)
+        XCTAssertFalse(makeContent(models: models, userTier: .plus).showsAvailableItemsSeparator)
+    }
+
+    func testWhenProOrInternalUserHasBothAvailableGroupsThenContentShowsAvailableSeparator() {
+        let models = [
+            makeModel(id: "with", entityHasAccess: true, accessTier: ["pro", "internal"], label: .everydayUse),
+            makeModel(id: "without", entityHasAccess: true, accessTier: ["pro", "internal"]),
+        ]
+
+        XCTAssertTrue(makeContent(models: models, userTier: .pro).showsAvailableItemsSeparator)
+        XCTAssertTrue(makeContent(models: models, userTier: .internal).showsAvailableItemsSeparator)
+    }
+
+    func testWhenProUserHasOnlyOneAvailableGroupThenContentDoesNotShowAvailableSeparator() {
+        let onlyLabeled = makeContent(models: [
+            makeModel(id: "with", entityHasAccess: true, accessTier: ["pro"], label: .everydayUse),
+        ], userTier: .pro)
+        let onlyUnlabeled = makeContent(models: [
+            makeModel(id: "without", entityHasAccess: true, accessTier: ["pro"]),
+        ], userTier: .pro)
+
+        XCTAssertFalse(onlyLabeled.showsAvailableItemsSeparator)
+        XCTAssertFalse(onlyUnlabeled.showsAvailableItemsSeparator)
     }
 
     func testWhenAvailableModelHasLabelThenContentIncludesLocalizedSubtitle() {
@@ -96,6 +132,18 @@ final class UnifiedToggleInputModelPickerTests: XCTestCase {
         XCTAssertEqual(content.gatedItems.first?.remainingName, "Claude Sonnet 4.6")
     }
 
+    func testWhenGatedModelsHaveLabelsThenContentKeepsBackendOrderAndDoesNotIncludeThemInAvailableGroups() {
+        let content = makeContent(models: [
+            makeModel(id: "gated-without", entityHasAccess: false, accessTier: ["plus"]),
+            makeModel(id: "gated-with", entityHasAccess: false, accessTier: ["plus"], label: .everydayUse),
+        ])
+
+        XCTAssertEqual(content.gatedItems.map(\.id), ["gated-without", "gated-with"])
+        XCTAssertTrue(content.itemsWithRecommendationLabel.isEmpty)
+        XCTAssertTrue(content.itemsWithoutRecommendationLabel.isEmpty)
+        XCTAssertTrue(content.gatedItems.allSatisfy { $0.subtitle == nil })
+    }
+
     func testWhenFreeUserHasGatedPlusModelThenContentOffersPurchase() {
         let content = makeContent(models: [
             makeModel(id: "plus", entityHasAccess: false, accessTier: ["plus", "pro"]),
@@ -103,6 +151,7 @@ final class UnifiedToggleInputModelPickerTests: XCTestCase {
 
         XCTAssertEqual(content.callToAction?.title, UserText.aiChatModelPickerTryForFree)
         XCTAssertEqual(content.callToAction?.requiredTier, .plus)
+        XCTAssertEqual(content.callToAction?.appearance, .tryForFree)
     }
 
     func testWhenPlusUserHasGatedProModelThenContentOffersUpgrade() {
@@ -112,6 +161,23 @@ final class UnifiedToggleInputModelPickerTests: XCTestCase {
 
         XCTAssertEqual(content.callToAction?.title, UserText.aiChatModelPickerUpgrade)
         XCTAssertEqual(content.callToAction?.requiredTier, .pro)
+        XCTAssertEqual(content.callToAction?.appearance, .upgrade)
+    }
+
+    func testWhenFreeUserHasGatedModelsThenContentUsesAdvancedModelsTitle() {
+        let content = makeContent(models: [
+            makeModel(id: "plus", entityHasAccess: false, accessTier: ["plus"]),
+        ], userTier: .free)
+
+        XCTAssertEqual(content.gatedSectionTitle, UserText.aiChatAdvancedModelsSectionHeader)
+    }
+
+    func testWhenPlusUserHasGatedModelsThenContentUsesProExclusiveTitle() {
+        let content = makeContent(models: [
+            makeModel(id: "pro", entityHasAccess: false, accessTier: ["pro"]),
+        ], userTier: .plus)
+
+        XCTAssertEqual(content.gatedSectionTitle, UserText.aiChatModelPickerProExclusive)
     }
 
     func testWhenNoSubscriptionChangeCanUnlockGatedModelsThenContentHasNoCallToAction() {
@@ -130,6 +196,15 @@ final class UnifiedToggleInputModelPickerTests: XCTestCase {
         ])
 
         XCTAssertEqual(content.preferredHeight, 216)
+    }
+
+    func testPreferredHeightIncludesAvailableSeparatorForProUser() {
+        let content = makeContent(models: [
+            makeModel(id: "with", entityHasAccess: true, accessTier: ["pro"], label: .everydayUse),
+            makeModel(id: "without", entityHasAccess: true, accessTier: ["pro"]),
+        ], userTier: .pro)
+
+        XCTAssertEqual(content.preferredHeight, 141)
     }
 
     private func makeContent(

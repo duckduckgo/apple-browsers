@@ -1,8 +1,8 @@
 {
     // Defined in https://app.asana.com/1/137249556945/project/1204186595873227/task/1214156660588025
     "m_ios_wide_post_idle_session": {
-        "description": "Wide pixel sent at the end of a post-idle session on iOS (NTP-after-idle or LUT-after-idle).",
-        "owners": ["SabrinaTardio"],
+        "description": "Wide pixel sent at the end of a return session on iOS: an after-idle treatment (NTP or LUT) or an ordinary return.",
+        "owners": ["SabrinaTardio", "Bunn"],
         "triggers": ["other"],
         "suffixes": ["daily"],
         "parameters": [
@@ -42,7 +42,7 @@
             {
                 "key": "feature.data.ext.surface",
                 "type": "string",
-                "description": "Which post-idle surface was shown",
+                "description": "Coarse landing surface when the session started",
                 "enum": ["ntp", "lut"]
             },
             {
@@ -50,7 +50,9 @@
                 "type": "string",
                 "description": "Reason the session ended",
                 "enum": [
-                    "bar_used",
+                    "search_submitted",
+                    "ai_prompt_submitted",
+                    "url_submitted",
                     "return_to_page_tapped",
                     "tab_switcher_selected",
                     "app_backgrounded",
@@ -58,6 +60,28 @@
                     "chat_selected",
                     "app_terminated"
                 ]
+            },
+            {
+                "key": "feature.data.ext.after_idle",
+                "type": "boolean",
+                "description": "Whether the session was started by an after-idle treatment rather than an ordinary return."
+            },
+            {
+                "key": "feature.data.ext.landed_on",
+                "type": "string",
+                "description": "What the user actually landed on",
+                "enum": ["ntp", "ntp_user_initiated", "web", "serp", "duck_ai"]
+            },
+            {
+                "key": "feature.data.ext.time_away_ms_bucketed",
+                "type": "string",
+                "description": "Time in the background before this return, bucketed (lower end of bucket, in ms)",
+                "enum": ["0", "60000", "300000", "900000", "1800000", "3600000"]
+            },
+            {
+                "key": "feature.data.ext.focused",
+                "type": "boolean",
+                "description": "Whether the landing surface appeared with the address bar focused."
             },
             {
                 "key": "feature.data.ext.session_duration_ms_bucketed",

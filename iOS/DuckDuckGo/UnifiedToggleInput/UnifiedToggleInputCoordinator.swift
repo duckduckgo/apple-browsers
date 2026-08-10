@@ -750,8 +750,28 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     // MARK: - Edit mode
 
-    func beginEditMode(prompt: String, attachments: [UnifiedToggleInputAttachment] = []) {
+    private var editContinuation: CheckedContinuation<EditPromptReply, Never>?
+    private var editHasResponsesToLose = false
+
+    func editPrompt(_ request: EditPromptRequest) async -> EditPromptReply {
+        resolveEdit(.cancelled)
+        beginEditMode(prompt: request.prompt,
+                      attachments: makeAttachments(from: request),
+                      hasResponsesToLose: request.hasResponsesToLose)
+        return await withCheckedContinuation { editContinuation = $0 }
+    }
+
+    func cancelEdit() {
+        endEditMode()
+    }
+
+    func beginEditMode(prompt: String, attachments: [UnifiedToggleInputAttachment] = [], hasResponsesToLose: Bool = false) {
+        let wasEditing = isEditing
+        editHasResponsesToLose = hasResponsesToLose
         isEditing = true
+        // A re-entrant edit leaves `isEditing` already true, so its `didSet` skips
+        // `applyEditMode()`; refresh here so the disclaimer reflects the new request.
+        if wasEditing { applyEditMode() }
         showExpanded(prefilledText: prompt, inputMode: .aiChat, activatesInput: true)
         attachmentController.replaceAllAttachments(with: attachments)
     }
@@ -759,14 +779,38 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     func endEditMode() {
         guard isEditing else { return }
         isEditing = false
+        resolveEdit(.cancelled)
         resetToolsSelection()
         clearAttachments()
         setText("")
         showCollapsed()
     }
 
+    private func resolveEdit(_ reply: EditPromptReply) {
+        guard let continuation = editContinuation else { return }
+        editContinuation = nil
+        continuation.resume(returning: reply)
+    }
+
+    private func makeAttachments(from request: EditPromptRequest) -> [UnifiedToggleInputAttachment] {
+        var attachments: [UnifiedToggleInputAttachment] = []
+        for image in request.images ?? [] {
+            guard let data = Data(base64Encoded: image.data), let uiImage = UIImage(data: data) else { continue }
+            let fileName = "image.\(image.format == "png" ? "png" : "jpg")"
+            attachments.append(.image(AIChatImageAttachment(image: uiImage,
+                                                            fileName: fileName,
+                                                            originalEncodedData: data,
+                                                            originalFormat: image.format)))
+        }
+        for file in request.files ?? [] {
+            guard let data = Data(base64Encoded: file.data) else { continue }
+            attachments.append(.file(AIChatFileAttachment(data: data, fileName: file.fileName, mimeType: file.mimeType)))
+        }
+        return attachments
+    }
+
     private func applyEditMode() {
-        viewController.setEditMode(isEditing)
+        viewController.setEditMode(isEditing, showsReplaceDisclaimer: isEditing && editHasResponsesToLose)
         delegate?.unifiedToggleInputDidChangeEditMode(isEditing)
     }
 
@@ -1482,8 +1526,14 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             return
         }
 
-        // In edit mode, submitting exits edit mode instead of sending a new prompt.
         if isEditing {
+            let images = selectedModelSupportsImageUpload
+                ? UnifiedToggleInputImageEncoder.encode(viewController.currentAttachments)
+                : nil
+            let files = selectedModelSupportsFileUpload
+                ? UnifiedToggleInputFileEncoder.encode(viewController.currentAttachments)
+                : nil
+            resolveEdit(.submit(prompt: text, images: images, files: files))
             endEditMode()
             return
         }

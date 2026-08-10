@@ -245,8 +245,8 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.isImageButtonHidden = newValue }
     }
 
-    func setEditMode(_ editing: Bool) {
-        inputBarView.setEditMode(editing)
+    func setEditMode(_ editing: Bool, showsReplaceDisclaimer: Bool) {
+        inputBarView.setEditMode(editing, showsReplaceDisclaimer: showsReplaceDisclaimer)
     }
 
     var isImageButtonEnabled: Bool {

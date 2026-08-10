@@ -530,6 +530,24 @@ final class TabManagerTests: XCTestCase {
         XCTAssertEqual(cacheDelegate.evictionReasons, [.lruCapacity, .lruCapacity])
     }
 
+    func testWhenCurrentControllerIsMissingThenLRUCapacityIsNotIncreased() throws {
+        let model = TabsModel(desktop: false)
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.tabLRUEviction])
+        let privacyConfigurationManager = makePrivacyConfigurationManager(settings: "{\"maxCapacityPhone\": 2}")
+        let manager = try makeManager(model,
+                                      featureFlagger: featureFlagger,
+                                      privacyConfigurationManager: privacyConfigurationManager,
+                                      isPad: false)
+
+        let controllers = (0..<3).map {
+            manager.add(url: URL(string: "https://example.com/\($0)")!, inBackground: true, inheritedAttribution: nil)
+        }
+
+        XCTAssertNil(manager.controller(for: controllers[0].tabModel))
+        XCTAssertNotNil(manager.controller(for: controllers[1].tabModel))
+        XCTAssertNotNil(manager.controller(for: controllers[2].tabModel))
+    }
+
     func testLRUCapacityIsSharedAcrossNormalAndFireTabs() throws {
         let normalTabs = (0..<2).map {
             Tab(link: Link(title: "normal-\($0)", url: URL(string: "https://example.com/normal-\($0)")!))

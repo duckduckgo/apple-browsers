@@ -674,7 +674,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         guard featureFlagger.isFeatureOn(.tabLRUEviction) else { return }
         let maximumCapacity = tabEvictionSettings.maximumCapacity(isPad: isPad)
         let currentController = current()
-        let effectiveMaximumCapacity = maximumCapacity + (currentController?.tabModel.link == nil ? 1 : 0)
+        let currentControllerIsNewTabPage = currentController.map { $0.tabModel.link == nil } ?? false
+        let effectiveMaximumCapacity = maximumCapacity + (currentControllerIsNewTabPage ? 1 : 0)
         while tabControllerCache.count > effectiveMaximumCapacity {
             let evictionCandidates = tabControllerCache.filter { $0 !== currentController }
             guard let controller = evictionCandidates.first(where: { $0.tabModel.link == nil }) ?? evictionCandidates.first else { return }

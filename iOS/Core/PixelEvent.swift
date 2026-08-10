@@ -93,7 +93,6 @@ extension Pixel {
         case tabSwitcherOpenedDaily
         case appOpenTabCountIdleNTPDaily
         case appOpenTabCountIdleLastTabDaily
-        case appReturn
         case tabManagerSwitchToAITab
         case tabManagerSwitchToWebTab
         case tabManagerCloseAITab
@@ -2189,7 +2188,6 @@ extension Pixel.Event {
         case .tabSwitcherOpenedDaily: return "m_tab_manager_opened_daily"
         case .appOpenTabCountIdleNTPDaily: return "m_app_open_tab_count_idle_ntp_daily"
         case .appOpenTabCountIdleLastTabDaily: return "m_app_open_tab_count_idle_last_tab_daily"
-        case .appReturn: return "m_app_return"
         case .tabManagerSwitchToAITab: return "m_tab_manager_switch_to_ai_tab"
         case .tabManagerSwitchToWebTab: return "m_tab_manager_switch_to_web_tab"
         case .tabManagerCloseAITab: return "m_tab_manager_close_ai_tab"

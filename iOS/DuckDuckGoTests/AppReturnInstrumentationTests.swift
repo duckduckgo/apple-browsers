@@ -68,7 +68,7 @@ struct AppReturnInstrumentationTests {
                                 launchAction: .standardLaunch(lastBackgroundDate: nil, isFirstForeground: false))
 
         #expect(collector.fired.count == 1)
-        #expect(collector.fired.first?.name == "m_app_return")
+        #expect(collector.fired.first?.name == "app_return")
         #expect(collector.fired.first?.params["feature_eligible"] == "false")
     }
 

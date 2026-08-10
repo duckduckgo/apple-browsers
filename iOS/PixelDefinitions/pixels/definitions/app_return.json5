@@ -5,7 +5,7 @@
         "description": "Fires on every foreground transition, ungated and launch-action-independent. Reports how long the user was away, the resolved idle threshold, and which Duck.ai capabilities are available.",
         "owners": ["fbunn"],
         "triggers": ["other"],
-        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "suffixes": ["platform", "form_factor", "first_daily_count"],
         "parameters": [
             "appVersion",
             {

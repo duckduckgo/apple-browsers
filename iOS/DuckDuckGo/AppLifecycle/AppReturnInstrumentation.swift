@@ -18,7 +18,21 @@
 //
 
 import Foundation
-import Core
+import PixelKit
+
+/// Fires as `m_app_return`; the `m_` prefix plus the platform suffix are applied by PixelKit.
+enum AppReturnPixel: PixelKitEvent, PixelKitEventWithCustomPrefix {
+
+    case appReturn
+
+    var name: String { "app_return" }
+
+    var parameters: [String: String]? { nil }
+
+    var standardParameters: [PixelKitStandardParameter]? { nil }
+
+    var namePrefix: String { "m_" }
+}
 
 /// Ungated per-foreground snapshot: time away, resolved idle threshold, and capability exposure.
 /// Fired from `Foreground.onTransition()` so URL, shortcut and user-activity opens count too,
@@ -33,14 +47,14 @@ final class DefaultAppReturnInstrumentation: AppReturnInstrumentation {
     private let isUnifiedInputAvailable: () -> Bool
     private let isToggleEnabled: () -> Bool
     private let now: () -> Date
-    private let fireDailyAndCount: (Pixel.Event, [String: String]) -> Void
+    private let fireDailyAndCount: (AppReturnPixel, [String: String]) -> Void
 
     init(eligibilityManager: IdleReturnEligibilityManaging,
          isUnifiedInputAvailable: @escaping () -> Bool = { UnifiedToggleInputFeature().isAvailable },
          isToggleEnabled: @escaping () -> Bool,
          now: @escaping () -> Date = Date.init,
-         fireDailyAndCount: @escaping (Pixel.Event, [String: String]) -> Void = { event, params in
-             DailyPixel.fireDailyAndCount(pixel: event, withAdditionalParameters: params)
+         fireDailyAndCount: @escaping (AppReturnPixel, [String: String]) -> Void = { event, params in
+             PixelKit.fire(event, frequency: .dailyAndCount, withAdditionalParameters: params)
          }) {
         self.eligibilityManager = eligibilityManager
         self.isUnifiedInputAvailable = isUnifiedInputAvailable

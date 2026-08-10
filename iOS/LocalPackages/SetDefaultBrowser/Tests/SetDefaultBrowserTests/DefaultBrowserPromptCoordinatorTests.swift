@@ -84,7 +84,7 @@ final class DefaultBrowserPromptCoordinatorTests {
         #expect(!promptTypeDeciderMock.didCallPromptType)
     }
 
-    @Test("Retained Prepared Prompt Validity Uses Current-Status Validation")
+    @Test("Retained Prepared Prompt Validity Delegates Cached Validation")
     func retainedPreparedPromptValidityDelegatesToDecider() {
         promptTypeDeciderMock.isRetainedPreparedPromptStillValidResult = false
 

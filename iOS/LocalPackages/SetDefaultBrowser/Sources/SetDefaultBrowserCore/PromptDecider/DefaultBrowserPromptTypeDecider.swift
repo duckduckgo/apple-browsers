@@ -60,8 +60,9 @@ package protocol DefaultBrowserPromptTypeDeciding {
     func promptType() -> DefaultBrowserPromptType?
     /// Revalidates prepared work from cached browser status without consuming selection state.
     func isPreparedPromptStillValid() -> Bool
-    /// Revalidates retained work using a fresh browser-status check before retrying presentation.
-    /// A failed check falls back to the stored status rather than invalidating the retained work.
+    /// Revalidates retained work from cached browser status before retrying presentation.
+    /// This bounds the lifecycle to selection's one fresh check. The cache can be stale after an external
+    /// default-browser change, and missing cached status deliberately remains fail-open.
     func isRetainedPreparedPromptStillValid() -> Bool
 }
 
@@ -177,15 +178,7 @@ package final class DefaultBrowserPromptTypeDecider: DefaultBrowserPromptTypeDec
     }
 
     package func isRetainedPreparedPromptStillValid() -> Bool {
-        switch defaultBrowserManager.defaultBrowserInfo() {
-        case let .success(newInfo):
-            return newInfo.isEligibleToShowDefaultBrowserPrompt()
-        case .failure:
-            // The OS status check is rate limited, and the retained prompt already consumed its
-            // selection state, so a failed check must not discard it. Fall back to the stored
-            // status, which a rate-limited check refreshes before failing.
-            return isPreparedPromptStillValid()
-        }
+        isPreparedPromptStillValid()
     }
 
 }

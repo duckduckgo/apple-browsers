@@ -28,7 +28,7 @@ public protocol DefaultBrowserPromptPresenting: AnyObject {
     func makePresentDefaultModalPrompt() -> UIViewController?
     /// Revalidates an already prepared prompt without consuming prompt-selection state.
     func isPreparedDefaultModalPromptStillValid() -> Bool
-    /// Revalidates a prompt retained across a recoverable presentation failure using current browser status.
+    /// Revalidates a prompt retained across a recoverable presentation failure using cached browser status.
     func isRetainedPreparedDefaultModalPromptStillValid() -> Bool
 }
 

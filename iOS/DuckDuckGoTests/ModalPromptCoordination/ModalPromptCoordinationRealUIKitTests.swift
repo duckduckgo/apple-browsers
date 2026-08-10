@@ -314,12 +314,16 @@ final class ModalPromptCoordinationRealUIKitTests {
         )
 
         let launchAction = LaunchAction.standardLaunch(lastBackgroundDate: nil, isFirstForeground: true)
+        let readinessToken = service.captureForegroundReadinessToken()
         await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
             interactionManager.start(
                 launchAction: launchAction,
                 onWebViewReadyForInteractions: {},
                 onAppReadyForInteractions: {
-                    service.presentModalPromptIfNeeded(from: presentationHost)
+                    service.presentModalPromptIfNeeded(
+                        from: presentationHost,
+                        readinessToken: readinessToken
+                    )
                     continuation.resume()
                 }
             )

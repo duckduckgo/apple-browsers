@@ -37,6 +37,10 @@ extension MainViewController: ModalPromptPresenter {
     var modalPromptPresentationViewController: UIViewController? { self }
 }
 
+struct PromoCoordinationForegroundReadinessToken: Equatable {
+    fileprivate let id = UUID()
+}
+
 // MARK: - Service
 
 struct ModalPromptProviders {
@@ -74,6 +78,7 @@ final class PromoCoordinationService {
     private var isRetryingRemoteMessageRegistrations = false
     private var isApplicationActive = true
     private var isWaitingForForegroundInteractionReadiness = false
+    private var foregroundReadinessToken = PromoCoordinationForegroundReadinessToken()
 
     let promoCoordinationMode: PromoCoordinationMode
 
@@ -163,15 +168,24 @@ final class PromoCoordinationService {
     func applicationDidEnterBackground() {
         isApplicationActive = false
         isWaitingForForegroundInteractionReadiness = true
+        foregroundReadinessToken = PromoCoordinationForegroundReadinessToken()
         modalPromptCoordinationManager.applicationDidEnterBackground()
     }
 
-    func presentModalPromptIfNeeded(from viewController: ModalPromptPresenter) {
+    func captureForegroundReadinessToken() -> PromoCoordinationForegroundReadinessToken {
+        foregroundReadinessToken
+    }
+
+    func presentModalPromptIfNeeded(
+        from viewController: ModalPromptPresenter,
+        readinessToken: PromoCoordinationForegroundReadinessToken
+    ) {
         if promoCoordinationMode == .coordinated {
             // `onAppReadyForInteractions` is asynchronous and can finish after this foreground has already moved to
-            // the background. Such a stale callback must not open admission for the next foreground before that
-            // foreground reaches its own full-interaction-readiness checkpoint.
-            guard isApplicationActive else {
+            // the background. Activity alone cannot distinguish that stale callback after the next foreground becomes
+            // active, so only the token captured for the current full foreground cycle may open admission.
+            guard isApplicationActive,
+                  readinessToken == foregroundReadinessToken else {
                 return
             }
 

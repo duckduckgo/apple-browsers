@@ -19,8 +19,8 @@
 
 import UIKit
 import Foundation
-import Combine
 import Core
+import Combine
 import PrivacyConfig
 import Testing
 import PersistenceTestingUtils
@@ -33,7 +33,6 @@ final class PromoCoordinationServiceTests {
     private let contextualOnboardingMock: MockContextualOnboardingStatusProvider
     private let managerMock: MockModalPromptCoordinationManager
     private let presenterMock: MockModalPromptPresenter
-    private let featureFlaggerMock: MockFeatureFlagger
     private let promoQueueLeaseArbiter: PromoQueueLeaseArbiter
     private var sut: PromoCoordinationService!
 
@@ -42,7 +41,6 @@ final class PromoCoordinationServiceTests {
         contextualOnboardingMock = MockContextualOnboardingStatusProvider(hasSeenOnboarding: true)
         managerMock = MockModalPromptCoordinationManager()
         presenterMock = MockModalPromptPresenter()
-        featureFlaggerMock = MockFeatureFlagger()
         promoQueueLeaseArbiter = PromoQueueLeaseArbiter()
     }
 
@@ -62,7 +60,7 @@ final class PromoCoordinationServiceTests {
         sut = PromoCoordinationService(
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: managerMock,
-            featureFlagger: featureFlaggerMock,
+            promoCoordinationMode: .legacy,
             promoQueueLeaseArbiter: promoQueueLeaseArbiter
         )
 
@@ -81,7 +79,7 @@ final class PromoCoordinationServiceTests {
         sut = PromoCoordinationService(
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: managerMock,
-            featureFlagger: featureFlaggerMock,
+            promoCoordinationMode: .legacy,
             promoQueueLeaseArbiter: promoQueueLeaseArbiter
         )
 
@@ -104,7 +102,7 @@ final class PromoCoordinationServiceTests {
         sut = PromoCoordinationService(
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: managerMock,
-            featureFlagger: featureFlaggerMock,
+            promoCoordinationMode: .legacy,
             promoQueueLeaseArbiter: promoQueueLeaseArbiter
         )
 
@@ -123,7 +121,7 @@ final class PromoCoordinationServiceTests {
         sut = PromoCoordinationService(
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: managerMock,
-            featureFlagger: featureFlaggerMock,
+            promoCoordinationMode: .legacy,
             promoQueueLeaseArbiter: promoQueueLeaseArbiter
         )
 
@@ -144,7 +142,7 @@ final class PromoCoordinationServiceTests {
         sut = PromoCoordinationService(
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: managerMock,
-            featureFlagger: featureFlaggerMock,
+            promoCoordinationMode: .legacy,
             promoQueueLeaseArbiter: promoQueueLeaseArbiter
         )
 
@@ -165,7 +163,7 @@ final class PromoCoordinationServiceTests {
         sut = PromoCoordinationService(
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: managerMock,
-            featureFlagger: featureFlaggerMock,
+            promoCoordinationMode: .legacy,
             promoQueueLeaseArbiter: promoQueueLeaseArbiter
         )
 
@@ -184,7 +182,7 @@ final class PromoCoordinationServiceTests {
         sut = PromoCoordinationService(
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: managerMock,
-            featureFlagger: featureFlaggerMock,
+            promoCoordinationMode: .legacy,
             promoQueueLeaseArbiter: promoQueueLeaseArbiter
         )
 
@@ -231,7 +229,7 @@ final class PromoCoordinationServiceTests {
             contextualOnboardingStatusProvider: contextualOnboardingMock,
             privacyConfigManager: privacyConfigManager,
             providers: providers,
-            featureFlagger: featureFlaggerMock,
+            promoCoordinationMode: .legacy,
             promoQueueLeaseArbiter: promoQueueLeaseArbiter
         )
 

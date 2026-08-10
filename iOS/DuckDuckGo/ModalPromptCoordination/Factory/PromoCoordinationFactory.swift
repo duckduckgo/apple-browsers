@@ -21,6 +21,7 @@ import Foundation
 import Persistence
 import SetDefaultBrowserUI
 import PrivacyConfig
+import FeatureFlags_iOS
 import enum Common.DevicePlatform
 import AIChat
 import RemoteMessaging
@@ -35,6 +36,9 @@ enum PromoCoordinationFactory {
     ) -> PromoCoordinationService {
 
         let isIPad = DevicePlatform.isIpad
+        let promoCoordinationMode = PromoCoordinationMode(
+            isCoordinated: dependency.featureFlagger.isFeatureOn(.promoPresentationCoordination)
+        )
 
         let newAddressBarPickerModalPromptProvider = makeNewAddressBarPickerModalPromptProvider(dependency: dependency, isIPad: isIPad)
         let defaultBrowserModalPromptProvider = DefaultBrowserModalPromptProvider(presenter: dependency.defaultBrowserPromptPresenter)
@@ -73,7 +77,7 @@ enum PromoCoordinationFactory {
                 whatsNew: whatsNewModalPromptProvider,
                 cookiePopupProtectionOptIn: cookiePopupProtectionOptInModalPromptProvider
             ),
-            featureFlagger: dependency.featureFlagger,
+            promoCoordinationMode: promoCoordinationMode,
             promoQueueLeaseArbiter: dependency.promoQueueLeaseArbiter
         )
     }

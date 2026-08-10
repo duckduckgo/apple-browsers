@@ -121,7 +121,6 @@ final class NewTabPageMessagesModel: ObservableObject {
     private var visibleRemoteMessageGateMountIDs = Set<UUID>()
     private var admittedRemoteMessageSession: AdmittedRemoteMessageSession?
     private var outgoingAdmittedRemoteMessageSessions = [UUID: OutgoingAdmittedRemoteMessageSession]()
-    private var featureTransitionTarget: PromoQueueFeatureTargetState?
 
     // MARK: - Dependencies
 
@@ -408,9 +407,8 @@ final class NewTabPageMessagesModel: ObservableObject {
         admittedRemoteMessageSession = updatedSession
     }
 
-    private func publishRenderItems(useCoordinatedGate coordinatedGateOverride: Bool? = nil) {
-        let shouldUseCoordinatedGate = coordinatedGateOverride
-            ?? (featureTransitionTarget != nil || promoCoordinator.promoQueueFeatureState != .disabled)
+    private func publishRenderItems() {
+        let shouldUseCoordinatedGate = promoCoordinator.promoCoordinationMode == .coordinated
         var renderItems = [NewTabPageHomeMessageRenderItem]()
 
         for (index, message) in messagesSnapshot.enumerated() {
@@ -607,7 +605,7 @@ final class NewTabPageMessagesModel: ObservableObject {
     // MARK: - Admission
 
     private func attemptRemoteMessageAdmission() {
-        guard promoCoordinator.promoQueueFeatureState == .enabled else {
+        guard promoCoordinator.promoCoordinationMode == .coordinated else {
             return
         }
 
@@ -619,7 +617,6 @@ final class NewTabPageMessagesModel: ObservableObject {
     ) {
         guard isLoaded,
               !isTornDown,
-              featureTransitionTarget == nil,
               isSurfaceRenderable,
               attachedToWindowProvider(),
               let message = remoteMessageCandidate,
@@ -671,7 +668,7 @@ final class NewTabPageMessagesModel: ObservableObject {
             )
             publishRenderItems()
 
-        case .blockedByModal, .occupiedSurfaceSlot, .featureDisabled, .unavailableDuringTransition:
+        case .blockedByModal, .occupiedSurfaceSlot, .featureDisabled:
             break
         }
     }
@@ -855,26 +852,6 @@ extension NewTabPageMessagesModel: NewTabPagePromoRetrying {
         attemptRemoteMessageAdmission(using: admissionHandler)
     }
 
-    func promoQueueWillTransition(to targetState: PromoQueueFeatureTargetState) {
-        featureTransitionTarget = targetState
-        withdrawAdmittedRemoteMessage()
-        visibleRemoteMessageGateID = nil
-        visibleRemoteMessageGateMountIDs.removeAll()
-        publishRenderItems()
-    }
-
-    func promoQueueDidTransition(to targetState: PromoQueueFeatureTargetState) {
-        guard featureTransitionTarget == targetState else {
-            return
-        }
-
-        featureTransitionTarget = nil
-        if targetState == .disabled {
-            publishRenderItems(useCoordinatedGate: false)
-        } else {
-            publishRenderItems(useCoordinatedGate: true)
-        }
-    }
 }
 
 // MARK: - HomeMessage Helpers

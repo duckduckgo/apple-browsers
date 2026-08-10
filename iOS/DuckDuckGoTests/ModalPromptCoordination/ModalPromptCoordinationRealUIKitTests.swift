@@ -143,7 +143,6 @@ final class ModalPromptCoordinationRealUIKitTests {
             providers: [provider],
             cooldownManager: cooldownManagerMock,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock,
             rootAttachmentChecker: attachmentChecker
         )
@@ -197,7 +196,6 @@ final class ModalPromptCoordinationRealUIKitTests {
             providers: [provider],
             cooldownManager: cooldownManagerMock,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
         let lease = try acquireModalLease()
@@ -254,44 +252,7 @@ final class ModalPromptCoordinationRealUIKitTests {
         _ = visiblePromoLease
     }
 
-    @available(iOS 16, *)
-    @Test("Enabling Re-Adopts Exact Root Attached To A Different Host", .timeLimit(.minutes(1)))
-    func whenLegacyRootIsAttachedToAnotherHostThenEnablingReAdoptsModalLease() {
-        // GIVEN
-        cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
-        let provider = MockModalPromptProvider()
-        let exactRoot = UIViewController()
-        provider.modalConfigurationToReturn = ModalPromptConfiguration(viewController: exactRoot)
-        sut = ModalPromptCoordinationManager(
-            providers: [provider],
-            cooldownManager: cooldownManagerMock,
-            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
-            modalPromptScheduling: schedulerMock
-        )
-        sut.presentModalPromptIfNeeded(from: presenterMock)
-        schedulerMock.executeScheduledBlock()
-
-        let actualPresentationHost = UIViewController()
-        let window = makeKeyWindow(withRoot: actualPresentationHost)
-        defer { window.isHidden = true }
-        actualPresentationHost.present(exactRoot, animated: false, completion: nil)
-        #expect(exactRoot.presentingViewController === actualPresentationHost)
-
-        // WHEN
-        sut.promoQueueWillTransition(to: .enabled)
-        promoQueueLeaseArbiter.invalidateAllLeases()
-        sut.promoQueueDidTransition(to: .enabled)
-
-        // THEN
-        #expect(promoQueueLeaseArbiter.snapshot.hasModalLease)
-        guard case .presentationActive = sut.modalAttemptPhase else {
-            Issue.record("Expected the attached exact root to be re-adopted regardless of its presentation host")
-            return
-        }
-    }
-
-    private func acquireModalLease() throws -> PromoQueueModalLease {
+     private func acquireModalLease() throws -> PromoQueueModalLease {
         guard case .acquired(let lease) = promoQueueLeaseArbiter.acquireModalLease() else {
             throw RealUIKitTestError.expectedAcquiredLease
         }

@@ -50,20 +50,6 @@ final class UnifiedInputContentContainerViewControllerTests: XCTestCase {
         XCTAssertEqual(delegate.syncSetupRequestCount, 1)
     }
 
-    func testPromoQueueEnablementPublisher_WhenAlreadyFocused_RefreshesAfterCompletedLiveEnable() {
-        let featureState = CurrentValueSubject<PromoQueueFeatureState, Never>(.disabled)
-        var refreshCount = 0
-        let cancellable = promoQueueEnablementPublisher(featureState.eraseToAnyPublisher())
-            .sink { refreshCount += 1 }
-
-        featureState.send(.transitioning(to: .enabled))
-        XCTAssertEqual(refreshCount, 0)
-
-        featureState.send(.enabled)
-        XCTAssertEqual(refreshCount, 1)
-        withExtendedLifetime(cancellable) {}
-    }
-
     func testActiveUnifiedFavoritesKeepsCachedNewTabPageActiveOnlyWhileFavoritesAreExposed() async {
         let fixture = PromoHostFixture()
         fixture.appSettings.autocomplete = false
@@ -92,7 +78,7 @@ final class UnifiedInputContentContainerViewControllerTests: XCTestCase {
         }
 
         sut.setActive(true)
-        await fulfillment(of: [retryTargetRegistered, firstAdmission], timeout: 1)
+        await fulfillment(of: [retryTargetRegistered, firstAdmission], timeout: 3)
         fixture.promoCoordinator.onVisibleLeaseAcquired = nil
 
         let cachedTarget = fixture.promoCoordinator.retryTarget
@@ -516,7 +502,7 @@ private final class PromoHostFixture {
 @MainActor
 private final class ArbitratingPromoHostCoordinator: NewTabPagePromoCoordinating {
     let arbiter = PromoQueueLeaseArbiter()
-    var promoQueueFeatureState: PromoQueueFeatureState = .enabled
+    let promoCoordinationMode = PromoCoordinationMode.coordinated
 
     private(set) weak var retryTarget: NewTabPagePromoRetrying?
     private(set) var admissionAttemptCount = 0

@@ -1444,7 +1444,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             keyEquivalent: ""
         )
         attachTabsItem.target = self
-        attachTabsItem.image = DesignSystemImages.Glyphs.Size16.tabContentAttach
+        attachTabsItem.image = DesignSystemImages.Glyphs.Size16.tabContent
         attachTabsItem.isEnabled = !candidates.isEmpty
         menu.addItem(attachTabsItem)
 

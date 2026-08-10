@@ -80,12 +80,16 @@ struct AIChatAttachTabsModal: ModalView {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text(UserText.aiChatAttachMenuAttachTabs)
-                .font(.system(size: 16).weight(.bold))
-                .foregroundColor(Color(designSystemColor: .textPrimary))
-                .padding(.horizontal, 20)
-                .padding(.top, 20)
-                .padding(.bottom, 14)
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(UserText.aiChatAttachMenuAttachTabs)
+                    .font(.system(size: 16).weight(.bold))
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
+                Spacer(minLength: 0)
+                selectionCount
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 20)
+            .padding(.bottom, 14)
 
             TextField(UserText.aiChatAttachTabsModalSearchPlaceholder, text: $searchQuery)
                 .textFieldStyle(.themed)
@@ -211,6 +215,19 @@ struct AIChatAttachTabsModal: ModalView {
                 .fill(Color(designSystemColor: .controlsFillPrimary, palette: themeManager.designColorPalette))
                 .padding(.horizontal, -6)
         }
+    }
+
+    /// The checkmark marks the point where picking more means unpicking something first.
+    private var selectionCount: some View {
+        HStack(spacing: 2) {
+            if selectedIds.count >= maxSelection {
+                Image(nsImage: DesignSystemImages.Glyphs.Size12.check)
+                    .renderingMode(.template)
+            }
+            Text(UserText.aiChatAttachTabsModalCount(selected: selectedIds.count, maximum: maxSelection))
+                .font(.system(size: 13))
+        }
+        .foregroundColor(Color(designSystemColor: .textSecondary))
     }
 
     private func row(for tab: AIChatTabAttachment) -> some View {

@@ -772,6 +772,10 @@ struct UserText {
     static let aiChatAttachTabsModalAttachButton = NSLocalizedString("aichat.attach-tabs-modal.attach", value: "Add", comment: "Confirm button in the AI chat add-tabs modal, adds the selected tabs")
     static let aiChatAttachTabsModalUpdateButton = NSLocalizedString("aichat.attach-tabs-modal.update", value: "Update", comment: "Confirm button in the AI chat add-tabs modal when it opened with tabs already attached, since confirming can remove them as well as add")
     static let aiChatAttachTabsStaleSelection = NSLocalizedString("aichat.attach-tabs.stale-selection", value: "That tab changed since the list was shown.", comment: "Error shown when a tab picked from the attach menu, the add-tabs modal or the @-mention picker can't be attached because it has closed or moved to another page since the list was built")
+    static func aiChatAttachTabsModalCount(selected: Int, maximum: Int) -> String {
+        let message = NSLocalizedString("aichat.attach-tabs-modal.count", value: "%1$d of %2$d attached", comment: "Counter in the header of the AI chat add-tabs modal. First parameter is how many tabs are selected, second is the maximum allowed.")
+        return String(format: message, selected, maximum)
+    }
     static let aiChatTabPickerCurrentTabSuffix = NSLocalizedString("aichat.tab-picker.current-tab-suffix", value: "(Current Tab)", comment: "Trailing badge in AI chat tab pickers (omnibar attach menu and the @-mention picker) next to the user's currently active browser tab")
     static let aiChatMentionPickerNoMatches = NSLocalizedString("aichat.mention-picker.no-matches", value: "No matching tabs", comment: "Placeholder shown inside the @-mention tab picker when the typed filter doesn't match any open browser tab")
     static let aiChatToolsButtonLabel = NSLocalizedString("aichat.tools-button.label", value: "Tools", comment: "Label for the tools dropdown button in AI chat omnibar")

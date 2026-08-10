@@ -359,6 +359,8 @@ extension SharedColorPaletteDefinition {
             return DynamicColor(staticColor: RebrandingColor.Mandarin.mandarin60)
         case .fireButtonPressedGradientEnd:
             return DynamicColor(staticColor: RebrandingColor.Red.red70)
+        case .fireDialogKnobFill:
+            return DynamicColor(staticColor: Color(0xFFFFFF))
         case .fireDialogTabBackground:
             return DynamicColor(lightColor: Color(designSystemColor: .containerFillSecondary), darkColor: Color(designSystemColor: .surfaceCanvas))
         case .fireDialogTabBackgroundSelected:

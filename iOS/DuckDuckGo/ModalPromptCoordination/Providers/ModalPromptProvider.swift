@@ -55,15 +55,7 @@ protocol ModalPromptProvider: AnyObject {
     ///
     /// The manager calls this before presenting coordinated work that may have been delayed or retained as pending.
     /// Providers whose eligibility can change after preparation should override this with a read-only check.
-    func isPreparedModalPromptStillValid(_ configuration: ModalPromptConfiguration) -> Bool
-
-    /// Revalidates a prepared prompt that was retained across a recoverable presentation failure.
-    func isRetainedPreparedModalPromptStillValid(_ configuration: ModalPromptConfiguration) -> Bool
-
-    /// Provides a replacement for an invalid prepared prompt when repeating preparation is safe.
-    ///
-    /// The default implementation returns `nil` so providers whose preparation has side effects are not evaluated twice.
-    func provideReplacementModalPrompt(for invalidConfiguration: ModalPromptConfiguration) -> ModalPromptConfiguration?
+    func isModalPromptStillValidForPresentation(_ configuration: ModalPromptConfiguration) -> Bool
 
     /// Called after the modal has been successfully presented.
     /// Use this to update any feature-specific tracking or state.
@@ -78,20 +70,20 @@ extension ModalPromptProvider {
         isOnboardingComplete
     }
 
-    func isPreparedModalPromptStillValid(_ configuration: ModalPromptConfiguration) -> Bool {
+    func isModalPromptStillValidForPresentation(_ configuration: ModalPromptConfiguration) -> Bool {
         true
-    }
-
-    func isRetainedPreparedModalPromptStillValid(_ configuration: ModalPromptConfiguration) -> Bool {
-        isPreparedModalPromptStillValid(configuration)
-    }
-
-    func provideReplacementModalPrompt(for invalidConfiguration: ModalPromptConfiguration) -> ModalPromptConfiguration? {
-        nil
     }
 
     func didPresentModal() {}
 
+}
+
+/// A provider whose prepared prompt can be safely replaced after presentation-time revalidation fails.
+///
+/// This capability is separate from `ModalPromptProvider` so ordinary providers are never prepared twice.
+@MainActor
+protocol InvalidModalPromptReplacing: ModalPromptProvider {
+    func provideReplacementModalPrompt(for invalidConfiguration: ModalPromptConfiguration) -> ModalPromptConfiguration?
 }
 
 /// A protocol for modal prompts that can be shown on-demand by the user.

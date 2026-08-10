@@ -38,20 +38,12 @@ package enum DefaultBrowserPromptPresentationType {
 @MainActor
 package protocol DefaultBrowserPromptCoordinating: AnyObject {
     func getPrompt() -> DefaultBrowserPromptPresentationType?
-    /// Revalidates prepared work without consuming prompt-selection state or performing a new status check.
-    func isPreparedPromptStillValid() -> Bool
-    /// Revalidates retained work from cached browser status before a presentation retry.
-    func isRetainedPreparedPromptStillValid() -> Bool
+    /// Revalidates prepared work from cached browser status without consuming selection state or performing a new status check.
+    func isModalPromptStillValidForPresentation() -> Bool
 
     func setDefaultBrowserAction(forPrompt prompt: DefaultBrowserPromptPresentationType)
     func dismissAction(forPrompt prompt: DefaultBrowserPromptPresentationType, shouldDismissPromptPermanently: Bool)
     func moreProtectionsAction()
-}
-
-package extension DefaultBrowserPromptCoordinating {
-    func isRetainedPreparedPromptStillValid() -> Bool {
-        isPreparedPromptStillValid()
-    }
 }
 
 @MainActor
@@ -94,12 +86,8 @@ extension DefaultBrowserPromptCoordinator: DefaultBrowserPromptCoordinating {
         return DefaultBrowserPromptPresentationType(prompt)
     }
 
-    package func isPreparedPromptStillValid() -> Bool {
-        promptTypeDecider.isPreparedPromptStillValid()
-    }
-
-    package func isRetainedPreparedPromptStillValid() -> Bool {
-        promptTypeDecider.isRetainedPreparedPromptStillValid()
+    package func isModalPromptStillValidForPresentation() -> Bool {
+        promptTypeDecider.isModalPromptStillValidForPresentation()
     }
 
     package func setDefaultBrowserAction(forPrompt prompt: DefaultBrowserPromptPresentationType) {

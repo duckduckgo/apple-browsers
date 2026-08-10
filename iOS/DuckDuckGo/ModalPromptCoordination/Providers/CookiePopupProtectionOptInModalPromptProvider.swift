@@ -137,7 +137,8 @@ final class CookiePopupProtectionOptInModalPromptProvider: ModalPromptProvider {
         }))
     }
 
-    func isPreparedModalPromptStillValid(_ configuration: ModalPromptConfiguration) -> Bool {
+    /// Rechecks current feature eligibility without reenrolling the user in the experiment.
+    func isModalPromptStillValidForPresentation(_ configuration: ModalPromptConfiguration) -> Bool {
         isEligibleToShow
     }
 

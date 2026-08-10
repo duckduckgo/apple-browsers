@@ -53,16 +53,18 @@ extension TabViewController {
         }
     }
 
-    /// Presents the sheet with `text` attached as its own context, alongside any page context. Nothing
-    /// is submitted — the selection is there for the user to ask about.
+    /// Presents the sheet with `text` attached as its own context. Nothing is submitted — the selection
+    /// is there for the user to ask about, so the page is not auto-attached on top of it.
     @MainActor
     func presentContextualAIChatSheet(withSelectedText text: String,
                                       from presentingViewController: UIViewController) async {
         let url = webView.url
-        await aiChatContextualSheetCoordinator.attachSelection(
+        await aiChatContextualSheetCoordinator.handleSelectionAction(
+            .ask,
             text: text,
             url: url,
             faviconBase64: url.flatMap { getFaviconBase64(for: $0) },
+            pageTitle: webView.title,
             restoreURL: restoreURLForContextualSheet(),
             from: presentingViewController
         )

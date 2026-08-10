@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import FoundationExtensions
 
 extension UserText {
 
@@ -26,6 +27,16 @@ extension UserText {
 
     public static let aiChatSuggestionTranslatePageLabel = NSLocalizedString("duckai.suggestion.translate-page.label", value: "Translate this page", comment: "Suggested prompt chip: translate the current page")
     public static let aiChatSuggestionTranslatePagePrompt = NSLocalizedString("duckai.suggestion.translate-page.prompt", value: "Translate this page into %@.", comment: "Suggested prompt submitted text: translate the page. %@ is replaced with the name of the user's language.")
+
+    /// `NotLocalizedString` so the selection stack can merge ahead of translations — see the
+    /// implementation plan §5a. The `prompt` values are unused for these two ids: tapping a selection
+    /// suggestion submits a tool payload rather than prompt text. They are populated so the entries
+    /// match the shape of every other catalog entry.
+    public static let aiChatSuggestionSummarizeSelectionLabel = NotLocalizedString("duckai.suggestion.summarize-selection.label", value: "Summarize this selection", comment: "Suggested prompt chip shown when the user has attached a text selection: summarize that selection")
+    public static let aiChatSuggestionSummarizeSelectionPrompt = NotLocalizedString("duckai.suggestion.summarize-selection.prompt", value: "Summarize this selection.", comment: "Suggested prompt submitted text: summarize the attached text selection")
+
+    public static let aiChatSuggestionTranslateSelectionLabel = NotLocalizedString("duckai.suggestion.translate-selection.label", value: "Translate this selection", comment: "Suggested prompt chip shown when the user has attached a text selection: translate that selection")
+    public static let aiChatSuggestionTranslateSelectionPrompt = NotLocalizedString("duckai.suggestion.translate-selection.prompt", value: "Translate this selection into %@.", comment: "Suggested prompt submitted text: translate the attached text selection. %@ is replaced with the name of the user's language.")
 
     public static let aiChatSuggestionKeyTakeawaysLabel = NSLocalizedString("duckai.suggestion.key-takeaways.label", value: "What are the key takeaways?", comment: "Suggested prompt chip: key takeaways of an article")
     public static let aiChatSuggestionKeyTakeawaysPrompt = NSLocalizedString("duckai.suggestion.key-takeaways.prompt", value: "What are the key takeaways from this article?", comment: "Suggested prompt submitted text: key takeaways of an article")

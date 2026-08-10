@@ -207,11 +207,11 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         super.tearDown()
     }
 
-    // MARK: - attachSelection Tests
+    // MARK: - handleSelectionAction Tests
 
     @MainActor
     func testAttachSelectionAttachesAndPresentsTheSheet() async {
-        await sut.attachSelection(text: "selected text", url: URL(string: "https://example.com"), faviconBase64: nil, from: mockPresentingVC)
+        await sut.handleSelectionAction(.ask, text: "selected text", url: URL(string: "https://example.com"), faviconBase64: nil, from: mockPresentingVC)
 
         XCTAssertEqual(sut.sessionState.attachedSelections.map(\.content), ["selected text"])
         XCTAssertNotNil(sut.sheetViewController)
@@ -223,8 +223,8 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     func testAttachingTheSameSelectionTwiceAttachesItOnce() async {
         let url = URL(string: "https://example.com")
 
-        await sut.attachSelection(text: "selected text", url: url, faviconBase64: nil, from: mockPresentingVC)
-        await sut.attachSelection(text: "selected text", url: url, faviconBase64: nil, from: mockPresentingVC)
+        await sut.handleSelectionAction(.ask, text: "selected text", url: url, faviconBase64: nil, from: mockPresentingVC)
+        await sut.handleSelectionAction(.ask, text: "selected text", url: url, faviconBase64: nil, from: mockPresentingVC)
 
         XCTAssertEqual(sut.sessionState.attachedSelections.count, 1)
     }
@@ -234,7 +234,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     func testAttachSelectionRestoresThePersistedChat() async {
         let restoreURL = URL(string: "https://duckduckgo.com/?chatID=abc")!
 
-        await sut.attachSelection(text: "selected text", url: URL(string: "https://example.com"), faviconBase64: nil, restoreURL: restoreURL, from: mockPresentingVC)
+        await sut.handleSelectionAction(.ask, text: "selected text", url: URL(string: "https://example.com"), faviconBase64: nil, restoreURL: restoreURL, from: mockPresentingVC)
 
         XCTAssertEqual(sut.sessionState.contextualChatURL, restoreURL)
     }

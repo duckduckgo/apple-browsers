@@ -414,6 +414,12 @@ final class UTIAttachmentController {
         view.showValidationError(message)
     }
 
+    /// Images and files currently in the input. Read by the contextual sheet, which offers suggestions
+    /// only while at most one thing is attached.
+    var attachmentCount: Int {
+        view.currentAttachments().count
+    }
+
     /// For something the input refused that isn't an attachment.
     func presentRejectionBanner(_ message: String) {
         presentTransientValidationError(message)

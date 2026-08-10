@@ -151,8 +151,7 @@ struct ProductionDependencies: SyncDependencies {
                                             api: api,
                                             crypter: crypter,
                                             scopedAccess: scopedAccess,
-                                            account: account,
-                                            canWriteUnifiedDeviceList: { syncFeatureFlags.canWriteUnifiedDeviceList() })
+                                            account: account)
     }
 
     func createTokenRescope() -> TokenRescoping {

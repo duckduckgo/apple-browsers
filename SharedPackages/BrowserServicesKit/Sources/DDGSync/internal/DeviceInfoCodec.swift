@@ -33,7 +33,6 @@ enum DeviceInfoCodecError: Error, Equatable {
 
 protocol DeviceInfoCoding {
     func encrypt(_ deviceInfo: DeviceInfo, using protectedKey: ProtectedKey) throws -> String
-    func encrypt(_ deviceInfo: DeviceInfo, using key: AccountInfoKey) throws -> String
     func decrypt(_ encryptedDeviceInfo: String, using key: AccountInfoKey) throws -> DeviceInfo
 }
 
@@ -51,10 +50,6 @@ struct DeviceInfoCodec: DeviceInfoCoding {
         }
         let publicKey = try RSAKeyImporter.makePublicKey(from: protectedKey.publicKey)
         return try encrypt(deviceInfo, publicKey: publicKey, keyID: protectedKey.kid)
-    }
-
-    func encrypt(_ deviceInfo: DeviceInfo, using key: AccountInfoKey) throws -> String {
-        try encrypt(deviceInfo, publicKey: key.publicKey, keyID: key.kid)
     }
 
     func decrypt(_ encryptedDeviceInfo: String, using key: AccountInfoKey) throws -> DeviceInfo {

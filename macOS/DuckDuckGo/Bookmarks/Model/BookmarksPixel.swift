@@ -41,12 +41,6 @@ enum BookmarksPixel: PixelKitEvent {
         }
     }
 
-    var frequency: PixelKit.Frequency {
-        switch self {
-        case .count: return .daily
-        }
-    }
-
     var parameters: [String: String]? {
         switch self {
         case .count(let bucket):
@@ -91,11 +85,5 @@ enum BookmarksPixel: PixelKitEvent {
                 self = .fiveHundredOneOrMore
             }
         }
-    }
-}
-
-extension BookmarksPixel {
-    func fire(pixelFiring: PixelFiring? = PixelKit.shared) {
-        pixelFiring?.fire(self, frequency: frequency)
     }
 }

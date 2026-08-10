@@ -197,7 +197,7 @@ final class LocalBookmarkManager: BookmarkManager {
     private func fireBookmarksCountPixel(bookmarksCount: Int) {
         let pixel = BookmarksPixel.count(.init(bookmarksCount))
         bookmarksCountPixelScheduler { [pixelFiring = pixelFiring] in
-            pixel.fire(pixelFiring: pixelFiring)
+            pixelFiring?.fire(pixel, frequency: .daily)
         }
     }
 

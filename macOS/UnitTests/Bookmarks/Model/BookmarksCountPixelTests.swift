@@ -17,7 +17,6 @@
 //
 
 import PixelKit
-import PixelKitTestingUtilities
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -52,17 +51,6 @@ final class BookmarksCountPixelTests: XCTestCase {
         guard case .pixelSource = standardParameter else {
             return XCTFail("Expected pixelSource standard parameter")
         }
-    }
-
-    func testPixelFiresWithConfiguredFrequencyAndBucketedCount() {
-        let pixel = BookmarksPixel.count(.init(51))
-        let pixelFiring = PixelKitMock(expecting: [
-            ExpectedFireCall(pixel: pixel, frequency: .daily),
-        ])
-
-        pixel.fire(pixelFiring: pixelFiring)
-
-        pixelFiring.verifyExpectations()
     }
 
     func testBookmarkListCountIncludesFavoritesAndNestedBookmarksButExcludesFolders() {

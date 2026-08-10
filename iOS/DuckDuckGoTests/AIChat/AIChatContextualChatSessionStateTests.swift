@@ -2163,16 +2163,14 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         AIChatSelectionContextBuilder.makeSelection(text: content, url: URL(string: "https://example.com/article"))
     }
 
-    // MARK: - Signals-only collection keeps the page available for later re-resolves
+    // MARK: - Signals-only collection
 
     func testSignalsOnlyCollectionRetainsSignalsWithoutMakingThePageAttachable() {
         sessionState.markPendingSignalsOnlyCollection()
 
         sessionState.updateContext(makeTestContext())
 
-        // The signals must survive for a later scope change to re-resolve from, or translate's language
-        // condition loses them. They must NOT land in `latestContext`, which feeds the paths that turn a
-        // collected page into an attachment — a new UTI host would start with the page pending submit.
+        // Must not land in `latestContext`, which feeds the paths that would attach the page.
         XCTAssertNotNil(sessionState.latestSignalsOnlyContext)
         XCTAssertNil(sessionState.latestContext)
         XCTAssertNil(sessionState.intendedAttachedContext)
@@ -2185,8 +2183,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
 
         sessionState.clearAttachedSelections()
 
-        // Clearing is a scope change like removal is, so the row must be re-resolved rather than left
-        // showing the selection-scoped pair for selections that are gone.
+        // Clearing is a scope change like removal, so the row must be resolved again.
         XCTAssertEqual(sessionState.viewState.suggestionsLoadState, .loading)
         XCTAssertTrue(sessionState.viewState.suggestions.isEmpty)
     }

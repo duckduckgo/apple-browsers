@@ -28,8 +28,7 @@ final class AIChatTextSelectionActionTests: XCTestCase {
         XCTAssertTrue(AIChatTextSelectionAction.translate.autoSubmits)
     }
 
-    /// Summarize and translate carry the text in their tool payload, so attaching it as well would send
-    /// the model the same passage twice.
+    /// The submitting actions carry the text with them, so attaching it too would send it twice.
     func testOnlyAskAttachesTheSelection() {
         XCTAssertTrue(AIChatTextSelectionAction.ask.attachesSelection)
         XCTAssertFalse(AIChatTextSelectionAction.summarize.attachesSelection)

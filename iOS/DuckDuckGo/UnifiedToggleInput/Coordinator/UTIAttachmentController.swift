@@ -414,11 +414,8 @@ final class UTIAttachmentController {
         view.showValidationError(message)
     }
 
-    /// Images and files currently in the input. Read by the contextual sheet, which offers suggestions
-    /// only while at most one thing is attached.
-    ///
-    /// Rejected files are excluded: they show a validation error and are never sent, so counting them
-    /// would hide the suggestions over something the user cannot actually submit.
+    /// Rejected files are excluded: they are never sent, so counting them would hide the contextual
+    /// sheet's suggestions over something the user cannot submit.
     var attachmentCount: Int {
         view.currentAttachments().filter {
             switch $0 {

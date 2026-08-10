@@ -394,8 +394,7 @@ final class ContextualSuggestionsMatcherTests: XCTestCase {
         XCTAssertFalse(result.isSmart)
     }
 
-    /// Guards Pikor's shipped page suggestions: adding the two ids to the catalog must not leak them
-    /// into the page-scoped sets, which is the regression §6.4 asks to rule out.
+    /// Adding the two ids to the catalog must not leak them into the page-scoped sets.
     func testPageScopeNeverOffersTheSelectionSuggestions() throws {
         let catalog = try standardCatalog()
         let scenarios = [

@@ -114,12 +114,7 @@ final class AIChatContextualChatSessionState {
     /// When false, page-context quick actions are suppressed. Fail-open (always attachable) by default.
     private let isCurrentPageAttachable: () -> Bool
 
-    /// Images and files currently in the input. Lives in `UTIAttachmentController`, which the session
-    /// state has no view of, so it is supplied from outside — and defaults to zero, which is correct for
-    /// the basic native input (no attachment affordance) and for tests.
-    ///
-    /// Settable rather than an init parameter because the unified-input host that answers it is created
-    /// after this object.
+    /// Supplied from outside because the host that answers it is created after this object.
     var inputAttachmentCount: () -> Int = { 0 }
 
     // MARK: - Core State (private(set) - mutations happen via methods)
@@ -129,13 +124,10 @@ final class AIChatContextualChatSessionState {
     private(set) var contextualChatURL: URL?
     private(set) var latestContext: AIChatPageContext?
 
-    /// Last page collected for signals only — page-type signals and URL for the suggestion matcher, from a
-    /// page that is deliberately not attached. Separate from `latestContext` so it cannot reach the paths
-    /// that turn a collected page into an attachment.
+    /// Kept out of `latestContext` so a page collected without being attached cannot reach the paths
+    /// that would attach it.
     private(set) var latestSignalsOnlyContext: AIChatPageContext?
 
-    /// The page the suggestion matcher resolves against: the attachable one when there is one, otherwise
-    /// the signals-only page collected for a page we deliberately did not attach.
     private var contextForSuggestions: AIChatPageContext? {
         latestContext ?? latestSignalsOnlyContext
     }
@@ -457,21 +449,16 @@ final class AIChatContextualChatSessionState {
         }
     }
 
-    /// Re-resolves the suggestions because their scope changed: a selection was attached or removed, and
-    /// the page-scoped and selection-scoped sets are different catalog entries. Without this the row
-    /// keeps whichever set was resolved last, so an attached selection would still be offered
-    /// "Summarize this page".
+    /// Called when a selection is attached, removed or cleared: the page-scoped and selection-scoped
+    /// sets are different catalog entries, so the row has to be resolved again.
     private func resolveSuggestionsForScopeChange() {
         guard frontendState == .noChat, showsSuggestionsStartSurface, !hasActiveChat else { return }
-        // Goes through `beginLoadingSuggestions` rather than setting `.loading` directly so the previous
-        // scope's chips are cleared — the loading view is inserted alongside them, not over them, so a
-        // stale "Summarize this page" would otherwise sit beside the spinner — and so the timeout is armed.
+        // Via `beginLoadingSuggestions` so the old scope's chips are cleared: the loading view is
+        // inserted beside them, not over them.
         beginLoadingSuggestions()
         resolveSuggestionsIfLoading(from: contextForSuggestions)
     }
 
-    /// Re-renders after something outside this object changed the attachment count — an image added to
-    /// or removed from the input — since that decides whether suggestions are offered.
     func refreshForAttachmentChange() {
         rebuildViewState()
     }
@@ -555,10 +542,7 @@ final class AIChatContextualChatSessionState {
             pendingSignalsOnlyCollection = false
             isProcessingNavigation = false
             if let context {
-                // Kept separately from `latestContext` on purpose. This page is deliberately *not*
-                // attached, and `latestContext` feeds paths that would attach it — a new UTI host starts
-                // with it as a pending-submit attachment. Suggestions only need its signals and URL, so
-                // they get their own reference and nothing else changes behaviour.
+                // Not `latestContext`: that feeds the paths that attach a page, and this one must not be.
                 latestSignalsOnlyContext = context
                 let payload = signalsOnlyPayload(from: context.contextData)
                 emit(.deliverPageContext(payload, targets: .frontendBridge))
@@ -799,33 +783,19 @@ private extension AIChatContextualChatSessionState {
         shouldAutoCollectContext || isManualAttachInProgress || isProcessingNavigation
     }
 
-    /// How many attachments the prompt currently carries: the page-context chip, each text selection,
-    /// and each image or file in the input.
-    ///
-    /// Auto-attached page context counts the same as manually attached — the user sees one chip either
-    /// way, and distinguishing them would mean recording provenance that nothing tracks today.
     private var attachmentCount: Int {
         let pageContextCount = if case .attached = chipState { 1 } else { 0 }
         return pageContextCount + attachedSelections.count + inputAttachmentCount()
     }
 
-    /// Suggestions are offered only while exactly one thing is attached, or nothing is.
-    ///
-    /// Beyond that the user has assembled something specific, and a one-line suggestion can no longer
-    /// say which part of it it acts on — the same reasoning that already hides suggestions when several
-    /// tabs are attached, generalised to attachments of any kind. So a selection plus an image, or page
-    /// context plus an image, offers nothing.
+    /// Beyond one attachment a single-line suggestion can no longer say which part of the prompt it
+    /// acts on.
     private var shouldHideSuggestions: Bool {
         attachmentCount > 1
     }
 
     private func resolveQuickActions() -> [AIChatContextualQuickAction] {
-        // Every quick action here is page-scoped ("Ask about page", "Summarize page"), so beside an
-        // attached selection they offer to act on the wrong thing — the same reason the page
-        // suggestions go. Pre-submit only: once a chat is running the frontend drives the UI.
-        //
-        // A selection and page context are still not mutually exclusive: the unified input's attach
-        // affordance carries its own page-context action, so that route survives the chip being hidden.
+        // These are all page-scoped, so beside an attached selection they act on the wrong thing.
         if !attachedSelections.isEmpty, frontendState == .noChat {
             return []
         }
@@ -864,9 +834,8 @@ private extension AIChatContextualChatSessionState {
 
         suggestionsTimeoutTask?.cancel()
 
-        // A selection is attached, so offer the selection-scoped pair instead of page-derived ones.
-        // `pageTypeSignals` still travels: translate's `differentLanguage` condition compares the source
-        // page's language against the UI language, and a selection's source is that page.
+        // Signals still travel under selection scope: translate compares the source page's language
+        // against the UI language, and a selection's source is that page.
         let input = ResolvePageSuggestionsInput(
             pageTypeSignals: context?.contextData.pageTypeSignals,
             url: context?.contextData.url,

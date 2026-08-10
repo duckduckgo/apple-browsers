@@ -24,10 +24,7 @@ struct ResolvePageSuggestionsInput {
 
     /// What the offered suggestions should act on.
     enum Scope {
-        /// The current page, matched against its type signals, URL and domain.
         case page
-        /// An attached text selection. Only the selection-scoped catalog entries are offered —
-        /// page-derived ones would act on the wrong thing.
         case selection
     }
 

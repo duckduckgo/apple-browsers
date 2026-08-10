@@ -177,7 +177,6 @@ final class AIChatContextualSheetCoordinator {
             isCurrentPageAttachable: { [weak pageContextHandler] in pageContextHandler?.isCurrentPageAttachable() ?? true }
         )
         self.sessionState.updateUnifiedToggleInputActive(isWebUTIEnabled, isImmediateContextual: isImmediateContextualUTIEnabled)
-        // Set here rather than passed in: the host that answers this is created later.
         self.sessionState.inputAttachmentCount = { [weak self] in self?.persistentUTIHost?.attachmentCount ?? 0 }
         self.sessionEffectCancellable = self.sessionState.effects
             .sink { [weak self] effect in
@@ -208,11 +207,8 @@ final class AIChatContextualSheetCoordinator {
 
     /// Presents the contextual AI chat sheet.
     ///
-    /// - Parameter skippingAutoAttach: pass `true` when the sheet is being opened *because* the user
-    ///   attached something specific — a text selection. Auto-attaching the whole page on top of that
-    ///   makes the selection the second attachment, which hides the selection's own suggestions and
-    ///   buries the passage the user chose under page content they didn't ask for. Page signals are
-    ///   still collected, so the Translate suggestion's language condition keeps working.
+    /// - Parameter skippingAutoAttach: `true` when the sheet opens because the user attached a text
+    ///   selection. The page is not attached on top of it; its signals are still collected.
     func presentSheet(from presentingViewController: UIViewController,
                       restoreURL: URL? = nil,
                       skippingAutoAttach: Bool = false) async {
@@ -223,8 +219,7 @@ final class AIChatContextualSheetCoordinator {
         startObservingContextUpdates()
 
         if skippingAutoAttach, currentPageURL != nil {
-            // Signals-only: no page chip, but the page-type signals the suggestions need still arrive.
-            // `markPendingSignalsOnlyCollection` already begins the loading state.
+            // No page chip, but the signals the suggestions need still arrive.
             sessionState.markPendingSignalsOnlyCollection()
             pageContextHandler.triggerContextCollection(trigger: .tabContent)
         } else if currentPageURL != nil, sessionState.shouldTriggerAutoCollect(for: currentPageURL) {
@@ -251,13 +246,9 @@ final class AIChatContextualSheetCoordinator {
 
     /// Runs a Duck.ai action on text selected in the page, presenting the sheet either way.
     ///
-    /// - `ask` attaches the selection as a chip and submits nothing, leaving the user to write their own
-    ///   question. At the cap the selection is refused with a banner and the sheet still presents, so the
-    ///   user can see the chips they already have and act on them.
-    /// - `summarize` and `translate` carry the text inside their tool payload and attach nothing — a chip
-    ///   would be a second, redundant copy. Submitting clears any selections already attached, matching
-    ///   macOS's `clearSelectionContexts()` on submit. **Delivering that payload needs the native-prompt
-    ///   channel, which does not exist yet**, so today these only clear and present.
+    /// `ask` attaches the selection and submits nothing; at the cap it is refused with a banner and the
+    /// sheet still presents. The submitting actions carry the text in their own payload, so they attach
+    /// nothing and clear any selections already attached, matching macOS on submit.
     func handleSelectionAction(_ action: AIChatTextSelectionAction,
                                selection selectedText: AIChatPageTextSelection,
                                restoreURL: URL? = nil,

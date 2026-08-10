@@ -122,8 +122,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
     @Published var attachmentUsage: AIChatAttachmentUsage?
 
-    /// Fires when the input's attachments change, so a host that renders off the attachment count can
-    /// re-evaluate. Rides the draft-changed callback, which is the existing signal for the same event.
+    /// Rides the draft-changed callback, which fires only on attachment mutations.
     var onAttachmentsChanged: (() -> Void)?
 
     @Published private(set) var isEditing: Bool = false {
@@ -1271,7 +1270,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         isVoiceSessionActive = false
     }
 
-    /// Images and files currently in the input.
     var attachmentCount: Int {
         attachmentController.attachmentCount
     }

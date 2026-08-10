@@ -65,14 +65,13 @@ struct ContextualSuggestionsMatcher {
 
     private init() {}
 
-    /// Catalog ids offered against an attached text selection. Translate carries the
-    /// `differentLanguage` condition, so a selection from a page in the user's own language offers one
-    /// suggestion rather than two.
+    /// Translate carries the `differentLanguage` condition, so a selection from a page in the user's own
+    /// language offers one suggestion rather than two.
     private static let selectionScopedIDs = AIChatTextSelectionAction.selectionSuggestionIDs
 
     static func resolve(_ input: ResolvePageSuggestionsInput, catalog: SuggestionCatalog) -> ResolvedPageSuggestions {
         let cap = max(1, catalog.maxSuggestedPrompts)
-        // Selection-scoped suggestions are a fixed pair, not page-matched, so they are never "smart".
+        // A fixed pair, not page-matched, so never "smart".
         let candidates = input.scope == .selection
             ? (ids: selectionScopedIDs, isSmart: false)
             : collectCandidateIds(input, catalog: catalog, cap: cap)

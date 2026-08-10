@@ -19,7 +19,7 @@
 
 import Foundation
 
-/// Text the user selected in a page, with what is needed to identify where it came from.
+/// Text selected in a page, and where it came from.
 struct AIChatPageTextSelection {
     let text: String
     let url: URL?
@@ -46,16 +46,14 @@ enum AIChatTextSelectionAction: String, CaseIterable, Equatable {
         }
     }
 
-    /// Whether the selected text becomes an attachment.
-    ///
-    /// Only ask does. Summarize and translate carry their text inside the tool payload (`TextSummary` /
-    /// `Translation`), so attaching it as well would send the model the same text twice.
+    /// Only ask does: the submitting actions carry the text with them, so attaching it as well would
+    /// send the model the same passage twice.
     var attachesSelection: Bool {
         !autoSubmits
     }
 
-    /// Catalog id of the suggestion that performs this action on an attached selection. Ask has none —
-    /// it is what attaches the selection in the first place, so there is nothing left to suggest.
+    /// Catalog id of the suggestion that performs this action on an attached selection. Ask has none: it
+    /// is what attaches the selection in the first place.
     var selectionSuggestionID: String? {
         switch self {
         case .summarize: return "summarize-selection"

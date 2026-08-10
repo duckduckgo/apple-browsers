@@ -2268,6 +2268,7 @@
 		CB3B4D542D648C44006DAD63 /* AuthenticationServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB3B4D532D648C44006DAD63 /* AuthenticationServiceTests.swift */; };
 		CB3B4D562D649DC8006DAD63 /* AutoClearServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB3B4D552D649DC8006DAD63 /* AutoClearServiceTests.swift */; };
 		CB3B4D592D64AADD006DAD63 /* MockOverlayWindowManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB3B4D582D64AADD006DAD63 /* MockOverlayWindowManager.swift */; };
+		CB019FD3300A000100000002 /* OverlayWindowPresenterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB019FD3300A000100000001 /* OverlayWindowPresenterTests.swift */; };
 		CB3C78892D06D3A700A7E4ED /* Foreground.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBAD0EFC2CFE1D48006267B8 /* Foreground.swift */; };
 		CB3C788A2D06D3A700A7E4ED /* Background.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBAD0F002CFE1D54006267B8 /* Background.swift */; };
 		CB3C788B2D06D3A700A7E4ED /* Launching.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBAD0EFA2CFE1D3F006267B8 /* Launching.swift */; };
@@ -2432,6 +2433,8 @@
 		CCCFFCD52FA3B82A0093CF07 /* OnboardingSharedPixelsStoring.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCCFFCD42FA3B81F0093CF07 /* OnboardingSharedPixelsStoring.swift */; };
 		CE8BB592D637EDF923F1E25C /* SubscriptionOnboardingNavigationContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 805FC085FDE8FE82A5752D91 /* SubscriptionOnboardingNavigationContainer.swift */; };
 		CF65ADDC7C8E902826B7931B /* AIChatTabChatHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA8E5DCD620608EB3A162D3D /* AIChatTabChatHeaderView.swift */; };
+		AC1147E0B100000000000102 /* AIChatHeaderGlassPill.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC1147E0B100000000000101 /* AIChatHeaderGlassPill.swift */; };
+		AC1147E0B100000000000202 /* AIChatEditHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC1147E0B100000000000201 /* AIChatEditHeaderView.swift */; };
 		D1A0B0112F92000100A1B001 /* DataImportEntryPointHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A0B0012F92000100A1B001 /* DataImportEntryPointHandlerTests.swift */; };
 		D1A0B0122F92000100A1B001 /* DataImportUserActivityHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A0B0022F92000100A1B001 /* DataImportUserActivityHandlerTests.swift */; };
 		D1A0B0132F92000100A1B001 /* ImportPasswordSourceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A0B0032F92000100A1B001 /* ImportPasswordSourceTests.swift */; };
@@ -5107,6 +5110,7 @@
 		CB3B4D532D648C44006DAD63 /* AuthenticationServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthenticationServiceTests.swift; sourceTree = "<group>"; };
 		CB3B4D552D649DC8006DAD63 /* AutoClearServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoClearServiceTests.swift; sourceTree = "<group>"; };
 		CB3B4D582D64AADD006DAD63 /* MockOverlayWindowManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockOverlayWindowManager.swift; sourceTree = "<group>"; };
+		CB019FD3300A000100000001 /* OverlayWindowPresenterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayWindowPresenterTests.swift; sourceTree = "<group>"; };
 		CB3CC3362D9EFFB4004D6B33 /* SiteThemeColorManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SiteThemeColorManager.swift; sourceTree = "<group>"; };
 		CB4448752AF6D51D001F93F7 /* hr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = hr; path = hr.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		CB4FA44D2C78AACE00A16F5A /* SpecialErrorPageUserScript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpecialErrorPageUserScript.swift; sourceTree = "<group>"; };
@@ -5388,6 +5392,8 @@
 		E893A63A6D9BB66F042D3770 /* SearchTokenExperimentTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SearchTokenExperimentTests.swift; sourceTree = "<group>"; };
 		EA39B7E1268A1A35000C62CD /* privacy-reference-tests */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = folder; name = "privacy-reference-tests"; path = "../SharedPackages/BrowserServicesKit/Tests/BrowserServicesKitTests/Res/privacy-reference-tests"; sourceTree = SOURCE_ROOT; };
 		EA8E5DCD620608EB3A162D3D /* AIChatTabChatHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatTabChatHeaderView.swift; sourceTree = "<group>"; };
+		AC1147E0B100000000000101 /* AIChatHeaderGlassPill.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatHeaderGlassPill.swift; sourceTree = "<group>"; };
+		AC1147E0B100000000000201 /* AIChatEditHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatEditHeaderView.swift; sourceTree = "<group>"; };
 		EAB19ED9268963510015D3EA /* DomainMatchingTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DomainMatchingTests.swift; sourceTree = "<group>"; };
 		ED1AD3E43001471400F2ADD6 /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = AppIcon.icon; sourceTree = "<group>"; };
 		ED1AD3E63001475100F2ADD6 /* AppIcon-black.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = "AppIcon-black.icon"; sourceTree = "<group>"; };
@@ -6330,6 +6336,8 @@
 				31F43E1E2F472F3C001BBCDA /* AIChatAddressBarExperience.swift */,
 				31A2B6DF2E1C3BDF00391020 /* SubscriptionAIChatStateHandler.swift */,
 				EA8E5DCD620608EB3A162D3D /* AIChatTabChatHeaderView.swift */,
+				AC1147E0B100000000000101 /* AIChatHeaderGlassPill.swift */,
+				AC1147E0B100000000000201 /* AIChatEditHeaderView.swift */,
 				5AB12C3D4E5F60718293A4B6 /* AIChatHistoryViewController.swift */,
 				5AB12C3D4E5F60718293A4B8 /* AIChatHistoryEmptyStateView.swift */,
 				5AB12C3D4E5F60718293A4BA /* AIChatHistoryViewModel.swift */,
@@ -6964,6 +6972,7 @@
 				369E692C2E5F6EB500F98A8F /* InactivityNotificationSchedulerServiceTests.swift */,
 				CB3B4D552D649DC8006DAD63 /* AutoClearServiceTests.swift */,
 				CB3B4D532D648C44006DAD63 /* AuthenticationServiceTests.swift */,
+				CB019FD3300A000100000001 /* OverlayWindowPresenterTests.swift */,
 				9F387DF42EA8BED0006861F8 /* PromoCoordinationServiceTests.swift */,
 				B6A7C21731A1000100F00D01 /* PromoCoordinationServicePromoQueueTests.swift */,
 				C1A74BAF2EC2618D00870321 /* AutofillServiceTests.swift */,
@@ -14093,6 +14102,8 @@
 				CBF259C72D4ED93F00AC63E4 /* OnboardingConfiguration.swift in Sources */,
 				31A2B6E02E1C3BE000391020 /* SubscriptionAIChatStateHandler.swift in Sources */,
 				CF65ADDC7C8E902826B7931B /* AIChatTabChatHeaderView.swift in Sources */,
+				AC1147E0B100000000000102 /* AIChatHeaderGlassPill.swift in Sources */,
+				AC1147E0B100000000000202 /* AIChatEditHeaderView.swift in Sources */,
 				5AB12C3D4E5F60718293A4B5 /* AIChatHistoryViewController.swift in Sources */,
 				5AB12C3D4E5F60718293A4B7 /* AIChatHistoryEmptyStateView.swift in Sources */,
 				5AB12C3D4E5F60718293A4B9 /* AIChatHistoryViewModel.swift in Sources */,
@@ -14793,6 +14804,7 @@
 				F1DA2F7D1EBCF23700313F51 /* ExternalUrlSchemeTests.swift in Sources */,
 				F198D78E1E39762C0088DA8A /* StringExtensionTests.swift in Sources */,
 				CB3B4D562D649DC8006DAD63 /* AutoClearServiceTests.swift in Sources */,
+				CB019FD3300A000100000002 /* OverlayWindowPresenterTests.swift in Sources */,
 				9F3038EE2F99C2510007310C /* CustomProductPageEvaluatorTests.swift in Sources */,
 				1E8146AE28C8ABF400D1AF63 /* PrivacyIconLogicTests.swift in Sources */,
 				8581F4D32D8AE04B00D93DA6 /* TabManagerTests.swift in Sources */,

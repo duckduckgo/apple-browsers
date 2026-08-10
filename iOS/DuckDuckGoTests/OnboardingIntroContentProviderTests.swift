@@ -1142,10 +1142,10 @@ struct OnboardingIntroContentProviderTests {
             // GIVEN
             let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
             let expectedOptions: [OnboardingDownloadReasonContent.Option] = [
-                .init(reason: .browserPrivately, icon: OnboardingImageResources.DownloadReason.search, title: UserText.Onboarding.DownloadReason.browsePrivately),
-                .init(reason: .privateAIChat, icon: OnboardingImageResources.DownloadReason.aiChat, title: UserText.Onboarding.DownloadReason.chatWithAI),
-                .init(reason: .noAI, icon: OnboardingImageResources.DownloadReason.noAI, title: UserText.Onboarding.DownloadReason.removeAI),
-                .init(reason: .blockAds, icon: OnboardingImageResources.DownloadReason.blockAds, title: UserText.Onboarding.DownloadReason.blockAds)
+                .init(reason: .browserPrivately, animation: .search, title: UserText.Onboarding.DownloadReason.browsePrivately),
+                .init(reason: .privateAIChat, animation: .duckAIChat, title: UserText.Onboarding.DownloadReason.chatWithAI),
+                .init(reason: .noAI, animation: .noAI, title: UserText.Onboarding.DownloadReason.removeAI),
+                .init(reason: .blockAds, animation: .imageSweep, title: UserText.Onboarding.DownloadReason.blockAds)
             ]
 
             // WHEN

@@ -2956,6 +2956,12 @@
 /* Title for the Import Passwords Promotion banner */
 "import.passwords.promo.title" = "Importēt savas paroles DuckDuckGo";
 
+/* Body for the notification sent after a period of inactivity. */
+"inactivity.notification.body" = "Izmanto DuckDuckGo, lai izvairītos no reklāmām, kas tevi izseko tīmeklī, un samazinātu savus tiešsaistes pēdu nospiedumus.";
+
+/* Title for the notification sent after a period of inactivity. */
+"inactivity.notification.title" = "Pārvaldi savu tiešsaistes pieredzi";
+
 /* Placeholder text for the duck.ai input field */
 "input.field.placeholder.duckai" = "Jautā jebko privāti";
 

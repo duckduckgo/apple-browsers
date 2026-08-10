@@ -15,6 +15,11 @@ name: 04_sync_data_setup_v2
     file: ../shared/add_bookmarks_and_favorites.yaml
 - runFlow:
     file: ../shared/use_firebutton.yaml
+- runFlow:
+    when:
+      visible: Back
+    commands:
+      - tapOn: Back
 
 # Add local login
 - runFlow:

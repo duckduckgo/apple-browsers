@@ -47,13 +47,6 @@ public extension Image {
 /// values so they can be referenced from UI-framework-agnostic content models.
 public enum OnboardingImageResources {
 
-    public enum DownloadReason {
-        public static let search = OnboardingImageResource(name: "Rebranding/Search", bundle: .module)
-        public static let aiChat = OnboardingImageResource(name: "Rebranding/AI-Chat", bundle: .module)
-        public static let noAI = OnboardingImageResource(name: "Rebranding/No-AI", bundle: .module)
-        public static let blockAds = OnboardingImageResource(name: "Rebranding/Block-Ads", bundle: .module)
-    }
-
     public enum Personalization {
         public static let addressBarToggleMode = OnboardingImageResource(name: "Rebranding/AddressBarToggleMode", bundle: .module)
     }

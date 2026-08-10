@@ -1181,6 +1181,7 @@ class OmniBarCell: UICollectionViewCell {
 
     weak var omniBar: OmniBar? {
         willSet {
+            guard omniBar !== newValue || omniBar?.barView.superview !== self else { return }
             let isFloatingUIEnabled = isFloatingUIEnabledProvider?() ?? false
             if isFloatingUIEnabled {
                 guard let currentBarView = omniBar?.barView, currentBarView.superview === self else { return }
@@ -1192,6 +1193,7 @@ class OmniBarCell: UICollectionViewCell {
             }
         }
         didSet {
+            guard oldValue !== omniBar || omniBar?.barView.superview !== self else { return }
             guard let omniBarView = omniBar?.barView else { return }
             let isFloatingUIEnabled = isFloatingUIEnabledProvider?() ?? false
             if isFloatingUIEnabled {

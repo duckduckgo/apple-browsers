@@ -349,7 +349,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             return UTIPixelContext(
                 surface: self.pixelSurface,
                 isDuckAISurfaceForAttribution: self.isDuckAISurfaceForAttribution,
-                inputMode: self.inputMode
+                inputMode: self.inputMode,
+                isToggleVisible: self.isToggleVisible
             )
         })
         wideEventReporter = UTIWideEventReporter(
@@ -1307,6 +1308,15 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         attachmentUsage = nil
         aiChatInputBoxVisibility = .visible
         isVoiceSessionActive = false
+    }
+
+    /// Surfaces a rejection in the input's validation banner.
+    func presentRejectionBanner(_ message: String) {
+        attachmentController.presentRejectionBanner(message)
+    }
+
+    func clearRejectionBanner() {
+        attachmentController.clearRejectionBanner()
     }
 
     func updateSelectedModel(_ modelId: String) {

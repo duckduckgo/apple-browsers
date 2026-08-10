@@ -40,7 +40,7 @@ package protocol DefaultBrowserPromptCoordinating: AnyObject {
     func getPrompt() -> DefaultBrowserPromptPresentationType?
     /// Revalidates prepared work without consuming prompt-selection state or performing a new status check.
     func isPreparedPromptStillValid() -> Bool
-    /// Revalidates retained work using current browser status before a presentation retry.
+    /// Revalidates retained work from cached browser status before a presentation retry.
     func isRetainedPreparedPromptStillValid() -> Bool
 
     func setDefaultBrowserAction(forPrompt prompt: DefaultBrowserPromptPresentationType)

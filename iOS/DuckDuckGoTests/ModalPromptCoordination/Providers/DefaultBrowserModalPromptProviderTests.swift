@@ -176,8 +176,8 @@ final class DefaultBrowserModalPromptProviderTests {
         #expect(presenter.isPreparedPromptStillValidCallCount == 1)
     }
 
-    @Test("Retained Prepared Prompt Uses Current Browser Revalidation")
-    func whenPreparedPromptWasRetainedThenProviderUsesCurrentBrowserRevalidation() throws {
+    @Test("Retained Prepared Prompt Uses Cached Browser Revalidation")
+    func whenPreparedPromptWasRetainedThenProviderUsesCachedBrowserRevalidation() throws {
         let presenter = MockDefaultBrowserPromptPresenter(viewControllerToReturn: UIViewController())
         let sut = DefaultBrowserModalPromptProvider(presenter: presenter)
         let configuration = try #require(sut.provideModalPrompt())

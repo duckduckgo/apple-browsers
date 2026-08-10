@@ -42,6 +42,7 @@ final class AIChatAttachedTabsTracker {
     }
 
     private weak var origin: (any DuckAIPromptOriginProviding)?
+    private weak var windowControllersManager: (any WindowControllersManagerProtocol)?
 
     private var observers: [ObserverKey: Observer] = [:]
     private weak var activeStore: (any DuckAIPromptDraftStoring)?
@@ -50,8 +51,9 @@ final class AIChatAttachedTabsTracker {
     private let seenStores = NSHashTable<AnyObject>.weakObjects()
     private var tabListCancellable: AnyCancellable?
 
-    init(origin: (any DuckAIPromptOriginProviding)?) {
+    init(origin: (any DuckAIPromptOriginProviding)?, windowControllersManager: (any WindowControllersManagerProtocol)?) {
         self.origin = origin
+        self.windowControllersManager = windowControllersManager
         watchTabListForClosedTabs()
     }
 
@@ -71,19 +73,24 @@ final class AIChatAttachedTabsTracker {
         guard let collection = origin?.originTabCollectionViewModel else { return }
         let pinnedTabs = collection.pinnedTabsCollection?.$tabs.eraseToAnyPublisher()
             ?? Just([]).eraseToAnyPublisher()
-        tabListCancellable = Publishers.CombineLatest(collection.tabCollection.$tabs, pinnedTabs)
+        // The origin window's own lists, plus every other window's: an attached tab can be closed
+        // from the window it lives in, which isn't necessarily this one.
+        let ownTabs = Publishers.CombineLatest(collection.tabCollection.$tabs, pinnedTabs)
             // Nothing has closed at subscription time; only later changes can strand an attachment.
             .dropFirst()
-            // Moves between the two collections are two mutations; read the lists once both landed.
+            .map { _, _ in () }
+        let otherWindows = windowControllersManager?.tabsChanged ?? Empty().eraseToAnyPublisher()
+        tabListCancellable = ownTabs.merge(with: otherWindows)
+            // Moves between collections are two mutations; read the lists once both landed.
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] _, _ in
+            .sink { [weak self] in
                 self?.dropAttachmentsForClosedTabs()
             }
     }
 
     private func dropAttachmentsForClosedTabs() {
-        guard let collection = origin?.originTabCollectionViewModel else { return }
-        let openTabIds = Set(allTabs(in: collection).map(\.uuid))
+        let openTabIds = Set(attachableCollections.flatMap { allTabs(in: $0) }.map(\.uuid))
+        guard !openTabIds.isEmpty else { return }
         for store in trackedStores {
             let remaining = store.aiChatTabAttachments.filter { openTabIds.contains($0.id) }
             guard remaining.count != store.aiChatTabAttachments.count else { continue }
@@ -107,15 +114,14 @@ final class AIChatAttachedTabsTracker {
     }
 
     private func observeAttachedTabs() {
-        guard let collection = origin?.originTabCollectionViewModel else { return }
         for store in trackedStores {
-            observeAttachedTabs(of: store, in: collection)
+            observeAttachedTabs(of: store)
         }
     }
 
-    private func observeAttachedTabs(of store: any DuckAIPromptDraftStoring, in collection: TabCollectionViewModel) {
+    private func observeAttachedTabs(of store: any DuckAIPromptDraftStoring) {
         for attachment in store.aiChatTabAttachments {
-            guard let tab = loadedTab(withId: attachment.id, in: collection) else { continue }
+            guard let tab = loadedTab(withId: attachment.id) else { continue }
             let key = ObserverKey(promptStore: ObjectIdentifier(store), tabId: attachment.id)
             guard observers[key]?.tab !== tab else { continue }
 
@@ -182,9 +188,15 @@ final class AIChatAttachedTabsTracker {
 
     // MARK: - Tab lookup
 
+    /// The windows an attachment can live in — see `AIChatTabPickerSource`.
+    private var attachableCollections: [TabCollectionViewModel] {
+        guard let origin = origin?.originTabCollectionViewModel, let windowControllersManager else { return [] }
+        return AIChatTabPickerSource.tabCollections(forOrigin: origin, in: windowControllersManager)
+    }
+
     /// Suspended tabs are skipped: they can't navigate, and the tab-list watch re-observes on resume.
-    private func loadedTab(withId id: String, in collection: TabCollectionViewModel) -> Tab? {
-        allTabs(in: collection).lazy.compactMap { anyTab -> Tab? in
+    private func loadedTab(withId id: String) -> Tab? {
+        attachableCollections.lazy.flatMap { allTabs(in: $0) }.compactMap { anyTab -> Tab? in
             guard case .loaded(let tab) = anyTab, tab.uuid == id else { return nil }
             return tab
         }.first

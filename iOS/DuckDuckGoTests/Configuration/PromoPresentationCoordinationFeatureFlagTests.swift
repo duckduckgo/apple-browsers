@@ -222,7 +222,7 @@ struct PromoPresentationCoordinationFeatureFlagTests {
 
         #expect(service.promoCoordinationMode == .coordinated)
         #expect(!arbiter.snapshot.hasModalLease)
-        #expect(arbiter.snapshot.visiblePromoIdentities.isEmpty)
+        #expect(arbiter.snapshot.activeOwner == nil)
     }
 
     @available(iOS 16, *)
@@ -237,7 +237,7 @@ struct PromoPresentationCoordinationFeatureFlagTests {
             promoQueueLeaseArbiter: arbiter
         )
 
-        guard case .featureDisabled = service.admitVisiblePromo(
+        guard case .deferred = service.admitRemoteMessage(
             VisiblePromoIdentity(surfaceID: UUID(), promoType: .remoteMessage, promoID: "legacy")
         ) else {
             Issue.record("Expected legacy admission to bypass arbitration")
@@ -245,7 +245,7 @@ struct PromoPresentationCoordinationFeatureFlagTests {
         }
 
         #expect(!arbiter.snapshot.hasModalLease)
-        #expect(arbiter.snapshot.visiblePromoIdentities.isEmpty)
+        #expect(arbiter.snapshot.activeOwner == nil)
     }
 
     // MARK: - Helpers

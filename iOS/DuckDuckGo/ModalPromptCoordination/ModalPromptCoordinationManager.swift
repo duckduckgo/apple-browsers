@@ -804,6 +804,10 @@ private extension ModalPromptCoordinationManager {
             attemptState = .idle
             activeAttempt.attempt.lease.release()
         }
+
+        // A synchronous no-provider decision is a real owner-release checkpoint. Notify only after the modal owner is
+        // clear so an active RMF registration can acquire through the service's readiness-gated stable drain.
+        coordinatedAttemptReleaseHandler?()
     }
 
     private func cancelScheduledPresentation() {

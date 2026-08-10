@@ -127,6 +127,7 @@ struct Foreground: ForegroundHandling {
         Logger.lifecycle.info("\(type(of: self)): \(#function)")
 
         configureAppearance()
+        let promoCoordinationReadinessToken = appDependencies.mainCoordinator.capturePromoCoordinationForegroundReadinessToken()
 
         interactionManager.start(
             launchAction: launchAction,
@@ -147,7 +148,9 @@ struct Foreground: ForegroundHandling {
                 BoolFileMarker(name: .hasSuccessfullyLaunchedBefore)?.mark()
 
                 // Present any eligible modal prompt
-                appDependencies.mainCoordinator.presentModalPromptIfNeeded()
+                appDependencies.mainCoordinator.presentModalPromptIfNeeded(
+                    readinessToken: promoCoordinationReadinessToken
+                )
             }
         )
 

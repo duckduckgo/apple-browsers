@@ -76,8 +76,7 @@ final class WebExtensionAvailabilityTests: XCTestCase {
         XCTAssertTrue(makeSUT().isAutoconsentExtensionAvailable)
     }
 
-    /// The Alpha case: the extension is loaded and both flags are on, but its service worker cannot
-    /// reach the app, so the native autoconsent user script has to take over.
+    // The Alpha case: loaded, but unable to reach the app, so the native script has to take over.
     @MainActor
     func testWhenNativeMessagingIsNotSupportedThenAutoconsentExtensionIsNotAvailable() async throws {
         try await loadEmbeddedExtension()
@@ -119,8 +118,7 @@ final class WebExtensionAvailabilityTests: XCTestCase {
         try await loadExtension(withIdentifier: DuckDuckGoWebExtensionType.embedded.rawValue)
     }
 
-    /// Extension types are read from the manifest, so the fixture only needs enough of one to
-    /// resolve an identifier.
+    // The type is read from the manifest, so the fixture only needs an id.
     @MainActor
     private func loadExtension(withIdentifier identifier: String) async throws {
         let manifest = """

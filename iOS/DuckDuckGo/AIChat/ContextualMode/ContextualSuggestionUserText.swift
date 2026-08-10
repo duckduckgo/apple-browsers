@@ -29,9 +29,9 @@ extension UserText {
     public static let aiChatSuggestionTranslatePagePrompt = NSLocalizedString("duckai.suggestion.translate-page.prompt", value: "Translate this page into %@.", comment: "Suggested prompt submitted text: translate the page. %@ is replaced with the name of the user's language.")
 
     /// `NotLocalizedString` so the selection stack can merge ahead of translations — see the
-    /// implementation plan §5a. The `prompt` values are unused for these two ids: tapping a selection
-    /// suggestion submits a tool payload rather than prompt text. They are populated so the entries
-    /// match the shape of every other catalog entry.
+    /// implementation plan §5a. Only the `label` values are shown today; the `prompt` values are populated
+    /// so these entries match the shape of every other catalog entry, and are deliberately not submitted —
+    /// these two act on the attached selection through a tool payload, not as prompt text.
     public static let aiChatSuggestionSummarizeSelectionLabel = NotLocalizedString("duckai.suggestion.summarize-selection.label", value: "Summarize this selection", comment: "Suggested prompt chip shown when the user has attached a text selection: summarize that selection")
     public static let aiChatSuggestionSummarizeSelectionPrompt = NotLocalizedString("duckai.suggestion.summarize-selection.prompt", value: "Summarize this selection.", comment: "Suggested prompt submitted text: summarize the attached text selection")
 

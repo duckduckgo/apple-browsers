@@ -61,10 +61,11 @@ extension TabViewController {
         let url = webView.url
         await aiChatContextualSheetCoordinator.handleSelectionAction(
             .ask,
-            text: text,
-            url: url,
-            faviconBase64: url.flatMap { getFaviconBase64(for: $0) },
-            pageTitle: webView.title,
+            selection: AIChatPageTextSelection(
+                text: text,
+                url: url,
+                faviconBase64: url.flatMap { getFaviconBase64(for: $0) }
+            ),
             restoreURL: restoreURLForContextualSheet(),
             from: presentingViewController
         )

@@ -19,6 +19,13 @@
 
 import Foundation
 
+/// Text the user selected in a page, with what is needed to identify where it came from.
+struct AIChatPageTextSelection {
+    let text: String
+    let url: URL?
+    let faviconBase64: String?
+}
+
 /// The Duck.ai actions that can be taken on a text selection.
 ///
 /// Only `ask` is offered in the selection edit menu — see `WebView.buildMenu`. Summarize and translate

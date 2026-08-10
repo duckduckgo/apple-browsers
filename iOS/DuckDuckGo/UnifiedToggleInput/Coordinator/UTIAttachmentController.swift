@@ -416,8 +416,16 @@ final class UTIAttachmentController {
 
     /// Images and files currently in the input. Read by the contextual sheet, which offers suggestions
     /// only while at most one thing is attached.
+    ///
+    /// Rejected files are excluded: they show a validation error and are never sent, so counting them
+    /// would hide the suggestions over something the user cannot actually submit.
     var attachmentCount: Int {
-        view.currentAttachments().count
+        view.currentAttachments().filter {
+            switch $0 {
+            case .image, .file: return true
+            case .invalidFile: return false
+            }
+        }.count
     }
 
     /// For something the input refused that isn't an attachment.

@@ -224,10 +224,8 @@ final class AIChatContextualSheetCoordinator {
 
         if skippingAutoAttach, currentPageURL != nil {
             // Signals-only: no page chip, but the page-type signals the suggestions need still arrive.
+            // `markPendingSignalsOnlyCollection` already begins the loading state.
             sessionState.markPendingSignalsOnlyCollection()
-            if sessionState.showsSuggestionsStartSurface {
-                sessionState.beginLoadingSuggestions()
-            }
             pageContextHandler.triggerContextCollection(trigger: .tabContent)
         } else if currentPageURL != nil, sessionState.shouldTriggerAutoCollect(for: currentPageURL) {
             if sessionState.showsSuggestionsStartSurface {
@@ -261,21 +259,18 @@ final class AIChatContextualSheetCoordinator {
     ///   macOS's `clearSelectionContexts()` on submit. **Delivering that payload needs the native-prompt
     ///   channel, which does not exist yet**, so today these only clear and present.
     func handleSelectionAction(_ action: AIChatTextSelectionAction,
-                               text: String,
-                               url: URL?,
-                               faviconBase64: String?,
-                               pageTitle: String? = nil,
+                               selection selectedText: AIChatPageTextSelection,
                                restoreURL: URL? = nil,
                                from presentingViewController: UIViewController) async {
         let selection = AIChatSelectionContextBuilder.makeSelection(
-            text: text,
-            url: url,
-            faviconBase64: faviconBase64
+            text: selectedText.text,
+            url: selectedText.url,
+            faviconBase64: selectedText.faviconBase64
         )
 
         var didHitCap = false
         if action.attachesSelection {
-            didHitCap = !sessionState.attachSelection(selection, pageTitle: pageTitle)
+            didHitCap = !sessionState.attachSelection(selection)
         } else {
             // Submitting consumes whatever was collected, so the input is clean for the next question.
             sessionState.clearAttachedSelections()

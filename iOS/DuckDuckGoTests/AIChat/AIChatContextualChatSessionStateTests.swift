@@ -2163,39 +2163,32 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         AIChatSelectionContextBuilder.makeSelection(text: content, url: URL(string: "https://example.com/article"))
     }
 
-    // MARK: - Selection page title
+    // MARK: - Signals-only collection keeps the page available for later re-resolves
 
-    func testAttachSelectionRecordsThePageTitle() {
-        sessionState.attachSelection(makeSelection(), pageTitle: "Article")
+    func testSignalsOnlyCollectionRetainsSignalsWithoutMakingThePageAttachable() {
+        sessionState.markPendingSignalsOnlyCollection()
 
-        XCTAssertEqual(sessionState.attachedSelectionPageTitle, "Article")
+        sessionState.updateContext(makeTestContext())
+
+        // The signals must survive for a later scope change to re-resolve from, or translate's language
+        // condition loses them. They must NOT land in `latestContext`, which feeds the paths that turn a
+        // collected page into an attachment — a new UTI host would start with the page pending submit.
+        XCTAssertNotNil(sessionState.latestSignalsOnlyContext)
+        XCTAssertNil(sessionState.latestContext)
+        XCTAssertNil(sessionState.intendedAttachedContext)
     }
 
-    func testRemovingTheLastSelectionClearsThePageTitle() {
-        let selection = makeSelection()
-        sessionState.attachSelection(selection, pageTitle: "Article")
+    func testClearingSelectionsResolvesSuggestionsBackToPageScope() {
+        mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
+        sessionState.attachSelection(makeSelection())
+        XCTAssertEqual(sessionState.viewState.suggestionsLoadState, .loading)
 
-        sessionState.removeAttachedSelection(id: selection.id)
+        sessionState.clearAttachedSelections()
 
-        XCTAssertNil(sessionState.attachedSelectionPageTitle)
-    }
-
-    func testRemovingOneOfSeveralSelectionsKeepsThePageTitle() {
-        let first = makeSelection("first")
-        sessionState.attachSelection(first, pageTitle: "Article")
-        sessionState.attachSelection(makeSelection("second"), pageTitle: "Article")
-
-        sessionState.removeAttachedSelection(id: first.id)
-
-        XCTAssertEqual(sessionState.attachedSelectionPageTitle, "Article")
-    }
-
-    func testConsumingSelectionsClearsThePageTitle() {
-        sessionState.attachSelection(makeSelection(), pageTitle: "Article")
-
-        sessionState.consumeAttachedSelections()
-
-        XCTAssertNil(sessionState.attachedSelectionPageTitle)
+        // Clearing is a scope change like removal is, so the row must be re-resolved rather than left
+        // showing the selection-scoped pair for selections that are gone.
+        XCTAssertEqual(sessionState.viewState.suggestionsLoadState, .loading)
+        XCTAssertTrue(sessionState.viewState.suggestions.isEmpty)
     }
 
     // MARK: - Suggestions hidden beyond one attachment

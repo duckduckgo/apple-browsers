@@ -129,12 +129,19 @@ final class AIChatContextualChatSessionState {
     private(set) var contextualChatURL: URL?
     private(set) var latestContext: AIChatPageContext?
 
+    /// Last page collected for signals only — page-type signals and URL for the suggestion matcher, from a
+    /// page that is deliberately not attached. Separate from `latestContext` so it cannot reach the paths
+    /// that turn a collected page into an attachment.
+    private(set) var latestSignalsOnlyContext: AIChatPageContext?
+
+    /// The page the suggestion matcher resolves against: the attachable one when there is one, otherwise
+    /// the signals-only page collected for a page we deliberately did not attach.
+    private var contextForSuggestions: AIChatPageContext? {
+        latestContext ?? latestSignalsOnlyContext
+    }
+
     /// Text selections attached from the page's selection menu, in attach order.
     private(set) var attachedSelections: [AIChatSelectionContextData] = []
-
-    /// Title of the page the most recent selection came from. Distinct from
-    /// `AIChatSelectionContextData.title`, which is the generic payload title ("Text selection").
-    private(set) var attachedSelectionPageTitle: String?
 
     /// URL included in the last submitted prompt with no navigation since; used to spot a stale auto-attach echo.
     private var deliveredContextURLWithNoNavigationSince: URL?
@@ -320,7 +327,7 @@ final class AIChatContextualChatSessionState {
     /// taps on the omnibar icon each read the selection asynchronously, so both can arrive here with
     /// identical text, and the resulting chips would be indistinguishable while costing two cap slots.
     @discardableResult
-    func attachSelection(_ selection: AIChatSelectionContextData, pageTitle: String? = nil) -> Bool {
+    func attachSelection(_ selection: AIChatSelectionContextData) -> Bool {
         guard !attachedSelections.contains(where: { $0.content == selection.content && $0.url == selection.url }) else {
             return true
         }
@@ -328,7 +335,6 @@ final class AIChatContextualChatSessionState {
             return false
         }
         attachedSelections.append(selection)
-        attachedSelectionPageTitle = pageTitle
         resolveSuggestionsForScopeChange()
         rebuildViewState()
         return true
@@ -338,9 +344,6 @@ final class AIChatContextualChatSessionState {
     func removeAttachedSelection(id: String) {
         guard attachedSelections.contains(where: { $0.id == id }) else { return }
         attachedSelections.removeAll { $0.id == id }
-        if attachedSelections.isEmpty {
-            attachedSelectionPageTitle = nil
-        }
         resolveSuggestionsForScopeChange()
         rebuildViewState()
     }
@@ -350,13 +353,13 @@ final class AIChatContextualChatSessionState {
     func consumeAttachedSelections() {
         guard !attachedSelections.isEmpty else { return }
         attachedSelections = []
-        attachedSelectionPageTitle = nil
+        resolveSuggestionsForScopeChange()
     }
 
     func clearAttachedSelections() {
         guard !attachedSelections.isEmpty else { return }
         attachedSelections = []
-        attachedSelectionPageTitle = nil
+        resolveSuggestionsForScopeChange()
         rebuildViewState()
     }
 
@@ -367,8 +370,8 @@ final class AIChatContextualChatSessionState {
     func resetToNoChat(preservingSelections: Bool = false) {
         if !preservingSelections {
             attachedSelections = []
-            attachedSelectionPageTitle = nil
         }
+        latestSignalsOnlyContext = nil
         frontendState = .noChat
         chipState = .placeholder
         contextualChatURL = nil
@@ -460,9 +463,11 @@ final class AIChatContextualChatSessionState {
     /// "Summarize this page".
     private func resolveSuggestionsForScopeChange() {
         guard frontendState == .noChat, showsSuggestionsStartSurface, !hasActiveChat else { return }
-        suggestionsResolveTask?.cancel()
-        suggestionsLoadState = .loading
-        resolveSuggestionsIfLoading(from: latestContext)
+        // Goes through `beginLoadingSuggestions` rather than setting `.loading` directly so the previous
+        // scope's chips are cleared — the loading view is inserted alongside them, not over them, so a
+        // stale "Summarize this page" would otherwise sit beside the spinner — and so the timeout is armed.
+        beginLoadingSuggestions()
+        resolveSuggestionsIfLoading(from: contextForSuggestions)
     }
 
     /// Re-renders after something outside this object changed the attachment count — an image added to
@@ -550,6 +555,11 @@ final class AIChatContextualChatSessionState {
             pendingSignalsOnlyCollection = false
             isProcessingNavigation = false
             if let context {
+                // Kept separately from `latestContext` on purpose. This page is deliberately *not*
+                // attached, and `latestContext` feeds paths that would attach it — a new UTI host starts
+                // with it as a pending-submit attachment. Suggestions only need its signals and URL, so
+                // they get their own reference and nothing else changes behaviour.
+                latestSignalsOnlyContext = context
                 let payload = signalsOnlyPayload(from: context.contextData)
                 emit(.deliverPageContext(payload, targets: .frontendBridge))
             }
@@ -565,6 +575,7 @@ final class AIChatContextualChatSessionState {
             }
             Logger.aiChat.debug("[SessionState] Context collection returned nil/empty - clearing context and downgrading to placeholder")
             latestContext = nil
+            latestSignalsOnlyContext = nil
             chipState = .placeholder
             // Clear the persistent UTI host chip
             emit(.deliverPageContext(nil, targets: .utiChip))
@@ -626,6 +637,7 @@ final class AIChatContextualChatSessionState {
 
         chipState = .placeholder
         latestContext = nil
+        latestSignalsOnlyContext = nil
         userDowngradedToPlaceholder = false
         rebuildViewState()
         Logger.aiChat.debug("[SessionState] Cleared stale manual context on sheet present")

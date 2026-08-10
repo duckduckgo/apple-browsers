@@ -46,7 +46,7 @@ final class ModalPromptCoordinationRealUIKitTests {
         // GIVEN
         let attachmentChecker = ModalPromptRootAttachmentChecker()
         let presenter = UIViewController()
-        let window = makeKeyWindow(withRoot: presenter)
+        let window = makeVisibleWindow(withRoot: presenter)
         defer { window.isHidden = true }
         let root = UIViewController()
 
@@ -64,7 +64,7 @@ final class ModalPromptCoordinationRealUIKitTests {
         // GIVEN
         let attachmentChecker = ModalPromptRootAttachmentChecker()
         let intendedPresenter = UIViewController()
-        let window = makeKeyWindow(withRoot: intendedPresenter)
+        let window = makeVisibleWindow(withRoot: intendedPresenter)
         defer { window.isHidden = true }
         let root = UIViewController()
         let nestedChild = UIViewController()
@@ -97,7 +97,7 @@ final class ModalPromptCoordinationRealUIKitTests {
         // GIVEN
         let attachmentChecker = ModalPromptRootAttachmentChecker()
         let presenter = UIViewController()
-        let window = makeKeyWindow(withRoot: presenter)
+        let window = makeVisibleWindow(withRoot: presenter)
         defer { window.isHidden = true }
         let root = UIViewController()
         // Wait on UIKit's own presentation completion rather than a delay. `isBeingDismissed` is only raised once the
@@ -154,7 +154,7 @@ final class ModalPromptCoordinationRealUIKitTests {
         // Give the selected root a real child presentation. The window exists only so UIKit accepts the nesting:
         // without it `exactRoot.presentedViewController` stays nil and a topmost walk would resolve straight back to
         // the exact root, leaving the two implementations indistinguishable.
-        let window = makeKeyWindow(withRoot: exactRoot)
+        let window = makeVisibleWindow(withRoot: exactRoot)
         defer { window.isHidden = true }
         let nestedChild = UIViewController()
         exactRoot.present(nestedChild, animated: false, completion: nil)
@@ -191,7 +191,7 @@ final class ModalPromptCoordinationRealUIKitTests {
             animated: false
         )
         let presentationHost = UIKitModalPromptPresenter()
-        let window = makeKeyWindow(withRoot: presentationHost)
+        let window = makeVisibleWindow(withRoot: presentationHost)
         defer { window.isHidden = true }
         sut = ModalPromptCoordinationManager(
             providers: [provider],
@@ -260,7 +260,7 @@ final class ModalPromptCoordinationRealUIKitTests {
     func whenStandardLaunchSchedulesKeyboardAndEligibleModalThenModalPresentsFromOmniBar() async {
         let orderingScheduler = LaunchOrderingScheduler()
         let presentationHost = UIKitModalPromptPresenter()
-        let window = makeKeyWindow(withRoot: presentationHost)
+        let window = makeVisibleWindow(withRoot: presentationHost)
         defer { window.isHidden = true }
 
         let omniBar = OmniBarEditingStateViewController(
@@ -374,11 +374,11 @@ final class ModalPromptCoordinationRealUIKitTests {
 
     /// Stands up a visible window so UIKit accepts synchronous, unanimated presentations from `root`.
     ///
-    /// Callers must hide the returned window again so it does not stay key for later tests.
-    private func makeKeyWindow(withRoot root: UIViewController) -> UIWindow {
+    /// Callers must hide the returned window again so it does not remain attached after the test.
+    private func makeVisibleWindow(withRoot root: UIViewController) -> UIWindow {
         let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
         window.rootViewController = root
-        window.makeKeyAndVisible()
+        window.isHidden = false
         return window
     }
 }

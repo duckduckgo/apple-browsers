@@ -245,21 +245,11 @@ private extension NewTabPageView {
 
     @ViewBuilder
     private func remoteMessageGate(_ gate: NewTabPageRemoteMessageGate) -> some View {
-        RemoteMessageGateMountView(gate: gate, messagesModel: messagesModel) { mountID in
-            if let renderSession = gate.renderSession {
-                homeMessageView(renderSession.viewModel)
-                    .id(renderSession.id)
-                    .onDisappear {
-                        messagesModel.remoteMessageDidDisappear(
-                            renderSessionID: renderSession.id,
-                            mountID: mountID
-                        )
-                    }
-            } else {
-                Color.clear
-                    .frame(height: 0)
-            }
-        }
+        NewTabPageRemoteMessageGateMountView(
+            gate: gate,
+            messagesModel: messagesModel,
+            maximumWidth: horizontalSizeClass == .regular ? Metrics.messageMaximumWidthPad : Metrics.messageMaximumWidth
+        )
     }
 
     private func sectionsViewHorizontalPadding(in geometry: GeometryProxy) -> CGFloat {
@@ -291,6 +281,42 @@ private extension NewTabPageView {
     }
 }
 
+/// The production coordinated remote-message subtree, exposed internally so host tests exercise
+/// the same gate, card, and disappearance callbacks as the NTP.
+struct NewTabPageRemoteMessageGateMountView: View {
+    let gate: NewTabPageRemoteMessageGate
+    let messagesModel: NewTabPageMessagesModel
+    let maximumWidth: CGFloat
+
+    var body: some View {
+        RemoteMessageGateMountView(gate: gate, messagesModel: messagesModel) { mountID in
+            if let renderSession = gate.renderSession {
+                HomeMessageView(viewModel: renderSession.viewModel)
+                    .frame(maxWidth: maximumWidth)
+                    // Coordinated ownership ends after the real removal callback. An identity transition keeps that
+                    // callback a trustworthy physical-removal boundary on every supported SwiftUI runtime.
+                    .transition(.identity)
+                    .id(renderSession.id)
+                    .onAppear {
+                        messagesModel.remoteMessageCardDidAppear(
+                            renderSessionID: renderSession.id,
+                            mountID: mountID
+                        )
+                    }
+                    .onDisappear {
+                        messagesModel.remoteMessageDidDisappear(
+                            renderSessionID: renderSession.id,
+                            mountID: mountID
+                        )
+                    }
+            } else {
+                Color.clear
+                    .frame(height: 0)
+            }
+        }
+    }
+}
+
 /// Gives each physical SwiftUI gate mount an identity for balanced appearance and disappearance callbacks.
 private struct RemoteMessageGateMountView<Content: View>: View {
     @State private var mountID = UUID()
@@ -315,7 +341,8 @@ private struct RemoteMessageGateMountView<Content: View>: View {
                 messagesModel.remoteMessageGateDidAppear(
                     gateID: gate.id,
                     messageID: gate.messageID,
-                    mountID: mountID
+                    mountID: mountID,
+                    renderSessionID: gate.renderSession?.id
                 )
             }
             .onDisappear {

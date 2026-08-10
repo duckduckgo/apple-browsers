@@ -19,11 +19,11 @@
 
 import Core
 
-/// Whether a coordinated launch modal was already shown earlier in this session, so the Duck.ai
-/// sync promo can yield to it. See Asana 1216108902675922.
+/// Whether actual, active, or pending launch-modal work should suppress another same-session promo.
+/// See Asana 1216108902675922.
 @MainActor
 protocol RecentModalPromptStatusProviding {
-    var wasModalPromptRecentlyPresented: Bool { get }
+    var shouldSuppressOtherSessionPromos: Bool { get }
 }
 
 @MainActor
@@ -48,7 +48,7 @@ final class AIChatSyncPromoViewModel {
 
     func shouldShowPromo(isQueryActive: Bool, chatCount: Int) -> Bool {
         guard !isQueryActive else { return false }
-        guard recentModalPromptStatusProvider?.wasModalPromptRecentlyPresented != true else { return false }
+        guard recentModalPromptStatusProvider?.shouldSuppressOtherSessionPromos != true else { return false }
         return syncPromoManager.shouldPresentPromoFor(.aiChat, count: chatCount)
     }
 

@@ -59,12 +59,12 @@ final class AIChatSyncPromoViewModelTests {
 
     @available(iOS 16, *)
     @Test(.timeLimit(.minutes(1)))
-    func shouldShowPromo_whenModalPromptRecentlyPresented_returnsFalseWithoutAskingManager() {
+    func shouldShowPromo_whenOtherSessionPromosShouldBeSuppressed_returnsFalseWithoutAskingManager() {
         let manager = MockSyncPromoManager()
         manager.shouldPresentForTouchpoint[.aiChat] = true
         let viewModel = AIChatSyncPromoViewModel(
             syncPromoManager: manager,
-            recentModalPromptStatusProvider: MockRecentModalPromptStatusProvider(wasModalPromptRecentlyPresented: true))
+            recentModalPromptStatusProvider: MockRecentModalPromptStatusProvider(shouldSuppressOtherSessionPromos: true))
 
         #expect(!viewModel.shouldShowPromo(isQueryActive: false, chatCount: 2))
         #expect(manager.shouldPresentRequests.isEmpty)
@@ -72,12 +72,12 @@ final class AIChatSyncPromoViewModelTests {
 
     @available(iOS 16, *)
     @Test(.timeLimit(.minutes(1)))
-    func shouldShowPromo_whenModalPromptNotRecentlyPresented_usesManager() {
+    func shouldShowPromo_whenOtherSessionPromosShouldNotBeSuppressed_usesManager() {
         let manager = MockSyncPromoManager()
         manager.shouldPresentForTouchpoint[.aiChat] = true
         let viewModel = AIChatSyncPromoViewModel(
             syncPromoManager: manager,
-            recentModalPromptStatusProvider: MockRecentModalPromptStatusProvider(wasModalPromptRecentlyPresented: false))
+            recentModalPromptStatusProvider: MockRecentModalPromptStatusProvider(shouldSuppressOtherSessionPromos: false))
 
         #expect(viewModel.shouldShowPromo(isQueryActive: false, chatCount: 2))
         #expect(manager.shouldPresentRequests.count == 1)
@@ -183,9 +183,9 @@ private final class MockSyncPromoManager: SyncPromoManaging {
 
 @MainActor
 private final class MockRecentModalPromptStatusProvider: RecentModalPromptStatusProviding {
-    var wasModalPromptRecentlyPresented: Bool
+    var shouldSuppressOtherSessionPromos: Bool
 
-    init(wasModalPromptRecentlyPresented: Bool) {
-        self.wasModalPromptRecentlyPresented = wasModalPromptRecentlyPresented
+    init(shouldSuppressOtherSessionPromos: Bool) {
+        self.shouldSuppressOtherSessionPromos = shouldSuppressOtherSessionPromos
     }
 }

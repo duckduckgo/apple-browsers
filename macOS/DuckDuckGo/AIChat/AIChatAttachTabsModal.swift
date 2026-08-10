@@ -52,6 +52,13 @@ struct AIChatAttachTabsModal: ModalView {
     @State private var keyMonitor: Any?
     @State private var sheetWindow: NSWindow?
 
+    /// Opening with nothing attached and selecting nothing leaves nothing to add, so confirming is
+    /// pointless. Opening with attachments is different: clearing every box is how they are removed,
+    /// so Update stays available all the way down to none.
+    private var canConfirm: Bool {
+        opensWithAttachments || !selectedIds.isEmpty
+    }
+
     private var filteredTabs: [AIChatTabAttachment] {
         AIChatMentionPickerFilter.filter(tabs, query: searchQuery, currentTabId: currentTabId)
     }
@@ -134,10 +141,8 @@ struct AIChatAttachTabsModal: ModalView {
                         .frame(maxWidth: .infinity)
                         .frame(height: 28)
                 }
-                // Nothing selected means nothing to add or update, whether it started that way or
-                // ended that way; cancelling is all that's left.
-                .buttonStyle(DefaultActionButtonStyle(enabled: !selectedIds.isEmpty, topPadding: 0, bottomPadding: 0, pillShape: true))
-                .disabled(selectedIds.isEmpty)
+                .buttonStyle(DefaultActionButtonStyle(enabled: canConfirm, topPadding: 0, bottomPadding: 0, pillShape: true))
+                .disabled(!canConfirm)
                 .keyboardShortcut(.defaultAction)
             }
             .padding(20)

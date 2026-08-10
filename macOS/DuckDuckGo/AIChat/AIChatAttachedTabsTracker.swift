@@ -75,11 +75,15 @@ final class AIChatAttachedTabsTracker {
             watchTabLists()
             return
         }
-        // Windows come and go; each brings tab lists of its own to watch.
+        // Windows come and go; each brings tab lists of its own to watch. A closed one takes its
+        // tabs with it without emptying those lists first, so this is also when their attachments
+        // are pruned — the lists themselves are `dropFirst`ed and say nothing about it.
         windowListCancellable = Publishers.Merge(windowControllersManager.didRegisterWindowController.asVoid(),
                                                  windowControllersManager.didUnregisterWindowController.asVoid())
+            .receive(on: DispatchQueue.main)
             .sink { [weak self] in
                 self?.watchTabLists()
+                self?.dropAttachmentsForClosedTabs()
             }
         watchTabLists()
     }

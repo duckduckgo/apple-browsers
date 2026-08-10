@@ -44,6 +44,7 @@ struct NewTabPagePromoSurfaceExposure {
 }
 
 /// Keeps promo-surface ownership changes ordered across the standard NTP and its alternate hosts.
+/// Any future host that covers an attached NTP must use this handoff; arbitrary overlays are not detected automatically.
 enum NewTabPagePromoSurfaceHandoff {
     static func showHostedSurface(
         deactivateNewTabPage: () -> Void,

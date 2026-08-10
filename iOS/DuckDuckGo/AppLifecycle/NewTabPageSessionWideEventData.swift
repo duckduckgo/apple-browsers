@@ -38,9 +38,7 @@ final class NewTabPageSessionWideEventData: WideEventData {
     enum Trigger: String, Codable, CaseIterable {
         case appOpen = "app_open"
         case newTabOpened = "new_tab_opened"
-        /// The New Tab Page the app lands on after the Fire button clears everything.
-        /// Distinguished from an ordinary new tab because the user did not ask for a
-        /// blank page, they asked to burn one.
+        /// Separate from `newTabOpened` because the user asked to burn, not for a blank page.
         case newTabOpenedAfterFire = "new_tab_opened_after_fire"
     }
 
@@ -188,10 +186,11 @@ final class NewTabPageSessionWideEventData: WideEventData {
         .keepPending
     }
 
-    /// A visit with no user action for this long ends as `noActionTimeout`.
+    /// After this long without a user action a visit counts as abandoned. It is still
+    /// reported when it actually leaves the screen, so its duration can exceed this.
     static let noActionTimeout: TimeInterval = 30
 
-    /// A visit still open after this long ends as `maxDurationExceeded`.
+    /// A visit is capped at this length, so a continuously active one cannot run forever.
     static let maxSessionDuration: TimeInterval = 120
 }
 

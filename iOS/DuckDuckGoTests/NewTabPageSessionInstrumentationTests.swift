@@ -368,13 +368,18 @@ struct NewTabPageSessionInstrumentationTests {
     // MARK: - Inactivity timeout
 
     @available(iOS 16, *)
-    @Test("An action after the inactivity timeout completes the visit and is dropped", .timeLimit(.minutes(1)))
-    func inactivityTimeoutCompletesVisitAndDropsAction() {
+    @Test("An action after the inactivity timeout is dropped without ending the visit", .timeLimit(.minutes(1)))
+    func inactivityTimeoutDropsActionWithoutEndingVisit() {
         let (sut, wideEvent, clock) = makeSUT()
         sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .up, toggleEnabled: false)
 
         clock.advance(by: NewTabPageSessionWideEventData.noActionTimeout)
         sut.tapInputBar()
+
+        // The visit is classed as abandoned but is still on screen, so nothing is sent yet.
+        #expect(wideEvent.completions.isEmpty)
+
+        sut.visitBackgrounded()
 
         guard let completion = lastCompletion(wideEvent) else {
             Issue.record("Expected a completion")
@@ -403,25 +408,55 @@ struct NewTabPageSessionInstrumentationTests {
     }
 
     @available(iOS 16, *)
-    @Test("On a timeout sessionInterval.end is the last action, not the current time", .timeLimit(.minutes(1)))
-    func timeoutStampsSessionEndAtLastAction() {
+    @Test("A timeout fixes the outcome but the real exit fixes the duration", .timeLimit(.minutes(1)))
+    func timeoutFixesOutcomeAndRealExitFixesDuration() {
         let (sut, wideEvent, clock) = makeSUT()
+        let startStamp = clock.now
         sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .up, toggleEnabled: false)
 
         clock.advance(by: 5)
-        let lastActionStamp = clock.now
         sut.tapInputBar()
 
-        clock.advance(by: 40)
+        // Well past the inactivity threshold. The visit is now classed as abandoned, but it
+        // is still on screen, so nothing is reported yet.
+        clock.advance(by: 300)
+        #expect(wideEvent.completions.isEmpty)
+
+        // Actions after the timeout are ignored, and do not end the visit either.
         sut.tapFavorite()
+        #expect(wideEvent.completions.isEmpty)
+
+        clock.advance(by: 55)
+        sut.visitBackgrounded()
 
         guard let completion = lastCompletion(wideEvent) else {
             Issue.record("Expected a completion")
             return
         }
         #expect(completion.0.terminalAction == .noActionTimeout)
-        #expect(completion.0.sessionInterval.end == lastActionStamp)
-        #expect(completion.0.sessionInterval.end != clock.now)
+        #expect(completion.0.tapFavorite == false)
+        // The full time the surface was on screen, not the 30 seconds to the threshold.
+        #expect(completion.0.sessionInterval.end == startStamp.addingTimeInterval(360))
+        #expect(completion.0.sessionInterval.durationMilliseconds == 360_000)
+    }
+
+    @available(iOS 16, *)
+    @Test("A visit abandoned without any action still reports its duration", .timeLimit(.minutes(1)))
+    func abandonedVisitReportsDuration() {
+        let (sut, wideEvent, clock) = makeSUT()
+        let startStamp = clock.now
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .up, toggleEnabled: false)
+
+        clock.advance(by: 90)
+        sut.visitBackgrounded()
+
+        guard let completion = lastCompletion(wideEvent) else {
+            Issue.record("Expected a completion")
+            return
+        }
+        #expect(completion.0.terminalAction == .noActionTimeout)
+        #expect(completion.0.sessionInterval.end == startStamp.addingTimeInterval(90))
+        #expect(completion.0.sessionInterval.durationMilliseconds == 90_000)
     }
 
     @available(iOS 16, *)
@@ -458,6 +493,12 @@ struct NewTabPageSessionInstrumentationTests {
             sut.scrollView()
         }
 
+        // The cap elapses on the 12th tick, and the check runs before the action is recorded,
+        // so only the first 11 count.
+        #expect(wideEvent.completions.isEmpty)
+
+        sut.visitBackgrounded()
+
         guard let completion = lastCompletion(wideEvent) else {
             Issue.record("Expected a completion")
             return
@@ -466,7 +507,7 @@ struct NewTabPageSessionInstrumentationTests {
         #expect(completion.0.terminalAction == .maxDurationExceeded)
         #expect(completion.1 == .failure)
         #expect(completion.0.actionCount == 11)
-        #expect(completion.0.sessionInterval.end == startStamp.addingTimeInterval(110))
+        #expect(completion.0.sessionInterval.end == startStamp.addingTimeInterval(130))
     }
 
     @available(iOS 16, *)
@@ -477,6 +518,7 @@ struct NewTabPageSessionInstrumentationTests {
 
         clock.advance(by: 300)
         sut.scrollView()
+        sut.visitBackgrounded()
 
         #expect(wideEvent.completions.count == 1)
         #expect(lastCompletion(wideEvent)?.0.terminalAction == .noActionTimeout)
@@ -550,6 +592,8 @@ struct NewTabPageSessionInstrumentationTests {
         #expect(wideEvent.discarded.isEmpty)
         #expect(wideEvent.completions.count == 1)
         #expect(lastCompletion(wideEvent)?.0.terminalAction == .noActionTimeout)
+        // Replacing the visit is what removed it from the screen, so that is its end.
+        #expect(lastCompletion(wideEvent)?.0.sessionInterval.durationMilliseconds == 60_000)
         #expect(wideEvent.started.count == 2)
     }
 }

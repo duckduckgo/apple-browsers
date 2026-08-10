@@ -40,9 +40,7 @@ protocol NewTabPageSessionInstrumentation: AnyObject {
 
     // MARK: - Actions
     //
-    // Each hook records that the user performed that action during the visit, and
-    // counts towards the visit's action total. Repeat calls are cheap and keep the
-    // inactivity timeout at bay.
+    // Repeat calls are cheap, and each one holds off the inactivity timeout.
 
     func tapInputBar()
     func typeInInput()
@@ -54,10 +52,9 @@ protocol NewTabPageSessionInstrumentation: AnyObject {
     func tapFavorite()
     func tapFireButton()
 
-    /// User tapped the button that returns to the tab they came from.
     func tapReturnToLast()
 
-    /// User left the New Tab Page through the tab switcher's escape hatch.
+    /// Reached through the return-to-tab card rather than the toolbar's tab button.
     func tapTabViewerEscapeHatch()
 
     func tapTabViewerToolbar()
@@ -70,16 +67,12 @@ protocol NewTabPageSessionInstrumentation: AnyObject {
     func menuDownloads()
     func menuVpn()
 
-    /// User acted on a remote message card's call to action.
     func clickMessageCta()
-
-    /// User dismissed a remote message card.
     func clickMessageDismiss()
-
     func dismissKeyboard()
     func scrollView()
 
-    /// User tapped the back arrow in the omnibar's unified text input.
+    /// The back arrow that leaves search mode, in the omnibar's unified text input.
     func utiBackArrow()
 
     // MARK: - Terminals
@@ -127,10 +120,13 @@ final class DefaultNewTabPageSessionInstrumentation: NewTabPageSessionInstrument
     /// Also read per visit, so a rate change lands without a relaunch.
     private let sampleRate: () -> Float
 
-    /// The live visit is kept in memory and written to storage only at start and at
-    /// completion, so a visit costs one disk write regardless of how many actions it
-    /// accumulates.
+    /// Held in memory rather than read back per action, so the number of actions in a visit
+    /// does not affect how often storage is touched. Storage is synchronous.
     private var activeVisit: NewTabPageSessionWideEventData?
+
+    /// Set once a timeout threshold has elapsed. The visit stays open so its real end time can
+    /// still be observed, but its outcome is fixed and further actions are ignored.
+    private var lockedTerminal: NewTabPageSessionWideEventData.TerminalAction?
 
     init(wideEvent: WideEventManaging,
          dateProvider: @escaping () -> Date = { Date() },
@@ -149,25 +145,28 @@ final class DefaultNewTabPageSessionInstrumentation: NewTabPageSessionInstrument
         // no-ops on its `activeVisit` guard.
         guard isEnabled() else { return }
 
-        expireActiveVisitIfNeeded()
+        lockTerminalIfTimedOut()
 
-        if let supersededVisit = activeVisit {
-            // A visit still open when the next one starts has no honest terminal: nothing
-            // here can tell whether the app backgrounded, the tab was replaced, or a hook
-            // was missed. Counting it as either a success or a failure would skew the
-            // success rate, so it is dropped instead of reported.
-            wideEvent.discardFlow(supersededVisit)
-            activeVisit = nil
+        if let previousVisit = activeVisit {
+            if let lockedTerminal {
+                // Timed out earlier and is only now leaving the screen, so this is its real
+                // end time.
+                previousVisit.sessionInterval.end = dateProvider()
+                complete(previousVisit, with: lockedTerminal)
+            } else {
+                // Still active when the next visit starts, so nothing here can tell whether
+                // the tab was replaced or a hook was missed. Reporting it either way would
+                // skew the success rate.
+                wideEvent.discardFlow(previousVisit)
+                activeVisit = nil
+            }
         }
 
-        // Anything left in storage belongs to a previous app lifecycle. Its `lastActionAt`
-        // is stale by design, because live state is held in memory and only written at
-        // start and at completion, so a stored record cannot say whether the user was
-        // still active; a timeout terminal would be a guess. `app_terminated` is the
-        // honest answer for a flow that outlived its process.
+        // Anything left in storage outlived its process. Its timestamps are stale because
+        // live state is held in memory, so a timeout terminal would be a guess.
         //
-        // The sweep runs synchronously before the new flow is created, avoiding a race
-        // with `WideEventService.resume()` that would complete the new flow as UNKNOWN.
+        // Swept here rather than from `completionDecision`, which the launch cleanup task
+        // calls concurrently with view controller construction and would race a new flow.
         for orphanedVisit in wideEvent.getAllFlowData(NewTabPageSessionWideEventData.self) {
             complete(orphanedVisit, with: .appTerminated)
         }
@@ -178,8 +177,8 @@ final class DefaultNewTabPageSessionInstrumentation: NewTabPageSessionInstrument
                                                   startedAt: dateProvider(),
                                                   globalData: WideEventGlobalData(sampleRate: sampleRate()))
         activeVisit = visit
-        // Sampling is applied here, at the only point the framework consults it. A visit
-        // dropped by the sampler still runs locally; its later calls simply no-op.
+        // The framework consults the sample rate only here. A visit the sampler drops still
+        // runs locally, and its later calls no-op.
         wideEvent.startFlow(visit)
     }
 
@@ -214,33 +213,37 @@ final class DefaultNewTabPageSessionInstrumentation: NewTabPageSessionInstrument
     // MARK: - Terminals
 
     func visitEnded(terminalAction: NewTabPageSessionWideEventData.TerminalAction) {
-        // Checked first so a terminal arriving after the visit already went stale does not
-        // resurrect it.
-        expireActiveVisitIfNeeded()
+        lockTerminalIfTimedOut()
         guard let visit = activeVisit else { return }
 
         let now = dateProvider()
-        visit.sessionInterval.end = now
-        markFirstInteractionIfNeeded(on: visit, at: now)
+        // A timed out visit keeps its timeout outcome. The user action that closed it came
+        // after we had already declared it abandoned.
+        let outcome = lockedTerminal ?? terminalAction
 
-        complete(visit, with: terminalAction)
+        visit.sessionInterval.end = now
+        if lockedTerminal == nil {
+            markFirstInteractionIfNeeded(on: visit, at: now)
+        }
+
+        complete(visit, with: outcome)
     }
 
     func visitBackgrounded() {
-        expireActiveVisitIfNeeded()
+        lockTerminalIfTimedOut()
         guard let visit = activeVisit else { return }
 
         visit.sessionInterval.end = dateProvider()
-        complete(visit, with: .appBackgrounded)
+        complete(visit, with: lockedTerminal ?? .appBackgrounded)
     }
 
     // MARK: - Helpers
 
     private func recordAction(_ mutate: (NewTabPageSessionWideEventData) -> Void) {
-        expireActiveVisitIfNeeded()
-        // An action after an expiry is dropped: the visit it belonged to is already
-        // reported, and only a fresh trigger opens another one.
-        guard let visit = activeVisit else { return }
+        lockTerminalIfTimedOut()
+        // Actions after a timeout are dropped: the visit is already classed as abandoned and
+        // only a fresh trigger opens another one.
+        guard let visit = activeVisit, lockedTerminal == nil else { return }
 
         let now = dateProvider()
         mutate(visit)
@@ -249,30 +252,25 @@ final class DefaultNewTabPageSessionInstrumentation: NewTabPageSessionInstrument
         markFirstInteractionIfNeeded(on: visit, at: now)
     }
 
-    /// Closes the active visit when either timeout has elapsed, standing in for the timers
-    /// this instrumentation deliberately does not run.
-    private func expireActiveVisitIfNeeded() {
-        guard let visit = activeVisit else { return }
+    /// Fixes the outcome of a stale visit without ending it, standing in for the timers this
+    /// instrumentation deliberately does not run.
+    ///
+    /// The visit stays open so that whatever actually removes the New Tab Page from the
+    /// screen decides when it ended. Completing here would report the time to the threshold
+    /// rather than how long the surface was really on screen.
+    private func lockTerminalIfTimedOut() {
+        guard let visit = activeVisit, lockedTerminal == nil else { return }
 
         let now = dateProvider()
-        let terminalAction: NewTabPageSessionWideEventData.TerminalAction
 
         // Inactivity wins over the overall cap when both have elapsed: a visit that went
         // quiet was abandoned, whatever its total length.
         if now.timeIntervalSince(visit.lastActionAt) >= NewTabPageSessionWideEventData.noActionTimeout {
-            terminalAction = .noActionTimeout
+            lockedTerminal = .noActionTimeout
         } else if let startedAt = visit.sessionInterval.start,
                   now.timeIntervalSince(startedAt) >= NewTabPageSessionWideEventData.maxSessionDuration {
-            terminalAction = .maxDurationExceeded
-        } else {
-            return
+            lockedTerminal = .maxDurationExceeded
         }
-
-        // Stamped at the last action rather than now, so the recorded duration covers the
-        // visit and not the idle gap that revealed the timeout.
-        visit.sessionInterval.end = visit.lastActionAt
-
-        complete(visit, with: terminalAction)
     }
 
     private func complete(_ visit: NewTabPageSessionWideEventData,
@@ -280,6 +278,7 @@ final class DefaultNewTabPageSessionInstrumentation: NewTabPageSessionInstrument
         visit.terminalAction = terminalAction
         wideEvent.completeFlow(visit, status: terminalAction.status, onComplete: { _, _ in })
         activeVisit = nil
+        lockedTerminal = nil
     }
 
     private func markFirstInteractionIfNeeded(on visit: NewTabPageSessionWideEventData, at date: Date) {

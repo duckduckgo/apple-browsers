@@ -500,13 +500,6 @@ private extension MainViewController {
             ntpAfterIdleInstrumentation.toggleUsedFromNTP(afterIdle: tab.openedAfterIdle)
         }
         postIdleSessionInstrumentation.toggleUsed()
-        switch mode {
-        case .aiChat:
-            newTabPageSessionInstrumentation.switchToggleToAiChat()
-        default:
-            newTabPageSessionInstrumentation.switchToggleToSearch()
-        }
-
         if coordinator.isOmnibarSession {
             handleOmnibarModeChange(mode, coordinator: coordinator)
         } else if coordinator.isAITabExpanded {
@@ -1137,8 +1130,6 @@ extension MainViewController {
             ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: tab.openedAfterIdle)
         }
         postIdleSessionInstrumentation.sessionEnded(reason: .barUsed)
-        newTabPageSessionInstrumentation.hitSubmit()
-        newTabPageSessionInstrumentation.visitEnded(terminalAction: terminalActionForSubmitted(query: query))
         loadQuery(query)
     }
 

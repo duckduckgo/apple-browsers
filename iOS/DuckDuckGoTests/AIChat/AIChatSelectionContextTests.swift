@@ -113,6 +113,18 @@ final class AIChatSelectionContextBuilderTests: XCTestCase {
         XCTAssertEqual(title, "\(UserText.aiChatTextSelectionWordCount(3)) · a dog barked")
     }
 
+    func testDisplayTitleUsesTheSingularWordFormForAOneWordSelection() {
+        let selection = AIChatSelectionContextBuilder.makeSelection(text: "barked", url: url)
+
+        XCTAssertEqual(AIChatSelectionContextBuilder.displayTitle(for: selection), "1 word · barked")
+    }
+
+    func testDisplayTitleUsesThePluralWordFormBeyondOneWord() {
+        let selection = AIChatSelectionContextBuilder.makeSelection(text: "a dog barked", url: url)
+
+        XCTAssertEqual(AIChatSelectionContextBuilder.displayTitle(for: selection), "3 words · a dog barked")
+    }
+
     func testDisplayTitleCollapsesWhitespaceSoChipsStaySingleLine() {
         let selection = AIChatSelectionContextBuilder.makeSelection(text: "first line\n\n  second   line", url: url)
 

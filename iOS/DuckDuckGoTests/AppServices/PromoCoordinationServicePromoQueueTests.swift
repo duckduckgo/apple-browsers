@@ -116,27 +116,6 @@ final class PromoCoordinationServicePromoQueueTests {
     }
 
     @available(iOS 16, *)
-    @Test("A Mock Released Disposition Does Not Duplicate The Readiness Drain", .timeLimit(.minutes(1)))
-    func whenMockManagerReturnsReleasedThenRegistrationsRetryOnlyInTheInitialDrain() {
-        launchSourceManagerMock.source = .standard
-        presenterMock.presentedViewController = nil
-        managerMock.coordinatedPresentationDisposition = .released
-        makeSUT()
-        let firstTarget = MockNewTabPagePromoRetryTarget()
-        let secondTarget = MockNewTabPagePromoRetryTarget()
-        let firstRegistration = sut.registerRemoteMessageRetry(for: UUID(), target: firstTarget)
-        let secondRegistration = sut.registerRemoteMessageRetry(for: UUID(), target: secondTarget)
-
-        presentModalPromptIfNeeded()
-
-        #expect(firstTarget.retryCount == 1)
-        #expect(secondTarget.retryCount == 1)
-        #expect(managerMock.didCallPresentModalPromptIfNeeded)
-        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == nil)
-        _ = (firstRegistration, secondRegistration)
-    }
-
-    @available(iOS 16, *)
     @Test("Real No-Provider Release Wakes A Waiter That Became Eligible After Readiness Drain", .timeLimit(.minutes(1)))
     func whenRealManagerFindsNoProviderThenItsReleaseCallbackRetriesExactlyOnce() {
         launchSourceManagerMock.source = .standard

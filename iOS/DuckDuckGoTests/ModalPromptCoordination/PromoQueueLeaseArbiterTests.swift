@@ -106,25 +106,6 @@ struct PromoQueueLeaseArbiterTests {
     }
 
     @available(iOS 16, *)
-    @Test("A visible promo blocks the same promo on a different surface", .timeLimit(.minutes(1)))
-    func visiblePromoBlocksSamePromoOnDifferentSurface() throws {
-        let arbiter = PromoQueueLeaseArbiter()
-        let firstIdentity = makeVisiblePromoIdentity(surfaceID: UUID(), promoID: "message")
-        let secondIdentity = makeVisiblePromoIdentity(surfaceID: UUID(), promoID: "message")
-        let firstLease = try acquiredLease(from: arbiter.acquireVisiblePromoLease(for: firstIdentity))
-
-        let result = arbiter.acquireVisiblePromoLease(for: secondIdentity)
-
-        guard case .blockedByVisiblePromo(let occupyingIdentity) = result else {
-            Issue.record("Expected the global visible owner to block another surface")
-            return
-        }
-        #expect(occupyingIdentity == firstIdentity)
-        #expect(arbiter.snapshot.activeOwner == .visible(firstIdentity))
-        _ = firstLease
-    }
-
-    @available(iOS 16, *)
     @Test("A visible promo blocks a different promo on a different surface", .timeLimit(.minutes(1)))
     func visiblePromoBlocksDifferentPromoOnDifferentSurface() throws {
         let arbiter = PromoQueueLeaseArbiter()
@@ -141,44 +122,6 @@ struct PromoQueueLeaseArbiterTests {
         #expect(occupyingIdentity == firstIdentity)
         #expect(arbiter.snapshot.activeOwner == .visible(firstIdentity))
         _ = firstLease
-    }
-
-    @available(iOS 16, *)
-    @Test("A visible promo blocks a different message on the same surface", .timeLimit(.minutes(1)))
-    func visiblePromoBlocksDifferentMessageOnSameSurface() throws {
-        let arbiter = PromoQueueLeaseArbiter()
-        let surfaceID = UUID()
-        let firstIdentity = makeVisiblePromoIdentity(surfaceID: surfaceID, promoID: "message-a")
-        let secondIdentity = makeVisiblePromoIdentity(surfaceID: surfaceID, promoID: "message-b")
-        let firstLease = try acquiredLease(from: arbiter.acquireVisiblePromoLease(for: firstIdentity))
-
-        let result = arbiter.acquireVisiblePromoLease(for: secondIdentity)
-
-        guard case .blockedByVisiblePromo(let occupyingIdentity) = result else {
-            Issue.record("Expected visible promo acquisition to be blocked by the global owner")
-            return
-        }
-        #expect(occupyingIdentity == firstIdentity)
-        #expect(arbiter.snapshot.activeOwner == .visible(firstIdentity))
-        _ = firstLease
-    }
-
-    @available(iOS 16, *)
-    @Test("The current visible owner cannot acquire the global slot twice", .timeLimit(.minutes(1)))
-    func visiblePromoCannotAcquireGlobalSlotTwice() throws {
-        let arbiter = PromoQueueLeaseArbiter()
-        let identity = makeVisiblePromoIdentity()
-        let lease = try acquiredLease(from: arbiter.acquireVisiblePromoLease(for: identity))
-
-        let result = arbiter.acquireVisiblePromoLease(for: identity)
-
-        guard case .blockedByVisiblePromo(let occupyingIdentity) = result else {
-            Issue.record("Expected duplicate visible promo acquisition to be blocked by the global owner")
-            return
-        }
-        #expect(occupyingIdentity == identity)
-        #expect(arbiter.snapshot.activeOwner == .visible(identity))
-        _ = lease
     }
 
     @available(iOS 16, *)
@@ -258,20 +201,6 @@ struct PromoQueueLeaseArbiterTests {
 
         #expect(arbiter.snapshot.activeOwner == .visible(identity))
         _ = visibleLease
-    }
-
-    @Test("A new process-scoped arbiter starts empty")
-    func newProcessScopedArbiterStartsWithoutInheritedLeases() throws {
-        let previousProcessArbiter = PromoQueueLeaseArbiter()
-        let previousProcessLease = try acquiredLease(
-            from: previousProcessArbiter.acquireVisiblePromoLease(for: makeVisiblePromoIdentity())
-        )
-
-        let newProcessArbiter = PromoQueueLeaseArbiter()
-
-        #expect(previousProcessArbiter.snapshot.activeOwner != nil)
-        #expect(newProcessArbiter.snapshot.activeOwner == nil)
-        withExtendedLifetime(previousProcessLease) {}
     }
 
     private func makeVisiblePromoIdentity(

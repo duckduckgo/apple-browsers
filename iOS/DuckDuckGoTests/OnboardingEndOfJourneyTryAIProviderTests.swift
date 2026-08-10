@@ -21,6 +21,7 @@ import Testing
 import Onboarding
 @testable import DuckDuckGo
 
+@MainActor
 @Suite("Onboarding -  Search Flow Completion Provider")
 struct OnboardingEndOfJourneyTryAIProviderTests {
 

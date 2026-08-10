@@ -27,9 +27,7 @@ protocol ContextualOnboardingContentProviding {
 }
 
 struct ContextualOnboardingContentProvider: ContextualOnboardingContentProviding {
-    /// Decides (and supplies content for) the Try-AI end-of-journey variant; `nil` when it doesn't apply.
     private let tryAIContentProvider: OnboardingEndOfJourneyTryAIContentProviding
-    /// Source of the user's download reason, used to pick the privateAIChat end-of-journey copy.
     private let downloadReasonProvider: OnboardingDownloadReasonHandling
 
     init(
@@ -62,16 +60,15 @@ enum OnboardingEndOfJourneyIcon: Equatable {
 
 /// Actions a rendered end-of-journey dialog can dispatch.
 enum OnboardingEndOfJourneyAction: Equatable {
-    case completeAndActivateSearch   // "High five!" — finish onboarding + focus search
-    case tryDuckAI                   // Try Duck.ai (Try-AI variant)
-    case skip                        // Skip (Try-AI variant)
-    case manualDismiss               // swipe / new-tab dismiss
+    case completeAndActivateSearch
+    case tryDuckAI
+    case skip
+    case manualDismiss
 }
 
 extension ContextualOnboardingContentProvider {
 
     var endOfJourneyContent: OnboardingEndOfJourneyContent {
-        // Try-AI variant (Search-flow, toggle on, didn't try AI) — two buttons + Duck.ai icon.
         if let tryAI = tryAIContentProvider.dialogContent {
             return OnboardingEndOfJourneyContent(
                 icon: .duckAI,
@@ -85,7 +82,6 @@ extension ContextualOnboardingContentProvider {
                 isManuallyDismissable: false
             )
         }
-        // privateAIChat reason — the standard dialog with tailored copy.
         if downloadReasonProvider.currentDownloadReason == .privateAIChat {
             return standardContent(message: UserText.Onboarding.ContextualOnboarding.EndOfJourney.aiMessage)
         }
@@ -93,7 +89,6 @@ extension ContextualOnboardingContentProvider {
     }
 
     /// The standard "You've got this!" end-of-journey — single button, Dax animation, manually dismissable.
-    /// `message` defaults to the standard copy; the privateAIChat variant passes tailored copy.
     private func standardContent(message: String = UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenMessage) -> OnboardingEndOfJourneyContent {
         OnboardingEndOfJourneyContent(
             icon: nil,

@@ -106,7 +106,7 @@ extension OnboardingRebranding {
             }
         }
 
-        /// Icon variant (Try-AI): promo-style layout — top icon, centered title/message, no bubble tail.
+        /// Icon variant (Try-AI): promo-style layout — top icon with centered title/message.
         private func iconDialogContent(icon: OnboardingEndOfJourneyIcon) -> some View {
             VStack {
                 icon.image

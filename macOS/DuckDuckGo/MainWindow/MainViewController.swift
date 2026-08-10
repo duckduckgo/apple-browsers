@@ -59,6 +59,7 @@ final class MainViewController: NSViewController {
     let aiChatOmnibarTextContainerViewController: AIChatOmnibarTextContainerViewController
     let featureFlagger: FeatureFlagger
     let fireCoordinator: FireCoordinator
+    private let aiChatConversationSourceHandler: AIChatConversationSourceHandler
     private let bookmarksBarVisibilityManager: BookmarksBarVisibilityManager
     private let defaultBrowserAndDockPromptPresenting: DefaultBrowserAndDockPromptPresenting
     private let vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter
@@ -126,6 +127,7 @@ final class MainViewController: NSViewController {
          aiChatMenuConfig: AIChatMenuVisibilityConfigurable = NSApp.delegateTyped.aiChatMenuConfiguration,
          aiChatSessionStore: AIChatSessionStoring,
          aiChatTabOpener: AIChatTabOpening = NSApp.delegateTyped.aiChatTabOpener,
+         aiChatConversationSourceHandler: AIChatConversationSourceHandler = NSApp.delegateTyped.aiChatConversationSourceHandler,
          brokenSitePromptLimiter: BrokenSitePromptLimiter = NSApp.delegateTyped.brokenSitePromptLimiter,
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
          searchPreferences: SearchPreferences = NSApp.delegateTyped.searchPreferences,
@@ -164,6 +166,7 @@ final class MainViewController: NSViewController {
         self.fireproofDomains = fireproofDomains
         self.isBurner = tabCollectionViewModel.isBurner
         self.featureFlagger = featureFlagger
+        self.aiChatConversationSourceHandler = aiChatConversationSourceHandler
         self.defaultBrowserAndDockPromptPresenting = defaultBrowserAndDockPromptPresenting
         self.downloadManager = downloadManager
         self.themeManager = themeManager
@@ -619,7 +622,7 @@ final class MainViewController: NSViewController {
         let behavior: LinkOpenBehavior = tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab
             ? .currentTab
             : .newTab(selected: true)
-        NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.tabBarButton)
+        aiChatConversationSourceHandler.setData(.tabBarButton)
         NSApp.delegateTyped.aiChatTabOpener.openNewAIChat(in: behavior)
     }
 
@@ -1426,7 +1429,7 @@ extension MainViewController: AIChatOmnibarControllerDelegate {
         /// Explicit exit: user selected a saved chat suggestion. Clear the current tab's duck.ai flag.
         tabCollectionViewModel.selectedTabViewModel?.addressBarSharedTextState.setDuckAIMode(false)
         updateAIChatOmnibarContainerVisibility(visible: false, shouldKeepSelection: false)
-        NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.recentChat)
+        aiChatConversationSourceHandler.setData(.recentChat)
         NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(with: .existingChat(chatId: suggestion.chatId), behavior: .currentTab)
     }
 }

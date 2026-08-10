@@ -325,26 +325,27 @@ extension AIChatMenu.Actions {
         tabOpener: AIChatTabOpening,
         historyCleaner: AIChatHistoryCleaning,
         windowControllersManager: WindowControllersManagerProtocol,
-        aiChatSyncCleaner: @escaping () -> AIChatSyncCleaning?
+        aiChatSyncCleaner: @escaping () -> AIChatSyncCleaning?,
+        aiChatConversationSourceHandler: AIChatConversationSourceHandler = Application.appDelegate.aiChatConversationSourceHandler
     ) -> AIChatMenu.Actions {
         AIChatMenu.Actions(
             openNewChat: {
-                NSApp.delegateTyped.aiChatConversationSourceHandler.setData(conversationSource)
+                aiChatConversationSourceHandler.setData(conversationSource)
                 tabOpener.openAIChatTab(with: .newChat, behavior: .newTab(selected: true))
             },
             openNewVoiceChat: {
                 let sourceCollection = windowControllersManager.lastKeyMainWindowController?
                     .mainViewController.tabCollectionViewModel
-                NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.voice)
+                aiChatConversationSourceHandler.setData(.voice)
                 tabOpener.openVoiceSession(inSourceCollection: sourceCollection, behavior: .newTab(selected: true))
             },
             openNewImageChat: {
                 let url = AIChatURLParameters.imageModeURL(from: remoteSettings.aiChatURL)
-                NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.imageGeneration)
+                aiChatConversationSourceHandler.setData(.imageGeneration)
                 tabOpener.openAIChatTab(with: .url(url), behavior: .newTab(selected: true))
             },
             openChat: { suggestion in
-                NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.recentChat)
+                aiChatConversationSourceHandler.setData(.recentChat)
                 tabOpener.openAIChatTab(with: .existingChat(chatId: suggestion.chatId), behavior: .currentTab)
             },
             deleteAllChats: {

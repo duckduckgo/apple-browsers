@@ -265,7 +265,6 @@ extension BookmarksContextMenu {
             openAllInNewWindowMenuItem(root: root, target: target, enabled: hasBookmarks),
             NSMenuItem.separator(),
             reorderByNameMenuItem(root: root, target: target),
-            NSMenuItem.separator(),
             addNewFolderMenuItem(entity: nil, target: target),
         ]
     }

@@ -395,6 +395,38 @@ final class NewTabPagePromoHostWiringTests: XCTestCase {
         XCTAssertEqual(fixture.promoCoordinator.successfulAdmissionCount, 2)
         XCTAssertEqual(fixture.promoCoordinator.releaseCount, 2)
     }
+
+    func testStaleAnimatedFavoritesInstallationCannotRemoveCurrentAutocomplete() async throws {
+        try XCTSkipUnless(
+            UIDevice.current.userInterfaceIdiom == .phone,
+            "The tray caches its NTP below autocomplete only on iPhone"
+        )
+        let fixture = PromoHostFixture()
+        let favoritesInstallationFinished = expectation(description: "Animated favorites installation completed")
+        let sut = fixture.makeSuggestionTrayController { controller in
+            if controller is NewTabPageViewController {
+                favoritesInstallationFinished.fulfill()
+            }
+        }
+        let window = makeVisibleWindow(rootViewController: sut)
+        defer {
+            detachAndHide(window)
+            fixture.tearDownSuggestionDependencies()
+        }
+
+        sut.show(for: .autocomplete(query: "first query"), animated: false)
+        XCTAssertTrue(sut.isShowingAutocompleteSuggestions)
+
+        sut.show(for: .favorites, animated: true)
+        sut.show(for: .autocomplete(query: "current query"), animated: false)
+
+        await fulfillment(of: [favoritesInstallationFinished], timeout: 1)
+
+        XCTAssertTrue(sut.isShowingAutocompleteSuggestions)
+        XCTAssertTrue(sut.isShowingFavorites)
+        XCTAssertFalse(fixture.promoCoordinator.retryTarget?.isActiveForPromoRetry == true)
+        XCTAssertNil(fixture.promoCoordinator.arbiter.snapshot.activeOwner)
+    }
 }
 
 @MainActor
@@ -477,7 +509,8 @@ private final class PromoHostFixture {
         )
     }
 
-    func makeSuggestionTrayController() -> SuggestionTrayViewController {
+    func makeSuggestionTrayController(
+        controllerInstallationDidComplete: @escaping (UIViewController) -> Void = { _ in }) -> SuggestionTrayViewController {
         let dependencies = suggestionTrayDependencies
         return SuggestionTrayViewController(
             favoritesViewModel: dependencies.favoritesViewModel,
@@ -490,7 +523,8 @@ private final class PromoHostFixture {
             featureDiscovery: dependencies.featureDiscovery,
             newTabPageDependencies: dependencies.newTabPageDependencies,
             productSurfaceTelemetry: dependencies.productSurfaceTelemetry,
-            hideBorder: true
+            hideBorder: true,
+            controllerInstallationDidComplete: controllerInstallationDidComplete
         )
     }
 

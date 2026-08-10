@@ -18,6 +18,7 @@
 //
 
 import UIKit
+import Combine
 import Testing
 @testable import DuckDuckGo
 
@@ -252,6 +253,113 @@ final class ModalPromptCoordinationRealUIKitTests {
         _ = visiblePromoLease
     }
 
+    // MARK: - Standard Launch Ordering
+
+    @available(iOS 16, *)
+    @Test("Standard Launch Presents Keyboard OmniBar Before Eligible Modal", .timeLimit(.minutes(1)))
+    func whenStandardLaunchSchedulesKeyboardAndEligibleModalThenModalPresentsFromOmniBar() async {
+        let orderingScheduler = LaunchOrderingScheduler()
+        let presentationHost = UIKitModalPromptPresenter()
+        let window = makeKeyWindow(withRoot: presentationHost)
+        defer { window.isHidden = true }
+
+        let omniBar = OmniBarEditingStateViewController(
+            switchBarHandler: LaunchOrderingSwitchBarHandler()
+        )
+        let modalRoot = UIViewController()
+        let provider = LaunchOrderingModalPromptProvider(
+            configuration: ModalPromptConfiguration(
+                viewController: modalRoot,
+                animated: false
+            )
+        )
+        let launchSourceManager = MockLaunchSourceManager()
+        let leaseArbiter = PromoQueueLeaseArbiter()
+        let manager = ModalPromptCoordinationManager(
+            providers: [provider],
+            cooldownManager: MockPromptCooldownManager(),
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            modalPromptScheduling: orderingScheduler
+        )
+        let service = PromoCoordinationService(
+            launchSourceManager: launchSourceManager,
+            modalPromptCoordinationManager: manager,
+            promoCoordinationMode: .coordinated,
+            promoQueueLeaseArbiter: leaseArbiter
+        )
+        var presentationEvents = [String]()
+        let keyboardPresenter = KeyboardPresenter(
+            isKeyboardOnAppLaunchEnabled: { true },
+            scheduleKeyboardPresentation: { delay, action in
+                _ = orderingScheduler.schedule(after: delay, execute: action)
+            },
+            enterSearch: {
+                presentationEvents.append("keyboard")
+                presentationHost.present(omniBar, animated: false, completion: nil)
+            }
+        )
+        let launchActionHandler = LaunchActionHandler(
+            urlHandler: MockURLHandler(),
+            shortcutItemHandler: MockShortcutItemHandler(),
+            userActivityHandler: MockUserActivityHandler(),
+            keyboardPresenter: keyboardPresenter,
+            launchSourceService: launchSourceManager,
+            idleReturnEvaluator: MockIdleReturnEvaluator()
+        )
+        let interactionManager = UIInteractionManager(
+            authenticationService: MockAuthenticationService(),
+            autoClearService: MockAutoClearService(),
+            launchActionHandler: launchActionHandler,
+            onboardingPresenter: MockOnboardingPresenting()
+        )
+
+        let launchAction = LaunchAction.standardLaunch(lastBackgroundDate: nil, isFirstForeground: true)
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            interactionManager.start(
+                launchAction: launchAction,
+                onWebViewReadyForInteractions: {},
+                onAppReadyForInteractions: {
+                    service.presentModalPromptIfNeeded(from: presentationHost)
+                    continuation.resume()
+                }
+            )
+        }
+
+        #expect(orderingScheduler.pendingDelayedBlockCount == 2)
+        #expect(presentationHost.presentedViewController == nil)
+
+        // Both production paths target the main queue. Equal deadlines preserve insertion order, so the keyboard
+        // work enqueued by LaunchActionHandler must establish the real OmniBar relationship first.
+        await withCheckedContinuation { continuation in
+            presentationHost.onPresentationCompleted = { continuation.resume() }
+            orderingScheduler.executeNextDelayedBlock()
+        }
+
+        #expect(presentationEvents == ["keyboard"])
+        #expect(presentationHost.presentedViewController === omniBar)
+        #expect(omniBar.presentedViewController == nil)
+        guard presentationEvents == ["keyboard"],
+              presentationHost.presentedViewController === omniBar else {
+            Issue.record("Expected the keyboard work to install the OmniBar before modal presentation work ran")
+            return
+        }
+
+        // The manager resolves its UIKit route only when its delayed work runs. This must therefore present through
+        // the OmniBar that the preceding keyboard work installed, not through the original launch presenter.
+        await withCheckedContinuation { continuation in
+            provider.onDidPresentModal = {
+                presentationEvents.append("modal")
+                continuation.resume()
+            }
+            orderingScheduler.executeNextDelayedBlock()
+        }
+
+        #expect(presentationEvents == ["keyboard", "modal"])
+        #expect(presentationHost.presentedViewController === omniBar)
+        #expect(omniBar.presentedViewController === modalRoot)
+        #expect(modalRoot.presentingViewController === omniBar)
+    }
+
      private func acquireModalLease() throws -> PromoQueueModalLease {
         guard case .acquired(let lease) = promoQueueLeaseArbiter.acquireModalLease() else {
             throw RealUIKitTestError.expectedAcquiredLease
@@ -268,6 +376,132 @@ final class ModalPromptCoordinationRealUIKitTests {
         window.makeKeyAndVisible()
         return window
     }
+}
+
+@MainActor
+private final class LaunchOrderingModalPromptProvider: ModalPromptProvider {
+    private let configuration: ModalPromptConfiguration
+    var onDidPresentModal: (() -> Void)?
+
+    init(configuration: ModalPromptConfiguration) {
+        self.configuration = configuration
+    }
+
+    func provideModalPrompt() -> ModalPromptConfiguration? {
+        configuration
+    }
+
+    func didPresentModal() {
+        let onDidPresentModal = onDidPresentModal
+        self.onDidPresentModal = nil
+        onDidPresentModal?()
+    }
+}
+
+/// Executes delayed work by deadline and then insertion order, matching the main queue ordering this test characterizes.
+@MainActor
+private final class LaunchOrderingScheduler: ModalPromptScheduling {
+    private final class ScheduledBlock {
+        let delay: TimeInterval
+        let sequence: Int
+        let execute: @MainActor () -> Void
+        var isCancelled = false
+
+        init(delay: TimeInterval, sequence: Int, execute: @escaping @MainActor () -> Void) {
+            self.delay = delay
+            self.sequence = sequence
+            self.execute = execute
+        }
+    }
+
+    private var nextSequence = 0
+    private var delayedBlocks = [ScheduledBlock]()
+    private var nextMainTurnBlocks = [ScheduledBlock]()
+
+    var pendingDelayedBlockCount: Int {
+        delayedBlocks.filter { !$0.isCancelled }.count
+    }
+
+    @discardableResult
+    func schedule(after delay: TimeInterval, execute: @escaping @MainActor () -> Void) -> ModalPromptScheduledTask {
+        let scheduledBlock = makeScheduledBlock(delay: delay, execute: execute)
+        delayedBlocks.append(scheduledBlock)
+        return ModalPromptScheduledTask {
+            scheduledBlock.isCancelled = true
+        }
+    }
+
+    @discardableResult
+    func scheduleOnNextMainTurn(execute: @escaping @MainActor () -> Void) -> ModalPromptScheduledTask {
+        let scheduledBlock = makeScheduledBlock(delay: 0, execute: execute)
+        nextMainTurnBlocks.append(scheduledBlock)
+        return ModalPromptScheduledTask {
+            scheduledBlock.isCancelled = true
+        }
+    }
+
+    func executeNextDelayedBlock() {
+        guard let nextBlockIndex = delayedBlocks.indices.min(by: {
+            let lhs = delayedBlocks[$0]
+            let rhs = delayedBlocks[$1]
+            return lhs.delay == rhs.delay ? lhs.sequence < rhs.sequence : lhs.delay < rhs.delay
+        }) else {
+            return
+        }
+
+        let scheduledBlock = delayedBlocks.remove(at: nextBlockIndex)
+        guard !scheduledBlock.isCancelled else {
+            executeNextDelayedBlock()
+            return
+        }
+        scheduledBlock.execute()
+    }
+
+    private func makeScheduledBlock(
+        delay: TimeInterval,
+        execute: @escaping @MainActor () -> Void
+    ) -> ScheduledBlock {
+        defer { nextSequence += 1 }
+        return ScheduledBlock(delay: delay, sequence: nextSequence, execute: execute)
+    }
+}
+
+private final class LaunchOrderingSwitchBarHandler: SwitchBarHandling {
+    var currentText = ""
+    var currentToggleState = TextEntryMode.search
+    var isVoiceSearchEnabled = false
+    let isAIVoiceChatEnabled = false
+    var hasUserInteractedWithText = false
+    var isCurrentTextValidURL = false
+    var buttonState = SwitchBarButtonState.noButtons
+    var isTopBarPosition = true
+    var isToggleEnabled = false
+    var isFireTab = false
+    var isUsingExpandedBottomBarHeight = false
+    var isUsingFadeOutAnimation = false
+    var shouldDisableAutocorrectOnEmpty = false
+    var hidesVoiceButton = false
+    var hasSubmittedPrompt = false
+    var hasSubmittedPromptPublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }
+    var currentTextPublisher: AnyPublisher<String, Never> { Empty().eraseToAnyPublisher() }
+    var toggleStatePublisher: AnyPublisher<TextEntryMode, Never> { Empty().eraseToAnyPublisher() }
+    var textSubmissionPublisher: AnyPublisher<(text: String, mode: TextEntryMode), Never> { Empty().eraseToAnyPublisher() }
+    var microphoneButtonTappedPublisher: AnyPublisher<Void, Never> { Empty().eraseToAnyPublisher() }
+    var clearButtonTappedPublisher: AnyPublisher<Void, Never> { Empty().eraseToAnyPublisher() }
+    var hasUserInteractedWithTextPublisher: AnyPublisher<Bool, Never> { Empty().eraseToAnyPublisher() }
+    var isCurrentTextValidURLPublisher: AnyPublisher<Bool, Never> { Empty().eraseToAnyPublisher() }
+    var currentButtonStatePublisher: AnyPublisher<SwitchBarButtonState, Never> { Empty().eraseToAnyPublisher() }
+    var modeParameters: [String: String] { [:] }
+
+    func updateCurrentText(_ text: String) {}
+    func submitText(_ text: String) {}
+    func setToggleState(_ state: TextEntryMode) {}
+    func clearText() {}
+    func microphoneButtonTapped() {}
+    func markUserInteraction() {}
+    func clearButtonTapped() {}
+    func stopGeneratingButtonTapped() {}
+    func updateBarPosition(isTop: Bool) {}
 }
 
 private enum RealUIKitTestError: Error {

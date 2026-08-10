@@ -169,6 +169,11 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
     private let onboardingStatusProvider: ContextualDaxDialogStatusProvider
     private let rootAttachmentChecker: ModalPromptRootAttachmentChecking
 
+    /// This inherited delay shares the standard-launch keyboard/OmniBar scheduling window. Control-flow history
+    /// and the composed UIKit launch-ordering test show that it preserves keyboard-before-modal routing; it is not
+    /// a cooldown or Promo Queue timing rule.
+    private static let presentationDelay: TimeInterval = 0.1
+
     // MARK: - State
 
     private var attemptState = AttemptState.idle
@@ -434,7 +439,7 @@ private extension ModalPromptCoordinationManager {
     // MARK: - Presentation Scheduling
 
     private func presentCoordinatedModal(_ committedAttempt: CommittedAttempt) {
-        scheduledPresentationTask = scheduler.schedule(after: 0.1) { [weak self] in
+        scheduledPresentationTask = scheduler.schedule(after: Self.presentationDelay) { [weak self] in
             guard let self,
                   case .committed(let currentAttempt) = self.attemptState,
                   currentAttempt.lease.attemptIdentity == committedAttempt.lease.attemptIdentity else {
@@ -469,7 +474,7 @@ private extension ModalPromptCoordinationManager {
         scheduledAttemptID: UUID,
         completion: @escaping (() -> Void)
     ) {
-        scheduler.schedule(after: 0.1) { [weak self] in
+        scheduler.schedule(after: Self.presentationDelay) { [weak self] in
             guard let self,
                   self.legacyActiveAttemptIDs.contains(scheduledAttemptID) else {
                 return

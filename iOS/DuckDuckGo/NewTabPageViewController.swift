@@ -27,6 +27,41 @@ import Onboarding
 import RemoteMessaging
 import Subscription
 
+/// The independent host signals that must all prove the NTP promo surface is exposed.
+struct NewTabPagePromoSurfaceExposure {
+    var isOwnerActive = false
+    var isRenderLocationReady = false
+    var isExplicitlyVisible = true
+    var isCovered = false
+
+    func isRenderable(isAttachedToWindow: Bool) -> Bool {
+        isOwnerActive
+            && isRenderLocationReady
+            && isExplicitlyVisible
+            && !isCovered
+            && isAttachedToWindow
+    }
+}
+
+/// Keeps promo-surface ownership changes ordered across the standard NTP and its alternate hosts.
+enum NewTabPagePromoSurfaceHandoff {
+    static func showHostedSurface(
+        deactivateNewTabPage: () -> Void,
+        showHostedSurface: () -> Void
+    ) {
+        deactivateNewTabPage()
+        showHostedSurface()
+    }
+
+    static func showNewTabPage(
+        hideHostedSurface: () -> Void,
+        activateNewTabPage: () -> Void
+    ) {
+        hideHostedSurface()
+        activateNewTabPage()
+    }
+}
+
 final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTabPage {
 
     var isShowingLogo: Bool {
@@ -76,11 +111,9 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     private(set) var isShowingDuckAICompletionDialog = false
     private var isBorderSuppressedForChromeLayout = false
     private var didHideBarsForChatPathVisitSiteDialog = false
-    private var isPromoSurfaceOwnerActive = false
-    private var isPromoRenderLocationReady = false
+    private var promoSurfaceExposure = NewTabPagePromoSurfaceExposure()
     /// Opt-out: callers mute visibility around alpha animations/handoffs, unlike the opt-in owner-activity and render-location signals a host must assert.
-    private var isPromoSurfaceVisible = true
-    private var isPromoSurfaceCovered = false
+    private var promoSurfaceVisibilityGeneration = 0
     private let appSettings: AppSettings
     private let appWidthObserver: AppWidthObserver
     private let floatingUIManager: FloatingUIManaging
@@ -207,7 +240,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        isPromoRenderLocationReady = true
+        promoSurfaceExposure.isRenderLocationReady = true
         updatePromoSurfaceExposure()
     }
 
@@ -224,7 +257,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
 
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
-        isPromoRenderLocationReady = false
+        promoSurfaceExposure.isRenderLocationReady = false
         updatePromoSurfaceExposure()
     }
 
@@ -253,19 +286,30 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     }
 
     func setPromoSurfaceActive(_ isActive: Bool) {
-        isPromoSurfaceOwnerActive = isActive
+        promoSurfaceExposure.isOwnerActive = isActive
         updatePromoSurfaceExposure()
     }
 
     func setPromoSurfaceRenderable(_ isRenderable: Bool) {
-        isPromoSurfaceOwnerActive = isRenderable
-        isPromoRenderLocationReady = isRenderable
+        promoSurfaceExposure.isOwnerActive = isRenderable
+        promoSurfaceExposure.isRenderLocationReady = isRenderable
         updatePromoSurfaceExposure()
     }
 
-    func setPromoSurfaceVisible(_ isVisible: Bool) {
-        isPromoSurfaceVisible = isVisible
+    @discardableResult
+    func setPromoSurfaceVisible(_ isVisible: Bool) -> Int {
+        promoSurfaceVisibilityGeneration += 1
+        promoSurfaceExposure.isExplicitlyVisible = isVisible
         updatePromoSurfaceExposure()
+        return promoSurfaceVisibilityGeneration
+    }
+
+    func restorePromoSurfaceVisibility(ifCurrent generation: Int) {
+        guard promoSurfaceVisibilityGeneration == generation else {
+            return
+        }
+
+        setPromoSurfaceVisible(true)
     }
 
     func tearDownPromoSurface() {
@@ -273,16 +317,13 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     }
 
     private func setPromoSurfaceCovered(_ isCovered: Bool) {
-        isPromoSurfaceCovered = isCovered
+        promoSurfaceExposure.isCovered = isCovered
         updatePromoSurfaceExposure()
     }
 
     private func updatePromoSurfaceExposure() {
         messagesModel.setSurfaceRenderable(
-            isPromoSurfaceOwnerActive
-                && isPromoRenderLocationReady
-                && isPromoSurfaceVisible
-                && !isPromoSurfaceCovered
+            promoSurfaceExposure.isRenderable(isAttachedToWindow: viewIfLoaded?.window != nil)
         )
     }
 

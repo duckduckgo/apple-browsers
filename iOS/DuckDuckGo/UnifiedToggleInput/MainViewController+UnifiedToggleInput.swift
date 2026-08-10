@@ -927,16 +927,28 @@ extension MainViewController {
         )
 
         if renderState.isContentVisible {
-            newTabPageViewController?.setPromoSurfaceActive(false)
-            coordinator.contentViewController.setActive(true)
-            coordinator.syncContentInputMode(renderState.contentInputMode, animated: false)
-            coordinator.pushContentInsets()
-            viewCoordinator.showUnifiedInputContent()
-            coordinator.contentViewController.refreshVisibleContentIfNeeded()
+            NewTabPagePromoSurfaceHandoff.showHostedSurface(
+                deactivateNewTabPage: {
+                    newTabPageViewController?.setPromoSurfaceActive(false)
+                },
+                showHostedSurface: {
+                    coordinator.contentViewController.setActive(true)
+                    coordinator.syncContentInputMode(renderState.contentInputMode, animated: false)
+                    coordinator.pushContentInsets()
+                    viewCoordinator.showUnifiedInputContent()
+                    coordinator.contentViewController.refreshVisibleContentIfNeeded()
+                }
+            )
         } else {
-            coordinator.contentViewController.setActive(false)
-            viewCoordinator.hideUnifiedInputContent()
-            newTabPageViewController?.setPromoSurfaceActive(viewCoordinator.suggestionTrayContainer.isHidden)
+            NewTabPagePromoSurfaceHandoff.showNewTabPage(
+                hideHostedSurface: {
+                    coordinator.contentViewController.setActive(false)
+                    viewCoordinator.hideUnifiedInputContent()
+                },
+                activateNewTabPage: {
+                    newTabPageViewController?.setPromoSurfaceActive(viewCoordinator.suggestionTrayContainer.isHidden)
+                }
+            )
         }
 
         if isOnAITab {

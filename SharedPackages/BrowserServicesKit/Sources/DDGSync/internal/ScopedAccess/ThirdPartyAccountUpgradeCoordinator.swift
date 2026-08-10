@@ -66,7 +66,6 @@ struct ThirdPartyAccountUpgradeCoordinator: ThirdPartyAccountUpgradeCoordinating
     let crypter: CryptingInternal
     let scopedAccess: ScopedAccessCredentialManaging
     let account: AccountManaging
-    private let canWriteUnifiedDeviceList: () -> Bool
 
     /// Back-off delays for retrying the final native login on transient failures after the credential
     /// is created. Nanoseconds; default is 0.5s then 1s — two retries.
@@ -82,7 +81,6 @@ struct ThirdPartyAccountUpgradeCoordinator: ThirdPartyAccountUpgradeCoordinating
          crypter: CryptingInternal,
          scopedAccess: ScopedAccessCredentialManaging,
          account: AccountManaging,
-         canWriteUnifiedDeviceList: @escaping () -> Bool,
          finalNativeLoginRetryDelays: [UInt64] = [500_000_000, 1_000_000_000],
          retrySleep: @escaping @Sendable (UInt64) async throws -> Void = { try await Task.sleep(nanoseconds: $0) }) {
         self.endpoints = endpoints
@@ -90,7 +88,6 @@ struct ThirdPartyAccountUpgradeCoordinator: ThirdPartyAccountUpgradeCoordinating
         self.crypter = crypter
         self.scopedAccess = scopedAccess
         self.account = account
-        self.canWriteUnifiedDeviceList = canWriteUnifiedDeviceList
         self.finalNativeLoginRetryDelays = finalNativeLoginRetryDelays
         self.retrySleep = retrySleep
     }
@@ -189,10 +186,9 @@ struct ThirdPartyAccountUpgradeCoordinator: ThirdPartyAccountUpgradeCoordinating
             throw ThirdPartyAccountUpgradeError.protectedKeysFetchFailed
         }
 
-        let shouldIncludeAccountInfoKeys = canWriteUnifiedDeviceList()
+        // Native credential creation rewraps every 3party-protected purpose, including account_info.
         let thirdPartyProtectedKeys = protectedKeys
             .filter { $0.encryptedWith == SyncCode.RecoveryKeyV2.thirdPartyCredentialId }
-            .filter { shouldIncludeAccountInfoKeys || $0.purpose != ProtectedKeyPurpose.accountInfo }
             .removingDuplicateWrappingIdentities()
         guard !thirdPartyProtectedKeys.isEmpty else {
             throw ThirdPartyAccountUpgradeError.noUsableThirdPartyProtectedKeys

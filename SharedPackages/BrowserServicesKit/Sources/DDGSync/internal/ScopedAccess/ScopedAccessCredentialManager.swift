@@ -70,18 +70,34 @@ struct ScopedAccessCredentialManager: ScopedAccessCredentialManaging {
         do {
             let accessCredentials = try await fetchAccessCredentials(account)
             if let scopedPassword = try recoverScopedPassword(from: accessCredentials, primaryKey: account.primaryKey, userID: account.userId) {
-                return EnsuredThirdPartyCredential(scopedPassword: scopedPassword, protectedKeysToCache: [])
+                let protectedKeysToCache = try await protectedKeysAfterRecoveringThirdPartyCredential(
+                    for: account,
+                    scopedPassword: scopedPassword)
+                return EnsuredThirdPartyCredential(scopedPassword: scopedPassword,
+                                                   protectedKeysToCache: protectedKeysToCache)
             }
 
             let scopedPassword = try scopedPasswordForNewThirdPartyCredential(cachedScopedPassword: cachedScopedPassword)
             let keyPreparation = try await protectedKeysForThirdPartyCredential(purpose: purpose,
                                                                                 account: account)
-            let ensuredScopedPassword = try await ensureThirdPartyAccessCredential(for: account,
-                                                                                  scopedPassword: scopedPassword,
-                                                                                  keys: keyPreparation.protectedKeys,
-                                                                                  defaultCredentialKeysToUpload: keyPreparation.defaultCredentialKeysToUpload)
-            return EnsuredThirdPartyCredential(scopedPassword: ensuredScopedPassword,
-                                               protectedKeysToCache: keyPreparation.protectedKeysToCache)
+            let ensuredCredential = try await ensureThirdPartyAccessCredential(
+                for: account,
+                scopedPassword: scopedPassword,
+                keys: keyPreparation.protectedKeys,
+                defaultCredentialKeysToUpload: keyPreparation.defaultCredentialKeysToUpload)
+            let protectedKeysToCache: [ProtectedKey]
+            if let createdProtectedKeys = ensuredCredential.createdProtectedKeys {
+                // The credential was created with these wrappers
+                protectedKeysToCache = (keyPreparation.protectedKeysToCache + createdProtectedKeys)
+                    .removingDuplicateWrappingIdentities()
+            } else {
+                // The credential already existed, so reconcile with server state
+                protectedKeysToCache = try await protectedKeysAfterRecoveringThirdPartyCredential(
+                    for: account,
+                    scopedPassword: ensuredCredential.scopedPassword)
+            }
+            return EnsuredThirdPartyCredential(scopedPassword: ensuredCredential.scopedPassword,
+                                               protectedKeysToCache: protectedKeysToCache)
         } catch let error as ScopedAccessCredentialError {
             throw error
         } catch {
@@ -98,7 +114,9 @@ struct ScopedAccessCredentialManager: ScopedAccessCredentialManaging {
         let storedAccountInfoKeys = protectedKeys(for: ProtectedKeyPurpose.accountInfo, in: storedKeys)
         if !storedAccountInfoKeys.isEmpty {
             Logger.sync.debug("Sync-UnifiedDevices: account_info key already exists")
-            return try await repairAccountInfoProtectedKeysIfNeeded(storedAccountInfoKeys, account: account)
+            let reconciledKeys = try await repairAccountInfoProtectedKeysIfNeeded(storedKeys,
+                                                                                  account: account)
+            return protectedKeys(for: ProtectedKeyPurpose.accountInfo, in: reconciledKeys)
         }
 
         let accessCredentials = try await fetchAccessCredentials(account)
@@ -117,8 +135,7 @@ struct ScopedAccessCredentialManager: ScopedAccessCredentialManaging {
         } else {
             Logger.sync.debug("Sync-UnifiedDevices: adopted existing account_info key")
         }
-        let persistedKeys = try await fetchStoredProtectedKeys(for: ProtectedKeyPurpose.accountInfo,
-                                                              account: account)
+        let persistedKeys = try await fetchProtectedKeys(account)
         return try validateAccountInfoProtectedKeys(persistedKeys,
                                                     requiresThirdPartyWrapper: scopedPassword != nil)
     }
@@ -145,7 +162,7 @@ struct ScopedAccessCredentialManager: ScopedAccessCredentialManaging {
     private func ensureThirdPartyAccessCredential(for account: SyncAccount,
                                                   scopedPassword: Data,
                                                   keys protectedKeys: [ProtectedKey],
-                                                  defaultCredentialKeysToUpload: [ProtectedKey]) async throws -> Data {
+                                                  defaultCredentialKeysToUpload: [ProtectedKey]) async throws -> EnsuredThirdPartyAccessCredential {
         guard let token = account.token else {
             throw SyncError.noToken
         }
@@ -173,11 +190,13 @@ struct ScopedAccessCredentialManager: ScopedAccessCredentialManaging {
         } catch SyncError.unexpectedStatusCode(let statusCode) where statusCode == 409 {
             let accessCredentials = try await fetchAccessCredentials(account)
             if let scopedPassword = try recoverScopedPassword(from: accessCredentials, primaryKey: account.primaryKey, userID: account.userId) {
-                return scopedPassword
+                return EnsuredThirdPartyAccessCredential(scopedPassword: scopedPassword,
+                                                         createdProtectedKeys: nil)
             }
             throw SyncError.unexpectedStatusCode(statusCode)
         }
-        return scopedPassword
+        return EnsuredThirdPartyAccessCredential(scopedPassword: scopedPassword,
+                                                 createdProtectedKeys: createCredentialKeys)
     }
 
     func fetchAccessCredentials(_ account: SyncAccount) async throws -> [AccessCredential] {
@@ -262,21 +281,17 @@ struct ScopedAccessCredentialManager: ScopedAccessCredentialManaging {
 
     private func protectedKeysForThirdPartyCredential(purpose: String,
                                                       account: SyncAccount) async throws -> ProtectedKeysForThirdPartyCredential {
+        // The backend rejects credential creation unless every existing ddg key has a matching 3party wrapper
         let fetchedProtectedKeys = try await fetchProtectedKeys(account)
         let fetchedDefaultCredentialKeys = defaultCredentialKeys(in: fetchedProtectedKeys)
-        let accountInfoKeys = canWriteUnifiedDeviceList()
-            ? protectedKeys(for: ProtectedKeyPurpose.accountInfo, in: fetchedProtectedKeys)
-            : []
         if fetchedDefaultCredentialKeys.contains(where: { $0.purpose == purpose }) {
-            let protectedKeys = (protectedKeys(for: purpose, in: fetchedProtectedKeys) + accountInfoKeys)
-                .removingDuplicateWrappingIdentities()
-            return ProtectedKeysForThirdPartyCredential(protectedKeys: protectedKeys,
+            return ProtectedKeysForThirdPartyCredential(protectedKeys: fetchedProtectedKeys.removingDuplicateWrappingIdentities(),
                                                         defaultCredentialKeysToUpload: [],
                                                         protectedKeysToCache: fetchedProtectedKeys)
         }
 
         let protectedKey = try makeDefaultCredentialProtectedKey(purpose: purpose, account: account)
-        let protectedKeys = ([protectedKey] + accountInfoKeys)
+        let protectedKeys = ([protectedKey] + fetchedProtectedKeys)
             .removingDuplicateWrappingIdentities()
         return ProtectedKeysForThirdPartyCredential(protectedKeys: protectedKeys,
                                                     defaultCredentialKeysToUpload: [protectedKey],
@@ -381,26 +396,56 @@ struct ScopedAccessCredentialManager: ScopedAccessCredentialManaging {
         return keysForPurpose
     }
 
-    private func repairAccountInfoProtectedKeysIfNeeded(_ keys: [ProtectedKey],
-                                                        account: SyncAccount) async throws -> [ProtectedKey] {
+    private func protectedKeysAfterRecoveringThirdPartyCredential(for account: SyncAccount, scopedPassword: Data) async throws -> [ProtectedKey] {
+        // Credential recovery is always allowed; repairing its account_info wrapper is write-gated.
+        guard canWriteUnifiedDeviceList() else {
+            return []
+        }
+
+        let storedKeys = try await fetchProtectedKeys(account)
+        guard storedKeys.contains(where: { $0.purpose == ProtectedKeyPurpose.accountInfo }) else {
+            return storedKeys
+        }
+        return try await repairAccountInfoProtectedKeysIfNeeded(
+            storedKeys,
+            account: account,
+            thirdPartyCredential: ThirdPartyCredentialContext(isPresent: true,
+                                                               scopedPassword: scopedPassword))
+    }
+
+    private func repairAccountInfoProtectedKeysIfNeeded(
+        _ keys: [ProtectedKey],
+        account: SyncAccount,
+        thirdPartyCredential providedThirdPartyCredential: ThirdPartyCredentialContext? = nil
+    ) async throws -> [ProtectedKey] {
         let accountInfoKeys = try validateAccountInfoProtectedKeyIdentity(keys)
         let hasDefaultWrapper = accountInfoKeys.contains { $0.encryptedWith == SyncCredentialID.defaultCredential }
         let hasThirdPartyWrapper = accountInfoKeys.contains { $0.encryptedWith == SyncCredentialID.thirdParty }
         if hasDefaultWrapper && hasThirdPartyWrapper {
-            return try validateAccountInfoProtectedKeys(accountInfoKeys, requiresThirdPartyWrapper: true)
+            _ = try validateAccountInfoProtectedKeys(accountInfoKeys, requiresThirdPartyWrapper: true)
+            return keys
         }
 
-        let accessCredentials = try await fetchAccessCredentials(account)
-        let requiresThirdPartyWrapper = accessCredentials.contains { $0.id == SyncCredentialID.thirdParty }
+        let thirdPartyCredential: ThirdPartyCredentialContext
+        if let providedThirdPartyCredential {
+            // Avoid fetching and recovering the credential again
+            thirdPartyCredential = providedThirdPartyCredential
+        } else {
+            let accessCredentials = try await fetchAccessCredentials(account)
+            thirdPartyCredential = ThirdPartyCredentialContext(
+                isPresent: accessCredentials.contains { $0.id == SyncCredentialID.thirdParty },
+                scopedPassword: try recoverScopedPassword(from: accessCredentials,
+                                                          primaryKey: account.primaryKey,
+                                                          userID: account.userId))
+        }
         let needsDefaultWrapper = !hasDefaultWrapper
-        let needsThirdPartyWrapper = requiresThirdPartyWrapper && !hasThirdPartyWrapper
+        let needsThirdPartyWrapper = thirdPartyCredential.isPresent && !hasThirdPartyWrapper
         guard needsDefaultWrapper || needsThirdPartyWrapper else {
-            return try validateAccountInfoProtectedKeys(accountInfoKeys, requiresThirdPartyWrapper: false)
+            _ = try validateAccountInfoProtectedKeys(accountInfoKeys, requiresThirdPartyWrapper: false)
+            return keys
         }
 
-        guard let scopedPassword = try recoverScopedPassword(from: accessCredentials,
-                                                             primaryKey: account.primaryKey,
-                                                             userID: account.userId) else {
+        guard let scopedPassword = thirdPartyCredential.scopedPassword else {
             throw SyncError.invalidDataInResponse("account_info protected keys cannot be repaired without a 3party credential")
         }
         guard let sourceKey = accountInfoKeys.first else {
@@ -427,12 +472,11 @@ struct ScopedAccessCredentialManager: ScopedAccessCredentialManaging {
         _ = try await setKeysIfAbsent(purpose: ProtectedKeyPurpose.accountInfo,
                                      keys: repairedKeys,
                                      for: account)
-        let storedKeys = try await fetchStoredProtectedKeys(for: ProtectedKeyPurpose.accountInfo,
-                                                           account: account)
-        let validatedKeys = try validateAccountInfoProtectedKeys(storedKeys,
-                                                                 requiresThirdPartyWrapper: requiresThirdPartyWrapper)
+        let storedKeys = try await fetchProtectedKeys(account)
+        _ = try validateAccountInfoProtectedKeys(storedKeys,
+                                                 requiresThirdPartyWrapper: thirdPartyCredential.isPresent)
         Logger.sync.debug("Sync-UnifiedDevices: account_info wrapper repair complete")
-        return validatedKeys
+        return storedKeys
     }
 
     private func validateAccountInfoProtectedKeyIdentity(_ keys: [ProtectedKey]) throws -> [ProtectedKey] {
@@ -585,6 +629,16 @@ struct ScopedAccessCredentialManager: ScopedAccessCredentialManaging {
         let protectedKeys: [ProtectedKey]
         let defaultCredentialKeysToUpload: [ProtectedKey]
         let protectedKeysToCache: [ProtectedKey]
+    }
+
+    private struct EnsuredThirdPartyAccessCredential {
+        let scopedPassword: Data
+        let createdProtectedKeys: [ProtectedKey]?
+    }
+
+    private struct ThirdPartyCredentialContext {
+        let isPresent: Bool
+        let scopedPassword: Data?
     }
 
 }

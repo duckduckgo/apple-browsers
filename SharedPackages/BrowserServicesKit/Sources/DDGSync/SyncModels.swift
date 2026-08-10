@@ -356,6 +356,21 @@ extension Sequence where Element == ProtectedKey {
             seenIdentities.insert(ProtectedKeyWrappingIdentity(key: key)).inserted
         }
     }
+
+    /// Preserves cached wrapping variants for the same key so an out-of-order snapshot cannot remove a newly added wrapper.
+    func preservingCachedWrappersForMatchingKeys(_ cachedKeys: [ProtectedKey]) -> [ProtectedKey] {
+        let incomingKeys = removingDuplicateWrappingIdentities()
+        let incomingWrappingIdentities = Set(incomingKeys.map { ProtectedKeyWrappingIdentity(key: $0) })
+        let cachedWrappersToPreserve = cachedKeys.removingDuplicateWrappingIdentities().filter { cachedKey in
+            !incomingWrappingIdentities.contains(ProtectedKeyWrappingIdentity(key: cachedKey))
+            && incomingKeys.contains { incomingKey in
+                incomingKey.kid == cachedKey.kid
+                && incomingKey.purpose == cachedKey.purpose
+                && incomingKey.publicKey == cachedKey.publicKey
+            }
+        }
+        return incomingKeys + cachedWrappersToPreserve
+    }
 }
 
 enum SyncProtocolVersion {

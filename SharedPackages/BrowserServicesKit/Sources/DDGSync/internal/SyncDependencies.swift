@@ -76,7 +76,8 @@ protocol ScopedAccessCredentialManaging {
     func recoverScopedPassword(from accessCredentials: [AccessCredential]?,
                                primaryKey: Data,
                                userID: String) throws -> Data?
-    /// Returns the account's scoped password, creating and uploading the 3party credential (and its protected keys) if absent; reuses `cachedScopedPassword` when creating.
+    /// Returns the account's scoped password, creating the credential and rewrapping existing protected keys when absent.
+    /// Reconciliation after credential creation remains gated by unified-device writes.
     func ensureThirdPartyScopedPassword(for account: SyncAccount,
                                         purpose: String,
                                         cachedScopedPassword: () throws -> Data?) async throws -> EnsuredThirdPartyCredential

@@ -625,12 +625,20 @@ public class DDGSync: DDGSyncing {
             return
         }
 
-        guard let encodedKeys = try? JSONEncoder.snakeCaseKeys.encode(keys.removingDuplicateWrappingIdentities()) else {
+        let keysToCache = keys.preservingCachedWrappersForMatchingKeys(cachedProtectedKeys())
+        guard let encodedKeys = try? JSONEncoder.snakeCaseKeys.encode(keysToCache) else {
             try? dependencies.secureStore.removeProtectedKeys()
             return
         }
 
         try? dependencies.secureStore.persistProtectedKeys(encodedKeys)
+    }
+
+    private func cachedProtectedKeys() -> [ProtectedKey] {
+        guard let data = try? dependencies.secureStore.protectedKeys() else {
+            return []
+        }
+        return (try? JSONDecoder.snakeCaseKeys.decode([ProtectedKey].self, from: data)) ?? []
     }
 
     private func ensureAccountInfoProtectedKeysIfNeeded(for account: SyncAccount) async -> [ProtectedKey] {

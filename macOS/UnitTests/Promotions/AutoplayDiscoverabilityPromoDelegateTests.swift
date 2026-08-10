@@ -17,7 +17,9 @@
 //
 
 import Combine
-import FeatureFlags
+import FeatureFlags_macOS
+import PixelKit
+import PixelKitTestingUtilities
 import PrivacyConfig
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
@@ -27,18 +29,29 @@ final class AutoplayDiscoverabilityPromoDelegateTests: XCTestCase {
 
     private var featureFlagger: MockFeatureFlagger!
     private var windowControllersManager: WindowControllersManagerMock!
+    private var pixelFiring: PixelKitMock!
     private var sut: AutoplayDiscoverabilityPromoDelegate!
+
+    private var firedPixels: [ExpectedFireCall] { pixelFiring.actualFireCalls }
 
     override func setUp() {
         super.setUp()
         featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.autoplayPolicy.rawValue: true])
         windowControllersManager = WindowControllersManagerMock()
-        sut = AutoplayDiscoverabilityPromoDelegate(featureFlagger: featureFlagger,
-                                                   windowControllersManager: windowControllersManager)
+        pixelFiring = PixelKitMock()
+        sut = makeSUT()
+    }
+
+    private func makeSUT(isNewUser: Bool = false) -> AutoplayDiscoverabilityPromoDelegate {
+        AutoplayDiscoverabilityPromoDelegate(featureFlagger: featureFlagger,
+                                             windowControllersManager: windowControllersManager,
+                                             pixelFiring: pixelFiring,
+                                             isNewUserProvider: { isNewUser })
     }
 
     override func tearDown() {
         sut = nil
+        pixelFiring = nil
         windowControllersManager = nil
         featureFlagger = nil
         super.tearDown()
@@ -53,6 +66,20 @@ final class AutoplayDiscoverabilityPromoDelegateTests: XCTestCase {
 
         XCTAssertFalse(sut.isEligible)
     }
+
+    // MARK: - Audience
+
+    /// `.ignored()` retires the promo permanently, which is what stops it from resurfacing once the
+    /// user is no longer new. `.noChange` would leave it eligible.
+    func testWhenNewUserThenShowRetiresThePromo() async {
+        sut = makeSUT(isNewUser: true)
+
+        let result = await sut.show(history: PromoHistoryRecord(id: "autoplay-discoverability"), force: false)
+
+        XCTAssertEqual(result, .ignored())
+    }
+
+    // MARK: - Eligibility Publisher
 
     func testWhenFeatureFlagChangesThenEligibilityPublisherEmits() {
         var received: [Bool] = []
@@ -75,8 +102,27 @@ final class AutoplayDiscoverabilityPromoDelegateTests: XCTestCase {
         XCTAssertEqual(result, .noChange)
     }
 
-    /// `PromoService` calls `hide()` on any promo it cleans up, including ones that never showed.
-    func testWhenHiddenWithoutShowingThenNothingHappens() {
+    /// `PromoService` calls `hide()` on any promo it cleans up, including ones that never showed: no dismissal to report.
+    func testWhenHiddenWithoutShowingThenNoPixelIsFired() {
         sut.hide()
+
+        XCTAssertTrue(firedPixels.isEmpty)
+    }
+
+    // MARK: - Pixels
+
+    /// Nothing was presented, so there is no impression to report.
+    func testWhenShowCannotPresentThenNoPixelIsFired() async {
+        _ = await sut.show(history: PromoHistoryRecord(id: "autoplay-discoverability"), force: false)
+
+        XCTAssertTrue(firedPixels.isEmpty)
+    }
+
+    /// The names must match `autoplay_promo_pixels.json5` minus the `m_mac_` prefix, which PixelKit prepends when firing.
+    func testPixelNames() {
+        XCTAssertEqual(AutoplayPromoPixel.shown.name, "autoplay-promo_shown")
+        XCTAssertEqual(AutoplayPromoPixel.engaged.name, "autoplay-promo_engaged")
+        XCTAssertEqual(AutoplayPromoPixel.autoDismissed.name, "autoplay-promo_auto-dismissed")
+        XCTAssertEqual(AutoplayPromoPixel.settingsLinkClicked.name, "autoplay-promo_settings-click")
     }
 }

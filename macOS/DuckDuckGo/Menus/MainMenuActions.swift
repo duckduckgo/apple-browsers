@@ -25,7 +25,7 @@ import FoundationExtensions
 import Configuration
 import Networking
 import Crashes
-import FeatureFlags
+import FeatureFlags_macOS
 import History
 import HistoryView
 import os.log

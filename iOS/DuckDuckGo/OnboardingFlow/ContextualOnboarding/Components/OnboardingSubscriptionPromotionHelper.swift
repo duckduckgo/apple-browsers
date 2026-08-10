@@ -22,6 +22,7 @@ import Core
 import Foundation
 import PrivacyConfig
 import Subscription
+import FeatureFlags_iOS
 
 /// Landing-page hint appended to the subscription purchase URL so the web flow can deep-link to a specific feature of the Subscription.
 ///

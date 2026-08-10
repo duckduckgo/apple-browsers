@@ -52,14 +52,17 @@ public struct PageContextExtractionResolver {
     }
 
     /// Returns `nil` when no request is outstanding (a duplicate or a collection we didn't initiate).
-    public mutating func resolve(pageContext: AIChatPageContextData?, now: DispatchTime = .now()) -> Resolution? {
+    public mutating func resolve(_ result: PageContextCollectionResult, now: DispatchTime = .now()) -> Resolution? {
         guard !pending.isEmpty else { return nil }
         let request = pending.removeFirst()
 
         let outcome: PageContextExtractionOutcome
-        if let pageContext {
+        switch result {
+        case .collected(let pageContext):
             outcome = pageContext.content.isEmpty ? .failure(.emptyContent) : .success
-        } else {
+        case .scriptError:
+            outcome = .failure(.scriptError)
+        case .decodeFailed:
             outcome = .failure(.deserializeFailed)
         }
 

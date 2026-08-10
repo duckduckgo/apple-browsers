@@ -23,7 +23,7 @@ import Combine
 import Common
 import FoundationExtensions
 import DataBrokerProtection_macOS
-import FeatureFlags
+import FeatureFlags_macOS
 import Freemium
 import HistoryView
 import NewTabPage
@@ -1324,6 +1324,10 @@ final class BrowserTabViewController: NSViewController {
         if preferencesViewController.parent !== self {
             addAndLayoutChildBesideSidebar(preferencesViewController)
         }
+    }
+
+    func navigateSettings(to destination: PreferencesDestination) {
+        preferencesViewController?.model.navigate(to: destination)
     }
 
     private func shouldReplaceWebView(for tabViewModel: TabViewModel?) -> Bool {

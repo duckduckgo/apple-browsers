@@ -235,6 +235,18 @@ final class AppURLsTests: XCTestCase {
         XCTAssertEqual(url?.absoluteString, "http://1.0.0.4/3.4")
     }
 
+    /// "Search with DuckDuckGo" on a selection that happens to look like a URL must search for it rather
+    /// than navigate to it.
+    func testSearchUrlCreatesSearchUrlWhenUrlLikeQueryIsForced() {
+        let url = URL.makeSearchURL(query: "example.com", forceSearchQuery: true)
+        XCTAssertEqual(url?.getParameter(named: "q"), "example.com")
+    }
+
+    func testSearchUrlCreatesWebUrlWhenUrlLikeQueryIsNotForced() {
+        let url = URL.makeSearchURL(query: "example.com")
+        XCTAssertNil(url?.getParameter(named: "q"))
+    }
+
     func testExtiUrlCreatesUrlWithAtbParam() throws {
         let url = URL.makeExtiURL(atb: "x", isPad: false)
         XCTAssertEqual(url.getParameter(named: "atb"), "x")

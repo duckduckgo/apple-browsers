@@ -18,12 +18,14 @@
 
 import Combine
 import Foundation
-import FeatureFlags
+import FeatureFlags_macOS
+import PixelKit
 import PrivacyConfig
 
 /// Opens the Permission Center by itself the first time a page displays the autoplay policy, so users discover the autoplay controls and the disclaimer UI.
 ///
 ///     Notes:
+///     - Pre-existing users only.
 ///     - Shown at most once: after 5s `PromoService` records the promo's custom timeout result
 ///     - If the user interacted with the popover by then, the address bar keeps it open and it simply behaves like a normally-opened Permission Center.
 ///       The promo is retired either way.
@@ -36,11 +38,18 @@ final class AutoplayDiscoverabilityPromoDelegate: InternalPromoDelegate {
 
     private let featureFlagger: FeatureFlagger
     private let windowControllersManager: WindowControllersManagerProtocol
+    private let pixelFiring: PixelFiring?
+    private let isNewUserProvider: () -> Bool
     private var showContinuation: CheckedContinuation<PromoResult, Never>?
 
-    init(featureFlagger: FeatureFlagger, windowControllersManager: WindowControllersManagerProtocol) {
+    init(featureFlagger: FeatureFlagger,
+         windowControllersManager: WindowControllersManagerProtocol,
+         pixelFiring: PixelFiring? = PixelKit.shared,
+         isNewUserProvider: @escaping () -> Bool) {
         self.featureFlagger = featureFlagger
         self.windowControllersManager = windowControllersManager
+        self.pixelFiring = pixelFiring
+        self.isNewUserProvider = isNewUserProvider
     }
 
     var isEligible: Bool {
@@ -59,6 +68,11 @@ final class AutoplayDiscoverabilityPromoDelegate: InternalPromoDelegate {
 
     @MainActor
     func show(history: PromoHistoryRecord, force: Bool) async -> PromoResult {
+        // Rendered only to pre-existing users, otherwise we'll retire the promo
+        if !force, isNewUserProvider() {
+            return .ignored()
+        }
+
         guard let addressBarButtonsViewController else {
             return .noChange
         }
@@ -73,6 +87,8 @@ final class AutoplayDiscoverabilityPromoDelegate: InternalPromoDelegate {
             return .noChange
         }
 
+        pixelFiring?.fire(AutoplayPromoPixel.shown)
+
         return await withCheckedContinuation { continuation in
             showContinuation = continuation
         }
@@ -80,7 +96,12 @@ final class AutoplayDiscoverabilityPromoDelegate: InternalPromoDelegate {
 
     @MainActor
     func hide() {
-        addressBarButtonsViewController?.autodismissPermissionCenterIfPossible()
+        let didAutodismiss = addressBarButtonsViewController?.autodismissPermissionCenterIfPossible() ?? false
+
+        if didAutodismiss {
+            pixelFiring?.fire(AutoplayPromoPixel.autoDismissed)
+        }
+
         resume(with: .noChange)
     }
 }

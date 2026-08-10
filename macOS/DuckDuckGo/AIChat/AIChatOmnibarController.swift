@@ -19,7 +19,7 @@
 import Cocoa
 import Combine
 import AIChat
-import FeatureFlags
+import FeatureFlags_macOS
 import os.log
 import Persistence
 import PixelKit
@@ -131,6 +131,9 @@ final class AIChatOmnibarController {
     /// Called after a successful submit so the container VC can cancel any in-flight image
     /// resize tasks (data is cleared via `persistAttachmentsToActiveTab([])`).
     var onAttachmentsClearRequested: (() -> Void)?
+
+    /// Blocked-submit reason, for the container VC's attachments error label.
+    var onAttachmentValidationFailed: ((String) -> Void)?
 
     /// Waits for all attachment resizing to complete before proceeding.
     var waitForAttachmentsReady: (() async -> Void)?
@@ -1160,12 +1163,37 @@ final class AIChatOmnibarController {
         return hasExcessTabAttachments
     }
 
+    /// Files accepted while `attachmentLimits` was nil were never validated, and the limits can change after a pick.
+    private var fileSubmissionValidationError: AIChatAttachmentValidator.FileValidationError? {
+        guard attachmentLimits != nil, selectedModelSupportsFileUpload else { return nil }
+
+        var validated: [AIChatAttachmentValidator.FileDescriptor] = []
+        for descriptor in activeFileAttachments.map(AIChatAttachmentValidator.FileDescriptor.init) {
+            let validator = makeAttachmentValidator(
+                pendingImageCount: activeImageAttachments.count,
+                pendingFiles: validated
+            )
+            // enforceCount off: the count limit keeps its one-over cue via `hasSubmitBlockingAttachmentExcess`.
+            if let error = validator.fileValidationError(for: descriptor, enforceCount: false) {
+                return error
+            }
+            validated.append(descriptor)
+        }
+        return nil
+    }
+
     func submit() {
         guard !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             return
         }
 
         guard !hasSubmitBlockingAttachmentExcess else {
+            return
+        }
+
+        if let error = fileSubmissionValidationError {
+            pixelHandler.fire(.fileValidationFailed(reason: error.reason.rawValue))
+            onAttachmentValidationFailed?(error.message)
             return
         }
 

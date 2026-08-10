@@ -374,7 +374,7 @@ struct PermissionRowView: View {
             SystemPermissionWarningView(
                 prefixText: UserText.permissionCenterSystemNotificationNotDetermined,
                 linkText: UserText.permissionCenterTurnOnNotifications,
-                linkColor: .accentColor
+                linkColor: Color(designSystemColor: .accentTextPrimary)
             ) {
                 onRequestSystemPermission?()
             }
@@ -383,7 +383,7 @@ struct PermissionRowView: View {
             SystemPermissionWarningView(
                 prefixText: item.permissionType.systemPermissionDisabledText,
                 linkText: item.permissionType.systemSettingsLinkText,
-                linkColor: .accentColor,
+                linkColor: Color(designSystemColor: .accentTextPrimary),
                 linkOnNewLine: item.permissionType == .notification
             ) {
                 openSystemSettings()

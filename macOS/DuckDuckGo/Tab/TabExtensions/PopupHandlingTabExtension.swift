@@ -21,7 +21,7 @@ import Combine
 import Common
 import ConcurrencyExtensions
 import ContentBlocking
-import FeatureFlags
+import FeatureFlags_macOS
 import FoundationExtensions
 import Navigation
 import OSLog

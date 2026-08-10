@@ -581,6 +581,35 @@ struct NewTabPageSessionInstrumentationTests {
     }
 
     @available(iOS 16, *)
+    @Test("Burning drops the visit it interrupted and opens an after-fire one", .timeLimit(.minutes(1)))
+    func burnDiscardsInterruptedVisitAndOpensAfterFireVisit() {
+        let (sut, wideEvent, clock) = makeSUT()
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: true)
+        guard let interruptedVisit = activeVisit(wideEvent) else {
+            Issue.record("Expected an active visit")
+            return
+        }
+
+        // The Fire button clears everything and lands on a fresh New Tab Page, which starts
+        // the next visit. The interrupted one has no terminal of its own until the data
+        // clearing hook is wired, so it is dropped rather than reported.
+        clock.advance(by: 3)
+        sut.visitStarted(trigger: .newTabOpenedAfterFire, launchKeyboardMode: .down, toggleEnabled: true)
+
+        #expect(wideEvent.completions.isEmpty)
+        #expect(wideEvent.discarded.count == 1)
+        #expect((wideEvent.discarded.first as? NewTabPageSessionWideEventData)?.globalData.id == interruptedVisit.globalData.id)
+        #expect(activeVisit(wideEvent)?.trigger == .newTabOpenedAfterFire)
+
+        clock.advance(by: 2)
+        sut.visitBackgrounded()
+
+        let completion = lastCompletion(wideEvent)
+        #expect(completion?.0.trigger == .newTabOpenedAfterFire)
+        #expect(completion?.0.terminalAction == .appBackgrounded)
+    }
+
+    @available(iOS 16, *)
     @Test("A stale visit is completed as a timeout at the next visitStarted, not discarded", .timeLimit(.minutes(1)))
     func staleVisitIsCompletedAtNextVisitStarted() {
         let (sut, wideEvent, clock) = makeSUT()

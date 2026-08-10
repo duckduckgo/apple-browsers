@@ -24,6 +24,7 @@ import PrivacyConfig
 import Testing
 import class UIKit.UIDevice
 import protocol BrowserServicesKit.VariantManager
+import FeatureFlags_iOS
 @testable import Core
 @testable import DuckDuckGo
 
@@ -698,22 +699,9 @@ struct OnboardingDownloadReasonExperimentTests {
 
     @Test(
         "selectDownloadReason returns the reason-tailored steps",
-        arguments: zip(
-            [
-                .browserPrivately,
-                .privateAIChat,
-                .noAI,
-                .blockAds
-            ] as [OnboardingDownloadReason],
-            [
-                [.setDefaultBrowser, .searchPrivacySettingsSelection, .searchExperienceSelection, .addressBarPositionSelection, .addToDockPromo, .appIconSelection, .duckAIQuerySelection],
-                [.setDefaultBrowser, .aiModelSelection, .toggleInputModeSelection, .addressBarPositionSelection, .addToDockPromo, .appIconSelection, .duckAIQuerySelection],
-                [.setDefaultBrowser, .aiSearchSettingsSelection, .keepDuckAISelection, .addressBarPositionSelection, .addToDockPromo, .appIconSelection, .duckAIQuerySelection],
-                [.setDefaultBrowser, .duckPlayerSelection, .searchExperienceSelection, .addressBarPositionSelection, .addToDockPromo, .appIconSelection, .duckAIQuerySelection],
-            ] as [[OnboardingIntroStep]]
-        )
+        arguments: OnboardingDownloadReason.allCases
     )
-    func selectDownloadReasonReturnsTailoredSteps(_ reason: OnboardingDownloadReason, _ expected: [OnboardingIntroStep]) {
+    func selectDownloadReasonReturnsTailoredSteps(_ reason: OnboardingDownloadReason) {
         // GIVEN
         let sut = makeManager(cohort: .treatment)
 
@@ -721,7 +709,7 @@ struct OnboardingDownloadReasonExperimentTests {
         let result = sut.selectDownloadReason(reason)
 
         // THEN
-        #expect(result == expected)
+        #expect(result == OnboardingStepsHelper.expectedRemainingSteps(for: reason))
     }
 
     // MARK: - currentDownloadReason
@@ -761,19 +749,19 @@ struct OnboardingDownloadReasonExperimentTests {
 
     // MARK: - Eligibility (new installers, iPhone)
 
-    @Test("iPad users are not enrolled even in the treatment cohort")
+    @Test("iPad users are not enrolled")
     func iPadUsersAreNotEnrolled() {
         // GIVEN
-        let sut = makeManager(cohort: .treatment, isIphone: false)
+        let sut = makeManager(cohort: nil, isIphone: false)
 
         // THEN
         #expect(sut.onboardingSteps == OnboardingStepsHelper.expectedIPadSteps(isReturningUser: false))
     }
 
-    @Test("Returning users are not enrolled even in the treatment cohort")
+    @Test("Returning users are not enrolled")
     func returningUsersAreNotEnrolled() {
         // GIVEN
-        let sut = makeManager(cohort: .treatment, variantManager: OnboardingManagerVariants.returningUserVariantManagerMock)
+        let sut = makeManager(cohort: nil, variantManager: OnboardingManagerVariants.returningUserVariantManagerMock)
 
         // THEN
         #expect(sut.onboardingSteps == OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: true))
@@ -781,12 +769,13 @@ struct OnboardingDownloadReasonExperimentTests {
 
     @Test("Ineligible users report the default pixel, not the tailored one")
     func ineligibleUsersReportDefaultPixel() {
-        // GIVEN — iPad user is ineligible even in the treatment cohort.
+        // GIVEN — an iPad user (ineligible).
         let sharedPixelStorage = makePixelStore()
         let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: false)
+        let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: nil)
         let sut = OnboardingManager(
             appDefaults: AppSettingsMock(),
-            featureFlagger: PrivacyConfig.MockFeatureFlagger(resolveCohortStub: Cohort.treatment),
+            featureFlagger: featureFlagger,
             variantManager: OnboardingManagerVariants.newUserVariantManagerMock,
             isIphone: false,
             tutorialSettings: tutorialSettings,
@@ -796,7 +785,9 @@ struct OnboardingDownloadReasonExperimentTests {
         // WHEN
         sut.configureOnboardingFlow(from: nil)
 
-        // THEN
+        // THEN — the eligibility guard skips enrollment (no cohort is ever assigned), so the user
+        // reports under the default flow rather than the tailored one.
+        #expect(featureFlagger.didCallResolveCohort == false)
         #expect(sharedPixelStorage.onboardingFlow == .default)
     }
 

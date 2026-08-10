@@ -35,6 +35,7 @@ public extension DesignSystemImages {
             public static var arrowLeft: DesignSystemImage { .init(resource: .arrowLeft12) }
             public static var arrowRight: DesignSystemImage { .init(resource: .arrowRight12) }
             public static var arrowUp: DesignSystemImage { .init(resource: .arrowUp12) }
+            public static var arrowUpDown: DesignSystemImage { .init(resource: .arrowUpDown12) }
             public static var arrowUpRight: DesignSystemImage { .init(resource: .arrowUpRight12) }
             public static var assist: DesignSystemImage { .init(resource: .assist12) }
             public static var assistAlt: DesignSystemImage { .init(resource: .assistAlt12) }
@@ -457,6 +458,9 @@ public extension DesignSystemImages {
             public static var aiChatAddSolid: DesignSystemImage { .init(resource: .aiChatAddSolid24) }
             public static var aiChatDown: DesignSystemImage { .init(resource: .aiChatDown24) }
             public static var aiChatHistory: DesignSystemImage { .init(resource: .aiChatHistory24) }
+            public static var aiModelClaude: DesignSystemImage { .init(resource: .aiModelClaude24) }
+            public static var aiModelMistral: DesignSystemImage { .init(resource: .aiModelMistral24) }
+            public static var aiModelOpenAI: DesignSystemImage { .init(resource: .aiModelOpenAI24) }
             public static var aiChatSettings: DesignSystemImage { .init(resource: .aiSettings24) }
             public static var alertRecolorable: DesignSystemImage { .init(resource: .alertRecolorable24) }
             public static var arrowCircleUpLeft: DesignSystemImage { .init(resource: .arrowCircleUpLeft24) }
@@ -639,6 +643,7 @@ public extension DesignSystemImages {
             public static var tabMobileAlertDot: DesignSystemImage { .init(resource: .tabMobileAlertDot24) }
             public static var tabNew: DesignSystemImage { .init(resource: .tabNew24) }
             public static var tag: DesignSystemImage { .init(resource: .tag24) }
+            public static var textSelect: DesignSystemImage { .init(resource: .textSelect24) }
             public static var thinking: DesignSystemImage { .init(resource: .thinking24) }
             public static var timer: DesignSystemImage { .init(resource: .timer24) }
             public static var trash: DesignSystemImage { .init(resource: .trash24) }

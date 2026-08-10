@@ -79,4 +79,15 @@ final class MockModalPromptCoordinationManager: ModalPromptCoordinationManaging 
     func applicationDidEnterBackground() {
         applicationDidEnterBackgroundCallCount += 1
     }
+
+    func resetRecordedInteractions() {
+        didCallPresentModalPromptIfNeeded = false
+        capturedPresenter = nil
+        callCount = 0
+        capturedModalLease = nil
+        reconcilePresentedModalCallCount = 0
+        applicationWillResignActiveCallCount = 0
+        applicationDidBecomeActiveCallCount = 0
+        applicationDidEnterBackgroundCallCount = 0
+    }
 }

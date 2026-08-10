@@ -892,7 +892,12 @@ final class AIChatOmnibarController {
             return true
         }
         guard let stillOffered = openTabsForOmnibarPicker().first(where: { $0.id == attachment.id }),
-              stillOffered.url == attachment.url else { return false }
+              stillOffered.url == attachment.url else {
+            // Every picker works from a snapshot, so say why the pick didn't take rather than
+            // leaving the click looking ignored.
+            onAttachmentValidationFailed?(UserText.aiChatAttachTabsStaleSelection)
+            return false
+        }
         toggleTabAttachment(stillOffered)
         return true
     }

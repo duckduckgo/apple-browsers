@@ -1524,6 +1524,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     }
 
     private func applyTabSelection(_ selected: [AIChatTabAttachment], offered: [AIChatTabAttachment]) {
+        // Confirming is a fresh pick action; a rejection from last time no longer applies.
+        lastAttachmentError = nil
         let diff = AIChatTabSelectionDiff.compute(current: omnibarController.activeTabAttachments,
                                                  selected: selected,
                                                  offered: offered)

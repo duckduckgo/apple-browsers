@@ -2889,6 +2889,30 @@
         }
       }
     },
+    "aichat.attach-tabs-modal.update" : {
+      "comment" : "Confirm button in the AI chat add-tabs modal when it opened with tabs already attached, since confirming can remove them as well as add",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Update"
+          }
+        }
+      }
+    },
+    "aichat.attach-tabs.stale-selection" : {
+      "comment" : "Error shown when a tab picked from the attach menu, the add-tabs modal or the @-mention picker can't be attached because it has closed or moved to another page since the list was built",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "That tab changed since the list was shown."
+          }
+        }
+      }
+    },
     "aichat.attachment.file.count.limit" : {
       "comment" : "Error message displayed when the user has attached more files than are allowed in a conversation. Parameter is the backend-provided maximum number of files.",
       "extractionState" : "extracted_with_value",

@@ -33,6 +33,11 @@ final class InactivityNotificationSchedulerService {
         static let defaultDaysInactive: Int = 7 // default to 7 days
         static let notificationIdentifier = "com.duckduckgo.inactivity.notification"
         static let subfeature: any PrivacySubfeature = iOSBrowserConfigSubfeature.inactivityNotification
+
+        static let notificationCategory = UNNotificationCategory(identifier: notificationIdentifier,
+                                                                 actions: [],
+                                                                 intentIdentifiers: [],
+                                                                 options: [.customDismissAction])
     }
     
     // MARK: - Dependencies
@@ -103,6 +108,7 @@ final class InactivityNotificationSchedulerService {
         content.title = UserText.inactivityNotificationTitle
         content.body = UserText.inactivityNotificationBody
         content.userInfo = [Constants.daysInactiveSettingKey: daysInactive]
+        content.categoryIdentifier = Constants.notificationIdentifier
         return content
     }
     

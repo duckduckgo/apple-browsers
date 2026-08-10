@@ -39,7 +39,7 @@ public enum OnboardingRebrandingImages {
         public static let endOfJourneyBackgroundNewTab = Image("Rebranding/contextual-bg-end-of-journey-ntp", bundle: .module)
         public static let subscriptionPromoBackground = Image("Rebranding/contextual-bg-subscription-promo", bundle: .module)
 
-        public static let promoShield = Image("Rebranding/shield", bundle: .module)
+        public static let promoShield = Image("Rebranding/Subscription-96", bundle: .module)
     }
 
     public enum Comparison {

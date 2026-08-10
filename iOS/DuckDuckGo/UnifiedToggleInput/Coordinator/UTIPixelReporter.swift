@@ -20,13 +20,16 @@
 import AIChat
 import Core
 import Foundation
+import PixelKit
 
-/// Injectable pixel-firing seam: bundles the two standard firers (`PixelFiring` for one-off pixels,
-/// `DailyPixelFiring` for daily-and-count) behind one value so UTI pixel firing has a single
-/// injection point. `.live` fires for real; tests pass `PixelFiringMock` to assert what was fired.
+/// Injectable pixel-firing seam: bundles the legacy firers (`Core.PixelFiring` for one-off pixels,
+/// `DailyPixelFiring` for daily-and-count) and PixelKit behind one value so UTI pixel firing has a single
+/// injection point. `.live` fires for real; tests pass `PixelFiringMock`/`PixelKitMock`.
 struct UTIPixelFiring {
-    var pixel: PixelFiring.Type = Pixel.self
+    var pixel: Core.PixelFiring.Type = Pixel.self
     var daily: DailyPixelFiring.Type = DailyPixel.self
+    /// Resolved at fire time so it picks up `PixelKit.setUp` regardless of when this value was created.
+    var pixelKit: () -> (any PixelKitFiring)? = { PixelKit.shared }
 
     static let live = UTIPixelFiring()
 
@@ -37,6 +40,10 @@ struct UTIPixelFiring {
     func fireDailyAndCount(_ event: Pixel.Event, _ parameters: [String: String] = [:]) {
         daily.fireDailyAndCount(event, error: nil, withAdditionalParameters: parameters)
     }
+
+    func fire(_ event: PixelKitEvent, frequency: PixelKit.Frequency) {
+        pixelKit()?.fire(event, frequency: frequency)
+    }
 }
 
 /// Live snapshot of the coordinator state a pixel needs, resolved at fire time (never captured) so a
@@ -46,6 +53,7 @@ struct UTIPixelContext {
     let surface: UnifiedToggleInputPixelSurface
     let isDuckAISurfaceForAttribution: Bool
     let inputMode: TextEntryMode
+    let isToggleVisible: Bool
 }
 
 /// Owns the omnibar UTI's pixel firing. Resolves the surface (and the other live inputs) through a
@@ -68,7 +76,10 @@ final class UTIPixelReporter {
     /// The pair fired whenever the unified input surface first appears in the omnibar host.
     func reportOmnibarInputSurfaceShown() {
         firing.fireDailyAndCount(.aiChatInternalSwitchBarDisplayed)
-        firing.fireDailyAndCount(.aiChatExperimentalOmnibarShown)
+        withContext {
+            firing.fire(ExperimentalOmnibarPixel.omnibarShownDaily(isToggleVisible: $0.isToggleVisible), frequency: .legacyDailyNoSuffix)
+            firing.fire(ExperimentalOmnibarPixel.omnibarShownCount(isToggleVisible: $0.isToggleVisible), frequency: .standard)
+        }
     }
 
     func reportBackButtonPressed() {

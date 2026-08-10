@@ -139,17 +139,19 @@ final class ContextualMenuTests: XCTestCase {
         let items = BookmarksContextMenu.folderMenuItems(with: folder, isReorderByNameEnabled: true)
 
         // THEN
-        XCTAssertEqual(items.count, 10)
+        XCTAssertEqual(items.count, 11)
+        XCTAssertTrue(items[5].isSeparatorItem)
         assertMenuItem(
-            items[5],
+            items[6],
             withTitle: UserText.bookmarksBarContextMenuReorderByName,
             selector: #selector(FolderMenuItemSelectors.reorderByName(_:)),
             representedObject: folder)
         assertMenuItem(
-            items[6],
+            items[7],
             withTitle: UserText.bookmarksBarContextMenuMoveToEnd,
             selector: #selector(FolderMenuItemSelectors.moveToEnd(_:)),
             representedObject: folder)
+        XCTAssertTrue(items[8].isSeparatorItem)
     }
 
     @MainActor
@@ -878,7 +880,7 @@ final class ContextualMenuTests: XCTestCase {
         let items = BookmarksContextMenu.rootMenuItems(topLevelEntities: entities, isReorderByNameEnabled: true)
 
         // THEN
-        XCTAssertEqual(items.count, 5)
+        XCTAssertEqual(items.count, 6)
         assertMenuItem(
             items[0],
             withTitle: UserText.openAllInNewTabs,
@@ -895,7 +897,8 @@ final class ContextualMenuTests: XCTestCase {
             withTitle: UserText.bookmarksBarContextMenuReorderByName,
             selector: #selector(FolderMenuItemSelectors.reorderByName(_:)),
             representedObject: BookmarksRootMenuItem(topLevelEntities: entities))
-        assertMenuItem(items[4], withTitle: UserText.addFolder, selector: #selector(FolderMenuItemSelectors.newFolder(_:)))
+        XCTAssertTrue(items[4].isSeparatorItem) // Separator
+        assertMenuItem(items[5], withTitle: UserText.addFolder, selector: #selector(FolderMenuItemSelectors.newFolder(_:)))
     }
 
     @MainActor

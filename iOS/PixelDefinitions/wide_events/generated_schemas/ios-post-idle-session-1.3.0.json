@@ -1,7 +1,7 @@
 {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "description": "Sent at the end of a return session: after-idle (the NTP or LUT treatment shown once the After Inactivity threshold elapses) or an ordinary return, capturing where the user landed, what they did, and how the session ended.",
-    "$comment": "{\"owners\":[\"samsymons\",\"SabrinaTardio\",\"jleandroperez\",\"fbunn\"]}",
+    "$comment": "{\"owners\":[\"samsymons\",\"SabrinaTardio\",\"jleandroperez\",\"Bunn\"]}",
     "type": "object",
     "required": ["meta", "global", "feature", "app"],
     "additionalProperties": false,

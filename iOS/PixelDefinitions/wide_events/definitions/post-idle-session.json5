@@ -1,7 +1,7 @@
 {
     "ios-post-idle-session": {
         "description": "Sent at the end of a return session: after-idle (the NTP or LUT treatment shown once the After Inactivity threshold elapses) or an ordinary return, capturing where the user landed, what they did, and how the session ended.",
-        "owners": ["samsymons", "SabrinaTardio", "jleandroperez", "fbunn"],
+        "owners": ["samsymons", "SabrinaTardio", "jleandroperez", "Bunn"],
         "meta": {
             "type": "ios-post-idle-session",
             "version": "3.0"

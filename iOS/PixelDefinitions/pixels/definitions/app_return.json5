@@ -3,7 +3,7 @@
 {
     "m_app_return": {
         "description": "Fires on every foreground transition, ungated and launch-action-independent. Reports how long the user was away, the resolved idle threshold, and which Duck.ai capabilities are available.",
-        "owners": ["fbunn"],
+        "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor", "first_daily_count"],
         "parameters": [

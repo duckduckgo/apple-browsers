@@ -39,7 +39,8 @@ name: test_contextual_immediate_uti_pre_submit_context
     id: "Browser.OmniBar.Button.AIChat"
 - assertVisible:
     id: "AIChat.ContextualSheet"
-- assertVisible: "Summarize page"
+- assertVisible:
+    id: "summarize-page"
 - assertNotVisible:
     id: "AIChatNativeInputView.submitButton"
 - extendedWaitUntil:

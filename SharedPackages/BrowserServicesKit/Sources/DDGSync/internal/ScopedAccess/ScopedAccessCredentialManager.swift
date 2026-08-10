@@ -136,8 +136,13 @@ struct ScopedAccessCredentialManager: ScopedAccessCredentialManaging {
             Logger.sync.debug("Sync-UnifiedDevices: adopted existing account_info key")
         }
         let persistedKeys = try await fetchProtectedKeys(account)
-        return try validateAccountInfoProtectedKeys(persistedKeys,
-                                                    requiresThirdPartyWrapper: scopedPassword != nil)
+        let reconciledKeys = try await repairAccountInfoProtectedKeysIfNeeded(
+            persistedKeys,
+            account: account,
+            thirdPartyCredential: ThirdPartyCredentialContext(
+                isPresent: accessCredentials.contains { $0.id == SyncCredentialID.thirdParty },
+                scopedPassword: scopedPassword))
+        return protectedKeys(for: ProtectedKeyPurpose.accountInfo, in: reconciledKeys)
     }
 
     func makeRecoveryCode(for account: SyncAccount, scopedPassword: Data) -> String? {

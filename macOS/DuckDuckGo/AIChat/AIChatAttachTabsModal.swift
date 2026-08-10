@@ -52,10 +52,12 @@ struct AIChatAttachTabsModal: ModalView {
     @State private var keyMonitor: Any?
     @State private var sheetWindow: NSWindow?
 
-    /// Nothing selected means nothing to add or update, however it got there — cancelling is all
-    /// that's left. Removing the last attachment is done from the carousel or the attach menu.
+    /// Opening with nothing attached and selecting nothing leaves nothing to add, so confirming is
+    /// pointless. Opening with attachments is different: clearing every box is an edit like any
+    /// other, and Update is what applies it — disabling it there strands the removal behind Cancel,
+    /// which throws it away.
     private var canConfirm: Bool {
-        !selectedIds.isEmpty
+        opensWithAttachments || !selectedIds.isEmpty
     }
 
     private var filteredTabs: [AIChatTabAttachment] {

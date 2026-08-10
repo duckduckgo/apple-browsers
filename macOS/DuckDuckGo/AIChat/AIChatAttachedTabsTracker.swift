@@ -196,7 +196,7 @@ final class AIChatAttachedTabsTracker {
 
     /// Suspended tabs are skipped: they can't navigate, and the tab-list watch re-observes on resume.
     private func loadedTab(withId id: String) -> Tab? {
-        attachableCollections.lazy.flatMap { allTabs(in: $0) }.compactMap { anyTab -> Tab? in
+        attachableCollections.lazy.flatMap { self.allTabs(in: $0) }.compactMap { anyTab -> Tab? in
             guard case .loaded(let tab) = anyTab, tab.uuid == id else { return nil }
             return tab
         }.first

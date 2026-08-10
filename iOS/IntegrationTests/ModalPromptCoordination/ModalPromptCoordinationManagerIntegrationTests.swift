@@ -20,9 +20,11 @@
 import UIKit
 import Foundation
 import FoundationExtensions
-import Testing
 import Persistence
 import PersistenceTestingUtils
+import RemoteMessaging
+import SwiftUI
+import Testing
 @testable import DuckDuckGo
 
 @MainActor
@@ -393,6 +395,290 @@ final class ModalPromptCoordinationManagerIntegrationTests {
         #expect(!provider.didCallProvideModalPrompt)
         #expect(!presenterMock.didCallPresent)
     }
+
+    @available(iOS 16, *)
+    @Test("After-Idle RMF Waits For Modal Release And Full Foreground Readiness", .timeLimit(.minutes(1)))
+    func whenAfterIdleRemoteMessageWaitsBehindCommittedModalThenReadinessAdmitsIt() async {
+        let scheduler = MockModalPromptScheduler()
+        let provider = MockModalPromptProvider()
+        let manager = ModalPromptCoordinationManager(
+            providers: [provider],
+            cooldownManager: cooldownManager,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            modalPromptScheduling: scheduler
+        )
+        let launchSourceManager = MockLaunchSourceManager()
+        launchSourceManager.source = .standard
+        presenterMock.presentedViewController = nil
+        let service = PromoCoordinationService(
+            launchSourceManager: launchSourceManager,
+            modalPromptCoordinationManager: manager,
+            promoCoordinationMode: .coordinated,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter
+        )
+
+        service.presentModalPromptIfNeeded(from: presenterMock)
+
+        guard case .committed = manager.modalAttemptPhase else {
+            Issue.record("Expected the modal to retain the global owner through its scheduled presentation window")
+            return
+        }
+        #expect(promoQueueLeaseArbiter.snapshot.hasModalLease)
+
+        let surfaceID = UUID()
+        let messageID = "after-idle-rmf"
+        let fixture = makeRemoteMessageModel(
+            messageID: messageID,
+            surfaceID: surfaceID,
+            coordinator: service,
+            isOpenedAfterIdle: true
+        ) { _ in }
+        let messagesModel = fixture.model
+        let messagesConfiguration = fixture.configuration
+        messagesModel.setSurfaceAttachmentProvider { true }
+        messagesModel.load()
+        messagesModel.setSurfaceRenderable(true)
+        guard let gate = remoteMessageGate(in: messagesModel) else {
+            Issue.record("Expected the after-idle RMF candidate to publish its coordinated gate")
+            return
+        }
+        messagesModel.remoteMessageGateDidAppear(
+            gateID: gate.id,
+            messageID: gate.messageID,
+            mountID: UUID()
+        )
+
+        #expect(messagesConfiguration.lastRefreshOpenedAfterIdle == true)
+        #expect(messagesConfiguration.refreshCallCount == 1)
+        #expect(messagesModel.homeMessageViewModels.isEmpty)
+        #expect(gate.renderSession == nil)
+        #expect(messagesConfiguration.appearanceCallCount == 0)
+        #expect(promoQueueLeaseArbiter.snapshot.hasModalLease)
+        #expect(promoQueueLeaseArbiter.snapshot.visiblePromoIdentity == nil)
+
+        // Fire the committed attempt while inactive. The real manager releases its owner and invokes the service's
+        // release callback, but coordinated RMF retry remains closed throughout the background transition.
+        service.applicationWillResignActive()
+        scheduler.executeScheduledBlock()
+
+        #expect(manager.modalAttemptPhase == .idle)
+        #expect(manager.hasActiveOrPendingModalAttempt)
+        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == nil)
+        #expect(messagesConfiguration.refreshCallCount == 1)
+        #expect(messagesModel.homeMessageViewModels.isEmpty)
+        #expect(messagesConfiguration.appearanceCallCount == 0)
+
+        service.applicationDidEnterBackground()
+        service.applicationDidBecomeActive()
+
+        #expect(messagesConfiguration.refreshCallCount == 1)
+        #expect(messagesModel.homeMessageViewModels.isEmpty)
+        #expect(messagesConfiguration.appearanceCallCount == 0)
+        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == nil)
+
+        service.presentModalPromptIfNeeded(from: presenterMock)
+
+        let expectedIdentity = VisiblePromoIdentity(
+            surfaceID: surfaceID,
+            promoType: .remoteMessage,
+            promoID: messageID
+        )
+        #expect(messagesConfiguration.refreshCallCount == 2)
+        #expect(messagesConfiguration.lastRefreshOpenedAfterIdle == true)
+        #expect(messagesModel.homeMessageViewModels.map(\.messageId) == [messageID])
+        #expect(remoteMessageRenderSession(in: messagesModel) != nil)
+        #expect(messagesConfiguration.appearanceCallCount == 0)
+        #expect(messagesConfiguration.lastAppearedHomeMessage == nil)
+        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .visible(expectedIdentity))
+
+        messagesModel.setSurfaceRenderable(false)
+        await withCheckedContinuation { continuation in
+            DispatchQueue.main.async {
+                continuation.resume()
+            }
+        }
+        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == nil)
+    }
+
+    @available(iOS 16, *)
+    @Test("Two Real NTP Models Handoff Only After SwiftUI Physical Removal", .timeLimit(.minutes(1)))
+    func whenFirstMountedRemoteMessageDisappearsThenSecondMountedModelReceivesHandoff() async {
+        let manager = ModalPromptCoordinationManager(
+            providers: [],
+            cooldownManager: cooldownManager,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            modalPromptScheduling: schedulerMock
+        )
+        let service = PromoCoordinationService(
+            launchSourceManager: MockLaunchSourceManager(),
+            modalPromptCoordinationManager: manager,
+            promoCoordinationMode: .coordinated,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter
+        )
+        let firstSurfaceID = UUID()
+        let secondSurfaceID = UUID()
+        let firstIdentity = VisiblePromoIdentity(
+            surfaceID: firstSurfaceID,
+            promoType: .remoteMessage,
+            promoID: "first"
+        )
+        let secondIdentity = VisiblePromoIdentity(
+            surfaceID: secondSurfaceID,
+            promoType: .remoteMessage,
+            promoID: "second"
+        )
+        let lifecycle = TwoModelRemoteMessageLifecycleRecorder()
+        let firstFixture = makeRemoteMessageModel(
+            messageID: firstIdentity.promoID,
+            surfaceID: firstSurfaceID,
+            coordinator: service
+        ) { [promoQueueLeaseArbiter = self.promoQueueLeaseArbiter] event in
+            switch event {
+            case .cardDidAppear:
+                lifecycle.record(.firstCardDidAppear)
+            case .cardDidDisappear:
+                lifecycle.ownerAtFirstCardDisappearance = promoQueueLeaseArbiter.snapshot.activeOwner
+                lifecycle.record(.firstCardDidDisappear)
+            case .gateDidDisappear:
+                lifecycle.record(.firstGateDidDisappear)
+            case .gateDidAppear:
+                break
+            }
+        }
+        let firstModel = firstFixture.model
+        let secondFixture = makeRemoteMessageModel(
+            messageID: secondIdentity.promoID,
+            surfaceID: secondSurfaceID,
+            coordinator: service
+        ) { event in
+            switch event {
+            case .gateDidAppear:
+                lifecycle.record(.secondGateDidAppear)
+            case .cardDidAppear:
+                lifecycle.record(.secondCardDidAppear)
+            case .cardDidDisappear, .gateDidDisappear:
+                break
+            }
+        }
+        let secondModel = secondFixture.model
+        let hostState = TwoModelRemoteMessageHostState()
+        let hostingController = UIHostingController(
+            rootView: TwoModelRemoteMessageGateHost(
+                firstModel: firstModel,
+                secondModel: secondModel,
+                state: hostState
+            )
+        )
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        defer {
+            firstModel.tearDown()
+            secondModel.tearDown()
+            window.isHidden = true
+        }
+
+        firstModel.setSurfaceAttachmentProvider { [weak hostingController] in
+            hostingController?.viewIfLoaded?.window != nil
+        }
+        secondModel.setSurfaceAttachmentProvider { [weak hostingController] in
+            hostingController?.viewIfLoaded?.window != nil
+        }
+        firstModel.load()
+        secondModel.load()
+        firstModel.setSurfaceRenderable(true)
+        secondModel.setSurfaceRenderable(true)
+        window.rootViewController = hostingController
+        window.makeKeyAndVisible()
+
+        guard await lifecycle.wait(for: .firstCardDidAppear) else {
+            Issue.record("Timed out waiting for the first mounted RMF card to appear")
+            return
+        }
+        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .visible(firstIdentity))
+
+        hostState.isSecondGatePresented = true
+        guard await lifecycle.wait(for: .secondGateDidAppear) else {
+            Issue.record("Timed out waiting for the blocked second RMF gate to appear")
+            return
+        }
+
+        #expect(remoteMessageRenderSession(in: secondModel) == nil)
+        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .visible(firstIdentity))
+
+        firstFixture.configuration.homeMessages = [makeRemoteMessage(messageID: "first-replacement")]
+        firstModel.refresh()
+        guard await lifecycle.wait(for: .firstCardDidDisappear) else {
+            Issue.record("Timed out waiting for the outgoing first RMF card to disappear")
+            return
+        }
+        guard await lifecycle.wait(for: .firstGateDidDisappear) else {
+            Issue.record("Timed out waiting for the outgoing first RMF gate to disappear")
+            return
+        }
+
+        #expect(lifecycle.ownerAtFirstCardDisappearance == .visible(firstIdentity))
+
+        guard await lifecycle.wait(for: .secondCardDidAppear) else {
+            Issue.record("Timed out waiting for the second RMF card to receive the release handoff")
+            return
+        }
+
+        #expect(firstModel.isActiveForPromoRetry)
+        #expect(remoteMessageGate(in: firstModel)?.messageID == "first-replacement")
+        #expect(remoteMessageRenderSession(in: firstModel) == nil)
+        #expect(remoteMessageRenderSession(in: secondModel) != nil)
+        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .visible(secondIdentity))
+    }
+
+    private func makeRemoteMessageModel(
+        messageID: String,
+        surfaceID: UUID,
+        coordinator: NewTabPagePromoCoordinating,
+        isOpenedAfterIdle: Bool = false,
+        lifecycleObserver: @escaping (NewTabPageRemoteMessageLifecycleEvent) -> Void
+    ) -> (model: NewTabPageMessagesModel, configuration: HomePageMessagesConfigurationMock) {
+        let configuration = HomePageMessagesConfigurationMock(
+            homeMessages: [makeRemoteMessage(messageID: messageID)]
+        )
+        let model = NewTabPageMessagesModel(
+            homePageMessagesConfiguration: configuration,
+            surfaceID: surfaceID,
+            notificationCenter: NotificationCenter(),
+            messageActionHandler: MockRemoteMessagingActionHandler(),
+            imageLoader: MockRemoteMessagingImageLoader(),
+            promoCoordinator: coordinator,
+            remoteMessageLifecycleObserver: lifecycleObserver,
+            isOpenedAfterIdle: { isOpenedAfterIdle }
+        )
+        return (model, configuration)
+    }
+
+    private func makeRemoteMessage(messageID: String) -> HomeMessage {
+        .remoteMessage(
+            remoteMessage: RemoteMessageModel(
+                id: messageID,
+                surfaces: .newTabPage,
+                content: .small(titleText: messageID, descriptionText: "Body"),
+                matchingRules: [],
+                exclusionRules: [],
+                isMetricsEnabled: true
+            )
+        )
+    }
+
+    private func remoteMessageRenderSession(
+        in model: NewTabPageMessagesModel
+    ) -> NewTabPageRemoteMessageRenderSession? {
+        remoteMessageGate(in: model)?.renderSession
+    }
+
+    private func remoteMessageGate(in model: NewTabPageMessagesModel) -> NewTabPageRemoteMessageGate? {
+        model.homeMessageRenderItems.lazy.compactMap { item in
+            guard case .remoteMessageGate(let gate) = item.content else {
+                return nil
+            }
+            return gate
+        }.first
+    }
 }
 
 // MARK: - Helpers
@@ -409,5 +695,78 @@ private final class ImmediateScheduler: ModalPromptScheduling {
     func scheduleOnNextMainTurn(execute: @escaping @MainActor () -> Void) -> ModalPromptScheduledTask {
         execute()
         return ModalPromptScheduledTask()
+    }
+}
+
+@MainActor
+private final class TwoModelRemoteMessageLifecycleRecorder {
+    enum Event: Hashable {
+        case firstCardDidAppear
+        case firstCardDidDisappear
+        case firstGateDidDisappear
+        case secondGateDidAppear
+        case secondCardDidAppear
+    }
+
+    var ownerAtFirstCardDisappearance: PromoQueueActiveOwnerSnapshot?
+
+    private var recordedEvents = Set<Event>()
+
+    func record(_ event: Event) {
+        recordedEvents.insert(event)
+    }
+
+    func wait(for event: Event) async -> Bool {
+        for _ in 0..<200 {
+            if recordedEvents.contains(event) {
+                return true
+            }
+            try? await Task.sleep(nanoseconds: 10_000_000)
+        }
+
+        return recordedEvents.contains(event)
+    }
+}
+
+@MainActor
+private final class TwoModelRemoteMessageHostState: ObservableObject {
+    @Published var isSecondGatePresented = false
+}
+
+private struct TwoModelRemoteMessageGateHost: View {
+    @ObservedObject var firstModel: NewTabPageMessagesModel
+    @ObservedObject var secondModel: NewTabPageMessagesModel
+    @ObservedObject var state: TwoModelRemoteMessageHostState
+
+    var body: some View {
+        VStack {
+            if let gate = remoteMessageGate(in: firstModel) {
+                NewTabPageRemoteMessageGateMountView(
+                    gate: gate,
+                    messagesModel: firstModel,
+                    maximumWidth: 320
+                )
+                .id(gate.id)
+            }
+
+            if state.isSecondGatePresented,
+               let gate = remoteMessageGate(in: secondModel) {
+                NewTabPageRemoteMessageGateMountView(
+                    gate: gate,
+                    messagesModel: secondModel,
+                    maximumWidth: 320
+                )
+                .id(gate.id)
+            }
+        }
+    }
+
+    private func remoteMessageGate(in model: NewTabPageMessagesModel) -> NewTabPageRemoteMessageGate? {
+        model.homeMessageRenderItems.lazy.compactMap { item in
+            guard case .remoteMessageGate(let gate) = item.content else {
+                return nil
+            }
+            return gate
+        }.first
     }
 }

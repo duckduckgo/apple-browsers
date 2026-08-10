@@ -153,7 +153,7 @@ final class NewTabPageMessagesModelTests: XCTestCase {
 
         XCTAssertTrue(sut.homeMessageViewModels.isEmpty)
         XCTAssertNil(try remoteRenderSession(in: sut))
-        XCTAssertEqual(promoCoordinator.arbiter.snapshot.visiblePromoCount, 0)
+        XCTAssertTrue(promoCoordinator.arbiter.snapshot.hasModalLease)
         XCTAssertNil(messagesConfiguration.lastAppearedHomeMessage)
     }
 
@@ -169,8 +169,40 @@ final class NewTabPageMessagesModelTests: XCTestCase {
 
         XCTAssertEqual(sut.homeMessageViewModels.map(\.messageId), ["message-a"])
         XCTAssertNotNil(try remoteRenderSession(in: sut))
-        XCTAssertEqual(promoCoordinator.arbiter.snapshot.visiblePromoCount, 1)
+        XCTAssertNotNil(promoCoordinator.arbiter.snapshot.visiblePromoIdentity)
         XCTAssertNil(messagesConfiguration.lastAppearedHomeMessage)
+    }
+
+    func testFeatureOnAcquiresAdmissionBeforeSynchronousImageLoaderAccess() throws {
+        let promoCoordinator = ArbitratingNewTabPagePromoCoordinatorMock(promoCoordinationMode: .coordinated)
+        let imageLoader = AdmissionOrderingImageLoader()
+        promoCoordinator.onAdmissionAcquired = { _ in
+            imageLoader.recordAdmissionAcquired()
+        }
+        messagesConfiguration.homeMessages = [
+            .mockRemote(
+                id: "message-a",
+                withType: .medium(
+                    titleText: "Title",
+                    descriptionText: "Body",
+                    placeholder: .announce,
+                    imageUrl: URL(string: "https://example.com/image.png")
+                )
+            )
+        ]
+        let sut = createSUT(
+            promoCoordinator: promoCoordinator,
+            imageLoader: imageLoader
+        )
+        sut.setSurfaceAttachmentProvider { true }
+        sut.load()
+        sut.setSurfaceRenderable(true)
+
+        try appearRemoteMessageGate(in: sut, expectedMessageID: "message-a")
+
+        XCTAssertEqual(imageLoader.events, [.admissionAcquired, .cachedImageRequested])
+        XCTAssertNotNil(promoCoordinator.arbiter.snapshot.visiblePromoIdentity)
+        XCTAssertNotNil(try remoteRenderSession(in: sut))
     }
 
     func testUnsupportedRemoteCardReleasesLeaseSynchronouslyAfterAdmission() throws {
@@ -193,7 +225,7 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         try appearRemoteMessageGate(in: sut, expectedMessageID: "message-a")
 
         XCTAssertNil(try remoteRenderSession(in: sut))
-        XCTAssertEqual(promoCoordinator.arbiter.snapshot.visiblePromoCount, 0)
+        XCTAssertNil(promoCoordinator.arbiter.snapshot.activeOwner)
         XCTAssertEqual(promoCoordinator.releaseCallCount, 1)
     }
 
@@ -274,7 +306,7 @@ final class NewTabPageMessagesModelTests: XCTestCase {
             case .acquired(let lease):
                 acquiredModalLease = lease
                 events.append("modalAcquired")
-            case .blockedByModal, .blockedByVisiblePromos:
+            case .blockedByModal, .blockedByVisiblePromo:
                 XCTFail("Expected modal acquisition only after the physically removed RMF released its lease")
             }
             visibleLeaseReleased.fulfill()
@@ -297,7 +329,7 @@ final class NewTabPageMessagesModelTests: XCTestCase {
                     didObserveCardDisappear = true
                     events.append("cardDidDisappear")
                     switch promoCoordinator.arbiter.acquireModalLease() {
-                    case .blockedByVisiblePromos:
+                    case .blockedByVisiblePromo:
                         break
                     case .acquired, .blockedByModal:
                         XCTFail("The outgoing RMF must retain its lease throughout the real card disappearance callback")
@@ -332,9 +364,9 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         await fulfillment(of: [cardDidAppear], timeout: 1)
 
         XCTAssertTrue(isCardRendered)
-        XCTAssertEqual(promoCoordinator.arbiter.snapshot.visiblePromoCount, 1)
+        XCTAssertNotNil(promoCoordinator.arbiter.snapshot.visiblePromoIdentity)
         switch promoCoordinator.arbiter.acquireModalLease() {
-        case .blockedByVisiblePromos:
+        case .blockedByVisiblePromo:
             break
         case .acquired, .blockedByModal:
             XCTFail("The rendered RMF must block modal acquisition")
@@ -343,9 +375,9 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         sut.setSurfaceRenderable(false)
 
         XCTAssertTrue(sut.homeMessageViewModels.isEmpty)
-        XCTAssertEqual(promoCoordinator.arbiter.snapshot.visiblePromoCount, 1)
+        XCTAssertNotNil(promoCoordinator.arbiter.snapshot.visiblePromoIdentity)
         switch promoCoordinator.arbiter.acquireModalLease() {
-        case .blockedByVisiblePromos:
+        case .blockedByVisiblePromo:
             break
         case .acquired, .blockedByModal:
             XCTFail("Publishing RMF removal must not release its lease before physical disappearance")
@@ -404,7 +436,7 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         XCTAssertEqual(refreshedSession.id, originalSession.id)
         XCTAssertEqual(refreshedSession.viewModel.title, "Updated")
         XCTAssertEqual(messagesConfiguration.appearanceCallCount, 1)
-        XCTAssertEqual(promoCoordinator.arbiter.snapshot.visiblePromoCount, 1)
+        XCTAssertNotNil(promoCoordinator.arbiter.snapshot.visiblePromoIdentity)
     }
 
     func testOverlappingCardMountsKeepCurrentSessionUntilFinalMatchingMountDisappears() async throws {
@@ -447,7 +479,7 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         )
 
         XCTAssertEqual(try remoteRenderSession(in: sut)?.id, session.id)
-        XCTAssertEqual(promoCoordinator.arbiter.snapshot.visiblePromoCount, 1)
+        XCTAssertNotNil(promoCoordinator.arbiter.snapshot.visiblePromoIdentity)
 
         sut.remoteMessageDidDisappear(
             renderSessionID: session.id,
@@ -460,11 +492,11 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         )
 
         XCTAssertNil(try remoteRenderSession(in: sut))
-        XCTAssertEqual(promoCoordinator.arbiter.snapshot.visiblePromoCount, 1)
+        XCTAssertNotNil(promoCoordinator.arbiter.snapshot.visiblePromoIdentity)
 
         await waitForNextMainQueueTurn()
 
-        XCTAssertEqual(promoCoordinator.arbiter.snapshot.visiblePromoCount, 0)
+        XCTAssertNil(promoCoordinator.arbiter.snapshot.activeOwner)
         XCTAssertEqual(promoCoordinator.releaseCallCount, 1)
     }
 
@@ -490,23 +522,23 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         sut.remoteMessageGateDidDisappear(gateID: gate.id, messageID: gate.messageID, mountID: originalMountID)
 
         XCTAssertEqual(try remoteRenderSession(in: sut)?.id, session.id)
-        XCTAssertEqual(promoCoordinator.arbiter.snapshot.visiblePromoCount, 1)
+        XCTAssertNotNil(promoCoordinator.arbiter.snapshot.visiblePromoIdentity)
         XCTAssertEqual(promoCoordinator.releaseCallCount, 0)
 
         await waitForNextMainQueueTurn()
 
         XCTAssertEqual(try remoteRenderSession(in: sut)?.id, session.id)
-        XCTAssertEqual(promoCoordinator.arbiter.snapshot.visiblePromoCount, 1)
+        XCTAssertNotNil(promoCoordinator.arbiter.snapshot.visiblePromoIdentity)
 
         sut.remoteMessageCardDidAppear(renderSessionID: session.id, mountID: replacementMountID)
         sut.remoteMessageDidDisappear(renderSessionID: session.id, mountID: replacementMountID)
         sut.remoteMessageGateDidDisappear(gateID: gate.id, messageID: gate.messageID, mountID: replacementMountID)
 
-        XCTAssertEqual(promoCoordinator.arbiter.snapshot.visiblePromoCount, 1)
+        XCTAssertNotNil(promoCoordinator.arbiter.snapshot.visiblePromoIdentity)
 
         await waitForNextMainQueueTurn()
 
-        XCTAssertEqual(promoCoordinator.arbiter.snapshot.visiblePromoCount, 0)
+        XCTAssertNil(promoCoordinator.arbiter.snapshot.activeOwner)
         XCTAssertEqual(promoCoordinator.releaseCallCount, 1)
     }
 
@@ -524,15 +556,15 @@ final class NewTabPageMessagesModelTests: XCTestCase {
 
         await waitForNextMainQueueTurn()
 
-        XCTAssertEqual(promoCoordinator.arbiter.snapshot.visiblePromoCount, 1)
+        XCTAssertNotNil(promoCoordinator.arbiter.snapshot.visiblePromoIdentity)
         XCTAssertEqual(promoCoordinator.releaseCallCount, 0)
 
         sut.remoteMessageDidDisappear(renderSessionID: session.id, mountID: lateMountID)
-        XCTAssertEqual(promoCoordinator.arbiter.snapshot.visiblePromoCount, 1)
+        XCTAssertNotNil(promoCoordinator.arbiter.snapshot.visiblePromoIdentity)
 
         await waitForNextMainQueueTurn()
 
-        XCTAssertEqual(promoCoordinator.arbiter.snapshot.visiblePromoCount, 0)
+        XCTAssertNil(promoCoordinator.arbiter.snapshot.activeOwner)
         XCTAssertEqual(promoCoordinator.releaseCallCount, 1)
     }
 
@@ -557,11 +589,11 @@ final class NewTabPageMessagesModelTests: XCTestCase {
             renderSessionID: nil
         )
 
-        XCTAssertEqual(promoCoordinator.arbiter.snapshot.visiblePromoCount, 1)
+        XCTAssertNotNil(promoCoordinator.arbiter.snapshot.visiblePromoIdentity)
 
         await waitForNextMainQueueTurn()
 
-        XCTAssertEqual(promoCoordinator.arbiter.snapshot.visiblePromoCount, 0)
+        XCTAssertNil(promoCoordinator.arbiter.snapshot.activeOwner)
         XCTAssertEqual(promoCoordinator.releaseCallCount, 1)
     }
 
@@ -594,7 +626,7 @@ final class NewTabPageMessagesModelTests: XCTestCase {
 
         await waitForNextMainQueueTurn()
 
-        XCTAssertEqual(promoCoordinator.arbiter.snapshot.visiblePromoIdentities.map(\.promoID), ["message-a"])
+        XCTAssertEqual(promoCoordinator.arbiter.snapshot.visiblePromoIdentity?.promoID, "message-a")
         XCTAssertEqual(promoCoordinator.releaseCallCount, 0)
 
         sut.remoteMessageCardDidAppear(renderSessionID: originalSession.id, mountID: staleMountID)
@@ -607,7 +639,7 @@ final class NewTabPageMessagesModelTests: XCTestCase {
 
         await waitForNextMainQueueTurn()
 
-        XCTAssertEqual(promoCoordinator.arbiter.snapshot.visiblePromoCount, 0)
+        XCTAssertNil(promoCoordinator.arbiter.snapshot.activeOwner)
         XCTAssertEqual(promoCoordinator.releaseCallCount, 1)
     }
 
@@ -650,7 +682,7 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         )
 
         XCTAssertEqual(try remoteRenderSession(in: sut)?.id, session.id)
-        XCTAssertEqual(promoCoordinator.arbiter.snapshot.visiblePromoCount, 1)
+        XCTAssertNotNil(promoCoordinator.arbiter.snapshot.visiblePromoIdentity)
     }
 
     func testWhenRemoteMessageIDChangesThenReplacementWaitsForPhysicalRemovalBeforeAdmission() async throws {
@@ -665,12 +697,12 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         try appearRemoteMessageGate(in: sut, expectedMessageID: "message-b")
 
         XCTAssertNil(try remoteRenderSession(in: sut))
-        XCTAssertEqual(promoCoordinator.arbiter.snapshot.visiblePromoIdentities.map(\.promoID), ["message-a"])
+        XCTAssertEqual(promoCoordinator.arbiter.snapshot.visiblePromoIdentity?.promoID, "message-a")
 
         await waitForNextMainQueueTurn()
 
         XCTAssertNil(try remoteRenderSession(in: sut))
-        XCTAssertEqual(promoCoordinator.arbiter.snapshot.visiblePromoIdentities.map(\.promoID), ["message-a"])
+        XCTAssertEqual(promoCoordinator.arbiter.snapshot.visiblePromoIdentity?.promoID, "message-a")
 
         sut.remoteMessageDidDisappear(
             renderSessionID: originalSession.id,
@@ -678,13 +710,13 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         )
 
         XCTAssertNil(try remoteRenderSession(in: sut))
-        XCTAssertEqual(promoCoordinator.arbiter.snapshot.visiblePromoIdentities.map(\.promoID), ["message-a"])
+        XCTAssertEqual(promoCoordinator.arbiter.snapshot.visiblePromoIdentity?.promoID, "message-a")
 
         await waitForNextMainQueueTurn()
         let replacementSession = try XCTUnwrap(try remoteRenderSession(in: sut))
 
         XCTAssertNotEqual(replacementSession.id, originalSession.id)
-        XCTAssertEqual(promoCoordinator.arbiter.snapshot.visiblePromoIdentities.map(\.promoID), ["message-b"])
+        XCTAssertEqual(promoCoordinator.arbiter.snapshot.visiblePromoIdentity?.promoID, "message-b")
     }
 
     func testOutgoingSessionWaitsForFinalPhysicalMountAndReleasesExactlyOnce() async throws {
@@ -705,15 +737,15 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         sut.remoteMessageDidDisappear(renderSessionID: session.id, mountID: firstMountID)
         await waitForNextMainQueueTurn()
 
-        XCTAssertEqual(promoCoordinator.arbiter.snapshot.visiblePromoCount, 1)
+        XCTAssertNotNil(promoCoordinator.arbiter.snapshot.visiblePromoIdentity)
         XCTAssertEqual(promoCoordinator.releaseCallCount, 0)
 
         sut.remoteMessageDidDisappear(renderSessionID: session.id, mountID: finalMountID)
-        XCTAssertEqual(promoCoordinator.arbiter.snapshot.visiblePromoCount, 1)
+        XCTAssertNotNil(promoCoordinator.arbiter.snapshot.visiblePromoIdentity)
 
         await waitForNextMainQueueTurn()
 
-        XCTAssertEqual(promoCoordinator.arbiter.snapshot.visiblePromoCount, 0)
+        XCTAssertNil(promoCoordinator.arbiter.snapshot.activeOwner)
         XCTAssertEqual(promoCoordinator.releaseCallCount, 1)
 
         sut.remoteMessageDidDisappear(renderSessionID: session.id, mountID: finalMountID)
@@ -733,22 +765,22 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         sut.setSurfaceRenderable(false)
 
         XCTAssertTrue(sut.homeMessageViewModels.isEmpty)
-        XCTAssertEqual(promoCoordinator.arbiter.snapshot.visiblePromoCount, 1)
+        XCTAssertNotNil(promoCoordinator.arbiter.snapshot.visiblePromoIdentity)
 
         await waitForNextMainQueueTurn()
-        XCTAssertEqual(promoCoordinator.arbiter.snapshot.visiblePromoCount, 1)
+        XCTAssertNotNil(promoCoordinator.arbiter.snapshot.visiblePromoIdentity)
 
         sut.remoteMessageDidDisappear(renderSessionID: session.id, mountID: mountID)
 
-        XCTAssertEqual(promoCoordinator.arbiter.snapshot.visiblePromoCount, 1)
+        XCTAssertNotNil(promoCoordinator.arbiter.snapshot.visiblePromoIdentity)
 
         await waitForNextMainQueueTurn()
-        XCTAssertEqual(promoCoordinator.arbiter.snapshot.visiblePromoCount, 0)
+        XCTAssertNil(promoCoordinator.arbiter.snapshot.activeOwner)
 
         sut.setSurfaceRenderable(true)
 
         XCTAssertNotNil(try remoteRenderSession(in: sut))
-        XCTAssertEqual(promoCoordinator.arbiter.snapshot.visiblePromoCount, 1)
+        XCTAssertNotNil(promoCoordinator.arbiter.snapshot.visiblePromoIdentity)
     }
 
     func testOwnerTeardownRetainsLeaseUntilPhysicalDisappearance() async throws {
@@ -759,16 +791,16 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         let session = try XCTUnwrap(try remoteRenderSession(in: sut))
 
         sut.tearDown()
-        XCTAssertEqual(promoCoordinator.arbiter.snapshot.visiblePromoCount, 1)
+        XCTAssertNotNil(promoCoordinator.arbiter.snapshot.visiblePromoIdentity)
 
         await waitForNextMainQueueTurn()
-        XCTAssertEqual(promoCoordinator.arbiter.snapshot.visiblePromoCount, 1)
+        XCTAssertNotNil(promoCoordinator.arbiter.snapshot.visiblePromoIdentity)
 
         sut.remoteMessageDidDisappear(renderSessionID: session.id, mountID: mountID)
 
         await waitForNextMainQueueTurn()
 
-        XCTAssertEqual(promoCoordinator.arbiter.snapshot.visiblePromoCount, 0)
+        XCTAssertNil(promoCoordinator.arbiter.snapshot.activeOwner)
         XCTAssertEqual(promoCoordinator.releaseCallCount, 1)
     }
 
@@ -796,11 +828,11 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         try appearRemoteMessageGate(in: sut, expectedMessageID: "message-a")
         let admissionCallCountBeforeRetry = promoCoordinator.publicAdmissionCallCount
 
-        sut.retryVisiblePromoAdmission(using: promoCoordinator.admitVisiblePromo)
+        sut.retryRemoteMessageAdmission(using: promoCoordinator.admitRemoteMessage)
 
         XCTAssertEqual(promoCoordinator.publicAdmissionCallCount - admissionCallCountBeforeRetry, 1)
         XCTAssertNil(try remoteRenderSession(in: sut))
-        XCTAssertEqual(promoCoordinator.arbiter.snapshot.visiblePromoCount, 0)
+        XCTAssertTrue(promoCoordinator.arbiter.snapshot.hasModalLease)
     }
 
     func testRemovedAndReinsertedSameIDGetsNewSessionAndIgnoresStaleCallbacks() async throws {
@@ -862,7 +894,7 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         await waitForNextMainQueueTurn()
 
         XCTAssertEqual(try remoteRenderSession(in: sut)?.id, replacementSession.id)
-        XCTAssertEqual(promoCoordinator.arbiter.snapshot.visiblePromoCount, 1)
+        XCTAssertNotNil(promoCoordinator.arbiter.snapshot.visiblePromoIdentity)
         XCTAssertEqual(promoCoordinator.releaseCallCount, 1)
     }
 
@@ -1128,6 +1160,7 @@ final class NewTabPageMessagesModelTests: XCTestCase {
     private func createSUT(
         isOpenedAfterIdle: Bool = false,
         promoCoordinator: ArbitratingNewTabPagePromoCoordinatorMock? = nil,
+        imageLoader: RemoteMessagingImageLoading? = nil,
         remoteMessageLifecycleObserver: ((NewTabPageRemoteMessageLifecycleEvent) -> Void)? = nil
     ) -> NewTabPageMessagesModel {
         // Built here rather than as a default argument: the mock is `@MainActor`, and default
@@ -1136,11 +1169,12 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         let remoteMessageActionHandler = RemoteMessagingActionHandler(lastSearchStateRefresher: RemoteMessagingSurveyLastSearchStateRefresher())
         remoteMessageActionHandler.messageNavigator = DefaultMessageNavigator(delegate: self)
 
+        let imageLoader = imageLoader ?? MockRemoteMessagingImageLoader()
         return NewTabPageMessagesModel(homePageMessagesConfiguration: messagesConfiguration,
                                 notificationCenter: notificationCenter,
                                 pixelFiring: PixelFiringMock.self,
                                 messageActionHandler: remoteMessageActionHandler,
-                                imageLoader: MockRemoteMessagingImageLoader(),
+                                imageLoader: imageLoader,
                                 promoCoordinator: promoCoordinator,
                                 remoteMessageLifecycleObserver: remoteMessageLifecycleObserver,
                                 isOpenedAfterIdle: { isOpenedAfterIdle })
@@ -1245,6 +1279,7 @@ private final class ArbitratingNewTabPagePromoCoordinatorMock: NewTabPagePromoCo
     private(set) var publicAdmissionCallCount = 0
     private(set) var releaseCallCount = 0
     var onVisibleLeaseReleased: (() -> Void)?
+    var onAdmissionAcquired: ((VisiblePromoIdentity) -> Void)?
     private var modalLease: PromoQueueModalLease?
 
     init(promoCoordinationMode: PromoCoordinationMode = .legacy) {
@@ -1259,32 +1294,31 @@ private final class ArbitratingNewTabPagePromoCoordinatorMock: NewTabPagePromoCo
         modalLease = lease
     }
 
-    func admitVisiblePromo(_ identity: VisiblePromoIdentity) -> VisiblePromoAdmissionResult {
+    func admitRemoteMessage(_ identity: VisiblePromoIdentity) -> PromoQueueRemoteMessageAdmissionResult {
         publicAdmissionCallCount += 1
         switch promoCoordinationMode {
         case .legacy:
-            return .featureDisabled
+            return .deferred
         case .coordinated:
             break
         }
 
         switch arbiter.acquireVisiblePromoLease(for: identity) {
         case .acquired(let lease):
-            return .acquired(lease)
-        case .blockedByModal:
-            return .blockedByModal
-        case .occupiedSurfaceSlot(let identity):
-            return .occupiedSurfaceSlot(identity)
+            onAdmissionAcquired?(identity)
+            return .acquired(PromoQueueRemoteMessageAdmission { [weak self, lease] in
+                guard lease.release() else {
+                    return
+                }
+                self?.releaseCallCount += 1
+                self?.onVisibleLeaseReleased?()
+            })
+        case .blockedByModal, .blockedByVisiblePromo:
+            return .deferred
         }
     }
 
-    func releaseVisiblePromoLease(_ lease: PromoQueueVisiblePromoLease) {
-        releaseCallCount += 1
-        lease.release()
-        onVisibleLeaseReleased?()
-    }
-
-    func registerVisiblePromoRetry(
+    func registerRemoteMessageRetry(
         for surfaceID: UUID,
         target: NewTabPagePromoRetrying
     ) -> NewTabPagePromoRetryRegistration {
@@ -1297,6 +1331,30 @@ private final class ArbitratingNewTabPagePromoCoordinatorMock: NewTabPagePromoCo
             deregistrationCount += 1
             retryTarget = nil
         }
+    }
+}
+
+private final class AdmissionOrderingImageLoader: RemoteMessagingImageLoading {
+    enum Event: Equatable {
+        case admissionAcquired
+        case cachedImageRequested
+    }
+
+    private(set) var events = [Event]()
+
+    func recordAdmissionAcquired() {
+        events.append(.admissionAcquired)
+    }
+
+    func prefetch(_ urls: [URL]) {}
+
+    func cachedImage(for url: URL) -> RemoteMessagingImage? {
+        events.append(.cachedImageRequested)
+        return nil
+    }
+
+    func loadImage(from url: URL) async throws -> RemoteMessagingImage {
+        throw RemoteMessagingImageLoadingError.invalidImageData
     }
 }
 extension NewTabPageMessagesModelTests: MessageNavigationDelegate {

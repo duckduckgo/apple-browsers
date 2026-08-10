@@ -544,14 +544,7 @@ struct FireDialogView: ModalView {
                 }
 
                 if !viewModel.fireproofed.isEmpty {
-                    Text(UserText.fireproofCookiesAndSiteDataExplanation)
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundColor(Color(designSystemColor: .textSecondary))
-                        .multilineTextAlignment(.leading)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .padding(.top, 12)
-                        .padding(.bottom, 4)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                    fireproofSitesSectionHeader
 
                     ForEach(viewModel.fireproofed, id: \.domain) { item in
                         sitesOverlayRow(for: item)
@@ -574,6 +567,24 @@ struct FireDialogView: ModalView {
                 )
         )
         .padding(.horizontal, 8)
+    }
+
+    /// Separates the sites whose data will be deleted from the Fireproof ones listed below it.
+    private var fireproofSitesSectionHeader: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            sectionDivider(padding: 0)
+
+            Text(UserText.fireDialogFireproofExplanation)
+                .font(.system(size: 11))
+                .foregroundColor(Color(designSystemColor: .textSecondary))
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 20)
+                .padding(.bottom, 5)
+        }
+        // the design hangs this 8pt off the list above; keeping it here is equivalent and self-contained
+        .padding(.top, 8)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func sitesOverlayRow(for item: FireDialogViewModel.Item) -> some View {

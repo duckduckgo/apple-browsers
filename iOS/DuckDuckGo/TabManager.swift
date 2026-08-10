@@ -661,18 +661,23 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     @MainActor
     private func markAsMostRecentlyViewed(_ controller: TabViewController?) {
         guard let controller,
-              let index = tabControllerCache.firstIndex(of: controller),
-              index != tabControllerCache.count - 1 else { return }
-        tabControllerCache.remove(at: index)
-        tabControllerCache.append(controller)
+              let index = tabControllerCache.firstIndex(of: controller) else { return }
+        if index != tabControllerCache.count - 1 {
+            tabControllerCache.remove(at: index)
+            tabControllerCache.append(controller)
+        }
+        enforceCacheCapacityIfNeeded()
     }
 
     @MainActor
     private func enforceCacheCapacityIfNeeded() {
         guard featureFlagger.isFeatureOn(.tabLRUEviction) else { return }
         let maximumCapacity = tabEvictionSettings.maximumCapacity(isPad: isPad)
-        while tabControllerCache.count > maximumCapacity {
-            guard let controller = tabControllerCache.first(where: { $0 !== current() }) else { return }
+        let currentController = current()
+        let effectiveMaximumCapacity = maximumCapacity + (currentController?.tabModel.link == nil ? 1 : 0)
+        while tabControllerCache.count > effectiveMaximumCapacity {
+            let evictionCandidates = tabControllerCache.filter { $0 !== currentController }
+            guard let controller = evictionCandidates.first(where: { $0.tabModel.link == nil }) ?? evictionCandidates.first else { return }
             evictFromCache(controller, reason: .lruCapacity)
         }
     }

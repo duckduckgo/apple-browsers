@@ -497,6 +497,39 @@ final class TabManagerTests: XCTestCase {
         XCTAssertNotNil(manager.controller(for: tabs[2]))
     }
 
+    func testWhenNewTabPagesExceedLRUCapacityThenLoadedTabsArePreserved() throws {
+        let loadedTabs = (0..<2).map {
+            Tab(link: Link(title: "tab-\($0)", url: URL(string: "https://example.com/\($0)")!))
+        }
+        let newTabPages = [Tab(), Tab()]
+        let model = TabsModel(tabs: loadedTabs + newTabPages, desktop: false)
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.tabLRUEviction])
+        let privacyConfigurationManager = makePrivacyConfigurationManager(settings: "{\"maxCapacityPhone\": 2}")
+        let cacheDelegate = MockTabControllerCacheDelegate()
+        let manager = try makeManager(model,
+                                      featureFlagger: featureFlagger,
+                                      privacyConfigurationManager: privacyConfigurationManager,
+                                      isPad: false)
+        manager.cacheDelegate = cacheDelegate
+
+        _ = manager.current(createIfNeeded: true)
+        _ = manager.select(loadedTabs[1])
+        _ = manager.select(newTabPages[0])
+        _ = manager.select(newTabPages[1])
+
+        XCTAssertNotNil(manager.controller(for: loadedTabs[0]))
+        XCTAssertNotNil(manager.controller(for: loadedTabs[1]))
+        XCTAssertNil(manager.controller(for: newTabPages[0]))
+        XCTAssertNotNil(manager.controller(for: newTabPages[1]))
+
+        _ = manager.select(loadedTabs[0])
+
+        XCTAssertNotNil(manager.controller(for: loadedTabs[0]))
+        XCTAssertNotNil(manager.controller(for: loadedTabs[1]))
+        XCTAssertNil(manager.controller(for: newTabPages[1]))
+        XCTAssertEqual(cacheDelegate.evictionReasons, [.lruCapacity, .lruCapacity])
+    }
+
     func testLRUCapacityIsSharedAcrossNormalAndFireTabs() throws {
         let normalTabs = (0..<2).map {
             Tab(link: Link(title: "normal-\($0)", url: URL(string: "https://example.com/normal-\($0)")!))

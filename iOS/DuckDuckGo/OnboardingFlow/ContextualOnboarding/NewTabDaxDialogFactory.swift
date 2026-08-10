@@ -93,7 +93,9 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProviding {
         case .final:
             // `.final` is intercepted in NewTabPageViewController and rendered via `createEndOfJourneyDialog`
             // (content-driven), so it never reaches this switch.
+            // swiftlint:disable redundant_discardable_let
             let _ = assertionFailure("Should not be reached.")
+            // swiftlint:enable redundant_discardable_let
             EmptyView()
         case .subscriptionPromotion:
             // Re-use same dismiss closure as dismissing the final dialog will set onboarding completed true

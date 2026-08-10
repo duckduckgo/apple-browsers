@@ -1458,14 +1458,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         let currentTabId = omnibarController.currentTabUUID
         let candidates = allCandidates.prefix(Constants.recentTabsInMenu)
 
-        menu.addItem(NSMenuItem.separator())
+        // With nothing to offer, the disabled Add Tabs item already says so; a placeholder row and
+        // the separator above it would just be more menu saying the same thing.
+        guard !candidates.isEmpty else { return }
 
-        guard !candidates.isEmpty else {
-            let empty = NSMenuItem(title: UserText.aiChatAttachMenuNoOpenTabs, action: nil, keyEquivalent: "")
-            empty.isEnabled = false
-            menu.addItem(empty)
-            return
-        }
+        menu.addItem(NSMenuItem.separator())
 
         let header = NSMenuItem(title: UserText.aiChatAttachMenuRecentTabsHeader, action: nil, keyEquivalent: "")
         header.isEnabled = false

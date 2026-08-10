@@ -64,8 +64,8 @@ struct AccountManager: AccountManaging {
 
         let hashedPassword = Data(accountKeys.passwordHash).base64EncodedString()
         let protectedEncryptionKey = Data(accountKeys.protectedSecretKey).base64EncodedString()
-        let deviceInfoFields = makeDeviceInfoFieldsForSignup(name: deviceName,
-                                                             type: deviceType,
+        let deviceInfoFields = makeDeviceInfoFieldsForSignup(deviceName: deviceName,
+                                                             deviceType: deviceType,
                                                              accountSecretKey: Data(accountKeys.secretKey))
 
         let params = Signup.Parameters(
@@ -205,8 +205,8 @@ struct AccountManager: AccountManaging {
         }
     }
 
-    private func makeDeviceInfoFieldsForSignup(name: String,
-                                               type: String,
+    private func makeDeviceInfoFieldsForSignup(deviceName: String,
+                                               deviceType: String,
                                                accountSecretKey: Data) -> (keys: [ProtectedKey], deviceInfo: String)? {
         guard canWriteUnifiedDeviceList() else {
             return nil
@@ -219,7 +219,7 @@ struct AccountManager: AccountManaging {
                 Logger.sync.error("Sync-UnifiedDevices: failed to prepare unified device info for signup: missing account_info protected key")
                 return nil
             }
-            let encryptedDeviceInfo = try deviceInfoCodec.encrypt(DeviceInfo(name: name, type: type),
+            let encryptedDeviceInfo = try deviceInfoCodec.encrypt(DeviceInfo(name: deviceName, type: deviceType),
                                                                   using: protectedKey)
             guard encryptedDeviceInfo.utf8.count <= DeviceInfo.maximumEncryptedLength else {
                 Logger.sync.error("Sync-UnifiedDevices: failed to prepare unified device info for signup: encrypted payload exceeds the maximum length")
@@ -229,7 +229,7 @@ struct AccountManager: AccountManaging {
             return (keys: keys, deviceInfo: encryptedDeviceInfo)
         } catch {
             // Device info is additive, so local preparation failures must not block legacy signup.
-            let errorType = String(describing: Swift.type(of: error))
+            let errorType = String(describing: type(of: error))
             Logger.sync.error("Sync-UnifiedDevices: failed to prepare unified device info for signup: \(errorType)")
             return nil
         }

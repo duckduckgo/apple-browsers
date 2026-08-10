@@ -128,6 +128,50 @@ final class FloatingUILayoutPolicyTests: XCTestCase {
         XCTAssertEqual(height, 70, accuracy: 0.001)
     }
 
+    func testWhenBarsVisibleThenTopObscuredHeightIsExpandedChrome() {
+        let height = FloatingUILayoutPolicy.webViewTopObscuredHeight(
+            barsVisibilityPercent: 1,
+            expandedChromeHeight: 111,
+            topCapsuleObscuredHeight: 91,
+            safeAreaTop: 59
+        )
+
+        XCTAssertEqual(height, 111, accuracy: 0.001)
+    }
+
+    func testWhenBarsHiddenAndTopCapsuleVisibleThenTopObscuredHeightTracksCapsule() {
+        let height = FloatingUILayoutPolicy.webViewTopObscuredHeight(
+            barsVisibilityPercent: 0,
+            expandedChromeHeight: 111,
+            topCapsuleObscuredHeight: 91,
+            safeAreaTop: 59
+        )
+
+        XCTAssertEqual(height, 91, accuracy: 0.001)
+    }
+
+    func testWhenBarsHiddenAndNoTopCapsuleThenTopObscuredHeightIsSafeArea() {
+        let height = FloatingUILayoutPolicy.webViewTopObscuredHeight(
+            barsVisibilityPercent: 0,
+            expandedChromeHeight: 111,
+            topCapsuleObscuredHeight: 0,
+            safeAreaTop: 59
+        )
+
+        XCTAssertEqual(height, 59, accuracy: 0.001)
+    }
+
+    func testWhenPartiallyHiddenThenTopObscuredHeightIsMaxOfShrinkingChromeAndCapsule() {
+        let height = FloatingUILayoutPolicy.webViewTopObscuredHeight(
+            barsVisibilityPercent: 0.5,
+            expandedChromeHeight: 111,
+            topCapsuleObscuredHeight: 91,
+            safeAreaTop: 59
+        )
+
+        XCTAssertEqual(height, 91, accuracy: 0.001)
+    }
+
     func testWhenFloatingBottomAddressBarAndNotMinimalChromeThenOmnibarIsHostedInToolbar() {
         XCTAssertTrue(FloatingUILayoutPolicy.shouldHostOmnibarInFloatingToolbar(
             isFloatingUIEnabled: true,

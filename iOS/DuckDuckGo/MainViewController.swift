@@ -4444,6 +4444,18 @@ extension MainViewController: BrowserChromeDelegate {
             + FloatingDomainCapsuleController.fixedElementClearance
     }
 
+    private var floatingTopCapsuleObscuredHeight: CGFloat {
+        guard appSettings.currentAddressBarPosition == .top,
+              isFloatingCapsuleActive,
+              let domain = currentFloatingDomainText(),
+              !domain.isEmpty else {
+            return 0
+        }
+        return view.safeAreaInsets.top
+            + floatingDomainCapsuleController.restObscuredHeightAboveSafeArea
+            + FloatingDomainCapsuleController.fixedElementClearance
+    }
+
     func floatingWebViewBottomObscuredHeight(for barsVisibilityPercent: CGFloat) -> CGFloat {
         // Minimal chrome hides the toolbar: reserve the single bar's height only for a bottom address
         // bar (reclaimed as it scrolls away); a top address bar leaves just the safe area.
@@ -4469,8 +4481,7 @@ extension MainViewController: BrowserChromeDelegate {
                      right: 0)
     }
 
-    /// Top region obscured by chrome: safe area, plus the omnibar for a top address bar. In minimal
-    /// chrome the top bar scrolls off, so its portion is reclaimed as it hides.
+    /// Top region obscured by chrome, shrinking from the omnibar to the resting capsule clearance.
     private func floatingWebViewTopObscuredHeight(for barsVisibilityPercent: CGFloat) -> CGFloat {
         let safeAreaTop = view.safeAreaInsets.top
         guard appSettings.currentAddressBarPosition == .top else { return safeAreaTop }
@@ -4478,7 +4489,12 @@ extension MainViewController: BrowserChromeDelegate {
             let clampedPercent = max(0, min(1, barsVisibilityPercent))
             return safeAreaTop + omniBar.barView.expectedHeight * clampedPercent
         }
-        return safeAreaTop + omniBar.barView.expectedHeight
+        return FloatingUILayoutPolicy.webViewTopObscuredHeight(
+            barsVisibilityPercent: barsVisibilityPercent,
+            expandedChromeHeight: safeAreaTop + omniBar.barView.expectedHeight,
+            topCapsuleObscuredHeight: floatingTopCapsuleObscuredHeight,
+            safeAreaTop: safeAreaTop
+        )
     }
 
     var minimalChromeBottomHeight: CGFloat {

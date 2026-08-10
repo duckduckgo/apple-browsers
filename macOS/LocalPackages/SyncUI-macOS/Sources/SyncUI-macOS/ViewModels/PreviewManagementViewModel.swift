@@ -28,16 +28,17 @@ final class PreviewManagementViewModel: ManagementViewModel {
     let isAppVersionNotSupported = false
     let isAIChatSyncEnabled = true
     let isAppRebranded = true
+    let isSimplifiedSyncSetupV2Enabled: Bool
 
     let isSyncEnabled: Bool
-    let isSyncPaused = false
+    let isSyncPaused: Bool
     let isSyncBookmarksPaused = false
     let isSyncCredentialsPaused = false
     let isSyncCreditCardsPaused = false
     let isSyncIdentitiesPaused = false
-    let syncPausedTitle: String? = nil
-    let syncPausedMessage: String? = nil
-    let syncPausedButtonTitle: String? = nil
+    let syncPausedTitle: String?
+    let syncPausedMessage: String?
+    let syncPausedButtonTitle: String?
     let syncPausedButtonAction: (() -> Void)? = nil
     let syncBookmarksPausedTitle: String? = nil
     let syncBookmarksPausedMessage: String? = nil
@@ -65,8 +66,21 @@ final class PreviewManagementViewModel: ManagementViewModel {
     @Published var isFaviconsFetchingEnabled = true
     @Published var isUnifiedFavoritesEnabled = true
 
-    init(isSyncEnabled: Bool, devices: [SyncDevice] = []) {
+    init(
+        isSyncEnabled: Bool,
+        isSyncPaused: Bool = false,
+        syncPausedTitle: String? = nil,
+        syncPausedMessage: String? = nil,
+        syncPausedButtonTitle: String? = nil,
+        isSimplifiedSyncSetupV2Enabled: Bool = false,
+        devices: [SyncDevice] = []
+    ) {
         self.isSyncEnabled = isSyncEnabled
+        self.isSyncPaused = isSyncPaused
+        self.syncPausedTitle = syncPausedTitle
+        self.syncPausedMessage = syncPausedMessage
+        self.syncPausedButtonTitle = syncPausedButtonTitle
+        self.isSimplifiedSyncSetupV2Enabled = isSimplifiedSyncSetupV2Enabled
         self.devices = devices
     }
 

@@ -32,6 +32,10 @@ enum Const {
 public struct ManagementView<ViewModel>: View where ViewModel: ManagementViewModel {
     @ObservedObject public var model: ViewModel
 
+    private var syncStatus: StatusIndicator {
+        model.isSyncEnabled ? .on : .off
+    }
+
     public init(model: ViewModel) {
         self.model = model
     }
@@ -41,8 +45,13 @@ public struct ManagementView<ViewModel>: View where ViewModel: ManagementViewMod
             TextMenuItemHeader(UserText.sync)
                 .padding(.bottom, -22)
 
+            StatusIndicatorView(status: syncStatus, isLarge: true)
+
             if model.isSyncEnabled {
                 SyncEnabledView<ViewModel>()
+                    .environmentObject(model)
+            } else if model.isSimplifiedSyncSetupV2Enabled {
+                SyncSetupViewV2<ViewModel>()
                     .environmentObject(model)
             } else {
                 SyncSetupView<ViewModel>()
@@ -51,3 +60,20 @@ public struct ManagementView<ViewModel>: View where ViewModel: ManagementViewMod
         }
     }
 }
+
+#if DEBUG
+#Preview("Enabled") {
+    let devices = [
+        SyncDevice(kind: .current, name: "My Mac", id: "current-device"),
+        SyncDevice(kind: .desktop, name: "MacBook Pro", id: "desktop-device"),
+        SyncDevice(kind: .mobile, name: "iPhone", id: "mobile-device")
+    ]
+
+    return ScrollView {
+        ManagementView(model: PreviewManagementViewModel(isSyncEnabled: false, devices: devices))
+            .frame(width: 544)
+            .padding()
+    }
+    .frame(height: 800)
+}
+#endif

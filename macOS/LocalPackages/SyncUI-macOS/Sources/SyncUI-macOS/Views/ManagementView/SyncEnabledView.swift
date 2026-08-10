@@ -267,7 +267,7 @@ struct SyncEnabledView<ViewModel>: View where ViewModel: ManagementViewModel {
 }
 
 #if DEBUG
-#Preview {
+#Preview("Enabled") {
     let devices = [
         SyncDevice(kind: .current, name: "My Mac", id: "current-device"),
         SyncDevice(kind: .desktop, name: "MacBook Pro", id: "desktop-device"),
@@ -278,6 +278,24 @@ struct SyncEnabledView<ViewModel>: View where ViewModel: ManagementViewModel {
     return ScrollView {
         SyncEnabledView<PreviewManagementViewModel>()
             .environmentObject(PreviewManagementViewModel(isSyncEnabled: true, devices: devices))
+            .padding()
+    }
+    .frame(height: 800)
+}
+
+#Preview("Sync Paused") {
+    let model = PreviewManagementViewModel(
+        isSyncEnabled: true,
+        isSyncPaused: true,
+        syncPausedTitle: "Sync & Backup is Paused",
+        syncPausedMessage: "Your data is not currently syncing. Try again to resume Sync & Backup.",
+        syncPausedButtonTitle: "Try Again",
+        devices: [SyncDevice(kind: .current, name: "My Mac", id: "current-device")]
+    )
+
+    return ScrollView {
+        SyncEnabledView<PreviewManagementViewModel>()
+            .environmentObject(model)
             .padding()
     }
     .frame(height: 800)

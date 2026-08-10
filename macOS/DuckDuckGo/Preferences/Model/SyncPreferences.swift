@@ -200,6 +200,7 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
     @Published var isAppVersionNotSupported: Bool = true
     @Published var isAIChatSyncEnabled: Bool = false
     @Published var isAppRebranded: Bool = false
+    @Published var isSimplifiedSyncSetupV2Enabled: Bool = false
 
     private let syncPausedStateManager: any SyncPausedStateManaging
     let syncSettingsHandler: SyncSettingsViewHandling
@@ -304,6 +305,7 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
             .sink { [weak self] in
                 guard let self else { return }
                 self.isAIChatSyncEnabled = self.featureFlagger.isFeatureOn(.aiChatSync)
+                self.isSimplifiedSyncSetupV2Enabled = self.featureFlagger.isFeatureOn(.simplifiedSyncSetupV2)
             }
             .store(in: &cancellables)
 

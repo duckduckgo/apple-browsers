@@ -2,6 +2,7 @@ appId: com.duckduckgo.mobile.ios
 tags:
     - iphone
     - release
+    - floating_ui_swipe_hides_chrome
 name: floating_ui_swipe_hides_chrome
 
 ---

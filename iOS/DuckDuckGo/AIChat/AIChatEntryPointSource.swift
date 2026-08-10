@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import Core
 import PixelKit
 
 /// Fires as `m_aichat_entry_point`; the `m_` prefix plus the platform suffix are applied by PixelKit.
@@ -32,6 +33,22 @@ enum AIChatEntryPointPixel: PixelKitEvent, PixelKitEventWithCustomPrefix {
     var standardParameters: [PixelKitStandardParameter]? { nil }
 
     var namePrefix: String { "m_" }
+
+    /// Shared so entry paths outside `MainViewController` can report too. Prefer
+    /// `MainViewController.fireAIChatEntryPointPixel`, which also records the source for `origin`.
+    static func fire(source: AIChatEntryPointSource,
+                     duckAIEnabled: Bool,
+                     toggleEnabled: Bool,
+                     opensNewTab: Bool,
+                     hasPrompt: Bool) {
+        PixelKit.fire(AIChatEntryPointPixel.entryPoint, frequency: .dailyAndCount, withAdditionalParameters: [
+            PixelParameters.source: source.rawValue,
+            "duckai_enabled": String(duckAIEnabled),
+            "toggle_enabled": String(toggleEnabled),
+            "opens_new_tab": String(opensNewTab),
+            "has_prompt": String(hasPrompt)
+        ])
+    }
 }
 
 /// Where a Duck.ai entry began. Reported as `source` on `m_aichat_entry_point`;

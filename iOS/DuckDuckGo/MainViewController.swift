@@ -4110,6 +4110,12 @@ class MainViewController: UIViewController {
         Pixel.fire(pixel: pixel, withAdditionalParameters: pixelParameters)
     }
 
+    /// Mirrors `TabURLInterceptor`'s duck.ai condition: it cancels the navigation and
+    /// reopens Duck.ai itself, so callers must not also report that navigation.
+    var duckAINavigationIsIntercepted: Bool {
+        !(aichatFullModeFeature.isAvailable || DevicePlatform.isIpad)
+    }
+
     /// `source` has no default on purpose: the compiler enumerates every entry
     /// path, so a new Duck.ai entry point can't ship without attribution.
     func openAIChat(source: AIChatEntryPointSource,
@@ -4160,13 +4166,11 @@ class MainViewController: UIViewController {
     }
 
     func fireAIChatEntryPointPixel(source: AIChatEntryPointSource, opensNewTab: Bool, hasPrompt: Bool) {
-        PixelKit.fire(AIChatEntryPointPixel.entryPoint, frequency: .dailyAndCount, withAdditionalParameters: [
-            PixelParameters.source: source.rawValue,
-            "duckai_enabled": String(aiChatSettings.isAIChatEnabled),
-            "toggle_enabled": String(aiChatSettings.isAIChatSearchInputUserSettingsEnabled),
-            "opens_new_tab": String(opensNewTab),
-            "has_prompt": String(hasPrompt)
-        ])
+        AIChatEntryPointPixel.fire(source: source,
+                                   duckAIEnabled: aiChatSettings.isAIChatEnabled,
+                                   toggleEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
+                                   opensNewTab: opensNewTab,
+                                   hasPrompt: hasPrompt)
     }
 
     func onDuckAIVoiceModeRequested() {
@@ -4184,15 +4188,17 @@ class MainViewController: UIViewController {
 
     private func openAIChatInVoiceMode(fromDeepLink: Bool = false) {
         // Voice mode bypasses `openAIChat`, so fire the entry pixel directly.
-        fireAIChatEntryPointPixel(source: fromDeepLink ? .deepLinkOther : .voice, opensNewTab: false, hasPrompt: false)
+        let source: AIChatEntryPointSource = fromDeepLink ? .deepLinkOther : .voice
         if aichatFullModeFeature.isAvailable || DevicePlatform.isIpad {
-            openAIChatVoiceModeInTab(fromDeepLink: fromDeepLink)
+            // Fired inside, once the new-tab decision is known.
+            openAIChatVoiceModeInTab(source: source, fromDeepLink: fromDeepLink)
         } else {
+            fireAIChatEntryPointPixel(source: source, opensNewTab: false, hasPrompt: false)
             aiChatViewControllerManager.openAIChatVoiceMode(on: self)
         }
     }
 
-    private func openAIChatVoiceModeInTab(fromDeepLink: Bool = false) {
+    private func openAIChatVoiceModeInTab(source: AIChatEntryPointSource, fromDeepLink: Bool = false) {
         guard tabManager.current(createIfNeeded: true) != nil else {
             assertionFailure("openAIChatVoiceModeInTab: no current tab available")
             return
@@ -4206,6 +4212,7 @@ class MainViewController: UIViewController {
         // Voice always opens a new tab over existing content (chat included) — voice over a chat would replace the prior conversation. NTP stays in-place via `link != nil`.
         let hasContent = currentTab.tabModel.link != nil
         let openInNewTab = hasContent && (unifiedToggleInputFeature.isAvailable || fromDeepLink)
+        fireAIChatEntryPointPixel(source: source, opensNewTab: openInNewTab, hasPrompt: false)
 
         if openInNewTab {
             let voiceURL = currentTab.aiChatContentHandler.buildVoiceModeURL()
@@ -5537,13 +5544,13 @@ extension MainViewController: OmniBarDelegate {
         onAIChatPressed(prefilledText: nil)
     }
 
-    func onAIChatPressed(prefilledText: String?) {
+    func onAIChatPressed(prefilledText: String?, source: AIChatEntryPointSource = .addressBarIcon) {
         recordNewTabPageSessionAction { $0.tapDuckaiButton() }
         ViewHighlighter.hideAll()
         hideSuggestionTray()
 
         guard prefilledText == nil else {
-            openAIChatFromAddressBar(prefilledText: prefilledText)
+            openAIChatFromAddressBar(prefilledText: prefilledText, source: source)
             return
         }
 
@@ -5555,11 +5562,13 @@ extension MainViewController: OmniBarDelegate {
         case .contextualSheet:
             guard let currentTab else { return }
             omniBar.endEditing()
+            // The sheet bypasses `openAIChat`, so fire the entry pixel directly.
+            fireAIChatEntryPointPixel(source: .contextualChat, opensNewTab: false, hasPrompt: false)
             currentTab.presentContextualAIChatSheet(from: self)
         case .dismissContextualSurface:
             dismissContextualDuckAISurface()
         case .legacyDuckAI:
-            openAIChatFromAddressBar(prefilledText: nil)
+            openAIChatFromAddressBar(prefilledText: nil, source: source)
         }
     }
 
@@ -5576,7 +5585,7 @@ extension MainViewController: OmniBarDelegate {
         currentTab?.onShareAction(forLink: link, fromView: targetView)
     }
 
-    private func openAIChatFromAddressBar(prefilledText: String?) {
+    private func openAIChatFromAddressBar(prefilledText: String?, source: AIChatEntryPointSource = .addressBarIcon) {
 
         let isEditing: Bool
         let textFieldValue: String?
@@ -5594,10 +5603,10 @@ extension MainViewController: OmniBarDelegate {
             textFieldValue: textFieldValue,
             currentURL: currentTab?.url,
             openWithPromptAndSend: {
-                openAIChat(source: .addressBarIcon, $0, autoSend: true)
+                openAIChat(source: source, $0, autoSend: true)
             },
             open: {
-                openAIChat(source: .addressBarIcon)
+                openAIChat(source: source)
             }
         )
 
@@ -6560,6 +6569,8 @@ extension MainViewController: TabDelegate {
     }
 
     func tab(_ tab: TabViewController, didRequestAIChatForSelectedText text: String) {
+        // The sheet bypasses `openAIChat`, so fire the entry pixel directly.
+        fireAIChatEntryPointPixel(source: .contextualChat, opensNewTab: false, hasPrompt: true)
         Task { @MainActor in
             await tab.presentContextualAIChatSheet(withSelectedText: text, from: self)
         }

@@ -1191,12 +1191,26 @@ extension MainViewController {
     /// Fires when the user reaches Duck.ai by typing its address into the UTI, regardless of the
     /// Duck.ai setting; `duckai_enabled=false` isolates residual demand among users who turned it
     /// off. Mirrors `loadQuery`'s URL resolution so detection matches what actually gets navigated.
+    /// Skipped when `TabURLInterceptor` will cancel the navigation and report from there instead,
+    /// which would otherwise count one submission twice.
     private func fireDirectDuckAINavigationPixelIfNeeded(for query: String) {
+        guard !duckAINavigationIsIntercepted else { return }
         guard let url = URL.makeSearchURL(query: query,
                                           useUnifiedLogic: isUnifiedURLPredictionEnabled,
                                           queryContext: currentTab?.url),
               url.isDuckAIURL else { return }
         fireDirectDuckAINavigationPixel()
+        // `loadQuery` loads duck.ai in-tab without going through `openAIChat`, so this is the
+        // only place the `direct_url` entry can be reported when the interceptor does not run.
+        let decision = AIBoundaryNavigationDecision.forProgrammaticNavigation(
+            currentIsAI: currentTab?.isAITab == true,
+            currentHasContent: currentTab?.tabModel.link != nil,
+            targetIsAI: true,
+            unifiedToggleInputAvailable: unifiedToggleInputFeature.isAvailable
+        )
+        fireAIChatEntryPointPixel(source: .directURL,
+                                  opensNewTab: decision == .openInNewTab,
+                                  hasPrompt: false)
     }
 
     func fireDirectDuckAINavigationPixel() {
@@ -1311,7 +1325,7 @@ extension MainViewController: UnifiedToggleInputDelegate {
             }
             return
         }
-        onAIChatPressed(prefilledText: prompt)
+        onAIChatPressed(prefilledText: prompt, source: .addressBarShortcutChip)
     }
 
     func unifiedToggleInputDidChangeHeight() {

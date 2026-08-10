@@ -555,6 +555,7 @@ extension TabViewController {
                  action: { [weak self] in
             DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuNewChatTabTapped)
             Pixel.fire(pixel: .browsingMenuAIChat)
+            self?.fireAIChatEntryPointPixelForMenu()
             self?.openNewChatInNewTab()
         })
     }
@@ -568,8 +569,19 @@ extension TabViewController {
                  action: { [weak self] in
             DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuNewChatTabTapped)
             Pixel.fire(pixel: .browsingMenuAIChat)
+            self?.fireAIChatEntryPointPixelForMenu()
             self?.openNewChatInNewTab()
         })
+    }
+
+    /// `openNewChatInNewTab` loads a URL directly instead of going through
+    /// `openAIChat(source:)`, so the entry pixel has to be fired here.
+    private func fireAIChatEntryPointPixelForMenu() {
+        AIChatEntryPointPixel.fire(source: link == nil ? .browsingMenuNTP : .browsingMenuWebpage,
+                                   duckAIEnabled: aiChatSettings.isAIChatEnabled,
+                                   toggleEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
+                                   opensNewTab: true,
+                                   hasPrompt: false)
     }
 
     private func buildDuckAiChatsEntry(withSmallIcon smallIcon: Bool = true) -> BrowsingMenuEntry {

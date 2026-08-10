@@ -999,6 +999,8 @@ extension MainViewController: TabsBarDelegate {
         } else {
             // Route through TabViewController so the cold-restore `contextualChatURL`
             // is honored — presenting the coordinator directly would skip it and open a blank chat.
+            // The sheet bypasses `openAIChat`, so fire the entry pixel directly.
+            fireAIChatEntryPointPixel(source: .contextualChat, opensNewTab: false, hasPrompt: false)
             currentTab.presentContextualAIChatSheet(from: self)
         }
     }

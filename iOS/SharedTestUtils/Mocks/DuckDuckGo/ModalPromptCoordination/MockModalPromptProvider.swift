@@ -23,18 +23,14 @@ import UIKit
 @MainActor
 final class MockModalPromptProvider: ModalPromptProvider {
     var modalConfigurationToReturn: ModalPromptConfiguration?
-    var replacementModalConfigurationToReturn: ModalPromptConfiguration?
     var isEligibleToPresentResult: Bool?
-    var isPreparedModalPromptStillValidResult = true
-    var isRetainedPreparedModalPromptStillValidResult: Bool?
+    var isModalPromptStillValidForPresentationResult = true
 
     private(set) var didCallProvideModalPrompt = false
     private(set) var didCallDidPresentModal = false
     private(set) var provideModalPromptCallCount = 0
     private(set) var didPresentModalCallCount = 0
-    private(set) var isPreparedModalPromptStillValidCallCount = 0
-    private(set) var isRetainedPreparedModalPromptStillValidCallCount = 0
-    private(set) var provideReplacementModalPromptCallCount = 0
+    private(set) var isModalPromptStillValidForPresentationCallCount = 0
     private(set) var capturedIsOnboardingComplete: Bool?
 
     init(shouldReturnPrompt: Bool = true) {
@@ -57,22 +53,9 @@ final class MockModalPromptProvider: ModalPromptProvider {
         return isEligibleToPresentResult ?? isOnboardingComplete
     }
 
-    func isPreparedModalPromptStillValid(_ configuration: ModalPromptConfiguration) -> Bool {
-        isPreparedModalPromptStillValidCallCount += 1
-        guard configuration.viewController !== replacementModalConfigurationToReturn?.viewController else {
-            return true
-        }
-        return isPreparedModalPromptStillValidResult
-    }
-
-    func isRetainedPreparedModalPromptStillValid(_ configuration: ModalPromptConfiguration) -> Bool {
-        isRetainedPreparedModalPromptStillValidCallCount += 1
-        return isRetainedPreparedModalPromptStillValidResult ?? isPreparedModalPromptStillValid(configuration)
-    }
-
-    func provideReplacementModalPrompt(for invalidConfiguration: ModalPromptConfiguration) -> ModalPromptConfiguration? {
-        provideReplacementModalPromptCallCount += 1
-        return replacementModalConfigurationToReturn
+    func isModalPromptStillValidForPresentation(_ configuration: ModalPromptConfiguration) -> Bool {
+        isModalPromptStillValidForPresentationCallCount += 1
+        return isModalPromptStillValidForPresentationResult
     }
 
     func didPresentModal() {
@@ -85,13 +68,9 @@ final class MockModalPromptProvider: ModalPromptProvider {
         didCallDidPresentModal = false
         provideModalPromptCallCount = 0
         didPresentModalCallCount = 0
-        isPreparedModalPromptStillValidCallCount = 0
-        isRetainedPreparedModalPromptStillValidCallCount = 0
-        provideReplacementModalPromptCallCount = 0
+        isModalPromptStillValidForPresentationCallCount = 0
         capturedIsOnboardingComplete = nil
         isEligibleToPresentResult = nil
-        isPreparedModalPromptStillValidResult = true
-        isRetainedPreparedModalPromptStillValidResult = nil
-        replacementModalConfigurationToReturn = nil
+        isModalPromptStillValidForPresentationResult = true
     }
 }

@@ -68,7 +68,8 @@ final class NewAddressBarPickerModalPromptProvider: ModalPromptProvider {
         )
     }
 
-    func isPreparedModalPromptStillValid(_ configuration: ModalPromptConfiguration) -> Bool {
+    /// Rechecks the address-bar picker's current eligibility without constructing another prompt.
+    func isModalPromptStillValidForPresentation(_ configuration: ModalPromptConfiguration) -> Bool {
         validator.shouldDisplayNewAddressBarPicker()
     }
     

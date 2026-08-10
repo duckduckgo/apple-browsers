@@ -38,7 +38,8 @@ final class SubscriptionPromoModalPromptProvider: ModalPromptProvider {
         return ModalPromptConfiguration(viewController: prompt, animated: true)
     }
 
-    func isPreparedModalPromptStillValid(_ configuration: ModalPromptConfiguration) -> Bool {
+    /// Rechecks whether the subscription launch promo remains eligible without constructing another prompt.
+    func isModalPromptStillValidForPresentation(_ configuration: ModalPromptConfiguration) -> Bool {
         coordinator.shouldPresentLaunchPrompt()
     }
 

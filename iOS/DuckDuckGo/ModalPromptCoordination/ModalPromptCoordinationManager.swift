@@ -401,7 +401,7 @@ private extension ModalPromptCoordinationManager {
 
         let invalidPendingPreparedItem: PreparedItem?
         if let pendingPreparedItem {
-            if isRetainedPreparedItemStillValid(pendingPreparedItem) {
+            if isModalPromptStillValidForPresentation(pendingPreparedItem) {
                 return pendingPreparedItem
             }
             invalidPendingPreparedItem = pendingPreparedItem
@@ -423,7 +423,8 @@ private extension ModalPromptCoordinationManager {
             let configuration: ModalPromptConfiguration?
             if let invalidPendingPreparedItem,
                provider === invalidPendingPreparedItem.provider {
-                configuration = provider.provideReplacementModalPrompt(for: invalidPendingPreparedItem.configuration)
+                configuration = (provider as? any InvalidModalPromptReplacing)?
+                    .provideReplacementModalPrompt(for: invalidPendingPreparedItem.configuration)
             } else {
                 configuration = provider.provideModalPrompt()
             }
@@ -513,7 +514,7 @@ private extension ModalPromptCoordinationManager {
             return .alreadyAttached
         }
 
-        guard isPreparedItemStillValid(committedAttempt.preparedItem) else {
+        guard isModalPromptStillValidForPresentation(committedAttempt.preparedItem) else {
             return .terminalFailure
         }
 
@@ -529,16 +530,10 @@ private extension ModalPromptCoordinationManager {
         return .ready(route)
     }
 
-    private func isPreparedItemStillValid(_ preparedItem: PreparedItem) -> Bool {
+    private func isModalPromptStillValidForPresentation(_ preparedItem: PreparedItem) -> Bool {
         let isOnboardingComplete = onboardingStatusProvider.hasSeenOnboarding
         return preparedItem.provider.isEligibleToPresent(isOnboardingComplete: isOnboardingComplete)
-            && preparedItem.provider.isPreparedModalPromptStillValid(preparedItem.configuration)
-    }
-
-    private func isRetainedPreparedItemStillValid(_ preparedItem: PreparedItem) -> Bool {
-        let isOnboardingComplete = onboardingStatusProvider.hasSeenOnboarding
-        return preparedItem.provider.isEligibleToPresent(isOnboardingComplete: isOnboardingComplete)
-            && preparedItem.provider.isRetainedPreparedModalPromptStillValid(preparedItem.configuration)
+            && preparedItem.provider.isModalPromptStillValidForPresentation(preparedItem.configuration)
     }
 
     private func isIntendedHostAttached(_ intendedHost: UIViewController?) -> Bool {

@@ -36,11 +36,8 @@ final class DefaultBrowserModalPromptProvider: ModalPromptProvider {
         )
     }
 
-    func isPreparedModalPromptStillValid(_ configuration: ModalPromptConfiguration) -> Bool {
-        presenter.isPreparedDefaultModalPromptStillValid()
-    }
-
-    func isRetainedPreparedModalPromptStillValid(_ configuration: ModalPromptConfiguration) -> Bool {
-        presenter.isRetainedPreparedDefaultModalPromptStillValid()
+    /// Revalidates using the browser-status cache populated during selection, without another system status check.
+    func isModalPromptStillValidForPresentation(_ configuration: ModalPromptConfiguration) -> Bool {
+        presenter.isModalPromptStillValidForPresentation()
     }
 }

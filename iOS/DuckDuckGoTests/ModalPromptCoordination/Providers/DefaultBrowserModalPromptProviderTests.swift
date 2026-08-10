@@ -147,47 +147,33 @@ final class DefaultBrowserModalPromptProviderTests {
         #expect(configuration?.animated == true)
     }
 
-    @Test("Prepared Prompt Is Invalid After Browser Becomes Default")
-    func whenBrowserBecomesDefaultThenPreparedPromptIsInvalid() throws {
+    @Test("Prompt Is Invalid After Browser Becomes Default")
+    func whenBrowserBecomesDefaultThenPromptIsInvalid() throws {
         let mockViewController = UIViewController()
         let presenter = MockDefaultBrowserPromptPresenter(viewControllerToReturn: mockViewController)
         let sut = DefaultBrowserModalPromptProvider(presenter: presenter)
         let configuration = try #require(sut.provideModalPrompt())
-        presenter.isPreparedPromptStillValidResult = false
+        presenter.isModalPromptStillValidForPresentationResult = false
 
-        let isStillValid = sut.isPreparedModalPromptStillValid(configuration)
+        let isStillValid = sut.isModalPromptStillValidForPresentation(configuration)
 
         #expect(!isStillValid)
         #expect(presenter.makeCallCount == 1)
-        #expect(presenter.isPreparedPromptStillValidCallCount == 1)
+        #expect(presenter.isModalPromptStillValidForPresentationCallCount == 1)
     }
 
-    @Test("Prepared Prompt Remains Valid When Presenter Revalidation Succeeds")
-    func whenPresenterRevalidationSucceedsThenPreparedPromptRemainsValid() throws {
+    @Test("Prompt Remains Valid When Presenter Revalidation Succeeds")
+    func whenPresenterRevalidationSucceedsThenPromptRemainsValid() throws {
         let mockViewController = UIViewController()
         let presenter = MockDefaultBrowserPromptPresenter(viewControllerToReturn: mockViewController)
         let sut = DefaultBrowserModalPromptProvider(presenter: presenter)
         let configuration = try #require(sut.provideModalPrompt())
 
-        let isStillValid = sut.isPreparedModalPromptStillValid(configuration)
+        let isStillValid = sut.isModalPromptStillValidForPresentation(configuration)
 
         #expect(isStillValid)
         #expect(presenter.makeCallCount == 1)
-        #expect(presenter.isPreparedPromptStillValidCallCount == 1)
-    }
-
-    @Test("Retained Prepared Prompt Uses Cached Browser Revalidation")
-    func whenPreparedPromptWasRetainedThenProviderUsesCachedBrowserRevalidation() throws {
-        let presenter = MockDefaultBrowserPromptPresenter(viewControllerToReturn: UIViewController())
-        let sut = DefaultBrowserModalPromptProvider(presenter: presenter)
-        let configuration = try #require(sut.provideModalPrompt())
-        presenter.isRetainedPreparedPromptStillValidResult = false
-
-        let isStillValid = sut.isRetainedPreparedModalPromptStillValid(configuration)
-
-        #expect(!isStillValid)
-        #expect(presenter.isPreparedPromptStillValidCallCount == 0)
-        #expect(presenter.isRetainedPreparedPromptStillValidCallCount == 1)
+        #expect(presenter.isModalPromptStillValidForPresentationCallCount == 1)
     }
 }
 
@@ -195,12 +181,10 @@ final class DefaultBrowserModalPromptProviderTests {
 @MainActor
 public final class MockDefaultBrowserPromptPresenter: DefaultBrowserPromptPresenting {
     private let viewControllerToReturn: UIViewController?
-    public var isPreparedPromptStillValidResult = true
-    public var isRetainedPreparedPromptStillValidResult = true
+    public var isModalPromptStillValidForPresentationResult = true
     public private(set) var didCallMakePresentDefaultModalPrompt = false
     public private(set) var makeCallCount = 0
-    public private(set) var isPreparedPromptStillValidCallCount = 0
-    public private(set) var isRetainedPreparedPromptStillValidCallCount = 0
+    public private(set) var isModalPromptStillValidForPresentationCallCount = 0
 
     public init(viewControllerToReturn: UIViewController?) {
         self.viewControllerToReturn = viewControllerToReturn
@@ -212,13 +196,8 @@ public final class MockDefaultBrowserPromptPresenter: DefaultBrowserPromptPresen
         return viewControllerToReturn
     }
 
-    public func isPreparedDefaultModalPromptStillValid() -> Bool {
-        isPreparedPromptStillValidCallCount += 1
-        return isPreparedPromptStillValidResult
-    }
-
-    public func isRetainedPreparedDefaultModalPromptStillValid() -> Bool {
-        isRetainedPreparedPromptStillValidCallCount += 1
-        return isRetainedPreparedPromptStillValidResult
+    public func isModalPromptStillValidForPresentation() -> Bool {
+        isModalPromptStillValidForPresentationCallCount += 1
+        return isModalPromptStillValidForPresentationResult
     }
 }

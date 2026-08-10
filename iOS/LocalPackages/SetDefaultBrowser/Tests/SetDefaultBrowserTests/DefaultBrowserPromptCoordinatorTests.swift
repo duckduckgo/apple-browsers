@@ -73,26 +73,14 @@ final class DefaultBrowserPromptCoordinatorTests {
         #expect(result == .activeUserModal)
     }
 
-    @Test("Prepared Prompt Validity Is Delegated Without Selecting Another Prompt")
-    func preparedPromptValidityDelegatesToDecider() {
-        promptTypeDeciderMock.isPreparedPromptStillValidResult = false
+    @Test("Prompt Validity Is Delegated Without Selecting Another Prompt")
+    func promptValidityDelegatesToDecider() {
+        promptTypeDeciderMock.isModalPromptStillValidForPresentationResult = false
 
-        let isStillValid = sut.isPreparedPromptStillValid()
-
-        #expect(!isStillValid)
-        #expect(promptTypeDeciderMock.didCallIsPreparedPromptStillValid)
-        #expect(!promptTypeDeciderMock.didCallPromptType)
-    }
-
-    @Test("Retained Prepared Prompt Validity Delegates Cached Validation")
-    func retainedPreparedPromptValidityDelegatesToDecider() {
-        promptTypeDeciderMock.isRetainedPreparedPromptStillValidResult = false
-
-        let isStillValid = sut.isRetainedPreparedPromptStillValid()
+        let isStillValid = sut.isModalPromptStillValidForPresentation()
 
         #expect(!isStillValid)
-        #expect(promptTypeDeciderMock.didCallIsRetainedPreparedPromptStillValid)
-        #expect(!promptTypeDeciderMock.didCallIsPreparedPromptStillValid)
+        #expect(promptTypeDeciderMock.didCallIsModalPromptStillValidForPresentation)
         #expect(!promptTypeDeciderMock.didCallPromptType)
     }
 

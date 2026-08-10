@@ -72,12 +72,13 @@ final class WhatsNewCoordinatorTests {
         let firstConfiguration = try #require(coordinator.provideModalPrompt())
         mockRepository.setScheduledRemoteMessage(replacementMessage)
 
-        #expect(!coordinator.isPreparedModalPromptStillValid(firstConfiguration))
+        #expect(!coordinator.isModalPromptStillValidForPresentation(firstConfiguration))
 
-        let replacementConfiguration = try #require(coordinator.provideReplacementModalPrompt(for: firstConfiguration))
+        let replacingProvider: any InvalidModalPromptReplacing = coordinator
+        let replacementConfiguration = try #require(replacingProvider.provideReplacementModalPrompt(for: firstConfiguration))
 
         #expect(replacementConfiguration.viewController !== firstConfiguration.viewController)
-        #expect(coordinator.isPreparedModalPromptStillValid(replacementConfiguration))
+        #expect(coordinator.isModalPromptStillValidForPresentation(replacementConfiguration))
     }
 
     @Test(

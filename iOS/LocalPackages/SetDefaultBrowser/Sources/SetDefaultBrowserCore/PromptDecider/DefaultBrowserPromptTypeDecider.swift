@@ -56,32 +56,24 @@ package extension DefaultBrowserPromptType {
 }
 
 @MainActor
-package protocol DefaultBrowserPromptTypeDeciding {
+package protocol DefaultBrowserPromptTypeSelecting {
     func promptType() -> DefaultBrowserPromptType?
-    /// Revalidates prepared work from cached browser status without consuming selection state.
-    func isPreparedPromptStillValid() -> Bool
-    /// Revalidates retained work from cached browser status before retrying presentation.
-    /// This bounds the lifecycle to selection's one fresh check. The cache can be stale after an external
-    /// default-browser change, and missing cached status deliberately remains fail-open.
-    func isRetainedPreparedPromptStillValid() -> Bool
 }
 
-package extension DefaultBrowserPromptTypeDeciding {
-    func isPreparedPromptStillValid() -> Bool {
-        true
-    }
-
-    func isRetainedPreparedPromptStillValid() -> Bool {
-        isPreparedPromptStillValid()
-    }
+@MainActor
+package protocol DefaultBrowserPromptTypeDeciding: DefaultBrowserPromptTypeSelecting {
+    /// Revalidates prepared work from cached browser status without consuming selection state.
+    /// This bounds the lifecycle to selection's one fresh check. The cache can be stale after an external
+    /// default-browser change, and missing cached status deliberately remains fail-open.
+    func isModalPromptStillValidForPresentation() -> Bool
 }
 
 @MainActor
 package final class DefaultBrowserPromptTypeDecider: DefaultBrowserPromptTypeDeciding {
     private let featureFlagger: DefaultBrowserPromptFeatureFlagger
     private let store: DefaultBrowserPromptStorage
-    private let activeUserPromptDecider: DefaultBrowserPromptTypeDeciding
-    private let inactiveUserPromptDecider: DefaultBrowserPromptTypeDeciding
+    private let activeUserPromptDecider: DefaultBrowserPromptTypeSelecting
+    private let inactiveUserPromptDecider: DefaultBrowserPromptTypeSelecting
     private let defaultBrowserManager: DefaultBrowserManaging
     private let installDateProvider: () -> Date?
     private let dateProvider: () -> Date
@@ -89,8 +81,8 @@ package final class DefaultBrowserPromptTypeDecider: DefaultBrowserPromptTypeDec
     init(
         featureFlagger: DefaultBrowserPromptFeatureFlagger,
         store: DefaultBrowserPromptStorage,
-        activeUserPromptDecider: DefaultBrowserPromptTypeDeciding,
-        inactiveUserPromptDecider: DefaultBrowserPromptTypeDeciding,
+        activeUserPromptDecider: DefaultBrowserPromptTypeSelecting,
+        inactiveUserPromptDecider: DefaultBrowserPromptTypeSelecting,
         defaultBrowserManager: DefaultBrowserManaging,
         installDateProvider: @escaping () -> Date?,
         dateProvider: @escaping () -> Date
@@ -170,15 +162,11 @@ package final class DefaultBrowserPromptTypeDecider: DefaultBrowserPromptTypeDec
         return defaultBrowserManager.defaultBrowserInfo().isEligibleToShowDefaultBrowserPrompt() ? promptToShow : nil
     }
 
-    package func isPreparedPromptStillValid() -> Bool {
+    package func isModalPromptStillValidForPresentation() -> Bool {
         guard let storedInfo = defaultBrowserManager.storedDefaultBrowserInfo() else {
             return true
         }
         return storedInfo.isEligibleToShowDefaultBrowserPrompt()
-    }
-
-    package func isRetainedPreparedPromptStillValid() -> Bool {
-        isPreparedPromptStillValid()
     }
 
 }

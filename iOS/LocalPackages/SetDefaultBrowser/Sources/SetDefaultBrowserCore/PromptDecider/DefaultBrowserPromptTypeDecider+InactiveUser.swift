@@ -19,7 +19,7 @@
 
 extension DefaultBrowserPromptTypeDecider {
 
-    final class InactiveUser: DefaultBrowserPromptTypeDeciding {
+    final class InactiveUser: DefaultBrowserPromptTypeSelecting {
         private let featureFlagger: DefaultBrowserPromptInactiveUserFeatureFlagger
         private let store: DefaultBrowserPromptStorage
         private let userActivityProvider: DefaultBrowserPromptUserActivityProvider

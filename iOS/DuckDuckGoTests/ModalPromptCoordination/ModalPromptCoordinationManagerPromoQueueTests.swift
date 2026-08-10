@@ -160,6 +160,19 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
         #expect(!schedulerMock.didCallSchedule)
     }
 
+    @Test("Modal Prompt Provider Defaults Are Safe")
+    func modalPromptProviderDefaultsGateOnOnboardingAndPreservePreparedWork() {
+        let provider: any ModalPromptProvider = DefaultBehaviorModalPromptProvider()
+        let configuration = ModalPromptConfiguration(viewController: UIViewController())
+
+        #expect(!provider.isEligibleToPresent(isOnboardingComplete: false))
+        #expect(provider.isEligibleToPresent(isOnboardingComplete: true))
+        #expect(provider.isModalPromptStillValidForPresentation(configuration))
+
+        provider.didPresentModal()
+        #expect(provider.provideModalPrompt() != nil)
+    }
+
     @available(iOS 16, *)
     @Test("Same Lease Attempt Moves From Committed To Presentation Active", .timeLimit(.minutes(1)))
     func whenCoordinatedPromptIsSelectedThenSameAttemptIdentityMovesThroughPhases() throws {
@@ -557,9 +570,8 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
     @Test("Invalid Pending Prompt Is Replaced By Its Provider In Priority Order", .timeLimit(.minutes(1)))
     func whenPendingPromptBecomesInvalidThenRetrySelectsReplacementFromSameProvider() throws {
         cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
-        let provider = MockModalPromptProvider()
         let replacementRoot = UIViewController()
-        provider.replacementModalConfigurationToReturn = ModalPromptConfiguration(viewController: replacementRoot)
+        let provider = ReplacingModalPromptProvider(replacementRoot: replacementRoot)
         let lowerPriorityProvider = MockModalPromptProvider()
         sut = ModalPromptCoordinationManager(
             providers: [provider, lowerPriorityProvider],
@@ -570,7 +582,7 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
         let firstLease = try acquireModalLease()
         _ = sut.presentModalPromptIfNeeded(from: presenterMock, with: firstLease)
         sut.applicationDidEnterBackground()
-        provider.isPreparedModalPromptStillValidResult = false
+        provider.isInitialConfigurationValid = false
         sut.applicationDidBecomeActive()
 
         let retryLease = try acquireModalLease()
@@ -578,7 +590,7 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
 
         #expect(disposition == .retained)
         #expect(provider.provideModalPromptCallCount == 1)
-        #expect(provider.isPreparedModalPromptStillValidCallCount == 1)
+        #expect(provider.isModalPromptStillValidForPresentationCallCount == 1)
         #expect(provider.provideReplacementModalPromptCallCount == 1)
         #expect(lowerPriorityProvider.provideModalPromptCallCount == 0)
         #expect(!presenterMock.didCallPresent)
@@ -596,9 +608,7 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
     @Test("Invalid Pending Prompt Releases When No Other Provider Is Eligible", .timeLimit(.minutes(1)))
     func whenPendingPromptBecomesInvalidThenRetryDoesNotAskItForAnotherController() throws {
         cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
-        let provider = MockModalPromptProvider()
-        provider.isPreparedModalPromptStillValidResult = true
-        provider.isRetainedPreparedModalPromptStillValidResult = false
+        let provider = OrdinarySideEffectfulModalPromptProvider()
         sut = ModalPromptCoordinationManager(
             providers: [provider],
             cooldownManager: cooldownManagerMock,
@@ -608,6 +618,7 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
         let firstLease = try acquireModalLease()
         _ = sut.presentModalPromptIfNeeded(from: presenterMock, with: firstLease)
         sut.applicationDidEnterBackground()
+        provider.isModalPromptStillValidForPresentationResult = false
         sut.applicationDidBecomeActive()
 
         let retryLease = try acquireModalLease()
@@ -615,9 +626,7 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
 
         #expect(disposition == .released)
         #expect(provider.provideModalPromptCallCount == 1)
-        #expect(provider.isPreparedModalPromptStillValidCallCount == 0)
-        #expect(provider.isRetainedPreparedModalPromptStillValidCallCount == 1)
-        #expect(provider.provideReplacementModalPromptCallCount == 1)
+        #expect(provider.isModalPromptStillValidForPresentationCallCount == 1)
         #expect(!presenterMock.didCallPresent)
         #expect(!sut.shouldSuppressOtherSessionPromos)
         #expect(!promoQueueLeaseArbiter.snapshot.hasModalLease)
@@ -649,13 +658,49 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
         #expect(disposition == .retained)
         #expect(higherPriorityProvider.provideModalPromptCallCount == 1)
         #expect(pendingProvider.provideModalPromptCallCount == 1)
-        #expect(pendingProvider.isPreparedModalPromptStillValidCallCount == 1)
+        #expect(pendingProvider.isModalPromptStillValidForPresentationCallCount == 1)
         #expect(sut.modalAttemptPhase == .committed(retryLease.attemptIdentity))
 
         schedulerMock.executeScheduledBlock(includingCancelled: true)
         schedulerMock.executeScheduledBlock()
 
         #expect(presenterMock.capturedViewController === pendingRoot)
+    }
+
+    @available(iOS 16, *)
+    @Test("Delayed Fire And Pending Retry Share Presentation Validity Hook", .timeLimit(.minutes(1)))
+    func whenPresentationBecomesPendingThenTheSameValidityHookChecksFireAndRetry() throws {
+        cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
+        let provider = MockModalPromptProvider()
+        let preparedRoot = try #require(provider.modalConfigurationToReturn?.viewController)
+        sut = ModalPromptCoordinationManager(
+            providers: [provider],
+            cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            modalPromptScheduling: schedulerMock
+        )
+        let firstLease = try acquireModalLease()
+        _ = sut.presentModalPromptIfNeeded(from: presenterMock, with: firstLease)
+        presenterMock.presentedViewController = UIViewController()
+
+        schedulerMock.executeScheduledBlock()
+
+        #expect(provider.isModalPromptStillValidForPresentationCallCount == 1)
+        #expect(!promoQueueLeaseArbiter.snapshot.hasModalLease)
+        #expect(sut.shouldSuppressOtherSessionPromos)
+
+        presenterMock.presentedViewController = nil
+        let retryLease = try acquireModalLease()
+        let disposition = sut.presentModalPromptIfNeeded(from: presenterMock, with: retryLease)
+
+        #expect(disposition == .retained)
+        #expect(provider.isModalPromptStillValidForPresentationCallCount == 2)
+        #expect(provider.provideModalPromptCallCount == 1)
+
+        schedulerMock.executeScheduledBlock()
+
+        #expect(provider.isModalPromptStillValidForPresentationCallCount == 3)
+        #expect(presenterMock.capturedViewController === preparedRoot)
     }
 
     @available(iOS 16, *)
@@ -675,12 +720,12 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
         }
         let lease = try acquireModalLease()
         _ = sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
-        provider.isPreparedModalPromptStillValidResult = false
+        provider.isModalPromptStillValidForPresentationResult = false
 
         schedulerMock.executeScheduledBlock()
 
         #expect(provider.provideModalPromptCallCount == 1)
-        #expect(provider.isPreparedModalPromptStillValidCallCount == 1)
+        #expect(provider.isModalPromptStillValidForPresentationCallCount == 1)
         #expect(!presenterMock.didCallPresent)
         #expect(!provider.didCallDidPresentModal)
         #expect(!cooldownManagerMock.didCallRecordLastPromptPresentationTimestamp)
@@ -709,7 +754,7 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
 
         #expect(provider.provideModalPromptCallCount == 1)
         #expect(provider.capturedIsOnboardingComplete == false)
-        #expect(provider.isPreparedModalPromptStillValidCallCount == 0)
+        #expect(provider.isModalPromptStillValidForPresentationCallCount == 0)
         #expect(!presenterMock.didCallPresent)
         #expect(!sut.shouldSuppressOtherSessionPromos)
         #expect(!promoQueueLeaseArbiter.snapshot.hasModalLease)
@@ -921,6 +966,69 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
             promoType: .remoteMessage,
             promoID: "message"
         )
+    }
+}
+
+@MainActor
+private final class ReplacingModalPromptProvider: InvalidModalPromptReplacing {
+    var isInitialConfigurationValid = true
+
+    private(set) var provideModalPromptCallCount = 0
+    private(set) var isModalPromptStillValidForPresentationCallCount = 0
+    private(set) var provideReplacementModalPromptCallCount = 0
+
+    private let initialConfiguration = ModalPromptConfiguration(viewController: UIViewController())
+    private let replacementConfiguration: ModalPromptConfiguration
+
+    init(replacementRoot: UIViewController) {
+        replacementConfiguration = ModalPromptConfiguration(viewController: replacementRoot)
+    }
+
+    func provideModalPrompt() -> ModalPromptConfiguration? {
+        provideModalPromptCallCount += 1
+        return initialConfiguration
+    }
+
+    func isModalPromptStillValidForPresentation(_ configuration: ModalPromptConfiguration) -> Bool {
+        isModalPromptStillValidForPresentationCallCount += 1
+        if configuration.viewController === replacementConfiguration.viewController {
+            return true
+        }
+        return isInitialConfigurationValid
+    }
+
+    func provideReplacementModalPrompt(for invalidConfiguration: ModalPromptConfiguration) -> ModalPromptConfiguration? {
+        provideReplacementModalPromptCallCount += 1
+        return replacementConfiguration
+    }
+}
+
+@MainActor
+private final class DefaultBehaviorModalPromptProvider: ModalPromptProvider {
+
+    func provideModalPrompt() -> ModalPromptConfiguration? {
+        ModalPromptConfiguration(viewController: UIViewController())
+    }
+}
+
+/// An ordinary provider whose preparation has observable side effects and which deliberately does not opt in to replacement.
+@MainActor
+private final class OrdinarySideEffectfulModalPromptProvider: ModalPromptProvider {
+    var isModalPromptStillValidForPresentationResult = true
+
+    private(set) var provideModalPromptCallCount = 0
+    private(set) var isModalPromptStillValidForPresentationCallCount = 0
+
+    private let configuration = ModalPromptConfiguration(viewController: UIViewController())
+
+    func provideModalPrompt() -> ModalPromptConfiguration? {
+        provideModalPromptCallCount += 1
+        return configuration
+    }
+
+    func isModalPromptStillValidForPresentation(_ configuration: ModalPromptConfiguration) -> Bool {
+        isModalPromptStillValidForPresentationCallCount += 1
+        return isModalPromptStillValidForPresentationResult
     }
 }
 

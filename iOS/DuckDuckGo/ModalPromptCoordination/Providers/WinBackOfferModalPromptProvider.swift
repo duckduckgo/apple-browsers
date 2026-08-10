@@ -39,7 +39,8 @@ final class WinBackOfferModalPromptProvider: ModalPromptProvider {
         )
     }
 
-    func isPreparedModalPromptStillValid(_ configuration: ModalPromptConfiguration) -> Bool {
+    /// Rechecks whether the launch offer remains eligible without constructing another prompt.
+    func isModalPromptStillValidForPresentation(_ configuration: ModalPromptConfiguration) -> Bool {
         coordinator.shouldPresentLaunchPrompt()
     }
     

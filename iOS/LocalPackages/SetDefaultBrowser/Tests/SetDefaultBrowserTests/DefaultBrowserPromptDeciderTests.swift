@@ -70,75 +70,39 @@ final class DefaultBrowserPromptDeciderTests {
         #expect(!userTypeProviderMock.didCallCurrentUserType)
     }
 
-    @Test("Prepared Prompt Remains Valid When Stored Status Says Browser Is Not Default")
-    func preparedPromptIsValidWhenBrowserIsNotDefault() {
-        defaultBrowserManagerMock.storedInfoToReturn = makeDefaultBrowserContext(isDefaultBrowser: false)
-        makeSUT()
-
-        let isStillValid = sut.isPreparedPromptStillValid()
-
-        #expect(isStillValid)
-        #expect(defaultBrowserManagerMock.didCallStoredDefaultBrowserInfo)
-        #expect(!defaultBrowserManagerMock.didCallDefaultBrowserInfo)
-    }
-
-    @Test("Prepared Prompt Is Invalid When Stored Status Says Browser Is Default")
-    func preparedPromptIsInvalidWhenBrowserIsDefault() {
-        defaultBrowserManagerMock.storedInfoToReturn = makeDefaultBrowserContext(isDefaultBrowser: true)
-        makeSUT()
-
-        let isStillValid = sut.isPreparedPromptStillValid()
-
-        #expect(!isStillValid)
-        #expect(defaultBrowserManagerMock.didCallStoredDefaultBrowserInfo)
-        #expect(!defaultBrowserManagerMock.didCallDefaultBrowserInfo)
-    }
-
-    @Test("Prepared Prompt Remains Valid When No Status Is Stored")
-    func preparedPromptIsValidWhenNoStatusIsStored() {
-        defaultBrowserManagerMock.storedInfoToReturn = nil
-        makeSUT()
-
-        let isStillValid = sut.isPreparedPromptStillValid()
-
-        #expect(isStillValid)
-        #expect(defaultBrowserManagerMock.didCallStoredDefaultBrowserInfo)
-        #expect(!defaultBrowserManagerMock.didCallDefaultBrowserInfo)
-    }
-
-    @Test("Retained Prepared Prompt Uses Cached Eligible Status")
-    func retainedPreparedPromptIsValidWhenCachedBrowserStatusIsNotDefault() {
+    @Test("Prompt Remains Valid When Cached Status Says Browser Is Not Default")
+    func promptIsValidWhenCachedBrowserStatusIsNotDefault() {
         defaultBrowserManagerMock.storedInfoToReturn = makeDefaultBrowserContext(isDefaultBrowser: false)
         defaultBrowserManagerMock.resultToReturn = .successful(isDefaultBrowser: true)
         makeSUT()
 
-        let isStillValid = sut.isRetainedPreparedPromptStillValid()
+        let isStillValid = sut.isModalPromptStillValidForPresentation()
 
         #expect(isStillValid)
         #expect(defaultBrowserManagerMock.didCallStoredDefaultBrowserInfo)
         #expect(!defaultBrowserManagerMock.didCallDefaultBrowserInfo)
     }
 
-    @Test("Retained Prepared Prompt Uses Cached Ineligible Status")
-    func retainedPreparedPromptIsInvalidWhenCachedBrowserStatusIsDefault() {
+    @Test("Prompt Is Invalid When Cached Status Says Browser Is Default")
+    func promptIsInvalidWhenCachedBrowserStatusIsDefault() {
         defaultBrowserManagerMock.storedInfoToReturn = makeDefaultBrowserContext(isDefaultBrowser: true)
         defaultBrowserManagerMock.resultToReturn = .successful(isDefaultBrowser: false)
         makeSUT()
 
-        let isStillValid = sut.isRetainedPreparedPromptStillValid()
+        let isStillValid = sut.isModalPromptStillValidForPresentation()
 
         #expect(!isStillValid)
         #expect(defaultBrowserManagerMock.didCallStoredDefaultBrowserInfo)
         #expect(!defaultBrowserManagerMock.didCallDefaultBrowserInfo)
     }
 
-    @Test("Retained Prepared Prompt Remains Valid When No Status Is Cached")
-    func retainedPreparedPromptIsValidWhenNoBrowserStatusIsCached() {
+    @Test("Prompt Remains Valid When No Status Is Cached")
+    func promptIsValidWhenNoBrowserStatusIsCached() {
         defaultBrowserManagerMock.storedInfoToReturn = nil
         defaultBrowserManagerMock.resultToReturn = .successful(isDefaultBrowser: true)
         makeSUT()
 
-        let isStillValid = sut.isRetainedPreparedPromptStillValid()
+        let isStillValid = sut.isModalPromptStillValidForPresentation()
 
         #expect(isStillValid)
         #expect(defaultBrowserManagerMock.didCallStoredDefaultBrowserInfo)
@@ -150,9 +114,9 @@ final class DefaultBrowserPromptDeciderTests {
         let eligibleCachedStatus = makeDefaultBrowserContext(isDefaultBrowser: false)
         defaultBrowserManagerMock.storedInfoToReturn = eligibleCachedStatus
         defaultBrowserManagerMock.resultToReturn = .failure(.rateLimitReached(updatedStoredInfo: eligibleCachedStatus))
-        let inactiveUserPromptDecider = MockDefaultBrowserPromptTypeDecider()
+        let inactiveUserPromptDecider = MockDefaultBrowserPromptTypeSelector()
         inactiveUserPromptDecider.promptToReturn = .inactive
-        let activeUserPromptDecider = MockDefaultBrowserPromptTypeDecider()
+        let activeUserPromptDecider = MockDefaultBrowserPromptTypeSelector()
         sut = DefaultBrowserPromptTypeDecider(
             featureFlagger: featureFlaggerMock,
             store: storeMock,
@@ -170,13 +134,13 @@ final class DefaultBrowserPromptDeciderTests {
         #expect(!defaultBrowserManagerMock.didCallStoredDefaultBrowserInfo)
     }
 
-    @Test("Check Inactive User Modal Has Priority Over Active User Modal")
-    func checkInactiveUserModalIsCheckedBeforeActiveUser() {
+    @Test("Composite Decider Accepts Selection-Only Children And Preserves Priority")
+    func compositeDeciderAcceptsSelectionOnlyChildrenAndChecksInactiveUserFirst() {
         // GIVEN
         defaultBrowserManagerMock.resultToReturn = .successful(isDefaultBrowser: false)
-        let inactiveUserPromptDecider = MockDefaultBrowserPromptTypeDecider()
+        let inactiveUserPromptDecider = MockDefaultBrowserPromptTypeSelector()
         inactiveUserPromptDecider.promptToReturn = .inactive
-        let activeUserPromptDecider = MockDefaultBrowserPromptTypeDecider()
+        let activeUserPromptDecider = MockDefaultBrowserPromptTypeSelector()
         activeUserPromptDecider.promptToReturn = .active(.firstModal)
         let installDate = Date(timeIntervalSince1970: 1750739150) // Tuesday, 24 June 2025 12:00:00 AM (GMT)
         sut = DefaultBrowserPromptTypeDecider(
@@ -200,9 +164,9 @@ final class DefaultBrowserPromptDeciderTests {
     func checkActiveUserModalIsReturnedWhenInactiveUserModalIsNil() {
         // GIVEN
         defaultBrowserManagerMock.resultToReturn = .successful(isDefaultBrowser: false)
-        let inactiveUserPromptDecider = MockDefaultBrowserPromptTypeDecider()
+        let inactiveUserPromptDecider = MockDefaultBrowserPromptTypeSelector()
         inactiveUserPromptDecider.promptToReturn = nil
-        let activeUserPromptDecider = MockDefaultBrowserPromptTypeDecider()
+        let activeUserPromptDecider = MockDefaultBrowserPromptTypeSelector()
         activeUserPromptDecider.promptToReturn = .active(.firstModal)
         let installDate = Date(timeIntervalSince1970: 1750739150) // Tuesday, 24 June 2025 12:00:00 AM (GMT)
         sut = DefaultBrowserPromptTypeDecider(
@@ -226,9 +190,9 @@ final class DefaultBrowserPromptDeciderTests {
     func checkModalIsNilWhenInactiveAndActiveUserModalIsNil() {
         // GIVEN
         defaultBrowserManagerMock.resultToReturn = .successful(isDefaultBrowser: false)
-        let inactiveUserPromptDecider = MockDefaultBrowserPromptTypeDecider()
+        let inactiveUserPromptDecider = MockDefaultBrowserPromptTypeSelector()
         inactiveUserPromptDecider.promptToReturn = nil
-        let activeUserPromptDecider = MockDefaultBrowserPromptTypeDecider()
+        let activeUserPromptDecider = MockDefaultBrowserPromptTypeSelector()
         activeUserPromptDecider.promptToReturn = nil
         let installDate = Date(timeIntervalSince1970: 1750739150) // Tuesday, 24 June 2025 12:00:00 AM (GMT)
         sut = DefaultBrowserPromptTypeDecider(
@@ -252,9 +216,9 @@ final class DefaultBrowserPromptDeciderTests {
     func checkModalIsNilWhenInactiveModalShouldBePromptedButBrowserAlreadyIsDefault() {
         // GIVEN
         defaultBrowserManagerMock.resultToReturn = .successful(isDefaultBrowser: true)
-        let inactiveUserPromptDecider = MockDefaultBrowserPromptTypeDecider()
+        let inactiveUserPromptDecider = MockDefaultBrowserPromptTypeSelector()
         inactiveUserPromptDecider.promptToReturn = .inactive
-        let activeUserPromptDecider = MockDefaultBrowserPromptTypeDecider()
+        let activeUserPromptDecider = MockDefaultBrowserPromptTypeSelector()
         activeUserPromptDecider.promptToReturn = .active(.firstModal)
         let installDate = Date(timeIntervalSince1970: 1750739150) // Tuesday, 24 June 2025 12:00:00 AM (GMT)
         sut = DefaultBrowserPromptTypeDecider(
@@ -284,9 +248,9 @@ final class DefaultBrowserPromptDeciderTests {
     func checkModalIsNilWhenInactiveAndActiveUserModalIsNil(_ promptType: DefaultBrowserPromptType) {
         // GIVEN
         defaultBrowserManagerMock.resultToReturn = .successful(isDefaultBrowser: true)
-        let inactiveUserPromptDecider = MockDefaultBrowserPromptTypeDecider()
+        let inactiveUserPromptDecider = MockDefaultBrowserPromptTypeSelector()
         inactiveUserPromptDecider.promptToReturn = nil
-        let activeUserPromptDecider = MockDefaultBrowserPromptTypeDecider()
+        let activeUserPromptDecider = MockDefaultBrowserPromptTypeSelector()
         activeUserPromptDecider.promptToReturn = promptType
         let installDate = Date(timeIntervalSince1970: 1750739150) // Tuesday, 24 June 2025 12:00:00 AM (GMT)
         sut = DefaultBrowserPromptTypeDecider(

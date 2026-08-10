@@ -99,17 +99,14 @@ final class WhatsNewCoordinator: NSObject, ModalPromptProvider {
         )
     }
 
-    func isPreparedModalPromptStillValid(_ configuration: ModalPromptConfiguration) -> Bool {
+    /// Scheduled prompts remain valid only while the prepared message is still scheduled; on-demand prompts remain valid.
+    func isModalPromptStillValidForPresentation(_ configuration: ModalPromptConfiguration) -> Bool {
         guard displayContext == .scheduled,
               let preparedMessageID = remoteMessage?.id else {
             return true
         }
 
         return repository.fetchScheduledMessage()?.id == preparedMessageID
-    }
-
-    func provideReplacementModalPrompt(for invalidConfiguration: ModalPromptConfiguration) -> ModalPromptConfiguration? {
-        provideModalPrompt()
     }
 
     func didPresentModal() {
@@ -120,6 +117,15 @@ final class WhatsNewCoordinator: NSObject, ModalPromptProvider {
         Task {
             await markMessageAsShown()
         }
+    }
+}
+
+// MARK: - InvalidModalPromptReplacing
+
+extension WhatsNewCoordinator: InvalidModalPromptReplacing {
+
+    func provideReplacementModalPrompt(for invalidConfiguration: ModalPromptConfiguration) -> ModalPromptConfiguration? {
+        provideModalPrompt()
     }
 }
 

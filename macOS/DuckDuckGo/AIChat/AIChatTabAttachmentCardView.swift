@@ -232,7 +232,7 @@ final class AIChatTabAttachmentCardView: NSView {
     // MARK: - Appearance
 
     private func updateAppearance() {
-        NSAppearance.withAppAppearance {
+        effectiveAppearance.performAsCurrentDrawingAppearance {
             let surfaceColor = NSColor(designSystemColor: .surfaceSecondary)
             let removeButtonBackgroundColor = NSColor(named: Constants.removeButtonBackgroundColorName) ?? .white
             let removeButtonIconColor = NSColor(named: Constants.removeButtonIconColorName) ?? .black
@@ -327,7 +327,7 @@ private final class AIChatTabPagePreviewView: NSView {
     }
 
     private func updateAppearance() {
-        NSAppearance.withAppAppearance {
+        effectiveAppearance.performAsCurrentDrawingAppearance {
             // A subtler tint than the surrounding card surface so the thumbnail reads as a nested
             // page preview rather than a flat solid block.
             let backgroundColor = NSColor(designSystemColor: .surfaceTertiary)

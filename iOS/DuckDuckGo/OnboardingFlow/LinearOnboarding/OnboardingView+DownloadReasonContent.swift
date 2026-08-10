@@ -18,6 +18,7 @@
 //
 
 import DuckUI
+import Lottie
 import Onboarding
 import SwiftUI
 import UIComponents
@@ -129,7 +130,7 @@ private struct DownloadReasonGrid: View {
             ForEach(rowAndColumns, id: \.self) { row in
                 HStack(spacing: Metrics.itemSpacing) {
                     ForEach(row, id: \.self) { reason in
-                        DownloadReasonButton(icon: reason.icon, title: reason.title, isSelected: reason == selectedItem) {
+                        DownloadReasonButton(animation: reason.animation, title: reason.title, isSelected: reason == selectedItem) {
                             onSelect(reason)
                         }
                     }
@@ -165,18 +166,26 @@ private extension DownloadReasonGrid {
 
         @Environment(\.onboardingTheme) private var onboardingTheme
         @Environment(\.colorScheme) private var colorScheme
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-        let icon: OnboardingImageResource
+        @State private var isPlaying = false
+
+        let animation: OnboardingDownloadReasonContent.Animation
         let title: String
         let isSelected: Bool
         let action: () -> Void
 
         var body: some View {
             VStack(alignment: .center, spacing: Metrics.contentVerticalSpacing) {
-                Image(icon)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: Metrics.imageSize.width, height: Metrics.imageSize.height)
+                // The pictogram rests on its last frame (a fully-drawn icon), then replays
+                // from the start each time the tile is tapped. Reduce Motion keeps it frozen.
+                Lottie.LottieView {
+                    try await DotLottieFile.asset(named: animation.rawValue)
+                }
+                .playbackMode(playbackMode)
+                .animationDidFinish { _ in isPlaying = false }
+                .resizable()
+                .frame(width: Metrics.imageSize.width, height: Metrics.imageSize.height)
 
                 Text(title)
                     .foregroundColor(onboardingTheme.colorPalette.textPrimary)
@@ -193,8 +202,19 @@ private extension DownloadReasonGrid {
             .shadow(color: Metrics.outerShadowColor, radius: Metrics.outerShadowRadius, x: Metrics.outerShadowOffset.x, y: Metrics.outerShadowOffset.y)
             .overlay(overlay)
             .onTapGesture {
+                // Fires on touch-up inside; cancels if the touch becomes a scroll.
+                if !reduceMotion {
+                    isPlaying = true
+                }
                 action()
             }
+        }
+
+        private var playbackMode: LottiePlaybackMode {
+            guard !reduceMotion else { return .paused(at: .progress(1)) }
+            return isPlaying
+                ? .playing(.fromProgress(0, toProgress: 1, loopMode: .playOnce))
+                : .paused(at: .progress(1))
         }
 
         @ViewBuilder

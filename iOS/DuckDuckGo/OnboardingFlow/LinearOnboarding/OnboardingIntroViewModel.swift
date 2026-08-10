@@ -342,6 +342,9 @@ final class OnboardingIntroViewModel: ObservableObject {
     }
 
     func openAIChatFromOnboarding(prompt: String?, autoSend: Bool) {
+        // Record that the user took the AI route at the Search/Duck.ai junction, so the end-of-journey step
+        // shows the standard completion instead of the "Try Duck.ai" nudge (they already tried AI).
+        onboardingSearchExperienceProvider.storeDidStartAIChatDuringOnboarding(true)
         onOpenAIChatFromOnboarding?(prompt, autoSend)
     }
 

@@ -207,6 +207,38 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         super.tearDown()
     }
 
+    // MARK: - attachSelection Tests
+
+    @MainActor
+    func testAttachSelectionAttachesAndPresentsTheSheet() async {
+        await sut.attachSelection(text: "selected text", url: URL(string: "https://example.com"), faviconBase64: nil, from: mockPresentingVC)
+
+        XCTAssertEqual(sut.sessionState.attachedSelections.map(\.content), ["selected text"])
+        XCTAssertNotNil(sut.sheetViewController)
+    }
+
+    /// Reading a selection suspends, so two taps on the omnibar icon can both reach here with the same
+    /// text. Each would otherwise mint its own id and burn a second cap slot on one passage.
+    @MainActor
+    func testAttachingTheSameSelectionTwiceAttachesItOnce() async {
+        let url = URL(string: "https://example.com")
+
+        await sut.attachSelection(text: "selected text", url: url, faviconBase64: nil, from: mockPresentingVC)
+        await sut.attachSelection(text: "selected text", url: url, faviconBase64: nil, from: mockPresentingVC)
+
+        XCTAssertEqual(sut.sessionState.attachedSelections.count, 1)
+    }
+
+    /// Attaching a selection must not cost the user the conversation they already had.
+    @MainActor
+    func testAttachSelectionRestoresThePersistedChat() async {
+        let restoreURL = URL(string: "https://duckduckgo.com/?chatID=abc")!
+
+        await sut.attachSelection(text: "selected text", url: URL(string: "https://example.com"), faviconBase64: nil, restoreURL: restoreURL, from: mockPresentingVC)
+
+        XCTAssertEqual(sut.sessionState.contextualChatURL, restoreURL)
+    }
+
     // MARK: - presentSheet Tests
 
     @MainActor

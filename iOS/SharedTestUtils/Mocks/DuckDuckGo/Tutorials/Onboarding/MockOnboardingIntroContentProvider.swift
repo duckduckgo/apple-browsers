@@ -53,10 +53,10 @@ extension OnboardingDownloadReasonContent {
         title: "Download Reason Title",
         message: "Download Reason Message",
         options: [
-            .init(reason: .browserPrivately, icon: .init(name: "", bundle: .main), title: "Search and browse privately"),
-            .init(reason: .privateAIChat, icon: .init(name: "", bundle: .main), title: "Chat with AI privately"),
-            .init(reason: .noAI, icon: .init(name: "", bundle: .main), title: "Remove AI from search results"),
-            .init(reason: .blockAds, icon: .init(name: "", bundle: .main), title: "Block ads and pop-ups")
+            .init(reason: .browserPrivately, animation: .search, title: "Search and browse privately"),
+            .init(reason: .privateAIChat, animation: .duckAIChat, title: "Chat with AI privately"),
+            .init(reason: .noAI, animation: .noAI, title: "Remove AI from search results"),
+            .init(reason: .blockAds, animation: .imageSweep, title: "Block ads and pop-ups")
         ],
         primaryCTA: "Download Reason Primary",
         daxAnimation: .wingBottom

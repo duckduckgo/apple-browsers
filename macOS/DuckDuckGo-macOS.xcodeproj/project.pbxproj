@@ -1237,6 +1237,12 @@
 		3785F6EE2EA6520400AF66E9 /* SuggestionLoadingDeciderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3785F6EA2EA651FE00AF66E9 /* SuggestionLoadingDeciderTests.swift */; };
 		378CA39F2FBC79290043CF38 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 378CA39E2FBC79290043CF38 /* AppIcon.icon */; };
 		378CA3A02FBC79290043CF38 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 378CA39E2FBC79290043CF38 /* AppIcon.icon */; };
+		ED314EC1301CC10E00D1A0A0 /* AppIcon-Debug.icon in Resources */ = {isa = PBXBuildFile; fileRef = ED314EC0301CC10E00D1A0A0 /* AppIcon-Debug.icon */; };
+		ED314EC2301CC10E00D1A0A0 /* AppIcon-Debug.icon in Resources */ = {isa = PBXBuildFile; fileRef = ED314EC0301CC10E00D1A0A0 /* AppIcon-Debug.icon */; };
+		ED314EC8301CC10E00D1A0A0 /* AppIcon-Alpha.icon in Resources */ = {isa = PBXBuildFile; fileRef = ED314EC3301CC10E00D1A0A0 /* AppIcon-Alpha.icon */; };
+		ED314EC9301CC10E00D1A0A0 /* AppIcon-Alpha.icon in Resources */ = {isa = PBXBuildFile; fileRef = ED314EC3301CC10E00D1A0A0 /* AppIcon-Alpha.icon */; };
+		ED314ECA301CC10E00D1A0A0 /* AppIcon-Review.icon in Resources */ = {isa = PBXBuildFile; fileRef = ED314EC4301CC10E00D1A0A0 /* AppIcon-Review.icon */; };
+		ED314ECB301CC10E00D1A0A0 /* AppIcon-Review.icon in Resources */ = {isa = PBXBuildFile; fileRef = ED314EC4301CC10E00D1A0A0 /* AppIcon-Review.icon */; };
 		378F44E429B4BDE900899924 /* SwiftUIExtensions in Frameworks */ = {isa = PBXBuildFile; productRef = 378F44E329B4BDE900899924 /* SwiftUIExtensions */; };
 		378F44E629B4BDEE00899924 /* SwiftUIExtensions in Frameworks */ = {isa = PBXBuildFile; productRef = 378F44E529B4BDEE00899924 /* SwiftUIExtensions */; };
 		378F44EB29B4C73E00899924 /* ViewExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 378F44EA29B4C73E00899924 /* ViewExtension.swift */; };
@@ -2771,8 +2777,6 @@
 		9D9AE86E2AA76D1F0026E7DC /* LoginItem+NetworkProtection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D9AE8682AA76CDC0026E7DC /* LoginItem+NetworkProtection.swift */; };
 		9D9AE91D2AAA3B450026E7DC /* DuckDuckGoDBPBackgroundAgentAppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D9AE9152AAA3B450026E7DC /* DuckDuckGoDBPBackgroundAgentAppDelegate.swift */; };
 		9D9AE91E2AAA3B450026E7DC /* DuckDuckGoDBPBackgroundAgentAppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D9AE9152AAA3B450026E7DC /* DuckDuckGoDBPBackgroundAgentAppDelegate.swift */; };
-		9D9AE91F2AAA3B450026E7DC /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9D9AE9162AAA3B450026E7DC /* Assets.xcassets */; };
-		9D9AE9202AAA3B450026E7DC /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9D9AE9162AAA3B450026E7DC /* Assets.xcassets */; };
 		9D9AE9212AAA3B450026E7DC /* UserText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D9AE9172AAA3B450026E7DC /* UserText.swift */; };
 		9D9AE9222AAA3B450026E7DC /* UserText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D9AE9172AAA3B450026E7DC /* UserText.swift */; };
 		9D9DE5732C63AA0700D20B15 /* AppKitExtensions in Frameworks */ = {isa = PBXBuildFile; productRef = 9D9DE5722C63AA0700D20B15 /* AppKitExtensions */; };
@@ -4317,6 +4321,22 @@
 		DBDE0002000000000000BDE0 /* NavigationPixelNavigationResponderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBDE0001000000000000BDE0 /* NavigationPixelNavigationResponderTests.swift */; };
 		DBDE0003000000000000BDE0 /* NavigationPixelNavigationResponderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBDE0001000000000000BDE0 /* NavigationPixelNavigationResponderTests.swift */; };
 		DD64C09B3FB444E5878C0D31 /* MockExperimentActionPixelStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17FCC743A88243F0AEF8B22D /* MockExperimentActionPixelStore.swift */; };
+		DD7A0101301D500100000001 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 378CA39E2FBC79290043CF38 /* AppIcon.icon */; };
+		DD7A0101301D500100000002 /* AppIcon-Debug.icon in Resources */ = {isa = PBXBuildFile; fileRef = ED314EC0301CC10E00D1A0A0 /* AppIcon-Debug.icon */; };
+		DD7A0101301D500100000003 /* AppIcon-Review.icon in Resources */ = {isa = PBXBuildFile; fileRef = ED314EC4301CC10E00D1A0A0 /* AppIcon-Review.icon */; };
+		DD7A0101301D500100000004 /* AppIcon-Alpha.icon in Resources */ = {isa = PBXBuildFile; fileRef = ED314EC3301CC10E00D1A0A0 /* AppIcon-Alpha.icon */; };
+		DD7A0102301D500100000001 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 378CA39E2FBC79290043CF38 /* AppIcon.icon */; };
+		DD7A0102301D500100000002 /* AppIcon-Debug.icon in Resources */ = {isa = PBXBuildFile; fileRef = ED314EC0301CC10E00D1A0A0 /* AppIcon-Debug.icon */; };
+		DD7A0102301D500100000003 /* AppIcon-Review.icon in Resources */ = {isa = PBXBuildFile; fileRef = ED314EC4301CC10E00D1A0A0 /* AppIcon-Review.icon */; };
+		DD7A0102301D500100000004 /* AppIcon-Alpha.icon in Resources */ = {isa = PBXBuildFile; fileRef = ED314EC3301CC10E00D1A0A0 /* AppIcon-Alpha.icon */; };
+		DD7A0103301D500100000001 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 378CA39E2FBC79290043CF38 /* AppIcon.icon */; };
+		DD7A0103301D500100000002 /* AppIcon-Debug.icon in Resources */ = {isa = PBXBuildFile; fileRef = ED314EC0301CC10E00D1A0A0 /* AppIcon-Debug.icon */; };
+		DD7A0103301D500100000003 /* AppIcon-Review.icon in Resources */ = {isa = PBXBuildFile; fileRef = ED314EC4301CC10E00D1A0A0 /* AppIcon-Review.icon */; };
+		DD7A0103301D500100000004 /* AppIcon-Alpha.icon in Resources */ = {isa = PBXBuildFile; fileRef = ED314EC3301CC10E00D1A0A0 /* AppIcon-Alpha.icon */; };
+		DD7A0104301D500100000001 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 378CA39E2FBC79290043CF38 /* AppIcon.icon */; };
+		DD7A0104301D500100000002 /* AppIcon-Debug.icon in Resources */ = {isa = PBXBuildFile; fileRef = ED314EC0301CC10E00D1A0A0 /* AppIcon-Debug.icon */; };
+		DD7A0104301D500100000003 /* AppIcon-Review.icon in Resources */ = {isa = PBXBuildFile; fileRef = ED314EC4301CC10E00D1A0A0 /* AppIcon-Review.icon */; };
+		DD7A0104301D500100000004 /* AppIcon-Alpha.icon in Resources */ = {isa = PBXBuildFile; fileRef = ED314EC3301CC10E00D1A0A0 /* AppIcon-Alpha.icon */; };
 		DDBB9E343D3A8AA3C0A9FBF7 /* AIChatDebugServer in Frameworks */ = {isa = PBXBuildFile; productRef = 30EF23C27554D957E2FCC6EE /* AIChatDebugServer */; };
 		DE5427713AC642CE9E29303C /* TabContentDisplayTitleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6308141E2A1B48C8B5FC059A /* TabContentDisplayTitleTests.swift */; };
 		DFE9DC288642264669587656 /* WebViewUserAgentProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAAA013D5BF54C0C260E784E /* WebViewUserAgentProvider.swift */; };
@@ -5354,6 +5374,9 @@
 		378B58C8295CF9A7002C0CC0 /* IntegrationTests.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = IntegrationTests.xcconfig; sourceTree = "<group>"; };
 		378B58CD295ECA75002C0CC0 /* DuckDuckGo.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = DuckDuckGo.xcconfig; sourceTree = "<group>"; };
 		378CA39E2FBC79290043CF38 /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = AppIcon.icon; sourceTree = "<group>"; };
+		ED314EC0301CC10E00D1A0A0 /* AppIcon-Debug.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = "AppIcon-Debug.icon"; sourceTree = "<group>"; };
+		ED314EC3301CC10E00D1A0A0 /* AppIcon-Alpha.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = "AppIcon-Alpha.icon"; sourceTree = "<group>"; };
+		ED314EC4301CC10E00D1A0A0 /* AppIcon-Review.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = "AppIcon-Review.icon"; sourceTree = "<group>"; };
 		378E2799296F6FDE00FCADA2 /* ManualAppStoreRelease.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = ManualAppStoreRelease.xcconfig; sourceTree = "<group>"; };
 		378E279D2970217400FCADA2 /* BuildToolPlugins */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = BuildToolPlugins; sourceTree = "<group>"; };
 		378F44E229B4B7B600899924 /* SwiftUIExtensions */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = SwiftUIExtensions; sourceTree = "<group>"; };
@@ -6184,7 +6207,6 @@
 		9D9AE8F22AAA39D30026E7DC /* DuckDuckGo Personal Information Removal App Store.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "DuckDuckGo Personal Information Removal App Store.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		9D9AE9142AAA3B450026E7DC /* Info-AppStore.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "Info-AppStore.plist"; sourceTree = "<group>"; };
 		9D9AE9152AAA3B450026E7DC /* DuckDuckGoDBPBackgroundAgentAppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DuckDuckGoDBPBackgroundAgentAppDelegate.swift; sourceTree = "<group>"; };
-		9D9AE9162AAA3B450026E7DC /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		9D9AE9172AAA3B450026E7DC /* UserText.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UserText.swift; sourceTree = "<group>"; };
 		9D9AE9182AAA3B450026E7DC /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		9D9AE9192AAA3B450026E7DC /* DuckDuckGoDBPBackgroundAgentAppStore.entitlements */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.entitlements; path = DuckDuckGoDBPBackgroundAgentAppStore.entitlements; sourceTree = "<group>"; };
@@ -10663,7 +10685,6 @@
 				F17E7DDB2C7C7F8100907A84 /* Logger+DBPBackgroundAgent.swift */,
 				9D9AE9172AAA3B450026E7DC /* UserText.swift */,
 				31ECDA102BED339600AE679F /* DataBrokerAuthenticationManagerBuilder.swift */,
-				9D9AE9162AAA3B450026E7DC /* Assets.xcassets */,
 				9D9AE91A2AAA3B450026E7DC /* DuckDuckGoDBPBackgroundAgent.entitlements */,
 				9D9AE9192AAA3B450026E7DC /* DuckDuckGoDBPBackgroundAgentAppStore.entitlements */,
 				9D9AE9182AAA3B450026E7DC /* Info.plist */,
@@ -11033,7 +11054,7 @@
 				AA4D700525545EDE00C3411E /* Application */,
 				7B122A972DE4716800B84F63 /* AppStoreInfo.plist */,
 				7B122A952DE4715D00B84F63 /* AppStoreInfoPlist.xcstrings */,
-				378CA39E2FBC79290043CF38 /* AppIcon.icon */,
+				ED314EA7301CB0B100D1A0A0 /* AppIcons */,
 				AA585D85248FD31400E9A3E2 /* Assets.xcassets */,
 				F14890832ECCCA9800B5239E /* AttributedMetric */,
 				B31055BB27A1BA0E001AC618 /* Autoconsent */,
@@ -13258,6 +13279,17 @@
 			path = Debug;
 			sourceTree = "<group>";
 		};
+		ED314EA7301CB0B100D1A0A0 /* AppIcons */ = {
+			isa = PBXGroup;
+			children = (
+				378CA39E2FBC79290043CF38 /* AppIcon.icon */,
+				ED314EC0301CC10E00D1A0A0 /* AppIcon-Debug.icon */,
+				ED314EC3301CC10E00D1A0A0 /* AppIcon-Alpha.icon */,
+				ED314EC4301CC10E00D1A0A0 /* AppIcon-Review.icon */,
+			);
+			path = AppIcons;
+			sourceTree = "<group>";
+		};
 		ED7478162E845958008628A1 /* AppHealth */ = {
 			isa = PBXGroup;
 			children = (
@@ -14585,6 +14617,9 @@
 				3706FCBE293F65D500E42796 /* autoconsent-bundle.js in Resources */,
 				3706FCBF293F65D500E42796 /* ContentOverlay.storyboard in Resources */,
 				378CA3A02FBC79290043CF38 /* AppIcon.icon in Resources */,
+				ED314EC1301CC10E00D1A0A0 /* AppIcon-Debug.icon in Resources */,
+				ED314EC8301CC10E00D1A0A0 /* AppIcon-Alpha.icon in Resources */,
+				ED314ECA301CC10E00D1A0A0 /* AppIcon-Review.icon in Resources */,
 				BB1F8E132E3CC5C40043648F /* sparkleloop_wide_legacy.json in Resources */,
 				B5EA14AB2FFFDB8000FC2512 /* Shield-Color-24.json in Resources */,
 				3706FCC0293F65D500E42796 /* FindInPage.storyboard in Resources */,
@@ -14698,6 +14733,10 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DD7A0101301D500100000001 /* AppIcon.icon in Resources */,
+				DD7A0101301D500100000002 /* AppIcon-Debug.icon in Resources */,
+				DD7A0101301D500100000003 /* AppIcon-Review.icon in Resources */,
+				DD7A0101301D500100000004 /* AppIcon-Alpha.icon in Resources */,
 				4B1561872F2FF36400E444AA /* macos-config.json in Resources */,
 				B5165043300FACD7007AE203 /* upsell_devices_reveal.json in Resources */,
 				B5165044300FACD7007AE203 /* upsell_devices_loop.json in Resources */,
@@ -14715,6 +14754,10 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DD7A0102301D500100000001 /* AppIcon.icon in Resources */,
+				DD7A0102301D500100000002 /* AppIcon-Debug.icon in Resources */,
+				DD7A0102301D500100000003 /* AppIcon-Review.icon in Resources */,
+				DD7A0102301D500100000004 /* AppIcon-Alpha.icon in Resources */,
 				4B1561882F2FF36400E444AA /* macos-config.json in Resources */,
 				B5165049300FACD7007AE203 /* upsell_devices_reveal.json in Resources */,
 				B516504A300FACD7007AE203 /* upsell_devices_loop.json in Resources */,
@@ -14797,7 +14840,10 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				9D9AE91F2AAA3B450026E7DC /* Assets.xcassets in Resources */,
+				DD7A0103301D500100000001 /* AppIcon.icon in Resources */,
+				DD7A0103301D500100000002 /* AppIcon-Debug.icon in Resources */,
+				DD7A0103301D500100000003 /* AppIcon-Review.icon in Resources */,
+				DD7A0103301D500100000004 /* AppIcon-Alpha.icon in Resources */,
 				4B1561892F2FF36400E444AA /* macos-config.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -14806,7 +14852,10 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				9D9AE9202AAA3B450026E7DC /* Assets.xcassets in Resources */,
+				DD7A0104301D500100000001 /* AppIcon.icon in Resources */,
+				DD7A0104301D500100000002 /* AppIcon-Debug.icon in Resources */,
+				DD7A0104301D500100000003 /* AppIcon-Review.icon in Resources */,
+				DD7A0104301D500100000004 /* AppIcon-Alpha.icon in Resources */,
 				4B15618A2F2FF36400E444AA /* macos-config.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -14830,6 +14879,9 @@
 				B31055CB27A1BA1D001AC618 /* autoconsent-bundle.js in Resources */,
 				7B1E819F27C8874900FF0E60 /* ContentOverlay.storyboard in Resources */,
 				378CA39F2FBC79290043CF38 /* AppIcon.icon in Resources */,
+				ED314EC2301CC10E00D1A0A0 /* AppIcon-Debug.icon in Resources */,
+				ED314EC9301CC10E00D1A0A0 /* AppIcon-Alpha.icon in Resources */,
+				ED314ECB301CC10E00D1A0A0 /* AppIcon-Review.icon in Resources */,
 				844178682EE9799B009BDC3A /* TabBar.storyboard in Resources */,
 				B5EA14AA2FFFDB8000FC2512 /* Shield-Color-24.json in Resources */,
 				BB1F8E142E3CC5C40043648F /* sparkleloop_wide_legacy.json in Resources */,
@@ -20545,9 +20597,9 @@
 			buildConfigurations = (
 				3706FCFB293F65D500E42796 /* Debug */,
 				3706FCFE293F65D500E42796 /* CI */,
-				3706FCFF293F65D500E42796 /* Release */,
 				370AB8772E2635AE00BBBDE0 /* Alpha */,
 				3706FD02293F65D500E42796 /* Review */,
+				3706FCFF293F65D500E42796 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -20629,9 +20681,9 @@
 			buildConfigurations = (
 				4B2D06462A11CFBE00DE1F49 /* Debug */,
 				4B2D06472A11CFBE00DE1F49 /* CI */,
-				4B2D06482A11CFBE00DE1F49 /* Release */,
 				370AB8852E2635AE00BBBDE0 /* Alpha */,
 				4B2D06492A11CFBE00DE1F49 /* Review */,
+				4B2D06482A11CFBE00DE1F49 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -20641,9 +20693,9 @@
 			buildConfigurations = (
 				4B2D06762A13318600DE1F49 /* Debug */,
 				4B2D06772A13318600DE1F49 /* CI */,
-				4B2D06782A13318600DE1F49 /* Release */,
 				370AB8862E2635AE00BBBDE0 /* Alpha */,
 				4B2D06792A13318600DE1F49 /* Review */,
+				4B2D06782A13318600DE1F49 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -20725,9 +20777,9 @@
 			buildConfigurations = (
 				9D9AE8CD2AAA39A70026E7DC /* Debug */,
 				9D9AE8CE2AAA39A70026E7DC /* CI */,
-				9D9AE8CF2AAA39A70026E7DC /* Release */,
 				370AB8872E2635AE00BBBDE0 /* Alpha */,
 				9D9AE8D02AAA39A70026E7DC /* Review */,
+				9D9AE8CF2AAA39A70026E7DC /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -20737,9 +20789,9 @@
 			buildConfigurations = (
 				9D9AE8EE2AAA39D30026E7DC /* Debug */,
 				9D9AE8EF2AAA39D30026E7DC /* CI */,
-				9D9AE8F02AAA39D30026E7DC /* Release */,
 				370AB8882E2635AE00BBBDE0 /* Alpha */,
 				9D9AE8F12AAA39D30026E7DC /* Review */,
+				9D9AE8F02AAA39D30026E7DC /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -20761,9 +20813,9 @@
 			buildConfigurations = (
 				AA585DA5248FD31500E9A3E2 /* Debug */,
 				4B1AD8B125FC322600261379 /* CI */,
-				AA585DA6248FD31500E9A3E2 /* Release */,
 				370AB8762E2635AE00BBBDE0 /* Alpha */,
 				AAE814AC2716DFE8009D3531 /* Review */,
+				AA585DA6248FD31500E9A3E2 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

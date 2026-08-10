@@ -24,6 +24,29 @@ import PrivacyConfig
 import WebExtensions
 import FeatureFlags_iOS
 
+/// Whether this build can run web extensions that talk to the app over native messaging.
+///
+/// Native messaging from an MV3 service worker only works with the web-browser entitlement, which
+/// the Alpha app identifier does not carry. There the extension still installs and loads, but its
+/// service worker never delivers a message, so it cannot read the privacy config it needs and
+/// silently does nothing - while its presence suppresses the native implementation it replaced.
+struct NativeMessagingSupport {
+
+    let isSupported: Bool
+
+    init(isSupported: Bool = Self.isSupportedByBuildConfiguration) {
+        self.isSupported = isSupported
+    }
+
+    private static var isSupportedByBuildConfiguration: Bool {
+#if ALPHA
+        return false
+#else
+        return true
+#endif
+    }
+}
+
 /// Holds a reference to the WebExtensionManager that can be set after initialization.
 /// This allows WebExtensionAvailability to be created before the manager exists,
 /// with the manager reference populated later during app startup.
@@ -35,13 +58,16 @@ final class WebExtensionManagerHolder {
 final class WebExtensionAvailability: WebExtensionAvailabilityProviding {
 
     private let featureFlagger: FeatureFlagger
+    private let nativeMessagingSupport: NativeMessagingSupport
     private let webExtensionManagerProvider: () -> WebExtensionManaging?
 
     init(
         featureFlagger: FeatureFlagger,
+        nativeMessagingSupport: NativeMessagingSupport = NativeMessagingSupport(),
         webExtensionManagerProvider: @escaping () -> WebExtensionManaging?
     ) {
         self.featureFlagger = featureFlagger
+        self.nativeMessagingSupport = nativeMessagingSupport
         self.webExtensionManagerProvider = webExtensionManagerProvider
     }
 
@@ -51,7 +77,9 @@ final class WebExtensionAvailability: WebExtensionAvailabilityProviding {
     }
 
     var isAutoconsentExtensionAvailable: Bool {
-        guard isAvailable, featureFlagger.isFeatureOn(.embeddedExtension) else { return false }
+        guard isAvailable,
+              nativeMessagingSupport.isSupported,
+              featureFlagger.isFeatureOn(.embeddedExtension) else { return false }
 
         if #available(iOS 18.4, *) {
             guard let manager = webExtensionManagerProvider() else { return false }

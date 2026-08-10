@@ -19,7 +19,6 @@
 
 import SwiftUI
 
-/// Personal Information Removal section screen.
 struct SubscriptionOnboardingPIRView: View {
     private let title: String?
     private let navigationButton: SubscriptionOnboardingNavigationButton?
@@ -33,7 +32,7 @@ struct SubscriptionOnboardingPIRView: View {
         self.activateButton = .init(UserText.subscriptionOnboardingActivateButton, action: onStart)
     }
 
-    /// Pushes `destination` so PIR opens on its own stack.
+    /// Pushes the destination on a separate stack.
     init<Destination: View>(title: String? = nil,
                             navigationButton: SubscriptionOnboardingNavigationButton? = nil,
                             push destination: Destination) {

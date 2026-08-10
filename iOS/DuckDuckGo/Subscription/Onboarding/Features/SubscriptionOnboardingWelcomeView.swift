@@ -22,7 +22,6 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import UIComponents
 
-/// Overview of four premium protections. Tapping a row opens its info sheet; primary button starts the flow.
 struct SubscriptionOnboardingWelcomeView: View {
     var navigationButton: SubscriptionOnboardingNavigationButton?
     var onNext: () -> Void = {}
@@ -53,7 +52,6 @@ private struct WelcomeCard: View {
         static let contentInsetVertical: CGFloat = 14
     }
 
-    /// The four features only — the home-screen widget is a checklist step, not something to introduce here.
     private let features = SubscriptionOnboardingChecklistItem.features
     private let onSelect: (SubscriptionOnboardingChecklistItem) -> Void
 

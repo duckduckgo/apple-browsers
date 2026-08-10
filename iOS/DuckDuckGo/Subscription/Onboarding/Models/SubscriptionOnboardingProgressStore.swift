@@ -44,8 +44,7 @@ enum SubscriptionOnboardingSession {
 }
 
 extension SubscriptionOnboardingProgressStoring {
-    /// Records completion the first time it is seen, then reports whether the card should still show.
-    /// True while the checklist is unfinished, and for the rest of the session in which it was finished.
+    /// Records first completion and reports whether the card should show — true until the next launch after completion.
     mutating func shouldShowSetupCard(percentage: Int, now: Date) -> Bool {
         guard percentage >= 100 else { return true }
         if fullyCompletedAt == nil {
@@ -100,6 +99,40 @@ struct SubscriptionOnboardingProgressStore: SubscriptionOnboardingProgressStorin
         get { read(.fullyCompletedAt) as? Date }
         set { write(newValue, for: .fullyCompletedAt) }
     }
+}
+
+// MARK: - Out-of-flow activation
+
+/// Records an activation the customer performed on their own, outside the onboarding flow.
+///
+/// Sections inside the flow report completion up through `SubscriptionOnboardingSectionDelegate`, and the flow
+/// translates that into a store write. A customer who activates a feature by themselves has no flow running to
+/// report to, so these signals write to the store directly. That is the only sanctioned way around the
+/// delegate, and it lives here rather than being scattered across the features that detect it.
+protocol SubscriptionOnboardingActivationRecording {
+    /// Call when a prompt is submitted to a paid-tier model, which is what activates the Duck.ai step.
+    func recordDuckAIActivated()
+}
+
+struct SubscriptionOnboardingActivationRecorder: SubscriptionOnboardingActivationRecording {
+
+    private let keyValueStore: ThrowingKeyValueStoring
+
+    init(keyValueStore: ThrowingKeyValueStoring) {
+        self.keyValueStore = keyValueStore
+    }
+
+    /// Safe to call on every paid-tier prompt: the store ignores an item it already holds, so only the first
+    /// one writes.
+    func recordDuckAIActivated() {
+        var store = SubscriptionOnboardingProgressStore(keyValueStore: keyValueStore)
+        store.markComplete(.duckAI)
+    }
+}
+
+/// Records nothing, for callers with no onboarding progress to keep (tests, previews).
+struct NullSubscriptionOnboardingActivationRecorder: SubscriptionOnboardingActivationRecording {
+    func recordDuckAIActivated() {}
 }
 
 // MARK: - Storage

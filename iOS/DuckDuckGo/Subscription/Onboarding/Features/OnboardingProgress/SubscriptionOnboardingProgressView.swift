@@ -21,61 +21,75 @@ import SwiftUI
 import DesignResourcesKit
 import UIComponents
 
-/// Progress screen wrapping ``SubscriptionOnboardingProgressCardView``. Ends in complete or summary state, and briefly shows before Duck.ai chat opens.
+/// Supplies the checklist this screen renders. Implemented by ``SubscriptionOnboardingFlowViewModel``, so the
+/// screen reads progress for itself on appear instead of showing whatever its builder captured — PIR
+/// completes in Data Broker Protection, and coming back has to show the state the customer just earned.
+@MainActor
+protocol SubscriptionOnboardingProgressProviding {
+    var checklist: [SubscriptionOnboardingChecklistItem] { get }
+    var completedItems: Set<SubscriptionOnboardingChecklistItem> { get }
+}
+
 struct SubscriptionOnboardingProgressView: View {
 
-    /// Where in the flow the screen is being shown, which fixes its hero, copy, footer and celebration.
+    /// Where the screen is shown, not what state the customer is in — that's read from `percentage`.
     enum Variant {
-        /// Every step is done. Always at 100%, and the only variant that celebrates.
-        case completion
-        /// The end of the flow with steps still outstanding — the common case, since the flow itself tops
-        /// out at 80% (PIR is a checklist item but not a step).
+        /// The flow's own progress screen.
         case summary
-        /// Shown before handing over to a Duck.ai chat, telling the customer how to come back and finish.
+        /// Shown before handing over to a Duck.ai chat.
         case duckAIInterstitial
     }
 
+    /// Checklist state; `percentage` is derived so it never contradicts the shown items.
+    struct Progress {
+        /// This customer's checklist, four items if PIR is unreachable, to prevent showing an impossible fifth row.
+        var items: [SubscriptionOnboardingChecklistItem] = SubscriptionOnboardingChecklistItem.allCases
+        var completedItems: Set<SubscriptionOnboardingChecklistItem>
+
+        var percentage: Int {
+            SubscriptionOnboardingChecklistItem.completionPercentage(completed: completedItems, checklist: items)
+        }
+
+        static let none = Progress(completedItems: [])
+    }
+
     private enum Metrics {
-        /// Lottie played by the hero when everything is done.
         static let completeHeroAnimation = "subscription-hero"
     }
 
     private let variant: Variant
-    private let items: [SubscriptionOnboardingChecklistItem]
-    /// Re-read on appear rather than fixed at construction: PIR is completed in Data Broker Protection, so
-    /// coming back from it has to show the customer the state they just earned.
-    private let readProgress: () -> (percentage: Int, completedItems: Set<SubscriptionOnboardingChecklistItem>)
+    /// Present when the screen can read progress for itself; `nil` for a fixed `progress` value.
+    private let source: SubscriptionOnboardingProgressProviding?
 
-    @State private var percentage: Int
-    @State private var completedItems: Set<SubscriptionOnboardingChecklistItem>
+    @State private var progress: Progress
     private let title: String?
     private let navigationButton: SubscriptionOnboardingNavigationButton?
     private let onSelectItem: ((SubscriptionOnboardingChecklistItem) -> Void)?
-    private let onDone: () -> Void
+    private let onNext: () -> Void
 
-    /// Latches on the first appearance that qualifies, so the burst plays once and isn't re-triggered by a
-    /// body re-evaluation or by returning to the screen.
     @State private var didTriggerConfetti = false
 
+    /// Seeded from `source` rather than left to `onAppear`, so the first frame is never a stale 0%.
+    @MainActor
     init(variant: Variant = .summary,
-         percentage: Int,
-         items: [SubscriptionOnboardingChecklistItem] = SubscriptionOnboardingChecklistItem.allCases,
-         completedItems: Set<SubscriptionOnboardingChecklistItem>,
+         progress: Progress = .none,
+         source: SubscriptionOnboardingProgressProviding? = nil,
          title: String? = nil,
          navigationButton: SubscriptionOnboardingNavigationButton? = nil,
          onSelectItem: ((SubscriptionOnboardingChecklistItem) -> Void)? = nil,
-         readProgress: (() -> (percentage: Int, completedItems: Set<SubscriptionOnboardingChecklistItem>))? = nil,
-         onDone: @escaping () -> Void) {
+         onNext: @escaping () -> Void) {
         self.variant = variant
-        self.items = items
-        let initialProgress = (percentage: percentage, completedItems: completedItems)
-        self.readProgress = readProgress ?? { initialProgress }
-        _percentage = State(initialValue: percentage)
-        _completedItems = State(initialValue: completedItems)
+        self.source = source
+        _progress = State(initialValue: Self.progress(from: source) ?? progress)
         self.title = title
         self.navigationButton = navigationButton
         self.onSelectItem = onSelectItem
-        self.onDone = onDone
+        self.onNext = onNext
+    }
+
+    @MainActor
+    private static func progress(from source: SubscriptionOnboardingProgressProviding?) -> Progress? {
+        source.map { Progress(items: $0.checklist, completedItems: $0.completedItems) }
     }
 
     var body: some View {
@@ -86,9 +100,9 @@ struct SubscriptionOnboardingProgressView: View {
             footer: footer,
             // The Duck.ai hand-off renders this page as an overlay on the picker, which owns the bar.
             declaresNavigationChrome: variant != .duckAIInterstitial) {
-            SubscriptionOnboardingProgressCardView(percentage: percentage,
-                                                   items: items,
-                                                   completedItems: completedItems,
+            SubscriptionOnboardingProgressCardView(percentage: progress.percentage,
+                                                   items: progress.items,
+                                                   completedItems: progress.completedItems,
                                                    onSelect: onSelectItem)
         }
         .overlay {
@@ -97,9 +111,9 @@ struct SubscriptionOnboardingProgressView: View {
             }
         }
         .onAppear {
-            let progress = readProgress()
-            percentage = progress.percentage
-            completedItems = progress.completedItems
+            if let read = Self.progress(from: source) {
+                progress = read
+            }
 
             guard shouldCelebrate, !didTriggerConfetti else { return }
             didTriggerConfetti = true
@@ -111,10 +125,10 @@ struct SubscriptionOnboardingProgressView: View {
 
 private extension SubscriptionOnboardingProgressView {
 
-    /// Only a fully complete flow celebrates. Driven by the live percentage, not the variant fixed at
-    /// construction, so completing PIR and coming back still earns the burst.
+    /// Only a fully complete checklist celebrates, and it is read from the live percentage, so completing
+    /// PIR and coming back still earns the burst.
     var shouldCelebrate: Bool {
-        variant != .duckAIInterstitial && percentage >= 100
+        variant != .duckAIInterstitial && progress.percentage >= 100
     }
 
     var header: SubscriptionOnboardingHeaderView {
@@ -126,15 +140,15 @@ private extension SubscriptionOnboardingProgressView {
         switch variant {
         case .duckAIInterstitial:
             return nil
-        case .completion, .summary:
-            return .single(.init(UserText.subscriptionOnboardingProgressDoneButton, action: onDone))
+        case .summary:
+            return .single(.init(UserText.subscriptionOnboardingProgressDoneButton, action: onNext))
         }
     }
 
     /// Complete state shows the animated hero (as a reward); Duck.ai hand-off shows Duck.ai's mark. The host must inject a `graphicLottieRenderer`.
     var headerVisual: Graphic {
         switch variant {
-        case .completion, .summary:
+        case .summary:
             return shouldCelebrate ? .lottie(name: Metrics.completeHeroAnimation) : .image(Image(.subscriptionCheckFeature128))
         case .duckAIInterstitial: return .image(Image(.onboardingDuckAI128))
         }
@@ -142,7 +156,7 @@ private extension SubscriptionOnboardingProgressView {
 
     var headerTitle: String {
         switch variant {
-        case .completion, .summary:
+        case .summary:
             return shouldCelebrate ? UserText.subscriptionOnboardingProgressCompleteTitle : UserText.subscriptionOnboardingProgressTitle
         case .duckAIInterstitial: return UserText.subscriptionOnboardingProgressTitle
         }
@@ -152,7 +166,7 @@ private extension SubscriptionOnboardingProgressView {
     /// rather than leaving a gap.
     var headerExplanation: String? {
         switch variant {
-        case .completion, .summary: return shouldCelebrate ? nil : UserText.subscriptionOnboardingProgressExplanation
+        case .summary: return shouldCelebrate ? nil : UserText.subscriptionOnboardingProgressExplanation
         case .duckAIInterstitial: return UserText.subscriptionOnboardingProgressDuckAIExplanation
         }
     }
@@ -162,17 +176,15 @@ private extension SubscriptionOnboardingProgressView {
 
 private struct SubscriptionOnboardingProgressViewPreview: View {
     let variant: SubscriptionOnboardingProgressView.Variant
-    let percentage: Int
     let completedItems: Set<SubscriptionOnboardingChecklistItem>
 
     var body: some View {
         SubscriptionOnboardingProgressView(
             variant: variant,
-            percentage: percentage,
-            completedItems: completedItems,
+            progress: .init(completedItems: completedItems),
             navigationButton: .close({}),
             onSelectItem: { _ in },
-            onDone: {})
+            onNext: {})
             .subscriptionOnboardingNavigationContainer()
             .graphicLottieRenderer(SubscriptionOnboardingLottieRenderer.shared)
     }
@@ -180,8 +192,7 @@ private struct SubscriptionOnboardingProgressViewPreview: View {
 
 #Preview("Completion — 100%") {
     RebrandedPreview {
-        SubscriptionOnboardingProgressViewPreview(variant: .completion,
-                                                  percentage: 100,
+        SubscriptionOnboardingProgressViewPreview(variant: .summary,
                                                   completedItems: Set(SubscriptionOnboardingChecklistItem.allCases))
     }
 }
@@ -190,7 +201,6 @@ private struct SubscriptionOnboardingProgressViewPreview: View {
 #Preview("Summary — 80%") {
     RebrandedPreview {
         SubscriptionOnboardingProgressViewPreview(variant: .summary,
-                                                  percentage: 80,
                                                   completedItems: [.vpn, .widget, .idtr, .duckAI])
     }
 }
@@ -198,15 +208,13 @@ private struct SubscriptionOnboardingProgressViewPreview: View {
 #Preview("Duck.ai interstitial") {
     RebrandedPreview {
         SubscriptionOnboardingProgressViewPreview(variant: .duckAIInterstitial,
-                                                  percentage: 80,
                                                   completedItems: [.vpn, .widget, .idtr, .duckAI])
     }
 }
 
 #Preview("Dark") {
     RebrandedPreview {
-        SubscriptionOnboardingProgressViewPreview(variant: .completion,
-                                                  percentage: 100,
+        SubscriptionOnboardingProgressViewPreview(variant: .summary,
                                                   completedItems: Set(SubscriptionOnboardingChecklistItem.allCases))
     }
     .preferredColorScheme(.dark)
@@ -215,7 +223,6 @@ private struct SubscriptionOnboardingProgressViewPreview: View {
 #Preview("Large Text") {
     RebrandedPreview {
         SubscriptionOnboardingProgressViewPreview(variant: .summary,
-                                                  percentage: 60,
                                                   completedItems: [.vpn, .idtr, .duckAI])
     }
     .dynamicTypeSize(.accessibility5)

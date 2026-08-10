@@ -31,6 +31,7 @@ import UserNotifications
 import UIComponents
 import Lottie
 import FeatureFlags_iOS
+import Persistence
 
 final class SubscriptionDebugViewController: UITableViewController {
 
@@ -475,12 +476,8 @@ final class SubscriptionDebugViewController: UITableViewController {
             case .idtr: showIDTROnboarding()
             case .duckAI: showDuckAIOnboarding()
             case .pir: showPIROnboarding()
-            case .progress: showProgressOnboarding(variant: .summary,
-                                                   percentage: 80,
-                                                   completedItems: [.vpn, .widget, .idtr, .duckAI])
-            case .progressComplete: showProgressOnboarding(variant: .completion,
-                                                           percentage: 100,
-                                                           completedItems: Set(SubscriptionOnboardingChecklistItem.allCases))
+            case .progress: showProgressOnboarding(completedItems: [.vpn, .widget, .idtr, .duckAI])
+            case .progressComplete: showProgressOnboarding(completedItems: Set(SubscriptionOnboardingChecklistItem.allCases))
             case .tapAllowHint: showTapAllowHintPlayground()
             default: break
             }
@@ -930,7 +927,8 @@ final class SubscriptionDebugViewController: UITableViewController {
     private func showOrderConfirmationOnboarding() {
         let hostingController = UIHostingController(
             rootView: SubscriptionOnboardingOrderConfirmationView(
-                viewModel: SubscriptionOnboardingOrderConfirmationViewModel(delegate: self),
+                viewModel: SubscriptionOnboardingOrderConfirmationViewModel(
+                    onNext: { [weak self] in self?.dismiss(animated: true) }),
                 navigationButton: .close({ [weak self] in self?.dismiss(animated: true) }))
                 .subscriptionOnboardingNavigationContainer())
         present(hostingController, animated: true)
@@ -946,7 +944,7 @@ final class SubscriptionDebugViewController: UITableViewController {
     }
 
     /// The real "start PIR" hand-off needs the Data Broker Protection view-controller provider, which lives
-    /// on `DBPService` and reaches the flow through `SubscriptionOnboardingLauncher.PIRAvailability`. The
+    /// on `DBPService` and reaches the flow as `SubscriptionOnboardingLauncher.launch`'s `pirScreen`. The
     /// debug menu has no handle on it, so this standalone row's CTA just dismisses.
     private func showPIROnboarding() {
         let hostingController = UIHostingController(
@@ -957,17 +955,15 @@ final class SubscriptionDebugViewController: UITableViewController {
         present(hostingController, animated: true)
     }
 
-    private func showProgressOnboarding(variant: SubscriptionOnboardingProgressView.Variant,
-                                        percentage: Int,
-                                        completedItems: Set<SubscriptionOnboardingChecklistItem>) {
+    /// Both progress rows use the flow's own summary variant — completion is derived from `percentage`, so
+    /// the "complete" row exercises the real derivation rather than asserting the end state.
+    private func showProgressOnboarding(completedItems: Set<SubscriptionOnboardingChecklistItem>) {
         let hostingController = UIHostingController(
             rootView: SubscriptionOnboardingProgressView(
-                variant: variant,
-                percentage: percentage,
-                completedItems: completedItems,
+                progress: .init(completedItems: completedItems),
                 navigationButton: .close({ [weak self] in self?.dismiss(animated: true) }),
                 onSelectItem: { _ in },
-                onDone: { [weak self] in self?.dismiss(animated: true) })
+                onNext: { [weak self] in self?.dismiss(animated: true) })
                 .subscriptionOnboardingNavigationContainer()
                 .graphicLottieRenderer(SubscriptionOnboardingLottieRenderer.shared))
         present(hostingController, animated: true)
@@ -985,7 +981,9 @@ final class SubscriptionDebugViewController: UITableViewController {
     private func showVPNOnboarding() {
         let hostingController = UIHostingController(
             rootView: SubscriptionOnboardingVPNActivationView(
-                viewModel: SubscriptionOnboardingVPNActivationViewModel(prefetcher: SubscriptionOnboardingPrefetcher(), delegate: self),
+                viewModel: SubscriptionOnboardingVPNActivationViewModel(
+                    prefetcher: SubscriptionOnboardingPrefetcher(),
+                    onNext: { [weak self] in self?.dismiss(animated: true) }),
                 navigationButton: .close({ [weak self] in self?.dismiss(animated: true) }))
                 .subscriptionOnboardingNavigationContainer()
                 .graphicLottieRenderer(SubscriptionOnboardingLottieRenderer.shared))
@@ -998,9 +996,15 @@ final class SubscriptionDebugViewController: UITableViewController {
     private func showDuckAIOnboarding() {
         let hostingController = UIHostingController(
             rootView: SubscriptionOnboardingDuckAIView(
-                viewModel: SubscriptionOnboardingDuckAIViewModel(prefetcher: SubscriptionOnboardingPrefetcher(), delegate: self),
+                viewModel: SubscriptionOnboardingDuckAIViewModel(
+                    prefetcher: SubscriptionOnboardingPrefetcher(),
+                    onNext: { [weak self] in self?.dismiss(animated: true) },
+                    onRequestChat: { [weak self] modelID in
+                        guard let self else { return }
+                        SubscriptionOnboardingDuckAIChatLauncher().launch(from: self, modelID: modelID)
+                    }),
                 navigationButton: .close({ [weak self] in self?.dismiss(animated: true) }),
-                progress: { .init(percentage: 60, completedItems: [.vpn, .widget, .idtr]) })
+                progress: { .init(completedItems: [.vpn, .widget, .idtr]) })
                 .subscriptionOnboardingNavigationContainer()
                 .graphicLottieRenderer(SubscriptionOnboardingLottieRenderer.shared))
         present(hostingController, animated: true)
@@ -1009,8 +1013,17 @@ final class SubscriptionDebugViewController: UITableViewController {
     /// Launches the real flow. PIR is left unavailable here because its view-controller provider lives on
     /// `DBPService`, which the debug menu has no handle on — the Settings entry point in C3 supplies it.
     private func showOnboardingFlow(entryPoint: SubscriptionOnboardingEntryPoint) {
-        SubscriptionOnboardingLauncher(keyValueStore: subscriptionUserDefaults)
-            .present(from: self, entryPoint: entryPoint)
+        let flow = SubscriptionOnboardingFlowViewModel(
+            entryPoint: entryPoint,
+            store: SubscriptionOnboardingProgressStore(keyValueStore: subscriptionUserDefaults),
+            isPIRAvailable: false)
+        let root = SubscriptionOnboardingLauncher.launch(flow: flow, onFinish: { [weak self] in
+            self?.dismiss(animated: true)
+            guard entryPoint == .postCheckout else { return }
+            NotificationCenter.default.post(name: .settingsDeepLinkNotification,
+                                            object: SettingsViewModel.SettingsDeepLinkSection.subscriptionSettings)
+        })
+        present(UIHostingController(rootView: root), animated: true)
     }
 
     /// Mirrors the Subscription Settings entry point: the real card, over the real stored progress. Kept
@@ -1037,15 +1050,10 @@ final class SubscriptionDebugViewController: UITableViewController {
 
     private lazy var setupCardHostingController = UIHostingController(rootView: makeSetupCardView())
 
-    /// The percentage is resolved here rather than held as SwiftUI state, so returning from a run can refresh
-    /// the card by replacing its root view.
+    /// Rebuilt rather than mutated, so replacing the root view remounts the card and it re-reads the store.
     private func makeSetupCardView() -> SubscriptionOnboardingSetupCardDebugView {
-        let store = SubscriptionOnboardingProgressStore(keyValueStore: subscriptionUserDefaults)
-        return SubscriptionOnboardingSetupCardDebugView(
-            // PIR is unavailable throughout the debug menu, so the checklist here is the four-item one.
-            percentage: SubscriptionOnboardingChecklistItem.completionPercentage(
-                completed: store.completedItems,
-                checklist: SubscriptionOnboardingChecklistItem.checklist(isPIRAvailable: false)),
+        SubscriptionOnboardingSetupCardDebugView(
+            keyValueStore: subscriptionUserDefaults,
             onContinue: { [weak self] in
                 self?.showOnboardingFlow(entryPoint: .subscriptionSettings)
             })
@@ -1075,12 +1083,15 @@ final class SubscriptionDebugViewController: UITableViewController {
 
 /// The real card, rendered inline in the debug table's Onboarding section.
 private struct SubscriptionOnboardingSetupCardDebugView: View {
-    let percentage: Int
+    let keyValueStore: ThrowingKeyValueStoring
     let onContinue: () -> Void
 
     var body: some View {
+        // PIR is unavailable throughout the debug menu, so the card measures over the four-item checklist.
         SubscriptionOnboardingSetupCard(visual: .image(Image(.subscription56)),
-                                        percentage: percentage,
+                                        keyValueStore: keyValueStore,
+                                        isPIRAvailable: false,
+                                        isPIRActivated: false,
                                         onContinue: onContinue)
             .padding(.vertical, 8)
     }

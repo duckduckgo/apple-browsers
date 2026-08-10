@@ -68,12 +68,10 @@ final class DefaultSubscriptionOnboardingAIModelProvider: SubscriptionOnboarding
     }
 }
 
-/// Backs the Duck.ai onboarding screen, persisting the selected model so the launched chat opens with it.
 @MainActor
 final class SubscriptionOnboardingDuckAIViewModel: ObservableObject {
 
-    /// The display-ready model list: only those the customer can access, advanced (paid-tier) ones first.
-    /// Derived once when the prefetcher resolves rather than recomputed on every read.
+    /// Display-ready models, derived once at prefetch time to avoid recomputation.
     @Published private(set) var availableModels: [AIChatModel] = []
     @Published private(set) var selectedModelID: String?
 
@@ -81,16 +79,22 @@ final class SubscriptionOnboardingDuckAIViewModel: ObservableObject {
     @Published private(set) var isShowingInterstitial = false
 
     private let prefetcher: SubscriptionOnboardingPrefetcher
-    private weak var delegate: SubscriptionOnboardingSectionDelegate?
+    private let onComplete: () -> Void
+    private let onNext: () -> Void
+    private let onRequestChat: (String?) -> Void
     private var cancellables = Set<AnyCancellable>()
 
     /// Prevents duplicate hand-offs when the interstitial's view is recreated.
     private var didHandOffToChat = false
 
     init(prefetcher: SubscriptionOnboardingPrefetcher,
-         delegate: SubscriptionOnboardingSectionDelegate? = nil) {
+         onComplete: @escaping () -> Void = {},
+         onNext: @escaping () -> Void = {},
+         onRequestChat: @escaping (String?) -> Void = { _ in }) {
         self.prefetcher = prefetcher
-        self.delegate = delegate
+        self.onComplete = onComplete
+        self.onNext = onNext
+        self.onRequestChat = onRequestChat
     }
 
     private func observePrefetcher() {
@@ -133,28 +137,19 @@ final class SubscriptionOnboardingDuckAIViewModel: ObservableObject {
         if let selectedModelID {
             prefetcher.updateSelectedModel(selectedModelID)
         }
-        delegate?.sectionDidComplete(.duckAI)
+        onComplete()
         isShowingInterstitial = true
     }
 
     /// Requests the chat at most once. Leaves the interstitial up since the launcher dismisses the entire chain.
     func handOffToChat() {
         guard !didHandOffToChat else { return }
-
-        // Nothing can present the chat, so drop the interstitial rather than stranding the customer on a
-        // page with no back button and no footer. Deliberately not latched, so a later tap can retry.
-        guard let delegate else {
-            Logger.subscription.error("Duck.ai onboarding hand-off had no delegate; dismissing the interstitial")
-            isShowingInterstitial = false
-            return
-        }
-
         didHandOffToChat = true
-        delegate.sectionDidRequestDuckAIChat(modelID: selectedModelID)
+        onRequestChat(selectedModelID)
     }
 
     /// Leaves Duck.ai without starting a chat, moving the flow to the next section.
     func skip() {
-        delegate?.sectionDidRequestAdvance()
+        onNext()
     }
 }

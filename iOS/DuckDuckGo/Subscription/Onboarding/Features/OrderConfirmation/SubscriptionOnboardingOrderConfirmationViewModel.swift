@@ -71,18 +71,18 @@ final class SubscriptionOnboardingOrderConfirmationViewModel: ObservableObject {
     private let subscriptionProvider: SubscriptionOnboardingSubscriptionProviding
     private let now: Date
     private let calendar: Calendar
-    private weak var delegate: SubscriptionOnboardingSectionDelegate?
+    private let onNext: () -> Void
 
     /// `subscriptionProvider` is defaulted inside the body rather than in the signature: default arguments
     /// are evaluated in a nonisolated context, and the live provider's initializer is main-actor isolated.
     init(subscriptionProvider: SubscriptionOnboardingSubscriptionProviding? = nil,
          now: Date = Date(),
          calendar: Calendar = .current,
-         delegate: SubscriptionOnboardingSectionDelegate? = nil) {
+         onNext: @escaping () -> Void = {}) {
         self.subscriptionProvider = subscriptionProvider ?? DefaultSubscriptionOnboardingSubscriptionProvider()
         self.now = now
         self.calendar = calendar
-        self.delegate = delegate
+        self.onNext = onNext
     }
 
     // MARK: - Display values
@@ -111,7 +111,7 @@ final class SubscriptionOnboardingOrderConfirmationViewModel: ObservableObject {
 
     /// Leaves the confirmation screen for the welcome section.
     func proceed() {
-        delegate?.sectionDidRequestAdvance()
+        onNext()
     }
 }
 

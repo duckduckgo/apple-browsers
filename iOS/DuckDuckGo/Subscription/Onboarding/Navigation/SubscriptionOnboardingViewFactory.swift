@@ -19,43 +19,52 @@
 
 import SwiftUI
 
-/// Builds screens by index (not section), since `.progress` appears twice with different chrome.
 @MainActor
 struct SubscriptionOnboardingViewFactory {
 
     private let flow: SubscriptionOnboardingFlowViewModel
-    private let prefetcher: SubscriptionOnboardingPrefetcher
-    /// PIR screen provider, supplied by the host.
-    private let pirDestination: () -> AnyView
 
-    init(flow: SubscriptionOnboardingFlowViewModel,
-         prefetcher: SubscriptionOnboardingPrefetcher,
-         pirDestination: @escaping () -> AnyView) {
+    private var prefetcher: SubscriptionOnboardingPrefetcher { flow.prefetcher }
+
+    init(flow: SubscriptionOnboardingFlowViewModel) {
         self.flow = flow
-        self.prefetcher = prefetcher
-        self.pirDestination = pirDestination
     }
 
-    func screen(at index: Int) -> AnyView {
-        guard let section = flow.section(at: index) else { return AnyView(EmptyView()) }
+    /// The PIR screen launched from the summary's checklist row. It carries its own navigation container
+    /// because it is presented over the flow rather than pushed onto it.
+    func pirLaunchScreen() -> AnyView {
+        AnyView(
+            SubscriptionOnboardingPIRView(
+                title: String(format: UserText.subscriptionOnboardingStepIndicatorFormat,
+                              SubscriptionOnboardingSection.indicatorStepCount,
+                              SubscriptionOnboardingSection.indicatorStepCount),
+                navigationButton: .close { flow.isPresentingPIR = false },
+                push: flow.pirScreen())
+                .subscriptionOnboardingNavigationContainer())
+    }
 
-        let title = flow.title(at: index)
-        let navigationButton = flow.navigationButton(at: index)
+    func screen(for section: SubscriptionOnboardingSection) -> AnyView {
+        let title = flow.title(for: section)
+        let navigationButton = flow.navigationButton(for: section)
 
         switch section {
         case .orderConfirmation:
             return AnyView(SubscriptionOnboardingOrderConfirmationView(
-                viewModel: SubscriptionOnboardingOrderConfirmationViewModel(delegate: flow),
+                viewModel: SubscriptionOnboardingOrderConfirmationViewModel(
+                    onNext: { flow.sectionDidRequestAdvance() }),
                 navigationButton: navigationButton))
 
         case .welcome:
             return AnyView(SubscriptionOnboardingWelcomeView(
                 navigationButton: navigationButton,
-                onNext: { flow.proceed() }))
+                onNext: { flow.sectionDidRequestAdvance() }))
 
         case .vpnActivation:
             return AnyView(SubscriptionOnboardingVPNActivationView(
-                viewModel: SubscriptionOnboardingVPNActivationViewModel(prefetcher: prefetcher, delegate: flow),
+                viewModel: SubscriptionOnboardingVPNActivationViewModel(
+                    prefetcher: prefetcher,
+                    onComplete: { flow.sectionDidComplete(.vpnActivation) },
+                    onNext: { flow.sectionDidRequestAdvance() }),
                 title: title,
                 navigationButton: navigationButton))
 
@@ -63,43 +72,43 @@ struct SubscriptionOnboardingViewFactory {
             return AnyView(SubscriptionOnboardingVPNWidgetEducationView(
                 title: title,
                 navigationButton: navigationButton,
-                onWidgetStepDone: { flow.markComplete(.widget) },
-                onDone: { flow.proceed() }))
+                onComplete: { flow.sectionDidComplete(.vpnWidget) },
+                onNext: { flow.sectionDidRequestAdvance() }))
 
         case .idtr:
             return AnyView(SubscriptionOnboardingIDTRView(
                 title: title,
                 navigationButton: navigationButton,
-                onNext: { flow.proceed() })
-                .onAppear { flow.markComplete(.idtr) })
+                onNext: {
+                    flow.sectionDidComplete(.idtr)
+                    flow.sectionDidRequestAdvance()
+                }))
 
         case .duckAI:
             return AnyView(SubscriptionOnboardingDuckAIView(
-                viewModel: SubscriptionOnboardingDuckAIViewModel(prefetcher: prefetcher, delegate: flow),
+                viewModel: SubscriptionOnboardingDuckAIViewModel(
+                    prefetcher: prefetcher,
+                    onComplete: { flow.sectionDidComplete(.duckAI) },
+                    onNext: { flow.sectionDidRequestAdvance() },
+                    onRequestChat: { flow.sectionDidRequestDuckAIChat(modelID: $0) }),
                 title: title,
                 navigationButton: navigationButton,
-                progress: { .init(percentage: flow.completionPercentage,
-                                  items: flow.checklist,
-                                  completedItems: flow.completedItems) }))
+                progress: { .init(items: flow.checklist, completedItems: flow.completedItems) }))
 
         case .progress:
             return AnyView(SubscriptionOnboardingProgressView(
-                variant: flow.progressVariant,
-                percentage: flow.completionPercentage,
-                items: flow.checklist,
-                completedItems: flow.completedItems,
+                source: flow,
                 navigationButton: navigationButton,
                 onSelectItem: { item in
                     guard item == .pir else { return }
                     flow.isPresentingPIR = true
                 },
-                onDone: { flow.proceed() }))
+                onNext: { flow.finish() }))
 
         case .pir:
-            return AnyView(SubscriptionOnboardingPIRView(
-                title: title,
-                navigationButton: navigationButton,
-                push: pirDestination()))
+            // PIR is launched from the summary's checklist row, which
+            // presents its own screen over the flow.
+            return AnyView(EmptyView())
         }
     }
 }

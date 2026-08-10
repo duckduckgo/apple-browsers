@@ -28,15 +28,12 @@ extension View {
         .navigationViewStyle(.stack)
     }
 
-    /// Re-enables swipe-back, which UIKit disables whenever a screen hides the default back button — as every
-    /// onboarding page does in favour of its own. Needed under `NavigationStack` for the same reason.
+    /// Re-enables swipe-back after hiding the default back button.
     func subscriptionOnboardingInteractivePopEnabled() -> some View {
         background(InteractivePopGestureEnabler())
     }
 }
 
-/// Re-enables the interactive pop (swipe-back) gesture, which UIKit disables whenever a screen hides
-/// the default back button (as the onboarding pages do in favour of a custom button).
 private struct InteractivePopGestureEnabler: UIViewControllerRepresentable {
     func makeCoordinator() -> Coordinator { Coordinator() }
 

@@ -22,7 +22,6 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import UIComponents
 
-/// Completion progress card. Same card renders both intermediate and complete states.
 struct SubscriptionOnboardingProgressCardView: View {
     private enum Metrics {
         static let headerPadding: CGFloat = 24

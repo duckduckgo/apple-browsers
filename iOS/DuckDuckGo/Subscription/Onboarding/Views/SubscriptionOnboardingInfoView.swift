@@ -22,7 +22,6 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import UIComponents
 
-/// Body of a protection's info screen: feature cards plus optional disclaimer. Pairs with ``SubscriptionOnboardingHeaderView/init(content:onInfoLinkTap:)`` for shared headers.
 struct SubscriptionOnboardingInfoView: View {
     let content: SubscriptionOnboardingInfoContent
 
@@ -51,8 +50,7 @@ struct SubscriptionOnboardingInfoView: View {
         }
     }
 
-    /// The disclaimer renders Markdown, so its `[label](url)` becomes a tappable link that opens in the
-    /// system URL handler (e.g. the Summary of Benefits PDF).
+    /// Renders Markdown; links open in the system URL handler.
     private func disclaimerView(_ disclaimer: String) -> some View {
         Text(.init("\(disclaimer)"))
             .daxFootnoteRegular()
@@ -66,7 +64,6 @@ struct SubscriptionOnboardingInfoView: View {
 // MARK: - Header
 
 extension SubscriptionOnboardingHeaderView {
-    /// Header for a protection's info content.
     init(content: SubscriptionOnboardingInfoContent, onInfoLinkTap: (() -> Void)? = nil) {
         self.init(visual: content.visual,
                   title: content.title,

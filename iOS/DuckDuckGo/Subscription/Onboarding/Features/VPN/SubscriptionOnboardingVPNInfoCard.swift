@@ -22,11 +22,8 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import UIComponents
 
-/// An IP-address info card whose `state` selects the overline label and icon: grayscale for the customer's
-/// real IP, colour for the VPN egress IP.
 struct SubscriptionOnboardingVPNInfoCard: View {
 
-    /// Which IP the card describes; drives the overline label and the leading icon.
     enum IPState {
         case visibleIP
         case hiddenIP

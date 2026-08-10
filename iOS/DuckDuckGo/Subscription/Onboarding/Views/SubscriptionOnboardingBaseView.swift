@@ -38,8 +38,7 @@ private enum Metrics {
     static let footerSpacing: CGFloat = 8
 }
 
-/// The navigation bar's leading button: either a back button or a close button. Both render as a
-/// circular filled button and carry their own glyph and VoiceOver label.
+/// The navigation bar's leading button: back or close, each with its own glyph and VoiceOver label.
 enum SubscriptionOnboardingNavigationButton {
     case back(() -> Void)
     case close(() -> Void)
@@ -70,7 +69,6 @@ enum SubscriptionOnboardingNavigationButton {
     }
 }
 
-/// A footer button: a title and either a tap action or a push destination.
 struct SubscriptionOnboardingFooterButton {
     enum Action {
         case tap(() -> Void)
@@ -91,7 +89,6 @@ struct SubscriptionOnboardingFooterButton {
     }
 }
 
-/// The page's bottom-pinned footer: a single primary button, or a primary button above a secondary one.
 enum SubscriptionOnboardingFooter {
     case single(SubscriptionOnboardingFooterButton)
     case double(primary: SubscriptionOnboardingFooterButton, secondary: SubscriptionOnboardingFooterButton)

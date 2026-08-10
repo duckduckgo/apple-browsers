@@ -19,39 +19,37 @@
 
 import SwiftUI
 
-/// The onboarding flow's root: the first section, inside the shared navigation container.
 struct SubscriptionOnboardingFlowView: View {
 
     let flow: SubscriptionOnboardingFlowViewModel
     let factory: SubscriptionOnboardingViewFactory
-    /// The PIR detour reached by tapping the summary's PIR row, presented rather than pushed — the row can
-    /// be tapped from a summary that sits several sections before `.pir`, which a linear stack can't express.
-    let pirDetour: () -> AnyView
 
     /// The root observes navigation only, for the same reason the section hosts do.
     @ObservedObject private var navigation: SubscriptionOnboardingNavigationState
-    /// Separate from navigation so presenting the detour cannot rebuild a section host's link.
-    @ObservedObject private var detour: SubscriptionOnboardingDetourState
+    /// Separate from navigation so launching PIR cannot rebuild a section host's link.
+    @ObservedObject private var pirLaunch: SubscriptionOnboardingPIRLaunchState
 
-    /// Built once and held. `factory.screen(at:)` returns a fresh `AnyView` per call, and this one is the
+    private let rootSection: SubscriptionOnboardingSection?
+
+    /// Built once and held. `factory.screen(for:)` returns a fresh `AnyView` per call, and this one is the
     /// stack's root — handing SwiftUI a different root on a body pass unwinds the whole path. The body runs
     /// whenever the presenting screen re-renders, which turning on the VPN does.
     private let rootScreen: AnyView
 
     init(flow: SubscriptionOnboardingFlowViewModel,
-         factory: SubscriptionOnboardingViewFactory,
-         pirDetour: @escaping () -> AnyView) {
+         factory: SubscriptionOnboardingViewFactory) {
         self.flow = flow
         self.factory = factory
-        self.pirDetour = pirDetour
         _navigation = ObservedObject(wrappedValue: flow.navigation)
-        _detour = ObservedObject(wrappedValue: flow.detour)
-        rootScreen = factory.screen(at: 0)
+        _pirLaunch = ObservedObject(wrappedValue: flow.pirLaunch)
+        rootSection = flow.sequence.first
+        rootScreen = flow.sequence.first.map { factory.screen(for: $0) } ?? AnyView(EmptyView())
     }
 
     var body: some View {
         stack
-            .sheet(isPresented: $detour.isPresentingPIR) { pirDetour() }
+            .sheet(isPresented: $pirLaunch.isPresentingPIR) { factory.pirLaunchScreen() }
+            .onAppear { flow.startPrefetching() }
     }
 
     /// iOS 16 owns the stack outright: `path` is the truth, and a pop is the system removing an element from
@@ -62,25 +60,22 @@ struct SubscriptionOnboardingFlowView: View {
         if #available(iOS 16.0, *) {
             NavigationStack(path: $navigation.path) {
                 rootScreen
-                    .navigationDestination(for: Int.self) { index in
-                        factory.screen(at: index)
+                    .navigationDestination(for: SubscriptionOnboardingSection.self) { section in
+                        factory.screen(for: section)
                     }
                     .subscriptionOnboardingInteractivePopEnabled()
             }
-        } else {
-            SubscriptionOnboardingSectionHost(index: 0, flow: flow, factory: factory)
+        } else if let rootSection {
+            SubscriptionOnboardingSectionHost(section: rootSection, flow: flow, factory: factory)
                 .subscriptionOnboardingNavigationContainer()
         }
     }
 }
 
-/// One section of the flow, plus the link that pushes the next one.
-///
-/// Recursive by design: each host renders its own screen and holds a `NavigationLink` to its successor, so
-/// the stack mirrors `flow.cursor` without any imperative push.
+/// Recursive section host: renders its screen and the link to its successor.
 struct SubscriptionOnboardingSectionHost: View {
 
-    let index: Int
+    let section: SubscriptionOnboardingSection
     let flow: SubscriptionOnboardingFlowViewModel
     let factory: SubscriptionOnboardingViewFactory
 
@@ -88,8 +83,10 @@ struct SubscriptionOnboardingSectionHost: View {
     /// time, or rebuilding its `NavigationLink` reads as a pop. See `SubscriptionOnboardingNavigationState`.
     @ObservedObject private var navigation: SubscriptionOnboardingNavigationState
 
-    init(index: Int, flow: SubscriptionOnboardingFlowViewModel, factory: SubscriptionOnboardingViewFactory) {
-        self.index = index
+    init(section: SubscriptionOnboardingSection,
+         flow: SubscriptionOnboardingFlowViewModel,
+         factory: SubscriptionOnboardingViewFactory) {
+        self.section = section
         self.flow = flow
         self.factory = factory
         _navigation = ObservedObject(wrappedValue: flow.navigation)
@@ -100,18 +97,18 @@ struct SubscriptionOnboardingSectionHost: View {
         // hands back a fresh `AnyView` every time — cannot take the link down with it.
         ZStack {
             nextSectionLink
-            factory.screen(at: index)
+            factory.screen(for: section)
         }
     }
 
     @ViewBuilder
     private var nextSectionLink: some View {
-        if flow.section(at: index + 1) != nil {
-            NavigationLink(isActive: flow.isPastSection(at: index)) {
+        if let next = flow.section(after: section) {
+            NavigationLink(isActive: flow.isPastSection(section)) {
                 // `LazyView` and `AnyView` are both load-bearing. Without the first, rendering the root would
                 // eagerly build every screen in the flow — and every view model with it. Without the second,
                 // this view's body type would refer to itself and fail to compile.
-                LazyView(AnyView(SubscriptionOnboardingSectionHost(index: index + 1, flow: flow, factory: factory)))
+                LazyView(AnyView(SubscriptionOnboardingSectionHost(section: next, flow: flow, factory: factory)))
             } label: {
                 EmptyView()
             }

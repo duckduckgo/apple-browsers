@@ -66,8 +66,8 @@ struct SubscriptionSettingsViewV2: View {
     /// rebuild the whole flow — new view model, empty navigation path — every time this view's body re-ran,
     /// which turning on the VPN does.
     @State private var onboardingFlow: AnyView?
-    @State private var onboardingPercentage = 0
-    @State private var isShowingSetupCard = false
+    /// Changed to remount the setup card so it re-reads the store after a flow run.
+    @State private var setupCardReloadToken = UUID()
     @State private var cancelDowngradeErrorMessageType: SubscriptionTransactionErrorAlert.MessageType = .general
 
     var body: some View {
@@ -119,19 +119,21 @@ struct SubscriptionSettingsViewV2: View {
     /// Reaching 100% keeps the card for the rest of the session; it goes on the next launch.
     ///
     /// TODO|htang: Step 3 adds the rest of the rule — a feature flag and the 14-day window from first display.
-    @ViewBuilder
     private var onboardingSetupSection: some View {
-        if isShowingSetupCard {
-            Section {
-                SubscriptionOnboardingSetupCard(visual: .image(Image(.subscription56)),
-                                                percentage: onboardingPercentage,
-                                                onContinue: { startOnboarding() })
-            }
-            // The card brings its own surface and padding, so it takes none from the list: no row background
-            // behind it and no row insets around it.
-            .listRowBackground(Color.clear)
-            .listRowInsets(EdgeInsets())
+        Section {
+            SubscriptionOnboardingSetupCard(visual: .image(Image(.subscription56)),
+                                            keyValueStore: settingsViewModel.keyValueStore,
+                                            isPIRAvailable: isPIRAvailable,
+                                            isPIRActivated: settingsViewModel.isPIRActivated,
+                                            onContinue: { startOnboarding() })
+                // Remounted after a flow run so the card re-reads: a sheet dismissing over this screen does
+                // not make it appear again, so its own `onAppear` would not fire.
+                .id(setupCardReloadToken)
         }
+        // The card brings its own surface and padding, so it takes none from the list: no row background
+        // behind it and no row insets around it.
+        .listRowBackground(Color.clear)
+        .listRowInsets(EdgeInsets())
     }
 
     /// PIR is gated three ways, and a customer who fails any of them is shown a four-item checklist rather
@@ -152,27 +154,15 @@ struct SubscriptionSettingsViewV2: View {
     }
 
     private func startOnboarding() {
-        onboardingFlow = SubscriptionOnboardingLauncher(
-            keyValueStore: settingsViewModel.keyValueStore,
-            pir: .init(isAvailable: isPIRAvailable,
-                       isActivated: settingsViewModel.isPIRActivated,
-                       makeScreen: { AnyView(pirDestination) }))
-            .makeFlow(entryPoint: .subscriptionSettings,
-                      onFinish: { isShowingOnboarding = false })
+        let flow = SubscriptionOnboardingFlowViewModel(
+            entryPoint: .subscriptionSettings,
+            store: SubscriptionOnboardingProgressStore(keyValueStore: settingsViewModel.keyValueStore),
+            isPIRAvailable: isPIRAvailable,
+            isPIRActivated: settingsViewModel.isPIRActivated,
+            pirScreen: { pirDestination })
+        onboardingFlow = SubscriptionOnboardingLauncher.launch(flow: flow,
+                                                              onFinish: { isShowingOnboarding = false })
         isShowingOnboarding = true
-    }
-
-    private func refreshOnboardingProgress() {
-        var store = SubscriptionOnboardingProgressStore(keyValueStore: settingsViewModel.keyValueStore)
-        // PIR completes inside Data Broker Protection, so it is composed in rather than recorded — reading
-        // this screen should not write to the store.
-        let completed = settingsViewModel.isPIRActivated
-            ? store.completedItems.union([.pir])
-            : store.completedItems
-        onboardingPercentage = SubscriptionOnboardingChecklistItem.completionPercentage(
-            completed: completed,
-            checklist: SubscriptionOnboardingChecklistItem.checklist(isPIRAvailable: isPIRAvailable))
-        isShowingSetupCard = store.shouldShowSetupCard(percentage: onboardingPercentage, now: Date())
     }
 
     private var upgradeSection: some View {
@@ -536,11 +526,10 @@ struct SubscriptionSettingsViewV2: View {
         .padding(.top, -20)
         .navigationTitle(UserText.settingsPProManageSubscription)
         .applyInsetGroupedListStyle()
-        .onAppear { refreshOnboardingProgress() }
         .sheet(isPresented: $isShowingOnboarding,
                onDismiss: {
                    onboardingFlow = nil
-                   refreshOnboardingProgress()
+                   setupCardReloadToken = UUID()
                }) {
             onboardingFlow
         }

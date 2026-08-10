@@ -23,7 +23,6 @@ import UIComponents
 import AIChat
 import Common
 
-/// The Duck.ai model-picker onboarding screen.
 struct SubscriptionOnboardingDuckAIView: View {
     private enum Metrics {
         static let iconTextSpacing: CGFloat = 16
@@ -34,20 +33,9 @@ struct SubscriptionOnboardingDuckAIView: View {
     @StateObject private var viewModel: SubscriptionOnboardingDuckAIViewModel
     private let title: String?
     private let navigationButton: SubscriptionOnboardingNavigationButton?
-    private let progress: () -> Progress
+    private let progress: () -> SubscriptionOnboardingProgressView.Progress
 
     @State private var isShowingInfoSheet = false
-
-    /// Checklist progress for the hand-off interstitial, supplied by the flow view model.
-    struct Progress {
-        var percentage: Int
-        /// This customer's checklist, which is four items when PIR is unreachable. Without it the interstitial
-        /// falls back to every case and shows a PIR row they can never tick.
-        var items: [SubscriptionOnboardingChecklistItem] = SubscriptionOnboardingChecklistItem.allCases
-        var completedItems: Set<SubscriptionOnboardingChecklistItem>
-
-        static let none = Progress(percentage: 0, completedItems: [])
-    }
 
     /// How long the interstitial holds before the chat is requested, if the customer doesn't tap through.
     private static let interstitialDuration: TimeInterval = 3
@@ -55,7 +43,7 @@ struct SubscriptionOnboardingDuckAIView: View {
     init(viewModel: @autoclosure @escaping () -> SubscriptionOnboardingDuckAIViewModel,
          title: String? = nil,
          navigationButton: SubscriptionOnboardingNavigationButton? = nil,
-         progress: @escaping () -> Progress = { .none }) {
+         progress: @escaping () -> SubscriptionOnboardingProgressView.Progress = { .none }) {
         _viewModel = StateObject(wrappedValue: viewModel())
         self.title = title
         self.navigationButton = navigationButton
@@ -89,13 +77,10 @@ private extension SubscriptionOnboardingDuckAIView {
 
     /// Holds for ``interstitialDuration`` then requests the chat, or sooner if tapped. Fires `handOffToChat()` only once.
     var interstitial: some View {
-        let progress = progress()
         return SubscriptionOnboardingProgressView(
             variant: .duckAIInterstitial,
-            percentage: progress.percentage,
-            items: progress.items,
-            completedItems: progress.completedItems,
-            onDone: {})
+            progress: progress(),
+            onNext: {})
         .contentShape(Rectangle())
         .onTapGesture { viewModel.handOffToChat() }
         .task {

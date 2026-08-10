@@ -21,7 +21,6 @@ import SwiftUI
 import DesignResourcesKit
 import UIComponents
 
-/// Purchase confirmation screen; shows free trial progress when applicable.
 struct SubscriptionOnboardingOrderConfirmationView: View {
     private enum Metrics {
         static let contentSpacing: CGFloat = 24
@@ -65,7 +64,6 @@ private extension SubscriptionOnboardingOrderConfirmationView {
             explanation: viewModel.explanation)
     }
 
-    /// Illustration is a background so the card floats over it.
     var content: some View {
         GeometryReader { proxy in
             VStack(spacing: Metrics.contentSpacing) {

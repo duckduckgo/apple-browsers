@@ -25,33 +25,26 @@ final class SubscriptionOnboardingFlowViewModelTests: XCTestCase {
 
     // MARK: - Sequence, post-checkout
 
-    func testWhenEntryIsPostCheckoutThenSequenceIsTheFullFlowEndingInPIR() {
+    func testWhenEntryIsPostCheckoutThenSequenceIsTheFullFlowEndingInTheSummary() {
         let sut = makeSUT(entryPoint: .postCheckout)
 
         XCTAssertEqual(sut.sequence,
-                       [.orderConfirmation, .welcome, .vpnActivation, .vpnWidget, .idtr, .duckAI, .progress, .pir])
+                       [.orderConfirmation, .welcome, .vpnActivation, .vpnWidget, .idtr, .duckAI, .progress])
     }
 
     func testWhenEntryIsPostCheckoutThenCompletedSectionsAreStillWalked() {
-        // Post-checkout doesn't filter; purchase moment is when entry happens.
         let sut = makeSUT(entryPoint: .postCheckout, completed: [.vpn, .widget, .idtr, .duckAI])
 
         XCTAssertEqual(sut.sequence,
-                       [.orderConfirmation, .welcome, .vpnActivation, .vpnWidget, .idtr, .duckAI, .progress, .pir])
+                       [.orderConfirmation, .welcome, .vpnActivation, .vpnWidget, .idtr, .duckAI, .progress])
     }
 
     // MARK: - Sequence, subscription settings
 
-    func testWhenEntryIsSettingsThenSequenceOpensAndClosesOnTheSummary() {
+    func testWhenEntryIsSettingsThenSequenceResumesAtTheFirstUnfinishedSectionAndClosesOnTheSummary() {
         let sut = makeSUT(entryPoint: .subscriptionSettings, completed: [.vpn])
 
-        XCTAssertEqual(sut.sequence, [.progress, .vpnWidget, .idtr, .duckAI, .progress, .pir])
-    }
-
-    func testWhenEntryIsSettingsAndNothingIsOutstandingThenSequenceIsSummaryThenPIR() {
-        let sut = makeSUT(entryPoint: .subscriptionSettings, completed: [.vpn, .widget, .idtr, .duckAI])
-
-        XCTAssertEqual(sut.sequence, [.progress, .pir])
+        XCTAssertEqual(sut.sequence, [.vpnWidget, .idtr, .duckAI, .progress])
     }
 
     func testWhenEverythingIsCompleteThenSequenceIsTheSummaryAlone() {
@@ -61,17 +54,34 @@ final class SubscriptionOnboardingFlowViewModelTests: XCTestCase {
         XCTAssertEqual(sut.sequence, [.progress])
     }
 
-    // MARK: - PIR availability
+    func testWhenNothingIsOutstandingThenSequenceIsTheSummaryAlone() {
+        let sut = makeSUT(entryPoint: .subscriptionSettings, completed: [.vpn, .widget, .idtr, .duckAI])
 
-    func testWhenPIRIsUnavailableThenItIsNeverSequenced() {
-        let postCheckout = makeSUT(entryPoint: .postCheckout, isPIRAvailable: false)
-        let settings = makeSUT(entryPoint: .subscriptionSettings,
-                               completed: [.vpn, .widget, .idtr, .duckAI],
-                               isPIRAvailable: false)
-
-        XCTAssertFalse(postCheckout.sequence.contains(.pir))
-        XCTAssertEqual(settings.sequence, [.progress])
+        XCTAssertEqual(sut.sequence, [.progress])
     }
+
+    // MARK: - Sequence invariants
+
+    func testWhenSequenceIsBuiltThenNoSectionRepeats() {
+        // Routing resolves a section's successor by looking it up in `sequence`, so a repeat would resolve to
+        // the wrong position — the closing summary would push the section after the opening one, forever.
+        let suts = [makeSUT(entryPoint: .postCheckout),
+                    makeSUT(entryPoint: .subscriptionSettings, completed: []),
+                    makeSUT(entryPoint: .subscriptionSettings, completed: [.vpn, .widget, .idtr]),
+                    makeSUT(entryPoint: .subscriptionSettings,
+                            completed: Set(SubscriptionOnboardingChecklistItem.allCases))]
+
+        for sut in suts {
+            XCTAssertEqual(sut.sequence.count, Set(sut.sequence).count, "Repeated section in \(sut.sequence)")
+        }
+    }
+
+    func testWhenSequenceIsBuiltThenPIRIsNeverASection() {
+        XCTAssertFalse(makeSUT(entryPoint: .postCheckout).sequence.contains(.pir))
+        XCTAssertFalse(makeSUT(entryPoint: .subscriptionSettings, completed: []).sequence.contains(.pir))
+    }
+
+    // MARK: - PIR availability
 
     func testWhenPIRIsUnavailableThenTheChecklistDropsItAndTheCeilingIsOneHundred() {
         let sut = makeSUT(entryPoint: .postCheckout,
@@ -80,42 +90,36 @@ final class SubscriptionOnboardingFlowViewModelTests: XCTestCase {
 
         XCTAssertEqual(sut.checklist, [.vpn, .widget, .idtr, .duckAI])
         XCTAssertEqual(sut.completionPercentage, 100)
-        XCTAssertEqual(sut.progressVariant, .completion)
     }
 
     func testWhenPIRIsAvailableThenTheInFlowCeilingIsEighty() {
         let sut = makeSUT(entryPoint: .postCheckout, completed: [.vpn, .widget, .idtr, .duckAI])
 
         XCTAssertEqual(sut.completionPercentage, 80)
-        XCTAssertEqual(sut.progressVariant, .summary)
     }
 
     // MARK: - Routing
 
-    func testWhenSectionIsRequestedPastTheEndThenItIsNil() {
-        let sut = makeSUT(entryPoint: .subscriptionSettings,
-                          completed: Set(SubscriptionOnboardingChecklistItem.allCases))
-
-        XCTAssertEqual(sut.section(at: 0), .progress)
-        XCTAssertNil(sut.section(at: 1))
-        XCTAssertNil(sut.section(at: -1))
-    }
-
-    func testWhenTheSameSectionAppearsTwiceThenEachPositionHasItsOwnSuccessor() {
-        // The two summaries in a settings-entry run are the reason routing is keyed on index, not on case.
+    func testWhenASectionIsTheLastThenItHasNoSuccessor() {
         let sut = makeSUT(entryPoint: .subscriptionSettings, completed: [.vpn, .widget, .idtr])
 
-        XCTAssertEqual(sut.sequence, [.progress, .duckAI, .progress, .pir])
-        XCTAssertEqual(sut.section(at: 1), .duckAI)
-        XCTAssertEqual(sut.section(at: 3), .pir)
+        XCTAssertEqual(sut.sequence, [.duckAI, .progress])
+        XCTAssertEqual(sut.section(after: .duckAI), .progress)
+        XCTAssertNil(sut.section(after: .progress))
     }
 
-    func testWhenProceedingThenTheCursorAdvances() {
+    func testWhenASectionIsNotInTheSequenceThenItHasNoSuccessor() {
+        let sut = makeSUT(entryPoint: .subscriptionSettings, completed: [.vpn, .widget, .idtr])
+
+        XCTAssertNil(sut.section(after: .orderConfirmation))
+    }
+
+    func testWhenProceedingThenTheFlowMovesToTheNextSection() {
         let sut = makeSUT(entryPoint: .postCheckout)
 
         sut.proceed()
 
-        XCTAssertEqual(sut.cursor, 1)
+        XCTAssertEqual(sut.currentSection, .welcome)
     }
 
     func testWhenProceedingPastTheLastSectionThenTheFlowFinishesInsteadOfAdvancing() {
@@ -127,24 +131,7 @@ final class SubscriptionOnboardingFlowViewModelTests: XCTestCase {
         sut.proceed()
 
         XCTAssertTrue(didFinish)
-        XCTAssertEqual(sut.cursor, 0)
-    }
-
-    func testWhenPIRCompletesViaTheDetourThenTheSummaryFinishesInsteadOfPushingIt() {
-        // Entered at 80%, so `.pir` was appended. Completing it through the detour makes that step stale.
-        var didFinish = false
-        let store = MockProgressStore()
-        let sut = makeSUT(entryPoint: .subscriptionSettings,
-                          completed: [.vpn, .widget, .idtr, .duckAI],
-                          store: store,
-                          onFinish: { didFinish = true })
-        XCTAssertEqual(sut.sequence, [.progress, .pir])
-
-        sut.markComplete(.pir)
-        sut.proceed()
-
-        XCTAssertTrue(didFinish)
-        XCTAssertEqual(sut.cursor, 0)
+        XCTAssertEqual(sut.currentSection, .progress)
     }
 
     func testWhenCompletionChangesMidFlowThenTheSequenceDoesNotChange() {
@@ -160,35 +147,35 @@ final class SubscriptionOnboardingFlowViewModelTests: XCTestCase {
 
     // MARK: - Navigation binding
 
-    func testWhenCursorIsPastAnIndexThenItsBindingIsActive() {
+    func testWhenTheFlowIsPastASectionThenItsBindingIsActive() {
         let sut = makeSUT(entryPoint: .postCheckout)
-        let binding = sut.isPastSection(at: 0)
+        let binding = sut.isPastSection(.orderConfirmation)
 
         XCTAssertFalse(binding.wrappedValue)
         sut.proceed()
         XCTAssertTrue(binding.wrappedValue)
     }
 
-    func testWhenTheTopLinkIsDeactivatedThenTheCursorWalksBackOneStep() {
+    func testWhenTheTopLinkIsDeactivatedThenTheFlowWalksBackOneSection() {
         let sut = makeSUT(entryPoint: .postCheckout)
         sut.proceed()
         sut.proceed()
 
-        sut.isPastSection(at: 1).wrappedValue = false
+        sut.isPastSection(.welcome).wrappedValue = false
 
-        XCTAssertEqual(sut.cursor, 1)
+        XCTAssertEqual(sut.currentSection, .welcome)
     }
 
-    func testWhenAShallowerLinkIsDeactivatedThenTheCursorIsUnchanged() {
+    func testWhenAShallowerLinkIsDeactivatedThenTheFlowIsUnchanged() {
         // Rebuilding the chain writes `false` into every link below the top one. Honouring those unwinds the
         // stack — the bug where completing the VPN step popped back to the summary.
         let sut = makeSUT(entryPoint: .postCheckout)
         sut.proceed()
         sut.proceed()
 
-        sut.isPastSection(at: 0).wrappedValue = false
+        sut.isPastSection(.orderConfirmation).wrappedValue = false
 
-        XCTAssertEqual(sut.cursor, 2)
+        XCTAssertEqual(sut.currentSection, .vpnActivation)
     }
 
     func testWhenAStepCompletesThenNavigationIsUntouched() {
@@ -197,15 +184,15 @@ final class SubscriptionOnboardingFlowViewModelTests: XCTestCase {
 
         sut.sectionDidComplete(.vpnActivation)
 
-        XCTAssertEqual(sut.cursor, 1)
+        XCTAssertEqual(sut.currentSection, .vpnWidget)
     }
 
-    func testWhenABindingForALaterIndexIsDeactivatedThenTheCursorIsUnchanged() {
+    func testWhenABindingForALaterSectionIsDeactivatedThenTheFlowIsUnchanged() {
         let sut = makeSUT(entryPoint: .postCheckout)
 
-        sut.isPastSection(at: 3).wrappedValue = false
+        sut.isPastSection(.vpnWidget).wrappedValue = false
 
-        XCTAssertEqual(sut.cursor, 0)
+        XCTAssertEqual(sut.currentSection, .orderConfirmation)
     }
 
     // MARK: - Navigation chrome
@@ -213,10 +200,10 @@ final class SubscriptionOnboardingFlowViewModelTests: XCTestCase {
     func testWhenSectionIsTheRootThenItShowsCloseOtherwiseBack() {
         let sut = makeSUT(entryPoint: .postCheckout)
 
-        guard case .close = sut.navigationButton(at: 0) else {
+        guard case .close = sut.navigationButton(for: .orderConfirmation) else {
             return XCTFail("Expected the flow root to show a close button")
         }
-        guard case .back = sut.navigationButton(at: 1) else {
+        guard case .back = sut.navigationButton(for: .welcome) else {
             return XCTFail("Expected a pushed screen to show a back button")
         }
     }
@@ -224,17 +211,22 @@ final class SubscriptionOnboardingFlowViewModelTests: XCTestCase {
     func testWhenSectionIsAnOverviewOrSummaryThenItHasNoStepIndicator() {
         let sut = makeSUT(entryPoint: .postCheckout)
 
-        XCTAssertNil(sut.title(at: 0))
-        XCTAssertNil(sut.title(at: 1))
-        XCTAssertEqual(sut.title(at: 2), String(format: UserText.subscriptionOnboardingStepIndicatorFormat, 1, 5))
-        XCTAssertEqual(sut.title(at: 3), String(format: UserText.subscriptionOnboardingStepIndicatorFormat, 2, 5))
+        XCTAssertNil(sut.title(for: .orderConfirmation))
+        XCTAssertNil(sut.title(for: .welcome))
+        XCTAssertNil(sut.title(for: .progress))
+        XCTAssertEqual(sut.title(for: .vpnActivation),
+                       String(format: UserText.subscriptionOnboardingStepIndicatorFormat, 1, 5))
+        XCTAssertEqual(sut.title(for: .vpnWidget),
+                       String(format: UserText.subscriptionOnboardingStepIndicatorFormat, 2, 5))
     }
 
     func testWhenPIRIsUnavailableThenTheIndicatorCountsFourStepsNotFive() {
         let sut = makeSUT(entryPoint: .postCheckout, isPIRAvailable: false)
 
-        XCTAssertEqual(sut.title(at: 2), String(format: UserText.subscriptionOnboardingStepIndicatorFormat, 1, 4))
-        XCTAssertEqual(sut.title(at: 5), String(format: UserText.subscriptionOnboardingStepIndicatorFormat, 4, 4))
+        XCTAssertEqual(sut.title(for: .vpnActivation),
+                       String(format: UserText.subscriptionOnboardingStepIndicatorFormat, 1, 4))
+        XCTAssertEqual(sut.title(for: .duckAI),
+                       String(format: UserText.subscriptionOnboardingStepIndicatorFormat, 4, 4))
     }
 
     // MARK: - Completion
@@ -274,7 +266,7 @@ final class SubscriptionOnboardingFlowViewModelTests: XCTestCase {
 
         sut.sectionDidRequestAdvance()
 
-        XCTAssertEqual(sut.cursor, 1)
+        XCTAssertEqual(sut.currentSection, .welcome)
     }
 
     func testWhenSectionRequestsDuckAIChatThenTheRequestIsForwardedWithItsModel() {
@@ -296,11 +288,13 @@ final class SubscriptionOnboardingFlowViewModelTests: XCTestCase {
                          onRequestDuckAIChat: @escaping (String?) -> Void = { _ in }) -> SubscriptionOnboardingFlowViewModel {
         let store = store ?? MockProgressStore()
         store.completedItems = store.completedItems.union(completed)
-        return SubscriptionOnboardingFlowViewModel(entryPoint: entryPoint,
-                                                   store: store,
-                                                   isPIRAvailable: isPIRAvailable,
-                                                   onFinish: onFinish,
-                                                   onRequestDuckAIChat: onRequestDuckAIChat)
+        let sut = SubscriptionOnboardingFlowViewModel(entryPoint: entryPoint,
+                                                      store: store,
+                                                      isPIRAvailable: isPIRAvailable,
+                                                      onRequestDuckAIChat: onRequestDuckAIChat)
+        // Assigned after construction because the launcher owns it in production.
+        sut.onFinish = onFinish
+        return sut
     }
 }
 

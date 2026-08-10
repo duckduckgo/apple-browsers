@@ -21,7 +21,6 @@ import SwiftUI
 import DesignResourcesKit
 import UIComponents
 
-/// The centered header for an onboarding section screen: an optional graphic above a title and optional explanation.
 struct SubscriptionOnboardingHeaderView: View {
     private enum Metrics {
         static let graphicWidth: CGFloat = 128
@@ -70,8 +69,7 @@ struct SubscriptionOnboardingHeaderView: View {
 }
 
 private extension SubscriptionOnboardingHeaderView {
-    /// Renders Markdown, and since every link leads to the section's info screen any tap fires
-    /// `onInfoLinkTap` — falling back to the system URL handler when that's nil.
+    /// Renders Markdown; links fire `onInfoLinkTap` or fall back to the system URL handler.
     func explanationView(_ explanation: String) -> some View {
         Text(.init("\(explanation)"))
             .daxSubheadRegular()

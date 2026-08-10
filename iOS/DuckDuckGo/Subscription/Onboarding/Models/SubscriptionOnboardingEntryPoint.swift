@@ -17,11 +17,7 @@
 //  limitations under the License.
 //
 
-/// Where the onboarding flow was launched from.
-///
-/// An entry point supplies exactly two things — its section sequence (`SubscriptionOnboardingFlowViewModel`)
-/// and what leaving the flow does (`SubscriptionOnboardingLauncher`) — so adding one is a case and a list,
-/// with no change to any screen.
+/// Where the flow was launched from; supplies its section sequence and exit action.
 enum SubscriptionOnboardingEntryPoint {
     /// Presented over the post-checkout page once a first purchase completes.
     case postCheckout

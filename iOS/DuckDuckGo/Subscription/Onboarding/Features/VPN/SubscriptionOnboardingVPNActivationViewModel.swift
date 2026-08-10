@@ -21,11 +21,9 @@ import Combine
 import Foundation
 import VPN
 
-/// Drives the VPN activation screen, from the pre-VPN connection info through to reporting completion.
 @MainActor
 final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
 
-    /// The two states of the single activation screen.
     enum ConnectionState: Equatable {
         case off
         case on
@@ -57,7 +55,8 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
     private let vpnLocationProvider: SubscriptionOnboardingVPNLocationProviding
     private let serverInfoObserver: ConnectionServerInfoObserver
     private let errorObserver: ConnectionErrorObserver
-    private weak var delegate: SubscriptionOnboardingSectionDelegate?
+    private let onComplete: () -> Void
+    private let onNext: () -> Void
     private let locale: Locale
 
     private var hasReportedCompletion = false
@@ -69,14 +68,16 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
          vpnLocationProvider: SubscriptionOnboardingVPNLocationProviding = DefaultSubscriptionOnboardingVPNLocationProvider(),
          serverInfoObserver: ConnectionServerInfoObserver = AppDependencyProvider.shared.serverInfoObserver,
          errorObserver: ConnectionErrorObserver = AppDependencyProvider.shared.connectionErrorObserver,
-         delegate: SubscriptionOnboardingSectionDelegate? = nil,
+         onComplete: @escaping () -> Void = {},
+         onNext: @escaping () -> Void = {},
          locale: Locale = .current) {
         self.prefetcher = prefetcher
         self.vpnController = vpnController
         self.vpnLocationProvider = vpnLocationProvider
         self.serverInfoObserver = serverInfoObserver
         self.errorObserver = errorObserver
-        self.delegate = delegate
+        self.onComplete = onComplete
+        self.onNext = onNext
         self.locale = locale
         self.connectionState = vpnController.isConnected ? .on : .off
     }
@@ -134,7 +135,7 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
 
     /// Finishes this section, moving the flow to the next one.
     func advance() {
-        delegate?.sectionDidRequestAdvance()
+        onNext()
     }
 
     /// Starts the VPN.
@@ -210,7 +211,7 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
     private func reportCompletionIfNeeded() {
         guard !hasReportedCompletion else { return }
         hasReportedCompletion = true
-        delegate?.sectionDidComplete(.vpnActivation)
+        onComplete()
     }
 }
 

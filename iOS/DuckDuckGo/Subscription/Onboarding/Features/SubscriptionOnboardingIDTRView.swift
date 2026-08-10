@@ -19,7 +19,6 @@
 
 import SwiftUI
 
-/// Identity Theft Restoration section screen. No "Learn More" link (this screen is the information) and no activation step (already active with subscription).
 struct SubscriptionOnboardingIDTRView: View {
     private let title: String?
     private let navigationButton: SubscriptionOnboardingNavigationButton?

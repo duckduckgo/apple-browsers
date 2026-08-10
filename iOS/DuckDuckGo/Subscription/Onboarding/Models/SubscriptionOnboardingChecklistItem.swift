@@ -30,7 +30,7 @@ enum SubscriptionOnboardingChecklistItem: String, CaseIterable, Identifiable {
 
     static let features: [SubscriptionOnboardingChecklistItem] = [.vpn, .idtr, .duckAI, .pir]
 
-    /// Customer's checklist (4 items if PIR unavailable, to keep ceiling at 100%).
+    /// Customer's checklist, filtered if PIR is unavailable to maintain 100% ceiling.
     static func checklist(isPIRAvailable: Bool) -> [SubscriptionOnboardingChecklistItem] {
         isPIRAvailable ? allCases : allCases.filter { $0 != .pir }
     }

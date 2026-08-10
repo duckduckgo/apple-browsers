@@ -20,18 +20,15 @@
 import Foundation
 import AIChat
 
-/// Prefetches flow data once at startup; screens read cached results rather than refetching.
 @MainActor
 final class SubscriptionOnboardingPrefetcher: ObservableObject {
 
-    /// The lifecycle of one prefetched value.
     enum FetchState<Value> {
         case idle
         case loading
         case loaded(Value)
         case failed
 
-        /// A fetch should (re)start only when nothing is in flight or already resolved.
         var shouldStartFetch: Bool {
             switch self {
             case .idle, .failed: return true
@@ -60,13 +57,10 @@ final class SubscriptionOnboardingPrefetcher: ObservableObject {
         modelsTask?.cancel()
     }
 
-    /// Requested fetches. Runs that skip sections shouldn't pay for their fetches.
     struct Targets: OptionSet {
         let rawValue: Int
 
-        /// The pre-VPN connection info the activation screen compares against.
         static let connectionInfo = Targets(rawValue: 1 << 0)
-        /// The Duck.ai model list.
         static let aiModels = Targets(rawValue: 1 << 1)
 
         static let all: Targets = [.connectionInfo, .aiModels]

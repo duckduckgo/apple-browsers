@@ -116,8 +116,8 @@ final class SubscriptionOnboardingVPNActivationViewModelTests: XCTestCase {
 
     func testWhenTunnelConnectsThenStateBecomesOnAndSectionCompletes() async {
         let controller = MockVPNController(isConnected: false)
-        let delegate = SpySectionDelegate()
-        let viewModel = makeViewModel(controller: controller, delegate: delegate)
+        let spy = SectionOutputSpy()
+        let viewModel = makeViewModel(controller: controller, spy: spy)
         viewModel.onAppear()
 
         XCTAssertEqual(viewModel.connectionState, .off)
@@ -127,7 +127,7 @@ final class SubscriptionOnboardingVPNActivationViewModelTests: XCTestCase {
         }
 
         XCTAssertEqual(viewModel.connectionState, .on)
-        XCTAssertEqual(delegate.completedSections, [.vpnActivation])
+        XCTAssertEqual(spy.completeCount, 1)
     }
 
     func testWhenAlreadyOnThenVPNConnectionInfoComesFromServerInfoObserverAndOriginalIsNotFetched() async {
@@ -149,22 +149,22 @@ final class SubscriptionOnboardingVPNActivationViewModelTests: XCTestCase {
     }
 
     func testWhenAlreadyOnAndOnAppearCalledTwiceThenSectionCompletesOnce() {
-        let delegate = SpySectionDelegate()
-        let viewModel = makeViewModel(controller: MockVPNController(isConnected: true), delegate: delegate)
+        let spy = SectionOutputSpy()
+        let viewModel = makeViewModel(controller: MockVPNController(isConnected: true), spy: spy)
 
         viewModel.onAppear()
         viewModel.onAppear()
 
-        XCTAssertEqual(delegate.completedSections, [.vpnActivation])
+        XCTAssertEqual(spy.completeCount, 1)
     }
 
     func testWhenAlreadyOnThenOnAppearReportsSectionComplete() {
-        let delegate = SpySectionDelegate()
-        let viewModel = makeViewModel(controller: MockVPNController(isConnected: true), delegate: delegate)
+        let spy = SectionOutputSpy()
+        let viewModel = makeViewModel(controller: MockVPNController(isConnected: true), spy: spy)
 
         viewModel.onAppear()
 
-        XCTAssertEqual(delegate.completedSections, [.vpnActivation])
+        XCTAssertEqual(spy.completeCount, 1)
     }
 
     func testWhenTunnelConnectsThenVPNConnectionInfoComesFromServerInfoObserver() async {
@@ -630,14 +630,15 @@ final class SubscriptionOnboardingVPNActivationViewModelTests: XCTestCase {
                                locationProvider: SubscriptionOnboardingVPNLocationProviding = MockVPNLocationProvider(),
                                serverInfoObserver: ConnectionServerInfoObserver = MockConnectionServerInfoObserver(),
                                errorObserver: ConnectionErrorObserver = MockConnectionErrorObserver(),
-                               delegate: SubscriptionOnboardingSectionDelegate? = nil) -> SubscriptionOnboardingVPNActivationViewModel {
+                               spy: SectionOutputSpy = SectionOutputSpy()) -> SubscriptionOnboardingVPNActivationViewModel {
         SubscriptionOnboardingVPNActivationViewModel(prefetcher: SubscriptionOnboardingPrefetcher(connectionInfoService: service,
                                                                                                   modelProvider: StubAIModelProvider()),
                                                      vpnController: controller,
                                                      vpnLocationProvider: locationProvider,
                                                      serverInfoObserver: serverInfoObserver,
                                                      errorObserver: errorObserver,
-                                                     delegate: delegate,
+                                                     onComplete: { spy.recordComplete() },
+                                                     onNext: { spy.recordNext() },
                                                      locale: enUS)
     }
 
@@ -764,13 +765,12 @@ private final class MockVPNLocationProvider: SubscriptionOnboardingVPNLocationPr
     }
 }
 
-private final class SpySectionDelegate: SubscriptionOnboardingSectionDelegate {
-    private(set) var completedSections: [SubscriptionOnboardingSection] = []
+/// Records the view model's outputs. It no longer knows which section it belongs to — mapping a completion
+/// onto `.vpnActivation` is the flow's job — so the meaningful assertion is that completion fired, and once.
+private final class SectionOutputSpy {
+    private(set) var completeCount = 0
+    private(set) var nextCount = 0
 
-    func sectionDidComplete(_ section: SubscriptionOnboardingSection) {
-        completedSections.append(section)
-    }
-
-    func sectionDidRequestDuckAIChat(modelID: String?) {}
-    func sectionDidRequestAdvance() {}
+    func recordComplete() { completeCount += 1 }
+    func recordNext() { nextCount += 1 }
 }

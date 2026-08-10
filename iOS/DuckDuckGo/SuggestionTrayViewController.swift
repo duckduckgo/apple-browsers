@@ -145,6 +145,7 @@ class SuggestionTrayViewController: UIViewController {
     private let aiChatSettings: AIChatSettingsProvider
     private let featureDiscovery: FeatureDiscovery
     private let hideBorder: Bool
+    private let controllerInstallationDidComplete: (UIViewController) -> Void
 
     var coversFullScreen: Bool = false
 
@@ -222,7 +223,8 @@ class SuggestionTrayViewController: UIViewController {
                    featureDiscovery: FeatureDiscovery,
                    newTabPageDependencies: NewTabPageDependencies,
                    productSurfaceTelemetry: ProductSurfaceTelemetry,
-                   hideBorder: Bool) {
+                   hideBorder: Bool,
+                   controllerInstallationDidComplete: @escaping (UIViewController) -> Void = { _ in }) {
         self.favoritesModel = favoritesViewModel
         self.bookmarksDatabase = bookmarksDatabase
         self.historyManager = historyManager
@@ -234,6 +236,7 @@ class SuggestionTrayViewController: UIViewController {
         self.featureDiscovery = featureDiscovery
         self.productSurfaceTelemetry = productSurfaceTelemetry
         self.hideBorder = hideBorder
+        self.controllerInstallationDidComplete = controllerInstallationDidComplete
 
        super.init(nibName: nil, bundle: nil)
     }
@@ -345,7 +348,9 @@ class SuggestionTrayViewController: UIViewController {
             } else {
                 willRemoveAutocomplete = true
                 displayFavoritesIfNeeded(animated: animated) { [weak self] controller in
-                    guard let self else { return }
+                    guard let self,
+                          contentPresentationGeneration == presentationGeneration,
+                          newTabPage === controller else { return }
                     removeAutocomplete(animated: animated) { [weak self, weak controller] in
                         guard let self else { return }
                         guard let controller,
@@ -843,11 +848,13 @@ class SuggestionTrayViewController: UIViewController {
                 controller.view.alpha = 1
             }, completion: { _ in
                 controller.didMove(toParent: self)
+                self.controllerInstallationDidComplete(controller)
                 completion()
             })
         } else {
             controller.view.alpha = 1
             controller.didMove(toParent: self)
+            controllerInstallationDidComplete(controller)
             completion()
         }
     }

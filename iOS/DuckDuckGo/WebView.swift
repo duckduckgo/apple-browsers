@@ -19,11 +19,28 @@
 
 import UIKit
 import WebKit
+import DesignResourcesKitIcons
 import os.log
 
 final class WebView: WKWebView {
     private var customAccesoryView: UIView?
     private(set) var inputAccessoryViewHidden = false
+
+    /// An item offered on a text selection.
+    enum TextSelectionMenuItem: Equatable {
+        case askAIChat
+        case searchWithDuckDuckGo
+    }
+
+    /// Re-evaluated on every menu build, so flag and setting changes take effect immediately.
+    var isAskAIChatItemAvailable: (() -> Bool)?
+    var isSearchWithDuckDuckGoItemAvailable: (() -> Bool)?
+
+    /// Receives the trimmed selection when the user picks Ask Duck.ai.
+    var askAIChatHandler: ((String) -> Void)?
+
+    /// Receives the trimmed selection when the user picks Search with DuckDuckGo.
+    var searchWithDuckDuckGoHandler: ((String) -> Void)?
 
     // Remembers the last find-in-page query so the system find navigator can be prepopulated per tab.
     var lastFindInPageQuery: String?
@@ -83,6 +100,70 @@ final class WebView: WKWebView {
         guard inputAccessoryViewHidden != hidden else { return }
         inputAccessoryViewHidden = hidden
         reloadContentViewInputViews()
+    }
+
+    /// Adds our items to the text-selection menu.
+    ///
+    /// Overridden on the subclass because `WKWebView` consumes `buildMenu(with:)` rather than propagating it
+    /// up the responder chain since iOS 18.2. Anchored after `.standardEdit` so the items sit beside Copy —
+    /// appending to the root menu was verified on device to put them in the overflow menu only.
+    override func buildMenu(with builder: UIMenuBuilder) {
+        super.buildMenu(with: builder)
+
+        let items = selectionMenuItems(forSystem: builder.system)
+        guard !items.isEmpty else { return }
+
+        builder.insertSibling(UIMenu(title: "", options: .displayInline, children: items.map(makeAction)),
+                              afterMenu: .standardEdit)
+    }
+
+    /// The items to offer, in display order. Selection menu only; the main menu system drives the iPad
+    /// menu bar, which has no selection to act on.
+    func selectionMenuItems(forSystem system: UIMenuSystem) -> [TextSelectionMenuItem] {
+        guard system != .main else { return [] }
+
+        var items: [TextSelectionMenuItem] = []
+        if isAskAIChatItemAvailable?() == true { items.append(.askAIChat) }
+        if isSearchWithDuckDuckGoItemAvailable?() == true { items.append(.searchWithDuckDuckGo) }
+        return items
+    }
+
+    private func makeAction(for item: TextSelectionMenuItem) -> UIAction {
+        switch item {
+        case .askAIChat:
+            return UIAction(title: UserText.actionAskAIChat,
+                            image: DesignSystemImages.Glyphs.Size16.aiChat) { [weak self] _ in
+                self?.withCurrentSelection { self?.askAIChatHandler?($0) }
+            }
+        case .searchWithDuckDuckGo:
+            return UIAction(title: UserText.actionSearchWithDuckDuckGo,
+                            image: DesignSystemImages.Glyphs.Size16.searchFind) { [weak self] _ in
+                self?.withCurrentSelection { self?.searchWithDuckDuckGoHandler?($0) }
+            }
+        }
+    }
+
+    /// The selection trimmed of surrounding whitespace, or nil when nothing usable remains.
+    ///
+    /// Uncapped, matching macOS: consumers need the real length, so truncation belongs to whoever builds
+    /// a payload from it.
+    static func normalizedSelection(_ text: String) -> String? {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        return trimmed
+    }
+
+    /// Read in the isolated content world so a page that overrides `window.getSelection` cannot substitute
+    /// text the user never selected. macOS moved its equivalent off the page world for the same reason.
+    ///
+    /// Main frame only: a selection inside an iframe yields nothing and the action silently does nothing.
+    private func withCurrentSelection(_ handler: @escaping (String) -> Void) {
+        evaluateJavaScript("window.getSelection().toString()", in: nil, in: .defaultClient) { result in
+            guard case .success(let value) = result,
+                  let text = value as? String,
+                  let selection = Self.normalizedSelection(text) else { return }
+            handler(selection)
+        }
     }
 
     private func reloadContentViewInputViews() {

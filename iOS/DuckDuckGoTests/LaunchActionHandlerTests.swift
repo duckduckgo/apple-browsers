@@ -195,7 +195,8 @@ final class LaunchActionHandlerTests {
         #expect(keyboardPresenter.lastBackgroundDate == date)
     }
 
-    @Test("Record ordinary return when a standard launch is not after idle")
+    @available(iOS 16, *)
+    @Test("Record ordinary return when a standard launch is not after idle", .timeLimit(.minutes(1)))
     func recordOrdinaryReturnWhenNotAfterIdle() {
         idleReturnEvaluator.didReturnAfterIdleResult = false
 
@@ -204,7 +205,8 @@ final class LaunchActionHandlerTests {
         #expect(idleReturnDelegate.recordOrdinaryReturnCalled)
     }
 
-    @Test("Do not record ordinary return when the return is after idle")
+    @available(iOS 16, *)
+    @Test("Do not record ordinary return when the return is after idle", .timeLimit(.minutes(1)))
     func noOrdinaryReturnWhenAfterIdle() {
         idleReturnEvaluator.didReturnAfterIdleResult = true
         idleReturnEvaluator.treatmentForIdleReturnResult = .ntp

@@ -256,7 +256,7 @@ struct PostIdleSessionInstrumentationTests {
         #expect(completion.0.statusReason == .searchSubmitted)
         #expect(completion.0.sessionInterval.end == clock.now)
         if case .success(let reason) = completion.1 {
-            #expect(reason == "bar_used")
+            #expect(reason == "search_submitted")
         } else {
             Issue.record("Expected .success status, got \(completion.1)")
         }

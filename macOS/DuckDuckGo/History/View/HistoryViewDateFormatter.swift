@@ -44,7 +44,6 @@ protocol HistoryViewDateFormatting {
      *
      * Rules:
      *   - when date is "today" -> display only the time
-     *   - when date is "yesterday" -> display "Yesterday" (localized).
      *   - when date is older -> display month and day, without time.
      */
     func shortString(for date: Date) -> String

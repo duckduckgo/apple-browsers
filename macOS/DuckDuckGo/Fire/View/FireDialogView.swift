@@ -431,7 +431,6 @@ struct FireDialogView: ModalView {
                 detailActionEnabled: viewModel.includeHistory,
                 detailAccessibilityIdentifier: "FireDialogView.historyDetailButton",
                 isEnabled: isIncludeHistoryEnabled,
-                roundedCorners: .top,
                 toggleId: "FireDialogView.historyToggle"
             )
             .accessibilityHidden(isShowingAnyOverlay)
@@ -449,7 +448,6 @@ struct FireDialogView: ModalView {
                 // grey-out the detail label when the toggle is Off
                 detailActionEnabled: viewModel.includeCookiesAndSiteData,
                 isEnabled: isIncludeCookiesAndSiteDataEnabled,
-                roundedCorners: viewModel.mode.shouldShowFireproofSection ? .none : .bottom,
                 toggleId: "FireDialogView.cookiesToggle"
             )
             .disabled(!isIncludeCookiesAndSiteDataEnabled)
@@ -458,7 +456,7 @@ struct FireDialogView: ModalView {
             if viewModel.shouldShowChatHistoryToggle {
                 sectionDivider()
 
-            // Row 3: Chat History
+                // Row 3: Chat History
                 sectionRow(
                     icon: DesignSystemImages.Glyphs.Size16.aiChat,
                     title: UserText.fireDialogChatHistoryTitle,
@@ -820,56 +818,56 @@ struct FireDialogView: ModalView {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private func sectionRow(icon: NSImage, title: String, subtitle: String? = nil, detail: String? = nil, isOn: Binding<Bool>, detailAction: (() -> Void)? = nil, detailActionEnabled: Bool = true, detailAccessibilityIdentifier: String = "FireDialogView.cookiesDetailButton", isEnabled: Bool = true, roundedCorners: RowCornerRadius = .none, toggleId: String) -> some View {
-        RowWithPressEffect(roundedCorners: roundedCorners, rowCornerRadius: style.rowCornerRadius, isEnabled: isEnabled) {
-            guard isEnabled else { return }
-            isOn.wrappedValue.toggle()
-        } content: {
-            HStack(spacing: 8) {
-                HStack(spacing: 12) {
-                    Image(nsImage: icon)
+    private func sectionRow(icon: NSImage, title: String, subtitle: String? = nil, detail: String? = nil, isOn: Binding<Bool>, detailAction: (() -> Void)? = nil, detailActionEnabled: Bool = true, detailAccessibilityIdentifier: String = "FireDialogView.cookiesDetailButton", isEnabled: Bool = true, toggleId: String) -> some View {
+        HStack(spacing: 8) {
+            HStack(spacing: 12) {
+                Image(nsImage: icon)
 
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(title)
-                            .font(.system(size: 13))
-                            .foregroundColor(Color(designSystemColor: .textPrimary))
-                            .lineLimit(1)
-                        if let subtitle {
-                            Text(subtitle)
-                                .font(.system(size: 11))
-                                .foregroundColor(Color(designSystemColor: .textSecondary))
-                                .multilineTextAlignment(.leading)
-                                .fixedSize(horizontal: false, vertical: true)
-                                .layoutPriority(3)
-                        }
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title)
+                        .font(.system(size: 13))
+                        .foregroundColor(Color(designSystemColor: .textPrimary))
+                        .lineLimit(1)
+                    if let subtitle {
+                        Text(subtitle)
+                            .font(.system(size: 11))
+                            .foregroundColor(Color(designSystemColor: .textSecondary))
+                            .multilineTextAlignment(.leading)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .layoutPriority(3)
                     }
-                }
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel(title)
-                .accessibilityValue(subtitle ?? detail ?? "")
-                .accessibilityAddTraits(.updatesFrequently)
-
-                Spacer()
-
-                HStack(spacing: 8) {
-                    if let detail {
-                        SectionRowDetailLabel(
-                            text: detail,
-                            action: detailAction,
-                            isEnabled: detailActionEnabled,
-                            accessibilityIdentifier: detailAccessibilityIdentifier
-                        )
-                    }
-
-                    Toggle(isOn: isOn)
-                        .toggleStyle(FireToggleStyle(onFill: style.knobFillColor, knobFill: Color(designSystemColor: .accentContentPrimary)))
-                        .accessibilityLabel(title)
-                        .accessibilityIdentifier(toggleId)
                 }
             }
-            .padding(.vertical, 13)
-            .padding(.horizontal, 4)
-            .frame(width: Constants.sectionRowWidth, alignment: .leading)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(title)
+            .accessibilityValue(subtitle ?? detail ?? "")
+            .accessibilityAddTraits(.updatesFrequently)
+
+            Spacer()
+
+            HStack(spacing: 8) {
+                if let detail {
+                    SectionRowDetailLabel(
+                        text: detail,
+                        action: detailAction,
+                        isEnabled: detailActionEnabled,
+                        accessibilityIdentifier: detailAccessibilityIdentifier
+                    )
+                }
+
+                Toggle(isOn: isOn)
+                    .toggleStyle(FireToggleStyle(onFill: style.knobFillColor, knobFill: Color(designSystemColor: .accentContentPrimary)))
+                    .accessibilityLabel(title)
+                    .accessibilityIdentifier(toggleId)
+            }
+        }
+        .padding(.vertical, 13)
+        .padding(.horizontal, 4)
+        .frame(width: Constants.sectionRowWidth, alignment: .leading)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            guard isEnabled else { return }
+            isOn.wrappedValue.toggle()
         }
     }
 
@@ -1149,61 +1147,6 @@ private struct RowCornerClipModifier: ViewModifier {
             content.clipShape(CustomRoundedCornersShape(tl: roundedCornerRadius, tr: roundedCornerRadius, bl: 0, br: 0))
         case .bottom:
             content.clipShape(CustomRoundedCornersShape(tl: 0, tr: 0, bl: roundedCornerRadius, br: roundedCornerRadius))
-        }
-    }
-}
-
-// Row with press effect - visual feedback without blocking child interactions
-private struct RowWithPressEffect<Content: View>: View {
-    let roundedCorners: RowCornerRadius
-    let rowCornerRadius: CGFloat
-    let isEnabled: Bool
-    let action: () -> Void
-    @ViewBuilder let content: () -> Content
-
-    @State private var showFeedback = false
-
-    var body: some View {
-        ZStack {
-            // Visual feedback overlay
-            pressBackground
-                .opacity(showFeedback ? 1 : 0)
-                .allowsHitTesting(false)
-
-            content()
-        }
-        .contentShape(Rectangle())
-        .onTapGesture {
-            if isEnabled {
-                // Quick flash animation
-                showFeedback = true
-
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.06) {
-                    showFeedback = false
-                    DispatchQueue.main.async {
-                        action()
-                    }
-                }
-            }
-        }
-        .animation(.easeOut(duration: showFeedback ? 0.06 : 0.12), value: showFeedback)
-        .modifier(RowCornerClipModifier(roundedCorners: roundedCorners, roundedCornerRadius: rowCornerRadius))
-    }
-
-    @ViewBuilder
-    private var pressBackground: some View {
-        let background = Color.buttonMouseDown
-
-        switch roundedCorners {
-        case .top:
-            CustomRoundedCornersShape(tl: rowCornerRadius, tr: rowCornerRadius, bl: 0, br: 0)
-                .fill(background)
-        case .bottom:
-            CustomRoundedCornersShape(tl: 0, tr: 0, bl: rowCornerRadius, br: rowCornerRadius)
-                .fill(background)
-        case .none:
-            Rectangle()
-                .fill(background)
         }
     }
 }

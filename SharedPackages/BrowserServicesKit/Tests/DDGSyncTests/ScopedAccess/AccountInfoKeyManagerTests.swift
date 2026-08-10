@@ -85,6 +85,58 @@ struct AccountInfoKeyManagerTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("A stale refresh cannot remove a cached wrapper for the same key", .timeLimit(.minutes(1)))
+    func testWhenRefreshReturnsFewerWrappersForMatchingKeyThenPreservesCachedWrapper() async throws {
+        let scopedPassword = Data(repeating: 0x03, count: 32)
+        let protectedKeys = try makeDualWrappedProtectedKeys(scopedPassword: scopedPassword)
+        let secureStore = SecureStorageStub()
+        secureStore.theProtectedKeysData = try JSONEncoder.snakeCaseKeys.encode([
+            protectedKeys.defaultCredential,
+            protectedKeys.thirdParty
+        ])
+        let scopedAccess = ScopedAccessCredentialManagingMock()
+        scopedAccess.fetchProtectedKeysStub = [protectedKeys.defaultCredential]
+        let manager = AccountInfoKeyManager(secureStore: secureStore,
+                                            scopedAccess: scopedAccess,
+                                            crypter: crypter)
+
+        _ = try await manager.refreshKey(for: account)
+
+        let cachedData = try #require(secureStore.theProtectedKeysData)
+        let cachedKeys = try JSONDecoder.snakeCaseKeys.decode([ProtectedKey].self, from: cachedData)
+        #expect(Set(cachedKeys.map(\.encryptedWith)) == Set([
+            SyncCredentialID.defaultCredential,
+            SyncCredentialID.thirdParty
+        ]))
+        #expect(cachedKeys.allSatisfy { $0.kid == protectedKeys.defaultCredential.kid })
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A refreshed key identity replaces wrappers for the old key", .timeLimit(.minutes(1)))
+    func testWhenRefreshReturnsDifferentKeyThenDoesNotPreserveCachedWrappers() async throws {
+        let scopedPassword = Data(repeating: 0x03, count: 32)
+        let cachedKeys = try makeDualWrappedProtectedKeys(scopedPassword: scopedPassword)
+        let refreshedKey = try makeDefaultCredentialProtectedKey()
+        let secureStore = SecureStorageStub()
+        secureStore.theProtectedKeysData = try JSONEncoder.snakeCaseKeys.encode([
+            cachedKeys.defaultCredential,
+            cachedKeys.thirdParty
+        ])
+        let scopedAccess = ScopedAccessCredentialManagingMock()
+        scopedAccess.fetchProtectedKeysStub = [refreshedKey]
+        let manager = AccountInfoKeyManager(secureStore: secureStore,
+                                            scopedAccess: scopedAccess,
+                                            crypter: crypter)
+
+        _ = try await manager.refreshKey(for: account)
+
+        let cachedData = try #require(secureStore.theProtectedKeysData)
+        let persistedKeys = try JSONDecoder.snakeCaseKeys.decode([ProtectedKey].self, from: cachedData)
+        #expect(persistedKeys.map(\.kid) == [refreshedKey.kid])
+        #expect(persistedKeys.map(\.encryptedWith) == [SyncCredentialID.defaultCredential])
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("A failed default wrapper falls back to the third-party wrapper", .timeLimit(.minutes(1)))
     func testWhenDefaultWrapperCannotBeUnwrappedThenFallsBackToThirdPartyWrapper() async throws {
         let scopedPassword = Data(repeating: 0x03, count: 32)

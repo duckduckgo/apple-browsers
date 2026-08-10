@@ -860,18 +860,52 @@ final class DDGSyncTests: XCTestCase {
         XCTAssertEqual(Base64URL.decode(payload.secret), scopedPassword)
     }
 
-    func testWhenPreparingThirdPartyRecoveryCodeAndNewProtectedKeysAreReturnedThenKeysAreCached() async throws {
+    func testWhenPreparingThirdPartyRecoveryCodeAndReturnedSnapshotIsMissingMatchingWrapperThenCachedWrapperIsPreserved() async throws {
         let scopedAccess = try XCTUnwrap(dependencies.scopedAccess as? ScopedAccessCredentialManagingMock)
-        let protectedKey = makeProtectedKey(kid: "key-ddg", encryptedWith: "ddg")
+        let defaultWrapper = makeProtectedKey(kid: "account-info-key",
+                                              encryptedWith: SyncCredentialID.defaultCredential,
+                                              purpose: ProtectedKeyPurpose.accountInfo)
+        let thirdPartyWrapper = makeProtectedKey(kid: "account-info-key",
+                                                 encryptedWith: SyncCredentialID.thirdParty,
+                                                 purpose: ProtectedKeyPurpose.accountInfo)
+        let unrelatedKey = makeProtectedKey(kid: "other-key", encryptedWith: SyncCredentialID.defaultCredential)
+        let secureStore = try XCTUnwrap(dependencies.secureStore as? SecureStorageStub)
+        secureStore.theProtectedKeysData = try JSONEncoder.snakeCaseKeys.encode([
+            defaultWrapper,
+            thirdPartyWrapper,
+            unrelatedKey
+        ])
         scopedAccess.ensureThirdPartyScopedPasswordStub = EnsuredThirdPartyCredential(scopedPassword: Data(repeating: 6, count: 32),
-                                                                                     protectedKeysToCache: [protectedKey])
+                                                                                     protectedKeysToCache: [defaultWrapper, unrelatedKey])
         let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
 
         _ = try await syncService.prepareThirdPartyRecoveryCode(purpose: "ai_chats")
 
-        let cachedProtectedKeysData = try XCTUnwrap((dependencies.secureStore as? SecureStorageStub)?.theProtectedKeysData)
+        let cachedProtectedKeysData = try XCTUnwrap(secureStore.theProtectedKeysData)
         let cachedProtectedKeys = try JSONDecoder.snakeCaseKeys.decode([ProtectedKey].self, from: cachedProtectedKeysData)
-        XCTAssertEqual(cachedProtectedKeys.map(\.kid), ["key-ddg"])
+        XCTAssertEqual(cachedProtectedKeys.count, 3)
+        XCTAssertEqual(Set(cachedProtectedKeys.filter { $0.purpose == ProtectedKeyPurpose.accountInfo }.map(\.encryptedWith)),
+                       Set([SyncCredentialID.defaultCredential, SyncCredentialID.thirdParty]))
+    }
+
+    func testWhenPreparingThirdPartyRecoveryCodeFailsThenExistingProtectedKeysCacheIsPreserved() async throws {
+        let cachedKey = makeProtectedKey(kid: "cached-key", encryptedWith: SyncCredentialID.defaultCredential)
+        let cachedData = try JSONEncoder.snakeCaseKeys.encode([cachedKey])
+        let secureStore = try XCTUnwrap(dependencies.secureStore as? SecureStorageStub)
+        secureStore.theProtectedKeysData = cachedData
+        let scopedAccess = try XCTUnwrap(dependencies.scopedAccess as? ScopedAccessCredentialManagingMock)
+        scopedAccess.ensureThirdPartyScopedPasswordError = ScopedAccessCredentialError.accountExtendFailed
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+
+        do {
+            _ = try await syncService.prepareThirdPartyRecoveryCode(purpose: "ai_chats")
+            XCTFail("Expected scoped credential preparation to fail")
+        } catch ScopedAccessCredentialError.accountExtendFailed {
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+
+        XCTAssertEqual(secureStore.theProtectedKeysData, cachedData)
     }
 
     func testWhenUpgradingThirdPartyAccountAndScopedAccessFeatureIsDisabledThenAccountIsUpgraded() async throws {

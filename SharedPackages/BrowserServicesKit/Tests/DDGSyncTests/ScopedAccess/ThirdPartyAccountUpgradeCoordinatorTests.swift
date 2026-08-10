@@ -33,7 +33,7 @@ final class ThirdPartyAccountUpgradeCoordinatorTests: XCTestCase {
     private let extractedSecretKey = Data((160..<192).map(UInt8.init))
 
     func testWhenUpgradeSucceedsThenReturnsNativeAccountDevicesScopedPasswordAndRewrappedKeys() async throws {
-        let setup = try makeSUT(canWriteUnifiedDeviceList: { true })
+        let setup = try makeSUT()
 
         let result = try await setup.coordinator.upgradeThirdPartyAccountToDefaultCredential(
             recoveryCode(),
@@ -68,32 +68,35 @@ final class ThirdPartyAccountUpgradeCoordinatorTests: XCTestCase {
         XCTAssertEqual(keys.first?["encrypted_with"] as? String, SyncCredentialID.defaultCredential)
     }
 
-    func testWhenUpgradeRunsWithUnifiedDeviceListWriteDisabledThenDoesNotRewrapAccountInfoKey() async throws {
-        let protectedKeys = try [
-            thirdPartyProtectedKey(),
-            thirdPartyProtectedKey(kid: "account-info-key", purpose: ProtectedKeyPurpose.accountInfo)
-        ]
-        let setup = try makeSUT(protectedKeys: protectedKeys,
-                                canWriteUnifiedDeviceList: { false })
+    func testWhenUpgradeRunsThenRewrapsAccountInfoKeyForDefaultCredential() async throws {
+        let accountInfoKey = try thirdPartyProtectedKey(kid: "account-info-key",
+                                                        purpose: ProtectedKeyPurpose.accountInfo)
+        let setup = try makeSUT(protectedKeys: [try thirdPartyProtectedKey(), accountInfoKey])
 
         let result = try await setup.coordinator.upgradeThirdPartyAccountToDefaultCredential(
             recoveryCode(),
             deviceName: "Mac",
             deviceType: "desktop")
 
-        XCTAssertEqual(result.protectedKeys.map(\.kid), ["key-1"])
-        XCTAssertEqual(result.protectedKeys.map(\.purpose), ["ai_chats"])
+        let rewrappedAccountInfoKey = try XCTUnwrap(result.protectedKeys.first {
+            $0.purpose == ProtectedKeyPurpose.accountInfo
+        })
+        XCTAssertEqual(rewrappedAccountInfoKey.kid, accountInfoKey.kid)
+        XCTAssertEqual(rewrappedAccountInfoKey.publicKey, accountInfoKey.publicKey)
+        XCTAssertEqual(rewrappedAccountInfoKey.encryptedWith, SyncCredentialID.defaultCredential)
 
         let postBody = try body(for: setup.endpoints.accessCredential(SyncCredentialID.defaultCredential), in: setup.api)
         let postPayload = try decodeJSONObject(postBody)
         let keys = try XCTUnwrap(postPayload["keys"] as? [[String: Any]])
-        XCTAssertEqual(keys.count, 1)
-        XCTAssertEqual(keys.first?["kid"] as? String, "key-1")
-        XCTAssertNil(keys.first { $0["purpose"] as? String == ProtectedKeyPurpose.accountInfo })
+        let accountInfoPayload = try XCTUnwrap(keys.first {
+            $0["purpose"] as? String == ProtectedKeyPurpose.accountInfo
+        })
+        XCTAssertEqual(accountInfoPayload["kid"] as? String, accountInfoKey.kid)
+        XCTAssertEqual(accountInfoPayload["encrypted_with"] as? String, SyncCredentialID.defaultCredential)
     }
 
     func testWhenUpgradeRunsThenTemporaryLoginUsesAIChatsScopeAndFinalNativeLoginUsesSyncScope() async throws {
-        let setup = try makeSUT(canWriteUnifiedDeviceList: { true })
+        let setup = try makeSUT()
 
         _ = try await setup.coordinator.upgradeThirdPartyAccountToDefaultCredential(
             recoveryCode(),
@@ -112,7 +115,7 @@ final class ThirdPartyAccountUpgradeCoordinatorTests: XCTestCase {
     }
 
     func testWhenUpgradeSucceedsThenTemporaryThirdPartyDeviceIsLoggedOut() async throws {
-        let setup = try makeSUT(canWriteUnifiedDeviceList: { true })
+        let setup = try makeSUT()
 
         _ = try await setup.coordinator.upgradeThirdPartyAccountToDefaultCredential(
             recoveryCode(),
@@ -128,7 +131,7 @@ final class ThirdPartyAccountUpgradeCoordinatorTests: XCTestCase {
     }
 
     func testWhenTemporaryThirdPartyDeviceLogoutFailsThenUpgradeStillReturnsNativeAccount() async throws {
-        let setup = try makeSUT(canWriteUnifiedDeviceList: { true })
+        let setup = try makeSUT()
         setup.account.logoutError = SyncError.unexpectedStatusCode(500)
 
         let result = try await setup.coordinator.upgradeThirdPartyAccountToDefaultCredential(
@@ -142,8 +145,7 @@ final class ThirdPartyAccountUpgradeCoordinatorTests: XCTestCase {
 
     func testWhenUpgradeAbortsAfterTemporaryLoginThenTemporaryThirdPartyDeviceIsLoggedOut() async throws {
         let accessCredentials = [AccessCredential(id: SyncCredentialID.defaultCredential, scope: "sync", encrypted3PartyCredential: nil)]
-        let setup = try makeSUT(accessCredentials: accessCredentials,
-                                canWriteUnifiedDeviceList: { true })
+        let setup = try makeSUT(accessCredentials: accessCredentials)
 
         do {
             _ = try await setup.coordinator.upgradeThirdPartyAccountToDefaultCredential(
@@ -160,8 +162,7 @@ final class ThirdPartyAccountUpgradeCoordinatorTests: XCTestCase {
     }
 
     func testWhenFinalNativeLoginFailsTransientlyThenRetriesAndReturnsNativeAccount() async throws {
-        let setup = try makeSUT(canWriteUnifiedDeviceList: { true },
-                                finalNativeLoginRetryDelays: [0, 0])
+        let setup = try makeSUT(finalNativeLoginRetryDelays: [0, 0])
         setup.api.fakeRequests[setup.endpoints.login] = SequencedThrowingHTTPRequestingMock(results: [
             .success(.init(data: Data(thirdPartyLoginBody().utf8), response: makeHTTPURLResponse(statusCode: 200))),
             .failure(SyncError.unexpectedStatusCode(500)),
@@ -180,8 +181,7 @@ final class ThirdPartyAccountUpgradeCoordinatorTests: XCTestCase {
     }
 
     func testWhenFinalNativeLoginKeepsFailingThenRetriesAndLogsOutTemporaryThirdPartyDevice() async throws {
-        let setup = try makeSUT(canWriteUnifiedDeviceList: { true },
-                                finalNativeLoginRetryDelays: [0, 0])
+        let setup = try makeSUT(finalNativeLoginRetryDelays: [0, 0])
         setup.api.fakeRequests[setup.endpoints.login] = SequencedThrowingHTTPRequestingMock(results: [
             .success(.init(data: Data(thirdPartyLoginBody().utf8), response: makeHTTPURLResponse(statusCode: 200))),
             .failure(SyncError.unexpectedStatusCode(500)),
@@ -206,8 +206,7 @@ final class ThirdPartyAccountUpgradeCoordinatorTests: XCTestCase {
     }
 
     func testWhenFinalNativeLoginReturnsUnauthorizedThenDoesNotRetryAndLogsOutTemporaryThirdPartyDevice() async throws {
-        let setup = try makeSUT(canWriteUnifiedDeviceList: { true },
-                                finalNativeLoginRetryDelays: [0, 0])
+        let setup = try makeSUT(finalNativeLoginRetryDelays: [0, 0])
         setup.api.fakeRequests[setup.endpoints.login] = SequencedThrowingHTTPRequestingMock(results: [
             .success(.init(data: Data(thirdPartyLoginBody().utf8), response: makeHTTPURLResponse(statusCode: 200))),
             .failure(SyncError.unexpectedStatusCode(401))
@@ -231,8 +230,7 @@ final class ThirdPartyAccountUpgradeCoordinatorTests: XCTestCase {
 
     func testWhenDDGCredentialAlreadyExistsThenUpgradeAborts() async throws {
         let accessCredentials = [AccessCredential(id: SyncCredentialID.defaultCredential, scope: "sync", encrypted3PartyCredential: nil)]
-        let setup = try makeSUT(accessCredentials: accessCredentials,
-                                canWriteUnifiedDeviceList: { true })
+        let setup = try makeSUT(accessCredentials: accessCredentials)
 
         do {
             _ = try await setup.coordinator.upgradeThirdPartyAccountToDefaultCredential(
@@ -249,8 +247,7 @@ final class ThirdPartyAccountUpgradeCoordinatorTests: XCTestCase {
     }
 
     func testWhenNoUsableThirdPartyProtectedKeysExistThenUpgradeAborts() async throws {
-        let setup = try makeSUT(protectedKeys: [],
-                                canWriteUnifiedDeviceList: { true })
+        let setup = try makeSUT(protectedKeys: [])
 
         do {
             _ = try await setup.coordinator.upgradeThirdPartyAccountToDefaultCredential(
@@ -267,7 +264,7 @@ final class ThirdPartyAccountUpgradeCoordinatorTests: XCTestCase {
     }
 
     func testWhenAccessCredentialsFetchFailsThenUpgradeAbortsWithTypedError() async throws {
-        let setup = try makeSUT(canWriteUnifiedDeviceList: { true })
+        let setup = try makeSUT()
         let request = HTTPRequestingMock()
         request.error = SyncError.unexpectedStatusCode(500)
         setup.api.fakeRequests[setup.endpoints.accessCredentials] = request
@@ -285,7 +282,7 @@ final class ThirdPartyAccountUpgradeCoordinatorTests: XCTestCase {
     }
 
     func testWhenProtectedKeysFetchFailsThenUpgradeAbortsWithTypedError() async throws {
-        let setup = try makeSUT(canWriteUnifiedDeviceList: { true })
+        let setup = try makeSUT()
         let request = HTTPRequestingMock()
         request.error = SyncError.unexpectedStatusCode(500)
         setup.api.fakeRequests[setup.endpoints.keys] = request
@@ -308,8 +305,7 @@ final class ThirdPartyAccountUpgradeCoordinatorTests: XCTestCase {
                                                publicKey: .mock,
                                                encryptedWith: SyncCode.RecoveryKeyV2.thirdPartyCredentialId,
                                                purpose: "ai_chats")
-        let setup = try makeSUT(protectedKeys: [invalidProtectedKey],
-                                canWriteUnifiedDeviceList: { true })
+        let setup = try makeSUT(protectedKeys: [invalidProtectedKey])
 
         do {
             _ = try await setup.coordinator.upgradeThirdPartyAccountToDefaultCredential(
@@ -324,7 +320,7 @@ final class ThirdPartyAccountUpgradeCoordinatorTests: XCTestCase {
     }
 
     func testWhenNativeCredentialCreationReturnsUnexpectedStatusThenUpgradeAbortsWithTypedError() async throws {
-        let setup = try makeSUT(canWriteUnifiedDeviceList: { true })
+        let setup = try makeSUT()
         setup.api.fakeRequests[setup.endpoints.accessCredential(SyncCredentialID.defaultCredential)] = makeRequest(statusCode: 500)
 
         do {
@@ -342,7 +338,6 @@ final class ThirdPartyAccountUpgradeCoordinatorTests: XCTestCase {
 
     private func makeSUT(accessCredentials: [AccessCredential] = [],
                          protectedKeys: [ProtectedKey]? = nil,
-                         canWriteUnifiedDeviceList: @escaping () -> Bool,
                          finalNativeLoginRetryDelays: [UInt64] = []) throws -> (coordinator: ThirdPartyAccountUpgradeCoordinator,
                                                                                  api: RemoteAPIRequestCreatingMock,
                                                                                  account: AccountManagingMock,
@@ -382,7 +377,6 @@ final class ThirdPartyAccountUpgradeCoordinatorTests: XCTestCase {
                                                               crypter: crypter,
                                                               scopedAccess: manager,
                                                               account: account,
-                                                              canWriteUnifiedDeviceList: canWriteUnifiedDeviceList,
                                                               finalNativeLoginRetryDelays: finalNativeLoginRetryDelays)
         let keys = try protectedKeys ?? [thirdPartyProtectedKey()]
 

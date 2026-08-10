@@ -462,7 +462,7 @@ final class ModalPromptCoordinationManagerIntegrationTests {
         scheduler.executeScheduledBlock()
 
         #expect(manager.modalAttemptPhase == .idle)
-        #expect(manager.hasActiveOrPendingModalAttempt)
+        #expect(manager.shouldSuppressOtherSessionPromos)
         #expect(promoQueueLeaseArbiter.snapshot.activeOwner == nil)
         #expect(messagesConfiguration.refreshCallCount == 1)
         #expect(messagesModel.homeMessageViewModels.isEmpty)

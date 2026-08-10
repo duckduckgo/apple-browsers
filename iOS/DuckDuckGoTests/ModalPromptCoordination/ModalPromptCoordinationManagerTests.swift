@@ -355,7 +355,7 @@ final class ModalPromptCoordinationManagerTests {
         )
         sut.presentModalPromptIfNeeded(from: presenterMock)
         // Held up by the in-flight legacy attempt alone: UIKit has not presented anything yet.
-        #expect(sut.didPresentModalPromptThisSession)
+        #expect(sut.shouldSuppressOtherSessionPromos)
         #expect(!sut.didActuallyPresentModalPromptThisSession)
 
         // WHEN the scheduled presentation runs, the completion clears that in-flight attempt — so it has to latch
@@ -364,7 +364,7 @@ final class ModalPromptCoordinationManagerTests {
 
         // THEN
         #expect(sut.didActuallyPresentModalPromptThisSession)
-        #expect(sut.didPresentModalPromptThisSession)
+        #expect(sut.shouldSuppressOtherSessionPromos)
         #expect(provider.didCallDidPresentModal)
     }
 
@@ -386,7 +386,7 @@ final class ModalPromptCoordinationManagerTests {
         schedulerMock.executeScheduledBlock()
 
         // THEN
-        #expect(!sut.didPresentModalPromptThisSession)
+        #expect(!sut.shouldSuppressOtherSessionPromos)
     }
 
     @Test("Check Cooldown Is Not Recorded When No Modal Is Presented")

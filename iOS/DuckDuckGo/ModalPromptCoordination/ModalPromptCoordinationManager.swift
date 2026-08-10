@@ -21,7 +21,7 @@ import UIKit
 
 @MainActor
 protocol ModalPromptCoordinationManaging {
-    var didPresentModalPromptThisSession: Bool { get }
+    var shouldSuppressOtherSessionPromos: Bool { get }
 
     func setCoordinatedAttemptReleaseHandler(_ handler: (@MainActor () -> Void)?)
     func presentModalPromptIfNeeded(from presenter: ModalPromptPresenter)
@@ -123,12 +123,8 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
         }
     }
 
-    private struct CoordinatedAttempt {
-        let lease: PromoQueueModalLease
-    }
-
     private struct CommittedAttempt {
-        let attempt: CoordinatedAttempt
+        let lease: PromoQueueModalLease
         let preparedItem: PreparedItem
         let presenter: ModalPromptPresenter
     }
@@ -141,7 +137,7 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
             case accepted(WeakPresentedRoot)
         }
 
-        let attempt: CoordinatedAttempt
+        let lease: PromoQueueModalLease
         let state: State
 
         var exactRoot: UIViewController? {
@@ -158,7 +154,7 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
         /// No coordinated attempt owns a lease.
         case idle
         /// Holds the lease while providers are evaluated.
-        case evaluating(CoordinatedAttempt)
+        case evaluating(PromoQueueModalLease)
         /// Holds the prepared prompt and lease until scheduled presentation begins.
         case committed(CommittedAttempt)
         /// Holds the lease while UIKit handoff is verified or the accepted root remains attached.
@@ -189,24 +185,23 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
     private(set) var didActuallyPresentModalPromptThisSession = false
     private var coordinatedAttemptReleaseHandler: (@MainActor () -> Void)?
 
-    var didPresentModalPromptThisSession: Bool {
-        didActuallyPresentModalPromptThisSession || hasActiveOrPendingModalAttempt
-    }
-
-    var hasActiveOrPendingModalAttempt: Bool {
-        !legacyActiveAttemptIDs.isEmpty || modalAttemptPhase != .idle || pendingPreparedItem != nil
+    var shouldSuppressOtherSessionPromos: Bool {
+        didActuallyPresentModalPromptThisSession
+            || !legacyActiveAttemptIDs.isEmpty
+            || modalAttemptPhase != .idle
+            || pendingPreparedItem != nil
     }
 
     var modalAttemptPhase: ModalPromptAttemptPhase {
         switch attemptState {
         case .idle:
             return .idle
-        case .evaluating(let attempt):
-            return .evaluating(attempt.lease.attemptIdentity)
+        case .evaluating(let lease):
+            return .evaluating(lease.attemptIdentity)
         case .committed(let committedAttempt):
-            return .committed(committedAttempt.attempt.lease.attemptIdentity)
+            return .committed(committedAttempt.lease.attemptIdentity)
         case .presentationActive(let activeAttempt):
-            return .presentationActive(activeAttempt.attempt.lease.attemptIdentity)
+            return .presentationActive(activeAttempt.lease.attemptIdentity)
         }
     }
 
@@ -243,7 +238,7 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
         }
 
         scheduleAttachmentVerification(
-            attemptIdentity: activeAttempt.attempt.lease.attemptIdentity,
+            attemptIdentity: activeAttempt.lease.attemptIdentity,
             exactRoot: presentation.exactRoot
         )
     }
@@ -258,7 +253,7 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
         pendingPreparedItem = committedAttempt.preparedItem
         cancelScheduledPresentation()
         attemptState = .idle
-        committedAttempt.attempt.lease.release()
+        committedAttempt.lease.release()
     }
 
     func setCoordinatedAttemptReleaseHandler(_ handler: (@MainActor () -> Void)?) {
@@ -305,8 +300,7 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
             return .released
         }
 
-        let attempt = CoordinatedAttempt(lease: lease)
-        attemptState = .evaluating(attempt)
+        attemptState = .evaluating(lease)
 
         if let pendingPreparedItem {
             self.pendingPreparedItem = nil
@@ -316,7 +310,7 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
             }
 
             let committedAttempt = CommittedAttempt(
-                attempt: attempt,
+                lease: lease,
                 preparedItem: preparedItem,
                 presenter: presenter
             )
@@ -332,7 +326,7 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
         }
 
         let committedAttempt = CommittedAttempt(
-            attempt: attempt,
+            lease: lease,
             preparedItem: preparedItem,
             presenter: presenter
         )
@@ -362,7 +356,7 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
 
             cancelAttachmentVerification()
             attemptState = .idle
-            activeAttempt.attempt.lease.release()
+            activeAttempt.lease.release()
             return true
         }
     }
@@ -443,7 +437,7 @@ private extension ModalPromptCoordinationManager {
         scheduledPresentationTask = scheduler.schedule(after: 0.1) { [weak self] in
             guard let self,
                   case .committed(let currentAttempt) = self.attemptState,
-                  currentAttempt.attempt.lease.attemptIdentity == committedAttempt.attempt.lease.attemptIdentity else {
+                  currentAttempt.lease.attemptIdentity == committedAttempt.lease.attemptIdentity else {
                 return
             }
 
@@ -562,11 +556,11 @@ private extension ModalPromptCoordinationManager {
             intendedHost: route.intendedHost
         )
         let activeAttempt = PresentationActiveAttempt(
-            attempt: committedAttempt.attempt,
+            lease: committedAttempt.lease,
             state: .verifying(presentation)
         )
         attemptState = .presentationActive(activeAttempt)
-        let attemptIdentity = committedAttempt.attempt.lease.attemptIdentity
+        let attemptIdentity = committedAttempt.lease.attemptIdentity
 
         performPresentation(
             committedAttempt.preparedItem.configuration,
@@ -581,7 +575,7 @@ private extension ModalPromptCoordinationManager {
         }
 
         guard case .presentationActive(let currentAttempt) = attemptState,
-              currentAttempt.attempt.lease.attemptIdentity == attemptIdentity,
+              currentAttempt.lease.attemptIdentity == attemptIdentity,
               case .verifying = currentAttempt.state else {
             return
         }
@@ -593,7 +587,7 @@ private extension ModalPromptCoordinationManager {
         let exactRoot = committedAttempt.preparedItem.configuration.viewController
         attemptState = .presentationActive(
             PresentationActiveAttempt(
-                attempt: committedAttempt.attempt,
+                lease: committedAttempt.lease,
                 state: .accepted(WeakPresentedRoot(exactRoot))
             )
         )
@@ -605,7 +599,7 @@ private extension ModalPromptCoordinationManager {
         exactRoot: UIViewController
     ) {
         guard case .presentationActive(let activeAttempt) = attemptState,
-              activeAttempt.attempt.lease.attemptIdentity == attemptIdentity,
+              activeAttempt.lease.attemptIdentity == attemptIdentity,
               case .verifying(let presentation) = activeAttempt.state,
               presentation.exactRoot === exactRoot else {
             return
@@ -651,7 +645,7 @@ private extension ModalPromptCoordinationManager {
     ) {
         let isCurrentAttempt: Bool
         if case .presentationActive(let activeAttempt) = attemptState {
-            isCurrentAttempt = activeAttempt.attempt.lease.attemptIdentity == attemptIdentity
+            isCurrentAttempt = activeAttempt.lease.attemptIdentity == attemptIdentity
                 && activeAttempt.exactRoot === exactRoot
         } else {
             isCurrentAttempt = false
@@ -677,7 +671,7 @@ private extension ModalPromptCoordinationManager {
     ) {
         pendingPreparedItem = retainAsPending ? committedAttempt.preparedItem : nil
         attemptState = .idle
-        committedAttempt.attempt.lease.release()
+        committedAttempt.lease.release()
         if notifyRelease {
             coordinatedAttemptReleaseHandler?()
         }
@@ -744,7 +738,7 @@ private extension ModalPromptCoordinationManager {
         // If UIKit attaches after this relationship-free rejection, the next pending retry will adopt the root.
         pendingPreparedItem = presentation.preparedItem.didRecordPresentation ? nil : presentation.preparedItem
         attemptState = .idle
-        activeAttempt.attempt.lease.release()
+        activeAttempt.lease.release()
         return true
     }
 
@@ -763,7 +757,7 @@ private extension ModalPromptCoordinationManager {
         cancelAttachmentVerification()
         attemptState = .presentationActive(
             PresentationActiveAttempt(
-                attempt: activeAttempt.attempt,
+                lease: activeAttempt.lease,
                 state: .accepted(WeakPresentedRoot(exactRoot))
             )
         )
@@ -792,17 +786,17 @@ private extension ModalPromptCoordinationManager {
         switch attemptState {
         case .idle:
             return
-        case .evaluating(let attempt):
+        case .evaluating(let lease):
             attemptState = .idle
-            attempt.lease.release()
+            lease.release()
         case .committed(let committedAttempt):
             cancelScheduledPresentation()
             attemptState = .idle
-            committedAttempt.attempt.lease.release()
+            committedAttempt.lease.release()
         case .presentationActive(let activeAttempt):
             cancelAttachmentVerification()
             attemptState = .idle
-            activeAttempt.attempt.lease.release()
+            activeAttempt.lease.release()
         }
 
         // A synchronous no-provider decision is a real owner-release checkpoint. Notify only after the modal owner is

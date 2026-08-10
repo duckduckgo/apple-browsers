@@ -30,19 +30,36 @@ protocol KeyboardPresenting {
 final class KeyboardPresenter: KeyboardPresenting {
 
     private static let showKeyboardOnLaunchThreshold = TimeInterval(20)
-    private let mainViewController: MainViewController
+    private let isKeyboardOnAppLaunchEnabled: () -> Bool
+    private let scheduleKeyboardPresentation: (TimeInterval, @escaping @MainActor () -> Void) -> Void
+    private let enterSearch: @MainActor () -> Void
 
     init(mainViewController: MainViewController) {
-        self.mainViewController = mainViewController
+        self.isKeyboardOnAppLaunchEnabled = { KeyboardSettings().onAppLaunch }
+        self.scheduleKeyboardPresentation = { delay, action in
+            let workItem = DispatchWorkItem(block: action)
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: workItem)
+        }
+        self.enterSearch = { mainViewController.enterSearch() }
+    }
+
+    init(
+        isKeyboardOnAppLaunchEnabled: @escaping () -> Bool,
+        scheduleKeyboardPresentation: @escaping (TimeInterval, @escaping @MainActor () -> Void) -> Void,
+        enterSearch: @escaping @MainActor () -> Void
+    ) {
+        self.isKeyboardOnAppLaunchEnabled = isKeyboardOnAppLaunchEnabled
+        self.scheduleKeyboardPresentation = scheduleKeyboardPresentation
+        self.enterSearch = enterSearch
     }
 
     func showKeyboardOnLaunch(lastBackgroundDate: Date? = nil) {
-        guard KeyboardSettings().onAppLaunch && shouldShowKeyboardOnLaunch(lastBackgroundDate: lastBackgroundDate) else { return }
+        guard isKeyboardOnAppLaunchEnabled() && shouldShowKeyboardOnLaunch(lastBackgroundDate: lastBackgroundDate) else { return }
         
         DailyPixel.fireDailyAndCount(pixel: .keyboardOnAppLaunchUsedDaily)
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            self.mainViewController.enterSearch()
+        scheduleKeyboardPresentation(0.1) {
+            self.enterSearch()
         }
     }
 

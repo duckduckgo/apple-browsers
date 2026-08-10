@@ -2674,7 +2674,7 @@
       }
     },
     "aichat.attach-menu.no-open-tabs" : {
-      "comment" : "Placeholder shown inside the AI chat omnibar add-attachment menu when none of the user's open tabs can be attached (e.g. all are filtered out as NTP / duck.ai / DDG homepage). Phrased as 'no page content' rather than 'no open tabs' because tabs may be open but their content isn't attachable.",
+      "comment" : "Placeholder shown inside the AI chat add-tabs modal when none of the user's open tabs can be attached (e.g. all are filtered out as NTP / duck.ai / DDG homepage). Phrased as 'no page content' rather than 'no open tabs' because tabs may be open but their content isn't attachable.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {

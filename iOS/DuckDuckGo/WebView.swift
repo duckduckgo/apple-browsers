@@ -153,15 +153,34 @@ final class WebView: WKWebView {
         return trimmed
     }
 
+    /// The page's current selection, trimmed, or nil when nothing usable is selected. Lets an entry
+    /// point other than the edit menu pick a selection up. Same content world as `withCurrentSelection`.
+    func currentSelection() async -> String? {
+        await withCheckedContinuation { continuation in
+            readSelection { continuation.resume(returning: $0) }
+        }
+    }
+
     /// Read in the isolated content world so a page that overrides `window.getSelection` cannot substitute
     /// text the user never selected. macOS moved its equivalent off the page world for the same reason.
     ///
+    /// Deliberately the completion-handler overload: `evaluateJavaScript`'s `async` twin bridges the result
+    /// back as `()` in this content world, so the selection never arrives.
+    ///
     /// Main frame only: a selection inside an iframe yields nothing and the action silently does nothing.
-    private func withCurrentSelection(_ handler: @escaping (String) -> Void) {
+    private func readSelection(_ completion: @escaping (String?) -> Void) {
         evaluateJavaScript("window.getSelection().toString()", in: nil, in: .defaultClient) { result in
-            guard case .success(let value) = result,
-                  let text = value as? String,
-                  let selection = Self.normalizedSelection(text) else { return }
+            guard case .success(let value) = result, let text = value as? String else {
+                completion(nil)
+                return
+            }
+            completion(Self.normalizedSelection(text))
+        }
+    }
+
+    private func withCurrentSelection(_ handler: @escaping (String) -> Void) {
+        readSelection { selection in
+            guard let selection else { return }
             handler(selection)
         }
     }

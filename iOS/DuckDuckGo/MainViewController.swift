@@ -6312,9 +6312,10 @@ extension MainViewController: TabDelegate {
         openAIChat()
     }
 
-    /// Opens the sheet; carrying the selection into it arrives with the selection model.
     func tab(_ tab: TabViewController, didRequestAIChatForSelectedText text: String) {
-        tab.presentContextualAIChatSheet(from: self)
+        Task { @MainActor in
+            await tab.presentContextualAIChatSheet(withSelectedText: text, from: self)
+        }
     }
 
     /// Selections are uncapped by design, but on this path the query *is* the payload — select-all on a

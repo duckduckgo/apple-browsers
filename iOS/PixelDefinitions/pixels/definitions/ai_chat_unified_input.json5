@@ -429,7 +429,7 @@
     },
     "m_aichat_unified_input_duck_ai_direct_navigation": {
         "description": "Fires when the user navigates directly to Duck.ai by typing its address — from the Unified Toggle Input or the URL interceptor — regardless of the Duck.ai setting. duckai_enabled=false isolates residual demand among users who turned Duck.ai off. Does not fire for the in-input Duck.ai shortcut button or other Duck.ai entry points.",
-        "owners": ["aataraxiaa", "fbunn"],
+        "owners": ["aataraxiaa", "Bunn"],
         "triggers": ["other"],
         "suffixes": ["daily_count", "platform", "form_factor"],
         "parameters": [

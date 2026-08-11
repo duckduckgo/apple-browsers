@@ -318,6 +318,7 @@ final class MainCoordinator {
                                         toggleModeStorage: toggleModeStorage,
                                         onboardingManager: onboardingManager,
                                         newTabPagePromoCoordinator: promoCoordinationService,
+                                        promoQueueDebugSnapshotProvider: promoCoordinationService,
                                         recentModalPromptStatusProvider: promoCoordinationService)
 
         setupWebExtensions(privacyConfigurationManager: privacyConfigurationManager)

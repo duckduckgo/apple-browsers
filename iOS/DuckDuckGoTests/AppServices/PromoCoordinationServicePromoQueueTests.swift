@@ -33,6 +33,119 @@ final class PromoCoordinationServicePromoQueueTests {
     private var currentDate = Date(timeIntervalSince1970: 1_800_000_000)
     private var sut: PromoCoordinationService!
 
+    // MARK: - Debug Snapshot
+
+    @available(iOS 16, *)
+    @Test("The coordinated debug snapshot projects the service-owned logical RMF lifecycle", .timeLimit(.minutes(1)))
+    func whenDebugSnapshotIsReadThenItProjectsTheLogicalRemoteMessageLifecycle() async {
+        let lastModalAppearance = currentDate.addingTimeInterval(-900)
+        let lastRemoteMessageAppearance = currentDate.addingTimeInterval(-300)
+        let cooldownSnapshot = PromoQueueCooldownSnapshot(
+            lastConfirmedModalAppearance: lastModalAppearance,
+            lastConfirmedRemoteMessageAppearance: lastRemoteMessageAppearance,
+            nextRemoteMessageEligibility: lastRemoteMessageAppearance.addingTimeInterval(600),
+            nextModalEligibility: lastRemoteMessageAppearance.addingTimeInterval(86_400)
+        )
+        promoQueueCooldownPolicy.snapshotToReturn = cooldownSnapshot
+        managerMock.hasPendingModalPrompt = true
+        managerMock.shouldSuppressOtherSessionPromos = true
+        makeSUT()
+
+        let rendererID = UUID()
+        let fixture = registerRenderer(rendererID: rendererID, messageID: "debug-owner")
+        guard let presentation = fixture.renderer.shownPresentations.first else {
+            Issue.record("Expected the service to publish its logical RMF owner")
+            return
+        }
+        #expect(fixture.registration.confirmAppearance(
+            sessionID: presentation.session.id,
+            presentationID: presentation.id,
+            isAttachedToWindow: true
+        ) == .accepted)
+
+        var snapshot = sut.promoQueueDebugSnapshot
+        #expect(snapshot.mode == .coordinated)
+        #expect(snapshot.activeOwner == .remoteMessage(presentation.session))
+        #expect(snapshot.remoteMessageCoordination.state == .owned)
+        #expect(snapshot.remoteMessageCoordination.messageID == presentation.session.messageID)
+        #expect(snapshot.remoteMessageCoordination.sessionID == presentation.session.id)
+        #expect(snapshot.remoteMessageCoordination.rendererID == rendererID)
+        #expect(snapshot.remoteMessageCoordination.registrationGenerationID != nil)
+        #expect(snapshot.remoteMessageCoordination.presentationID == presentation.id)
+        #expect(snapshot.remoteMessageCoordination.isQueueAppearanceConfirmed)
+        #expect(snapshot.remoteMessageCoordination.isPresentationAppearanceReported == true)
+        #expect(snapshot.remoteMessageCoordination.removalID == nil)
+        #expect(snapshot.remoteMessageCoordination.removalTerminal == nil)
+        #expect(snapshot.remoteMessageCoordination.drainContinuation == nil)
+        #expect(snapshot.remoteMessageCoordination.registeredRendererCount == 1)
+        #expect(snapshot.remoteMessageCoordination.eligibleRendererCount == 1)
+        #expect(snapshot.modalAttemptPhase == .idle)
+        #expect(snapshot.hasPendingModalPrompt)
+        #expect(snapshot.shouldSuppressOtherSessionPromos)
+        #expect(snapshot.isApplicationActive)
+        #expect(!snapshot.isWaitingForForegroundInteractionReadiness)
+        #expect(snapshot.cooldown == cooldownSnapshot)
+
+        fixture.registration.update(candidate: .available(messageID: "debug-owner"), isEligible: false)
+
+        snapshot = sut.promoQueueDebugSnapshot
+        #expect(snapshot.activeOwner == .remoteMessage(presentation.session))
+        #expect(snapshot.remoteMessageCoordination.state == .draining)
+        #expect(snapshot.remoteMessageCoordination.sessionID == presentation.session.id)
+        #expect(snapshot.remoteMessageCoordination.presentationID == presentation.id)
+        #expect(snapshot.remoteMessageCoordination.removalID != nil)
+        #expect(snapshot.remoteMessageCoordination.removalTerminal == nil)
+        #expect(snapshot.remoteMessageCoordination.drainContinuation == .transferSameMessageIfAvailable)
+        #expect(snapshot.remoteMessageCoordination.eligibleRendererCount == 0)
+
+        fixture.renderer.isRemoteMessageRendererAttachedToWindow = false
+        fixture.renderer.finishLastRemoval(using: fixture.registration, terminal: .hostDetached)
+
+        snapshot = sut.promoQueueDebugSnapshot
+        #expect(snapshot.remoteMessageCoordination.state == .draining)
+        #expect(snapshot.remoteMessageCoordination.removalTerminal == .hostDetached)
+        #expect(snapshot.activeOwner == .remoteMessage(presentation.session))
+
+        await waitForMainQueueSettlement()
+
+        snapshot = sut.promoQueueDebugSnapshot
+        #expect(snapshot.activeOwner == nil)
+        #expect(snapshot.remoteMessageCoordination.state == .idle)
+        #expect(snapshot.remoteMessageCoordination.registeredRendererCount == 1)
+        #expect(snapshot.remoteMessageCoordination.eligibleRendererCount == 0)
+        #expect(promoQueueCooldownPolicy.snapshotDates == [currentDate, currentDate, currentDate, currentDate])
+        fixture.registration.deregister()
+    }
+
+    @available(iOS 16, *)
+    @Test("The legacy debug snapshot does not read Promo Queue history", .timeLimit(.minutes(1)))
+    func whenLegacyDebugSnapshotIsReadThenCooldownHistoryRemainsUntouched() {
+        promoQueueCooldownPolicy.snapshotToReturn = PromoQueueCooldownSnapshot(
+            lastConfirmedModalAppearance: currentDate,
+            lastConfirmedRemoteMessageAppearance: currentDate,
+            nextRemoteMessageEligibility: currentDate,
+            nextModalEligibility: currentDate
+        )
+        managerMock.hasPendingModalPrompt = true
+        managerMock.shouldSuppressOtherSessionPromos = true
+        makeSUT(mode: .legacy, readyForInteractions: false)
+
+        let snapshot = sut.promoQueueDebugSnapshot
+
+        #expect(snapshot.mode == .legacy)
+        #expect(snapshot.activeOwner == nil)
+        #expect(snapshot.remoteMessageCoordination.state == .idle)
+        #expect(snapshot.remoteMessageCoordination.registeredRendererCount == 0)
+        #expect(snapshot.remoteMessageCoordination.eligibleRendererCount == 0)
+        #expect(snapshot.modalAttemptPhase == .idle)
+        #expect(snapshot.hasPendingModalPrompt)
+        #expect(snapshot.shouldSuppressOtherSessionPromos)
+        #expect(!snapshot.isApplicationActive)
+        #expect(snapshot.isWaitingForForegroundInteractionReadiness)
+        #expect(snapshot.cooldown == .empty)
+        #expect(promoQueueCooldownPolicy.snapshotDates.isEmpty)
+    }
+
     // MARK: - Modal Mutual Exclusion
 
     @available(iOS 16, *)

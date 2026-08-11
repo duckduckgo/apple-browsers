@@ -42,6 +42,23 @@ struct PromoCoordinationForegroundReadinessToken: Equatable {
     fileprivate let id = UUID()
 }
 
+struct PromoQueueDebugSnapshot: Equatable {
+    let mode: PromoCoordinationMode
+    let activeOwner: PromoQueueActiveOwnerSnapshot?
+    let remoteMessageCoordination: PromoQueueRemoteMessageCoordinationSnapshot
+    let modalAttemptPhase: ModalPromptAttemptPhase
+    let hasPendingModalPrompt: Bool
+    let shouldSuppressOtherSessionPromos: Bool
+    let isApplicationActive: Bool
+    let isWaitingForForegroundInteractionReadiness: Bool
+    let cooldown: PromoQueueCooldownSnapshot
+}
+
+@MainActor
+protocol PromoQueueDebugSnapshotProviding: AnyObject {
+    var promoQueueDebugSnapshot: PromoQueueDebugSnapshot { get }
+}
+
 // MARK: - Service
 
 struct ModalPromptProviders {
@@ -65,7 +82,7 @@ enum PromoQueueRemoteMessageDrainContinuationSnapshot: Equatable {
     case endSession
 }
 
-/// Read-only projection of the service-owned RMF state for focused tests and later debug UI integration.
+/// Read-only projection of the service-owned RMF state for focused tests and the debug UI.
 struct PromoQueueRemoteMessageCoordinationSnapshot: Equatable {
     let state: PromoQueueRemoteMessageLogicalStateSnapshot
     let messageID: String?
@@ -928,4 +945,29 @@ extension PromoCoordinationService: NewTabPagePromoCoordinating {
 
 extension PromoCoordinationService: RecentModalPromptStatusProviding {
     var shouldSuppressOtherSessionPromos: Bool { modalPromptCoordinationManager.shouldSuppressOtherSessionPromos }
+}
+
+extension PromoCoordinationService: PromoQueueDebugSnapshotProviding {
+    var promoQueueDebugSnapshot: PromoQueueDebugSnapshot {
+        let cooldownSnapshot: PromoQueueCooldownSnapshot
+        switch promoCoordinationMode {
+        case .legacy:
+            // The legacy path must not activate either persisted Promo Queue history read.
+            cooldownSnapshot = .empty
+        case .coordinated:
+            cooldownSnapshot = promoQueueCooldownPolicy.snapshot(now: dateProvider())
+        }
+
+        return PromoQueueDebugSnapshot(
+            mode: promoCoordinationMode,
+            activeOwner: promoQueueLeaseArbiter.snapshot.activeOwner,
+            remoteMessageCoordination: remoteMessageCoordinationSnapshot,
+            modalAttemptPhase: modalPromptCoordinationManager.modalAttemptPhase,
+            hasPendingModalPrompt: modalPromptCoordinationManager.hasPendingModalPrompt,
+            shouldSuppressOtherSessionPromos: modalPromptCoordinationManager.shouldSuppressOtherSessionPromos,
+            isApplicationActive: isApplicationActive,
+            isWaitingForForegroundInteractionReadiness: isWaitingForForegroundInteractionReadiness,
+            cooldown: cooldownSnapshot
+        )
+    }
 }

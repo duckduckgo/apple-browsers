@@ -27,13 +27,11 @@ public struct UserText {
     public static let downloadFailed = NSLocalizedString("aichat.download.failed", bundle: Bundle.module, value: "Download failed", comment: "Download failed message")
     public static let modelPickerLabelEverydayUse = NotLocalizedString(
         "aichat.model-picker.label.everyday-use",
-        bundle: Bundle.module,
         value: "Best for everyday use",
         comment: "Editorial descriptor shown beneath a model in the model picker when it is recommended for everyday use"
     )
     public static let modelPickerLabelUsesLimitsFaster = NotLocalizedString(
         "aichat.model-picker.label.uses-limits-faster",
-        bundle: Bundle.module,
         value: "Solid but uses limits faster",
         comment: "Editorial descriptor shown beneath a model in the model picker when it consumes usage limits faster"
     )

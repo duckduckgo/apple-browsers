@@ -2333,6 +2333,14 @@ public struct UserText {
         comment: "Section header for Pro-only models shown to DuckDuckGo Plus subscribers")
     public static let aiChatModelPickerTryForFree = NotLocalizedString("aichat.model-picker.try-for-free", value: "TRY FOR FREE", comment: "Button in the model picker that opens the DuckDuckGo subscription purchase flow")
     public static let aiChatModelPickerUpgrade = NotLocalizedString("aichat.model-picker.upgrade", value: "UPGRADE", comment: "Button in the model picker that opens the DuckDuckGo subscription upgrade flow")
+    public static let aiChatModelPickerEffortTitle = NotLocalizedString(
+        "aichat.model-picker.effort-title",
+        value: "Effort",
+        comment: "Title of the reasoning effort submenu in the model picker")
+    public static let aiChatModelPickerModelsSectionHeader = NotLocalizedString(
+        "aichat.model-picker.models-section-header",
+        value: "Models",
+        comment: "Section header above models in the model picker")
 
     public static let settingsAIChatExperimentalMainSwitch = NotLocalizedString("settings.aichat.native.experimental", value: "Experimental Duck.ai", comment: "")
     public static let settingsAIChatExperimentalSection = NotLocalizedString("settings.aichat.experimental.section.title", value: "Experimental Duck.ai (internal only) ", comment: "")

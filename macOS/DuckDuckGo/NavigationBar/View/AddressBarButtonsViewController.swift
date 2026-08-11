@@ -2936,7 +2936,7 @@ extension AddressBarButtonsViewController {
         guard
             isViewLoaded,
             view.window?.isKeyWindow == true,
-            tabViewModel?.tab.detectedVideoAutoplay == true,
+            tabViewModel?.tab.mustDisplayAutoplayPolicy == true,
             permissionCenterButton.isShown,
             permissionCenterPopover?.isShown != true
         else {

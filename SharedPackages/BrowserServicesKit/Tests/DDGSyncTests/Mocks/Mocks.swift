@@ -441,6 +441,13 @@ final class AccountInfoKeyManagingMock: AccountInfoKeyManaging {
         }
         return refreshKeyStub
     }
+
+    var clearCachedKeyCalls: [SyncAccount] = []
+    var clearCachedKeyHandler: ((SyncAccount) -> Void)?
+    func clearCachedKey(for account: SyncAccount) async {
+        clearCachedKeyCalls.append(account)
+        clearCachedKeyHandler?(account)
+    }
 }
 
 final class ScopedAccessCredentialManagingMock: ScopedAccessCredentialManaging {

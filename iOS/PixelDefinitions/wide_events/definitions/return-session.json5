@@ -7,7 +7,7 @@
             "version": "0.0"
         },
         "feature": {
-            "name": "return_session",
+            "name": "return-session",
             "status": ["SUCCESS", "CANCELLED", "UNKNOWN"],
             "data": {
                 "ext": {

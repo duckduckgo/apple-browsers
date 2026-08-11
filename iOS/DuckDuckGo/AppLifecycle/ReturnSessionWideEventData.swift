@@ -30,7 +30,7 @@ final class ReturnSessionWideEventData: WideEventData {
 
     static let metadata = WideEventMetadata(
         pixelName: "return_session",
-        featureName: "return_session",
+        featureName: "return-session",
         mobileMetaType: "ios-return-session",
         // API requires both; only mobileMetaType is read on iOS.
         desktopMetaType: "macos-return-session",

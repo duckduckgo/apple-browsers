@@ -30,7 +30,7 @@
                 "key": "feature.name",
                 "type": "string",
                 "description": "Feature identifier for this wide pixel",
-                "enum": ["return_session"]
+                "enum": ["return-session"]
             },
 
             // Feature data

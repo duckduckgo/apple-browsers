@@ -996,10 +996,7 @@
                 "key": "entry_point",
                 "type": "string",
                 "description": "Which entry point launched this onboarding run",
-                "enum": [
-                    "post_checkout",
-                    "subscription_settings"
-                ]
+                "enum": ["post_checkout", "subscription_settings"]
             },
             {
                 "key": "duck_ai_enabled",
@@ -1013,35 +1010,20 @@
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
-        "parameters": [
-            "appVersion",
-            "pixelSource",
-            "errorDomain",
-            "errorCode"
-        ]
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode"]
     },
     "subscription_onboarding_ai-models_failure": {
         "description": "Fired when the Duck.ai model list fetch fails during onboarding.",
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
-        "parameters": [
-            "appVersion",
-            "pixelSource",
-            "errorDomain",
-            "errorCode"
-        ]
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode"]
     },
     "subscription_onboarding_subscription_failure": {
         "description": "Fired when the subscription fetch behind the order confirmation screen fails during onboarding.",
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
-        "parameters": [
-            "appVersion",
-            "pixelSource",
-            "errorDomain",
-            "errorCode"
-        ]
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode"]
     }
 }

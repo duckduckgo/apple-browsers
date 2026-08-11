@@ -57,8 +57,8 @@ extension SubscriptionOnboardingFlowViewModel {
 
     /// Resumes at the first unfinished section, and closes on the summary.
     static func subscriptionSettings<PIRScreen: View>(progress: SubscriptionOnboardingProgress,
-                                                     onFinish: @escaping () -> Void,
-                                                     @ViewBuilder pirScreen: @escaping () -> PIRScreen)
+                                                      onFinish: @escaping () -> Void,
+                                                      @ViewBuilder pirScreen: @escaping () -> PIRScreen)
     -> SubscriptionOnboardingFlowViewModel {
         SubscriptionOnboardingFlowViewModel(entryPoint: .subscriptionSettings,
                                            progress: progress,

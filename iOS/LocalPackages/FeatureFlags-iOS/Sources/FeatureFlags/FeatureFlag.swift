@@ -331,6 +331,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1212289671815991
     case unifiedToggleInput
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217271232291839
+    case updatedModelPicker
+
     /// Forward-only new-user cutoff for the unified toggle input rollout. On by default; ship a
     /// privacy-config entry disabling it to stop *new* (un-granted) users from receiving UTI
     /// without revoking it from anyone already granted. Distinct from `unifiedToggleInput`, which
@@ -795,6 +798,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.showWhatsNewPromptOnDemand))
         case .unifiedToggleInput:
             Config(source: .remoteReleasable(AIChatSubfeature.unifiedToggleInput))
+        case .updatedModelPicker:
+            Config(source: .remoteReleasable(AIChatSubfeature.updatedModelPicker))
         case .unifiedToggleInputIncludeNewUsers:
             Config(defaultValue: .enabled,
                    source: .remoteReleasable(AIChatSubfeature.unifiedToggleInputIncludeNewUsers),

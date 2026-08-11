@@ -66,11 +66,11 @@ struct SubscriptionOnboardingInstrumentation: SubscriptionOnboardingInstrumentin
 
     private let entryPoint: SubscriptionOnboardingEntryPoint
     private let isDuckAIEnabled: () -> Bool
-    private let fire: (SubscriptionPixel) -> Void
+    private let pixelFiring: PixelFiring?
 
     init(entryPoint: SubscriptionOnboardingEntryPoint,
          isDuckAIEnabled: (() -> Bool)? = nil,
-         fire: @escaping (SubscriptionPixel) -> Void = { PixelKit.fire($0) }) {
+         pixelFiring: PixelFiring? = PixelKit.shared) {
         self.entryPoint = entryPoint
         if let isDuckAIEnabled {
             self.isDuckAIEnabled = isDuckAIEnabled
@@ -78,7 +78,7 @@ struct SubscriptionOnboardingInstrumentation: SubscriptionOnboardingInstrumentin
             let aiChatSettings = AIChatSettings()
             self.isDuckAIEnabled = { aiChatSettings.isAIChatEnabled }
         }
-        self.fire = fire
+        self.pixelFiring = pixelFiring
     }
 
     func flowStarted() {
@@ -96,6 +96,10 @@ struct SubscriptionOnboardingInstrumentation: SubscriptionOnboardingInstrumentin
 
     func stepSkipped(_ section: SubscriptionOnboardingSection) {
         fire(.subscriptionOnboardingStepSkipped(step: section.pixelStepName, entryPoint: entryPoint.pixelValue))
+    }
+
+    private func fire(_ pixel: SubscriptionPixel) {
+        pixelFiring?.fire(pixel)
     }
 }
 

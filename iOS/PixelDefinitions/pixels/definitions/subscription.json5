@@ -918,7 +918,6 @@
         "triggers": ["other"],
         "suffixes": [
             {
-                "key": "step",
                 "type": "string",
                 "description": "The onboarding step that was shown",
                 "enum": ["intro", "features_summary", "vpn", "vpn_widget", "idtr", "duck_ai", "pir", "completion"]
@@ -943,7 +942,6 @@
         "triggers": ["user_submitted"],
         "suffixes": [
             {
-                "key": "step",
                 "type": "string",
                 "description": "The onboarding step that was completed",
                 "enum": ["vpn", "vpn_widget", "idtr", "duck_ai", "pir"]
@@ -968,7 +966,6 @@
         "triggers": ["user_submitted"],
         "suffixes": [
             {
-                "key": "step",
                 "type": "string",
                 "description": "The onboarding step that was skipped",
                 "enum": ["vpn", "duck_ai"]

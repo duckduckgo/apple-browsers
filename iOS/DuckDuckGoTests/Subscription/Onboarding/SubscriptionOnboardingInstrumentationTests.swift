@@ -18,24 +18,31 @@
 //
 
 import XCTest
+import PixelKit
 @testable import DuckDuckGo
 
 @MainActor
 final class SubscriptionOnboardingInstrumentationTests: XCTestCase {
 
-    private var fired: [SubscriptionPixel] = []
+    private var pixelFiring: SpyPixelFiring!
+
+    private var fired: [SubscriptionPixel] { pixelFiring.fired.compactMap { $0 as? SubscriptionPixel } }
 
     override func setUp() {
         super.setUp()
-        fired = []
+        pixelFiring = SpyPixelFiring()
+    }
+
+    override func tearDown() {
+        pixelFiring = nil
+        super.tearDown()
     }
 
     private func makeInstrumentation(entryPoint: SubscriptionOnboardingEntryPoint = .postCheckout,
                                      isDuckAIEnabled: Bool = true) -> SubscriptionOnboardingInstrumentation {
         SubscriptionOnboardingInstrumentation(entryPoint: entryPoint,
-                                             isDuckAIEnabled: { isDuckAIEnabled }) { [weak self] pixel in
-            self?.fired.append(pixel)
-        }
+                                             isDuckAIEnabled: { isDuckAIEnabled },
+                                             pixelFiring: pixelFiring)
     }
 
     // MARK: - Step names
@@ -99,5 +106,20 @@ final class SubscriptionOnboardingInstrumentationTests: XCTestCase {
         sut.stepShown(.idtr)
 
         XCTAssertEqual(fired.first?.parameters?["entry_point"], "post_checkout")
+    }
+}
+
+/// Records the events the instrumentation hands to PixelKit.
+private final class SpyPixelFiring: PixelFiring {
+    private(set) var fired: [PixelKitEvent] = []
+
+    func fire(_ event: PixelKitEvent,
+              frequency: PixelKit.Frequency,
+              includeAppVersionParameter: Bool,
+              withAdditionalParameters: [String: String]?,
+              withNamePrefix: String?,
+              doNotEnforcePrefix: Bool,
+              onComplete: @escaping PixelKit.CompletionBlock) {
+        fired.append(event)
     }
 }

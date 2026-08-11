@@ -706,22 +706,28 @@ struct FireDialogView: ModalView {
 
             Spacer(minLength: 8)
 
-            Button(action: { isShowingHistoryOverlay = false }) {
-                Image(nsImage: DesignSystemImages.Glyphs.Size16.close)
-                    .resizable()
-                    .frame(width: 12, height: 12)
+            HStack(alignment: .center, spacing: 8) {
+                if viewModel.historyVisits.count > Constants.historyOverlayMaxVisibleItems {
+                    seeFullHistoryButton
+                }
+
+                Button(action: { isShowingHistoryOverlay = false }) {
+                    Image(nsImage: DesignSystemImages.Glyphs.Size16.close)
+                        .resizable()
+                        .frame(width: 12, height: 12)
+                }
+                .buttonStyle(
+                    StandardButtonStyle(topPadding: 6,
+                                        bottomPadding: 6,
+                                        horizontalPadding: 6,
+                                        backgroundColor: Color(designSystemColor: .controlsFillPrimary),
+                                        backgroundPressedColor: Color(designSystemColor: .controlsFillPrimary))
+                )
+                .clipShape(Circle())
+                .accessibilityLabel(UserText.close)
+                .accessibilityIdentifier("FireDialogView.historyOverlayCloseButton")
+                .keyboardShortcut(.cancelAction)
             }
-            .buttonStyle(
-                StandardButtonStyle(topPadding: 6,
-                                    bottomPadding: 6,
-                                    horizontalPadding: 6,
-                                    backgroundColor: Color(designSystemColor: .controlsFillPrimary),
-                                    backgroundPressedColor: Color(designSystemColor: .controlsFillPrimary))
-            )
-            .clipShape(Circle())
-            .accessibilityLabel(UserText.close)
-            .accessibilityIdentifier("FireDialogView.historyOverlayCloseButton")
-            .keyboardShortcut(.cancelAction)
         }
         .padding(.top, 24)
         .padding(.horizontal, Constants.horizontalPadding)
@@ -731,19 +737,15 @@ struct FireDialogView: ModalView {
     private var historyOverlayList: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
+                Spacer(minLength: 11)
                 ForEach(viewModel.historyVisits.sorted { $0.date > $1.date }.prefix(Constants.historyOverlayMaxVisibleItems), id: \.self) { visit in
                     historyOverlayRow(for: visit)
-                }
-
-                if viewModel.historyVisits.count > Constants.historyOverlayMaxVisibleItems {
-                    seeFullHistoryButton
                 }
             }
             .padding(.leading, 24)
             .padding(.trailing, 32)
             .padding(.vertical, 4)
         }
-        .padding(.top, 11)
         .padding(.trailing, 8)
         .background(
             CustomRoundedCornersShape(tl: 16, tr: 16, bl: 0, br: 0)
@@ -761,14 +763,21 @@ struct FireDialogView: ModalView {
         Button {
             viewModel.openFullHistory()
         } label: {
-            Text(UserText.fireDialogSeeFullHistory)
-                .font(.system(size: 12, weight: .medium))
-                .foregroundColor(style.selectedForeground)
-                .frame(maxWidth: .infinity, alignment: .center)
+            Text(UserText.fireDialogShowAllHistory)
+                .font(.system(size: 11))
+                .foregroundColor(Color(designSystemColor: .textSecondary))
+                .lineLimit(1)
+                .fixedSize()
         }
-        .buttonStyle(.plain)
+        .buttonStyle(
+            StandardButtonStyle(topPadding: 5,
+                                bottomPadding: 5,
+                                horizontalPadding: 8,
+                                backgroundColor: Color(designSystemColor: .controlsFillPrimary),
+                                backgroundPressedColor: Color(designSystemColor: .controlsFillSecondary),
+                                cornerRadius: 12)
+        )
         .cursor(.pointingHand)
-        .padding(.vertical, 12)
         .accessibilityIdentifier("FireDialogView.seeFullHistoryButton")
     }
 

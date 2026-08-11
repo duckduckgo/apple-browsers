@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		96A0383D30261A5C00225654 /* BookmarksRootMenuItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96A0383C30261A5B00225654 /* BookmarksRootMenuItem.swift */; };
+		96A0383E30261A5C00225654 /* BookmarksRootMenuItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96A0383C30261A5B00225654 /* BookmarksRootMenuItem.swift */; };
 		CD41A0010000000000100005 /* AutoplayDiscoverabilityPromoDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD41A0010000000000100004 /* AutoplayDiscoverabilityPromoDelegate.swift */; };
 		CD41A0010000000000100006 /* AutoplayDiscoverabilityPromoDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD41A0010000000000100004 /* AutoplayDiscoverabilityPromoDelegate.swift */; };
 		CD41A0010000000000100008 /* PromoServiceFactory+AutoplayDiscoverability.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD41A0010000000000100007 /* PromoServiceFactory+AutoplayDiscoverability.swift */; };
@@ -5001,6 +5003,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		96A0383C30261A5B00225654 /* BookmarksRootMenuItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksRootMenuItem.swift; sourceTree = "<group>"; };
 		CD41A0010000000000100004 /* AutoplayDiscoverabilityPromoDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoplayDiscoverabilityPromoDelegate.swift; sourceTree = "<group>"; };
 		CD41A0010000000000100007 /* PromoServiceFactory+AutoplayDiscoverability.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PromoServiceFactory+AutoplayDiscoverability.swift"; sourceTree = "<group>"; };
 		CD41A001000000000010000A /* AutoplayDiscoverabilityPromoDelegateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoplayDiscoverabilityPromoDelegateTests.swift; sourceTree = "<group>"; };
@@ -11863,6 +11866,7 @@
 		AAC5E4C225D6A6C7007F5990 /* Model */ = {
 			isa = PBXGroup;
 			children = (
+				96A0383C30261A5B00225654 /* BookmarksRootMenuItem.swift */,
 				AAC5E4CD25D6A709007F5990 /* Bookmark.swift */,
 				841BE93D2C6F235F00E9C2B5 /* BookmarkDragDropManager.swift */,
 				AAC5E4CF25D6A709007F5990 /* BookmarkList.swift */,
@@ -15741,6 +15745,7 @@
 				9FBD84742BB3E15D00220859 /* InstallationAttributionPixelHandler.swift in Sources */,
 				7B2BF16D2F9F68FA0025F707 /* DefaultInstallOriginVariantProvider.swift in Sources */,
 				BBFB72802C48047C0088884C /* SortBookmarksViewModel.swift in Sources */,
+				96A0383D30261A5C00225654 /* BookmarksRootMenuItem.swift in Sources */,
 				37197EA72942443D00394917 /* AuthenticationAlert.swift in Sources */,
 				37C7493A2D55FE710065B48B /* HistoryViewActionsHandler.swift in Sources */,
 				B5CCC06E2F649BAF003EB0A2 /* TabBackgroundView.swift in Sources */,
@@ -18492,6 +18497,7 @@
 				E2BC1B232E210AF200F58D61 /* NewTabPageOmnibarConfigProvider.swift in Sources */,
 				D1A7B0010000000000000002 /* NewTabPageOmnibarTabsProvider.swift in Sources */,
 				BBFB727F2C48047C0088884C /* SortBookmarksViewModel.swift in Sources */,
+				96A0383E30261A5C00225654 /* BookmarksRootMenuItem.swift in Sources */,
 				EECA36B92E869885005A42EE /* ImportArchiveReader.swift in Sources */,
 				37E3E8032DAE58660056DEED /* TabCrashRecoveryExtension.swift in Sources */,
 				F124B9552F2CC15600B29447 /* BuildFlags.swift in Sources */,

@@ -2088,9 +2088,6 @@ extension Pixel {
         case fireModeLastTabClosedBurn
         case fireModeEmptyStateNewTab
         case linkLongPressMenuShown
-        case linkLongPressNewTab
-        case linkLongPressBackgroundTab
-        case linkLongPressFireTab
 
         // MARK: - Custom Product Page
         case customProductPageDuckAIOpenedAIChat
@@ -4064,9 +4061,6 @@ extension Pixel.Event {
         case .fireModeLastTabClosedBurn: return "m_fire-mode_last-tab-closed_burn"
         case .fireModeEmptyStateNewTab: return "m_fire-mode_empty-state_new-tab"
         case .linkLongPressMenuShown: return "m_link-long-press_menu-shown"
-        case .linkLongPressNewTab: return "m_link-long-press_new-tab"
-        case .linkLongPressBackgroundTab: return "m_link-long-press_background-tab"
-        case .linkLongPressFireTab: return "m_link-long-press_fire-tab"
 
         // MARK: - Custom Product Page
         case .customProductPageDuckAIOpenedAIChat: return "m_custom-product-page_duck-ai_opened-ai-chat"

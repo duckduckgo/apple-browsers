@@ -2171,6 +2171,7 @@ class MainViewController: UIViewController {
     }
 
     @IBAction func onFirePressed() {
+        recordNewTabPageSessionAction { $0.tapFireButton() }
         let wasContextualFireOnboardingDialogVisible = daxDialogsManager.isShowingFireDialog
 
         func showFireConfirmation() {
@@ -6748,6 +6749,8 @@ extension MainViewController: TabSwitcherDelegate {
             reportDuckAITabClosedIfNeeded(tab)
         }
 
+        endNewTabPageSessionWithDataClearing()
+
         Task {
             let request: FireRequest
             switch tabSwitcher.selectedBrowsingMode {
@@ -6914,6 +6917,7 @@ extension MainViewController {
 
         firePixels(for: request)
         productSurfaceTelemetry.dataClearingUsed()
+        endNewTabPageSessionWithDataClearing()
         
         fireExecutor.prepare(for: request)
         

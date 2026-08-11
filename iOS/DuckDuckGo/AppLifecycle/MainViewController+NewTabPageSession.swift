@@ -54,6 +54,15 @@ extension MainViewController {
         newTabPageSessionInstrumentation.visitEnded(terminalAction: url.isDuckDuckGoSearch ? .loadSerp : .loadWebsite)
     }
 
+    /// Ends the visit on a burn, whichever surface it was started from.
+    ///
+    /// Called as the burn begins rather than once it finishes, because clearing lands the user back
+    /// on a fresh New Tab Page: a terminal reported after that re-attach would arrive when the visit
+    /// it belongs to has already been superseded and discarded.
+    func endNewTabPageSessionWithDataClearing() {
+        newTabPageSessionInstrumentation.visitEnded(terminalAction: .deleteData)
+    }
+
     /// Records picking an autocomplete row, then ends the visit on where that row leads.
     ///
     /// The action is recorded first so it survives into the completed visit. Suggestions that do

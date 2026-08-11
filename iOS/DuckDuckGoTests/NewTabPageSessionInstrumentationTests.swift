@@ -620,9 +620,8 @@ struct NewTabPageSessionInstrumentationTests {
             return
         }
 
-        // The Fire button clears everything and lands on a fresh New Tab Page, which starts
-        // the next visit. The interrupted one has no terminal of its own until the data
-        // clearing hook is wired, so it is dropped rather than reported.
+        // A visit replaced while still active has no terminal to report, and counting it either
+        // way would skew the success rate, so it is dropped.
         clock.advance(by: 3)
         sut.visitStarted(trigger: .newTabOpenedAfterFire, launchKeyboardMode: .down, toggleEnabled: true)
 
@@ -637,6 +636,32 @@ struct NewTabPageSessionInstrumentationTests {
         let completion = lastCompletion(wideEvent)
         #expect(completion?.0.trigger == .newTabOpenedAfterFire)
         #expect(completion?.0.terminalAction == .appBackgrounded)
+    }
+
+    @available(iOS 16, *)
+    @Test("A burn reported before the after-fire visit keeps the interrupted visit", .timeLimit(.minutes(1)))
+    func burnReportedBeforeReattachCompletesInterruptedVisit() {
+        let (sut, wideEvent, clock) = makeSUT()
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: true)
+        sut.tapFireButton()
+
+        // Ordering the real wiring depends on: the burn ends the visit, and only then does
+        // clearing land on a fresh New Tab Page.
+        clock.advance(by: 4)
+        sut.visitEnded(terminalAction: .deleteData)
+        sut.visitStarted(trigger: .newTabOpenedAfterFire, launchKeyboardMode: .down, toggleEnabled: true)
+
+        #expect(wideEvent.discarded.isEmpty)
+        guard let completion = lastCompletion(wideEvent) else {
+            Issue.record("Expected the interrupted visit to be reported")
+            return
+        }
+        #expect(completion.0.trigger == .appOpen)
+        #expect(completion.0.terminalAction == .deleteData)
+        #expect(completion.1 == .success)
+        #expect(completion.0.tapFireButton)
+        #expect(completion.0.sessionInterval.durationMilliseconds == 4_000)
+        #expect(activeVisit(wideEvent)?.trigger == .newTabOpenedAfterFire)
     }
 
     @available(iOS 16, *)

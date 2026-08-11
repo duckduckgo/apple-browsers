@@ -20,9 +20,9 @@
 import AIChat
 import BrowserServicesKit
 import Core
+import EventHub
 import os.log
 import Foundation
-import Persistence
 import PrivacyConfig
 import SERPSettings
 import SpecialErrorPages
@@ -62,17 +62,14 @@ final class UserScripts: UserScriptsProvider {
     private(set) var fullScreenVideoScript = FullScreenVideoUserScript()
     private(set) var printingSubfeature = PrintingSubfeature()
     private(set) var trackerProtectionSubfeature = TrackerProtectionSubfeature()
-    let webEventsSubfeature: WebEventsSubfeature
 
     private let isAutoconsentExtensionAvailable: Bool
 
     init(with sourceProvider: ScriptSourceProviding,
          appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
-         keyValueStore: ThrowingKeyValueStoring,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
-         aiChatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
-         adBlockingAvailability: AdBlockingAvailabilityProviding) {
+         aiChatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings()) {
 
         isAutoconsentExtensionAvailable = sourceProvider.webExtensionAvailability?.isAutoconsentExtensionAvailable ?? false
 
@@ -151,23 +148,8 @@ final class UserScripts: UserScriptsProvider {
             featureFlagProvider: subscriptionFeatureFlagAdapter,
             navigationDelegate: subscriptionNavigationHandler,
             debugHost: aiChatDebugSettings.messagePolicyHostname)
-        let youTubeAdBlockingStorage: any ThrowingKeyedStoring<YouTubeAdBlockingKeys> = keyValueStore.throwingKeyedStoring()
-        webEventsSubfeature = WebEventsSubfeature(
-            isUserOptedIn: {
-                let analyticsEnabled = (try? youTubeAdBlockingStorage.value(for: \.youTubeAnalyticsEnabled)) ?? false
-                return adBlockingAvailability.isEnabled && analyticsEnabled
-            },
-            onEvent: { type, loginState in
-                guard let pixel = Pixel.Event.adBlockingDetectedEvent(type: type) else { return }
-                DailyPixel.fire(
-                    pixel: pixel,
-                    withAdditionalParameters: ["loginState": loginState.rawValue]
-                )
-            }
-        )
 
         contentScopeUserScriptIsolated.registerSubfeature(delegate: faviconScript)
-        contentScopeUserScriptIsolated.registerSubfeature(delegate: webEventsSubfeature)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: aiChatUserScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: subscriptionUserScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: serpSettingsUserScript)
@@ -186,6 +168,13 @@ final class UserScripts: UserScriptsProvider {
         specialErrorPageUserScript = SpecialErrorPageUserScript(localeStrings: SpecialErrorPageUserScript.localeStrings(),
                                                                 languageCode: Locale.current.languageCode ?? "en")
         specialErrorPageUserScript.map { specialPages?.registerSubfeature(delegate: $0) }
+    }
+
+    /// Registers a tab's EventHub `webEvents` handler. Unlike the subfeatures above this one cannot be
+    /// created here: it is per-tab, and `UserScripts` has no tab identity. `TabViewController` owns the
+    /// handler and calls this each time it is handed a new instance of us.
+    func registerEventHubSubfeature(_ handler: WebEventsHandler) {
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: handler)
     }
 
     lazy var userScripts: [UserScript] = {

@@ -172,6 +172,9 @@ final class MockBookmarkManager: BookmarkManager, URLFavoriteStatusProviding, Re
 
     func handleFavoritesAfterDisablingSync() {}
 
+    @MainActor
+    func reorderByName(_ children: [BaseBookmarkEntity], withinParentFolder parentFolder: ParentFolderType, undoManager: UndoManager?) {}
+
     @Published var list: BookmarkList?
 
     var listPublisher: Published<BookmarkList?>.Publisher { $list }

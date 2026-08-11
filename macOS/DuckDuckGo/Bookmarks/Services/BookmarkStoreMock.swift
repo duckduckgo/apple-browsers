@@ -239,12 +239,43 @@ final class BookmarkStoreMock: BookmarkStore, CustomDebugStringConvertible {
     var moveObjectUUIDCalled = false
     var capturedObjectUUIDs: [String]?
     var capturedToIndex: Int?
+    struct MoveArgs: Equatable {
+        let objectUUIDs: [String]
+        let toIndex: Int?
+        let withinParentFolder: ParentFolderType
+    }
+    private(set) var moveObjectsCalls: [MoveArgs] = []
+    var moveObjectsError: Error?
+    var completesMoveCompletions = false
+    var defersMoveCompletions = false
+    private var deferredMoveCompletions: [() -> Void] = []
+    var deferredMoveCompletionCount: Int { deferredMoveCompletions.count }
+
     func move(objectUUIDs: [String], toIndex: Int?, withinParentFolder: ParentFolderType, completion: @escaping (Error?) -> Void) {
         moveObjectUUIDCalled = true
         capturedObjectUUIDs = objectUUIDs
         capturedToIndex = toIndex
         capturedParentFolderType = withinParentFolder
-        store?.move(objectUUIDs: objectUUIDs, toIndex: toIndex, withinParentFolder: withinParentFolder, completion: completion)
+        moveObjectsCalls.append(.init(objectUUIDs: objectUUIDs, toIndex: toIndex, withinParentFolder: withinParentFolder))
+
+        if let store {
+            store.move(objectUUIDs: objectUUIDs, toIndex: toIndex, withinParentFolder: withinParentFolder, completion: completion)
+        } else if defersMoveCompletions {
+            let error = moveObjectsError
+            deferredMoveCompletions.append {
+                completion(error)
+            }
+        } else if completesMoveCompletions {
+            completion(moveObjectsError)
+        }
+    }
+
+    func completeNextMove() {
+        guard !deferredMoveCompletions.isEmpty else {
+            assertionFailure("No deferred bookmark move completion is available")
+            return
+        }
+        deferredMoveCompletions.removeFirst()()
     }
 
     var updateFavoriteIndexCalled = false

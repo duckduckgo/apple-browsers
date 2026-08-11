@@ -38,7 +38,7 @@ jobs:
         run: ../trusted/scripts/merge-snapshots.sh "$PR_BRANCH"
 
       - name: Remove the label
-        if: success()
+        if: always()
         env:
           GH_TOKEN: ${{ github.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}

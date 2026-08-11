@@ -44,7 +44,9 @@ struct PromoQueueModalAttemptIdentity: Hashable {
 }
 
 enum PromoQueueActiveOwnerSnapshot: Equatable {
+    /// The associated attempt identity names the modal that currently owns the global slot.
     case modal(PromoQueueModalAttemptIdentity)
+    /// The associated promo identity names the visible promo that currently owns the global slot.
     case visible(VisiblePromoIdentity)
 }
 

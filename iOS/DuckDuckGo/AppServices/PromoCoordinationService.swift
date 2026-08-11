@@ -37,6 +37,7 @@ extension MainViewController: ModalPromptPresenter {
     var modalPromptPresentationViewController: UIViewController? { self }
 }
 
+/// Identifies one full foreground cycle so stale asynchronous readiness callbacks cannot open promo admission.
 struct PromoCoordinationForegroundReadinessToken: Equatable {
     fileprivate let id = UUID()
 }
@@ -79,6 +80,7 @@ final class PromoCoordinationService {
     private var isApplicationActive = false
     private var isWaitingForForegroundInteractionReadiness = true
     private var foregroundReadinessToken = PromoCoordinationForegroundReadinessToken()
+    private weak var deferredModalPromptPresenter: ModalPromptPresenter?
 
     let promoCoordinationMode: PromoCoordinationMode
 
@@ -162,6 +164,15 @@ final class PromoCoordinationService {
         guard !isWaitingForForegroundInteractionReadiness else {
             return
         }
+
+        if let deferredModalPromptPresenter {
+            self.deferredModalPromptPresenter = nil
+            presentModalPromptIfNeeded(
+                from: deferredModalPromptPresenter,
+                readinessToken: foregroundReadinessToken
+            )
+            return
+        }
         retryActiveRemoteMessageRegistrations()
     }
 
@@ -169,6 +180,7 @@ final class PromoCoordinationService {
         isApplicationActive = false
         isWaitingForForegroundInteractionReadiness = true
         foregroundReadinessToken = PromoCoordinationForegroundReadinessToken()
+        deferredModalPromptPresenter = nil
         modalPromptCoordinationManager.applicationDidEnterBackground()
     }
 
@@ -182,14 +194,20 @@ final class PromoCoordinationService {
     ) {
         if promoCoordinationMode == .coordinated {
             // `onAppReadyForInteractions` is asynchronous and can finish after this foreground has already moved to
-            // the background. Activity alone cannot distinguish that stale callback after the next foreground becomes
-            // active, so only the token captured for the current full foreground cycle may open admission.
-            guard isApplicationActive,
-                  readinessToken == foregroundReadinessToken else {
+            // the background. Only the token captured for the current full foreground cycle may open admission. A
+            // matching callback received during temporary inactivity still establishes readiness, but its presentation
+            // checkpoint is deferred until the app becomes active again.
+            guard readinessToken == foregroundReadinessToken else {
                 return
             }
 
             isWaitingForForegroundInteractionReadiness = false
+            guard isApplicationActive else {
+                deferredModalPromptPresenter = viewController
+                return
+            }
+
+            deferredModalPromptPresenter = nil
             _ = modalPromptCoordinationManager.reconcilePresentedModal()
             retryActiveRemoteMessageRegistrations()
         }

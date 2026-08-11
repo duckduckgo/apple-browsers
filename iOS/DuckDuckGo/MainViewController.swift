@@ -2091,13 +2091,18 @@ class MainViewController: UIViewController {
             && !daxDialogsManager.subscriptionPromotionPending
             && !chatPathCompletionPending
 
+        // Consumed on every attach, including the ones that record nothing below, so a burn
+        // can't leak its trigger into an unrelated New Tab Page visit later on.
+        let isAfterFire = isAttachingNewTabPageAfterFire
+        isAttachingNewTabPageAfterFire = false
+
         // It's possible for this to be called when in the background of the
         //  switcher, and we only want to show the pixel when it's actually
         // about to shown to the user.
         if presentedViewController == nil || presentedViewController?.isBeingDismissed == true {
             fireNewTabPixels()
             fireNTPShownInstrumentation(openedAfterIdle: openedAfterIdle, hatch: hatch)
-            startNewTabPageSessionInstrumentation(isNewTab: isNewTab, willBeginEditing: willBeginEditing)
+            startNewTabPageSessionInstrumentation(isNewTab: isNewTab, willBeginEditing: willBeginEditing, isAfterFire: isAfterFire)
         }
 
         if willBeginEditing {
@@ -2132,10 +2137,9 @@ class MainViewController: UIViewController {
     ///
     /// Re-attachments that are none of a launch, a new tab or a burn, such as switching to an
     /// already empty tab, report `appOpen`.
-    private func startNewTabPageSessionInstrumentation(isNewTab: Bool, willBeginEditing: Bool) {
+    private func startNewTabPageSessionInstrumentation(isNewTab: Bool, willBeginEditing: Bool, isAfterFire: Bool) {
         let trigger: NewTabPageSessionWideEventData.Trigger
-        if isAttachingNewTabPageAfterFire {
-            isAttachingNewTabPageAfterFire = false
+        if isAfterFire {
             trigger = .newTabOpenedAfterFire
         } else {
             trigger = isNewTab ? .newTabOpened : .appOpen

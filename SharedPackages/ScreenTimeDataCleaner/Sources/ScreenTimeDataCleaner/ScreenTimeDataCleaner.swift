@@ -21,19 +21,93 @@ import WebKit
 @available(iOS 26, macOS 26, *)
 public struct ScreenTimeDataCleaner {
 
+    private static let removalTimeoutNanoseconds: UInt64 = 2_000_000_000
+
     public init() { }
 
     @MainActor
     public func removeScreenTimeData() async {
         let uids = await WKWebsiteDataStore.allDataStoreIdentifiers
-        let stores = uids.map { WKWebsiteDataStore(forIdentifier: $0) }
-            + [WKWebsiteDataStore.default()]
 
-        // Perform sequentially because it has to run on the main thread anyway, so even
-        // in a group they would still run sequentially.
-        for store in stores {
-            await store.removeData(ofTypes: [WKWebsiteDataTypeScreenTime], modifiedSince: .distantPast)
+        for uid in uids {
+            guard !Task.isCancelled else { return }
+            guard await removeScreenTimeData(from: .identified(uid)) else { return }
         }
+
+        guard !Task.isCancelled else { return }
+        _ = await removeScreenTimeData(from: .default)
+    }
+
+    @MainActor
+    private func removeScreenTimeData(from dataStore: DataStore) async -> Bool {
+        let result = FirstRemovalResult()
+        let removalTask = Task { @MainActor in
+            let store: WKWebsiteDataStore
+            switch dataStore {
+            case .identified(let uid):
+                store = WKWebsiteDataStore(forIdentifier: uid)
+            case .default:
+                store = .default()
+            }
+
+            await store.removeData(ofTypes: [WKWebsiteDataTypeScreenTime], modifiedSince: .distantPast)
+            await result.resolve(with: .completed)
+        }
+        let timeoutTask = Task.detached {
+            do {
+                try await Task.sleep(nanoseconds: Self.removalTimeoutNanoseconds)
+                await result.resolve(with: .timedOut)
+            } catch {
+                return
+            }
+        }
+
+        switch await result.value() {
+        case .completed:
+            timeoutTask.cancel()
+            return true
+        case .timedOut:
+            removalTask.cancel()
+            return false
+        }
+    }
+
+}
+
+@available(iOS 26, macOS 26, *)
+private extension ScreenTimeDataCleaner {
+
+    enum DataStore: Sendable {
+        case identified(UUID)
+        case `default`
+    }
+
+}
+
+private enum RemovalResult: Sendable {
+    case completed
+    case timedOut
+}
+
+private actor FirstRemovalResult {
+
+    private var result: RemovalResult?
+    private var continuation: CheckedContinuation<RemovalResult, Never>?
+
+    func value() async -> RemovalResult {
+        if let result {
+            return result
+        }
+
+        return await withCheckedContinuation { continuation = $0 }
+    }
+
+    func resolve(with result: RemovalResult) {
+        guard self.result == nil else { return }
+
+        self.result = result
+        continuation?.resume(returning: result)
+        continuation = nil
     }
 
 }

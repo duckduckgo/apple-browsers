@@ -77,8 +77,13 @@ struct Background: BackgroundHandling {
     private func cleanScreenTimeDataOniOS26() {
         guard appDependencies.featureFlagger.isFeatureOn(.screenTimeCleaning) else { return }
         guard #available(iOS 26, *) else { return }
-        Task {
+
+        let backgroundTask = ScreenTimeDataCleaningBackgroundTask()
+        guard backgroundTask.begin() else { return }
+
+        Task { @MainActor in
             await ScreenTimeDataCleaner().removeScreenTimeData()
+            backgroundTask.end()
         }
     }
 
@@ -153,3 +158,30 @@ extension Background {
     }
 
 }
+
+// MARK: - Background tasks
+
+@available(iOS 26, *)
+@MainActor
+private final class ScreenTimeDataCleaningBackgroundTask {
+
+    private static let name = "Screen Time Data Cleaning"
+
+    private var identifier: UIBackgroundTaskIdentifier = .invalid
+
+    func begin() -> Bool {
+        identifier = UIApplication.shared.beginBackgroundTask(withName: Self.name) { [weak self] in
+            self?.end()
+        }
+        return identifier != .invalid
+    }
+
+    func end() {
+        guard identifier != .invalid else { return }
+
+        UIApplication.shared.endBackgroundTask(identifier)
+        identifier = .invalid
+    }
+
+}
+

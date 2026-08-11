@@ -147,11 +147,12 @@ private extension DownloadReasonGrid {
     struct DownloadReasonButton: View {
 
         private enum Metrics {
-            static let contentVerticalSpacing: CGFloat = 8
+            static let contentVerticalSpacing: CGFloat = 0
             static let contentHorizontalPadding: CGFloat = 16
-            static let contentVerticalPadding: CGFloat = 20
+            static let contentTopPadding: CGFloat = 12
+            static let contentBottomPadding: CGFloat = 20
             static let cornerRadius: CGFloat = 24
-            static let imageSize = CGSize(width: 44, height: 44)
+            static let imageSize = CGSize(width: 64, height: 64)
             // Shadow
             static let innerShadowColor: Color = .black.opacity(0.06)
             static let innerShadowRadius: CGFloat = 2
@@ -194,7 +195,8 @@ private extension DownloadReasonGrid {
                     .fixedSize(horizontal: false, vertical: true)
             }
             .padding(.horizontal, Metrics.contentHorizontalPadding)
-            .padding(.vertical, Metrics.contentVerticalPadding)
+            .padding(.top, Metrics.contentTopPadding)
+            .padding(.bottom, Metrics.contentBottomPadding)
             .frame(maxWidth: .infinity, alignment: .top)
             .background(isSelected ? OnboardingRebrandColor.accentAltPrimary : onboardingTheme.colorPalette.bubbleBackground)
             .cornerRadius(Metrics.cornerRadius)

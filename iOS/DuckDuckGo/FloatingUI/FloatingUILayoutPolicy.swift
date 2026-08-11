@@ -45,6 +45,14 @@ enum FloatingUILayoutPolicy {
         return max(toolbarSlotHeight * clampedPercent, bottomCapsuleObscuredHeight, safeAreaBottom)
     }
 
+    static func webViewTopObscuredHeight(barsVisibilityPercent: CGFloat,
+                                         expandedChromeHeight: CGFloat,
+                                         topCapsuleObscuredHeight: CGFloat,
+                                         safeAreaTop: CGFloat) -> CGFloat {
+        let clampedPercent = max(0, min(1, barsVisibilityPercent))
+        return max(expandedChromeHeight * clampedPercent, topCapsuleObscuredHeight, safeAreaTop)
+    }
+
     static func shouldHostOmnibarInFloatingToolbar(isFloatingUIEnabled: Bool,
                                                    addressBarPosition: AddressBarPosition,
                                                    isUnifiedToggleInputVisible: Bool,

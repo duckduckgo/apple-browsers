@@ -122,6 +122,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
     @Published var attachmentUsage: AIChatAttachmentUsage?
 
+    /// Rides the draft-changed callback, which fires only on attachment mutations.
+    var onAttachmentsChanged: (() -> Void)?
+
     @Published private(set) var isEditing: Bool = false {
         didSet {
             guard oldValue != isEditing else { return }
@@ -178,6 +181,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private var pixelReporter: UTIPixelReporter!
     private var wideEventReporter: UTIWideEventReporter!
     private var modelSelector: UTIModelSelector!
+    private let isUpdatedModelPickerAvailable: Bool
+    private let modelPickerPresenter = UnifiedToggleInputModelPickerPresenter()
+    private let subscriptionUpsellPresenter = UnifiedToggleInputSubscriptionUpsellPresenter()
     private var attachmentController: UTIAttachmentController!
     private var isContentOverlaySuppressed = false
     /// Forces the model chip visible mid-chat for the FE's `showModelPicker` flow; cleared on prompt
@@ -288,11 +294,13 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         duckAIWideEventFlowScope: DuckAIWideEventFlowScope? = nil,
         pixelFiring: UTIPixelFiring = .live,
         contextualStartsPreSubmit: Bool = false,
-        attachmentPasteEnabled: Bool = false
+        attachmentPasteEnabled: Bool = false,
+        updatedModelPickerFeature: UpdatedModelPickerFeatureProviding = UpdatedModelPickerFeature()
     ) {
         self.host = host
         self.isToggleEnabled = isToggleEnabled
         self.hidesToggleOnDuckAITab = hidesToggleOnDuckAITab
+        self.isUpdatedModelPickerAvailable = updatedModelPickerFeature.isAvailable
         self.switchBarSubmissionMetrics = switchBarSubmissionMetrics
         self.aiChatSettings = aiChatSettings
         self.sessionMonitor = UTISessionMonitor(
@@ -307,7 +315,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         )
         self.modelStore = UTIModelStore(
             modelsService: modelsService ?? AIChatModelsService(
-                baseURL: aiChatModelsBaseURL(forChatURL: aiChatSettings.aiChatURL)
+                baseURL: aiChatModelsBaseURL(forChatURL: aiChatSettings.aiChatURL),
+                accessTokenProvider: subscriptionManager
             ),
             preferences: preferences,
             subscriptionManager: subscriptionManager
@@ -393,6 +402,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 onModelApplied: { [weak self] in self?.notifyFrontendOfActiveChatModelChange($0) }
             )
         )
+        if isUpdatedModelPickerAvailable {
+            viewController.usesUpdatedModelPickerPresentation = true
+            viewController.onUpdatedModelPickerTapped = { [weak self] in
+                self?.presentUpdatedModelPicker()
+            }
+        }
         attachmentController = UTIAttachmentController(
             pixelReporter: pixelReporter,
             view: .init(
@@ -425,7 +440,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 presenterViewController: { [weak self] in self?.attachmentPresenterViewController }
             ),
             callbacks: .init(
-                onDraftChanged: { [weak self] in self?.persistDraftToStore() },
+                onDraftChanged: { [weak self] in
+                    self?.persistDraftToStore()
+                    self?.onAttachmentsChanged?()
+                },
                 onExpandIfNeeded: { [weak self] in self?.expandIfOnExpandedInputHost() },
                 updateFloatingReturnKey: { [weak self] in self?.updateFloatingReturnKeyState() }
             )
@@ -750,8 +768,28 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     // MARK: - Edit mode
 
-    func beginEditMode(prompt: String, attachments: [UnifiedToggleInputAttachment] = []) {
+    private var editContinuation: CheckedContinuation<EditPromptReply, Never>?
+    private var editHasResponsesToLose = false
+
+    func editPrompt(_ request: EditPromptRequest) async -> EditPromptReply {
+        resolveEdit(.cancelled)
+        beginEditMode(prompt: request.prompt,
+                      attachments: makeAttachments(from: request),
+                      hasResponsesToLose: request.hasResponsesToLose)
+        return await withCheckedContinuation { editContinuation = $0 }
+    }
+
+    func cancelEdit() {
+        endEditMode()
+    }
+
+    func beginEditMode(prompt: String, attachments: [UnifiedToggleInputAttachment] = [], hasResponsesToLose: Bool = false) {
+        let wasEditing = isEditing
+        editHasResponsesToLose = hasResponsesToLose
         isEditing = true
+        // A re-entrant edit leaves `isEditing` already true, so its `didSet` skips
+        // `applyEditMode()`; refresh here so the disclaimer reflects the new request.
+        if wasEditing { applyEditMode() }
         showExpanded(prefilledText: prompt, inputMode: .aiChat, activatesInput: true)
         attachmentController.replaceAllAttachments(with: attachments)
     }
@@ -759,14 +797,38 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     func endEditMode() {
         guard isEditing else { return }
         isEditing = false
+        resolveEdit(.cancelled)
         resetToolsSelection()
         clearAttachments()
         setText("")
         showCollapsed()
     }
 
+    private func resolveEdit(_ reply: EditPromptReply) {
+        guard let continuation = editContinuation else { return }
+        editContinuation = nil
+        continuation.resume(returning: reply)
+    }
+
+    private func makeAttachments(from request: EditPromptRequest) -> [UnifiedToggleInputAttachment] {
+        var attachments: [UnifiedToggleInputAttachment] = []
+        for image in request.images ?? [] {
+            guard let data = Data(base64Encoded: image.data), let uiImage = UIImage(data: data) else { continue }
+            let fileName = "image.\(image.format == "png" ? "png" : "jpg")"
+            attachments.append(.image(AIChatImageAttachment(image: uiImage,
+                                                            fileName: fileName,
+                                                            originalEncodedData: data,
+                                                            originalFormat: image.format)))
+        }
+        for file in request.files ?? [] {
+            guard let data = Data(base64Encoded: file.data) else { continue }
+            attachments.append(.file(AIChatFileAttachment(data: data, fileName: file.fileName, mimeType: file.mimeType)))
+        }
+        return attachments
+    }
+
     private func applyEditMode() {
-        viewController.setEditMode(isEditing)
+        viewController.setEditMode(isEditing, showsReplaceDisclaimer: isEditing && editHasResponsesToLose)
         delegate?.unifiedToggleInputDidChangeEditMode(isEditing)
     }
 
@@ -1264,6 +1326,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         isVoiceSessionActive = false
     }
 
+    var attachmentCount: Int {
+        attachmentController.attachmentCount
+    }
+
     /// Surfaces a rejection in the input's validation banner.
     func presentRejectionBanner(_ message: String) {
         attachmentController.presentRejectionBanner(message)
@@ -1482,8 +1548,14 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             return
         }
 
-        // In edit mode, submitting exits edit mode instead of sending a new prompt.
         if isEditing {
+            let images = selectedModelSupportsImageUpload
+                ? UnifiedToggleInputImageEncoder.encode(viewController.currentAttachments)
+                : nil
+            let files = selectedModelSupportsFileUpload
+                ? UnifiedToggleInputFileEncoder.encode(viewController.currentAttachments)
+                : nil
+            resolveEdit(.submit(prompt: text, images: images, files: files))
             endEditMode()
             return
         }
@@ -1706,6 +1778,78 @@ private extension UnifiedToggleInputCoordinator {
         }
         guard let scene = viewController.view.window?.windowScene else { return nil }
         return scene.keyWindow?.rootViewController
+    }
+
+    func presentUpdatedModelPicker() {
+        guard isUpdatedModelPickerAvailable,
+              let presentingViewController = attachmentPresenterViewController,
+              viewController.modelPickerSourceView.window != nil else {
+            return
+        }
+
+        let content = UnifiedToggleInputModelPickerContent(
+            models: modelStore.models,
+            selectedModelID: modelStore.persistedModelId,
+            userTier: modelStore.subscriptionState.userTier
+        )
+        modelPickerPresenter.present(
+            content: content,
+            from: presentingViewController,
+            sourceView: viewController.modelPickerSourceView,
+            onSelect: { [weak self] modelID in
+                self?.handleUpdatedModelSelection(modelID)
+            },
+            onCallToAction: { [weak self] requiredTier in
+                self?.handleUpdatedModelPickerCallToAction(requiredTier: requiredTier)
+            }
+        )
+    }
+
+    func handleUpdatedModelPickerCallToAction(requiredTier: AIChatModelPublicAccessTier) {
+        switch modelStore.subscriptionState.userTier.upgradeFlow(for: requiredTier) {
+        case .purchase:
+            presentSubscriptionUpsell { [weak self] in
+                self?.modelSelector.handleModelPickerSubscriptionCallToAction(requiredTier: requiredTier)
+            }
+        case .upgrade, .none:
+            modelSelector.handleModelPickerSubscriptionCallToAction(requiredTier: requiredTier)
+        }
+    }
+
+    func handleUpdatedModelSelection(_ modelID: String) {
+        guard let model = modelStore.models.first(where: { $0.id == modelID }),
+              !model.entityHasAccess,
+              let requiredTier = model.lowestPublicAccessTier else {
+            modelSelector.handleModelSelection(modelID)
+            return
+        }
+
+        switch modelStore.subscriptionState.userTier.upgradeFlow(for: requiredTier) {
+        case .purchase, .upgrade:
+            presentSubscriptionUpsell { [weak self] in
+                self?.modelSelector.handleModelSelection(modelID)
+            }
+        case .none:
+            modelSelector.handleModelSelection(modelID)
+        }
+    }
+
+    func presentSubscriptionUpsell(onSubscribe: @escaping () -> Void) {
+        guard isUpdatedModelPickerAvailable,
+              let presentingViewController = attachmentPresenterViewController else {
+            return
+        }
+
+        subscriptionUpsellPresenter.present(
+            from: presentingViewController,
+            onSubscribe: onSubscribe,
+            onHaveSubscription: {
+                NotificationCenter.default.post(
+                    name: .settingsDeepLinkNotification,
+                    object: SettingsViewModel.SettingsDeepLinkSection.restoreFlow
+                )
+            }
+        )
     }
 
     func makeFloatingReturnKeyState() -> UnifiedToggleInputFloatingReturnKeyState {

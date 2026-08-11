@@ -512,6 +512,7 @@ struct UserText {
     static let fireDialogModeFromThisTab = NotLocalizedString("fire.dialog.mode.tab", value: "From this tab", comment: "Fire dialog mode for clearing data from current tab")
     static let fireDialogModeAllData = NotLocalizedString("fire.dialog.mode.all.data", value: "All data", comment: "Fire dialog mode for clearing all browsing data")
     static let fireDialogChooseWhatToDelete = NotLocalizedString("fire.dialog.choose.what.to.delete", value: "Choose what to delete", comment: "Fire dialog disclosure label that expands/collapses the data type toggles")
+    static let fireDialogFireproofExplanation = NotLocalizedString("fire.dialog.fireproof.explanation", value: "Fireproof site data won’t be deleted", comment: "Footnote below the Fire dialog data type toggles, explaining that data belonging to Fireproof sites is kept")
     static let fireDialogAccessibilityDetailsExpanded = NotLocalizedString("fire.dialog.accessibility.details.expanded", value: "expanded", comment: "Accessiblity value - The fire dialog details are expanded")
     static let fireDialogAccessibilityDetailsCollapsed = NotLocalizedString("fire.dialog.accessibility.details.collapsed", value: "collapsed", comment: "Accessiblity value - The fire dialog details are collapsed")
     static let fireDialogAccessibilitySelected = NotLocalizedString("fire.dialog.accessibility.selected", value: "selected", comment: "Accessiblity value - The selected fire dialog mode")
@@ -1994,7 +1995,7 @@ struct UserText {
     static let showBookmarksBarNewTabOnly = NSLocalizedString("bookmarks.bar.show.new-tab-only", value: "Only show on New Tab", comment: "Preference for only showing the bookmarks bar on new tab")
     static let bookmarksBarFolderEmpty = NSLocalizedString("bookmarks.bar.folder.empty", value: "Empty", comment: "Empty state for a bookmarks bar folder")
     static let bookmarksBarContextMenuDelete = NSLocalizedString("bookmarks.bar.context-menu.delete", value: "Delete", comment: "Delete menu item for the bookmarks bar context menu")
-    static let bookmarksBarContextMenuReorderByName = NotLocalizedString("bookmarks.bar.context-menu.reorder-by-name", value: "Reorder by name", comment: "Reorder by name menu item for bookmark folder context menus")
+    static let bookmarksBarContextMenuReorderByName = NotLocalizedString("bookmarks.bar.context-menu.reorder-by-name", value: "Reorder by Name", comment: "Reorder by Name menu item for bookmark folder context menus")
     static let bookmarksBarContextMenuMoveToEnd = NSLocalizedString("bookmarks.bar.context-menu.move-to-end", value: "Move to End", comment: "Move to End menu item for the bookmarks bar context menu")
 
     static let inviteDialogGetStartedButton = NSLocalizedString("invite.dialog.get.started.button", value: "Get Started", comment: "Get Started button on an invite dialog")

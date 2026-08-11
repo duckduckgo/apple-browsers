@@ -233,6 +233,16 @@
             </BuildableReference>
          </TestableReference>
          <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "EventHubTests"
+               BuildableName = "EventHubTests"
+               BlueprintName = "EventHubTests"
+               ReferencedContainer = "container:../SharedPackages/EventHub">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
             skipped = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"

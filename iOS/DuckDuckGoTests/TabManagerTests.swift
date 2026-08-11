@@ -649,6 +649,7 @@ final class TabManagerTests: XCTestCase {
                           launchSourceManager: launchSourceManager,
                           darkReaderFeatureSettings: MockDarkReaderFeatureSettings(),
                           adBlockingAvailability: StubAdBlockingAvailability(),
+                          eventHub: StubEventHub(),
                           tabTerminationTelemetry: tabTerminationTelemetry,
                           applicationState: applicationState,
                           isPad: isPad)

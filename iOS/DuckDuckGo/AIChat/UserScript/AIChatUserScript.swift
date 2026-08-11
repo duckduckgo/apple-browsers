@@ -256,6 +256,12 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.enableChatInput
         case .focusChatInput:
             return handler.focusChatInput
+        case .editPrompt:
+            return { [weak self] params, message in
+                await self?.handler.editPrompt(params: params, message: message)
+            }
+        case .cancelEdit:
+            return handler.cancelEdit
         default:
             return nil
         }

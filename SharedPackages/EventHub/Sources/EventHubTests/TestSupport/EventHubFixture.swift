@@ -1,0 +1,139 @@
+//
+//  EventHubFixture.swift
+//
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import Foundation
+import Combine
+@testable import EventHub
+
+/// Shared test fixture for the EventHub pixel manager. Wires a real `EventHubKeyValueStore` over an
+/// `InMemoryKeyValueStore`, a real `EventHubConfigParser`, a fake `EventHubSettingsProviding` whose
+/// enabled-state and settings are controllable (and changeable mid-test), and a single
+/// `ManualEventHubScheduler` that the manager uses for both time (`nowMillis()`) and period-end timers.
+/// Fired pixels are captured in `fired`.
+final class EventHubFixture {
+    /// A fixed wall-clock (2026-01-02T00:01:00Z) so attributionPeriod values are deterministic.
+    static let start = ISO8601DateFormatter().date(from: "2026-01-02T00:01:00Z")!
+
+    /// How far to advance virtual time to let the write-behind persistence flush run.
+    static let writeBehindFlush: TimeInterval = 15
+
+    let scheduler: ManualEventHubScheduler
+    let manager: EventHub
+
+    private let backingStore: InMemoryKeyValueStore
+    private let backingRepository: EventHubKeyValueStore
+    private let spyPixelFiring = SpyPixelFiring()
+
+    // The manager mutates all three of these on its own queue, asynchronously, so every test-side read
+    // fences first. Reading `state(of:)`/`count(of:)` needs no such treatment: `activePixelStates` is
+    // itself a `queue.sync`.
+    var store: InMemoryKeyValueStore { manager.settle(); return backingStore }
+    var repository: EventHubKeyValueStore { manager.settle(); return backingRepository }
+    var fired: [FiredPixel] { manager.settle(); return spyPixelFiring.fired }
+
+    private let enabledSubject: CurrentValueSubject<Bool, Never>
+    private let settingsSubject: CurrentValueSubject<[String: Any]?, Never>
+    private let settingsJSON: String
+
+    private init(store: InMemoryKeyValueStore, settingsJSON: String, enabled: Bool, hasSettings: Bool) {
+        self.backingStore = store
+        self.settingsJSON = settingsJSON
+        self.scheduler = ManualEventHubScheduler(startMillis: Int64(Self.start.timeIntervalSince1970 * 1000))
+
+        let parser = EventHubConfigParser()
+        self.backingRepository = EventHubKeyValueStore(store: store, parser: parser)
+        self.enabledSubject = CurrentValueSubject(enabled)
+        self.settingsSubject = CurrentValueSubject(hasSettings ? settingsDictionary(settingsJSON) : nil)
+
+        let settingsProvider = TestSettingsProviding(enabled: enabledSubject.eraseToAnyPublisher(), settings: settingsSubject.eraseToAnyPublisher())
+
+        self.manager = EventHub(store: backingRepository, parser: parser, settings: settingsProvider,
+                                 scheduler: scheduler, pixelFiring: spyPixelFiring)
+        scheduler.settle = { [weak manager = self.manager] in manager?.settle() }
+    }
+
+    /// A foregrounded fixture with config applied — the common "active period" starting point.
+    static func active(_ settingsJSON: String, enabled: Bool = true, hasSettings: Bool = true) -> EventHubFixture {
+        let fixture = EventHubFixture(store: InMemoryKeyValueStore(), settingsJSON: settingsJSON, enabled: enabled, hasSettings: hasSettings)
+        fixture.manager.onAppForegrounded()
+        fixture.manager.onConfigChanged()
+        return fixture
+    }
+
+    /// A backgrounded fixture (config not yet applied) — for foreground-gating scenarios.
+    static func background(_ settingsJSON: String, enabled: Bool = true, hasSettings: Bool = true) -> EventHubFixture {
+        EventHubFixture(store: InMemoryKeyValueStore(), settingsJSON: settingsJSON, enabled: enabled, hasSettings: hasSettings)
+    }
+
+    static func webEvent(_ type: String) -> [String: Any] {
+        ["type": type]
+    }
+
+    static func eventWithData(_ type: String, dataJSON: String) -> [String: Any] {
+        let data = (try? JSONSerialization.jsonObject(with: dataJSON.data(using: .utf8)!)) ?? [String: Any]()
+        return ["type": type, "data": data]
+    }
+
+    /// The expected attributionPeriod (interval-start unix seconds, as a string) for a period starting
+    /// at `start`.
+    static func expectedAttribution(periodSeconds: Int64) -> String {
+        let epochSeconds = Int64(start.timeIntervalSince1970)
+        return String(epochSeconds / periodSeconds * periodSeconds)
+    }
+
+    /// The manager's current in-memory state for a pixel (the source of truth during a period), or nil.
+    func state(of pixelName: String) -> PixelState? {
+        manager.activePixelStates.first { $0.pixelName == pixelName }
+    }
+
+    /// The current in-memory counter value for a pixel — fresh without a flush, unlike a repository read.
+    func count(of pixelName: String) -> Int {
+        state(of: pixelName)?.params["count"]?.value ?? 0
+    }
+
+    func setEnabled(_ value: Bool) { enabledSubject.send(value) }
+
+    func setSettings(_ json: String) { settingsSubject.send(settingsDictionary(json)) }
+
+    func advance(by interval: TimeInterval) { scheduler.advance(by: interval) }
+
+    /// Moves virtual time forward but leaves the armed period-end callback pending, so a test can act
+    /// while `now` is past `periodEnd` and the period has not yet been swept.
+    func advanceClockOnly(by interval: TimeInterval) { scheduler.advanceClockOnly(by: interval) }
+
+    /// Plants a corrupt persisted state directly into the store (an active period window, but an
+    /// unparseable config snapshot) so load-time resilience can be exercised on the next start.
+    func plantCorruptState(_ pixelName: String) {
+        var stored = (try? JSONDecoder().decode([String: EventHubStoredPixelState].self, from: store.object(forKey: EventHubKeyValueStore.storageKey) as? Data ?? Data())) ?? [:]
+        stored[pixelName] = EventHubStoredPixelState(periodStartMillis: 0, periodEndMillis: .max, paramsJSON: "{}", configJSON: "not valid json")
+        store.set(try? JSONEncoder().encode(stored), forKey: EventHubKeyValueStore.storageKey)
+    }
+
+    /// Builds a fresh, foregrounded manager over the same persisted store (simulates a restart).
+    func restart() -> EventHubFixture {
+        // Backgrounding is a flush boundary, but the write-behind flush runs on the scheduler, so
+        // advance virtual time to let it complete before "restarting" over the same persisted store.
+        manager.onAppBackgrounded()
+        scheduler.advance(by: Self.writeBehindFlush)
+
+        let fixture = EventHubFixture(store: backingStore, settingsJSON: settingsJSON, enabled: enabledSubject.value, hasSettings: true)
+        fixture.manager.onAppForegrounded()
+        fixture.manager.onConfigChanged()
+        return fixture
+    }
+}

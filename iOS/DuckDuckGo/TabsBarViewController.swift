@@ -20,12 +20,14 @@
 import UIKit
 import Combine
 import Core
+import FoundationExtensions
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import BrowserServicesKit
 import AIChat
 import Persistence
 import PrivacyConfig
+import FeatureFlags_iOS
 
 protocol TabsBarDelegate: NSObjectProtocol {
     
@@ -63,6 +65,7 @@ class TabsBarViewController: UIViewController {
         static let firstTabLeadingMargin: CGFloat = 24
         /// Active-tab bottom fillet size (Figma spec).
         static let tabRampSize = CGSize(width: 10, height: 10)
+        static let windowControlsTabGap: CGFloat = 16
     }
     
     enum NewTabType {
@@ -91,6 +94,10 @@ class TabsBarViewController: UIViewController {
         currentIndex: { [weak self] in self?.currentIndex },
         fillColor: { ThemeManager.shared.currentTheme.omniBarBackgroundColor }
     )
+
+    func setCurrentTabSelectionAlpha(_ alpha: CGFloat) {
+        flareBackground.hideAlpha = alpha.clamped(to: 0...1)
+    }
 
     lazy var fireButton: UIButton = {
         createButton(image: DesignSystemImages.Glyphs.Size24.fireSolid)
@@ -573,10 +580,27 @@ class TabsBarViewController: UIViewController {
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
+        updateWindowControlsInsetIfNeeded()
         // Catches layout passes (e.g. the first one) that land before refresh()/backgroundTabAdded().
         recomputeItemSize()
         flareBackground.update()
         NotificationCenter.default.post(name: TabsBarViewController.viewDidLayoutNotification, object: self)
+    }
+
+    // Recalculate after resizing because reserved window control width changes.
+    private func updateWindowControlsInsetIfNeeded() {
+        let margin: CGFloat
+        if WindowControlsRowLayout.sharesRow(in: view, isEnabled: WindowControlsRowLayout.isEnabled(featureFlagger: featureFlagger)) {
+            let clearsWindowControls = WindowControlsRowLayout.leadingInset(in: view) + Constants.windowControlsTabGap
+            margin = max(Constants.firstTabLeadingMargin, clearsWindowControls)
+        } else {
+            // Horizontal adaptation reserves display corner space in full screen.
+            margin = Constants.firstTabLeadingMargin
+        }
+        guard tabsBarView.firstTabLeadingMargin != margin else { return }
+
+        tabsBarView.firstTabLeadingMargin = margin
+        view.layoutIfNeeded()
     }
 }
 

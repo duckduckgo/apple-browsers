@@ -19,7 +19,7 @@
 import AppKit
 import Combine
 import DesignResourcesKit
-import FeatureFlags
+import FeatureFlags_macOS
 import Foundation
 import PixelKit
 import PrivacyConfig
@@ -191,6 +191,8 @@ final class PermissionCenterViewModel: ObservableObject {
     private let grantPermission: ((PermissionAuthorizationQuery) -> Void)?
     private let reloadPage: (() -> Void)?
     private let setPermissionsNeedReload: (() -> Void)?
+    private let openSettings: ((PreferencesDestination) -> Void)?
+    private let pixelFiring: PixelFiring?
     private var cancellables = Set<AnyCancellable>()
     private var removedPermissions = Set<PermissionType>()
     private(set) var hasTemporaryPopupAllowance: Bool
@@ -207,6 +209,13 @@ final class PermissionCenterViewModel: ObservableObject {
 
     /// Whether the Autoplay Policy permission must be inserted(or not)
     private let displaysAutoplayPolicy: Bool
+
+    /// Whether the UI is presented by the Autoplay Policy Discoverability Promo, which also displays the autoplay disclaimer
+    private let displaysAutoplayDiscovery: Bool
+
+    /// Indicates if the Permissions UI can be automatically dismissed. Starts off matching `displaysAutoplayDiscovery`,
+    /// since the promo is the only presentation that autodismisses, and only ever goes false (see `disableAutodismiss()`).
+    private(set) var allowsAutodismiss: Bool
 
     init(
         domain: String,
@@ -225,10 +234,13 @@ final class PermissionCenterViewModel: ObservableObject {
         grantPermission: ((PermissionAuthorizationQuery) -> Void)? = nil,
         reloadPage: (() -> Void)? = nil,
         setPermissionsNeedReload: (() -> Void)? = nil,
+        openSettings: ((PreferencesDestination) -> Void)? = nil,
         hasTemporaryPopupAllowance: Bool = false,
         pageInitiatedPopupOpened: Bool = false,
         displaysAutoplayPolicy: Bool = false,
         permissionsNeedReload: Bool = false,
+        displaysAutoplayDiscovery: Bool = false,
+        pixelFiring: PixelFiring? = PixelKit.shared,
         systemPermissionManager: SystemPermissionManagerProtocol = SystemPermissionManager()
     ) {
         self.domain = domain
@@ -247,17 +259,32 @@ final class PermissionCenterViewModel: ObservableObject {
         self.grantPermission = grantPermission
         self.reloadPage = reloadPage
         self.setPermissionsNeedReload = setPermissionsNeedReload
+        self.openSettings = openSettings
         self.hasTemporaryPopupAllowance = hasTemporaryPopupAllowance
         self.pageInitiatedPopupOpened = pageInitiatedPopupOpened
         self.displaysAutoplayPolicy = displaysAutoplayPolicy
         self.systemPermissionManager = systemPermissionManager
         self.showReloadBanner = permissionsNeedReload
+        self.displaysAutoplayDiscovery = displaysAutoplayDiscovery
+        self.allowsAutodismiss = displaysAutoplayDiscovery
+        self.pixelFiring = pixelFiring
 
         loadPermissions()
         subscribeToPermissionChanges()
     }
 
     // MARK: - Public Methods
+
+    /// Opts out of automatic dismissal, permanently. Called as soon as the user reaches the UI with the pointer, so that
+    /// the Autoplay Policy Discoverability Promo doesn't close the popover from under them.
+    func disableAutodismiss() {
+        guard allowsAutodismiss else {
+            return
+        }
+
+        allowsAutodismiss = false
+        pixelFiring?.fire(AutoplayPromoPixel.engaged)
+    }
 
     /// Updates the decision for a permission type
     func setDecision(_ decision: PersistedPermissionDecision, for permissionType: PermissionType) {
@@ -271,7 +298,7 @@ final class PermissionCenterViewModel: ObservableObject {
 
         // Fire pixel for decision change
         if previousDecision != decision {
-            PixelKit.fire(PermissionPixel.permissionCenterChanged(permissionType: permissionType, from: previousDecision, to: decision))
+            pixelFiring?.fire(PermissionPixel.permissionCenterChanged(permissionType: permissionType, from: previousDecision, to: decision))
             markReloadNeeded()
         }
 
@@ -307,7 +334,7 @@ final class PermissionCenterViewModel: ObservableObject {
 
         // Fire pixel for decision change
         if previousDecision != decision {
-            PixelKit.fire(PermissionPixel.permissionCenterChanged(permissionType: permissionType, from: previousDecision, to: decision))
+            pixelFiring?.fire(PermissionPixel.permissionCenterChanged(permissionType: permissionType, from: previousDecision, to: decision))
             markReloadNeeded()
         }
     }
@@ -319,7 +346,7 @@ final class PermissionCenterViewModel: ObservableObject {
         removePermissionFromTab(permissionType)
 
         // Fire pixel for permission reset
-        PixelKit.fire(PermissionPixel.permissionCenterReset(permissionType: permissionType))
+        pixelFiring?.fire(PermissionPixel.permissionCenterReset(permissionType: permissionType))
 
         // Show reload banner
         markReloadNeeded()
@@ -419,6 +446,21 @@ final class PermissionCenterViewModel: ObservableObject {
         permissionManager.hasPermissionPersisted(forDomain: domain, permissionType: .autoplayPolicy)
     }
 
+    /// Whether the autoplay disclaimer card is shown: only within the Autoplay Discoverability Promo, and only alongside the row it explains
+    var showAutoplayDisclaimer: Bool {
+        displaysAutoplayDiscovery && permissionItems.contains { $0.permissionType == .autoplayPolicy }
+    }
+
+    /// Opens the General settings pane, scrolled to the Permissions section where the all-sites autoplay preference lives
+    func openAutoplaySettings() {
+        if displaysAutoplayDiscovery {
+            pixelFiring?.fire(AutoplayPromoPixel.settingsLinkClicked)
+        }
+
+        openSettings?(.generalPermissions)
+        dismissPopover()
+    }
+
     /// Opens a specific blocked popup
     func openBlockedPopup(_ popup: BlockedPopup) {
         openPopup?(popup.query)
@@ -431,7 +473,7 @@ final class PermissionCenterViewModel: ObservableObject {
         removePermissionFromTab(permissionType)
 
         // Fire pixel for permission reset
-        PixelKit.fire(PermissionPixel.permissionCenterReset(permissionType: permissionType))
+        pixelFiring?.fire(PermissionPixel.permissionCenterReset(permissionType: permissionType))
 
         // Show reload banner
         markReloadNeeded()
@@ -493,8 +535,9 @@ final class PermissionCenterViewModel: ObservableObject {
             otherPermissions.append(.popups)
         }
 
-        // Always include autoplay policy when feature flag is on
-        if displaysAutoplayPolicy,
+        // Always include autoplay policy when feature flag is on (OR) we're displaying the Autoplay Discovery
+        // When `displaysAutoplayDiscovery` we'll forcefully display the Permission.
+        if displaysAutoplayPolicy || displaysAutoplayDiscovery,
            !otherPermissions.contains(.autoplayPolicy),
            !removedPermissions.contains(.autoplayPolicy) {
             otherPermissions.append(.autoplayPolicy)

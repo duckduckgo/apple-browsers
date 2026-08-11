@@ -55,8 +55,7 @@ struct DefaultSuggestionRowThemeProvider: SuggestionRowThemeProviding {
             return accentPrimaryColor
         }
 
-        let provider = themeManager.theme.colorsProvider
-        return isBurner ? provider.suggestionsFireSuffixColor : provider.suggestionsSuffixColor
+        return themeManager.theme.colorsProvider.suggestionsSuffixColor(isBurner: isBurner)
     }
 
     var suffixSelectedTextColor: NSColor {
@@ -64,8 +63,7 @@ struct DefaultSuggestionRowThemeProvider: SuggestionRowThemeProviding {
             return selectedTintColor
         }
 
-        let provider = themeManager.theme.colorsProvider
-        return isBurner ? provider.suggestionsFireHighlightSuffixColor : provider.suggestionsHighlightSuffixColor
+        return themeManager.theme.colorsProvider.suggestionsHighlightSuffixColor(isBurner: isBurner)
     }
 }
 

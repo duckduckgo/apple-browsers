@@ -162,9 +162,26 @@ public enum NetworkProtectionError: LocalizedError, CustomNSError {
     }
 
     public var errorDescription: String? {
-        // This is probably not the most elegant error to show to a user but
-        // it's a great way to get detailed reports for those cases we haven't
-        // provided good descriptions for yet.
-        return "NetworkProtectionError.\(String(describing: self))"
+        switch self {
+        case .failedToCastKeychainValueToData(let field):
+            return "NetworkProtectionError.failedToCastKeychainValueToData(\(field))"
+        case .keychainReadError(let field, let status):
+            return "NetworkProtectionError.keychainReadError(\(field), \(status))"
+        case .keychainWriteError(let field, let status):
+            return "NetworkProtectionError.keychainWriteError(\(field), \(status))"
+        case .keychainUpdateError(let field, let status):
+            return "NetworkProtectionError.keychainUpdateError(\(field), \(status))"
+        case .keychainDeleteError(let status):
+            return "NetworkProtectionError.keychainDeleteError(\(status))"
+        case .wireGuardInvalidState(let reason):
+            return "NetworkProtectionError.wireGuardInvalidState(\(reason))"
+        case .unhandledError(let function, let line, _):
+            return "NetworkProtectionError.unhandledError(\(function), \(line))"
+        default:
+            break
+        }
+
+        let caseName = Mirror(reflecting: self).children.first?.label ?? String(describing: self)
+        return "NetworkProtectionError.\(caseName)"
     }
 }

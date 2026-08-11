@@ -11,6 +11,9 @@ tags:
     file: ../shared/setup.yaml
 
 - tapOn: "Browsing Menu"
+- extendedWaitUntil:
+    visible: "Settings"
+    timeout: 10000
 - tapOn: "Settings"
 - scrollUntilVisible:
     element: "General"
@@ -42,6 +45,9 @@ tags:
 - assertVisible: ".*Privacy Test Pages.*"
 
 - tapOn: "Browsing Menu"
+- extendedWaitUntil:
+    visible: "Settings"
+    timeout: 10000
 - tapOn: "Settings"
 - scrollUntilVisible:
     element: "General"

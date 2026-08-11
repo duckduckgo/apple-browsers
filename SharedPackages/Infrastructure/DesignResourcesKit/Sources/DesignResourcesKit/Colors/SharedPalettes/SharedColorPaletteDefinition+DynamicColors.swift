@@ -108,6 +108,14 @@ extension SharedColorPaletteDefinition {
         case .shieldPrivacy:
             return shieldPrivacy
 
+        /// Status
+        case .statusGray:
+            return statusGray
+        case .statusGreen:
+            return statusGreen
+        case .statusRed:
+            return statusRed
+
         /// VPN
         /// Feature-scoped colours for the VPN status pill and header animation, resolved inline
         /// (following the Permission Center pattern) since they don't vary by accent palette. Per the
@@ -227,11 +235,37 @@ extension SharedColorPaletteDefinition {
         case .iconsTertiary:
             return iconsTertiary
 
-        /// Input
+        /// Unified Input
+        case .unifiedInputControlFillPrimary:
+            return unifiedInputControlFillPrimary
+        case .unifiedInputControlFillSecondary:
+            return unifiedInputControlFillSecondary
+        case .unifiedInputControlShadowPrimary:
+            return unifiedInputControlShadowPrimary
         case .unifiedInputFieldFillPrimary:
             return unifiedInputFieldFillPrimary
         case .unifiedInputFieldFillSecondary:
             return unifiedInputFieldFillSecondary
+        case .unifiedInputFireControlFillPrimary:
+            return unifiedInputFireControlFillPrimary
+        case .unifiedInputFireControlFillSecondary:
+            return unifiedInputFireControlFillSecondary
+        case .unifiedInputFireFieldFillPrimary:
+            return unifiedInputFireFieldFillPrimary
+        case .unifiedInputFireFieldFillSecondary:
+            return unifiedInputFireFieldFillSecondary
+        case .unifiedInputFireIconsPrimary:
+            return unifiedInputFireIconsPrimary
+        case .unifiedInputFireIconsSecondary:
+            return unifiedInputFireIconsSecondary
+        case .unifiedInputFireTextPrimary:
+            return unifiedInputFireTextPrimary
+        case .unifiedInputFireTextSecondary:
+            return unifiedInputFireTextSecondary
+        case .unifiedInputTextPrimary:
+            return unifiedInputTextPrimary
+        case .unifiedInputTextSecondary:
+            return unifiedInputTextSecondary
 
         /// System
         case .lines:
@@ -296,6 +330,8 @@ extension SharedColorPaletteDefinition {
             return toneShadePrimary
         case .toneTintPrimary:
             return toneTintPrimary
+        case .toneTintSecondary:
+            return toneTintSecondary
 
         /// Permission Center
         case .permissionCenterBackground:
@@ -313,25 +349,26 @@ extension SharedColorPaletteDefinition {
 
     static func dynamicColor(for singleUseColor: SingleUseColor) -> DynamicColor {
         switch singleUseColor {
-        case .aiToggleBorder:
-            return DynamicColor(staticColor: .clear)
-        case .aiToggleBackground:
-            return controlsSubtleFillSecondary
-        case .aiToggleSelectionBackground:
-            return controlsRaisedFillPrimary
-        case .aiToggleSelectionBorder:
-            return shadowTertiary
-
         case .fireModeAccent:
             return DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin50, darkColor: RebrandingColor.Mandarin.mandarin40)
         case .fireButtonGradientStart:
-            return DynamicColor(staticColor: RebrandingColor.Mandarin.mandarin50)
+            return DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin50, darkColor: RebrandingColor.Mandarin.mandarin40)
         case .fireButtonGradientEnd:
-            return DynamicColor(staticColor: RebrandingColor.Red.red50)
+            return DynamicColor(lightColor: RebrandingColor.Red.red50, darkColor: RebrandingColor.Red.red40)
         case .fireButtonPressedGradientStart:
             return DynamicColor(staticColor: RebrandingColor.Mandarin.mandarin60)
         case .fireButtonPressedGradientEnd:
             return DynamicColor(staticColor: RebrandingColor.Red.red70)
+        case .fireDialogKnobFill:
+            return DynamicColor(staticColor: Color(0xFFFFFF))
+        case .fireDialogTabBackground:
+            return DynamicColor(lightColor: Color(designSystemColor: .containerFillSecondary), darkColor: Color(designSystemColor: .surfaceCanvas))
+        case .fireDialogTabBackgroundSelected:
+            return DynamicColor(lightColor: Color(designSystemColor: .surfaceTertiary), darkColor: Color(designSystemColor: .surfaceSecondary))
+        case .fireDialogTabShadowPrimary:
+            return DynamicColor(lightColor: Color(designSystemColor: .shadowPrimary), darkColor: .shade(0.06))
+        case .fireDialogTabShadowSecondary:
+            return DynamicColor(lightColor: Color(designSystemColor: .shadowTertiary), darkColor: .shade(0.16))
         }
     }
 }

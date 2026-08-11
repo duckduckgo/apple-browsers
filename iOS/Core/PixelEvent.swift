@@ -1127,6 +1127,7 @@ extension Pixel {
         case syncAutoRestorePreservedAccountClearFailed
 
         case syncSetupBarcodeScreenShown
+        case syncSetupScanQRScreenShown
         case syncSetupBarcodeScannerSuccess
         case syncSetupBarcodeScannerFailed
         case syncSetupBarcodeCodeCopied
@@ -1696,6 +1697,10 @@ extension Pixel {
         case aiChatContextualAutoAttachDAU
         case aiChatIsEnabledDaily
 
+        // MARK: Duck.ai subscription funnel (frontend-reported entry points)
+        case aiChatSubscriptionFunnelImpression
+        case aiChatSubscriptionFunnelClick
+
         case duckAiNativeStorageMigrationDoneUnique(key: String)
         case duckAiNativeStorageMigrationDoneCount(key: String)
         case duckAiNativeStorageMigrationDoneBlankCount
@@ -1763,7 +1768,6 @@ extension Pixel {
         case aiChatNewAddressBarPickerV2Confirmed
         
         // MARK: Experimental Omnibar Metrics
-        case aiChatExperimentalOmnibarShown
         case aiChatExperimentalOmnibarPromptSubmitted
         case aiChatExperimentalOmnibarQuerySubmitted
         case aiChatExperimentalOmnibarModeSwitched
@@ -1892,6 +1896,7 @@ extension Pixel {
         case unifiedToggleInputStopGenerationTapped
         case unifiedToggleInputSubscriptionUpsellTriggered
         case unifiedToggleInputChatHeaderUpgradeTapped
+        case unifiedToggleInputChatHeaderUpgradeShown
         case unifiedToggleInputPromptSubmitted
         case unifiedToggleInputShowModelPicker
         case unifiedToggleInputSubmitChangeModel
@@ -1922,7 +1927,6 @@ extension Pixel {
         case tabInteractionStateSourceMissingRootDirectory
         case tabInteractionStateSourceFailedToWrite
 
-        case tabInteractionStateFailedToRestore
         case tabInteractionStateRestorationTime(_ time: BucketAggregation)
 
         // MARK: Malicious Site Protection
@@ -2079,12 +2083,6 @@ extension Pixel {
 
         case webExtensionDailyAdBlockingState
 
-        case webExtensionAdBlockingDetectedAdBlockerDaily
-        case webExtensionAdBlockingDetectedPlayabilityErrorDaily
-        case webExtensionAdBlockingDetectedVideoAdDaily
-        case webExtensionAdBlockingDetectedStaticAdDaily
-        case webExtensionAdBlockingDetectedBufferingDaily
-
         // MARK: - Fire Mode
         case browsingModeSwitched
         case tabSwitcherModeToggled
@@ -2106,21 +2104,6 @@ extension Pixel {
 }
 
 extension Pixel.Event: Equatable {}
-
-extension Pixel.Event {
-    /// Maps a C-S-S `webEvent` `type` string to the matching pixel case.
-    /// Returns `nil` for unknown types so the caller can no-op.
-    public static func adBlockingDetectedEvent(type: String) -> Pixel.Event? {
-        switch type {
-        case "youtube_adBlocker": return .webExtensionAdBlockingDetectedAdBlockerDaily
-        case "youtube_playabilityError": return .webExtensionAdBlockingDetectedPlayabilityErrorDaily
-        case "youtube_videoAd": return .webExtensionAdBlockingDetectedVideoAdDaily
-        case "youtube_staticAd": return .webExtensionAdBlockingDetectedStaticAdDaily
-        case "youtube_buffering": return .webExtensionAdBlockingDetectedBufferingDaily
-        default: return nil
-        }
-    }
-}
 
 extension Pixel.Event {
 
@@ -3025,8 +3008,6 @@ extension Pixel.Event {
         case .tabInteractionStateSourceFailedToWrite:
             return "m_d_tab-interaction-state-source_failed-to-write"
 
-        case .tabInteractionStateFailedToRestore:
-            return "m_d_tab-interaction-state_failed-to-restore"
         case .tabInteractionStateRestorationTime(let aggregation):
             return "m_d_tab-interaction-state_restoration-time-\(aggregation)"
 
@@ -3215,6 +3196,7 @@ extension Pixel.Event {
         case .syncAutoRestorePreservedAccountClearFailed: return "sync-auto-restore_preserved_account_clear_failed"
 
         case .syncSetupBarcodeScreenShown: return "sync_setup_barcode_screen_shown"
+        case .syncSetupScanQRScreenShown: return "sync_setup_scan_qr_screen_shown"
         case .syncSetupBarcodeScannerSuccess: return "sync_setup_barcode_scanner_success"
         case .syncSetupBarcodeScannerFailed: return "sync_setup_barcode_scanner_failed"
         case .syncSetupBarcodeCodeCopied: return "sync_setup_barcode_code_copied"
@@ -3635,6 +3617,11 @@ extension Pixel.Event {
         case .aiChatContextualAutoAttachDAU: return "m_aichat_contextual_auto_attach_dau"
         case .aiChatIsEnabledDaily: return "m_aichat_is_enabled_daily"
 
+        // The hyphen inside these snake_case names is deliberate: it matches the macOS names so a single
+        // query answers both platforms.
+        case .aiChatSubscriptionFunnelImpression: return "m_aichat_subscription-funnel_impression"
+        case .aiChatSubscriptionFunnelClick: return "m_aichat_subscription-funnel_click"
+
         // AI Features telemetry: no `m_` prefix so the wire names are identical to macOS.
         case .aiFeaturesStateDaily: return "ai_features_state_daily"
         case .aiFeaturesDisabled: return "ai_features_disabled"
@@ -3704,7 +3691,6 @@ extension Pixel.Event {
         case .aiChatNewAddressBarPickerV2Confirmed: return "m_aichat_new_address_bar_picker_v2_confirmed"
         
         // MARK: Experimental Omnibar Metrics
-        case .aiChatExperimentalOmnibarShown: return "m_aichat_experimental_omnibar_shown"
         case .aiChatExperimentalOmnibarPromptSubmitted: return "m_aichat_experimental_omnibar_prompt_submitted"
         case .aiChatExperimentalOmnibarQuerySubmitted: return "m_aichat_experimental_omnibar_query_submitted"
         case .aiChatExperimentalOmnibarModeSwitched: return "m_aichat_experimental_omnibar_mode_switched"
@@ -3831,6 +3817,7 @@ extension Pixel.Event {
         case .unifiedToggleInputStopGenerationTapped: return "m_aichat_unified_input_stop_generation_tapped"
         case .unifiedToggleInputSubscriptionUpsellTriggered: return "m_aichat_unified_input_subscription_upsell_triggered"
         case .unifiedToggleInputChatHeaderUpgradeTapped: return "m_aichat_unified_input_chat_header_upgrade_tapped"
+        case .unifiedToggleInputChatHeaderUpgradeShown: return "m_aichat_unified_input_chat_header_upgrade_shown"
         case .unifiedToggleInputPromptSubmitted: return "m_aichat_unified_input_prompt_submitted"
         case .unifiedToggleInputShowModelPicker: return "aichat_unified_input_show_model_picker"
         case .unifiedToggleInputSubmitChangeModel: return "aichat_unified_input_submit_change_model"
@@ -4076,12 +4063,6 @@ extension Pixel.Event {
         case .webExtensionAdBlockingPickerAlwaysOff: return "m_web_extension_ad_blocking_picker_always_off"
         case .webExtensionAdBlockingPickerDisableUntilRelaunch: return "m_web_extension_ad_blocking_picker_disable_until_relaunch"
         case .webExtensionAdBlockingBreakageReportEntered: return "m_web_extension_ad_blocking_breakage_report_entered"
-
-        case .webExtensionAdBlockingDetectedAdBlockerDaily: return "m_web_extension_adblocking_detected_ad_blocker_daily"
-        case .webExtensionAdBlockingDetectedPlayabilityErrorDaily: return "m_web_extension_adblocking_detected_playability_error_daily"
-        case .webExtensionAdBlockingDetectedVideoAdDaily: return "m_web_extension_adblocking_detected_video_ad_daily"
-        case .webExtensionAdBlockingDetectedStaticAdDaily: return "m_web_extension_adblocking_detected_static_ad_daily"
-        case .webExtensionAdBlockingDetectedBufferingDaily: return "m_web_extension_adblocking_detected_buffering_daily"
 
         // MARK: - Fire Mode
         case .browsingModeSwitched: return "m_browsing-mode_switched"

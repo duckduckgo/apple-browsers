@@ -89,6 +89,7 @@ public enum PrivacyFeature: String {
     case forceDarkModeOnWebsites
     case promoQueue
     case adBlockingExtension
+    case eventHub
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.
@@ -205,9 +206,6 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     case screenTimeCleaning
 
-    /// https://app.asana.com/1/137249556945/project/1211264967278501/task/1211806114021633?focus=true
-    case onboardingRebranding
-
     /// Option to install Chrome extension during onboarding (DMG only)
     case onboardingChromeExtension
 
@@ -215,114 +213,10 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// legacy `javascript:` URL trampoline. Kill switch — disable remotely to revert to the
     /// trampoline if the SPI ever misbehaves.
     case newErrorPageReload
-}
 
-public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
-    public var parent: PrivacyFeature {
-        .iOSBrowserConfig
-    }
-
-    // Demonstrative case for default value. Remove once a real-world feature is added
-    case intentionallyLocalOnlySubfeatureForTests
-
-    case widgetReporting
-
-    // Local inactivity provisional notifications delivered to Notification Center.
-    // https://app.asana.com/1/137249556945/project/72649045549333/task/1211003501974970?focus=true
-    case inactivityNotification
-
-    /// https://app.asana.com/1/137249556945/project/715106103902962/task/1210997282929955?focus=true
-    case unifiedURLPredictor
-
-    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211660503405838?focus=true
-    case forgetAllInSettings
-
-    /// https://app.asana.com/1/137249556945/project/481882893211075/task/1212057154681076?focus=true
-    case productTelemetrySurfaceUsage
-
-    ///  https://app.asana.com/1/137249556945/project/414709148257752/task/1212395110448661?focus=true
-    case appRatingPrompt
-
-    /// https://app.asana.com/1/137249556945/project/1206329551987282/task/1212238464901412?focus=true
-    case showWhatsNewPromptOnDemand
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212875994217788?focus=true
-    case genericBackgroundTask
-
-    /// Failsafe flag for disabling call stack tree depth limiting in crash collector
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037858764805
-    case crashCollectionLimitCallStackTreeDepth
-
-    /// Enables sending MetricKit launch-time telemetry pixels.
-    /// https://app.asana.com/1/137249556945/project/1208671677432066/task/1214963974721156
-    case launchTimeMetrics
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212835969125260
-    case browsingMenuSheetEnabledByDefault
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213336304802675
-    case showNTPAfterIdleReturn
-
-    case crashReportOptInStatusResetting
-
-    case screenTimeCleaning
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215448831345663?focus=true
-    case bottomBarViewportFixedElementsWorkaround
-
-    /// https://app.asana.com/1/137249556945/project/1206329551987282/task/1211806114021630?focus=true
-    case onboardingRebranding
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214974217398704?focus=true
-    case appRebranding
-
-    /// https://app.asana.com/1/137249556945/task/1213314048601761
-    case fireMode
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213965646075290
-    case fireButtonRefinements
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216535350078652
-    case fireButtonSingleTabDeleteAll
-
-    /// https://app.asana.com/1/137249556945/project/392891325557410/task/1212828713075939?focus=true
-    case omniBarLongPressMenu
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214797978179697?focus=true
-    case customProductPageDuckAiChat
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215151176422651?focus=true
-    case customProductPageDuckAiOnboardingFlow
-
-    /// Gate the default-to-NTP-after-idle behavior for existing iPhone users behind a remote flag.
-    /// https://app.asana.com/1/137249556945/project/1204186595873227/task/1214830562427843
-    case defaultExistingIPhoneUsersToNewTabAfterIdle
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215169783702336
-    case walletPassDownload
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215359554019438?focus=true
-    case floatingUI
-
-    /// https://app.asana.com/1/137249556945/project/392891325557410/task/1216807388526023?focus=true
-    case tabSwitcherJuly2026
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215385432113040?focus=true
-    case removeChatHistory
-
-    /// NA experiment: search token to speed up SERP by combining Index/Deep responses.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216365830146824
-    case searchTokenExperiment
-
-    /// NA Experiment: tailor the onboarding flow based on the user's download reason.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216491579842691?focus=true
-    case onboardingFlowByDownloadReasonExperiment
-
-    /// Caches the blank-snapshot overlay off the suspend path to avoid the background scene-update watchdog.
-    case blankSnapshotCaching
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216629730083154?focus=true
-    case systemFindInPage
+    /// "Reorder by name" — permanently reorders a bookmark folder's direct children alphabetically.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217076881156357?focus=true
+    case bookmarksReorderByName
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -372,7 +266,6 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case waitlist
     case waitlistBetaActive
     case freemium
-    case remoteBrokerDelivery
     case foregroundRunningOnAppActive
     case continuedProcessing
     case pirRollout
@@ -497,6 +390,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Controls pin/unpin updates of Synced chats
     case supportsSyncChatsUpdate
 
+    /// Duck.ai actions on selected text in the browser, offered from the selection edit menu.
+    case textActions
+
     /// Shows a link in Settings → AI Features that opens the Duck.ai Settings modal.
     case settingsLinkInAiFeatures
 
@@ -537,17 +433,11 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables deleting recent AI chats from the New Tab Page omnibar
     case ntpSuggestionsDeletion
 
-    /// Enables page context feature on iPad
-    case iPadPageContext
-
     /// Enables voice chat shortcut in the focused address bar
     case voiceShortcut
 
     /// Enables removing individual AI chat suggestions
     case removeSuggestion
-
-    /// Enables the fire button in the contextual AI chat sheet
-    case contextualFireButton
 
     /// Enables the Duck.ai top-level main menu shortcut (macOS only)
     case mainMenuShortcut
@@ -627,7 +517,10 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     case nativeSidebar
 
     /// macOS only. System-wide Duck.ai entry point: global keyboard shortcut and menu bar icon.
-    case macosPromptBar
+    case promptBar
+
+    /// Supports Duck.ai edit prompt from the native input field.
+    case nativePromptEditing
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
@@ -716,9 +609,8 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case scopedAccessCredentials
     case canUseV2ConnectFlow
     case canShowV2ConnectCode
-
-    /// Gates the Simplified Sync Setup follow-up screens (deactivation + multi-device path).
-    /// https://app.asana.com/1/137249556945/project/1214200115953388/task/1215960387490701
+    case canWriteUnifiedDeviceList
+    case canReadUnifiedDeviceList
     case simplifiedSyncSetupV2
 }
 

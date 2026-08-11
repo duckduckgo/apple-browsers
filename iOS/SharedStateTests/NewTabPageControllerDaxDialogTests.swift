@@ -38,6 +38,7 @@ private class MockURLBasedDebugCommands: URLBasedDebugCommands {
     }
 }
 
+@MainActor
 final class NewTabPageControllerDaxDialogTests: XCTestCase {
 
     var variantManager: CapturingVariantManager!
@@ -67,6 +68,7 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
             faviconLoader: EmptyFaviconLoading(),
             remoteMessagingActionHandler: MockRemoteMessagingActionHandler(),
             remoteMessagingImageLoader: MockRemoteMessagingImageLoader(),
+            promoCoordinator: MockNewTabPagePromoCoordinator(),
             appSettings: AppSettingsMock(),
             faviconsCache: Favicons(),
             subscriptionManager: SubscriptionManagerMock(),
@@ -118,6 +120,7 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
             faviconLoader: EmptyFaviconLoading(),
             remoteMessagingActionHandler: MockRemoteMessagingActionHandler(),
             remoteMessagingImageLoader: MockRemoteMessagingImageLoader(),
+            promoCoordinator: MockNewTabPagePromoCoordinator(),
             appSettings: AppSettingsMock(),
             faviconsCache: Favicons(),
             subscriptionManager: SubscriptionManagerMock(),
@@ -299,6 +302,10 @@ class CapturingNewTabDaxDialogProvider: NewTabDaxDialogProviding {
     }
 
     func createDuckAIFireOnboardingCompletionDialog(message: String, onDismiss: @escaping () -> Void) -> AnyView {
+        AnyView(EmptyView())
+    }
+
+    func createEndOfJourneyDialog(content: OnboardingEndOfJourneyContent, onAction: @escaping (OnboardingEndOfJourneyAction) -> Void) -> AnyView {
         AnyView(EmptyView())
     }
 }

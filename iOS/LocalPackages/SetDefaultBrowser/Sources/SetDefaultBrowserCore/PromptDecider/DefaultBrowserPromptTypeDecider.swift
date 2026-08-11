@@ -163,7 +163,7 @@ private extension DefaultBrowserPromptTypeDecider {
     func decidePromptType() -> DefaultBrowserPromptType? {
         // First, check if we need to display the prompt for inactive users.
         // Second, check if we need to display one of the prompt for active users.
-        // Note: Cooldown is now managed globally within the client in (See ModalPromptCoordinationService).
+        // Note: Cooldown is now managed globally within the client in (See PromoCoordinationService).
         if let inactivePrompt = inactiveUserPromptDecider.promptType() {
             return inactivePrompt
         } else if let activePrompt = activeUserPromptDecider.promptType() {

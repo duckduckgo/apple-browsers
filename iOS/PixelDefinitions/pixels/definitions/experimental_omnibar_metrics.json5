@@ -9,7 +9,15 @@
             ["first_daily_count", "platform", "form_factor"],
             ["platform", "form_factor"]
         ],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "toggle_visible",
+                "description": "Whether the Search/Duck.ai toggle was actually on screen when the surface was shown: true or false",
+                "type": "boolean"
+            }
+        ]
     },
     "m_aichat_experimental_omnibar_prompt_submitted": {
         "description": "Fires when user submits an AI chat prompt through the experimental omnibar",

@@ -26,6 +26,7 @@ import Foundation
 import os.log
 import PrivacyConfig
 import UIKit
+import FeatureFlags_iOS
 
 // MARK: - State Enums
 
@@ -120,6 +121,9 @@ final class AIChatContextualChatSessionState {
     private(set) var chipState: ChipState = .placeholder
     private(set) var contextualChatURL: URL?
     private(set) var latestContext: AIChatPageContext?
+
+    /// Text selections attached from the page's selection menu, in attach order.
+    private(set) var attachedSelections: [AIChatSelectionContextData] = []
 
     /// URL included in the last submitted prompt with no navigation since; used to spot a stale auto-attach echo.
     private var deliveredContextURLWithNoNavigationSince: URL?
@@ -298,8 +302,55 @@ final class AIChatContextualChatSessionState {
         rebuildViewState()
     }
 
+    // MARK: - Attached Text Selections
+
+    /// At the cap a further selection is refused rather than displacing one the user already collected.
+    /// Returns whether it was attached, so the caller can say why nothing appeared.
+    ///
+    /// The same passage from the same page is treated as already attached rather than added twice: two
+    /// taps on the omnibar icon each read the selection asynchronously, so both can arrive here with
+    /// identical text, and the resulting chips would be indistinguishable while costing two cap slots.
+    @discardableResult
+    func attachSelection(_ selection: AIChatSelectionContextData) -> Bool {
+        guard !attachedSelections.contains(where: { $0.content == selection.content && $0.url == selection.url }) else {
+            return true
+        }
+        guard attachedSelections.count < AIChatSelectionContextBuilder.maxAttachedSelections else {
+            return false
+        }
+        attachedSelections.append(selection)
+        rebuildViewState()
+        return true
+    }
+
+    /// Page context and the other selections are untouched — each chip is independent.
+    func removeAttachedSelection(id: String) {
+        guard attachedSelections.contains(where: { $0.id == id }) else { return }
+        attachedSelections.removeAll { $0.id == id }
+        rebuildViewState()
+    }
+
+    /// Clears the selections a prompt has taken ownership of. Unlike `clearAttachedSelections()` it does
+    /// not re-render; the caller refreshes the chips.
+    func consumeAttachedSelections() {
+        guard !attachedSelections.isEmpty else { return }
+        attachedSelections = []
+    }
+
+    func clearAttachedSelections() {
+        guard !attachedSelections.isEmpty else { return }
+        attachedSelections = []
+        rebuildViewState()
+    }
+
     /// Call when starting a new chat (resetting frontend)
-    func resetToNoChat() {
+    ///
+    /// `preservingSelections` is for the inactivity timer: expiring an idle chat must not destroy text
+    /// the user gathered across pages. New Chat and fire are explicit start-overs, hence the default.
+    func resetToNoChat(preservingSelections: Bool = false) {
+        if !preservingSelections {
+            attachedSelections = []
+        }
         frontendState = .noChat
         chipState = .placeholder
         contextualChatURL = nil
@@ -318,7 +369,7 @@ final class AIChatContextualChatSessionState {
         pixelHandler.endManualAttach()
         rebuildViewState()
         emit(.clearPrompt)
-        Logger.aiChat.debug("[SessionState] Reset to no chat")
+        Logger.aiChat.debug("[SessionState] Reset to no chat (selections preserved: \(preservingSelections, privacy: .public))")
     }
 
     /// Updates the contextual chat URL (for persistence/expansion)

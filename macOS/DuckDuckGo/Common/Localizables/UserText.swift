@@ -512,6 +512,7 @@ struct UserText {
     static let fireDialogModeFromThisTab = NotLocalizedString("fire.dialog.mode.tab", value: "From this tab", comment: "Fire dialog mode for clearing data from current tab")
     static let fireDialogModeAllData = NotLocalizedString("fire.dialog.mode.all.data", value: "All data", comment: "Fire dialog mode for clearing all browsing data")
     static let fireDialogChooseWhatToDelete = NotLocalizedString("fire.dialog.choose.what.to.delete", value: "Choose what to delete", comment: "Fire dialog disclosure label that expands/collapses the data type toggles")
+    static let fireDialogFireproofExplanation = NotLocalizedString("fire.dialog.fireproof.explanation", value: "Fireproof site data won’t be deleted", comment: "Footnote below the Fire dialog data type toggles, explaining that data belonging to Fireproof sites is kept")
     static let fireDialogAccessibilityDetailsExpanded = NotLocalizedString("fire.dialog.accessibility.details.expanded", value: "expanded", comment: "Accessiblity value - The fire dialog details are expanded")
     static let fireDialogAccessibilityDetailsCollapsed = NotLocalizedString("fire.dialog.accessibility.details.collapsed", value: "collapsed", comment: "Accessiblity value - The fire dialog details are collapsed")
     static let fireDialogAccessibilitySelected = NotLocalizedString("fire.dialog.accessibility.selected", value: "selected", comment: "Accessiblity value - The selected fire dialog mode")
@@ -674,19 +675,18 @@ struct UserText {
     static let newAIChatMenuItem = NSLocalizedString("duckai.menu.new", value: "New Duck.ai Chat", comment: "Menu item to launch AI Chat")
 
     // Prompt Bar (Settings → AI Features)
-    static let promptBarKeyboardShortcutToggle = NotLocalizedString("duckai.prompt-bar.keyboard-shortcut.toggle", value: "Open Duck.ai floating window with a keyboard shortcut", comment: "Checkbox in Settings → AI Features that enables the system-wide Duck.ai keyboard shortcut")
-    static let promptBarMenuBarIconToggle = NotLocalizedString("duckai.prompt-bar.menu-bar-icon.toggle", value: "Show Duck.ai in menu bar", comment: "Checkbox in Settings → AI Features that shows the Duck.ai icon in the macOS menu bar")
-    static let promptBarMenuBarIconCaption = NotLocalizedString("duckai.prompt-bar.menu-bar-icon.caption", value: "Adds a menu bar shortcut to open Duck.ai in a floating window", comment: "Caption under the 'Show Duck.ai in menu bar' checkbox describing what the menu bar icon does")
-    static let promptBarShortcutRecordingPlaceholder = NotLocalizedString("duckai.prompt-bar.shortcut.recording-placeholder", value: "Type shortcut", comment: "Placeholder shown in the shortcut recorder control while it waits for a key combination")
-    static let promptBarShortcutRecordingCancelHint = NotLocalizedString("duckai.prompt-bar.shortcut.recording-cancel-hint", value: "Press **Esc** to cancel", comment: "Hint under the shortcut recorder while recording. 'Esc' is the Escape key; the surrounding asterisks render it bold and must be kept")
-    static let promptBarShortcutResetToDefault = NotLocalizedString("duckai.prompt-bar.shortcut.reset-to-default", value: "Reset to default", comment: "Button that reverts the Duck.ai keyboard shortcut to the default combination")
+    static let promptBarKeyboardShortcutToggle = NSLocalizedString("duckai.prompt-bar.keyboard-shortcut.toggle", value: "Open Duck.ai floating window with a keyboard shortcut", comment: "Checkbox in Settings → AI Features that enables the system-wide Duck.ai keyboard shortcut")
+    static let promptBarMenuBarIconToggle = NSLocalizedString("duckai.prompt-bar.menu-bar-icon.toggle", value: "Show Duck.ai shortcut in menu bar", comment: "Checkbox in Settings → AI Features that shows the Duck.ai icon in the macOS menu bar")
+    static let promptBarShortcutRecordingPlaceholder = NSLocalizedString("duckai.prompt-bar.shortcut.recording-placeholder", value: "Type shortcut", comment: "Placeholder shown in the shortcut recorder control while it waits for a key combination")
+    static let promptBarShortcutRecordingCancelHint = NSLocalizedString("duckai.prompt-bar.shortcut.recording-cancel-hint", value: "Press **Esc** to cancel", comment: "Hint under the shortcut recorder while recording. 'Esc' is the Escape key; the surrounding asterisks render it bold and must be kept")
+    static let promptBarShortcutResetToDefault = NSLocalizedString("duckai.prompt-bar.shortcut.reset-to-default", value: "Reset to default", comment: "Button that reverts the Duck.ai keyboard shortcut to the default combination")
     static func promptBarShortcutReservedError(shortcut: String, ownerName: String) -> String {
-        let localized = NotLocalizedString("duckai.prompt-bar.shortcut.reserved-error",
-                                           value: "“%1$@” is already used by %2$@. Try a different combination.",
-                                           comment: "Error shown when a recorded keyboard shortcut is reserved by the system. %1$@ is the shortcut (e.g. ⌘Space), %2$@ is the feature using it (e.g. Spotlight)")
+        let localized = NSLocalizedString("duckai.prompt-bar.shortcut.reserved-error",
+                                          value: "“%1$@” is already used by %2$@. Try a different combination.",
+                                          comment: "Error shown when a recorded keyboard shortcut is reserved by the system. %1$@ is the shortcut (e.g. ⌘Space), %2$@ is the feature using it (e.g. Spotlight)")
         return String(format: localized, shortcut, ownerName)
     }
-    static let promptBarShortcutSpaceKey = NotLocalizedString("duckai.prompt-bar.shortcut.space-key", value: "Space", comment: "Display name of the Space bar key shown in the keyboard shortcut recorder")
+    static let promptBarShortcutSpaceKey = NSLocalizedString("duckai.prompt-bar.shortcut.space-key", value: "Space", comment: "Display name of the Space bar key shown in the keyboard shortcut recorder")
 
     // Duck.ai main menu
     static let aiChatMenuOpenDuckAI = NSLocalizedString("duckai.menu.open-duck-ai", value: "Open Duck.ai", comment: "Duck.ai menu item to open Duck.ai")
@@ -765,9 +765,12 @@ struct UserText {
     static let aiChatSearchToggleButtonTooltip = NSLocalizedString("aichat.search-toggle-button.tooltip", value: "Search the web", comment: "Tooltip for the search toggle button in AI chat omnibar")
     static let aiChatImageUploadButtonTooltip = NSLocalizedString("aichat.image-upload-button.tooltip", value: "Add image", comment: "Tooltip for the image upload button in AI chat omnibar")
     static let aiChatAttachMenuImageOrFile = NSLocalizedString("aichat.attach-menu.image-or-file", value: "Add Images or PDFs", comment: "Top-level item in the AI chat omnibar add-attachment menu that opens the image and file picker. PDF is the only file format the menu currently accepts on the file side, so the copy names it explicitly rather than the more abstract 'file'.")
-    static let aiChatAttachMenuPageContent = NSLocalizedString("aichat.attach-menu.page-content", value: "Add Page Content", comment: "Top-level item in the AI chat omnibar add-attachment menu that opens the open-tabs submenu")
+    static let aiChatAttachMenuTabsHeader = NotLocalizedString("aichat.attach-menu.tabs-header", value: "Tabs", comment: "Section header inside the AI chat omnibar add-attachment menu listing the user's currently open browser tabs")
     static let aiChatAttachMenuRecentTabsHeader = NSLocalizedString("aichat.attach-menu.recent-tabs-header", value: "Recent Tabs", comment: "Section header inside the AI chat omnibar add-attachment menu listing the user's currently open browser tabs")
     static let aiChatAttachMenuNoOpenTabs = NSLocalizedString("aichat.attach-menu.no-open-tabs", value: "No page content available", comment: "Placeholder shown inside the AI chat omnibar add-attachment menu when none of the user's open tabs can be attached (e.g. all are filtered out as NTP / duck.ai / DDG homepage). Phrased as 'no page content' rather than 'no open tabs' because tabs may be open but their content isn't attachable.")
+    static let aiChatAttachMenuAttachTabs = NotLocalizedString("aichat.attach-menu.attach-tabs", value: "Attach Tabs", comment: "Item in the AI chat omnibar add-attachment menu that opens a modal for selecting multiple open tabs to attach")
+    static let aiChatAttachTabsModalSearchPlaceholder = NotLocalizedString("aichat.attach-tabs-modal.search-placeholder", value: "Search tabs", comment: "Placeholder in the search field of the AI chat attach-tabs modal, filters the list of open tabs")
+    static let aiChatAttachTabsModalAttachButton = NotLocalizedString("aichat.attach-tabs-modal.attach", value: "Attach", comment: "Confirm button in the AI chat attach-tabs modal, attaches the selected tabs")
     static let aiChatTabPickerCurrentTabSuffix = NSLocalizedString("aichat.tab-picker.current-tab-suffix", value: "(Current Tab)", comment: "Trailing badge in AI chat tab pickers (omnibar attach menu and the @-mention picker) next to the user's currently active browser tab")
     static let aiChatMentionPickerNoMatches = NSLocalizedString("aichat.mention-picker.no-matches", value: "No matching tabs", comment: "Placeholder shown inside the @-mention tab picker when the typed filter doesn't match any open browser tab")
     static let aiChatToolsButtonLabel = NSLocalizedString("aichat.tools-button.label", value: "Tools", comment: "Label for the tools dropdown button in AI chat omnibar")
@@ -1045,6 +1048,8 @@ struct UserText {
     static let passwordManagerAlertSaveChanges = NSLocalizedString("passsword.manager.alert.save-changes", value: "Save the changes you made?", comment: "Text of the alert that asks the user if the want to save the changes made")
     static let passwordManagerAlertDuplicatePassword = NSLocalizedString("passsword.manager.alert.duplicate.password", value: "Duplicate Password", comment: "Title of the alert that the password inserted already exists")
     static let passwordManagerAlertDuplicatePasswordDescription = NSLocalizedString("passsword.manager.alert.duplicate.password.description", value: "You already have a password saved for this username and website.", comment: "Text of the alert that explains the password inserted already exists for a given website")
+    static let passwordManagerAlertNoteRequiresDomainTitle = NSLocalizedString("password.manager.alert.missing.website.or.username.title", value: "Website or Username Required", comment: "Title of alert shown when saving a password that has neither a website nor a username")
+    static let passwordManagerAlertNoteRequiresDomainDescription = NSLocalizedString("password.manager.alert.missing.website.or.username.description", value: "To save this password, enter a website or username.", comment: "Body text of alert shown when saving a password that has neither a website nor a username")
     static let thisActionCannotBeUndone = NSLocalizedString("action-cannot-be-undone", value: "This action cannot be undone.", comment: "Text used in alerts to warn user that a given action cannot be undone")
     static let passwordManagerAlertDeleteButton = NSLocalizedString("passsword.manager.alert.delete", value: "Delete", comment: "Button of the alert that asks the user to confirm they want to delete an password, login or credential to actually delete")
     static let passwordManagerAlertRemoveCardConfirmation = NSLocalizedString("passsword.manager.alert.remove-card.confirmation", value: "Are you sure you want to delete this saved credit card?", comment: "Text of the alert that asks the user to confirm they want to delete a credit card")
@@ -1386,6 +1391,9 @@ struct UserText {
     static let permissionCenterResetTooltip = NSLocalizedString("permission.center.reset.tooltip", value: "Remove permission", comment: "Tooltip for the remove permission button in permission center")
     static let permissionCenterReloadMessage = NSLocalizedString("permission.center.reload.message", value: "Reload for changes to take effect", comment: "Message shown in permission center when permissions have been changed and reload is needed")
     static let permissionCenterReloadButton = NSLocalizedString("permission.center.reload.button", value: "Reload", comment: "Button to reload the page to apply permission changes")
+    static let permissionCenterAutoplayDisclaimerTitle = NSLocalizedString("permission.center.autoplay.disclaimer.title", value: "Video autoplay stopped", comment: "Title of the informational card explaining autoplay blocking in the Permission Center")
+    static let permissionCenterAutoplayDisclaimerMessage = NSLocalizedString("permission.center.autoplay.disclaimer.message", value: "DuckDuckGo stops videos from autoplaying. You can change settings for this site here, and for all sites in", comment: "Explains the Autoplay behavior the Permission Center")
+    static let permissionCenterAutoplayDisclaimerSettingsLink = NSLocalizedString("permission.center.autoplay.disclaimer.settings.link", value: "Settings → General → Permissions.", comment: "Clickable label in the autoplay disclaimer UI that opens the General settings pane")
 
     static let permissionsSection = NSLocalizedString("preferences.permissions.section", value: "Permissions", comment: "Section header for the Permissions section in General preferences")
     static let autoplayLabel = NSLocalizedString("preferences.autoplay.label", value: "Autoplay website media", comment: "Label for the autoplay blocking preference picker in General preferences")
@@ -1987,6 +1995,7 @@ struct UserText {
     static let showBookmarksBarNewTabOnly = NSLocalizedString("bookmarks.bar.show.new-tab-only", value: "Only show on New Tab", comment: "Preference for only showing the bookmarks bar on new tab")
     static let bookmarksBarFolderEmpty = NSLocalizedString("bookmarks.bar.folder.empty", value: "Empty", comment: "Empty state for a bookmarks bar folder")
     static let bookmarksBarContextMenuDelete = NSLocalizedString("bookmarks.bar.context-menu.delete", value: "Delete", comment: "Delete menu item for the bookmarks bar context menu")
+    static let bookmarksBarContextMenuReorderByName = NotLocalizedString("bookmarks.bar.context-menu.reorder-by-name", value: "Reorder by Name", comment: "Reorder by Name menu item for bookmark folder context menus")
     static let bookmarksBarContextMenuMoveToEnd = NSLocalizedString("bookmarks.bar.context-menu.move-to-end", value: "Move to End", comment: "Move to End menu item for the bookmarks bar context menu")
 
     static let inviteDialogGetStartedButton = NSLocalizedString("invite.dialog.get.started.button", value: "Get Started", comment: "Get Started button on an invite dialog")
@@ -2079,6 +2088,9 @@ struct UserText {
     static let bookmarksSearch = NSLocalizedString("tooltip.bookmarks.search", value: "Search bookmarks", comment: "Tooltip to activate the bookmark search")
     static let bookmarksSort = NSLocalizedString("tooltip.bookmarks.sort", value: "Sort", comment: "Tooltip to activate the bookmark sort")
     static let bookmarksSortByNameTitle = NSLocalizedString("tooltip.bookmarks.sort.name.title", value: "Sort by Name", comment: "Title when bookmark sort by name is enabled")
+    static let bookmarksSortViewTitle = NotLocalizedString("tooltip.bookmarks.sort.view.title", value: "Sort View", comment: "Title for the bookmark sort view button")
+    static let bookmarksSortViewByNameTitle = NotLocalizedString("tooltip.bookmarks.sort.view.name.title", value: "Sort View by Name", comment: "Title when bookmark sort by name is enabled")
+    static let bookmarksSortViewTooltip = NotLocalizedString("tooltip.bookmarks.sort.view", value: "Sort bookmarks view", comment: "Tooltip to activate the bookmark sort view")
     static let bookmarksSortManual = NSLocalizedString("bookmarks.sort.manual", value: "Manual", comment: "Button to sort bookmarks by manual")
     static let bookmarksSortByName = NSLocalizedString("bookmarks.sort.name", value: "Name", comment: "Button to sort bookmarks by name ascending")
     static let bookmarksSortByNameAscending = NSLocalizedString("bookmarks.sort.name.asc", value: "Ascending", comment: "Button to sort bookmarks by name ascending")

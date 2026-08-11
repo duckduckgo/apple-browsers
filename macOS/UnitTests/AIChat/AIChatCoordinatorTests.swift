@@ -21,7 +21,7 @@ import BrowserServicesKit
 import Combine
 import PixelKit
 import PixelKitTestingUtilities
-import FeatureFlags
+import FeatureFlags_macOS
 import PrivacyConfig
 import SharedTestUtilities
 import XCTest

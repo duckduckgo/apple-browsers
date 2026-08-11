@@ -20,6 +20,7 @@
 import UIKit
 import Core
 import PrivacyConfig
+import FeatureFlags_iOS
 
 protocol OverlayWindowManaging {
 
@@ -41,6 +42,35 @@ struct BlankSnapshotOverlayReason: OptionSet {
 
 }
 
+final class OverlayWindowPresenter {
+
+    private let mainWindow: UIWindow
+    private var didHideMainWindow = false
+
+    init(mainWindow: UIWindow) {
+        self.mainWindow = mainWindow
+    }
+
+    func revealBlankSnapshotWindow(_ overlayWindow: UIWindow) {
+        overlayWindow.isHidden = false
+    }
+
+    func revealInteractiveWindow(_ overlayWindow: UIWindow) {
+        overlayWindow.makeKeyAndVisible()
+        mainWindow.isHidden = true
+        didHideMainWindow = true
+    }
+
+    func removeWindow(_ overlayWindow: UIWindow) {
+        overlayWindow.isHidden = true
+        if didHideMainWindow {
+            didHideMainWindow = false
+            mainWindow.makeKeyAndVisible()
+        }
+    }
+
+}
+
 final class OverlayWindowManager: OverlayWindowManaging {
 
     private var overlayWindow: UIWindow?
@@ -56,6 +86,7 @@ final class OverlayWindowManager: OverlayWindowManaging {
     private let aiChatAddressBarExperience: AIChatAddressBarExperienceProviding
     private let mobileCustomization: MobileCustomization
     private let privacyStore: PrivacyStore
+    private let windowPresenter: OverlayWindowPresenter
 
     init(window: UIWindow,
          appSettings: AppSettings,
@@ -73,6 +104,7 @@ final class OverlayWindowManager: OverlayWindowManaging {
         self.aiChatAddressBarExperience = aiChatAddressBarExperience
         self.mobileCustomization = mobileCustomization
         self.privacyStore = privacyStore
+        self.windowPresenter = OverlayWindowPresenter(mainWindow: window)
 
         registerForCacheInvalidationNotifications()
         // Seed the cache off the critical path so the first background doesn't build the chrome.
@@ -111,19 +143,18 @@ final class OverlayWindowManager: OverlayWindowManaging {
             windowToReveal = makeOverlayWindow(with: makeBlankSnapshotViewController())
         }
         preparedOverlayWindow = nil
-        reveal(overlayWindow: windowToReveal)
+        revealBlankSnapshotWindow(windowToReveal)
     }
 
     func displayOverlay(with viewController: UIViewController) {
         guard overlayWindow == nil else { return }
-        reveal(overlayWindow: makeOverlayWindow(with: viewController))
+        revealInteractiveWindow(makeOverlayWindow(with: viewController))
     }
 
     func removeAnyOverlay() {
         guard let overlay = overlayWindow ?? obtainOverlayWindow() else { return }
-        overlay.isHidden = true
+        windowPresenter.removeWindow(overlay)
         overlayWindow = nil
-        window.makeKeyAndVisible()
         activeReasons = []
         // Re-arm the cache for the next background, off the critical path.
         DispatchQueue.main.async { [weak self] in
@@ -167,11 +198,16 @@ final class OverlayWindowManager: OverlayWindowManaging {
         return newWindow
     }
 
-    private func reveal(overlayWindow windowToReveal: UIWindow) {
+    private func revealBlankSnapshotWindow(_ windowToReveal: UIWindow) {
         overlayWindow = windowToReveal
-        windowToReveal.makeKeyAndVisible()
         ThemeManager.shared.updateUserInterfaceStyle(window: windowToReveal)
-        window.isHidden = true
+        windowPresenter.revealBlankSnapshotWindow(windowToReveal)
+    }
+
+    private func revealInteractiveWindow(_ windowToReveal: UIWindow) {
+        overlayWindow = windowToReveal
+        windowPresenter.revealInteractiveWindow(windowToReveal)
+        ThemeManager.shared.updateUserInterfaceStyle(window: windowToReveal)
     }
 
     private func obtainOverlayWindow() -> UIWindow? {

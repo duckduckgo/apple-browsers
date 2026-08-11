@@ -19,7 +19,7 @@
 import Combine
 import XCTest
 import BrowserServicesKit
-import FeatureFlags
+import FeatureFlags_macOS
 import PixelKitTestingUtilities
 @testable import DuckDuckGo_Privacy_Browser
 

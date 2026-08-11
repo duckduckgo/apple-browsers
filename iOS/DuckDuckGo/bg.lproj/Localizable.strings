@@ -949,6 +949,12 @@
 /* Login name label for login details on autofill */
 "autofill.logins.details.login-name" = "Заглавие";
 
+/* Message for alert when attempting to save a password that has neither a website nor a username */
+"autofill.logins.details.missing-website-or-username-alert.message" = "За да запазите тази парола, въведете уебсайт или потребителско име.";
+
+/* Title for alert when attempting to save a password that has neither a website nor a username */
+"autofill.logins.details.missing-website-or-username-alert.title" = "Изисква се уебсайт или потребителско име";
+
 /* Title when adding new autofill login */
 "autofill.logins.details.new-title" = "Добавяне на парола";
 
@@ -2949,6 +2955,12 @@
 
 /* Title for the Import Passwords Promotion banner */
 "import.passwords.promo.title" = "Импортиране на пароли в DuckDuckGo";
+
+/* Body for the notification sent after a period of inactivity. */
+"inactivity.notification.body" = "Използвайте DuckDuckGo, за да избегнете рекламите, които Ви следят в мрежата, и да намалите своя онлайн отпечатък.";
+
+/* Title for the notification sent after a period of inactivity. */
+"inactivity.notification.title" = "Контролирайте онлайн изживяването";
 
 /* Placeholder text for the duck.ai input field */
 "input.field.placeholder.duckai" = "Задайте въпрос поверително";

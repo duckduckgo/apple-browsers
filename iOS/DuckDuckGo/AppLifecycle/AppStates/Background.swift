@@ -22,6 +22,7 @@ import Core
 import Persistence
 import ScreenTimeDataCleaner
 import WebKit
+import FeatureFlags_iOS
 
 /// Represents the state where the app is in the background and not visible to the user.
 /// - Usage:
@@ -65,6 +66,7 @@ struct Background: BackgroundHandling {
         services.autofillService.suspend()
         services.syncService.suspend()
         services.reportingService.suspend()
+        services.eventHubService.suspend()
 
         appDependencies.mainCoordinator.onBackground()
 

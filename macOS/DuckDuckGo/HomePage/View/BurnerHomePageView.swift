@@ -18,6 +18,7 @@
 
 import Foundation
 import SwiftUI
+import DesignResourcesKit
 
 struct BurnerHomePageView: View {
 
@@ -27,6 +28,7 @@ struct BurnerHomePageView: View {
     enum Const {
         static let verticalPadding = 40.0
         static let contentGap = 20.0
+        static let verticalCenterOffsetRatio = 0.2
     }
 
     @ObservedObject var promoViewModel: SubscriptionPromoViewModel
@@ -43,10 +45,10 @@ struct BurnerHomePageView: View {
             ScrollView {
                 VStack(spacing: Const.contentGap) {
                     ZStack {
-                        RoundedRectangle(cornerRadius: 12)
+                        RoundedRectangle(cornerRadius: DesignSystemRebrand.isAppRebranded() ? 24 : 12)
                             .stroke(Color.homeFavoritesGhost, style: StrokeStyle(lineWidth: 1.0))
                             .background(Color(designSystemColor: .surfaceTertiary))
-                            .cornerRadius(12)
+                            .cornerRadius(DesignSystemRebrand.isAppRebranded() ? 24 : 12)
 
                         VStack(alignment: .leading, spacing: 16) {
                             HStack {
@@ -80,6 +82,7 @@ struct BurnerHomePageView: View {
                     }
                 }
                 .padding(.vertical, Const.verticalPadding)
+                .padding(.bottom, geometry.size.height * Const.verticalCenterOffsetRatio)
                 .frame(maxWidth: .infinity, minHeight: geometry.size.height)
             }
             .background(backgroundColor)

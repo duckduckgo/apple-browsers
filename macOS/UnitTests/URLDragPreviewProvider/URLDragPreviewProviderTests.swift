@@ -16,141 +16,83 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Foundation
 import SnapshotTestingSupport
-import XCTest
+import Testing
 
 @testable import DuckDuckGo_Privacy_Browser
 
-final class URLDragPreviewProviderTests: XCTestCase {
+@MainActor
+@Suite("URL Drag Preview Provider Tests", .disabled("Snapshot testing is opt-in until the sync automations land"))
+final class URLDragPreviewProviderTests {
 
-    private var snapshotWindow: SnapshotWindow!
-
-    override func tearDown() {
-        snapshotWindow = nil
-        NSApp.appearance = nil
-    }
-
-    func snapshot(from provider: URLDragPreviewProvider) -> NSView {
-        let preview = provider.createPreview()
-        // render with scale factor 1.0
-        snapshotWindow = SnapshotWindow(contentRect: preview.bounds, styleMask: [], backing: .buffered, defer: false)
-        snapshotWindow.contentView = preview
-        return preview
-    }
-
-    // MARK: - Tests
-
+    @available(macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testURLPreviewWithFavicon() {
-        for appearanceName: NSAppearance.Name in [.aqua, .darkAqua] {
-            NSApp.appearance = .init(named: appearanceName)!
-            let provider = URLDragPreviewProvider(url: URL(string: "https://duckduckgo.com")!, favicon: .homeFavicon)
-            let preview = snapshot(from: provider)
-
-            assertSnapshot(of: preview, as: .image(perceptualPrecision: 0.9), named: appearanceName.snapshotName)
-        }
+        let provider = URLDragPreviewProvider(url: URL(string: "https://duckduckgo.com")!, favicon: .homeFavicon)
+        assertImageSnapshot(matching: provider.createPreview().snapshotBackground(), size: .intrinsicContentSize)
     }
 
+    @available(macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testURLPreviewWithoutFavicon() {
-        for appearanceName: NSAppearance.Name in [.aqua, .darkAqua] {
-            NSApp.appearance = .init(named: appearanceName)!
-            let provider = URLDragPreviewProvider(url: URL(string: "https://duckduckgo.com")!, favicon: nil)
-            let preview = snapshot(from: provider)
-
-            assertSnapshot(of: preview, as: .image(perceptualPrecision: 0.9), named: appearanceName.snapshotName)
-        }
+        let provider = URLDragPreviewProvider(url: URL(string: "https://duckduckgo.com")!, favicon: nil)
+        assertImageSnapshot(matching: provider.createPreview().snapshotBackground(), size: .intrinsicContentSize)
     }
 
+    @available(macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testURLPreviewWithCustomColors() {
-        for appearanceName: NSAppearance.Name in [.aqua, .darkAqua] {
-            NSApp.appearance = .init(named: appearanceName)!
-            let provider = URLDragPreviewProvider(
-                url: URL(string: "https://duckduckgo.com")!,
-                favicon: .homeFavicon,
-                backgroundColor: .button,
-                textColor: .textColor
-            )
-            let preview = snapshot(from: provider)
-
-            assertSnapshot(of: preview, as: .image(perceptualPrecision: 0.9), named: appearanceName.snapshotName)
-        }
+        let provider = URLDragPreviewProvider(
+            url: URL(string: "https://duckduckgo.com")!,
+            favicon: .homeFavicon,
+            backgroundColor: .button,
+            textColor: .textColor
+        )
+        assertImageSnapshot(matching: provider.createPreview().snapshotBackground(), size: .intrinsicContentSize)
     }
 
+    @available(macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testURLPreviewWithCustomWidth() {
-        for appearanceName: NSAppearance.Name in [.aqua, .darkAqua] {
-            NSApp.appearance = .init(named: appearanceName)!
-            let provider = URLDragPreviewProvider(
-                url: URL(string: "https://duckduckgo.com")!,
-                favicon: .homeFavicon,
-                width: 300
-            )
-            let preview = snapshot(from: provider)
-
-            assertSnapshot(of: preview, as: .image(perceptualPrecision: 0.9), named: appearanceName.snapshotName)
-        }
+        let provider = URLDragPreviewProvider(
+            url: URL(string: "https://duckduckgo.com")!,
+            favicon: .homeFavicon,
+            width: 300
+        )
+        assertImageSnapshot(matching: provider.createPreview().snapshotBackground(), size: .intrinsicContentSize)
     }
 
+    @available(macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testURLPreviewWithCustomWidthAndWithoutFavicon() {
-        for appearanceName: NSAppearance.Name in [.aqua, .darkAqua] {
-            NSApp.appearance = .init(named: appearanceName)!
-            let provider = URLDragPreviewProvider(url: URL(string: "https://duckduckgo.com")!, favicon: nil, width: 300)
-            let preview = snapshot(from: provider)
-
-            assertSnapshot(of: preview, as: .image(perceptualPrecision: 0.9), named: appearanceName.snapshotName)
-        }
+        let provider = URLDragPreviewProvider(url: URL(string: "https://duckduckgo.com")!, favicon: nil, width: 300)
+        assertImageSnapshot(matching: provider.createPreview().snapshotBackground(), size: .intrinsicContentSize)
     }
 
+    @available(macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testURLPreviewWithLongURL() {
-        for appearanceName: NSAppearance.Name in [.aqua, .darkAqua] {
-            NSApp.appearance = .init(named: appearanceName)!
-            let provider = URLDragPreviewProvider(
-                url: URL(string: "https://very-long-domain-name-that-should-be-truncated.com/path/to/some/very/long/resource")!,
-                favicon: .homeFavicon
-            )
-            let preview = snapshot(from: provider)
-
-            assertSnapshot(of: preview, as: .image(perceptualPrecision: 0.9), named: appearanceName.snapshotName)
-        }
+        let provider = URLDragPreviewProvider(
+            url: URL(string: "https://very-long-domain-name-that-should-be-truncated.com/path/to/some/very/long/resource")!,
+            favicon: .homeFavicon
+        )
+        assertImageSnapshot(matching: provider.createPreview().snapshotBackground(), size: .intrinsicContentSize)
     }
 
+    @available(macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testTextPreviewWithTextOnly() {
-        for appearanceName: NSAppearance.Name in [.aqua, .darkAqua] {
-            NSApp.appearance = .init(named: appearanceName)!
-            let provider = URLDragPreviewProvider(
-                text: "Custom Text Only Preview",
-                favicon: nil
-            )
-            let preview = snapshot(from: provider)
-
-            assertSnapshot(of: preview, as: .image(perceptualPrecision: 0.9), named: appearanceName.snapshotName)
-        }
+        let provider = URLDragPreviewProvider(text: "Custom Text Only Preview", favicon: nil)
+        assertImageSnapshot(matching: provider.createPreview().snapshotBackground(), size: .intrinsicContentSize)
     }
 
+    @available(macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testTextPreviewWithFavicon() {
-
-        for appearanceName: NSAppearance.Name in [.aqua, .darkAqua] {
-            NSApp.appearance = .init(named: appearanceName)!
-            let provider = URLDragPreviewProvider(text: "Custom Text Only Preview", favicon: .homeFavicon)
-            let preview = snapshot(from: provider)
-
-            assertSnapshot(of: preview, as: .image(perceptualPrecision: 0.9), named: appearanceName.snapshotName)
-        }
+        let provider = URLDragPreviewProvider(text: "Custom Text Only Preview", favicon: .homeFavicon)
+        assertImageSnapshot(matching: provider.createPreview().snapshotBackground(), size: .intrinsicContentSize)
     }
 
-}
-
-private class SnapshotWindow: NSWindow {
-    override var backingScaleFactor: CGFloat {
-        return 1.0
-    }
-}
-
-private extension NSAppearance.Name {
-    var snapshotName: String {
-        if #available(macOS 26, *) {
-            return self.rawValue + "_tahoe"
-        } else {
-            return self.rawValue
-        }
-    }
 }

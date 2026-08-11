@@ -21,9 +21,7 @@ import SwiftUI
 import DesignResourcesKit
 import UIComponents
 
-/// A showcase card for the post-subscription onboarding flow: a bordered card presenting a single feature
-/// or benefit as a top-leading icon above a title and a paragraph of body text (e.g. an Identity Theft
-/// Restoration benefit). Built from `SubscriptionOnboardingCard` + `CardItem`.
+/// A showcase card presenting a single feature or benefit as an icon above a title and body text.
 private enum ShowcaseCardMetrics {
     static let iconSpacing: CGFloat = 8
     static let titleTextSpacing: CGFloat = 4

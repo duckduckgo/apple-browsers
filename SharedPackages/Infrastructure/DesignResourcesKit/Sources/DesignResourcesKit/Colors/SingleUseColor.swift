@@ -80,15 +80,15 @@ public enum SingleUseColor {
 
 #elseif os(macOS)
 
-    case aiToggleBorder
-    case aiToggleBackground
-    case aiToggleSelectionBackground
-    case aiToggleSelectionBorder
-
     case fireButtonGradientStart
     case fireButtonGradientEnd
     case fireButtonPressedGradientStart
     case fireButtonPressedGradientEnd
+    case fireDialogKnobFill
+    case fireDialogTabBackground
+    case fireDialogTabBackgroundSelected
+    case fireDialogTabShadowPrimary
+    case fireDialogTabShadowSecondary
 
 #endif
 

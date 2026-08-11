@@ -21,7 +21,7 @@ import BrowserServicesKit
 import Common
 import FoundationExtensions
 import Foundation
-import FeatureFlags
+import FeatureFlags_macOS
 import PrivacyConfig
 
 enum SecureVaultItem: Equatable, Identifiable, Comparable {

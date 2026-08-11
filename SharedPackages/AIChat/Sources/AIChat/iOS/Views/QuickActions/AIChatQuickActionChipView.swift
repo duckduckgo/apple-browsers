@@ -128,6 +128,7 @@ public final class AIChatQuickActionChipView: UIView {
         iconView.image = action.icon?.withRenderingMode(.alwaysTemplate)
         iconView.isHidden = action.icon == nil
         accessibilityLabel = action.title
+        accessibilityIdentifier = action.id
     }
 }
 

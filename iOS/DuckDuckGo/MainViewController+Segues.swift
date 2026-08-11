@@ -105,7 +105,9 @@ extension MainViewController {
             systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
             daxDialogsManager: daxDialogsManager,
             syncAutoRestoreHandler: syncAutoRestoreHandler,
-            onboardingManager: onboardingManager
+            onboardingManager: onboardingManager,
+            keyValueStore: keyValueStore,
+            adBlockingAvailability: adBlockingAvailability
         )
         let controller = OnboardingIntroFactory.makeController(
             viewModel: viewModel,

@@ -23,10 +23,10 @@ import Combine
 import Common
 import ConcurrencyExtensions
 import FoundationExtensions
+import PixelKit
 import os.log
 
 protocol BookmarkManager: AnyObject {
-
     func isUrlBookmarked(url: URL) -> Bool
     func isAnyUrlVariantBookmarked(url: URL) -> Bool
     func isUrlFavorited(url: URL) -> Bool
@@ -86,6 +86,26 @@ extension BookmarkManager {
     func move(objectUUIDs: [String], toIndex index: Int?, withinParentFolder parent: ParentFolderType) {
         move(objectUUIDs: objectUUIDs, toIndex: index, withinParentFolder: parent) { _ in }
     }
+
+    func reorderByName(_ children: [BaseBookmarkEntity], withinParentFolder parentFolder: ParentFolderType) {
+        let sortedChildIDs = children
+            .sorted(by: .nameAscending)
+            .map(\.id)
+
+        guard sortedChildIDs != children.map(\.id) else {
+            sortMode = .manual
+            return
+        }
+
+        move(objectUUIDs: sortedChildIDs, toIndex: 0, withinParentFolder: parentFolder) { [weak self] error in
+            guard let error else {
+                self?.sortMode = .manual
+                return
+            }
+
+            Logger.bookmarks.error("Failed to reorder bookmarks by name: \(error.localizedDescription, privacy: .public)")
+        }
+    }
 }
 final class LocalBookmarkManager: BookmarkManager {
 
@@ -93,11 +113,18 @@ final class LocalBookmarkManager: BookmarkManager {
         bookmarkStore: BookmarkStore,
         foldersStore: BookmarkFoldersStore = UserDefaultsBookmarkFoldersStore(),
         sortRepository: SortBookmarksRepository = SortBookmarksUserDefaults(),
-        appearancePreferences: AppearancePreferences
+        appearancePreferences: AppearancePreferences,
+        pixelFiring: PixelFiring? = PixelKit.shared,
+        bookmarksCountPixelScheduler: @escaping (@escaping () -> Void) -> Void = { firePixel in
+            let randomDelay = Double.random(in: 0.5...5)
+            DispatchQueue.global().asyncAfter(deadline: .now() + randomDelay, execute: firePixel)
+        }
     ) {
         self.foldersStore = foldersStore
         self.bookmarkStore = bookmarkStore
         self.sortRepository = sortRepository
+        self.pixelFiring = pixelFiring
+        self.bookmarksCountPixelScheduler = bookmarksCountPixelScheduler
 
         subscribeToFavoritesDisplayMode(with: appearancePreferences)
         sortMode = sortRepository.storedSortMode
@@ -128,6 +155,8 @@ final class LocalBookmarkManager: BookmarkManager {
     private let bookmarkStore: BookmarkStore
     private let sortRepository: SortBookmarksRepository
     private let foldersStore: BookmarkFoldersStore
+    private let pixelFiring: PixelFiring?
+    private let bookmarksCountPixelScheduler: (@escaping () -> Void) -> Void
 
     private var favoritesDisplayMode: FavoritesDisplayMode = .displayNative(.desktop)
     private var favoritesDisplayModeCancellable: AnyCancellable?
@@ -156,10 +185,19 @@ final class LocalBookmarkManager: BookmarkManager {
                         return
                     }
 
+                    let bookmarkList = BookmarkList(entities: bookmarks, topLevelEntities: topLevelEntities, favorites: favorites)
                     self.isLoading = false
-                    self.list = BookmarkList(entities: bookmarks, topLevelEntities: topLevelEntities, favorites: favorites)
+                    self.list = bookmarkList
+                    self.fireBookmarksCountPixel(bookmarksCount: bookmarkList.totalBookmarks)
                 }
             }
+        }
+    }
+
+    private func fireBookmarksCountPixel(bookmarksCount: Int) {
+        let pixel = BookmarksPixel.count(.init(bookmarksCount))
+        bookmarksCountPixelScheduler { [pixelFiring = pixelFiring] in
+            pixelFiring?.fire(pixel, frequency: .daily)
         }
     }
 

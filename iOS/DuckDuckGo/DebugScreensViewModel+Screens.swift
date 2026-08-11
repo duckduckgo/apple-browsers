@@ -28,6 +28,7 @@ import AIChat
 import WebExtensions
 import DuckUI
 import Persistence
+import FeatureFlags_iOS
 
 extension DebugScreensViewModel {
 
@@ -161,8 +162,8 @@ extension DebugScreensViewModel {
             .view(title: "Default Browser Prompt", { d in
                 DefaultBrowserPromptDebugView(model: DefaultBrowserPromptDebugViewModel(keyValueFilesStore: d.keyValueStore))
             }),
-            .view(title: "Notifications Playground", { _ in
-                LocalNotificationsPlaygroundView()
+            .view(title: "Notifications Playground", { d in
+                LocalNotificationsPlaygroundView(keyValueStore: d.keyValueStore)
             }),
             .view(title: "Win-back Offer", { d in
                 WinBackOfferDebugView(keyValueStore: d.keyValueStore)
@@ -279,7 +280,13 @@ extension DebugScreensViewModel {
                         systemSettingsPiPTutorialManager: d.systemSettingsPiPTutorialManager,
                         daxDialogsManager: d.daxDialogManager,
                         syncAutoRestoreHandler: d.syncAutoRestoreHandler,
-                        onboardingManager: OnboardingManager()
+                        onboardingManager: OnboardingManager(),
+                        // Debug preview: a self-contained store/availability is fine here.
+                        keyValueStore: UserDefaults.app,
+                        adBlockingAvailability: AdBlockingAvailability(
+                            featureFlagger: AppDependencyProvider.shared.featureFlagger,
+                            isEnabledByUserProvider: { false }
+                        )
                     )
                     let controller = OnboardingIntroFactory.makeController(
                         viewModel: viewModel,

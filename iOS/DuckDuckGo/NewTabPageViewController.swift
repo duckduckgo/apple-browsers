@@ -785,28 +785,7 @@ extension NewTabPageViewController {
         }
 
         let onManualDismiss: () -> Void = { [weak self] in
-            guard let self else { return }
-            self.dismissHostingController(didFinishNTPOnboarding: true,
-                                          updatePromoSurfaceCoverage: spec != .final)
-
-            if spec == .final {
-                let nextSpec = dialogProvider.nextHomeScreenMessageNew()
-                if nextSpec == .subscriptionPromotion {
-                    // Hide the NTP logo before the promo fades in — mirrors the onDismiss path.
-                    self.setLogoHidden(true)
-                    self.dismissAddressBarEditingForSubscriptionPromo(completion: { [weak self] in
-                        self?.showNextDaxDialog()
-                        // Set the background color to the rebranding backdrop color to prevent the NTP logo from flashing through the completion dialog.
-                        self?.hostingController?.view.backgroundColor = UIColor(singleUseColor: .rebranding(.backdrop))
-                    })
-                    return
-                }
-                self.setPromoSurfaceCovered(false)
-                dialogProvider.dismiss()
-            }
-
-            // Show keyboard when manually dismiss the Dax tips.
-            self.chromeDelegate?.omniBar.beginEditing(animated: true)
+            self?.handleManualDaxDialogDismissal(spec: spec, dialogProvider: dialogProvider)
         }
 
         let daxDialogView: AnyView
@@ -857,6 +836,30 @@ extension NewTabPageViewController {
         hostingController.didMove(toParent: self)
 
         newTabPageViewModel.startOnboarding()
+    }
+
+    private func handleManualDaxDialogDismissal(spec: DaxDialogs.HomeScreenSpec, dialogProvider: NewTabDialogSpecProvider) {
+        dismissHostingController(didFinishNTPOnboarding: true,
+                                 updatePromoSurfaceCoverage: spec != .final)
+
+        if spec == .final {
+            let nextSpec = dialogProvider.nextHomeScreenMessageNew()
+            if nextSpec == .subscriptionPromotion {
+                // Hide the NTP logo before the promo fades in — mirrors the onDismiss path.
+                setLogoHidden(true)
+                dismissAddressBarEditingForSubscriptionPromo(completion: { [weak self] in
+                    self?.showNextDaxDialog()
+                    // Set the background color to the rebranding backdrop color to prevent the NTP logo from flashing through the completion dialog.
+                    self?.hostingController?.view.backgroundColor = UIColor(singleUseColor: .rebranding(.backdrop))
+                })
+                return
+            }
+            setPromoSurfaceCovered(false)
+            dialogProvider.dismiss()
+        }
+
+        // Show keyboard when manually dismiss the Dax tips.
+        chromeDelegate?.omniBar.beginEditing(animated: true)
     }
 
     /// Collapses the address bar (or UTI panel) before showing the subscription promo, then

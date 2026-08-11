@@ -746,6 +746,7 @@ struct FireDialogView: ModalView {
             .padding(.trailing, 32)
             .padding(.vertical, 4)
         }
+        .scrollBounceBasedOnSize()
         .padding(.trailing, 8)
         .background(
             CustomRoundedCornersShape(tl: 16, tr: 16, bl: 0, br: 0)

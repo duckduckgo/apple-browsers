@@ -22,6 +22,7 @@ import Persistence
 
 protocol DeviceInfoMigrationCoordinating {
     func migrateCurrentDeviceIfNeeded(for account: SyncAccount) async
+    func hasCompletedMigration(for account: SyncAccount) -> Bool
     func reset()
 }
 

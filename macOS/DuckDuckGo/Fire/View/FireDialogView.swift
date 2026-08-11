@@ -710,7 +710,7 @@ struct FireDialogView: ModalView {
 
             HStack(alignment: .center, spacing: 8) {
                 if viewModel.historyVisits.count > Constants.historyOverlayMaxVisibleItems {
-                    seeFullHistoryButton
+                    seeFullHistoryButton(accessibilityIdentifier: "FireDialogView.seeFullHistoryButton")
                 }
 
                 Button(action: { isShowingHistoryOverlay = false }) {
@@ -743,6 +743,14 @@ struct FireDialogView: ModalView {
                 ForEach(viewModel.historyVisits.sorted { $0.date > $1.date }.prefix(Constants.historyOverlayMaxVisibleItems), id: \.self) { visit in
                     historyOverlayRow(for: visit)
                 }
+
+                if viewModel.historyVisits.count > Constants.historyOverlayMaxVisibleItems {
+                    seeFullHistoryButton(accessibilityIdentifier: "FireDialogView.seeFullHistoryListButton")
+                        .padding(.top, 12)
+                        .padding(.bottom, 20)
+                        .padding(.leading, 8)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                }
             }
             .padding(.leading, 24)
             .padding(.trailing, 32)
@@ -762,7 +770,9 @@ struct FireDialogView: ModalView {
         .padding(.horizontal, 8)
     }
 
-    private var seeFullHistoryButton: some View {
+    /// The same button appears twice when the list is capped: once in the overlay header and once below the last
+    /// visit, so it stays reachable without scrolling back up. Each instance needs its own accessibility identifier.
+    private func seeFullHistoryButton(accessibilityIdentifier: String) -> some View {
         Button {
             viewModel.openFullHistory()
         } label: {
@@ -781,7 +791,7 @@ struct FireDialogView: ModalView {
                                 cornerRadius: 12)
         )
         .cursor(.pointingHand)
-        .accessibilityIdentifier("FireDialogView.seeFullHistoryButton")
+        .accessibilityIdentifier(accessibilityIdentifier)
     }
 
     private func historyOverlayRow(for visit: Visit) -> some View {

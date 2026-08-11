@@ -290,7 +290,6 @@ final class UnifiedToggleInputToolbarView: UIView {
             button.preferredMenuElementOrder = .fixed
         }
         button.addTarget(self, action: #selector(modelPickerShown), for: .touchDown)
-        button.addTarget(self, action: #selector(updatedModelPickerTapped), for: .primaryActionTriggered)
         button.translatesAutoresizingMaskIntoConstraints = false
         button.setContentHuggingPriority(.defaultLow, for: .horizontal)
         button.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
@@ -583,11 +582,11 @@ private extension UnifiedToggleInputToolbarView {
     @objc private func returnKeyTapped() { onReturnKeyTapped?() }
     @objc private func modelPickerShown() {
         guard modelPickerMenu != nil else { return }
-        onModelPickerShown?()
-    }
-    @objc private func updatedModelPickerTapped() {
-        guard usesUpdatedModelPickerPresentation, modelPickerMenu != nil else { return }
-        onUpdatedModelPickerTapped?()
+        if usesUpdatedModelPickerPresentation {
+            onUpdatedModelPickerTapped?()
+        } else {
+            onModelPickerShown?()
+        }
     }
     @objc private func reasoningPickerShown() {
         guard reasoningPickerMenu != nil else { return }

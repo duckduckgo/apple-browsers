@@ -2152,6 +2152,16 @@ class MainViewController: UIViewController {
         )
     }
 
+    /// Records a New Tab Page action, but only while the New Tab Page is the surface on screen.
+    ///
+    /// A visit stays open until something ends it, and not every way out of the New Tab Page has a
+    /// terminal. Without this guard such a visit would keep collecting interactions belonging to
+    /// whatever replaced it.
+    func recordNewTabPageSessionAction(_ record: (NewTabPageSessionInstrumentation) -> Void) {
+        guard isNewTabPageVisible else { return }
+        record(newTabPageSessionInstrumentation)
+    }
+
     func fireNewTabPixels() {
         Pixel.fire(.homeScreenShown, withAdditionalParameters: [:])
         productSurfaceTelemetry.newTabPageUsed()
@@ -5311,6 +5321,7 @@ extension MainViewController: OmniBarDelegate {
                                      website: .addressBarClickOnWebsite,
                                      aiChat: .addressBarClickOnAIChat,
                                      additionalParameters: modeParam)
+            recordNewTabPageSessionAction { $0.tapInputBar() }
         }
 
         guard newTabPageViewController == nil else { return }
@@ -5591,6 +5602,7 @@ extension MainViewController: OmniBarDelegate {
                                  website: .addressBarClickOnWebsite,
                                  aiChat: .addressBarClickOnAIChat,
                                  additionalParameters: modeParam)
+        recordNewTabPageSessionAction { $0.tapInputBar() }
     }
 
     func onExperimentalAddressBarClearPressed() {

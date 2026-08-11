@@ -27,11 +27,7 @@ final class AIChatContextualFloatingInputFeatureTests: XCTestCase {
     // MARK: - Mocks
 
     private final class MockDevicePlatform: DevicePlatformProviding {
-        var mockIsIphone: Bool = true
-        static var isIphone: Bool {
-            shared.mockIsIphone
-        }
-        static let shared = MockDevicePlatform()
+        static var isIphone: Bool = true
     }
 
     private struct MockUnifiedToggleInputFeature: UnifiedToggleInputFeatureProviding {
@@ -47,7 +43,7 @@ final class AIChatContextualFloatingInputFeatureTests: XCTestCase {
         isIphone: Bool = true,
         isUnifiedToggleInputAvailable: Bool = true
     ) -> AIChatContextualFloatingInputFeature {
-        MockDevicePlatform.shared.mockIsIphone = isIphone
+        MockDevicePlatform.isIphone = isIphone
         return AIChatContextualFloatingInputFeature(
             featureFlagger: MockFeatureFlagger(enabledFeatureFlags: enabledFlags),
             devicePlatform: MockDevicePlatform.self,

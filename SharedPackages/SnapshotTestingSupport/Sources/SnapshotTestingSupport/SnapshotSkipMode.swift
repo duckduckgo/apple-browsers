@@ -1,6 +1,5 @@
 //
-//  AIChatSyncPromoViewTests.swift
-//  DuckDuckGo
+//  SnapshotSkipMode.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -17,20 +16,23 @@
 //  limitations under the License.
 //
 
-import SnapshotTestingSupport
-import Testing
-@testable import DuckDuckGo
+import Foundation
 
-@MainActor
-@Suite("AI Chat Sync Promo View Tests")
-final class AIChatSyncPromoViewTests {
+public enum SnapshotSkipMode {
+    public static let environmentVariableName = "SKIP_SNAPSHOT_TESTS"
 
-    @available(iOS 16, macOS 13, *)
-    @Test(.timeLimit(.minutes(1)))
-    func testAIChatSyncPromoViewSnapshots() {
-        assertImageSnapshots(
-            AIChatSyncPromoView_Previews.snapshots,
-            size: .constrainedWidth
-        )
+    public static func isEnabled(
+        environment: [String: String] = ProcessInfo.processInfo.environment
+    ) -> Bool {
+        isEnabled(environment[environmentVariableName])
+    }
+
+    private static func isEnabled(_ value: String?) -> Bool {
+        switch value?.lowercased() {
+        case "1", "true", "yes":
+            return true
+        default:
+            return false
+        }
     }
 }

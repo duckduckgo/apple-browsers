@@ -34,6 +34,8 @@ public func assertImageSnapshot(
     line: UInt = #line,
     column: UInt = #column
 ) {
+    guard !SnapshotSkipMode.isEnabled() else { return }
+
     let configurations = strategy.configurations(for: .macOS, size: size)
     guard assertSnapshotConfigurations(configurations, fileID: fileID, file: file, line: line, column: column) else { return }
     guard assertSnapshotEnvironment(fileID: fileID, file: file, line: line, column: column) else { return }
@@ -100,6 +102,8 @@ public func assertImageSnapshot<Value: SwiftUI.View>(
     line: UInt = #line,
     column: UInt = #column
 ) {
+    guard !SnapshotSkipMode.isEnabled() else { return }
+
     let configurations = strategy.configurations(for: .macOS, size: size)
     guard assertSnapshotConfigurations(configurations, fileID: fileID, file: file, line: line, column: column) else { return }
     guard assertSnapshotEnvironment(fileID: fileID, file: file, line: line, column: column) else { return }

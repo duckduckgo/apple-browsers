@@ -209,7 +209,7 @@ private struct SubscriptionUpsellButtonStyle: ButtonStyle {
         case .secondary:
             return Color(designSystemColor: isPressed ? .controlsFillTertiary : .controlsFillSecondary)
         case .cancel:
-            return Color(designSystemColor: isPressed ? .decorationTertiary : .decorationSecondary)
+            return Color(designSystemColor: isPressed ? .controlsFillTertiary : .decorationSecondary)
         }
     }
 }

@@ -945,6 +945,7 @@ class MainViewController: UIViewController {
             }
 
             DailyPixel.fire(pixel: .swipeTabsUsedDaily)
+            self?.newTabPageSessionInstrumentation.visitEnded(terminalAction: .swipeToOtherTab)
             self?.currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
             self?.selectTab(tab)
 
@@ -5872,6 +5873,11 @@ extension MainViewController: EscapeHatchActionRouter {
             return
         }
 
+        // Hooked here rather than in `onSwitchToTab`, which the "switch to open tab" suggestion
+        // row also reaches after already reporting its own terminal.
+        recordNewTabPageSessionAction { $0.tapReturnToLast() }
+        newTabPageSessionInstrumentation.visitEnded(terminalAction: .lastTabLoaded)
+
         onSwitchToTab(tab)
     }
 
@@ -5952,6 +5958,7 @@ extension MainViewController: EscapeHatchActionRouter {
     }
 
     func escapeHatchDidRequestTabSwitcher() {
+        recordNewTabPageSessionAction { $0.tapTabViewerEscapeHatch() }
         requestTabSwitcher()
         ntpAfterIdleInstrumentation.escapeHatchTabSwitcherTapped()
     }
@@ -6626,6 +6633,9 @@ extension MainViewController: TabSwitcherDelegate {
         }
         
         if let tab {
+            // Only a chosen tab is a terminal; dismissing with none selected creates a new tab,
+            // which opens its own visit instead.
+            newTabPageSessionInstrumentation.visitEnded(terminalAction: .selectOtherTab)
             tabManager.select(tab, dismissCurrent: false)
         }
 
@@ -6819,6 +6829,7 @@ extension MainViewController: TabSwitcherButtonDelegate {
     }
 
     func showTabSwitcher(_ button: TabSwitcherButton) {
+        recordNewTabPageSessionAction { $0.tapTabViewerToolbar() }
         requestTabSwitcher()
     }
 

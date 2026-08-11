@@ -1377,6 +1377,7 @@ extension MainViewController: UnifiedInputContentContainerViewControllerDelegate
     }
 
     func unifiedInputEditingStateDidRequestTabSwitcher() {
+        recordNewTabPageSessionAction { $0.tapTabViewerEscapeHatch() }
         requestTabSwitcher()
     }
 

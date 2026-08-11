@@ -22,14 +22,6 @@ extension PixelFiring {
 
     /// Async/await variant of PixelKit `fire`
     ///
-    /// Note: Named `fireAsync` rather than overloading `fire` on purpose: a same-named `async` overload would be
-    /// preferred by Swift over the synchronous `fire` inside any `async` context, silently breaking the many
-    /// existing fire-and-forget `fire(...)` call sites that live in async code.
-    ///
-    /// Frequencies that fire more than one request (`.dailyAndCount`, `.dailyAndStandard`,
-    /// `.legacyDailyAndCount`) invoke the underlying completion once per request; this method resumes with
-    /// the first result and ignores the rest.
-    ///
     /// - Returns: `true` if a request was fired, `false` if it was suppressed by frequency rules.
     /// - Throws: the underlying error if firing the request failed.
     @discardableResult

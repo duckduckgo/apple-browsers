@@ -206,6 +206,18 @@ public struct DuckDuckGoSubscription: Codable, Equatable, CustomDebugStringConve
         activeOffers.contains(where: { $0.type == .trial })
     }
 
+    /// The active trial's length in whole days, or `nil` when there is no trial or the dates do not describe
+    /// one. `Offer` carries no duration, so the span between `startedAt` and `expiresOrRenewsAt`, which is
+    /// the trial's end and the first billing date, is the description of *this* customer's trial.
+    /// - Parameter calendar: supplies the time zone that day boundaries are counted in.
+    public func trialLengthInDays(calendar: Calendar = .current) -> Int? {
+        guard hasActiveTrialOffer else { return nil }
+        let days = calendar.dateComponents([.day],
+                                           from: calendar.startOfDay(for: startedAt),
+                                           to: calendar.startOfDay(for: expiresOrRenewsAt)).day ?? 0
+        return days > 0 ? days : nil
+    }
+
     /// Returns the pending plan with the earliest effective date if one exists, nil otherwise.
     public var firstPendingPlan: PendingPlan? {
         pendingPlans?.min(by: { $0.effectiveAt < $1.effectiveAt })

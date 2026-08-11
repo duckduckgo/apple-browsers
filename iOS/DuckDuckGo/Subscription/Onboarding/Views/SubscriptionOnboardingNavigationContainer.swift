@@ -21,6 +21,8 @@ import SwiftUI
 import UIKit
 
 extension View {
+    // (TODO|Post-iOS15-Drop): `NavigationView` + `.navigationViewStyle(.stack)` become a plain `NavigationStack`.
+    // Both helpers here stay — standalone screens and info sheets need them on every iOS version.
     func subscriptionOnboardingNavigationContainer() -> some View {
         NavigationView {
             self.subscriptionOnboardingInteractivePopEnabled()
@@ -28,7 +30,7 @@ extension View {
         .navigationViewStyle(.stack)
     }
 
-    /// Re-enables swipe-back after hiding the default back button.
+    /// Re-enables swipe-back after hiding the default back button. 
     func subscriptionOnboardingInteractivePopEnabled() -> some View {
         background(InteractivePopGestureEnabler())
     }

@@ -19,45 +19,34 @@
 
 import SwiftUI
 
-/// The flow's navigation state, deliberately separate from `SubscriptionOnboardingFlowViewModel`.
-///
-/// Section hosts observe *only* this. If they observed the flow view model they would re-evaluate on every
-/// progress change too — and re-evaluating a host rebuilds the `NavigationLink` in its background, which on
-/// iOS 15 writes `false` into the link's binding and reads as a pop. That collapsed the stack whenever a
-/// step completed while a deeper screen was showing.
-@MainActor
-final class SubscriptionOnboardingNavigationState: ObservableObject {
-
-    /// The pushed sections, root excluded. On iOS 16 this *is* `NavigationStack`'s path, so a pop is the
-    /// system removing an element — never an ambiguous `false` written into a per-link binding.
-    @Published var path: [SubscriptionOnboardingSection] = []
-}
-
-/// The PIR launch's presentation, deliberately on its own publisher. It cannot live on
-/// ``SubscriptionOnboardingNavigationState`` because the section hosts observe that, and on iOS 15 rebuilding
-/// a host rebuilds its `NavigationLink` — which reads as a pop. Only the flow's root view observes this.
+// (TODO|Post-iOS15-Drop): fold back into the flow view model, which can then publish more than `path`.
+/// The PIR launch's presentation
 @MainActor
 final class SubscriptionOnboardingPIRLaunchState: ObservableObject {
     @Published var isPresentingPIR = false
 }
 
-/// Drives the onboarding flow with a cursor over a frozen sequence of sections.
+/// Drives the onboarding flow, pushing along a frozen sequence of sections.
 @MainActor
-final class SubscriptionOnboardingFlowViewModel {
+final class SubscriptionOnboardingFlowViewModel: ObservableObject {
 
-    /// Sections this run walks through, frozen at init. Must not be re-derived during progress changes since
-    /// re-shaping an active NavigationLink corrupts the stack; freezing anchors the sequence at launch.
+    // MARK: - Navigation
+
+    /// Sections this run walks through, frozen at init.
     let sequence: [SubscriptionOnboardingSection]
 
-    /// How far the customer has walked `sequence`. The only mutable navigation state in the flow.
-    let navigation = SubscriptionOnboardingNavigationState()
+    /// The pushed sections, root excluded. Must stay the *sole* `@Published` member: anything else
+    /// republishing rebuilds a section host's `NavigationLink`, which reads as a pop.
+    // (TODO|Post-iOS15-Drop): constraint lifts — other state may share this publisher.
+    @Published var path: [SubscriptionOnboardingSection] = []
 
-    /// The section on screen. The root is not on the path, so an empty path means the sequence's first.
-    var currentSection: SubscriptionOnboardingSection? { navigation.path.last ?? sequence.first }
+    /// The section on screen.
+    var currentSection: SubscriptionOnboardingSection? { path.last ?? sequence.first }
 
-    /// How far the customer has walked; 0 is the root. The path is a contiguous prefix of `sequence` past the
-    /// root, so its count is the position.
-    private var depth: Int { navigation.path.count }
+    // (TODO|Post-iOS15-Drop): delete — only `isPastSection(_:)` reads it.
+    private var depth: Int { path.count }
+
+    // MARK: - PIR
 
     let pirLaunch = SubscriptionOnboardingPIRLaunchState()
 
@@ -68,56 +57,50 @@ final class SubscriptionOnboardingFlowViewModel {
         set { pirLaunch.isPresentingPIR = newValue }
     }
 
-    let entryPoint: SubscriptionOnboardingEntryPoint
+    /// The Data Broker Protection screen, erased once here so callers hand over a plain view. Unreachable
+    /// unless `isPIRAvailable`
+    let pirScreen: () -> AnyView
 
-    /// Customer's checklist (4 items if PIR unreachable, to keep ceiling at 100%).
-    let checklist: [SubscriptionOnboardingChecklistItem]
+    // MARK: - Progress
+
+    /// The flow writes completion into this and reads it twice — for the step indicator and, once at launch,
+    /// to skip finished sections.
+    var progress: SubscriptionOnboardingProgress
+
+    // MARK: - Dependencies
 
     /// Screens read cached results from this rather than fetching for themselves.
     let prefetcher: SubscriptionOnboardingPrefetcher
 
-    /// The Data Broker Protection screen, erased once here so callers hand over a plain view. Unreachable
-    /// unless `isPIRAvailable`, since only then does the checklist carry a PIR row to tap.
-    let pirScreen: () -> AnyView
-
-    /// Assigned by ``SubscriptionOnboardingLauncher/launch(flow:onFinish:)``, which owns how the flow is
-    /// presented and therefore how it closes.
-    var onFinish: () -> Void = {}
-
-    private var store: SubscriptionOnboardingProgressStoring
-    private let isPIRActivated: Bool
+    private let onFinish: () -> Void
     private let onRequestDuckAIChat: (String?) -> Void
+
+    // MARK: - Init
 
     /// `prefetcher` and `onRequestDuckAIChat` are defaulted inside the body rather than in the signature:
     /// default arguments are evaluated in a nonisolated context, and both resolve main-actor isolated types.
     init<PIRScreen: View>(entryPoint: SubscriptionOnboardingEntryPoint,
-                          store: SubscriptionOnboardingProgressStoring,
-                          isPIRAvailable: Bool,
-                          isPIRActivated: Bool = false,
+                          progress: SubscriptionOnboardingProgress,
+                          onFinish: @escaping () -> Void = {},
                           prefetcher: SubscriptionOnboardingPrefetcher? = nil,
                           onRequestDuckAIChat: ((String?) -> Void)? = nil,
-                          @ViewBuilder pirScreen: @escaping () -> PIRScreen = { EmptyView() }) {
-        self.entryPoint = entryPoint
-        self.store = store
-        self.isPIRActivated = isPIRActivated
+                          @ViewBuilder pirScreen: @escaping () -> PIRScreen) {
+        self.progress = progress
+        self.onFinish = onFinish
         self.prefetcher = prefetcher ?? SubscriptionOnboardingPrefetcher()
         self.pirScreen = { AnyView(pirScreen()) }
         if let onRequestDuckAIChat {
             self.onRequestDuckAIChat = onRequestDuckAIChat
         } else {
-            // Built only when it will be used, so a test that supplies its own never constructs one.
-            // Deliberately no dismiss — the chat launcher tears down the whole presented chain itself.
             let chatLauncher = SubscriptionOnboardingDuckAIChatLauncher()
             self.onRequestDuckAIChat = { chatLauncher.launch(modelID: $0) }
         }
 
-        self.checklist = SubscriptionOnboardingChecklistItem.checklist(isPIRAvailable: isPIRAvailable)
         self.sequence = Self.makeSequence(entryPoint: entryPoint,
-                                          completedItems: store.completedItems)
+                                          completedItems: self.progress.completedItems)
     }
 
-    /// Kicked off when the flow appears rather than from `init`, so constructing a flow — in a test, or for a
-    /// screen that is never shown — starts no network work. `prefetch` ignores targets already in flight.
+    /// Kicked off when the flow appears.
     func startPrefetching() {
         prefetcher.prefetch(Self.prefetchTargets(for: sequence))
     }
@@ -149,19 +132,15 @@ final class SubscriptionOnboardingFlowViewModel {
             finish()
             return
         }
-        navigation.path.append(next)
+        path.append(next)
     }
 
     func finish() {
         onFinish()
     }
 
+    // (TODO|Post-iOS15-Drop): delete this and its four tests — `NavigationStack` drives itself from `path`.
     /// Drives the `NavigationLink` that pushes the section after `section`.
-    ///
-    /// The setter exists for one case only: a swipe-back on the top screen, which UIKit performs itself and
-    /// reports here. The back chevron goes through ``goBack(from:)`` directly, and a `false` from any
-    /// shallower link is SwiftUI rebuilding the chain rather than the customer popping anything — accepting
-    /// one of those would unwind every screen above it.
     func isPastSection(_ section: SubscriptionOnboardingSection) -> Binding<Bool> {
         Binding(get: { [weak self] in
             guard let self, let index = self.sequence.firstIndex(of: section) else { return false }
@@ -170,7 +149,7 @@ final class SubscriptionOnboardingFlowViewModel {
             guard let self, !isShowingNext,
                   let index = self.sequence.firstIndex(of: section),
                   self.depth == index + 1 else { return }
-            self.navigation.path.removeLast()
+            self.path.removeLast()
         })
     }
 
@@ -181,19 +160,19 @@ final class SubscriptionOnboardingFlowViewModel {
             : .back { [weak self] in self?.goBack(from: section) }
     }
 
-    /// The "Step X of N" indicator counted over this customer's checklist, so a PIR-ineligible customer sees the correct ceiling.
+    /// The "Step X of N" indicator counted over this customer's checklist
     func title(for section: SubscriptionOnboardingSection) -> String? {
         guard case .activation(let item) = section.kind,
-              let step = checklist.firstIndex(of: item) else { return nil }
-        return String(format: UserText.subscriptionOnboardingStepIndicatorFormat, step + 1, checklist.count)
+              let step = progress.checklistItems.firstIndex(of: item) else { return nil }
+        return String(format: UserText.subscriptionOnboardingStepIndicatorFormat,
+                      step + 1,
+                      progress.checklistItems.count)
     }
 
-    /// The path is written in exactly two places — here and ``proceed()`` — and both are reached only from
-    /// a customer action: a forward CTA, the back chevron, or a swipe-back. Nothing else may move it.
-    /// Recording progress in particular must not, which is why completion notifies no one.
+    /// Reached from the back chevron only.
     private func goBack(from section: SubscriptionOnboardingSection) {
-        guard let position = navigation.path.firstIndex(of: section) else { return }
-        navigation.path.removeSubrange(position...)
+        guard let position = path.firstIndex(of: section) else { return }
+        path.removeSubrange(position...)
     }
 
     // MARK: - Sequence construction
@@ -214,37 +193,14 @@ final class SubscriptionOnboardingFlowViewModel {
     }
 }
 
-// MARK: - Progress
-
-/// Progress is the store's business, not the flow's. Nothing here moves the cursor or touches navigation:
-/// ``markComplete(_:)`` forwards to the store and stops, and the rest are reads derived from it. Kept apart
-/// from the navigation members above so that stays true — a completion that published would re-evaluate a
-/// section host, and on iOS 15 rebuilding a host's `NavigationLink` reads as a pop.
-extension SubscriptionOnboardingFlowViewModel: SubscriptionOnboardingProgressProviding {
-
-    /// Read straight from the store so screens take their progress when built; PIR is composed in at read time since it completes outside this flow.
-    var completedItems: Set<SubscriptionOnboardingChecklistItem> {
-        isPIRActivated ? store.completedItems.union([.pir]) : store.completedItems
-    }
-
-    /// Over the checklist this customer actually sees, so a PIR-ineligible customer can reach 100%.
-    var completionPercentage: Int {
-        SubscriptionOnboardingChecklistItem.completionPercentage(completed: completedItems, checklist: checklist)
-    }
-
-    /// Writes to the store. That is the whole of it.
-    func markComplete(_ item: SubscriptionOnboardingChecklistItem) {
-        store.markComplete(item)
-    }
-}
-
 // MARK: - SubscriptionOnboardingSectionDelegate
 
+/// Recording a completion
 extension SubscriptionOnboardingFlowViewModel: SubscriptionOnboardingSectionDelegate {
 
     func sectionDidComplete(_ section: SubscriptionOnboardingSection) {
         guard case .activation(let item) = section.kind else { return }
-        markComplete(item)
+        progress.markComplete(item)
     }
 
     func sectionDidRequestAdvance() {

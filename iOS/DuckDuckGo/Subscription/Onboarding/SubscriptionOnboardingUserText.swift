@@ -205,8 +205,7 @@ extension UserText {
     // MARK: - Order confirmation screen
 
     public static let subscriptionOnboardingOrderConfirmationTitle = NotLocalizedString("subscription.onboarding.order-confirmation.title", value: "Protections unlocked!", comment: "Order confirmation screen title, shown right after checkout completes")
-    public static let subscriptionOnboardingOrderConfirmationTrialExplanation = NotLocalizedString("subscription.onboarding.order-confirmation.trial.explanation", value: "Start using your premium protections today!", comment: "Order confirmation screen subtitle shown when the customer is on a free trial")
-    public static let subscriptionOnboardingOrderConfirmationPaidExplanation = NotLocalizedString("subscription.onboarding.order-confirmation.paid.explanation", value: "Your subscription is active. Start using your premium protections today!", comment: "Order confirmation screen subtitle shown when the customer purchased without a free trial")
+    public static let subscriptionOnboardingOrderConfirmationExplanation = NotLocalizedString("subscription.onboarding.order-confirmation.explanation", value: "Start using your premium protections today!", comment: "Order confirmation screen subtitle, shown right after checkout completes")
     public static let subscriptionOnboardingOrderConfirmationNextButton = NotLocalizedString("subscription.onboarding.order-confirmation.next.button", value: "Let's go!", comment: "Order confirmation screen primary button that starts the onboarding flow")
 
     // MARK: - Progress screen

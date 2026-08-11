@@ -19,31 +19,23 @@
 
 import SwiftUI
 
-/// The widget education screen, reached from the VPN activation "Next" or the "Skip" shown after a denial.
 struct SubscriptionOnboardingVPNWidgetEducationView: View {
 
     var title: String?
     var navigationButton: SubscriptionOnboardingNavigationButton?
-    /// Reported when the customer taps "Got it", which is what finishes the widget step.
     var onComplete: () -> Void = {}
-    /// Passed through to the tips screen, which is where this section finishes.
     var onNext: () -> Void = {}
 
     @Environment(\.dismiss) private var dismiss
 
-    /// Local because tips is a second level of *this* section rather than a section of its own, so it stays
-    /// out of the flow's navigation path. Set only by the "Got it" tap.
     @State private var isShowingTips = false
 
-    /// Forked because "push while this is true" is a different API per OS version, and the iOS 15 one is
-    /// unsupported inside a `NavigationStack` — Apple replaced `NavigationLink(isActive:)` with
-    /// `navigationDestination(isPresented:)`, and the old form can silently fail to push there.
+    // (TODO|Post-iOS15-Drop): drop the fork and keep the `navigationDestination` branch.
     @ViewBuilder
     var body: some View {
         if #available(iOS 16.0, *) {
             page.navigationDestination(isPresented: $isShowingTips) { tipsScreen }
         } else {
-            // Link beside the page rather than behind it, so a rebuilt page cannot take it down with it.
             ZStack {
                 NavigationLink(isActive: $isShowingTips) { tipsScreen } label: { EmptyView() }
                 page
@@ -56,9 +48,6 @@ struct SubscriptionOnboardingVPNWidgetEducationView: View {
             title: title,
             navigationButton: navigationButton ?? .back({ dismiss() }),
             header: SubscriptionOnboardingHeaderView(title: UserText.subscriptionOnboardingVPNWidgetEducationTitle),
-            // One tap, two jobs: it finishes the widget step and opens the tips screen. Deliberately not a
-            // `push:` footer button — that renders a `NavigationLink`, which gives no tap to hang the
-            // completion on and would put it back on the tips screen appearing.
             footer: .single(.init(UserText.subscriptionOnboardingVPNWidgetEducationGotItButton, action: {
                 onComplete()
                 isShowingTips = true

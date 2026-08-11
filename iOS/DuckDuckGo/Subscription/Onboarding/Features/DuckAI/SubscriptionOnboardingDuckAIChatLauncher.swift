@@ -19,7 +19,6 @@
 
 import UIKit
 
-/// Hands the user off from the subscription onboarding flow into a Duck.ai chat.
 @MainActor
 struct SubscriptionOnboardingDuckAIChatLauncher {
 
@@ -27,7 +26,6 @@ struct SubscriptionOnboardingDuckAIChatLauncher {
         launch(using: presentingViewController.view.window?.rootViewController, modelID: modelID)
     }
 
-    /// SwiftUI variant that finds the root window.
     func launch(modelID: String?) {
         launch(using: UIApplication.shared.firstKeyWindow?.rootViewController, modelID: modelID)
     }

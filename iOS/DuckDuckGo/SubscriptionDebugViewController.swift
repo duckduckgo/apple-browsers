@@ -944,8 +944,8 @@ final class SubscriptionDebugViewController: UITableViewController {
     }
 
     /// The real "start PIR" hand-off needs the Data Broker Protection view-controller provider, which lives
-    /// on `DBPService` and reaches the flow as `SubscriptionOnboardingLauncher.launch`'s `pirScreen`. The
-    /// debug menu has no handle on it, so this standalone row's CTA just dismisses.
+    /// on `DBPService` and reaches the flow as `SubscriptionOnboardingFlowViewModel.subscriptionSettings`'s
+    /// `pirScreen`. The debug menu has no handle on it, so this standalone row's CTA just dismisses.
     private func showPIROnboarding() {
         let hostingController = UIHostingController(
             rootView: SubscriptionOnboardingPIRView(
@@ -960,7 +960,7 @@ final class SubscriptionDebugViewController: UITableViewController {
     private func showProgressOnboarding(completedItems: Set<SubscriptionOnboardingChecklistItem>) {
         let hostingController = UIHostingController(
             rootView: SubscriptionOnboardingProgressView(
-                progress: .init(completedItems: completedItems),
+                progress: SubscriptionOnboardingProgress(completedItems: completedItems),
                 navigationButton: .close({ [weak self] in self?.dismiss(animated: true) }),
                 onSelectItem: { _ in },
                 onNext: { [weak self] in self?.dismiss(animated: true) })
@@ -1004,7 +1004,7 @@ final class SubscriptionDebugViewController: UITableViewController {
                         SubscriptionOnboardingDuckAIChatLauncher().launch(from: self, modelID: modelID)
                     }),
                 navigationButton: .close({ [weak self] in self?.dismiss(animated: true) }),
-                progress: { .init(completedItems: [.vpn, .widget, .idtr]) })
+                progress: SubscriptionOnboardingProgress(completedItems: [.vpn, .widget, .idtr]))
                 .subscriptionOnboardingNavigationContainer()
                 .graphicLottieRenderer(SubscriptionOnboardingLottieRenderer.shared))
         present(hostingController, animated: true)
@@ -1015,14 +1015,18 @@ final class SubscriptionDebugViewController: UITableViewController {
     private func showOnboardingFlow(entryPoint: SubscriptionOnboardingEntryPoint) {
         let flow = SubscriptionOnboardingFlowViewModel(
             entryPoint: entryPoint,
-            store: SubscriptionOnboardingProgressStore(keyValueStore: subscriptionUserDefaults),
-            isPIRAvailable: false)
-        let root = SubscriptionOnboardingLauncher.launch(flow: flow, onFinish: { [weak self] in
-            self?.dismiss(animated: true)
-            guard entryPoint == .postCheckout else { return }
-            NotificationCenter.default.post(name: .settingsDeepLinkNotification,
-                                            object: SettingsViewModel.SettingsDeepLinkSection.subscriptionSettings)
-        })
+            progress: SubscriptionOnboardingProgress(
+                persistor: SubscriptionOnboardingProgressPersistor(keyValueStore: subscriptionUserDefaults),
+                isPIRAvailable: false),
+            onFinish: { [weak self] in
+                self?.dismiss(animated: true)
+                guard entryPoint == .postCheckout else { return }
+                NotificationCenter.default.post(name: .settingsDeepLinkNotification,
+                                                object: SettingsViewModel.SettingsDeepLinkSection.subscriptionSettings)
+            },
+            // No Data Broker Protection provider here, so PIR falls back to the move-to-desktop screen.
+            pirScreen: { SubscriptionPIRMoveToDesktopView() })
+        let root = SubscriptionOnboardingLauncher.launch(flow: flow)
         present(UIHostingController(rootView: root), animated: true)
     }
 
@@ -1064,7 +1068,7 @@ final class SubscriptionDebugViewController: UITableViewController {
     }
 
     private func resetOnboardingProgress() {
-        var store = SubscriptionOnboardingProgressStore(keyValueStore: subscriptionUserDefaults)
+        var store = SubscriptionOnboardingProgressPersistor(keyValueStore: subscriptionUserDefaults)
         store.completedItems = []
         store.cardFirstShownDate = nil
         refreshSetupCard()
@@ -1088,11 +1092,13 @@ private struct SubscriptionOnboardingSetupCardDebugView: View {
 
     var body: some View {
         // PIR is unavailable throughout the debug menu, so the card measures over the four-item checklist.
-        SubscriptionOnboardingSetupCard(visual: .image(Image(.subscription56)),
-                                        keyValueStore: keyValueStore,
-                                        isPIRAvailable: false,
-                                        isPIRActivated: false,
-                                        onContinue: onContinue)
+        SubscriptionOnboardingSetupCard(
+            visual: .image(Image(.subscription56)),
+            progress: SubscriptionOnboardingProgress(
+                persistor: SubscriptionOnboardingProgressPersistor(keyValueStore: keyValueStore),
+                isPIRAvailable: false),
+            session: AppDependencyProvider.shared.subscriptionOnboardingSession,
+            onContinue: onContinue)
             .padding(.vertical, 8)
     }
 }

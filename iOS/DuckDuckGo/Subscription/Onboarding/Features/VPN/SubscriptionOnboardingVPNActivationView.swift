@@ -23,7 +23,6 @@ import UIKit
 import DesignResourcesKit
 import UIComponents
 
-/// The VPN activation screen. Header, body and footer all switch on the view model's `connectionState`.
 struct SubscriptionOnboardingVPNActivationView: View {
     private enum Metrics {
         static let offContentSpacing: CGFloat = 33
@@ -62,7 +61,6 @@ struct SubscriptionOnboardingVPNActivationView: View {
         .onAppear { viewModel.onAppear() }
         .onDisappear {
             viewModel.onDisappear()
-            // Safety net
             tapAllowHintWindow.hide()
             tapAllowHint.disappeared()
         }

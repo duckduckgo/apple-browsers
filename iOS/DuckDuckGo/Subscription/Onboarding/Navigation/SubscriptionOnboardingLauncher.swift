@@ -19,18 +19,50 @@
 
 import SwiftUI
 
-/// Assembles the flow's root view. The caller builds the view model, so this holds no dependencies of its own.
+enum SubscriptionOnboardingEntryPoint {
+    /// Presented over the post-checkout page once a purchase completes.
+    case postCheckout
+    /// The "Continue Setup" card on Subscription Settings.
+    case subscriptionSettings
+}
+
 @MainActor
 enum SubscriptionOnboardingLauncher {
 
-    /// - Parameter onFinish: fires when the customer leaves the flow. Supplied here rather than to the view
-    ///   model because how the flow closes belongs to whoever presented it.
-    static func launch(flow: SubscriptionOnboardingFlowViewModel,
-                       onFinish: @escaping () -> Void) -> AnyView {
-        flow.onFinish = onFinish
-        return AnyView(
+    static func launch(flow: SubscriptionOnboardingFlowViewModel) -> AnyView {
+        AnyView(
             SubscriptionOnboardingFlowView(flow: flow,
                                            factory: SubscriptionOnboardingViewFactory(flow: flow))
                 .graphicLottieRenderer(SubscriptionOnboardingLottieRenderer.shared))
+    }
+}
+
+// MARK: - Flows to launch
+
+extension SubscriptionOnboardingFlowViewModel {
+
+    /// Walks the whole flow from the order confirmation.
+    ///
+    /// - Parameter pirScreen: pushed when the customer taps the summary's PIR row, which both entry points
+    ///   can reach — the summary closes every sequence.
+    static func postCheckout<PIRScreen: View>(progress: SubscriptionOnboardingProgress,
+                                              onFinish: @escaping () -> Void,
+                                              @ViewBuilder pirScreen: @escaping () -> PIRScreen)
+    -> SubscriptionOnboardingFlowViewModel {
+        SubscriptionOnboardingFlowViewModel(entryPoint: .postCheckout,
+                                           progress: progress,
+                                           onFinish: onFinish,
+                                           pirScreen: pirScreen)
+    }
+
+    /// Resumes at the first unfinished section, and closes on the summary.
+    static func subscriptionSettings<PIRScreen: View>(progress: SubscriptionOnboardingProgress,
+                                                     onFinish: @escaping () -> Void,
+                                                     @ViewBuilder pirScreen: @escaping () -> PIRScreen)
+    -> SubscriptionOnboardingFlowViewModel {
+        SubscriptionOnboardingFlowViewModel(entryPoint: .subscriptionSettings,
+                                           progress: progress,
+                                           onFinish: onFinish,
+                                           pirScreen: pirScreen)
     }
 }

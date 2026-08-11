@@ -17,10 +17,7 @@
 //  limitations under the License.
 //
 
-/// Steps the completion checklist tracks. `widget` is a checklist step but not a subscription feature—it has no "Learn More" content and doesn't appear in the welcome list.
-///
-/// Raw values are persisted by `SubscriptionOnboardingProgressStore`, so renaming a case resets progress
-/// for anyone mid-flow.
+/// Steps the completion checklist tracks. `widget` is a checklist step but not a subscription feature
 enum SubscriptionOnboardingChecklistItem: String, CaseIterable, Identifiable {
     case vpn
     case widget
@@ -30,12 +27,10 @@ enum SubscriptionOnboardingChecklistItem: String, CaseIterable, Identifiable {
 
     static let features: [SubscriptionOnboardingChecklistItem] = [.vpn, .idtr, .duckAI, .pir]
 
-    /// Customer's checklist, filtered if PIR is unavailable to maintain 100% ceiling.
     static func checklist(isPIRAvailable: Bool) -> [SubscriptionOnboardingChecklistItem] {
         isPIRAvailable ? allCases : allCases.filter { $0 != .pir }
     }
 
-    /// Completion percentage over `checklist`, clamped to `0...100`.
     static func completionPercentage(completed: Set<SubscriptionOnboardingChecklistItem>,
                                      checklist: [SubscriptionOnboardingChecklistItem]) -> Int {
         guard !checklist.isEmpty else { return 0 }

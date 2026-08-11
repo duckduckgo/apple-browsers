@@ -21,7 +21,6 @@ import SwiftUI
 import Lottie
 import UIComponents
 
-/// Renders Lottie animations; must be injected by every onboarding screen host.
 enum SubscriptionOnboardingLottieRenderer {
     static let shared = GraphicLottieRenderer { name, playback in
         AnyView(

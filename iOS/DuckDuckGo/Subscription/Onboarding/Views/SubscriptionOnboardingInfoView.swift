@@ -75,7 +75,6 @@ extension SubscriptionOnboardingHeaderView {
 
 // MARK: - Presentation
 
-/// Info content as a self-contained sheet with close button, no footer.
 private struct SubscriptionOnboardingInfoSheet: View {
     let content: SubscriptionOnboardingInfoContent
     let onClose: () -> Void
@@ -99,7 +98,6 @@ extension View {
         }
     }
 
-    /// Presents the "Learn More" info sheet for the selected checklist item.
     func subscriptionOnboardingInfoSheet(item: Binding<SubscriptionOnboardingChecklistItem?>) -> some View {
         sheet(item: item) { selected in
             SubscriptionOnboardingInfoSheet(content: .content(for: selected), onClose: { item.wrappedValue = nil })
@@ -109,7 +107,6 @@ extension View {
 
 // MARK: - Content
 
-/// Data backing ``SubscriptionOnboardingInfoView``: hero header and feature cards.
 struct SubscriptionOnboardingInfoContent {
     struct Feature: Identifiable {
         var id: String { title }
@@ -247,7 +244,6 @@ private enum DuckAIInfoFeature: CaseIterable {
     }
 }
 
-/// The IDTR features listed on the IDTR info sheet.
 private enum IDTRInfoFeature: CaseIterable {
     case financialLosses
     case creditReport
@@ -332,7 +328,6 @@ private enum PIRInfoFeature: CaseIterable {
 
 // MARK: - Platform grid
 
-/// 2-column platform grid for info-sheet cards.
 struct SubscriptionOnboardingPlatformGrid: View {
     private enum Metrics {
         static let columnSpacing: CGFloat = 4

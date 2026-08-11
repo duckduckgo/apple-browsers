@@ -30,8 +30,7 @@ struct SubscriptionOnboardingViewFactory {
         self.flow = flow
     }
 
-    /// The PIR screen launched from the summary's checklist row. It carries its own navigation container
-    /// because it is presented over the flow rather than pushed onto it.
+    /// The PIR screen launched from the summary's checklist row.
     func pirLaunchScreen() -> AnyView {
         AnyView(
             SubscriptionOnboardingPIRView(
@@ -93,11 +92,11 @@ struct SubscriptionOnboardingViewFactory {
                     onRequestChat: { flow.sectionDidRequestDuckAIChat(modelID: $0) }),
                 title: title,
                 navigationButton: navigationButton,
-                progress: { .init(items: flow.checklist, completedItems: flow.completedItems) }))
+                progress: flow.progress))
 
         case .progress:
             return AnyView(SubscriptionOnboardingProgressView(
-                source: flow,
+                progress: flow.progress,
                 navigationButton: navigationButton,
                 onSelectItem: { item in
                     guard item == .pir else { return }
@@ -106,8 +105,6 @@ struct SubscriptionOnboardingViewFactory {
                 onNext: { flow.finish() }))
 
         case .pir:
-            // PIR is launched from the summary's checklist row, which
-            // presents its own screen over the flow.
             return AnyView(EmptyView())
         }
     }

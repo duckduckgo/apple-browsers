@@ -79,10 +79,9 @@ final class SubscriptionOnboardingOrderConfirmationViewModelTests: XCTestCase {
         await sut.load()
 
         XCTAssertNotNil(sut.freeTrialCard)
-        XCTAssertEqual(sut.explanation, UserText.subscriptionOnboardingOrderConfirmationTrialExplanation)
     }
 
-    func testWhenSubscriptionHasActiveTrialThenTrialLengthIsDerivedFromTheDateRange() async {
+    func testWhenSubscriptionHasActiveTrialThenTheCardUsesTheSubscriptionsTrialLength() async {
         let start = date(2026, 5, 7)
         let sut = makeViewModel(subscription: subscription(startedAt: start,
                                                            expiresOrRenewsAt: date(2026, 5, 21),
@@ -91,7 +90,7 @@ final class SubscriptionOnboardingOrderConfirmationViewModelTests: XCTestCase {
 
         await sut.load()
 
-        // 14 days between start and billing, not the card model's 7-day default.
+        // The subscription's own 14 days, not the card model's 7-day default.
         XCTAssertEqual(sut.freeTrialCard?.trialLength, 14)
         XCTAssertEqual(sut.freeTrialCard?.dayLabels.count, 14)
     }
@@ -120,7 +119,6 @@ final class SubscriptionOnboardingOrderConfirmationViewModelTests: XCTestCase {
         await sut.load()
 
         XCTAssertNil(sut.freeTrialCard)
-        XCTAssertEqual(sut.explanation, UserText.subscriptionOnboardingOrderConfirmationPaidExplanation)
     }
 
     func testWhenSubscriptionIsUnavailableThenScreenFallsBackToThePaidVariant() async {
@@ -129,36 +127,14 @@ final class SubscriptionOnboardingOrderConfirmationViewModelTests: XCTestCase {
         await sut.load()
 
         XCTAssertNil(sut.freeTrialCard)
-        XCTAssertEqual(sut.explanation, UserText.subscriptionOnboardingOrderConfirmationPaidExplanation)
     }
 
-    // MARK: - Implausible trial spans
+    // MARK: - Trials the card cannot draw
 
-    func testWhenTrialStartAndBillingAreTheSameDayThenNoCardIsShown() async {
-        let start = date(2026, 5, 7)
-        let sut = makeViewModel(subscription: subscription(startedAt: start,
-                                                           expiresOrRenewsAt: start,
-                                                           hasTrial: true),
-                                now: start)
+    // Spans that aren't trials at all (zero-length, reversed dates) are rejected by
+    // `DuckDuckGoSubscription.trialLengthInDays(calendar:)` and covered by its own tests.
 
-        await sut.load()
-
-        XCTAssertNil(sut.freeTrialCard)
-    }
-
-    func testWhenBillingPrecedesTheTrialStartThenNoCardIsShown() async {
-        let start = date(2026, 5, 7)
-        let sut = makeViewModel(subscription: subscription(startedAt: start,
-                                                           expiresOrRenewsAt: date(2026, 5, 1),
-                                                           hasTrial: true),
-                                now: start)
-
-        await sut.load()
-
-        XCTAssertNil(sut.freeTrialCard)
-    }
-
-    func testWhenTheTrialSpanIsImplausiblyLongThenNoCardIsShown() async {
+    func testWhenTheTrialIsLongerThanTheStripCanDrawThenNoCardIsShown() async {
         let start = date(2026, 5, 7)
         let sut = makeViewModel(subscription: subscription(startedAt: start,
                                                            expiresOrRenewsAt: date(2026, 8, 7),
@@ -172,10 +148,9 @@ final class SubscriptionOnboardingOrderConfirmationViewModelTests: XCTestCase {
 
     // MARK: - Loading
 
-    func testWhenStillLoadingThenNoExplanationIsShown() {
+    func testWhenStillLoadingThenNoTrialCardIsShown() {
         let sut = makeViewModel(subscription: nil, now: date(2026, 5, 7))
 
-        XCTAssertNil(sut.explanation)
         XCTAssertNil(sut.freeTrialCard)
     }
 

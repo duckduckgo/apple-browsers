@@ -79,7 +79,6 @@ private extension SubscriptionOnboardingProgressCardView {
         .padding(Metrics.headerPadding)
     }
 
-    /// The tap action for the row at `index`, or `nil` when it isn't selectable — only an incomplete PIR row is.
     var rowSelectAction: (Int) -> (() -> Void)? {
         guard let onSelect else { return { _ in nil } }
         return CardItemList.selectAction(over: items, where: isSelectable) { onSelect($0) }
@@ -117,14 +116,13 @@ private extension SubscriptionOnboardingProgressCardView {
 
 // MARK: - Progress Bar
 
-/// The completion screen's progress bar: a solid green fill on a light-grey track.
 private struct SubscriptionOnboardingProgressBar: View {
     private enum Metrics {
         static let trackHeight: CGFloat = 12
     }
 
-    /// The completion percentage. `SubscriptionOnboardingFlowViewModel` is the source and clamps it; the
-    /// fill clamps again because an out-of-range value here is an invalid frame, not just a wrong label.
+    /// The completion percentage, already bounded to `0...100` by how it is derived. The fill clamps anyway,
+    /// because an out-of-range value here is an invalid frame rather than just a wrong label.
     let percentage: Int
 
     var body: some View {

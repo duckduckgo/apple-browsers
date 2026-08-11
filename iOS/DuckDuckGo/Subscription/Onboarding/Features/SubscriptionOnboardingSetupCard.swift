@@ -31,30 +31,28 @@ struct SubscriptionOnboardingSetupCard: View {
     }
 
     private let visual: Graphic
-    private let keyValueStore: ThrowingKeyValueStoring
-    /// PIR is gated outside this card; a customer who cannot reach it is measured over four items, not five.
-    private let isPIRAvailable: Bool
-    private let isPIRActivated: Bool
+    private let progress: SubscriptionOnboardingProgress
+    private let session: SubscriptionOnboardingSessionStating
     private let onContinue: () -> Void
 
-    @State private var percentage = 0
-    @State private var isShowing = false
+    @State private var percentage: Int
+    @State private var isShowing: Bool
 
     init(visual: Graphic,
-         keyValueStore: ThrowingKeyValueStoring,
-         isPIRAvailable: Bool,
-         isPIRActivated: Bool,
+         progress: SubscriptionOnboardingProgress,
+         session: SubscriptionOnboardingSessionStating,
          onContinue: @escaping () -> Void) {
         self.visual = visual
-        self.keyValueStore = keyValueStore
-        self.isPIRAvailable = isPIRAvailable
-        self.isPIRActivated = isPIRActivated
+        self.progress = progress
+        self.session = session
         self.onContinue = onContinue
+
+        var seed = progress
+        _percentage = State(initialValue: seed.percentage)
+        _isShowing = State(initialValue: seed.shouldShowSetupCard(now: Date(), session: session))
     }
 
     var body: some View {
-        // Always mounted, rendering nothing while hidden. A card taken out of the hierarchy has no `onAppear`,
-        // so it could never re-read the store and bring itself back.
         Group {
             if isShowing {
                 card
@@ -81,28 +79,15 @@ struct SubscriptionOnboardingSetupCard: View {
         String(format: UserText.subscriptionOnboardingSetupCardTitleFormat, percentage)
     }
 
-    /// Reads progress and decides whether to show, on every appearance — the checklist advances outside this
-    /// screen. PIR completes inside Data Broker Protection, so it is composed in at read time rather than
-    /// recorded here.
+    /// Reads progress and decides whether to show, on every appearance
     private func refresh() {
-        var store = SubscriptionOnboardingProgressStore(keyValueStore: keyValueStore)
-        let completed = isPIRActivated ? store.completedItems.union([.pir]) : store.completedItems
-        percentage = SubscriptionOnboardingChecklistItem.completionPercentage(
-            completed: completed,
-            checklist: SubscriptionOnboardingChecklistItem.checklist(isPIRAvailable: isPIRAvailable))
-        isShowing = store.shouldShowSetupCard(percentage: percentage, now: Date())
+        var progress = self.progress
+        percentage = progress.percentage
+        isShowing = progress.shouldShowSetupCard(now: Date(), session: session)
     }
 }
 
 #if DEBUG
-
-/// The shared in-memory store lives in a test-only module, so previews bring their own.
-private final class PreviewKeyValueStore: ThrowingKeyValueStoring {
-    private var values: [String: Any] = [:]
-    func object(forKey defaultName: String) throws -> Any? { values[defaultName] }
-    func set(_ value: Any?, forKey defaultName: String) throws { values[defaultName] = value }
-    func removeObject(forKey defaultName: String) throws { values.removeValue(forKey: defaultName) }
-}
 
 private struct SubscriptionOnboardingSetupCardPreview: View {
     var body: some View {
@@ -118,15 +103,11 @@ private struct SubscriptionOnboardingSetupCardPreview: View {
     }
 
     private func card(completed: Set<SubscriptionOnboardingChecklistItem>) -> some View {
-        let keyValueStore = PreviewKeyValueStore()
-        var store = SubscriptionOnboardingProgressStore(keyValueStore: keyValueStore)
-        store.completedItems = completed
-
-        return SubscriptionOnboardingSetupCard(visual: .image(Image(.subscription56)),
-                                               keyValueStore: keyValueStore,
-                                               isPIRAvailable: false,
-                                               isPIRActivated: false,
-                                               onContinue: {})
+        SubscriptionOnboardingSetupCard(
+            visual: .image(Image(.subscription56)),
+            progress: SubscriptionOnboardingProgress(completedItems: completed, isPIRAvailable: false),
+            session: SubscriptionOnboardingSessionState(),
+            onContinue: {})
     }
 }
 

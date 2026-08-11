@@ -38,7 +38,6 @@ private enum Metrics {
     static let footerSpacing: CGFloat = 8
 }
 
-/// The navigation bar's leading button: back or close, each with its own glyph and VoiceOver label.
 enum SubscriptionOnboardingNavigationButton {
     case back(() -> Void)
     case close(() -> Void)
@@ -239,6 +238,8 @@ private extension SubscriptionOnboardingBaseView {
 
     /// A footer button's underlying control: a `Button` for a tap action, or a `NavigationLink` for a push
     /// destination. The button style is applied by the caller so both cases share it.
+    // (TODO|Post-iOS15-Drop): `NavigationLink(destination:)` builds its destination eagerly and re-derives it
+    // on every body pass. Move to `NavigationLink(value:)` + `navigationDestination(for:)`.
     @ViewBuilder
     func footerControl(_ button: SubscriptionOnboardingFooterButton) -> some View {
         switch button.action {
@@ -271,6 +272,7 @@ private extension SubscriptionOnboardingBaseView {
 private extension View {
     /// Paints the navigation bar with the page color so it matches the flat `surfaceTertiary` page.
     /// `toolbarBackground` is iOS 16+, so on iOS 15 the bar keeps the system default background.
+    // (TODO|Post-iOS15-Drop): drop the fork and apply `toolbarBackground` unconditionally.
     @ViewBuilder
     func navigationBarBackground(_ color: Color) -> some View {
         if #available(iOS 16.0, *) {

@@ -66,7 +66,6 @@ final class SubscriptionOnboardingPrefetcher: ObservableObject {
         static let all: Targets = [.connectionInfo, .aiModels]
     }
 
-    /// Starts requested fetches; no default to avoid unnecessary fetches.
     func prefetch(_ targets: Targets) {
         if targets.contains(.connectionInfo) {
             fetchConnectionInfoIfNeeded()

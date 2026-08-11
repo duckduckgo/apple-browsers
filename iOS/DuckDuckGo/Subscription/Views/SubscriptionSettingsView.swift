@@ -61,6 +61,12 @@ struct SubscriptionSettingsViewV2: View {
     @State var isShowingPlansView = false
     @State var isShowingUpgradeView = false
     @State var isShowingCancelDowngradeError = false
+    @State private var cancelDowngradeErrorMessageType: SubscriptionTransactionErrorAlert.MessageType = .general
+
+    // MARK: - Onboarding state
+    // Stored properties cannot live in an extension, so these stay here; the rest of the onboarding
+    // members are in the `Onboarding` extension at the foot of this file.
+
     @State private var isShowingOnboarding = false
     /// Built once, when the customer taps the card. Building it in the sheet's content closure instead would
     /// rebuild the whole flow — new view model, empty navigation path — every time this view's body re-ran,
@@ -68,7 +74,6 @@ struct SubscriptionSettingsViewV2: View {
     @State private var onboardingFlow: AnyView?
     /// Changed to remount the setup card so it re-reads the store after a flow run.
     @State private var setupCardReloadToken = UUID()
-    @State private var cancelDowngradeErrorMessageType: SubscriptionTransactionErrorAlert.MessageType = .general
 
     var body: some View {
         optionsView
@@ -112,57 +117,6 @@ struct SubscriptionSettingsViewV2: View {
         }
         .listRowBackground(Color.clear)
         .frame(maxWidth: .infinity, alignment: .center)
-    }
-
-    /// The "Continue Setup" re-entry card. Shown while any premium protection is still inactive.
-    ///
-    /// Reaching 100% keeps the card for the rest of the session; it goes on the next launch.
-    ///
-    /// TODO|htang: Step 3 adds the rest of the rule — a feature flag and the 14-day window from first display.
-    private var onboardingSetupSection: some View {
-        Section {
-            SubscriptionOnboardingSetupCard(visual: .image(Image(.subscription56)),
-                                            keyValueStore: settingsViewModel.keyValueStore,
-                                            isPIRAvailable: isPIRAvailable,
-                                            isPIRActivated: settingsViewModel.isPIRActivated,
-                                            onContinue: { startOnboarding() })
-                // Remounted after a flow run so the card re-reads: a sheet dismissing over this screen does
-                // not make it appear again, so its own `onAppear` would not fire.
-                .id(setupCardReloadToken)
-        }
-        // The card brings its own surface and padding, so it takes none from the list: no row background
-        // behind it and no row insets around it.
-        .listRowBackground(Color.clear)
-        .listRowInsets(EdgeInsets())
-    }
-
-    /// PIR is gated three ways, and a customer who fails any of them is shown a four-item checklist rather
-    /// than a row they could never tick — which also makes their completion ceiling 100% instead of 80%.
-    private var isPIRAvailable: Bool { settingsViewModel.isPIRAvailable }
-
-    /// The PIR screen the flow pushes from its own stack, matching what Settings already pushes from its
-    /// PIR row (`SettingsSubscriptionView`). `LazyView` there is unnecessary — the flow only asks for this
-    /// when it reaches the PIR section.
-    @ViewBuilder
-    private var pirDestination: some View {
-        if let provider = settingsViewModel.dataBrokerProtectionViewControllerProvider {
-            DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: provider)
-                .edgesIgnoringSafeArea(.bottom)
-        } else {
-            SubscriptionPIRMoveToDesktopView()
-        }
-    }
-
-    private func startOnboarding() {
-        let flow = SubscriptionOnboardingFlowViewModel(
-            entryPoint: .subscriptionSettings,
-            store: SubscriptionOnboardingProgressStore(keyValueStore: settingsViewModel.keyValueStore),
-            isPIRAvailable: isPIRAvailable,
-            isPIRActivated: settingsViewModel.isPIRActivated,
-            pirScreen: { pirDestination })
-        onboardingFlow = SubscriptionOnboardingLauncher.launch(flow: flow,
-                                                              onFinish: { isShowingOnboarding = false })
-        isShowingOnboarding = true
     }
 
     private var upgradeSection: some View {
@@ -715,5 +669,63 @@ private var resubscribeWithWinBackOfferView: some View {
         Text(UserText.winBackCampaignSubscriptionSettingsPageResubscribeSubtitle)
             .daxFootnoteRegular()
             .foregroundColor(Color(designSystemColor: .textSecondary))
+    }
+}
+
+// MARK: - Onboarding
+
+extension SubscriptionSettingsViewV2 {
+
+    /// The "Continue Setup" re-entry card. Shown while any premium protection is still inactive.
+    ///
+    /// Reaching 100% keeps the card for the rest of the session; it goes on the next launch.
+    ///
+    /// TODO|htang: Step 3 adds the rest of the rule — a feature flag and the 14-day window from first display.
+    var onboardingSetupSection: some View {
+        Section {
+            SubscriptionOnboardingSetupCard(visual: .image(Image(.subscription56)),
+                                            progress: onboardingProgress,
+                                            session: settingsViewModel.subscriptionOnboardingSession,
+                                            onContinue: { startOnboarding() })
+                // Remounted after a flow run so the card re-reads: a sheet dismissing over this screen does
+                // not make it appear again, so its own `onAppear` would not fire.
+                .id(setupCardReloadToken)
+        }
+        // The card brings its own surface and padding, so it takes none from the list: no row background
+        // behind it and no row insets around it.
+        .listRowBackground(Color.clear)
+        .listRowInsets(EdgeInsets())
+    }
+
+    func startOnboarding() {
+        onboardingFlow = SubscriptionOnboardingLauncher.launch(
+            flow: .subscriptionSettings(progress: onboardingProgress,
+                                        onFinish: { isShowingOnboarding = false },
+                                        pirScreen: { pirDestination }))
+        isShowingOnboarding = true
+    }
+
+    /// Built fresh on each access; the state it reads lives in the key-value store, not in the value.
+    private var onboardingProgress: SubscriptionOnboardingProgress {
+        SubscriptionOnboardingProgress(
+            persistor: SubscriptionOnboardingProgressPersistor(keyValueStore: settingsViewModel.keyValueStore),
+            isPIRAvailable: isPIRAvailable)
+    }
+
+    /// PIR is gated three ways, and a customer who fails any of them is shown a four-item checklist rather
+    /// than a row they could never tick — which also makes their completion ceiling 100% instead of 80%.
+    private var isPIRAvailable: Bool { settingsViewModel.isPIRAvailable }
+
+    /// The PIR screen the flow pushes from its own stack, matching what Settings already pushes from its
+    /// PIR row (`SettingsSubscriptionView`). `LazyView` there is unnecessary — the flow only asks for this
+    /// when it reaches the PIR section.
+    @ViewBuilder
+    private var pirDestination: some View {
+        if let provider = settingsViewModel.dataBrokerProtectionViewControllerProvider {
+            DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: provider)
+                .edgesIgnoringSafeArea(.bottom)
+        } else {
+            SubscriptionPIRMoveToDesktopView()
+        }
     }
 }

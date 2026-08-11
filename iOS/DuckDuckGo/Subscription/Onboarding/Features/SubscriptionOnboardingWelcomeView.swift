@@ -44,7 +44,6 @@ struct SubscriptionOnboardingWelcomeView: View {
 
 // MARK: - Welcome card
 
-/// Feature-list card with one selectable row per premium protection.
 private struct WelcomeCard: View {
     private enum Metrics {
         static let iconTextSpacing: CGFloat = 8

@@ -67,6 +67,8 @@ protocol DependencyProvider {
     var subscriptionExpirationReminderScheduler: SubscriptionExpirationReminderScheduling { get }
     var dbpSettings: DataBrokerProtectionSettings { get }
     var syncAutoRestoreDecisionManager: SyncAutoRestoreDecisionManaging { get }
+    /// App-scoped so the Subscription Settings setup card survives to the next launch after completion.
+    var subscriptionOnboardingSession: SubscriptionOnboardingSessionStating { get }
 }
 
 /// Provides dependencies for objects that are not directly instantiated
@@ -95,6 +97,7 @@ final class AppDependencyProvider: DependencyProvider {
     var subscriptionManager: any SubscriptionManager
     var tokenHandlerProvider: any SubscriptionTokenHandling
     let subscriptionExpirationReminderScheduler: SubscriptionExpirationReminderScheduling
+    let subscriptionOnboardingSession: SubscriptionOnboardingSessionStating = SubscriptionOnboardingSessionState()
     static let deadTokenRecoverer = DeadTokenRecoverer()
 
     let vpnFeatureVisibility: DefaultNetworkProtectionVisibility

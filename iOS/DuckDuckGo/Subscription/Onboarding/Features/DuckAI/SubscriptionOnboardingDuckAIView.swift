@@ -33,7 +33,7 @@ struct SubscriptionOnboardingDuckAIView: View {
     @StateObject private var viewModel: SubscriptionOnboardingDuckAIViewModel
     private let title: String?
     private let navigationButton: SubscriptionOnboardingNavigationButton?
-    private let progress: () -> SubscriptionOnboardingProgressView.Progress
+    private let progress: SubscriptionOnboardingProgress
 
     @State private var isShowingInfoSheet = false
 
@@ -43,7 +43,7 @@ struct SubscriptionOnboardingDuckAIView: View {
     init(viewModel: @autoclosure @escaping () -> SubscriptionOnboardingDuckAIViewModel,
          title: String? = nil,
          navigationButton: SubscriptionOnboardingNavigationButton? = nil,
-         progress: @escaping () -> SubscriptionOnboardingProgressView.Progress = { .none }) {
+         progress: SubscriptionOnboardingProgress = SubscriptionOnboardingProgress(completedItems: [])) {
         _viewModel = StateObject(wrappedValue: viewModel())
         self.title = title
         self.navigationButton = navigationButton
@@ -53,7 +53,6 @@ struct SubscriptionOnboardingDuckAIView: View {
     var body: some View {
         SubscriptionOnboardingBaseView(
             title: title,
-            // The back button is hidden during hand-off since the interstitial covers the page but not the nav bar.
             navigationButton: viewModel.isShowingInterstitial ? nil : navigationButton,
             header: header,
             footer: footer,
@@ -75,18 +74,15 @@ struct SubscriptionOnboardingDuckAIView: View {
 
 private extension SubscriptionOnboardingDuckAIView {
 
-    /// Holds for ``interstitialDuration`` then requests the chat, or sooner if tapped. Fires `handOffToChat()` only once.
     var interstitial: some View {
         return SubscriptionOnboardingProgressView(
             variant: .duckAIInterstitial,
-            progress: progress(),
+            progress: progress,
             onNext: {})
         .contentShape(Rectangle())
         .onTapGesture { viewModel.handOffToChat() }
         .task {
             try? await Task.sleep(nanoseconds: UInt64(Self.interstitialDuration * 1_000_000_000))
-            // `try?` swallows the cancellation, so without this the hand-off would still fire after the
-            // view goes away.
             guard !Task.isCancelled else { return }
             viewModel.handOffToChat()
         }
@@ -129,7 +125,6 @@ private extension SubscriptionOnboardingDuckAIView {
         }
     }
 
-    /// Whether rows show a selection (false on iPad where model preselection can't reach a fresh chat session).
     var isSelectable: Bool {
         !DevicePlatform.isIpad
     }

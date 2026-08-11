@@ -24,9 +24,7 @@ import UIComponents
 struct SubscriptionOnboardingOrderConfirmationView: View {
     private enum Metrics {
         static let contentSpacing: CGFloat = 24
-        /// Illustration overhang tuned by eye.
         static let illustrationOverhang: CGFloat = 36
-        /// Illustration aspect ratio (402:351).
         static let illustrationAspectRatio: CGFloat = 402.0 / 351.0
     }
 
@@ -61,7 +59,7 @@ private extension SubscriptionOnboardingOrderConfirmationView {
         SubscriptionOnboardingHeaderView(
             visual: .image(Image(.subscriptionCheckFeature128)),
             title: UserText.subscriptionOnboardingOrderConfirmationTitle,
-            explanation: viewModel.explanation)
+            explanation: UserText.subscriptionOnboardingOrderConfirmationExplanation)
     }
 
     var content: some View {

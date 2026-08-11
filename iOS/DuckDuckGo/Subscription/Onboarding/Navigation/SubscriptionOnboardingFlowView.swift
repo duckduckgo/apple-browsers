@@ -21,26 +21,25 @@ import SwiftUI
 
 struct SubscriptionOnboardingFlowView: View {
 
-    let flow: SubscriptionOnboardingFlowViewModel
+    /// Observed for `path` and nothing else — see its documentation on the view model.
+    @ObservedObject var flow: SubscriptionOnboardingFlowViewModel
     let factory: SubscriptionOnboardingViewFactory
 
-    /// The root observes navigation only, for the same reason the section hosts do.
-    @ObservedObject private var navigation: SubscriptionOnboardingNavigationState
-    /// Separate from navigation so launching PIR cannot rebuild a section host's link.
+    /// Separate from the flow view model so a PIR toggle cannot rebuild a section host's link.
+    // (TODO|Post-iOS15-Drop): observe the flow view model instead.
     @ObservedObject private var pirLaunch: SubscriptionOnboardingPIRLaunchState
 
+    // (TODO|Post-iOS15-Drop): delete — the `NavigationStack` branch renders `rootScreen`.
     private let rootSection: SubscriptionOnboardingSection?
 
     /// Built once and held. `factory.screen(for:)` returns a fresh `AnyView` per call, and this one is the
-    /// stack's root — handing SwiftUI a different root on a body pass unwinds the whole path. The body runs
-    /// whenever the presenting screen re-renders, which turning on the VPN does.
+    /// stack's root
     private let rootScreen: AnyView
 
     init(flow: SubscriptionOnboardingFlowViewModel,
          factory: SubscriptionOnboardingViewFactory) {
-        self.flow = flow
+        _flow = ObservedObject(wrappedValue: flow)
         self.factory = factory
-        _navigation = ObservedObject(wrappedValue: flow.navigation)
         _pirLaunch = ObservedObject(wrappedValue: flow.pirLaunch)
         rootSection = flow.sequence.first
         rootScreen = flow.sequence.first.map { factory.screen(for: $0) } ?? AnyView(EmptyView())
@@ -52,13 +51,11 @@ struct SubscriptionOnboardingFlowView: View {
             .onAppear { flow.startPrefetching() }
     }
 
-    /// iOS 16 owns the stack outright: `path` is the truth, and a pop is the system removing an element from
-    /// it. iOS 15 has no `NavigationStack`, so it mirrors the same path with a chain of `NavigationLink`s
-    /// whose bindings have to distinguish a real pop from a rebuild. This fork goes away with iOS 15 support.
+    // (TODO|Post-iOS15-Drop): drop the fork and keep the `NavigationStack` branch.
     @ViewBuilder
     private var stack: some View {
         if #available(iOS 16.0, *) {
-            NavigationStack(path: $navigation.path) {
+            NavigationStack(path: $flow.path) {
                 rootScreen
                     .navigationDestination(for: SubscriptionOnboardingSection.self) { section in
                         factory.screen(for: section)
@@ -72,29 +69,18 @@ struct SubscriptionOnboardingFlowView: View {
     }
 }
 
+// (TODO|Post-iOS15-Drop): delete this whole type — `NavigationStack` + `navigationDestination` replace it.
 /// Recursive section host: renders its screen and the link to its successor.
 struct SubscriptionOnboardingSectionHost: View {
 
     let section: SubscriptionOnboardingSection
-    let flow: SubscriptionOnboardingFlowViewModel
+
+    @ObservedObject var flow: SubscriptionOnboardingFlowViewModel
+
     let factory: SubscriptionOnboardingViewFactory
 
-    /// Observed instead of the flow view model: a host must re-evaluate when the cursor moves and at no other
-    /// time, or rebuilding its `NavigationLink` reads as a pop. See `SubscriptionOnboardingNavigationState`.
-    @ObservedObject private var navigation: SubscriptionOnboardingNavigationState
-
-    init(section: SubscriptionOnboardingSection,
-         flow: SubscriptionOnboardingFlowViewModel,
-         factory: SubscriptionOnboardingViewFactory) {
-        self.section = section
-        self.flow = flow
-        self.factory = factory
-        _navigation = ObservedObject(wrappedValue: flow.navigation)
-    }
-
     var body: some View {
-        // The link sits beside the screen rather than in its `.background`, so a rebuilt screen — the factory
-        // hands back a fresh `AnyView` every time — cannot take the link down with it.
+        // The link sits beside the screen
         ZStack {
             nextSectionLink
             factory.screen(for: section)
@@ -105,9 +91,6 @@ struct SubscriptionOnboardingSectionHost: View {
     private var nextSectionLink: some View {
         if let next = flow.section(after: section) {
             NavigationLink(isActive: flow.isPastSection(section)) {
-                // `LazyView` and `AnyView` are both load-bearing. Without the first, rendering the root would
-                // eagerly build every screen in the flow — and every view model with it. Without the second,
-                // this view's body type would refer to itself and fail to compile.
                 LazyView(AnyView(SubscriptionOnboardingSectionHost(section: next, flow: flow, factory: factory)))
             } label: {
                 EmptyView()

@@ -28,7 +28,7 @@ protocol SubscriptionOnboardingSubscriptionProviding {
     func fetchSubscription() async -> DuckDuckGoSubscription?
 }
 
-/// The live provider, reading the cached subscription the rest of the app reads from.
+/// The live provider, reading the cached subscription
 @MainActor
 final class DefaultSubscriptionOnboardingSubscriptionProvider: SubscriptionOnboardingSubscriptionProviding {
     private let subscriptionManager: any SubscriptionManager
@@ -49,11 +49,9 @@ final class DefaultSubscriptionOnboardingSubscriptionProvider: SubscriptionOnboa
     }
 }
 
-/// Resolves purchase type and free trial details for the confirmation screen.
 @MainActor
 final class SubscriptionOnboardingOrderConfirmationViewModel: ObservableObject {
 
-    /// What the screen knows about the purchase.
     enum State {
         case loading
         /// A free trial is running; the calendar card renders from this model.
@@ -62,9 +60,9 @@ final class SubscriptionOnboardingOrderConfirmationViewModel: ObservableObject {
         case paid
     }
 
-    /// The calendar strip renders one column per trial day, so a span outside this range would render an
-    /// unreadable or broken card. Anything else is treated as "no trial".
-    private static let plausibleTrialLengths = 1...31
+    /// Lengths the calendar strip can draw — it renders one column per trial day. A valid but longer trial
+    /// falls back to the paid layout rather than rendering an unreadable card.
+    private static let drawableTrialLengths = 1...31
 
     @Published private(set) var state: State = .loading
 
@@ -73,8 +71,6 @@ final class SubscriptionOnboardingOrderConfirmationViewModel: ObservableObject {
     private let calendar: Calendar
     private let onNext: () -> Void
 
-    /// `subscriptionProvider` is defaulted inside the body rather than in the signature: default arguments
-    /// are evaluated in a nonisolated context, and the live provider's initializer is main-actor isolated.
     init(subscriptionProvider: SubscriptionOnboardingSubscriptionProviding? = nil,
          now: Date = Date(),
          calendar: Calendar = .current,
@@ -87,16 +83,6 @@ final class SubscriptionOnboardingOrderConfirmationViewModel: ObservableObject {
 
     // MARK: - Display values
 
-    /// Omitted until the subscription resolves so the screen shows the correct copy.
-    var explanation: String? {
-        switch state {
-        case .loading: nil
-        case .freeTrial: UserText.subscriptionOnboardingOrderConfirmationTrialExplanation
-        case .paid: UserText.subscriptionOnboardingOrderConfirmationPaidExplanation
-        }
-    }
-
-    /// The trial calendar card to render, or `nil` when there is no trial to describe.
     var freeTrialCard: SubscriptionOnboardingFreeTrialCalendarCardModel? {
         guard case .freeTrial(let model) = state else { return nil }
         return model
@@ -109,7 +95,6 @@ final class SubscriptionOnboardingOrderConfirmationViewModel: ObservableObject {
         state = Self.state(for: await subscriptionProvider.fetchSubscription(), now: now, calendar: calendar)
     }
 
-    /// Leaves the confirmation screen for the welcome section.
     func proceed() {
         onNext()
     }
@@ -120,39 +105,25 @@ final class SubscriptionOnboardingOrderConfirmationViewModel: ObservableObject {
 private extension SubscriptionOnboardingOrderConfirmationViewModel {
 
     static func state(for subscription: DuckDuckGoSubscription?, now: Date, calendar: Calendar) -> State {
-        guard let subscription, subscription.hasActiveTrialOffer else { return .paid }
-
-        // `expiresOrRenewsAt` is the trial end / billing start date.
-        let billingStartDate = subscription.expiresOrRenewsAt
-        guard let trialLength = trialLength(from: subscription.startedAt, to: billingStartDate, calendar: calendar) else {
-            return .paid
-        }
+        guard let subscription,
+              let trialLength = subscription.trialLengthInDays(calendar: calendar),
+              drawableTrialLengths.contains(trialLength) else { return .paid }
 
         return .freeTrial(SubscriptionOnboardingFreeTrialCalendarCardModel(freeTrialStartDate: subscription.startedAt,
-                                                                          billingStartDate: billingStartDate,
+                                                                          billingStartDate: subscription.expiresOrRenewsAt,
                                                                           trialLength: trialLength,
                                                                           now: now,
                                                                           calendar: calendar))
-    }
-
-    /// The trial's whole-day length, or `nil` when the dates don't describe a plausible trial.
-    static func trialLength(from start: Date, to billingStart: Date, calendar: Calendar) -> Int? {
-        let days = calendar.dateComponents([.day],
-                                           from: calendar.startOfDay(for: start),
-                                           to: calendar.startOfDay(for: billingStart)).day ?? 0
-        return plausibleTrialLengths.contains(days) ? days : nil
     }
 }
 
 #if DEBUG
 
-/// A provider that never resolves, so a seeded preview state is never overwritten.
 private struct UnresolvedSubscriptionProvider: SubscriptionOnboardingSubscriptionProviding {
     func fetchSubscription() async -> DuckDuckGoSubscription? { nil }
 }
 
 extension SubscriptionOnboardingOrderConfirmationViewModel {
-    /// A view model seeded with a fixed state for previews.
     static func preview(state: State) -> SubscriptionOnboardingOrderConfirmationViewModel {
         let viewModel = SubscriptionOnboardingOrderConfirmationViewModel(subscriptionProvider: UnresolvedSubscriptionProvider())
         viewModel.state = state

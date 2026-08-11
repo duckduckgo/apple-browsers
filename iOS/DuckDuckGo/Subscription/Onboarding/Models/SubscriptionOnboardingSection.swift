@@ -17,7 +17,6 @@
 //  limitations under the License.
 //
 
-/// A section of the post-subscription onboarding flow; a section may span several screens internally.
 enum SubscriptionOnboardingSection: CaseIterable {
     case orderConfirmation
     case welcome
@@ -28,7 +27,6 @@ enum SubscriptionOnboardingSection: CaseIterable {
     case progress
     case pir
 
-    /// How a section counts toward the flow's progress.
     enum Kind: Equatable {
         case activation(SubscriptionOnboardingChecklistItem)
         case overview
@@ -55,7 +53,6 @@ enum SubscriptionOnboardingSection: CaseIterable {
 
     static var indicatorStepCount: Int { indicatorSteps.count }
 
-    /// This section's position in the step indicator, or `nil` for sections the indicator doesn't count.
     var indicatorStep: Int? {
         Self.indicatorSteps.firstIndex(of: self).map { $0 + 1 }
     }

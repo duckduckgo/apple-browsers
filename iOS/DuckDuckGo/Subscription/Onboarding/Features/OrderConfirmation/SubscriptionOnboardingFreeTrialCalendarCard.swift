@@ -31,10 +31,7 @@ struct SubscriptionOnboardingFreeTrialCalendarCardModel {
     /// `currentTrialDay` rendered in the calendar's locale, so its numerals match the localized billing date.
     let currentTrialDayText: String
 
-    /// Zero-based index of the marker within the strip.
     let markerIndex: Int
-
-    /// Day-of-month numbers for each day of the trial window, anchored at the start date.
     let dayLabels: [String]
 
     /// The billing line, e.g. "Billing starts on May 7, 2026", formatted from `billingStartDate` using the

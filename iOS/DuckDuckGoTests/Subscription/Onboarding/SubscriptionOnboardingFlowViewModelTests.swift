@@ -83,19 +83,19 @@ final class SubscriptionOnboardingFlowViewModelTests: XCTestCase {
 
     // MARK: - PIR availability
 
-    func testWhenPIRIsUnavailableThenTheChecklistDropsItAndTheCeilingIsOneHundred() {
-        let sut = makeSUT(entryPoint: .postCheckout,
-                          completed: [.vpn, .widget, .idtr, .duckAI],
-                          isPIRAvailable: false)
+    // Percentages are `SubscriptionOnboardingProgress`'s job and covered by its own tests; the flow only
+    // has to hand screens the right checklist.
 
-        XCTAssertEqual(sut.checklist, [.vpn, .widget, .idtr, .duckAI])
-        XCTAssertEqual(sut.completionPercentage, 100)
+    func testWhenPIRIsUnavailableThenTheChecklistDropsIt() {
+        let sut = makeSUT(entryPoint: .postCheckout, isPIRAvailable: false)
+
+        XCTAssertEqual(sut.progress.checklistItems, [.vpn, .widget, .idtr, .duckAI])
     }
 
-    func testWhenPIRIsAvailableThenTheInFlowCeilingIsEighty() {
-        let sut = makeSUT(entryPoint: .postCheckout, completed: [.vpn, .widget, .idtr, .duckAI])
+    func testWhenPIRIsAvailableThenTheChecklistHasAllFiveItems() {
+        let sut = makeSUT(entryPoint: .postCheckout)
 
-        XCTAssertEqual(sut.completionPercentage, 80)
+        XCTAssertEqual(sut.progress.checklistItems, SubscriptionOnboardingChecklistItem.allCases)
     }
 
     // MARK: - Routing
@@ -139,8 +139,8 @@ final class SubscriptionOnboardingFlowViewModelTests: XCTestCase {
         let sut = makeSUT(entryPoint: .subscriptionSettings, completed: [.vpn])
         let original = sut.sequence
 
-        sut.markComplete(.idtr)
-        sut.markComplete(.duckAI)
+        sut.progress.markComplete(.idtr)
+        sut.progress.markComplete(.duckAI)
 
         XCTAssertEqual(sut.sequence, original)
     }
@@ -238,7 +238,7 @@ final class SubscriptionOnboardingFlowViewModelTests: XCTestCase {
         sut.sectionDidComplete(.vpnActivation)
 
         XCTAssertEqual(store.completedItems, [.vpn])
-        XCTAssertEqual(sut.completedItems, [.vpn])
+        XCTAssertEqual(sut.progress.completedItems, [.vpn])
     }
 
     func testWhenANonActivationSectionCompletesThenNothingIsRecorded() {
@@ -254,11 +254,10 @@ final class SubscriptionOnboardingFlowViewModelTests: XCTestCase {
     func testWhenAnItemIsCompletedTwiceThenItIsRecordedOnce() {
         let sut = makeSUT(entryPoint: .postCheckout)
 
-        sut.markComplete(.vpn)
-        sut.markComplete(.vpn)
+        sut.progress.markComplete(.vpn)
+        sut.progress.markComplete(.vpn)
 
-        XCTAssertEqual(sut.completedItems, [.vpn])
-        XCTAssertEqual(sut.completionPercentage, 20)
+        XCTAssertEqual(sut.progress.completedItems, [.vpn])
     }
 
     func testWhenSectionRequestsAdvanceThenTheFlowProceeds() {
@@ -288,18 +287,18 @@ final class SubscriptionOnboardingFlowViewModelTests: XCTestCase {
                          onRequestDuckAIChat: @escaping (String?) -> Void = { _ in }) -> SubscriptionOnboardingFlowViewModel {
         let store = store ?? MockProgressStore()
         store.completedItems = store.completedItems.union(completed)
-        let sut = SubscriptionOnboardingFlowViewModel(entryPoint: entryPoint,
-                                                      store: store,
-                                                      isPIRAvailable: isPIRAvailable,
-                                                      onRequestDuckAIChat: onRequestDuckAIChat)
-        // Assigned after construction because the launcher owns it in production.
-        sut.onFinish = onFinish
-        return sut
+        let progress = SubscriptionOnboardingProgress(persistor: store, isPIRAvailable: isPIRAvailable)
+        return SubscriptionOnboardingFlowViewModel(entryPoint: entryPoint,
+                                                  progress: progress,
+                                                  onFinish: onFinish,
+                                                  onRequestDuckAIChat: onRequestDuckAIChat,
+                                                  pirScreen: { EmptyView() })
     }
 }
 
-/// A reference-typed store so a test can observe writes the flow makes through its own copy.
-private final class MockProgressStore: SubscriptionOnboardingProgressStoring {
+/// A reference-typed persistor so a test can observe writes the flow makes through its own copy.
+private final class MockProgressStore: SubscriptionOnboardingProgressPersisting {
     var completedItems: Set<SubscriptionOnboardingChecklistItem> = []
     var cardFirstShownDate: Date?
+    var fullyCompletedAt: Date?
 }

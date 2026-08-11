@@ -489,11 +489,13 @@ final class BookmarkListViewController: NSViewController {
             }
         } else {
             let selectedNodes = self.selectedNodes
+            let scrollPosition = outlineView.visibleRect.origin
 
             dataSource.reloadData(with: sortBookmarksViewModel.selectedSortMode)
             outlineView.reloadData()
 
             expandAndRestore(selectedNodes: selectedNodes)
+            outlineView.scroll(scrollPosition)
         }
 
         let isEmpty = (outlineView.numberOfRows == 0)
@@ -512,8 +514,10 @@ final class BookmarkListViewController: NSViewController {
 
     private func setupSort(mode: BookmarksSortMode) {
         hideSearchBar()
+        let scrollPosition = outlineView.visibleRect.origin
         dataSource.reloadData(with: mode)
         outlineView.reloadData()
+        outlineView.scroll(scrollPosition)
         sortBookmarksButton.image = (mode == .nameDescending) ? .bookmarkSortDesc : .bookmarkSortAsc
         sortBookmarksButton.backgroundColor = mode.shouldHighlightButton ? .buttonMouseDown : .clear
         sortBookmarksButton.mouseOverColor = mode.shouldHighlightButton ? .buttonMouseDown : .buttonMouseOver

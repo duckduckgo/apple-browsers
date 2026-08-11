@@ -9,5 +9,4 @@ self-hosted-runner:
   labels:
     - apple
     - xcode-27
-    - bitrise_pool_name:macos26-m4
-    - bitrise_pool_name:macos26-m4-xlarge
+    - bitrise:*

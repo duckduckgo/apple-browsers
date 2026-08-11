@@ -55,23 +55,26 @@ extension TabViewController {
 
     func presentContextualFloatingInput(from presentingViewController: UIViewController) {
         Task { @MainActor in
-            // The surface floats over this page and hides its suggestions while the page moves, so it needs the
-            // scroll view it is sitting on.
+            // The surface floats over this page and hides its suggestions while the page moves, so it
+            // needs the scroll view it is sitting on.
             await aiChatContextualSheetCoordinator.presentFloatingInput(from: presentingViewController,
                                                                        pageScrollView: webView?.scrollView)
         }
     }
 
-    /// Presents the sheet with `text` attached as its own context, alongside any page context. Nothing
-    /// is submitted — the selection is there for the user to ask about.
+    /// Presents the sheet with `text` attached as its own context. Nothing is submitted — the selection
+    /// is there for the user to ask about, so the page is not auto-attached on top of it.
     @MainActor
     func presentContextualAIChatSheet(withSelectedText text: String,
                                       from presentingViewController: UIViewController) async {
         let url = webView.url
-        await aiChatContextualSheetCoordinator.attachSelection(
-            text: text,
-            url: url,
-            faviconBase64: url.flatMap { getFaviconBase64(for: $0) },
+        await aiChatContextualSheetCoordinator.handleSelectionAction(
+            .ask,
+            selection: AIChatPageTextSelection(
+                text: text,
+                url: url,
+                faviconBase64: url.flatMap { getFaviconBase64(for: $0) }
+            ),
             restoreURL: restoreURLForContextualSheet(),
             from: presentingViewController
         )

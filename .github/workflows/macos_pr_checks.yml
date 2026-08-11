@@ -101,7 +101,7 @@ jobs:
 
     name: Test Shell Scripts
 
-    runs-on: bitrise_pool_name:bitrise-runner-apple1
+    runs-on: bitrise_pool_name:bitrise-runner-apple2
 
     needs: should-run-checks
     if: needs.should-run-checks.outputs.should_run == 'true'
@@ -157,9 +157,9 @@ jobs:
             flavor: Non-Sandbox
           - cache-key: sandbox-
             flavor: Sandbox
-          - runs-on: bitrise_pool_name:bitrise-runner-apple1
+          - runs-on: bitrise_pool_name:bitrise-runner-apple2
             flavor: Non-Sandbox
-          - runs-on: bitrise_pool_name:bitrise-runner-apple1
+          - runs-on: bitrise_pool_name:bitrise-runner-apple2
             flavor: Sandbox
 
     runs-on: ${{ matrix.runs-on }}
@@ -519,10 +519,10 @@ jobs:
       inputs.skip-release-build != true &&
       needs.should-run-checks.outputs.should_run == 'true'
 
-    runs-on: bitrise_pool_name:bitrise-runner-apple1
+    runs-on: bitrise_pool_name:bitrise-runner-apple2
     timeout-minutes: 60
     env:
-      RUNS_ON: bitrise_pool_name:bitrise-runner-apple1 # keep this in sync with runs-on above
+      RUNS_ON: bitrise_pool_name:bitrise-runner-apple2 # keep this in sync with runs-on above
 
     outputs:
       changed_files: ${{ steps.changed-strings-files.outputs.changed_files }}

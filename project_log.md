@@ -2,9 +2,9 @@
 
 ## Current handoff
 - Goal: Land the completed iteration-one iOS promo queue as three sequential app PRs without merging temporary project documentation.
-- Status: PR 1 merged to `main` as [#6087](https://github.com/duckduckgo/apple-browsers/pull/6087). PR 2 is final and awaiting review as [#6175](https://github.com/duckduckgo/apple-browsers/pull/6175) from `bartosz/promo-q-2` at `8d6d95438e`. PR 3 is pushed/open as [#6217](https://github.com/duckduckgo/apple-browsers/pull/6217) from `bartosz/promo-q-3`; `origin/bartosz/promo-q-3` is at `06a2417373`. The temporary source `bartosz/promo-queue` remains the documentation/implementation source snapshot.
-- Completed: Preserved/synchronized the final PR 2 stack; extracted PR 3; removed the two proposed collision pixels in `1f12bf8a66`; implemented the directional cooldown matrix and focused coverage in `06a2417373`; and reconciled the temporary documentation with both commits.
-- Next: Review PR 3 at `06a2417373`. After its app changes are accepted, resynchronize the temporary source snapshot without modifying `bartosz/promo-q-2` or placing temporary docs in an app PR.
+- Status: PR 1 merged to `main` as [#6087](https://github.com/duckduckgo/apple-browsers/pull/6087). The open second slice is stacked as `bartosz/promo-q-2` (`12e24676eb`) to `main` plus the agreed `bartosz/promo-q-2-fixes` (`37b99b0d78`) to PR 2. The fixes endpoint replaces live flag transitions and per-surface RMF leases with one process-latched mode and one singular owner. The existing `origin/bartosz/promo-q-3` tip (`59dfec29f7`, draft [#6217](https://github.com/duckduckgo/apple-browsers/pull/6217)) is based on the superseded architecture and is evidence only.
+- Completed: Audited Q2, Q2-fixes, the old Q3 implementation, and both shared simplification plans. Reconciled the canonical design/landing/integration docs with the accepted endpoint and specified the remaining Q3 cooldown, animation, diagnostics, and validation work. Promo Queue telemetry and privacy-config rollout remain separate.
+- Next: Review the uncommitted documentation changes. After the PR 2-fixes tip is frozen, rebuild the final Q3 slice from that exact endpoint (preferably after merge) rather than mechanically cherry-picking the old Q3 cooldown/debug commits.
 - Blockers: None.
 
 ## Decisions
@@ -13,21 +13,31 @@
 - Why: This follows the implementation plan's dependency slices while avoiding parallel-stack rebases and repeated propagation of review feedback.
 - Consequences: `bartosz/promo-queue` is only the temporary source snapshot. Normally review feedback flows through merged `main`; because PR 2 was final but not yet merged when PR 3 preparation began, the user explicitly chose to resynchronize the source with final `bartosz/promo-q-2` and base PR 3 directly on it. Nothing under `promo-queue-docs/`, and no `project_log.md`, may enter the app PRs.
 
-- Treat `TECH_DESIGN_FINAL.md` as architecturally sound for iteration one, with implementation-plan corrections for current code rather than changes in scope.
+- Treat the implementation on `bartosz/promo-q-2-fixes` and the agreed Q2/Q3 simplification plans as authoritative over the pre-simplification `TECH_DESIGN_FINAL.md`; keep the consolidated tech design current with those decisions.
 - Use one app-scoped, main-actor transactional lease arbiter constructed in `Launching` and passed explicitly; do not add another global singleton or extract the macOS queue.
 - Preserve provider order, eligibility, modal-to-modal cooldown, and accounting; on the feature-enabled path acquire the modal lease before any provider is queried because provider evaluation can have side effects. The later fixed modal/RMF directional policy is service-owned. Feature off retains the lease-free legacy overload and existing modal cooldown.
 - Model NTP activity explicitly in all three hosts. Cached focused NTPs can remain mounted and on-window while hidden, so UIKit appearance alone is not authoritative.
-- Keep atomic first-shown coordination in the existing shared `HomePageConfiguration` rather than changing BrowserServicesKit storage APIs in iteration one.
-- Default the new iOS promo-queue feature flag to disabled and stage enablement in a separate privacy-configuration change.
+- Treat atomic `remoteMessageShownUnique` coordination as an optional independent correctness change requiring separate approval, not a Q3 cooldown prerequisite.
+- Default the new iOS promo-queue feature flag to disabled, sample it once per service graph, and stage enablement in a separate privacy-configuration change. Remote/local changes affect a fresh graph/relaunch, not the running process.
 - Extend the existing Modal Prompt Coordination debug screen. Do not add Promo Queue admission, collision, or cooldown telemetry in iteration one; measurement belongs to a separate project.
 
-### 2026-08-06 — Add fixed directional modal/RMF cooldowns to iteration one
+### 2026-08-11 — Adopt the Q2 simplification endpoint and re-plan Q3
+- Decision: Treat `bartosz/promo-q-2-fixes` at `37b99b0d78` as the agreed Q2 endpoint: one immutable process mode, one singular identity-bearing owner, one release-only self-owned RMF admission, truthful physical removal, one guarded weak handoff registry, and the modal/NTP lifecycle adapters.
+- Flag consequence: Delete live transition semantics from the final design. A kill-switch or local-override change applies only to a new graph; production rollback therefore requires force-quit/relaunch.
+- Ownership consequence: Two NTP RMFs cannot coexist. The 10-minute RMF→RMF rule is a minimum delay after confirmed appearance, but physical ownership can defer the next RMF longer. This is stricter than the original per-surface design and increases hidden-host starvation risk.
+- Retry consequence: Q3 is checkpoint-only. Do not add the old exact-boundary RMF timer; reaching 10 minutes or 24 hours alone does nothing.
+- Q3 scope: Implement the fixed directional policy and confirmed-RMF persistence/appearance confirmation against the singular owner, restore the coordinated scale/opacity removal animation without early release, add current-architecture diagnostics, and add only the focused cooldown/animation coverage missing from Q2-fixes.
+- Old Q3 disposition: `origin/bartosz/promo-q-3` at `59dfec29f7` is pre-simplification evidence. Do not port its live state, plural owners, provisional reservation, boundary scheduler, production in-memory fallbacks, or stale debug rows.
+- Deferred scope: Atomic unique-shown accounting remains optional; telemetry and privacy-config rollout remain separate projects.
+
+### 2026-08-06 — Add fixed directional modal/RMF cooldowns to iteration one (product matrix retained; implementation shape superseded)
 - Decision: Add modal→RMF 10 minutes, RMF→RMF 10 minutes globally across IDs/NTP instances, RMF→modal fixed 24 hours, and preserve the existing remotely tunable modal→modal interval (currently/default 24 hours).
 - Source events: Confirm modal history only at UIKit completion or attached-root adoption, and RMF history only on the first `onAppear` of the matching admitted render session. Selection, mapping, admission alone, denial, pending/failed modal work, and withdrawal before appearance do not write.
 - State ownership: Keep `PromoQueueLeaseArbiter` transient/history-free. A separate service-owned policy/store reuses the existing persisted modal timestamp and adds one persisted last-confirmed-RMF timestamp. Store event times, not expiry dates; exact boundaries are eligible, and backward wall-clock movement conservatively extends cooldown.
 - Concurrency/retry: Take one global identity-bound provisional RMF reservation before publication, promote it on matching appearance, and release it without writing on withdrawal. Schedule at most one active-NTP retry at the earliest 10-minute boundary; modal retry remains foreground/checkpoint-driven. A later RMF may appear after 10 minutes even while an earlier RMF remains visible, but active RMF leases still block modals.
 - Flag/accounting: Feature off bypasses new checks, RMF writes, provisional state, and timers while preserving confirmed timestamps and the legacy modal cooldown. Cooldown denial retains work and consumes no provider/RMF accounting. Iteration one emits no new Promo Queue telemetry.
 - Scope: This is compiled iteration-one policy for launch modals and NTP RMF only, not a generic RMF frequency engine or remotely configurable queue. PR 3 [#6217](https://github.com/duckduckgo/apple-browsers/pull/6217) implements it with focused boundary/persistence/concurrency coverage in `06a2417373`.
+- Supersession note: The four product rows remain approved. The provisional reservation, per-surface coexistence, live flag behavior, and exact-boundary timer described in this entry were replaced by the 2026-08-11 singular-owner/checkpoint-only decision. The old implementation is test evidence, not the final Q3 base.
 
 ### 2026-08-06 — Defer Promo Queue telemetry
 - Decision: Keep the iteration-one debug snapshot, but remove the two newly introduced collision pixels and all related reporter/definition/test code from PR 3 (`1f12bf8a66`).
@@ -107,3 +117,10 @@
 - Updated every affected Promo Queue Markdown/HTML artifact for the approved directional cooldown matrix, including ownership, persistence, provisional RMF serialization, boundary retry, feature-off behavior, PR 3 scope, tests/QA/debug, and the distinction between RMF framework gaps and the narrow iOS client policy. No app code was changed by this documentation pass.
 - Removed the two Promo Queue collision pixels and their implementation/tests from PR 3 in `1f12bf8a66`; telemetry is now explicitly a separate project.
 - Implemented the documented directional cooldown policy on PR 3 in `06a2417373`, including the persisted RMF timestamp, global provisional reservation, exact-boundary retry, debug snapshot, and focused service/policy/model/integration coverage. `origin/bartosz/promo-q-3` now points to this commit.
+
+### 2026-08-11
+- Fetched and audited `origin/bartosz/promo-q-2` at `12e24676eb` and `origin/bartosz/promo-q-2-fixes` at `37b99b0d78`; their merge-base confirms the fixes branch is a clean stack on the current Q2 tip.
+- Verified the agreed fixes in code: one factory flag read and no publisher subscription; one singular arbiter owner; release-only RMF admission; physical removal through outgoing mount state and the next main turn; readiness-gated stable weak handoff; centralized known-host exposure; one provider validity hook; cached retained Default Browser validation; and the preserved named `0.1`-second modal delay.
+- Identified the complete core Q3 remainder: directional cooldown policy/store/appearance confirmation; checkpoint-only cooldown integration; read-only current-architecture diagnostics; restoration of the coordinated scale/opacity removal animation; and focused coverage/QA for those changes. No other core product behavior was found missing.
+- Flagged accepted concerns relative to the original design: next-process rollback, stronger singular-owner serialization/starvation risk, checkpoint-only delay, manual future-host integration, cached Default Browser staleness, and separately deferred atomic unique-shown accounting.
+- Rewrote the canonical technical design, implementation/landing plan, integration guide, and visual appendix; added `promo-queue-docs/Q3_IMPLEMENTATION_PLAN.md`; refreshed iteration research status notes and durable lessons. These documentation changes remain intentionally uncommitted for user review.

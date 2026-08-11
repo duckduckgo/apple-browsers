@@ -1,242 +1,204 @@
-# Adding Promo Queue Integrations on iOS
+# Adding Promo Queue integrations on iOS
 
-## Scope: iteration 1 is deliberately narrow
+## Start here
 
-The iOS promo queue currently prevents one specific collision:
+Iteration one coordinates only:
 
-- launch-modal promos coordinated by `PromoCoordinationService`; and
-- Remote Messaging Framework (RMF) cards rendered on an active New Tab Page (NTP).
+- launch-modal promos evaluated by `PromoCoordinationService`; and
+- RMF cards rendered in a known New Tab Page host.
 
-It is a main-actor mutual-exclusion seam with one fixed directional cooldown policy, not a general promo scheduler. It does not coordinate badges, settings rows, notification bars, onboarding, Duck.ai sync promos, tab-switcher promos, or arbitrary UIKit presentations. It also does not share or replace the macOS promo queue.
+It is a main-actor mutual-exclusion and fixed-cooldown seam, not a general promo scheduler. Do not route badges, settings rows, notification bars, onboarding, arbitrary UIKit presentations, or other promo surfaces through it without a new product/design decision.
 
-`PromoType` currently has one supported case, `.remoteMessage`, in
-[`PromoQueueLeaseArbiter.swift`](../iOS/DuckDuckGo/ModalPromptCoordination/Arbitration/PromoQueueLeaseArbiter.swift).
-Do not add another case merely to make a new feature compile. A promo outside the launch-modal/NTP-RMF seam needs an explicit design decision covering its priority, visibility, lifecycle, accounting, and rollback behavior.
+Read `TECH_DESIGN_FINAL.md` for the contract and `Q3_IMPLEMENTATION_PLAN.md` for the final implementation work.
 
-## The integration boundary
+## Core model
 
-All coordination is `@MainActor`. The app-scoped `PromoQueueLeaseArbiter` is the only mutual-exclusion authority:
+There is one app-scoped `PromoQueueLeaseArbiter` with one active owner:
 
-- a modal lease can exist only when there are no visible-promo leases;
-- visible-promo leases can coexist across surfaces once the global RMF target cooldown allows a later appearance;
-- one `(surfaceID, promoType)` slot can hold at most one promo;
-- every lease is bound to a per-acquisition identity;
-- dropped tokens are weakly tracked and pruned before snapshots or new acquisitions; and
-- release is explicit, idempotent, and unable to clear newer state.
-
-The arbiter owns no eligibility, priority, cooldown, RMF selection, persistence, view lifecycle, or retry policy. Consumers must not receive it directly. A separate service-owned cooldown policy/store owns the limited matrix and remains outside the arbiter and RMF framework.
-
-## Iteration-one cooldown contract
-
-| Previous confirmed appearance | Next requested appearance | Required elapsed time |
-| --- | --- | --- |
-| Modal | NTP RMF | fixed 10 minutes |
-| NTP RMF | NTP RMF | fixed 10 minutes, global across IDs and NTP instances |
-| NTP RMF | Modal | fixed 24 hours |
-| Modal | Modal | existing remotely tunable `PromptCooldownManager` interval, currently/default 24 hours |
-
-The service-owned component reuses the existing persisted modal timestamp and persists one last-confirmed-RMF timestamp. Both are source-event times, not expiry dates. A modal event is confirmed only at UIKit completion or adoption of the attached prepared root. An RMF event is confirmed only by the first `onAppear` of the matching admitted render session. Selection, mapping, lease acquisition alone, denial, pending work, withdrawal before appearance, and failed presentation never write history.
-
-The exact boundary is eligible (`now >= timestamp + interval`), and a backward wall-clock change conservatively extends the wait. The 10-minute intervals and RMF-to-modal 24-hour interval are fixed production constants. Only modal-to-modal keeps existing remote tuning.
-
-Before publishing inner RMF UI, admission retains one identity-bound global provisional reservation. This prevents two NTP instances or message IDs from both passing before either appears. The first matching appearance promotes the reservation to persisted RMF history; withdrawal first releases it without writing. Duplicate `onAppear`, physical remount, and same-ID refresh in one render session do not restart cooldown. A later admitted session, even for the same message, is a new appearance. After 10 minutes another RMF may appear while an earlier card remains visible, but every active RMF lease still blocks modal admission.
-
-NTP code uses the narrow `NewTabPagePromoCoordinating` interface implemented by
-[`PromoCoordinationService.swift`](../iOS/DuckDuckGo/AppServices/PromoCoordinationService.swift):
-
-```swift
-var promoQueueFeatureState: PromoQueueFeatureState { get }
-var promoQueueFeatureStatePublisher: AnyPublisher<PromoQueueFeatureState, Never> { get }
-
-func admitVisiblePromo(_ identity: VisiblePromoIdentity) -> VisiblePromoAdmissionResult
-func releaseVisiblePromoAdmission(_ admission: PromoQueueVisiblePromoAdmission)
-func cancelVisiblePromoCooldownRetry(for surfaceID: UUID)
-func registerVisiblePromoRetry(
-    for surfaceID: UUID,
-    target: NewTabPagePromoRetrying
-) -> NewTabPagePromoRetryRegistration
+```text
+none | modal(attempt identity) | remoteMessage(surface + message identity)
 ```
 
-Always ask this service to admit visible content. `admitVisiblePromo` first reconciles the exact modal root through `ModalPromptCoordinationManager`, then performs the atomic arbiter acquisition. Calling `PromoQueueLeaseArbitrating.acquireVisiblePromoLease` from a feature would bypass that checkpoint and is incorrect.
+Any owner blocks every other coordinated request. The arbiter is transient and history-free. It owns no provider priority, RMF targeting, cooldown, persistence, presentation, or retry timing.
 
-The typed result is also significant:
+The service owns admission and the fixed cross-promo cooldown policy. UI owners retain identity-bound tokens for the complete real lifetime of their promo.
 
-- `.blockedByModal` is a real cross-surface conflict;
-- a typed cooldown denial carries `nextEligibleDate` and is not a lease conflict;
-- `.blockedByProvisionalReservation` means another RMF admission is waiting for its first appearance or withdrawal;
-- `.occupiedSurfaceSlot` indicates that the surface still owns another identity;
-- `.featureDisabled` and `.unavailableDuringTransition` are feature-state outcomes; and
-- other denials must not be reported as modal/RMF collisions.
+Never:
 
-On the enabled/coordinated modal path, `PromoCoordinationService` follows the inverse rule: it runs its existing launch-source and UIKit/OmniBar gates, acquires a modal lease, and only then lets `ModalPromptCoordinationManager` evaluate providers. If acquisition is `.blockedByVisiblePromos`, the manager's provider-evaluation/presentation entry point and the providers must not be called; the earlier exact-root reconciliation checkpoint still applies. Feature off deliberately uses the legacy lease-free overload.
+- construct a second arbiter for another host;
+- add a `.shared` queue singleton;
+- query the arbiter and mutate it later as two separate operations;
+- store leases in user defaults;
+- inject the arbiter or cooldown store into SwiftUI views/providers;
+- add a per-surface owner dictionary or provisional cooldown reservation; or
+- add a cooldown deadline timer.
 
-## Construction and injection
+## Feature mode
 
-There must be exactly one arbiter and one service-owned directional cooldown policy/store per app coordination graph.
+`PromoCoordinationFactory` samples `.promoPresentationCoordination` once and creates immutable `.legacy` or `.coordinated` behavior for the service graph.
 
-[`Launching.swift`](../iOS/DuckDuckGo/AppLifecycle/AppStates/Launching.swift) constructs `PromoQueueLeaseArbiter` beside the coordination service. The same instance is passed through `PromoCoordinationFactory.Dependency` in
-[`PromoCoordinationFactory.swift`](../iOS/DuckDuckGo/ModalPromptCoordination/Factory/PromoCoordinationFactory.swift)
-to the service and manager.
+- Do not subscribe to live flag changes.
+- Local overrides must be set before graph construction.
+- Force-quit/relaunch after changing the flag.
+- Legacy mode must keep the established lease-free modal flow and direct/eager RMF behavior.
 
-The production `PromoCoordinationService` initializer constructs `PromoQueueCooldownPolicy` from the same persisted `PromptCooldownStore` used by the modal manager plus `PromoQueueRemoteMessageCooldownKeyValueFilesStore`. The designated initializer accepts policy/scheduler doubles for tests. NTP code receives only `PromoQueueVisiblePromoAdmission`, which owns the lease and provisional reservation; never pass the policy or stores into the manager, provider, controller, model, or view.
+If immediate in-process rollback becomes a requirement again, treat it as a new architecture decision rather than restoring the removed transition machinery piecemeal.
 
-`MainCoordinator` retains the service and passes it as the narrow `NewTabPagePromoCoordinating` dependency to `MainViewController`. That dependency must continue through all three NTP construction paths:
+## Adding or changing a launch-modal provider
 
-1. the standalone NTP built by `MainViewController.attachHomeScreen`;
-2. the focused NTP built by `SuggestionTrayViewController` from `SuggestionTrayViewController.NewTabPageDependencies`; and
-3. the cached favorites NTP built by `UnifiedInputContentContainerViewController`/`UnifiedSuggestionsHost`.
+The service acquires modal ownership before the manager evaluates any provider. Provider evaluation may have side effects, so code must not query a provider while an RMF owns the queue or while the fixed RMF→modal cooldown is active.
 
-Relevant files are
-[`MainCoordinator.swift`](../iOS/DuckDuckGo/UICoordination/MainCoordinator.swift),
-[`MainViewController.swift`](../iOS/DuckDuckGo/MainViewController.swift),
-[`SuggestionTrayViewController.swift`](../iOS/DuckDuckGo/SuggestionTrayViewController.swift), and
-[`UnifiedSuggestionsHost.swift`](../iOS/DuckDuckGo/UnifiedToggleInput/Suggestions/UnifiedSuggestionsHost.swift).
+The manager remains responsible for:
 
-Do not construct a second arbiter, introduce a `.shared` coordinator, store leases in user defaults, duplicate the existing modal timestamp, or inject the arbiter/cooldown store into a view or provider.
+- provider ordering and first-eligible selection;
+- per-provider onboarding/eligibility;
+- the existing remotely tunable modal→modal cooldown;
+- prepared work and the inherited `0.1`-second presentation delay;
+- UIKit presentation and exact-root lifetime; and
+- provider shown/accounting callbacks.
 
-## NTP RMF admission and release
+Implement `ModalPromptProvider.isModalPromptStillValidForPresentation(_:)` when prepared or retained work can become stale. Make the check read-only. Conform to `InvalidModalPromptReplacing` only when repeating preparation is known to be safe; the default is no replacement.
 
-[`NewTabPageMessagesModel.swift`](../iOS/DuckDuckGo/NewTabPageMessagesModel.swift)
-owns the candidate and admitted render session. `NewTabPageViewController` owns the stable `surfaceID`. The model may attempt admission only when all of these are true:
+Do not release ownership when a nested child is presented or dismissed. The selected modal root ends the attempt only after an approved checkpoint proves that exact root is detached.
 
-- the model is loaded and not torn down;
-- the queue is enabled and not transitioning;
-- the host says the NTP is logically active;
-- the render location is ready;
-- the controller is attached to a window;
-- the matching outer RMF gate is in the SwiftUI render location; and
-- no older render session for the surface is still retiring.
-- the service has atomically granted the global provisional RMF cooldown reservation.
+Provider tests should cover:
 
-The outer `NewTabPageRemoteMessageGate` remains in
-[`NewTabPageView.swift`](../iOS/DuckDuckGo/NewTabPageView.swift)
-while an eligible candidate is blocked. It may render at zero height, but it is not the RMF card and must not account an appearance. Only after the service returns a lease may the model build and publish the inner `HomeMessageViewModel`.
+- no evaluation before owner/cooldown admission;
+- immediate and retained revalidation;
+- replacement only for explicitly safe providers;
+- no-provider/cooldown release without accounting; and
+- exact-root attachment, nested presentation, and dismissal.
 
-Retain these lifecycle rules when changing or adding an NTP host:
+## NTP RMF integration
 
-- Treat logical activity as authoritative. A cached controller can be attached while covered by autocomplete, Duck.ai content, an overlay, or opacity.
-- Use controller/window attachment only as a final safety condition.
-- Keep the lease until the admitted inner view is no longer renderable.
-- Give every physical SwiftUI gate mount its own UUID and balance appearance/disappearance by that identity.
-- Prefer the inner view's `onDisappear` for release. Owner-driven withdrawal publishes removal first, then releases on the next main turn; reachable controller teardown is an idempotent safety path.
-- Match both render-session and lease identity. A late callback from message A must not release message B.
-- A same-ID refresh updates content while preserving the lease, render session, and recorded appearance.
-- A matching first appearance confirms the provisional cooldown reservation once. Withdrawal before appearance releases it without a write.
-- A changed-ID refresh withdraws the old inner UI, releases its exact lease after removal, and only then attempts the replacement.
-- `load()` must stay idempotent. `tearDown()` must remove the RMF observer, deregister `NewTabPagePromoRetryRegistration`, and release admitted or retiring leases.
-- Retry targets are weak, synchronous, and surface-specific. Dead registrations are pruned both on registration and after retries, even if the feature is disabled. The model retains the candidate; the service retains no blocked RMF content. For cooldown-only RMF denial, the service schedules/cancels one retry at the earliest 10-minute boundary. Modal cooldown denial stays foreground/checkpoint-driven and has no 24-hour timer.
+### Admission boundary
 
-The `setPromoSurfaceActive`, `setPromoSurfaceRenderable`, and `setPromoSurfaceVisible` entry points in
-[`NewTabPageViewController.swift`](../iOS/DuckDuckGo/NewTabPageViewController.swift)
-form the host-facing bridge. The controller composes owner activity, render-location readiness, explicit visibility, and coverage; the model applies the separate attachment-provider check before admission. Standalone, legacy-tray, and Unified Toggle Input hosts must drive those inputs from the owner state that actually exposes or covers favorites, including animation windows. Do not infer visibility solely from `viewDidAppear`, `view.window`, or alpha.
+An RMF card can be built and published only when the model is loaded, active, renderable, attached to a window, has a mounted matching gate, and receives `.acquired(admission)` from the service.
 
-A blocked candidate stays selected but is not rendered, marked shown, dismissed, or consumed.
+The public NTP facade intentionally exposes only:
 
-## Feature flag and lifecycle behavior
+```text
+acquired(admission) | deferred
+```
 
-`FeatureFlag.promoPresentationCoordination` maps to `iOSPromoQueueSubfeature.iOSPromoPresentationCoordination` with an explicit `.disabled` default in
-[`FeatureFlag.swift`](../iOS/LocalPackages/FeatureFlags-iOS/Sources/FeatureFlags/FeatureFlag.swift).
-`PromoCoordinationService` seeds the effective state before consumers run and owns the single deduplicated `FeatureFlagger.updatesPublisher` subscription.
+Lease conflicts, readiness, and cooldown reasons stay inside service/policy diagnostics. A deferred candidate remains in the model and is not rendered, marked shown, dismissed, or consumed.
 
-A live flag change is one serialized main-actor transaction:
+### Identity and physical lifetime
 
-- disabling cancels or invalidates coordination work, resets leases, clears provisional reservations/timers without writing, and republishes NTP RMF through the exact legacy path while retaining confirmed timestamps;
-- enabling first withdraws legacy RMF UI, resets stale leases, restores remaining cooldown from confirmed timestamps, and re-adopts an attached exact modal root; after the barrier lowers, stable gate remounts and host-specific enablement publishers retry admission; and
-- public admission is unavailable while the transition barrier is active.
+Keep separate stable identities for:
 
-The service does not synchronously retry every registered NTP from inside enablement. Foreground checkpoints still refresh/retry active registrations synchronously before modal evaluation; UTI refreshes its retained candidate through `promoQueueEnablementPublisher` once the stable enabled state is published.
+- the NTP surface;
+- the candidate gate;
+- the admitted render session; and
+- each physical SwiftUI mount.
 
-Do not “clean up” feature-off behavior in this integration. The service calls the legacy modal overload, while NTP RMF intentionally preserves direct eager mapping and SwiftUI appearance accounting. Feature off bypasses all new cross-surface checks, RMF writes, provisional reservations, and timers; the existing modal-only cooldown remains unchanged. Re-enable resumes confirmed history.
+Same-ID refresh is one continuous admitted session. A changed ID withdraws the old inner card and cannot acquire the replacement until the old admission releases.
 
-Foreground modal evaluation is initiated from `Foreground.onAppReadyForInteractions` in
-[`Foreground.swift`](../iOS/DuckDuckGo/AppLifecycle/AppStates/Foreground.swift).
-The service reconciles the exact modal root and synchronously refreshes/retries active NTPs before acquiring a new modal lease or evaluating providers.
+Logical withdrawal is not physical disappearance. Move the admission into outgoing-session state, wait for all matching pending/visible card mounts to disappear, then wait one following main turn before releasing. Every callback must match the render session and mount it changes.
 
-Backgrounding does not make a visible NTP inactive and does not release a presentation-active modal. Hosts still deactivate surfaces when their own UI covers or removes them. Committed-but-not-presented modal work is migrated to pending and its scheduled attempt is invalidated by the manager.
+The coordinated card must retain the legacy scale/opacity transition. Do not switch it to `.identity` merely to simplify lifecycle callbacks, and do not guess animation completion with a fixed delay.
 
-## Policy remains with narrow owners
+### Appearance and accounting
 
-Do not move modal policy into the arbiter or an NTP model.
+On the first matching card appearance:
 
-The ordered provider array is assembled by `PromoCoordinationService` and evaluated by
-[`ModalPromptCoordinationManager.swift`](../iOS/DuckDuckGo/ModalPromptCoordination/ModalPromptCoordinationManager.swift).
-The current order is:
+1. confirm the RMF cooldown appearance through the admission;
+2. mark the session appearance as recorded; and
+3. run ordinary RMF shown accounting.
 
-1. win-back offer;
-2. delayed/reinstaller subscription promo;
-3. existing-user subscription promo;
-4. address-bar picker;
-5. default-browser provider, including its re-activation/default-browser policy;
-6. What's New; and
-7. Cookie Popup Protection opt-in.
+Confirmation is once per admitted render session. Duplicate `onAppear`, remount, same-ID refresh, stale session callbacks, and confirmation after release do nothing. Withdrawal or build failure before appearance writes no RMF history.
 
-The manager remains responsible for provider eligibility evaluation, onboarding status passed to providers, first-eligible priority, the existing modal-to-modal `PromptCooldownManager` behavior, modal scheduling/presentation, provider shown callbacks, and exact-root attempt phases. The service-owned policy handles only the four fixed directional rows above and reuses the manager's confirmed modal timestamp. The provider adapter contract revalidates prepared and retained prompts before presentation and permits replacement only where repeating preparation is safe. Default Browser uses cached validation for prepared work and a fresh check with stored-status fallback for retained work; What's New re-fetches and replaces its prepared controller when the scheduled RMF message ID changes. The default replacement implementation is `nil`, so side-effectful providers are not prepared twice. The service retains launch-source and unrelated UIKit/OmniBar gates. RMF continues to own message selection, targeting, dismissal, and persistence; it does not gain a cooldown engine.
+Normal shown accounting is once per admitted appearance. Atomic `remoteMessageShownUnique` persistence is an independent optional correctness change; do not silently mix it into a new surface integration.
 
-Adding a surface must not duplicate or override any of those decisions.
+## Host exposure contract
 
-## Shown accounting
+The known hosts are:
 
-For the enabled path, shown accounting belongs to an admitted render appearance:
+- standard NTP;
+- suggestion tray/favorites NTP; and
+- unified-input/favorites NTP.
 
-- the outer blocked gate records nothing;
-- the first inner appearance in a render session records one normal shown event;
-- that same first appearance confirms the RMF cooldown timestamp once;
-- a same-ID refresh in that session records nothing more; and
-- leaving and later re-entering creates a new appearance.
+Use the centralized exposure predicate and outgoing-before-incoming handoff. UIKit appearance or `view.window` alone is not enough: a cached controller can remain attached while hidden by autocomplete, Duck.ai content, an overlay, or opacity.
 
-[`HomePageConfiguration.swift`](../iOS/DuckDuckGo/HomePageConfiguration.swift)
-remains the shared owner of normal shown, unique shown, and the asynchronous store update. Its main-actor `didAppear` entry point uses a session-scoped `firstShownReservations` set so two NTPs can each record a normal appearance but only one can win unique shown before the store write completes. That reservation is accounting state, not a lease, and must survive flag toggles.
+Async transition/completion callbacks must carry a generation or identity so stale completion cannot reactivate a covered host.
 
-The `HomePageMessageShownPixelReporting` injection is for deterministic normal/unique tests. The `PixelFiring.Type` dependency in `NewTabPageMessagesModel` continues to cover RMF action pixels; do not conflate the two seams.
+A future host or overlay that can cover or retain an NTP must explicitly:
 
-## Telemetry scope
+1. define the stable surface owner;
+2. report logical renderability and coverage;
+3. perform outgoing-before-incoming handoff;
+4. invalidate stale async completions;
+5. preserve window/gate readiness; and
+6. add direct host tests.
 
-Iteration one adds no Promo Queue admission, collision, or cooldown telemetry. The two previously proposed collision pixels and their reporter, definitions, and tests were removed in `1f12bf8a66`; telemetry belongs to a separate future project.
+This obligation is not compiler-enforced. Missing it can let a hidden NTP starve every promo under singular ownership.
 
-Existing RMF shown/dismiss/action accounting and existing modal-provider prompt/impression accounting remain unchanged. Do not add queue pixels while extending or maintaining this seam. A future measurement proposal needs its own product contract, privacy/measurement review, implementation, and rollout plan.
+## Cooldown contract
 
-The queue ships off by default. Enabling `promoQueue.features.iOSPromoPresentationCoordination` is a separate privacy-configuration rollout, not an app-code shortcut and not an RMF targeting rule.
+| Confirmed source | Requested target | Required elapsed time |
+| --- | --- | --- |
+| Modal | RMF | 10 minutes |
+| RMF | RMF | 10 minutes |
+| RMF | Modal | 24 hours |
+| Modal | Modal | Existing remote-tunable interval, currently/default 24 hours |
 
-## Test expectations
+The service-owned policy reuses the modal manager's persisted confirmed-modal timestamp and owns one persisted confirmed-RMF timestamp. It stores event times, not expiry dates.
 
-Use real arbiter state where practical and deterministic mocks for scheduling, presentation, feature state, RMF configuration, and host activity.
+Admission order is significant:
 
-At minimum, preserve coverage for:
+- RMF: readiness → modal reconciliation → acquire global owner → evaluate cooldown → return admission;
+- modal: service gates → acquire global owner → evaluate RMF→modal → enter manager.
 
-- mutual exclusion, multiple NTP surfaces, occupied slots, stale/duplicate release, reset safety, and dropped-token pruning in `PromoQueueLeaseArbiterTests`;
-- “visible RMF blocks modal before provider evaluation” and exact typed denial attribution in `PromoCoordinationServiceTests`/`PromoCoordinationServicePromoQueueTests`;
-- evaluating, committed, pending, presentation-active, background, refused-presentation, and exact-root reconciliation behavior in manager unit/integration tests;
-- blocked candidates, readiness, same-ID continuity, changed-ID replacement, retry, teardown, transition rollback, and no accounting before admission in `NewTabPageMessagesModelTests`;
-- standalone, legacy tray, and UTI visibility/coverage/animation behavior in the focused controller, UTI, model, and integration suites;
-- two admitted NTP appearances producing two normal shown events and one unique winner before persistence completes in `HomePageConfigurationTests`/`NewTabPageMessagesModelTests`;
-- all four cooldown directions at just-before/exact/just-after boundaries, persistence/relaunch/backward-clock behavior, global provisional serialization, timer cancellation/replacement, and feature-off bypass.
+Acquiring first serializes requests. Do not add a provisional reservation.
 
-Feature-off tests must assert the exact legacy path. Feature-on tests must assert that no `await`, dispatched callback, provider evaluation, or inner-view publication occurs between conflict checking and lease retention.
+Exact boundary equality is eligible. Future timestamps conservatively extend the wait. Denial releases raw ownership and consumes no provider/RMF accounting or timestamp state.
 
-## Practical checklist
+Cooldown passage is not an event. Do not add a timer. Reconsider retained work at existing real checkpoints: configuration/refresh, gate mount, window/host exposure, foreground readiness, successful owner release, and same-surface retry after physical removal.
 
-### Adding another host for the existing NTP RMF surface
+With singular ownership, 10 minutes is a minimum RMF→RMF delay, not permission to overlap two cards. A second RMF still waits for the first card's physical removal.
 
-- Reuse the app-scoped `NewTabPagePromoCoordinating` dependency.
-- Let `NewTabPageViewController` create one stable surface ID.
-- Drive logical activity from the owner state that exposes the NTP.
-- Signal render-location readiness explicitly.
-- Keep window attachment as a safety check.
-- Call `tearDownPromoSurface()` from a reachable path only when controller ownership actually ends; do not add `deinit` or `UnifiedSuggestionsHost.tearDown()` assumptions.
-- Test covered, hidden, removed, and re-exposed states.
-- Test a blocked candidate and exact identity release.
-- Test that simultaneous instances share the provisional reservation and 10-minute RMF target boundary, while a later appearance after the boundary may coexist with the first lease.
+## Retry and release handoff
 
-### Proposing a different promo surface
+Each NTP model owns its retained candidate and a weak service registration. The service owns no blocked RMF content.
 
-- Stop and document why it belongs in the same mutual-exclusion group.
-- Decide who owns its eligibility, priority, cooldown, persistence, and shown accounting.
-- Do not inherit the iteration-one matrix automatically; extending cooldown policy to another surface requires an explicit product/design decision.
-- Define its authoritative visibility and dismissal checkpoints.
-- Define feature-off and live-transition rollback behavior.
-- Decide whether simultaneous instances may coexist and what forms a stable surface identity.
-- Obtain privacy/measurement approval for any telemetry.
-- Only after that decision, extend a narrow service protocol and keep checkpoint reconciliation inside the service.
-- Never inject the arbiter directly or silently generalize `NewTabPagePromoCoordinating`.
+Registry-wide handoff is allowed only after a token successfully releases the current owner. It must:
 
-If those questions are unanswered, the feature is outside iteration 1 and must not be added to this seam.
+- run only while app/UI readiness is valid;
+- exclude the releasing surface;
+- preserve registration order;
+- iterate a snapshot;
+- re-check membership and target liveness before each callback;
+- skip inactive targets; and
+- suppress nested drains.
+
+Stale/double release and cooldown-denied raw rollback do not drain the registry. RMF release never starts modal evaluation.
+
+## Construction and diagnostics
+
+There must be one coordination graph. The service convenience initializer currently creates the modal cooldown store and manager; the final graph should pass that exact store to the directional policy and add one production RMF timestamp store.
+
+The debug projection is read-only and should show:
+
+- immutable process mode;
+- singular owner identity;
+- modal phase and pending/suppression state;
+- readiness/retry count where useful;
+- confirmed modal/RMF timestamps; and
+- derived next-RMF/next-modal boundaries with a note that no timer is scheduled.
+
+Do not expose stale transition, plural-lease, provisional-reservation, or timer fields. Do not add new Promo Queue telemetry as part of an integration.
+
+## Test checklist for any extension
+
+- Acquisition is main-actor and atomic.
+- Blocked work is retained and unaccounted.
+- Stale and duplicate release cannot clear a newer owner.
+- Physical lifetime covers the full visible transition.
+- Background/foreground and host coverage cannot admit hidden content.
+- The process-latched feature-off path remains legacy.
+- Cooldown checks use confirmed history and exact boundaries.
+- Time passage alone is a no-op; a real checkpoint retries.
+- No provider is queried before modal owner/cooldown admission.
+- No new queue pixel, scheduler, provisional token, or second arbiter is introduced.
+
+If a proposed surface needs different coexistence, priority, frequency, persistence, preemption, or rollback semantics, stop and write a new design decision. Those requirements are outside iteration one.

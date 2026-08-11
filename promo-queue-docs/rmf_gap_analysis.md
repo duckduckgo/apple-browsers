@@ -1,13 +1,13 @@
 # RMF gap analysis — iteration 2
 
-**Decision pre-read · original research 2026-07-30; iteration-one status refreshed 2026-08-06**
+**Decision pre-read · original research 2026-07-30; iteration-one status refreshed 2026-08-11**
 
 **Apple checkout:** `7fdd4719a1` on `origin/main` (merged PR [#6087](https://github.com/duckduckgo/apple-browsers/pull/6087), 2026-08-04).
 **RMF config checkout:** `5764096` on `main` (2026-07-29).
 
 > **Source rule.** Code and config claims cite these checkouts with `file:line`. Statements from Asana threads are marked **reported (Asana), not code-verifiable**. Effort classes: **S** = bounded days, **M** = coordinated multi-component work, **L** = architectural/multi-release — relative classes, not delivery commitments.
 
-> **Iteration-1 status note (affects several claims below).** The seven-provider modal chain and its modal-to-modal cooldown shipped to `main` **ungated** in Nov 2025 (`105dd6cf34` #2337). PR 1 is on `main`; PR 2 is final and awaiting review as [#6175](https://github.com/duckduckgo/apple-browsers/pull/6175) at `8d6d95438e`. PR 3 is pushed/open as [#6217](https://github.com/duckduckgo/apple-browsers/pull/6217) from `bartosz/promo-q-3` at `06a2417373`. That commit implements the narrow client-side matrix: modal→RMF fixed 10m; RMF→RMF fixed 10m globally; RMF→modal fixed 24h; modal→modal preserves the existing remotely tunable interval, currently/default 24h. A service-owned policy reuses the persisted modal timestamp, adds one last-confirmed-RMF timestamp, and keeps the arbiter transient/history-free. Commit `1f12bf8a66` removes the two proposed collision pixels because Promo Queue telemetry is a separate project. RMF itself still has no cooldown engine, so the framework findings below remain valid.
+> **Iteration-1 status note (affects several claims below).** The seven-provider modal chain and its modal-to-modal cooldown shipped to `main` **ungated** in Nov 2025 (`105dd6cf34` #2337), and PR 1 is on `main`. The accepted PR 2 endpoint is the open `bartosz/promo-q-2` plus `bartosz/promo-q-2-fixes` stack: startup-latched mode, one singular transient owner, lifecycle-safe modal/RMF admission, truthful physical release, and known-host coverage. The fixed modal→RMF 10m, RMF→RMF 10m, RMF→modal 24h, and existing modal→modal policy remains Q3 work using confirmed history and checkpoint-only reconsideration. The existing PR 3 branch predates this simplification and is evidence only. Promo Queue telemetry is a separate project. RMF itself still has no cooldown engine, so the framework findings below remain valid.
 
 ---
 
@@ -217,7 +217,7 @@ These are the reasons RMF loses when it *could* have carried the promo:
 
 ## 7. Open questions for humans
 
-1. **Measurement scope** — project lead: in scope (*"otherwise we're blind"*); advisor: *"nice to have"*, not a release blocker; Android DRI: impacts delivery. All **reported (Asana)**. Facts to argue against: RMF already gives per-message shown/unique/dismiss/action (13 iOS pixel types); the source branch implements aggregate per-denial collision counting for PR 3, but nothing measures delay duration or eligible-not-shown delivery loss. Booked to a midmortem.
+1. **Measurement scope** — project lead: in scope (*"otherwise we're blind"*); advisor: *"nice to have"*, not a release blocker; Android DRI: impacts delivery. All **reported (Asana)**. Facts to argue against: RMF already gives per-message shown/unique/dismiss/action (13 iOS pixel types), but iteration one deliberately adds no queue admission, collision, delay-duration, or eligible-not-shown measurement. Telemetry is a separate project.
 2. **Mandatory auto-dismiss policy** (R1): does product accept forced expiry on evergreen surveys (18/24 live objects), or should the requirement be per-template? Who owns the live-config retrofit PR?
 3. **Does any campaign need two concurrent RMF surfaces** (e.g. a What's New while an NTP card runs)? Decides whether G2 is ever funded.
 4. **Who is the named owner of a first remote-modal campaign** (R5's demand gate)? If nobody claims one in a quarter, G1 drops below G7 in priority.

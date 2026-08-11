@@ -2,7 +2,7 @@
 
 Companion to `iteration_2_research.md` / `iteration_3_research.md`. Two agent-produced reports over the local checkouts (`apple-browsers` @ `bartosz/promo-queue`, `remote-messaging-config` @ main). **Trust code over this appendix on any conflict; re-verify `file:line` cites before relying on them.**
 
-> **Current iteration-one clarification — 2026-08-06:** RMF still has no native caps/cooldowns. PR 3 commit `06a2417373` implements only this fixed iOS client modal/NTP-RMF matrix: modal→RMF 10m, RMF→RMF 10m globally, RMF→modal fixed 24h, and modal→modal the existing remote-tunable interval (currently/default 24h). A service-owned policy reuses the persisted modal timestamp and adds one confirmed-RMF timestamp; the arbiter remains transient/history-free. Commit `1f12bf8a66` removes the two proposed collision pixels because Promo Queue telemetry is deferred to a separate project.
+> **Current iteration-one clarification — 2026-08-11:** RMF still has no native caps/cooldowns. The accepted Q2 endpoint uses a startup-latched mode and one singular transient owner. The fixed iOS client modal/NTP-RMF matrix remains Q3 work in a service-owned policy using confirmed modal history plus one persisted confirmed-RMF timestamp, with checkpoint-only reconsideration. The older Q3 implementation predates the simplification and is evidence only. Promo Queue telemetry remains a separate project.
 
 ---
 

@@ -8,7 +8,7 @@
 
 This report answers iteration-2 RQ1–RQ5. It starts from `iteration_2_research_appendix.md`, re-opens every load-bearing citation in the current checkouts, reconciles the 74 names in the product inventory, and classifies the resulting canonical promo units.
 
-> **Iteration-one status update — 2026-08-06:** The historical finding that RMF has no cooldown engine remains true. PR 3 commit `06a2417373` implements a separate, narrow iOS client policy for launch modals and NTP RMF only: modal→RMF 10m, RMF→RMF 10m globally, RMF→modal fixed 24h, and modal→modal the existing remotely tunable interval (currently/default 24h). A service-owned store reuses the modal timestamp and adds one confirmed-RMF timestamp; the lease arbiter remains transient. Commit `1f12bf8a66` removes the proposed collision pixels, leaving telemetry to a separate project.
+> **Iteration-one status update — 2026-08-11:** The historical finding that RMF has no cooldown engine remains true. The accepted Q2 endpoint now uses a startup-latched mode and one singular transient modal/RMF owner. A separate service-owned Q3 policy will apply modal→RMF 10m, RMF→RMF 10m, RMF→modal 24h, and the existing modal→modal interval from confirmed history, with checkpoint-only reconsideration. The older Q3 implementation is superseded evidence; Promo Queue telemetry remains a separate project.
 
 > **Source rule.** Statements attributed to product/stakeholder discussions are **reported (Asana), not code-verifiable** and cite the local digest. Code and config claims cite the current checkout. Negative inventory findings were checked with case-insensitive `rg` searches across `iOS/**/*.swift`, `iOS/**/*.strings`, `iOS/**/*.pbxproj`, `SharedPackages/**/*.swift`, and the four live RMF JSON files.
 

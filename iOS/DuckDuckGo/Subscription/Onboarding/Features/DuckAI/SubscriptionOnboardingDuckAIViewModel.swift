@@ -38,15 +38,18 @@ final class DefaultSubscriptionOnboardingAIModelProvider: SubscriptionOnboarding
     private let modelsService: AIChatModelsProviding
     private var preferences: AIChatPreferencesPersisting
     private let subscriptionManager: any SubscriptionManager
+    private let pixelFiring: PixelFiring?
 
     private var models: [AIChatModel] = []
 
     init(modelsService: AIChatModelsProviding? = nil,
          preferences: AIChatPreferencesPersisting = AIChatPreferencesPersistor(),
-         subscriptionManager: any SubscriptionManager = AppDependencyProvider.shared.subscriptionManager) {
+         subscriptionManager: any SubscriptionManager = AppDependencyProvider.shared.subscriptionManager,
+         pixelFiring: PixelFiring? = PixelKit.shared) {
         self.modelsService = modelsService ?? AIChatModelsService()
         self.preferences = preferences
         self.subscriptionManager = subscriptionManager
+        self.pixelFiring = pixelFiring
     }
 
     func fetchModels() async -> [AIChatModel] {
@@ -56,7 +59,7 @@ final class DefaultSubscriptionOnboardingAIModelProvider: SubscriptionOnboarding
             models = UTIModelStore.resolveModels(from: response.models, userTier: userTier)
         } catch {
             Logger.subscription.error("Duck.ai onboarding model fetch failed: \(error.localizedDescription, privacy: .public)")
-            PixelKit.fire(SubscriptionPixel.subscriptionOnboardingAIModelsFailure(error), frequency: .dailyAndCount)
+            pixelFiring?.fire(SubscriptionPixel.subscriptionOnboardingAIModelsFailure(error), frequency: .dailyAndCount)
             models = []
         }
         return models

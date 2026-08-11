@@ -33,9 +33,12 @@ protocol SubscriptionOnboardingSubscriptionProviding {
 @MainActor
 final class DefaultSubscriptionOnboardingSubscriptionProvider: SubscriptionOnboardingSubscriptionProviding {
     private let subscriptionManager: any SubscriptionManager
+    private let pixelFiring: PixelFiring?
 
-    init(subscriptionManager: any SubscriptionManager = AppDependencyProvider.shared.subscriptionManager) {
+    init(subscriptionManager: any SubscriptionManager = AppDependencyProvider.shared.subscriptionManager,
+         pixelFiring: PixelFiring? = PixelKit.shared) {
         self.subscriptionManager = subscriptionManager
+        self.pixelFiring = pixelFiring
     }
 
     /// Errors are swallowed; screen degrades to paid variant.
@@ -44,7 +47,7 @@ final class DefaultSubscriptionOnboardingSubscriptionProvider: SubscriptionOnboa
             return try await subscriptionManager.getSubscription()
         } catch {
             Logger.subscription.error("Order confirmation subscription fetch failed: \(error.localizedDescription, privacy: .public)")
-            PixelKit.fire(SubscriptionPixel.subscriptionOnboardingSubscriptionFailure(error), frequency: .dailyAndCount)
+            pixelFiring?.fire(SubscriptionPixel.subscriptionOnboardingSubscriptionFailure(error), frequency: .dailyAndCount)
             return nil
         }
     }

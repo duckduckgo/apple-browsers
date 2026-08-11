@@ -48,13 +48,16 @@ final class SubscriptionOnboardingPrefetcher: ObservableObject {
 
     private let connectionInfoService: SubscriptionOnboardingConnectionInfoService
     private let modelProvider: SubscriptionOnboardingAIModelProviding
+    private let pixelFiring: PixelFiring?
 
     private var connectionInfoTask: Task<Void, Never>?
     private var modelsTask: Task<Void, Never>?
 
     init(connectionInfoService: SubscriptionOnboardingConnectionInfoService = DefaultSubscriptionOnboardingConnectionInfoService(),
-         modelProvider: SubscriptionOnboardingAIModelProviding? = nil) {
+         modelProvider: SubscriptionOnboardingAIModelProviding? = nil,
+         pixelFiring: PixelFiring? = PixelKit.shared) {
         self.connectionInfoService = connectionInfoService
+        self.pixelFiring = pixelFiring
         self.modelProvider = modelProvider ?? DefaultSubscriptionOnboardingAIModelProvider()
     }
 
@@ -101,7 +104,7 @@ final class SubscriptionOnboardingPrefetcher: ObservableObject {
                     return
                 }
                 Logger.subscription.error("Onboarding connection info fetch failed: \(error.localizedDescription, privacy: .public)")
-                PixelKit.fire(SubscriptionPixel.subscriptionOnboardingConnectionInfoFailure(error), frequency: .dailyAndCount)
+                self?.pixelFiring?.fire(SubscriptionPixel.subscriptionOnboardingConnectionInfoFailure(error), frequency: .dailyAndCount)
                 self?.connectionInfo = .failed
             }
         }

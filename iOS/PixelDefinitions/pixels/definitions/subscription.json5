@@ -912,12 +912,20 @@
     },
 
     // Subscription Onboarding Flow
-    "subscription_onboarding_step_shown": {
-        "keyPattern": "^subscription_onboarding_step_shown_(intro|features_summary|vpn|vpn_widget|idtr|duck_ai|pir|completion)$",
-        "description": "Fired when an onboarding step is shown. One pixel per step, named by the step.",
+    "subscription_onboarding_step_shown_": {
+        "description": "Fired when an onboarding step is shown. The step name is the pixel's suffix.",
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
-        "suffixes": ["platform", "form_factor"],
+        "suffixes": [
+            {
+                "key": "step",
+                "type": "string",
+                "description": "The onboarding step that was shown",
+                "enum": ["intro", "features_summary", "vpn", "vpn_widget", "idtr", "duck_ai", "pir", "completion"]
+            },
+            "platform",
+            "form_factor"
+        ],
         "parameters": [
             "appVersion",
             "pixelSource",
@@ -929,12 +937,20 @@
             }
         ]
     },
-    "subscription_onboarding_step_completed": {
-        "keyPattern": "^subscription_onboarding_step_completed_(vpn|vpn_widget|idtr|duck_ai|pir)$",
+    "subscription_onboarding_step_completed_": {
         "description": "Fired when an onboarding step is completed — the protection it offers was activated. Only activation steps can complete.",
         "owners": ["hanyutang-sandra"],
         "triggers": ["user_submitted"],
-        "suffixes": ["platform", "form_factor"],
+        "suffixes": [
+            {
+                "key": "step",
+                "type": "string",
+                "description": "The onboarding step that was completed",
+                "enum": ["vpn", "vpn_widget", "idtr", "duck_ai", "pir"]
+            },
+            "platform",
+            "form_factor"
+        ],
         "parameters": [
             "appVersion",
             "pixelSource",
@@ -946,12 +962,20 @@
             }
         ]
     },
-    "subscription_onboarding_step_skipped": {
-        "keyPattern": "^subscription_onboarding_step_skipped_(vpn|duck_ai)$",
+    "subscription_onboarding_step_skipped_": {
         "description": "Fired when the customer leaves an onboarding step via its skip CTA. Only the VPN and Duck.ai steps have one.",
         "owners": ["hanyutang-sandra"],
         "triggers": ["user_submitted"],
-        "suffixes": ["platform", "form_factor"],
+        "suffixes": [
+            {
+                "key": "step",
+                "type": "string",
+                "description": "The onboarding step that was skipped",
+                "enum": ["vpn", "duck_ai"]
+            },
+            "platform",
+            "form_factor"
+        ],
         "parameters": [
             "appVersion",
             "pixelSource",

@@ -2152,35 +2152,6 @@ class MainViewController: UIViewController {
         )
     }
 
-    /// Records a New Tab Page action, but only while the New Tab Page is the surface on screen.
-    ///
-    /// A visit stays open until something ends it, and not every way out of the New Tab Page has a
-    /// terminal. Without this guard such a visit would keep collecting interactions belonging to
-    /// whatever replaced it.
-    func recordNewTabPageSessionAction(_ record: (NewTabPageSessionInstrumentation) -> Void) {
-        guard isNewTabPageVisible else { return }
-        record(newTabPageSessionInstrumentation)
-    }
-
-    /// Records text entry from either the omnibar or the unified input.
-    ///
-    /// Empty text is ignored: the same change signals also carry a cleared field and the
-    /// text hand-over between the search and Duck.ai inputs, neither of which is the user
-    /// putting a query in.
-    func recordNewTabPageSessionTextEntry(_ text: String) {
-        guard !text.isEmpty else { return }
-        recordNewTabPageSessionAction { $0.typeInInput() }
-    }
-
-    /// Ends the visit on a navigation the user asked for, splitting search results from a site.
-    ///
-    /// Called with the resolved URL rather than the typed text, because whether a query becomes a
-    /// search or a direct address is only decided while building it. Unlike the action hooks this
-    /// has no visibility guard: it must still land when the New Tab Page has already gone.
-    private func endNewTabPageSessionWithLoad(of url: URL) {
-        newTabPageSessionInstrumentation.visitEnded(terminalAction: url.isDuckDuckGoSearch ? .loadSerp : .loadWebsite)
-    }
-
     func fireNewTabPixels() {
         Pixel.fire(.homeScreenShown, withAdditionalParameters: [:])
         productSurfaceTelemetry.newTabPageUsed()
@@ -4677,6 +4648,7 @@ extension MainViewController: BrowserChromeDelegate {
             ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: tab.openedAfterIdle)
         }
         postIdleSessionInstrumentation.sessionEnded(reason: .barUsed)
+        endNewTabPageSessionWithSuggestion(suggestion)
         newTabPageViewController?.chromeDelegate = nil
         dismissOmniBar()
         viewCoordinator.omniBar.cancel()

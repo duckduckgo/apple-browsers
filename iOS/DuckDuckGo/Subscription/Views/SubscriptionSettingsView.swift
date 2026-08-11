@@ -670,18 +670,16 @@ extension SubscriptionSettingsViewV2 {
     /// The "Continue Setup" re-entry card. Shown while any premium protection is still inactive.
     ///
     /// Reaching 100% keeps the card for the rest of the session; it goes on the next launch.
-    ///
-    /// TODO|htang: Step 3 adds the rest of the rule — a feature flag and the 14-day window from first display.
     var onboardingSetupSection: some View {
         Section {
-            SubscriptionOnboardingSetupCard(visual: .image(Image(.subscription56)),
-                                            progress: onboardingProgress,
-                                            session: settingsViewModel.subscriptionOnboardingSession,
-                                            isPresentingFlow: isShowingOnboarding,
-                                            onContinue: { startOnboarding() })
+            if isOnboardingEnabled {
+                SubscriptionOnboardingSetupCard(visual: .image(Image(.subscription56)),
+                                                progress: onboardingProgress,
+                                                session: settingsViewModel.subscriptionOnboardingSession,
+                                                isPresentingFlow: isShowingOnboarding,
+                                                onContinue: { startOnboarding() })
+            }
         }
-        // The card brings its own surface and padding, so it takes none from the list: no row background
-        // behind it and no row insets around it.
         .listRowBackground(Color.clear)
         .listRowInsets(EdgeInsets())
     }
@@ -699,6 +697,11 @@ extension SubscriptionSettingsViewV2 {
         SubscriptionOnboardingProgress(
             persistor: SubscriptionOnboardingProgressPersistor(keyValueStore: settingsViewModel.keyValueStore),
             isPIRAvailable: isPIRAvailable)
+    }
+
+    /// Checked here rather than inside the card so the flag also covers `startOnboarding()`
+    private var isOnboardingEnabled: Bool {
+        settingsViewModel.featureFlagger.isFeatureOn(.subscriptionOnboarding)
     }
 
     /// PIR is gated three ways, and a customer who fails any of them is shown a four-item checklist rather

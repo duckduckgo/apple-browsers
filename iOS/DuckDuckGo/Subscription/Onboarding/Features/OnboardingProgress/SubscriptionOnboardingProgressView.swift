@@ -40,6 +40,7 @@ struct SubscriptionOnboardingProgressView: View {
     private let title: String?
     private let navigationButton: SubscriptionOnboardingNavigationButton?
     private let onSelectItem: ((SubscriptionOnboardingChecklistItem) -> Void)?
+    private let onPIRPresentationChanged: ((Bool) -> Void)?
     private let onNext: () -> Void
 
     @ObservedObject private var pirLaunch: SubscriptionOnboardingPIRLaunchState
@@ -56,9 +57,11 @@ struct SubscriptionOnboardingProgressView: View {
          title: String? = nil,
          navigationButton: SubscriptionOnboardingNavigationButton? = nil,
          onSelectItem: ((SubscriptionOnboardingChecklistItem) -> Void)? = nil,
+         onPIRPresentationChanged: ((Bool) -> Void)? = nil,
          onNext: @escaping () -> Void) {
         self.variant = variant
         self.progress = progress
+        self.onPIRPresentationChanged = onPIRPresentationChanged
         _pirLaunch = ObservedObject(wrappedValue: pirLaunch ?? SubscriptionOnboardingPIRLaunchState())
         _completedItems = State(initialValue: progress.completedItems)
         _percentage = State(initialValue: progress.percentage)
@@ -87,8 +90,10 @@ struct SubscriptionOnboardingProgressView: View {
         }
         .onAppear(perform: refresh)
         .onChange(of: pirLaunch.isPresentingPIR) { isPresenting in
-            guard !isPresenting else { return }
-            refresh()
+            if !isPresenting {
+                refresh()
+            }
+            onPIRPresentationChanged?(isPresenting)
         }
     }
 

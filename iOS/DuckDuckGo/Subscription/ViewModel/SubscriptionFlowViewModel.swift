@@ -121,12 +121,27 @@ final class SubscriptionFlowViewModel: ObservableObject {
             isPIRAvailable: isPIRAvailable)
     }
 
+    /// A pure rule so it can be tested
+    static func shouldRequestOnboarding(flowType: SubscriptionFlowType,
+                                        isAtWelcomePage: Bool,
+                                        hasOnboardingStore: Bool,
+                                        isFeatureEnabled: Bool,
+                                        didAlreadyRequest: Bool) -> Bool {
+        !didAlreadyRequest
+            && flowType == .firstPurchase
+            && isAtWelcomePage
+            && hasOnboardingStore
+            && isFeatureEnabled
+    }
+
     /// The customer reaches the welcome page by acknowledging the web-rendered purchase confirmation
     private func requestOnboardingIfNeeded() {
-        guard !didRequestOnboarding,
-              flowType == .firstPurchase,
-              isCurrentURL(matching: .welcome),
-              onboardingKeyValueStore != nil else { return }
+        guard Self.shouldRequestOnboarding(
+            flowType: flowType,
+            isAtWelcomePage: isCurrentURL(matching: .welcome),
+            hasOnboardingStore: onboardingKeyValueStore != nil,
+            isFeatureEnabled: featureFlagger.isFeatureOn(.subscriptionOnboarding),
+            didAlreadyRequest: didRequestOnboarding) else { return }
         didRequestOnboarding = true
         state.shouldPresentOnboarding = true
     }

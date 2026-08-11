@@ -19,6 +19,7 @@
 
 import XCTest
 @testable import DuckDuckGo
+import SwiftUI
 
 @MainActor
 final class SubscriptionOnboardingFlowViewModelTests: XCTestCase {
@@ -292,6 +293,7 @@ final class SubscriptionOnboardingFlowViewModelTests: XCTestCase {
                                                   progress: progress,
                                                   onFinish: onFinish,
                                                   onRequestDuckAIChat: onRequestDuckAIChat,
+                                                  instrumentation: NullSubscriptionOnboardingInstrumentation(),
                                                   pirScreen: { EmptyView() })
     }
 }

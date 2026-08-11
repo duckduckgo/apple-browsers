@@ -132,7 +132,6 @@ final class SubscriptionDebugViewController: UITableViewController {
     }
 
     enum OnboardingRows: Int, CaseIterable {
-        case setupCard
         case resetProgress
         case expireSetupCard
         case fullFlowAfterSubscription
@@ -170,7 +169,6 @@ final class SubscriptionDebugViewController: UITableViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        refreshSetupCard()
         loadExpirationReminderStatus()
     }
 
@@ -181,14 +179,6 @@ final class SubscriptionDebugViewController: UITableViewController {
 
     var serviceEnvironment: SubscriptionEnvironment.ServiceEnvironment {
         return subscriptionManager.currentEnvironment.serviceEnvironment
-    }
-
-    override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        guard Sections(rawValue: indexPath.section) == .onboarding,
-              OnboardingRows(rawValue: indexPath.row) == .setupCard else {
-            return tableView.rowHeight
-        }
-        return UITableView.automaticDimension
     }
 
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -347,8 +337,6 @@ final class SubscriptionDebugViewController: UITableViewController {
 
         case .onboarding:
             switch OnboardingRows(rawValue: indexPath.row) {
-            case .setupCard:
-                return setupCardCell
             case .resetProgress:
                 cell.textLabel?.text = "Reset Onboarding Progress"
                 cell.accessoryType = .none
@@ -465,7 +453,6 @@ final class SubscriptionDebugViewController: UITableViewController {
             }
         case .onboarding:
             switch OnboardingRows(rawValue: indexPath.row) {
-            case .setupCard: break
             case .resetProgress: resetOnboardingProgress()
             case .expireSetupCard: expireSetupCardWindow()
             case .fullFlowAfterSubscription: showOnboardingFlow(entryPoint: .postCheckout)
@@ -1025,46 +1012,11 @@ final class SubscriptionDebugViewController: UITableViewController {
         present(UIHostingController(rootView: root), animated: true)
     }
 
-    private lazy var setupCardCell: UITableViewCell = {
-        let cell = UITableViewCell()
-        cell.selectionStyle = .none
-        cell.backgroundColor = .clear
-
-        addChild(setupCardHostingController)
-        let hosted = setupCardHostingController.view!
-        hosted.backgroundColor = .clear
-        hosted.translatesAutoresizingMaskIntoConstraints = false
-        cell.contentView.addSubview(hosted)
-        NSLayoutConstraint.activate([
-            hosted.leadingAnchor.constraint(equalTo: cell.contentView.leadingAnchor),
-            hosted.trailingAnchor.constraint(equalTo: cell.contentView.trailingAnchor),
-            hosted.topAnchor.constraint(equalTo: cell.contentView.topAnchor),
-            hosted.bottomAnchor.constraint(equalTo: cell.contentView.bottomAnchor)
-        ])
-        setupCardHostingController.didMove(toParent: self)
-        return cell
-    }()
-
-    private lazy var setupCardHostingController = UIHostingController(rootView: makeSetupCardView())
-
-    private func makeSetupCardView() -> SubscriptionOnboardingSetupCardDebugView {
-        SubscriptionOnboardingSetupCardDebugView(
-            keyValueStore: subscriptionUserDefaults,
-            onContinue: { [weak self] in
-                self?.showOnboardingFlow(entryPoint: .subscriptionSettings)
-            })
-    }
-
-    private func refreshSetupCard() {
-        setupCardHostingController.rootView = makeSetupCardView()
-    }
-
     private func resetOnboardingProgress() {
         var store = SubscriptionOnboardingProgressPersistor(keyValueStore: subscriptionUserDefaults)
         store.completedItems = []
         store.cardFirstShownDate = nil
         store.fullyCompletedAt = nil
-        refreshSetupCard()
         showAlert(title: "Onboarding progress reset")
     }
 
@@ -1073,7 +1025,6 @@ final class SubscriptionDebugViewController: UITableViewController {
     private func expireSetupCardWindow() {
         var store = SubscriptionOnboardingProgressPersistor(keyValueStore: subscriptionUserDefaults)
         store.cardFirstShownDate = Date().addingTimeInterval(-15 * 24 * 60 * 60)
-        refreshSetupCard()
         showAlert(title: "Setup card aged past 14 days")
     }
 
@@ -1085,24 +1036,6 @@ final class SubscriptionDebugViewController: UITableViewController {
         present(hostingController, animated: true)
     }
 
-}
-
-/// The real card, rendered inline in the debug table's Onboarding section.
-private struct SubscriptionOnboardingSetupCardDebugView: View {
-    let keyValueStore: ThrowingKeyValueStoring
-    let onContinue: () -> Void
-
-    var body: some View {
-        // PIR is unavailable throughout the debug menu, so the card measures over the four-item checklist.
-        SubscriptionOnboardingSetupCard(
-            visual: .image(Image(.subscription56)),
-            progress: SubscriptionOnboardingProgress(
-                persistor: SubscriptionOnboardingProgressPersistor(keyValueStore: keyValueStore),
-                isPIRAvailable: false),
-            session: AppDependencyProvider.shared.subscriptionOnboardingSession,
-            onContinue: onContinue)
-            .padding(.vertical, 8)
-    }
 }
 
 extension Bool {

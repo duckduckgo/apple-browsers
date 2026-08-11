@@ -19,6 +19,7 @@
 
 import Foundation
 import AIChat
+import PixelKit
 import os.log
 
 /// Prefetches what the flow's sections need, once at flow start, so screens read the result rather than
@@ -100,6 +101,7 @@ final class SubscriptionOnboardingPrefetcher: ObservableObject {
                     return
                 }
                 Logger.subscription.error("Onboarding connection info fetch failed: \(error.localizedDescription, privacy: .public)")
+                PixelKit.fire(SubscriptionPixel.subscriptionOnboardingConnectionInfoFailure(error), frequency: .dailyAndCount)
                 self?.connectionInfo = .failed
             }
         }

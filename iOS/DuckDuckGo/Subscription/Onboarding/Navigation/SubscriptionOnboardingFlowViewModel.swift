@@ -61,6 +61,15 @@ final class SubscriptionOnboardingFlowViewModel: ObservableObject {
     /// unless `isPIRAvailable`
     let pirScreen: () -> AnyView
 
+    /// Both edges of the PIR sheet, reported from the summary's own observation of `pirLaunch`
+    func reportPIRPresentation(_ isPresenting: Bool) {
+        if isPresenting {
+            instrumentation.stepShown(.pir)
+        } else if progress.completedItems.contains(.pir) {
+            instrumentation.stepCompleted(.pir)
+        }
+    }
+
     // MARK: - Progress
 
     /// The flow writes completion into this and reads it twice — for the step indicator and, once at launch,
@@ -71,6 +80,9 @@ final class SubscriptionOnboardingFlowViewModel: ObservableObject {
 
     /// Screens read cached results from this rather than fetching for themselves.
     let prefetcher: SubscriptionOnboardingPrefetcher
+
+    /// Per run, so its once-only reporting resets for the next run rather than the next launch.
+    let instrumentation: SubscriptionOnboardingInstrumenting
 
     private let onFinish: () -> Void
     private let onRequestDuckAIChat: (String?) -> Void
@@ -84,10 +96,12 @@ final class SubscriptionOnboardingFlowViewModel: ObservableObject {
                           onFinish: @escaping () -> Void = {},
                           prefetcher: SubscriptionOnboardingPrefetcher? = nil,
                           onRequestDuckAIChat: ((String?) -> Void)? = nil,
+                          instrumentation: SubscriptionOnboardingInstrumenting? = nil,
                           @ViewBuilder pirScreen: @escaping () -> PIRScreen) {
         self.progress = progress
         self.onFinish = onFinish
         self.prefetcher = prefetcher ?? SubscriptionOnboardingPrefetcher()
+        self.instrumentation = instrumentation ?? SubscriptionOnboardingInstrumentation(entryPoint: entryPoint)
         self.pirScreen = { AnyView(pirScreen()) }
         if let onRequestDuckAIChat {
             self.onRequestDuckAIChat = onRequestDuckAIChat
@@ -102,6 +116,7 @@ final class SubscriptionOnboardingFlowViewModel: ObservableObject {
 
     /// Kicked off when the flow appears.
     func startPrefetching() {
+        instrumentation.flowStarted()
         prefetcher.prefetch(Self.prefetchTargets(for: sequence))
     }
 
@@ -199,12 +214,30 @@ final class SubscriptionOnboardingFlowViewModel: ObservableObject {
 extension SubscriptionOnboardingFlowViewModel: SubscriptionOnboardingSectionDelegate {
 
     func sectionDidComplete(_ section: SubscriptionOnboardingSection) {
+        instrumentation.stepCompleted(section)
         guard case .activation(let item) = section.kind else { return }
         progress.markComplete(item)
     }
 
     func sectionDidRequestAdvance() {
+        reportSkipIfNeeded()
         proceed()
+    }
+
+    /// The two sections with a skip CTA.
+    private func reportSkipIfNeeded() {
+        switch currentSection {
+        case .vpnActivation:
+            // An incomplete VPN means the customer skipped.
+            if !progress.completedItems.contains(.vpn) {
+                instrumentation.stepSkipped(.vpnActivation)
+            }
+        case .duckAI:
+            // Advancing means user skipped the step
+            instrumentation.stepSkipped(.duckAI)
+        default:
+            break
+        }
     }
 
     func sectionDidRequestDuckAIChat(modelID: String?) {

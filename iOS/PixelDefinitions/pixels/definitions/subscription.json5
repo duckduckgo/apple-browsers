@@ -909,5 +909,118 @@
                 "enum": ["web_restore", "vpn"]
             }
         ]
+    },
+
+    // Subscription Onboarding Flow
+    "subscription_onboarding_step_shown": {
+        "keyPattern": "^subscription_onboarding_step_shown_(intro|features_summary|vpn|vpn_widget|idtr|duck_ai|pir|completion)$",
+        "description": "Fired when an onboarding step is shown. One pixel per step, named by the step.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "entry_point",
+                "type": "string",
+                "description": "Which entry point launched this onboarding run",
+                "enum": ["post_checkout", "subscription_settings"]
+            }
+        ]
+    },
+    "subscription_onboarding_step_completed": {
+        "keyPattern": "^subscription_onboarding_step_completed_(vpn|vpn_widget|idtr|duck_ai|pir)$",
+        "description": "Fired when an onboarding step is completed — the protection it offers was activated. Only activation steps can complete.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "entry_point",
+                "type": "string",
+                "description": "Which entry point launched this onboarding run",
+                "enum": ["post_checkout", "subscription_settings"]
+            }
+        ]
+    },
+    "subscription_onboarding_step_skipped": {
+        "keyPattern": "^subscription_onboarding_step_skipped_(vpn|duck_ai)$",
+        "description": "Fired when the customer leaves an onboarding step via its skip CTA. Only the VPN and Duck.ai steps have one.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "entry_point",
+                "type": "string",
+                "description": "Which entry point launched this onboarding run",
+                "enum": ["post_checkout", "subscription_settings"]
+            }
+        ]
+    },
+    "subscription_onboarding_flow_started": {
+        "description": "Fired when the flow starts. The funnel's denominator, and the measurement of how many customers enter with Duck.ai disabled.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "entry_point",
+                "type": "string",
+                "description": "Which entry point launched this onboarding run",
+                "enum": [
+                    "post_checkout",
+                    "subscription_settings"
+                ]
+            },
+            {
+                "key": "duck_ai_enabled",
+                "type": "boolean",
+                "description": "Whether Duck.ai was enabled in the app when the customer entered the flow"
+            }
+        ]
+    },
+    "subscription_onboarding_connection-info_failure": {
+        "description": "Fired when the public IP and geolocation fetch behind the VPN activation screen fails during onboarding.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "errorDomain",
+            "errorCode"
+        ]
+    },
+    "subscription_onboarding_ai-models_failure": {
+        "description": "Fired when the Duck.ai model list fetch fails during onboarding.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "errorDomain",
+            "errorCode"
+        ]
+    },
+    "subscription_onboarding_subscription_failure": {
+        "description": "Fired when the subscription fetch behind the order confirmation screen fails during onboarding.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "errorDomain",
+            "errorCode"
+        ]
     }
 }

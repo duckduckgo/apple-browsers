@@ -21,6 +21,7 @@ import Foundation
 import Combine
 import AIChat
 import Subscription
+import PixelKit
 import os.log
 
 /// A seam over the `/models` fetch and the persisted selection, so both can be mocked in tests.
@@ -54,8 +55,8 @@ final class DefaultSubscriptionOnboardingAIModelProvider: SubscriptionOnboarding
             let response = try await modelsService.fetchModels()
             models = UTIModelStore.resolveModels(from: response.models, userTier: userTier)
         } catch {
-            // TODO|htang: report this with a pixel in Step 3.
             Logger.subscription.error("Duck.ai onboarding model fetch failed: \(error.localizedDescription, privacy: .public)")
+            PixelKit.fire(SubscriptionPixel.subscriptionOnboardingAIModelsFailure(error), frequency: .dailyAndCount)
             models = []
         }
         return models

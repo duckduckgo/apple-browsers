@@ -19,6 +19,7 @@
 
 import Foundation
 import Subscription
+import PixelKit
 import os.log
 
 /// A seam over the subscription fetch, so the trial mapping can be exercised without the network.
@@ -42,8 +43,8 @@ final class DefaultSubscriptionOnboardingSubscriptionProvider: SubscriptionOnboa
         do {
             return try await subscriptionManager.getSubscription()
         } catch {
-            // TODO|htang: report this with a pixel in Step 3.
             Logger.subscription.error("Order confirmation subscription fetch failed: \(error.localizedDescription, privacy: .public)")
+            PixelKit.fire(SubscriptionPixel.subscriptionOnboardingSubscriptionFailure(error), frequency: .dailyAndCount)
             return nil
         }
     }

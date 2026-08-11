@@ -21,11 +21,11 @@ import Combine
 
 @MainActor
 final class PreviewManagementViewModel: ManagementViewModel {
-    let isDataSyncingAvailable = true
-    let isConnectingDevicesAvailable = true
-    let isAccountCreationAvailable = true
+    let isDataSyncingAvailable: Bool
+    let isConnectingDevicesAvailable: Bool
+    let isAccountCreationAvailable: Bool
     let isAccountRecoveryAvailable = true
-    let isAppVersionNotSupported = false
+    let isAppVersionNotSupported: Bool
     let isAIChatSyncEnabled = true
     let isAppRebranded = true
     let isSimplifiedSyncSetupV2Enabled: Bool
@@ -73,6 +73,10 @@ final class PreviewManagementViewModel: ManagementViewModel {
         syncPausedMessage: String? = nil,
         syncPausedButtonTitle: String? = nil,
         isSimplifiedSyncSetupV2Enabled: Bool = false,
+        isDataSyncingAvailable: Bool = true,
+        isConnectingDevicesAvailable: Bool = true,
+        isAccountCreationAvailable: Bool = true,
+        isAppVersionNotSupported: Bool = false,
         devices: [SyncDevice] = []
     ) {
         self.isSyncEnabled = isSyncEnabled
@@ -81,6 +85,10 @@ final class PreviewManagementViewModel: ManagementViewModel {
         self.syncPausedMessage = syncPausedMessage
         self.syncPausedButtonTitle = syncPausedButtonTitle
         self.isSimplifiedSyncSetupV2Enabled = isSimplifiedSyncSetupV2Enabled
+        self.isDataSyncingAvailable = isDataSyncingAvailable
+        self.isConnectingDevicesAvailable = isConnectingDevicesAvailable
+        self.isAccountCreationAvailable = isAccountCreationAvailable
+        self.isAppVersionNotSupported = isAppVersionNotSupported
         self.devices = devices
     }
 

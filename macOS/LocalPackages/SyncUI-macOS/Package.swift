@@ -16,6 +16,7 @@ let package = Package(
         .package(path: "../PreferencesUI-macOS"),
         .package(path: "../SwiftUIExtensions"),
         .package(path: "../../../SharedPackages/Infrastructure/DesignResourcesKit"),
+        .package(path: "../../../SharedPackages/Infrastructure/DesignResourcesKitIcons"),
         .package(path: "../../../SharedPackages/SnapshotTestingSupport"),
     ],
     targets: [
@@ -25,6 +26,7 @@ let package = Package(
                 .product(name: "PreferencesUI-macOS", package: "PreferencesUI-macOS"),
                 .product(name: "SwiftUIExtensions", package: "SwiftUIExtensions"),
                 .product(name: "DesignResourcesKit", package: "DesignResourcesKit"),
+                .product(name: "DesignResourcesKitIcons", package: "DesignResourcesKitIcons"),
                 .product(name: "PreviewSnapshots", package: "SnapshotTestingSupport"),
             ],
             resources: [

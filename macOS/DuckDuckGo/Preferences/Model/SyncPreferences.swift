@@ -246,6 +246,8 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
         self.syncPausedStateManager = syncPausedStateManager
         self.featureFlagger = featureFlagger
         self.isAppRebranded = DesignSystemRebrand.isAppRebranded()
+        self.isAIChatSyncEnabled = featureFlagger.isFeatureOn(.aiChatSync)
+        self.isSimplifiedSyncSetupV2Enabled = featureFlagger.isFeatureOn(.simplifiedSyncSetupV2)
 
         self.isFaviconsFetchingEnabled = syncBookmarksAdapter.isFaviconsFetchingEnabled
         self.isUnifiedFavoritesEnabled = appearancePreferences.favoritesDisplayMode.isDisplayUnified

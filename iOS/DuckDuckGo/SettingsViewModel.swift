@@ -1443,7 +1443,7 @@ extension SettingsViewModel {
     }
 
     func onFirstAppear() {
-        recordPIRActivationIfNeeded()
+        recordOnboardingActivationsIfNeeded()
         Task {
             await initState()
             triggerDeepLinkNavigation(to: self.deepLinkTarget)
@@ -1451,17 +1451,28 @@ extension SettingsViewModel {
     }
 
     func onSubsequentAppear() {
-        recordPIRActivationIfNeeded()
+        recordOnboardingActivationsIfNeeded()
         refreshNextStepsVisibility(animated: false)
         Task {
             await setupSubscriptionEnvironment()
         }
     }
 
+    private func recordOnboardingActivationsIfNeeded() {
+        recordPIRActivationIfNeeded()
+        recordVPNActivationIfNeeded()
+    }
+
     /// Backfill only: profiles saved from now on record themselves via `BrokerProfileJobEventsHandler.onProfileSaved`.
     private func recordPIRActivationIfNeeded() {
         guard isPIRActivated else { return }
         SubscriptionOnboardingActivationRecorder(keyValueStore: keyValueStore).recordPIRActivated()
+    }
+
+    /// Marks the VPN step complete when the VPN is already on as the customer arrives here.
+    private func recordVPNActivationIfNeeded() {
+        guard state.networkProtectionConnected else { return }
+        SubscriptionOnboardingActivationRecorder(keyValueStore: keyValueStore).recordVPNActivated()
     }
 
     @MainActor

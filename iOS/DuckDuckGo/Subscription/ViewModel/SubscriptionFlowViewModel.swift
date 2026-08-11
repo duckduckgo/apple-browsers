@@ -26,6 +26,7 @@ import PrivacyConfig
 import DataBrokerProtection_iOS
 import PixelKit
 import FeatureFlags_iOS
+import Persistence
 
 enum SubscriptionFlowType {
     case firstPurchase
@@ -88,6 +89,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
         var selectedFeature: SelectedFeature = .none
         var viewTitle: String = UserText.subscriptionTitle
         var shouldGoBackToSettings: Bool = false
+        var shouldPresentOnboarding: Bool = false
     }
     
     // Read only View State - Should only be modified from the VM
@@ -95,6 +97,38 @@ final class SubscriptionFlowViewModel: ObservableObject {
 
     var isPIREnabled: Bool {
         featureFlagger.isFeatureOn(.personalInformationRemoval)
+    }
+
+    // MARK: - Post-checkout onboarding
+
+    /// `nil` unless this flow came from `makeSubscribeFlowV2`
+    private let onboardingKeyValueStore: ThrowingKeyValueStoring?
+
+    private let meetsPIRLocaleRequirement: () -> Bool
+
+    /// Match `SettingsViewModel.isPIRAvailable`
+    private var isPIRAvailable: Bool {
+        isPIREnabled && meetsPIRLocaleRequirement() && dataBrokerProtectionViewControllerProvider != nil
+    }
+
+    /// The welcome page is re-enterable by back navigation or reload, so the flow is offered once per purchase.
+    private var didRequestOnboarding = false
+
+    var onboardingProgress: SubscriptionOnboardingProgress? {
+        guard let onboardingKeyValueStore else { return nil }
+        return SubscriptionOnboardingProgress(
+            persistor: SubscriptionOnboardingProgressPersistor(keyValueStore: onboardingKeyValueStore),
+            isPIRAvailable: isPIRAvailable)
+    }
+
+    /// The customer reaches the welcome page by acknowledging the web-rendered purchase confirmation
+    private func requestOnboardingIfNeeded() {
+        guard !didRequestOnboarding,
+              flowType == .firstPurchase,
+              isCurrentURL(matching: .welcome),
+              onboardingKeyValueStore != nil else { return }
+        didRequestOnboarding = true
+        state.shouldPresentOnboarding = true
     }
 
     /// Returns the subscription URL type based on the current flow type
@@ -120,7 +154,9 @@ final class SubscriptionFlowViewModel: ObservableObject {
          urlOpener: URLOpener = UIApplication.shared,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          wideEvent: WideEventManaging = AppDependencyProvider.shared.wideEvent,
-         dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?) {
+         dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
+         onboardingKeyValueStore: ThrowingKeyValueStoring? = nil,
+         meetsPIRLocaleRequirement: @escaping () -> Bool = { false }) {
         self.initialURL = initialURL
         self.flowType = flowType
         self.userScript = userScript
@@ -131,6 +167,8 @@ final class SubscriptionFlowViewModel: ObservableObject {
         self.featureFlagger = featureFlagger
         self.wideEvent = wideEvent
         self.dataBrokerProtectionViewControllerProvider = dataBrokerProtectionViewControllerProvider
+        self.onboardingKeyValueStore = onboardingKeyValueStore
+        self.meetsPIRLocaleRequirement = meetsPIRLocaleRequirement
         let allowedDomains = AsyncHeadlessWebViewSettings.makeAllowedDomains(baseURL: subscriptionManager.url(for: .baseURL),
                                                                              isInternalUser: isInternalUser)
 
@@ -292,6 +330,8 @@ final class SubscriptionFlowViewModel: ObservableObject {
                 } else {
                     strongSelf.state.viewTitle = strongSelf.flowType.navigationTitle
                 }
+
+                strongSelf.requestOnboardingIfNeeded()
             }
     }
 

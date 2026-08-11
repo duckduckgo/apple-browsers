@@ -1188,18 +1188,30 @@ extension MainViewController {
         loadQuery(query)
     }
 
-    /// Fires when the user reaches Duck.ai by typing its address into the UTI, regardless of the
-    /// Duck.ai setting; `duckai_enabled=false` isolates residual demand among users who turned it
-    /// off. Mirrors `loadQuery`'s URL resolution so detection matches what actually gets navigated.
-    /// Skipped when `TabURLInterceptor` will cancel the navigation and report from there instead,
-    /// which would otherwise count one submission twice.
+    /// Reports a typed duck.ai address submitted through the UTI. This is the only place a typed
+    /// address can be told apart from an in-page link or deep link to Duck.ai, and it runs whether
+    /// or not `TabURLInterceptor` goes on to cancel the navigation. Mirrors `loadQuery`'s URL
+    /// resolution so detection matches what actually gets navigated.
     private func fireDirectDuckAINavigationPixelIfNeeded(for query: String) {
-        guard !duckAINavigationIsIntercepted else { return }
         guard let url = URL.makeSearchURL(query: query,
                                           useUnifiedLogic: isUnifiedURLPredictionEnabled,
                                           queryContext: currentTab?.url),
               url.isDuckAIURL else { return }
-        fireDirectDuckAINavigationPixel()
+
+        DailyPixel.fireDailyAndCount(pixel: .aiChatDuckAIDirectNavigation, withAdditionalParameters: [
+            "duckai_enabled": String(aiChatSettings.isAIChatEnabled),
+            "toggle_enabled": String(aiChatSettings.isAIChatSearchInputUserSettingsEnabled)
+        ])
+
+        // Superseded by the pixel above, kept firing on its original condition so its series stays
+        // comparable. Disabling Duck.ai also forces the toggle off, so this check is sufficient.
+        if !aiChatSettings.isAIChatEnabled {
+            DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputDuckAIDirectNavigation)
+        }
+
+        // Skipped when `TabURLInterceptor` cancels the navigation and reports the entry from there,
+        // which would otherwise attribute one submission twice.
+        guard !duckAINavigationIsIntercepted else { return }
         // `loadQuery` loads duck.ai in-tab without going through `openAIChat`, so this is the
         // only place the `direct_url` entry can be reported when the interceptor does not run.
         let decision = AIBoundaryNavigationDecision.forProgrammaticNavigation(
@@ -1211,13 +1223,6 @@ extension MainViewController {
         fireAIChatEntryPointPixel(source: .directURL,
                                   opensNewTab: decision == .openInNewTab,
                                   hasPrompt: false)
-    }
-
-    func fireDirectDuckAINavigationPixel() {
-        DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputDuckAIDirectNavigation, withAdditionalParameters: [
-            "duckai_enabled": String(aiChatSettings.isAIChatEnabled),
-            "toggle_enabled": String(aiChatSettings.isAIChatSearchInputUserSettingsEnabled)
-        ])
     }
 
 }

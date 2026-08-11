@@ -33,5 +33,24 @@
                 "type": "boolean"
             }
         ]
+    },
+    "m_aichat_duck_ai_direct_navigation": {
+        "description": "Fires when the user reaches Duck.ai by typing its address into the address bar and submitting, for all users rather than only those who turned Duck.ai off. duckai_enabled=false isolates residual demand among users who disabled it, which is the population the superseded m_aichat_unified_input_duck_ai_direct_navigation reports on; that pixel keeps firing unchanged so its series stays comparable. Does not fire for the in-input Duck.ai shortcut button or other Duck.ai entry points, and not for in-page links or deep links to Duck.ai — only a typed address counts.",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "duckai_enabled",
+                "description": "Whether Duck.ai is enabled under AI Features settings: true or false",
+                "type": "boolean"
+            },
+            {
+                "key": "toggle_enabled",
+                "description": "Whether the Search/Duck.ai toggle user setting is enabled: true or false",
+                "type": "boolean"
+            }
+        ]
     }
 }

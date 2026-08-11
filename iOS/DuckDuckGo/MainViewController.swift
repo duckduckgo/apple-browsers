@@ -3684,10 +3684,9 @@ class MainViewController: UIViewController {
                     query = queryItems.first(where: { $0.name == AIChatURLParameters.promptQueryName })?.value
                     shouldAutoSend = queryItems.first(where: { $0.name == AIChatURLParameters.autoSubmitPromptQueryName })?.value == AIChatURLParameters.autoSubmitPromptQueryValue
                 }
-                
-                // The interceptor is the enabled-side path for typed duck.ai URLs; the UTI path
-                // only covers disabled users, so this fire completes the direct-navigation series.
-                self?.fireDirectDuckAINavigationPixel()
+
+                // The direct-navigation pixels are not fired here: the interceptor sees every
+                // duck.ai navigation, so it cannot tell a typed address from an in-page link.
                 if let query = query {
                     self?.openAIChat(source: .directURL, query, autoSend: shouldAutoSend, payload: payload)
                 } else {

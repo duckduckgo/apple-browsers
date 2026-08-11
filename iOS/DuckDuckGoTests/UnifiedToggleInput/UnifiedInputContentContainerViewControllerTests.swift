@@ -403,8 +403,10 @@ final class NewTabPagePromoHostWiringTests: XCTestCase {
         )
         let fixture = PromoHostFixture()
         let favoritesInstallationFinished = expectation(description: "Animated favorites installation completed")
+        var installedFavoritesController: NewTabPageViewController?
         let sut = fixture.makeSuggestionTrayController { controller in
-            if controller is NewTabPageViewController {
+            if let controller = controller as? NewTabPageViewController {
+                installedFavoritesController = controller
                 favoritesInstallationFinished.fulfill()
             }
         }
@@ -422,8 +424,18 @@ final class NewTabPagePromoHostWiringTests: XCTestCase {
 
         await fulfillment(of: [favoritesInstallationFinished], timeout: 1)
 
+        let autocompleteController = try XCTUnwrap(
+            sut.children.compactMap { $0 as? AutocompleteViewController }.first
+        )
+        let favoritesController = try XCTUnwrap(installedFavoritesController)
+        let contentContainer = try XCTUnwrap(autocompleteController.view.superview)
+
         XCTAssertTrue(sut.isShowingAutocompleteSuggestions)
         XCTAssertTrue(sut.isShowingFavorites)
+        XCTAssertTrue(favoritesController.view.superview === contentContainer)
+        XCTAssertTrue(contentContainer.subviews.last === autocompleteController.view)
+        XCTAssertFalse(autocompleteController.view.isHidden)
+        XCTAssertEqual(autocompleteController.view.alpha, 1, accuracy: 0.001)
         XCTAssertFalse(fixture.promoCoordinator.retryTarget?.isActiveForPromoRetry == true)
         XCTAssertNil(fixture.promoCoordinator.arbiter.snapshot.activeOwner)
     }

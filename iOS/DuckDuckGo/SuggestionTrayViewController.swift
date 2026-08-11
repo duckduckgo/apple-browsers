@@ -562,7 +562,13 @@ class SuggestionTrayViewController: UIViewController {
             if autocompleteController == nil {
                 installAutocompleteSuggestions(animated: animated)
             }
-            autocompleteController?.updateQuery(query)
+            if let autocompleteController {
+                autocompleteController.updateQuery(query)
+                // Favorites are cached below autocomplete on iPhone. If an animated favorites
+                // installation is superseded, its view was added later and would otherwise remain
+                // above the current autocomplete controller after the stale completion is ignored.
+                containerView.bringSubviewToFront(autocompleteController.view)
+            }
         }
     }
 

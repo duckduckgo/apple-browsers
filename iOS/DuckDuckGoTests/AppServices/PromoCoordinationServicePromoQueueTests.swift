@@ -604,6 +604,65 @@ final class PromoCoordinationServicePromoQueueTests {
     }
 
     @available(iOS 16, *)
+    @Test("Current Readiness During Temporary Inactivity Resumes RMF Admission On Return", .timeLimit(.minutes(1)))
+    func whenCurrentReadinessArrivesDuringTemporaryInactivityThenReturnPerformsHandoff() {
+        launchSourceManagerMock.source = .standard
+        presenterMock.presentedViewController = nil
+        makeSUT(readyForInteractions: false)
+        let identity = makeIdentity(promoID: "temporarily-inactive-waiter")
+        let waiter = MockNewTabPagePromoRetryTarget()
+        waiter.identityToAdmitOnRetry = identity
+        let registration = sut.registerRemoteMessageRetry(for: identity.surfaceID, target: waiter)
+        let readinessToken = sut.captureForegroundReadinessToken()
+
+        sut.applicationDidBecomeActive()
+        sut.applicationWillResignActive()
+        sut.presentModalPromptIfNeeded(from: presenterMock, readinessToken: readinessToken)
+
+        #expect(waiter.retryCount == 0)
+        #expect(managerMock.reconcilePresentedModalCallCount == 0)
+        #expect(!managerMock.didCallPresentModalPromptIfNeeded)
+        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == nil)
+        guard case .deferred = sut.admitRemoteMessage(identity) else {
+            Issue.record("Expected direct admission to remain closed while inactive")
+            return
+        }
+
+        sut.applicationDidBecomeActive()
+
+        #expect(waiter.retryCount == 1)
+        #expect(waiter.retainedAdmission != nil)
+        #expect(managerMock.reconcilePresentedModalCallCount == 2)
+        #expect(!managerMock.didCallPresentModalPromptIfNeeded)
+        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .visible(identity))
+        _ = registration
+    }
+
+    @available(iOS 16, *)
+    @Test("Current Readiness During Temporary Inactivity Defers Modal Pass Until Return", .timeLimit(.minutes(1)))
+    func whenCurrentReadinessArrivesDuringTemporaryInactivityThenModalWaitsUntilActive() {
+        launchSourceManagerMock.source = .standard
+        presenterMock.presentedViewController = nil
+        makeSUT(readyForInteractions: false)
+        let readinessToken = sut.captureForegroundReadinessToken()
+
+        sut.applicationDidBecomeActive()
+        sut.applicationWillResignActive()
+        sut.presentModalPromptIfNeeded(from: presenterMock, readinessToken: readinessToken)
+
+        #expect(managerMock.reconcilePresentedModalCallCount == 0)
+        #expect(!managerMock.didCallPresentModalPromptIfNeeded)
+        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == nil)
+
+        sut.applicationDidBecomeActive()
+
+        #expect(managerMock.reconcilePresentedModalCallCount == 1)
+        #expect(managerMock.didCallPresentModalPromptIfNeeded)
+        #expect(managerMock.capturedPresenter === presenterMock)
+        #expect(managerMock.capturedModalLease != nil)
+    }
+
+    @available(iOS 16, *)
     @Test("Temporary Inactivity Defers Admission And Successful Release Handoff Until Active", .timeLimit(.minutes(1)))
     func whenOwnerReleasesDuringTemporaryInactivityThenReturnPerformsHandoff() {
         makeSUT()
@@ -685,6 +744,10 @@ final class PromoCoordinationServicePromoQueueTests {
 
         sut.applicationDidEnterBackground()
         let currentReadinessToken = sut.captureForegroundReadinessToken()
+        sut.presentModalPromptIfNeeded(
+            from: presenterMock,
+            readinessToken: staleReadinessToken
+        )
         sut.applicationDidBecomeActive()
         sut.presentModalPromptIfNeeded(
             from: presenterMock,

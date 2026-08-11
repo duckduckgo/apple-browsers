@@ -143,7 +143,13 @@ public struct AIChatRemoteModel: Decodable, Equatable {
         self.supportedReasoningEffort = try container.decodeIfPresent([String].self, forKey: .supportedReasoningEffort)?
             .compactMap(AIChatReasoningEffort.init(rawValue:)) ?? []
         self.accessTier = try container.decode([String].self, forKey: .accessTier)
-        self.label = try container.decodeIfPresent(AIChatModelLabel.self, forKey: .label)
+
+        do {
+            self.label = try container.decodeIfPresent(AIChatModelLabel.self, forKey: .label)
+        } catch {
+            Logger.aiChat.error("Failed to decode AI Chat model label: \(error.localizedDescription)")
+            self.label = nil
+        }
 
         do {
             let rawEntries = try container.decodeIfPresent([RawReasoningEffortAccess].self, forKey: .reasoningEffortAccess)

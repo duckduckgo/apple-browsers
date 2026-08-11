@@ -23,20 +23,10 @@ import WebKit
 
 public protocol WebTelemetryUserScriptDelegate: AnyObject {
     @MainActor
-    func webTelemetryUserScript(_ webTelemetryUserScript: WebTelemetryUserScript,
-                                didDetectVideoPlayback payload: WebTelemetryUserScript.VideoPlaybackPayload,
-                                in webView: WKWebView?)
+    func webTelemetryUserScript(_ webTelemetryUserScript: WebTelemetryUserScript, didDetectVideoPlaybackIn webView: WKWebView?)
 }
 
 public final class WebTelemetryUserScript: NSObject, Subfeature {
-
-    public struct VideoPlaybackPayload: Codable, Equatable {
-        public let userInteraction: Bool
-
-        public init(userInteraction: Bool) {
-            self.userInteraction = userInteraction
-        }
-    }
 
     public let messageOriginPolicy: MessageOriginPolicy = .all
 
@@ -69,9 +59,9 @@ public final class WebTelemetryUserScript: NSObject, Subfeature {
 
     @MainActor
     private func videoPlayback(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        guard let payload: VideoPlaybackPayload = DecodableHelper.decode(from: params) else {
-            return nil
-        }
+        delegate?.webTelemetryUserScript(self, didDetectVideoPlaybackIn: original.webView)
+        return nil
+    }
 
         delegate?.webTelemetryUserScript(self, didDetectVideoPlayback: payload, in: original.webView)
         return nil

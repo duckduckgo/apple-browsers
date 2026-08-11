@@ -2440,6 +2440,8 @@
 		8400DC4C2C6E26AE006509D2 /* BookmarksBarCollectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8400DC4A2C6E26AE006509D2 /* BookmarksBarCollectionView.swift */; };
 		8400DC4E2C6E2770006509D2 /* SteppedScrollView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8400DC4D2C6E2770006509D2 /* SteppedScrollView.swift */; };
 		8400DC4F2C6E2770006509D2 /* SteppedScrollView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8400DC4D2C6E2770006509D2 /* SteppedScrollView.swift */; };
+		7B1F0A112F0100000000FA01 /* FireWindowClosingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B1F0A102F0100000000FA01 /* FireWindowClosingTests.swift */; };
+		7B1F0A122F0100000000FA01 /* FireWindowClosingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B1F0A102F0100000000FA01 /* FireWindowClosingTests.swift */; };
 		8402A7BD2E9F8C5B00ACA20C /* FireCoordinatorIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8402A7BA2E9F7CA000ACA20C /* FireCoordinatorIntegrationTests.swift */; };
 		8402A7BE2E9F8C5B00ACA20C /* FireCoordinatorIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8402A7BA2E9F7CA000ACA20C /* FireCoordinatorIntegrationTests.swift */; };
 		8409BD782ED878C400E39FA7 /* popup-delayed.html in Resources */ = {isa = PBXBuildFile; fileRef = 8409BD752ED878C400E39FA7 /* popup-delayed.html */; };
@@ -6024,6 +6026,7 @@
 		7FD43DAF77B35315FBE6255D /* UpdateNotificationPresenterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateNotificationPresenterTests.swift; sourceTree = "<group>"; };
 		8400DC4A2C6E26AE006509D2 /* BookmarksBarCollectionView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BookmarksBarCollectionView.swift; sourceTree = "<group>"; };
 		8400DC4D2C6E2770006509D2 /* SteppedScrollView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SteppedScrollView.swift; sourceTree = "<group>"; };
+		7B1F0A102F0100000000FA01 /* FireWindowClosingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireWindowClosingTests.swift; sourceTree = "<group>"; };
 		8402A7BA2E9F7CA000ACA20C /* FireCoordinatorIntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireCoordinatorIntegrationTests.swift; sourceTree = "<group>"; };
 		8409BD752ED878C400E39FA7 /* popup-delayed.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = "popup-delayed.html"; sourceTree = "<group>"; };
 		8409BD762ED878C400E39FA7 /* popup-links.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = "popup-links.html"; sourceTree = "<group>"; };
@@ -10201,6 +10204,7 @@
 			isa = PBXGroup;
 			children = (
 				8402A7BA2E9F7CA000ACA20C /* FireCoordinatorIntegrationTests.swift */,
+				7B1F0A102F0100000000FA01 /* FireWindowClosingTests.swift */,
 				84E4A4952E79BDDC00D6A1E7 /* FireMock.swift */,
 				845F57312E98021F00C7F78A /* FireproofDomainsStoreMock.swift */,
 				AA9C362F25518CA9004B1BA3 /* FireTests.swift */,
@@ -17327,6 +17331,7 @@
 				84537A092C99C203008723BC /* DeallocationTests.swift in Sources */,
 				84524C072D79E6BB00F723D6 /* FireTests.swift in Sources */,
 				8402A7BE2E9F8C5B00ACA20C /* FireCoordinatorIntegrationTests.swift in Sources */,
+				7B1F0A122F0100000000FA01 /* FireWindowClosingTests.swift in Sources */,
 				1E33A5522EBB632E000E828B /* AutoconsentStatsMock.swift in Sources */,
 				84524C112D79E9AA00F723D6 /* RecentlyClosedCoordinatorMock.swift in Sources */,
 				8434E6B12DB01483008FFA3D /* BookmarksBarVisibilityManagerTests.swift in Sources */,
@@ -17395,6 +17400,7 @@
 				84537A082C99C203008723BC /* DeallocationTests.swift in Sources */,
 				84524C062D79E6BB00F723D6 /* FireTests.swift in Sources */,
 				8402A7BD2E9F8C5B00ACA20C /* FireCoordinatorIntegrationTests.swift in Sources */,
+				7B1F0A112F0100000000FA01 /* FireWindowClosingTests.swift in Sources */,
 				1E33A5512EBB632E000E828B /* AutoconsentStatsMock.swift in Sources */,
 				84524C102D79E9AA00F723D6 /* RecentlyClosedCoordinatorMock.swift in Sources */,
 				8434E6B02DB01483008FFA3D /* BookmarksBarVisibilityManagerTests.swift in Sources */,

@@ -231,11 +231,15 @@ final class FirePopoverViewController: NSViewController {
 #endif
         let windowControllersManager = Application.appDelegate.windowControllersManager
         guard let tabCollectionViewModel = tabCollectionViewModel,
-              let windowController = windowControllersManager.windowController(for: tabCollectionViewModel) else {
+              let windowController = windowControllersManager.windowController(for: tabCollectionViewModel),
+              let window = windowController.window else {
             assertionFailure("No TabCollectionViewModel or MainWindowController")
             return
         }
-        windowController.window?.close()
+        // Going through the window controller rather than closing the window directly: `NSWindow.close()`
+        // skips `windowShouldClose(_:)`, which is what plays the fire animation and warns about downloads.
+        // The popover is torn down by `FireViewController.closeAllChildWindows()` as the animation starts.
+        windowController.burnAndClose(window)
     }
 }
 

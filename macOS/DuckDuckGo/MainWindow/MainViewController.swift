@@ -1405,7 +1405,15 @@ extension MainViewController: BrowserTabViewControllerDelegate {
         }()
 
         if noPinnedTabs || (isSharedPinnedTabsMode && areOtherWindowsWithPinnedTabsAvailable) {
-            window.close()
+            // A Fire Window disappearing because its last tab was closed still owes the user the fire
+            // animation, and `NSWindow.close()` would skip it. `burnAndClose` closes directly when a
+            // burn is already in progress, which is how Fire closes windows after burning.
+            if tabCollectionViewModel.isBurner,
+               let windowController = window.windowController as? MainWindowController {
+                windowController.burnAndClose(window)
+            } else {
+                window.close()
+            }
             return true
         }
         return false

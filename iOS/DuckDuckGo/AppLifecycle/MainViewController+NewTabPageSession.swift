@@ -54,6 +54,16 @@ extension MainViewController {
         newTabPageSessionInstrumentation.visitEnded(terminalAction: url.isDuckDuckGoSearch ? .loadSerp : .loadWebsite)
     }
 
+    /// Records the user moving the Search / Duck.ai toggle, in whichever direction.
+    func recordNewTabPageSessionToggleSwitch(to mode: TextEntryMode) {
+        recordNewTabPageSessionAction { instrumentation in
+            switch mode {
+            case .search: instrumentation.switchToggleToSearch()
+            case .aiChat: instrumentation.switchToggleToAiChat()
+            }
+        }
+    }
+
     /// Ends the visit on the customizable toolbar button doing something other than burning.
     ///
     /// Where it leads is deliberately not distinguished: the button is one slot the user has

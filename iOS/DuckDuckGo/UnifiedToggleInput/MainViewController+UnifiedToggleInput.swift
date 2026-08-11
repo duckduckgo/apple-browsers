@@ -527,6 +527,7 @@ private extension MainViewController {
             ntpAfterIdleInstrumentation.toggleUsedFromNTP(afterIdle: tab.openedAfterIdle)
         }
         postIdleSessionInstrumentation.toggleUsed()
+        recordNewTabPageSessionToggleSwitch(to: mode)
 
         if coordinator.isOmnibarSession {
             handleOmnibarModeChange(mode, coordinator: coordinator)

@@ -4056,6 +4056,10 @@ class MainViewController: UIViewController {
                     files: [AIChatNativePrompt.NativePromptFile]? = nil,
                     fromDeepLink: Bool = false) {
 
+        // A query means the user asked something and a response is what they are waiting for;
+        // without one they are only opening the chat surface.
+        newTabPageSessionInstrumentation.visitEnded(terminalAction: query == nil ? .loadDuckai : .loadDuckaiResponse)
+
         if aichatFullModeFeature.isAvailable || DevicePlatform.isIpad {
             openAIChatInTab(
                 query,
@@ -4725,6 +4729,7 @@ extension MainViewController: OmniBarDelegate {
 
     func onChatHistorySelected(url: URL) {
         postIdleSessionInstrumentation.sessionEnded(reason: .chatSelected)
+        newTabPageSessionInstrumentation.visitEnded(terminalAction: .loadPreviousChat)
         // Route through boundary helper so NTP transforms in-place; web→chat spawns a new tab; chat→chat stays. Matches `onPromptSubmitted`.
         loadUrlRespectingAIBoundary(url)
     }
@@ -5394,6 +5399,7 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onAIChatPressed(prefilledText: String?) {
+        recordNewTabPageSessionAction { $0.tapDuckaiButton() }
         ViewHighlighter.hideAll()
         hideSuggestionTray()
 
@@ -5692,6 +5698,8 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onTextEntryModeDidChange(_ mode: TextEntryMode) {
+        // Only this callback carries the direction; `onToggleModeSwitched` does not.
+        recordNewTabPageSessionToggleSwitch(to: mode)
         onToggleModeSwitched()
     }
 

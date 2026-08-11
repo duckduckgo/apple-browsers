@@ -60,6 +60,18 @@ final class PromptCooldownKeyValueFilesStore: PromptCooldownStore {
         }
     }
 
+    /// Reads persisted modal history for the Promo Queue debug projection without reporting failures.
+    ///
+    /// Debug diagnostics must not add a pixel-firing path. Admission continues to use
+    /// `lastPresentationTimestamp`, which preserves the existing production failure reporting.
+    func lastPresentationTimestampForPromoQueueDiagnostics() -> TimeInterval? {
+        do {
+            return try keyValueStore.object(forKey: StorageKey.lastPromptShownTimestamp) as? TimeInterval
+        } catch {
+            return nil
+        }
+    }
+
 }
 
 extension PromptCooldownKeyValueFilesStore {

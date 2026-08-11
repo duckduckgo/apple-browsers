@@ -94,6 +94,54 @@ final class PromoQueueRemoteMessageCooldownKeyValueFilesStore: PromoQueueRemoteM
             }
         }
     }
+
+    /// Returns the timestamp that production admission would currently observe without changing its fallback cache.
+    ///
+    /// In particular, a successful persistence read made only for diagnostics must not become the fallback for a
+    /// later production read failure. Locally confirmed appearances remain authoritative for the current process.
+    func lastConfirmedRemoteMessageTimestampForPromoQueueDiagnostics() -> TimeInterval? {
+        if case .value(let timestamp) = locallyWrittenValue {
+            return timestamp
+        }
+
+        do {
+            return try keyValueStore.object(forKey: StorageKey.lastConfirmedRemoteMessageTimestamp) as? TimeInterval
+        } catch {
+            guard case .value(let timestamp) = lastSuccessfulRead else {
+                return nil
+            }
+            return timestamp
+        }
+    }
+}
+
+@MainActor
+protocol PromoQueueCooldownDebugSnapshotProviding: AnyObject {
+    func snapshot(now: Date) -> PromoQueueCooldownSnapshot
+}
+
+/// Builds the debug cooldown projection through non-reporting, non-mutating reads.
+/// Production admission deliberately continues to use `PromoQueueCooldownPolicy` and its failure semantics.
+@MainActor
+final class PromoQueueCooldownDebugSnapshotProvider: PromoQueueCooldownDebugSnapshotProviding {
+    private let modalPresentationStore: PromptCooldownKeyValueFilesStore
+    private let remoteMessagePresentationStore: PromoQueueRemoteMessageCooldownKeyValueFilesStore
+
+    init(
+        modalPresentationStore: PromptCooldownKeyValueFilesStore,
+        remoteMessagePresentationStore: PromoQueueRemoteMessageCooldownKeyValueFilesStore
+    ) {
+        self.modalPresentationStore = modalPresentationStore
+        self.remoteMessagePresentationStore = remoteMessagePresentationStore
+    }
+
+    func snapshot(now _: Date) -> PromoQueueCooldownSnapshot {
+        PromoQueueCooldownSnapshot.make(
+            lastModalTimestamp: modalPresentationStore.lastPresentationTimestampForPromoQueueDiagnostics(),
+            lastRemoteMessageTimestamp: remoteMessagePresentationStore
+                .lastConfirmedRemoteMessageTimestampForPromoQueueDiagnostics()
+        )
+    }
 }
 
 @MainActor
@@ -135,17 +183,9 @@ final class PromoQueueCooldownPolicy: PromoQueueCooldownPolicying {
     }
 
     func snapshot(now _: Date) -> PromoQueueCooldownSnapshot {
-        let lastModalAppearance = modalPresentationStore.lastPresentationTimestamp.map(Date.init(timeIntervalSince1970:))
-        let lastRemoteMessageAppearance = remoteMessagePresentationStore.lastConfirmedRemoteMessageTimestamp.map(Date.init(timeIntervalSince1970:))
-
-        let remoteMessageBoundaries = [lastModalAppearance, lastRemoteMessageAppearance]
-            .compactMap { $0?.addingTimeInterval(Self.remoteMessageTargetInterval) }
-
-        return PromoQueueCooldownSnapshot(
-            lastConfirmedModalAppearance: lastModalAppearance,
-            lastConfirmedRemoteMessageAppearance: lastRemoteMessageAppearance,
-            nextRemoteMessageEligibility: remoteMessageBoundaries.max(),
-            nextModalEligibility: lastRemoteMessageAppearance?.addingTimeInterval(Self.modalAfterRemoteMessageInterval)
+        PromoQueueCooldownSnapshot.make(
+            lastModalTimestamp: modalPresentationStore.lastPresentationTimestamp,
+            lastRemoteMessageTimestamp: remoteMessagePresentationStore.lastConfirmedRemoteMessageTimestamp
         )
     }
 
@@ -154,5 +194,25 @@ final class PromoQueueCooldownPolicy: PromoQueueCooldownPolicying {
             return .eligible
         }
         return .blocked(until: nextEligibility)
+    }
+}
+
+private extension PromoQueueCooldownSnapshot {
+    @MainActor
+    static func make(
+        lastModalTimestamp: TimeInterval?,
+        lastRemoteMessageTimestamp: TimeInterval?
+    ) -> PromoQueueCooldownSnapshot {
+        let lastModalAppearance = lastModalTimestamp.map(Date.init(timeIntervalSince1970:))
+        let lastRemoteMessageAppearance = lastRemoteMessageTimestamp.map(Date.init(timeIntervalSince1970:))
+        let remoteMessageBoundaries = [lastModalAppearance, lastRemoteMessageAppearance]
+            .compactMap { $0?.addingTimeInterval(PromoQueueCooldownPolicy.remoteMessageTargetInterval) }
+
+        return PromoQueueCooldownSnapshot(
+            lastConfirmedModalAppearance: lastModalAppearance,
+            lastConfirmedRemoteMessageAppearance: lastRemoteMessageAppearance,
+            nextRemoteMessageEligibility: remoteMessageBoundaries.max(),
+            nextModalEligibility: lastRemoteMessageAppearance?.addingTimeInterval(PromoQueueCooldownPolicy.modalAfterRemoteMessageInterval)
+        )
     }
 }

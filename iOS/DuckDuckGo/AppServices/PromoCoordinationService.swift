@@ -177,6 +177,7 @@ final class PromoCoordinationService {
     private let launchSourceManager: LaunchSourceManaging
     private let promoQueueLeaseArbiter: PromoQueueLeaseArbitrating
     private let promoQueueCooldownPolicy: PromoQueueCooldownPolicying
+    private let promoQueueCooldownDebugSnapshotProvider: PromoQueueCooldownDebugSnapshotProviding?
     private let dateProvider: () -> Date
     private var remoteMessageRendererRegistrations = [WeakRemoteMessageRendererRegistration]()
     private var nextRemoteMessageRegistrationOrder: UInt64 = 0
@@ -295,6 +296,10 @@ final class PromoCoordinationService {
             modalPresentationStore: presentationStore,
             remoteMessagePresentationStore: remoteMessagePresentationStore
         )
+        let promoQueueCooldownDebugSnapshotProvider = PromoQueueCooldownDebugSnapshotProvider(
+            modalPresentationStore: presentationStore,
+            remoteMessagePresentationStore: remoteMessagePresentationStore
+        )
 
         let modalPromptCoordinationManager = ModalPromptCoordinationManager(
             providers: providers,
@@ -307,7 +312,8 @@ final class PromoCoordinationService {
             modalPromptCoordinationManager: modalPromptCoordinationManager,
             promoCoordinationMode: promoCoordinationMode,
             promoQueueLeaseArbiter: promoQueueLeaseArbiter,
-            promoQueueCooldownPolicy: promoQueueCooldownPolicy
+            promoQueueCooldownPolicy: promoQueueCooldownPolicy,
+            promoQueueCooldownDebugSnapshotProvider: promoQueueCooldownDebugSnapshotProvider
         )
     }
 
@@ -317,6 +323,7 @@ final class PromoCoordinationService {
         promoCoordinationMode: PromoCoordinationMode,
         promoQueueLeaseArbiter: PromoQueueLeaseArbitrating,
         promoQueueCooldownPolicy: PromoQueueCooldownPolicying,
+        promoQueueCooldownDebugSnapshotProvider: PromoQueueCooldownDebugSnapshotProviding? = nil,
         dateProvider: @escaping () -> Date = Date.init
     ) {
         self.launchSourceManager = launchSourceManager
@@ -324,6 +331,7 @@ final class PromoCoordinationService {
         self.promoCoordinationMode = promoCoordinationMode
         self.promoQueueLeaseArbiter = promoQueueLeaseArbiter
         self.promoQueueCooldownPolicy = promoQueueCooldownPolicy
+        self.promoQueueCooldownDebugSnapshotProvider = promoQueueCooldownDebugSnapshotProvider
         self.dateProvider = dateProvider
 
         modalPromptCoordinationManager.setCoordinatedAttemptReleaseHandler { [weak self] in
@@ -955,7 +963,7 @@ extension PromoCoordinationService: PromoQueueDebugSnapshotProviding {
             // The legacy path must not activate either persisted Promo Queue history read.
             cooldownSnapshot = .empty
         case .coordinated:
-            cooldownSnapshot = promoQueueCooldownPolicy.snapshot(now: dateProvider())
+            cooldownSnapshot = promoQueueCooldownDebugSnapshotProvider?.snapshot(now: dateProvider()) ?? .empty
         }
 
         return PromoQueueDebugSnapshot(

@@ -143,6 +143,20 @@ final class PromptCooldownStoreTests {
         #expect(capturedError != nil)
     }
 
+    @Test("Check Failed Promo Queue Diagnostic Read Does Not Trigger Event")
+    func whenPromoQueueDiagnosticReadFailsThenEventIsNotFired() {
+        var didCallFireEvent = false
+        keyValueStoreMock.throwOnRead = TestError()
+        let sut = PromptCooldownKeyValueFilesStore(keyValueStore: keyValueStoreMock, eventMapper: .init { _, _, _, _ in
+            didCallFireEvent = true
+        })
+
+        let result = sut.lastPresentationTimestampForPromoQueueDiagnostics()
+
+        #expect(result == nil)
+        #expect(!didCallFireEvent)
+    }
+
     @Test("Check Failed Write Triggers Event")
     func whenWriteFailsThenEventIsFired() {
         // GIVEN

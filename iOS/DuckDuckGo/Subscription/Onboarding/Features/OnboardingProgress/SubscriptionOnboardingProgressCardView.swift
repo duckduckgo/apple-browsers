@@ -96,7 +96,7 @@ private extension SubscriptionOnboardingProgressCardView {
         }
     }
 
-    /// Completed rows show the animated check. The host must supply a `graphicLottieRenderer`.
+    /// Completed rows show the animated check.
     func visual(for item: SubscriptionOnboardingChecklistItem) -> Graphic {
         if completedItems.contains(item) {
             return .lottie(name: "check-color")
@@ -107,8 +107,7 @@ private extension SubscriptionOnboardingProgressCardView {
         return .image(Image(uiImage: glyph))
     }
 
-    /// Only an incomplete PIR row is interactive, and only when the caller supplied a handler — otherwise the
-    /// row would show a chevron that does nothing.
+    /// Only an incomplete PIR row is interactive, otherwise the row does nothing.
     func isSelectable(_ item: SubscriptionOnboardingChecklistItem) -> Bool {
         onSelect != nil && item == .pir && !completedItems.contains(item)
     }
@@ -121,8 +120,7 @@ private struct SubscriptionOnboardingProgressBar: View {
         static let trackHeight: CGFloat = 12
     }
 
-    /// The completion percentage, already bounded to `0...100` by how it is derived. The fill clamps anyway,
-    /// because an out-of-range value here is an invalid frame rather than just a wrong label.
+    /// The completion percentage, bounded to `0...100`
     let percentage: Int
 
     var body: some View {
@@ -144,7 +142,7 @@ private struct SubscriptionOnboardingProgressBar: View {
 
 private extension SubscriptionOnboardingProgressBar {
     var fraction: Double {
-        min(max(Double(percentage) / 100, 0), 1)
+        Double(percentage) / 100
     }
 }
 
@@ -173,7 +171,7 @@ private struct SubscriptionOnboardingProgressCardViewPreview: View {
             .padding()
         }
         .background(Color(designSystemColor: .surfaceTertiary).ignoresSafeArea())
-        .graphicLottieRenderer(SubscriptionOnboardingLottieRenderer.shared)
+        .graphicLottieRenderer(.app)
     }
 
     private static let items = SubscriptionOnboardingChecklistItem.allCases

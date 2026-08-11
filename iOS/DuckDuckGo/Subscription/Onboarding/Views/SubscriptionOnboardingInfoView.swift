@@ -22,6 +22,7 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import UIComponents
 
+/// A generic "Learn More" info sheet for a subscription protection: a hero header above a scrollable list of feature cards.
 struct SubscriptionOnboardingInfoView: View {
     let content: SubscriptionOnboardingInfoContent
 

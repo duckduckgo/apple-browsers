@@ -134,6 +134,7 @@ final class SubscriptionDebugViewController: UITableViewController {
     enum OnboardingRows: Int, CaseIterable {
         case setupCard
         case resetProgress
+        case expireSetupCard
         case fullFlowAfterSubscription
     }
 
@@ -164,13 +165,11 @@ final class SubscriptionDebugViewController: UITableViewController {
         super.viewDidLoad()
         loadStoreKitMetadata()
         loadExpirationReminderStatus()
-        // The onboarding setup card sizes itself; every other row keeps the storyboard's fixed height.
         tableView.estimatedRowHeight = tableView.rowHeight
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        // Returning from a flow run: show the progress it left behind.
         refreshSetupCard()
         loadExpirationReminderStatus()
     }
@@ -353,6 +352,9 @@ final class SubscriptionDebugViewController: UITableViewController {
             case .resetProgress:
                 cell.textLabel?.text = "Reset Onboarding Progress"
                 cell.accessoryType = .none
+            case .expireSetupCard:
+                cell.textLabel?.text = "Age Setup Card Past 14 Days"
+                cell.accessoryType = .none
             case .fullFlowAfterSubscription:
                 cell.textLabel?.text = "Full Flow — After Subscription"
                 cell.accessoryType = .disclosureIndicator
@@ -465,6 +467,7 @@ final class SubscriptionDebugViewController: UITableViewController {
             switch OnboardingRows(rawValue: indexPath.row) {
             case .setupCard: break
             case .resetProgress: resetOnboardingProgress()
+            case .expireSetupCard: expireSetupCardWindow()
             case .fullFlowAfterSubscription: showOnboardingFlow(entryPoint: .postCheckout)
             default: break
             }
@@ -955,8 +958,6 @@ final class SubscriptionDebugViewController: UITableViewController {
         present(hostingController, animated: true)
     }
 
-    /// Both progress rows use the flow's own summary variant — completion is derived from `percentage`, so
-    /// the "complete" row exercises the real derivation rather than asserting the end state.
     private func showProgressOnboarding(completedItems: Set<SubscriptionOnboardingChecklistItem>) {
         let hostingController = UIHostingController(
             rootView: SubscriptionOnboardingProgressView(
@@ -965,7 +966,7 @@ final class SubscriptionDebugViewController: UITableViewController {
                 onSelectItem: { _ in },
                 onNext: { [weak self] in self?.dismiss(animated: true) })
                 .subscriptionOnboardingNavigationContainer()
-                .graphicLottieRenderer(SubscriptionOnboardingLottieRenderer.shared))
+                .graphicLottieRenderer(.app))
         present(hostingController, animated: true)
     }
 
@@ -986,13 +987,10 @@ final class SubscriptionDebugViewController: UITableViewController {
                     onNext: { [weak self] in self?.dismiss(animated: true) }),
                 navigationButton: .close({ [weak self] in self?.dismiss(animated: true) }))
                 .subscriptionOnboardingNavigationContainer()
-                .graphicLottieRenderer(SubscriptionOnboardingLottieRenderer.shared))
+                .graphicLottieRenderer(.app))
         present(hostingController, animated: true)
     }
 
-    /// Standalone screen only — the progress values are hand-picked, where the full-flow rows take theirs
-    /// from `SubscriptionOnboardingFlowViewModel`. The Lottie renderer is required because the hand-off
-    /// interstitial embeds the progress card, whose completed rows animate a check.
     private func showDuckAIOnboarding() {
         let hostingController = UIHostingController(
             rootView: SubscriptionOnboardingDuckAIView(
@@ -1006,12 +1004,10 @@ final class SubscriptionDebugViewController: UITableViewController {
                 navigationButton: .close({ [weak self] in self?.dismiss(animated: true) }),
                 progress: SubscriptionOnboardingProgress(completedItems: [.vpn, .widget, .idtr]))
                 .subscriptionOnboardingNavigationContainer()
-                .graphicLottieRenderer(SubscriptionOnboardingLottieRenderer.shared))
+                .graphicLottieRenderer(.app))
         present(hostingController, animated: true)
     }
 
-    /// Launches the real flow. PIR is left unavailable here because its view-controller provider lives on
-    /// `DBPService`, which the debug menu has no handle on — the Settings entry point in C3 supplies it.
     private func showOnboardingFlow(entryPoint: SubscriptionOnboardingEntryPoint) {
         let flow = SubscriptionOnboardingFlowViewModel(
             entryPoint: entryPoint,
@@ -1030,8 +1026,6 @@ final class SubscriptionDebugViewController: UITableViewController {
         present(UIHostingController(rootView: root), animated: true)
     }
 
-    /// Mirrors the Subscription Settings entry point: the real card, over the real stored progress. Kept
-    /// outside the reuse pool — it owns a hosting controller, which must not end up under another row.
     private lazy var setupCardCell: UITableViewCell = {
         let cell = UITableViewCell()
         cell.selectionStyle = .none
@@ -1054,7 +1048,6 @@ final class SubscriptionDebugViewController: UITableViewController {
 
     private lazy var setupCardHostingController = UIHostingController(rootView: makeSetupCardView())
 
-    /// Rebuilt rather than mutated, so replacing the root view remounts the card and it re-reads the store.
     private func makeSetupCardView() -> SubscriptionOnboardingSetupCardDebugView {
         SubscriptionOnboardingSetupCardDebugView(
             keyValueStore: subscriptionUserDefaults,
@@ -1071,8 +1064,18 @@ final class SubscriptionDebugViewController: UITableViewController {
         var store = SubscriptionOnboardingProgressPersistor(keyValueStore: subscriptionUserDefaults)
         store.completedItems = []
         store.cardFirstShownDate = nil
+        store.fullyCompletedAt = nil
         refreshSetupCard()
         showAlert(title: "Onboarding progress reset")
+    }
+
+    /// Backdates the card's first display so its 14-day window has already closed. The session latch is
+    /// process-scoped, so a relaunch is still needed to test the "hidden after completion" rule.
+    private func expireSetupCardWindow() {
+        var store = SubscriptionOnboardingProgressPersistor(keyValueStore: subscriptionUserDefaults)
+        store.cardFirstShownDate = Date().addingTimeInterval(-15 * 24 * 60 * 60)
+        refreshSetupCard()
+        showAlert(title: "Setup card aged past 14 days")
     }
 
     private func showTapAllowHintPlayground() {

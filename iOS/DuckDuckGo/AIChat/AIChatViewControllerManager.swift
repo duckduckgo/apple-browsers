@@ -644,8 +644,7 @@ extension AIChatViewControllerManager: AIChatUserScriptDelegate {
 
             if let tier = metric.modelTier, case .plus = tier {
                 freeTrialConversionService.markDuckAIActivated()
-                // See `AIChatContentHandler`: completes the onboarding checklist's Duck.ai step for a paid chat
-                // the customer started outside the flow.
+                // Also completes the subscription onboarding checklist's Duck.ai step
                 onboardingActivationRecorder.recordDuckAIActivated()
             }
 

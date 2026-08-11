@@ -1,5 +1,5 @@
 //
-//  SubscriptionOnboardingLottieRenderer.swift
+//  GraphicLottieRenderer+App.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -21,8 +21,11 @@ import SwiftUI
 import Lottie
 import UIComponents
 
-enum SubscriptionOnboardingLottieRenderer {
-    static let shared = GraphicLottieRenderer { name, playback in
+extension GraphicLottieRenderer {
+
+    /// Draws `Graphic.lottie(name:)` for the app. `UIComponents` deliberately has no Lottie dependency, so
+    /// the drawing lives here and is injected through the environment with `.graphicLottieRenderer(.app)`.
+    static let app = GraphicLottieRenderer { name, playback in
         AnyView(
             Lottie.LottieView(animation: .named(name))
                 .playbackMode(playback == .playOnce

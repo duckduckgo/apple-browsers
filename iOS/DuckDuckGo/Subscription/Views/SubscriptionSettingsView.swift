@@ -64,16 +64,10 @@ struct SubscriptionSettingsViewV2: View {
     @State private var cancelDowngradeErrorMessageType: SubscriptionTransactionErrorAlert.MessageType = .general
 
     // MARK: - Onboarding state
-    // Stored properties cannot live in an extension, so these stay here; the rest of the onboarding
-    // members are in the `Onboarding` extension at the foot of this file.
 
     @State private var isShowingOnboarding = false
-    /// Built once, when the customer taps the card. Building it in the sheet's content closure instead would
-    /// rebuild the whole flow — new view model, empty navigation path — every time this view's body re-ran,
-    /// which turning on the VPN does.
+    /// Built when the customer taps the card.
     @State private var onboardingFlow: AnyView?
-    /// Changed to remount the setup card so it re-reads the store after a flow run.
-    @State private var setupCardReloadToken = UUID()
 
     var body: some View {
         optionsView
@@ -481,10 +475,7 @@ struct SubscriptionSettingsViewV2: View {
         .navigationTitle(UserText.settingsPProManageSubscription)
         .applyInsetGroupedListStyle()
         .sheet(isPresented: $isShowingOnboarding,
-               onDismiss: {
-                   onboardingFlow = nil
-                   setupCardReloadToken = UUID()
-               }) {
+               onDismiss: { onboardingFlow = nil }) {
             onboardingFlow
         }
         .onChange(of: viewModel.state.shouldDismissView) { value in
@@ -686,10 +677,8 @@ extension SubscriptionSettingsViewV2 {
             SubscriptionOnboardingSetupCard(visual: .image(Image(.subscription56)),
                                             progress: onboardingProgress,
                                             session: settingsViewModel.subscriptionOnboardingSession,
+                                            isPresentingFlow: isShowingOnboarding,
                                             onContinue: { startOnboarding() })
-                // Remounted after a flow run so the card re-reads: a sheet dismissing over this screen does
-                // not make it appear again, so its own `onAppear` would not fire.
-                .id(setupCardReloadToken)
         }
         // The card brings its own surface and padding, so it takes none from the list: no row background
         // behind it and no row insets around it.

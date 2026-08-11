@@ -78,7 +78,6 @@ private extension SubscriptionOnboardingOrderConfirmationView {
         }
     }
 
-    /// Static image sized by width with aspect ratio. Negative paddings cancel page insets.
     func illustration(pageWidth: CGFloat) -> some View {
         Image(.daxThumbupStatic)
             .resizable()

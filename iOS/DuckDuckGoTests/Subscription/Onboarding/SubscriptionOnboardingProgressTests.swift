@@ -168,7 +168,55 @@ final class SubscriptionOnboardingProgressTests: XCTestCase {
         XCTAssertEqual(SubscriptionOnboardingProgressPersistor(keyValueStore: keyValueStore).fullyCompletedAt, first)
     }
 
+    // MARK: - Setup card 14-day window
+
+    func testWhenTheCardWindowIsStillOpenThenTheCardShows() {
+        var progress = makeProgress(isPIRAvailable: true, completed: [.vpn])
+        let firstShown = Date(timeIntervalSince1970: 1_000_000)
+
+        XCTAssertTrue(progress.shouldShowSetupCard(now: firstShown,
+                                                   session: SubscriptionOnboardingSessionState()))
+        XCTAssertTrue(progress.shouldShowSetupCard(now: firstShown.addingTimeInterval(13 * day),
+                                                   session: SubscriptionOnboardingSessionState()))
+    }
+
+    /// Expiry beats incompleteness: 20% complete, but the window has closed.
+    func testWhenFourteenDaysHavePassedSinceFirstDisplayThenTheCardIsHidden() {
+        var progress = makeProgress(isPIRAvailable: true, completed: [.vpn])
+        let firstShown = Date(timeIntervalSince1970: 1_000_000)
+        _ = progress.shouldShowSetupCard(now: firstShown, session: SubscriptionOnboardingSessionState())
+
+        XCTAssertFalse(progress.shouldShowSetupCard(now: firstShown.addingTimeInterval(14 * day),
+                                                    session: SubscriptionOnboardingSessionState()))
+    }
+
+    func testWhenTheCardIsShownAgainThenTheWindowIsNotExtended() {
+        var progress = makeProgress(isPIRAvailable: true, completed: [.vpn])
+        let firstShown = Date(timeIntervalSince1970: 1_000_000)
+        _ = progress.shouldShowSetupCard(now: firstShown, session: SubscriptionOnboardingSessionState())
+        _ = progress.shouldShowSetupCard(now: firstShown.addingTimeInterval(10 * day),
+                                         session: SubscriptionOnboardingSessionState())
+
+        XCTAssertEqual(SubscriptionOnboardingProgressPersistor(keyValueStore: keyValueStore).cardFirstShownDate,
+                       firstShown)
+        XCTAssertFalse(progress.shouldShowSetupCard(now: firstShown.addingTimeInterval(15 * day),
+                                                    session: SubscriptionOnboardingSessionState()))
+    }
+
+    /// The anchor is the first *display*, not the purchase, so a customer who ignores Settings for a month
+    /// still gets a full window when they finally look.
+    func testWhenTheCardIsFirstShownLateThenTheWindowStartsThen() {
+        var progress = makeProgress(isPIRAvailable: true, completed: [.vpn])
+        let late = Date(timeIntervalSince1970: 1_000_000).addingTimeInterval(60 * day)
+
+        XCTAssertTrue(progress.shouldShowSetupCard(now: late, session: SubscriptionOnboardingSessionState()))
+        XCTAssertTrue(progress.shouldShowSetupCard(now: late.addingTimeInterval(13 * day),
+                                                   session: SubscriptionOnboardingSessionState()))
+    }
+
     // MARK: - Progress helpers
+
+    private let day: TimeInterval = 24 * 60 * 60
 
     private func makeProgress(isPIRAvailable: Bool,
                               completed: Set<SubscriptionOnboardingChecklistItem> = []) -> SubscriptionOnboardingProgress {

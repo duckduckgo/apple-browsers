@@ -20,15 +20,19 @@
 import Foundation
 import AIChat
 
+/// Prefetches what the flow's sections need, once at flow start, so screens read the result rather than
+/// refetching on every visit.
 @MainActor
 final class SubscriptionOnboardingPrefetcher: ObservableObject {
 
+    /// The lifecycle of one prefetched value.
     enum FetchState<Value> {
         case idle
         case loading
         case loaded(Value)
         case failed
 
+        /// A fetch should (re)start only when nothing is in flight or already resolved.
         var shouldStartFetch: Bool {
             switch self {
             case .idle, .failed: return true
@@ -66,6 +70,7 @@ final class SubscriptionOnboardingPrefetcher: ObservableObject {
         static let all: Targets = [.connectionInfo, .aiModels]
     }
 
+    /// Kicks off fetches at flow start.
     func prefetch(_ targets: Targets) {
         if targets.contains(.connectionInfo) {
             fetchConnectionInfoIfNeeded()

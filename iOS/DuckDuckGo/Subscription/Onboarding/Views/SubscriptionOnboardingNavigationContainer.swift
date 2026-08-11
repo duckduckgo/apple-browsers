@@ -22,7 +22,6 @@ import UIKit
 
 extension View {
     // (TODO|Post-iOS15-Drop): `NavigationView` + `.navigationViewStyle(.stack)` become a plain `NavigationStack`.
-    // Both helpers here stay — standalone screens and info sheets need them on every iOS version.
     func subscriptionOnboardingNavigationContainer() -> some View {
         NavigationView {
             self.subscriptionOnboardingInteractivePopEnabled()

@@ -23,7 +23,10 @@ import UIComponents
 
 // MARK: - Card Shell
 
+/// The rounded card shell for the onboarding flow. For rows built from `CardItem`s use the convenience
+/// initializers, which divide adjacent rows; pass arbitrary views through the builders for richer layouts.
 struct SubscriptionOnboardingCard<Header: View, Items: View, Footer: View>: View {
+    /// The card's visual style.
     enum Style {
         case bordered
         case borderless

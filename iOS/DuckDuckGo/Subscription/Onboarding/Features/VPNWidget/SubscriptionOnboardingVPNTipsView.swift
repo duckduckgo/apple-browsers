@@ -21,6 +21,8 @@ import SwiftUI
 import DesignResourcesKit
 import UIComponents
 
+/// The post-activation "What to know about using your VPN" screen: the tips carousel with a single
+/// button that finishes the VPN section and moves the flow to the next one.
 struct SubscriptionOnboardingVPNTipsView: View {
 
     var title: String?
@@ -42,6 +44,7 @@ struct SubscriptionOnboardingVPNTipsView: View {
 
 // MARK: - Tips carousel
 
+/// The VPN tips carousel: fixed-width cards with the neighbours peeking at the edges.
 private struct VPNTipsCarousel: View {
     private enum Metrics {
         static let cardWidth: CGFloat = 217

@@ -131,8 +131,7 @@ final class SubscriptionOnboardingDuckAIViewModel: ObservableObject {
         selectedModelID = modelID
     }
 
-    /// Persists the model selection, marks the step complete, then shows the interstitial. Completion is reported
-    /// here (not at hand-off) so the checklist shows Duck.ai finished on the screen launching it.
+    /// Persists the model selection, marks the step complete, then shows the interstitial.
     func startChat() {
         if let selectedModelID {
             prefetcher.updateSelectedModel(selectedModelID)
@@ -141,7 +140,7 @@ final class SubscriptionOnboardingDuckAIViewModel: ObservableObject {
         isShowingInterstitial = true
     }
 
-    /// Requests the chat at most once. Leaves the interstitial up since the launcher dismisses the entire chain.
+    /// Requests the chat
     func handOffToChat() {
         guard !didHandOffToChat else { return }
         didHandOffToChat = true

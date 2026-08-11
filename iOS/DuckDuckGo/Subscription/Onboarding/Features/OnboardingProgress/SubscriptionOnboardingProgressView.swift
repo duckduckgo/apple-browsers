@@ -42,21 +42,24 @@ struct SubscriptionOnboardingProgressView: View {
     private let onSelectItem: ((SubscriptionOnboardingChecklistItem) -> Void)?
     private let onNext: () -> Void
 
-    /// Frozen for the render, so the percentage can never contradict the rows beside it. Re-read on appear
-    /// because PIR completes inside Data Broker Protection and coming back must show what was just earned.
+    @ObservedObject private var pirLaunch: SubscriptionOnboardingPIRLaunchState
+
     @State private var completedItems: Set<SubscriptionOnboardingChecklistItem>
     @State private var percentage: Int
 
     @State private var didTriggerConfetti = false
 
+    @MainActor
     init(variant: Variant = .summary,
          progress: SubscriptionOnboardingProgress,
+         pirLaunch: SubscriptionOnboardingPIRLaunchState? = nil,
          title: String? = nil,
          navigationButton: SubscriptionOnboardingNavigationButton? = nil,
          onSelectItem: ((SubscriptionOnboardingChecklistItem) -> Void)? = nil,
          onNext: @escaping () -> Void) {
         self.variant = variant
         self.progress = progress
+        _pirLaunch = ObservedObject(wrappedValue: pirLaunch ?? SubscriptionOnboardingPIRLaunchState())
         _completedItems = State(initialValue: progress.completedItems)
         _percentage = State(initialValue: progress.percentage)
         self.title = title
@@ -82,13 +85,19 @@ struct SubscriptionOnboardingProgressView: View {
                 ConfettiView()
             }
         }
-        .onAppear {
-            completedItems = progress.completedItems
-            percentage = progress.percentage
-
-            guard shouldCelebrate, !didTriggerConfetti else { return }
-            didTriggerConfetti = true
+        .onAppear(perform: refresh)
+        .onChange(of: pirLaunch.isPresentingPIR) { isPresenting in
+            guard !isPresenting else { return }
+            refresh()
         }
+    }
+
+    private func refresh() {
+        completedItems = progress.completedItems
+        percentage = progress.percentage
+
+        guard shouldCelebrate, !didTriggerConfetti else { return }
+        didTriggerConfetti = true
     }
 }
 
@@ -155,7 +164,7 @@ private struct SubscriptionOnboardingProgressViewPreview: View {
             onSelectItem: { _ in },
             onNext: {})
             .subscriptionOnboardingNavigationContainer()
-            .graphicLottieRenderer(SubscriptionOnboardingLottieRenderer.shared)
+            .graphicLottieRenderer(.app)
     }
 }
 

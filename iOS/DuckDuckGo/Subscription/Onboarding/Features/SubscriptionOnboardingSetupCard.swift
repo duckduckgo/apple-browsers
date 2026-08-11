@@ -23,6 +23,7 @@ import DuckUI
 import UIComponents
 import Persistence
 
+/// The Subscription Settings re-entry card, carrying the current setup `percentage` and a CTA to resume.
 struct SubscriptionOnboardingSetupCard: View {
     private enum Metrics {
         static let iconSpacing: CGFloat = 12
@@ -33,6 +34,9 @@ struct SubscriptionOnboardingSetupCard: View {
     private let visual: Graphic
     private let progress: SubscriptionOnboardingProgress
     private let session: SubscriptionOnboardingSessionStating
+    /// Whether the onboarding flow is on screen over this card. Watched so the card re-reads when the flow
+    /// closes: dismissing a sheet does not re-fire `onAppear` on the view underneath.
+    private let isPresentingFlow: Bool
     private let onContinue: () -> Void
 
     @State private var percentage: Int
@@ -41,10 +45,12 @@ struct SubscriptionOnboardingSetupCard: View {
     init(visual: Graphic,
          progress: SubscriptionOnboardingProgress,
          session: SubscriptionOnboardingSessionStating,
+         isPresentingFlow: Bool = false,
          onContinue: @escaping () -> Void) {
         self.visual = visual
         self.progress = progress
         self.session = session
+        self.isPresentingFlow = isPresentingFlow
         self.onContinue = onContinue
 
         var seed = progress
@@ -59,6 +65,10 @@ struct SubscriptionOnboardingSetupCard: View {
             }
         }
         .onAppear(perform: refresh)
+        .onChange(of: isPresentingFlow) { isPresenting in
+            guard !isPresenting else { return }
+            refresh()
+        }
     }
 
     private var card: some View {

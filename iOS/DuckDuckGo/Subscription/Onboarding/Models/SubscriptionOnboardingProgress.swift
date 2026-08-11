@@ -87,6 +87,9 @@ struct SubscriptionOnboardingProgressPersistor: SubscriptionOnboardingProgressPe
 /// none of them can disagree about a customer's completion.
 struct SubscriptionOnboardingProgress {
 
+    /// How long the Subscription Settings card lives, measured from its first display.
+    private static let cardLifetime: TimeInterval = 14 * 24 * 60 * 60
+
     /// Four items when PIR is unreachable, so that customer's ceiling is still 100%.
     let checklistItems: [SubscriptionOnboardingChecklistItem]
 
@@ -111,15 +114,23 @@ struct SubscriptionOnboardingProgress {
         persistor.markComplete(item)
     }
 
-    /// The card stays up for the rest of the run in which the checklist was finished and goes on the next
-    /// launch, which is what `session` being held in memory rather than stored buys.
+    /// Two rules, both from the PRD:
+    ///
+    /// - On reaching 100% the card stays up for the rest of that run and goes on the next launch
+    /// - It expires 14 days after it first appeared, whether or not the customer finished.
     mutating func shouldShowSetupCard(now: Date, session: SubscriptionOnboardingSessionStating) -> Bool {
-        guard percentage >= 100 else { return true }
-        if persistor.fullyCompletedAt == nil {
-            persistor.fullyCompletedAt = now
-            session.recordCompletedDuringThisSession()
+        if percentage >= 100 {
+            if persistor.fullyCompletedAt == nil {
+                persistor.fullyCompletedAt = now
+                session.recordCompletedDuringThisSession()
+            }
+            guard session.didCompleteDuringThisSession else { return false }
         }
-        return session.didCompleteDuringThisSession
+
+        persistor.recordCardFirstShownIfNeeded(now: now)
+        // A failed write leaves no anchor to measure from; showing the card beats hiding it forever.
+        guard let firstShown = persistor.cardFirstShownDate else { return true }
+        return now.timeIntervalSince(firstShown) < Self.cardLifetime
     }
 }
 

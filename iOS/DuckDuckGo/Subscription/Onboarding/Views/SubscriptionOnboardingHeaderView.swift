@@ -21,6 +21,7 @@ import SwiftUI
 import DesignResourcesKit
 import UIComponents
 
+/// The centered header for an onboarding section screen: an optional graphic above a title and optional explanation.
 struct SubscriptionOnboardingHeaderView: View {
     private enum Metrics {
         static let graphicWidth: CGFloat = 128

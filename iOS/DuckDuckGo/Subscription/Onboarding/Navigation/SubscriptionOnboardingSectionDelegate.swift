@@ -17,8 +17,7 @@
 //  limitations under the License.
 //
 
-/// Receives events from an onboarding section. Implemented by ``SubscriptionOnboardingFlowViewModel``, which
-/// turns a completion into a store write and an advance into a push.
+/// Receives events from an onboarding section.
 protocol SubscriptionOnboardingSectionDelegate: AnyObject {
     func sectionDidComplete(_ section: SubscriptionOnboardingSection)
     func sectionDidRequestDuckAIChat(modelID: String?)

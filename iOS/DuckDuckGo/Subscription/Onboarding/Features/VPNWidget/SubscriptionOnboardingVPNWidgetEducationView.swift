@@ -19,6 +19,7 @@
 
 import SwiftUI
 
+/// The widget education screen, reached from the VPN activation "Next" or the "Skip" shown after a denial.
 struct SubscriptionOnboardingVPNWidgetEducationView: View {
 
     var title: String?

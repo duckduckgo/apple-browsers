@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+/// A section of the post-subscription onboarding flow; a section may span several screens internally.
 enum SubscriptionOnboardingSection: CaseIterable {
     case orderConfirmation
     case welcome

@@ -289,7 +289,6 @@
 		368349DD30268A09009BDEF7 /* SubscriptionOnboardingLauncher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 368349DC30268A09009BDEF7 /* SubscriptionOnboardingLauncher.swift */; };
 		368349DF30268B2E009BDEF7 /* SubscriptionOnboardingFlowViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 368349DE30268B2E009BDEF7 /* SubscriptionOnboardingFlowViewModelTests.swift */; };
 		368349E130268B36009BDEF7 /* SubscriptionOnboardingProgressStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 368349E030268B36009BDEF7 /* SubscriptionOnboardingProgressStoreTests.swift */; };
-		368349E630268D00009BDEF7 /* SubscriptionOnboardingLottieRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 368349E530268D00009BDEF7 /* SubscriptionOnboardingLottieRenderer.swift */; };
 		3685767F3023E30D002F4AFF /* AIChatUserTier+Subscription.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3685767E3023E30D002F4AFF /* AIChatUserTier+Subscription.swift */; };
 		369809BF2E5635E7007FE895 /* AppShortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 369809BE2E5635E1007FE895 /* AppShortcuts.swift */; };
 		369E69282E5F4B9600F98A8F /* InactivityNotificationSchedulerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 369E69272E5F4B8500F98A8F /* InactivityNotificationSchedulerService.swift */; };
@@ -297,6 +296,7 @@
 		369E692D2E5F6EC200F98A8F /* InactivityNotificationSchedulerServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 369E692C2E5F6EB500F98A8F /* InactivityNotificationSchedulerServiceTests.swift */; };
 		36A96A0A2E6606CF003D4529 /* LocalNotificationsPlaygroundView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36A96A092E6606C0003D4529 /* LocalNotificationsPlaygroundView.swift */; };
 		36DD9FD5302B823100D12A6A /* SubscriptionOnboardingDuckAIChatLauncher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36DD9FD4302B823100D12A6A /* SubscriptionOnboardingDuckAIChatLauncher.swift */; };
+		36DD9FD7302B88A600D12A6A /* GraphicLottieRenderer+App.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36DD9FD6302B88A600D12A6A /* GraphicLottieRenderer+App.swift */; };
 		36E8274030264E3700147F78 /* SubscriptionOnboardingIDTRView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36E8273E30264E3700147F78 /* SubscriptionOnboardingIDTRView.swift */; };
 		36E8274330264E4200147F78 /* SubscriptionOnboardingPIRView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36E8274130264E4200147F78 /* SubscriptionOnboardingPIRView.swift */; };
 		36E8274830264E8300147F78 /* SubscriptionOnboardingOrderConfirmationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36E8274630264E8300147F78 /* SubscriptionOnboardingOrderConfirmationView.swift */; };
@@ -3196,7 +3196,6 @@
 		368349DC30268A09009BDEF7 /* SubscriptionOnboardingLauncher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingLauncher.swift; sourceTree = "<group>"; };
 		368349DE30268B2E009BDEF7 /* SubscriptionOnboardingFlowViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingFlowViewModelTests.swift; sourceTree = "<group>"; };
 		368349E030268B36009BDEF7 /* SubscriptionOnboardingProgressStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingProgressStoreTests.swift; sourceTree = "<group>"; };
-		368349E530268D00009BDEF7 /* SubscriptionOnboardingLottieRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingLottieRenderer.swift; sourceTree = "<group>"; };
 		3685767E3023E30D002F4AFF /* AIChatUserTier+Subscription.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AIChatUserTier+Subscription.swift"; sourceTree = "<group>"; };
 		369809BE2E5635E1007FE895 /* AppShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShortcuts.swift; sourceTree = "<group>"; };
 		369E69272E5F4B8500F98A8F /* InactivityNotificationSchedulerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InactivityNotificationSchedulerService.swift; sourceTree = "<group>"; };
@@ -3204,6 +3203,7 @@
 		369E692C2E5F6EB500F98A8F /* InactivityNotificationSchedulerServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InactivityNotificationSchedulerServiceTests.swift; sourceTree = "<group>"; };
 		36A96A092E6606C0003D4529 /* LocalNotificationsPlaygroundView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalNotificationsPlaygroundView.swift; sourceTree = "<group>"; };
 		36DD9FD4302B823100D12A6A /* SubscriptionOnboardingDuckAIChatLauncher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingDuckAIChatLauncher.swift; sourceTree = "<group>"; };
+		36DD9FD6302B88A600D12A6A /* GraphicLottieRenderer+App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "GraphicLottieRenderer+App.swift"; sourceTree = "<group>"; };
 		36E8273E30264E3700147F78 /* SubscriptionOnboardingIDTRView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingIDTRView.swift; sourceTree = "<group>"; };
 		36E8274130264E4200147F78 /* SubscriptionOnboardingPIRView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingPIRView.swift; sourceTree = "<group>"; };
 		36E8274630264E8300147F78 /* SubscriptionOnboardingOrderConfirmationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingOrderConfirmationView.swift; sourceTree = "<group>"; };
@@ -6040,6 +6040,7 @@
 		1E162603296840790004127F /* SwiftUI */ = {
 			isa = PBXGroup;
 			children = (
+				36DD9FD6302B88A600D12A6A /* GraphicLottieRenderer+App.swift */,
 				6FB864C42ED0CE1100E8333F /* ListExtension.swift */,
 				1E24295D293F57FA00584836 /* LottieView.swift */,
 				1E162604296840D80004127F /* Triangle.swift */,
@@ -6962,7 +6963,6 @@
 			isa = PBXGroup;
 			children = (
 				3666D86B30017B1400B63F99 /* RebrandedPreview.swift */,
-				368349E530268D00009BDEF7 /* SubscriptionOnboardingLottieRenderer.swift */,
 			);
 			path = Helpers;
 			sourceTree = "<group>";
@@ -13827,7 +13827,6 @@
 				CB15F6E62FE2DA9E00EDEB50 /* FocusedChromeView.swift in Sources */,
 				AA2000040000000000000004 /* TabSwitcherTrackerCountViewModel.swift in Sources */,
 				803F67E82F48102E0057BD1A /* FireModeCapability.swift in Sources */,
-				368349E630268D00009BDEF7 /* SubscriptionOnboardingLottieRenderer.swift in Sources */,
 				9FF362D82F3DB73F00824B30 /* ContextualOnboardingDialogs+EndOfJourney.swift in Sources */,
 				83BE9BC3215D69C1009844D9 /* AppConfigurationFetch.swift in Sources */,
 				37CF91622BB474AA00BADCAE /* CrashCollectionOnboardingView.swift in Sources */,
@@ -14150,6 +14149,7 @@
 				9FD6E6132DFA6B4900C2B032 /* PictureInPictureEvent.swift in Sources */,
 				31951E8E2823003200CAF535 /* AutofillLoginDetailsHeaderView.swift in Sources */,
 				CB6EF04B2FDC0203000C75BA /* PopoverSuggestionsController.swift in Sources */,
+				36DD9FD7302B88A600D12A6A /* GraphicLottieRenderer+App.swift in Sources */,
 				CBB4A84D2FD3019400A65956 /* SuggestionRowIcon+Glyph.swift in Sources */,
 				F194FAED1F14E2B3009B4DF8 /* UIFontExtension.swift in Sources */,
 				D67969112BC84CE700BA8B34 /* SubscriptionContainerViewModel.swift in Sources */,

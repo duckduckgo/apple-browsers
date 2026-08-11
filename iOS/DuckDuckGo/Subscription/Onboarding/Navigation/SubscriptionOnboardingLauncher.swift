@@ -33,7 +33,7 @@ enum SubscriptionOnboardingLauncher {
         AnyView(
             SubscriptionOnboardingFlowView(flow: flow,
                                            factory: SubscriptionOnboardingViewFactory(flow: flow))
-                .graphicLottieRenderer(SubscriptionOnboardingLottieRenderer.shared))
+                .graphicLottieRenderer(.app))
     }
 }
 

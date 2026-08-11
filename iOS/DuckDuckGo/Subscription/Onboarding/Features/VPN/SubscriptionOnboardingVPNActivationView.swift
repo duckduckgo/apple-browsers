@@ -241,7 +241,7 @@ private func activationPreview(state: SubscriptionOnboardingVPNActivationViewMod
                             didFailToStartVPN: didFailToStart),
         title: String(format: UserText.subscriptionOnboardingStepIndicatorFormat, 1, 4))
     .subscriptionOnboardingNavigationContainer()
-    .graphicLottieRenderer(SubscriptionOnboardingLottieRenderer.shared)
+    .graphicLottieRenderer(.app)
 }
 
 #Preview("Off - Light") {
@@ -325,7 +325,7 @@ private struct VPNRevealPreview: View {
             viewModel: viewModel,
             title: String(format: UserText.subscriptionOnboardingStepIndicatorFormat, 1, 4))
         .subscriptionOnboardingNavigationContainer()
-        .graphicLottieRenderer(SubscriptionOnboardingLottieRenderer.shared)
+        .graphicLottieRenderer(.app)
         .task {
             try? await Task.sleep(nanoseconds: 1_000_000_000)
             await viewModel.turnOnVPN()

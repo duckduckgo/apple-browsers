@@ -380,10 +380,7 @@ extension AIChatContentHandler: AIChatUserScriptDelegate {
 
             if let tier = metric.modelTier, case .plus = tier {
                 freeTrialConversionService.markDuckAIActivated()
-                // Also completes the subscription onboarding checklist's Duck.ai step, for the customer who
-                // starts a paid chat on their own rather than through the onboarding flow. The free-trial
-                // service cannot stand in for this: its flow only exists during a trial and is closed the
-                // moment the customer converts.
+                // Also completes the subscription onboarding checklist's Duck.ai step
                 onboardingActivationRecorder.recordDuckAIActivated()
             }
 

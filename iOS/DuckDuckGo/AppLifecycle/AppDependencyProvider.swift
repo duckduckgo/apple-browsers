@@ -67,7 +67,6 @@ protocol DependencyProvider {
     var subscriptionExpirationReminderScheduler: SubscriptionExpirationReminderScheduling { get }
     var dbpSettings: DataBrokerProtectionSettings { get }
     var syncAutoRestoreDecisionManager: SyncAutoRestoreDecisionManaging { get }
-    /// App-scoped so the Subscription Settings setup card survives to the next launch after completion.
     var subscriptionOnboardingSession: SubscriptionOnboardingSessionStating { get }
 }
 

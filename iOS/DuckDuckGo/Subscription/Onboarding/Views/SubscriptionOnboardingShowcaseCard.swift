@@ -21,6 +21,7 @@ import SwiftUI
 import DesignResourcesKit
 import UIComponents
 
+/// A showcase card presenting a single feature or benefit as an icon above a title and body text.
 private enum ShowcaseCardMetrics {
     static let iconSpacing: CGFloat = 8
     static let titleTextSpacing: CGFloat = 4
@@ -33,6 +34,8 @@ struct SubscriptionOnboardingShowcaseCard<Footer: View>: View {
     private let text: String
     private let footer: Footer
 
+    /// Creates a card whose `footer` renders below the title/body inside the same bordered card (via
+    /// `SubscriptionOnboardingCard`'s footer slot) — e.g. the "Devices" card's platform grid.
     init(icon: Image, title: String, text: String, @ViewBuilder footer: () -> Footer) {
         self.icon = icon
         self.title = title

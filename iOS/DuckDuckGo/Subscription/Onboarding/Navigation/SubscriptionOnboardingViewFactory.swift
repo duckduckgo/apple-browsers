@@ -97,6 +97,7 @@ struct SubscriptionOnboardingViewFactory {
         case .progress:
             return AnyView(SubscriptionOnboardingProgressView(
                 progress: flow.progress,
+                pirLaunch: flow.pirLaunch,
                 navigationButton: navigationButton,
                 onSelectItem: { item in
                     guard item == .pir else { return }

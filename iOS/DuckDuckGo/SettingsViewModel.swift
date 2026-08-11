@@ -202,10 +202,7 @@ final class SettingsViewModel: ObservableObject {
         runPrerequisitesDelegate?.meetsLocaleRequirement ?? false
     }
 
-    /// Whether onboarding's PIR step is done. Two routes reach it, and a customer can arrive by either:
-    /// a subscriber saving a profile in Data Broker Protection, or someone who came through the freemium
-    /// free-scan flow before subscribing. `didActivate` only covers the second.
-    /// Whether this customer can reach PIR at all. Also gates the onboarding checklist's fifth item.
+    /// Whether onboarding's PIR step is done.
     var isPIRAvailable: Bool {
         isPIREnabled && meetsLocaleRequirement && dataBrokerProtectionViewControllerProvider != nil
     }

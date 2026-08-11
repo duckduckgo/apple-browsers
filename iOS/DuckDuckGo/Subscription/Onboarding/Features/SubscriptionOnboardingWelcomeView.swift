@@ -22,6 +22,8 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import UIComponents
 
+/// An overview of the four premium protections (VPN, Identity Theft Restoration, Advanced AI Models, Personal Information Removal).
+/// Tapping a row presents that feature's  info screen (``SubscriptionOnboardingInfoView``) as a sheet; the primary button starts the flow.
 struct SubscriptionOnboardingWelcomeView: View {
     var navigationButton: SubscriptionOnboardingNavigationButton?
     var onNext: () -> Void = {}
@@ -44,6 +46,8 @@ struct SubscriptionOnboardingWelcomeView: View {
 
 // MARK: - Welcome card
 
+/// The feature-list card: one selectable row per premium protection, each with a leading icon, title,
+/// description and a trailing chevron. `onSelect` receives the tapped feature.
 private struct WelcomeCard: View {
     private enum Metrics {
         static let iconTextSpacing: CGFloat = 8

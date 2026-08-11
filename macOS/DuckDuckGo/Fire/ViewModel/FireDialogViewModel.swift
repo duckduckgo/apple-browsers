@@ -164,6 +164,7 @@ final class FireDialogViewModel: ObservableObject {
          tld: TLD,
          windowControllersManager: WindowControllersManagerProtocol,
          dataClearingPreferences: DataClearingPreferences,
+         historyDateFormatter: HistoryViewDateFormatting = DefaultHistoryViewDateFormatter(),
          pixelFiring: PixelFiring?) {
 
         self.fireViewModel = fireViewModel
@@ -175,6 +176,7 @@ final class FireDialogViewModel: ObservableObject {
         self.aiChatHistoryCleaner = aiChatHistoryCleaner
         self.windowControllersManager = windowControllersManager
         self.dataClearingPreferences = dataClearingPreferences
+        self.historyDateFormatter = historyDateFormatter
         self.pixelFiring = pixelFiring
 
         self.tld = tld
@@ -232,6 +234,7 @@ final class FireDialogViewModel: ObservableObject {
     let pixelFiring: PixelFiring?
     let tld: TLD
     let mode: Mode
+    let historyDateFormatter: HistoryViewDateFormatting
     private let scopeVisits: [Visit]?
 
     private(set) var hasOnlySingleFireproofDomain: Bool = false

@@ -68,7 +68,7 @@ protocol AccountManaging {
 
     func logout(deviceId: String, token: String) async throws
 
-    func fetchDevicesForAccount(_ account: SyncAccount) async throws -> [RegisteredDevice]
+    func fetchDevicesForAccount(_ account: SyncAccount) async throws -> RegisteredDeviceMappingResult
     func updateDevice(_ update: UpdateDevices.Update, for account: SyncAccount) async throws -> [RegisteredDevice]
 }
 

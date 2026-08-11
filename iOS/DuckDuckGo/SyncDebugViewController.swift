@@ -59,6 +59,7 @@ class SyncDebugViewController: UITableViewController {
 
         case accountInfoKey
         case migration
+        case refreshDevices
 
     }
 
@@ -86,8 +87,10 @@ class SyncDebugViewController: UITableViewController {
 
     private let bookmarksDatabase: CoreDataDatabase
     private let sync: DDGSyncing
+    private var debugDevices: [RegisteredDeviceDebugInfo] = []
     private var accountInfoKeyStatus = "Not checked"
     private var migrationStatus = "Not checked"
+    private var isRefreshingDevices = false
 
     var syncCancellable: Cancellable?
 
@@ -155,17 +158,32 @@ class SyncDebugViewController: UITableViewController {
             }
 
         case .unifiedDevices:
-            switch UnifiedDeviceRows(rawValue: indexPath.row) {
-            case .accountInfoKey:
-                cell.textLabel?.text = "Account info key"
-                cell.detailTextLabel?.text = accountInfoKeyStatus
+            if let row = UnifiedDeviceRows(rawValue: indexPath.row) {
+                switch row {
+                case .accountInfoKey:
+                    cell.textLabel?.text = "Account info key"
+                    cell.detailTextLabel?.text = accountInfoKeyStatus
+                    cell.accessoryType = .disclosureIndicator
+                case .migration:
+                    cell.textLabel?.text = "Migration"
+                    cell.detailTextLabel?.text = migrationStatus
+                    cell.selectionStyle = .none
+                case .refreshDevices:
+                    cell.textLabel?.text = "Refresh devices"
+                    cell.detailTextLabel?.text = isRefreshingDevices ? "Loading…" : nil
+                    cell.selectionStyle = isRefreshingDevices ? .none : .default
+                }
+            } else {
+                let debugDevice = debugDevices[indexPath.row - UnifiedDeviceRows.allCases.count]
+                let device = debugDevice.device
+                let isCurrentDevice = device.id == sync.account?.deviceId
+                cell.textLabel?.text = isCurrentDevice ? "\(device.name) (this device)" : device.name
+                cell.detailTextLabel?.text = [
+                    device.type,
+                    device.credentialId ?? SyncCredentialID.defaultCredential,
+                    sourceDescription(for: debugDevice)
+                ].joined(separator: " • ")
                 cell.accessoryType = .disclosureIndicator
-            case .migration:
-                cell.textLabel?.text = "Migration"
-                cell.detailTextLabel?.text = migrationStatus
-                cell.selectionStyle = .none
-            case .none:
-                break
             }
 
         case .testActions:
@@ -235,7 +253,7 @@ class SyncDebugViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         switch Sections(rawValue: section) {
         case .info: return InfoRows.allCases.count
-        case .unifiedDevices: return UnifiedDeviceRows.allCases.count
+        case .unifiedDevices: return UnifiedDeviceRows.allCases.count + debugDevices.count
         case .testActions: return TestActionRows.allCases.count
         case .models: return ModelRows.allCases.count
         case .environment: return EnvironmentRows.allCases.count
@@ -276,11 +294,18 @@ class SyncDebugViewController: UITableViewController {
             default: break
             }
         case .unifiedDevices:
-            switch UnifiedDeviceRows(rawValue: indexPath.row) {
-            case .accountInfoKey:
-                validateAccountInfoKey()
-            case .migration, .none:
-                break
+            if let row = UnifiedDeviceRows(rawValue: indexPath.row) {
+                switch row {
+                case .accountInfoKey:
+                    validateAccountInfoKey()
+                case .migration:
+                    break
+                case .refreshDevices:
+                    refreshDevicesForDebug()
+                }
+            } else {
+                let debugDevice = debugDevices[indexPath.row - UnifiedDeviceRows.allCases.count]
+                showDeviceDetails(debugDevice)
             }
         case .testActions:
             switch TestActionRows(rawValue: indexPath.row) {
@@ -387,6 +412,27 @@ class SyncDebugViewController: UITableViewController {
         }
     }
 
+    private func refreshDevicesForDebug() {
+        guard !isRefreshingDevices else { return }
+
+        isRefreshingDevices = true
+        reloadUnifiedDevicesSection()
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            defer {
+                isRefreshingDevices = false
+                reloadUnifiedDevicesSection()
+            }
+
+            do {
+                debugDevices = try await sync.fetchDevicesForDebug()
+            } catch {
+                debugDevices = []
+                showAlert(title: "Unable to Fetch Devices", message: String(reflecting: error))
+            }
+        }
+    }
+
     private func refreshMigrationStatus() {
         do {
             migrationStatus = try sync.isDeviceInfoMigrationCompleteForDebug() ? "Complete" : "Not complete"
@@ -406,6 +452,7 @@ class SyncDebugViewController: UITableViewController {
                 let isComplete = try sync.isDeviceInfoMigrationCompleteForDebug()
                 let message = isComplete ? "Migration is complete." : "Migration did not complete. Check the Sync logs for details."
                 showAlert(title: "Device Info Migration", message: message)
+                refreshDevicesForDebug()
             } catch {
                 showAlert(title: "Unable to Run Migration", message: String(reflecting: error))
             }
@@ -424,6 +471,35 @@ class SyncDebugViewController: UITableViewController {
             refreshMigrationStatus()
         })
         present(alertController, animated: true)
+    }
+
+    private func showDeviceDetails(_ debugDevice: RegisteredDeviceDebugInfo) {
+        let device = debugDevice.device
+        let issue = debugDevice.deviceInfoIssue ?? "None"
+        let message = """
+        ID: \(device.id)
+        Type: \(device.type)
+        Credential: \(device.credentialId ?? SyncCredentialID.defaultCredential)
+        Source: \(sourceDescription(for: debugDevice))
+        Device info issue: \(issue)
+        """
+        let alertController = UIAlertController(title: device.name, message: message, preferredStyle: .alert)
+        alertController.addAction(UIAlertAction(title: "Copy ID", style: .default) { _ in
+            UIPasteboard.general.string = device.id
+        })
+        alertController.addAction(UIAlertAction(title: "OK", style: .cancel))
+        present(alertController, animated: true)
+    }
+
+    private func sourceDescription(for debugDevice: RegisteredDeviceDebugInfo) -> String {
+        switch debugDevice.source {
+        case .deviceInfo:
+            return debugDevice.source.rawValue
+        case .legacy:
+            return debugDevice.deviceInfoIssue == nil ? "legacy" : "legacy fallback"
+        case .placeholder:
+            return "placeholder"
+        }
     }
 
     private func abbreviatedKeyID(_ keyID: String) -> String {

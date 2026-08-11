@@ -112,16 +112,27 @@ class AccountManagingMock: AccountManaging {
         }
     }
 
-    func fetchDevicesForAccount(_ account: SyncAccount) async throws -> [RegisteredDevice] {
-        [.mock]
+    var fetchDevicesForAccountCalls: [SyncAccount] = []
+    var fetchDevicesForAccountStub = RegisteredDeviceMappingResult(devices: [.mock], needsCurrentDeviceInfoRepair: false)
+    var fetchDevicesForAccountError: Error?
+    var fetchDevicesForAccountHandler: ((SyncAccount) async throws -> RegisteredDeviceMappingResult)?
+    func fetchDevicesForAccount(_ account: SyncAccount) async throws -> RegisteredDeviceMappingResult {
+        fetchDevicesForAccountCalls.append(account)
+        if let fetchDevicesForAccountHandler {
+            return try await fetchDevicesForAccountHandler(account)
+        }
+        if let fetchDevicesForAccountError {
+            throw fetchDevicesForAccountError
+        }
+        return fetchDevicesForAccountStub
     }
 
     var updateDeviceCalls: [(update: UpdateDevices.Update, account: SyncAccount)] = []
-    var updateDeviceStub: UpdateDevices.Result?
+    var updateDeviceStub: [RegisteredDevice]?
     var updateDeviceError: Error?
-    var updateDeviceHandler: ((UpdateDevices.Update, SyncAccount) async throws -> UpdateDevices.Result)?
+    var updateDeviceHandler: ((UpdateDevices.Update, SyncAccount) async throws -> [RegisteredDevice])?
     func updateDevice(_ update: UpdateDevices.Update,
-                      for account: SyncAccount) async throws -> UpdateDevices.Result {
+                      for account: SyncAccount) async throws -> [RegisteredDevice] {
         updateDeviceCalls.append((update: update, account: account))
         if let updateDeviceHandler {
             return try await updateDeviceHandler(update, account)
@@ -129,7 +140,7 @@ class AccountManagingMock: AccountManaging {
         if let updateDeviceError {
             throw updateDeviceError
         }
-        return updateDeviceStub ?? UpdateDevices.Result(devices: [], devicesV2: [])
+        return updateDeviceStub ?? []
     }
 }
 

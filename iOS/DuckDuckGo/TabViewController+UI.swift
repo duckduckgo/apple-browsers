@@ -132,7 +132,7 @@ extension TabViewController {
             privacyDashboardAnchor.heightAnchor.constraint(equalToConstant: 80)
         ])
 
-        setupErrorView(in: rootView)
+        setupErrorView(in: outerContainer)
 
         final class JSAlertContainerView: UIView { }
         jsAlertContainerView = JSAlertContainerView()

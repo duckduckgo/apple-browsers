@@ -924,15 +924,15 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
 
     func markLastUsedTabAsResumedAfterIdle(timeAwayMs: Int?) {
         controller.postIdleSessionInstrumentation.noteReturn(timeAwayMs: timeAwayMs)
-        controller.postIdleSessionInstrumentation.sessionStarted(landedOn: landedOnForCurrentTab(), afterIdle: true, focused: false)
+        controller.postIdleSessionInstrumentation.sessionStarted(landedOn: landedOnForCurrentTab(), afterIdleSurface: .lut, focused: false)
     }
 
     func recordOrdinaryReturn(timeAwayMs: Int?) {
         controller.postIdleSessionInstrumentation.noteReturn(timeAwayMs: timeAwayMs)
-        controller.postIdleSessionInstrumentation.sessionStarted(landedOn: landedOnForCurrentTab(), afterIdle: false, focused: false)
+        controller.postIdleSessionInstrumentation.sessionStarted(landedOn: landedOnForCurrentTab(), afterIdleSurface: nil, focused: false)
     }
 
-    private func landedOnForCurrentTab() -> PostIdleSessionWideEventData.LandedOn {
+    private func landedOnForCurrentTab() -> ReturnSessionWideEventData.LandedOn {
         guard let url = tabManager.currentTabsModel.currentTab?.link?.url else { return .ntpUserInitiated }
         if url.isDuckAIURL { return .duckAI }
         if url.isDuckDuckGoSearch { return .serp }

@@ -2130,7 +2130,7 @@ class MainViewController: UIViewController {
             ntpAfterIdleInstrumentation.escapeHatchShown()
         }
         if openedAfterIdle {
-            postIdleSessionInstrumentation.sessionStarted(landedOn: .ntp, afterIdle: true, focused: focused)
+            postIdleSessionInstrumentation.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: focused)
         }
     }
 
@@ -2441,9 +2441,9 @@ class MainViewController: UIViewController {
         loadUrlRespectingAIBoundary(url)
     }
 
-    /// Classifies an address-bar submission for the post-idle session: text that
+    /// Classifies an address-bar submission for the return session: text that
     /// resolves to a SERP counts as a search, anything else as direct navigation.
-    func postIdleSubmissionReason(for query: String) -> PostIdleSessionWideEventData.StatusReason {
+    func postIdleSubmissionReason(for query: String) -> ReturnSessionWideEventData.StatusReason {
         guard let url = URL.makeSearchURL(query: query, useUnifiedLogic: isUnifiedURLPredictionEnabled, queryContext: currentTab?.url) else {
             return .searchSubmitted
         }
@@ -4672,7 +4672,7 @@ extension MainViewController: BrowserChromeDelegate {
     }
 
 
-    private func postIdleSubmissionReason(for suggestion: Suggestion) -> PostIdleSessionWideEventData.StatusReason {
+    private func postIdleSubmissionReason(for suggestion: Suggestion) -> ReturnSessionWideEventData.StatusReason {
         switch suggestion {
         case .phrase, .unknown: return .searchSubmitted
         case .askAIChat: return .aiPromptSubmitted

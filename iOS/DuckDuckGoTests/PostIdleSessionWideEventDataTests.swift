@@ -33,7 +33,7 @@ struct PostIdleSessionWideEventDataTests {
         #expect(PostIdleSessionWideEventData.metadata.pixelName == "post_idle_session")
         #expect(PostIdleSessionWideEventData.metadata.featureName == "post_idle_session")
         #expect(PostIdleSessionWideEventData.metadata.type == "ios-post-idle-session")
-        #expect(PostIdleSessionWideEventData.metadata.version == "1.3.0")
+        #expect(PostIdleSessionWideEventData.metadata.version == "1.2.0")
     }
 
     // MARK: - jsonParameters
@@ -57,50 +57,11 @@ struct PostIdleSessionWideEventDataTests {
     }
 
     @available(iOS 16, *)
-    @Test("Submission reasons emit status_reason", .timeLimit(.minutes(1)))
-    func submissionReasonsEmitStatusReason() {
+    @Test("Bar used reason emits status_reason", .timeLimit(.minutes(1)))
+    func barUsedReasonEmitsStatusReason() {
         let data = PostIdleSessionWideEventData(surface: .ntp)
-        data.statusReason = .searchSubmitted
-        #expect(data.jsonParameters()["feature.data.ext.status_reason"] as? String == "search_submitted")
-        data.statusReason = .aiPromptSubmitted
-        #expect(data.jsonParameters()["feature.data.ext.status_reason"] as? String == "ai_prompt_submitted")
-        data.statusReason = .urlSubmitted
-        #expect(data.jsonParameters()["feature.data.ext.status_reason"] as? String == "url_submitted")
-    }
-
-    @available(iOS 16, *)
-    @Test("Return context fields emit after_idle, landed_on, time_away and focused", .timeLimit(.minutes(1)))
-    func returnContextFieldsEmit() {
-        let data = PostIdleSessionWideEventData(surface: .lut,
-                                                afterIdle: false,
-                                                landedOn: .serp,
-                                                timeAwayMs: 310_000,
-                                                focused: true)
-        let params = data.jsonParameters()
-        #expect(params["feature.data.ext.after_idle"] as? Bool == false)
-        #expect(params["feature.data.ext.landed_on"] as? String == "serp")
-        #expect(params["feature.data.ext.time_away_ms_bucketed"] as? String == "300000")
-        #expect(params["feature.data.ext.focused"] as? Bool == true)
-    }
-
-    @available(iOS 16, *)
-    @Test("Return context fields are absent when not provided", .timeLimit(.minutes(1)))
-    func returnContextFieldsAbsentByDefault() {
-        let params = PostIdleSessionWideEventData(surface: .ntp).jsonParameters()
-        #expect(params["feature.data.ext.after_idle"] == nil)
-        #expect(params["feature.data.ext.landed_on"] == nil)
-        #expect(params["feature.data.ext.time_away_ms_bucketed"] == nil)
-        #expect(params["feature.data.ext.focused"] == nil)
-    }
-
-    @available(iOS 16, *)
-    @Test("LandedOn derives the coarse surface", .timeLimit(.minutes(1)))
-    func landedOnDerivesSurface() {
-        #expect(PostIdleSessionWideEventData.LandedOn.ntp.surface == .ntp)
-        #expect(PostIdleSessionWideEventData.LandedOn.ntpUserInitiated.surface == .ntp)
-        #expect(PostIdleSessionWideEventData.LandedOn.web.surface == .lut)
-        #expect(PostIdleSessionWideEventData.LandedOn.serp.surface == .lut)
-        #expect(PostIdleSessionWideEventData.LandedOn.duckAI.surface == .lut)
+        data.statusReason = .barUsed
+        #expect(data.jsonParameters()["feature.data.ext.status_reason"] as? String == "bar_used")
     }
 
     @available(iOS 16, *)

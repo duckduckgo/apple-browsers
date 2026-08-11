@@ -73,7 +73,9 @@ jobs:
       with:
         repository: DuckDuckGo/pir-fake-broker
         ssh-key: ${{ secrets.SSH_PRIVATE_KEY_PIR_FAKE_BROKER }}
-        ref: main
+        # TEMPORARY - DO NOT MERGE. Points at duckduckgo/pir-fake-broker#28 to
+        # verify the pinned macOS PostgreSQL version on a runner. Restore `main`.
+        ref: anh/pin-postgres-version
         path: macOS/pir-fake-broker
 
     - name: Update Homebrew

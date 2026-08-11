@@ -997,9 +997,8 @@ final class SubscriptionDebugViewController: UITableViewController {
                 viewModel: SubscriptionOnboardingDuckAIViewModel(
                     prefetcher: SubscriptionOnboardingPrefetcher(),
                     onNext: { [weak self] in self?.dismiss(animated: true) },
-                    onRequestChat: { [weak self] modelID in
-                        guard let self else { return }
-                        SubscriptionOnboardingDuckAIChatLauncher().launch(from: self, modelID: modelID)
+                    onRequestChat: { modelID in
+                        SubscriptionOnboardingDuckAIChatLauncher().launch(modelID: modelID)
                     }),
                 navigationButton: .close({ [weak self] in self?.dismiss(animated: true) }),
                 progress: SubscriptionOnboardingProgress(completedItems: [.vpn, .widget, .idtr]))
@@ -1117,7 +1116,7 @@ extension SubscriptionDebugViewController: SubscriptionOnboardingSectionDelegate
     func sectionDidComplete(_ section: SubscriptionOnboardingSection) {}
 
     func sectionDidRequestDuckAIChat(modelID: String?) {
-        SubscriptionOnboardingDuckAIChatLauncher().launch(from: self, modelID: modelID)
+        SubscriptionOnboardingDuckAIChatLauncher().launch(modelID: modelID)
     }
 
     func sectionDidRequestAdvance() {

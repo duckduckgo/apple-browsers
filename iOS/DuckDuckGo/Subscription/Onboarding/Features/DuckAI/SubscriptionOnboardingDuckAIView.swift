@@ -23,6 +23,7 @@ import UIComponents
 import AIChat
 import Common
 
+/// The Duck.ai model-picker onboarding screen.
 struct SubscriptionOnboardingDuckAIView: View {
     private enum Metrics {
         static let iconTextSpacing: CGFloat = 16
@@ -125,6 +126,8 @@ private extension SubscriptionOnboardingDuckAIView {
         }
     }
 
+    /// Whether rows show/report a selection at all — false on iPad, where model preselection has no way
+    /// to reach a fresh chat session, so neither the checkmark nor its accessibility value should appear.
     var isSelectable: Bool {
         !DevicePlatform.isIpad
     }

@@ -68,6 +68,7 @@ final class DefaultSubscriptionOnboardingAIModelProvider: SubscriptionOnboarding
     }
 }
 
+/// Backs the Duck.ai onboarding screen, persisting the selected model so the launched chat opens with it.
 @MainActor
 final class SubscriptionOnboardingDuckAIViewModel: ObservableObject {
 

@@ -99,6 +99,7 @@ extension View {
         }
     }
 
+    /// Presents the "Learn More" info sheet for whichever checklist `item` is selected
     func subscriptionOnboardingInfoSheet(item: Binding<SubscriptionOnboardingChecklistItem?>) -> some View {
         sheet(item: item) { selected in
             SubscriptionOnboardingInfoSheet(content: .content(for: selected), onClose: { item.wrappedValue = nil })
@@ -108,6 +109,7 @@ extension View {
 
 // MARK: - Content
 
+/// The data backing a ``SubscriptionOnboardingInfoView``
 struct SubscriptionOnboardingInfoContent {
     struct Feature: Identifiable {
         var id: String { title }
@@ -168,6 +170,7 @@ extension SubscriptionOnboardingInfoContent {
         features: PIRInfoFeature.allCases.map(\.feature))
 }
 
+/// The VPN features listed on the VPN info sheet.
 private enum VPNInfoFeature: CaseIterable {
     case devices
     case noLogging
@@ -217,6 +220,7 @@ private enum VPNInfoFeature: CaseIterable {
     }
 }
 
+/// The Duck.ai features listed on the Duck.ai info sheet.
 private enum DuckAIInfoFeature: CaseIterable {
     case models
     case privacy
@@ -245,6 +249,7 @@ private enum DuckAIInfoFeature: CaseIterable {
     }
 }
 
+/// The IDTR features listed on the IDTR info sheet.
 private enum IDTRInfoFeature: CaseIterable {
     case financialLosses
     case creditReport
@@ -293,6 +298,7 @@ private enum IDTRInfoFeature: CaseIterable {
     }
 }
 
+/// The PIR features listed on the PIR info sheet.
 private enum PIRInfoFeature: CaseIterable {
     case platforms
     case repeatedScans

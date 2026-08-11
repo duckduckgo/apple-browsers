@@ -43,6 +43,7 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
 
     /// The original (pre-VPN) connection, mirrored from the prefetcher while off and retained.
     @Published private(set) var originalConnectionInfo: ConnectionInfoState = .idle
+    /// The VPN egress server info (address + location) from the shared server-info observer.
     @Published private(set) var vpnServerInfo: NetworkProtectionStatusServerInfo = .unknown
 
     /// Whether the customer declined the system VPN-configuration prompt, observed from the controller's
@@ -51,6 +52,7 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
 
     /// Whether starting the VPN failed for a reason other than a denial
     @Published private(set) var didFailToStartVPN = false
+
     private let prefetcher: SubscriptionOnboardingPrefetcher
     private let vpnController: SubscriptionOnboardingVPNControlling
     private let vpnLocationProvider: SubscriptionOnboardingVPNLocationProviding

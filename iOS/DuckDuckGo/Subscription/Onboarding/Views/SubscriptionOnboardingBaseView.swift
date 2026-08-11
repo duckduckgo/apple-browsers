@@ -22,8 +22,7 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import DuckUI
 
-/// The content insets `SubscriptionOnboardingBaseView` applies to every page, exposed so an element that
-/// needs to bleed past them can cancel the real values rather than hard-coding copies.
+/// The content insets `SubscriptionOnboardingBaseView` applies to every page
 enum SubscriptionOnboardingPageInsets {
     static let horizontal: CGFloat = 24
     static let vertical: CGFloat = 20
@@ -38,6 +37,8 @@ private enum Metrics {
     static let footerSpacing: CGFloat = 8
 }
 
+/// The navigation bar's leading button: either a back button or a close button. Both render as a
+/// circular filled button and carry their own glyph and VoiceOver label.
 enum SubscriptionOnboardingNavigationButton {
     case back(() -> Void)
     case close(() -> Void)
@@ -68,6 +69,7 @@ enum SubscriptionOnboardingNavigationButton {
     }
 }
 
+/// A footer button: a title and either a tap action or a push destination.
 struct SubscriptionOnboardingFooterButton {
     enum Action {
         case tap(() -> Void)
@@ -88,6 +90,7 @@ struct SubscriptionOnboardingFooterButton {
     }
 }
 
+/// The page's bottom-pinned footer: a single primary button, or a primary button above a secondary one.
 enum SubscriptionOnboardingFooter {
     case single(SubscriptionOnboardingFooterButton)
     case double(primary: SubscriptionOnboardingFooterButton, secondary: SubscriptionOnboardingFooterButton)
@@ -105,10 +108,6 @@ struct SubscriptionOnboardingBaseView<Content: View>: View {
     private let declaresNavigationChrome: Bool
     private let content: Content
 
-    /// - Parameter declaresNavigationChrome: pass `false` when the page is rendered *inside* another page
-    ///   rather than pushed onto the navigation stack. A nested page would otherwise reconfigure the host's
-    ///   navigation bar — claiming its toolbar slots and overriding its title display mode and background —
-    ///   for as long as it is on screen.
     init(title: String? = nil,
          navigationButton: SubscriptionOnboardingNavigationButton? = nil,
          header: SubscriptionOnboardingHeaderView? = nil,
@@ -142,7 +141,6 @@ struct SubscriptionOnboardingBaseView<Content: View>: View {
         }
     }
 
-    /// Every navigation-bar reconfiguration lives here, so a page that doesn't own the bar applies none of it.
     @ViewBuilder
     private func navigationChrome<Page: View>(around page: Page) -> some View {
         let bar = page

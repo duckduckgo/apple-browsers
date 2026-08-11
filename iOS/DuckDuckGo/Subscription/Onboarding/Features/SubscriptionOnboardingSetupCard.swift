@@ -34,8 +34,7 @@ struct SubscriptionOnboardingSetupCard: View {
     private let visual: Graphic
     private let progress: SubscriptionOnboardingProgress
     private let session: SubscriptionOnboardingSessionStating
-    /// Whether the onboarding flow is on screen over this card. Watched so the card re-reads when the flow
-    /// closes: dismissing a sheet does not re-fire `onAppear` on the view underneath.
+    /// Whether the onboarding flow is on screen over this card.
     private let isPresentingFlow: Bool
     private let onContinue: () -> Void
 

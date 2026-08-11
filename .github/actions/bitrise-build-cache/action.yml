@@ -1,0 +1,10 @@
+name: 'Setup Bitrise Build Cache'
+description: 'Sets up Bitrise build cache'
+
+runs:
+  using: 'composite'
+  steps:
+    - id: bitrise-build-cache
+      shell: bash
+      run: |
+        ${{ github.action_path }}/setup_bitrise_build_cache.sh

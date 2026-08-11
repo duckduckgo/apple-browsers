@@ -162,7 +162,8 @@ final class ContextualMenuTests: XCTestCase {
         let delta = Bookmark(id: "delta", url: "https://delta.example", title: "delta", isFavorite: false)
         let bravo = Bookmark(id: "bravo", url: "https://bravo.example", title: "Bravo", isFavorite: false)
         let folder = BookmarkFolder(id: "folder", title: "Folder", children: [charlie, alpha, delta, bravo])
-        let menu = BookmarksContextMenu.folderMenu(with: folder, isReorderByNameEnabled: true)
+        let undoManager = UndoManager()
+        let menu = BookmarksContextMenu.folderMenu(with: folder, isReorderByNameEnabled: true, undoManager: undoManager)
         let bookmarkManager = try XCTUnwrap(menu.bookmarkManager as? MockBookmarkManager)
         bookmarkManager.sortMode = .nameDescending
         let menuItem = try XCTUnwrap(menu.items.first(where: { $0.title == UserText.bookmarksBarContextMenuReorderByName }))
@@ -178,6 +179,7 @@ final class ContextualMenuTests: XCTestCase {
                 toIndex: 0,
                 withinParentFolder: .parent(uuid: folder.id)))
         XCTAssertEqual(bookmarkManager.sortMode, .manual)
+        XCTAssertTrue(undoManager.canUndo)
     }
 
     @MainActor
@@ -979,7 +981,11 @@ final class ContextualMenuTests: XCTestCase {
         let alpha = BookmarkFolder(id: "alpha", title: "Alpha")
         let delta = Bookmark(id: "delta", url: "https://delta.example", title: "delta", isFavorite: false)
         let bravo = Bookmark(id: "bravo", url: "https://bravo.example", title: "Bravo", isFavorite: false)
-        let menu = BookmarksContextMenu.rootMenu(topLevelEntities: [charlie, alpha, delta, bravo], isReorderByNameEnabled: true)
+        let undoManager = UndoManager()
+        let menu = BookmarksContextMenu.rootMenu(
+            topLevelEntities: [charlie, alpha, delta, bravo],
+            isReorderByNameEnabled: true,
+            undoManager: undoManager)
         let bookmarkManager = try XCTUnwrap(menu.bookmarkManager as? MockBookmarkManager)
         bookmarkManager.sortMode = .nameDescending
         let menuItem = try XCTUnwrap(menu.items.first(where: { $0.title == UserText.bookmarksBarContextMenuReorderByName }))
@@ -995,6 +1001,7 @@ final class ContextualMenuTests: XCTestCase {
                 toIndex: 0,
                 withinParentFolder: .root))
         XCTAssertEqual(bookmarkManager.sortMode, .manual)
+        XCTAssertTrue(undoManager.canUndo)
     }
 
     @MainActor
@@ -1243,10 +1250,12 @@ extension BookmarksContextMenu {
     static func folderMenu(
         with bookmarkFolder: BookmarkFolder,
         enableManageBookmarks: Bool = true,
-        isReorderByNameEnabled: Bool = false) -> BookmarksContextMenu {
+        isReorderByNameEnabled: Bool = false,
+        undoManager: UndoManager? = nil) -> BookmarksContextMenu {
         let delegate = MockBookmarksContextMenuDelegate()
         delegate.selectedBookmarkItems = [bookmarkFolder]
         delegate.shouldIncludeManageBookmarksItem = enableManageBookmarks
+        delegate.undoManager = undoManager
         let bkman = MockBookmarkManager(list: .init(entities: [bookmarkFolder], topLevelEntities: [BookmarkFolder(id: PseudoFolder.bookmarks.id, title: "Bookmarks", children: [bookmarkFolder])]))
         let featureFlagger = MockFeatureFlagger(featuresStub: [
             FeatureFlag.bookmarksReorderByName.rawValue: isReorderByNameEnabled
@@ -1278,10 +1287,12 @@ extension BookmarksContextMenu {
     static func rootMenu(
         topLevelEntities: [BaseBookmarkEntity],
         pseudoFolder: PseudoFolder = .bookmarks,
-        isReorderByNameEnabled: Bool = false) -> BookmarksContextMenu {
+        isReorderByNameEnabled: Bool = false,
+        undoManager: UndoManager? = nil) -> BookmarksContextMenu {
         let delegate = MockBookmarksContextMenuDelegate()
         delegate.selectedBookmarkItems = [BookmarkNode(representedObject: pseudoFolder, parent: nil)]
         delegate.shouldIncludeManageBookmarksItem = false
+        delegate.undoManager = undoManager
         let bkman = MockBookmarkManager(list: .init(entities: topLevelEntities, topLevelEntities: topLevelEntities))
         let featureFlagger = MockFeatureFlagger(featuresStub: [
             FeatureFlag.bookmarksReorderByName.rawValue: isReorderByNameEnabled

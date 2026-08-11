@@ -76,6 +76,28 @@ protocol BookmarkManager: AnyObject {
     /// For debug menu use only
     func resetBookmarks(completion: @escaping () -> Void)
 }
+
+private struct BookmarksReorderState {
+    let objectUUIDs: [String]
+    let sortMode: BookmarksSortMode
+}
+
+@MainActor
+private final class BookmarksReorderOperationContext {
+
+    struct Transition {
+        let state: BookmarksReorderState
+        let inverse: BookmarksReorderState
+    }
+
+    enum State {
+        case idle
+        case persisting(pending: Transition?)
+    }
+
+    var state: State = .idle
+}
+
 extension BookmarkManager {
     @discardableResult func makeBookmark(for url: URL, title: String, isFavorite: Bool, completion: @escaping (Error?) -> Void = { _ in }) -> Bookmark? {
         makeBookmark(for: url, title: title, isFavorite: isFavorite, index: nil, parent: nil, completion: completion)
@@ -87,26 +109,104 @@ extension BookmarkManager {
         move(objectUUIDs: objectUUIDs, toIndex: index, withinParentFolder: parent) { _ in }
     }
 
-    func reorderByName(_ children: [BaseBookmarkEntity], withinParentFolder parentFolder: ParentFolderType) {
-        let sortedChildIDs = children
-            .sorted(by: .nameAscending)
-            .map(\.id)
+    @MainActor
+    func reorderByName(_ children: [BaseBookmarkEntity], withinParentFolder parentFolder: ParentFolderType, undoManager: UndoManager?) {
+        let before = BookmarksReorderState(objectUUIDs: children.map(\.id), sortMode: sortMode)
+        let after = BookmarksReorderState(
+            objectUUIDs: children.sorted(by: .nameAscending).map(\.id),
+            sortMode: .manual)
 
-        guard sortedChildIDs != children.map(\.id) else {
-            sortMode = .manual
+        applyReorderState(
+            after,
+            inverse: before,
+            withinParentFolder: parentFolder,
+            undoManager: undoManager,
+            context: BookmarksReorderOperationContext())
+    }
+
+    /// Transitions to an exact captured state. Undo and redo swap the states instead of sorting potentially stale entities again.
+    @MainActor
+    private func applyReorderState(
+        _ state: BookmarksReorderState,
+        inverse: BookmarksReorderState,
+        withinParentFolder parentFolder: ParentFolderType,
+        undoManager: UndoManager?,
+        context: BookmarksReorderOperationContext
+    ) {
+        let shouldMove = state.objectUUIDs != inverse.objectUUIDs
+        let modeWouldChange = sortMode == inverse.sortMode && sortMode != state.sortMode
+        guard shouldMove || modeWouldChange else { return }
+
+        if let undoManager {
+            undoManager.registerUndo(withTarget: self) { @MainActor [weak undoManager] bookmarkManager in
+                bookmarkManager.applyReorderState(
+                    inverse,
+                    inverse: state,
+                    withinParentFolder: parentFolder,
+                    undoManager: undoManager,
+                    context: context)
+            }
+            if !undoManager.isUndoing {
+                undoManager.setActionName(UserText.bookmarksUndoActionReorderByName)
+            }
+        }
+
+        guard shouldMove else {
+            applySortMode(state.sortMode, ifStillEqualTo: inverse.sortMode)
             return
         }
 
-        move(objectUUIDs: sortedChildIDs, toIndex: 0, withinParentFolder: parentFolder) { [weak self] error in
-            guard let error else {
-                self?.sortMode = .manual
-                return
-            }
+        switch context.state {
+        case .idle:
+            context.state = .persisting(pending: nil)
+        case .persisting:
+            // Undo and redo can arrive before persistence finishes. Only the latest requested exact state needs to be applied.
+            context.state = .persisting(pending: .init(state: state, inverse: inverse))
+            return
+        }
 
-            Logger.bookmarks.error("Failed to reorder bookmarks by name: \(error.localizedDescription, privacy: .public)")
+        persistReorderState(state, inverse: inverse, withinParentFolder: parentFolder, context: context)
+    }
+
+    @MainActor
+    private func persistReorderState(
+        _ state: BookmarksReorderState,
+        inverse: BookmarksReorderState,
+        withinParentFolder parentFolder: ParentFolderType,
+        context: BookmarksReorderOperationContext
+    ) {
+        move(objectUUIDs: state.objectUUIDs, toIndex: 0, withinParentFolder: parentFolder) { [weak self] error in
+            MainActor.assumeMainThread {
+                guard let self else { return }
+
+                if let error {
+                    Logger.bookmarks.error("Failed to reorder bookmarks by name: \(error.localizedDescription, privacy: .public)")
+                } else {
+                    self.applySortMode(state.sortMode, ifStillEqualTo: inverse.sortMode)
+                }
+
+                guard case .persisting(let pending) = context.state else {
+                    assertionFailure("Reorder persistence completed without an active operation")
+                    return
+                }
+
+                if let next = pending {
+                    context.state = .persisting(pending: nil)
+                    self.persistReorderState(next.state, inverse: next.inverse, withinParentFolder: parentFolder, context: context)
+                } else {
+                    context.state = .idle
+                }
+            }
         }
     }
+
+    @MainActor
+    private func applySortMode(_ newMode: BookmarksSortMode, ifStillEqualTo expectedMode: BookmarksSortMode) {
+        guard sortMode == expectedMode, sortMode != newMode else { return }
+        sortMode = newMode
+    }
 }
+
 final class LocalBookmarkManager: BookmarkManager {
 
     init(

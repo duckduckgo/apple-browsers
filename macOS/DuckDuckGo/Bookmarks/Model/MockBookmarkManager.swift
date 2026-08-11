@@ -135,10 +135,33 @@ final class MockBookmarkManager: BookmarkManager, URLFavoriteStatusProviding, Re
         var withinParentFolder: ParentFolderType
     }
     var moveObjectsCalled: MoveArgs?
+    private(set) var moveObjectsCalls: [MoveArgs] = []
     var moveObjectsError: Error?
+    var defersMoveCompletions = false
+    private var deferredMoveCompletions: [() -> Void] = []
+    var deferredMoveCompletionCount: Int { deferredMoveCompletions.count }
+
     func move(objectUUIDs: [String], toIndex: Int?, withinParentFolder: ParentFolderType, completion: @escaping (Error?) -> Void) {
-        moveObjectsCalled = .init(objectUUIDs: objectUUIDs, toIndex: toIndex, withinParentFolder: withinParentFolder)
-        completion(moveObjectsError)
+        let arguments = MoveArgs(objectUUIDs: objectUUIDs, toIndex: toIndex, withinParentFolder: withinParentFolder)
+        moveObjectsCalled = arguments
+        moveObjectsCalls.append(arguments)
+
+        let error = moveObjectsError
+        guard defersMoveCompletions else {
+            completion(error)
+            return
+        }
+        deferredMoveCompletions.append {
+            completion(error)
+        }
+    }
+
+    func completeNextMove() {
+        guard !deferredMoveCompletions.isEmpty else {
+            assertionFailure("No deferred bookmark move completion is available")
+            return
+        }
+        deferredMoveCompletions.removeFirst()()
     }
 
     func moveFavorites(with objectUUIDs: [String], toIndex: Int?, completion: @escaping (Error?) -> Void) {}

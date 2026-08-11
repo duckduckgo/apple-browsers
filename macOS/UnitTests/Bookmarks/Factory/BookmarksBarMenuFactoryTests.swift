@@ -72,6 +72,7 @@ final class BookmarksBarMenuFactoryTests: XCTestCase {
         XCTAssertEqual(menu.items[3].title, UserText.bookmarksManageBookmarks)
     }
 
+    @MainActor
     func testReorderByNameMovesTopLevelEntitiesWithinRoot() {
         // GIVEN
         let zulu = Bookmark(id: "zulu", url: "https://zulu.example", title: "Zulu", isFavorite: false)
@@ -81,13 +82,268 @@ final class BookmarksBarMenuFactoryTests: XCTestCase {
             sortMode: .nameDescending)
 
         // WHEN
-        bookmarkManager.reorderByName(bookmarkManager.list?.topLevelEntities ?? [], withinParentFolder: .root)
+        bookmarkManager.reorderByName(
+            bookmarkManager.list?.topLevelEntities ?? [],
+            withinParentFolder: .root,
+            undoManager: nil)
 
         // THEN
         XCTAssertEqual(
             bookmarkManager.moveObjectsCalled,
             .init(objectUUIDs: [alpha.id, zulu.id], toIndex: 0, withinParentFolder: .root))
         XCTAssertEqual(bookmarkManager.sortMode, .manual)
+    }
+
+    @MainActor
+    func testWhenReorderByNameIsUndoneAndRedoneThenExactOrderAndSortModeAreRestored() {
+        // GIVEN
+        let zulu = Bookmark(id: "zulu", url: "https://zulu.example", title: "Zulu", isFavorite: false)
+        let alpha = BookmarkFolder(id: "alpha", title: "Alpha")
+        let bookmarkManager = MockBookmarkManager(sortMode: .nameDescending)
+        let undoManager = UndoManager()
+
+        // WHEN
+        bookmarkManager.reorderByName([zulu, alpha], withinParentFolder: .root, undoManager: undoManager)
+
+        // THEN
+        XCTAssertEqual(
+            bookmarkManager.moveObjectsCalls,
+            [.init(objectUUIDs: [alpha.id, zulu.id], toIndex: 0, withinParentFolder: .root)])
+        XCTAssertEqual(bookmarkManager.sortMode, .manual)
+        XCTAssertTrue(undoManager.canUndo)
+        XCTAssertEqual(undoManager.undoActionName, UserText.bookmarksUndoActionReorderByName)
+
+        // WHEN
+        undoManager.undo()
+
+        // THEN
+        XCTAssertEqual(
+            bookmarkManager.moveObjectsCalls.last,
+            .init(objectUUIDs: [zulu.id, alpha.id], toIndex: 0, withinParentFolder: .root))
+        XCTAssertEqual(bookmarkManager.sortMode, .nameDescending)
+        XCTAssertTrue(undoManager.canRedo)
+
+        // WHEN
+        undoManager.redo()
+
+        // THEN
+        XCTAssertEqual(
+            bookmarkManager.moveObjectsCalls.last,
+            .init(objectUUIDs: [alpha.id, zulu.id], toIndex: 0, withinParentFolder: .root))
+        XCTAssertEqual(bookmarkManager.sortMode, .manual)
+        XCTAssertTrue(undoManager.canUndo)
+    }
+
+    @MainActor
+    func testWhenUndoArrivesBeforeReorderPersistenceCompletesThenMovesAreSerialized() {
+        // GIVEN
+        let zulu = Bookmark(id: "zulu", url: "https://zulu.example", title: "Zulu", isFavorite: false)
+        let alpha = BookmarkFolder(id: "alpha", title: "Alpha")
+        let bookmarkManager = MockBookmarkManager(sortMode: .nameDescending)
+        bookmarkManager.defersMoveCompletions = true
+        let undoManager = UndoManager()
+
+        // WHEN
+        bookmarkManager.reorderByName([zulu, alpha], withinParentFolder: .root, undoManager: undoManager)
+        undoManager.undo()
+
+        // THEN
+        XCTAssertEqual(bookmarkManager.moveObjectsCalls.count, 1)
+        XCTAssertEqual(bookmarkManager.deferredMoveCompletionCount, 1)
+
+        // WHEN
+        bookmarkManager.completeNextMove()
+
+        // THEN
+        XCTAssertEqual(
+            bookmarkManager.moveObjectsCalls,
+            [
+                .init(objectUUIDs: [alpha.id, zulu.id], toIndex: 0, withinParentFolder: .root),
+                .init(objectUUIDs: [zulu.id, alpha.id], toIndex: 0, withinParentFolder: .root),
+            ])
+        XCTAssertEqual(bookmarkManager.deferredMoveCompletionCount, 1)
+
+        // WHEN
+        bookmarkManager.completeNextMove()
+
+        // THEN
+        XCTAssertEqual(bookmarkManager.sortMode, .nameDescending)
+        XCTAssertTrue(undoManager.canRedo)
+    }
+
+    @MainActor
+    func testWhenUndoAndRedoArriveBeforePersistenceCompletesThenLatestStateIsApplied() {
+        // GIVEN
+        let zulu = Bookmark(id: "zulu", url: "https://zulu.example", title: "Zulu", isFavorite: false)
+        let alpha = BookmarkFolder(id: "alpha", title: "Alpha")
+        let bookmarkManager = MockBookmarkManager(sortMode: .nameDescending)
+        bookmarkManager.defersMoveCompletions = true
+        let undoManager = UndoManager()
+
+        // WHEN
+        bookmarkManager.reorderByName([zulu, alpha], withinParentFolder: .root, undoManager: undoManager)
+        undoManager.undo()
+        undoManager.redo()
+
+        // THEN
+        XCTAssertEqual(bookmarkManager.moveObjectsCalls.count, 1)
+        XCTAssertEqual(bookmarkManager.deferredMoveCompletionCount, 1)
+
+        // WHEN
+        bookmarkManager.completeNextMove()
+        bookmarkManager.completeNextMove()
+
+        // THEN
+        XCTAssertEqual(
+            bookmarkManager.moveObjectsCalls.map(\.objectUUIDs),
+            [
+                [alpha.id, zulu.id],
+                [alpha.id, zulu.id],
+            ])
+        XCTAssertEqual(bookmarkManager.sortMode, .manual)
+        XCTAssertTrue(undoManager.canUndo)
+        XCTAssertFalse(undoManager.canRedo)
+    }
+
+    @MainActor
+    func testWhenSortModeChangesWhileReorderIsPendingThenCompletionDoesNotOverwriteIt() {
+        // GIVEN
+        let zulu = Bookmark(id: "zulu", url: "https://zulu.example", title: "Zulu", isFavorite: false)
+        let alpha = BookmarkFolder(id: "alpha", title: "Alpha")
+        let bookmarkManager = MockBookmarkManager(sortMode: .nameDescending)
+        bookmarkManager.defersMoveCompletions = true
+
+        // WHEN
+        bookmarkManager.reorderByName([zulu, alpha], withinParentFolder: .root, undoManager: nil)
+        bookmarkManager.sortMode = .nameAscending
+        bookmarkManager.completeNextMove()
+
+        // THEN
+        XCTAssertEqual(bookmarkManager.sortMode, .nameAscending)
+    }
+
+    @MainActor
+    func testWhenSortModeChangesAfterReorderThenUndoRestoresOrderWithoutOverwritingNewMode() {
+        // GIVEN
+        let zulu = Bookmark(id: "zulu", url: "https://zulu.example", title: "Zulu", isFavorite: false)
+        let alpha = BookmarkFolder(id: "alpha", title: "Alpha")
+        let bookmarkManager = MockBookmarkManager(sortMode: .nameDescending)
+        let undoManager = UndoManager()
+        bookmarkManager.reorderByName([zulu, alpha], withinParentFolder: .root, undoManager: undoManager)
+
+        // WHEN
+        bookmarkManager.sortMode = .nameAscending
+        undoManager.undo()
+
+        // THEN
+        XCTAssertEqual(
+            bookmarkManager.moveObjectsCalls.last,
+            .init(objectUUIDs: [zulu.id, alpha.id], toIndex: 0, withinParentFolder: .root))
+        XCTAssertEqual(bookmarkManager.sortMode, .nameAscending)
+    }
+
+    @MainActor
+    func testWhenInitialReorderFailsThenRedoRetriesTheReorder() {
+        // GIVEN
+        let zulu = Bookmark(id: "zulu", url: "https://zulu.example", title: "Zulu", isFavorite: false)
+        let alpha = BookmarkFolder(id: "alpha", title: "Alpha")
+        let bookmarkManager = MockBookmarkManager(sortMode: .nameDescending)
+        bookmarkManager.defersMoveCompletions = true
+        bookmarkManager.moveObjectsError = NSError(domain: "BookmarksBarMenuFactoryTests", code: 1)
+        let undoManager = UndoManager()
+
+        // WHEN
+        bookmarkManager.reorderByName([zulu, alpha], withinParentFolder: .root, undoManager: undoManager)
+        bookmarkManager.completeNextMove()
+
+        // THEN
+        XCTAssertEqual(bookmarkManager.sortMode, .nameDescending)
+        XCTAssertTrue(undoManager.canUndo)
+
+        // WHEN
+        bookmarkManager.moveObjectsError = nil
+        undoManager.undo()
+        bookmarkManager.completeNextMove()
+        undoManager.redo()
+        bookmarkManager.completeNextMove()
+
+        // THEN
+        XCTAssertEqual(
+            bookmarkManager.moveObjectsCalls.map(\.objectUUIDs),
+            [
+                [alpha.id, zulu.id],
+                [zulu.id, alpha.id],
+                [alpha.id, zulu.id],
+            ])
+        XCTAssertEqual(bookmarkManager.sortMode, .manual)
+    }
+
+    @MainActor
+    func testWhenOrderIsAlreadyAlphabeticalAndModeChangesThenOnlyModeIsUndoable() {
+        // GIVEN
+        let alpha = BookmarkFolder(id: "alpha", title: "Alpha")
+        let zulu = Bookmark(id: "zulu", url: "https://zulu.example", title: "Zulu", isFavorite: false)
+        let bookmarkManager = MockBookmarkManager(sortMode: .nameDescending)
+        let undoManager = UndoManager()
+
+        // WHEN
+        bookmarkManager.reorderByName([alpha, zulu], withinParentFolder: .root, undoManager: undoManager)
+
+        // THEN
+        XCTAssertTrue(bookmarkManager.moveObjectsCalls.isEmpty)
+        XCTAssertEqual(bookmarkManager.sortMode, .manual)
+        XCTAssertTrue(undoManager.canUndo)
+
+        // WHEN
+        undoManager.undo()
+
+        // THEN
+        XCTAssertEqual(bookmarkManager.sortMode, .nameDescending)
+        XCTAssertTrue(undoManager.canRedo)
+
+        // WHEN
+        undoManager.redo()
+
+        // THEN
+        XCTAssertEqual(bookmarkManager.sortMode, .manual)
+    }
+
+    @MainActor
+    func testWhenOrderIsAlreadyAlphabeticalAndModeIsManualThenReorderIsNoOp() {
+        // GIVEN
+        let alpha = BookmarkFolder(id: "alpha", title: "Alpha")
+        let zulu = Bookmark(id: "zulu", url: "https://zulu.example", title: "Zulu", isFavorite: false)
+        let bookmarkManager = MockBookmarkManager(sortMode: .manual)
+        let undoManager = UndoManager()
+
+        // WHEN
+        bookmarkManager.reorderByName([alpha, zulu], withinParentFolder: .root, undoManager: undoManager)
+
+        // THEN
+        XCTAssertTrue(bookmarkManager.moveObjectsCalls.isEmpty)
+        XCTAssertFalse(undoManager.canUndo)
+    }
+
+    @MainActor
+    func testWhenUndoManagerOwnerIsReleasedThenReorderHandlerDoesNotRetainUndoManager() {
+        // GIVEN
+        let zulu = Bookmark(id: "zulu", url: "https://zulu.example", title: "Zulu", isFavorite: false)
+        let alpha = BookmarkFolder(id: "alpha", title: "Alpha")
+        let bookmarkManager = MockBookmarkManager(sortMode: .nameDescending)
+        weak var weakUndoManager: UndoManager?
+
+        // WHEN
+        do {
+            let undoManager = UndoManager()
+            undoManager.groupsByEvent = false
+            undoManager.beginUndoGrouping()
+            weakUndoManager = undoManager
+            bookmarkManager.reorderByName([zulu, alpha], withinParentFolder: .root, undoManager: undoManager)
+            undoManager.endUndoGrouping()
+        }
+
+        // THEN
+        XCTAssertNil(weakUndoManager)
     }
 
     func testShouldNotReturnAddFolderAndManageBookmarksWhenAddToMenuIsCalled() {

@@ -34,6 +34,13 @@ protocol BookmarksBarMenuViewControllerDelegate: AnyObject {
 }
 
 final class BookmarksBarMenuViewController: NSViewController {
+    override var undoManager: UndoManager? {
+        var hostWindow = view.window
+        while let parentWindow = hostWindow?.parent {
+            hostWindow = parentWindow
+        }
+        return hostWindow?.undoManager ?? super.undoManager
+    }
 
     fileprivate enum Constants {
         static let noContentMenuSize = CGSize(width: 8, height: 40)

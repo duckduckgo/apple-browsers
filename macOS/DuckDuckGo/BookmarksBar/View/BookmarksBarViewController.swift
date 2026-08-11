@@ -576,7 +576,10 @@ private extension BookmarksBarViewController {
     }
 
     @objc func reorderBookmarksBarByName(_ sender: NSMenuItem) {
-        bookmarkManager.reorderByName(bookmarkManager.list?.topLevelEntities ?? [], withinParentFolder: .root)
+        bookmarkManager.reorderByName(
+            bookmarkManager.list?.topLevelEntities ?? [],
+            withinParentFolder: .root,
+            undoManager: undoManager)
     }
 
 }

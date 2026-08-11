@@ -18,6 +18,7 @@
 
 import Combine
 import Common
+import FeatureFlags_macOS
 import FoundationExtensions
 import History
 import HistoryView
@@ -158,6 +159,68 @@ final class BookmarksBarViewControllerTests: XCTestCase {
         // Then
         wait(for: [expectation], timeout: 2.0)
         XCTAssertFalse(vc.importBookmarksButton.isHidden)
+    }
+
+    @MainActor
+    func testWhenReorderByNameIsSelectedFromBookmarksBarThenMainWindowUndoManagerReceivesAction() throws {
+        // GIVEN
+        let zulu = Bookmark(id: "zulu", url: "https://zulu.example", title: "Zulu", isFavorite: false)
+        let alpha = BookmarkFolder(id: "alpha", title: "Alpha")
+        bookmarksManager.list = BookmarkList(entities: [zulu], topLevelEntities: [zulu, alpha])
+        bookmarksManager.sortMode = .nameDescending
+        let controller = BookmarksBarViewController.create(
+            tabCollectionViewModel: TabCollectionViewModel(isPopup: false),
+            bookmarkManager: bookmarksManager,
+            dragDropManager: .init(bookmarkManager: bookmarksManager),
+            pinningManager: MockPinningManager(),
+            featureFlagger: MockFeatureFlagger(featuresStub: [FeatureFlag.bookmarksReorderByName.rawValue: true]))
+        let window = NSWindow(contentViewController: controller)
+        let undoManager = try XCTUnwrap(window.undoManager)
+        let menu = NSMenu()
+        controller.menuNeedsUpdate(menu)
+        let menuItem = try XCTUnwrap(menu.items.first(where: { $0.title == UserText.bookmarksBarContextMenuReorderByName }))
+        let target = try XCTUnwrap(menuItem.target)
+        let action = try XCTUnwrap(menuItem.action)
+
+        // WHEN
+        _ = target.perform(action, with: menuItem)
+
+        // THEN
+        XCTAssertTrue(undoManager.canUndo)
+        XCTAssertEqual(undoManager.undoActionName, UserText.bookmarksUndoActionReorderByName)
+    }
+
+    @MainActor
+    func testWhenBookmarksBarMenuIsHostedInChildWindowThenUndoManagerResolvesToTopLevelWindow() {
+        // GIVEN
+        let parentWindow = NSWindow()
+        let childWindow = BookmarksBarMenuWindow()
+        let controller = BookmarksBarMenuViewController(
+            bookmarkManager: bookmarksManager,
+            dragDropManager: .init(bookmarkManager: bookmarksManager))
+        childWindow.contentViewController = controller
+        parentWindow.addChildWindow(childWindow, ordered: .above)
+        defer { parentWindow.removeChildWindow(childWindow) }
+
+        // THEN
+        XCTAssertTrue(controller.undoManager === parentWindow.undoManager)
+        XCTAssertFalse(controller.undoManager === childWindow.undoManager)
+    }
+
+    @MainActor
+    func testWhenBookmarkListHasHostWindowThenUndoManagerResolvesToHostWindow() {
+        // GIVEN
+        let hostWindow = NSWindow()
+        let controller = BookmarkListViewController(
+            bookmarkManager: bookmarksManager,
+            dragDropManager: .init(bookmarkManager: bookmarksManager),
+            pinningManager: MockPinningManager())
+
+        // WHEN
+        controller.hostWindow = hostWindow
+
+        // THEN
+        XCTAssertTrue(controller.undoManager === hostWindow.undoManager)
     }
 
 }

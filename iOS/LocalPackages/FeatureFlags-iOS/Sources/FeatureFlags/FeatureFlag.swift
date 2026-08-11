@@ -335,6 +335,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1212289671815991
     case unifiedToggleInput
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217271232291839
+    case updatedModelPicker
+
     /// Forward-only new-user cutoff for the unified toggle input rollout. On by default; ship a
     /// privacy-config entry disabling it to stop *new* (un-granted) users from receiving UTI
     /// without revoking it from anyone already granted. Distinct from `unifiedToggleInput`, which
@@ -388,6 +391,12 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217109908046478?focus=true
     case tabTerminationTelemetry
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217244101759199?focus=true
+    case tabEvictionOnMemoryWarning
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217244101759205?focus=true
+    case tabLRUEviction
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214974217398704?focus=true
     case appRebranding
@@ -461,12 +470,18 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214797978179697?focus=true
     case customProductPageDuckAiChat
 
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1216945875759265
+    case aiChatTextActions
+
     /// Gate the default-to-NTP-after-idle behavior for existing iPhone users behind a remote flag.
     /// https://app.asana.com/1/137249556945/project/1204186595873227/task/1214830562427843
     case defaultExistingIPhoneUsersToNewTabAfterIdle
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217024926605808
     case customizeNTPIcons
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217276406422603
+    case newTabPageSessionInstrumentation
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215169783702336
     case walletPassDownload
@@ -498,6 +513,12 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215597855114767?focus=true
     case syncCanShowV2ConnectCode
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217191536064244?focus=true
+    case syncCanWriteUnifiedDeviceList
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217191536064256?focus=true
+    case syncCanReadUnifiedDeviceList
 
     /// Gates the Simplified Sync Setup follow-up screens.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216075349711580
@@ -783,6 +804,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.showWhatsNewPromptOnDemand))
         case .unifiedToggleInput:
             Config(source: .remoteReleasable(AIChatSubfeature.unifiedToggleInput))
+        case .updatedModelPicker:
+            Config(source: .remoteReleasable(AIChatSubfeature.updatedModelPicker))
         case .unifiedToggleInputIncludeNewUsers:
             Config(defaultValue: .enabled,
                    source: .remoteReleasable(AIChatSubfeature.unifiedToggleInputIncludeNewUsers),
@@ -819,6 +842,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.launchTimeMetrics), supportsLocalOverriding: true)
         case .tabTerminationTelemetry:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.tabTerminationTelemetry), supportsLocalOverriding: true)
+        case .tabEvictionOnMemoryWarning:
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.tabEvictionOnMemoryWarning), supportsLocalOverriding: true)
+        case .tabLRUEviction:
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.tabLRUEviction), supportsLocalOverriding: true)
 
         case .appRebranding:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.appRebranding), supportsLocalOverriding: true)
@@ -866,10 +893,14 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.omniBarLongPressMenu))
         case .customProductPageDuckAiChat:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.customProductPageDuckAiChat), supportsLocalOverriding: true)
+        case .aiChatTextActions:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.textActions), supportsLocalOverriding: true)
         case .defaultExistingIPhoneUsersToNewTabAfterIdle:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.defaultExistingIPhoneUsersToNewTabAfterIdle))
         case .customizeNTPIcons:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.customizeNTPIcons))
+        case .newTabPageSessionInstrumentation:
+            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.newTabPageSessionInstrumentation))
         case .walletPassDownload:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.walletPassDownload))
         case .aiChatChromeShortcutIPad:
@@ -888,6 +919,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(SyncSubfeature.canUseV2ConnectFlow))
         case .syncCanShowV2ConnectCode:
             Config(source: .remoteReleasable(SyncSubfeature.canShowV2ConnectCode))
+        case .syncCanWriteUnifiedDeviceList:
+            Config(source: .remoteReleasable(SyncSubfeature.canWriteUnifiedDeviceList))
+        case .syncCanReadUnifiedDeviceList:
+            Config(source: .remoteReleasable(SyncSubfeature.canReadUnifiedDeviceList))
         case .simplifiedSyncSetupV2:
             Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.simplifiedSyncSetupV2))
         case .blankSnapshotCaching:

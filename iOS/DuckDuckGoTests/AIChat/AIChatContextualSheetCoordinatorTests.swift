@@ -207,6 +207,51 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         super.tearDown()
     }
 
+    // MARK: - handleSelectionAction Tests
+
+    @MainActor
+    func testAttachSelectionAttachesAndPresentsTheSheet() async {
+        await sut.handleSelectionAction(.ask, selection: .init(text: "selected text", url: URL(string: "https://example.com"), faviconBase64: nil), from: mockPresentingVC)
+
+        XCTAssertEqual(sut.sessionState.attachedSelections.map(\.content), ["selected text"])
+        XCTAssertNotNil(sut.sheetViewController)
+    }
+
+    /// The signals-only payload is content-free and marked unattached, so pushing it while a page is
+    /// attached would clear that page on the frontend while the chip still shows it.
+    @MainActor
+    func testSelectionActionDoesNotCollectSignalsWhileAPageIsAttached() async {
+        sut.sessionState.attachContextFromSuggestionTap(makeTestContext(title: "Attached"))
+        mockPageContextHandler.triggerContextCollectionCallCount = 0
+
+        await sut.handleSelectionAction(.ask, selection: .init(text: "selected text", url: URL(string: "https://example.com"), faviconBase64: nil), from: mockPresentingVC)
+
+        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 0)
+        XCTAssertNotNil(sut.sessionState.intendedAttachedContext)
+    }
+
+    /// Reading a selection suspends, so two taps on the omnibar icon can both reach here with the same
+    /// text. Each would otherwise mint its own id and burn a second cap slot on one passage.
+    @MainActor
+    func testAttachingTheSameSelectionTwiceAttachesItOnce() async {
+        let url = URL(string: "https://example.com")
+
+        await sut.handleSelectionAction(.ask, selection: .init(text: "selected text", url: url, faviconBase64: nil), from: mockPresentingVC)
+        await sut.handleSelectionAction(.ask, selection: .init(text: "selected text", url: url, faviconBase64: nil), from: mockPresentingVC)
+
+        XCTAssertEqual(sut.sessionState.attachedSelections.count, 1)
+    }
+
+    /// Attaching a selection must not cost the user the conversation they already had.
+    @MainActor
+    func testAttachSelectionRestoresThePersistedChat() async {
+        let restoreURL = URL(string: "https://duckduckgo.com/?chatID=abc")!
+
+        await sut.handleSelectionAction(.ask, selection: .init(text: "selected text", url: URL(string: "https://example.com"), faviconBase64: nil), restoreURL: restoreURL, from: mockPresentingVC)
+
+        XCTAssertEqual(sut.sessionState.contextualChatURL, restoreURL)
+    }
+
     // MARK: - presentSheet Tests
 
     @MainActor

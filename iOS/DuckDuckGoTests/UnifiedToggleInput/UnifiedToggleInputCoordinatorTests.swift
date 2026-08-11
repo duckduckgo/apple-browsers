@@ -48,7 +48,8 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
             isToggleEnabled: true,
             preferences: mockPreferences,
             toggleModeStorage: mockToggleModeStorage,
-            switchBarSubmissionMetrics: mockSubmissionMetrics
+            switchBarSubmissionMetrics: mockSubmissionMetrics,
+            updatedModelPickerFeature: MockUpdatedModelPickerFeature(isAvailable: false)
         )
         mockDelegate = MockUnifiedToggleInputDelegate()
         sut.delegate = mockDelegate
@@ -173,6 +174,30 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     // MARK: - Model Picker (showModelPicker)
 
+    func testWhenUpdatedModelPickerIsAvailableThenCoordinatorEnablesUpdatedPresentation() {
+        let coordinator = UnifiedToggleInputCoordinator(
+            host: .omnibar,
+            isToggleEnabled: true,
+            preferences: mockPreferences,
+            updatedModelPickerFeature: MockUpdatedModelPickerFeature(isAvailable: true)
+        )
+
+        XCTAssertTrue(coordinator.viewController.usesUpdatedModelPickerPresentation)
+        XCTAssertNotNil(coordinator.viewController.onUpdatedModelPickerTapped)
+    }
+
+    func testWhenUpdatedModelPickerIsUnavailableThenCoordinatorKeepsNativePresentation() {
+        let coordinator = UnifiedToggleInputCoordinator(
+            host: .omnibar,
+            isToggleEnabled: true,
+            preferences: mockPreferences,
+            updatedModelPickerFeature: MockUpdatedModelPickerFeature(isAvailable: false)
+        )
+
+        XCTAssertFalse(coordinator.viewController.usesUpdatedModelPickerPresentation)
+        XCTAssertNil(coordinator.viewController.onUpdatedModelPickerTapped)
+    }
+
     func test_modelChip_isHidden_duringActiveChat_byDefault() {
         _ = sut.prepareExternalPromptSubmission()
 
@@ -215,6 +240,24 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "follow-up", mode: .aiChat)
 
         XCTAssertTrue(sut.viewController.isModelChipHidden)
+    }
+
+    // MARK: - Prompt editing
+
+    @MainActor
+    func test_editPrompt_holdsUntilSubmit_thenResolvesWithEditedContent() async {
+        let request = EditPromptRequest(prompt: "original", images: nil, files: nil, hasResponsesToLose: false)
+
+        let editTask = Task { await sut.editPrompt(request) }
+        await Task.yield() // let editPrompt reach its suspension
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "edited", mode: .aiChat)
+
+        let reply = await editTask.value
+        guard case let .submit(prompt, _, _) = reply else {
+            return XCTFail("Expected .submit, got \(reply)")
+        }
+        XCTAssertEqual(prompt, "edited", "Submitting during an edit resolves the held reply with the edited content")
     }
 
     // MARK: - Recovery-Card Submit Block
@@ -2872,6 +2915,10 @@ private final class MockToggleModeStorage: ToggleModeStoring {
     private var storedMode: TextEntryMode?
     func save(_ mode: TextEntryMode) { storedMode = mode }
     func restore() -> TextEntryMode? { storedMode }
+}
+
+private struct MockUpdatedModelPickerFeature: UpdatedModelPickerFeatureProviding {
+    let isAvailable: Bool
 }
 
 final class MockSwitchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding {

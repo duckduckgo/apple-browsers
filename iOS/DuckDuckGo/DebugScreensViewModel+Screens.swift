@@ -166,8 +166,8 @@ extension DebugScreensViewModel {
             .view(title: "Default Browser Prompt", { d in
                 DefaultBrowserPromptDebugView(model: DefaultBrowserPromptDebugViewModel(keyValueFilesStore: d.keyValueStore))
             }),
-            .view(title: "Notifications Playground", { _ in
-                LocalNotificationsPlaygroundView()
+            .view(title: "Notifications Playground", { d in
+                LocalNotificationsPlaygroundView(keyValueStore: d.keyValueStore)
             }),
             .view(title: "Win-back Offer", { d in
                 WinBackOfferDebugView(keyValueStore: d.keyValueStore)

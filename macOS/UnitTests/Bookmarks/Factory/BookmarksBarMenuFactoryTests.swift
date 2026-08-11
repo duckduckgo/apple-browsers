@@ -38,16 +38,16 @@ final class BookmarksBarMenuFactoryTests: XCTestCase {
             prefs: NSApp.delegateTyped.appearancePreferences)
 
         // THEN
-        XCTAssertEqual(menu.items.count, 5)
-        XCTAssertEqual(menu.items[1].title, "")
-        XCTAssertNil(menu.items[1].action)
-        XCTAssertEqual(menu.items[2].title, UserText.addFolder)
-        XCTAssertEqual(menu.items[2].action, #selector(targetMock.addFolder(_:)))
-        XCTAssertEqual(menu.items[3].title, UserText.bookmarksBarContextMenuReorderByName)
-        XCTAssertEqual(menu.items[3].action, #selector(targetMock.reorderByName(_:)))
-        XCTAssertEqual(menu.items[3].image?.pngData(), DesignSystemImages.Glyphs.Size12.arrowUpDown.pngData())
-        XCTAssertEqual(menu.items[4].title, UserText.bookmarksManageBookmarks)
-        XCTAssertEqual(menu.items[4].action, #selector(targetMock.manageBookmarks))
+        XCTAssertEqual(menu.items.count, 6)
+        XCTAssertTrue(menu.items[1].isSeparatorItem)
+        XCTAssertEqual(menu.items[2].title, UserText.bookmarksBarContextMenuReorderByName)
+        XCTAssertEqual(menu.items[2].action, #selector(targetMock.reorderByName(_:)))
+        XCTAssertEqual(menu.items[2].image?.pngData(), DesignSystemImages.Glyphs.Size12.arrowUpDown.pngData())
+        XCTAssertTrue(menu.items[3].isSeparatorItem)
+        XCTAssertEqual(menu.items[4].title, UserText.addFolder)
+        XCTAssertEqual(menu.items[4].action, #selector(targetMock.addFolder(_:)))
+        XCTAssertEqual(menu.items[5].title, UserText.bookmarksManageBookmarks)
+        XCTAssertEqual(menu.items[5].action, #selector(targetMock.manageBookmarks))
     }
 
     func testReorderByNameIsMissingWhenSelectorIsNil() {
@@ -67,6 +67,9 @@ final class BookmarksBarMenuFactoryTests: XCTestCase {
         // THEN
         XCTAssertEqual(menu.items.count, 4)
         XCTAssertFalse(menu.items.contains(where: { $0.title == UserText.bookmarksBarContextMenuReorderByName }))
+        XCTAssertTrue(menu.items[1].isSeparatorItem)
+        XCTAssertEqual(menu.items[2].title, UserText.addFolder)
+        XCTAssertEqual(menu.items[3].title, UserText.bookmarksManageBookmarks)
     }
 
     func testReorderByNameMovesTopLevelEntitiesWithinRoot() {

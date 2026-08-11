@@ -2172,6 +2172,15 @@ class MainViewController: UIViewController {
         recordNewTabPageSessionAction { $0.typeInInput() }
     }
 
+    /// Ends the visit on a navigation the user asked for, splitting search results from a site.
+    ///
+    /// Called with the resolved URL rather than the typed text, because whether a query becomes a
+    /// search or a direct address is only decided while building it. Unlike the action hooks this
+    /// has no visibility guard: it must still land when the New Tab Page has already gone.
+    private func endNewTabPageSessionWithLoad(of url: URL) {
+        newTabPageSessionInstrumentation.visitEnded(terminalAction: url.isDuckDuckGoSearch ? .loadSerp : .loadWebsite)
+    }
+
     func fireNewTabPixels() {
         Pixel.fire(.homeScreenShown, withAdditionalParameters: [:])
         productSurfaceTelemetry.newTabPageUsed()
@@ -2457,6 +2466,7 @@ class MainViewController: UIViewController {
         }
         // Make sure that once query is submitted, we don't trigger the non-SERP flow
         skipSERPFlow = false
+        endNewTabPageSessionWithLoad(of: url)
         loadUrlRespectingAIBoundary(url)
     }
 
@@ -4850,6 +4860,7 @@ extension MainViewController: OmniBarDelegate {
             ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: tab.openedAfterIdle)
         }
         postIdleSessionInstrumentation.sessionEnded(reason: .barUsed)
+        recordNewTabPageSessionAction { $0.hitSubmit() }
         loadQuery(query)
         hideNotificationBarIfBrokenSitePromptShown()
         showHomeRowReminder()

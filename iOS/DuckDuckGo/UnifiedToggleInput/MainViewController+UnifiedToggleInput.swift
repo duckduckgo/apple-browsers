@@ -1175,6 +1175,7 @@ extension MainViewController {
             ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: tab.openedAfterIdle)
         }
         postIdleSessionInstrumentation.sessionEnded(reason: .barUsed)
+        recordNewTabPageSessionAction { $0.hitSubmit() }
         loadQuery(query)
     }
 

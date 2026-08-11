@@ -186,6 +186,8 @@ protocol AIChatUserScriptHandling: AnyObject {
     func disableChatInput(params: Any, message: UserScriptMessage) async -> Encodable?
     func enableChatInput(params: Any, message: UserScriptMessage) async -> Encodable?
     func focusChatInput(params: Any, message: UserScriptMessage) async -> Encodable?
+    func editPrompt(params: Any, message: UserScriptMessage) async -> Encodable?
+    func cancelEdit(params: Any, message: UserScriptMessage) async -> Encodable?
 
     // Sync
     func getSyncStatus(params: Any, message: UserScriptMessage) -> Encodable?
@@ -415,6 +417,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             supportsAIChatSync: featureFlagger.isFeatureOn(.aiChatSync) && !fireMode,
             supportsMultipleContexts: supportsContextualMode && featureFlagger.isFeatureOn(.multiplePageContexts),
             supportsNativeStorage: featureFlagger.isFeatureOn(.aiChatNativeStorage) && isNativeStorageBridgeAvailable,
+            supportsNativePromptEditing: featureFlagger.isFeatureOn(.nativeAIPromptEditing) && supportsNativeChatInput,
             supportsSuggestions: supportsSuggestions,
             installType: installTypeProvider(),
             installAge: AIChatNativeConfigValues.installAgeBucket(installDate: installDateProvider())
@@ -543,6 +546,24 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
                 }
             }
         }
+    }
+    
+    func editPrompt(params: Any, message: UserScriptMessage) async -> Encodable? {
+        guard featureFlagger.isFeatureOn(.nativeAIPromptEditing) else {
+            return EditPromptReply.cancelled
+        }
+        guard let request: EditPromptRequest = DecodableHelper.decode(from: params) else {
+            Logger.aiChat.error("editPrompt: invalid params")
+            return EditPromptReply.cancelled
+        }
+        guard let inputBoxHandler else { return EditPromptReply.cancelled }
+        return await inputBoxHandler.editPrompt(request)
+    }
+
+    @MainActor
+    func cancelEdit(params: Any, message: UserScriptMessage) async -> Encodable? {
+        inputBoxHandler?.cancelEdit()
+        return nil
     }
 
     func storeMigrationData(params: Any, message: UserScriptMessage) -> Encodable? {

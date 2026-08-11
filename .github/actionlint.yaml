@@ -9,3 +9,4 @@ self-hosted-runner:
   labels:
     - apple
     - xcode-27
+    - bitrise_pool_name:bitrise-runner-apple1

@@ -200,7 +200,7 @@ final class SubscriptionOnboardingDuckAIViewModelTests: XCTestCase {
         XCTAssertTrue(spy.requestedChatModelIDs.isEmpty)
     }
 
-    func testWhenHandingOffThenRequestsDuckAIChatWithoutCompletingSection() async {
+    func testWhenHandingOffThenRequestsDuckAIChatWithoutCompletingSectionAgain() async {
         let spy = SectionOutputSpy()
         let provider = MockAIModelProvider(models: [model("a", tier: ["plus"])])
         let (viewModel, _) = makeViewModel(provider: provider, spy: spy)
@@ -212,7 +212,7 @@ final class SubscriptionOnboardingDuckAIViewModelTests: XCTestCase {
         viewModel.handOffToChat()
 
         XCTAssertEqual(spy.requestedChatModelIDs, ["a"])
-        XCTAssertEqual(spy.completeCount, 0)
+        XCTAssertEqual(spy.completeCount, 1)
     }
 
     /// The interstitial's timer and its tap-to-skip can both fire.

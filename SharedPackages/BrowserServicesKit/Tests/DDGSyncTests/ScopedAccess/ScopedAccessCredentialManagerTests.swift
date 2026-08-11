@@ -1003,6 +1003,7 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
         let api = RemoteAPIRequestCreatingMock()
         let endpoints = Endpoints(baseURL: Self.baseURL)
         let accountInfoKeyFactory = AccountInfoKeyFactoryMock()
+        let crypter = CryptingMock()
         let accountPrimaryKey = Data((0..<32).map(UInt8.init))
         let scopedPassword = Data((32..<64).map(UInt8.init))
         let account = makeAccount(primaryKey: accountPrimaryKey)
@@ -1015,16 +1016,19 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
                              scope: "sync",
                              encrypted3PartyCredential: encryptedCredential)
         ]
-        let defaultWrapper = makeProtectedKey(kid: "created",
-                                              encryptedWith: SyncCredentialID.defaultCredential,
-                                              purpose: ProtectedKeyPurpose.accountInfo)
-        let thirdPartyWrapper = makeProtectedKey(kid: "created",
+        let defaultWrapper = try makeNativeEncryptedProtectedKey(
+            privateKey: Data([0xFF] + Array("account-info-private-key".utf8)),
+            account: account,
+            crypter: crypter,
+            purpose: ProtectedKeyPurpose.accountInfo)
+        let thirdPartyWrapper = makeProtectedKey(kid: defaultWrapper.kid,
                                                  encryptedWith: SyncCredentialID.thirdParty,
-                                                 purpose: ProtectedKeyPurpose.accountInfo)
+                                                 purpose: ProtectedKeyPurpose.accountInfo,
+                                                 publicKey: defaultWrapper.publicKey)
         accountInfoKeyFactory.makeProtectedKeysStub = [defaultWrapper, thirdPartyWrapper]
         let manager = ScopedAccessCredentialManager(endpoints: endpoints,
                                                     api: api,
-                                                    crypter: CryptingMock(),
+                                                    crypter: crypter,
                                                     accountInfoKeyFactory: accountInfoKeyFactory,
                                                     canWriteUnifiedDeviceList: { true })
         api.fakeRequests[endpoints.keys] = SequencedHTTPRequestingMock(results: [

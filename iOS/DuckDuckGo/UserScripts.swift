@@ -59,6 +59,9 @@ final class UserScripts: UserScriptsProvider {
 
     private(set) var faviconScript = FaviconUserScript()
     private(set) var findInPageScript = FindInPageUserScript()
+
+    /// Only created when the text-selection feature is on, evaluated once per `UserScripts`.
+    private(set) var selectionFrameScript: SelectionFrameUserScript?
     private(set) var fullScreenVideoScript = FullScreenVideoUserScript()
     private(set) var printingSubfeature = PrintingSubfeature()
     private(set) var trackerProtectionSubfeature = TrackerProtectionSubfeature()
@@ -69,9 +72,13 @@ final class UserScripts: UserScriptsProvider {
          appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
-         aiChatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings()) {
+         aiChatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
+         textSelectionFeature: AIChatTextSelectionFeatureProviding? = nil) {
 
         isAutoconsentExtensionAvailable = sourceProvider.webExtensionAvailability?.isAutoconsentExtensionAvailable ?? false
+
+        let textSelectionFeature = textSelectionFeature ?? AIChatTextSelectionFeature(featureFlagger: featureFlagger)
+        selectionFrameScript = textSelectionFeature.isEnabled ? SelectionFrameUserScript() : nil
 
         autofillUserScript = AutofillUserScript(scriptSourceProvider: sourceProvider.autofillSourceProvider)
         autofillUserScript.sessionKey = sourceProvider.contentScopeProperties.sessionKey
@@ -180,6 +187,7 @@ final class UserScripts: UserScriptsProvider {
     lazy var userScripts: [UserScript] = {
         var scripts: [UserScript?] = [
             findInPageScript,
+            selectionFrameScript,
             fullScreenVideoScript,
             autofillUserScript,
             loginFormDetectionScript,

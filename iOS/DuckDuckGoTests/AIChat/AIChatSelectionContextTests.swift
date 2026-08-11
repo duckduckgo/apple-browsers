@@ -17,6 +17,8 @@
 //  limitations under the License.
 //
 
+import UserScript
+import WebKit
 import XCTest
 @testable import DuckDuckGo
 @testable import AIChat
@@ -103,6 +105,43 @@ final class AIChatSelectionContextBuilderTests: XCTestCase {
         XCTAssertNotEqual(first.id, second.id)
     }
 
+    // MARK: - Delivery on the prompt's `selections` key
+
+    /// The key is omitted entirely when nothing is attached.
+    func testPromptOmitsSelectionsKeyWhenNoneAttached() throws {
+        let prompt = AIChatNativePrompt.queryPrompt("hello", autoSubmit: true)
+
+        let json = try XCTUnwrap(String(data: try JSONEncoder().encode(prompt), encoding: .utf8))
+
+        XCTAssertFalse(json.contains("selections"))
+    }
+
+    func testPromptCarriesAttachedSelectionsIntact() throws {
+        let text = String(repeating: "b", count: AIChatSelectionContextBuilder.maxSelectionContextLength + 100)
+        let selection = AIChatSelectionContextBuilder.makeSelection(text: text, url: url)
+        let prompt = AIChatNativePrompt.queryPrompt("hello", autoSubmit: true, selections: [selection])
+
+        let decoded = try JSONDecoder().decode(AIChatNativePrompt.self, from: try JSONEncoder().encode(prompt))
+
+        XCTAssertEqual(decoded.selections, [selection])
+        XCTAssertEqual(decoded.selections?.first?.wordCount, selection.wordCount)
+        XCTAssertEqual(decoded.selections?.first?.truncated, true)
+    }
+
+    /// Selections must not displace page context.
+    func testPromptCarriesPageContextAndSelectionsTogether() throws {
+        let selection = AIChatSelectionContextBuilder.makeSelection(text: "text", url: url)
+        let page = AIChatPageContextData(title: "Page", favicon: [], url: url.absoluteString, content: "body",
+                                         truncated: false, fullContentLength: 4, attachable: true, attached: true)
+        let prompt = AIChatNativePrompt.queryPrompt("hello", autoSubmit: true,
+                                                    pageContext: .single(page), selections: [selection])
+
+        let decoded = try JSONDecoder().decode(AIChatNativePrompt.self, from: try JSONEncoder().encode(prompt))
+
+        XCTAssertEqual(decoded.selections, [selection])
+        XCTAssertNotNil(decoded.pageContext)
+    }
+
     // MARK: - displayTitle
 
     func testDisplayTitleLeadsWithTheWordCountThenASnippet() {
@@ -152,5 +191,94 @@ final class AIChatSelectionContextBuilderTests: XCTestCase {
         let selection = AIChatSelectionContextBuilder.makeSelection(text: content, url: url)
 
         XCTAssertFalse(AIChatSelectionContextBuilder.displayTitle(for: selection).contains("…"))
+    }
+}
+
+/// Consumption clears the chips and the session's selections, so it has to happen exactly when they
+/// reach the frontend — never on a submit that carried none, and never on one that was dropped before
+/// it got there, or the user's text is destroyed unsent.
+final class AIChatUserScriptSelectionDeliveryTests: XCTestCase {
+
+    private let url = URL(string: "https://example.com/article")!
+
+    /// Weak on the user script, so the fixture has to hold them.
+    private var webView: WKWebView!
+    private var broker: UserScriptMessageBroker!
+
+    override func setUp() {
+        super.setUp()
+        webView = WKWebView()
+        broker = UserScriptMessageBroker(context: "aiChat")
+    }
+
+    override func tearDown() {
+        webView = nil
+        broker = nil
+        super.tearDown()
+    }
+
+    /// A script whose bridge can actually dispatch.
+    private func makeConnectedUserScript() -> AIChatUserScript {
+        let userScript = makeTestUserScript()
+        userScript.webView = webView
+        userScript.broker = broker
+        return userScript
+    }
+
+    private func attach(_ userScript: AIChatUserScript, consumed: @escaping () -> Void) {
+        userScript.setAttachedSelectionsProvider { [AIChatSelectionContextBuilder.makeSelection(text: "selected", url: self.url)] }
+        userScript.setAttachedSelectionsConsumedHandler(consumed)
+    }
+
+    func testSubmittingWithAttachedSelectionsConsumesThem() {
+        let userScript = makeConnectedUserScript()
+        var didConsume = false
+        attach(userScript) { didConsume = true }
+
+        userScript.submitPrompt("hello", pageContext: nil, modelId: nil)
+
+        XCTAssertTrue(didConsume)
+    }
+
+    func testMultiModalSubmitAlsoConsumesAttachedSelections() {
+        let userScript = makeConnectedUserScript()
+        var didConsume = false
+        attach(userScript) { didConsume = true }
+
+        userScript.submitPrompt("hello", images: nil, files: nil, modelId: nil, tools: nil, reasoningEffort: nil)
+
+        XCTAssertTrue(didConsume)
+    }
+
+    func testSubmittingWithNothingAttachedDoesNotConsume() {
+        let userScript = makeConnectedUserScript()
+        var didConsume = false
+        userScript.setAttachedSelectionsProvider { [] }
+        userScript.setAttachedSelectionsConsumedHandler { didConsume = true }
+
+        userScript.submitPrompt("hello", pageContext: nil, modelId: nil)
+
+        XCTAssertFalse(didConsume)
+    }
+
+    /// Consuming a dropped push would clear the chips for a prompt that was never sent.
+    func testSubmittingWithoutABridgeDoesNotConsume() {
+        let userScript = makeTestUserScript()
+        var didConsume = false
+        attach(userScript) { didConsume = true }
+
+        userScript.submitPrompt("hello", pageContext: nil, modelId: nil)
+
+        XCTAssertFalse(didConsume)
+    }
+
+    func testMultiModalSubmitWithoutABridgeDoesNotConsume() {
+        let userScript = makeTestUserScript()
+        var didConsume = false
+        attach(userScript) { didConsume = true }
+
+        userScript.submitPrompt("hello", images: nil, files: nil, modelId: nil, tools: nil, reasoningEffort: nil)
+
+        XCTAssertFalse(didConsume)
     }
 }

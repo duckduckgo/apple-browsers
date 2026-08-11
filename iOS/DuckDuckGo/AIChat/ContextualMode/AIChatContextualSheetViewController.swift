@@ -869,9 +869,8 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
 
     func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSelectSuggestion suggestion: ContextualSuggestedPrompt) {
         guard featureFlagger.isFeatureOn(.contextualSuggestedPrompts) else { return }
-        // These act on the attached selection, so they must not take the page route below: it attaches
-        // the whole page and submits the label as prompt text.
-        guard AIChatTextSelectionAction(selectionSuggestionID: suggestion.id) == nil else { return }
+        // Acts on the already-attached selection, so it must not also attach the page.
+        let actsOnSelection = AIChatTextSelectionAction(selectionSuggestionID: suggestion.id) != nil
         cancelSuggestionSubmission()
         pixelHandler.fireSuggestionSelected(suggestionId: suggestion.id, pageType: sessionState.viewState.suggestionsPageType)
         contextualInputViewController.setStartActionsDimmed(true)
@@ -889,14 +888,18 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
                 }
             }
 
-            await self.delegate?.aiChatContextualSheetViewControllerAttachContextForSuggestion(self)
-            guard !Task.isCancelled, self.canProcessSuggestionSubmission else { return }
+            if !actsOnSelection {
+                await self.delegate?.aiChatContextualSheetViewControllerAttachContextForSuggestion(self)
+                guard !Task.isCancelled, self.canProcessSuggestionSubmission else { return }
+            }
 
             guard let webViewController = self.webViewController else { return }
 
             let isFrontendReady = await webViewController.waitUntilFrontendReady(timeout: Constants.suggestedPromptFrontendReadinessTimeout)
             guard isFrontendReady else { return }
             guard !Task.isCancelled, self.canProcessSuggestionSubmission else { return }
+            // The selection can be removed while waiting for the frontend.
+            guard !actsOnSelection || !self.sessionState.attachedSelections.isEmpty else { return }
             self.submitSuggestionPrompt(suggestion.prompt)
         }
     }

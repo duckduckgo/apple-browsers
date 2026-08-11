@@ -42,6 +42,9 @@ final class WebView: WKWebView {
     /// Receives the trimmed selection when the user picks Search with DuckDuckGo.
     var searchWithDuckDuckGoHandler: ((String) -> Void)?
 
+    /// The frame holding the selection, or nil to read the main frame.
+    var selectionFrameProvider: (() -> SelectionFrame?)?
+
     // Remembers the last find-in-page query so the system find navigator can be prepopulated per tab.
     var lastFindInPageQuery: String?
 
@@ -167,14 +170,34 @@ final class WebView: WKWebView {
     /// Deliberately the completion-handler overload: `evaluateJavaScript`'s `async` twin bridges the result
     /// back as `()` in this content world, so the selection never arrives.
     ///
-    /// Main frame only: a selection inside an iframe yields nothing and the action silently does nothing.
+    /// Reads from the frame holding the selection, falling back to the main frame if that fails.
     private func readSelection(_ completion: @escaping (String?) -> Void) {
-        evaluateJavaScript("window.getSelection().toString()", in: nil, in: .defaultClient) { result in
+        let frame = selectionFrameProvider?()
+
+        readSelection(in: frame) { [weak self] selection in
+            // A frame that has gone away can only be known stale by trying it.
+            guard selection == nil, frame != nil, let self else {
+                completion(selection)
+                return
+            }
+            self.readSelection(in: nil, completion)
+        }
+    }
+
+    private func readSelection(in frame: SelectionFrame?, _ completion: @escaping (String?) -> Void) {
+        let script = "window.getSelection().toString()"
+        let handler: (Result<Any, Error>) -> Void = { result in
             guard case .success(let value) = result, let text = value as? String else {
                 completion(nil)
                 return
             }
             completion(Self.normalizedSelection(text))
+        }
+
+        if let frame {
+            frame.evaluateJavaScript(script, in: self, contentWorld: .defaultClient, completionHandler: handler)
+        } else {
+            evaluateJavaScript(script, in: nil, in: .defaultClient, completionHandler: handler)
         }
     }
 

@@ -81,6 +81,10 @@ final class AIChatContextualWebViewController: UIViewController {
     /// Page context bundled with a pending prompt submission (consumed together in `submitPromptNow`).
     private var pendingPageContext: AIChatPageContextData?
     private var pendingRichPrompt: PendingRichPrompt?
+    /// Selections as they were when a queued prompt was submitted, so editing chips while the frontend
+    /// loads cannot change what that prompt carries.
+    private var pendingSelections: [AIChatSelectionContextData]?
+    private var selectionsProvider: (() -> [AIChatSelectionContextData])?
     /// Standalone page context for the "Attach Page Content" chip, buffered when WebView isn't ready yet.
     private var pendingChipContext: AIChatPageContextData?
     private var hasPendingChipContext = false
@@ -227,6 +231,7 @@ final class AIChatContextualWebViewController: UIViewController {
             utiHost?.promptDeliveryUpdated(wasQueued: true, didSendBridgeMessage: nil)
             pendingPrompt = prompt
             pendingPageContext = pageContext
+            pendingSelections = selectionsProvider?()
         }
     }
 
@@ -251,6 +256,7 @@ final class AIChatContextualWebViewController: UIViewController {
                                                   tools: tools,
                                                   pageContext: pageContext,
                                                   reasoningEffort: reasoningEffort)
+            pendingSelections = selectionsProvider?()
             pendingPrompt = nil
             pendingPageContext = nil
         }
@@ -283,6 +289,18 @@ final class AIChatContextualWebViewController: UIViewController {
         }
     }
 
+    func setAttachedSelectionsProvider(_ provider: (() -> [AIChatSelectionContextData])?) {
+        selectionsProvider = provider
+        aiChatContentHandler.setAttachedSelectionsProvider { [weak self] in
+            guard let self else { return [] }
+            return self.pendingSelections ?? self.selectionsProvider?() ?? []
+        }
+    }
+
+    func setAttachedSelectionsConsumedHandler(_ handler: (() -> Void)?) {
+        aiChatContentHandler.setAttachedSelectionsConsumedHandler(handler)
+    }
+
     func reload() {
         isPageReady = false
         isContentHandlerReady = false
@@ -306,6 +324,7 @@ final class AIChatContextualWebViewController: UIViewController {
         pendingPrompt = nil
         pendingPageContext = nil
         pendingRichPrompt = nil
+        pendingSelections = nil
         hasPendingChipContext = false
         pendingChipContext = nil
         loadingView.startAnimating()
@@ -394,11 +413,13 @@ final class AIChatContextualWebViewController: UIViewController {
         if let richPrompt = pendingRichPrompt {
             pendingRichPrompt = nil
             submitPromptNow(richPrompt)
+            pendingSelections = nil
         } else if let prompt = pendingPrompt {
             let pageContext = pendingPageContext
             pendingPrompt = nil
             pendingPageContext = nil
             submitPromptNow(prompt, pageContext: pageContext)
+            pendingSelections = nil
         }
 
         if hasPendingChipContext, frontendReadinessGate.isReady {

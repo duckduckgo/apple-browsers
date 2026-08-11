@@ -110,6 +110,26 @@ final class AIChatContentHandlerTests: XCTestCase {
         XCTAssertTrue(mockUserScript.webViewSet)
     }
 
+    /// They are installed before `setup` runs, so they have to survive it.
+    func testSetupForwardsSelectionsProviderAndConsumedHandlerInstalledBeforehand() throws {
+        // Given
+        let mockUserScript = MockAIChatUserScript()
+        let mockWebView = WKWebView()
+        let selection = AIChatSelectionContextBuilder.makeSelection(text: "selected", url: URL(string: "https://example.com")!)
+        var didConsume = false
+
+        handler.setAttachedSelectionsProvider { [selection] }
+        handler.setAttachedSelectionsConsumedHandler { didConsume = true }
+
+        // When
+        handler.setup(with: mockUserScript, webView: mockWebView, displayMode: .fullTab)
+
+        // Then
+        XCTAssertEqual(mockUserScript.attachedSelectionsProvider?(), [selection])
+        mockUserScript.attachedSelectionsConsumedHandler?()
+        XCTAssertTrue(didConsume)
+    }
+
     func testSetupSetsDisplayMode() throws {
         // Given
         let mockUserScript = MockAIChatUserScript()
@@ -776,6 +796,8 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
     var submitPageContextCallCount = 0
     var lastSubmittedPageContextViaSubmit: AIChatPageContextData?
     var lastDisplayModeSet: AIChatDisplayMode?
+    var attachedSelectionsProvider: (() -> [AIChatSelectionContextData])?
+    var attachedSelectionsConsumedHandler: (() -> Void)?
 
     func setPayloadHandler(_ payloadHandler: any AIChat.AIChatConsumableDataHandling) {
         payloadHandlerSet = true
@@ -788,6 +810,14 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
 
     func setPageContextProvider(_ provider: PageContextAsyncProvider?) {
         pageContextProviderSet = true
+    }
+
+    func setAttachedSelectionsProvider(_ provider: (() -> [AIChatSelectionContextData])?) {
+        attachedSelectionsProvider = provider
+    }
+
+    func setAttachedSelectionsConsumedHandler(_ handler: (() -> Void)?) {
+        attachedSelectionsConsumedHandler = handler
     }
 
     func setChatStatusHandler(_ handler: (@MainActor (AIChatStatusValue) -> Void)?) {

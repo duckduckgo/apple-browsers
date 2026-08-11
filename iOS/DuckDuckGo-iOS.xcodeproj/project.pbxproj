@@ -98,6 +98,7 @@
 		1E8AD1DD27C653F800ABA377 /* Downloads.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1E8AD1DC27C653F800ABA377 /* Downloads.xcassets */; };
 		1E908BF129827C480008C8F3 /* AutoconsentUserScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E908BEE29827C480008C8F3 /* AutoconsentUserScript.swift */; };
 		1E908BF229827C480008C8F3 /* autoconsent-bundle.js in Resources */ = {isa = PBXBuildFile; fileRef = 1E908BEF29827C480008C8F3 /* autoconsent-bundle.js */; };
+		AD5E1ED02B0000000000F30A /* selectionframe.js in Resources */ = {isa = PBXBuildFile; fileRef = AD5E1ED02B0000000000F309 /* selectionframe.js */; };
 		1E908BF329827C480008C8F3 /* AutoconsentManagement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E908BF029827C480008C8F3 /* AutoconsentManagement.swift */; };
 		1E9529A12C4E748B006E80D4 /* UINavigationControllerExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E9529A02C4E748B006E80D4 /* UINavigationControllerExtension.swift */; };
 		1EA1DA252F460653005387D0 /* AutoconsentMessageHandlerDelegate+iOS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EA1DA242F460653005387D0 /* AutoconsentMessageHandlerDelegate+iOS.swift */; };
@@ -989,6 +990,7 @@
 		85BA585A1F3506AE00C6E8CA /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85BA58591F3506AE00C6E8CA /* AppSettings.swift */; };
 		85BA79911F6FF75000F59015 /* ContentBlockerStoreConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85BA79901F6FF75000F59015 /* ContentBlockerStoreConstants.swift */; };
 		85BDC310243359040053DB07 /* FindInPageUserScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85BDC30F243359040053DB07 /* FindInPageUserScript.swift */; };
+		AD5E1ED02B0000000000F10A /* SelectionFrameUserScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD5E1ED02B0000000000F109 /* SelectionFrameUserScript.swift */; };
 		85BDC3192436161C0053DB07 /* LoginFormDetectionUserScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85BDC3182436161C0053DB07 /* LoginFormDetectionUserScript.swift */; };
 		85C11E4120904BBE00BFFEB4 /* VariantManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85C11E4020904BBE00BFFEB4 /* VariantManagerTests.swift */; };
 		85C11E4C2090888C00BFFEB4 /* HomeRowReminder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85C11E4B2090888C00BFFEB4 /* HomeRowReminder.swift */; };
@@ -2667,6 +2669,7 @@
 		F1849C702D6E3D17000589A4 /* DiagnosticReport.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1849C6F2D6E3D17000589A4 /* DiagnosticReport.swift */; };
 		F1849C722D6E3D4C000589A4 /* CrashDebugScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1849C712D6E3D4C000589A4 /* CrashDebugScreen.swift */; };
 		F189AED71F18F6DE001EBAE1 /* TabTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F189AED61F18F6DE001EBAE1 /* TabTests.swift */; };
+		AD5E1ED02B0000000000F20A /* SelectionFrameUserScriptTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD5E1ED02B0000000000F209 /* SelectionFrameUserScriptTests.swift */; };
 		F189AEE41F18FDAF001EBAE1 /* LinkTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F189AEE31F18FDAF001EBAE1 /* LinkTests.swift */; };
 		F194FAED1F14E2B3009B4DF8 /* UIFontExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = F194FAEC1F14E2B3009B4DF8 /* UIFontExtension.swift */; };
 		F194FAFB1F14E622009B4DF8 /* UIFontExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F194FAFA1F14E622009B4DF8 /* UIFontExtensionTests.swift */; };
@@ -3015,6 +3018,7 @@
 		1E8AD1DC27C653F800ABA377 /* Downloads.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Downloads.xcassets; sourceTree = "<group>"; };
 		1E908BEE29827C480008C8F3 /* AutoconsentUserScript.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AutoconsentUserScript.swift; sourceTree = "<group>"; };
 		1E908BEF29827C480008C8F3 /* autoconsent-bundle.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = "autoconsent-bundle.js"; sourceTree = "<group>"; };
+		AD5E1ED02B0000000000F309 /* selectionframe.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = selectionframe.js; sourceTree = "<group>"; };
 		1E908BF029827C480008C8F3 /* AutoconsentManagement.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AutoconsentManagement.swift; sourceTree = "<group>"; };
 		1E9529A02C4E748B006E80D4 /* UINavigationControllerExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UINavigationControllerExtension.swift; sourceTree = "<group>"; };
 		1EA1DA242F460653005387D0 /* AutoconsentMessageHandlerDelegate+iOS.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AutoconsentMessageHandlerDelegate+iOS.swift"; sourceTree = "<group>"; };
@@ -3826,6 +3830,7 @@
 		85BA58591F3506AE00C6E8CA /* AppSettings.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
 		85BA79901F6FF75000F59015 /* ContentBlockerStoreConstants.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ContentBlockerStoreConstants.swift; sourceTree = "<group>"; };
 		85BDC30F243359040053DB07 /* FindInPageUserScript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FindInPageUserScript.swift; sourceTree = "<group>"; };
+		AD5E1ED02B0000000000F109 /* SelectionFrameUserScript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionFrameUserScript.swift; sourceTree = "<group>"; };
 		85BDC3182436161C0053DB07 /* LoginFormDetectionUserScript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginFormDetectionUserScript.swift; sourceTree = "<group>"; };
 		85C11E4020904BBE00BFFEB4 /* VariantManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VariantManagerTests.swift; sourceTree = "<group>"; };
 		85C11E4B2090888C00BFFEB4 /* HomeRowReminder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeRowReminder.swift; sourceTree = "<group>"; };
@@ -5591,6 +5596,7 @@
 		F1849C6F2D6E3D17000589A4 /* DiagnosticReport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiagnosticReport.swift; sourceTree = "<group>"; };
 		F1849C712D6E3D4C000589A4 /* CrashDebugScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrashDebugScreen.swift; sourceTree = "<group>"; };
 		F189AED61F18F6DE001EBAE1 /* TabTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TabTests.swift; sourceTree = "<group>"; };
+		AD5E1ED02B0000000000F209 /* SelectionFrameUserScriptTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionFrameUserScriptTests.swift; sourceTree = "<group>"; };
 		F189AEE31F18FDAF001EBAE1 /* LinkTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LinkTests.swift; sourceTree = "<group>"; };
 		F194FAEC1F14E2B3009B4DF8 /* UIFontExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UIFontExtension.swift; sourceTree = "<group>"; };
 		F194FAFA1F14E622009B4DF8 /* UIFontExtensionTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UIFontExtensionTests.swift; sourceTree = "<group>"; };
@@ -6195,6 +6201,23 @@
 				314C92B927C3E7CB0042EC96 /* QuickLookContainerViewController.swift */,
 			);
 			name = Modals;
+			sourceTree = "<group>";
+		};
+		AD5E1ED02B0000000000F409 /* TextSelection */ = {
+			isa = PBXGroup;
+			children = (
+				AD5E1ED02B0000000000F109 /* SelectionFrameUserScript.swift */,
+				AD5E1ED02B0000000000F309 /* selectionframe.js */,
+			);
+			path = TextSelection;
+			sourceTree = "<group>";
+		};
+		AD5E1ED02B0000000000F509 /* TextSelection */ = {
+			isa = PBXGroup;
+			children = (
+				AD5E1ED02B0000000000F209 /* SelectionFrameUserScriptTests.swift */,
+			);
+			path = TextSelection;
 			sourceTree = "<group>";
 		};
 		1E908BED29827C480008C8F3 /* Autoconsent */ = {
@@ -7972,6 +7995,7 @@
 				9817C9C121EF58BA00884F65 /* AutoClear */,
 				F15D43211E70849A00BF2CDC /* Autocomplete */,
 				1E908BED29827C480008C8F3 /* Autoconsent */,
+				AD5E1ED02B0000000000F409 /* TextSelection */,
 				F44D279327F331930037F371 /* Autofill */,
 				857EE6E53000FC1900DAC799 /* Automation */,
 				5BF65FD82F5A2CA400BCC9F4 /* Autoplay */,
@@ -12171,6 +12195,7 @@
 				317DD5532E0D5DB900CCC28C /* SwitchBar */,
 				67412C9BD9BF373C2B6D808A /* ToggleMode */,
 				310EEA2D2CFFCDB60043CA1A /* AIChat */,
+				AD5E1ED02B0000000000F509 /* TextSelection */,
 				83EDCC3E1F86B363005CDFCD /* API */,
 				C1BF4BA82D26E08F00A83C77 /* Autofill */,
 				C14882DD27F20D7300D59F0C /* Bookmarks */,
@@ -13008,6 +13033,7 @@
 				85A9C37920E0E00C00073340 /* HomeRow.xcassets in Resources */,
 				3666D87A300193EA00B63F99 /* check-color.json in Resources */,
 				1E908BF229827C480008C8F3 /* autoconsent-bundle.js in Resources */,
+				AD5E1ED02B0000000000F30A /* selectionframe.js in Resources */,
 				ED39ED412FE607620011B7C3 /* confirmation-prompt-128.json in Resources */,
 				F143C2B21E49D78C00CFDE3A /* Assets.xcassets in Resources */,
 				310C24E82E6B6D1900D5A372 /* NewAddressBarPicker.xcassets in Resources */,
@@ -13506,6 +13532,7 @@
 				D6FEB8B32B74990D00C3615F /* HeadlessWebViewNavCoordinator.swift in Sources */,
 				80F8207D2F4D4AC0007CA7C9 /* AutoconsentManagementProvider.swift in Sources */,
 				85BDC310243359040053DB07 /* FindInPageUserScript.swift in Sources */,
+				AD5E1ED02B0000000000F10A /* SelectionFrameUserScript.swift in Sources */,
 				F132D6A52C62239B00D85426 /* SubscriptionSettingsHeaderView.swift in Sources */,
 				B57246132FB7AF3B004EB481 /* LeftCapsuleShape.swift in Sources */,
 				6F2BB1A22F59D628004B1DBE /* SafariRedirectHandler.swift in Sources */,
@@ -14993,6 +15020,7 @@
 				852A4D013013738B00FA7A16 /* PrivacyUserDefaultsTests.swift in Sources */,
 				9F7CFF7D2C89B69A0012833E /* AppIconPickerViewModelTests.swift in Sources */,
 				F189AED71F18F6DE001EBAE1 /* TabTests.swift in Sources */,
+				AD5E1ED02B0000000000F20A /* SelectionFrameUserScriptTests.swift in Sources */,
 				652A1E08DFB4460E2E44DEAF /* WebViewInputAccessoryTests.swift in Sources */,
 				C163DC962DC92FDC0026852D /* OnboardingSubscriptionPromotionHelpingTests.swift in Sources */,
 				CB596FF12ED9FBF300370FA8 /* MockRemoteMessagingDebugHandler.swift in Sources */,

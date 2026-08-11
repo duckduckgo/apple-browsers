@@ -1190,6 +1190,10 @@ class TabViewController: UIViewController {
             guard let self else { return }
             self.delegate?.tab(self, didRequestSearchForSelectedText: text)
         }
+
+        webView.selectionFrameProvider = { [weak self] in
+            self?.userScripts?.selectionFrameScript?.frameWithSelection
+        }
     }
 
     // The `consumeCookies` is legacy behaviour from the previous Fireproofing implementation. Cookies no longer need to be consumed after invocations

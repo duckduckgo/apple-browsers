@@ -9,7 +9,7 @@ Iteration one coordinates only:
 
 It is a main-actor mutual-exclusion and fixed-cooldown seam, not a general promo scheduler. Do not route badges, settings rows, notification bars, onboarding, arbitrary UIKit presentations, or other promo surfaces through it without a new product/design decision.
 
-Read `TECH_DESIGN_FINAL.md` for the contract and `Q3_IMPLEMENTATION_PLAN.md` for the final implementation work.
+Read `TECH_DESIGN_FINAL.md` for the contract and `Q3_IMPLEMENTATION_PLAN.md` for the final implementation record.
 
 ## Core model
 
@@ -94,9 +94,9 @@ Keep separate stable identities for:
 
 Same-ID refresh is one continuous admitted session. A changed ID withdraws the old inner card and cannot acquire the replacement until the old admission releases.
 
-Logical withdrawal is not physical disappearance. Move the admission into outgoing-session state, wait for all matching pending/visible card mounts to disappear, then wait one following main turn before releasing. Every callback must match the render session and mount it changes.
+Logical withdrawal is not physical disappearance. `onDisappear` begins removal but does not complete it. Move the admission into outgoing-session state, use the coordinated transition's inert animatable terminal callback to mark matching physical completion, then wait one following main turn before releasing. Every callback must match the render session and mount it changes.
 
-The coordinated card must retain the legacy scale/opacity transition. Do not switch it to `.identity` merely to simplify lifecycle callbacks, and do not guess animation completion with a fixed delay.
+The coordinated card retains the legacy scale/opacity transition. Never call the terminal-completion seam early, switch it to `.identity` merely to simplify lifecycle callbacks, or guess animation completion with a fixed delay.
 
 ### Appearance and accounting
 
@@ -175,9 +175,9 @@ Stale/double release and cooldown-denied raw rollback do not drain the registry.
 
 ## Construction and diagnostics
 
-There must be one coordination graph. The service convenience initializer currently creates the modal cooldown store and manager; the final graph should pass that exact store to the directional policy and add one production RMF timestamp store.
+There is one coordination graph. The service convenience initializer creates one modal cooldown store, passes that exact instance to both the existing manager and directional policy, and adds one persisted production RMF timestamp store.
 
-The debug projection is read-only and should show:
+The debug projection is read-only and shows:
 
 - immutable process mode;
 - singular owner identity;

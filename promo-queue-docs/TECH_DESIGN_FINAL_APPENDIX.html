@@ -104,18 +104,18 @@
 <body>
 <main>
   <h1>Promo Queue iteration 1</h1>
-  <p class="subtitle">Visual companion to <code>TECH_DESIGN_FINAL.md</code>. It shows the agreed Q2 singular-owner/startup-latch endpoint and the remaining Q3 cooldown, animation, and diagnostics work.</p>
+  <p class="subtitle">Visual companion to <code>TECH_DESIGN_FINAL.md</code>. It shows the implemented iteration-one singular-owner, fixed-cooldown, physical-lifetime, and diagnostics endpoint.</p>
 
   <div class="status">
     <strong>Current source of truth</strong>
-    <p><code>bartosz/promo-q-2-fixes</code> is the authoritative Q2 endpoint. The older Q3 branch uses the superseded live-transition, per-surface-owner, provisional-reservation, and timer design; use it only as test evidence.</p>
+    <p>Local <code>bartosz/promo-q-3</code> at <code>29a7e33a80</code> is the implemented endpoint, built directly from frozen Q2-fixes tip <code>37b99b0d78</code>. The older pre-simplification Q3 implementation remains test evidence only.</p>
   </div>
 
   <h2>Delivery state</h2>
   <div class="grid">
     <div class="card"><span class="tag done">Merged</span><h3>PR 1</h3><p>Feature mapping, initial arbiter/injection, and modal admission foundation.</p></div>
     <div class="card"><span class="tag done">Implemented</span><h3>PR 2 + fixes</h3><p>Lifecycle-safe modal and RMF coordination, startup latch, singular owner, known hosts, truthful release, and handoff.</p></div>
-    <div class="card"><span class="tag todo">Remaining</span><h3>PR 3</h3><p>Directional cooldowns, scale/opacity animation correction, diagnostics, and focused validation.</p></div>
+    <div class="card"><span class="tag done">Implemented locally</span><h3>PR 3</h3><p>Directional cooldowns, confirmed RMF history, scale/opacity terminal completion, checkpoint coverage, and read-only diagnostics. Not pushed; no PR opened.</p></div>
   </div>
 
   <h2>One coordination graph</h2>
@@ -194,9 +194,9 @@
     <div class="arrow">→</div>
     <div class="node"><strong>Next main turn</strong><small>release once</small></div>
   </div>
-  <div class="warning">
-    <strong>Unresolved Q3 correction</strong>
-    <p>Q2-fixes currently uses <code>.transition(.identity)</code> on the coordinated card. Q3 must restore scale/opacity while keeping physical-lifetime ownership. Do not replace truthful lifecycle with a guessed fixed delay.</p>
+  <div class="status">
+    <strong>Resolved in Q3</strong>
+    <p>The coordinated card uses scale/opacity. <code>onDisappear</code> starts removal, a visually inert animatable token reports the transition's terminal value, and the owner releases after identity-checked completion plus the following main turn. No fixed delay is used.</p>
   </div>
 
   <h2>Diagnostics</h2>
@@ -204,7 +204,13 @@
     <div class="card"><h3>Process</h3><p>Immutable mode, app/UI readiness, and reminder that overrides require relaunch.</p></div>
     <div class="card"><h3>Ownership</h3><p>Singular owner identity, modal phase, pending work, and suppression state.</p></div>
     <div class="card"><h3>History</h3><p>Confirmed modal/RMF timestamps and derived next target boundaries.</p></div>
-    <div class="card"><h3>No timer</h3><p>The screen must say boundaries do not schedule presentation or retry.</p></div>
+    <div class="card"><h3>No timer</h3><p>The screen states that boundaries do not schedule presentation or retry.</p></div>
+  </div>
+
+  <h2>Validation status</h2>
+  <div class="grid">
+    <div class="card"><span class="tag done">Passed</span><h3>Static gates</h3><p>Swift parsing, strict SwiftLint, Xcode project plist validation, and diff checks.</p></div>
+    <div class="card"><span class="tag concern">Pending runtime</span><h3>Simulator and manual QA</h3><p>The simulator harness and approval service prevented a clean final test result. Animated/disabled removal and all three known NTP hosts still require runtime confirmation.</p></div>
   </div>
 
   <h2>Agreed changes that remain concerning</h2>
@@ -231,7 +237,7 @@
     <li>A general RMF frequency engine or macOS queue extraction.</li>
   </ul>
 
-  <footer>Canonical prose: <code>TECH_DESIGN_FINAL.md</code>. Remaining implementation: <code>Q3_IMPLEMENTATION_PLAN.md</code>. Integration guide: <code>ADDING_PROMOS.md</code>.</footer>
+  <footer>Canonical prose: <code>TECH_DESIGN_FINAL.md</code>. Implementation record: <code>Q3_IMPLEMENTATION_PLAN.md</code>. Integration guide: <code>ADDING_PROMOS.md</code>.</footer>
 </main>
 </body>
 </html>

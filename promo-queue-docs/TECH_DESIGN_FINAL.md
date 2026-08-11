@@ -2,16 +2,16 @@
 
 ## Status and source of truth
 
-This document describes the intended iteration-one endpoint after the agreed Q2 simplification work on `bartosz/promo-q-2-fixes` and the remaining Q3 work in `Q3_IMPLEMENTATION_PLAN.md`.
+This document describes the implemented iteration-one endpoint on local branch `bartosz/promo-q-3`, built directly from the frozen `bartosz/promo-q-2-fixes` tip `37b99b0d78`. The app branch remains local: it has not been pushed and no pull request has been opened.
 
 When sources disagree, use this order:
 
-1. the implementation at `origin/bartosz/promo-q-2-fixes` (`37b99b0d78` when this document was updated);
-2. `PROMO_QUEUE_Q2_SIMPLIFICATION_IMPLEMENTATION_PLAN.md` in the shared project documents;
-3. `PROMO_QUEUE_Q3_SIMPLIFICATION_IMPLEMENTATION_PLAN.md` in the shared project documents;
-4. this document for the consolidated iteration-one target.
+1. the implementation on local `bartosz/promo-q-3` at `29a7e33a80`;
+2. the frozen Q2-fixes base `37b99b0d78`;
+3. `Q3_IMPLEMENTATION_PLAN.md` for the approved scope and dependency order; and
+4. this document for the consolidated iteration-one contract.
 
-PR 1 is already on `main`. PR 2 and its stacked fixes establish the Q2 foundation. Directional cooldowns were deliberately deferred to the final PR. The older `bartosz/promo-q-3` implementation and commit `06a2417373` predate the Q2 simplification and are evidence only; their live-flag, per-surface-owner, provisional-reservation, timer, and debug shapes must not be ported.
+PR 1 is already on `main`, and PR 2 plus its stacked fixes establish the Q2 foundation. The rebuilt local Q3 endpoint is four dependency-ordered commits: `26f11cee84` (removal animation), `c5cfe59937` (pure cooldown policy and RMF history), `6d2563d963` (admission confirmation, cooldown integration, and checkpoints), and `29a7e33a80` (read-only diagnostics). The older pre-simplification Q3 implementation at `06a2417373` remains evidence only; none of its live-flag, per-surface-owner, provisional-reservation, timer, or stale debug shapes were ported.
 
 ## Goal
 
@@ -91,11 +91,11 @@ Each NTP model owns its candidate, stable surface identity, gate identity, rende
 
 The card is built and published only after the service grants `PromoQueueRemoteMessageAdmission`. A blocked candidate remains retained and unaccounted.
 
-Logical withdrawal first removes the inner card. The admission moves to identity-keyed outgoing state and remains strongly held until every matching pending or visible card mount has disappeared and one following main-queue turn has settled. Only then is the global owner released. Same-ID refresh keeps one session; changed-ID replacement cannot release or overwrite a newer session through stale callbacks.
+Logical withdrawal first removes the inner card. `onDisappear` records only the start of removal. The coordinated scale/opacity transition carries a visually inert animatable completion token; reaching its terminal value reports truthful physical completion without a fixed delay. The admission moves to identity-keyed outgoing state and remains strongly held until every matching pending or visible card mount has completed removal and one following main-queue turn has settled. Only then is the global owner released. Same-ID refresh keeps one session; changed-ID replacement cannot release or overwrite a newer session through stale callbacks.
 
 Successful current-owner release may hand the slot to another active registered NTP. The registry is weak, stable-order, mutation-safe, reentrancy-guarded, and gated on current app/UI readiness. Visible-RMF release never initiates modal evaluation.
 
-## Q3 directional cooldown design
+## Q3 directional cooldown implementation
 
 ### Policy
 
@@ -174,7 +174,7 @@ Time reaching 10 minutes or 24 hours by itself does nothing. A static eligible c
 
 ## Debugging and operations
 
-Extend the existing Modal Prompt Coordination screen with a read-only Promo Queue snapshot showing:
+The existing Modal Prompt Coordination screen now includes a read-only Promo Queue snapshot showing:
 
 - process mode and the force-quit/relaunch requirement;
 - singular active owner and identity;
@@ -204,11 +204,11 @@ The following changes are agreed, but remain important rollout or maintenance co
 | Default Browser retained validation uses cached status | An external default-browser change after selection can make retained validation stale. This is an accepted system-check budget trade-off. |
 | Atomic unique-shown reservation removed from core scope | The existing asynchronous `hasShown`/write sequence can still race across sequential configurations. It is an optional independent correctness fix, not a cooldown prerequisite. |
 
-One change is not accepted: coordinated RMF currently uses `.transition(.identity)`, removing the legacy scale/opacity removal animation. Q3 must restore the existing visual behavior while keeping the owner until truthful physical removal. If SwiftUI timing cannot satisfy both, stop for explicit product/design approval rather than silently changing the animation.
+The previously unaccepted `.transition(.identity)` deviation is resolved. Coordinated RMF now uses the established scale/opacity visual transition and an inert animatable terminal callback, while the identity-checked outgoing session retains ownership through physical completion and the following settling turn. No fixed animation delay was introduced.
 
 ## Testing and definition of done
 
-Iteration one is complete when tests and real-host characterization prove:
+The implementation and focused coverage address the following definition of done:
 
 - the factory reads the feature flag once and does not subscribe to live updates;
 - legacy mode preserves established modal and RMF behavior;
@@ -226,4 +226,6 @@ Iteration one is complete when tests and real-host characterization prove:
 - the debug screen reports the current architecture without mutation or stale timer/transition concepts; and
 - no new Promo Queue telemetry or privacy-config rollout change is included.
 
-See `Q3_IMPLEMENTATION_PLAN.md` for the remaining implementation sequence and `ADDING_PROMOS.md` for the integration contract.
+Static validation on the final local branch passes Swift frontend parsing for all changed Swift files, strict SwiftLint with cache disabled, `plutil -lint` for the Xcode project, and `git diff --check`. A focused Xcode run during implementation compiled the app and test targets far enough to catch and repair a stale admission initializer; the simulator harness and later approval service did not permit a clean final runtime result. The animated/disabled-animation tests and manual standard-NTP, suggestion-tray, and unified-input QA therefore remain explicit validation risks rather than claimed passes.
+
+See `Q3_IMPLEMENTATION_PLAN.md` for the implementation record and `ADDING_PROMOS.md` for the integration contract.

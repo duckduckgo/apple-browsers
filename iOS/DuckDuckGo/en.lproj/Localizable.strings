@@ -367,15 +367,6 @@
 /* Accessibility label for the unpin action revealed by leading-swiping a Duck.ai chat row in the Pinned section. */
 "aiChat.history.swipe.unpin.a11y" = "Unpin chat";
 
-/* Section header for Pro-only models shown to DuckDuckGo Plus subscribers */
-"aichat.model-picker.pro-exclusive" = "Pro Exclusive";
-
-/* Button in the model picker that opens the DuckDuckGo subscription purchase flow */
-"aichat.model-picker.try-for-free" = "TRY FOR FREE";
-
-/* Button in the model picker that opens the DuckDuckGo subscription upgrade flow */
-"aichat.model-picker.upgrade" = "UPGRADE";
-
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "For analytical tasks";
 

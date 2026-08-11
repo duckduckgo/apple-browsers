@@ -64,7 +64,8 @@ let package = Package(
         .package(url: "https://github.com/1024jp/GzipSwift.git", exact: "6.0.1"),
         .package(url: "https://github.com/vapor/jwt-kit.git", exact: "4.13.5"),
         .package(url: "https://github.com/pointfreeco/swift-clocks.git", exact: "1.0.6"),
-        .package(url: "https://github.com/duckduckgo/content-scope-scripts.git", exact: "16.2.0"),
+        // TODO: Revert to `exact: "16.2.0"` before merging — temporary branch pin for autoplay testing.
+        .package(url: "https://github.com/duckduckgo/content-scope-scripts.git", branch: "pr-releases/lantean/video-autoplay-telemetry"),
         .package(path: "../URLPredictor"),
         .package(path: "../Infrastructure/SystemFrameworksExtensions"),
     ],

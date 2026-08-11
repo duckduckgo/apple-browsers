@@ -596,6 +596,7 @@ final class DeviceInfoMigrationCoordinatingMock: DeviceInfoMigrationCoordinating
     private let lock = NSLock()
     private var recordedCalls: [Call] = []
     private var recordedRepairCalls: [Call] = []
+    private var recordedRenameCalls: [(name: String, account: SyncAccount)] = []
     private var recordedResetCallCount = 0
     var hasCompletedMigrationStub = false
     var calls: [Call] {
@@ -613,8 +614,16 @@ final class DeviceInfoMigrationCoordinatingMock: DeviceInfoMigrationCoordinating
         defer { lock.unlock() }
         return recordedResetCallCount
     }
+    var renameCalls: [(name: String, account: SyncAccount)] {
+        lock.lock()
+        defer { lock.unlock() }
+        return recordedRenameCalls
+    }
     var migrateCurrentDeviceHandler: (() async -> Void)?
     var repairCurrentDeviceInfoHandler: (() async -> Void)?
+    var renameCurrentDeviceStub: [RegisteredDevice] = []
+    var renameCurrentDeviceError: Error?
+    var renameCurrentDeviceHandler: (() async throws -> [RegisteredDevice])?
 
     func migrateCurrentDeviceIfNeeded(for account: SyncAccount) async {
         let handler = record(Call(account: account))
@@ -624,6 +633,25 @@ final class DeviceInfoMigrationCoordinatingMock: DeviceInfoMigrationCoordinating
     func repairCurrentDeviceInfo(for account: SyncAccount) async {
         let handler = recordRepair(Call(account: account))
         await handler?()
+    }
+
+    func renameCurrentDevice(to name: String, for account: SyncAccount) async throws -> [RegisteredDevice] {
+        let result = recordRename(name: name, account: account)
+        if let handler = result.handler {
+            return try await handler()
+        }
+        if let error = result.error {
+            throw error
+        }
+        return result.stub
+    }
+
+    private func recordRename(name: String,
+                              account: SyncAccount) -> (handler: (() async throws -> [RegisteredDevice])?, error: Error?, stub: [RegisteredDevice]) {
+        lock.lock()
+        defer { lock.unlock() }
+        recordedRenameCalls.append((name: name, account: account))
+        return (renameCurrentDeviceHandler, renameCurrentDeviceError, renameCurrentDeviceStub)
     }
 
     func hasCompletedMigration(for account: SyncAccount) -> Bool {

@@ -23,6 +23,7 @@ import Persistence
 protocol DeviceInfoMigrationCoordinating {
     func migrateCurrentDeviceIfNeeded(for account: SyncAccount) async
     func repairCurrentDeviceInfo(for account: SyncAccount) async
+    func renameCurrentDevice(to name: String, for account: SyncAccount) async throws -> [RegisteredDevice]
     func hasCompletedMigration(for account: SyncAccount) -> Bool
     func reset()
 }
@@ -94,6 +95,43 @@ struct DeviceInfoMigrationCoordinator: DeviceInfoMigrationCoordinating {
             return
         }
         await updateCurrentDeviceInfo(for: account, identity: identity)
+    }
+
+    func renameCurrentDevice(to name: String, for account: SyncAccount) async throws -> [RegisteredDevice] {
+        let identity = DeviceInfoMigrationIdentity(account: account)
+        guard let currentAccount = currentAccount(matching: identity),
+              isCurrentAccountSnapshot(account, identity: identity) else {
+            throw SyncError.accountNotFound
+        }
+
+        let protectedKey = try await prepareAccountInfoProtectedKey(for: currentAccount,
+                                                                     identity: identity)
+        guard !Task.isCancelled,
+              isCurrentAccountSnapshot(currentAccount, identity: identity) else {
+            throw CancellationError()
+        }
+
+        let update = try updateBuilder.makeUpdate(deviceID: currentAccount.deviceId,
+                                                   deviceName: name,
+                                                   deviceType: currentAccount.deviceType,
+                                                   primaryKey: currentAccount.primaryKey,
+                                                   protectedKey: protectedKey)
+        guard !Task.isCancelled,
+              isCurrentAccountSnapshot(currentAccount, identity: identity) else {
+            throw CancellationError()
+        }
+
+        let devices = try await accountManager.updateDevice(update, for: currentAccount)
+        guard !Task.isCancelled,
+              isCurrentAccountSnapshot(currentAccount, identity: identity) else {
+            throw CancellationError()
+        }
+
+        let renamedAccount = currentAccount.updatingDeviceName(name)
+        try secureStore.persistAccount(renamedAccount)
+        markMigrationComplete(for: renamedAccount)
+        Logger.sync.debug("Sync-UnifiedDevices: current device rename complete")
+        return devices
     }
 
     private func updateCurrentDeviceInfo(for account: SyncAccount,

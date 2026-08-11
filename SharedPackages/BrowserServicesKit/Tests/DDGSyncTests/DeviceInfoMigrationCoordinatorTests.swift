@@ -25,6 +25,7 @@ final class DeviceInfoMigrationCoordinatorTests: XCTestCase {
 
     private var accountManager: AccountManagingMock!
     private var scopedAccess: ScopedAccessCredentialManagingMock!
+    private var crypter: CryptingMock!
     private var deviceInfoCodec: DeviceInfoMigrationCodingMock!
     private var secureStore: SecureStorageStub!
     private var keyValueStore: MockKeyValueFileStore!
@@ -37,6 +38,7 @@ final class DeviceInfoMigrationCoordinatorTests: XCTestCase {
 
         accountManager = AccountManagingMock()
         scopedAccess = ScopedAccessCredentialManagingMock()
+        crypter = CryptingMock()
         deviceInfoCodec = DeviceInfoMigrationCodingMock()
         secureStore = SecureStorageStub()
         secureStore.theAccount = .mock
@@ -55,6 +57,7 @@ final class DeviceInfoMigrationCoordinatorTests: XCTestCase {
     override func tearDown() {
         accountManager = nil
         scopedAccess = nil
+        crypter = nil
         deviceInfoCodec = nil
         secureStore = nil
         keyValueStore = nil
@@ -89,6 +92,121 @@ final class DeviceInfoMigrationCoordinatorTests: XCTestCase {
         XCTAssertEqual(call.update.type, "encrypted_\(SyncAccount.mock.deviceType)")
         XCTAssertEqual(call.update.info, deviceInfoCodec.encryptStub)
         XCTAssertTrue(coordinator.hasCompletedMigration(for: .mock))
+    }
+
+    func testWhenRenameSucceedsThenOnlyCurrentDeviceIsPatchedInBothFormatsAndRenamedAccountIsPersisted() async throws {
+        let returnedDevices = [RegisteredDevice(id: "device-1", name: "Device 1", type: "iOS")]
+        accountManager.updateDeviceStub = returnedDevices
+
+        let devices = try await coordinator.renameCurrentDevice(to: "Renamed Device", for: .mock)
+
+        XCTAssertEqual(devices.map(\.id), returnedDevices.map(\.id))
+        XCTAssertEqual(scopedAccess.ensureAccountInfoProtectedKeysCalls.map(\.deviceId), [SyncAccount.mock.deviceId])
+        XCTAssertEqual(deviceInfoCodec.encryptCalls.map(\.deviceInfo), [
+            DeviceInfo(name: "Renamed Device", type: SyncAccount.mock.deviceType)
+        ])
+        let call = try XCTUnwrap(accountManager.updateDeviceCalls.first)
+        XCTAssertEqual(accountManager.updateDeviceCalls.count, 1)
+        XCTAssertEqual(call.account.deviceId, SyncAccount.mock.deviceId)
+        XCTAssertEqual(call.update.id, SyncAccount.mock.deviceId)
+        XCTAssertEqual(call.update.name, "encrypted_Renamed Device")
+        XCTAssertEqual(call.update.type, "encrypted_\(SyncAccount.mock.deviceType)")
+        XCTAssertEqual(call.update.info, deviceInfoCodec.encryptStub)
+
+        let persistedAccount = try XCTUnwrap(secureStore.theAccount)
+        XCTAssertEqual(persistedAccount.deviceId, SyncAccount.mock.deviceId)
+        XCTAssertEqual(persistedAccount.deviceName, "Renamed Device")
+        XCTAssertEqual(persistedAccount.deviceType, SyncAccount.mock.deviceType)
+        XCTAssertEqual(persistedAccount.userId, SyncAccount.mock.userId)
+        XCTAssertEqual(persistedAccount.primaryKey, SyncAccount.mock.primaryKey)
+        XCTAssertEqual(persistedAccount.secretKey, SyncAccount.mock.secretKey)
+        XCTAssertEqual(persistedAccount.token, SyncAccount.mock.token)
+        XCTAssertEqual(persistedAccount.state, SyncAccount.mock.state)
+        XCTAssertTrue(coordinator.hasCompletedMigration(for: persistedAccount))
+    }
+
+    func testWhenRenameKeyPreparationFailsThenAccountAndMigrationMarkerAreUnchanged() async {
+        scopedAccess.ensureAccountInfoProtectedKeysError = TestError.expected
+
+        do {
+            _ = try await coordinator.renameCurrentDevice(to: "Renamed Device", for: .mock)
+            XCTFail("Expected rename to throw")
+        } catch TestError.expected {
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+
+        XCTAssertEqual(secureStore.theAccount?.deviceName, SyncAccount.mock.deviceName)
+        XCTAssertTrue(accountManager.updateDeviceCalls.isEmpty)
+        XCTAssertFalse(coordinator.hasCompletedMigration(for: .mock))
+    }
+
+    func testWhenRenameEncryptionFailsThenAccountAndMigrationMarkerAreUnchanged() async {
+        deviceInfoCodec.encryptError = TestError.expected
+
+        do {
+            _ = try await coordinator.renameCurrentDevice(to: "Renamed Device", for: .mock)
+            XCTFail("Expected rename to throw")
+        } catch TestError.expected {
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+
+        XCTAssertEqual(secureStore.theAccount?.deviceName, SyncAccount.mock.deviceName)
+        XCTAssertTrue(accountManager.updateDeviceCalls.isEmpty)
+        XCTAssertFalse(coordinator.hasCompletedMigration(for: .mock))
+    }
+
+    func testWhenRenameLegacyEncryptionFailsThenAccountAndMigrationMarkerAreUnchanged() async {
+        crypter._encryptAndBase64Encode = { _ in throw TestError.expected }
+        coordinator = makeCoordinator()
+
+        do {
+            _ = try await coordinator.renameCurrentDevice(to: "Renamed Device", for: .mock)
+            XCTFail("Expected rename to throw")
+        } catch TestError.expected {
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+
+        XCTAssertEqual(deviceInfoCodec.encryptCalls.count, 1)
+        XCTAssertEqual(secureStore.theAccount?.deviceName, SyncAccount.mock.deviceName)
+        XCTAssertTrue(accountManager.updateDeviceCalls.isEmpty)
+        XCTAssertFalse(coordinator.hasCompletedMigration(for: .mock))
+    }
+
+    func testWhenRenamePatchFailsThenAccountAndMigrationMarkerAreUnchanged() async {
+        accountManager.updateDeviceError = SyncError.unexpectedStatusCode(500)
+
+        do {
+            _ = try await coordinator.renameCurrentDevice(to: "Renamed Device", for: .mock)
+            XCTFail("Expected rename to throw")
+        } catch let error as SyncError {
+            XCTAssertEqual(error, .unexpectedStatusCode(500))
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+
+        XCTAssertEqual(accountManager.updateDeviceCalls.count, 1)
+        XCTAssertEqual(secureStore.theAccount?.deviceName, SyncAccount.mock.deviceName)
+        XCTAssertFalse(coordinator.hasCompletedMigration(for: .mock))
+    }
+
+    func testWhenEncryptedDeviceInfoExceedsServerLimitThenRenameIsNotPatchedPersistedOrMarkedComplete() async {
+        deviceInfoCodec.encryptStub = String(repeating: "a", count: DeviceInfo.maximumEncryptedLength + 1)
+
+        do {
+            _ = try await coordinator.renameCurrentDevice(to: "Renamed Device", for: .mock)
+            XCTFail("Expected rename to throw")
+        } catch let error as DeviceInfoMigrationError {
+            XCTAssertEqual(error, .encryptedDeviceInfoTooLarge)
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+
+        XCTAssertTrue(accountManager.updateDeviceCalls.isEmpty)
+        XCTAssertEqual(secureStore.theAccount?.deviceName, SyncAccount.mock.deviceName)
+        XCTAssertFalse(coordinator.hasCompletedMigration(for: .mock))
     }
 
     func testWhenMigrationRunsTwiceThenCurrentDeviceIsPatchedOnce() async {
@@ -280,7 +398,7 @@ final class DeviceInfoMigrationCoordinatorTests: XCTestCase {
         DeviceInfoMigrationCoordinator(
             accountManager: accountManager,
             scopedAccess: scopedAccess,
-            crypter: CryptingMock(),
+            crypter: crypter,
             deviceInfoCodec: deviceInfoCodec,
             secureStore: secureStore,
             keyValueStore: keyValueStore,

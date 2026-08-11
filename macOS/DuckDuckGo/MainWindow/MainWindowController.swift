@@ -597,11 +597,8 @@ extension MainWindowController: NSWindowDelegate {
         return false
     }
 
-    /// Closes a Fire Window the way its close button does: warn about in-progress downloads, then play
-    /// the fire animation before the window goes away.
-    ///
-    /// `NSWindow.close()` bypasses `windowShouldClose(_:)`, so programmatic Fire Window closes have to
-    /// come through here or the user loses both the animation and the downloads warning.
+    /// `NSWindow.close()` bypasses `windowShouldClose(_:)`, so programmatic Fire Window closes have to come
+    /// through here or they lose the fire animation and the in-progress downloads warning.
     func burnAndClose(_ window: NSWindow) {
         // A burn already has the animation on screen and closes windows itself (see Fire.closeWindows).
         guard fireViewModel.fire.burningData == nil else {

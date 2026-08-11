@@ -21,14 +21,8 @@ import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
 
-/// Fire Windows must play the fire animation before they disappear, no matter how the close was triggered.
-///
-/// `NSWindow.close()` doesn't invoke `windowShouldClose(_:)`, so every programmatic close has to go through
-/// `MainWindowController.burnAndClose(_:)` — these tests cover the two paths that used to call `close()` directly.
-///
-/// Outside the `.normal` run type the Lottie animation view is never loaded, so `animateFireWhenClosing()`
-/// flips `isAnimationPlaying` on and straight back off. That's enough to tell "the animation ran" from
-/// "it was skipped", which is exactly what the popover button used to get wrong.
+/// Outside the `.normal` run type the Lottie view is never loaded, so `animateFireWhenClosing()` flips
+/// `isAnimationPlaying` on and straight back off — enough to tell "the animation ran" from "it was skipped".
 final class FireWindowClosingTests: XCTestCase {
 
     private var cancellables = Set<AnyCancellable>()
@@ -64,9 +58,8 @@ final class FireWindowClosingTests: XCTestCase {
         var animationStates = [Bool]()
         subscribeToAnimationStates(of: windowController) { animationStates.append($0) }
 
-        // Not going through `FireCoordinator.showFirePopover` on purpose: the coordinator holds on to the
-        // popover for the lifetime of the app, so its views would outlive the test and trip the harness'
-        // deallocation checks. The action doesn't touch the view hierarchy, so a bare controller is enough.
+        // Not going through `FireCoordinator.showFirePopover`: it holds the popover for the app's lifetime,
+        // so the popover's views would outlive the test and trip the harness' deallocation checks.
         let popoverViewController = FirePopoverViewController(
             fireViewModel: windowController.mainViewController.fireViewController.fireViewModel,
             tabCollectionViewModel: windowController.mainViewController.tabCollectionViewModel

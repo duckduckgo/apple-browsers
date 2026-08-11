@@ -2156,17 +2156,20 @@ public final class MockDBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeature
     public let isWebViewUserAgentOn: Bool
     public let isOptOutRetryErrorFrequencyExperimentOn: Bool
     public let isFreemiumPIREnabled: Bool
+    public let isExtractedProfileRefreshOn: Bool
 
     public init(isForegroundRunningOnAppActiveFeatureOn: Bool = true,
                 isContinuedProcessingFeatureOn: Bool = true,
                 isWebViewUserAgentOn: Bool = false,
                 isOptOutRetryErrorFrequencyExperimentOn: Bool = false,
-                isFreemiumPIREnabled: Bool = false) {
+                isFreemiumPIREnabled: Bool = false,
+                isExtractedProfileRefreshOn: Bool = true) {
         self.isForegroundRunningOnAppActiveFeatureOn = isForegroundRunningOnAppActiveFeatureOn
         self.isContinuedProcessingFeatureOn = isContinuedProcessingFeatureOn
         self.isWebViewUserAgentOn = isWebViewUserAgentOn
         self.isOptOutRetryErrorFrequencyExperimentOn = isOptOutRetryErrorFrequencyExperimentOn
         self.isFreemiumPIREnabled = isFreemiumPIREnabled
+        self.isExtractedProfileRefreshOn = isExtractedProfileRefreshOn
     }
 }
 

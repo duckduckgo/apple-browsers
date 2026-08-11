@@ -274,6 +274,7 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case freemiumPIR
     case optOutRetryError96Hours
     case deferredSecureVaultInit
+    case extractedProfileRefresh
 }
 
 public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {

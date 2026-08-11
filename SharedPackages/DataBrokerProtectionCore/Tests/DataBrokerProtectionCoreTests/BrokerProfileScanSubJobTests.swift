@@ -1311,6 +1311,39 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         }
     }
 
+    func testWhenExtractedProfileRefreshIsOff_thenTheStoredProfileIsNotRefreshed() async {
+        do {
+            mockDependencies.featureFlagger = MockDBPFeatureFlagger(isExtractedProfileRefreshOn: false)
+            let storedProfile = ExtractedProfile(id: 1,
+                                                 name: "Some name",
+                                                 profileUrl: "someURL",
+                                                 identifier: "someURL",
+                                                 extras: ["county": "Sangamon"])
+            let scrapedProfile = ExtractedProfile(name: "Some name",
+                                                  profileUrl: "someURL",
+                                                  identifier: "someURL",
+                                                  extras: ["zip": "62701"])
+            mockDatabase.extractedProfilesFromBroker = [storedProfile]
+            mockScanRunner.scanResults = [scrapedProfile]
+
+            _ = try await sut.runScan(
+                brokerProfileQueryData: .init(
+                    dataBroker: .mock,
+                    profileQuery: .mock,
+                    scanJobData: .mock,
+                    optOutJobData: [OptOutJobData.mock(with: storedProfile)]
+                ),
+                showWebView: false,
+                isManual: false,
+                shouldRunNextStep: { true }
+            )
+
+            XCTAssertTrue(mockDatabase.updatedExtractedProfiles.isEmpty)
+        } catch {
+            XCTFail("Should not throw")
+        }
+    }
+
     func testWhenScannedProfileIsNotYetInTheDatabase_thenNoStoredProfileIsRefreshed() async {
         do {
             mockScanRunner.scanResults = [.mockWithoutRemovedDate]

@@ -966,6 +966,16 @@ class TabViewController: UIViewController {
     }
 
     func updateWebViewBottomAnchor(for barsVisibilityPercent: CGFloat) {
+        updateWebViewBottomConstraint(for: barsVisibilityPercent)
+
+        if floatingUIManager.isFloatingUIEnabled {
+            updateWebViewLayoutForFloatingUI(for: barsVisibilityPercent)
+        } else {
+            updateWebViewLayoutForClassicUI(for: barsVisibilityPercent)
+        }
+    }
+
+    private func updateWebViewBottomConstraint(for barsVisibilityPercent: CGFloat) {
         let isUnifiedToggleInputAffectingBottomLayout = isAITab && unifiedToggleInputFeature.isAvailable
         if appSettings.currentAddressBarPosition == .bottom && !isUnifiedToggleInputAffectingBottomLayout {
             if chromeDelegate?.isInMinimalChromeLayout == true {
@@ -994,53 +1004,56 @@ class TabViewController: UIViewController {
         } else {
             webViewBottomAnchorConstraint?.constant = 0
         }
-        if floatingUIManager.isFloatingUIEnabled {
-            guard #available(iOS 26, *) else {
-                assertionFailure("Floating UI requires iOS 26")
-                return
-            }
-            borderView.bottomAlpha = 0
-            borderView.isHidden = true
-            borderView.isTopVisible = false
-            borderView.isBottomVisible = false
+    }
 
-            // AI tabs with the unified toggle input own their own bottom layout, so keep the web view
-            // full-bleed with no obscured region there.
-            let isUnifiedToggleInputAffectingLayout = isAITab && unifiedToggleInputFeature.isAvailable
-            let obscuredInsets: UIEdgeInsets = isUnifiedToggleInputAffectingLayout
-                ? .zero
-                : (chromeDelegate?.floatingWebViewObscuredInsets(for: barsVisibilityPercent) ?? .zero)
-            if scrollViewAdjustmentBehaviorBeforeFloatingUI == nil {
-                scrollViewAdjustmentBehaviorBeforeFloatingUI = WebViewScrollViewInsetUpdater.beginManaging(webView.scrollView)
-            }
-            webViewBottomAnchorConstraint?.constant = 0
-            if additionalSafeAreaInsets != .zero {
-                additionalSafeAreaInsets = .zero
-            }
-            if WebViewScrollViewInsetUpdater.shouldUpdateDuringChromeTransition(
-                barsVisibilityPercent: barsVisibilityPercent,
-                hasAppliedInsets: hasAppliedFloatingUIScrollViewInsets
-            ) {
-                WebViewScrollViewInsetUpdater.update(webView.scrollView, insets: obscuredInsets)
-                hasAppliedFloatingUIScrollViewInsets = true
-            }
-            if webView.obscuredContentInsets != obscuredInsets {
-                webView.obscuredContentInsets = obscuredInsets
-            }
-        } else {
-            borderView.isHidden = false
-            borderView.bottomAlpha = AppWidthObserver.shared.isLargeWidth ? 0 : barsVisibilityPercent
-            if #available(iOS 26, *) {
-                webView.obscuredContentInsets = .zero
-            }
-            if hasAppliedFloatingUIScrollViewInsets {
-                WebViewScrollViewInsetUpdater.update(webView.scrollView, insets: .zero)
-                hasAppliedFloatingUIScrollViewInsets = false
-            }
-            restoreScrollViewAdjustmentBehaviorAfterFloatingUI()
-            if additionalSafeAreaInsets != .zero {
-                additionalSafeAreaInsets = .zero
-            }
+    private func updateWebViewLayoutForFloatingUI(for barsVisibilityPercent: CGFloat) {
+        guard #available(iOS 26, *) else {
+            assertionFailure("Floating UI requires iOS 26")
+            return
+        }
+        borderView.bottomAlpha = 0
+        borderView.isHidden = true
+        borderView.isTopVisible = false
+        borderView.isBottomVisible = false
+
+        // AI tabs with the unified toggle input own their own bottom layout, so keep the web view
+        // full-bleed with no obscured region there.
+        let isUnifiedToggleInputAffectingLayout = isAITab && unifiedToggleInputFeature.isAvailable
+        let obscuredInsets: UIEdgeInsets = isUnifiedToggleInputAffectingLayout
+            ? .zero
+            : (chromeDelegate?.floatingWebViewObscuredInsets(for: barsVisibilityPercent) ?? .zero)
+        if scrollViewAdjustmentBehaviorBeforeFloatingUI == nil {
+            scrollViewAdjustmentBehaviorBeforeFloatingUI = WebViewScrollViewInsetUpdater.beginManaging(webView.scrollView)
+        }
+        webViewBottomAnchorConstraint?.constant = 0
+        if additionalSafeAreaInsets != .zero {
+            additionalSafeAreaInsets = .zero
+        }
+        if WebViewScrollViewInsetUpdater.shouldUpdateDuringChromeTransition(
+            barsVisibilityPercent: barsVisibilityPercent,
+            hasAppliedInsets: hasAppliedFloatingUIScrollViewInsets
+        ) {
+            WebViewScrollViewInsetUpdater.update(webView.scrollView, insets: obscuredInsets)
+            hasAppliedFloatingUIScrollViewInsets = true
+        }
+        if webView.obscuredContentInsets != obscuredInsets {
+            webView.obscuredContentInsets = obscuredInsets
+        }
+    }
+
+    private func updateWebViewLayoutForClassicUI(for barsVisibilityPercent: CGFloat) {
+        borderView.isHidden = false
+        borderView.bottomAlpha = AppWidthObserver.shared.isLargeWidth ? 0 : barsVisibilityPercent
+        if #available(iOS 26, *) {
+            webView.obscuredContentInsets = .zero
+        }
+        if hasAppliedFloatingUIScrollViewInsets {
+            WebViewScrollViewInsetUpdater.update(webView.scrollView, insets: .zero)
+            hasAppliedFloatingUIScrollViewInsets = false
+        }
+        restoreScrollViewAdjustmentBehaviorAfterFloatingUI()
+        if additionalSafeAreaInsets != .zero {
+            additionalSafeAreaInsets = .zero
         }
     }
 

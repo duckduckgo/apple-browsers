@@ -21,7 +21,6 @@ import SnapshotTestingSupport
 import Testing
 @testable import SyncUI_macOS
 
-// TODO: define DEBUG for package builds under CI so these snapshot tests can run there, then drop the #if DEBUG guard.
 #if DEBUG
 @MainActor
 @Suite("Management View Tests", .disabled("Snapshot testing is opt-in until the sync automations land"))

@@ -959,7 +959,7 @@ final class TabBarViewItem: NSCollectionViewItem {
     }
 
     private func refreshLayoutIfNeeded(isSelected: Bool, wasSelected: Bool) {
-        guard isSelected, isSelected != wasSelected else {
+        guard isSelected != wasSelected else {
             return
         }
 

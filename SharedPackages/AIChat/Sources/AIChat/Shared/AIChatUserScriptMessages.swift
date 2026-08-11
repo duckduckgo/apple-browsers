@@ -91,6 +91,9 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
     /// Native honors this only when the Unified Toggle Input feature is enabled.
     case focusChatInput
 
+    case editPrompt
+    case cancelEdit
+
     // Sync
     case getSyncStatus
     case getScopedSyncAuthToken

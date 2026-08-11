@@ -245,8 +245,8 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.isImageButtonHidden = newValue }
     }
 
-    func setEditMode(_ editing: Bool) {
-        inputBarView.setEditMode(editing)
+    func setEditMode(_ editing: Bool, showsReplaceDisclaimer: Bool) {
+        inputBarView.setEditMode(editing, showsReplaceDisclaimer: showsReplaceDisclaimer)
     }
 
     var isImageButtonEnabled: Bool {
@@ -407,6 +407,10 @@ final class UnifiedToggleInputViewController: UIViewController {
 
     func bindPageContextChip(to viewModel: UnifiedToggleInputPageContextChipViewModel) {
         inputBarView.bindPageContextChip(to: viewModel)
+    }
+
+    func setSelectionContextChips(_ items: [(id: String, title: String, favicon: UIImage?)], onRemove: @escaping (String) -> Void) {
+        inputBarView.setSelectionContextChips(items, onRemove: onRemove)
     }
 
     // MARK: - Lifecycle

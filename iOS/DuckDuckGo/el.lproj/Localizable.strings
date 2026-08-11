@@ -2956,6 +2956,12 @@
 /* Title for the Import Passwords Promotion banner */
 "import.passwords.promo.title" = "Εισαγάγετε τους κωδικούς πρόσβασής σας στο DuckDuckGo";
 
+/* Body for the notification sent after a period of inactivity. */
+"inactivity.notification.body" = "Χρησιμοποίησε το DuckDuckGo για να αποφύγεις τις διαφημίσεις που σε ακολουθούν στο διαδίκτυο και να μειώσεις το διαδικτυακό σου αποτύπωμα.";
+
+/* Title for the notification sent after a period of inactivity. */
+"inactivity.notification.title" = "Πάρε τον έλεγχο της διαδικτυακής σου εμπειρίας";
+
 /* Placeholder text for the duck.ai input field */
 "input.field.placeholder.duckai" = "Ρώτα οτιδήποτε ιδιωτικά";
 

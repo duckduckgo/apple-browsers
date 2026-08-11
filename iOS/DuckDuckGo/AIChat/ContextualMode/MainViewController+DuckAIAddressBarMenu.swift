@@ -29,7 +29,7 @@ extension MainViewController {
             isContextualModeAvailable: aiChatContextualModeFeature.isAvailable,
             isFloatingInputAvailable: aiChatContextualFloatingInputFeature.isAvailable,
             isHomeTab: currentTab?.tabModel.isHomeTab ?? true,
-            hasActiveChat: coordinator?.sessionState.hasActiveChat ?? false,
+            hasChatToReopen: currentTab?.hasContextualChatToReopen ?? false,
             isContextualSurfacePresented: coordinator?.isSheetPresented == true || coordinator?.isFloatingInputPresented == true
         )
     }

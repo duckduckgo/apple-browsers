@@ -25,13 +25,13 @@ final class DuckAIAddressBarEntryTests: XCTestCase {
     private func resolve(isContextualModeAvailable: Bool = true,
                          isFloatingInputAvailable: Bool = true,
                          isHomeTab: Bool = false,
-                         hasActiveChat: Bool = false,
+                         hasChatToReopen: Bool = false,
                          isContextualSurfacePresented: Bool = false) -> DuckAIAddressBarEntry {
         DuckAIAddressBarEntry.resolve(
             isContextualModeAvailable: isContextualModeAvailable,
             isFloatingInputAvailable: isFloatingInputAvailable,
             isHomeTab: isHomeTab,
-            hasActiveChat: hasActiveChat,
+            hasChatToReopen: hasChatToReopen,
             isContextualSurfacePresented: isContextualSurfacePresented
         )
     }
@@ -44,8 +44,10 @@ final class DuckAIAddressBarEntryTests: XCTestCase {
 
     // MARK: - Sheet
 
-    func testWebPageWithAnActiveChatGoesStraightToTheSheet() {
-        XCTAssertEqual(resolve(hasActiveChat: true), .contextualSheet)
+    /// Live or restored from a previous launch — both menu actions start something new, so offering the
+    /// menu here would leave the conversation unreachable.
+    func testAChatToReopenGoesStraightToTheSheet() {
+        XCTAssertEqual(resolve(hasChatToReopen: true), .contextualSheet)
     }
 
     func testWebPageWithoutFloatingInputGoesStraightToTheSheet() {
@@ -59,7 +61,7 @@ final class DuckAIAddressBarEntryTests: XCTestCase {
     }
 
     func testAPresentedSurfaceWinsOverAnActiveChat() {
-        XCTAssertEqual(resolve(hasActiveChat: true, isContextualSurfacePresented: true), .dismissContextualSurface)
+        XCTAssertEqual(resolve(hasChatToReopen: true, isContextualSurfacePresented: true), .dismissContextualSurface)
     }
 
     // MARK: - Legacy
@@ -73,7 +75,7 @@ final class DuckAIAddressBarEntryTests: XCTestCase {
     }
 
     func testHomeTabWinsOverAnActiveChat() {
-        XCTAssertEqual(resolve(isHomeTab: true, hasActiveChat: true), .legacyDuckAI)
+        XCTAssertEqual(resolve(isHomeTab: true, hasChatToReopen: true), .legacyDuckAI)
     }
 
     func testHomeTabWinsOverAPresentedSurface() {

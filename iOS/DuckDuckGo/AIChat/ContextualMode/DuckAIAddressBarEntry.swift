@@ -31,15 +31,19 @@ enum DuckAIAddressBarEntry: Equatable {
     case legacyDuckAI
 
     /// The menu is only offered where the New Chat versus Ask About Page choice is meaningful: a web
-    /// page with no chat under way and nothing already open. With a chat going, the button reopens it.
+    /// page with no chat to return to and nothing already open.
+    ///
+    /// - Parameter hasChatToReopen: A conversation this tab can go back to, whether it is still live
+    ///   or was persisted by an earlier launch. Neither menu action reopens one, so offering the menu
+    ///   here would strand it.
     static func resolve(isContextualModeAvailable: Bool,
                         isFloatingInputAvailable: Bool,
                         isHomeTab: Bool,
-                        hasActiveChat: Bool,
+                        hasChatToReopen: Bool,
                         isContextualSurfacePresented: Bool) -> DuckAIAddressBarEntry {
         guard isContextualModeAvailable, !isHomeTab else { return .legacyDuckAI }
         guard !isContextualSurfacePresented else { return .dismissContextualSurface }
-        guard isFloatingInputAvailable, !hasActiveChat else { return .contextualSheet }
+        guard isFloatingInputAvailable, !hasChatToReopen else { return .contextualSheet }
         return .menu
     }
 }

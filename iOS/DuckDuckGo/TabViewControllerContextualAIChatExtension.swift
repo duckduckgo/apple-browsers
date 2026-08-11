@@ -80,6 +80,12 @@ extension TabViewController {
         )
     }
 
+    /// A conversation this tab can return to: either still live in the coordinator, or persisted by an
+    /// earlier launch and waiting to be restored.
+    var hasContextualChatToReopen: Bool {
+        aiChatContextualSheetCoordinator.sessionState.hasActiveChat || tabModel.contextualChatURL != nil
+    }
+
     /// The persisted chat to restore, for both the plain and the selection-carrying entry points —
     /// attaching a selection must not cost the user the conversation they already had.
     private func restoreURLForContextualSheet() -> URL? {

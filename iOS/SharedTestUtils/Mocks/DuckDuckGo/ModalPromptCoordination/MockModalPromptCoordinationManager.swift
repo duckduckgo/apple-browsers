@@ -26,6 +26,8 @@ final class MockModalPromptCoordinationManager: ModalPromptCoordinationManaging 
     private(set) var capturedPresenter: ModalPromptPresenter?
     private(set) var callCount = 0
     var shouldSuppressOtherSessionPromos = false
+    var modalAttemptPhase = ModalPromptAttemptPhase.idle
+    var hasPendingModalPrompt = false
     var coordinatedPresentationDisposition = ModalPromptLeaseDisposition.retained
     var reconcilePresentedModalResult = false
     var coordinatedAttemptReleaseHandler: (@MainActor () -> Void)?

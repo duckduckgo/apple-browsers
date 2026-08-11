@@ -166,6 +166,11 @@ struct NewTabPagePromoExposureSnapshot: Equatable {
 }
 
 @MainActor
+protocol NewTabPagePromoExposureSnapshotProviding: AnyObject {
+    var promoExposureSnapshot: NewTabPagePromoExposureSnapshot { get }
+}
+
+@MainActor
 protocol PromoSurfaceBlocking: AnyObject {
     func blockPromoSurface(
         scope: PromoSurfaceBlockerScope,
@@ -379,5 +384,11 @@ extension NewTabPagePromoExposureController: NewTabPagePromoExposureControlling 
         )
         reconcileSelection()
         return token
+    }
+}
+
+extension NewTabPagePromoExposureController: NewTabPagePromoExposureSnapshotProviding {
+    var promoExposureSnapshot: NewTabPagePromoExposureSnapshot {
+        snapshot
     }
 }

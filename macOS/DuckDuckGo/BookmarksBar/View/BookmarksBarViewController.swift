@@ -579,7 +579,8 @@ private extension BookmarksBarViewController {
         bookmarkManager.reorderByName(
             bookmarkManager.list?.topLevelEntities ?? [],
             withinParentFolder: .root,
-            undoManager: undoManager)
+            undoManager: undoManager
+        )
     }
 
 }

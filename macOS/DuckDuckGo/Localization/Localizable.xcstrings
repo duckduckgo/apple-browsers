@@ -22147,18 +22147,6 @@
         }
       }
     },
-    "bookmarks.undo-action.reorder-by-name" : {
-      "comment" : "Undo and redo action name for permanently reordering bookmarks by name",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Reorder by Name"
-          }
-        }
-      }
-    },
     "Bring All to Front" : {
       "comment" : "Main Menu Window item",
       "localizations" : {

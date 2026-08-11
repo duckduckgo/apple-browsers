@@ -565,6 +565,7 @@ final class DeviceInfoMigrationCoordinatingMock: DeviceInfoMigrationCoordinating
     private let lock = NSLock()
     private var recordedCalls: [Call] = []
     private var recordedResetCallCount = 0
+    var hasCompletedMigrationStub = false
     var calls: [Call] {
         lock.lock()
         defer { lock.unlock() }
@@ -580,6 +581,10 @@ final class DeviceInfoMigrationCoordinatingMock: DeviceInfoMigrationCoordinating
     func migrateCurrentDeviceIfNeeded(for account: SyncAccount) async {
         let handler = record(Call(account: account))
         await handler?()
+    }
+
+    func hasCompletedMigration(for account: SyncAccount) -> Bool {
+        hasCompletedMigrationStub
     }
 
     func reset() {

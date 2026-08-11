@@ -47,23 +47,6 @@ final class SubscriptionOnboardingSectionTests: XCTestCase {
                        [.vpnActivation, .vpnWidget, .idtr, .duckAI])
     }
 
-    // MARK: - Step indicator
-
-    func testWhenSectionIsCountedByTheIndicatorThenItsStepIsItsPositionIncludingPIR() {
-        XCTAssertEqual(SubscriptionOnboardingSection.vpnActivation.indicatorStep, 1)
-        XCTAssertEqual(SubscriptionOnboardingSection.vpnWidget.indicatorStep, 2)
-        XCTAssertEqual(SubscriptionOnboardingSection.idtr.indicatorStep, 3)
-        XCTAssertEqual(SubscriptionOnboardingSection.duckAI.indicatorStep, 4)
-        XCTAssertEqual(SubscriptionOnboardingSection.pir.indicatorStep, 5)
-        XCTAssertEqual(SubscriptionOnboardingSection.indicatorStepCount, 5)
-    }
-
-    func testWhenSectionIsNotCountedByTheIndicatorThenItHasNoStep() {
-        XCTAssertNil(SubscriptionOnboardingSection.orderConfirmation.indicatorStep)
-        XCTAssertNil(SubscriptionOnboardingSection.welcome.indicatorStep)
-        XCTAssertNil(SubscriptionOnboardingSection.progress.indicatorStep)
-    }
-
     // MARK: - Navigation button accessibility
 
     func testWhenNavigationButtonIsBackThenAccessibilityLabelIsBackLabel() {

@@ -84,15 +84,15 @@ final class SubscriptionOnboardingOrderConfirmationViewModelTests: XCTestCase {
     func testWhenSubscriptionHasActiveTrialThenTheCardUsesTheSubscriptionsTrialLength() async {
         let start = date(2026, 5, 7)
         let sut = makeViewModel(subscription: subscription(startedAt: start,
-                                                           expiresOrRenewsAt: date(2026, 5, 21),
+                                                           expiresOrRenewsAt: date(2026, 5, 17),
                                                            hasTrial: true),
                                 now: start)
 
         await sut.load()
 
-        // The subscription's own 14 days, not the card model's 7-day default.
-        XCTAssertEqual(sut.freeTrialCard?.trialLength, 14)
-        XCTAssertEqual(sut.freeTrialCard?.dayLabels.count, 14)
+        // The subscription's own 10 days, not the card model's 7-day default.
+        XCTAssertEqual(sut.freeTrialCard?.trialLength, 10)
+        XCTAssertEqual(sut.freeTrialCard?.dayLabels.count, 10)
     }
 
     func testWhenTodayIsPartwayThroughTheTrialThenTheCardMarksThatDay() async {
@@ -134,10 +134,12 @@ final class SubscriptionOnboardingOrderConfirmationViewModelTests: XCTestCase {
     // Spans that aren't trials at all (zero-length, reversed dates) are rejected by
     // `DuckDuckGoSubscription.trialLengthInDays(calendar:)` and covered by its own tests.
 
+    /// One day past the widest strip the card can draw, so this guards the limit rather than a span so long
+    /// it would fail under any limit.
     func testWhenTheTrialIsLongerThanTheStripCanDrawThenNoCardIsShown() async {
         let start = date(2026, 5, 7)
         let sut = makeViewModel(subscription: subscription(startedAt: start,
-                                                           expiresOrRenewsAt: date(2026, 8, 7),
+                                                           expiresOrRenewsAt: date(2026, 5, 18),
                                                            hasTrial: true),
                                 now: start)
 

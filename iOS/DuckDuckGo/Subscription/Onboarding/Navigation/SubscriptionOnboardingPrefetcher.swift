@@ -19,6 +19,7 @@
 
 import Foundation
 import AIChat
+import os.log
 
 /// Prefetches what the flow's sections need, once at flow start, so screens read the result rather than
 /// refetching on every visit.
@@ -82,6 +83,7 @@ final class SubscriptionOnboardingPrefetcher: ObservableObject {
 
     func fetchConnectionInfoIfNeeded() {
         guard connectionInfo.shouldStartFetch else { return }
+        Logger.subscription.debug("Onboarding prefetch starting: connection info")
         connectionInfo = .loading
         connectionInfoTask = Task { @MainActor [weak self] in
             guard let service = self?.connectionInfoService else { return }
@@ -97,6 +99,7 @@ final class SubscriptionOnboardingPrefetcher: ObservableObject {
                     self?.connectionInfo = .idle
                     return
                 }
+                Logger.subscription.error("Onboarding connection info fetch failed: \(error.localizedDescription, privacy: .public)")
                 self?.connectionInfo = .failed
             }
         }
@@ -104,6 +107,7 @@ final class SubscriptionOnboardingPrefetcher: ObservableObject {
 
     func fetchModelsIfNeeded() {
         guard models.shouldStartFetch else { return }
+        Logger.subscription.debug("Onboarding prefetch starting: Duck.ai models")
         models = .loading
         modelsTask = Task { @MainActor [weak self] in
             guard let provider = self?.modelProvider else { return }
@@ -112,7 +116,12 @@ final class SubscriptionOnboardingPrefetcher: ObservableObject {
                 self?.models = .idle
                 return
             }
-            self?.models = fetched.isEmpty ? .failed : .loaded(fetched)
+            guard !fetched.isEmpty else {
+                Logger.subscription.error("Onboarding Duck.ai model fetch returned no models")
+                self?.models = .failed
+                return
+            }
+            self?.models = .loaded(fetched)
         }
     }
 

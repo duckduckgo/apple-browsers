@@ -60,9 +60,8 @@ final class SubscriptionOnboardingOrderConfirmationViewModel: ObservableObject {
         case paid
     }
 
-    /// Lengths the calendar strip can draw — it renders one column per trial day. A valid but longer trial
-    /// falls back to the paid layout rather than rendering an unreadable card.
-    private static let drawableTrialLengths = 1...31
+    /// Lengths the calendar strip can draw
+    private static let drawableTrialLengths = 1...10
 
     @Published private(set) var state: State = .loading
 

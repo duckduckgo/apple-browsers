@@ -33,12 +33,11 @@ struct SubscriptionOnboardingViewFactory {
     /// The PIR screen launched from the summary's checklist row.
     func pirLaunchScreen() -> AnyView {
         AnyView(
-            SubscriptionOnboardingPIRView(
-                title: String(format: UserText.subscriptionOnboardingStepIndicatorFormat,
-                              SubscriptionOnboardingSection.indicatorStepCount,
-                              SubscriptionOnboardingSection.indicatorStepCount),
+            SubscriptionOnboardingProtectionOverviewView(
+                content: .pir,
+                title: flow.title(for: .pir),
                 navigationButton: .close { flow.isPresentingPIR = false },
-                push: flow.pirScreen())
+                onLaunch: flow.pirScreen())
                 .subscriptionOnboardingNavigationContainer())
     }
 
@@ -75,7 +74,8 @@ struct SubscriptionOnboardingViewFactory {
                 onNext: { flow.sectionDidRequestAdvance() }))
 
         case .idtr:
-            return AnyView(SubscriptionOnboardingIDTRView(
+            return AnyView(SubscriptionOnboardingProtectionOverviewView(
+                content: .idtr,
                 title: title,
                 navigationButton: navigationButton,
                 onNext: {

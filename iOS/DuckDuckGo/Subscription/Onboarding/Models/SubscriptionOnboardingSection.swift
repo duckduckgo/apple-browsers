@@ -48,13 +48,4 @@ enum SubscriptionOnboardingSection: CaseIterable {
 
     /// In-flow sections (excludes .pir, overview, and progress).
     static let activationSections: [SubscriptionOnboardingSection] = [.vpnActivation, .vpnWidget, .idtr, .duckAI]
-
-    /// Sections for the step indicator (includes PIR even though it's not in-flow).
-    static let indicatorSteps: [SubscriptionOnboardingSection] = activationSections + [.pir]
-
-    static var indicatorStepCount: Int { indicatorSteps.count }
-
-    var indicatorStep: Int? {
-        Self.indicatorSteps.firstIndex(of: self).map { $0 + 1 }
-    }
 }

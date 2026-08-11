@@ -938,22 +938,22 @@ final class SubscriptionDebugViewController: UITableViewController {
     }
 
     private func showIDTROnboarding() {
-        let hostingController = UIHostingController(
-            rootView: SubscriptionOnboardingIDTRView(
-                navigationButton: .close({ [weak self] in self?.dismiss(animated: true) }),
-                onNext: { [weak self] in self?.dismiss(animated: true) })
-                .subscriptionOnboardingNavigationContainer())
-        present(hostingController, animated: true)
+        showProtectionOverviewOnboarding(content: .idtr)
     }
 
     /// The real "start PIR" hand-off needs the Data Broker Protection view-controller provider, which lives
     /// on `DBPService` and reaches the flow as `SubscriptionOnboardingFlowViewModel.subscriptionSettings`'s
     /// `pirScreen`. The debug menu has no handle on it, so this standalone row's CTA just dismisses.
     private func showPIROnboarding() {
+        showProtectionOverviewOnboarding(content: .pir)
+    }
+
+    private func showProtectionOverviewOnboarding(content: SubscriptionOnboardingInfoContent) {
         let hostingController = UIHostingController(
-            rootView: SubscriptionOnboardingPIRView(
+            rootView: SubscriptionOnboardingProtectionOverviewView(
+                content: content,
                 navigationButton: .close({ [weak self] in self?.dismiss(animated: true) }),
-                onStart: { [weak self] in self?.dismiss(animated: true) })
+                onNext: { [weak self] in self?.dismiss(animated: true) })
                 .subscriptionOnboardingNavigationContainer())
         present(hostingController, animated: true)
     }

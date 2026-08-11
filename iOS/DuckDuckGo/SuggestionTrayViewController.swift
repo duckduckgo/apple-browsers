@@ -375,11 +375,17 @@ class SuggestionTrayViewController: UIViewController {
     }
 
     func didHide(animated: Bool) {
-        contentPresentationGeneration += 1
-        newTabPage?.setPromoSurfaceRenderable(false)
+        deactivatePromoSurfaceExposure()
         removeAutocomplete(animated: animated)
         removeNewTabPage(animated: animated)
         teardownPopoverDuckAIController()
+    }
+
+    /// Invalidates pending presentation completions and deactivates the cached favorites NTP's promo exposure
+    /// without tearing down its content. Call this before an ancestor hides the tray.
+    func deactivatePromoSurfaceExposure() {
+        contentPresentationGeneration += 1
+        newTabPage?.setPromoSurfaceRenderable(false)
     }
     
     @objc func keyboardMoveSelectionDown() {
@@ -701,6 +707,7 @@ class SuggestionTrayViewController: UIViewController {
     /// Tears down both iPad suggestion surfaces (search + Duck.ai) without hiding the container —
     /// used on tab switch so the next focus session rebuilds fresh for the current tab.
     func teardownPopoverSuggestions() {
+        deactivatePromoSurfaceExposure()
         removeAutocomplete(animated: false)
         teardownPopoverDuckAIController()
     }

@@ -396,6 +396,97 @@ final class NewTabPagePromoHostWiringTests: XCTestCase {
         XCTAssertEqual(fixture.promoCoordinator.releaseCount, 2)
     }
 
+    func testDeactivatingTrayKeepsCachedNewTabPageInactiveUntilFavoritesReturn() async {
+        let fixture = PromoHostFixture()
+        let sut = fixture.makeSuggestionTrayController()
+        let window = makeVisibleWindow(rootViewController: sut)
+        defer {
+            detachAndHide(window)
+            fixture.tearDownSuggestionDependencies()
+        }
+
+        let firstAdmission = expectation(description: "Tray favorites acquired its RMF slot")
+        fixture.promoCoordinator.onVisibleLeaseAcquired = { _ in
+            firstAdmission.fulfill()
+        }
+        sut.show(for: .favorites, animated: false)
+        await fulfillment(of: [firstAdmission], timeout: 1)
+        fixture.promoCoordinator.onVisibleLeaseAcquired = nil
+
+        let cachedTarget = fixture.promoCoordinator.retryTarget
+        XCTAssertNotNil(cachedTarget)
+        XCTAssertTrue(cachedTarget?.isActiveForPromoRetry == true)
+
+        let firstRelease = expectation(description: "Hidden tray released the favorites RMF slot")
+        fixture.promoCoordinator.onVisibleLeaseReleased = {
+            firstRelease.fulfill()
+        }
+        sut.deactivatePromoSurfaceExposure()
+        await fulfillment(of: [firstRelease], timeout: 1)
+        fixture.promoCoordinator.onVisibleLeaseReleased = nil
+
+        XCTAssertTrue(sut.isShowingFavorites, "Hiding the tray must preserve its cached favorites content")
+        XCTAssertTrue(fixture.promoCoordinator.retryTarget === cachedTarget)
+        XCTAssertFalse(cachedTarget?.isActiveForPromoRetry == true)
+        XCTAssertNil(fixture.promoCoordinator.arbiter.snapshot.activeOwner)
+        let hiddenAttemptCount = fixture.promoCoordinator.admissionAttemptCount
+        cachedTarget?.retryRemoteMessageAdmission(using: fixture.promoCoordinator.admitRemoteMessage)
+        XCTAssertEqual(fixture.promoCoordinator.admissionAttemptCount, hiddenAttemptCount)
+
+        let secondAdmission = expectation(description: "Returning to tray favorites reacquired the RMF slot")
+        fixture.promoCoordinator.onVisibleLeaseAcquired = { _ in
+            secondAdmission.fulfill()
+        }
+        sut.show(for: .favorites, animated: false)
+        await fulfillment(of: [secondAdmission], timeout: 1)
+        fixture.promoCoordinator.onVisibleLeaseAcquired = nil
+
+        XCTAssertTrue(fixture.promoCoordinator.retryTarget === cachedTarget)
+        XCTAssertTrue(cachedTarget?.isActiveForPromoRetry == true)
+
+        let secondRelease = expectation(description: "Tray teardown released the favorites RMF slot")
+        fixture.promoCoordinator.onVisibleLeaseReleased = {
+            secondRelease.fulfill()
+        }
+        sut.teardownPopoverSuggestions()
+        await fulfillment(of: [secondRelease], timeout: 1)
+
+        XCTAssertTrue(sut.isShowingFavorites, "Tray teardown must preserve its cached favorites content")
+        XCTAssertTrue(fixture.promoCoordinator.retryTarget === cachedTarget)
+        XCTAssertFalse(cachedTarget?.isActiveForPromoRetry == true)
+        XCTAssertNil(fixture.promoCoordinator.arbiter.snapshot.activeOwner)
+        XCTAssertEqual(fixture.promoCoordinator.successfulAdmissionCount, 2)
+        XCTAssertEqual(fixture.promoCoordinator.releaseCount, 2)
+    }
+
+    func testDeactivatingTrayInvalidatesPendingFavoritesActivation() async {
+        let fixture = PromoHostFixture()
+        let favoritesInstallationFinished = expectation(
+            description: "Animated tray favorites installation completed"
+        )
+        let sut = fixture.makeSuggestionTrayController { controller in
+            if controller is NewTabPageViewController {
+                favoritesInstallationFinished.fulfill()
+            }
+        }
+        let window = makeVisibleWindow(rootViewController: sut)
+        defer {
+            detachAndHide(window)
+            fixture.tearDownSuggestionDependencies()
+        }
+
+        sut.show(for: .favorites, animated: true)
+        sut.deactivatePromoSurfaceExposure()
+
+        await fulfillment(of: [favoritesInstallationFinished], timeout: 1)
+        await nextMainQueueTurn()
+
+        XCTAssertTrue(sut.isShowingFavorites, "Hiding during installation must keep the favorites cache")
+        XCTAssertFalse(fixture.promoCoordinator.retryTarget?.isActiveForPromoRetry == true)
+        XCTAssertNil(fixture.promoCoordinator.arbiter.snapshot.activeOwner)
+        XCTAssertEqual(fixture.promoCoordinator.successfulAdmissionCount, 0)
+    }
+
     func testStaleAnimatedFavoritesInstallationCannotRemoveCurrentAutocomplete() async throws {
         try XCTSkipUnless(
             UIDevice.current.userInterfaceIdiom == .phone,

@@ -1580,8 +1580,14 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
     }
 
     func testAskAboutPageSurvivesRemovalWhenThereIsNoFloatingInput() {
-        // Given the flag is off, nothing else offers re-attach, so the chip must stay
+        // Given no floating input, nothing else offers re-attach, so the chip must stay
         mockSettings.isAutomaticContextAttachmentEnabled = true
+        sessionState = AIChatContextualChatSessionState(
+            aiChatSettings: mockSettings,
+            pixelHandler: mockPixelHandler,
+            featureFlagger: mockFeatureFlagger,
+            floatingInputFeature: MockFloatingInputFeature(isAvailable: false)
+        )
         sessionState.updateContext(makeTestContext())
 
         // When

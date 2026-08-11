@@ -455,6 +455,8 @@ final class AIChatContextualSheetCoordinator {
         pageContextHandler.clear()
         sessionState.resetToNoChat()
         pixelHandler.reset()
+        // Both callers are deletions, so the tab must not keep a URL that would restore the chat.
+        delegate?.aiChatContextualSheetCoordinator(self, didUpdateContextualChatURL: nil)
     }
 
     func reloadIfNeeded() {

@@ -2162,6 +2162,16 @@ class MainViewController: UIViewController {
         record(newTabPageSessionInstrumentation)
     }
 
+    /// Records text entry from either the omnibar or the unified input.
+    ///
+    /// Empty text is ignored: the same change signals also carry a cleared field and the
+    /// text hand-over between the search and Duck.ai inputs, neither of which is the user
+    /// putting a query in.
+    func recordNewTabPageSessionTextEntry(_ text: String) {
+        guard !text.isEmpty else { return }
+        recordNewTabPageSessionAction { $0.typeInInput() }
+    }
+
     func fireNewTabPixels() {
         Pixel.fire(.homeScreenShown, withAdditionalParameters: [:])
         productSurfaceTelemetry.newTabPageUsed()
@@ -4740,6 +4750,7 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onAIChatQueryUpdated(_ query: String) {
+        recordNewTabPageSessionTextEntry(query)
         iPadAIChatQuery = query
         refreshPopoverSuggestions()
     }
@@ -4794,6 +4805,8 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onOmniQueryUpdated(_ updatedQuery: String) {
+        recordNewTabPageSessionTextEntry(updatedQuery)
+
         // Duck.ai text changes arrive via onAIChatQueryUpdated; don't show search here.
         if isModeToggleInAIChatMode {
             return

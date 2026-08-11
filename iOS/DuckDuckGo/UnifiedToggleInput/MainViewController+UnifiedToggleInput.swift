@@ -492,6 +492,12 @@ private extension MainViewController {
             }
             .store(in: &unifiedToggleInputCancellables)
 
+        coordinator.textChangePublisher
+            .sink { [weak self] text in
+                self?.recordNewTabPageSessionTextEntry(text)
+            }
+            .store(in: &unifiedToggleInputCancellables)
+
         // AI-tab search mode swaps suggestions in/out at the empty↔non-empty text boundary.
         coordinator.textChangePublisher
             .map { $0.isEmpty }

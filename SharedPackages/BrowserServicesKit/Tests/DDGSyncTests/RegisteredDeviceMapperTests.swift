@@ -67,6 +67,80 @@ final class RegisteredDeviceMapperTests: XCTestCase {
         XCTAssertEqual(deviceInfoCodec.decryptCalls, ["encrypted-info"])
     }
 
+    func testWhenUnifiedThirdPartyInfoDecryptsThenDoesNotLoadLegacyThirdPartyKey() async throws {
+        let account = makeAccount()
+        let accountInfoKeys = AccountInfoKeyManagingMock()
+        accountInfoKeys.loadKeyStub = try makeAccountInfoKey()
+        let deviceInfoCodec = DeviceInfoReadingMock()
+        deviceInfoCodec.decryptHandler = { _, _ in
+            DeviceInfo(name: "Python Client", type: "browser")
+        }
+        let scopedAccess = ScopedAccessCredentialManagingMock()
+        var cachedScopedPasswordCalls = 0
+        let mapper = RegisteredDeviceMapper(crypter: CryptingMock(),
+                                            scopedAccess: scopedAccess,
+                                            accountInfoKeys: accountInfoKeys,
+                                            deviceInfoCodec: deviceInfoCodec,
+                                            cachedScopedPassword: {
+                                                cachedScopedPasswordCalls += 1
+                                                return Data(repeating: 7, count: 32)
+                                            },
+                                            isScopedAccessCredentialsEnabled: { true },
+                                            canReadUnifiedDeviceList: { true })
+        let entry = RegisteredDeviceEntry(id: "third-party-device",
+                                          name: "legacy-name",
+                                          type: "legacy-type",
+                                          info: "encrypted-info",
+                                          credentialId: SyncCredentialID.thirdParty)
+
+        let devices = await mapper.registeredDevices(from: [entry], account: account)
+
+        XCTAssertEqual(devices.map(\.name), ["Python Client"])
+        XCTAssertEqual(cachedScopedPasswordCalls, 0)
+        XCTAssertTrue(scopedAccess.fetchAccessCredentialsCalls.isEmpty)
+        XCTAssertTrue(scopedAccess.recoverScopedPasswordCalls.isEmpty)
+    }
+
+    func testWhenUnifiedThirdPartyInfoFailsThenLoadsLegacyThirdPartyKey() async throws {
+        let account = makeAccount()
+        let accountInfoKeys = AccountInfoKeyManagingMock()
+        accountInfoKeys.loadKeyStub = try makeAccountInfoKey()
+        let deviceInfoCodec = DeviceInfoReadingMock()
+        deviceInfoCodec.decryptHandler = { _, _ in
+            throw DeviceInfoCodecError.invalidPayload
+        }
+        let scopedPassword = Data(repeating: 7, count: 32)
+        let thirdPartyMainKey = ScopedAccessKeyDerivation.mainKey(from: scopedPassword, userID: account.userId)
+        let codec = JWECompactCodec()
+        var cachedScopedPasswordCalls = 0
+        let mapper = RegisteredDeviceMapper(crypter: CryptingMock(),
+                                            accountInfoKeys: accountInfoKeys,
+                                            deviceInfoCodec: deviceInfoCodec,
+                                            cachedScopedPassword: {
+                                                cachedScopedPasswordCalls += 1
+                                                return scopedPassword
+                                            },
+                                            isScopedAccessCredentialsEnabled: { true },
+                                            canReadUnifiedDeviceList: { true },
+                                            jweCompactCodec: codec)
+        let entry = RegisteredDeviceEntry(
+            id: "third-party-device",
+            name: try codec.encryptDirect(payload: Data("Python Client".utf8),
+                                          contentEncryptionKey: thirdPartyMainKey,
+                                          kid: SyncCredentialID.thirdParty),
+            type: try codec.encryptDirect(payload: Data("browser".utf8),
+                                          contentEncryptionKey: thirdPartyMainKey,
+                                          kid: SyncCredentialID.thirdParty),
+            info: "invalid-info",
+            credentialId: SyncCredentialID.thirdParty)
+
+        let devices = await mapper.registeredDevices(from: [entry], account: account)
+
+        XCTAssertEqual(devices.map(\.name), ["Python Client"])
+        XCTAssertEqual(devices.map(\.type), ["browser"])
+        XCTAssertEqual(cachedScopedPasswordCalls, 1)
+    }
+
     func testWhenUnifiedReadIsDisabledThenIgnoresDeviceInfoAndUsesLegacyFields() async {
         let accountInfoKeys = AccountInfoKeyManagingMock()
         let deviceInfoCodec = DeviceInfoReadingMock()

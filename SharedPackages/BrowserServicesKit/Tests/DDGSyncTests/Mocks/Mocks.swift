@@ -591,6 +591,7 @@ final class DeviceInfoMigrationCoordinatingMock: DeviceInfoMigrationCoordinating
 
     private let lock = NSLock()
     private var recordedCalls: [Call] = []
+    private var recordedRepairCalls: [Call] = []
     private var recordedResetCallCount = 0
     var hasCompletedMigrationStub = false
     var calls: [Call] {
@@ -598,15 +599,26 @@ final class DeviceInfoMigrationCoordinatingMock: DeviceInfoMigrationCoordinating
         defer { lock.unlock() }
         return recordedCalls
     }
+    var repairCalls: [Call] {
+        lock.lock()
+        defer { lock.unlock() }
+        return recordedRepairCalls
+    }
     var resetCallCount: Int {
         lock.lock()
         defer { lock.unlock() }
         return recordedResetCallCount
     }
     var migrateCurrentDeviceHandler: (() async -> Void)?
+    var repairCurrentDeviceInfoHandler: (() async -> Void)?
 
     func migrateCurrentDeviceIfNeeded(for account: SyncAccount) async {
         let handler = record(Call(account: account))
+        await handler?()
+    }
+
+    func repairCurrentDeviceInfo(for account: SyncAccount) async {
+        let handler = recordRepair(Call(account: account))
         await handler?()
     }
 
@@ -624,6 +636,14 @@ final class DeviceInfoMigrationCoordinatingMock: DeviceInfoMigrationCoordinating
         lock.lock()
         recordedCalls.append(call)
         let handler = migrateCurrentDeviceHandler
+        lock.unlock()
+        return handler
+    }
+
+    private func recordRepair(_ call: Call) -> (() async -> Void)? {
+        lock.lock()
+        recordedRepairCalls.append(call)
+        let handler = repairCurrentDeviceInfoHandler
         lock.unlock()
         return handler
     }

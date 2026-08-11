@@ -438,6 +438,14 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
             .sink { [weak self] isVideoPlaying in
                 self?.refreshDisplaysAutoplayPolicy(isVideoPlaying: isVideoPlaying)
             }
+
+        /// # Note: The autoplay policy feature flag is already enforced by `AutoplayPolicyTabExtension`.
+        videoAutoplayCancellable = extensions.autoplayPolicy?.videoAutoplayDetectedPublisher
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] detectedVideoAutoplay in
+                self?.detectedVideoAutoplay = detectedVideoAutoplay
+            }
     }
 
 #if DEBUG
@@ -578,6 +586,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
 
     @Published private(set) var audioStateTest: WebView.AudioState = .unmuted(isPlayingAudio: false)
     @Published private(set) var mustDisplayAutoplayPolicy: Bool = false
+    @Published private(set) var detectedVideoAutoplay: Bool = false
 
     // MARK: - Tab Suspension
 
@@ -1184,6 +1193,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     private var faviconCancellable: AnyCancellable?
     private var tabCrashRecoveryCancellable: AnyCancellable?
     private var videoPlaybackCancellable: AnyCancellable?
+    private var videoAutoplayCancellable: AnyCancellable?
 
     private func setupWebView(shouldLoadInBackground: Bool) {
         webView.navigationDelegate = navigationDelegate

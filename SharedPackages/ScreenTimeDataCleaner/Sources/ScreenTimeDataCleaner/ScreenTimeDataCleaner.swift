@@ -29,13 +29,13 @@ public struct ScreenTimeDataCleaner {
     public func removeScreenTimeData() async {
         let uids = await WKWebsiteDataStore.allDataStoreIdentifiers
 
+        guard !Task.isCancelled else { return }
+        guard await removeScreenTimeData(from: .default) else { return }
+
         for uid in uids {
             guard !Task.isCancelled else { return }
             guard await removeScreenTimeData(from: .identified(uid)) else { return }
         }
-
-        guard !Task.isCancelled else { return }
-        _ = await removeScreenTimeData(from: .default)
     }
 
     @MainActor

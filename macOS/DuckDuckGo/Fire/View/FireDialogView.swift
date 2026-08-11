@@ -962,10 +962,10 @@ struct FireDialogView: ModalView {
                             Group {
                                 if AppVersion.isLiquidGlassSupported {
                                     Capsule(style: .continuous)
-                                        .fill(Color(designSystemColor: .buttonsSecondaryFillDefault))
+                                        .fill(Color(designSystemColor: .controlsFillPrimary))
                                 } else {
                                     RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                        .fill(Color(designSystemColor: .buttonsSecondaryFillDefault))
+                                        .fill(Color(designSystemColor: .controlsFillPrimary))
                                 }
                             }
                         )

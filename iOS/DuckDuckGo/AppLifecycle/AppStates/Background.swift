@@ -184,4 +184,3 @@ private final class ScreenTimeDataCleaningBackgroundTask {
     }
 
 }
-

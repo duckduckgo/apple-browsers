@@ -547,7 +547,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             }
         }
     }
-    
+
     func editPrompt(params: Any, message: UserScriptMessage) async -> Encodable? {
         guard featureFlagger.isFeatureOn(.nativeAIPromptEditing) else {
             return EditPromptReply.cancelled

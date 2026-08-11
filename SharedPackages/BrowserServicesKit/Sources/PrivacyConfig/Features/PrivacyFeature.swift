@@ -89,6 +89,7 @@ public enum PrivacyFeature: String {
     case forceDarkModeOnWebsites
     case promoQueue
     case adBlockingExtension
+    case eventHub
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.
@@ -387,6 +388,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Controls pin/unpin updates of Synced chats
     case supportsSyncChatsUpdate
 
+    /// Duck.ai actions on selected text in the browser, offered from the selection edit menu.
+    case textActions
+
     /// Shows a link in Settings → AI Features that opens the Duck.ai Settings modal.
     case settingsLinkInAiFeatures
 
@@ -603,6 +607,8 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case scopedAccessCredentials
     case canUseV2ConnectFlow
     case canShowV2ConnectCode
+    case canWriteUnifiedDeviceList
+    case canReadUnifiedDeviceList
     case simplifiedSyncSetupV2
 }
 

@@ -242,6 +242,24 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertTrue(sut.viewController.isModelChipHidden)
     }
 
+    // MARK: - Prompt editing
+
+    @MainActor
+    func test_editPrompt_holdsUntilSubmit_thenResolvesWithEditedContent() async {
+        let request = EditPromptRequest(prompt: "original", images: nil, files: nil, hasResponsesToLose: false)
+
+        let editTask = Task { await sut.editPrompt(request) }
+        await Task.yield() // let editPrompt reach its suspension
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "edited", mode: .aiChat)
+
+        let reply = await editTask.value
+        guard case let .submit(prompt, _, _) = reply else {
+            return XCTFail("Expected .submit, got \(reply)")
+        }
+        XCTAssertEqual(prompt, "edited", "Submitting during an edit resolves the held reply with the edited content")
+    }
+
     // MARK: - Recovery-Card Submit Block
 
     func test_recoveryCardBlock_propagatesToViewController() {

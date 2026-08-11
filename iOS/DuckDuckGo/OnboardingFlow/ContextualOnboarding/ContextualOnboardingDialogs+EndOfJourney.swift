@@ -27,66 +27,129 @@ import DesignResourcesKitIcons
 
 extension OnboardingRebranding {
 
+    static let contextualThumbsUpDaxAnimation = DaxAnimation(
+        animationName: "Dax-EndOfJourney-TryWebsite",
+        size: CGSize(width: 153, height: 169.67),
+        position: .left(bottomPadding: -70.0, xOffset: 0.0),
+        largeScreenPosition: .left(bottomPadding: 0.0, xOffset: 0.0)
+    )
+
     /// https://www.figma.com/design/YPE94Xkcrk2uqiF2l4VmSv/Onboarding--2026-?node-id=12206-51627&m=dev
+    /// https://www.figma.com/design/vsuCJP9OGykRkk1iZIU0ek/Mobile-Onboarding---Segmented?node-id=938-134498&m=dev
     struct OnboardingEndOfJourneyDialog: View {
         @Environment(\.verticalSizeClass) private var vSizeClass
         @Environment(\.horizontalSizeClass) private var hSizeClass
         @Environment(\.onboardingTheme) private var theme
         @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
-        let title: String
-        let message: String
-        let cta: String
-        let dismissAction: () -> Void
-        let onManualDismiss: (() -> Void)?
-        /// Suppress the screen-bottom Dax — used by the Duck.ai variant where the
-        /// keyboard is up and there's no room for Dax.
-        let showsDaxAnimation: Bool
+        let content: OnboardingEndOfJourneyContent
+        let onAction: (OnboardingEndOfJourneyAction) -> Void
 
+        init(content: OnboardingEndOfJourneyContent, onAction: @escaping (OnboardingEndOfJourneyAction) -> Void) {
+            self.content = content
+            self.onAction = onAction
+        }
+
+        /// Legacy convenience initializer for single-button callers (fire-onboarding completion, standard
+        /// final) that still pass discrete closures. Bridges them to the content-driven view.
         init(title: String = UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenTitle,
              message: String,
              cta: String,
              showsDaxAnimation: Bool = true,
-             dismissAction: @escaping () -> Void, onManualDismiss: (() -> Void)? = nil) {
-            self.title = title
-            self.message = message
-            self.cta = cta
-            self.showsDaxAnimation = showsDaxAnimation
-            self.dismissAction = dismissAction
-            self.onManualDismiss = onManualDismiss
-        }
-
-        static let daxAnimation = DaxAnimation(
-            animationName: "Dax-EndOfJourney-TryWebsite",
-            size: CGSize(width: 153, height: 169.67),
-            position: .left(bottomPadding: -70.0, xOffset: 0.0),
-            largeScreenPosition: .left(bottomPadding: 0.0, xOffset: 0.0)
-        )
-
-        var body: some View {
-            OnboardingBubbleView(tailPosition: showsDaxAnimation && !OnboardingBubbleAnimationMetrics.shouldHideBubbleTail(for: dynamicTypeSize) ? .bottom(offset: 0.2, direction: .leading) : nil) {
-                OnboardingRebranding.ContextualDaxDialogContent(
-                    orientation: OnboardingRebranding.ContextualDynamicMetrics.dialogOrientation(horizontalAlignment: .center).build(v: vSizeClass, h: hSizeClass),
-                    title: AttributedString(title),
-                    message: AttributedString(OnboardingRichTextMessageRenderer.render(message))
-                ) {
-                    Button(action: dismissAction) {
-                        Text(cta)
-                    }
-                    .frame(maxWidth: Metrics.buttonMaxWidth.build(v: vSizeClass, h: hSizeClass))
-                    .buttonStyle(theme.primaryButtonStyle.style)
+             dismissAction: @escaping () -> Void,
+             onManualDismiss: (() -> Void)? = nil) {
+            self.content = OnboardingEndOfJourneyContent(
+                icon: nil,
+                title: title,
+                message: message,
+                primaryCTA: cta,
+                primaryAction: .completeAndActivateSearch,
+                secondaryCTA: nil,
+                secondaryAction: nil,
+                daxAnimation: showsDaxAnimation ? OnboardingRebranding.contextualThumbsUpDaxAnimation : nil,
+                isManuallyDismissable: onManualDismiss != nil
+            )
+            self.onAction = { action in
+                switch action {
+                case .manualDismiss: onManualDismiss?()
+                default: dismissAction()
                 }
             }
-            .ifLet(onManualDismiss) { view, onDismiss in
-                view.onboardingDismissable(onDismiss)
+        }
+
+        var body: some View {
+            OnboardingBubbleView(tailPosition: content.daxAnimation != nil && !OnboardingBubbleAnimationMetrics.shouldHideBubbleTail(for: dynamicTypeSize) ? .bottom(offset: 0.2, direction: .leading) : nil) {
+                dialogContent
+            }
+            .if(content.isManuallyDismissable) { view in
+                view.onboardingDismissable {
+                    onAction(.manualDismiss)
+                }
             }
             .padding(theme.contextualOnboardingMetrics.containerPadding)
             .applyMaxDialogWidth(iPhoneLandscape: theme.contextualOnboardingMetrics.maxContainerWidth, iPad: theme.contextualOnboardingMetrics.maxContainerWidth)
             .overlay {
-                // Keyboard-aware placement on every non-compact device. Replaces the prior
-                // iPhone-only path that left iPad's keyboard covering Dax.
-                if showsDaxAnimation && !OnboardingBubbleAnimationMetrics.isCompactDevice {
-                    ScreenBottomDaxOverlay(animation: Self.daxAnimation)
+                // Bottom, keyboard-aware Dax on every non-compact device. Hidden on compact (no room)
+                // and when the content opts out (e.g. the chat-path completion).
+                if let daxAnimation = content.daxAnimation, !OnboardingBubbleAnimationMetrics.isCompactDevice {
+                    ScreenBottomDaxOverlay(animation: daxAnimation)
+                }
+            }
+        }
+
+        @ViewBuilder
+        private var dialogContent: some View {
+            if let icon = content.icon {
+                iconDialogContent(icon: icon)
+            } else {
+                standardDialogContent
+            }
+        }
+
+        /// Icon variant (Try-AI): promo-style layout — top icon with centered title/message.
+        private func iconDialogContent(icon: OnboardingEndOfJourneyIcon) -> some View {
+            VStack {
+                icon.image
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: Metrics.iconSize.width, height: Metrics.iconSize.height)
+                OnboardingRebranding.ContextualDaxDialogContent(
+                    title: content.title,
+                    titleTextAlignment: .center,
+                    message: content.message,
+                    messageTextAlignment: .center
+                ) {
+                    buttons
+                }
+            }
+        }
+
+        /// Standard "You've got this!" / privateAIChat: bottom bubble tail, orientation-adaptive rich text.
+        private var standardDialogContent: some View {
+            OnboardingRebranding.ContextualDaxDialogContent(
+                orientation: OnboardingRebranding.ContextualDynamicMetrics.dialogOrientation(horizontalAlignment: .center).build(v: vSizeClass, h: hSizeClass),
+                title: AttributedString(content.title),
+                message: AttributedString(OnboardingRichTextMessageRenderer.render(content.message))
+            ) {
+                buttons
+            }
+        }
+
+        @ViewBuilder
+        private var buttons: some View {
+            VStack(spacing: Metrics.buttonSpacing) {
+                Button(action: { onAction(content.primaryAction) }) {
+                    Text(content.primaryCTA)
+                }
+                // Single-button dialogs keep the current width on iPad / iPhone-landscape; two-button dialogs stay full-width.
+                .frame(maxWidth: content.secondaryCTA == nil ? Metrics.buttonMaxWidth.build(v: vSizeClass, h: hSizeClass) : nil)
+                .buttonStyle(theme.primaryButtonStyle.style)
+
+                if let secondaryCTA = content.secondaryCTA, let secondaryAction = content.secondaryAction {
+                    Button(action: { onAction(secondaryAction) }) {
+                        Text(secondaryCTA)
+                    }
+                    .buttonStyle(theme.secondaryButtonStyle.style)
                 }
             }
         }
@@ -94,12 +157,24 @@ extension OnboardingRebranding {
 
 }
 
+// MARK: - Icon
+
+extension OnboardingEndOfJourneyIcon {
+    /// The view owns the mapping from the semantic icon case to its image.
+    var image: Image {
+        switch self {
+        case .duckAI:
+            return Image(uiImage: DesignSystemImages.Color.Size96.duckAI)
+        }
+    }
+}
+
 // MARK: - Screen-Bottom Dax Overlay
 
 /// Positions Dax at the screen bottom via global coordinates; re-anchors to the keyboard's
 /// top edge when the keyboard is visible so it doesn't get covered. Renders beyond the
 /// hosting controller's bounds (which doesn't clip).
-private struct ScreenBottomDaxOverlay: View {
+struct ScreenBottomDaxOverlay: View {
     let animation: DaxAnimation
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -167,6 +242,8 @@ private struct ScreenBottomDaxOverlay: View {
 private extension OnboardingRebranding.OnboardingEndOfJourneyDialog {
 
     enum Metrics {
+        static let iconSize = CGSize(width: 96, height: 96)
+        static let buttonSpacing: CGFloat = 8
         static let buttonMaxWidth = MetricBuilder<CGFloat?>(default: nil).iPhone(landscape: 170.0).iPad(170.0)
     }
 

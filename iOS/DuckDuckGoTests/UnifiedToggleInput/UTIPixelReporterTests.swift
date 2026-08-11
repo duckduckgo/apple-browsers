@@ -19,33 +19,67 @@
 
 import AIChat
 import Core
+import PixelKit
+import PixelKitTestingUtilities
 import XCTest
 @testable import DuckDuckGo
 
 @MainActor
 final class UTIPixelReporterTests: XCTestCase {
 
+    private var pixelKitMock: PixelKitMock!
+
     override func setUp() {
         super.setUp()
         PixelFiringMock.tearDown()
+        pixelKitMock = PixelKitMock()
     }
 
     override func tearDown() {
         PixelFiringMock.tearDown()
+        pixelKitMock = nil
         super.tearDown()
     }
 
     private func makeReporter(context: @escaping () -> UTIPixelContext?) -> UTIPixelReporter {
-        UTIPixelReporter(firing: UTIPixelFiring(pixel: PixelFiringMock.self, daily: PixelFiringMock.self),
+        UTIPixelReporter(firing: UTIPixelFiring(pixel: PixelFiringMock.self,
+                                                daily: PixelFiringMock.self,
+                                                pixelKit: { [unowned self] in pixelKitMock }),
                          context: context)
     }
 
     private func context(surface: UnifiedToggleInputPixelSurface = .addressBar,
                          isDuckAISurfaceForAttribution: Bool = false,
-                         inputMode: TextEntryMode = .search) -> UTIPixelContext {
+                         inputMode: TextEntryMode = .search,
+                         isToggleVisible: Bool = false) -> UTIPixelContext {
         UTIPixelContext(surface: surface,
                         isDuckAISurfaceForAttribution: isDuckAISurfaceForAttribution,
-                        inputMode: inputMode)
+                        inputMode: inputMode,
+                        isToggleVisible: isToggleVisible)
+    }
+
+    // MARK: - Omnibar surface shown (toggle visibility from live context)
+
+    func testWhenOmnibarSurfaceShownWithToggleVisibleThenPixelReportsToggleVisibleTrue() {
+        let reporter = makeReporter { self.context(isToggleVisible: true) }
+
+        reporter.reportOmnibarInputSurfaceShown()
+
+        XCTAssertEqual(pixelKitMock.actualFireCalls.count, 2)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.first?.pixel.name, "m_aichat_experimental_omnibar_shown_daily")
+        XCTAssertEqual(pixelKitMock.actualFireCalls.first?.frequency, .legacyDailyNoSuffix)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name, "m_aichat_experimental_omnibar_shown_count")
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.frequency, .standard)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.first?.pixel.parameters, ["toggle_visible": "true"])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.parameters, ["toggle_visible": "true"])
+    }
+
+    func testWhenOmnibarSurfaceShownWithToggleHiddenThenPixelReportsToggleVisibleFalse() {
+        let reporter = makeReporter { self.context(isToggleVisible: false) }
+
+        reporter.reportOmnibarInputSurfaceShown()
+
+        XCTAssertEqual(pixelKitMock.actualFireCalls.first?.pixel.parameters, ["toggle_visible": "false"])
     }
 
     // MARK: - Mode switch (non-trivial params, passed per call)

@@ -199,6 +199,7 @@ final class UnifiedToggleInputCoordinatorPixelHelper {
         surface: UnifiedToggleInputPixelSurface,
         pageType: UnifiedToggleInputPromptPageType? = nil,
         origin: AIChatEntryPointSource? = nil,
+        defaultMode: DefaultOmnibarMode? = nil,
         firing: UTIPixelFiring = .live
     ) {
         let selectedToolValue = UnifiedPromptSubmittedSelectedToolPixelValue(selectedTool: selectedTool).rawValue
@@ -216,8 +217,28 @@ final class UnifiedToggleInputCoordinatorPixelHelper {
         ]
         parameters["page_type"] = pageType?.rawValue
         parameters["origin"] = origin?.rawValue
+        parameters["default_mode"] = defaultMode?.rawValue
 
         firing.fireDailyAndCount(.unifiedToggleInputPromptSubmitted, parameters)
+    }
+
+    /// The `.search` counterpart of `fireUnifiedPromptSubmittedPixel`. Shares `page_type`,
+    /// `surface` and `default_mode` with it so the Search vs Duck.ai mix is a ratio of the two.
+    static func fireUnifiedQuerySubmittedPixel(
+        surface: UnifiedToggleInputPixelSurface,
+        pageType: UnifiedToggleInputPromptPageType? = nil,
+        isToggleVisible: Bool,
+        defaultMode: DefaultOmnibarMode? = nil,
+        firing: UTIPixelFiring = .live
+    ) {
+        var parameters = [
+            "surface": surface.rawValue,
+            "toggle_visible": isToggleVisible ? "true" : "false"
+        ]
+        parameters["page_type"] = pageType?.rawValue
+        parameters["default_mode"] = defaultMode?.rawValue
+
+        firing.fireDailyAndCount(.unifiedToggleInputQuerySubmitted, parameters)
     }
 
     static func fireModelSelectedPixel(modelId: String, surface: UnifiedToggleInputPixelSurface, firing: UTIPixelFiring = .live) {

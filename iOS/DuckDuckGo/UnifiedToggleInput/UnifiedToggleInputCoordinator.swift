@@ -1542,6 +1542,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
                 switchBarSubmissionMetrics.process(text, for: .search)
             }
             sessionMonitor.recordActivity(mode: .search)
+            pixelReporter.reportQuerySubmitted(defaultOmnibarMode: aiChatSettings.defaultOmnibarMode)
             clearStoreEntryAfterSubmission()
             if isAITabState {
                 hide()
@@ -1585,7 +1586,8 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             selectedTool: toolsController.selectedTool,
             attachments: viewController.currentAttachments,
             reasoningMode: reasoningModeForSubmitPixel,
-            modelId: modelStore.persistedModelId
+            modelId: modelStore.persistedModelId,
+            defaultOmnibarMode: aiChatSettings.defaultOmnibarMode
         )
         pixelReporter.reportToolSubmittedIfNeeded(
             selectedTool: toolsController.selectedTool,

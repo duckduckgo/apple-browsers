@@ -198,7 +198,8 @@ final class UTIPixelReporter {
                                selectedTool: AIChatRAGTool?,
                                attachments: [UnifiedToggleInputAttachment],
                                reasoningMode: AIChatReasoningMode?,
-                               modelId: String?) {
+                               modelId: String?,
+                               defaultOmnibarMode: DefaultOmnibarMode) {
         withContext {
             UnifiedToggleInputCoordinatorPixelHelper.fireUnifiedPromptSubmittedPixel(
                 hasText: hasText,
@@ -209,6 +210,21 @@ final class UTIPixelReporter {
                 surface: $0.surface,
                 pageType: $0.pageType,
                 origin: Self.promptOrigin(for: $0),
+                defaultMode: defaultOmnibarMode,
+                firing: firing
+            )
+        }
+    }
+
+    /// The `.search` counterpart of `reportPromptSubmitted`, giving the Search vs Duck.ai mix a
+    /// denominator at the same granularity as the prompt side.
+    func reportQuerySubmitted(defaultOmnibarMode: DefaultOmnibarMode) {
+        withContext {
+            UnifiedToggleInputCoordinatorPixelHelper.fireUnifiedQuerySubmittedPixel(
+                surface: $0.surface,
+                pageType: $0.pageType,
+                isToggleVisible: $0.isToggleVisible,
+                defaultMode: defaultOmnibarMode,
                 firing: firing
             )
         }

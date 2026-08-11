@@ -122,7 +122,8 @@ final class UTIPixelReporterTests: XCTestCase {
                                        selectedTool: nil,
                                        attachments: [],
                                        reasoningMode: nil,
-                                       modelId: "gpt-x")
+                                       modelId: "gpt-x",
+                                       defaultOmnibarMode: .search)
 
         XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.pixelName, Pixel.Event.unifiedToggleInputPromptSubmitted.name)
         XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.params, [
@@ -134,7 +135,8 @@ final class UTIPixelReporterTests: XCTestCase {
             "has_text": "true",
             "surface": "duck_ai",
             "page_type": "duck_ai",
-            "origin": "address_bar_icon"
+            "origin": "address_bar_icon",
+            "default_mode": "search"
         ])
     }
 
@@ -145,7 +147,8 @@ final class UTIPixelReporterTests: XCTestCase {
                                        selectedTool: nil,
                                        attachments: [],
                                        reasoningMode: nil,
-                                       modelId: nil)
+                                       modelId: nil,
+                                       defaultOmnibarMode: .lastUsed)
 
         XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.params?["origin"], "address_bar_prompt")
         XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.params?["page_type"], "serp")
@@ -158,9 +161,57 @@ final class UTIPixelReporterTests: XCTestCase {
                                        selectedTool: nil,
                                        attachments: [],
                                        reasoningMode: nil,
-                                       modelId: nil)
+                                       modelId: nil,
+                                       defaultOmnibarMode: .lastUsed)
 
         XCTAssertNil(PixelFiringMock.lastDailyPixelInfo?.params?["origin"])
+    }
+
+    // MARK: - Query submission (the Search-side counterpart of prompt submission)
+
+    func testReportQuerySubmittedFiresDailyWithResolvedSurfacePageTypeAndToggleVisibility() {
+        let reporter = makeReporter { self.context(surface: .addressBar, isToggleVisible: true, pageType: .serp) }
+
+        reporter.reportQuerySubmitted(defaultOmnibarMode: .duckAI)
+
+        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.pixelName, Pixel.Event.unifiedToggleInputQuerySubmitted.name)
+        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.params, [
+            "surface": "address_bar",
+            "page_type": "serp",
+            "toggle_visible": "true",
+            "default_mode": "duckAI"
+        ])
+    }
+
+    /// A search submitted with the toggle off screen was not a Search-vs-Duck.ai choice, so it has
+    /// to be excludable from any choice-rate denominator.
+    func testWhenQuerySubmittedWithToggleHiddenThenToggleVisibleIsFalse() {
+        let reporter = makeReporter { self.context(isToggleVisible: false) }
+
+        reporter.reportQuerySubmitted(defaultOmnibarMode: .search)
+
+        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.params?["toggle_visible"], "false")
+    }
+
+    /// The query and prompt pixels have to agree on the keys the mix is cut by, or the ratio
+    /// cannot be computed at matching granularity.
+    func testQueryAndPromptSubmittedShareTheKeysTheMixIsCutBy() {
+        let reporter = makeReporter { self.context(surface: .addressBar, isToggleVisible: true, pageType: .ntp) }
+
+        reporter.reportQuerySubmitted(defaultOmnibarMode: .search)
+        let queryParams = PixelFiringMock.lastDailyPixelInfo?.params ?? [:]
+
+        reporter.reportPromptSubmitted(hasText: true,
+                                       selectedTool: nil,
+                                       attachments: [],
+                                       reasoningMode: nil,
+                                       modelId: nil,
+                                       defaultOmnibarMode: .search)
+        let promptParams = PixelFiringMock.lastDailyPixelInfo?.params ?? [:]
+
+        for key in ["surface", "page_type", "default_mode"] {
+            XCTAssertEqual(queryParams[key], promptParams[key], "\(key) must match across the two submission pixels")
+        }
     }
 
     // MARK: - Regular pixel with surface from context

@@ -357,7 +357,7 @@
         "parameters": ["appVersion"]
     },
     "m_aichat_unified_input_prompt_submitted": {
-        "description": "Fires on every UTI submission in the .aiChat branch, regardless of selected tool. Captures the full submit-time state of the input (tool, model, reasoning effort, attachments, text presence, page type, and the entry origin).",
+        "description": "Fires on every UTI submission in the .aiChat branch, regardless of selected tool. Captures the full submit-time state of the input (tool, model, reasoning effort, attachments, text presence, page type, and the entry origin). Pairs with m_aichat_unified_input_query_submitted, the .search branch's counterpart: the two share suffixes and their page_type / unified_input_surface / default_mode keys, so the Search vs Duck.ai mix is a ratio of the two at matching granularity.",
         "owners": ["pikorddg", "aataraxiaa", "Bunn"],
         "triggers": ["other"],
         "suffixes": ["daily_count", "platform", "form_factor"],
@@ -367,6 +367,12 @@
                 "key": "page_type",
                 "description": "The page the user was on when submitting: ntp, serp, website, duck_ai, contextual, or unknown",
                 "type": "string"
+            },
+            {
+                "key": "default_mode",
+                "description": "The user's Opening-mode setting for the Search/Duck.ai toggle. Comparing it against the branch that fired separates submissions that accepted the default from ones where the user switched: search here means the user switched to Duck.ai, lastUsed means the toggle restored its previous position. Absent on iPad's separate address-bar toggle path, which has no Search-side counterpart pixel — use its presence to scope a Search-vs-Duck.ai ratio to submissions that have one.",
+                "type": "string",
+                "enum": ["search", "duckAI", "lastUsed"]
             },
             {
                 "key": "origin",
@@ -406,6 +412,32 @@
                 "description": "Whether the input contained non-whitespace text at submission time. Combined with attachment flags allows deriving attachment-only submits.",
                 "type": "boolean"
             }
+        ]
+    },
+    "m_aichat_unified_input_query_submitted": {
+        "description": "Fires on every UTI submission in the .search branch — the Search-side counterpart of m_aichat_unified_input_prompt_submitted, which covers the .aiChat branch. Without it there is no denominator for the Search vs Duck.ai mix. Shares suffixes and the page_type / unified_input_surface / default_mode keys with the prompt pixel so the two divide cleanly. Fired only from UnifiedToggleInputCoordinator: iPad's separate address-bar toggle path fires the prompt pixel without a default_mode and has no counterpart here, so restrict any Search-vs-Duck.ai ratio to rows where default_mode is present or it will read as Duck.ai-only on tablet. No has_text: a search submission cannot be empty (attachments are Duck.ai-only, so text is required to submit), unlike an attachment-only prompt.",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "page_type",
+                "description": "The page the user was on when submitting: ntp, serp, website, duck_ai, contextual, or unknown",
+                "type": "string"
+            },
+            {
+                "key": "default_mode",
+                "description": "The user's Opening-mode setting for the Search/Duck.ai toggle. Comparing it against the branch that fired separates submissions that accepted the default from ones where the user switched: duckAI here means the user switched to Search, lastUsed means the toggle restored its previous position.",
+                "type": "string",
+                "enum": ["search", "duckAI", "lastUsed"]
+            },
+            {
+                "key": "toggle_visible",
+                "description": "Whether the Search/Duck.ai toggle was on screen at submission time. false means no choice was available on this submission, so those searches must be excluded from any choice-rate denominator.",
+                "type": "boolean"
+            },
+            "unified_input_surface"
         ]
     },
     "aichat_unified_input_show_model_picker": {

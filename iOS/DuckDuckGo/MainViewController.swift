@@ -1445,6 +1445,7 @@ class MainViewController: UIViewController {
     }
 
     @objc func onAddressBarPositionChanged() {
+        revealFloatingChromeImmediately()
         if !isAnyAITabUTIState {
             viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
             refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
@@ -5268,6 +5269,10 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onTextFieldWillBeginEditing(_ omniBar: OmniBarView, tapped: Bool) {
+        if tapped {
+            revealFloatingChromeImmediately()
+        }
+
         // We don't want any action here if suggestions are still visible (existence alone isn't enough
         // on iPad, where the controllers persist hidden across the focus session).
         guard !areSuggestionsVisible else { return }
@@ -5561,6 +5566,7 @@ extension MainViewController: OmniBarDelegate {
 
     // MARK: - Experimental Address Bar (pixels only)
     func onExperimentalAddressBarTapped() {
+        revealFloatingChromeImmediately()
         let modeParam = [PixelParameters.browsingMode: tabManager.currentBrowsingMode.pixelParamValue]
         ViewHighlighter.hideAll()
         fireControllerAwarePixel(ntp: .addressBarClickOnNTP,
@@ -6450,6 +6456,11 @@ extension MainViewController: TabDelegate {
 
     func showBars() {
         chromeManager.reset()
+    }
+
+    private func revealFloatingChromeImmediately() {
+        guard isFloatingUIEnabled else { return }
+        chromeManager.reset(animated: false)
     }
     
     func tabDidRequestFindInPage(tab: TabViewController) {

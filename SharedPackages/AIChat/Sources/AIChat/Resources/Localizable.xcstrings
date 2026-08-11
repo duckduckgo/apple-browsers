@@ -493,30 +493,6 @@
         }
       }
     },
-    "aichat.model-picker.label.everyday-use" : {
-      "comment" : "Editorial descriptor shown beneath a model in the model picker when it is recommended for everyday use",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Best for everyday use"
-          }
-        }
-      }
-    },
-    "aichat.model-picker.label.uses-limits-faster" : {
-      "comment" : "Editorial descriptor shown beneath a model in the model picker when it consumes usage limits faster",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Solid but uses limits faster"
-          }
-        }
-      }
-    },
     "aichat.title" : {
       "comment" : "Title for DuckDuckGo AI Chat. Should not be translated",
       "extractionState" : "extracted_with_value",

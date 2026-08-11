@@ -884,31 +884,49 @@ final class PixelKitTests: XCTestCase {
 
     private struct AsyncFireSampleError: Error, Equatable {}
 
-    /// Minimal `PixelFiring` conformer that drives the `fireAsync` bridge with a fixed completion result,
+    /// Minimal `PixelFiring` conformer that drives the `fireAsync` bridge with fixed completion results,
     /// without involving `PixelKit`'s frequency or retry-queue machinery (and the shared state that comes with it).
+    /// Each element of `completions` triggers one `onComplete` call, mimicking multi-request frequencies
+    /// such as `.dailyAndCount` when more than one is provided.
     private struct StubPixelFiring: PixelFiring {
-        let fired: Bool
-        let error: (any Error)?
+        let completions: [(fired: Bool, error: (any Error)?)]
+
+        init(fired: Bool, error: (any Error)?) {
+            self.completions = [(fired, error)]
+        }
+
+        init(completions: [(fired: Bool, error: (any Error)?)]) {
+            self.completions = completions
+        }
 
         func fire(_ event: PixelKitEvent,
                   frequency: PixelKit.Frequency,
                   includeAppVersionParameter: Bool,
                   withAdditionalParameters parameters: [String: String]?,
                   withNamePrefix namePrefix: String?,
+                  doNotEnforcePrefix: Bool,
                   onComplete: @escaping PixelKit.CompletionBlock) {
-            onComplete(fired, error)
+            for completion in completions {
+                onComplete(completion.fired, completion.error)
+            }
         }
+    }
+
+    /// `PixelKit` instance backed by an always-succeeding fire request, with a unique defaults suite and
+    /// retry-queue session so tests never share persisted frequency or retry state.
+    private func makePixelKit(fireRequest: @escaping PixelKit.FireRequest = { _, _, _, _, _, completion in completion(true, nil) }) -> PixelKit {
+        PixelKit(dryRun: false,
+                 appVersion: "1.0.0",
+                 session: UUID().uuidString,
+                 defaultHeaders: [:],
+                 pixelCalendar: nil,
+                 defaults: userDefaults(),
+                 fireRequest: fireRequest)
     }
 
     /// `await fire` returns `true` and resolves once the underlying request reports success.
     func testAsyncFireReturnsTrueWhenRequestSucceeds() async throws {
-        let pixelKit = PixelKit(dryRun: false,
-                                appVersion: "1.0.0",
-                                defaultHeaders: [:],
-                                pixelCalendar: nil,
-                                defaults: userDefaults()) { _, _, _, _, _, completion in
-            completion(true, nil)
-        }
+        let pixelKit = makePixelKit()
 
         let fired = try await pixelKit.fireAsync(TestEventV2.testEvent)
 
@@ -917,19 +935,65 @@ final class PixelKitTests: XCTestCase {
 
     /// `await fire` returns `false` (without throwing) when a daily pixel is suppressed by frequency rules.
     func testAsyncFireReturnsFalseWhenSuppressedByDailyFrequency() async throws {
-        let pixelKit = PixelKit(dryRun: false,
-                                appVersion: "1.0.0",
-                                defaultHeaders: [:],
-                                pixelCalendar: nil,
-                                defaults: userDefaults()) { _, _, _, _, _, completion in
-            completion(true, nil)
-        }
+        let pixelKit = makePixelKit()
 
         let firstFire = try await pixelKit.fireAsync(TestEventV2.dailyEvent, frequency: .daily)
         let secondFire = try await pixelKit.fireAsync(TestEventV2.dailyEvent, frequency: .daily)
 
         XCTAssertTrue(firstFire)
         XCTAssertFalse(secondFire)
+    }
+
+    /// Legacy frequencies are suppressed inside their handlers (not the early frequency pre-checks);
+    /// before those handlers reported suppression to the completion, this second `await` hung forever.
+    func testAsyncFireReturnsFalseWhenSuppressedByLegacyDailyFrequency() async throws {
+        let pixelKit = makePixelKit()
+
+        let firstFire = try await pixelKit.fireAsync(TestEventV2.dailyEvent, frequency: .legacyDaily)
+        let secondFire = try await pixelKit.fireAsync(TestEventV2.dailyEvent, frequency: .legacyDaily)
+
+        XCTAssertTrue(firstFire)
+        XCTAssertFalse(secondFire)
+    }
+
+    /// `.dailyAndCount` fires two requests (`_daily` and `_count`), completing once per request:
+    /// `fireAsync` must resume with the first result and not trap on the second completion.
+    func testAsyncFireWithDailyAndCountFrequencyResumesOnlyOnce() async throws {
+        // The second (`_count`) request can complete after `fireAsync` has already resumed,
+        // so the names are gathered behind a lock and awaited via an expectation.
+        let namesLock = NSLock()
+        var firedPixelNames = [String]()
+        let bothRequestsFired = expectation(description: "fires the _daily and _count requests")
+        bothRequestsFired.expectedFulfillmentCount = 2
+
+        let pixelKit = makePixelKit { pixelName, _, _, _, _, completion in
+            namesLock.lock()
+            firedPixelNames.append(pixelName)
+            namesLock.unlock()
+            completion(true, nil)
+            bothRequestsFired.fulfill()
+        }
+
+        let fired = try await pixelKit.fireAsync(TestEventV2.dailyEvent, frequency: .dailyAndCount)
+        await fulfillment(of: [bothRequestsFired], timeout: 1)
+
+        XCTAssertTrue(fired)
+        namesLock.lock()
+        let names = firedPixelNames
+        namesLock.unlock()
+        XCTAssertTrue(names.contains { $0.hasSuffix("_daily") })
+        XCTAssertTrue(names.contains { $0.hasSuffix("_count") })
+    }
+
+    /// Even if the underlying completion is somehow invoked multiple times with mixed results,
+    /// `fireAsync` resolves with the first one and ignores the rest.
+    func testAsyncFireIgnoresCompletionsAfterTheFirst() async throws {
+        let pixelFiring = StubPixelFiring(completions: [(fired: true, error: nil),
+                                                        (fired: false, error: AsyncFireSampleError())])
+
+        let fired = try await pixelFiring.fireAsync(TestEventV2.testEvent)
+
+        XCTAssertTrue(fired)
     }
 
     /// `fireAsync` rethrows the error reported by the underlying completion handler.

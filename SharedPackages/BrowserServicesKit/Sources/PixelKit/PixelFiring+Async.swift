@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import Foundation
+
 extension PixelFiring {
 
     /// Async/await variant of PixelKit `fire`
@@ -24,6 +26,10 @@ extension PixelFiring {
     /// preferred by Swift over the synchronous `fire` inside any `async` context, silently breaking the many
     /// existing fire-and-forget `fire(...)` call sites that live in async code.
     ///
+    /// Frequencies that fire more than one request (`.dailyAndCount`, `.dailyAndStandard`,
+    /// `.legacyDailyAndCount`) invoke the underlying completion once per request; this method resumes with
+    /// the first result and ignores the rest.
+    ///
     /// - Returns: `true` if a request was fired, `false` if it was suppressed by frequency rules.
     /// - Throws: the underlying error if firing the request failed.
     @discardableResult
@@ -31,13 +37,18 @@ extension PixelFiring {
                           frequency: PixelKit.Frequency = .standard,
                           includeAppVersionParameter: Bool = true,
                           withAdditionalParameters parameters: [String: String]? = nil,
-                          withNamePrefix namePrefix: String? = nil) async throws -> Bool {
-        try await withCheckedThrowingContinuation { continuation in
+                          withNamePrefix namePrefix: String? = nil,
+                          doNotEnforcePrefix: Bool = false) async throws -> Bool {
+        let firstCompletion = OneTimeFlag()
+        return try await withCheckedThrowingContinuation { continuation in
             fire(event,
                  frequency: frequency,
                  includeAppVersionParameter: includeAppVersionParameter,
                  withAdditionalParameters: parameters,
-                 withNamePrefix: namePrefix) { fired, error in
+                 withNamePrefix: namePrefix,
+                 doNotEnforcePrefix: doNotEnforcePrefix) { fired, error in
+                guard firstCompletion.trySet() else { return }
+
                 if let error {
                     continuation.resume(throwing: error)
                     return
@@ -46,5 +57,21 @@ extension PixelFiring {
                 continuation.resume(returning: fired)
             }
         }
+    }
+}
+
+/// Thread-safe latch that can only be set once. Guards the continuation above against the multiple
+/// completions of multi-request frequencies, which would otherwise trap on the second resume.
+private final class OneTimeFlag {
+    private let lock = NSLock()
+    private var isSet = false
+
+    /// Sets the flag, returning `true` only for the call that actually set it.
+    func trySet() -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        guard !isSet else { return false }
+        isSet = true
+        return true
     }
 }

@@ -284,7 +284,8 @@ final class ModalPromptCoordinationRealUIKitTests {
             launchSourceManager: launchSourceManager,
             modalPromptCoordinationManager: manager,
             promoCoordinationMode: .coordinated,
-            promoQueueLeaseArbiter: leaseArbiter
+            promoQueueLeaseArbiter: leaseArbiter,
+            promoQueueCooldownPolicy: MockPromoQueueCooldownPolicy()
         )
         var presentationEvents = [String]()
         let keyboardPresenter = KeyboardPresenter(

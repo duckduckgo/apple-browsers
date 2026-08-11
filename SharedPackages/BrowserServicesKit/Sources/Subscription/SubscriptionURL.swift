@@ -227,9 +227,9 @@ extension URL {
         }
 
         if let queryItems = components.queryItems, !queryItems.isEmpty {
-            // `experiment_mobileannualtrials_ios` is the monthly free-trial experiment cohort param;
+            // `experiment_mobileannualtrials2_ios` is the monthly free-trial experiment cohort param;
             // like `origin` it's appended to loaded URLs and must be ignored when matching screens.
-            components.queryItems = queryItems.filter { !["environment", "origin", "using", "experiment_mobileannualtrials_ios"].contains($0.name) }
+            components.queryItems = queryItems.filter { !["environment", "origin", "using", "experiment_mobileannualtrials2_ios"].contains($0.name) }
             if components.queryItems?.isEmpty ?? true {
                 components.queryItems = nil
             }

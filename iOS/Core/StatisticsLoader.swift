@@ -89,7 +89,6 @@ public class StatisticsLoader {
         let inProgressExperiments = [
             iOSBrowserConfigSubfeature.searchTokenExperimentV2.rawValue,
             iOSBrowserConfigSubfeature.onboardingFlowByDownloadReasonExperiment.rawValue,
-            PrivacyProSubfeature.monthlyFreeTrialExperiment.rawValue,
             AutoconsentSubfeature.cookiePopupOptInDialogExperiment.rawValue
         ]
         for subfeatureID in inProgressExperiments {

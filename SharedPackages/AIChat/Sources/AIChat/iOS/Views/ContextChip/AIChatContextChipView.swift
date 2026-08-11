@@ -144,9 +144,7 @@ public final class AIChatContextChipView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
 
-    /// The single writer of the corner radius. It is derived from the laid-out height rather than taken
-    /// literally, because the design's 24 exceeds half of the 44pt height and would render as a pointed
-    /// kink instead of clamping to a capsule.
+    /// Clamped to a capsule: the design's 24 exceeds half the 44pt height and would kink.
     public override func layoutSubviews() {
         super.layoutSubviews()
         layer.cornerRadius = min(Constants.cornerRadius, bounds.height / 2)
@@ -226,6 +224,9 @@ private extension AIChatContextChipView {
             isHidden = false
             backgroundColor = .clear
             removeButton.isHidden = true
+            // One element rather than its parts, so the re-attach tap is what VoiceOver offers.
+            isAccessibilityElement = true
+            accessibilityIdentifier = "AIChat.ContextChip.Placeholder"
             accessibilityLabel = UserText.askAboutPage
             accessibilityTraits = .button
             applyBorder(width: Constants.placeholderBorderWidth)
@@ -246,7 +247,11 @@ private extension AIChatContextChipView {
             faviconView.layer.borderWidth = 0
             faviconView.layer.borderColor = nil
             backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
+            // The title and the remove button are the elements here, not the chip itself.
+            isAccessibilityElement = false
+            accessibilityIdentifier = nil
             accessibilityLabel = title
+            accessibilityTraits = .none
             applyBorder(width: Constants.borderWidth)
             isUserInteractionEnabled = true
         }
@@ -272,12 +277,8 @@ private extension AIChatContextChipView {
     }
 
     func setupConstraints() {
-        // One height for every state, so swapping the icon size between the attached pill and the
-        // placeholder button can't change how tall the chip is. Centred contents rather than
-        // top-and-bottom padding, which would otherwise pin the height to the icon's size.
-        //
-        // The host can collapse the chip via an external `height == 0` constraint while it's hidden,
-        // so this stays below required priority to break gracefully when that happens.
+        // One height for every state, so swapping icon sizes can't resize the chip. Below required
+        // priority so the host's external `height == 0` collapse can break it.
         let height = heightAnchor.constraint(equalToConstant: Constants.height)
         height.priority = .defaultHigh
 
@@ -323,7 +324,6 @@ private extension AIChatContextChipView {
     }
 
     func setupAccessibility() {
-        isAccessibilityElement = false
         removeButton.accessibilityLabel = "Remove"
         removeButton.accessibilityIdentifier = "AIChat.ContextChip.RemoveButton"
         removeButton.accessibilityTraits = .button
@@ -353,12 +353,9 @@ extension AIChatContextChipView {
         super.traitCollectionDidChange(previousTraitCollection)
 
         if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
-            layer.borderColor = UIColor(designSystemColor: .lines).cgColor
-            backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
-            // Update favicon border color for dark mode (placeholder state only)
-            if faviconView.layer.borderWidth > 0 {
-                faviconView.layer.borderColor = UIColor(designSystemColor: .decorationQuaternary).cgColor
-            }
+            // Re-resolve through the state rather than restating colours here, where the placeholder's
+            // clear background would otherwise be overwritten with the attached fill.
+            updateUI(for: currentState)
         }
     }
 }

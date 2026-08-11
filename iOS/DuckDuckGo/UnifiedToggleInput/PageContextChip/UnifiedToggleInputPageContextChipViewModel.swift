@@ -97,9 +97,8 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
         recompute()
     }
 
-    /// Deliberately leaves `isOfferingReattach` alone: removing the context makes the coordinator clear
-    /// the page-context handler, which delivers a nil context straight back here, so resetting the
-    /// offer would cancel the button a frame after the removal that asked for it.
+    /// Deliberately leaves `isOfferingReattach` alone: removal feeds a nil context straight back here,
+    /// so resetting the offer would cancel the button a frame after the removal that asked for it.
     func clearAttached() {
         isShowingAttachAffordance = false
         clearAttachmentState()
@@ -135,10 +134,8 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
 
     func tapToRemove() {
         Logger.contextualUTI.info("PageContextChip remove tapped — detaching")
-        // Set before clearing so `clearAttached`'s own recompute lands the final state in one pass.
-        // Publishing twice would make the strip drop the chip and re-add it, costing two layout passes.
-        // Only an explicit removal leaves the re-attach button behind; clearing for any other reason
-        // (a new chat, say) leaves the strip empty rather than inviting a re-attach.
+        // Set before clearing so `clearAttached`'s recompute lands the final state in one pass —
+        // publishing twice makes the strip drop the chip and re-add it.
         isOfferingReattach = showsAttachAffordance
         clearAttached()
         onRemoveActionRequested?()
@@ -171,9 +168,8 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
 
         if isShowingAttachAffordance || isOfferingReattach {
             state = .placeholder
-            // Only an explicit removal shows the re-attach button. The attach-affordance command is a
-            // separate, pre-existing signal whose contract is a hidden placeholder — keying visibility
-            // off the feature flag instead would have made that path render the button too.
+            // Only an explicit removal shows the button: the attach-affordance command is a separate,
+            // pre-existing signal whose contract is a hidden placeholder.
             isVisible = isOfferingReattach
             branch = "attachAffordance(reattachOffer=\(isOfferingReattach))"
         } else if let ctx = attachedContext {

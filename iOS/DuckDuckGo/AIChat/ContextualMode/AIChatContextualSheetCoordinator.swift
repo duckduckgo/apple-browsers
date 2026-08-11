@@ -290,9 +290,8 @@ final class AIChatContextualSheetCoordinator {
     /// coordinator drives them for as long as it is the current surface.
     private func observeViewStateForFloatingChips() {
         floatingChipsCancellable = sessionState.$viewState
-            // Only the chip content matters here, and `rebuildViewState` fires on many unrelated
-            // changes. Without this, every emission recreates each chip — and each glass chip is a
-            // fresh `UIVisualEffectView` — while the one-shot entrance leaves the new ones unanimated.
+            // `rebuildViewState` fires on many changes that leave the chips alone; without this, each
+            // one rebuilds every chip's `UIVisualEffectView` and the one-shot entrance skips them.
             .map { StartActionsContent(viewState: $0) }
             .removeDuplicates()
             .receive(on: DispatchQueue.main)
@@ -320,10 +319,8 @@ final class AIChatContextualSheetCoordinator {
     /// call site. `promoteFloatingInputToSheet` deliberately bypasses it.
     func dismissFloatingInput() {
         guard let controller = floatingInputViewController else { return }
-        // Released here rather than when the animation ends: this is what the address bar reads to decide
-        // whether its Duck.ai button offers the menu, and a surface on its way out is no longer a surface to
-        // dismiss. Removal that lands late cannot disturb a newer surface — `unmount(from:)` is scoped to
-        // the parent that owns the input.
+        // Released before the animation ends: the address bar reads this, and a surface on its way out
+        // is no longer one to dismiss. `unmount(from:)` keeps a late removal off a newer surface.
         floatingInputViewController = nil
         floatingChipsCancellable = nil
         pixelHandler.fireFloatingInputDismissedWithoutSubmission()
@@ -339,16 +336,14 @@ final class AIChatContextualSheetCoordinator {
         guard let floatingInputViewController,
               let presentingViewController = floatingInputViewController.parent else { return }
 
-        // Detached before the keyboard is touched: resigning reports a keyboard hide, which the floating
-        // input would otherwise read as something else having taken the keyboard, and dismiss itself over
-        // this handover.
+        // Detached before the keyboard is touched: resigning reports a hide, which the floating input
+        // would otherwise read as losing the keyboard and dismiss itself over this handover.
         self.floatingInputViewController = nil
         floatingChipsCancellable = nil
         persistentUTIHost?.deactivateInput()
         floatingInputViewController.remove()
-        // Every promotion is a submission, whether the prompt has already gone or follows immediately: the
-        // sheet opens onto the chat, not onto a pre-submit surface the user never saw at a detent it would
-        // only have to grow out of.
+        // Every promotion is a submission, so the sheet opens onto the chat rather than at a pre-submit
+        // detent it would only have to grow out of.
         presentNewSheet(from: presentingViewController, restoreURL: nil, opensOntoSubmittedChat: true)
     }
 

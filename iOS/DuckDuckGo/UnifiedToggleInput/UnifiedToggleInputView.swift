@@ -632,8 +632,7 @@ final class UnifiedToggleInputView: UIView {
     private var attachmentsStripChainConstraint: NSLayoutConstraint!
 
     /// Attachment strip above the text entry, per the contextual Duck.ai design. Decided by the owning
-    /// coordinator — this view must not resolve the feature itself, or it would restructure every UTI
-    /// surface including the omnibar.
+    /// coordinator: resolving the feature here would restructure every UTI surface, the omnibar included.
     private let placesAttachmentsAboveInput: Bool
 
     // MARK: - Initialization
@@ -1611,8 +1610,7 @@ private extension UnifiedToggleInputView {
         toggleHeightConstraint = toggleView.heightAnchor.constraint(equalToConstant: 0)
         inlineDismissTopConstraint = inlineDismissButton.topAnchor.constraint(equalTo: cardView.topAnchor, constant: Constants.toggleTopPadding)
         inlineDismissCenterYConstraint = inlineDismissButton.centerYAnchor.constraint(equalTo: textEntryView.centerYAnchor)
-        // Vertical chain inside the card. `inputTopConstraint` and `inputBottomConstraint` keep their
-        // meaning in both orders — padding above the block, and below the text entry — so every
+        // `inputTopConstraint` and `inputBottomConstraint` keep their meaning in both orders, so every
         // caller that mutates their constants stays correct.
         if placesAttachmentsAboveInput {
             inputTopConstraint = attachmentsStrip.topAnchor.constraint(equalTo: toggleView.bottomAnchor, constant: 0)

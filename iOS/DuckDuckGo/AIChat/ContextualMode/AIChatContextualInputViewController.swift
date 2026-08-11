@@ -218,11 +218,8 @@ final class AIChatContextualInputViewController: UIViewController {
         quickActionsView.setLoading(isLoading)
     }
 
-    /// Chips floating over live page content use the glass appearance from the design.
-    ///
-    /// Clipping is released because interactive glass scales a chip beyond its bounds on touch, and
-    /// the enclosing scroll view would otherwise trim it. Safe here: the scroll view is sized to its
-    /// content, so it never actually scrolls.
+    /// Clipping is released because interactive glass scales a chip past its bounds on touch. Safe here:
+    /// the scroll view is sized to its content, so it never actually scrolls.
     func useGlassStartActionBackgrounds() {
         quickActionsView.chipBackgroundStyle = .glass
         quickActionsScrollView.clipsToBounds = false

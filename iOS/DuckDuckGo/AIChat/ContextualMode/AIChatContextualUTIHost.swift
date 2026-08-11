@@ -268,10 +268,8 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         frozenBottomConstraint = frozen
     }
 
-    /// Detaches the input so it can be mounted in a different parent. A child view controller may
-    /// only have one parent, so this has to run before the next `mount(in:)`.
-    /// Only if `parent` is still the one holding the input. A surface animating itself out finishes after the
-    /// next one may already have mounted the input, and it must not take that surface's bar away with it.
+    /// Detaches the input so it can be mounted elsewhere, but only if `parent` still holds it: a surface
+    /// animating out finishes after the next one may already have mounted it.
     func unmount(from parent: UIViewController) {
         guard coordinator.viewController.parent === parent else { return }
         detachInput()

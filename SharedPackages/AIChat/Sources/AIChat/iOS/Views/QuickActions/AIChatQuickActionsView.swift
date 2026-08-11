@@ -102,13 +102,8 @@ public final class AIChatQuickActionsView<Action: AIChatQuickActionType>: UIView
         chips.count
     }
 
-    /// The chips arrive as a deck: stacked on one spot, revealed together, then springing apart into their
-    /// slots as one — the mirror of the collapse. Moving them as a group avoids any one card looking more
-    /// important than the rest.
-    ///
-    /// The deck position and each card's travel come from resting frames, so the loader is cleared first
-    /// — it holds a slot in this stack, and the cards would otherwise be measured low and jump when it
-    /// disappeared.
+    /// The chips deal out of a stacked deck. The loader is cleared first because it holds a slot here,
+    /// and the resting frames this measures would otherwise be too low.
     public func animateChipsIn() {
         setLoading(false)
         layoutIfNeeded()
@@ -130,8 +125,7 @@ public final class AIChatQuickActionsView<Action: AIChatQuickActionType>: UIView
             cards.forEach { $0.alpha = 1 }
         }
 
-        // Every card springs at once, mirroring the collapse: the deck gathers as one thing, so it deals as
-        // one thing. A stagger here made the two directions read as different mechanisms.
+        // Every card springs at once: a stagger made dealing and collapsing read as different mechanisms.
         UIView.animate(withDuration: AIChatQuickActionsViewConstants.spreadDuration,
                        delay: AIChatQuickActionsViewConstants.deckRevealDuration,
                        usingSpringWithDamping: AIChatQuickActionsViewConstants.spreadDamping,
@@ -141,9 +135,7 @@ public final class AIChatQuickActionsView<Action: AIChatQuickActionType>: UIView
         }
     }
 
-    /// The reverse of the entrance: the cards gather back into their stack and fade as one, so they read as
-    /// the same deck leaving rather than a separate effect. No stagger on the way out — collapsing is a single
-    /// gesture, where dealing is several.
+    /// The reverse of the entrance: the cards gather back into the deck and fade as one.
     public func animateChipsOut(completion: (() -> Void)? = nil) {
         layoutIfNeeded()
         let cards = chips
@@ -167,9 +159,8 @@ public final class AIChatQuickActionsView<Action: AIChatQuickActionType>: UIView
         })
     }
 
-    /// The card the deck forms on sits in front, so the rest gather behind it rather than one sweeping over
-    /// the others. This is a stack view's natural order — last subview on top — stated rather than assumed,
-    /// since both the deal and the collapse depend on it.
+    /// The card the deck forms on sits in front, so the rest gather behind it. Both directions depend
+    /// on this order, so it's stated rather than left to the stack view's default.
     private func faceDeckWithLastCard(_ cards: [UIView]) {
         cards.forEach(stackView.bringSubviewToFront)
     }
@@ -178,9 +169,7 @@ public final class AIChatQuickActionsView<Action: AIChatQuickActionType>: UIView
         stackView.arrangedSubviews.filter { $0 !== loadingView }
     }
 
-    /// Whether `point`, expressed in `view`'s coordinate space, lands on an actual chip.
-    ///
-    /// Lets a host treat the gaps around the chips as empty space rather than as part of this view.
+    /// Whether `point`, in `view`'s coordinate space, lands on a chip rather than the gaps around them.
     public func containsChip(at point: CGPoint, from view: UIView) -> Bool {
         stackView.arrangedSubviews.contains { chip in
             guard !chip.isHidden, chip.alpha > 0.01 else { return false }

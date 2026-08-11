@@ -100,9 +100,8 @@ final class AIChatContextualFloatingInputViewControllerTests: XCTestCase {
         )
     }
 
-    /// Installed with a spied host, for the assertions that turn on what the exit asks of it.
-    /// The surface is settled once the keyboard has finished appearing — that is when the input, which rides
-    /// it, reaches its final position.
+    /// The surface is settled once the keyboard has finished appearing — the input rides it, so that is
+    /// when it reaches its final position.
     private func postKeyboardSettled() {
         NotificationCenter.default.post(name: UIResponder.keyboardDidShowNotification, object: nil)
     }
@@ -293,9 +292,7 @@ final class AIChatContextualFloatingInputViewControllerTests: XCTestCase {
         XCTAssertEqual(spy.dismissRequestCount, 1)
     }
 
-    /// Presenting takes the keyboard over from whatever held it before, and that handover reports a hide of its
-    /// own. With a hardware keyboard attached, no software keyboard appears at all. Dismissing on either would
-    /// tear down a surface that never had a keyboard to lose.
+    /// A handover reports a hide of its own, and a hardware keyboard means no software one ever appears.
     func testAKeyboardHideBeforeOneHasAppearedIsIgnored() {
         let (_, _, spy, _) = makeSubjectWithHostSpy()
 

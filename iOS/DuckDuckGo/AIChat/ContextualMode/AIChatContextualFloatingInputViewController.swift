@@ -39,8 +39,7 @@ protocol AIChatContextualFloatingInputHosting: AnyObject {
 }
 
 /// Chip suggestions and the unified toggle input floating over the page, with no sheet chrome.
-///
-/// Dismissed by tapping the dimmed page, by swiping the input down, or by a VoiceOver escape.
+/// Dismissed by tapping the dimmed page, swiping the input down, or a VoiceOver escape.
 @MainActor
 final class AIChatContextualFloatingInputViewController: UIViewController {
 
@@ -82,15 +81,12 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
 
     private var keyboardAnimation = KeyboardAnimation()
 
-    /// Whether a keyboard has appeared for this surface. Presenting takes the keyboard over from whatever held
-    /// it before, and that handover reports a hide of its own; with a hardware keyboard attached no software
-    /// keyboard appears at all. Neither is this surface losing the keyboard it was sitting above.
+    /// Gates the keyboard-hide dismissal: a handover's own hide, or a hardware keyboard, is not this
+    /// surface losing the keyboard it was sitting above.
     private var hasKeyboardAppeared = false
 
-    /// Whether the surface has stopped moving. With a software keyboard that means the keyboard has finished
-    /// coming up and taken the input to its final position — our own entrance animation is no substitute, since
-    /// it runs on an assumed duration and can finish while the keyboard is still rising. The suggestions wait
-    /// for this so they deal onto a surface that has arrived, rather than one still on its way.
+    /// Whether the surface has stopped moving. The entrance animation is no substitute — it runs on an
+    /// assumed duration and can finish while the keyboard is still rising.
     private var hasSettledInPlace = false
 
     /// Stays true for the rest of this surface's life — it is presented once and dismissed once.
@@ -139,9 +135,8 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
         }
     }
 
-    /// Purely visual — dimming the page must not stop it being scrolled or tapped. Set to strength outright:
-    /// the entrance and the exit fade the whole surface, dim included, so a fade of its own would compound.
-    /// Its alpha still carries the drag, where the dim alone thins out as the page is pulled back into view.
+    /// Purely visual — the page underneath stays scrollable and tappable. Set to strength outright, since
+    /// the entrance and exit fade the whole surface; only the drag thins the dim on its own.
     private lazy var dimView: UIView = {
         let view = UIView()
         view.backgroundColor = .black
@@ -170,9 +165,8 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
         }
     }
 
-    /// Installed on the presenter so it sees taps that land on the page, and deliberately does not
-    /// consume them: a tap dismisses this surface *and* still activates whatever it hit, so a link
-    /// opens on the same tap. Taps on our own chips and bar are filtered out by the delegate.
+    /// Installed on the presenter and deliberately non-consuming: a tap dismisses this surface *and*
+    /// still activates whatever it hit, so a link opens on the same tap.
     private lazy var dismissOnPageTapRecognizer: UITapGestureRecognizer = {
         let recognizer = BriefTapGestureRecognizer(target: self, action: #selector(handlePageTap))
         recognizer.delegate = self
@@ -263,14 +257,8 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
         Logger.contextualUTI.info("Floating contextual input installed")
     }
 
-    /// Fades in as it rides up glued to the keyboard's top edge. The bar's bottom is already pinned to the
-    /// keyboard guide, so the layout only has to animate on the keyboard's own terms — an offset of its own
-    /// is what would let it drift off that edge, and the fade covers it being at full strength on the first
-    /// frame, at the bottom, before the ride has gone anywhere.
-    ///
-    /// One alpha for the whole surface, dim included. Fading this view rather than the bar: the bar belongs
-    /// to the host and is reused, and activation re-applies its render state, which flushes an animation set
-    /// directly on it.
+    /// Fades in as it rides the keyboard guide up — an offset of its own would drift off that edge.
+    /// Fades this view, not the bar: the bar is the host's, and activation flushes animations set on it.
     func playEntrance() {
         view.alpha = 0
         UIView.animate(withDuration: keyboardAnimation.duration,
@@ -500,9 +488,8 @@ private extension AIChatContextualFloatingInputViewController {
         chipsViewController.animateStartActionsOut()
     }
 
-    /// Restarted on every movement, so the delay is measured from the last one. Re-armed rather than fired while
-    /// a finger is still down: a hand resting mid-scroll is not the page being still, and the suggestions would
-    /// spring back under it.
+    /// Restarted on every movement, and re-armed rather than fired while a finger is still down —
+    /// a hand resting mid-scroll is not the page being still.
     func scheduleSuggestionsReturn() {
         suggestionsReturnWorkItem?.cancel()
         let workItem = DispatchWorkItem { [weak self] in
@@ -550,11 +537,8 @@ private extension AIChatContextualFloatingInputViewController {
             return
         }
 
-        // Something else has taken away the keyboard this surface was sitting above — a long press starting a
-        // text selection, or the page blurring its own field — so the surface goes too. Only once one has
-        // actually appeared for it: otherwise a handover's own hide, or a hardware keyboard leaving no
-        // software one to show, would dismiss a surface that never had a keyboard to lose. Dismissals of our
-        // own are already under way by the time they reach here.
+        // Something else took the keyboard this surface was sitting above — a long-press text selection,
+        // or the page blurring its own field — so the surface goes too.
         guard notification.name == UIResponder.keyboardWillHideNotification,
               hasKeyboardAppeared,
               !isDismissing else { return }
@@ -601,9 +585,8 @@ extension AIChatContextualFloatingInputViewController: UIGestureRecognizerDelega
         return velocity.y > 0 && velocity.y > abs(velocity.x)
     }
 
-    /// Taps on our own controls are the surface being used, not the user leaving it. Asking our own
-    /// hit test keeps one definition of "does this surface own this point" — the passthrough root and
-    /// the chips container already decide it.
+    /// Taps on our own controls are the surface being used, not the user leaving it. Deferring to our
+    /// hit test keeps one definition of which points this surface owns.
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
         guard gestureRecognizer === dismissOnPageTapRecognizer else { return true }
         return view.hitTest(touch.location(in: view), with: nil) == nil

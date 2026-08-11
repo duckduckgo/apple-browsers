@@ -37,9 +37,7 @@ public final class AIChatQuickActionChipView: UIView {
         static let borderWidth: CGFloat = 1
         static let highlightAlpha: CGFloat = 0.1
 
-        // Glass appearance, per the contextual floating-input design. Same height as the translucent style —
-        /// the design's 26 radius exceeds half of it, so the shape is a capsule and the radius is derived
-        /// rather than stored.
+        // Glass appearance, per the contextual floating-input design.
         static let glassFontSize: CGFloat = 17
         static let glassShadowOpacity: Float = 0.02
         static let glassShadowRadius: CGFloat = 15
@@ -48,14 +46,9 @@ public final class AIChatQuickActionChipView: UIView {
         static let glassIconLeadingPadding: CGFloat = 14
         static let glassIconLabelSpacing: CGFloat = 8
         static let glassTrailingPadding: CGFloat = 14
-        /// Lightens the glass without hiding the blurred backdrop, so this carries the lightness the
-        /// underlay can't. Raise for a lighter pill.
     }
 
-    /// How the chip renders behind its content.
-    ///
-    /// `.translucent` is the sheet's flat fill. `.glass` is the contextual floating input: an iOS
-    /// glass effect with its own radius, height and type scale, so it reads over live page content.
+    /// `.translucent` is the sheet's flat fill; `.glass` is the contextual floating input over live page content.
     public enum BackgroundStyle {
         case translucent
         case glass
@@ -181,9 +174,7 @@ private extension AIChatQuickActionChipView {
         }
     }
 
-    /// The design layers three translucent fills; `UIGlassEffect` is the platform equivalent and is
-    /// what the omnibar and toolbar already use. The glass shapes itself via `cornerConfiguration` —
-    /// a layer `cornerRadius` leaves the effect rectangular behind a rounded overlay.
+    /// Shaped via `cornerConfiguration` — a layer `cornerRadius` leaves the effect rectangular behind it.
     func installGlassBackgroundIfNeeded() {
         guard glassBackgroundView == nil else { return }
 
@@ -247,10 +238,8 @@ private extension AIChatQuickActionChipView {
         ])
     }
 
-    /// Glass applies its legibility treatment to whatever sits in its `contentView` — a `UILabel` and a
-    /// template `UIImageView` adapt there automatically. Content parented anywhere else has to fend for
-    /// itself against whatever the page happens to look like, which is what a heavy white tint was papering
-    /// over. The translucent style has no effect view, so there the chip hosts its own content.
+    /// Glass only applies its legibility treatment to content in its `contentView`; the translucent
+    /// style has no effect view, so there the chip hosts its own.
     func hostContent(in host: UIView) {
         guard iconView.superview !== host else { return }
 

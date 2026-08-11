@@ -377,9 +377,8 @@ final class AIChatContextualSheetViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
-        // Held back while a promoted submission is in flight: until the input rebinds to the chat it still
-        // renders its pre-submit self — page chip, model picker, "Ask anything privately" — which belongs to
-        // the surface the prompt was sent from, not to the answer it produced.
+        // Held back while a promoted submission is in flight: until the input rebinds to the chat it
+        // still renders its pre-submit self, which belongs to the surface the prompt was sent from.
         if !opensOntoSubmittedChat {
             mountPersistentUTIHostIfNeeded()
         }

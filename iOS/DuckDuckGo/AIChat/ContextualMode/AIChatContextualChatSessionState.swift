@@ -755,9 +755,8 @@ private extension AIChatContextualChatSessionState {
     private func resolveQuickActions() -> [AIChatContextualQuickAction] {
         // No "Ask about page" for pages that can't be attached — it would no-op on tap.
         guard isCurrentPageAttachable() else { return [] }
-        // Only "Ask about page" is dropped, and only where the attachment strip actually shows its own
-        // re-attach button — the same gate that drives it, so the two can't disagree. Returning nothing
-        // here would also strip `summarizePage` on surfaces that never get the strip's button.
+        // Dropped only where the attachment strip shows its own re-attach button, off the same gate
+        // that drives it, so the two can't disagree.
         let actions = quickActionsIgnoringReattachAffordance()
         guard floatingInputFeature.isAvailable else { return actions }
         return actions.filter { $0 != .askAboutPage }

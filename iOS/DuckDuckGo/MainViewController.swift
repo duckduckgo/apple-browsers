@@ -1082,12 +1082,8 @@ class MainViewController: UIViewController {
             return
         }
 
-        // Every runtime input to `duckAIAddressBarEntry`, so the Duck.ai button's menu can never be left
-        // attached — or detached — against what a tap will do. Both surfaces, because the floating input is
-        // dismissed by routes the sheet knows nothing about, and `hasActiveChat`, which flips on its own when
-        // a session times out or is cleared, with no surface and no navigation to notice it.
-        // `isHomeTab`, the remaining input, changes only with navigation, which refreshes the omnibar anyway.
-        // `dropFirst` skips the replay of the current state, which the explicit refresh below covers.
+        // Every runtime input to `duckAIAddressBarEntry`, so the button can never disagree with what a tap
+        // does. `isHomeTab`, the remaining input, only changes with navigation, which refreshes the omnibar.
         let coordinator = currentTab.aiChatContextualSheetCoordinator
         let sessionState = coordinator.sessionState
         let hasActiveChat = sessionState.$viewState
@@ -1107,7 +1103,7 @@ class MainViewController: UIViewController {
         let isSheetPresented = currentTab?.aiChatContextualSheetCoordinator.isSheetPresented ?? false
         // iPhone-only: iPad's tabs-bar chip already indicates sheet state, so avoid a duplicate.
         if UIDevice.current.userInterfaceIdiom == .phone {
-            omniBar.barView.updateAIChatButtonForContextualSheet(isPresented: isSheetPresented)
+            omniBar.barView.updateAIChatButtonForContextualSurface(isPresented: duckAIAddressBarEntry == .dismissContextualSurface)
         }
         refreshDuckAIAddressBarMenu()
         guard let tabsBarController else { return }

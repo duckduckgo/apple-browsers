@@ -26,7 +26,8 @@ private enum AIChatQuickActionsViewConstants {
 
     /// The stacked deck fades in as one, so no single card reads as more important.
     static let deckRevealDuration: TimeInterval = 0.12
-    static let deckScale: CGFloat = 0.94
+    /// Translation only, no scale: every card scaled by the same amount stayed perfectly overlapped, so a
+    /// scale only shrank the whole stack rather than making it read as one.
     static let spreadDuration: TimeInterval = 0.45
     static let spreadDamping: CGFloat = 0.78
     static let spreadInitialVelocity: CGFloat = 0.15
@@ -119,8 +120,6 @@ public final class AIChatQuickActionsView<Action: AIChatQuickActionType>: UIView
         for (card, restingTop) in zip(cards, restingTops) {
             card.alpha = 0
             card.transform = CGAffineTransform(translationX: 0, y: deckTop - restingTop)
-                .scaledBy(x: AIChatQuickActionsViewConstants.deckScale,
-                          y: AIChatQuickActionsViewConstants.deckScale)
         }
 
         faceDeckWithLastCard(cards)
@@ -162,8 +161,6 @@ public final class AIChatQuickActionsView<Action: AIChatQuickActionType>: UIView
             for (card, restingTop) in zip(cards, restingTops) {
                 card.alpha = 0
                 card.transform = CGAffineTransform(translationX: 0, y: deckTop - restingTop)
-                    .scaledBy(x: AIChatQuickActionsViewConstants.deckScale,
-                              y: AIChatQuickActionsViewConstants.deckScale)
             }
         }, completion: { _ in
             completion?()

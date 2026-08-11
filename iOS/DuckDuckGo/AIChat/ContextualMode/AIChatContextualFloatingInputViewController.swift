@@ -87,6 +87,12 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
     /// keyboard appears at all. Neither is this surface losing the keyboard it was sitting above.
     private var hasKeyboardAppeared = false
 
+    /// Whether the surface has stopped moving. With a software keyboard that means the keyboard has finished
+    /// coming up and taken the input to its final position — our own entrance animation is no substitute, since
+    /// it runs on an assumed duration and can finish while the keyboard is still rising. The suggestions wait
+    /// for this so they deal onto a surface that has arrived, rather than one still on its way.
+    private var hasSettledInPlace = false
+
     /// Stays true for the rest of this surface's life — it is presented once and dismissed once.
     private var isDismissing = false
     private var hasResignedInput = false
@@ -269,19 +275,27 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
         view.alpha = 0
         UIView.animate(withDuration: keyboardAnimation.duration,
                        delay: 0,
-                       options: [keyboardAnimation.options, .beginFromCurrentState]) {
+                       options: [keyboardAnimation.options, .beginFromCurrentState],
+                       animations: {
             self.view.alpha = 1
             self.view.layoutIfNeeded()
-        }
+        }, completion: { _ in
+            // With a software keyboard on its way, the surface is still rising with it and `keyboardDidShow`
+            // is what says it has arrived. With a hardware keyboard there is no such signal, so this is it.
+            guard !self.hasKeyboardAppeared else { return }
+            self.markSettledInPlace()
+        })
     }
 
     /// Chips arrive asynchronously with the page context, so the entrance plays on the first batch
     /// that actually has content rather than at install time.
     func playChipsEntranceIfNeeded() {
         guard !hasPlayedChipsEntrance, chipsViewController.startActionCount > 0 else { return }
+        guard hasSettledInPlace else { return }
         hasPlayedChipsEntrance = true
         // Resting frames first: each chip's start offset is measured from where it lands.
         view.layoutIfNeeded()
+        chipsContainerView.alpha = 1
         chipsViewController.animateStartActionsIn()
     }
 
@@ -372,6 +386,9 @@ private extension AIChatContextualFloatingInputViewController {
     /// Horizontal alignment waits for `embedChips`, since the card's anchors only share an ancestor
     /// with us once the input is mounted.
     func addChipsContainer() {
+        // Hidden until dealt: the suggestions are configured as soon as they load, which is before the surface
+        // has settled, and without this they simply appear at full strength wherever they land.
+        chipsContainerView.alpha = 0
         view.addSubview(chipsContainerView)
         chipsContainerView.topAnchor.constraint(greaterThanOrEqualTo: view.safeAreaLayoutGuide.topAnchor).isActive = true
     }
@@ -465,6 +482,13 @@ private extension AIChatContextualFloatingInputViewController {
         }
     }
 
+    /// Also deals a batch of suggestions that arrived while the surface was still moving.
+    func markSettledInPlace() {
+        guard !hasSettledInPlace else { return }
+        hasSettledInPlace = true
+        playChipsEntranceIfNeeded()
+    }
+
     func handlePageScrolled() {
         hideSuggestionsForScrollIfNeeded()
         scheduleSuggestionsReturn()
@@ -501,6 +525,7 @@ private extension AIChatContextualFloatingInputViewController {
 
     func observeKeyboardAnimation() {
         let names: [Notification.Name] = [UIResponder.keyboardWillShowNotification,
+                                          UIResponder.keyboardDidShowNotification,
                                           UIResponder.keyboardWillChangeFrameNotification,
                                           UIResponder.keyboardWillHideNotification]
         for name in names {
@@ -518,6 +543,11 @@ private extension AIChatContextualFloatingInputViewController {
 
         if notification.name == UIResponder.keyboardWillShowNotification {
             hasKeyboardAppeared = true
+        }
+
+        if notification.name == UIResponder.keyboardDidShowNotification {
+            markSettledInPlace()
+            return
         }
 
         // Something else has taken away the keyboard this surface was sitting above — a long press starting a

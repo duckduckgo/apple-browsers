@@ -37,10 +37,9 @@ public final class AIChatQuickActionChipView: UIView {
         static let borderWidth: CGFloat = 1
         static let highlightAlpha: CGFloat = 0.1
 
-        // Glass appearance, per the contextual floating-input design.
-        /// The design's 26 radius exceeds half this height, so the shape is a capsule and the radius
-        /// is derived rather than stored.
-        static let glassHeight: CGFloat = 44
+        // Glass appearance, per the contextual floating-input design. Same height as the translucent style —
+        /// the design's 26 radius exceeds half of it, so the shape is a capsule and the radius is derived
+        /// rather than stored.
         static let glassFontSize: CGFloat = 17
         static let glassShadowOpacity: Float = 0.02
         static let glassShadowRadius: CGFloat = 15
@@ -51,11 +50,6 @@ public final class AIChatQuickActionChipView: UIView {
         static let glassTrailingPadding: CGFloat = 14
         /// Lightens the glass without hiding the blurred backdrop, so this carries the lightness the
         /// underlay can't. Raise for a lighter pill.
-        static let glassTintAlpha: CGFloat = 0.32
-        /// Sits behind the effect view, so the pill reads light on the first frame — before the glass
-        /// has sampled a backdrop — instead of flashing grey. Kept low: it hides the blurred page
-        /// behind it, which is the glassiness. Lower for more glass, raise for less first-frame flash.
-        static let glassUnderlayAlpha: CGFloat = 0.18
     }
 
     /// How the chip renders behind its content.
@@ -76,6 +70,7 @@ public final class AIChatQuickActionChipView: UIView {
     }
 
     private var heightConstraint: NSLayoutConstraint?
+    private var contentConstraints: [NSLayoutConstraint] = []
     private var iconLeadingConstraint: NSLayoutConstraint?
     private var iconLabelSpacingConstraint: NSLayoutConstraint?
     private var labelTrailingConstraint: NSLayoutConstraint?
@@ -141,6 +136,7 @@ private extension AIChatQuickActionChipView {
         case .translucent:
             glassBackgroundView?.removeFromSuperview()
             glassBackgroundView = nil
+            hostContent(in: self)
             backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
             layer.borderWidth = Constants.borderWidth
             layer.borderColor = UIColor(designSystemColor: .decorationQuaternary).cgColor
@@ -152,14 +148,17 @@ private extension AIChatQuickActionChipView {
                                    iconToLabel: Constants.iconLabelSpacing,
                                    trailing: Constants.trailingPadding)
         case .glass:
-            backgroundColor = UIColor(white: 1, alpha: Constants.glassUnderlayAlpha)
+            // The glass is the background: nothing of ours behind it, and no tint holding it lighter than the
+            // page it sits over. It adapts to that page, and its `contentView` keeps the label legible as it does.
+            backgroundColor = .clear
             // No border: it lives on this layer, so it can't scale with the glass's interactive
             // expansion and would sit inside the enlarged pill on touch.
             layer.borderWidth = 0
             installGlassBackgroundIfNeeded()
+            hostContent(in: glassBackgroundView?.contentView ?? self)
             applyGlassShadow()
-            applyCornerRadius(Constants.glassHeight / 2)
-            heightConstraint?.constant = Constants.glassHeight
+            applyCornerRadius(Constants.height / 2)
+            heightConstraint?.constant = Constants.height
             label.font = .systemFont(ofSize: Constants.glassFontSize, weight: .medium)
             applyHorizontalPadding(leading: Constants.glassIconLeadingPadding,
                                    iconToLabel: Constants.glassIconLabelSpacing,
@@ -192,7 +191,6 @@ private extension AIChatQuickActionChipView {
         if #available(iOS 26.0, *) {
             let effect = UIGlassEffect(style: .regular)
             effect.isInteractive = true
-            effect.tintColor = UIColor.white.withAlphaComponent(Constants.glassTintAlpha)
             effectView = UIVisualEffectView(effect: effect)
             effectView.cornerConfiguration = .capsule()
         } else {
@@ -236,32 +234,48 @@ private extension AIChatQuickActionChipView {
         let height = heightAnchor.constraint(equalToConstant: Constants.height)
         heightConstraint = height
 
-        let iconLeading = iconView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.iconLeadingPadding)
-        iconLeadingConstraint = iconLeading
-
-        let iconLabelSpacing = label.leadingAnchor.constraint(equalTo: iconView.trailingAnchor, constant: Constants.iconLabelSpacing)
-        iconLabelSpacingConstraint = iconLabelSpacing
-
-        let labelTrailing = label.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.trailingPadding)
-        labelTrailingConstraint = labelTrailing
-
         NSLayoutConstraint.activate([
             height,
 
-            iconLeading,
-            iconView.centerYAnchor.constraint(equalTo: centerYAnchor),
             iconView.widthAnchor.constraint(equalToConstant: Constants.iconSize),
             iconView.heightAnchor.constraint(equalToConstant: Constants.iconSize),
-
-            iconLabelSpacing,
-            label.centerYAnchor.constraint(equalTo: centerYAnchor),
-            labelTrailing,
 
             highlightOverlay.topAnchor.constraint(equalTo: topAnchor),
             highlightOverlay.bottomAnchor.constraint(equalTo: bottomAnchor),
             highlightOverlay.leadingAnchor.constraint(equalTo: leadingAnchor),
             highlightOverlay.trailingAnchor.constraint(equalTo: trailingAnchor),
         ])
+    }
+
+    /// Glass applies its legibility treatment to whatever sits in its `contentView` — a `UILabel` and a
+    /// template `UIImageView` adapt there automatically. Content parented anywhere else has to fend for
+    /// itself against whatever the page happens to look like, which is what a heavy white tint was papering
+    /// over. The translucent style has no effect view, so there the chip hosts its own content.
+    func hostContent(in host: UIView) {
+        guard iconView.superview !== host else { return }
+
+        contentConstraints.forEach { $0.isActive = false }
+        host.addSubview(iconView)
+        host.addSubview(label)
+
+        let iconLeading = iconView.leadingAnchor.constraint(equalTo: host.leadingAnchor,
+                                                           constant: iconLeadingConstraint?.constant ?? Constants.iconLeadingPadding)
+        let iconLabelSpacing = label.leadingAnchor.constraint(equalTo: iconView.trailingAnchor,
+                                                             constant: iconLabelSpacingConstraint?.constant ?? Constants.iconLabelSpacing)
+        let labelTrailing = label.trailingAnchor.constraint(equalTo: host.trailingAnchor,
+                                                           constant: labelTrailingConstraint?.constant ?? -Constants.trailingPadding)
+        iconLeadingConstraint = iconLeading
+        iconLabelSpacingConstraint = iconLabelSpacing
+        labelTrailingConstraint = labelTrailing
+
+        contentConstraints = [
+            iconLeading,
+            iconView.centerYAnchor.constraint(equalTo: host.centerYAnchor),
+            iconLabelSpacing,
+            label.centerYAnchor.constraint(equalTo: host.centerYAnchor),
+            labelTrailing,
+        ]
+        NSLayoutConstraint.activate(contentConstraints)
     }
 
     func setupAccessibility() {

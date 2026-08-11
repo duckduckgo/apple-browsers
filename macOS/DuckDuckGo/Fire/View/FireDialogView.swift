@@ -523,6 +523,7 @@ struct FireDialogView: ModalView {
 
     private var sitesOverlayList: some View {
         ScrollView {
+            Spacer(minLength: 11)
             VStack(alignment: .leading, spacing: 0) {
                 ForEach(viewModel.selectable, id: \.domain) { item in
                     sitesOverlayRow(for: item)
@@ -540,7 +541,7 @@ struct FireDialogView: ModalView {
             .padding(.trailing, 32)
             .padding(.vertical, 4)
         }
-        .padding(.top, 11)
+        .scrollBounceBasedOnSize()
         .padding(.trailing, 8)
         .background(
             CustomRoundedCornersShape(tl: 16, tr: 16, bl: 0, br: 0)
@@ -640,6 +641,7 @@ struct FireDialogView: ModalView {
 
     private var chatsOverlayList: some View {
         ScrollView {
+            Spacer(minLength: 11)
             VStack(alignment: .leading, spacing: 0) {
                 ForEach(viewModel.chats, id: \.chatId) { chat in
                     HStack(spacing: 12) {
@@ -662,7 +664,7 @@ struct FireDialogView: ModalView {
             .padding(.trailing, 32)
             .padding(.vertical, 4)
         }
-        .padding(.top, 11)
+        .scrollBounceBasedOnSize()
         .padding(.trailing, 8)
         .background(
             CustomRoundedCornersShape(tl: 16, tr: 16, bl: 0, br: 0)

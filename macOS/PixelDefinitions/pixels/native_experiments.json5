@@ -43,7 +43,7 @@
                     "enum": ["1"]
                 },
                 "trialStarted": {
-                    "description": "A subscription was completed and attributed to the onboarding upsell origin",
+                    "description": "A free trial was started and attributed to the onboarding upsell origin",
                     "enum": ["1"]
                 }
             }

@@ -406,7 +406,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
                 saveSubscriptionUpgradeTimestampIfFreemiumActivated()
                 PixelKit.fire(SubscriptionPixel.subscriptionActivated, frequency: .uniqueByName)
                 subscriptionSuccessPixelHandler.fireSuccessfulSubscriptionAttributionPixel(freeTrial: freeTrialEligible)
-                reportOnboardingUpsellSubscriptionSuccessIfNeeded(origin: origin)
+                await reportOnboardingUpsellTrialStartedIfNeeded(origin: origin)
                 sendSubscriptionUpgradeFromFreemiumNotificationIfFreemiumActivated()
                 notificationCenter.post(name: .subscriptionDidChange, object: self)
                 await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: purchaseUpdate)
@@ -647,7 +647,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
         } else {
             PixelKit.fire(SubscriptionPixel.subscriptionPurchaseStripeSuccess, frequency: .legacyDailyAndCount)
             subscriptionSuccessPixelHandler.fireSuccessfulSubscriptionAttributionPixel(freeTrial: false)
-            reportOnboardingUpsellSubscriptionSuccessIfNeeded(origin: origin)
+            await reportOnboardingUpsellTrialStartedIfNeeded(origin: origin)
         }
 
         sendFreemiumSubscriptionPixelIfFreemiumActivated()
@@ -899,10 +899,11 @@ private extension SubscriptionPagesUseSubscriptionFeature {
         }
     }
 
-    /// Windows names this shared conversion metric `trialStarted`; on macOS it represents any successful
-    /// subscription from this flow because App Store purchases do not necessarily include a trial.
-    func reportOnboardingUpsellSubscriptionSuccessIfNeeded(origin: String?) {
-        guard origin == SubscriptionFunnelOrigin.onboardingSubscriptionUpsell.rawValue else { return }
+    /// Reports the shared conversion metric only when the completed subscription includes an active trial.
+    func reportOnboardingUpsellTrialStartedIfNeeded(origin: String?) async {
+        guard origin == SubscriptionFunnelOrigin.onboardingSubscriptionUpsell.rawValue,
+              let subscription = try? await subscriptionManager.getSubscription(),
+              subscription.hasActiveTrialOffer else { return }
         subscriptionUpsellMetrics.report(.trialStarted)
     }
 

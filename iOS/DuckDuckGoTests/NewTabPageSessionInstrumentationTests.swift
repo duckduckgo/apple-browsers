@@ -473,9 +473,40 @@ struct NewTabPageSessionInstrumentationTests {
 
         #expect(wideEvent.completions.isEmpty)
         let visit = activeVisit(wideEvent)
-        #expect(visit?.actionCount == 5)
+        // An uninterrupted run of the same action is one step.
+        #expect(visit?.actionCount == 1)
         #expect(visit?.lastActionAt == clock.now)
         #expect(visit?.typeInInput == true)
+    }
+
+    @available(iOS 16, *)
+    @Test("Returning to an earlier action after another one counts as a new step", .timeLimit(.minutes(1)))
+    func returningToAnActionCountsAgain() {
+        let (sut, wideEvent, _) = makeSUT()
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .up, toggleEnabled: false)
+
+        sut.tapInputBar()
+        sut.typeInInput()
+        sut.typeInInput()
+        sut.typeInInput()
+        sut.tapDuckaiButton()
+        sut.typeInInput()
+        sut.typeInInput()
+
+        #expect(activeVisit(wideEvent)?.actionCount == 4)
+    }
+
+    @available(iOS 16, *)
+    @Test("Repeated taps each count, so an unresponsive control is visible in the total", .timeLimit(.minutes(1)))
+    func repeatedTapsEachCount() {
+        let (sut, wideEvent, _) = makeSUT()
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: false)
+
+        sut.tapFavorite()
+        sut.tapFavorite()
+        sut.tapFavorite()
+
+        #expect(activeVisit(wideEvent)?.actionCount == 3)
     }
 
     // MARK: - Max duration
@@ -493,8 +524,7 @@ struct NewTabPageSessionInstrumentationTests {
             sut.scrollView()
         }
 
-        // The cap elapses on the 12th tick, and the check runs before the action is recorded,
-        // so only the first 11 count.
+        // The cap elapses on the 12th tick, but locking the terminal does not end the visit.
         #expect(wideEvent.completions.isEmpty)
 
         sut.visitBackgrounded()
@@ -506,7 +536,7 @@ struct NewTabPageSessionInstrumentationTests {
         #expect(wideEvent.completions.count == 1)
         #expect(completion.0.terminalAction == .maxDurationExceeded)
         #expect(completion.1 == .failure)
-        #expect(completion.0.actionCount == 11)
+        #expect(completion.0.actionCount == 1)
         #expect(completion.0.sessionInterval.end == startStamp.addingTimeInterval(130))
     }
 

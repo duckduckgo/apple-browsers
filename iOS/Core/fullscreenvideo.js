@@ -51,11 +51,37 @@
             return null
         }
 
+        let activeFullscreenVideo = null
+
         HTMLElement.prototype.requestFullscreen = function () {
             const video = findVideo(this)
-            if (!video) return false
+            if (!video) return Promise.reject(new TypeError('No video found'))
+
+            activeFullscreenVideo = video
+            video.addEventListener('webkitendfullscreen', () => {
+                if (activeFullscreenVideo === video) {
+                    activeFullscreenVideo = null
+                }
+            }, { once: true })
+
             video.webkitEnterFullscreen()
-            return true
+            return Promise.resolve()
+        }
+
+        document.exitFullscreen = function () {
+            const video = activeFullscreenVideo
+            activeFullscreenVideo = null
+
+            if (!video || typeof video.webkitExitFullscreen !== 'function') {
+                return Promise.resolve()
+            }
+
+            try {
+                video.webkitExitFullscreen()
+                return Promise.resolve()
+            } catch (error) {
+                return Promise.reject(error)
+            }
         }
     }
 })()

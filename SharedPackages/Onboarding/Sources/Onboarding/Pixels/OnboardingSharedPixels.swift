@@ -55,13 +55,31 @@ public enum OnboardingPixelParameter {
     public enum Flow: String {
         case `default` = "default"
         case duckAI = "duckai"
-        case tailoredByDownloadReason = "tailored_download_reason"
+        case tailoredByDownloadReason = "tailored_by_download_reason"
     }
 
     /// Pixel parameter for the variant of the onboarding flow the user enters after a branching step during onboarding.
     public enum Variant: String {
         case duckAISearch = "search_plus_duckai-search"
         case duckAIChat = "search_plus_duckai-chat"
+        // Records the download reason the user selected, passed to every pixel after the choice for internal cohort segmentation.
+        case downloadReasonSearch = "download_reason_search"
+        case downloadReasonAIChat = "download_reason_ai-chat"
+        case downloadReasonNoAI = "download_reason_no-ai"
+        case downloadReasonAdBlocking = "download_reason_ad-blocking"
+    }
+}
+
+public extension OnboardingPixelParameter.Variant {
+    /// Maps the domain download reason to its pixel variant, so the selected reason can be
+    /// recorded on the segmented-onboarding pixels for cohort segmentation.
+    init(_ reason: OnboardingDownloadReason) {
+        switch reason {
+        case .browserPrivately: self = .downloadReasonSearch
+        case .privateAIChat:    self = .downloadReasonAIChat
+        case .noAI:             self = .downloadReasonNoAI
+        case .blockAds:         self = .downloadReasonAdBlocking
+        }
     }
 }
 

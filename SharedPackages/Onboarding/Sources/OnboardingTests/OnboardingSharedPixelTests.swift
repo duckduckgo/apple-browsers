@@ -73,6 +73,63 @@ final class OnboardingSharedPixelTests: XCTestCase {
         XCTAssertEqual(event.additionalParameters?["variant"], "search_plus_duckai-search")
     }
 
+    func testWhenFlowIsTailoredByDownloadReasonThenUsesTailoredByDownloadReasonValue() throws {
+        // GIVEN
+        let pixelFiring = PixelKitMock()
+        let pixelHandler = makeHandler(pixelFiring: pixelFiring)
+
+        // WHEN
+        pixelHandler.fire(.welcome(.shown),
+                          source: .default,
+                          flow: .tailoredByDownloadReason,
+                          variant: nil)
+
+        // THEN
+        let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
+        XCTAssertEqual(event.additionalParameters?["flow"], "tailored_by_download_reason")
+    }
+
+    func testWhenVariantIsDownloadReasonThenUsesDownloadReasonValue() throws {
+        // GIVEN
+        let expectedValues: [OnboardingPixelParameter.Variant: String] = [
+            .downloadReasonSearch: "download_reason_search",
+            .downloadReasonAIChat: "download_reason_ai-chat",
+            .downloadReasonNoAI: "download_reason_no-ai",
+            .downloadReasonAdBlocking: "download_reason_ad-blocking"
+        ]
+
+        // WHEN
+        for (variant, expectedValue) in expectedValues {
+            let pixelFiring = PixelKitMock()
+            let pixelHandler = makeHandler(pixelFiring: pixelFiring)
+
+            pixelHandler.fire(.welcome(.shown),
+                              source: .default,
+                              flow: .tailoredByDownloadReason,
+                              variant: variant)
+
+            // THEN
+            let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
+            XCTAssertEqual(event.additionalParameters?["variant"], expectedValue, "Failed for variant \(variant)")
+        }
+    }
+
+    func testWhenVariantInitFromDownloadReasonThenMapsToExpectedVariant() {
+        // GIVEN
+        let expectedMappings: [OnboardingDownloadReason: OnboardingPixelParameter.Variant] = [
+            .browserPrivately: .downloadReasonSearch,
+            .privateAIChat: .downloadReasonAIChat,
+            .noAI: .downloadReasonNoAI,
+            .blockAds: .downloadReasonAdBlocking
+        ]
+
+        // WHEN
+        for (reason, expectedVariant) in expectedMappings {
+            // THEN
+            XCTAssertEqual(OnboardingPixelParameter.Variant(reason), expectedVariant, "Failed for reason \(reason)")
+        }
+    }
+
     func testWhenFiringPixelEventThenFrequencyIsUniqueByNameAndParameters() throws {
         let pixelFiring = PixelKitMock()
         let pixelHandler = makeHandler(pixelFiring: pixelFiring)

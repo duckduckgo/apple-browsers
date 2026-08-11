@@ -30,6 +30,7 @@ final class PromoCoordinationServicePromoQueueTests {
     private let presenterMock = MockModalPromptPresenter()
     private let promoQueueLeaseArbiter = PromoQueueLeaseArbiter()
     private let promoQueueCooldownPolicy = MockPromoQueueCooldownPolicy()
+    private let promoQueueCooldownDebugSnapshotProvider = MockPromoQueueCooldownDebugSnapshotProvider()
     private var currentDate = Date(timeIntervalSince1970: 1_800_000_000)
     private var sut: PromoCoordinationService!
 
@@ -46,7 +47,7 @@ final class PromoCoordinationServicePromoQueueTests {
             nextRemoteMessageEligibility: lastRemoteMessageAppearance.addingTimeInterval(600),
             nextModalEligibility: lastRemoteMessageAppearance.addingTimeInterval(86_400)
         )
-        promoQueueCooldownPolicy.snapshotToReturn = cooldownSnapshot
+        promoQueueCooldownDebugSnapshotProvider.snapshotToReturn = cooldownSnapshot
         managerMock.hasPendingModalPrompt = true
         managerMock.shouldSuppressOtherSessionPromos = true
         makeSUT()
@@ -63,6 +64,9 @@ final class PromoCoordinationServicePromoQueueTests {
             isAttachedToWindow: true
         ) == .accepted)
 
+        let remoteMessageAdmissionDates = promoQueueCooldownPolicy.remoteMessageAdmissionDates
+        let modalAdmissionDates = promoQueueCooldownPolicy.modalAdmissionDates
+        let confirmedRemoteMessageAppearanceDates = promoQueueCooldownPolicy.confirmedRemoteMessageAppearanceDates
         var snapshot = sut.promoQueueDebugSnapshot
         #expect(snapshot.mode == .coordinated)
         #expect(snapshot.activeOwner == .remoteMessage(presentation.session))
@@ -85,6 +89,11 @@ final class PromoCoordinationServicePromoQueueTests {
         #expect(snapshot.isApplicationActive)
         #expect(!snapshot.isWaitingForForegroundInteractionReadiness)
         #expect(snapshot.cooldown == cooldownSnapshot)
+        #expect(promoQueueCooldownDebugSnapshotProvider.snapshotDates == [currentDate])
+        #expect(promoQueueCooldownPolicy.snapshotDates.isEmpty)
+        #expect(promoQueueCooldownPolicy.remoteMessageAdmissionDates == remoteMessageAdmissionDates)
+        #expect(promoQueueCooldownPolicy.modalAdmissionDates == modalAdmissionDates)
+        #expect(promoQueueCooldownPolicy.confirmedRemoteMessageAppearanceDates == confirmedRemoteMessageAppearanceDates)
 
         fixture.registration.update(candidate: .available(messageID: "debug-owner"), isLocallyReady: false)
 
@@ -113,14 +122,23 @@ final class PromoCoordinationServicePromoQueueTests {
         #expect(snapshot.remoteMessageCoordination.state == .idle)
         #expect(snapshot.remoteMessageCoordination.registeredRendererCount == 1)
         #expect(snapshot.remoteMessageCoordination.eligibleRendererCount == 0)
-        #expect(promoQueueCooldownPolicy.snapshotDates == [currentDate, currentDate, currentDate, currentDate])
+        #expect(promoQueueCooldownDebugSnapshotProvider.snapshotDates == [
+            currentDate,
+            currentDate,
+            currentDate,
+            currentDate
+        ])
+        #expect(promoQueueCooldownPolicy.snapshotDates.isEmpty)
+        #expect(promoQueueCooldownPolicy.remoteMessageAdmissionDates == remoteMessageAdmissionDates)
+        #expect(promoQueueCooldownPolicy.modalAdmissionDates == modalAdmissionDates)
+        #expect(promoQueueCooldownPolicy.confirmedRemoteMessageAppearanceDates == confirmedRemoteMessageAppearanceDates)
         fixture.registration.deregister()
     }
 
     @available(iOS 16, *)
     @Test("The legacy debug snapshot does not read Promo Queue history", .timeLimit(.minutes(1)))
     func whenLegacyDebugSnapshotIsReadThenCooldownHistoryRemainsUntouched() {
-        promoQueueCooldownPolicy.snapshotToReturn = PromoQueueCooldownSnapshot(
+        promoQueueCooldownDebugSnapshotProvider.snapshotToReturn = PromoQueueCooldownSnapshot(
             lastConfirmedModalAppearance: currentDate,
             lastConfirmedRemoteMessageAppearance: currentDate,
             nextRemoteMessageEligibility: currentDate,
@@ -143,6 +161,7 @@ final class PromoCoordinationServicePromoQueueTests {
         #expect(!snapshot.isApplicationActive)
         #expect(snapshot.isWaitingForForegroundInteractionReadiness)
         #expect(snapshot.cooldown == .empty)
+        #expect(promoQueueCooldownDebugSnapshotProvider.snapshotDates.isEmpty)
         #expect(promoQueueCooldownPolicy.snapshotDates.isEmpty)
     }
 
@@ -1201,6 +1220,7 @@ final class PromoCoordinationServicePromoQueueTests {
             promoCoordinationMode: mode,
             promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             promoQueueCooldownPolicy: promoQueueCooldownPolicy,
+            promoQueueCooldownDebugSnapshotProvider: promoQueueCooldownDebugSnapshotProvider,
             dateProvider: { [unowned self] in currentDate }
         )
 
@@ -1265,6 +1285,17 @@ private struct RendererFixture {
     let rendererID: UUID
     let renderer: ControllableRemoteMessageRenderer
     let registration: NewTabPagePromoRendererRegistration
+}
+
+@MainActor
+private final class MockPromoQueueCooldownDebugSnapshotProvider: PromoQueueCooldownDebugSnapshotProviding {
+    var snapshotToReturn: PromoQueueCooldownSnapshot = .empty
+    private(set) var snapshotDates = [Date]()
+
+    func snapshot(now: Date) -> PromoQueueCooldownSnapshot {
+        snapshotDates.append(now)
+        return snapshotToReturn
+    }
 }
 
 @MainActor

@@ -245,19 +245,71 @@ final class PromoQueueRemoteMessageCooldownStoreTests {
         #expect(store.lastConfirmedRemoteMessageTimestamp == referenceTimestamp)
     }
 
-    @Test("A later read failure returns the last successfully read timestamp")
-    func whenReadFailsAfterSuccessThenCachedTimestampIsReturned() {
-        let keyValueStore = MockKeyValueFileStore(
-            underlyingDict: [
-                PromoQueueRemoteMessageCooldownKeyValueFilesStore.StorageKey.lastConfirmedRemoteMessageTimestamp: referenceTimestamp
-            ]
-        )
+    @Test("A diagnostic read does not warm the production failure fallback")
+    func whenDiagnosticReadSucceedsThenLaterProductionReadFailureHasNoFallback() {
+        let keyValueStore = MockKeyValueFileStore()
+        let persistenceWriter = PromoQueueRemoteMessageCooldownKeyValueFilesStore(keyValueStore: keyValueStore)
+        persistenceWriter.lastConfirmedRemoteMessageTimestamp = referenceTimestamp
+        let store = PromoQueueRemoteMessageCooldownKeyValueFilesStore(keyValueStore: keyValueStore)
+
+        #expect(store.lastConfirmedRemoteMessageTimestampForPromoQueueDiagnostics() == referenceTimestamp)
+
+        keyValueStore.throwOnRead = StoreTestError.read
+        #expect(store.lastConfirmedRemoteMessageTimestamp == nil)
+    }
+
+    @Test("A failed diagnostic read preserves the production failure fallback")
+    func whenProductionCacheExistsThenDiagnosticReadFailureDoesNotChangeIt() {
+        let keyValueStore = MockKeyValueFileStore()
+        let persistenceWriter = PromoQueueRemoteMessageCooldownKeyValueFilesStore(keyValueStore: keyValueStore)
+        persistenceWriter.lastConfirmedRemoteMessageTimestamp = referenceTimestamp
         let store = PromoQueueRemoteMessageCooldownKeyValueFilesStore(keyValueStore: keyValueStore)
         #expect(store.lastConfirmedRemoteMessageTimestamp == referenceTimestamp)
 
         keyValueStore.throwOnRead = StoreTestError.read
 
+        #expect(store.lastConfirmedRemoteMessageTimestampForPromoQueueDiagnostics() == referenceTimestamp)
         #expect(store.lastConfirmedRemoteMessageTimestamp == referenceTimestamp)
+    }
+
+    @Test("Diagnostics preserve the current-process authoritative RMF value")
+    func whenPersistenceWriteFailsThenDiagnosticReadUsesLocallyConfirmedValue() {
+        let persistedTimestamp = referenceTimestamp - 1
+        let keyValueStore = MockKeyValueFileStore()
+        let persistenceWriter = PromoQueueRemoteMessageCooldownKeyValueFilesStore(keyValueStore: keyValueStore)
+        persistenceWriter.lastConfirmedRemoteMessageTimestamp = persistedTimestamp
+        let store = PromoQueueRemoteMessageCooldownKeyValueFilesStore(keyValueStore: keyValueStore)
+        keyValueStore.throwOnSet = StoreTestError.write
+
+        store.lastConfirmedRemoteMessageTimestamp = referenceTimestamp
+
+        #expect(store.lastConfirmedRemoteMessageTimestampForPromoQueueDiagnostics() == referenceTimestamp)
+        keyValueStore.throwOnSet = nil
+        let reconstructedStore = PromoQueueRemoteMessageCooldownKeyValueFilesStore(keyValueStore: keyValueStore)
+        #expect(reconstructedStore.lastConfirmedRemoteMessageTimestamp == persistedTimestamp)
+    }
+
+    @Test(
+        "A later read failure returns the last successfully read optional timestamp and recovers",
+        arguments: [nil, 1_775_000_000] as [TimeInterval?]
+    )
+    func whenReadFailsAfterSuccessThenCachedTimestampIsReturned(lastSuccessfulTimestamp: TimeInterval?) {
+        let recoveredTimestamp = referenceTimestamp + 1
+        let keyValueStore = MockKeyValueFileStore()
+        let persistenceWriter = PromoQueueRemoteMessageCooldownKeyValueFilesStore(keyValueStore: keyValueStore)
+        persistenceWriter.lastConfirmedRemoteMessageTimestamp = lastSuccessfulTimestamp
+        let store = PromoQueueRemoteMessageCooldownKeyValueFilesStore(keyValueStore: keyValueStore)
+        #expect(store.lastConfirmedRemoteMessageTimestamp == lastSuccessfulTimestamp)
+
+        let persistenceMutator = PromoQueueRemoteMessageCooldownKeyValueFilesStore(keyValueStore: keyValueStore)
+        persistenceMutator.lastConfirmedRemoteMessageTimestamp = recoveredTimestamp
+
+        keyValueStore.throwOnRead = StoreTestError.read
+
+        #expect(store.lastConfirmedRemoteMessageTimestamp == lastSuccessfulTimestamp)
+
+        keyValueStore.throwOnRead = nil
+        #expect(store.lastConfirmedRemoteMessageTimestamp == recoveredTimestamp)
     }
 
     @Test("A successful nil read is cached for a later failure")

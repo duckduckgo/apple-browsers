@@ -1445,6 +1445,7 @@ class MainViewController: UIViewController {
     }
 
     @objc func onAddressBarPositionChanged() {
+        revealFloatingChromeImmediately()
         if !isAnyAITabUTIState {
             viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
             refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
@@ -4286,12 +4287,16 @@ extension MainViewController: BrowserChromeDelegate {
         } else {
             applyBarsVisibilityState(percent, postChromeVisibilityNotification: postNotification)
 
-            // Calling this here is important as it causes the layout to run immediately inside current run loop,
-            // instead of deferring it until next update block.
-            // Late layout after change here could potentially cause a scroll offset update right before the next one,
-            // which may cause an infitie loop layout loop in certain scenarios.
-            // See https://app.asana.com/1/137249556945/project/414709148257752/task/1208671955053442 for details.
-            self.view.layoutIfNeeded()
+            if isFloatingUIEnabled, percent > 0, percent < 1 {
+                self.view.setNeedsLayout()
+            } else {
+                // Calling this here is important as it causes the layout to run immediately inside current run loop,
+                // instead of deferring it until next update block.
+                // Late layout after change here could potentially cause a scroll offset update right before the next one,
+                // which may cause an infitie loop layout loop in certain scenarios.
+                // See https://app.asana.com/1/137249556945/project/414709148257752/task/1208671955053442 for details.
+                self.view.layoutIfNeeded()
+            }
         }
     }
 
@@ -4440,6 +4445,18 @@ extension MainViewController: BrowserChromeDelegate {
             + FloatingDomainCapsuleController.fixedElementClearance
     }
 
+    private var floatingTopCapsuleObscuredHeight: CGFloat {
+        guard appSettings.currentAddressBarPosition == .top,
+              isFloatingCapsuleActive,
+              let domain = currentFloatingDomainText(),
+              !domain.isEmpty else {
+            return 0
+        }
+        return view.safeAreaInsets.top
+            + floatingDomainCapsuleController.restObscuredHeightAboveSafeArea
+            + FloatingDomainCapsuleController.fixedElementClearance
+    }
+
     func floatingWebViewBottomObscuredHeight(for barsVisibilityPercent: CGFloat) -> CGFloat {
         // Minimal chrome hides the toolbar: reserve the single bar's height only for a bottom address
         // bar (reclaimed as it scrolls away); a top address bar leaves just the safe area.
@@ -4465,8 +4482,7 @@ extension MainViewController: BrowserChromeDelegate {
                      right: 0)
     }
 
-    /// Top region obscured by chrome: safe area, plus the omnibar for a top address bar. In minimal
-    /// chrome the top bar scrolls off, so its portion is reclaimed as it hides.
+    /// Top region obscured by chrome, shrinking from the omnibar to the resting capsule clearance.
     private func floatingWebViewTopObscuredHeight(for barsVisibilityPercent: CGFloat) -> CGFloat {
         let safeAreaTop = view.safeAreaInsets.top
         guard appSettings.currentAddressBarPosition == .top else { return safeAreaTop }
@@ -4474,7 +4490,12 @@ extension MainViewController: BrowserChromeDelegate {
             let clampedPercent = max(0, min(1, barsVisibilityPercent))
             return safeAreaTop + omniBar.barView.expectedHeight * clampedPercent
         }
-        return safeAreaTop + omniBar.barView.expectedHeight
+        return FloatingUILayoutPolicy.webViewTopObscuredHeight(
+            barsVisibilityPercent: barsVisibilityPercent,
+            expandedChromeHeight: safeAreaTop + omniBar.barView.expectedHeight,
+            topCapsuleObscuredHeight: floatingTopCapsuleObscuredHeight,
+            safeAreaTop: safeAreaTop
+        )
     }
 
     var minimalChromeBottomHeight: CGFloat {
@@ -5248,6 +5269,10 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onTextFieldWillBeginEditing(_ omniBar: OmniBarView, tapped: Bool) {
+        if tapped {
+            revealFloatingChromeImmediately()
+        }
+
         // We don't want any action here if suggestions are still visible (existence alone isn't enough
         // on iPad, where the controllers persist hidden across the focus session).
         guard !areSuggestionsVisible else { return }
@@ -5541,6 +5566,7 @@ extension MainViewController: OmniBarDelegate {
 
     // MARK: - Experimental Address Bar (pixels only)
     func onExperimentalAddressBarTapped() {
+        revealFloatingChromeImmediately()
         let modeParam = [PixelParameters.browsingMode: tabManager.currentBrowsingMode.pixelParamValue]
         ViewHighlighter.hideAll()
         fireControllerAwarePixel(ntp: .addressBarClickOnNTP,
@@ -6435,6 +6461,11 @@ extension MainViewController: TabDelegate {
 
     func showBars() {
         chromeManager.reset()
+    }
+
+    private func revealFloatingChromeImmediately() {
+        guard isFloatingUIEnabled else { return }
+        chromeManager.reset(animated: false)
     }
     
     func tabDidRequestFindInPage(tab: TabViewController) {

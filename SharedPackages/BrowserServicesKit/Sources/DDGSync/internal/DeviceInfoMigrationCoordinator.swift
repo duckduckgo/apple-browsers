@@ -54,8 +54,7 @@ struct DeviceInfoMigrationCoordinator: DeviceInfoMigrationCoordinating {
 
     private let accountManager: AccountManaging
     private let scopedAccess: ScopedAccessCredentialManaging
-    private let crypter: CryptingInternal
-    private let deviceInfoCodec: DeviceInfoCoding
+    private let updateBuilder: DeviceInfoUpdateBuilder
     private let secureStore: SecureStoring
     private let keyValueStore: ThrowingKeyValueStoring
     private let canWriteUnifiedDeviceList: () -> Bool
@@ -69,8 +68,7 @@ struct DeviceInfoMigrationCoordinator: DeviceInfoMigrationCoordinating {
          canWriteUnifiedDeviceList: @escaping () -> Bool) {
         self.accountManager = accountManager
         self.scopedAccess = scopedAccess
-        self.crypter = crypter
-        self.deviceInfoCodec = deviceInfoCodec
+        self.updateBuilder = DeviceInfoUpdateBuilder(crypter: crypter, deviceInfoCodec: deviceInfoCodec)
         self.secureStore = secureStore
         self.keyValueStore = keyValueStore
         self.canWriteUnifiedDeviceList = canWriteUnifiedDeviceList
@@ -108,18 +106,11 @@ struct DeviceInfoMigrationCoordinator: DeviceInfoMigrationCoordinating {
                 return
             }
 
-            let encryptedDeviceInfo = try deviceInfoCodec.encrypt(
-                DeviceInfo(name: currentAccount.deviceName, type: currentAccount.deviceType),
-                using: protectedKey)
-            guard encryptedDeviceInfo.utf8.count <= DeviceInfo.maximumEncryptedLength else {
-                throw DeviceInfoMigrationError.encryptedDeviceInfoTooLarge
-            }
-
-            let update = UpdateDevices.Update(
-                id: currentAccount.deviceId,
-                name: try crypter.encryptAndBase64Encode(currentAccount.deviceName, using: currentAccount.primaryKey),
-                type: try crypter.encryptAndBase64Encode(currentAccount.deviceType, using: currentAccount.primaryKey),
-                info: encryptedDeviceInfo)
+            let update = try updateBuilder.makeUpdate(deviceID: currentAccount.deviceId,
+                                                       deviceName: currentAccount.deviceName,
+                                                       deviceType: currentAccount.deviceType,
+                                                       primaryKey: currentAccount.primaryKey,
+                                                       protectedKey: protectedKey)
             guard !Task.isCancelled,
                   isCurrentAccountSnapshot(currentAccount, identity: identity) else {
                 return

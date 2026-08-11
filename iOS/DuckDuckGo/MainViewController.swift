@@ -7879,6 +7879,12 @@ extension MainViewController {
 
         let button = mobileCustomization.state.currentToolbarButton
         guard !button.requiresWebPage || hasWebPageContext else { return }
+
+        // Burning reports itself from where the burn starts, so it is not one of these.
+        if button != .fire {
+            endNewTabPageSessionWithCustomButton()
+        }
+
         switch button {
         case .home:
             guard let tab = self.currentTab?.tabModel else { return }

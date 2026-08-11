@@ -54,6 +54,15 @@ extension MainViewController {
         newTabPageSessionInstrumentation.visitEnded(terminalAction: url.isDuckDuckGoSearch ? .loadSerp : .loadWebsite)
     }
 
+    /// Ends the visit on the customizable toolbar button doing something other than burning.
+    ///
+    /// Where it leads is deliberately not distinguished: the button is one slot the user has
+    /// assigned, so what matters for the success rate is that they reached for it. Buttons needing
+    /// a loaded page never act on the New Tab Page, so they cannot end a visit either.
+    func endNewTabPageSessionWithCustomButton() {
+        newTabPageSessionInstrumentation.visitEnded(terminalAction: .customButton)
+    }
+
     /// Ends the visit on a burn, whichever surface it was started from.
     ///
     /// Called as the burn begins rather than once it finishes, because clearing lands the user back

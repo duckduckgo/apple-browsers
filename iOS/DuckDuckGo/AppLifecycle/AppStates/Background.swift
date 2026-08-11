@@ -66,6 +66,7 @@ struct Background: BackgroundHandling {
         services.autofillService.suspend()
         services.syncService.suspend()
         services.reportingService.suspend()
+        services.eventHubService.suspend()
 
         appDependencies.mainCoordinator.onBackground()
 

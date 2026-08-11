@@ -65,6 +65,12 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217125840097313?focus=true
     case tabTerminationErrorPage
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217244101759199?focus=true
+    case tabEvictionOnMemoryWarning
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217244101759205?focus=true
+    case tabLRUEviction
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212835969125260
     case browsingMenuSheetEnabledByDefault
 

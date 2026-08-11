@@ -132,6 +132,13 @@ final class UnifiedToggleInputView: UIView {
         /// dismiss shares the field row (toggle disabled, top position).
         static let fieldRowInlineDismissSpacing: CGFloat = 4
 
+        static let editDisclaimerOverlap: CGFloat = 44
+        static let editDisclaimerTopGap: CGFloat = 12
+        static let editDisclaimerIconSize: CGFloat = 24
+        static let editDisclaimerIconTextGap: CGFloat = 12
+        static let editDisclaimerContentLeading: CGFloat = 20
+        static let editDisclaimerContentBottom: CGFloat = 12
+
         /// Leading constant for the toggle when the inline dismiss button shares the top row.
         static var toggleLeadingWithInlineDismiss: CGFloat {
             inlineDismissLeadingPadding + inlineDismissSize + toggleInlineDismissSpacing
@@ -348,6 +355,62 @@ final class UnifiedToggleInputView: UIView {
         set { toolsToolbar.isImageButtonHidden = newValue }
     }
 
+    func setEditMode(_ editing: Bool, showsReplaceDisclaimer: Bool) {
+        toolsToolbar.isEditing = editing
+        setEditReplaceDisclaimerCardVisible(showsReplaceDisclaimer)
+    }
+
+    private func setEditReplaceDisclaimerCardVisible(_ visible: Bool) {
+        editReplaceDisclaimerCard.isHidden = !visible
+        cardBottomConstraint.isActive = !visible
+        cardEditBottomConstraint.isActive = visible
+    }
+
+    private static func makeEditReplaceDisclaimerCard() -> UIView {
+        let card = UIView()
+        card.translatesAutoresizingMaskIntoConstraints = false
+        card.backgroundColor = UIColor(designSystemColor: .surfaceSecondary)
+        card.layer.cornerRadius = Constants.cardCornerRadiusExpanded
+        card.layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
+        card.layer.shadowColor = UIColor(designSystemColor: .shadowSecondary).cgColor
+        card.layer.shadowOpacity = 1
+        card.layer.shadowOffset = CGSize(width: 0, height: 6)
+        card.layer.shadowRadius = 12
+        card.isUserInteractionEnabled = false
+        card.isHidden = true
+
+        let icon = UIImageView(image: DesignSystemImages.Color.Size24.infoFeedback)
+        icon.translatesAutoresizingMaskIntoConstraints = false
+        icon.contentMode = .scaleAspectFit
+        icon.setContentHuggingPriority(.required, for: .horizontal)
+        icon.setContentCompressionResistancePriority(.required, for: .horizontal)
+
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.text = UserText.aiChatEditReplaceResponseDisclaimer
+        label.font = .daxCaption1()
+        label.textColor = UIColor(designSystemColor: .textSecondary)
+        label.numberOfLines = 0
+        label.adjustsFontForContentSizeCategory = true
+
+        let stack = UIStackView(arrangedSubviews: [icon, label])
+        stack.axis = .horizontal
+        stack.alignment = .center
+        stack.spacing = Constants.editDisclaimerIconTextGap
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        card.addSubview(stack)
+
+        NSLayoutConstraint.activate([
+            icon.widthAnchor.constraint(equalToConstant: Constants.editDisclaimerIconSize),
+            icon.heightAnchor.constraint(equalToConstant: Constants.editDisclaimerIconSize),
+            stack.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: Constants.editDisclaimerContentLeading),
+            stack.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -Constants.editDisclaimerContentLeading),
+            stack.topAnchor.constraint(equalTo: card.topAnchor, constant: Constants.editDisclaimerOverlap + Constants.editDisclaimerTopGap),
+            stack.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -Constants.editDisclaimerContentBottom),
+        ])
+        return card
+    }
+
     var isImageButtonEnabled: Bool {
         get { toolsToolbar.isImageButtonEnabled }
         set { toolsToolbar.isImageButtonEnabled = newValue }
@@ -379,6 +442,13 @@ final class UnifiedToggleInputView: UIView {
 
     // MARK: - Page-Context Chip
 
+    /// Driven directly rather than through a view model: unlike page context there is no auto-attach
+    /// or navigation state to reconcile. `onRemove` receives the removed selection's id.
+    func setSelectionContextChips(_ items: [(id: String, title: String, favicon: UIImage?)], onRemove: @escaping (String) -> Void) {
+        attachmentsStrip.onSelectionContextRemove = onRemove
+        attachmentsStrip.setSelectionContextChips(items)
+    }
+
     func bindPageContextChip(to viewModel: UnifiedToggleInputPageContextChipViewModel) {
         pageContextChipCancellables.removeAll()
         attachmentsStrip.onPageContextRemove = { [weak viewModel] in viewModel?.tapToRemove() }
@@ -403,6 +473,8 @@ final class UnifiedToggleInputView: UIView {
     private lazy var inlineDismissButton: UIButton = Self.makeInlineDismissButton()
     private let attachmentsStrip = UnifiedToggleInputAttachmentsStripView()
     private let toolsToolbar = UnifiedToggleInputToolbarView()
+
+    private lazy var editReplaceDisclaimerCard = Self.makeEditReplaceDisclaimerCard()
     private var pageContextChipCancellables = Set<AnyCancellable>()
 
     private lazy var aiTabCollapsedFireButton: UIButton = {
@@ -535,6 +607,7 @@ final class UnifiedToggleInputView: UIView {
     private var cardTrailingConstraint: NSLayoutConstraint!
     private var cardTrailingFlankedConstraint: NSLayoutConstraint!
     private var cardBottomConstraint: NSLayoutConstraint!
+    private var cardEditBottomConstraint: NSLayoutConstraint!
     private var cardPinnedHeightConstraint: NSLayoutConstraint!
     private var toggleTopConstraint: NSLayoutConstraint!
     private var toggleLeadingConstraint: NSLayoutConstraint!
@@ -583,6 +656,8 @@ final class UnifiedToggleInputView: UIView {
             // Resync the stored shadows so `CompositeShadowView`'s own trait handler doesn't
             // revert dynamic colors to the init-time config.
             expandedShadowView.shadows = currentLayout == .flanked ? flankedShadows : expandedShadows
+            // The disclaimer card's shadowColor is a snapshotted cgColor; re-resolve it here.
+            editReplaceDisclaimerCard.layer.shadowColor = UIColor(designSystemColor: .shadowSecondary).cgColor
             if isExpanded {
                 cardView.layer.borderColor = expandedBorderColor
             }
@@ -1215,7 +1290,9 @@ final class UnifiedToggleInputView: UIView {
     }
 
     private func updateAttachmentsStripLayout() {
-        let hasVisibleStripItems = !attachmentsStrip.attachments.isEmpty || attachmentsStrip.hasVisiblePageContext
+        let hasVisibleStripItems = !attachmentsStrip.attachments.isEmpty
+            || attachmentsStrip.hasVisiblePageContext
+            || attachmentsStrip.hasVisibleSelectionContext
         let showStrip = hasVisibleStripItems && isExpanded && handler.currentToggleState == .aiChat
         attachmentsStripHeightConstraint.constant = showStrip ? UnifiedToggleInputAttachmentsStripView.Constants.stripHeight : 0
         attachmentsStrip.alpha = showStrip ? 1 : 0
@@ -1392,6 +1469,7 @@ private extension UnifiedToggleInputView {
         cardView.layer.shadowRadius = 12
         cardView.isUserInteractionEnabled = false
         addSubview(cardView)
+        insertSubview(editReplaceDisclaimerCard, belowSubview: cardView)
         addSubview(aiTabCollapsedFireButton)
         addSubview(aiTabCollapsedMenuButton)
 
@@ -1506,6 +1584,8 @@ private extension UnifiedToggleInputView {
         cardTrailingFlankedConstraint = cardView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -flankedHorizontalInset)
         cardTrailingFlankedConstraint.isActive = false
         cardBottomConstraint = cardView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Constants.collapsedCardBottomMargin)
+        cardEditBottomConstraint = cardView.bottomAnchor.constraint(equalTo: editReplaceDisclaimerCard.topAnchor, constant: Constants.editDisclaimerOverlap)
+        cardEditBottomConstraint.isActive = false
         cardPinnedHeightConstraint = cardView.heightAnchor.constraint(equalToConstant: Constants.collapsedCardHeight)
         cardPinnedHeightConstraint.priority = .defaultHigh
         cardPinnedHeightConstraint.isActive = true
@@ -1527,6 +1607,10 @@ private extension UnifiedToggleInputView {
             cardLeadingConstraint,
             cardTrailingConstraint,
             cardBottomConstraint,
+
+            editReplaceDisclaimerCard.leadingAnchor.constraint(equalTo: cardView.leadingAnchor),
+            editReplaceDisclaimerCard.trailingAnchor.constraint(equalTo: cardView.trailingAnchor),
+            editReplaceDisclaimerCard.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Constants.cardVerticalMarginBottom),
 
             toggleTopConstraint,
             toggleLeadingConstraint,

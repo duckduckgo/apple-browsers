@@ -949,6 +949,12 @@
 /* Login name label for login details on autofill */
 "autofill.logins.details.login-name" = "Naslov";
 
+/* Message for alert when attempting to save a password that has neither a website nor a username */
+"autofill.logins.details.missing-website-or-username-alert.message" = "Če želite shraniti to geslo, vnesite spletno mesto ali uporabniško ime.";
+
+/* Title for alert when attempting to save a password that has neither a website nor a username */
+"autofill.logins.details.missing-website-or-username-alert.title" = "Zahtevano spletno mesto ali uporabniško ime";
+
 /* Title when adding new autofill login */
 "autofill.logins.details.new-title" = "Dodajte geslo";
 
@@ -2949,6 +2955,12 @@
 
 /* Title for the Import Passwords Promotion banner */
 "import.passwords.promo.title" = "Uvozite gesla v DuckDuckGo";
+
+/* Body for the notification sent after a period of inactivity. */
+"inactivity.notification.body" = "Z DuckDuckGo se izognite oglasom, ki vas spremljajo po spletu, in zmanjšajte svoj spletni odtis.";
+
+/* Title for the notification sent after a period of inactivity. */
+"inactivity.notification.title" = "Nadzorujte svojo spletno izkušnjo";
 
 /* Placeholder text for the duck.ai input field */
 "input.field.placeholder.duckai" = "Vprašajte kar koli zasebno";

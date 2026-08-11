@@ -30,6 +30,7 @@ import SwiftUI
 import AIChat
 import RemoteMessaging
 import FeatureFlags_iOS
+import PixelKit
 
 protocol OmniBarEditingStateViewControllerDelegate: AnyObject {
     func onQueryUpdated(_ query: String)
@@ -231,7 +232,9 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         super.viewDidAppear(animated)
 
         DailyPixel.fireDailyAndCount(pixel: .aiChatInternalSwitchBarDisplayed)
-        DailyPixel.fireDailyAndCount(pixel: .aiChatExperimentalOmnibarShown)
+        let isToggleVisible = switchBarHandler.isToggleEnabled
+        PixelKit.fire(ExperimentalOmnibarPixel.omnibarShownDaily(isToggleVisible: isToggleVisible), frequency: .legacyDailyNoSuffix)
+        PixelKit.fire(ExperimentalOmnibarPixel.omnibarShownCount(isToggleVisible: isToggleVisible), frequency: .standard)
     }
 
     override func viewDidDisappear(_ animated: Bool) {

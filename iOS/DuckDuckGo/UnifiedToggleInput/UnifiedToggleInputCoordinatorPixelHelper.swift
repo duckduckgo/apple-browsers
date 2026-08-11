@@ -20,7 +20,35 @@
 import AIChat
 import Core
 import Foundation
+import PixelKit
 import Subscription
+
+/// The schedule suffix is part of the name, fired with frequencies that append nothing, so PixelKit's
+/// platform suffix lands after it and the wire name stays `..._daily_ios_phone` as the legacy pixel reports it.
+enum ExperimentalOmnibarPixel: PixelKitEvent, PixelKitEventWithCustomPrefix {
+
+    /// `isToggleVisible`: whether the Search/Duck.ai toggle was on screen when the surface appeared.
+    case omnibarShownDaily(isToggleVisible: Bool)
+    case omnibarShownCount(isToggleVisible: Bool)
+
+    var name: String {
+        switch self {
+        case .omnibarShownDaily: "m_aichat_experimental_omnibar_shown_daily"
+        case .omnibarShownCount: "m_aichat_experimental_omnibar_shown_count"
+        }
+    }
+
+    var parameters: [String: String]? {
+        switch self {
+        case .omnibarShownDaily(let isToggleVisible), .omnibarShownCount(let isToggleVisible):
+            ["toggle_visible": String(isToggleVisible)]
+        }
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? { [.pixelSource] }
+
+    var namePrefix: String { "" }
+}
 
 /// The UTI surface a pixel is fired from, sent as the `surface` param (`voice_tapped` reuses `source`).
 enum UnifiedToggleInputPixelSurface: String {

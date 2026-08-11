@@ -150,10 +150,19 @@ extension OnboardingIntroContentProvider {
 // MARK: - Content Provider + Download Reason (Set things up your way)
 
 struct OnboardingDownloadReasonContent: Equatable {
+    /// Lottie pictograms in `OnboardingAnimations.xcassets/Pictograms`. Data assets get no
+    /// generated symbol, so the raw value is the dataset name passed to `DotLottieFile.asset(named:)`.
+    enum Animation: String {
+        case search
+        case duckAIChat = "duckai-chat"
+        case noAI = "no-ai"
+        case imageSweep = "image-sweep"
+    }
+
     /// A selectable reason tile.
     struct Option: Hashable {
         let reason: OnboardingDownloadReason
-        let icon: OnboardingImageResource
+        let animation: Animation
         let title: String
     }
 
@@ -172,10 +181,10 @@ extension OnboardingIntroContentProvider {
             title: UserText.Onboarding.DownloadReason.title,
             message: UserText.Onboarding.DownloadReason.message,
             options: [
-                .init(reason: .browserPrivately, icon: OnboardingImageResources.DownloadReason.search, title: UserText.Onboarding.DownloadReason.browsePrivately),
-                .init(reason: .privateAIChat, icon: OnboardingImageResources.DownloadReason.aiChat, title: UserText.Onboarding.DownloadReason.chatWithAI),
-                .init(reason: .noAI, icon: OnboardingImageResources.DownloadReason.noAI, title: UserText.Onboarding.DownloadReason.removeAI),
-                .init(reason: .blockAds, icon: OnboardingImageResources.DownloadReason.blockAds, title: UserText.Onboarding.DownloadReason.blockAds)
+                .init(reason: .browserPrivately, animation: .search, title: UserText.Onboarding.DownloadReason.browsePrivately),
+                .init(reason: .privateAIChat, animation: .duckAIChat, title: UserText.Onboarding.DownloadReason.chatWithAI),
+                .init(reason: .noAI, animation: .noAI, title: UserText.Onboarding.DownloadReason.removeAI),
+                .init(reason: .blockAds, animation: .imageSweep, title: UserText.Onboarding.DownloadReason.blockAds)
             ],
             primaryCTA: UserText.Onboarding.DownloadReason.cta,
             daxAnimation: .wingBottom

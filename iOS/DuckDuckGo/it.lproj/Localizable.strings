@@ -949,6 +949,12 @@
 /* Login name label for login details on autofill */
 "autofill.logins.details.login-name" = "Titolo";
 
+/* Message for alert when attempting to save a password that has neither a website nor a username */
+"autofill.logins.details.missing-website-or-username-alert.message" = "Per salvare questa password, inserisci un sito web o un nome utente.";
+
+/* Title for alert when attempting to save a password that has neither a website nor a username */
+"autofill.logins.details.missing-website-or-username-alert.title" = "Sito web o nome utente richiesto";
+
 /* Title when adding new autofill login */
 "autofill.logins.details.new-title" = "Aggiungi password";
 
@@ -2949,6 +2955,12 @@
 
 /* Title for the Import Passwords Promotion banner */
 "import.passwords.promo.title" = "Importa le tue password in DuckDuckGo";
+
+/* Body for the notification sent after a period of inactivity. */
+"inactivity.notification.body" = "Usa DuckDuckGo per evitare gli annunci che ti tracciano sul web e ridurre la tua impronta digitale.";
+
+/* Title for the notification sent after a period of inactivity. */
+"inactivity.notification.title" = "Controlla la tua esperienza online";
 
 /* Placeholder text for the duck.ai input field */
 "input.field.placeholder.duckai" = "Chiedi qualsiasi cosa in privato";

@@ -122,6 +122,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
     @Published var attachmentUsage: AIChatAttachmentUsage?
 
+    /// Rides the draft-changed callback, which fires only on attachment mutations.
+    var onAttachmentsChanged: (() -> Void)?
+
     @Published private(set) var isEditing: Bool = false {
         didSet {
             guard oldValue != isEditing else { return }
@@ -425,7 +428,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 presenterViewController: { [weak self] in self?.attachmentPresenterViewController }
             ),
             callbacks: .init(
-                onDraftChanged: { [weak self] in self?.persistDraftToStore() },
+                onDraftChanged: { [weak self] in
+                    self?.persistDraftToStore()
+                    self?.onAttachmentsChanged?()
+                },
                 onExpandIfNeeded: { [weak self] in self?.expandIfOnExpandedInputHost() },
                 updateFloatingReturnKey: { [weak self] in self?.updateFloatingReturnKeyState() }
             )
@@ -1306,6 +1312,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         attachmentUsage = nil
         aiChatInputBoxVisibility = .visible
         isVoiceSessionActive = false
+    }
+
+    var attachmentCount: Int {
+        attachmentController.attachmentCount
     }
 
     /// Surfaces a rejection in the input's validation banner.

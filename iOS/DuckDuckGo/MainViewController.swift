@@ -202,6 +202,10 @@ class MainViewController: UIViewController {
     let ntpAfterIdleInstrumentation: NTPAfterIdleInstrumentation
     let idleReturnTabCountInstrumentation: IdleReturnTabCountInstrumentation
     let postIdleSessionInstrumentation: PostIdleSessionInstrumentation
+    let newTabPageSessionInstrumentation: NewTabPageSessionInstrumentation
+    /// Set by the data clearing path so the New Tab Page it lands on is attributed to the
+    /// Fire button rather than to an ordinary new tab. Consumed by the next visit start.
+    private var isAttachingNewTabPageAfterFire = false
     let duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation
     let syncAutoRestoreHandler: SyncAutoRestoreHandling
     private let lastActiveTabStore: LastActiveTabStoring
@@ -558,6 +562,15 @@ class MainViewController: UIViewController {
         self.ntpAfterIdleInstrumentation = DefaultNTPAfterIdleInstrumentation(eligibilityManager: idleReturnEligibilityManager)
         self.idleReturnTabCountInstrumentation = DefaultIdleReturnTabCountInstrumentation(eligibilityManager: idleReturnEligibilityManager)
         self.postIdleSessionInstrumentation = DefaultPostIdleSessionInstrumentation(wideEvent: AppDependencyProvider.shared.wideEvent)
+        self.newTabPageSessionInstrumentation = DefaultNewTabPageSessionInstrumentation(
+            wideEvent: AppDependencyProvider.shared.wideEvent,
+            isEnabled: { featureFlagger.isFeatureOn(.newTabPageSessionInstrumentation) },
+            sampleRate: {
+                NewTabPageSessionSampleRate.resolve(
+                    from: privacyConfigurationManager.privacyConfig.settings(for: iOSBrowserConfigSubfeature.newTabPageSessionInstrumentation)
+                )
+            }
+        )
         self.duckAIWideEventInstrumentation = DefaultDuckAIWideEventInstrumentation(
             wideEvent: AppDependencyProvider.shared.wideEvent,
             completeOrphanedFlowsOnInit: true
@@ -1433,6 +1446,7 @@ class MainViewController: UIViewController {
             ntpAfterIdleInstrumentation.appBackgroundedFromNTP(afterIdle: tab.openedAfterIdle)
         }
         postIdleSessionInstrumentation.sessionCancelledByBackground()
+        newTabPageSessionInstrumentation.visitBackgrounded()
 
         /// Resign the web view's first responder when backgrounding with the tab switcher
         /// visible. The tab switcher uses .overCurrentContext so the WKWebView stays in the
@@ -2065,14 +2079,6 @@ class MainViewController: UIViewController {
         updateScrollInteractionIfNeeded()
         presentContextualOnboardingDialogIfNeeded()
 
-        // It's possible for this to be called when in the background of the
-        //  switcher, and we only want to show the pixel when it's actually
-        // about to shown to the user.
-        if presentedViewController == nil || presentedViewController?.isBeingDismissed == true {
-            fireNewTabPixels()
-            fireNTPShownInstrumentation(openedAfterIdle: openedAfterIdle, hatch: hatch)
-        }
-
         // Suppress keyboard-on-new-tab when an NTP onboarding dialog is about to appear:
         // viewDidAppear fires after this function and shows the dialog, but the editing state
         // created here would immediately cover it.
@@ -2080,9 +2086,27 @@ class MainViewController: UIViewController {
         // is scheduled to fire: it drives its own beginEditing, and a premature activation here
         // causes the Dax logo to blink (disappear–reappear) before the completion dialog shows.
         let chatPathCompletionPending = daxDialogsManager.chatPathPhase == .trackerToEOJ && aiChatSettings.isAIChatEnabled
-        if isNewTab && allowingKeyboard && KeyboardSettings().onNewTab
+        // Resolved before the instrumentation call below, so the wide event records the mode
+        // the app decided on rather than racing the keyboard to observe it.
+        let willBeginEditing = isNewTab && allowingKeyboard && KeyboardSettings().onNewTab
             && !daxDialogsManager.subscriptionPromotionPending
-            && !chatPathCompletionPending {
+            && !chatPathCompletionPending
+
+        // Consumed on every attach, including the ones that record nothing below, so a burn
+        // can't leak its trigger into an unrelated New Tab Page visit later on.
+        let isAfterFire = isAttachingNewTabPageAfterFire
+        isAttachingNewTabPageAfterFire = false
+
+        // It's possible for this to be called when in the background of the
+        //  switcher, and we only want to show the pixel when it's actually
+        // about to shown to the user.
+        if presentedViewController == nil || presentedViewController?.isBeingDismissed == true {
+            fireNewTabPixels()
+            fireNTPShownInstrumentation(openedAfterIdle: openedAfterIdle, hatch: hatch)
+            startNewTabPageSessionInstrumentation(isNewTab: isNewTab, willBeginEditing: willBeginEditing, isAfterFire: isAfterFire)
+        }
+
+        if willBeginEditing {
             omniBar.beginEditing(animated: true)
         }
 
@@ -2108,6 +2132,25 @@ class MainViewController: UIViewController {
         if openedAfterIdle {
             postIdleSessionInstrumentation.sessionStarted(surface: .ntp)
         }
+    }
+
+    /// Opens a New Tab Page visit for the Starting Experience Success Rate wide event.
+    ///
+    /// Re-attachments that are none of a launch, a new tab or a burn, such as switching to an
+    /// already empty tab, report `appOpen`.
+    private func startNewTabPageSessionInstrumentation(isNewTab: Bool, willBeginEditing: Bool, isAfterFire: Bool) {
+        let trigger: NewTabPageSessionWideEventData.Trigger
+        if isAfterFire {
+            trigger = .newTabOpenedAfterFire
+        } else {
+            trigger = isNewTab ? .newTabOpened : .appOpen
+        }
+
+        newTabPageSessionInstrumentation.visitStarted(
+            trigger: trigger,
+            launchKeyboardMode: willBeginEditing ? .up : .down,
+            toggleEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled
+        )
     }
 
     func fireNewTabPixels() {
@@ -6972,6 +7015,7 @@ extension MainViewController {
             return
         }
         showBars()
+        isAttachingNewTabPageAfterFire = true
         attachHomeScreen()
         refreshTabBar()
 

@@ -75,8 +75,18 @@ final class SelectionFrameUserScriptTests: XCTestCase {
         XCTAssertTrue(sut.source.contains("frameToken: frameToken"))
     }
 
+    func testReadSelectionReturnsTheFrameTokenWithTheText() {
+        XCTAssertTrue(sut.source.contains("readSelection"))
+        XCTAssertTrue(sut.source.contains("selectedText:"))
+    }
+
     func testAFrameReleasesItsClaimOnPageHide() {
         XCTAssertTrue(sut.source.contains("pagehide"))
+    }
+
+    func testAFrameRestoresItsClaimFromTheBackForwardCache() {
+        XCTAssertTrue(sut.source.contains("pageshow"))
+        XCTAssertTrue(sut.source.contains("event.persisted"))
     }
 
     /// A selection appearing must not wait on the debounce.
@@ -87,6 +97,18 @@ final class SelectionFrameUserScriptTests: XCTestCase {
     /// A frame that never held a selection has no claim to release.
     func testOnlyAFrameThatHeldASelectionReportsOnPageHide() {
         XCTAssertTrue(sut.source.contains("lastHasSelection === true"))
+    }
+
+    /// Reading live at action time would read whatever the page put there after the user committed.
+    func testTheTextIsSnapshotWhenSelectedRatherThanWhenRead() {
+        XCTAssertTrue(sut.source.contains("selectedText: snapshot"))
+        XCTAssertTrue(sut.source.contains("snapshot = text"))
+    }
+
+    /// An out-of-view third-party iframe could otherwise select its own text and have that read instead.
+    func testASubframeOnlyClaimsTheSelectionWhileFocusIsInsideIt() {
+        XCTAssertTrue(sut.source.contains("ancestorOrigins"))
+        XCTAssertTrue(sut.source.contains("document.hasFocus()"))
     }
 
     /// The text is read later, only once the user picks a menu item.
@@ -134,6 +156,30 @@ final class SelectionFrameUserScriptTests: XCTestCase {
         XCTAssertNotNil(sut.frameWithSelection)
 
         sut.update(with: body(hasSelection: false, token: "second"), from: frame(host: "second.example"))
+        XCTAssertNil(sut.frameWithSelection)
+    }
+
+    func testReadAcceptsTextFromTheTrackedDocument() {
+        sut.update(with: body(hasSelection: true, token: "expected"), from: frame())
+
+        let text = sut.frameWithSelection?.selectedText(from: ["frameToken": "expected", "selectedText": "selection"])
+
+        XCTAssertEqual(text, "selection")
+    }
+
+    func testReadRejectsTextFromAReplacementDocument() {
+        sut.update(with: body(hasSelection: true, token: "expected"), from: frame())
+
+        let text = sut.frameWithSelection?.selectedText(from: ["frameToken": "replacement", "selectedText": "wrong selection"])
+
+        XCTAssertNil(text)
+    }
+
+    func testResetReleasesTheTrackedFrame() {
+        sut.update(with: body(hasSelection: true, token: "a"), from: frame())
+
+        sut.reset()
+
         XCTAssertNil(sut.frameWithSelection)
     }
 

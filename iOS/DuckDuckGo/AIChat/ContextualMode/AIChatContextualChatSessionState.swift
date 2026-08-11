@@ -336,11 +336,11 @@ final class AIChatContextualChatSessionState {
         rebuildViewState()
     }
 
-    /// Clears the selections a prompt has taken ownership of. Unlike `clearAttachedSelections()` it does
-    /// not re-render; the caller refreshes the chips.
-    func consumeAttachedSelections() {
-        guard !attachedSelections.isEmpty else { return }
-        attachedSelections = []
+    /// Removes the selections dispatched with a prompt without touching newer attachments.
+    func consumeAttachedSelections(ids: [String]) {
+        guard !ids.isEmpty else { return }
+        let consumedIDs = Set(ids)
+        attachedSelections.removeAll { consumedIDs.contains($0.id) }
         resolveSuggestionsForScopeChange()
     }
 

@@ -664,9 +664,9 @@ private extension AIChatContextualSheetCoordinator {
             self?.sessionState.attachedSelections ?? []
         }
 
-        webVC.setAttachedSelectionsConsumedHandler { [weak self] in
+        webVC.setAttachedSelectionsConsumedHandler { [weak self] selectionIDs in
             guard let self else { return }
-            self.sessionState.consumeAttachedSelections()
+            self.sessionState.consumeAttachedSelections(ids: selectionIDs)
             self.refreshSelectionChips()
         }
 

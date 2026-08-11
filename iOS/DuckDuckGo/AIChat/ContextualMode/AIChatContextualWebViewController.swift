@@ -297,7 +297,7 @@ final class AIChatContextualWebViewController: UIViewController {
         }
     }
 
-    func setAttachedSelectionsConsumedHandler(_ handler: (() -> Void)?) {
+    func setAttachedSelectionsConsumedHandler(_ handler: (([String]) -> Void)?) {
         aiChatContentHandler.setAttachedSelectionsConsumedHandler(handler)
     }
 

@@ -28,9 +28,11 @@ import os.log
 struct SelectionFrame {
 
     private let frameInfo: WKFrameInfo
+    private let frameToken: String
 
-    init(_ frameInfo: WKFrameInfo) {
+    init(_ frameInfo: WKFrameInfo, frameToken: String) {
         self.frameInfo = frameInfo
+        self.frameToken = frameToken
     }
 
     func evaluateJavaScript(_ script: String,
@@ -38,6 +40,12 @@ struct SelectionFrame {
                             contentWorld: WKContentWorld,
                             completionHandler: @escaping (Result<Any, Error>) -> Void) {
         webView.evaluateJavaScript(script, in: frameInfo, in: contentWorld, completionHandler: completionHandler)
+    }
+
+    func selectedText(from value: Any) -> String? {
+        guard let result = value as? [String: Any],
+              result["frameToken"] as? String == frameToken else { return nil }
+        return result["selectedText"] as? String
     }
 }
 
@@ -49,6 +57,8 @@ final class SelectionFrameUserScript: NSObject, UserScript {
     private enum MessageName {
         static let selectionChanged = "selectionFrameChanged"
     }
+
+    static let readSelectionScript = "window.__ddgSelectionFrame.readSelection()"
 
     /// An empty source leaves the feature inert rather than taking the app down with it.
     var source: String = {
@@ -68,13 +78,12 @@ final class SelectionFrameUserScript: NSObject, UserScript {
 
     var messageNames: [String] = [MessageName.selectionChanged]
 
-    /// The frame holding the selection, or nil to read the main frame.
+    /// The frame holding the selection.
     private(set) var frameWithSelection: SelectionFrame?
 
     private var trackedFrameToken: String?
 
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-
         update(with: message.body, from: message.frameInfo)
     }
 
@@ -85,7 +94,7 @@ final class SelectionFrameUserScript: NSObject, UserScript {
               let frameToken = body["frameToken"] as? String else { return }
 
         if hasSelection {
-            frameWithSelection = SelectionFrame(frame)
+            frameWithSelection = SelectionFrame(frame, frameToken: frameToken)
             trackedFrameToken = frameToken
         } else if frameToken == trackedFrameToken {
             // Only the tracked frame may release the claim: selecting in an iframe collapses the main
@@ -93,5 +102,10 @@ final class SelectionFrameUserScript: NSObject, UserScript {
             frameWithSelection = nil
             trackedFrameToken = nil
         }
+    }
+
+    func reset() {
+        frameWithSelection = nil
+        trackedFrameToken = nil
     }
 }

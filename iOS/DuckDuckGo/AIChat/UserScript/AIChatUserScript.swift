@@ -120,8 +120,8 @@ final class AIChatUserScript: NSObject, Subfeature {
     /// Text selections to send on the prompt's `selections` key, alongside `pageContext` rather than in place of it.
     var attachedSelectionsProvider: (() -> [AIChatSelectionContextData])?
 
-    /// Fired once the selections have been dispatched, so the host can clear them.
-    var onAttachedSelectionsConsumed: (() -> Void)?
+    /// Fired with the IDs of selections that have been dispatched.
+    var onAttachedSelectionsConsumed: (([String]) -> Void)?
 
     /// Fires after a prompt is submitted via the multi-modal `submitPrompt(...)` path (used by
     /// the native UTI). Set by the host so the chip can flip to its post-submit silent state.
@@ -293,7 +293,7 @@ final class AIChatUserScript: NSObject, Subfeature {
         attachedSelectionsProvider = provider
     }
 
-    func setAttachedSelectionsConsumedHandler(_ handler: (() -> Void)?) {
+    func setAttachedSelectionsConsumedHandler(_ handler: (([String]) -> Void)?) {
         onAttachedSelectionsConsumed = handler
     }
 
@@ -400,9 +400,9 @@ final class AIChatUserScript: NSObject, Subfeature {
     /// destroy them. Dispatch is not acknowledgement — the frontend can still fail to receive it.
     private func pushPrompt(_ payload: AIChatNativePrompt) {
         guard push(.submitPrompt(payload)) else { return }
-        guard payload.selections?.isEmpty == false else { return }
+        guard let selectionIDs = payload.selections?.map(\.id), !selectionIDs.isEmpty else { return }
 
-        onAttachedSelectionsConsumed?()
+        onAttachedSelectionsConsumed?(selectionIDs)
     }
 
     /// Submits a start chat action to the web content, initiating a new AI Chat conversation.

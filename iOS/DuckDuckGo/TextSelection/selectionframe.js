@@ -1,9 +1,33 @@
 (function() {
+    if (Object.prototype.hasOwnProperty.call(window, '__ddgSelectionFrame')) { return; }
+
     // Identifies the sending frame: WKFrameInfo has no usable identity, and comparing origins is
     // ambiguous for same-origin iframes.
-    var frameToken = String(Math.random()).slice(2) + '-' + String(Math.random()).slice(2);
+    var tokenParts = new Uint32Array(4);
+    crypto.getRandomValues(tokenParts);
+    var frameToken = Array.from(tokenParts).join('-');
     var lastHasSelection = null;
-    var isPending = false;
+    var clearTimer = null;
+    var snapshot = '';
+
+    // Matches isBeingFramed() in content-scope-scripts. ancestorOrigins is not forgeable from the page.
+    var isFramed = (window.location && 'ancestorOrigins' in window.location)
+        ? window.location.ancestorOrigins.length > 0
+        : window.top !== window;
+
+    Object.defineProperty(window, '__ddgSelectionFrame', {
+        value: Object.freeze({
+            readSelection: function() {
+                return {
+                    frameToken: frameToken,
+                    selectedText: snapshot
+                };
+            }
+        }),
+        configurable: false,
+        enumerable: false,
+        writable: false
+    });
 
     function post(hasSelection) {
         if (hasSelection === lastHasSelection) { return; }
@@ -16,30 +40,67 @@
         } catch (e) {}
     }
 
-    function hasSelection() {
+    function selectionText() {
         var selection = window.getSelection();
-        return !!(selection && String(selection).trim().length > 0);
+        return selection ? String(selection) : '';
+    }
+
+    function cancelPendingClear() {
+        if (clearTimer === null) { return; }
+        clearTimeout(clearTimer);
+        clearTimer = null;
+    }
+
+    // A frame the user never interacted with must not be able to claim the selection: native trusts the
+    // newest claim, so an out-of-view third-party iframe could otherwise select its own text and have
+    // that read in place of the user's. A subframe joins the focus chain only once focus is inside it.
+    // The top frame is exempt — it is not the theft case, and gating it would rest the whole feature on
+    // how hasFocus() behaves in a WKWebView.
+    function canClaim() {
+        return !isFramed || document.hasFocus();
+    }
+
+    // Snapshots the selection while the user's gesture is still what produced it, and keeps it in this
+    // isolated world where the page cannot reach it. Reading at action time instead would read after the
+    // user has committed, by which point the page has had time to swap the range or rewrite the text in it.
+    function publish(text) {
+        if (text.trim().length > 0 && canClaim()) {
+            snapshot = text;
+            post(true);
+            return;
+        }
+        snapshot = '';
+        post(false);
     }
 
     // A selection appearing is reported at once, so acting on it cannot outrun the message that
     // identifies its frame. Only clearing is debounced, since selectionchange also fires per caret move.
     document.addEventListener('selectionchange', function() {
-        if (hasSelection()) {
-            isPending = false;
-            post(true);
+        var text = selectionText();
+        if (text.trim().length > 0) {
+            cancelPendingClear();
+            publish(text);
             return;
         }
-        if (isPending) { return; }
-        isPending = true;
-        setTimeout(function() {
-            isPending = false;
-            post(hasSelection());
+        if (clearTimer !== null) { return; }
+        clearTimer = setTimeout(function() {
+            clearTimer = null;
+            publish(selectionText());
         }, 100);
     }, true);
 
     // Releases the claim when the frame navigates away or is torn down. Frames that never held a
     // selection stay silent.
     window.addEventListener('pagehide', function() {
+        cancelPendingClear();
+        snapshot = '';
         if (lastHasSelection === true) { post(false); }
+    }, true);
+
+    window.addEventListener('pageshow', function(event) {
+        if (!event.persisted) { return; }
+        cancelPendingClear();
+        lastHasSelection = null;
+        publish(selectionText());
     }, true);
 })();

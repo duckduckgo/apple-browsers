@@ -2147,6 +2147,8 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+        userScripts?.selectionFrameScript?.reset()
+
         if let url = webView.url {
             let finalURL = duckPlayerNavigationHandler.getDuckURLFor(url)
             viewModel.captureWebviewDidCommit(finalURL)
@@ -3868,6 +3870,8 @@ extension TabViewController: WKUIDelegate {
     }
 
     private func handleWebContentProcessDidTerminate(_ webView: WKWebView, reasonName: String?) {
+        userScripts?.selectionFrameScript?.reset()
+
         let isDuckAITab = webView.url?.isDuckAIURL == true
         if isDuckAITab {
             DailyPixel.fireDailyAndCount(.aiChatTabDidTerminate, error: nil, withAdditionalParameters: [:])

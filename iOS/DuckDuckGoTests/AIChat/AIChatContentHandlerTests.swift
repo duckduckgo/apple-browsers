@@ -119,14 +119,14 @@ final class AIChatContentHandlerTests: XCTestCase {
         var didConsume = false
 
         handler.setAttachedSelectionsProvider { [selection] }
-        handler.setAttachedSelectionsConsumedHandler { didConsume = true }
+        handler.setAttachedSelectionsConsumedHandler { _ in didConsume = true }
 
         // When
         handler.setup(with: mockUserScript, webView: mockWebView, displayMode: .fullTab)
 
         // Then
         XCTAssertEqual(mockUserScript.attachedSelectionsProvider?(), [selection])
-        mockUserScript.attachedSelectionsConsumedHandler?()
+        mockUserScript.attachedSelectionsConsumedHandler?([selection.id])
         XCTAssertTrue(didConsume)
     }
 
@@ -797,7 +797,7 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
     var lastSubmittedPageContextViaSubmit: AIChatPageContextData?
     var lastDisplayModeSet: AIChatDisplayMode?
     var attachedSelectionsProvider: (() -> [AIChatSelectionContextData])?
-    var attachedSelectionsConsumedHandler: (() -> Void)?
+    var attachedSelectionsConsumedHandler: (([String]) -> Void)?
 
     func setPayloadHandler(_ payloadHandler: any AIChat.AIChatConsumableDataHandling) {
         payloadHandlerSet = true
@@ -816,7 +816,7 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
         attachedSelectionsProvider = provider
     }
 
-    func setAttachedSelectionsConsumedHandler(_ handler: (() -> Void)?) {
+    func setAttachedSelectionsConsumedHandler(_ handler: (([String]) -> Void)?) {
         attachedSelectionsConsumedHandler = handler
     }
 

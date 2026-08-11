@@ -225,25 +225,28 @@ final class AIChatUserScriptSelectionDeliveryTests: XCTestCase {
         return userScript
     }
 
-    private func attach(_ userScript: AIChatUserScript, consumed: @escaping () -> Void) {
-        userScript.setAttachedSelectionsProvider { [AIChatSelectionContextBuilder.makeSelection(text: "selected", url: self.url)] }
+    @discardableResult
+    private func attach(_ userScript: AIChatUserScript, consumed: @escaping ([String]) -> Void) -> AIChatSelectionContextData {
+        let selection = AIChatSelectionContextBuilder.makeSelection(text: "selected", url: url)
+        userScript.setAttachedSelectionsProvider { [selection] }
         userScript.setAttachedSelectionsConsumedHandler(consumed)
+        return selection
     }
 
     func testSubmittingWithAttachedSelectionsConsumesThem() {
         let userScript = makeConnectedUserScript()
-        var didConsume = false
-        attach(userScript) { didConsume = true }
+        var consumedIDs: [String] = []
+        let selection = attach(userScript) { consumedIDs = $0 }
 
         userScript.submitPrompt("hello", pageContext: nil, modelId: nil)
 
-        XCTAssertTrue(didConsume)
+        XCTAssertEqual(consumedIDs, [selection.id])
     }
 
     func testMultiModalSubmitAlsoConsumesAttachedSelections() {
         let userScript = makeConnectedUserScript()
         var didConsume = false
-        attach(userScript) { didConsume = true }
+        attach(userScript) { _ in didConsume = true }
 
         userScript.submitPrompt("hello", images: nil, files: nil, modelId: nil, tools: nil, reasoningEffort: nil)
 
@@ -254,7 +257,7 @@ final class AIChatUserScriptSelectionDeliveryTests: XCTestCase {
         let userScript = makeConnectedUserScript()
         var didConsume = false
         userScript.setAttachedSelectionsProvider { [] }
-        userScript.setAttachedSelectionsConsumedHandler { didConsume = true }
+        userScript.setAttachedSelectionsConsumedHandler { _ in didConsume = true }
 
         userScript.submitPrompt("hello", pageContext: nil, modelId: nil)
 
@@ -265,7 +268,7 @@ final class AIChatUserScriptSelectionDeliveryTests: XCTestCase {
     func testSubmittingWithoutABridgeDoesNotConsume() {
         let userScript = makeTestUserScript()
         var didConsume = false
-        attach(userScript) { didConsume = true }
+        attach(userScript) { _ in didConsume = true }
 
         userScript.submitPrompt("hello", pageContext: nil, modelId: nil)
 
@@ -275,7 +278,7 @@ final class AIChatUserScriptSelectionDeliveryTests: XCTestCase {
     func testMultiModalSubmitWithoutABridgeDoesNotConsume() {
         let userScript = makeTestUserScript()
         var didConsume = false
-        attach(userScript) { didConsume = true }
+        attach(userScript) { _ in didConsume = true }
 
         userScript.submitPrompt("hello", images: nil, files: nil, modelId: nil, tools: nil, reasoningEffort: nil)
 

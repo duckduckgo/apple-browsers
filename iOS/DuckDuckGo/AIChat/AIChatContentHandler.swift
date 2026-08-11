@@ -37,7 +37,7 @@ protocol AIChatUserScriptProviding: AnyObject {
     func setOpenLinkHandler(_ openLinkHandler: ((URL) -> Void)?)
     func setPageContextProvider(_ provider: PageContextAsyncProvider?)
     func setAttachedSelectionsProvider(_ provider: (() -> [AIChatSelectionContextData])?)
-    func setAttachedSelectionsConsumedHandler(_ handler: (() -> Void)?)
+    func setAttachedSelectionsConsumedHandler(_ handler: (([String]) -> Void)?)
     func setChatStatusHandler(_ handler: (@MainActor (AIChatStatusValue) -> Void)?)
     func setContextualModePixelHandler(_ pixelHandler: AIChatContextualModePixelFiring)
     func setDisplayMode(_ displayMode: AIChatDisplayMode)
@@ -139,8 +139,8 @@ protocol AIChatContentHandling: AnyObject {
     /// Text selections sent on the prompt's `selections` key, alongside page context rather than in place of it.
     func setAttachedSelectionsProvider(_ provider: (() -> [AIChatSelectionContextData])?)
 
-    /// Called once those selections have been dispatched.
-    func setAttachedSelectionsConsumedHandler(_ handler: (() -> Void)?)
+    /// Called with the IDs of selections that have been dispatched.
+    func setAttachedSelectionsConsumedHandler(_ handler: (([String]) -> Void)?)
 
     /// Fires AI Chat telemetry: product surface telemetry, 'chat open' pixel, and sets the AI Chat feature as 'used before'
     func fireAIChatTelemetry()
@@ -186,7 +186,7 @@ final class AIChatContentHandler: AIChatContentHandling {
 
     /// Retained so they survive a `setup` that happens after the owner installed them.
     private var getAttachedSelections: (() -> [AIChatSelectionContextData])?
-    private var onAttachedSelectionsConsumed: (() -> Void)?
+    private var onAttachedSelectionsConsumed: (([String]) -> Void)?
 
     weak var delegate: AIChatContentHandlingDelegate?
 
@@ -346,7 +346,7 @@ final class AIChatContentHandler: AIChatContentHandling {
         userScript?.setAttachedSelectionsProvider(provider)
     }
 
-    func setAttachedSelectionsConsumedHandler(_ handler: (() -> Void)?) {
+    func setAttachedSelectionsConsumedHandler(_ handler: (([String]) -> Void)?) {
         onAttachedSelectionsConsumed = handler
         userScript?.setAttachedSelectionsConsumedHandler(handler)
     }

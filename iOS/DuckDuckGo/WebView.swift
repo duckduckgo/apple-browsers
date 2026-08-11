@@ -42,7 +42,7 @@ final class WebView: WKWebView {
     /// Receives the trimmed selection when the user picks Search with DuckDuckGo.
     var searchWithDuckDuckGoHandler: ((String) -> Void)?
 
-    /// The frame holding the selection, or nil to read the main frame.
+    /// The frame holding the selection.
     var selectionFrameProvider: (() -> SelectionFrame?)?
 
     // Remembers the last find-in-page query so the system find navigator can be prepopulated per tab.
@@ -156,49 +156,40 @@ final class WebView: WKWebView {
         return trimmed
     }
 
-    /// The page's current selection, trimmed, or nil when nothing usable is selected. Lets an entry
-    /// point other than the edit menu pick a selection up. Same content world as `withCurrentSelection`.
+    /// The user's selection, trimmed, or nil when nothing usable is selected. Lets an entry point other
+    /// than the edit menu pick a selection up. Same content world as `withCurrentSelection`.
     func currentSelection() async -> String? {
         await withCheckedContinuation { continuation in
             readSelection { continuation.resume(returning: $0) }
         }
     }
 
-    /// Read in the isolated content world so a page that overrides `window.getSelection` cannot substitute
-    /// text the user never selected. macOS moved its equivalent off the page world for the same reason.
+    /// Reads in the isolated content world so page-world overrides cannot replace the selection reader.
+    ///
+    /// Returns the snapshot the script took when the selection was made, not a live read: by the time an
+    /// action runs, the page has had time to swap the range or rewrite the text inside it.
     ///
     /// Deliberately the completion-handler overload: `evaluateJavaScript`'s `async` twin bridges the result
     /// back as `()` in this content world, so the selection never arrives.
-    ///
-    /// Reads from the frame holding the selection, falling back to the main frame if that fails.
     private func readSelection(_ completion: @escaping (String?) -> Void) {
-        let frame = selectionFrameProvider?()
-
-        readSelection(in: frame) { [weak self] selection in
-            // A frame that has gone away can only be known stale by trying it.
-            guard selection == nil, frame != nil, let self else {
-                completion(selection)
-                return
-            }
-            self.readSelection(in: nil, completion)
+        guard let frame = selectionFrameProvider?() else {
+            completion(nil)
+            return
         }
-    }
 
-    private func readSelection(in frame: SelectionFrame?, _ completion: @escaping (String?) -> Void) {
-        let script = "window.getSelection().toString()"
         let handler: (Result<Any, Error>) -> Void = { result in
-            guard case .success(let value) = result, let text = value as? String else {
+            guard case .success(let value) = result,
+                  let text = frame.selectedText(from: value) else {
                 completion(nil)
                 return
             }
             completion(Self.normalizedSelection(text))
         }
 
-        if let frame {
-            frame.evaluateJavaScript(script, in: self, contentWorld: .defaultClient, completionHandler: handler)
-        } else {
-            evaluateJavaScript(script, in: nil, in: .defaultClient, completionHandler: handler)
-        }
+        frame.evaluateJavaScript(SelectionFrameUserScript.readSelectionScript,
+                                 in: self,
+                                 contentWorld: .defaultClient,
+                                 completionHandler: handler)
     }
 
     private func withCurrentSelection(_ handler: @escaping (String) -> Void) {

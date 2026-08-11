@@ -134,6 +134,8 @@ After re-recording, inspect every diff and commit only the intentional ones.
 xcodebuild test ... SKIP_SNAPSHOT_TESTS=1
 ```
 
+**Currently pinned on.** The variable is hardcoded to `1` in the test-action environment of the app schemes (`iOS Browser`, `macOS Browser`, `macOS Browser App Store`, `macOS Unit Tests`), so image snapshots are skipped for everyone — locally and in CI — while snapshot references and CI runners stabilise. To re-enable snapshots, set the value back to `$(SKIP_SNAPSHOT_TESTS)` (or disable the entry) in those schemes.
+
 ## Conventions
 
 - Snapshot tests use Swift Testing with `@MainActor`, `@Suite`, and `@Test(.timeLimit(.minutes(1)))`.

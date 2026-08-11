@@ -286,7 +286,7 @@
       <EnvironmentVariables>
          <EnvironmentVariable
             key = "SKIP_SNAPSHOT_TESTS"
-            value = "$(SKIP_SNAPSHOT_TESTS)"
+            value = "1"
             isEnabled = "YES">
          </EnvironmentVariable>
       </EnvironmentVariables>

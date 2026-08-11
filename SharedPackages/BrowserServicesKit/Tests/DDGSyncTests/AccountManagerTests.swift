@@ -774,6 +774,7 @@ final class AccountManagerTests: XCTestCase {
         let api = RemoteAPIRequestCreatingMock()
         let endpoints = Endpoints(baseURL: Self.baseURL)
         let mapper = RegisteredDeviceMappingMock()
+        mapper.needsCurrentDeviceInfoRepair = true
         let accountManager = AccountManager(endpoints: endpoints,
                                             api: api,
                                             crypter: CryptingMock(),
@@ -801,10 +802,12 @@ final class AccountManagerTests: XCTestCase {
         }
         """)
 
-        let devices = try await accountManager.fetchDevicesForAccount(makeAccount(primaryKey: Data()))
+        let result = try await accountManager.fetchDevicesForAccount(makeAccount(primaryKey: Data()))
+        let devices = result.devices
 
         XCTAssertEqual(mapper.registeredDevicesCallEntryIDs, ["v2-device"])
         XCTAssertEqual(devices.map(\.id), ["v2-device"])
+        XCTAssertTrue(result.needsCurrentDeviceInfoRepair)
         XCTAssertFalse(api.createRequestCallArgs.contains { $0.url == endpoints.logoutDevice })
     }
 
@@ -832,7 +835,8 @@ final class AccountManagerTests: XCTestCase {
         }
         """)
 
-        let devices = try await accountManager.fetchDevicesForAccount(makeAccount(primaryKey: Data()))
+        let result = try await accountManager.fetchDevicesForAccount(makeAccount(primaryKey: Data()))
+        let devices = result.devices
 
         XCTAssertEqual(mapper.registeredDevicesCallEntryIDs, ["legacy-device"])
         XCTAssertEqual(devices.map(\.id), ["legacy-device"])
@@ -871,7 +875,8 @@ final class AccountManagerTests: XCTestCase {
         }
         """)
 
-        let devices = try await accountManager.fetchDevicesForAccount(makeAccount(primaryKey: Data()))
+        let result = try await accountManager.fetchDevicesForAccount(makeAccount(primaryKey: Data()))
+        let devices = result.devices
 
         XCTAssertEqual(devices.map(\.id), ["third-party-device", "native-device"])
         XCTAssertEqual(devices.map(\.name), ["Browser", "Unknown"])
@@ -910,7 +915,8 @@ final class AccountManagerTests: XCTestCase {
         }
         """)
 
-        let devices = try await accountManager.fetchDevicesForAccount(makeAccount(primaryKey: Data()))
+        let result = try await accountManager.fetchDevicesForAccount(makeAccount(primaryKey: Data()))
+        let devices = result.devices
 
         XCTAssertTrue(devices.isEmpty)
         XCTAssertTrue(api.createRequestCallArgs.contains { $0.url == endpoints.logoutDevice })
@@ -990,15 +996,20 @@ private final class DeviceInfoCodingMock: DeviceInfoCoding {
 private final class RegisteredDeviceMappingMock: RegisteredDeviceMapping {
 
     private(set) var registeredDevicesCallEntryIDs: [String] = []
+    private(set) var defaultCredentialLoginEntryIDs: [String] = []
+    var needsCurrentDeviceInfoRepair = false
 
-    func registeredDevices(from entries: [RegisteredDeviceEntry], account: SyncAccount) async -> [RegisteredDevice] {
+    func registeredDevicesWithRepairState(from entries: [RegisteredDeviceEntry],
+                                          account: SyncAccount) async -> RegisteredDeviceMappingResult {
         registeredDevicesCallEntryIDs = entries.map(\.id)
-        return entries.map { entry in
+        let devices = entries.map { entry in
             RegisteredDevice(id: entry.id,
                              name: entry.name ?? "",
                              type: entry.type ?? "",
                              credentialId: entry.credentialId)
         }
+        return RegisteredDeviceMappingResult(devices: devices,
+                                             needsCurrentDeviceInfoRepair: needsCurrentDeviceInfoRepair)
     }
 
     func registeredDevice(fromLegacyEntry entry: RegisteredDeviceEntry, account: SyncAccount) -> RegisteredDevice? {
@@ -1012,10 +1023,11 @@ private final class RegisteredDeviceMappingMock: RegisteredDeviceMapping {
                           encryptedName: String,
                           encryptedType: String?,
                           primaryKey: Data) -> RegisteredDevice? {
-        RegisteredDevice(id: id,
-                         name: encryptedName,
-                         type: encryptedType ?? "",
-                         credentialId: SyncCredentialID.defaultCredential)
+        defaultCredentialLoginEntryIDs.append(id)
+        return RegisteredDevice(id: id,
+                                name: encryptedName,
+                                type: encryptedType ?? "",
+                                credentialId: SyncCredentialID.defaultCredential)
     }
 
 }

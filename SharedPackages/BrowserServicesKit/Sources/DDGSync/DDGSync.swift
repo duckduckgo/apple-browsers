@@ -247,7 +247,7 @@ public class DDGSync: DDGSyncing {
         }
 
         do {
-            return try await dependencies.account.fetchDevicesForAccount(account)
+            try await dependencies.account.fetchDevicesForAccount(account).devices
         } catch {
             throw handleUnauthenticatedAndMap(error)
         }
@@ -321,6 +321,18 @@ public class DDGSync: DDGSyncing {
         return (refreshedKeyID: refreshedKey.kid,
                 reloadedKeyID: reloadedKey.kid,
                 keySizeInBits: SecKeyGetBlockSize(reloadedKey.publicKey) * 8)
+    }
+
+    public func fetchDevicesForDebug() async throws -> [RegisteredDeviceDebugInfo] {
+        guard let account = try dependencies.secureStore.account() else {
+            throw SyncError.accountNotFound
+        }
+
+        do {
+            return try await dependencies.account.fetchDevicesForAccount(account).debugDevices
+        } catch {
+            throw handleUnauthenticatedAndMap(error)
+        }
     }
 
     public func isDeviceInfoMigrationCompleteForDebug() throws -> Bool {

@@ -341,6 +341,10 @@ final class AIChatContextualSheetCoordinator {
         guard let floatingInputViewController,
               let presentingViewController = floatingInputViewController.parent else { return }
 
+        // Every promotion route funnels through here — typed prompts and both chip taps — so the pixel
+        // belongs here. The chip taps promote before submitting, so a caller-side check reads as false.
+        pixelHandler.fireFloatingInputPromotedToSheet()
+
         // Detached before the keyboard is touched: resigning reports a hide, which the floating input
         // would otherwise read as losing the keyboard and dismiss itself over this handover.
         self.floatingInputViewController = nil
@@ -615,7 +619,6 @@ private extension AIChatContextualSheetCoordinator {
             guard let self else { return }
             self.sessionState.beginChatForUTISubmission()
             if self.isFloatingInputPresented {
-                self.pixelHandler.fireFloatingInputPromotedToSheet()
                 self.promoteFloatingInputToSheet()
             }
             self.sheetViewController?.handleFirstUTISubmission()
@@ -883,9 +886,9 @@ extension AIChatContextualSheetCoordinator: AIChatContextualInputViewControllerD
     func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSelectQuickAction action: AIChatContextualQuickAction) {
         switch action {
         case .askAboutPage:
-            // Unreachable on this surface: the strip's own re-attach button owns the action, so the
-            // session state filters this chip out wherever that button is shown.
-            break
+            // Only offered while the strip isn't showing its own re-attach button, so this is the sole
+            // affordance when it appears rather than a duplicate of it.
+            requestManualPageContextAttach()
         case .summarize, .summarizePage:
             pixelHandler.fireQuickActionSummarizeSelected()
             promoteFloatingInputToSheet()

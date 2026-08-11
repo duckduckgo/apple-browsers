@@ -798,10 +798,11 @@ private extension AIChatContextualChatSessionState {
         }
         // No "Ask about page" for pages that can't be attached — it would no-op on tap.
         guard isCurrentPageAttachable() else { return [] }
-        // Dropped only where the attachment strip shows its own re-attach button, off the same gate
-        // that drives it, so the two can't disagree.
+        // Dropped only while the strip is actually offering its own re-attach button, which takes an
+        // explicit removal — feature availability alone would also drop it after a new chat, where the
+        // strip has cleared that offer and neither affordance would be left.
         let actions = quickActionsIgnoringReattachAffordance()
-        guard floatingInputFeature.isAvailable else { return actions }
+        guard floatingInputFeature.isAvailable, userDowngradedToPlaceholder else { return actions }
         return actions.filter { $0 != .askAboutPage }
     }
 

@@ -65,6 +65,10 @@ public final class AIChatContextChipView: UIView {
 
     private var currentState: State = .placeholder
 
+    /// Only live in the placeholder state. Left enabled in the attached state it would recognise taps on
+    /// the remove button and cancel them, since it spans the whole chip.
+    private lazy var placeholderTapRecognizer = UITapGestureRecognizer(target: self, action: #selector(chipTapped))
+
     /// Bold 14 from the design, scaled so it still honours Dynamic Type.
     private static let placeholderFont = UIFontMetrics(forTextStyle: .footnote)
         .scaledFont(for: .systemFont(ofSize: Constants.placeholderFontSize, weight: .bold))
@@ -201,7 +205,7 @@ private extension AIChatContextChipView {
         chipContentView.addSubview(removeButton)
         mainStackView.addArrangedSubview(chipContentView)
 
-        addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(chipTapped)))
+        addGestureRecognizer(placeholderTapRecognizer)
 
         setupConstraints()
         setupAccessibility()
@@ -232,6 +236,7 @@ private extension AIChatContextChipView {
             applyBorder(width: Constants.placeholderBorderWidth)
             applyLayout(hugsContent: true)
             isUserInteractionEnabled = true
+            placeholderTapRecognizer.isEnabled = true
 
         case .attached(let title, let favicon):
             isHidden = false
@@ -254,6 +259,7 @@ private extension AIChatContextChipView {
             accessibilityTraits = .none
             applyBorder(width: Constants.borderWidth)
             isUserInteractionEnabled = true
+            placeholderTapRecognizer.isEnabled = false
         }
     }
 
@@ -337,10 +343,7 @@ private extension AIChatContextChipView {
         onRemove?()
     }
 
-    /// Only the placeholder is a button. In the attached state a tap anywhere but the X means nothing,
-    /// so the gesture must not reach `onTap` — its one consumer asks for the page to be re-attached.
     @objc func chipTapped() {
-        guard case .placeholder = currentState else { return }
         onTap?()
     }
 }

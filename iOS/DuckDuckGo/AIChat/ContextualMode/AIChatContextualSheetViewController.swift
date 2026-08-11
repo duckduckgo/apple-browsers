@@ -894,10 +894,13 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
     /// Attaches context, waits for the frontend, then submits. Also used by the floating input, which
     /// promotes to this sheet first so the web view exists to receive the prompt.
     func submitSuggestion(_ suggestion: ContextualSuggestedPrompt) {
-        guard featureFlagger.isFeatureOn(.contextualSuggestedPrompts) else { return }
-        // These act on the attached selection, so they must not take the page route below: it attaches
-        // the whole page and submits the label as prompt text.
-        guard AIChatTextSelectionAction(selectionSuggestionID: suggestion.id) == nil else { return }
+        // Selection suggestions act on the attached selection, so they must not take the page route
+        // below: it attaches the whole page and submits the label as prompt text.
+        guard featureFlagger.isFeatureOn(.contextualSuggestedPrompts),
+              AIChatTextSelectionAction(selectionSuggestionID: suggestion.id) == nil else {
+            abandonAwaitedSubmittedChat()
+            return
+        }
         cancelSuggestionSubmission()
         pixelHandler.fireSuggestionSelected(suggestionId: suggestion.id, pageType: sessionState.viewState.suggestionsPageType)
         contextualInputViewController.setStartActionsDimmed(true)
@@ -915,16 +918,37 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
                 }
             }
 
-            await self.delegate?.aiChatContextualSheetViewControllerAttachContextForSuggestion(self)
-            guard !Task.isCancelled, self.canProcessSuggestionSubmission else { return }
-
-            guard let webViewController = self.webViewController else { return }
-
-            let isFrontendReady = await webViewController.waitUntilFrontendReady(timeout: Constants.suggestedPromptFrontendReadinessTimeout)
-            guard isFrontendReady else { return }
-            guard !Task.isCancelled, self.canProcessSuggestionSubmission else { return }
-            self.submitSuggestionPrompt(suggestion.prompt)
+            if await self.deliverSuggestionPrompt(suggestion) == false {
+                self.abandonAwaitedSubmittedChat()
+            }
         }
+    }
+
+    /// Attaches the context, waits for the frontend, then submits. Returns whether anything is still
+    /// going to bring this sheet a chat — a prompt that went out, or another surface that took over.
+    /// Only `false` leaves a promoted sheet with nothing coming.
+    private func deliverSuggestionPrompt(_ suggestion: ContextualSuggestedPrompt) async -> Bool {
+        await delegate?.aiChatContextualSheetViewControllerAttachContextForSuggestion(self)
+        guard !Task.isCancelled, canProcessSuggestionSubmission else { return true }
+
+        guard let webViewController else { return false }
+
+        let isFrontendReady = await webViewController.waitUntilFrontendReady(timeout: Constants.suggestedPromptFrontendReadinessTimeout)
+        guard isFrontendReady else { return false }
+        guard !Task.isCancelled, canProcessSuggestionSubmission else { return true }
+
+        submitSuggestionPrompt(suggestion.prompt)
+        return true
+    }
+
+    /// A sheet promoted for a submission that never arrived would sit on the web view with no input at
+    /// all. Falls back to being an ordinary pre-submit sheet, which the user can retype into.
+    func abandonAwaitedSubmittedChat() {
+        guard isAwaitingSubmittedChat else { return }
+        isAwaitingSubmittedChat = false
+        cancelWaitingForInitialPromptResponseState()
+        mountPersistentUTIHostIfNeeded()
+        apply(sessionState.viewState)
     }
 
     func contextualInputViewControllerDidTapVoice(_ viewController: AIChatContextualInputViewController) {

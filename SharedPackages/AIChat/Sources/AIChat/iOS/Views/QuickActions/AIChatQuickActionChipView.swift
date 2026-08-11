@@ -212,8 +212,8 @@ private extension AIChatQuickActionChipView {
     func setupUI() {
         layer.borderColor = UIColor(designSystemColor: .decorationQuaternary).cgColor
 
-        addSubview(iconView)
-        addSubview(label)
+        // The icon and label are parented by `hostContent`, which moves them between this view and the
+        // glass effect's content view.
         addSubview(highlightOverlay)
 
         setupConstraints()
@@ -246,6 +246,8 @@ private extension AIChatQuickActionChipView {
         contentConstraints.forEach { $0.isActive = false }
         host.addSubview(iconView)
         host.addSubview(label)
+        // The overlay tints the content, so it has to stay above whatever was just re-parented.
+        bringSubviewToFront(highlightOverlay)
 
         let iconLeading = iconView.leadingAnchor.constraint(equalTo: host.leadingAnchor,
                                                            constant: iconLeadingConstraint?.constant ?? Constants.iconLeadingPadding)

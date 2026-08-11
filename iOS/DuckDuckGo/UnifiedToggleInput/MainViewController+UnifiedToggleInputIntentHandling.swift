@@ -117,6 +117,7 @@ private extension MainViewController {
            coordinator.cardPosition == .bottom {
             viewCoordinator.setNavBarContainerBottomToKeyboard()
         }
+        suggestionTrayController?.deactivatePromoSurfaceExposure()
         viewCoordinator.suggestionTrayContainer.isHidden = true
         if let coordinator = unifiedToggleInputCoordinator {
             coordinator.viewController.apply(coordinator.computeRenderState().viewConfig, animated: false)
@@ -224,6 +225,7 @@ private extension MainViewController {
         let isBottom = coordinator.cardPosition.isBottom
 
         viewCoordinator.showUnifiedToggleInputOmnibar(expandedHeight: height)
+        suggestionTrayController?.deactivatePromoSurfaceExposure()
         viewCoordinator.suggestionTrayContainer.isHidden = true
         updateUnifiedInputContentVisibility(for: coordinator)
 

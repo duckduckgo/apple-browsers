@@ -90,7 +90,7 @@ extension OnboardingView {
                         Button(action: primaryAction) {
                             Text(content.primaryCTA)
                         }
-                        .buttonStyle(onboardingTheme.secondaryButtonStyle.style)
+                        .buttonStyle(onboardingTheme.primaryButtonStyle.style)
 
                         Button(action: secondaryAction) {
                             Text(content.secondaryCTA)

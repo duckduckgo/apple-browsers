@@ -48,6 +48,10 @@ on:
         required: true
       APPLE_GH_RO_PAT:
         required: true
+      BITRISE_BUILD_CACHE_AUTH_TOKEN:
+        required: true
+      BITRISE_BUILD_CACHE_WORKSPACE_ID:
+        required: true
       MATCH_PASSWORD:
         required: true
       SSH_PRIVATE_KEY_FASTLANE_MATCH:
@@ -263,6 +267,9 @@ jobs:
     - name: Setup Bitrise Build Cache
       if: runner.environment == 'self-hosted'
       uses: ./.github/actions/bitrise-build-cache
+      with:
+        token: ${{ secrets.BITRISE_BUILD_CACHE_AUTH_TOKEN }}
+        workspace-id: ${{ secrets.BITRISE_BUILD_CACHE_WORKSPACE_ID }}
 
     - name: Build for testing
       id: build-for-testing
@@ -613,6 +620,9 @@ jobs:
     - name: Setup Bitrise Build Cache
       if: runner.environment == 'self-hosted'
       uses: ./.github/actions/bitrise-build-cache
+      with:
+        token: ${{ secrets.BITRISE_BUILD_CACHE_AUTH_TOKEN }}
+        workspace-id: ${{ secrets.BITRISE_BUILD_CACHE_WORKSPACE_ID }}
 
     - name: Build the app
       run: |

@@ -1,10 +1,21 @@
 name: 'Setup Bitrise Build Cache'
 description: 'Sets up Bitrise build cache'
 
+inputs:
+  token:
+    description: 'Bitrise Build Cache API Token'
+    required: true
+  workspace-id:
+    description: 'Bitrise Workspace ID'
+    required: true
+
 runs:
   using: 'composite'
   steps:
     - id: bitrise-build-cache
       shell: bash
+      env:
+        BITRISE_BUILD_CACHE_AUTH_TOKEN: ${{ inputs.token }}
+        BITRISE_BUILD_CACHE_WORKSPACE_ID: ${{ inputs.workspace-id }}
       run: |
         ${{ github.action_path }}/setup_bitrise_build_cache.sh

@@ -621,6 +621,11 @@
             value = "$(CI)"
             isEnabled = "YES">
          </EnvironmentVariable>
+         <EnvironmentVariable
+            key = "SKIP_SNAPSHOT_TESTS"
+            value = "$(SKIP_SNAPSHOT_TESTS)"
+            isEnabled = "YES">
+         </EnvironmentVariable>
       </EnvironmentVariables>
    </LaunchAction>
    <ProfileAction

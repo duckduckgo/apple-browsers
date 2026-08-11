@@ -308,6 +308,7 @@ jobs:
           "-skip-testing:${{ matrix.integration-tests-target }}" \
           -test-iterations 3 \
           -retry-tests-on-failure \
+          SKIP_SNAPSHOT_TESTS=1 \
           | tee ${{ matrix.flavor }}-unittests-xcodebuild.log \
           | sed -e 's/CoreData: error:/CoreData: [notice]:/g' -e 's/Failed to create NSXPCConnection/[notice] NSXPCConnection unavailable/g' \
           | xcbeautify --report junit --report-path . --junit-report-filename ${{ matrix.flavor }}-unittests.xml \

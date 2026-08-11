@@ -37,7 +37,7 @@ public enum SnapshotPlatform: Equatable {
 }
 
 public enum SnapshotEnvironment {
-    public static let expectedIOSVersion = OperatingSystemVersion(majorVersion: 26, minorVersion: 5, patchVersion: 1)
+    public static let expectedIOSVersion = OperatingSystemVersion(majorVersion: 26, minorVersion: 4, patchVersion: 0)
     public static let expectedMacOSVersion = OperatingSystemVersion(majorVersion: 26, minorVersion: 6, patchVersion: 0)
     public static let expectedIOSDisplayScale = 3.0
 

@@ -171,6 +171,8 @@ final class PromoCoordinationService {
     private let modalPromptCoordinationManager: ModalPromptCoordinationManaging
     private let launchSourceManager: LaunchSourceManaging
     private let promoQueueLeaseArbiter: PromoQueueLeaseArbitrating
+    private let promoQueueCooldownPolicy: PromoQueueCooldownPolicying
+    private let dateProvider: () -> Date
     private var remoteMessageRendererRegistrations = [WeakRemoteMessageRendererRegistration]()
     private var nextRemoteMessageRegistrationOrder: UInt64 = 0
     private var remoteMessageState = RemoteMessageState.idle
@@ -301,6 +303,11 @@ final class PromoCoordinationService {
         let presentationStore = PromptCooldownKeyValueFilesStore(keyValueStore: keyValueStore, eventMapper: PromptCooldownStorePixelReporter())
         let cooldownIntervalProvider = PromptCooldownIntervalProvider(privacyConfigManager: privacyConfigManager)
         let cooldownManager = PromptCooldownManager(presentationStore: presentationStore, cooldownIntervalProvider: cooldownIntervalProvider)
+        let remoteMessagePresentationStore = PromoQueueRemoteMessageCooldownKeyValueFilesStore(keyValueStore: keyValueStore)
+        let promoQueueCooldownPolicy = PromoQueueCooldownPolicy(
+            modalPresentationStore: presentationStore,
+            remoteMessagePresentationStore: remoteMessagePresentationStore
+        )
 
         let modalPromptCoordinationManager = ModalPromptCoordinationManager(
             providers: providers,
@@ -312,7 +319,8 @@ final class PromoCoordinationService {
             launchSourceManager: launchSourceManager,
             modalPromptCoordinationManager: modalPromptCoordinationManager,
             promoCoordinationMode: promoCoordinationMode,
-            promoQueueLeaseArbiter: promoQueueLeaseArbiter
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
+            promoQueueCooldownPolicy: promoQueueCooldownPolicy
         )
     }
 
@@ -320,12 +328,16 @@ final class PromoCoordinationService {
         launchSourceManager: LaunchSourceManaging,
         modalPromptCoordinationManager: ModalPromptCoordinationManaging,
         promoCoordinationMode: PromoCoordinationMode,
-        promoQueueLeaseArbiter: PromoQueueLeaseArbitrating
+        promoQueueLeaseArbiter: PromoQueueLeaseArbitrating,
+        promoQueueCooldownPolicy: PromoQueueCooldownPolicying,
+        dateProvider: @escaping () -> Date = Date.init
     ) {
         self.launchSourceManager = launchSourceManager
         self.modalPromptCoordinationManager = modalPromptCoordinationManager
         self.promoCoordinationMode = promoCoordinationMode
         self.promoQueueLeaseArbiter = promoQueueLeaseArbiter
+        self.promoQueueCooldownPolicy = promoQueueCooldownPolicy
+        self.dateProvider = dateProvider
 
         modalPromptCoordinationManager.setCoordinatedAttemptReleaseHandler { [weak self] in
             guard self?.promoCoordinationMode == .coordinated else {
@@ -425,6 +437,12 @@ final class PromoCoordinationService {
 
         switch promoQueueLeaseArbiter.acquireModalLease() {
         case .acquired(let lease):
+            guard promoQueueCooldownPolicy.evaluateModalAdmission(now: dateProvider()) == .eligible else {
+                lease.release()
+                Logger.modalPrompt.debug("[Promo Queue] - Skipping modal prompt during the fixed RMF-to-modal cooldown.")
+                return
+            }
+
             switch modalPromptCoordinationManager.presentModalPromptIfNeeded(from: viewController, with: lease) {
             case .retained:
                 Logger.modalPrompt.debug("[Modal Prompt Coordination] - The coordinated modal attempt holds the slot.")
@@ -482,8 +500,12 @@ final class PromoCoordinationService {
         }
 
         ownedState.isCurrentPresentationAppearanceReported = true
+        let shouldRecordQueueAppearance = !ownedState.logicalSession.isQueueAppearanceConfirmed
         ownedState.logicalSession.isQueueAppearanceConfirmed = true
         remoteMessageState = .owned(ownedState)
+        if shouldRecordQueueAppearance {
+            promoQueueCooldownPolicy.recordConfirmedRemoteMessageAppearance(at: dateProvider())
+        }
         return .accepted
     }
 
@@ -608,6 +630,15 @@ final class PromoCoordinationService {
         let session = PromoQueueRemoteMessageSession(id: UUID(), messageID: messageID)
         switch promoQueueLeaseArbiter.acquireRemoteMessageLease(for: session) {
         case .acquired(let lease):
+            guard promoQueueCooldownPolicy.evaluateRemoteMessageAdmission(now: dateProvider()) == .eligible else {
+                _ = lease.release()
+                // Reconciliation may have been dirtied when the preceding modal check released a stale modal lease.
+                // A cooldown denial is checkpoint-driven, so do not reacquire in this reconciliation pass.
+                needsRemoteMessageReconciliation = false
+                Logger.modalPrompt.debug("[Promo Queue] - Deferring RMF during the fixed directional cooldown.")
+                return
+            }
+
             let logicalSession = LogicalRemoteMessageSession(identity: session)
             authorizeRemoteMessage(
                 logicalSession: logicalSession,

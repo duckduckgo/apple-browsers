@@ -61,7 +61,8 @@ final class PromoCoordinationServiceTests {
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: managerMock,
             promoCoordinationMode: .legacy,
-            promoQueueLeaseArbiter: promoQueueLeaseArbiter
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
+            promoQueueCooldownPolicy: MockPromoQueueCooldownPolicy()
         )
 
         // WHEN
@@ -80,7 +81,8 @@ final class PromoCoordinationServiceTests {
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: managerMock,
             promoCoordinationMode: .legacy,
-            promoQueueLeaseArbiter: promoQueueLeaseArbiter
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
+            promoQueueCooldownPolicy: MockPromoQueueCooldownPolicy()
         )
 
         // WHEN
@@ -103,7 +105,8 @@ final class PromoCoordinationServiceTests {
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: managerMock,
             promoCoordinationMode: .legacy,
-            promoQueueLeaseArbiter: promoQueueLeaseArbiter
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
+            promoQueueCooldownPolicy: MockPromoQueueCooldownPolicy()
         )
 
         // WHEN
@@ -122,7 +125,8 @@ final class PromoCoordinationServiceTests {
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: managerMock,
             promoCoordinationMode: .legacy,
-            promoQueueLeaseArbiter: promoQueueLeaseArbiter
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
+            promoQueueCooldownPolicy: MockPromoQueueCooldownPolicy()
         )
 
         // WHEN
@@ -143,7 +147,8 @@ final class PromoCoordinationServiceTests {
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: managerMock,
             promoCoordinationMode: .legacy,
-            promoQueueLeaseArbiter: promoQueueLeaseArbiter
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
+            promoQueueCooldownPolicy: MockPromoQueueCooldownPolicy()
         )
 
         // WHEN
@@ -164,7 +169,8 @@ final class PromoCoordinationServiceTests {
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: managerMock,
             promoCoordinationMode: .legacy,
-            promoQueueLeaseArbiter: promoQueueLeaseArbiter
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
+            promoQueueCooldownPolicy: MockPromoQueueCooldownPolicy()
         )
 
         // WHEN
@@ -183,7 +189,8 @@ final class PromoCoordinationServiceTests {
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: managerMock,
             promoCoordinationMode: .legacy,
-            promoQueueLeaseArbiter: promoQueueLeaseArbiter
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
+            promoQueueCooldownPolicy: MockPromoQueueCooldownPolicy()
         )
 
         // WHEN

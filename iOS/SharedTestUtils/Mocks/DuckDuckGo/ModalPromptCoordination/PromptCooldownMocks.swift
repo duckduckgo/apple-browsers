@@ -44,6 +44,43 @@ final class MockPromptCooldownManager: PromptCooldownManaging {
     }
 }
 
+@MainActor
+final class MockPromoQueueCooldownPolicy: PromoQueueCooldownPolicying {
+    var remoteMessageAdmissionDecision: PromoQueueCooldownDecision = .eligible
+    var modalAdmissionDecision: PromoQueueCooldownDecision = .eligible
+    var remoteMessageAdmissionDecisionProvider: ((Date) -> PromoQueueCooldownDecision)?
+    var modalAdmissionDecisionProvider: ((Date) -> PromoQueueCooldownDecision)?
+    var snapshotToReturn: PromoQueueCooldownSnapshot = .empty
+    var onEvaluateRemoteMessageAdmission: ((Date) -> Void)?
+    var onEvaluateModalAdmission: ((Date) -> Void)?
+
+    private(set) var remoteMessageAdmissionDates = [Date]()
+    private(set) var modalAdmissionDates = [Date]()
+    private(set) var confirmedRemoteMessageAppearanceDates = [Date]()
+    private(set) var snapshotDates = [Date]()
+
+    func evaluateRemoteMessageAdmission(now: Date) -> PromoQueueCooldownDecision {
+        remoteMessageAdmissionDates.append(now)
+        onEvaluateRemoteMessageAdmission?(now)
+        return remoteMessageAdmissionDecisionProvider?(now) ?? remoteMessageAdmissionDecision
+    }
+
+    func evaluateModalAdmission(now: Date) -> PromoQueueCooldownDecision {
+        modalAdmissionDates.append(now)
+        onEvaluateModalAdmission?(now)
+        return modalAdmissionDecisionProvider?(now) ?? modalAdmissionDecision
+    }
+
+    func recordConfirmedRemoteMessageAppearance(at date: Date) {
+        confirmedRemoteMessageAppearanceDates.append(date)
+    }
+
+    func snapshot(now: Date) -> PromoQueueCooldownSnapshot {
+        snapshotDates.append(now)
+        return snapshotToReturn
+    }
+}
+
 extension PromptCooldownInfo {
     static let inCoolDown: PromptCooldownInfo = .init(
         isInCooldownPeriod: true,

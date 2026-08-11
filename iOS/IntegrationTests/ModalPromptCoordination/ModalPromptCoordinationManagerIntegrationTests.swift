@@ -33,6 +33,7 @@ final class ModalPromptCoordinationManagerIntegrationTests {
     private let cooldownStore: PromptCooldownKeyValueFilesStore
     private let cooldownIntervalProvider: MockPromptCooldownIntervalProvider
     private let cooldownManager: PromptCooldownManager
+    private let promoQueueCooldownPolicy: PromoQueueCooldownPolicy
     private let schedulerMock: ImmediateScheduler
     private let presenterMock: MockModalPromptPresenter
     private let promoQueueLeaseArbiter: PromoQueueLeaseArbiter
@@ -46,11 +47,16 @@ final class ModalPromptCoordinationManagerIntegrationTests {
             keyValueStore: keyValueStore,
             eventMapper: .init(mapping: { _, _, _, _ in })
         )
+        let remoteMessageCooldownStore = PromoQueueRemoteMessageCooldownKeyValueFilesStore(keyValueStore: keyValueStore)
         cooldownIntervalProvider = MockPromptCooldownIntervalProvider() // Cooldown Interval 24h
         cooldownManager = PromptCooldownManager(
             presentationStore: cooldownStore,
             cooldownIntervalProvider: cooldownIntervalProvider,
             dateProvider: timeTraveller.getDate
+        )
+        promoQueueCooldownPolicy = PromoQueueCooldownPolicy(
+            modalPresentationStore: cooldownStore,
+            remoteMessagePresentationStore: remoteMessageCooldownStore
         )
         schedulerMock = ImmediateScheduler()
         presenterMock = MockModalPromptPresenter()
@@ -412,7 +418,9 @@ final class ModalPromptCoordinationManagerIntegrationTests {
             launchSourceManager: launchSourceManager,
             modalPromptCoordinationManager: manager,
             promoCoordinationMode: .coordinated,
-            promoQueueLeaseArbiter: promoQueueLeaseArbiter
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
+            promoQueueCooldownPolicy: promoQueueCooldownPolicy,
+            dateProvider: timeTraveller.getDate
         )
 
         service.applicationDidBecomeActive()
@@ -517,7 +525,9 @@ final class ModalPromptCoordinationManagerIntegrationTests {
             launchSourceManager: MockLaunchSourceManager(),
             modalPromptCoordinationManager: manager,
             promoCoordinationMode: .coordinated,
-            promoQueueLeaseArbiter: promoQueueLeaseArbiter
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
+            promoQueueCooldownPolicy: promoQueueCooldownPolicy,
+            dateProvider: timeTraveller.getDate
         )
         service.applicationDidBecomeActive()
         service.presentModalPromptIfNeeded(
@@ -589,13 +599,16 @@ final class ModalPromptCoordinationManagerIntegrationTests {
             launchSourceManager: MockLaunchSourceManager(),
             modalPromptCoordinationManager: manager,
             promoCoordinationMode: .coordinated,
-            promoQueueLeaseArbiter: promoQueueLeaseArbiter
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
+            promoQueueCooldownPolicy: promoQueueCooldownPolicy,
+            dateProvider: timeTraveller.getDate
         )
         service.applicationDidBecomeActive()
         service.presentModalPromptIfNeeded(
             from: presenterMock,
             readinessToken: service.captureForegroundReadinessToken()
         )
+        promoQueueCooldownPolicy.recordConfirmedRemoteMessageAppearance(at: timeTraveller.getDate())
         let firstSurfaceID = UUID()
         let secondSurfaceID = UUID()
         let messageID = "shared-message"
@@ -624,10 +637,22 @@ final class ModalPromptCoordinationManagerIntegrationTests {
         firstModel.setSurfaceLifecycleReady(true)
         secondModel.setSurfaceLifecycleReady(true)
 
+        #expect(coordinatedRemoteMessageRenderSession(in: firstModel) == nil)
+        #expect(firstModel.homeMessageViewModels.isEmpty)
+        #expect(firstFixture.configuration.appearanceCallCount == 0)
+        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == nil)
+
+        timeTraveller.advanceBy(.minutes(10))
+
+        #expect(coordinatedRemoteMessageRenderSession(in: firstModel) == nil)
+        #expect(firstFixture.configuration.appearanceCallCount == 0)
+
+        firstModel.refresh()
+
         let firstOwnedSnapshot = service.remoteMessageCoordinationSnapshot
         guard let firstSessionID = firstOwnedSnapshot.sessionID,
               let firstPresentationID = firstOwnedSnapshot.presentationID else {
-            Issue.record("Expected the first real NTP model to own a remote-message presentation")
+            Issue.record("Expected the first real NTP model to own a remote-message presentation after cooldown")
             return
         }
         let logicalSession = PromoQueueRemoteMessageSession(id: firstSessionID, messageID: messageID)
@@ -650,6 +675,7 @@ final class ModalPromptCoordinationManagerIntegrationTests {
 
         firstRenderSession.viewModel.onDidAppear()
 
+        let firstConfirmationDate = timeTraveller.getDate()
         let firstConfirmedSnapshot = service.remoteMessageCoordinationSnapshot
         #expect(firstFixture.configuration.appearanceCallCount == 1)
         #expect(secondFixture.configuration.appearanceCallCount == 0)
@@ -663,6 +689,16 @@ final class ModalPromptCoordinationManagerIntegrationTests {
         #expect(firstFixture.configuration.appearanceCallCount == 1)
         #expect(secondFixture.configuration.appearanceCallCount == 0)
         #expect(service.remoteMessageCoordinationSnapshot.isQueueAppearanceConfirmed)
+        #expect(
+            promoQueueCooldownPolicy.snapshot(now: firstConfirmationDate).lastConfirmedRemoteMessageAppearance ==
+                firstConfirmationDate
+        )
+
+        timeTraveller.advanceBy(.minutes(1))
+        #expect(
+            promoQueueCooldownPolicy.evaluateRemoteMessageAdmission(now: timeTraveller.getDate()) ==
+                .blocked(until: firstConfirmationDate.addingTimeInterval(.minutes(10)))
+        )
 
         service.setSelectedRemoteMessageRendererID(secondSurfaceID)
 
@@ -717,6 +753,10 @@ final class ModalPromptCoordinationManagerIntegrationTests {
         #expect(secondFixture.configuration.appearanceCallCount == 1)
         #expect(service.remoteMessageCoordinationSnapshot.sessionID == firstSessionID)
         #expect(service.remoteMessageCoordinationSnapshot.isQueueAppearanceConfirmed)
+        #expect(
+            promoQueueCooldownPolicy.snapshot(now: timeTraveller.getDate()).lastConfirmedRemoteMessageAppearance ==
+                firstConfirmationDate
+        )
     }
 
     @available(iOS 16, *)
@@ -732,7 +772,9 @@ final class ModalPromptCoordinationManagerIntegrationTests {
             launchSourceManager: MockLaunchSourceManager(),
             modalPromptCoordinationManager: manager,
             promoCoordinationMode: .coordinated,
-            promoQueueLeaseArbiter: promoQueueLeaseArbiter
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
+            promoQueueCooldownPolicy: promoQueueCooldownPolicy,
+            dateProvider: timeTraveller.getDate
         )
         service.applicationDidBecomeActive()
         service.presentModalPromptIfNeeded(

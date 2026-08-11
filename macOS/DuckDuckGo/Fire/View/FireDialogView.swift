@@ -523,8 +523,8 @@ struct FireDialogView: ModalView {
 
     private var sitesOverlayList: some View {
         ScrollView {
-            Spacer(minLength: 11)
             VStack(alignment: .leading, spacing: 0) {
+                Spacer(minLength: 11)
                 ForEach(viewModel.selectable, id: \.domain) { item in
                     sitesOverlayRow(for: item)
                 }
@@ -641,8 +641,8 @@ struct FireDialogView: ModalView {
 
     private var chatsOverlayList: some View {
         ScrollView {
-            Spacer(minLength: 11)
             VStack(alignment: .leading, spacing: 0) {
+                Spacer(minLength: 11)
                 ForEach(viewModel.chats, id: \.chatId) { chat in
                     HStack(spacing: 12) {
                         Image(nsImage: DesignSystemImages.Glyphs.Size16.aiChat)

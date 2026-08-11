@@ -156,7 +156,6 @@ final class SettingsViewModel: ObservableObject {
 
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     let keyValueStore: ThrowingKeyValueStoring
-    /// App-scoped, so the onboarding setup card is not reset by this view model being rebuilt per presentation.
     let subscriptionOnboardingSession: SubscriptionOnboardingSessionStating
     let contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>
     private let systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging

@@ -145,7 +145,7 @@ final class SubscriptionOnboardingProgressTests: XCTestCase {
 
         XCTAssertTrue(progress.shouldShowSetupCard(now: Date(), session: session))
         XCTAssertTrue(session.didCompleteDuringThisSession)
-        // Asking again within the same session must not hide it.
+        // Asked again within the same session, so it must still show.
         XCTAssertTrue(progress.shouldShowSetupCard(now: Date(), session: session))
     }
 

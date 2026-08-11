@@ -19,6 +19,7 @@
 
 import UIKit
 
+/// Hands the user off from the subscription onboarding flow into a Duck.ai chat.
 @MainActor
 struct SubscriptionOnboardingDuckAIChatLauncher {
 

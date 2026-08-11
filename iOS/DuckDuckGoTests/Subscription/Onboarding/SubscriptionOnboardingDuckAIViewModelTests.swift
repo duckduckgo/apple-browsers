@@ -70,7 +70,6 @@ final class SubscriptionOnboardingDuckAIViewModelTests: XCTestCase {
     }
 
     func testWhenOnAppearThenSelectsMostPremiumAvailableModel() async {
-        // Defaults to most premium available model.
         let provider = MockAIModelProvider(models: [model("b", tier: ["free"]), model("a", tier: ["plus"])])
         let (viewModel, _) = makeViewModel(provider: provider)
 
@@ -213,7 +212,6 @@ final class SubscriptionOnboardingDuckAIViewModelTests: XCTestCase {
         viewModel.handOffToChat()
 
         XCTAssertEqual(spy.requestedChatModelIDs, ["a"])
-        // Requesting the chat does not complete the section.
         XCTAssertEqual(spy.completeCount, 0)
     }
 

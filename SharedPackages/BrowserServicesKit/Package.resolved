@@ -1,13 +1,13 @@
 {
-  "originHash" : "4d0f4104cc73557715f2813314fd42d65646df5b63167834655dd7645dd5e7ae",
+  "originHash" : "b77fb06079864ff0e3d30fdc82199531979c9ab2df20887100c40405b1d152e7",
   "pins" : [
     {
       "identity" : "content-scope-scripts",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
-        "revision" : "c2c1e53de6b5ea8c5515475c3d4cd8fd7a834fb7",
-        "version" : "16.2.0"
+        "branch" : "pr-releases/lantean/video-autoplay-telemetry",
+        "revision" : "02f59f3f75cec08fe6ce411874683b06a5fc1c54"
       }
     },
     {

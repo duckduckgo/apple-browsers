@@ -306,4 +306,30 @@ final class BookmarkStoreMock: BookmarkStore, CustomDebugStringConvertible {
     }
 }
 
+@MainActor
+enum ReorderBookmarkManagerTestFactory {
+    static func makeManager(
+        sortMode: BookmarksSortMode,
+        bookmarks: [BaseBookmarkEntity] = []
+    ) -> (manager: LocalBookmarkManager, store: BookmarkStoreMock) {
+        let bookmarkStore = BookmarkStoreMock(bookmarks: bookmarks)
+        bookmarkStore.completesMoveCompletions = true
+        let bookmarkManager = LocalBookmarkManager(
+            bookmarkStore: bookmarkStore,
+            sortRepository: SortRepository(storedSortMode: sortMode),
+            appearancePreferences: .mock,
+            pixelFiring: nil)
+        bookmarkManager.loadBookmarks()
+        return (bookmarkManager, bookmarkStore)
+    }
+
+    private final class SortRepository: SortBookmarksRepository {
+        var storedSortMode: BookmarksSortMode
+
+        init(storedSortMode: BookmarksSortMode) {
+            self.storedSortMode = storedSortMode
+        }
+    }
+}
+
 #endif

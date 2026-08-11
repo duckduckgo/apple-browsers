@@ -77,7 +77,7 @@ final class BookmarksBarMenuFactoryTests: XCTestCase {
         // GIVEN
         let zulu = Bookmark(id: "zulu", url: "https://zulu.example", title: "Zulu", isFavorite: false)
         let alpha = BookmarkFolder(id: "alpha", title: "Alpha")
-        let (bookmarkManager, bookmarkStore) = makeReorderManager(sortMode: .nameDescending)
+        let (bookmarkManager, bookmarkStore) = ReorderBookmarkManagerTestFactory.makeManager(sortMode: .nameDescending)
 
         // WHEN
         bookmarkManager.reorderByName(
@@ -97,7 +97,7 @@ final class BookmarksBarMenuFactoryTests: XCTestCase {
         // GIVEN
         let zulu = Bookmark(id: "zulu", url: "https://zulu.example", title: "Zulu", isFavorite: false)
         let alpha = BookmarkFolder(id: "alpha", title: "Alpha")
-        let (bookmarkManager, bookmarkStore) = makeReorderManager(sortMode: .nameDescending)
+        let (bookmarkManager, bookmarkStore) = ReorderBookmarkManagerTestFactory.makeManager(sortMode: .nameDescending)
         let undoManager = UndoManager()
 
         // WHEN
@@ -137,7 +137,7 @@ final class BookmarksBarMenuFactoryTests: XCTestCase {
         // GIVEN
         let zulu = Bookmark(id: "zulu", url: "https://zulu.example", title: "Zulu", isFavorite: false)
         let alpha = BookmarkFolder(id: "alpha", title: "Alpha")
-        let (bookmarkManager, bookmarkStore) = makeReorderManager(sortMode: .nameDescending)
+        let (bookmarkManager, bookmarkStore) = ReorderBookmarkManagerTestFactory.makeManager(sortMode: .nameDescending)
         bookmarkStore.defersMoveCompletions = true
         let undoManager = UndoManager()
 
@@ -174,7 +174,7 @@ final class BookmarksBarMenuFactoryTests: XCTestCase {
         // GIVEN
         let zulu = Bookmark(id: "zulu", url: "https://zulu.example", title: "Zulu", isFavorite: false)
         let alpha = BookmarkFolder(id: "alpha", title: "Alpha")
-        let (bookmarkManager, bookmarkStore) = makeReorderManager(sortMode: .nameDescending)
+        let (bookmarkManager, bookmarkStore) = ReorderBookmarkManagerTestFactory.makeManager(sortMode: .nameDescending)
         bookmarkStore.defersMoveCompletions = true
         let undoManager = UndoManager()
 
@@ -208,7 +208,7 @@ final class BookmarksBarMenuFactoryTests: XCTestCase {
         // GIVEN
         let zulu = Bookmark(id: "zulu", url: "https://zulu.example", title: "Zulu", isFavorite: false)
         let alpha = BookmarkFolder(id: "alpha", title: "Alpha")
-        let (bookmarkManager, bookmarkStore) = makeReorderManager(sortMode: .nameDescending)
+        let (bookmarkManager, bookmarkStore) = ReorderBookmarkManagerTestFactory.makeManager(sortMode: .nameDescending)
         bookmarkStore.defersMoveCompletions = true
 
         // WHEN
@@ -225,7 +225,7 @@ final class BookmarksBarMenuFactoryTests: XCTestCase {
         // GIVEN
         let zulu = Bookmark(id: "zulu", url: "https://zulu.example", title: "Zulu", isFavorite: false)
         let alpha = BookmarkFolder(id: "alpha", title: "Alpha")
-        let (bookmarkManager, bookmarkStore) = makeReorderManager(sortMode: .nameDescending)
+        let (bookmarkManager, bookmarkStore) = ReorderBookmarkManagerTestFactory.makeManager(sortMode: .nameDescending)
         let undoManager = UndoManager()
         bookmarkManager.reorderByName([zulu, alpha], withinParentFolder: .root, undoManager: undoManager)
 
@@ -245,7 +245,7 @@ final class BookmarksBarMenuFactoryTests: XCTestCase {
         // GIVEN
         let zulu = Bookmark(id: "zulu", url: "https://zulu.example", title: "Zulu", isFavorite: false)
         let alpha = BookmarkFolder(id: "alpha", title: "Alpha")
-        let (bookmarkManager, bookmarkStore) = makeReorderManager(sortMode: .nameDescending)
+        let (bookmarkManager, bookmarkStore) = ReorderBookmarkManagerTestFactory.makeManager(sortMode: .nameDescending)
         bookmarkStore.defersMoveCompletions = true
         bookmarkStore.moveObjectsError = NSError(domain: "BookmarksBarMenuFactoryTests", code: 1)
         let undoManager = UndoManager()
@@ -281,7 +281,7 @@ final class BookmarksBarMenuFactoryTests: XCTestCase {
         // GIVEN
         let alpha = BookmarkFolder(id: "alpha", title: "Alpha")
         let zulu = Bookmark(id: "zulu", url: "https://zulu.example", title: "Zulu", isFavorite: false)
-        let (bookmarkManager, bookmarkStore) = makeReorderManager(sortMode: .nameDescending)
+        let (bookmarkManager, bookmarkStore) = ReorderBookmarkManagerTestFactory.makeManager(sortMode: .nameDescending)
         let undoManager = UndoManager()
 
         // WHEN
@@ -311,7 +311,7 @@ final class BookmarksBarMenuFactoryTests: XCTestCase {
         // GIVEN
         let alpha = BookmarkFolder(id: "alpha", title: "Alpha")
         let zulu = Bookmark(id: "zulu", url: "https://zulu.example", title: "Zulu", isFavorite: false)
-        let (bookmarkManager, bookmarkStore) = makeReorderManager(sortMode: .manual)
+        let (bookmarkManager, bookmarkStore) = ReorderBookmarkManagerTestFactory.makeManager(sortMode: .manual)
         let undoManager = UndoManager()
 
         // WHEN
@@ -323,11 +323,61 @@ final class BookmarksBarMenuFactoryTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenDeleteFollowsReorderThenDeleteIsTheNextUndoAction() {
+        // GIVEN
+        let zulu = Bookmark(id: "zulu", url: "https://zulu.example", title: "Zulu", isFavorite: false)
+        let alpha = BookmarkFolder(id: "alpha", title: "Alpha")
+        let (bookmarkManager, _) = ReorderBookmarkManagerTestFactory.makeManager(
+            sortMode: .nameDescending,
+            bookmarks: [zulu, alpha])
+        let undoManager = UndoManager()
+        undoManager.groupsByEvent = false
+
+        // WHEN
+        undoManager.beginUndoGrouping()
+        bookmarkManager.reorderByName([zulu, alpha], withinParentFolder: .root, undoManager: undoManager)
+        undoManager.endUndoGrouping()
+        undoManager.beginUndoGrouping()
+        bookmarkManager.remove(bookmark: zulu, undoManager: undoManager)
+        undoManager.endUndoGrouping()
+
+        // THEN
+        XCTAssertEqual(undoManager.undoActionName, UserText.deleteBookmark)
+
+        // WHEN
+        undoManager.undo()
+
+        // THEN
+        XCTAssertEqual(undoManager.undoActionName, UserText.bookmarksUndoActionReorderByName)
+    }
+
+    @MainActor
+    func testWhenActionsForBookmarkManagerAreRemovedThenReorderUndoIsCleared() {
+        // GIVEN
+        let zulu = Bookmark(id: "zulu", url: "https://zulu.example", title: "Zulu", isFavorite: false)
+        let alpha = BookmarkFolder(id: "alpha", title: "Alpha")
+        let (bookmarkManager, _) = ReorderBookmarkManagerTestFactory.makeManager(sortMode: .nameDescending)
+        let undoManager = UndoManager()
+        undoManager.groupsByEvent = false
+        undoManager.beginUndoGrouping()
+        bookmarkManager.reorderByName([zulu, alpha], withinParentFolder: .root, undoManager: undoManager)
+        undoManager.endUndoGrouping()
+        XCTAssertTrue(undoManager.canUndo)
+
+        // WHEN
+        undoManager.removeAllActions(withTarget: bookmarkManager)
+
+        // THEN
+        XCTAssertFalse(undoManager.canUndo)
+        XCTAssertFalse(undoManager.canRedo)
+    }
+
+    @MainActor
     func testWhenUndoManagerOwnerIsReleasedThenReorderHandlerDoesNotRetainUndoManager() {
         // GIVEN
         let zulu = Bookmark(id: "zulu", url: "https://zulu.example", title: "Zulu", isFavorite: false)
         let alpha = BookmarkFolder(id: "alpha", title: "Alpha")
-        let (bookmarkManager, _) = makeReorderManager(sortMode: .nameDescending)
+        let (bookmarkManager, _) = ReorderBookmarkManagerTestFactory.makeManager(sortMode: .nameDescending)
         weak var weakUndoManager: UndoManager?
 
         // WHEN
@@ -356,25 +406,6 @@ final class BookmarksBarMenuFactoryTests: XCTestCase {
         XCTAssertEqual(menu.items.count, 1)
     }
 
-    @MainActor
-    private func makeReorderManager(sortMode: BookmarksSortMode) -> (LocalBookmarkManager, BookmarkStoreMock) {
-        let bookmarkStore = BookmarkStoreMock()
-        bookmarkStore.completesMoveCompletions = true
-        let bookmarkManager = LocalBookmarkManager(
-            bookmarkStore: bookmarkStore,
-            sortRepository: ReorderSortRepository(storedSortMode: sortMode),
-            appearancePreferences: .mock,
-            pixelFiring: nil)
-        return (bookmarkManager, bookmarkStore)
-    }
-}
-
-private final class ReorderSortRepository: SortBookmarksRepository {
-    var storedSortMode: BookmarksSortMode
-
-    init(storedSortMode: BookmarksSortMode) {
-        self.storedSortMode = storedSortMode
-    }
 }
 
 private class BookmarksBarTargetMock: NSObject {

@@ -507,7 +507,7 @@ final class LocalBookmarkManager: BookmarkManager {
         if let undoManager {
             registerReorderUndo(
                 restoring: inverse,
-                from: state,
+                replacing: state,
                 withinParentFolder: parentFolder,
                 undoManager: undoManager,
                 context: context
@@ -533,16 +533,16 @@ final class LocalBookmarkManager: BookmarkManager {
 
     @MainActor
     private func registerReorderUndo(
-        restoring state: BookmarkReorder.State,
-        from inverse: BookmarkReorder.State,
+        restoring target: BookmarkReorder.State,
+        replacing current: BookmarkReorder.State,
         withinParentFolder parentFolder: ParentFolderType,
         undoManager: UndoManager,
         context: BookmarkReorder.OperationContext
     ) {
         undoManager.registerUndo(withTarget: self) { @MainActor [weak undoManager] bookmarkManager in
             bookmarkManager.applyReorderState(
-                state,
-                inverse: inverse,
+                target,
+                inverse: current,
                 withinParentFolder: parentFolder,
                 undoManager: undoManager,
                 context: context)

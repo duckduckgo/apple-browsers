@@ -35,7 +35,7 @@ protocol BookmarksBarMenuViewControllerDelegate: AnyObject {
 
 final class BookmarksBarMenuViewController: NSViewController {
     override var undoManager: UndoManager? {
-        var hostWindow = view.window
+        var hostWindow = isViewLoaded ? view.window : nil
         while let parentWindow = hostWindow?.parent {
             hostWindow = parentWindow
         }

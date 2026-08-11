@@ -163,7 +163,7 @@ final class ContextualMenuTests: XCTestCase {
         let bravo = Bookmark(id: "bravo", url: "https://bravo.example", title: "Bravo", isFavorite: false)
         let folder = BookmarkFolder(id: "folder", title: "Folder", children: [charlie, alpha, delta, bravo])
         let undoManager = UndoManager()
-        let (bookmarkManager, bookmarkStore) = makeReorderManager(sortMode: .nameDescending)
+        let (bookmarkManager, bookmarkStore) = ReorderBookmarkManagerTestFactory.makeManager(sortMode: .nameDescending)
         let menu = BookmarksContextMenu.folderMenu(
             with: folder,
             isReorderByNameEnabled: true,
@@ -199,7 +199,7 @@ final class ContextualMenuTests: XCTestCase {
         for children in testChildren {
             // GIVEN
             let folder = BookmarkFolder(id: "folder", title: "Folder", children: children)
-            let (bookmarkManager, bookmarkStore) = makeReorderManager(sortMode: .nameDescending)
+            let (bookmarkManager, bookmarkStore) = ReorderBookmarkManagerTestFactory.makeManager(sortMode: .nameDescending)
             let menu = BookmarksContextMenu.folderMenu(
                 with: folder,
                 isReorderByNameEnabled: true,
@@ -221,7 +221,7 @@ final class ContextualMenuTests: XCTestCase {
         let zulu = Bookmark(id: "zulu", url: "https://zulu.example", title: "Zulu", isFavorite: false)
         let alpha = Bookmark(id: "alpha", url: "https://alpha.example", title: "Alpha", isFavorite: false)
         let folder = BookmarkFolder(id: "folder", title: "Folder", children: [zulu, alpha])
-        let (bookmarkManager, bookmarkStore) = makeReorderManager(sortMode: .nameDescending)
+        let (bookmarkManager, bookmarkStore) = ReorderBookmarkManagerTestFactory.makeManager(sortMode: .nameDescending)
         bookmarkStore.moveObjectsError = NSError(domain: "ContextualMenuTests", code: 1)
         let menu = BookmarksContextMenu.folderMenu(
             with: folder,
@@ -990,7 +990,7 @@ final class ContextualMenuTests: XCTestCase {
         let bravo = Bookmark(id: "bravo", url: "https://bravo.example", title: "Bravo", isFavorite: false)
         let undoManager = UndoManager()
         let entities: [BaseBookmarkEntity] = [charlie, alpha, delta, bravo]
-        let (bookmarkManager, bookmarkStore) = makeReorderManager(sortMode: .nameDescending, bookmarks: entities)
+        let (bookmarkManager, bookmarkStore) = ReorderBookmarkManagerTestFactory.makeManager(sortMode: .nameDescending, bookmarks: entities)
         let menu = BookmarksContextMenu.rootMenu(
             topLevelEntities: entities,
             isReorderByNameEnabled: true,
@@ -1018,7 +1018,7 @@ final class ContextualMenuTests: XCTestCase {
         let zulu = Bookmark(id: "zulu", url: "https://zulu.example", title: "Zulu", isFavorite: false)
         let alpha = Bookmark(id: "alpha", url: "https://alpha.example", title: "Alpha", isFavorite: false)
         let entities: [BaseBookmarkEntity] = [zulu, alpha]
-        let (bookmarkManager, bookmarkStore) = makeReorderManager(sortMode: .nameDescending, bookmarks: entities)
+        let (bookmarkManager, bookmarkStore) = ReorderBookmarkManagerTestFactory.makeManager(sortMode: .nameDescending, bookmarks: entities)
         bookmarkStore.moveObjectsError = NSError(domain: "ContextualMenuTests", code: 1)
         let menu = BookmarksContextMenu.rootMenu(
             topLevelEntities: entities,
@@ -1130,22 +1130,6 @@ final class ContextualMenuTests: XCTestCase {
 }
 
 private extension ContextualMenuTests {
-
-    @MainActor
-    func makeReorderManager(
-        sortMode: BookmarksSortMode,
-        bookmarks: [BaseBookmarkEntity] = []
-    ) -> (LocalBookmarkManager, BookmarkStoreMock) {
-        let bookmarkStore = BookmarkStoreMock(bookmarks: bookmarks)
-        bookmarkStore.completesMoveCompletions = true
-        let bookmarkManager = LocalBookmarkManager(
-            bookmarkStore: bookmarkStore,
-            sortRepository: ContextMenuSortRepository(storedSortMode: sortMode),
-            appearancePreferences: .mock,
-            pixelFiring: nil)
-        bookmarkManager.loadBookmarks()
-        return (bookmarkManager, bookmarkStore)
-    }
 
     /// Installs a `MainWindowController` into the menu‘s `WindowControllersManagerMock`.
     ///
@@ -1356,14 +1340,6 @@ extension BookmarksContextMenu {
         menu.update()
 
         return menu
-    }
-}
-
-private final class ContextMenuSortRepository: SortBookmarksRepository {
-    var storedSortMode: BookmarksSortMode
-
-    init(storedSortMode: BookmarksSortMode) {
-        self.storedSortMode = storedSortMode
     }
 }
 

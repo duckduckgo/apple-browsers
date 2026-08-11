@@ -59,7 +59,7 @@ struct SyncSetupViewV2<ViewModel>: View where ViewModel: ManagementViewModel {
                 SyncUIViewsV2.TextDetailSecondary(text: UserText.beginSyncDescriptionV2)
             }
             .padding(.bottom, 20)
-            
+
             Button {
                 Task {
                     await model.syncWithAnotherDevicePressed()
@@ -99,6 +99,7 @@ struct SyncSetupViewV2<ViewModel>: View where ViewModel: ManagementViewModel {
             }
             .labelsHidden()
             .toggleStyle(.switch)
+            .accessibilityLabel(Text(UserText.syncThisDeviceTitleV2))
             .disabled(!model.isAccountCreationAvailable)
         }
         .padding(.horizontal, 16)

@@ -20,6 +20,7 @@
 import AIChat
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import DuckUI
 import SwiftUI
 import UIKit
 
@@ -134,21 +135,21 @@ struct UnifiedToggleInputSubscriptionUpsellView: View {
                     Text(verbatim: "Subscribe")
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(SubscriptionUpsellButtonStyle(appearance: .primary))
+                .buttonStyle(PrimaryButtonStyle())
                 .accessibilityIdentifier("SubscriptionUpsellSubscribeButton")
 
                 Button(action: onHaveSubscription) {
                     Text(verbatim: "I Have a Subscription")
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(SubscriptionUpsellButtonStyle(appearance: .secondary))
+                .buttonStyle(SecondaryFillButtonStyle())
                 .accessibilityIdentifier("SubscriptionUpsellHaveSubscriptionButton")
 
                 Button(action: onDismiss) {
                     Text(verbatim: "Not Now")
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(SubscriptionUpsellButtonStyle(appearance: .cancel))
+                .buttonStyle(SecondaryFillButtonStyle())
                 .accessibilityIdentifier("SubscriptionUpsellNotNowButton")
             }
         }
@@ -170,52 +171,5 @@ private extension UnifiedToggleInputSubscriptionUpsellView {
         static let textTopPadding: CGFloat = 8
         static let textBottomPadding: CGFloat = 24
         static let imageSize: CGFloat = 72
-    }
-}
-
-private struct SubscriptionUpsellButtonStyle: ButtonStyle {
-    enum Appearance {
-        case primary
-        case secondary
-        case cancel
-    }
-
-    let appearance: Appearance
-
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.body.weight(.medium))
-            .foregroundStyle(foregroundColor)
-            .frame(maxWidth: .infinity)
-            .frame(height: Metrics.height)
-            .background(backgroundColor(isPressed: configuration.isPressed))
-            .clipShape(Capsule())
-            .contentShape(Capsule())
-    }
-
-    private var foregroundColor: Color {
-        switch appearance {
-        case .primary:
-            return Color(designSystemColor: .accentContentPrimary)
-        case .secondary, .cancel:
-            return Color(designSystemColor: .textPrimary)
-        }
-    }
-
-    private func backgroundColor(isPressed: Bool) -> Color {
-        switch appearance {
-        case .primary:
-            return Color(designSystemColor: isPressed ? .accentTertiary : .accentPrimary)
-        case .secondary:
-            return Color(designSystemColor: isPressed ? .controlsFillTertiary : .controlsFillSecondary)
-        case .cancel:
-            return Color(designSystemColor: isPressed ? .controlsFillTertiary : .decorationSecondary)
-        }
-    }
-}
-
-private extension SubscriptionUpsellButtonStyle {
-    enum Metrics {
-        static let height: CGFloat = 48
     }
 }

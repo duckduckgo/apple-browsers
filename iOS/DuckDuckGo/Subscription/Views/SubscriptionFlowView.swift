@@ -40,6 +40,11 @@ struct SubscriptionFlowView: View {
     @State private var errorMessageType: SubscriptionTransactionErrorAlert.MessageType = .general
     @State private var isPresentingError: Bool = false
 
+    // MARK: - Onboarding state
+
+    @State private var isShowingOnboarding = false
+    @State private var onboardingFlow: AnyView?
+
     enum Constants {
         static let empty = ""
         static let navButtonPadding: CGFloat = 20.0
@@ -165,6 +170,17 @@ struct SubscriptionFlowView: View {
         .onChange(of: viewModel.state.shouldGoBackToSettings) { _ in
             dismiss()
         }
+
+        .onChange(of: viewModel.state.shouldPresentOnboarding) { shouldPresent in
+            if shouldPresent {
+                startOnboarding()
+            }
+        }
+
+        .sheet(isPresented: $isShowingOnboarding,
+               onDismiss: { onboardingFlow = nil }) {
+            onboardingFlow
+        }
         
         .onFirstAppear {
             setUpAppearances()
@@ -196,6 +212,32 @@ struct SubscriptionFlowView: View {
             if viewModel.state.transactionStatus != .idle {
                 PurchaseInProgressView(status: getTransactionStatus())
             }
+        }
+    }
+
+    // MARK: - Onboarding
+
+    /// Dismisses the onboarding sheet only, leaving the customer on the post-checkout page. The summary's CTA
+    /// is meant to drop them into Subscription Settings, which this container cannot reach — Settings is not
+    /// on the stack beneath a first purchase.
+    private func startOnboarding() {
+        guard let progress = viewModel.onboardingProgress else { return }
+        onboardingFlow = SubscriptionOnboardingLauncher.launch(
+            flow: .postCheckout(progress: progress,
+                                onFinish: { isShowingOnboarding = false },
+                                pirScreen: { pirDestination }))
+        isShowingOnboarding = true
+    }
+
+    /// The same destination the hidden PIR `NavigationLink` above pushes, so the flow's PIR row lands the
+    /// customer in the same place the purchase page's own PIR link would.
+    @ViewBuilder
+    private var pirDestination: some View {
+        if viewModel.isPIREnabled, let provider = viewModel.dataBrokerProtectionViewControllerProvider {
+            DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: provider)
+                .edgesIgnoringSafeArea(.bottom)
+        } else {
+            SubscriptionPIRMoveToDesktopView()
         }
     }
 

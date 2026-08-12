@@ -161,7 +161,9 @@ struct SettingsRootView: View {
                                                              internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                                                              dataBrokerProtectionViewControllerProvider: viewModel.dataBrokerProtectionViewControllerProvider,
                                                              wideEvent: AppDependencyProvider.shared.wideEvent,
-                                                             featureFlagger: viewModel.featureFlagger)
+                                                             featureFlagger: viewModel.featureFlagger,
+                                                             onboardingKeyValueStore: viewModel.keyValueStore,
+                                                             meetsPIRLocaleRequirement: { viewModel.meetsLocaleRequirement })
     }
 
     @ViewBuilder func subscriptionPlanChangeFlowNavigationDestination(redirectURLComponents: URLComponents?) -> some View {

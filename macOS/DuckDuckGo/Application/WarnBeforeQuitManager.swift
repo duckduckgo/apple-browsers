@@ -681,7 +681,7 @@ extension PixelFiring {
     func fireAndWait(_ event: PixelKit.Event, frequency: PixelKit.Frequency, timeout: TimeInterval = 1) async {
         try? await withTimeout(timeout) {
             await withCancellableContinuation { resume, _ in
-                fire(event, frequency: frequency) { _, _ in
+                fire(event: event, frequency: frequency, options: .default) { _, _ in
                     DispatchQueue.main.asyncOrNow {
                         resume(())
                     }

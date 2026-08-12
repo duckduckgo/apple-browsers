@@ -1,5 +1,5 @@
 //
-//  SubscriptionOnboardingSectionDelegate.swift
+//  PIRAvailability.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -17,9 +17,13 @@
 //  limitations under the License.
 //
 
-/// Receives events from an onboarding section.
-protocol SubscriptionOnboardingSectionDelegate: AnyObject {
-    func sectionDidComplete(_ section: SubscriptionOnboardingSection)
-    func sectionDidRequestDuckAIChat(modelID: String?)
-    func sectionDidRequestAdvance()
+import DataBrokerProtection_iOS
+
+/// Shared by `SettingsViewModel` and `SubscriptionFlowViewModel`.
+enum PIRAvailability {
+    static func isAvailable(isPIREnabled: Bool,
+                            meetsLocaleRequirement: Bool,
+                            provider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?) -> Bool {
+        isPIREnabled && meetsLocaleRequirement && provider != nil
+    }
 }

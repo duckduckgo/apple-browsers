@@ -186,7 +186,9 @@ struct Launching: LaunchingHandling {
         let freemiumPIRDebugSettings = FreemiumPIRDebugSettings(keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
         let dbpService = DBPService(appDependencies: AppDependencyProvider.shared,
                                     contentBlocking: contentBlockingService.common,
-                                    freemiumPIRDebugSettings: freemiumPIRDebugSettings)
+                                    freemiumPIRDebugSettings: freemiumPIRDebugSettings,
+                                    onboardingActivationRecorder: SubscriptionOnboardingActivationRecorder(
+                                        keyValueStore: appKeyValueFileStoreService.keyValueFilesStore))
         let configurationService = RemoteConfigurationService()
         let crashCollectionService = CrashCollectionService(featureFlagger: featureFlagger)
         let launchTimeMetricsService = LaunchTimeMetricsService(featureFlagger: featureFlagger)

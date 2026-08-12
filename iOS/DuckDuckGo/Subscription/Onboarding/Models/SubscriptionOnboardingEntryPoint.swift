@@ -1,5 +1,5 @@
 //
-//  SubscriptionOnboardingSectionDelegate.swift
+//  SubscriptionOnboardingEntryPoint.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -17,9 +17,9 @@
 //  limitations under the License.
 //
 
-/// Receives events from an onboarding section.
-protocol SubscriptionOnboardingSectionDelegate: AnyObject {
-    func sectionDidComplete(_ section: SubscriptionOnboardingSection)
-    func sectionDidRequestDuckAIChat(modelID: String?)
-    func sectionDidRequestAdvance()
+enum SubscriptionOnboardingEntryPoint {
+    /// Presented over the post-checkout page once a purchase completes.
+    case postCheckout
+    /// The "Continue Setup" card on Subscription Settings.
+    case subscriptionSettings
 }

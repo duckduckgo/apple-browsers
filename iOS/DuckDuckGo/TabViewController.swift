@@ -739,7 +739,8 @@ class TabViewController: UIViewController {
             tabURLPublishers: AIChatTabURLPublishers(originating: urlPublisher, didFinish: didFinishURLPublisher),
             isFireTab: tabModel.fireTab,
             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
-            duckAiFireModeStorageHandler: duckAiFireModeStorageHandler
+            duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
+            onboardingActivationRecorder: SubscriptionOnboardingActivationRecorder(keyValueStore: keyValueStore)
         )
         coordinator.delegate = self
         return coordinator
@@ -832,6 +833,7 @@ class TabViewController: UIViewController {
         self.aiChatContentHandler = AIChatContentHandler(aiChatSettings: aiChatSettings,
                                                          featureDiscovery: featureDiscovery,
                                                          productSurfaceTelemetry: productSurfaceTelemetry,
+                                                         onboardingActivationRecorder: SubscriptionOnboardingActivationRecorder(keyValueStore: keyValueStore),
                                                          unifiedToggleInputFeature: unifiedToggleInputFeature)
         self.subscriptionAIChatStateHandler = SubscriptionAIChatStateHandler()
         self.voiceSearchHelper = voiceSearchHelper

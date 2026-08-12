@@ -23,8 +23,8 @@ import UIKit
 @MainActor
 struct SubscriptionOnboardingDuckAIChatLauncher {
 
-    func launch(from presentingViewController: UIViewController, modelID: String?) {
-        guard let mainViewController = presentingViewController.view.window?.rootViewController as? MainViewController else {
+    func launch(modelID: String?) {
+        guard let mainViewController = UIApplication.shared.firstKeyWindow?.rootViewController as? MainViewController else {
             assertionFailure("Expected MainViewController as rootViewController when launching Duck.ai from onboarding")
             return
         }

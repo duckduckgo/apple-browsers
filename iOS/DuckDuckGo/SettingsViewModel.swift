@@ -161,6 +161,7 @@ final class SettingsViewModel: ObservableObject {
 
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     let keyValueStore: ThrowingKeyValueStoring
+    let subscriptionOnboardingSession: SubscriptionOnboardingSessionStating
     let contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>
     private let systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
 
@@ -203,6 +204,17 @@ final class SettingsViewModel: ObservableObject {
 
     var meetsLocaleRequirement: Bool {
         runPrerequisitesDelegate?.meetsLocaleRequirement ?? false
+    }
+
+    /// Whether this customer can use PIR: the feature flag is on and the app exposes a PIR view controller.
+    var isPIRAvailable: Bool {
+        PIRAvailability.isAvailable(isPIREnabled: isPIREnabled,
+                                    meetsLocaleRequirement: meetsLocaleRequirement,
+                                    provider: dataBrokerProtectionViewControllerProvider)
+    }
+
+    var isPIRActivated: Bool {
+        profileStateManager.profileState == .hasProfile || freemiumDBPUserStateManager.didActivate
     }
 
     var canShowFreemiumPIRSettingsEntryPoint: Bool {
@@ -1040,6 +1052,7 @@ final class SettingsViewModel: ObservableObject {
          urlOpener: URLOpener = UIApplication.shared,
          privacyConfigurationManager: PrivacyConfigurationManaging,
          keyValueStore: ThrowingKeyValueStoring,
+         subscriptionOnboardingSession: SubscriptionOnboardingSessionStating,
          contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>,
          idleReturnEligibilityManager: IdleReturnEligibilityManaging,
          afterInactivityOptionAdapter: AfterInactivityOptionAdapter,
@@ -1084,6 +1097,7 @@ final class SettingsViewModel: ObservableObject {
         self.urlOpener = urlOpener
         self.privacyConfigurationManager = privacyConfigurationManager
         self.keyValueStore = keyValueStore
+        self.subscriptionOnboardingSession = subscriptionOnboardingSession
         self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
         self.idleReturnEligibilityManager = idleReturnEligibilityManager
         self.afterInactivityOptionAdapter = afterInactivityOptionAdapter
@@ -1437,6 +1451,7 @@ extension SettingsViewModel {
     }
 
     func onFirstAppear() {
+        recordOnboardingActivationsIfNeeded()
         Task {
             await initState()
             triggerDeepLinkNavigation(to: self.deepLinkTarget)
@@ -1444,10 +1459,21 @@ extension SettingsViewModel {
     }
 
     func onSubsequentAppear() {
+        recordOnboardingActivationsIfNeeded()
         refreshNextStepsVisibility(animated: false)
         Task {
             await setupSubscriptionEnvironment()
         }
+    }
+
+    private func recordOnboardingActivationsIfNeeded() {
+        recordPIRActivationIfNeeded()
+    }
+
+    /// Backfill only: profiles saved from now on record themselves via `BrokerProfileJobEventsHandler.onProfileSaved`.
+    private func recordPIRActivationIfNeeded() {
+        guard isPIRActivated else { return }
+        SubscriptionOnboardingActivationRecorder(keyValueStore: keyValueStore).recordPIRActivated()
     }
 
     @MainActor
@@ -1587,7 +1613,7 @@ extension SettingsViewModel {
     private func isFeatureAvailableForNewBadge(_ feature: NewBadgeFeature) -> Bool {
         switch feature {
         case .personalInformationRemoval:
-            return isPIREnabled && meetsLocaleRequirement && dataBrokerProtectionViewControllerProvider != nil
+            return isPIRAvailable
         }
     }
 

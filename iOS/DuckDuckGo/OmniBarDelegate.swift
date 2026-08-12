@@ -30,6 +30,10 @@ enum OmniBarEditingEndResult {
 
 protocol OmniBarDelegate: AnyObject {
 
+    /// The user edited the text, on whichever input surface is in use. Separate from
+    /// `onOmniQueryUpdated`, which also decides what the suggestion tray shows.
+    func onOmniBarTextEdited(_ text: String)
+
     func onOmniQueryUpdated(_ query: String)
     
     func onOmniQuerySubmitted(_ query: String)
@@ -161,6 +165,10 @@ protocol OmniBarDelegate: AnyObject {
 
 extension OmniBarDelegate {
     
+    func onOmniBarTextEdited(_ text: String) {
+
+    }
+
     func onOmniQueryUpdated(_ query: String) {
         
     }

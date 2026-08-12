@@ -4830,6 +4830,10 @@ extension MainViewController: OmniBarDelegate {
         autocomplete(selectedSuggestion: suggestion)
     }
 
+    func onOmniBarTextEdited(_ text: String) {
+        recordNewTabPageSessionTextEntry(text)
+    }
+
     func onOmniQueryUpdated(_ updatedQuery: String) {
         recordNewTabPageSessionTextEntry(updatedQuery)
 

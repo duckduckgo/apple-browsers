@@ -19,7 +19,7 @@
 import Foundation
 import WebKit
 
-/// Discovers the currently live WebContent processes used by PIR resource sampling.
+/// Finds the WebContent processes whose CPU and memory should be included in PIR measurements.
 struct WebContentProcessIDProvider {
 
     func currentProcessIDs() -> [pid_t]? {
@@ -43,8 +43,8 @@ struct WebContentProcessIDProvider {
             }
         }
 
-        // WebKit owns these unretained proxy objects on the main thread. The monitor queue is never
-        // synchronously awaited, so this main-queue hop cannot form a queue-to-main deadlock.
+        // WebKit owns the returned process-info objects and expects them to be accessed on the main thread. It is safe
+        // to wait for the main queue here because the main queue never waits synchronously for the monitor queue.
         return Thread.isMainThread
             ? collectPIDs()
             : DispatchQueue.main.sync(execute: collectPIDs)

@@ -18,18 +18,18 @@
 
 import Foundation
 
-/// A snapshot of one monitored PIR queue run.
+/// The CPU and memory measurements collected for one PIR queue run.
 public struct ResourceSnapshot: Equatable, Sendable {
 
     public struct CPUUsage: Equatable, Sendable {
-        /// Cumulative agent CPU time; separates coordinator overhead from WebContent work.
+        /// CPU time used by the background agent during the run, in seconds.
         public let agentTime: TimeInterval
-        /// Cumulative observed WebContent CPU time; attributes cost to broker-page execution.
+        /// CPU time used by all observed WebContent processes during the run, in seconds.
         public let webContentTime: TimeInterval
-        /// Total CPU time normalized by elapsed monitoring time; 100% represents one fully occupied core.
+        /// Average CPU use during the run. One fully used core is 100%; multiple cores can exceed 100%.
         public let averagePercent: Double
 
-        /// Cumulative agent and observed WebContent CPU time; measures total captured CPU cost.
+        /// Combined agent and WebContent CPU time, in seconds.
         public var totalTime: TimeInterval {
             agentTime + webContentTime
         }
@@ -37,24 +37,24 @@ public struct ResourceSnapshot: Equatable, Sendable {
 
     public struct MemoryUsage: Equatable, Sendable {
         public struct Agent: Equatable, Sendable {
-            /// Current physical footprint; identifies sustained coordinator memory usage.
+            /// Memory attributed to the agent in the latest reading, in bytes. Zero can also mean the read failed.
             public let footprintBytes: UInt64
-            /// Highest sampled physical footprint; identifies coordinator memory spikes.
+            /// Highest agent-memory reading observed during the run, in bytes. Zero can also mean no successful read was made.
             public let peakFootprintBytes: UInt64
         }
 
         public struct WebContent: Equatable, Sendable {
-            /// Current summed physical footprint, or `nil` if unavailable; identifies sustained usage.
+            /// Memory attributed to all WebContent processes in the latest reading, or `nil` if it could not be read completely.
             public let footprintBytes: UInt64?
-            /// Highest sampled physical-footprint sum; identifies broker-page memory spikes.
+            /// Highest complete WebContent-memory reading observed during the run, or `nil` if none was available.
             public let peakFootprintBytes: UInt64?
-            /// Current process count, or `nil` if unavailable; relates usage to process fan-out.
+            /// Number of WebContent processes found in the latest reading, or `nil` if discovery failed.
             public let processCount: Int?
         }
 
         public let agent: Agent
         public let webContent: WebContent
-        /// Whether critical memory pressure occurred during the run; provides a direct system-impact signal.
+        /// Whether macOS reported critically low available memory during the run.
         public let hadCriticalPressure: Bool
     }
 

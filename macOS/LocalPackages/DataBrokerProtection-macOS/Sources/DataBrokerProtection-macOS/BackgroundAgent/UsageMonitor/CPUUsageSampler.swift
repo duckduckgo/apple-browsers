@@ -18,35 +18,32 @@
 
 import Foundation
 
-/// One point-in-time read of cumulative process CPU counters. Each value contains all user and system
-/// CPU consumed since that process started, not CPU consumed since the previous sample. For example:
-/// - Run start reads `agent: 100s`, `WebContent[A]: 3s`; both become baselines, so run usage is `0s`.
-/// - Next reads `agent: 102s`, `A: 5s`, `B: 2s`; B started during the run, so run usage is
-///   `agent: 2s`, `WebContent: 4s` (`A: 2s`, `B: 2s`).
-/// - Later reads `agent: 103s`, `B: 5s`; run usage is `agent: 3s`, `WebContent: 7s`, retaining A's `2s`.
+/// One reading of the CPU counters maintained by macOS for each process.
+///
+/// Each value is a running total from when the process started, not CPU used since our previous reading.
+/// `CPUUsageMonitor` compares these readings to determine how much belongs to the current PIR run.
 struct CPUUsageSample {
-    /// Cumulative user and system CPU time in nanoseconds.
+    /// Total time spent running process code and macOS system code on its behalf, in nanoseconds.
     typealias ProcessCPUTime = UInt64
 
     struct ProcessIdentity: Hashable {
-        /// The process identifier, which the system may reuse after a process exits.
+        /// The numeric ID assigned to the process by macOS.
         let pid: pid_t
-        /// Process start time paired with the PID to distinguish reused identifiers.
+        /// Paired with `pid` because macOS can give the same numeric ID to a later process.
         let startAbsoluteTime: UInt64
     }
 
-    /// Cumulative agent CPU time, or `nil` when its process counter could not be read.
+    /// The agent's total CPU time since it started, or `nil` if macOS could not read it.
     let agent: ProcessCPUTime?
-    /// Cumulative WebContent CPU time keyed by stable process identity.
+    /// Each live WebContent process's total CPU time since it started.
     let webContent: [ProcessIdentity: ProcessCPUTime]
-    /// System uptime when this sample was taken.
+    /// The system uptime at this reading, used to calculate how long the monitored run has lasted.
     let uptime: TimeInterval
 }
 
-/// Reads cumulative user and system CPU counters for the agent and currently live WebContent processes.
+/// Reads the CPU counters for the agent and the currently running WebContent processes.
 struct CPUUsageSampler {
 
-    /// Reads the agent and the supplied currently live WebContent PIDs.
     func takeSample(webContentPIDs: Set<pid_t>) -> CPUUsageSample {
         let webContent = Dictionary(
             uniqueKeysWithValues: webContentPIDs.compactMap { pid in
@@ -60,11 +57,17 @@ struct CPUUsageSampler {
         )
     }
 
+    /// Reads the total CPU time used by one process since it started.
+    ///
+    /// `proc_pid_rusage` asks macOS for statistics about a process by its numeric ID. The version-4 record contains the
+    /// process start time plus separate counters for time spent running app code and macOS system code. We add those two
+    /// counters together. This returns `nil` if the process exits before it can be read or the query otherwise fails.
     private static func processCPUTime(
         for pid: pid_t
     ) -> (identity: CPUUsageSample.ProcessIdentity, cpuTime: CPUUsageSample.ProcessCPUTime)? {
         var usage = rusage_info_v4()
         let result = withUnsafeMutablePointer(to: &usage) { pointer in
+            // The API accepts a generic resource-usage pointer, so temporarily view our version-4 buffer as that type.
             pointer.withMemoryRebound(to: rusage_info_t?.self, capacity: 1) {
                 proc_pid_rusage(pid, RUSAGE_INFO_V4, $0)
             }

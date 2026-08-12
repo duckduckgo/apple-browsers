@@ -18,17 +18,29 @@
 
 import Foundation
 
-/// Tracks cumulative CPU usage across one PIR queue run. WebContent counters become unavailable when
-/// a process exits, so the resource monitor records them regularly to reduce missed work.
+/// Measures CPU used by the agent and WebContent processes during one PIR queue run.
+///
+/// macOS gives us a running total for each process, measured from when that process started. It does not give us the
+/// total for an arbitrary period such as a PIR run, so this monitor calculates the run total as follows:
+///
+/// - **Existing process:** A process already running when PIR starts gets an initial reading. Later readings count only
+///   the increase. For example, readings of 12 seconds at the start and 15 seconds later add 3 seconds to this PIR run.
+/// - **New process:** A WebContent process created after PIR starts has no CPU from before the run. Its entire first
+///   reading is therefore counted, and later readings again count only the increase.
+/// - **Late discovery:** A process first discovered during the run but created before it uses that first reading as its
+///   starting point. We cannot separate its earlier CPU into before-run and during-run work, so the first reading is not
+///   counted; only increases seen in later readings are counted.
+///
+/// **Frequent sampling:** WebContent processes can exit at any time, and macOS no longer lets us read a process's counter
+/// after it exits. Taking a reading every 10 seconds saves work observed so far. We keep that saved amount after the
+/// process exits. Any CPU used after its last reading but before it exits cannot be recovered, so frequent readings
+/// reduce—but do not eliminate—undercounting for short-lived processes.
 struct CPUUsageMonitor {
 
     private typealias Identity = CPUUsageSample.ProcessIdentity
     private typealias ProcessCPUTime = CPUUsageSample.ProcessCPUTime
 
-    /// Converts cumulative process-lifetime readings into CPU consumed during the monitored run.
-    /// In the `CPUUsageSample` example, the agent contributes `3s`, A contributes `2s`, and B contributes
-    /// its first `2s` plus a `3s` delta. The accumulated result is `agent: 3s`, `WebContent: 7s`, even
-    /// after A exits.
+    /// Turns a process's running lifetime total into the amount counted for this PIR run.
     private struct CPUCounter {
         private var previous: ProcessCPUTime?
         private(set) var total: ProcessCPUTime = 0
@@ -39,10 +51,8 @@ struct CPUUsageMonitor {
 
         mutating func record(_ current: ProcessCPUTime, wasCreatedDuringRun: Bool = false) {
             if let previous, current >= previous {
-                // Process CPU counters are cumulative, so subsequent readings contribute only their delta.
                 total += current - previous
             } else if previous == nil, wasCreatedDuringRun {
-                // A process created during this run contributes its entire first lifetime reading.
                 total += current
             }
             previous = current
@@ -51,17 +61,14 @@ struct CPUUsageMonitor {
 
     private let sampler = CPUUsageSampler()
     private var agent = CPUCounter()
-    // Retaining counters across disappearance preserves CPU already observed for each WebContent process.
+    // Keep counters for exited processes so their recorded CPU remains in the run total.
     private var webContent: [Identity: CPUCounter] = [:]
-    // Used to include lifetime CPU only for WebContent processes created during this run.
     private var runStartAbsoluteTime: UInt64?
-    // Used to normalize cumulative CPU time into average core-equivalent utilization.
     private var startUptime: TimeInterval?
     private var latestUptime: TimeInterval?
 
     // MARK: - Run Lifecycle
 
-    /// Establishes baselines so CPU consumed before this PIR run is excluded.
     mutating func start(webContentPIDs: Set<pid_t>, runStartAbsoluteTime: UInt64) {
         reset()
         let sample = sampler.takeSample(webContentPIDs: webContentPIDs)
@@ -72,7 +79,6 @@ struct CPUUsageMonitor {
         latestUptime = sample.uptime
     }
 
-    /// Adds CPU consumed since the previous sample to the active run.
     mutating func recordSample(webContentPIDs: Set<pid_t>) {
         let sample = sampler.takeSample(webContentPIDs: webContentPIDs)
         updateAgentCPUTime(with: sample.agent)
@@ -101,7 +107,7 @@ struct CPUUsageMonitor {
         let webContentCPUTime = webContent.values.reduce(ProcessCPUTime(0)) { $0 + $1.total }
         let webContentTime = TimeInterval(webContentCPUTime) / TimeInterval(NSEC_PER_SEC)
         let totalTime = agentTime + webContentTime
-        // This is core-equivalent utilization: one fully occupied core is 100%, so totals may exceed 100%.
+        // One core running for the entire period is 100%. Using several cores at once can produce more than 100%.
         let averagePercent = elapsedTime > 0 ? totalTime / elapsedTime * 100 : 0
 
         return ResourceSnapshot.CPUUsage(
@@ -122,8 +128,6 @@ struct CPUUsageMonitor {
         with counters: [Identity: ProcessCPUTime]
     ) {
         for (identity, cpuTime) in counters {
-            // A process created during this run contributes its lifetime CPU; an older process's first
-            // reading is only a baseline. Start time also distinguishes recycled PIDs.
             webContent[identity, default: CPUCounter()].record(
                 cpuTime,
                 wasCreatedDuringRun: identity.startAbsoluteTime >= (runStartAbsoluteTime ?? .max)

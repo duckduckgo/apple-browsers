@@ -18,16 +18,16 @@
 
 import Foundation
 
-/// One point-in-time read of agent and WebContent physical footprints.
+/// One reading of the physical memory attributed to the agent and its WebContent processes.
 struct MemoryUsageSample {
-    /// Physical memory footprint in bytes.
+    /// Physical memory attributed to a process, in bytes.
     typealias MemoryFootprint = UInt64
 
-    /// Current agent physical footprint, or zero when `task_info` fails.
+    /// Memory attributed to the agent, or zero if macOS could not read it.
     let agentFootprint: MemoryFootprint
-    /// Sum of WebContent footprints, or `nil` when PID discovery or any footprint read was unavailable.
+    /// Memory attributed to all discovered WebContent processes, or `nil` if the total could not be read completely.
     let webContentFootprint: MemoryFootprint?
-    /// Number of WebContent PIDs discovered.
+    /// Number of WebContent processes found, or `nil` if they could not be discovered.
     let webContentCount: Int?
 
     static let unavailable = MemoryUsageSample(
@@ -37,11 +37,11 @@ struct MemoryUsageSample {
     )
 }
 
-/// Agent memory mirrors AppHealth's `getCurrentMemoryUsage()`. WebContent uses physical footprint
-/// instead of the resident size used by `getWebContentProcessMemory()` to avoid inflated shared mappings.
+/// Uses the same physical-memory measurement as AppHealth for the agent. For WebContent, it deliberately uses physical
+/// footprint instead of AppHealth's resident-size measurement, which can count the same shared memory in several processes.
 struct MemoryUsageSampler {
 
-    /// Treats `nil` PIDs as unavailable and an empty collection as zero WebContent usage.
+    /// A missing process list means WebContent usage is unavailable; an empty list means it is known to be zero.
     func takeSample(webContentPIDs: [pid_t]?) -> MemoryUsageSample {
         let webContentFootprint = webContentPIDs.flatMap(Self.combinedPhysicalFootprint)
         return MemoryUsageSample(
@@ -60,10 +60,20 @@ struct MemoryUsageSampler {
         return total
     }
 
+    /// Reads memory used by the background agent itself.
+    ///
+    /// `task_info` asks macOS for memory statistics about the current process (`mach_task_self_`). We report
+    /// `phys_footprint`, in bytes: the amount of RAM macOS considers this process responsible for. Unlike resident size,
+    /// this avoids charging the full size of shared memory to every process and includes compressed memory attributed to
+    /// the process. If macOS cannot provide the statistics, this returns zero.
     private static func agentPhysicalFootprint() -> MemoryUsageSample.MemoryFootprint {
         var vmInfo = task_vm_info_data_t()
-        var vmInfoCount = mach_msg_type_number_t(MemoryLayout<task_vm_info_data_t>.size) / 4
+        // The Mach API describes the output buffer's size in `integer_t` units, rather than bytes.
+        var vmInfoCount = mach_msg_type_number_t(
+            MemoryLayout<task_vm_info_data_t>.size / MemoryLayout<integer_t>.size
+        )
         let result = withUnsafeMutablePointer(to: &vmInfo) { pointer in
+            // Swift sees `vmInfo` as a struct, while the Mach API expects a pointer to its underlying integers.
             pointer.withMemoryRebound(to: integer_t.self, capacity: Int(vmInfoCount)) {
                 task_info(mach_task_self_, task_flavor_t(TASK_VM_INFO), $0, &vmInfoCount)
             }
@@ -71,7 +81,15 @@ struct MemoryUsageSampler {
         return result == KERN_SUCCESS ? UInt64(vmInfo.phys_footprint) : 0
     }
 
+    /// Reads memory used by one WebContent process.
+    ///
+    /// WebContent runs in a separate process, so it cannot be queried as the current Mach task. Instead,
+    /// `proc_pid_rusage` asks macOS for statistics about that process by PID. `ri_phys_footprint` is the same kind of
+    /// physical-memory measurement used for the agent above. This returns `nil` if the process exits before it can be
+    /// read, or if macOS otherwise cannot provide its statistics.
     private static func physicalFootprint(for pid: pid_t) -> MemoryUsageSample.MemoryFootprint? {
+        // This struct is the output buffer. `RUSAGE_INFO_V4` tells macOS which version of the buffer we supplied;
+        // version 4 is used because it includes `ri_phys_footprint`.
         var usage = rusage_info_v4()
         let result = withUnsafeMutablePointer(to: &usage) { pointer in
             pointer.withMemoryRebound(to: rusage_info_t?.self, capacity: 1) {

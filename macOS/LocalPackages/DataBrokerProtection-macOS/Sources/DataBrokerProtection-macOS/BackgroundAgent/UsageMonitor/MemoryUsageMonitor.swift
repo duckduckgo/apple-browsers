@@ -18,7 +18,7 @@
 
 import Foundation
 
-/// Tracks current and peak memory usage across one PIR queue run.
+/// Tracks the latest memory reading and the highest readings seen during one PIR queue run.
 struct MemoryUsageMonitor {
 
     private typealias MemoryFootprint = MemoryUsageSample.MemoryFootprint
@@ -46,20 +46,20 @@ struct MemoryUsageMonitor {
 
     // MARK: - Run Lifecycle
 
-    /// Resets run state and captures the initial values used by peak reporting.
+    /// Clears data from the previous run and immediately takes the first memory reading.
     mutating func start(webContentPIDs: [pid_t]?) {
         reset()
         recordSample(webContentPIDs: webContentPIDs)
     }
 
-    /// Records current memory usage and advances the run-level peaks.
+    /// Replaces the current reading and updates the highest values seen in this run.
     mutating func recordSample(webContentPIDs: [pid_t]?) {
         let sample = sampler.takeSample(webContentPIDs: webContentPIDs)
         state.current = sample
         state.peak.record(sample)
     }
 
-    /// Records critical pressure and returns whether this is the first event in the run.
+    /// Remembers that macOS reported critically low memory and returns whether this is the first such event in the run.
     mutating func recordCriticalPressure() -> Bool {
         let isFirstEvent = !state.hadCriticalPressure
         state.hadCriticalPressure = true

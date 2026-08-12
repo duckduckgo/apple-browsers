@@ -26,14 +26,15 @@ public protocol ResourceMonitoring: AnyObject {
 
 /// Monitors resource usage for one accepted PIR queue run.
 ///
-/// Reports include:
-/// - CPU: cumulative agent and WebContent time, plus average core-equivalent utilization; for example,
-///   `agent: 3.2s`, `WebContent: 7.1s`, and `average: 1.7%`.
-/// - Memory: current and peak physical footprints for the agent and summed WebContent processes; for example,
-///   `agent: 120/150 MiB` and `WebContent: 2.1/2.8 GiB` for current/peak usage.
-/// - WebContent: current process count; for example, `18` processes.
-/// - Pressure: whether critical memory pressure occurred during the run; for example, `true` after one event.
-/// - Pixels: a bucketed summary when the run ends, CPU thresholds as they are crossed, and critical pressure.
+/// This monitors the background agent plus its WebContent processes, not the whole machine.
+///
+/// CPU is read from cumulative process-lifetime counters at the run boundaries and every 10 seconds, then converted to
+/// within-run deltas. Average CPU is total agent + WebContent CPU time divided by elapsed time, so it is core-equivalent
+/// utilization: one fully occupied core is 100% and concurrent work can exceed 100%.
+///
+/// Memory is physical footprint, sampled at the run start, after 10 seconds, every 60 seconds thereafter, on critical
+/// memory pressure, and at the run end. The monitor logs these snapshots and emits bucketed pixels for the run summary,
+/// crossed CPU thresholds, and critical memory pressure.
 public final class ResourceMonitor: ResourceMonitoring, @unchecked Sendable {
 
     // MARK: - Run State

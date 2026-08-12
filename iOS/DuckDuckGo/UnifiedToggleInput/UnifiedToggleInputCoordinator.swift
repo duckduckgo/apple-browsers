@@ -1798,22 +1798,8 @@ private extension UnifiedToggleInputCoordinator {
             sourceView: viewController.modelPickerSourceView,
             onSelect: { [weak self] modelID in
                 self?.handleUpdatedModelSelection(modelID)
-            },
-            onCallToAction: { [weak self] requiredTier in
-                self?.handleUpdatedModelPickerCallToAction(requiredTier: requiredTier)
             }
         )
-    }
-
-    func handleUpdatedModelPickerCallToAction(requiredTier: AIChatModelPublicAccessTier) {
-        switch modelStore.subscriptionState.userTier.upgradeFlow(for: requiredTier) {
-        case .purchase:
-            presentSubscriptionUpsell { [weak self] in
-                self?.modelSelector.handleModelPickerSubscriptionCallToAction(requiredTier: requiredTier)
-            }
-        case .upgrade, .none:
-            modelSelector.handleModelPickerSubscriptionCallToAction(requiredTier: requiredTier)
-        }
     }
 
     func handleUpdatedModelSelection(_ modelID: String) {

@@ -125,15 +125,6 @@ final class UTIModelSelector {
         callbacks.onUserChoiceRecorded()
     }
 
-    func handleModelPickerSubscriptionCallToAction(requiredTier: AIChatModelPublicAccessTier) {
-        subscriptionUpsellPresenter.routeGatedSelection(
-            requiredTier: requiredTier,
-            userTier: modelStore.subscriptionState.userTier,
-            source: .modelPicker,
-            isAITabState: environment.isDuckAISurfaceForAttribution()
-        )
-    }
-
     @discardableResult
     private func routeGatedModelSelection(_ model: AIChatModel) -> Bool {
         guard let requiredPublicTier = model.lowestPublicAccessTier else {

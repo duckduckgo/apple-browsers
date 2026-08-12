@@ -43,22 +43,10 @@ struct UnifiedToggleInputModelPickerContent {
         }
     }
 
-    struct CallToAction {
-        enum Appearance {
-            case tryForFree
-            case upgrade
-        }
-
-        let title: String
-        let requiredTier: AIChatModelPublicAccessTier
-        let appearance: Appearance
-    }
-
     let itemsWithRecommendationLabel: [Item]
     let itemsWithoutRecommendationLabel: [Item]
     let gatedItems: [Item]
     let selectedModelID: String?
-    let callToAction: CallToAction?
     let showsAvailableItemsSeparator: Bool
     let gatedSectionTitle: String
 
@@ -73,12 +61,10 @@ struct UnifiedToggleInputModelPickerContent {
         }
         gatedItems = groupedModels.gated.map { Item(model: $0.model, isDimmed: true, allowsSubtitle: false) }
         self.selectedModelID = selectedModelID
-        callToAction = Self.makeCallToAction(gatedModels: groupedModels.gated, userTier: userTier)
         showsAvailableItemsSeparator = Self.shouldShowAvailableItemsSeparator(
             hasItemsWithRecommendationLabel: !groupedAvailableModels.withLabel.isEmpty,
-            hasItemsWithoutRecommendationLabel: !groupedAvailableModels.withoutLabel.isEmpty,
-            userTier: userTier)
-        gatedSectionTitle = userTier == .plus ? UserText.aiChatModelPickerProExclusive : UserText.aiChatAdvancedModelsSectionHeader
+            hasItemsWithoutRecommendationLabel: !groupedAvailableModels.withoutLabel.isEmpty)
+        gatedSectionTitle = userTier == .plus ? UserText.aiChatModelPickerAvailableWithPro : UserText.aiChatModelPickerTryFree
     }
 
     var availableItems: [Item] {
@@ -95,30 +81,8 @@ struct UnifiedToggleInputModelPickerContent {
 
     private static func shouldShowAvailableItemsSeparator(
         hasItemsWithRecommendationLabel: Bool,
-        hasItemsWithoutRecommendationLabel: Bool,
-        userTier: AIChatUserTier) -> Bool {
-        guard hasItemsWithRecommendationLabel, hasItemsWithoutRecommendationLabel else { return false }
-        return userTier == .pro || userTier == .internal
-    }
-
-    private static func makeCallToAction(gatedModels: [AIChatGatedModel], userTier: AIChatUserTier) -> CallToAction? {
-        let requiredTier: AIChatModelPublicAccessTier
-        if gatedModels.contains(where: { $0.requiredTier == .plus }) {
-            requiredTier = .plus
-        } else if gatedModels.contains(where: { $0.requiredTier == .pro }) {
-            requiredTier = .pro
-        } else {
-            return nil
-        }
-
-        switch userTier.upgradeFlow(for: requiredTier) {
-        case .purchase:
-            return CallToAction(title: UserText.aiChatModelPickerTryForFree, requiredTier: requiredTier, appearance: .tryForFree)
-        case .upgrade:
-            return CallToAction(title: UserText.aiChatModelPickerUpgrade, requiredTier: requiredTier, appearance: .upgrade)
-        case .none:
-            return nil
-        }
+        hasItemsWithoutRecommendationLabel: Bool) -> Bool {
+        hasItemsWithRecommendationLabel && hasItemsWithoutRecommendationLabel
     }
 
     private static func rowHeight(for item: Item) -> CGFloat {
@@ -156,8 +120,7 @@ final class UnifiedToggleInputModelPickerPresenter: NSObject {
         content: UnifiedToggleInputModelPickerContent,
         from presentingViewController: UIViewController,
         sourceView: UIView,
-        onSelect: @escaping (String) -> Void,
-        onCallToAction: @escaping (AIChatModelPublicAccessTier) -> Void
+        onSelect: @escaping (String) -> Void
     ) {
         guard presentedViewController == nil else { return }
 
@@ -168,11 +131,6 @@ final class UnifiedToggleInputModelPickerPresenter: NSObject {
             onSelect: { [weak self] modelID in
                 self?.dismiss {
                     onSelect(modelID)
-                }
-            },
-            onCallToAction: { [weak self] requiredTier in
-                self?.dismiss {
-                    onCallToAction(requiredTier)
                 }
             }
         )
@@ -239,7 +197,6 @@ private struct UnifiedToggleInputModelPickerView: View {
     let content: UnifiedToggleInputModelPickerContent
     let height: CGFloat
     let onSelect: (String) -> Void
-    let onCallToAction: (AIChatModelPublicAccessTier) -> Void
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -295,30 +252,12 @@ private struct UnifiedToggleInputModelPickerView: View {
     }
 
     private var gatedModelsHeader: some View {
-        HStack(spacing: Metrics.headerSpacing) {
-            Text(content.gatedSectionTitle)
-                .font(.footnote.weight(.medium))
-                .foregroundStyle(Color(designSystemColor: .textTertiary))
-
-            Spacer(minLength: 0)
-
-            if let callToAction = content.callToAction {
-                Button {
-                    onCallToAction(callToAction.requiredTier)
-                } label: {
-                    Text(callToAction.title)
-                        .daxCaptionBold()
-                        .foregroundStyle(callToAction.foregroundColor)
-                        .padding(.horizontal, Metrics.callToActionHorizontalPadding)
-                        .frame(height: Metrics.callToActionHeight)
-                        .background(callToAction.backgroundColor, in: Capsule())
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("ModelPicker.CallToAction")
-            }
-        }
-        .padding(.horizontal, Metrics.headerHorizontalPadding)
-        .frame(height: Metrics.headerHeight)
+        Text(content.gatedSectionTitle)
+            .font(.footnote.weight(.medium))
+            .foregroundStyle(Color(designSystemColor: .textTertiary))
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, Metrics.headerHorizontalPadding)
+            .frame(height: Metrics.headerHeight)
     }
 
     @ViewBuilder
@@ -335,26 +274,6 @@ private struct UnifiedToggleInputModelPickerView: View {
     }
 }
 
-private extension UnifiedToggleInputModelPickerContent.CallToAction {
-    var foregroundColor: Color {
-        switch appearance {
-        case .tryForFree:
-            return Color(designSystemColor: .textPrimary)
-        case .upgrade:
-            return .white
-        }
-    }
-
-    var backgroundColor: Color {
-        switch appearance {
-        case .tryForFree:
-            return RebrandingColor.Pollen.pollen30
-        case .upgrade:
-            return RebrandingColor.Pondwater.pondwater50
-        }
-    }
-}
-
 private extension UnifiedToggleInputModelPickerView {
     enum Metrics {
         static let width: CGFloat = 270
@@ -365,9 +284,6 @@ private extension UnifiedToggleInputModelPickerView {
         static let separatorHorizontalPadding: CGFloat = 8
         static let headerHeight: CGFloat = 35
         static let headerHorizontalPadding: CGFloat = 8
-        static let headerSpacing: CGFloat = 8
-        static let callToActionHorizontalPadding: CGFloat = 8
-        static let callToActionHeight: CGFloat = 24
     }
 }
 

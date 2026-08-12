@@ -213,6 +213,15 @@ public enum OnboardingSharedPixelEvent: PixelKit.Event, Equatable {
     case end(EngagementEvent)
     case subscriptionPromo(EngagementEvent) // iOS only
 
+    // Segmented onboarding (download-reason) events — iOS only
+    case downloadChoice(DownloadChoiceEvent)
+    case preferencesSerp(SerpEngagementEvent)
+    case preferencesAIModel(AIModelEvent)
+    case preferencesAIToggleMode(AIToggleModeEvent)
+    case preferencesAISearch(AISearchEngagementEvent)
+    case preferencesDuckAI(DuckAIEvent)
+    case preferencesYoutube(YoutubeEngagementEvent)
+
     public enum EngagementEvent: Equatable {
         public enum Value: String {
             case engage
@@ -294,6 +303,60 @@ public enum OnboardingSharedPixelEvent: PixelKit.Event, Equatable {
         case shown
         case clicked(Value)
     }
+
+    /// The download-reason selection screen. `Value` records the reason the user chose.
+    public enum DownloadChoiceEvent: Equatable {
+        public enum Value: String {
+            case search
+            case aiChat = "ai-chat"
+            case noAI = "no-ai"
+            case adBlocking = "ad-blocking"
+        }
+
+        case shown
+        case clicked(Value)
+    }
+
+    /// The SERP preferences screen.
+    public enum SerpEngagementEvent: Equatable {
+        case shown
+        case clicked(recentlyVisitedSitesEnabled: Bool, safeSearchEnabled: Bool)
+    }
+
+    /// The AI search settings screen.
+    public enum AISearchEngagementEvent: Equatable {
+        case shown
+        case clicked(searchAssistEnabled: Bool, aiGeneratedImagesEnabled: Bool)
+    }
+
+    /// The YouTube (Duck Player) preferences screen.
+    public enum YoutubeEngagementEvent: Equatable {
+        case shown
+        case clicked(youTubeAdBlockingEnabled: Bool, duckPlayerEnabled: Bool)
+    }
+
+    /// The AI model picker. The selected model as a coarse label (e.g. "claude", "chatgpt")
+    public enum AIModelEvent: Equatable {
+        case shown
+        case clicked(model: String)
+    }
+
+    /// The Search/AI address-bar toggle-mode screen.
+    public enum AIToggleModeEvent: Equatable {
+        case shown
+        case clicked(enabled: Bool)
+    }
+
+    /// The "Keep Duck.ai on / Turn Duck.ai off" screen.
+    public enum DuckAIEvent: Equatable {
+        public enum Value: String {
+            case on
+            case off
+        }
+
+        case shown
+        case clicked(Value)
+    }
 }
 
 public extension OnboardingSharedPixelEvent {
@@ -309,6 +372,8 @@ public extension OnboardingSharedPixelEvent {
         if let value {
             parameters["value"] = value
         }
+
+        parameters.merge(extraParameters) { _, new in new }
 
         return parameters
     }
@@ -345,6 +410,13 @@ private extension OnboardingSharedPixelEvent {
         case .fireButton: return "fire-button"
         case .end: return "end"
         case .subscriptionPromo: return "subscription-promo"
+        case .downloadChoice: return "download-choice"
+        case .preferencesSerp: return "preferences_serp"
+        case .preferencesAIModel: return "preferences_ai-model"
+        case .preferencesAIToggleMode: return "preferences_ai-toggle-mode"
+        case .preferencesAISearch: return "preferences_ai-search"
+        case .preferencesDuckAI: return "preferences_duck-ai"
+        case .preferencesYoutube: return "preferences_youtube"
         }
     }
 
@@ -415,6 +487,55 @@ private extension OnboardingSharedPixelEvent {
                 return ParameterValues.clicked
             }
         case .searchChatToggle(let event):
+            switch event {
+            case .shown:
+                return ParameterValues.shown
+            case .clicked:
+                return ParameterValues.clicked
+            }
+        case .downloadChoice(let event):
+            switch event {
+            case .shown:
+                return ParameterValues.shown
+            case .clicked:
+                return ParameterValues.clicked
+            }
+        case .preferencesSerp(let event):
+            switch event {
+            case .shown:
+                return ParameterValues.shown
+            case .clicked:
+                return ParameterValues.clicked
+            }
+        case .preferencesAISearch(let event):
+            switch event {
+            case .shown:
+                return ParameterValues.shown
+            case .clicked:
+                return ParameterValues.clicked
+            }
+        case .preferencesYoutube(let event):
+            switch event {
+            case .shown:
+                return ParameterValues.shown
+            case .clicked:
+                return ParameterValues.clicked
+            }
+        case .preferencesAIModel(let event):
+            switch event {
+            case .shown:
+                return ParameterValues.shown
+            case .clicked:
+                return ParameterValues.clicked
+            }
+        case .preferencesAIToggleMode(let event):
+            switch event {
+            case .shown:
+                return ParameterValues.shown
+            case .clicked:
+                return ParameterValues.clicked
+            }
+        case .preferencesDuckAI(let event):
             switch event {
             case .shown:
                 return ParameterValues.shown
@@ -492,6 +613,73 @@ private extension OnboardingSharedPixelEvent {
             case .clicked(let value):
                 return value.rawValue
             }
+        case .downloadChoice(let event):
+            switch event {
+            case .shown:
+                return nil
+            case .clicked(let value):
+                return value.rawValue
+            }
+        case .preferencesSerp(let event):
+            switch event {
+            case .shown, .clicked:
+                // Toggle states are emitted via `extraParameters`, not as `value`.
+                return nil
+            }
+        case .preferencesAISearch(let event):
+            switch event {
+            case .shown, .clicked:
+                return nil
+            }
+        case .preferencesYoutube(let event):
+            switch event {
+            case .shown, .clicked:
+                return nil
+            }
+        case .preferencesAIModel(let event):
+            switch event {
+            case .shown:
+                return nil
+            case .clicked(let model):
+                return model
+            }
+        case .preferencesAIToggleMode(let event):
+            switch event {
+            case .shown:
+                return nil
+            case .clicked(let enabled):
+                return String(enabled)
+            }
+        case .preferencesDuckAI(let event):
+            switch event {
+            case .shown:
+                return nil
+            case .clicked(let value):
+                return value.rawValue
+            }
+        }
+    }
+
+    // Screen-specific toggle states emitted as their own pixel parameters (in addition to `event`/`value`).
+    var extraParameters: [String: String] {
+        switch self {
+        case .preferencesSerp(.clicked(let recentlyVisitedSitesEnabled, let safeSearchEnabled)):
+            return [
+                "recently_visited_sites_enabled": String(recentlyVisitedSitesEnabled),
+                "safe_search_enabled": String(safeSearchEnabled)
+            ]
+        case .preferencesAISearch(.clicked(let searchAssistEnabled, let aiGeneratedImagesEnabled)):
+            return [
+                "search_assist_enabled": String(searchAssistEnabled),
+                "ai_generated_images_enabled": String(aiGeneratedImagesEnabled)
+            ]
+        case .preferencesYoutube(.clicked(let youTubeAdBlockingEnabled, let duckPlayerEnabled)):
+            return [
+                "youtube_ad_blocking_enabled": String(youTubeAdBlockingEnabled),
+                "duck_player_enabled": String(duckPlayerEnabled)
+            ]
+        default:
+            return [:]
         }
     }
 }

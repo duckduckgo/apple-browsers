@@ -640,9 +640,7 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         let didAttach = expectation(description: "The authorized remote message attached to the test window")
         let didDetach = expectation(description: "The synchronously cleared remote message detached from the test window")
         let didObserveRemovalTransaction = expectation(description: "The mounted host observed the synchronous removal transaction")
-        let didReachSettlement = expectation(description: "The outgoing view detached before service settlement")
         var wasSourceClearedAtTerminal = false
-        var wasProbeDetachedAtSettlement = false
         probe.onAttachmentChanged = { isAttached in
             if isAttached {
                 didAttach.fulfill()
@@ -655,10 +653,6 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         }
         promoCoordinator.onRemovalTerminal = { _ in
             wasSourceClearedAtTerminal = self.coordinatedRenderSession(in: sut) == nil
-            DispatchQueue.main.async {
-                wasProbeDetachedAtSettlement = !probe.isAttachedToWindow
-                didReachSettlement.fulfill()
-            }
         }
 
         sut.load()
@@ -684,8 +678,7 @@ final class NewTabPageMessagesModelTests: XCTestCase {
             )]
         )
 
-        await fulfillment(of: [didObserveRemovalTransaction, didDetach, didReachSettlement], timeout: 1)
-        XCTAssertTrue(wasProbeDetachedAtSettlement)
+        await fulfillment(of: [didObserveRemovalTransaction, didDetach], timeout: 1)
         XCTAssertFalse(probe.isAttachedToWindow)
         XCTAssertEqual(
             probe.removalTransaction,

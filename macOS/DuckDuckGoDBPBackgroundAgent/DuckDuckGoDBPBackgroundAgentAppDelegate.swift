@@ -86,7 +86,6 @@ final class DuckDuckGoDBPBackgroundAgentApplication: NSApplication {
 }
 
 @main
-@MainActor
 final class DuckDuckGoDBPBackgroundAgentAppDelegate: NSObject, NSApplicationDelegate {
     private let settings = DataBrokerProtectionSettings(defaults: .dbp)
     private let resourceMonitor = ResourceMonitor()

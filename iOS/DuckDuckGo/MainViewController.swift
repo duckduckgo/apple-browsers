@@ -432,9 +432,7 @@ class MainViewController: UIViewController {
                                   ttlProvider: { settings.tokenTTL },
                                   windowProvider: { settings.refreshWindow },
                                   onFetchResult: { result in
-            DailyPixel.fireDailyAndCount(pixel: .searchTokenFetch, withAdditionalParameters: [
-                "result": result.rawValue
-            ])
+            PixelKit.fire(SearchTokenPixel.fetch(result: result.rawValue), frequency: .dailyAndCount)
         })
     }()
 

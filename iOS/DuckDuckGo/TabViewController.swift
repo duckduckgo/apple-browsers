@@ -5232,13 +5232,12 @@ private extension WKProcessTerminationReason {
 
 private extension TabViewController {
 
-    /// Fires the treatment-only `m_search-token_serp-attach` diagnostic for a SERP navigation the interceptor
+    /// Fires the treatment-only `search-token_serp-attach` diagnostic for a SERP navigation the interceptor
     /// just decorated: whether a token was attached and its length bucket. Daily+count, low-cardinality, no PII.
     func fireSearchTokenAttachPixel(token: String?) {
-        DailyPixel.fireDailyAndCount(pixel: .searchTokenSerpAttach, withAdditionalParameters: [
-            "outcome": token != nil ? "attached" : "no_token",
-            "token_length": Self.tokenLengthBucket(token?.count ?? 0)
-        ])
+        PixelKit.fire(SearchTokenPixel.serpAttach(outcome: token != nil ? "attached" : "no_token",
+                                                  tokenLength: Self.tokenLengthBucket(token?.count ?? 0)),
+                      frequency: .dailyAndCount)
     }
 
     // A normal token is ~347 chars; buckets bracket that so truncation (1_256) and oversize (513_plus)

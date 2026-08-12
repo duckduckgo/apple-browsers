@@ -1,11 +1,11 @@
 // Search Token (Dindex) experiment diagnostics — treatment cohort only.
 // Separate from the param-locked experiment_metrics_* pixels so they can carry diagnostic params.
 {
-    "m_search-token_serp-attach": {
+    "search-token_serp-attach": {
         "description": "Fires once per treatment-cohort variant-b SERP navigation the interceptor decorates, recording whether the client attached an X-DDG-Search-Token header and the token's length bucket. Compare 'attached' against the backend's received-a-header count to separate warming gap from header-stripped-in-transit.",
         "owners": ["hassaanelgarem"],
         "triggers": ["other"],
-        "suffixes": ["daily_count", "platform", "form_factor"],
+        "suffixes": ["platform", "form_factor", "daily_count"],
         "parameters": [
             "appVersion",
             {
@@ -23,11 +23,11 @@
         ],
         "expires": "2026-10-12"
     },
-    "m_search-token_fetch": {
+    "search-token_fetch": {
         "description": "Fires on each warm token fetch attempt (treatment cohort), recording the result. Disambiguates whether a warming gap is caused by fetches failing versus warm never triggering.",
         "owners": ["hassaanelgarem"],
         "triggers": ["other"],
-        "suffixes": ["daily_count", "platform", "form_factor"],
+        "suffixes": ["platform", "form_factor", "daily_count"],
         "parameters": [
             "appVersion",
             {

@@ -34,7 +34,7 @@ import os.log
 /// else `nil`. Only fetching is UA-aware; retrieval never withholds a live token.
 final class SearchTokenFetcher {
 
-    /// Outcome of a warm fetch, reported to `onFetchResult` for the `m_search-token_fetch` diagnostic pixel.
+    /// Outcome of a warm fetch, reported to `onFetchResult` for the `search-token_fetch` diagnostic pixel.
     enum FetchResult: String {
         case success
         case httpError = "http_error"      // non-2xx status from the token endpoint

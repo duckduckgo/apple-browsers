@@ -25052,6 +25052,246 @@
         }
       }
     },
+    "contextual.onboarding.subscription-upsell.accept-button" : {
+      "comment" : "Primary button on the subscription upsell onboarding screen, it opens the subscription purchase page.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Probiere es kostenlos aus!"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Try for free!"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¡Pruébalo gratis!"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Essayez gratuitement !"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Provalo gratis!"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Probeer het gratis!"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wypróbuj za darmo!"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Experimenta grátis!"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Попробуй бесплатно!"
+          }
+        }
+      }
+    },
+    "contextual.onboarding.subscription-upsell.decline-button" : {
+      "comment" : "Secondary button on the subscription upsell onboarding screen, it dismisses the screen and completes onboarding.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nein, danke"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "No thanks"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No, gracias"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non merci"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No, grazie"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nee, bedankt"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie, dziękuję"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não, obrigado"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нет, спасибо"
+          }
+        }
+      }
+    },
+    "contextual.onboarding.subscription-upsell.message" : {
+      "comment" : "Message of the onboarding screen promoting the optional paid subscription. Text between single asterisks is rendered in bold; keep the asterisks in the translation.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo bietet auch ein *optionales kostenpflichtiges Abonnement* mit einem sicheren *VPN* und *fortschrittlicher, privater KI*."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "DuckDuckGo also has an *optional paid subscription*, with a secure *VPN* and *advanced, private AI.*"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo también tiene una *suscripción opcional de pago*, con una *VPN* segura y una *IA privada avanzada*."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo propose également un *abonnement payant en option*, avec un *VPN* sécurisé et une *IA privée et évoluée*."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo offre anche un *abbonamento a pagamento facoltativo*, con *VPN* sicura e *AI avanzata e privata*."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo heeft ook een *optioneel betaald abonnement*, met een veilige *VPN* en *geavanceerde, privé-AI*."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo oferuje również *opcjonalną płatną subskrypcję*, z bezpieczną *siecią VPN* i *zaawansowaną, prywatną sztuczną inteligencją*."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O DuckDuckGo também tem uma *subscrição paga opcional*, com uma *VPN* segura e *IA avançada e privada*."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo также предлагает *дополнительную платную подписку* с безопасным *VPN* и *приватным ИИ с расширенными возможностями*."
+          }
+        }
+      }
+    },
+    "contextual.onboarding.subscription-upsell.title" : {
+      "comment" : "Title of the onboarding screen promoting the optional paid subscription.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oh, bevor ich es vergesse ..."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Oh, before I forget..."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oh, antes de que se me olvide..."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oh, avant que j'oublie..."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oh, prima che me ne dimentichi..."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oh, voordat ik het vergeet..."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jeszcze jedno."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ah, antes que me esqueça…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Кстати, пока не забыл..."
+          }
+        }
+      }
+    },
     "contextual.onboarding.try-a-search.message" : {
       "comment" : "Message of a popover on the browser that invites the user to try a search explaining that their searches are anonymous",
       "extractionState" : "extracted_with_value",

@@ -18,6 +18,7 @@
 
 import XCTest
 import Testing
+import FeatureFlags_macOS
 import PrivacyDashboard
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -26,13 +27,142 @@ class ContextualDialogsManagerTests {
     var manager: ContextualDialogsManager!
     var trackerProvider: MockTrackerMessageProvider!
     var stateStorage: MockContextualDialogStateStoring!
+    var subscriptionUpsellExperiment: SpyOnboardingSubscriptionUpsellEnrolling!
     let expectation = XCTestExpectation()
 
     init() {
         stateStorage = MockContextualDialogStateStoring()
         trackerProvider = MockTrackerMessageProvider(expectation: expectation)
-        manager = ContextualDialogsManager(trackerMessageProvider: trackerProvider, stateStorage: stateStorage)
+        subscriptionUpsellExperiment = SpyOnboardingSubscriptionUpsellEnrolling()
+        manager = ContextualDialogsManager(trackerMessageProvider: trackerProvider,
+                                           subscriptionUpsellExperiment: subscriptionUpsellExperiment,
+                                           stateStorage: stateStorage)
         trackerProvider.trackerType = .blockedTrackers(entityNames: ["Tracker1"])
+    }
+
+    // MARK: - Subscription Upsell Flow
+
+    @available(iOS 16, macOS 13, *)
+    @Test("High Five enrolls once and navigation advances to the treatment upsell", .timeLimit(.minutes(1)),
+          arguments: [26, 28, 30, 32])
+    func testWhenHighFiveIsShownThenTreatmentEnrollsAndAdvances(contextualDialogsSeenKey: Int) async {
+        subscriptionUpsellExperiment.cohortStub = .treatment
+        manager.state = .ongoing
+        stateStorage.contextualDialogsSeen = combinationDictionary[contextualDialogsSeenKey]!
+        let tab = await Tab(content: .newtab)
+
+        #expect(manager.dialogTypeForTab(tab, privacyInfo: nil) == .highFive)
+        #expect(subscriptionUpsellExperiment.enrollCallCount == 1)
+
+        #expect(manager.dialogTypeForTab(tab, privacyInfo: nil) == .subscriptionUpsell)
+        #expect(subscriptionUpsellExperiment.enrollCallCount == 1)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Skipping Fire advances to High Five and enrolls", .timeLimit(.minutes(1)))
+    func testWhenFireIsSkippedThenHighFiveBecomesTheNextRootDialog() {
+        manager.state = .ongoing
+        manager.lastDialog = .tryFireButton
+
+        manager.gotItPressed()
+
+        #expect(manager.lastDialog == .highFive)
+        #expect(stateStorage.contextualDialogsSeen.contains("highFive"))
+        #expect(subscriptionUpsellExperiment.enrollCallCount == 1)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Earlier dialogs do not enroll in the experiment", .timeLimit(.minutes(1)),
+          arguments: [ContextualDialogType.searchDone(shouldFollowUp: true), .tryASearch, .tryASite])
+    func testWhenEarlierDialogAdvancesThenExperimentDoesNotEnroll(dialog: ContextualDialogType) {
+        manager.state = .ongoing
+        manager.lastDialog = dialog
+
+        manager.gotItPressed()
+
+        #expect(subscriptionUpsellExperiment.enrollCallCount == 0)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Treatment queues the one-shot upsell after High Five", .timeLimit(.minutes(1)))
+    func testWhenTreatmentCompletesHighFiveThenUpsellIsQueued() {
+        subscriptionUpsellExperiment.cohortStub = .treatment
+        manager.state = .ongoing
+        manager.lastDialog = .highFive
+
+        manager.gotItPressed()
+
+        #expect(manager.lastDialog == .subscriptionUpsell)
+        #expect(manager.state == .ongoing)
+        #expect(stateStorage.contextualDialogsSeen.contains("subscriptionUpsell"))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Control and unresolved cohorts complete at High Five", .timeLimit(.minutes(1)))
+    func testWhenNotTreatmentThenHighFiveCompletesOnboarding() {
+        let cohorts: [FeatureFlag.OnboardingSubscriptionUpsellCohort?] = [.control, nil]
+        for cohort in cohorts {
+            stateStorage = MockContextualDialogStateStoring()
+            subscriptionUpsellExperiment = SpyOnboardingSubscriptionUpsellEnrolling()
+            subscriptionUpsellExperiment.cohortStub = cohort
+            manager = ContextualDialogsManager(
+                trackerMessageProvider: trackerProvider,
+                subscriptionUpsellExperiment: subscriptionUpsellExperiment,
+                stateStorage: stateStorage)
+            manager.state = .ongoing
+            manager.lastDialog = .highFive
+
+            manager.gotItPressed()
+
+            #expect(manager.state == .onboardingCompleted)
+            #expect(manager.lastDialog == nil)
+        }
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Completing the upsell completes onboarding", .timeLimit(.minutes(1)))
+    func testWhenUpsellCompletesThenItCannotBeOfferedAgain() async {
+        manager.state = .ongoing
+        manager.lastDialog = .subscriptionUpsell
+
+        manager.gotItPressed()
+
+        let tab = await Tab(content: .newtab)
+        #expect(manager.dialogTypeForTab(tab, privacyInfo: nil) == nil)
+        #expect(manager.state == .onboardingCompleted)
+        #expect(manager.lastDialog == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Navigation away from a shown upsell completes onboarding", .timeLimit(.minutes(1)))
+    func testWhenNavigatingAwayFromUpsellThenOnboardingCompletes() async {
+        subscriptionUpsellExperiment.cohortStub = .treatment
+        manager.state = .ongoing
+        manager.lastDialog = .highFive
+        manager.gotItPressed()
+        let otherTab = await Tab(content: .newtab)
+
+        #expect(manager.dialogTypeForTab(otherTab, privacyInfo: nil) == nil)
+        #expect(manager.state == .onboardingCompleted)
+        #expect(manager.lastDialog == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Relaunch after the upsell was queued does not show it again", .timeLimit(.minutes(1)))
+    func testWhenRelaunchingAfterUpsellWasQueuedThenOnboardingCompletes() async {
+        subscriptionUpsellExperiment.cohortStub = .treatment
+        manager.state = .ongoing
+        manager.lastDialog = .highFive
+        manager.gotItPressed()
+
+        let relaunched = ContextualDialogsManager(
+            trackerMessageProvider: trackerProvider,
+            subscriptionUpsellExperiment: subscriptionUpsellExperiment,
+            stateStorage: stateStorage)
+        let tab = await Tab(content: .newtab)
+
+        #expect(relaunched.dialogTypeForTab(tab, privacyInfo: nil) == nil)
+        #expect(relaunched.state == .onboardingCompleted)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -360,6 +490,19 @@ class MockTrackerMessageProvider: TrackerMessageProviding {
     func trackersType(privacyInfo: PrivacyInfo?) -> OnboardingTrackersType? {
         // Simulate fetching the tracker type
         return trackerType
+    }
+}
+
+class SpyOnboardingSubscriptionUpsellEnrolling: OnboardingSubscriptionUpsellEnrolling {
+
+    var enrollCallCount = 0
+    var cohortStub: FeatureFlag.OnboardingSubscriptionUpsellCohort?
+
+    var cohort: FeatureFlag.OnboardingSubscriptionUpsellCohort? { cohortStub }
+
+    func enroll() -> FeatureFlag.OnboardingSubscriptionUpsellCohort? {
+        enrollCallCount += 1
+        return cohortStub
     }
 }
 

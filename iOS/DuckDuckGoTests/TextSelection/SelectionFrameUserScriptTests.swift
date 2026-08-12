@@ -99,7 +99,8 @@ final class SelectionFrameUserScriptTests: XCTestCase {
         XCTAssertTrue(sut.source.contains("lastHasSelection === true"))
     }
 
-    /// Reading live at action time would read whatever the page put there after the user committed.
+    /// Covers the mechanism only: storing at selection time rules out mutation that fires no
+    /// selectionchange, not a page that replaces the selection and so updates what is stored.
     func testTheTextIsSnapshotWhenSelectedRatherThanWhenRead() {
         XCTAssertTrue(sut.source.contains("selectedText: snapshot"))
         XCTAssertTrue(sut.source.contains("snapshot = text"))

@@ -166,8 +166,9 @@ final class WebView: WKWebView {
 
     /// Reads in the isolated content world so page-world overrides cannot replace the selection reader.
     ///
-    /// Returns the snapshot the script took when the selection was made, not a live read: by the time an
-    /// action runs, the page has had time to swap the range or rewrite the text inside it.
+    /// Returns the stored snapshot rather than reading live, so text-node mutation that fires no
+    /// selectionchange cannot change what is read. A page that replaces the selection outright does fire
+    /// selectionchange and so updates the snapshot; that substitution is a known residual.
     ///
     /// Deliberately the completion-handler overload: `evaluateJavaScript`'s `async` twin bridges the result
     /// back as `()` in this content world, so the selection never arrives.

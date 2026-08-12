@@ -60,17 +60,21 @@
         return !isFramed || document.hasFocus();
     }
 
-    // Snapshots the selection while the user's gesture is still what produced it, and keeps it in this
-    // isolated world where the page cannot reach it. Reading at action time instead would read after the
-    // user has committed, by which point the page has had time to swap the range or rewrite the text in it.
+    // Stores the selection in this isolated world, where the page cannot reach it. This stops a later read
+    // from observing text-node mutation that fires no selectionchange. It does not stop the page replacing
+    // the selection: that fires selectionchange and overwrites what is stored here.
     function publish(text) {
-        if (text.trim().length > 0 && canClaim()) {
-            snapshot = text;
-            post(true);
+        if (text.trim().length === 0) {
+            snapshot = '';
+            post(false);
             return;
         }
-        snapshot = '';
-        post(false);
+        // A frame that may not claim leaves its own stored selection alone rather than clearing it: text
+        // selected while focus was inside this frame must stay readable if a later selectionchange arrives
+        // after focus has moved out. Clearing here would drop the user's selection, not a hostile claim.
+        if (!canClaim()) { return; }
+        snapshot = text;
+        post(true);
     }
 
     // A selection appearing is reported at once, so acting on it cannot outrun the message that

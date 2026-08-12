@@ -1555,6 +1555,48 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertEqual(sessionState.viewState.quickActions, [.askAboutPage])
     }
 
+    // MARK: - Ask about page vs the attachment strip's re-attach button
+
+    /// The strip's re-attach button takes an explicit removal, so only then is the chip a duplicate.
+    func testAskAboutPageIsDroppedOnlyOnceTheUserHasRemovedTheContext() {
+        // Given a floating-input-capable surface with the page attached
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        sessionState = AIChatContextualChatSessionState(
+            aiChatSettings: mockSettings,
+            pixelHandler: mockPixelHandler,
+            featureFlagger: mockFeatureFlagger,
+            floatingInputFeature: MockFloatingInputFeature(isAvailable: true)
+        )
+        sessionState.updateContext(makeTestContext())
+        XCTAssertEqual(sessionState.viewState.quickActions, [.summarizePage])
+
+        // When the user removes it, the strip offers re-attach, so the chip stands down
+        sessionState.downgradeToPlaceholder()
+        XCTAssertEqual(sessionState.viewState.quickActions, [])
+
+        // Then a new chat clears that offer, so the chip has to come back — otherwise neither is left
+        sessionState.resetToNoChat()
+        XCTAssertEqual(sessionState.viewState.quickActions, [.askAboutPage])
+    }
+
+    func testAskAboutPageSurvivesRemovalWhenThereIsNoFloatingInput() {
+        // Given no floating input, nothing else offers re-attach, so the chip must stay
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        sessionState = AIChatContextualChatSessionState(
+            aiChatSettings: mockSettings,
+            pixelHandler: mockPixelHandler,
+            featureFlagger: mockFeatureFlagger,
+            floatingInputFeature: MockFloatingInputFeature(isAvailable: false)
+        )
+        sessionState.updateContext(makeTestContext())
+
+        // When
+        sessionState.downgradeToPlaceholder()
+
+        // Then
+        XCTAssertEqual(sessionState.viewState.quickActions, [.askAboutPage])
+    }
+
     func testQuickActionsIsEmptyWhenSuggestedPromptsOnAndAttached() {
         // Given
         mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
@@ -2398,6 +2440,11 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
     func fireViewAllChatsTapped() {}
     func fireFireButtonTapped() { fireButtonTappedFired = true }
     func fireFireButtonConfirmed() { fireButtonConfirmedFired = true }
+    func fireAddressBarMenuShown() {}
+    func fireAddressBarMenuNewChatSelected() {}
+    func fireAddressBarMenuAskAboutPageSelected() {}
+    func fireFloatingInputDismissedWithoutSubmission() {}
+    func fireFloatingInputPromotedToSheet() {}
     func firePageContextAutoAttached() { pageContextAutoAttachedFired = true }
     func firePageContextUpdatedOnNavigation(url: String) { pageContextUpdatedOnNavigationFired = true }
     func firePageContextManuallyAttachedNative() { pageContextManuallyAttachedNativeFired = true }
@@ -2476,4 +2523,10 @@ private final class GatedContextualSuggestedPromptsProvider: ContextualSuggested
     func resume(at index: Int, returning suggestions: [ContextualSuggestedPrompt]) {
         continuations[index].resume(returning: ResolvedPageSuggestions(suggestions: suggestions, isSmart: false, pageType: .none))
     }
+}
+
+// MARK: - Floating Input Feature
+
+private struct MockFloatingInputFeature: AIChatContextualFloatingInputFeatureProviding {
+    let isAvailable: Bool
 }

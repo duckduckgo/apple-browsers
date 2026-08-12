@@ -376,7 +376,9 @@ class MainViewController: UIViewController {
     let productSurfaceTelemetry: ProductSurfaceTelemetry
 
     private let aichatFullModeFeature: AIChatFullModeFeatureProviding
-    private let aiChatContextualModeFeature: AIChatContextualModeFeatureProviding
+    let aiChatContextualModeFeature: AIChatContextualModeFeatureProviding
+    lazy var aiChatContextualFloatingInputFeature: AIChatContextualFloatingInputFeatureProviding = AIChatContextualFloatingInputFeature()
+    let duckAIAddressBarPixelHandler: AIChatContextualModePixelFiring = AIChatContextualModePixelHandler()
     let voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding
     lazy var unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature()
     private lazy var floatingUIManager: FloatingUIManaging = FloatingUIManager(
@@ -1093,7 +1095,16 @@ class MainViewController: UIViewController {
             return
         }
 
-        currentTab.aiChatContextualSheetCoordinator.$isSheetPresented
+        // Every runtime input to `duckAIAddressBarEntry`, so the button can never disagree with what a tap
+        // does. `isHomeTab`, the remaining input, only changes with navigation, which refreshes the omnibar.
+        let coordinator = currentTab.aiChatContextualSheetCoordinator
+        let sessionState = coordinator.sessionState
+        let hasActiveChat = sessionState.$viewState
+            .map { _ in sessionState.hasActiveChat }
+            .removeDuplicates()
+        Publishers.CombineLatest3(coordinator.$isSheetPresented, coordinator.$isFloatingInputPresented, hasActiveChat)
+            .removeDuplicates { $0 == $1 }
+            .dropFirst()
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in self?.refreshAIChatChromeChip() }
             .store(in: &aiChatChromeChipCancellables)
@@ -1105,8 +1116,9 @@ class MainViewController: UIViewController {
         let isSheetPresented = currentTab?.aiChatContextualSheetCoordinator.isSheetPresented ?? false
         // iPhone-only: iPad's tabs-bar chip already indicates sheet state, so avoid a duplicate.
         if UIDevice.current.userInterfaceIdiom == .phone {
-            omniBar.barView.updateAIChatButtonForContextualSheet(isPresented: isSheetPresented)
+            omniBar.barView.updateAIChatButtonForContextualSurface(isPresented: duckAIAddressBarEntry == .dismissContextualSurface)
         }
+        refreshDuckAIAddressBarMenu()
         guard let tabsBarController else { return }
         tabsBarController.updateAIChatChipState(isContextualSheetPresented: isSheetPresented)
     }
@@ -2712,6 +2724,7 @@ class MainViewController: UIViewController {
 
     func refreshOmniBar() {
         updateOmniBarLoadingState()
+        refreshDuckAIAddressBarMenu()
         viewCoordinator.omniBar.refreshFireMode(fireMode: isCurrentTabFireTab())
         // A fresh NTP has no `TabViewController` yet; drive UTI from the tab model so fire-mode still applies.
         unifiedToggleInputCoordinator?.updateIsFireTab(isCurrentTabFireTab())
@@ -5413,15 +5426,24 @@ extension MainViewController: OmniBarDelegate {
         ViewHighlighter.hideAll()
         hideSuggestionTray()
 
-        let shouldPresentContextualSheet = currentTab?.tabModel.isHomeTab == false
-            && aiChatContextualModeFeature.isAvailable
-            && prefilledText == nil
+        guard prefilledText == nil else {
+            openAIChatFromAddressBar(prefilledText: prefilledText)
+            return
+        }
 
-        if let currentTab, shouldPresentContextualSheet {
+        switch duckAIAddressBarEntry {
+        case .menu:
+            // Unreachable: the menu is the button's primary action, and everything the entry is derived from
+            // re-attaches it on change, so a tap in this state is consumed by the menu itself.
+            break
+        case .contextualSheet:
+            guard let currentTab else { return }
             omniBar.endEditing()
             currentTab.presentContextualAIChatSheet(from: self)
-        } else {
-            openAIChatFromAddressBar(prefilledText: prefilledText)
+        case .dismissContextualSurface:
+            dismissContextualDuckAISurface()
+        case .legacyDuckAI:
+            openAIChatFromAddressBar(prefilledText: nil)
         }
     }
 
@@ -5484,6 +5506,7 @@ extension MainViewController: OmniBarDelegate {
 
     func onDidBeginEditing() {
         // Omnibar got focus. Lift minimal chrome bar above keyboard.
+        dismissFloatingContextualInputIfPresented()
         refreshMinimalChromeBottomAnchor()
         warmSearchTokenIfEligible()
     }

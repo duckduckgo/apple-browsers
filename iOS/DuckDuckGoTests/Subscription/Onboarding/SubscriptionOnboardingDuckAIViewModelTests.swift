@@ -70,8 +70,6 @@ final class SubscriptionOnboardingDuckAIViewModelTests: XCTestCase {
     }
 
     func testWhenOnAppearThenSelectsMostPremiumAvailableModel() async {
-        // "a" is advanced (non-free tier); "b" is a free-tier model. The default selection must be the most
-        // premium available model, and must not be swayed by whatever was previously persisted.
         let provider = MockAIModelProvider(models: [model("b", tier: ["free"]), model("a", tier: ["plus"])])
         let (viewModel, _) = makeViewModel(provider: provider)
 
@@ -160,33 +158,110 @@ final class SubscriptionOnboardingDuckAIViewModelTests: XCTestCase {
         XCTAssertEqual(provider.updatedModelID, "a")
     }
 
-    func testWhenStartChatThenRequestsDuckAIChatWithoutCompletingSection() async {
-        let delegate = SpySectionDelegate()
+    func testWhenStartChatThenTheDuckAIStepCompletesBeforeTheInterstitialShows() async {
+        // The interstitial renders the checklist, so completing at hand-off instead would show Duck.ai
+        // outstanding on the very screen that is opening it. Tech spec: complete when the in-flow chat starts.
+        let spy = SectionOutputSpy()
         let provider = MockAIModelProvider(models: [model("a", tier: ["plus"])])
-        let (viewModel, _) = makeViewModel(provider: provider, delegate: delegate)
+        let (viewModel, _) = makeViewModel(provider: provider, spy: spy)
         await wait(viewModel.$selectedModelID, until: { $0 != nil }) {
             viewModel.onAppear()
         }
 
         viewModel.startChat()
 
-        XCTAssertEqual(delegate.requestedChatModelIDs, ["a"])
-        // Requesting the chat does not complete the section.
-        XCTAssertTrue(delegate.completedSections.isEmpty)
+        XCTAssertEqual(spy.completeCount, 1)
     }
 
-    func testWhenStartChatWithNoModelsThenChatIsRequestedWithoutASelection() async {
-        let delegate = SpySectionDelegate()
-        let provider = MockAIModelProvider(models: [])
-        let (viewModel, prefetcher) = makeViewModel(provider: provider, delegate: delegate)
-        await wait(prefetcher.$models, until: { if case .failed = $0 { return true } else { return false } }) {
+    func testWhenSkippingThenTheDuckAIStepDoesNotComplete() async {
+        let spy = SectionOutputSpy()
+        let provider = MockAIModelProvider(models: [model("a", tier: ["plus"])])
+        let (viewModel, _) = makeViewModel(provider: provider, spy: spy)
+        await wait(viewModel.$selectedModelID, until: { $0 != nil }) {
+            viewModel.onAppear()
+        }
+
+        viewModel.skip()
+
+        XCTAssertEqual(spy.completeCount, 0)
+    }
+
+    func testWhenStartChatThenInterstitialIsShownAndChatIsNotYetRequested() async {
+        let spy = SectionOutputSpy()
+        let provider = MockAIModelProvider(models: [model("a", tier: ["plus"])])
+        let (viewModel, _) = makeViewModel(provider: provider, spy: spy)
+        await wait(viewModel.$selectedModelID, until: { $0 != nil }) {
             viewModel.onAppear()
         }
 
         viewModel.startChat()
 
-        XCTAssertEqual(delegate.requestedChatModelIDs.count, 1)
-        XCTAssertNil(delegate.requestedChatModelIDs[0])
+        XCTAssertTrue(viewModel.isShowingInterstitial)
+        XCTAssertTrue(spy.requestedChatModelIDs.isEmpty)
+    }
+
+    func testWhenHandingOffThenRequestsDuckAIChatWithoutCompletingSectionAgain() async {
+        let spy = SectionOutputSpy()
+        let provider = MockAIModelProvider(models: [model("a", tier: ["plus"])])
+        let (viewModel, _) = makeViewModel(provider: provider, spy: spy)
+        await wait(viewModel.$selectedModelID, until: { $0 != nil }) {
+            viewModel.onAppear()
+        }
+
+        viewModel.startChat()
+        viewModel.handOffToChat()
+
+        XCTAssertEqual(spy.requestedChatModelIDs, ["a"])
+        XCTAssertEqual(spy.completeCount, 1)
+    }
+
+    /// The interstitial's timer and its tap-to-skip can both fire.
+    func testWhenHandingOffTwiceThenChatIsRequestedOnlyOnce() async {
+        let spy = SectionOutputSpy()
+        let provider = MockAIModelProvider(models: [model("a", tier: ["plus"])])
+        let (viewModel, _) = makeViewModel(provider: provider, spy: spy)
+        await wait(viewModel.$selectedModelID, until: { $0 != nil }) {
+            viewModel.onAppear()
+        }
+
+        viewModel.startChat()
+        viewModel.handOffToChat()
+        viewModel.handOffToChat()
+
+        XCTAssertEqual(spy.requestedChatModelIDs.count, 1)
+    }
+
+    /// The interstitial's timer dismisses it unconditionally, so a hand-off that never actually launches
+    /// (e.g. no reachable `MainViewController`) still returns the customer to the model picker.
+    func testWhenDismissingInterstitialThenItNoLongerShowsEvenWithoutHandingOff() async {
+        let spy = SectionOutputSpy()
+        let provider = MockAIModelProvider(models: [model("a", tier: ["plus"])])
+        let (viewModel, _) = makeViewModel(provider: provider, spy: spy)
+        await wait(viewModel.$selectedModelID, until: { $0 != nil }) {
+            viewModel.onAppear()
+        }
+
+        viewModel.startChat()
+        XCTAssertTrue(viewModel.isShowingInterstitial)
+
+        viewModel.dismissInterstitial()
+
+        XCTAssertFalse(viewModel.isShowingInterstitial)
+    }
+
+    func testWhenStartChatWithNoModelsThenChatIsRequestedWithoutASelection() async {
+        let spy = SectionOutputSpy()
+        let provider = MockAIModelProvider(models: [])
+        let (viewModel, prefetcher) = makeViewModel(provider: provider, spy: spy)
+        await wait(prefetcher.$models, until: { if case .failed = $0 { return true } else { return false } }) {
+            viewModel.onAppear()
+        }
+
+        viewModel.startChat()
+        viewModel.handOffToChat()
+
+        XCTAssertEqual(spy.requestedChatModelIDs.count, 1)
+        XCTAssertNil(spy.requestedChatModelIDs[0])
         XCTAssertNil(provider.updatedModelID)
     }
 
@@ -208,11 +283,14 @@ final class SubscriptionOnboardingDuckAIViewModelTests: XCTestCase {
     // MARK: - Helpers
 
     private func makeViewModel(provider: MockAIModelProvider,
-                               delegate: SubscriptionOnboardingSectionDelegate? = nil)
+                               spy: SectionOutputSpy = SectionOutputSpy())
     -> (viewModel: SubscriptionOnboardingDuckAIViewModel, prefetcher: SubscriptionOnboardingPrefetcher) {
         let prefetcher = SubscriptionOnboardingPrefetcher(connectionInfoService: StubConnectionInfoService(),
                                                           modelProvider: provider)
-        let viewModel = SubscriptionOnboardingDuckAIViewModel(prefetcher: prefetcher, delegate: delegate)
+        let viewModel = SubscriptionOnboardingDuckAIViewModel(prefetcher: prefetcher,
+                                                              onComplete: { spy.recordComplete() },
+                                                              onNext: { spy.recordNext() },
+                                                              onRequestChat: { spy.recordChatRequest($0) })
         return (viewModel, prefetcher)
     }
 
@@ -267,17 +345,16 @@ private final class MockAIModelProvider: SubscriptionOnboardingAIModelProviding 
     }
 }
 
-private final class SpySectionDelegate: SubscriptionOnboardingSectionDelegate {
-    private(set) var completedSections: [SubscriptionOnboardingSection] = []
+/// Records the view model's outputs. It no longer knows which section it belongs to — mapping a completion
+/// onto `.duckAI` is the flow's job — so the meaningful assertion is that completion fired.
+private final class SectionOutputSpy {
+    private(set) var completeCount = 0
+    private(set) var nextCount = 0
     private(set) var requestedChatModelIDs: [String?] = []
-    func sectionDidComplete(_ section: SubscriptionOnboardingSection) {
-        completedSections.append(section)
-    }
-    func sectionDidRequestDuckAIChat(modelID: String?) {
-        requestedChatModelIDs.append(modelID)
-    }
-    func sectionDidRequestAdvance() {}
-    func sectionDidRequestGoBack() {}
+
+    func recordComplete() { completeCount += 1 }
+    func recordNext() { nextCount += 1 }
+    func recordChatRequest(_ modelID: String?) { requestedChatModelIDs.append(modelID) }
 }
 
 // MARK: - DefaultSubscriptionOnboardingAIModelProvider

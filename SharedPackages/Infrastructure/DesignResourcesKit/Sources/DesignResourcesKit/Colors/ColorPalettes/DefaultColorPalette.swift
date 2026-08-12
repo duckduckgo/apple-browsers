@@ -423,6 +423,28 @@ private extension DefaultColorPalette {
             return DynamicColor(staticColor: RebrandingColor.Green.green40)
         case .calendarStripYellow:
             return DynamicColor(staticColor: RebrandingColor.Pollen.pollen20)
+        // Confetti particles are decorative and sit above both light and dark page surfaces, so each hue is
+        // a fixed tone that stays legible on either: the 50 step fills the body, the 70 step outlines it.
+        case .confettiMandarinFill:
+            return DynamicColor(staticColor: RebrandingColor.Mandarin.mandarin50)
+        case .confettiMandarinStroke:
+            return DynamicColor(staticColor: RebrandingColor.Mandarin.mandarin70)
+        case .confettiPondwaterFill:
+            return DynamicColor(staticColor: RebrandingColor.Pondwater.pondwater50)
+        case .confettiPondwaterStroke:
+            return DynamicColor(staticColor: RebrandingColor.Pondwater.pondwater70)
+        case .confettiLilypadFill:
+            return DynamicColor(staticColor: RebrandingColor.Lilypad.lilypad50)
+        case .confettiLilypadStroke:
+            return DynamicColor(staticColor: RebrandingColor.Lilypad.lilypad70)
+        case .confettiBlossomFill:
+            return DynamicColor(staticColor: RebrandingColor.Blossom.blossom50)
+        case .confettiBlossomStroke:
+            return DynamicColor(staticColor: RebrandingColor.Blossom.blossom70)
+        case .confettiPollenFill:
+            return DynamicColor(staticColor: RebrandingColor.Pollen.pollen50)
+        case .confettiPollenStroke:
+            return DynamicColor(staticColor: RebrandingColor.Pollen.pollen70)
         }
     }
 

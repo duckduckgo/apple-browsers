@@ -21,12 +21,13 @@ import Foundation
 import Combine
 import AIChat
 import Subscription
+import PixelKit
+import os.log
 
 /// A seam over the `/models` fetch and the persisted selection, so both can be mocked in tests.
 @MainActor
 protocol SubscriptionOnboardingAIModelProviding: AnyObject {
-    /// Fetches the available models. An empty result signals "no models"; the underlying error is swallowed,
-    /// so failure is inferred from emptiness.
+    /// Fetches the available models; empty result indicates failure.
     func fetchModels() async -> [AIChatModel]
     func updateSelectedModel(_ modelID: String)
 }
@@ -37,15 +38,18 @@ final class DefaultSubscriptionOnboardingAIModelProvider: SubscriptionOnboarding
     private let modelsService: AIChatModelsProviding
     private var preferences: AIChatPreferencesPersisting
     private let subscriptionManager: any SubscriptionManager
+    private let pixelFiring: PixelFiring?
 
     private var models: [AIChatModel] = []
 
     init(modelsService: AIChatModelsProviding? = nil,
          preferences: AIChatPreferencesPersisting = AIChatPreferencesPersistor(),
-         subscriptionManager: any SubscriptionManager = AppDependencyProvider.shared.subscriptionManager) {
+         subscriptionManager: any SubscriptionManager = AppDependencyProvider.shared.subscriptionManager,
+         pixelFiring: PixelFiring? = PixelKit.shared) {
         self.modelsService = modelsService ?? AIChatModelsService()
         self.preferences = preferences
         self.subscriptionManager = subscriptionManager
+        self.pixelFiring = pixelFiring
     }
 
     func fetchModels() async -> [AIChatModel] {
@@ -54,6 +58,8 @@ final class DefaultSubscriptionOnboardingAIModelProvider: SubscriptionOnboarding
             let response = try await modelsService.fetchModels()
             models = UTIModelStore.resolveModels(from: response.models, userTier: userTier)
         } catch {
+            Logger.subscription.error("Duck.ai onboarding model fetch failed: \(error.localizedDescription, privacy: .public)")
+            pixelFiring?.fire(SubscriptionPixel.subscriptionOnboardingAIModelsFailure(error), frequency: .dailyAndCount)
             models = []
         }
         return models
@@ -70,19 +76,30 @@ final class DefaultSubscriptionOnboardingAIModelProvider: SubscriptionOnboarding
 @MainActor
 final class SubscriptionOnboardingDuckAIViewModel: ObservableObject {
 
-    /// The display-ready model list: only those the customer can access, advanced (paid-tier) ones first.
-    /// Derived once when the prefetcher resolves rather than recomputed on every read.
+    /// Display-ready models, derived once at prefetch time to avoid recomputation.
     @Published private(set) var availableModels: [AIChatModel] = []
     @Published private(set) var selectedModelID: String?
 
+    /// Whether the progress interstitial is covering the picker while the chat is handed over.
+    @Published private(set) var isShowingInterstitial = false
+
     private let prefetcher: SubscriptionOnboardingPrefetcher
-    private weak var delegate: SubscriptionOnboardingSectionDelegate?
+    private let onComplete: () -> Void
+    private let onNext: () -> Void
+    private let onRequestChat: (String?) -> Void
     private var cancellables = Set<AnyCancellable>()
 
+    /// Prevents duplicate hand-offs when the interstitial's view is recreated.
+    private var didHandOffToChat = false
+
     init(prefetcher: SubscriptionOnboardingPrefetcher,
-         delegate: SubscriptionOnboardingSectionDelegate? = nil) {
+         onComplete: @escaping () -> Void = {},
+         onNext: @escaping () -> Void = {},
+         onRequestChat: @escaping (String?) -> Void = { _ in }) {
         self.prefetcher = prefetcher
-        self.delegate = delegate
+        self.onComplete = onComplete
+        self.onNext = onNext
+        self.onRequestChat = onRequestChat
     }
 
     private func observePrefetcher() {
@@ -119,22 +136,29 @@ final class SubscriptionOnboardingDuckAIViewModel: ObservableObject {
         selectedModelID = modelID
     }
 
-    /// Persists the committed model (default or tapped) so the launched chat opens with it, then requests
-    /// the chat.
+    /// Persists the model selection, marks the step complete, then shows the interstitial.
     func startChat() {
         if let selectedModelID {
             prefetcher.updateSelectedModel(selectedModelID)
         }
-        delegate?.sectionDidRequestDuckAIChat(modelID: selectedModelID)
+        onComplete()
+        isShowingInterstitial = true
     }
 
-    /// Skips this (currently last) section, finishing the flow.
+    /// Requests the chat
+    func handOffToChat() {
+        guard !didHandOffToChat else { return }
+        didHandOffToChat = true
+        onRequestChat(selectedModelID)
+    }
+
+    /// Ends the interstitial regardless of whether the hand-off above actually succeeded
+    func dismissInterstitial() {
+        isShowingInterstitial = false
+    }
+
+    /// Leaves Duck.ai without starting a chat, moving the flow to the next section.
     func skip() {
-        delegate?.sectionDidRequestAdvance()
-    }
-
-    /// Leaves this section, going back to the previous one.
-    func goBack() {
-        delegate?.sectionDidRequestGoBack()
+        onNext()
     }
 }

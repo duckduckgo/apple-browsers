@@ -4021,6 +4021,18 @@
 /* Special error page title for pages that can only be opened in Safari */
 "prompt.general-page-problem.title" = "Ta stran se naloži samo v brskalniku Safari";
 
+/* Error page message shown after repeated tab terminations */
+"prompt.tab-termination-error-page.message" = "Ta stran se je večkrat nehala nalagati. Poskusite znova naložiti ali nam pošljite povratne informacije.";
+
+/* Button that reloads a page after repeated tab terminations */
+"prompt.tab-termination-error-page.reload" = "Ponovno naloži";
+
+/* Button that opens site feedback after repeated tab terminations */
+"prompt.tab-termination-error-page.send-feedback" = "Pošljite povratne informacije";
+
+/* Error page title shown after repeated tab terminations */
+"prompt.tab-termination-error-page.title" = "Te strani nismo mogli naložiti";
+
 /* Default native error page message */
 "prompt.web-page-load-error.message" = "To spletno mesto ima neveljavno varnostno potrdilo in obisk morda ni varen.";
 

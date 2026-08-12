@@ -180,6 +180,20 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.modelPickerMenu = newValue }
     }
 
+    var usesUpdatedModelPickerPresentation: Bool {
+        get { inputBarView.usesUpdatedModelPickerPresentation }
+        set { inputBarView.usesUpdatedModelPickerPresentation = newValue }
+    }
+
+    var onUpdatedModelPickerTapped: (() -> Void)? {
+        get { inputBarView.onUpdatedModelPickerTapped }
+        set { inputBarView.onUpdatedModelPickerTapped = newValue }
+    }
+
+    var modelPickerSourceView: UIView {
+        inputBarView.modelPickerSourceView
+    }
+
     @discardableResult
     func presentModelPickerMenu() -> Bool {
         inputBarView.presentModelPickerMenu()
@@ -245,8 +259,8 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.isImageButtonHidden = newValue }
     }
 
-    func setEditMode(_ editing: Bool) {
-        inputBarView.setEditMode(editing)
+    func setEditMode(_ editing: Bool, showsReplaceDisclaimer: Bool) {
+        inputBarView.setEditMode(editing, showsReplaceDisclaimer: showsReplaceDisclaimer)
     }
 
     var isImageButtonEnabled: Bool {

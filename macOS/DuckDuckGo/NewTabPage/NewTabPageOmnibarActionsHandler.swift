@@ -181,10 +181,12 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
         if mode == AIChatNativePrompt.voiceMode {
             let sourceCollection = windowControllersManager.lastKeyMainWindowController?
                 .mainViewController.tabCollectionViewModel
+            NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.voice)
             tabOpener.openVoiceSession(inSourceCollection: sourceCollection, behavior: behavior)
             return
         }
 
+        NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.newTabPage)
         tabOpener.openAIChatTab(with: .query(chat), behavior: behavior)
 
         // Re-set prompt after tab opener to include images, files, attached page contexts, mode,
@@ -242,6 +244,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
             behavior = .newTab(selected: isShiftPressed())
         }
 
+        NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.recentChat)
         tabOpener.openAIChatTab(with: .existingChat(chatId: chatId), behavior: behavior)
     }
 
@@ -258,6 +261,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
             behavior = .newTab(selected: isShiftPressed())
         }
 
+        NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.newTabPage)
         tabOpener.openNewAIChat(in: behavior)
     }
 

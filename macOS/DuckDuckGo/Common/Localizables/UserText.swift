@@ -512,6 +512,7 @@ struct UserText {
     static let fireDialogModeFromThisTab = NotLocalizedString("fire.dialog.mode.tab", value: "From this tab", comment: "Fire dialog mode for clearing data from current tab")
     static let fireDialogModeAllData = NotLocalizedString("fire.dialog.mode.all.data", value: "All data", comment: "Fire dialog mode for clearing all browsing data")
     static let fireDialogChooseWhatToDelete = NotLocalizedString("fire.dialog.choose.what.to.delete", value: "Choose what to delete", comment: "Fire dialog disclosure label that expands/collapses the data type toggles")
+    static let fireDialogFireproofExplanation = NotLocalizedString("fire.dialog.fireproof.explanation", value: "Fireproof site data won’t be deleted", comment: "Footnote below the Fire dialog data type toggles, explaining that data belonging to Fireproof sites is kept")
     static let fireDialogAccessibilityDetailsExpanded = NotLocalizedString("fire.dialog.accessibility.details.expanded", value: "expanded", comment: "Accessiblity value - The fire dialog details are expanded")
     static let fireDialogAccessibilityDetailsCollapsed = NotLocalizedString("fire.dialog.accessibility.details.collapsed", value: "collapsed", comment: "Accessiblity value - The fire dialog details are collapsed")
     static let fireDialogAccessibilitySelected = NotLocalizedString("fire.dialog.accessibility.selected", value: "selected", comment: "Accessiblity value - The selected fire dialog mode")
@@ -559,9 +560,9 @@ struct UserText {
     static let fireDialogHistoryOverlayTitleRegular = NotLocalizedString("fire.dialog.history.overlay.title.regular",
                                                                           value: "will be deleted:",
                                                                           comment: "Regular-weight portion of the simplified Fire dialog's history overlay title, appended after fireDialogHistoryOverlayTitleBold.")
-    static let fireDialogSeeFullHistory = NotLocalizedString("fire.dialog.history.overlay.see.full.history",
-                                                               value: "See full history",
-                                                               comment: "Link button shown below the (capped) history overlay list, opens the full History View.")
+    static let fireDialogShowAllHistory = NotLocalizedString("fire.dialog.history.overlay.show.all.history",
+                                                             value: "Show all history",
+                                                             comment: "Link button shown below the (capped) history overlay list, opens the full History View.")
 
     // MARK: - Fire dialog single-entry contextual titles
     /// Title used when reusing the Fire dialog as a single entry point (from History, menu, etc.) with full-time range
@@ -617,11 +618,11 @@ struct UserText {
     static let webTrackingProtectionSettingsTitle = NSLocalizedString("web.tracking.protection.title", value: "Web Tracking Protection", comment: "Web tracking protection settings section title")
     public static let webTrackingProtectionSubtitle = NSLocalizedString("settings.web.tracking.protection.subtitle", value: "How We Protect You", comment: "The subtitle of the web tracking protection grid section")
     static let webTrackingProtectionExplenation = NSLocalizedString("web.tracking.protection.subtitle", value: "DuckDuckGo automatically blocks hidden trackers as you browse the web.", comment: "Privacy feature explanation in the browser settings")
-    static let autoManageCookiePopupsTitle = NSLocalizedString("settings.cookie.auto-manage.title", value: "Auto-Manage Cookie Pop-Ups", comment: "Title for the auto-manage cookie pop-ups toggle in settings")
-    static let autoManageCookiePopupsExplanation = NSLocalizedString("settings.cookie.auto-manage.explanation", value: "We'll aim to only select the most private cookie options available for you, then close these pop-ups.", comment: "Explanation below the auto-manage cookie pop-ups toggle in settings")
-    static let popUpsWithoutOptOutsTitle = NSLocalizedString("settings.cookie.popups-without-opt-outs.title", value: "Pop-Ups Without Opt-Outs", comment: "Title for the pop-ups without opt-outs toggle in settings")
-    static let popUpsWithoutOptOutsExplanation = NSLocalizedString("settings.cookie.popups-without-opt-outs.explanation", value: "Also let DuckDuckGo save you a click by accepting cookies on your behalf to close pop-ups that don’t let you opt out.", comment: "Explanation below the pop-ups without opt-outs toggle in settings")
-    static let autoconsentExplanation = NSLocalizedString("autoconsent.explanation", value: "DuckDuckGo can auto-manage cookie preferences to maximize privacy, minimize cookies, and close these pop-ups.", comment: "Autoconsent feature explanation in settings")
+    static let autoManageCookiePopupsTitle = NSLocalizedString("settings.cookie.auto-manage.title", value: "Reject optional cookies", comment: "Title for the auto-manage cookie pop-ups toggle in settings")
+    static let autoManageCookiePopupsExplanation = NSLocalizedString("settings.cookie.auto-manage.explanation", value: "We’ll aim to reject as many cookies as possible for you, then close the pop-ups.", comment: "Explanation below the auto-manage cookie pop-ups toggle in settings")
+    static let popUpsWithoutOptOutsTitle = NSLocalizedString("settings.cookie.popups-without-opt-outs.title", value: "Accept cookies that can’t be rejected", comment: "Title for the pop-ups without opt-outs toggle in settings")
+    static let popUpsWithoutOptOutsExplanation = NSLocalizedString("settings.cookie.popups-without-opt-outs.explanation", value: "If there’s no reject option, we’ll save you a click, accept these cookies for you, and close the pop-ups.", comment: "Explanation below the pop-ups without opt-outs toggle in settings")
+    static let autoconsentExplanation = NSLocalizedString("autoconsent.explanation", value: "DuckDuckGo can auto-manage cookie pop-ups to maximize privacy and minimize cookies before you even see them.", comment: "Autoconsent feature explanation in settings")
     static let privateSearchExplanation = NSLocalizedString("private.search.explenation", value: "DuckDuckGo Private Search is your default search engine, so you can search the web without being tracked.", comment: "feature explanation in settings")
     static let webTrackingProtectionExplanation = NSLocalizedString("web.tracking.protection.explanation", value: "DuckDuckGo automatically blocks hidden trackers as you browse the web.", comment: "feature explanation in settings")
     static let webTrackingProtectionUpdatedDescription = NSLocalizedString("web.tracking.protection.updated.description", value: "The DuckDuckGo browser provides tracking protections, which are always active.", comment: "Updated feature description in settings")
@@ -1994,7 +1995,8 @@ struct UserText {
     static let showBookmarksBarNewTabOnly = NSLocalizedString("bookmarks.bar.show.new-tab-only", value: "Only show on New Tab", comment: "Preference for only showing the bookmarks bar on new tab")
     static let bookmarksBarFolderEmpty = NSLocalizedString("bookmarks.bar.folder.empty", value: "Empty", comment: "Empty state for a bookmarks bar folder")
     static let bookmarksBarContextMenuDelete = NSLocalizedString("bookmarks.bar.context-menu.delete", value: "Delete", comment: "Delete menu item for the bookmarks bar context menu")
-    static let bookmarksBarContextMenuReorderByName = NotLocalizedString("bookmarks.bar.context-menu.reorder-by-name", value: "Reorder by name", comment: "Reorder by name menu item for bookmark folder context menus")
+    static let bookmarksBarContextMenuReorderByName = NotLocalizedString("bookmarks.bar.context-menu.reorder-by-name", value: "Reorder by Name", comment: "Reorder by Name menu item for bookmark folder context menus")
+    static let bookmarksUndoActionReorderByName = NotLocalizedString("bookmarks.undo-action.reorder-by-name", value: "Reorder by Name", comment: "Undo and redo action name for permanently reordering bookmarks by name")
     static let bookmarksBarContextMenuMoveToEnd = NSLocalizedString("bookmarks.bar.context-menu.move-to-end", value: "Move to End", comment: "Move to End menu item for the bookmarks bar context menu")
 
     static let inviteDialogGetStartedButton = NSLocalizedString("invite.dialog.get.started.button", value: "Get Started", comment: "Get Started button on an invite dialog")

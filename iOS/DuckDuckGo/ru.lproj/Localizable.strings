@@ -4021,6 +4021,18 @@
 /* Special error page title for pages that can only be opened in Safari */
 "prompt.general-page-problem.title" = "Эта страница открывается только в Safari";
 
+/* Error page message shown after repeated tab terminations */
+"prompt.tab-termination-error-page.message" = "Загрузка этой страницы прерывалась несколько раз. Попробуй обновить страницу или отправь нам отзыв.";
+
+/* Button that reloads a page after repeated tab terminations */
+"prompt.tab-termination-error-page.reload" = "Перезагрузить";
+
+/* Button that opens site feedback after repeated tab terminations */
+"prompt.tab-termination-error-page.send-feedback" = "Отправить отзыв";
+
+/* Error page title shown after repeated tab terminations */
+"prompt.tab-termination-error-page.title" = "Не удалось загрузить эту страницу";
+
 /* Default native error page message */
 "prompt.web-page-load-error.message" = "Сертификат безопасности этого сайта недействителен. Посещение сайта может быть небезопасным.";
 

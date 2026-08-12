@@ -326,6 +326,42 @@ final class FileDownloadManagerTests: XCTestCase {
         }
     }
 
+    // A too-long suggested filename makes the OS return NSFileWriteInvalidFileNameError (ENAMETOOLONG).
+    // This is an expected, non-actionable condition: the download should fail with the real error and
+    // must NOT trip the pixel assertion reserved for genuinely unexpected write failures.
+    @MainActor
+    func testWhenFileCreationFailsWithInvalidFileNameThenDownloadIsMarkedFailed() {
+        let downloadsURL = fm.temporaryDirectory
+        preferences.selectedDownloadLocation = downloadsURL
+
+        // Inject the error the OS raises when the suggested filename exceeds the filesystem limit.
+        let writeError = CocoaError(.fileWriteInvalidFileName)
+        dm.reservePlaceholderFile = { _ in throw writeError }
+
+        let download = WKDownloadMock(url: .duckDuckGo)
+        let task = dm.add(download, fireWindowSession: nil, delegate: self, destination: .auto)
+
+        self.chooseDestination = { _, _, _ in
+            XCTFail("Unexpected chooseDestination call — download should have failed, not prompted")
+        }
+
+        let e = expectation(description: "WKDownload callback called")
+        download.delegate?.download(download.asWKDownload(), decideDestinationUsing: response, suggestedFilename: "file.pdf") { url in
+            XCTAssertNil(url, "Download should be cancelled when the filename is invalid")
+            e.fulfill()
+        }
+
+        waitForExpectations(timeout: 5)
+
+        if case .failed(_, _, _, let error) = task.state {
+            let nsError = error.underlyingError as NSError?
+            XCTAssertEqual(nsError?.domain, NSCocoaErrorDomain)
+            XCTAssertEqual(nsError?.code, NSFileWriteInvalidFileNameError)
+        } else {
+            XCTFail("Expected task state .failed, got \(task.state)")
+        }
+    }
+
     // When the preferred filename is already taken on disk (TOCTOU race: another process claimed it),
     // the download manager should retry with the next available filename rather than aborting.
     @MainActor

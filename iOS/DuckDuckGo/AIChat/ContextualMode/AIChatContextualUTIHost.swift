@@ -131,6 +131,17 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
         coordinator.viewController.setSelectionContextChips(items, onRemove: onRemove)
     }
 
+    /// Images and files currently in the input.
+    var attachmentCount: Int {
+        coordinator.attachmentCount
+    }
+
+    /// Fires when the input's attachments change.
+    var onAttachmentsChanged: (() -> Void)? {
+        get { coordinator.onAttachmentsChanged }
+        set { coordinator.onAttachmentsChanged = newValue }
+    }
+
     func presentRejectionBanner(_ message: String) {
         coordinator.presentRejectionBanner(message)
     }

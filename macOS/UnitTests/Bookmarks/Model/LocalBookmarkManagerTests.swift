@@ -20,10 +20,11 @@ import Bookmarks
 import Combine
 import ConcurrencyExtensions
 import Foundation
-import os.log
+import PixelKitTestingUtilities
 import SharedTestUtilities
 import Utilities
 import XCTest
+import os.log
 
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -78,6 +79,55 @@ final class LocalBookmarkManagerTests: XCTestCase {
         XCTAssertNotNil(bookmarkManager.getBookmark(for: Bookmark.aBookmark.urlObject!))
         XCTAssert(bookmarkStoreMock.loadAllCalled)
         XCTAssertEqual(bookmarkManager.list?.bookmarks().count, 1)
+    }
+
+    @MainActor
+    func testWhenBookmarksAreLoadedThenBookmarkCountPixelIsScheduledAndReceivesBucketedTotalBookmarks() throws {
+        let bookmarks = (0..<11).map { index in
+            Bookmark(
+                id: "bookmark-\(index)",
+                url: "https://example.com/\(index)",
+                title: "Bookmark \(index)",
+                isFavorite: index == 0
+            )
+        }
+        let folder = BookmarkFolder(id: "folder", title: "Folder", children: bookmarks)
+        let pixelFiring = PixelKitMock(expecting: [
+            ExpectedFireCall(pixel: BookmarksPixel.count(.elevenToFifty), frequency: .daily),
+        ])
+        var scheduledPixel: (() -> Void)?
+        let bookmarkManager = LocalBookmarkManager(
+            bookmarkStore: BookmarkStoreMock(bookmarks: [folder]),
+            appearancePreferences: .mock,
+            pixelFiring: pixelFiring,
+            bookmarksCountPixelScheduler: { scheduledPixel = $0 }
+        )
+
+        bookmarkManager.loadBookmarks()
+
+        XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty)
+        let firePixel = try XCTUnwrap(scheduledPixel)
+        firePixel()
+        pixelFiring.verifyExpectations()
+    }
+
+    @MainActor
+    func testWhenLoadingBookmarksFailsThenBookmarkCountPixelIsNotFired() {
+        let bookmarkStore = BookmarkStoreMock()
+        bookmarkStore.loadError = BookmarkManagerError.somethingReallyBad
+        let pixelFiring = PixelKitMock(expecting: [])
+        let bookmarkManager = LocalBookmarkManager(
+            bookmarkStore: bookmarkStore,
+            appearancePreferences: .mock,
+            pixelFiring: pixelFiring,
+            bookmarksCountPixelScheduler: { _ in
+                XCTFail("Bookmark count pixel should not be scheduled when loading fails")
+            }
+        )
+
+        bookmarkManager.loadBookmarks()
+
+        pixelFiring.verifyExpectations()
     }
 
     @MainActor
@@ -922,7 +972,13 @@ fileprivate extension LocalBookmarkManagerTests {
     private func makeManager(@BookmarksBuilder with bookmarks: () -> [BookmarksBuilderItem]) -> (LocalBookmarkManager, BookmarkStoreMock) {
         let bookmarkStoreMock = BookmarkStoreMock(contextProvider: context.map { context in { context } }, bookmarks: bookmarks().build())
         foldersStore = BookmarkFolderStoreMock()
-        let bookmarkManager = LocalBookmarkManager(bookmarkStore: bookmarkStoreMock, foldersStore: foldersStore, appearancePreferences: .mock)
+        let bookmarkManager = LocalBookmarkManager(
+            bookmarkStore: bookmarkStoreMock,
+            foldersStore: foldersStore,
+            appearancePreferences: .mock,
+            pixelFiring: nil,
+            bookmarksCountPixelScheduler: { $0() }
+        )
         Logger.tests.debug("LocalBookmarkManagerTests.\(self.name).makeManager \(String(describing: bookmarkManager)) with \(bookmarkStoreMock.debugDescription, privacy: .public)")
 
         return (bookmarkManager, bookmarkStoreMock)

@@ -25,6 +25,7 @@ name: test_contextual_immediate_uti_pre_submit_context
         ff.contextualDuckAIMode: "true"
         ff.aiChatContextualUnifiedToggleInput: "true"
         ff.aiChatAutoAttachContextByDefault: "true"
+        ff.contextualSuggestedPrompts: "true"
 
 - runFlow:
     file: ../shared/dismiss_chat_open_modals.yaml
@@ -39,7 +40,8 @@ name: test_contextual_immediate_uti_pre_submit_context
     id: "Browser.OmniBar.Button.AIChat"
 - assertVisible:
     id: "AIChat.ContextualSheet"
-- assertVisible: "Summarize page"
+- assertVisible:
+    id: "summarize-page"
 - assertNotVisible:
     id: "AIChatNativeInputView.submitButton"
 - extendedWaitUntil:

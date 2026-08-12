@@ -1,0 +1,750 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>iOS Promo Queue — Final System Review Appendix</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #14213d;
+      --muted: #526179;
+      --line: #c8d2df;
+      --panel: #f5f8fc;
+      --blue: #1d4f91;
+      --blue-soft: #e8f1fb;
+      --green: #176b4d;
+      --green-soft: #e7f6ef;
+      --amber: #855f00;
+      --amber-soft: #fff4cf;
+      --red: #a1281e;
+      --red-soft: #fdecea;
+      --purple: #5b3f91;
+      --purple-soft: #f0ebfa;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: #fff;
+      color: var(--ink);
+      font: 16px/1.52 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    main { max-width: 1220px; margin: 0 auto; padding: 32px 26px 72px; }
+    header {
+      padding: 30px;
+      color: #fff;
+      border-radius: 18px;
+      background: linear-gradient(135deg, #173f75, #4a2e7f);
+      box-shadow: 0 8px 28px rgba(20,33,61,.14);
+    }
+    h1 { margin: 0 0 8px; font-size: clamp(2rem, 4vw, 3.15rem); line-height: 1.08; }
+    h2 { margin: 48px 0 14px; padding-bottom: 7px; border-bottom: 2px solid var(--line); font-size: 1.65rem; }
+    h3 { margin: 28px 0 10px; font-size: 1.17rem; }
+    h4 { margin: 20px 0 8px; }
+    p { margin: 8px 0 12px; }
+    code {
+      font: .88em ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      overflow-wrap: anywhere;
+    }
+    a { color: var(--blue); }
+    .subtitle { margin: 0; max-width: 900px; color: #e8effa; font-size: 1.08rem; }
+    .meta { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 8px; }
+    .tag {
+      display: inline-block;
+      padding: 4px 9px;
+      border: 1px solid rgba(255,255,255,.38);
+      border-radius: 999px;
+      background: rgba(255,255,255,.1);
+      color: #fff;
+      font-size: .82rem;
+    }
+    .toc { columns: 2; column-gap: 40px; }
+    .toc li { break-inside: avoid; margin: 4px 0; }
+    .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 18px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 14px; }
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      padding: 16px;
+      background: #fff;
+      break-inside: avoid;
+    }
+    .card > :first-child { margin-top: 0; }
+    .card > :last-child { margin-bottom: 0; }
+    .blue { background: var(--blue-soft); border-color: #a9c6e6; }
+    .green { background: var(--green-soft); border-color: #acd9c7; }
+    .amber { background: var(--amber-soft); border-color: #e6cd76; }
+    .red { background: var(--red-soft); border-color: #efaaa4; }
+    .purple { background: var(--purple-soft); border-color: #c8b7e8; }
+    .callout { border-left: 5px solid var(--blue); padding: 12px 15px; background: var(--blue-soft); }
+    .callout.warning { border-color: var(--red); background: var(--red-soft); }
+    .status { white-space: nowrap; font-weight: 700; }
+    .complete { color: var(--green); }
+    .partial { color: var(--red); }
+    .deferred { color: var(--amber); }
+    .na { color: var(--muted); }
+    ul, ol { padding-left: 23px; }
+    li { margin: 5px 0; }
+    .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 11px; }
+    table { width: 100%; border-collapse: collapse; min-width: 760px; font-size: .91rem; }
+    th, td { padding: 10px 11px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); }
+    th { background: #eaf0f7; font-weight: 700; }
+    tbody tr:nth-child(even) { background: #fafbfd; }
+    tbody tr:last-child td { border-bottom: 0; }
+    .diagram {
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      background: #fbfcfe;
+      padding: 10px;
+      break-inside: avoid;
+    }
+    .diagram svg { display: block; width: 100%; min-width: 670px; height: auto; }
+    .diagram.small svg { min-width: 520px; }
+    .legend { display: flex; flex-wrap: wrap; gap: 12px; margin: 9px 0 0; color: var(--muted); font-size: .84rem; }
+    .swatch { display: inline-block; width: 12px; height: 12px; margin-right: 5px; border-radius: 3px; vertical-align: -1px; }
+    .flow { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; }
+    .flow .step { flex: 1 1 150px; min-width: 0; padding: 11px; border-radius: 9px; background: var(--panel); border: 1px solid var(--line); }
+    .flow .arrow { align-self: center; color: var(--blue); font-weight: 800; }
+    .source { color: var(--muted); font-size: .82rem; }
+    .footnote { color: var(--muted); font-size: .86rem; }
+    .pill { display: inline-block; padding: 2px 7px; border-radius: 999px; font-size: .8rem; font-weight: 700; }
+    .pill.internal { color: #134b7d; background: #ddebfa; }
+    .pill.public { color: #6b3500; background: #ffe8b0; }
+    .pill.package { color: #4c3580; background: #ebe2fb; }
+    .sha { font-size: .78rem; }
+    .no-break { break-inside: avoid; }
+    @media (max-width: 780px) {
+      main { padding: 18px 14px 48px; }
+      header { padding: 22px 18px; border-radius: 12px; }
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+      .toc { columns: 1; }
+    }
+    @media print {
+      @page { size: A4 landscape; margin: 11mm; }
+      body { font-size: 10.5pt; }
+      main { max-width: none; padding: 0; }
+      header { background: #173f75 !important; print-color-adjust: exact; -webkit-print-color-adjust: exact; box-shadow: none; }
+      h2 { break-after: avoid; margin-top: 26px; }
+      h3, h4 { break-after: avoid; }
+      .diagram { overflow: visible; }
+      .diagram svg { min-width: 0 !important; }
+      .table-wrap { overflow: visible; }
+      table { min-width: 0; font-size: 8.5pt; }
+      th, td { padding: 6px; }
+      a { color: inherit; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>iOS Promo Queue</h1>
+    <p class="subtitle">Final cumulative system appendix, derived from the implementation at Q3 head. It explains the app-scoped coordination contract, lifecycle, host integration, cooldowns, developer API, and current review caveats.</p>
+    <div class="meta">
+      <span class="tag">Q3 <code>e83b59282e897df8233fea246732f3cd98367429</code></span>
+      <span class="tag">Static review 2026-08-12</span>
+      <span class="tag">No builds or tests run in final review</span>
+      <span class="tag">All access levels verified from Swift sources</span>
+    </div>
+  </header>
+
+  <section aria-labelledby="review-status">
+    <h2 id="review-status">Review status</h2>
+    <div class="grid-2">
+      <div class="card green">
+        <h3>Implemented foundation</h3>
+        <p>The cumulative branch implements the agreed process-latched mode, one global modal/RMF owner, modal retention and revalidation, readiness-gated RMF admission, directional cooldown policy, appearance confirmation, weak stable retry registry, and read-only diagnostics.</p>
+      </div>
+      <div class="card red">
+        <h3>Release caveats</h3>
+        <ol>
+          <li><strong>High:</strong> on iOS 15/16, a <code>CATransaction</code> completion is not authoritative for SwiftUI’s scale/opacity removal transition and can release ownership early.</li>
+          <li><strong>Medium:</strong> the iPad <code>hidePopover()</code> path deactivates the tray surface but does not reactivate the exposed standard NTP.</li>
+        </ol>
+        <p class="source">Sources: <code>NewTabPageMessagesModel.swift:47–56, 752–785, 883–909</code>; <code>MainViewController.swift:3159–3193, 5781–5788</code>; <code>PopoverSuggestionsCoordinator.swift:104–120</code>.</p>
+      </div>
+    </div>
+    <p class="callout warning"><strong>Interpretation:</strong> the design is functionally present but not fully conformant at Q3 head because two production paths violate the physical-removal and host-exposure invariants. The diagrams below show the intended architecture and label the current divergence where it occurs.</p>
+  </section>
+
+  <nav aria-labelledby="contents">
+    <h2 id="contents">Contents</h2>
+    <ol class="toc">
+      <li><a href="#purpose">Purpose, scope, invariants, flag, non-goals</a></li>
+      <li><a href="#architecture">Before and after architecture</a></li>
+      <li><a href="#flows">Presentation and conflict-resolution flows</a></li>
+      <li><a href="#objects">High-level object graph</a></li>
+      <li><a href="#sequences">Modal and RMF sequences</a></li>
+      <li><a href="#lifecycle">Lifecycle, readiness, and physical removal</a></li>
+      <li><a href="#cooldowns">Cooldown and appearance-confirmation flow</a></li>
+      <li><a href="#conflicts">Conflict-resolution matrix</a></li>
+      <li><a href="#api">Externally consumed system API</a></li>
+      <li><a href="#traceability">Technical-design traceability</a></li>
+      <li><a href="#workflows">Developer workflows</a></li>
+      <li><a href="#tradeoffs">Tradeoffs and limitations</a></li>
+      <li><a href="#glossary">Glossary</a></li>
+      <li><a href="#map">Source, test, and review map</a></li>
+    </ol>
+  </nav>
+
+  <section id="purpose" aria-labelledby="purpose-heading">
+    <h2 id="purpose-heading">Purpose, scope, invariants, flag, and non-goals</h2>
+    <p>Promo Queue prevents launch-modal promos and NTP Remote Messaging Framework (RMF) cards from appearing together. It is a narrow coordination layer: RMF still owns message targeting, content, persistence, and dismissal; the modal manager still owns provider ordering, modal policy, and UIKit presentation.</p>
+    <div class="grid-3">
+      <div class="card blue">
+        <h3>Scope</h3>
+        <ul>
+          <li>Launch modals and NTP RMF cards on iOS.</li>
+          <li>One main-actor owner across all NTP instances.</li>
+          <li>Standard NTP, suggestion-tray NTP, and unified-input/favorites NTP presentation contexts.</li>
+          <li>Directional cooldowns and local read-only diagnostics.</li>
+        </ul>
+      </div>
+      <div class="card green">
+        <h3>Core invariants</h3>
+        <ul>
+          <li>At most one global owner: modal or RMF.</li>
+          <li>Admission precedes provider evaluation or RMF card construction.</li>
+          <li>History records confirmed appearances, not intent.</li>
+          <li>Modal ownership ends at exact-root detachment.</li>
+          <li>RMF ownership ends after physical removal plus one main turn.</li>
+        </ul>
+      </div>
+      <div class="card purple">
+        <h3>Non-goals</h3>
+        <ul>
+          <li>A generic promo scheduler, priority system, caps, or restoration.</li>
+          <li>macOS <code>PromoService</code> changes.</li>
+          <li>New telemetry, pixels, or rollout configuration.</li>
+          <li>Atomic unique-shown reservation.</li>
+          <li>Live feature-flag transitions.</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>Feature-flag behavior</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Concern</th><th>Legacy mode</th><th>Coordinated mode</th><th>Evidence</th></tr></thead>
+        <tbody>
+          <tr><td>Sampling</td><td colspan="2">The factory reads <code>.promoPresentationCoordination</code> once while constructing the app graph and stores immutable <code>PromoCoordinationMode</code>. Later remote/local changes require a fresh graph, which in production means force-quit and relaunch.</td><td><code>PromoCoordinationFactory.swift:31–41, 66–82</code>; <code>PromoCoordinationMode.swift:20–29</code></td></tr>
+          <tr><td>Modal path</td><td>Existing lease-free manager flow.</td><td>Acquire owner → RMF→modal cooldown → manager.</td><td><code>PromoCoordinationService.swift:275–302</code></td></tr>
+          <tr><td>RMF path</td><td>Direct/eager mapping and established appearance accounting.</td><td>Retain candidate; gate build/publication behind readiness, owner, and cooldown.</td><td><code>NewTabPageMessagesModel.swift:460–518, 539–553, 659–725</code></td></tr>
+          <tr><td>Persistence/diagnostics</td><td>No Promo Queue history read or write; snapshot uses empty cooldown state.</td><td>Confirmed-appearance persistence and non-mutating diagnostics enabled.</td><td><code>PromoCoordinationService.swift:411–425, 455–480</code></td></tr>
+          <tr><td>Lifecycle/retry bookkeeping</td><td>Presentation is unchanged; current code still creates a weak retry registration, but never drains or admits through it.</td><td>Readiness tokens and registry checkpoints control admission.</td><td><code>NewTabPageMessagesModel.swift:215–239</code>; <code>PromoCoordinationService.swift:184–250, 428–447</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="architecture" aria-labelledby="architecture-heading">
+    <h2 id="architecture-heading">Before and after architecture</h2>
+    <div class="grid-2">
+      <div>
+        <h3>Before Promo Queue</h3>
+        <div class="diagram small">
+          <svg viewBox="0 0 700 410" role="img" aria-labelledby="before-arch-title before-arch-desc">
+            <title id="before-arch-title">Architecture before Promo Queue</title>
+            <desc id="before-arch-desc">The modal manager and several NTP RMF hosts operate independently, allowing simultaneous presentation.</desc>
+            <defs><marker id="arr-before" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#1d4f91"/></marker></defs>
+            <rect x="25" y="25" width="650" height="62" rx="12" fill="#e8f1fb" stroke="#1d4f91"/>
+            <text x="350" y="52" text-anchor="middle" font-size="18" font-weight="700" fill="#14213d">App launch / foreground</text>
+            <text x="350" y="73" text-anchor="middle" font-size="14" fill="#526179">independent triggers</text>
+            <rect x="45" y="145" width="250" height="96" rx="12" fill="#f0ebfa" stroke="#5b3f91"/>
+            <text x="170" y="176" text-anchor="middle" font-size="17" font-weight="700" fill="#14213d">Modal manager</text>
+            <text x="170" y="200" text-anchor="middle" font-size="14" fill="#526179">provider order + UIKit</text>
+            <text x="170" y="220" text-anchor="middle" font-size="14" fill="#526179">modal-only cooldown</text>
+            <rect x="405" y="126" width="250" height="135" rx="12" fill="#e7f6ef" stroke="#176b4d"/>
+            <text x="530" y="155" text-anchor="middle" font-size="17" font-weight="700" fill="#14213d">RMF hosts</text>
+            <text x="530" y="183" text-anchor="middle" font-size="14" fill="#526179">standard NTP</text>
+            <text x="530" y="205" text-anchor="middle" font-size="14" fill="#526179">suggestion tray</text>
+            <text x="530" y="227" text-anchor="middle" font-size="14" fill="#526179">unified input / favorites</text>
+            <path d="M255 87 L180 142" stroke="#1d4f91" stroke-width="3" fill="none" marker-end="url(#arr-before)"/>
+            <path d="M445 87 L520 123" stroke="#1d4f91" stroke-width="3" fill="none" marker-end="url(#arr-before)"/>
+            <rect x="110" y="320" width="480" height="62" rx="12" fill="#fdecea" stroke="#a1281e" stroke-width="2"/>
+            <text x="350" y="347" text-anchor="middle" font-size="17" font-weight="700" fill="#a1281e">No shared conflict authority</text>
+            <text x="350" y="370" text-anchor="middle" font-size="14" fill="#14213d">modal and RMF can overlap; multiple NTPs can compete</text>
+            <path d="M170 242 L270 316" stroke="#a1281e" stroke-width="3" fill="none" marker-end="url(#arr-before)"/>
+            <path d="M530 262 L430 316" stroke="#a1281e" stroke-width="3" fill="none" marker-end="url(#arr-before)"/>
+          </svg>
+        </div>
+      </div>
+      <div>
+        <h3>After Promo Queue</h3>
+        <div class="diagram small">
+          <svg viewBox="0 0 700 410" role="img" aria-labelledby="after-arch-title after-arch-desc">
+            <title id="after-arch-title">Architecture after Promo Queue</title>
+            <desc id="after-arch-desc">One app-scoped coordination service mediates modal and RMF ownership, cooldowns, readiness, and handoff while leaving content policy with existing owners.</desc>
+            <defs><marker id="arr-after" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#1d4f91"/></marker></defs>
+            <rect x="160" y="22" width="380" height="66" rx="12" fill="#e8f1fb" stroke="#1d4f91" stroke-width="2"/>
+            <text x="350" y="49" text-anchor="middle" font-size="18" font-weight="700" fill="#14213d">PromoCoordinationService</text>
+            <text x="350" y="72" text-anchor="middle" font-size="14" fill="#526179">app-scoped, @MainActor, latched mode</text>
+            <rect x="25" y="135" width="205" height="88" rx="12" fill="#f0ebfa" stroke="#5b3f91"/>
+            <text x="128" y="165" text-anchor="middle" font-size="16" font-weight="700" fill="#14213d">Modal manager</text>
+            <text x="128" y="190" text-anchor="middle" font-size="13" fill="#526179">selection, revalidation, UIKit</text>
+            <rect x="248" y="135" width="205" height="88" rx="12" fill="#fff4cf" stroke="#855f00"/>
+            <text x="350" y="165" text-anchor="middle" font-size="16" font-weight="700" fill="#14213d">Global arbiter</text>
+            <text x="350" y="190" text-anchor="middle" font-size="13" fill="#526179">none | modal | RMF</text>
+            <rect x="470" y="135" width="205" height="88" rx="12" fill="#e7f6ef" stroke="#176b4d"/>
+            <text x="573" y="165" text-anchor="middle" font-size="16" font-weight="700" fill="#14213d">Cooldown policy</text>
+            <text x="573" y="190" text-anchor="middle" font-size="13" fill="#526179">confirmed timestamps</text>
+            <rect x="80" y="296" width="540" height="88" rx="12" fill="#e7f6ef" stroke="#176b4d" stroke-width="2"/>
+            <text x="350" y="325" text-anchor="middle" font-size="17" font-weight="700" fill="#14213d">NTP RMF models and host exposure seams</text>
+            <text x="350" y="350" text-anchor="middle" font-size="14" fill="#526179">standard NTP • suggestion tray • unified input/favorites • multiple instances</text>
+            <text x="350" y="371" text-anchor="middle" font-size="13" fill="#526179">RMF content policy remains in RMF/model</text>
+            <path d="M270 89 L155 132" stroke="#1d4f91" stroke-width="3" fill="none" marker-end="url(#arr-after)"/>
+            <path d="M350 89 L350 132" stroke="#1d4f91" stroke-width="3" fill="none" marker-end="url(#arr-after)"/>
+            <path d="M430 89 L545 132" stroke="#1d4f91" stroke-width="3" fill="none" marker-end="url(#arr-after)"/>
+            <path d="M350 224 L350 292" stroke="#1d4f91" stroke-width="3" fill="none" marker-end="url(#arr-after)"/>
+            <path d="M500 224 C500 260,470 270,450 292" stroke="#1d4f91" stroke-width="2.5" fill="none" marker-end="url(#arr-after)"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+    <p class="source">Primary sources: <code>Launching.swift:286–314</code>; <code>PromoCoordinationFactory.swift:31–82</code>; <code>PromoCoordinationService.swift:78–189</code>; <code>PromoQueueLeaseArbiter.swift:75–218</code>.</p>
+  </section>
+
+  <section id="flows" aria-labelledby="flows-heading">
+    <h2 id="flows-heading">Before and after presentation/conflict flows</h2>
+    <div class="grid-2">
+      <div class="card">
+        <h3>Before</h3>
+        <div class="flow" aria-label="Presentation flow before coordination">
+          <div class="step"><strong>Trigger</strong><br>launch or NTP refresh</div><span class="arrow">→</span>
+          <div class="step"><strong>Local policy</strong><br>modal provider or RMF selection</div><span class="arrow">→</span>
+          <div class="step"><strong>Present</strong><br>without cross-surface check</div>
+        </div>
+        <p>Conflicts were discovered only after both surfaces had independently progressed toward presentation.</p>
+      </div>
+      <div class="card blue">
+        <h3>After</h3>
+        <div class="flow" aria-label="Presentation flow after coordination">
+          <div class="step"><strong>Readiness</strong><br>app, UI, host, mount</div><span class="arrow">→</span>
+          <div class="step"><strong>Acquire</strong><br>single global owner</div><span class="arrow">→</span>
+          <div class="step"><strong>Cooldown</strong><br>directional history</div><span class="arrow">→</span>
+          <div class="step"><strong>Local policy</strong><br>provider or RMF mapping</div><span class="arrow">→</span>
+          <div class="step"><strong>Present</strong><br>confirm actual appearance</div><span class="arrow">→</span>
+          <div class="step"><strong>Release</strong><br>physical lifecycle terminal</div>
+        </div>
+        <p>A denial retains work without building, publishing, accounting, or writing history. Reconsideration happens at real checkpoints, never from a deadline timer.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="objects" aria-labelledby="objects-heading">
+    <h2 id="objects-heading">High-level object interaction graph</h2>
+    <div class="diagram">
+      <svg viewBox="0 0 1100 610" role="img" aria-labelledby="object-title object-desc">
+        <title id="object-title">Promo Queue high-level object graph</title>
+        <desc id="object-desc">The lifecycle and factory feed one coordination service, which uses the global arbiter, modal manager, cooldown policy, debug projection, and weak retry registry to coordinate NTP models and hosts.</desc>
+        <defs><marker id="arr-obj" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#1d4f91"/></marker><marker id="arr-obj-green" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#176b4d"/></marker></defs>
+        <rect x="390" y="30" width="320" height="70" rx="12" fill="#e8f1fb" stroke="#1d4f91" stroke-width="2"/>
+        <text x="550" y="58" text-anchor="middle" font-size="18" font-weight="700" fill="#14213d">PromoCoordinationFactory</text>
+        <text x="550" y="82" text-anchor="middle" font-size="14" fill="#526179">samples flag once; builds graph</text>
+
+        <rect x="65" y="145" width="250" height="72" rx="12" fill="#f5f8fc" stroke="#526179"/>
+        <text x="190" y="174" text-anchor="middle" font-size="17" font-weight="700" fill="#14213d">Foreground / MainCoordinator</text>
+        <text x="190" y="198" text-anchor="middle" font-size="13" fill="#526179">readiness token + lifecycle</text>
+        <rect x="390" y="140" width="320" height="82" rx="12" fill="#ddebfa" stroke="#1d4f91" stroke-width="3"/>
+        <text x="550" y="171" text-anchor="middle" font-size="19" font-weight="700" fill="#14213d">PromoCoordinationService</text>
+        <text x="550" y="196" text-anchor="middle" font-size="14" fill="#526179">mode • readiness • registry • orchestration</text>
+        <rect x="790" y="145" width="245" height="72" rx="12" fill="#f0ebfa" stroke="#5b3f91"/>
+        <text x="912" y="174" text-anchor="middle" font-size="17" font-weight="700" fill="#14213d">Debug screen</text>
+        <text x="912" y="198" text-anchor="middle" font-size="13" fill="#526179">read-only snapshot</text>
+
+        <rect x="55" y="300" width="270" height="92" rx="12" fill="#fff4cf" stroke="#855f00"/>
+        <text x="190" y="331" text-anchor="middle" font-size="17" font-weight="700" fill="#14213d">PromoQueueLeaseArbiter</text>
+        <text x="190" y="355" text-anchor="middle" font-size="13" fill="#526179">one weakly observed owner</text>
+        <text x="190" y="376" text-anchor="middle" font-size="13" fill="#526179">identity-safe release</text>
+        <rect x="415" y="300" width="270" height="92" rx="12" fill="#f0ebfa" stroke="#5b3f91"/>
+        <text x="550" y="331" text-anchor="middle" font-size="17" font-weight="700" fill="#14213d">Modal manager</text>
+        <text x="550" y="355" text-anchor="middle" font-size="13" fill="#526179">providers • retained candidate</text>
+        <text x="550" y="376" text-anchor="middle" font-size="13" fill="#526179">exact UIKit root</text>
+        <rect x="775" y="300" width="270" height="92" rx="12" fill="#e7f6ef" stroke="#176b4d"/>
+        <text x="910" y="331" text-anchor="middle" font-size="17" font-weight="700" fill="#14213d">Cooldown policy + stores</text>
+        <text x="910" y="355" text-anchor="middle" font-size="13" fill="#526179">modal timestamp • RMF timestamp</text>
+        <text x="910" y="376" text-anchor="middle" font-size="13" fill="#526179">injected clock • diagnostics</text>
+
+        <rect x="110" y="480" width="360" height="95" rx="12" fill="#e7f6ef" stroke="#176b4d" stroke-width="2"/>
+        <text x="290" y="511" text-anchor="middle" font-size="17" font-weight="700" fill="#14213d">NewTabPageMessagesModel instances</text>
+        <text x="290" y="536" text-anchor="middle" font-size="13" fill="#526179">candidate • gate • render session • admission</text>
+        <text x="290" y="557" text-anchor="middle" font-size="13" fill="#526179">weak retry target; strong current/outgoing admission</text>
+        <rect x="630" y="480" width="360" height="95" rx="12" fill="#f5f8fc" stroke="#526179" stroke-width="2"/>
+        <text x="810" y="511" text-anchor="middle" font-size="17" font-weight="700" fill="#14213d">NTP host controllers</text>
+        <text x="810" y="536" text-anchor="middle" font-size="13" fill="#526179">owner + visibility + window + cover + render location</text>
+        <text x="810" y="557" text-anchor="middle" font-size="13" fill="#526179">outgoing-before-incoming handoff</text>
+
+        <path d="M550 101 L550 136" stroke="#1d4f91" stroke-width="3" marker-end="url(#arr-obj)"/>
+        <path d="M316 181 L386 181" stroke="#1d4f91" stroke-width="3" marker-end="url(#arr-obj)"/>
+        <path d="M714 181 L786 181" stroke="#1d4f91" stroke-width="3" marker-end="url(#arr-obj)"/>
+        <path d="M470 224 L250 296" stroke="#1d4f91" stroke-width="3" fill="none" marker-end="url(#arr-obj)"/>
+        <path d="M550 224 L550 296" stroke="#1d4f91" stroke-width="3" marker-end="url(#arr-obj)"/>
+        <path d="M630 224 L850 296" stroke="#1d4f91" stroke-width="3" fill="none" marker-end="url(#arr-obj)"/>
+        <path d="M450 393 L335 476" stroke="#176b4d" stroke-width="3" fill="none" marker-end="url(#arr-obj-green)"/>
+        <path d="M774 347 C680 420,520 440,420 477" stroke="#176b4d" stroke-width="2.5" fill="none" marker-end="url(#arr-obj-green)"/>
+        <path d="M473 527 L626 527" stroke="#176b4d" stroke-width="3" marker-end="url(#arr-obj-green)"/>
+        <text x="550" y="515" text-anchor="middle" font-size="12" fill="#526179">exposure</text>
+      </svg>
+    </div>
+  </section>
+
+  <section id="sequences" aria-labelledby="sequences-heading">
+    <h2 id="sequences-heading">Presentation sequences</h2>
+    <div class="grid-2">
+      <div>
+        <h3>Modal presentation</h3>
+        <div class="diagram small">
+          <svg viewBox="0 0 720 650" role="img" aria-labelledby="modal-seq-title modal-seq-desc">
+            <title id="modal-seq-title">Modal presentation sequence</title>
+            <desc id="modal-seq-desc">Foreground readiness asks the service to acquire the owner and cooldown, then the modal manager selects, revalidates, presents, accounts, and holds ownership to exact-root detachment.</desc>
+            <defs><marker id="arr-modal" markerWidth="9" markerHeight="9" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#1d4f91"/></marker></defs>
+            <g font-size="13" fill="#14213d">
+              <text x="80" y="30" text-anchor="middle" font-weight="700">Foreground</text><text x="250" y="30" text-anchor="middle" font-weight="700">Service</text><text x="420" y="30" text-anchor="middle" font-weight="700">Arbiter/policy</text><text x="620" y="30" text-anchor="middle" font-weight="700">Modal manager/UIKit</text>
+            </g>
+            <g stroke="#9aa8ba" stroke-dasharray="5 5"><line x1="80" y1="42" x2="80" y2="625"/><line x1="250" y1="42" x2="250" y2="625"/><line x1="420" y1="42" x2="420" y2="625"/><line x1="620" y1="42" x2="620" y2="625"/></g>
+            <g stroke="#1d4f91" stroke-width="2" fill="none" marker-end="url(#arr-modal)">
+              <path d="M80 78 L245 78"/><path d="M250 125 L415 125"/><path d="M420 175 L255 175"/><path d="M250 225 L415 225"/><path d="M420 275 L615 275"/><path d="M620 330 L255 330"/><path d="M250 390 L615 390"/><path d="M620 445 L255 445"/><path d="M250 510 L615 510"/><path d="M620 572 L415 572"/>
+            </g>
+            <g font-size="12.5" fill="#14213d">
+              <text x="165" y="69" text-anchor="middle">ready(token, presenter)</text>
+              <text x="335" y="116" text-anchor="middle">acquire modal owner</text>
+              <text x="335" y="166" text-anchor="middle">lease</text>
+              <text x="335" y="216" text-anchor="middle">evaluate RMF→modal 24h</text>
+              <text x="515" y="266" text-anchor="middle">lease + request</text>
+              <text x="435" y="321" text-anchor="middle">retained or released</text>
+              <text x="435" y="381" text-anchor="middle">0.1s fire-time revalidation</text>
+              <text x="435" y="436" text-anchor="middle">exact root attached</text>
+              <text x="435" y="501" text-anchor="middle">checkpoint: reconcile root</text>
+              <text x="515" y="563" text-anchor="middle">release exact lease</text>
+            </g>
+            <rect x="510" y="285" width="195" height="76" rx="9" fill="#f0ebfa" stroke="#5b3f91"/><text x="607" y="307" text-anchor="middle" font-size="12" fill="#14213d">select provider in order;</text><text x="607" y="328" text-anchor="middle" font-size="12" fill="#14213d">modal cooldown; retain/revalidate</text><text x="607" y="349" text-anchor="middle" font-size="12" fill="#14213d">prepared candidate</text>
+            <rect x="510" y="458" width="195" height="74" rx="9" fill="#e7f6ef" stroke="#176b4d"/><text x="607" y="481" text-anchor="middle" font-size="12" fill="#14213d">record confirmed modal</text><text x="607" y="502" text-anchor="middle" font-size="12" fill="#14213d">appearance; keep owner through</text><text x="607" y="523" text-anchor="middle" font-size="12" fill="#14213d">nested children/dismissal</text>
+          </svg>
+        </div>
+        <p class="source"><code>PromoCoordinationService.swift:228–302</code>; <code>ModalPromptCoordinationManager.swift:304–373, 392–543, 647–684, 726–826</code>.</p>
+      </div>
+      <div>
+        <h3>RMF presentation</h3>
+        <div class="diagram small">
+          <svg viewBox="0 0 720 650" role="img" aria-labelledby="rmf-seq-title rmf-seq-desc">
+            <title id="rmf-seq-title">Remote message presentation sequence</title>
+            <desc id="rmf-seq-desc">The host and model retain a candidate until all readiness gates pass, then the service acquires ownership, evaluates cooldown, and returns an admission. First physical appearance confirms history exactly once. Removal should release only after physical completion.</desc>
+            <defs><marker id="arr-rmf" markerWidth="9" markerHeight="9" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#176b4d"/></marker></defs>
+            <g font-size="13" fill="#14213d"><text x="90" y="30" text-anchor="middle" font-weight="700">Host/SwiftUI</text><text x="270" y="30" text-anchor="middle" font-weight="700">NTP model</text><text x="455" y="30" text-anchor="middle" font-weight="700">Service</text><text x="635" y="30" text-anchor="middle" font-weight="700">Arbiter/policy</text></g>
+            <g stroke="#9aa8ba" stroke-dasharray="5 5"><line x1="90" y1="42" x2="90" y2="625"/><line x1="270" y1="42" x2="270" y2="625"/><line x1="455" y1="42" x2="455" y2="625"/><line x1="635" y1="42" x2="635" y2="625"/></g>
+            <g stroke="#176b4d" stroke-width="2" fill="none" marker-end="url(#arr-rmf)">
+              <path d="M90 75 L265 75"/><path d="M270 125 L450 125"/><path d="M455 170 L630 170"/><path d="M635 215 L460 215"/><path d="M455 260 L275 260"/><path d="M270 315 L95 315"/><path d="M90 365 L265 365"/><path d="M270 410 L450 410"/><path d="M90 470 L265 470"/><path d="M270 520 L450 520"/><path d="M455 570 L630 570"/>
+            </g>
+            <g font-size="12.5" fill="#14213d">
+              <text x="178" y="66" text-anchor="middle">load / expose / mount gate</text>
+              <text x="363" y="116" text-anchor="middle">admit(identity)</text>
+              <text x="545" y="161" text-anchor="middle">acquire global owner</text>
+              <text x="545" y="206" text-anchor="middle">lease + 10m policy</text>
+              <text x="363" y="251" text-anchor="middle">identity-bound admission</text>
+              <text x="178" y="306" text-anchor="middle">publish admitted card</text>
+              <text x="178" y="356" text-anchor="middle">first card onAppear</text>
+              <text x="363" y="401" text-anchor="middle">confirm once + normal accounting</text>
+              <text x="178" y="461" text-anchor="middle">logical withdrawal starts transition</text>
+              <text x="363" y="511" text-anchor="middle">physical terminal + next turn</text>
+              <text x="545" y="561" text-anchor="middle">release + NTP handoff</text>
+            </g>
+            <rect x="155" y="535" width="300" height="84" rx="9" fill="#fdecea" stroke="#a1281e" stroke-width="2"/>
+            <text x="305" y="558" text-anchor="middle" font-size="12" font-weight="700" fill="#a1281e">Current divergence on iOS 15/16</text>
+            <text x="305" y="580" text-anchor="middle" font-size="12" fill="#14213d">CATransaction completion can precede the</text>
+            <text x="305" y="600" text-anchor="middle" font-size="12" fill="#14213d">SwiftUI scale/opacity physical terminal.</text>
+          </svg>
+        </div>
+        <p class="source"><code>NewTabPageMessagesModel.swift:659–725, 728–785, 883–910</code>; <code>PromoCoordinationService.swift:305–360, 411–449</code>.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="lifecycle" aria-labelledby="lifecycle-heading">
+    <h2 id="lifecycle-heading">Lifecycle, readiness, and RMF physical removal</h2>
+    <h3>Foreground readiness</h3>
+    <div class="diagram">
+      <svg viewBox="0 0 1050 265" role="img" aria-labelledby="life-title life-desc">
+        <title id="life-title">Foreground readiness state flow</title>
+        <desc id="life-desc">Full background rotates the readiness token and closes admission. A matching ready callback opens the current cycle. Temporary inactivity defers presentation without losing readiness. A stale callback is rejected.</desc>
+        <defs><marker id="arr-life" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#1d4f91"/></marker></defs>
+        <rect x="30" y="70" width="205" height="90" rx="12" fill="#f5f8fc" stroke="#526179"/><text x="132" y="100" text-anchor="middle" font-size="16" font-weight="700" fill="#14213d">Background</text><text x="132" y="126" text-anchor="middle" font-size="13" fill="#526179">rotate token</text><text x="132" y="147" text-anchor="middle" font-size="13" fill="#526179">waiting = true</text>
+        <rect x="295" y="70" width="205" height="90" rx="12" fill="#fff4cf" stroke="#855f00"/><text x="397" y="100" text-anchor="middle" font-size="16" font-weight="700" fill="#14213d">Active, not ready</text><text x="397" y="126" text-anchor="middle" font-size="13" fill="#526179">RMF deferred</text><text x="397" y="147" text-anchor="middle" font-size="13" fill="#526179">modal pass waiting</text>
+        <rect x="560" y="70" width="205" height="90" rx="12" fill="#e7f6ef" stroke="#176b4d"/><text x="662" y="100" text-anchor="middle" font-size="16" font-weight="700" fill="#14213d">Active + ready</text><text x="662" y="126" text-anchor="middle" font-size="13" fill="#526179">reconcile modal</text><text x="662" y="147" text-anchor="middle" font-size="13" fill="#526179">retry RMFs, then modal</text>
+        <rect x="825" y="70" width="195" height="90" rx="12" fill="#f0ebfa" stroke="#5b3f91"/><text x="922" y="100" text-anchor="middle" font-size="16" font-weight="700" fill="#14213d">Temporarily inactive</text><text x="922" y="126" text-anchor="middle" font-size="13" fill="#526179">retain readiness</text><text x="922" y="147" text-anchor="middle" font-size="13" fill="#526179">defer presenter</text>
+        <g stroke="#1d4f91" stroke-width="3" fill="none" marker-end="url(#arr-life)"><path d="M235 115 L290 115"/><path d="M500 115 L555 115"/><path d="M765 115 L820 115"/><path d="M922 162 C922 220,675 224,665 165"/><path d="M562 165 C520 235,155 235,130 165"/></g>
+        <text x="265" y="103" text-anchor="middle" font-size="12" fill="#526179">did become active</text><text x="530" y="103" text-anchor="middle" font-size="12" fill="#526179">matching ready(token)</text><text x="793" y="103" text-anchor="middle" font-size="12" fill="#526179">resign active</text><text x="800" y="245" text-anchor="middle" font-size="12" fill="#526179">return: deferred presenter/checkpoint</text><text x="345" y="249" text-anchor="middle" font-size="12" fill="#526179">full background: new token; stale callback cannot reopen admission</text>
+      </svg>
+    </div>
+    <p class="source"><code>PromoCoordinationService.swift:192–250</code>; <code>Foreground.swift:126–154, 242–254</code>; <code>MainCoordinator.swift:664–707</code>.</p>
+
+    <h3>RMF physical-removal state flow</h3>
+    <div class="flow" aria-label="Remote message physical removal flow">
+      <div class="step"><strong>Admitted</strong><br>model strongly owns admission; card mounts tracked</div><span class="arrow">→</span>
+      <div class="step"><strong>Logical withdrawal</strong><br>move identity to outgoing state; publish card removal</div><span class="arrow">→</span>
+      <div class="step"><strong>Transition</strong><br>scale + opacity; <code>onDisappear</code> means “began,” not “finished”</div><span class="arrow">→</span>
+      <div class="step"><strong>Physical terminal</strong><br>all matching mounts removed; identity-checked completion</div><span class="arrow">→</span>
+      <div class="step"><strong>Settle</strong><br>one following main-queue turn</div><span class="arrow">→</span>
+      <div class="step"><strong>Release/handoff</strong><br>clear exact owner; offer other active NTPs, then same surface</div>
+    </div>
+    <p class="callout warning"><strong>Current code caveat:</strong> iOS 17+ uses <code>withAnimation(... completionCriteria: .removed)</code>. The iOS 15/16 fallback treats a surrounding <code>CATransaction</code> as the physical terminal even though the <code>@Published</code> mutation and SwiftUI’s later render transaction are not the same transaction. This makes the red transition above untrustworthy on supported older OS versions.</p>
+  </section>
+
+  <section id="cooldowns" aria-labelledby="cooldowns-heading">
+    <h2 id="cooldowns-heading">Cooldown matrix and timestamp/confirmation flow</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Previous confirmed appearance</th><th>Next requested appearance</th><th>Minimum elapsed</th><th>Owner of rule</th><th>Boundary</th></tr></thead>
+        <tbody>
+          <tr><td>Launch modal</td><td>NTP RMF</td><td><strong>10 minutes</strong></td><td><code>PromoQueueCooldownPolicy</code></td><td>Exact equality is eligible.</td></tr>
+          <tr><td>NTP RMF</td><td>NTP RMF, any ID or NTP</td><td><strong>10 minutes</strong></td><td><code>PromoQueueCooldownPolicy</code></td><td>Global, not per surface.</td></tr>
+          <tr><td>NTP RMF</td><td>Launch modal</td><td><strong>24 hours</strong></td><td><code>PromoQueueCooldownPolicy</code></td><td>Future source time blocks until source + interval.</td></tr>
+          <tr><td>Launch modal</td><td>Launch modal</td><td>Existing remote-configured interval; currently/default 24h</td><td><code>PromptCooldownManager</code></td><td>Existing behavior retained.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="source"><code>PromoQueueCooldownPolicy.swift:156–217</code>; <code>PromoCoordinationService.swift:280–320</code>.</p>
+
+    <h3>Confirmed-appearance timestamp flow</h3>
+    <div class="diagram">
+      <svg viewBox="0 0 1080 310" role="img" aria-labelledby="time-title time-desc">
+        <title id="time-title">Timestamp and appearance confirmation flow</title>
+        <desc id="time-desc">Intent events do not write history. A modal writes after accepted UIKit presentation. An RMF admission confirms its first matching physical appearance exactly once, then normal shown accounting runs. Policy derives future boundaries from source timestamps and retries only at checkpoints.</desc>
+        <defs><marker id="arr-time" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#176b4d"/></marker></defs>
+        <rect x="25" y="40" width="190" height="80" rx="11" fill="#f5f8fc" stroke="#526179"/><text x="120" y="69" text-anchor="middle" font-size="16" font-weight="700" fill="#14213d">Selection / acquire</text><text x="120" y="94" text-anchor="middle" font-size="13" fill="#526179">no history write</text>
+        <rect x="270" y="40" width="220" height="80" rx="11" fill="#e8f1fb" stroke="#1d4f91"/><text x="380" y="69" text-anchor="middle" font-size="16" font-weight="700" fill="#14213d">Confirmed appearance</text><text x="380" y="94" text-anchor="middle" font-size="13" fill="#526179">modal accepted or first RMF onAppear</text>
+        <rect x="545" y="40" width="220" height="80" rx="11" fill="#e7f6ef" stroke="#176b4d"/><text x="655" y="69" text-anchor="middle" font-size="16" font-weight="700" fill="#14213d">Persist source time</text><text x="655" y="94" text-anchor="middle" font-size="13" fill="#526179">not expiry; RMF confirmation once</text>
+        <rect x="820" y="40" width="230" height="80" rx="11" fill="#fff4cf" stroke="#855f00"/><text x="935" y="69" text-anchor="middle" font-size="16" font-weight="700" fill="#14213d">Derive boundary</text><text x="935" y="94" text-anchor="middle" font-size="13" fill="#526179">max(modal+10m, RMF+10m)</text>
+        <g stroke="#176b4d" stroke-width="3" fill="none" marker-end="url(#arr-time)"><path d="M215 80 L265 80"/><path d="M490 80 L540 80"/><path d="M765 80 L815 80"/><path d="M935 121 L935 190"/></g>
+        <rect x="770" y="195" width="280" height="82" rx="11" fill="#f0ebfa" stroke="#5b3f91"/><text x="910" y="222" text-anchor="middle" font-size="16" font-weight="700" fill="#14213d">Checkpoint evaluates now</text><text x="910" y="247" text-anchor="middle" font-size="13" fill="#526179">eligible if now ≥ boundary</text><text x="910" y="266" text-anchor="middle" font-size="13" fill="#526179">no boundary timer</text>
+        <rect x="25" y="178" width="665" height="100" rx="11" fill="#fdecea" stroke="#a1281e"/><text x="357" y="205" text-anchor="middle" font-size="15" font-weight="700" fill="#a1281e">Never a source event</text><text x="357" y="231" text-anchor="middle" font-size="13" fill="#14213d">selection • mapping • owner acquisition • cooldown denial • build failure • pending work</text><text x="357" y="253" text-anchor="middle" font-size="13" fill="#14213d">withdrawal before appearance • refused presentation</text>
+      </svg>
+    </div>
+    <h3>RMF persistence failure semantics</h3>
+    <ul>
+      <li>Initial read failure means no known history and remains retryable.</li>
+      <li>A successful read—including <code>nil</code>—is cached; a later read failure uses the last successful value.</li>
+      <li>After a failed write, the attempted value remains authoritative in the current process; a relaunch sees only the last persisted value.</li>
+      <li>Diagnostic reads do not seed or mutate production fallback state.</li>
+    </ul>
+    <p class="source"><code>PromoQueueCooldownPolicy.swift:48–145</code>; <code>PromptCooldownStore.swift:25–88</code>.</p>
+  </section>
+
+  <section id="conflicts" aria-labelledby="conflicts-heading">
+    <h2 id="conflicts-heading">Conflict-resolution matrix</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Situation</th><th>Current owner / condition</th><th>Request outcome</th><th>Retained work and handoff</th><th>Evidence</th></tr></thead>
+        <tbody>
+          <tr><td>Modal ↔ modal</td><td>One modal attempt in evaluating, committed, or presentation-active phase.</td><td>Second modal cannot acquire; provider evaluation does not run.</td><td>Current attempt stays owner through exact-root detachment. Existing provider order and modal cooldown remain authoritative.</td><td><code>PromoQueueLeaseArbiter.swift:166–192</code>; <code>ModalPromptCoordinationManager.swift:181–217, 304–347</code></td></tr>
+          <tr><td>Modal → RMF</td><td>Modal attempt owns the slot, or a confirmed modal is within 10m.</td><td>RMF admission is deferred before card construction/publication.</td><td>Candidate remains in the NTP model. Successful modal release offers registered RMFs a stable-order retry.</td><td><code>PromoCoordinationService.swift:305–341, 369–407</code></td></tr>
+          <tr><td>RMF → modal</td><td>RMF owns the slot, or confirmed RMF is within 24h.</td><td>Modal cannot acquire, or raw lease is rolled back before providers are queried.</td><td>Visible RMF release does not launch a modal; modal is reconsidered only at an existing modal checkpoint.</td><td><code>PromoCoordinationService.swift:280–302, 335–340</code></td></tr>
+          <tr><td>RMF ↔ RMF</td><td>Any NTP RMF owns the one global slot; confirmed RMF also starts global 10m cooldown.</td><td>Other NTPs defer, even with a different ID.</td><td>Successful physical release offers the next active weak registration, then same-surface retry.</td><td><code>PromoQueueLeaseArbiter.swift:194–218</code>; <code>PromoCoordinationService.swift:344–407</code></td></tr>
+          <tr><td>Multiple NTPs</td><td>Each model has a stable surface ID, but ownership is global.</td><td>Only one admission can be active.</td><td>Registry is weak, stable-order, mutation-safe, and reentrancy-guarded.</td><td><code>PromoCoordinationService.swift:80–100, 363–407, 428–447</code></td></tr>
+          <tr><td>Hidden or covered host</td><td>Owner/visible/window/render-location/cover predicate is false, or gate is unmounted.</td><td>No admission; an admitted card is logically withdrawn and should retain ownership until physical removal.</td><td>Exposure changes are checkpoints. Outgoing host must deactivate before incoming host activates.</td><td><code>NewTabPageViewController.swift:30–64, 276–315</code>; <code>NewTabPageMessagesModel.swift:267–285, 659–681</code></td></tr>
+          <tr><td>iPad popover hides</td><td>Tray deactivates and ancestor container hides; standard NTP is exposed.</td><td><span class="status partial">Current defect:</span> standard NTP remains inactive.</td><td>Retained/existing standard-NTP RMF can starve until an unrelated reactivation.</td><td><code>MainViewController.swift:5781–5788</code> versus correct handback at <code>3181–3193</code></td></tr>
+          <tr><td>Foreground not ready</td><td>App inactive or current readiness token has not completed.</td><td>RMF deferred; modal presenter retained during temporary inactivity.</td><td>Matching callback/current-cycle reactivation drains RMFs, then continues modal pass. Stale full-background tokens are rejected.</td><td><code>PromoCoordinationService.swift:192–250, 411–425</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="api" aria-labelledby="api-heading">
+    <h2 id="api-heading">Externally consumed system API</h2>
+    <p>“System API” here means the interfaces consumed across Promo Queue’s internal components. It does <em>not</em> mean Swift <code>public</code>. Almost every coordination symbol has module-internal access; no queue/lease API is exported from the iOS app module.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>System contract</th><th>Methods/properties</th><th>Owner and lifetime</th><th>Consumers</th><th>Swift access and source</th></tr></thead>
+        <tbody>
+          <tr><td><code>PromoCoordinationFactory</code></td><td><code>makeService(dependency:)</code></td><td>Constructs one process/app graph and samples the flag once.</td><td><code>Launching</code></td><td><span class="pill internal">internal</span> <code>PromoCoordinationFactory.swift:31–82</code></td></tr>
+          <tr><td><code>PromoCoordinationService</code></td><td><code>captureForegroundReadinessToken</code>, lifecycle hooks, <code>presentModalPromptIfNeeded</code></td><td>Strong app-lifetime instance, main-actor isolated.</td><td><code>MainCoordinator</code>, foreground/background states</td><td><span class="pill internal">internal</span> <code>PromoCoordinationService.swift:78–250</code></td></tr>
+          <tr><td><code>NewTabPagePromoCoordinating</code></td><td><code>promoCoordinationMode</code>, <code>admitRemoteMessage</code>, <code>registerRemoteMessageRetry</code></td><td>Implemented by the app service; registration weakly observes each NTP model.</td><td><code>NewTabPageMessagesModel</code>, previews/tests</td><td><span class="pill internal">internal</span> <code>NewTabPagePromoCoordination.swift:76–115</code>; conformance at <code>PromoCoordinationService.swift:411–449</code></td></tr>
+          <tr><td><code>PromoQueueRemoteMessageAdmission</code></td><td><code>confirmAppearance()</code>, <code>release()</code></td><td>Strongly held by admitted/current or outgoing render session; state is pending → consumed → released.</td><td><code>NewTabPageMessagesModel</code></td><td><span class="pill internal">internal</span> <code>NewTabPagePromoCoordination.swift:29–74</code></td></tr>
+          <tr><td><code>NewTabPagePromoRetrying</code></td><td><code>isActiveForPromoRetry</code>, <code>retryRemoteMessageAdmission(using:)</code></td><td>Weak registry target; NTP model owns itself through controller graph.</td><td><code>PromoCoordinationService</code> registry</td><td><span class="pill internal">internal</span> <code>NewTabPagePromoCoordination.swift:78–103</code></td></tr>
+          <tr><td><code>PromoQueueLeaseArbitrating</code></td><td><code>snapshot</code>, <code>acquireModalLease</code>, <code>acquireVisiblePromoLease</code></td><td>One app-scoped arbiter. Consumers strongly own lease tokens; arbiter observes tokens weakly.</td><td>Coordination service; diagnostics</td><td><span class="pill internal">internal</span> <code>PromoQueueLeaseArbiter.swift:75–126</code></td></tr>
+          <tr><td><code>ModalPromptCoordinationManaging</code></td><td>legacy/coordinated present, reconcile, lifecycle, release callback, suppression state</td><td>Service-owned manager; carries modal lease across attempt phases.</td><td><code>PromoCoordinationService</code></td><td><span class="pill internal">internal</span> <code>ModalPromptCoordinationManager.swift:23–67</code></td></tr>
+          <tr><td><code>ModalPromptProvider</code></td><td><code>modalPrompt()</code>, <code>isModalPromptStillValidForPresentation()</code>, <code>didPresentModal()</code>; optional replacement protocol</td><td>Provider instances live with the manager/app service.</td><td>Modal manager; seven production providers</td><td><span class="pill internal">internal</span> <code>ModalPromptProvider.swift:23–96</code></td></tr>
+          <tr><td><code>PromoQueueCooldownPolicying</code></td><td>evaluate modal/RMF admission, record confirmed RMF appearance, snapshot</td><td>Service-owned; uses shared modal store and dedicated RMF store.</td><td><code>PromoCoordinationService</code></td><td><span class="pill internal">internal</span> <code>PromoQueueCooldownPolicy.swift:147–198</code></td></tr>
+          <tr><td><code>NewTabPagePromoSurfaceHandoff</code> and NTP exposure setters</td><td><code>showHostedSurface</code>, <code>showNewTabPage</code>; <code>setPromoSurfaceActive/Visible/Covered/Renderable</code></td><td>Controller-owned presentation-context state; each NTP model has stable surface identity.</td><td><code>MainViewController</code>, suggestion tray, unified input</td><td><span class="pill internal">internal</span> <code>NewTabPageViewController.swift:30–64, 276–315</code></td></tr>
+          <tr><td><code>PromoQueueDebugSnapshotProviding</code></td><td><code>promoQueueDebugSnapshot</code></td><td>Read-only projection from app service; diagnostics must not mutate policy caches/history.</td><td>Settings/debug UI</td><td><span class="pill internal">internal</span> <code>PromoCoordinationService.swift:45–60, 455–480</code></td></tr>
+          <tr><td><code>RecentModalPromptStatusProviding</code></td><td><code>shouldSuppressOtherSessionPromos</code></td><td>Service façade over manager session state.</td><td>AI Chat sync promo view model</td><td><span class="pill internal">internal</span> <code>AIChatSyncPromoViewModel.swift:25–51</code>; conformance at <code>PromoCoordinationService.swift:451–453</code></td></tr>
+          <tr><td><code>iOSPromoQueueSubfeature</code></td><td>privacy-config subfeature key</td><td>FeatureFlags package declaration; not an arbitration API.</td><td>Feature-flag configuration</td><td><span class="pill public">public</span> <code>iOSPromoQueueSubfeature.swift:22–29</code></td></tr>
+          <tr><td>Default-browser revalidation contracts</td><td><code>isModalPromptStillValidForPresentation</code>, cached default-browser information</td><td>Cross-module provider dependency; widened for production conformance, not merely Promo Queue tests.</td><td>Default-browser modal provider/decider</td><td><span class="pill public">public</span> / <span class="pill package">package</span> in <code>DefaultBrowserPromptPresenter.swift:26–30</code>, <code>CheckDefaultBrowserManager.swift:23–26</code>, <code>DefaultBrowserPromptTypeDecider.swift:59–68</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="traceability" aria-labelledby="trace-heading">
+    <h2 id="trace-heading">Technical-design traceability</h2>
+    <p>The rows below account for the normative requirements in <code>TECH_DESIGN_FINAL.md</code>. “Partial” denotes a demonstrated cumulative-code divergence, not a missing architectural layer.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Normative requirement</th><th>Status</th><th>Implementation evidence</th><th>Test/static evidence</th></tr></thead>
+        <tbody>
+          <tr><td>Prevent modal/RMF overlap while preserving provider order, eligibility, modal cooldown, presentation, and feature accounting.</td><td><span class="status partial">Partial</span></td><td>Global admission and existing managers are composed in <code>PromoCoordinationService.swift:117–164, 275–360</code>. Pre-iOS-17 early removal release can still permit visual overlap.</td><td>Service/arbiter/manager suites are strong; old-runtime physical state is not independently asserted.</td></tr>
+          <tr><td>One app-scoped, main-actor, identity-bearing global owner.</td><td><span class="status complete">Implemented</span></td><td><code>Launching.swift:286–314</code>; <code>PromoQueueLeaseArbiter.swift:75–218</code>.</td><td><code>PromoQueueLeaseArbiterTests</code>: conflict matrix, idempotence, weak-token reclamation.</td></tr>
+          <tr><td>Acquire modal ownership before provider evaluation; blocked/cooldown-denied requests never query providers.</td><td><span class="status complete">Implemented</span></td><td><code>PromoCoordinationService.swift:252–302</code>.</td><td><code>PromoCoordinationServicePromoQueueTests.swift:148–267</code>.</td></tr>
+          <tr><td>Acquire RMF ownership before card build/publication; blocked work stays retained and unaccounted.</td><td><span class="status complete">Implemented</span></td><td><code>NewTabPageMessagesModel.swift:460–518, 659–725</code>.</td><td><code>NewTabPageMessagesModelTests.swift:101–238, 997–1030</code>.</td></tr>
+          <tr><td>Feature flag sampled once; no live subscription; legacy remains lease-free/direct/eager.</td><td><span class="status complete">Implemented</span></td><td><code>PromoCoordinationFactory.swift:38–41</code>; <code>PromoCoordinationService.swift:275–277, 411–425, 455–464</code>; <code>NewTabPageMessagesModel.swift:460–553</code>.</td><td><code>PromoPresentationCoordinationFeatureFlagTests.swift:39–190</code>; legacy service/model tests.</td></tr>
+          <tr><td>Singular owner blocks modal↔modal, modal↔RMF, and RMF↔RMF across NTP instances; identity-safe idempotent release.</td><td><span class="status complete">Implemented</span></td><td><code>PromoQueueLeaseArbiter.swift:144–263</code>.</td><td><code>PromoQueueLeaseArbiterTests.swift:37–160</code>.</td></tr>
+          <tr><td>Arbiter remains history-free and policy-free.</td><td><span class="status complete">Implemented</span></td><td>Arbiter stores only active-owner records; cooldown stores/policy are separate.</td><td>Static dependency inspection.</td></tr>
+          <tr><td>Modal attempt carries the same lease through evaluating → committed → presentationActive; retain/revalidate prepared work and allow only explicit safe replacement.</td><td><span class="status complete">Implemented</span></td><td><code>ModalPromptCoordinationManager.swift:181–217, 304–543</code>; <code>ModalPromptProvider.swift:43–91</code>.</td><td><code>ModalPromptCoordinationManagerPromoQueueTests.swift:49–865</code>.</td></tr>
+          <tr><td>Modal ownership ends only when the exact presented root detaches; nested children do not release it.</td><td><span class="status complete">Implemented</span></td><td><code>ModalPromptCoordinationManager.swift:350–373, 556–670, 726–826</code>.</td><td><code>ModalPromptCoordinationRealUIKitTests.swift:45–224</code>.</td></tr>
+          <tr><td>RMF admission requires app/UI readiness, loaded/non-torn-down model, renderable host, window attachment, and mounted matching gate.</td><td><span class="status complete">Implemented</span></td><td><code>PromoCoordinationService.swift:411–425</code>; <code>NewTabPageMessagesModel.swift:659–681</code>.</td><td>Service readiness and NTP mount/exposure tests.</td></tr>
+          <tr><td>RMF uses scale/opacity and retains ownership through truthful physical removal of all mounts plus one main turn.</td><td><span class="status partial">Partial</span></td><td>Scale/opacity and outgoing identity tracking exist at <code>NewTabPageView.swift:284–361</code> and <code>NewTabPageMessagesModel.swift:728–910</code>; iOS 15/16 terminal at <code>:47–56</code> is not tied to SwiftUI’s physical transition.</td><td>Modern-runtime/injected tests do not independently validate old-runtime physical disappearance.</td></tr>
+          <tr><td>Same-ID refresh preserves session; changed-ID/stale callbacks cannot release or overwrite a newer owner.</td><td><span class="status complete">Implemented</span></td><td><code>NewTabPageMessagesModel.swift:391–458, 728–910</code>.</td><td><code>NewTabPageMessagesModelTests.swift:478–927</code>.</td></tr>
+          <tr><td>Successful RMF release can hand off to another active NTP through weak, stable, mutation-safe, reentrancy-guarded registry; it never starts modal evaluation.</td><td><span class="status complete">Implemented</span></td><td><code>PromoCoordinationService.swift:335–407, 428–449</code>.</td><td><code>PromoCoordinationServicePromoQueueTests.swift:560–818, 1046+</code>.</td></tr>
+          <tr><td>Directional cooldowns: modal→RMF 10m, RMF→RMF 10m global, RMF→modal 24h, modal→modal unchanged; equality eligible and future time conservative.</td><td><span class="status complete">Implemented</span></td><td><code>PromoQueueCooldownPolicy.swift:156–217</code>.</td><td><code>PromoQueueCooldownPolicyTests.swift:63–180</code>.</td></tr>
+          <tr><td>Reuse modal presentation store; persist RMF source timestamp; deterministic initial/later read failures, failed writes, and relaunch semantics.</td><td><span class="status complete">Implemented</span></td><td><code>PromoCoordinationService.swift:138–149</code>; <code>PromoQueueCooldownPolicy.swift:48–115</code>.</td><td><code>PromoQueueCooldownPolicyTests.swift:181–347</code>.</td></tr>
+          <tr><td>Only confirmed modal presentation and first matching RMF physical appearance write history; denial/build failure/preappearance withdrawal do not.</td><td><span class="status complete">Implemented</span></td><td><code>ModalPromptCoordinationManager.swift:647–670</code>; <code>NewTabPageMessagesModel.swift:638–655</code>; <code>PromoCoordinationService.swift:344–359</code>.</td><td>Appearance/withdrawal tests in service and model suites.</td></tr>
+          <tr><td>RMF admission is pending → consumed → released; confirmation is synchronous, identity-bound, exactly once, and does not release.</td><td><span class="status complete">Implemented</span></td><td><code>NewTabPagePromoCoordination.swift:29–73</code>.</td><td>Duplicate confirmation and retained ownership tests; late confirmation after release is a missing edge test.</td></tr>
+          <tr><td>Acquire before cooldown; cooldown-denied raw rollback does not recursively drain the registry.</td><td><span class="status complete">Implemented</span></td><td><code>PromoCoordinationService.swift:280–341</code>.</td><td>Owner-during-policy and checkpoint tests at <code>PromoCoordinationServicePromoQueueTests.swift:213, 314, 335</code>.</td></tr>
+          <tr><td>No deadline timer; reconsider only at documented load, refresh, mount, exposure/readiness, lifecycle, release, and modal checkpoints.</td><td><span class="status complete">Implemented</span></td><td>Checkpoint calls in <code>PromoCoordinationService.swift:184–250, 363–449</code> and <code>NewTabPageMessagesModel.swift:215–285, 290–377, 941–952</code>; no queue timer/scheduler found.</td><td>Checkpoint-only service tests; static prohibited-symbol search.</td></tr>
+          <tr><td>Read-only diagnostics show current singular architecture and boundaries, state no scheduled retry, and do not mutate history/cache or add controls.</td><td><span class="status complete">Implemented</span></td><td><code>PromoCoordinationService.swift:455–480</code>; <code>PromoQueueCooldownPolicy.swift:98–145</code>; <code>ModalPromptCoordinationDebugMenu.swift:24–216</code>.</td><td>Snapshot/store semantics covered; formatting projection coverage is missing.</td></tr>
+          <tr><td>Known hosts use centralized exposure predicate and outgoing-before-incoming handoff; async callbacks identity/generation checked.</td><td><span class="status partial">Partial</span></td><td>Shared predicate/handoff and generation checks exist, but <code>MainViewController.hidePopover()</code> omits standard-NTP reactivation.</td><td>Unified host suite covers many transitions but not the iPad type→clear handback or a real covered NTP.</td></tr>
+          <tr><td>No new queue telemetry/pixels or privacy-config rollout change.</td><td><span class="status complete">Implemented</span></td><td>No Promo Queue event emission; flag remains default-disabled remote subfeature at <code>FeatureFlag.swift:824–825</code>.</td><td>Static search and rollout contract test.</td></tr>
+          <tr><td>Future overlays/hosts must explicitly integrate the NTP exposure contract.</td><td><span class="status deferred">Intentional/manual</span></td><td>Documented integration seam; not compiler-enforced.</td><td>Accepted design limitation.</td></tr>
+          <tr><td>No macOS/general queue/priority/caps/atomic reservation/live transition implementation.</td><td><span class="status na">Out of scope</span></td><td>None introduced.</td><td>Static scope inspection.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="workflows" aria-labelledby="workflows-heading">
+    <h2 id="workflows-heading">Common developer workflows</h2>
+    <div class="grid-3">
+      <div class="card blue">
+        <h3>Add a modal provider</h3>
+        <ol>
+          <li>Conform to internal <code>ModalPromptProvider</code> and return a complete <code>ModalPromptConfiguration</code>.</li>
+          <li>Implement a side-effect-free presentation-validity check for retained/fire-time revalidation.</li>
+          <li>Conform to <code>InvalidModalPromptReplacing</code> only when replacement preparation is safe.</li>
+          <li>Add the provider to <code>ModalPromptProviders</code>, factory construction, and the explicit priority array.</li>
+          <li>Test selection order, no query before owner/cooldown, retained revalidation, fire-time invalidation, accounting, and exact-root lifetime.</li>
+        </ol>
+        <p class="source"><code>ModalPromptProvider.swift:23–96</code>; <code>PromoCoordinationFactory.swift:43–80</code>; <code>PromoCoordinationService.swift:117–155</code>.</p>
+      </div>
+      <div class="card green">
+        <h3>Integrate a new NTP-covering surface</h3>
+        <ol>
+          <li>Treat “RMF surface” as an NTP presentation context, not a new RMF destination.</li>
+          <li>Give the hosted NTP a stable controller/model lifetime and surface ID.</li>
+          <li>Feed owner, visibility generation, window attachment, cover state, and render location into the centralized exposure predicate.</li>
+          <li>Use <code>showHostedSurface</code>: deactivate outgoing standard NTP before revealing incoming host.</li>
+          <li>Use <code>showNewTabPage</code>: deactivate/hide hosted surface before reactivating the standard NTP; guard async completion with generation/identity.</li>
+          <li>Test visible/hidden transitions, failed presentation, rapid reversal, multiple NTPs, pending animation completion, and physical removal.</li>
+        </ol>
+        <p class="source"><code>NewTabPageViewController.swift:30–64, 276–315</code>; integrations in <code>MainViewController.swift:3159–3193</code> and unified-input sources.</p>
+      </div>
+      <div class="card purple">
+        <h3>Debug coordination</h3>
+        <ol>
+          <li>Open the existing Modal Prompt Coordination debug screen.</li>
+          <li>Confirm latched mode; a running graph does not follow live flag changes.</li>
+          <li>Inspect singular owner identity, modal phase/pending state, app readiness, and live weak registration count.</li>
+          <li>Inspect last confirmed source timestamps and derived next-eligibility boundaries.</li>
+          <li>Remember: a boundary is not a scheduled retry. Trigger a documented checkpoint.</li>
+          <li>For a stuck RMF, check host exposure, window attachment, gate mount, current owner, and outgoing physical-removal state in that order.</li>
+        </ol>
+        <p class="source"><code>ModalPromptCoordinationDebugMenu.swift:24–216</code>; <code>PromoCoordinationService.swift:455–480</code>.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="tradeoffs" aria-labelledby="tradeoffs-heading">
+    <h2 id="tradeoffs-heading">Known tradeoffs and intentional limitations</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Decision</th><th>Benefit</th><th>Cost / operational consequence</th></tr></thead>
+        <tbody>
+          <tr><td>Process-latched flag</td><td>One internally consistent app graph; no mid-session migration states.</td><td>Kill switch/local override takes effect only after a fresh process graph.</td></tr>
+          <tr><td>One global owner</td><td>Simple, strong no-overlap invariant across modal and every NTP.</td><td>A hidden host that incorrectly retains ownership can starve all promos; a second RMF cannot appear while the first remains mounted.</td></tr>
+          <tr><td>Checkpoint-only cooldown retry</td><td>No timer lifecycle, persistence, or clock-change machinery.</td><td>Eligibility can be delayed past the exact 10m/24h boundary until another real event.</td></tr>
+          <tr><td>Manual host integration</td><td>Keeps coordination independent of view-controller framework details.</td><td>Not compiler-enforced; every future overlay/host must update the exposure/handoff seam correctly.</td></tr>
+          <tr><td>Cached Default Browser retained validation</td><td>Avoids repeating an expensive external status query during retry.</td><td>An external default-browser change after initial selection can leave the cached validation stale.</td></tr>
+          <tr><td>No atomic unique-shown reservation</td><td>Avoids expanding core scope and RMF persistence behavior.</td><td>The existing asynchronous unique-shown check/write can race across sequential configurations.</td></tr>
+          <tr><td>Local read-only diagnostics</td><td>Useful state visibility without influencing production decisions.</td><td>No telemetry/pixels for fleet-level collision, fairness, or cooldown analysis.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="glossary" aria-labelledby="glossary-heading">
+    <h2 id="glossary-heading">Glossary</h2>
+    <div class="grid-2">
+      <div class="card"><h3>Promo Queue</h3><p>The narrow iOS coordination system that arbitrates launch modals and NTP RMF cards. It is not a general scheduling framework.</p></div>
+      <div class="card"><h3>Modal</h3><p>A launch-time promotional UIKit presentation chosen by the existing ordered modal-provider system.</p></div>
+      <div class="card"><h3>RMF</h3><p>Remote Messaging Framework. It owns remote-message targeting, selection, content, dismissal, and its normal accounting/persistence.</p></div>
+      <div class="card amber"><h3>RMF surface</h3><p><strong>Currently an NTP presentation context</strong> affected by overlays such as the suggestion tray or unified input. It is not a separately supported RMF destination.</p></div>
+      <div class="card"><h3>Host exposure</h3><p>Whether an NTP is the owning, visible, window-attached, uncovered, renderable presentation context. Exposure changes are admission/removal checkpoints.</p></div>
+      <div class="card"><h3>Owner / lease</h3><p>The arbiter’s one active identity and the consumer-held token that proves authority to clear it. Tokens release idempotently and stale tokens cannot clear replacements.</p></div>
+      <div class="card"><h3>Admission</h3><p>An identity-bound RMF capability returned only after ownership and cooldown checks. It confirms one appearance and later releases ownership.</p></div>
+      <div class="card"><h3>Retained candidate</h3><p>Selected modal or RMF work kept without presentation/accounting while blocked, so it can be revalidated at a later checkpoint.</p></div>
+      <div class="card"><h3>Physical removal</h3><p>The actual visual terminal after the SwiftUI card’s scale/opacity transition, not merely model withdrawal or <code>onDisappear</code> beginning.</p></div>
+      <div class="card"><h3>Readiness token</h3><p>An opaque identity for one full foreground cycle. Background rotates it; stale asynchronous callbacks cannot reopen admission.</p></div>
+      <div class="card"><h3>Checkpoint</h3><p>A real app/UI event that justifies reconsidering retained work: load, refresh, mount, exposure, readiness/lifecycle, owner release, or the standard modal pass.</p></div>
+      <div class="card"><h3>Cooldown</h3><p>A directional minimum interval derived from confirmed source-event timestamps. Crossing a boundary alone does not trigger work.</p></div>
+    </div>
+  </section>
+
+  <section id="map" aria-labelledby="map-heading">
+    <h2 id="map-heading">Source, test, and review map</h2>
+    <h3>Concise source map</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Area</th><th>Primary sources</th></tr></thead>
+        <tbody>
+          <tr><td>Graph, feature mode, lifecycle</td><td><code>Launching.swift</code>; <code>PromoCoordinationFactory.swift</code>; <code>PromoCoordinationMode.swift</code>; <code>PromoCoordinationService.swift</code>; <code>Foreground.swift</code>; <code>MainCoordinator.swift</code></td></tr>
+          <tr><td>Arbitration/admission</td><td><code>PromoQueueLeaseArbiter.swift</code>; <code>NewTabPagePromoCoordination.swift</code></td></tr>
+          <tr><td>Modal flow</td><td><code>ModalPromptCoordinationManager.swift</code>; <code>ModalPromptProvider.swift</code>; provider implementations; scheduler/root-attachment helpers</td></tr>
+          <tr><td>RMF model/view</td><td><code>NewTabPageMessagesModel.swift</code>; <code>NewTabPageView.swift</code></td></tr>
+          <tr><td>NTP host exposure</td><td><code>NewTabPageViewController.swift</code>; <code>MainViewController.swift</code>; <code>SuggestionTrayViewController.swift</code>; unified-input host sources; <code>PopoverSuggestionsCoordinator.swift</code></td></tr>
+          <tr><td>Cooldown/persistence</td><td><code>PromoQueueCooldownPolicy.swift</code>; <code>PromptCooldownStore.swift</code>; <code>PromptCooldownManager.swift</code></td></tr>
+          <tr><td>Diagnostics</td><td><code>ModalPromptCoordinationDebugMenu.swift</code>; debug/settings wiring; service snapshot projection</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Concise test map</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Suite</th><th>Behavior protected</th><th>Notable limitation</th></tr></thead>
+        <tbody>
+          <tr><td><code>PromoPresentationCoordinationFeatureFlagTests</code></td><td>Rollout contract, local override, single sampling, fresh-graph behavior.</td><td>Static/constructor scope by design.</td></tr>
+          <tr><td><code>PromoQueueLeaseArbiterTests</code></td><td>Full owner conflict matrix, idempotence, stale/weak token behavior.</td><td>Some cases can be parameterized without losing coverage.</td></tr>
+          <tr><td><code>PromoCoordinationServicePromoQueueTests</code></td><td>Admission order, lifecycle/readiness, policy rollback, registry order/reentrancy, handoff, legacy gating, diagnostics.</td><td>Late appearance confirmation after release remains untested.</td></tr>
+          <tr><td><code>ModalPromptCoordinationManagerPromoQueueTests</code></td><td>Selection, pending work, revalidation/replacement, fire-time gates, exact-once accounting.</td><td>Dense but largely behavioral and valuable.</td></tr>
+          <tr><td><code>ModalPromptCoordinationRealUIKitTests</code></td><td>Exact UIKit root, nested presentation, active dismissal transition, keyboard/OmniBar order.</td><td>Simulator/runtime-sensitive.</td></tr>
+          <tr><td><code>PromoQueueCooldownPolicyTests</code></td><td>All boundaries, future clocks, persistence failures, snapshots, diagnostic isolation.</td><td>Real factory/store reconstruction remains untested.</td></tr>
+          <tr><td><code>NewTabPageMessagesModelTests</code></td><td>Legacy mapping, gates, confirmation, mounts, stale callbacks, withdrawal/removal/handoff.</td><td>Real-host test observes the model animator signal; no independent iOS 15/16 physical-removal proof.</td></tr>
+          <tr><td><code>UnifiedInputContentContainerViewControllerTests</code></td><td>Standard/tray/unified host exposure, ordered handoff, generations, stale animation callbacks.</td><td>No iPad popover type→clear handback and no behavioral covered-NTP test.</td></tr>
+          <tr><td><code>ModalPromptCoordinationManagerIntegrationTests</code></td><td>Persistent cooldown integration, readiness interaction, real two-model RMF handoff.</td><td>Two-model recorder polls with repeated sleeps and should use an event signal.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Reviewed revisions and intended bases</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Layer</th><th>Intended base reviewed</th><th>Head reviewed</th><th>Ancestry note</th></tr></thead>
+        <tbody>
+          <tr><td>PR 6087 (merged PR1)</td><td class="sha"><code>9dd3c84efdbc6a3208652324e5c9b34097b7cd8e</code></td><td class="sha"><code>fdb31d0ebef872c7839ee8f7dd2f372f3b9a43c5</code></td><td>GitHub landed a squash/merge commit <code>7fdd4719a1345c8805d3bbb9639c618f7dbb562d</code>, which is the ancestor carried by Q2/current main. The PR head itself need not be an ancestor.</td></tr>
+          <tr><td>PR 6194 (Q2)</td><td class="sha"><code>bd65c05015d20a6c28333147163d0d4d35408a19</code></td><td class="sha"><code>a455a7ca6e24a128a4687f4b02fe5653ec72a5c2</code></td><td>Head is an ancestor of Q2-fixes and Q3.</td></tr>
+          <tr><td>PR 6280 (Q2 fixes)</td><td class="sha"><code>a455a7ca6e24a128a4687f4b02fe5653ec72a5c2</code></td><td class="sha"><code>a746fddacfcd26250776190489e58c18a96d4578</code></td><td>Exact Q2 head as base; head is exact Q3 base.</td></tr>
+          <tr><td>PR 6291 (Q3)</td><td class="sha"><code>a746fddacfcd26250776190489e58c18a96d4578</code></td><td class="sha"><code>e83b59282e897df8233fea246732f3cd98367429</code></td><td>Local branch and fetched remote head matched; cumulative endpoint documented here.</td></tr>
+          <tr><td>Current fetched <code>main</code></td><td>—</td><td class="sha"><code>fe4f65db00ee6ebd8b5d58ab24b22f7835cfbaf8</code></td><td>Contains PR1 landing; Q2’s intended base predates later main movement.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="footnote">The PR descriptions and all current review threads for PRs 6087, 6194, 6280, and 6291 were inspected. Superseded closed PRs were not used as authority. Previously accepted fixes were reconciled against cumulative Q3 rather than assumed from thread resolution state.</p>
+  </section>
+
+  <footer>
+    <h2>Document provenance</h2>
+    <p>Generated from static source and test inspection of <code>bartosz/promo-q-3</code> at <code>e83b59282e897df8233fea246732f3cd98367429</code>. No build, simulator run, or test execution was performed during this final-review pass, per instruction. This appendix is stored outside the Q3 worktree and is not staged or committed.</p>
+  </footer>
+</main>
+</body>
+</html>

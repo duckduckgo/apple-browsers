@@ -1792,6 +1792,7 @@ class TabViewController: UIViewController {
         errorReportBrokenSiteButton.setTitle(UserText.tabTerminationErrorPageSendFeedbackButton, for: .normal)
         errorReportBrokenSiteButton.isHidden = false
         error.layoutIfNeeded()
+        hideProgressIndicator()
         webpageDidFailToLoad(preservePrivacyInfo: true)
         tabTerminationErrorPageInstrumentation.errorPageShown()
     }

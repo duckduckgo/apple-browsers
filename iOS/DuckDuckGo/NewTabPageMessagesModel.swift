@@ -20,109 +20,84 @@
 import Core
 import Foundation
 import RemoteMessaging
+import SwiftUI
 
 // MARK: - Render Models
 
-/// A stable SwiftUI render slot for either a direct home message or a coordinated remote-message gate.
+/// A stable SwiftUI render item for either a legacy/direct message or one centrally authorized remote-message presentation.
 struct NewTabPageHomeMessageRenderItem: Identifiable {
     enum Content {
-        /// A home message rendered directly without coordinated admission.
         case message(HomeMessageViewModel)
-        /// A stable mount point whose optional session reflects visible-promo admission.
-        case remoteMessageGate(NewTabPageRemoteMessageGate)
+        case coordinatedRemoteMessage(NewTabPageRemoteMessageRenderSession)
     }
 
-    /// Stable identity used to preserve the appropriate SwiftUI mount across model refreshes.
     let id: String
     let content: Content
 }
 
-/// Keeps a remote-message mount in the render tree while admission controls whether it has content.
-struct NewTabPageRemoteMessageGate {
-    /// Identity of the gate for the current remote-message candidate.
-    let id: UUID
-    let messageID: String
-    /// Present only while this gate owns an admitted visible-promo render session.
-    let renderSession: NewTabPageRemoteMessageRenderSession?
-}
-
-/// Identity and view model for one admitted rendering of a remote message.
+/// The single service-authorized physical presentation rendered by this model.
 struct NewTabPageRemoteMessageRenderSession {
-    /// Changes when SwiftUI should replace the mounted card with a newly admitted session.
-    let id: UUID
+    let presentation: PromoQueueRemoteMessagePresentation
     let viewModel: HomeMessageViewModel
 }
 
-/// Test-observable lifecycle callbacks emitted by the real SwiftUI gate and card mount.
-///
-/// The observer is optional and does not participate in coordination decisions.
-enum NewTabPageRemoteMessageLifecycleEvent: Equatable {
-    case gateDidAppear
-    case cardDidAppear
-    case cardDidDisappear
-    case gateDidDisappear
+/// Injectable selection of the old-OS synchronous removal path so it can be exercised on a current simulator.
+enum NewTabPageRemoteMessageRemovalPath: Equatable {
+    case automatic
+    case synchronousSourceClear
 }
 
 @MainActor
 final class NewTabPageMessagesModel: ObservableObject {
-    // MARK: - Published State
-
     @Published private(set) var homeMessageRenderItems: [NewTabPageHomeMessageRenderItem] = []
 
     var homeMessageViewModels: [HomeMessageViewModel] {
-        homeMessageRenderItems.compactMap { item in
+        homeMessageRenderItems.map { item in
             switch item.content {
             case .message(let viewModel):
                 return viewModel
-            case .remoteMessageGate(let gate):
-                return gate.renderSession?.viewModel
+            case .coordinatedRemoteMessage(let renderSession):
+                return renderSession.viewModel
             }
         }
     }
 
+    var usesAnimatedRemoteMessageRemoval: Bool {
+        guard removalPath == .automatic else {
+            return false
+        }
+        if #available(iOS 17, *) {
+            return true
+        }
+        return false
+    }
+
     let surfaceID: UUID
 
-    // MARK: - Coordination State
-
-    private struct AdmittedRemoteMessageSession {
-        let id: UUID
-        let gateID: UUID
-        let identity: VisiblePromoIdentity
-        let admission: PromoQueueRemoteMessageAdmission
+    private struct AuthorizedRemoteMessage {
+        let presentation: PromoQueueRemoteMessagePresentation
         var message: HomeMessage
         var viewModel: HomeMessageViewModel
-        var appearanceRecorded: Bool
-        var visibleCardMountIDs: Set<UUID>
-        var pendingCardMountIDs: Set<UUID>
     }
 
-    private struct OutgoingAdmittedRemoteMessageSession {
-        let session: AdmittedRemoteMessageSession
-        var remainingCardMountIDs: Set<UUID>
-        var pendingCardMountIDs: Set<UUID>
-        var scheduledReleaseID: UUID?
-    }
-
-    private struct RemoteMessageGateIdentity {
-        let id: UUID
-        let messageID: String
+    private struct PendingRemoteMessageRemoval {
+        let presentation: PromoQueueRemoteMessagePresentation
+        let removalID: UUID
+        let registration: NewTabPagePromoRendererRegistration
+        var didReportTerminal: Bool
     }
 
     private var observable: NSObjectProtocol?
-    private var retryRegistration: NewTabPagePromoRetryRegistration?
+    private var rendererRegistration: NewTabPagePromoRendererRegistration?
     private var isLoaded = false
     private var isTornDown = false
     private var isSurfaceRenderable = false
     private var attachedToWindowProvider: () -> Bool = { false }
     private var messagesSnapshot = [HomeMessage]()
     private var remoteMessageCandidate: HomeMessage?
-    private var remoteMessageGateIdentity: RemoteMessageGateIdentity?
-    private var visibleRemoteMessageGateID: UUID?
-    private var visibleRemoteMessageGateMountIDs = Set<UUID>()
-    private var admittedRemoteMessageSession: AdmittedRemoteMessageSession?
-    private var outgoingAdmittedRemoteMessageSessions = [UUID: OutgoingAdmittedRemoteMessageSession]()
-
-    // MARK: - Dependencies
+    private var remoteMessageCandidateState = PromoQueueRemoteMessageCandidateState.none
+    private var authorizedRemoteMessage: AuthorizedRemoteMessage?
+    private var pendingRemoteMessageRemoval: PendingRemoteMessageRemoval?
 
     private let homePageMessagesConfiguration: HomePageMessagesConfiguration
     private let notificationCenter: NotificationCenter
@@ -132,10 +107,8 @@ final class NewTabPageMessagesModel: ObservableObject {
     private let imageLoader: RemoteMessagingImageLoading
     private let pixelReporter: RemoteMessagingPixelReporting?
     private let promoCoordinator: NewTabPagePromoCoordinating
-    private let remoteMessageLifecycleObserver: ((NewTabPageRemoteMessageLifecycleEvent) -> Void)?
+    private let removalPath: NewTabPageRemoteMessageRemovalPath
     private let isOpenedAfterIdle: () -> Bool
-
-    // MARK: - Initialization
 
     init(homePageMessagesConfiguration: HomePageMessagesConfiguration,
          surfaceID: UUID = UUID(),
@@ -146,7 +119,7 @@ final class NewTabPageMessagesModel: ObservableObject {
          imageLoader: RemoteMessagingImageLoading,
          pixelReporter: RemoteMessagingPixelReporting? = nil,
          promoCoordinator: NewTabPagePromoCoordinating,
-         remoteMessageLifecycleObserver: ((NewTabPageRemoteMessageLifecycleEvent) -> Void)? = nil,
+         remoteMessageRemovalPath: NewTabPageRemoteMessageRemovalPath = .automatic,
          isOpenedAfterIdle: @escaping () -> Bool = { false }) {
         self.homePageMessagesConfiguration = homePageMessagesConfiguration
         self.surfaceID = surfaceID
@@ -157,7 +130,7 @@ final class NewTabPageMessagesModel: ObservableObject {
         self.imageLoader = imageLoader
         self.pixelReporter = pixelReporter
         self.promoCoordinator = promoCoordinator
-        self.remoteMessageLifecycleObserver = remoteMessageLifecycleObserver
+        self.removalPath = remoteMessageRemovalPath
         self.isOpenedAfterIdle = isOpenedAfterIdle
     }
 
@@ -169,7 +142,6 @@ final class NewTabPageMessagesModel: ObservableObject {
 
     // MARK: - Lifecycle
 
-    /// The owning controller must call this once after construction; repeat calls are ignored.
     func load() {
         guard !isLoaded, !isTornDown else {
             if isTornDown {
@@ -179,10 +151,9 @@ final class NewTabPageMessagesModel: ObservableObject {
         }
 
         isLoaded = true
-        retryRegistration = promoCoordinator.registerRemoteMessageRetry(
-            for: surfaceID,
-            target: self
-        )
+        if promoCoordinator.promoCoordinationMode == .coordinated {
+            rendererRegistration = promoCoordinator.registerRemoteMessageRenderer(id: surfaceID, target: self)
+        }
         observable = notificationCenter.addObserver(
             forName: RemoteMessagingStore.Notifications.remoteMessagesDidChange,
             object: nil,
@@ -202,127 +173,66 @@ final class NewTabPageMessagesModel: ObservableObject {
 
         isTornDown = true
         isSurfaceRenderable = false
-        visibleRemoteMessageGateID = nil
-        visibleRemoteMessageGateMountIDs.removeAll()
-        remoteMessageGateIdentity = nil
-
         if let observable {
             notificationCenter.removeObserver(observable)
             self.observable = nil
         }
-        retryRegistration?.deregister()
-        retryRegistration = nil
 
-        withdrawAdmittedRemoteMessage()
+        reportCandidateAndEligibility()
+        rendererRegistration?.deregister()
         messagesSnapshot = []
         remoteMessageCandidate = nil
-        publishRenderItems()
+        remoteMessageCandidateState = .none
+
+        if authorizedRemoteMessage == nil {
+            publishRenderItems()
+        }
+    }
+
+    /// Called after a host has physically detached this renderer. It is idempotent with the OS-specific removal terminal.
+    func remoteMessageHostDidDetach() {
+        guard !isRemoteMessageRendererAttachedToWindow,
+              var pendingRemoval = pendingRemoteMessageRemoval,
+              !pendingRemoval.didReportTerminal else {
+            return
+        }
+
+        clearAuthorizedPresentation(matching: pendingRemoval.presentation)
+        pendingRemoval.didReportTerminal = true
+        pendingRemoteMessageRemoval = pendingRemoval
+        pendingRemoval.registration.removalDidReachTerminal(
+            sessionID: pendingRemoval.presentation.session.id,
+            presentationID: pendingRemoval.presentation.id,
+            removalID: pendingRemoval.removalID,
+            terminal: .hostDetached
+        )
+        pendingRemoteMessageRemoval = nil
     }
 
     // MARK: - Surface Exposure
 
     func setSurfaceAttachmentProvider(_ provider: @escaping () -> Bool) {
         attachedToWindowProvider = provider
-        attemptRemoteMessageAdmission()
+        reportCandidateAndEligibility()
+        if isTornDown {
+            remoteMessageHostDidDetach()
+        }
     }
 
     func setSurfaceRenderable(_ isRenderable: Bool) {
         guard isSurfaceRenderable != isRenderable else {
             if isRenderable {
-                attemptRemoteMessageAdmission()
+                reportCandidateAndEligibility()
             }
             return
         }
 
         isSurfaceRenderable = isRenderable
-        if isRenderable {
-            attemptRemoteMessageAdmission()
-        } else {
-            withdrawAdmittedRemoteMessage()
-        }
-    }
-
-    // MARK: - Gate Mount Lifecycle
-
-    func remoteMessageGateDidAppear(
-        gateID: UUID,
-        messageID: String,
-        mountID: UUID,
-        renderSessionID: UUID? = nil
-    ) {
-        remoteMessageLifecycleObserver?(.gateDidAppear)
-
-        if let renderSessionID {
-            retainAdmissionForPendingCardMount(
-                renderSessionID: renderSessionID,
-                mountID: mountID
-            )
-        }
-
-        guard remoteMessageCandidate?.remoteMessageID == messageID,
-              remoteMessageGateIdentity?.id == gateID,
-              remoteMessageGateIdentity?.messageID == messageID else {
-            return
-        }
-
-        visibleRemoteMessageGateID = gateID
-        visibleRemoteMessageGateMountIDs.insert(mountID)
-        attemptRemoteMessageAdmission()
-    }
-
-    func remoteMessageGateDidDisappear(gateID: UUID, messageID: String, mountID: UUID) {
-        remoteMessageLifecycleObserver?(.gateDidDisappear)
-        defer {
-            completePhysicalRemovalForGateMount(mountID)
-        }
-
-        guard remoteMessageGateIdentity?.id == gateID,
-              remoteMessageGateIdentity?.messageID == messageID,
-              visibleRemoteMessageGateID == gateID else {
-            return
-        }
-        guard visibleRemoteMessageGateMountIDs.remove(mountID) != nil else {
-            return
-        }
-        guard visibleRemoteMessageGateMountIDs.isEmpty else {
-            return
-        }
-
-        visibleRemoteMessageGateID = nil
-        withdrawAdmittedRemoteMessage()
-    }
-
-    func remoteMessageCardDidAppear(renderSessionID: UUID, mountID: UUID) {
-        remoteMessageLifecycleObserver?(.cardDidAppear)
-
-        if var session = admittedRemoteMessageSession,
-           session.id == renderSessionID {
-            session.pendingCardMountIDs.remove(mountID)
-            session.visibleCardMountIDs.insert(mountID)
-            admittedRemoteMessageSession = session
-        } else if var outgoingSession = outgoingAdmittedRemoteMessageSessions[renderSessionID] {
-            outgoingSession.pendingCardMountIDs.remove(mountID)
-            outgoingSession.remainingCardMountIDs.insert(mountID)
-            outgoingSession.scheduledReleaseID = nil
-            outgoingAdmittedRemoteMessageSessions[renderSessionID] = outgoingSession
-        }
-    }
-
-    func remoteMessageDidDisappear(renderSessionID: UUID, mountID: UUID) {
-        remoteMessageLifecycleObserver?(.cardDidDisappear)
-        completePhysicalRemovalFromCurrentSession(
-            matching: renderSessionID,
-            mountID: mountID
-        )
-        completePhysicalRemovalFromOutgoingSession(
-            matching: renderSessionID,
-            mountID: mountID
-        )
+        reportCandidateAndEligibility()
     }
 
     // MARK: - Message Actions
 
-    @MainActor
     func dismissHomeMessage(_ homeMessage: HomeMessage) async {
         await homePageMessagesConfiguration.dismissHomeMessage(homeMessage)
         updateHomeMessageViewModel()
@@ -333,133 +243,117 @@ final class NewTabPageMessagesModel: ObservableObject {
     }
 
     func refresh() {
-        refresh(shouldAttemptAdmission: true)
-    }
-
-    private func refresh(shouldAttemptAdmission: Bool) {
         guard !isTornDown else {
             return
         }
 
         homePageMessagesConfiguration.refresh(openedAfterIdle: isOpenedAfterIdle())
-        updateHomeMessageViewModel(shouldAttemptAdmission: shouldAttemptAdmission)
+        updateHomeMessageViewModel()
     }
 
-    // MARK: - Render Model Updates
+    // MARK: - Candidate And Rendering
 
-    private func updateHomeMessageViewModel(shouldAttemptAdmission: Bool = true) {
+    private func updateHomeMessageViewModel() {
         let newMessages = homePageMessagesConfiguration.homeMessages
         let newRemoteMessageCandidate = newMessages.first(where: \.isRemoteMessage)
-        let previousMessageID = remoteMessageCandidate?.remoteMessageID
-        let newMessageID = newRemoteMessageCandidate?.remoteMessageID
-
         messagesSnapshot = newMessages
         remoteMessageCandidate = newRemoteMessageCandidate
 
-        if previousMessageID != newMessageID {
-            visibleRemoteMessageGateID = nil
-            visibleRemoteMessageGateMountIDs.removeAll()
-            remoteMessageGateIdentity = nil
-            withdrawAdmittedRemoteMessage()
+        if let messageID = newRemoteMessageCandidate?.remoteMessageID {
+            remoteMessageCandidateState = .available(messageID: messageID)
+        } else {
+            remoteMessageCandidateState = .none
         }
 
-        if let admittedRemoteMessageSession,
-           admittedRemoteMessageSession.identity.promoID == newMessageID,
+        if let authorizedRemoteMessage,
+           authorizedRemoteMessage.presentation.session.messageID == newRemoteMessageCandidate?.remoteMessageID,
            let newRemoteMessageCandidate {
-            updateAdmittedRemoteMessageSession(
-                admittedRemoteMessageSession,
-                with: newRemoteMessageCandidate
-            )
+            updateAuthorizedRemoteMessage(authorizedRemoteMessage, with: newRemoteMessageCandidate)
         }
 
         publishRenderItems()
-
-        if previousMessageID == newMessageID, shouldAttemptAdmission {
-            attemptRemoteMessageAdmission()
-        }
+        reportCandidateAndEligibility()
     }
 
-    private func updateAdmittedRemoteMessageSession(
-        _ session: AdmittedRemoteMessageSession,
+    private func updateAuthorizedRemoteMessage(
+        _ authorizedRemoteMessage: AuthorizedRemoteMessage,
         with message: HomeMessage
     ) {
-        guard case .remoteMessage(let remoteMessage) = message else {
+        guard case .remoteMessage(let remoteMessage) = message,
+              let viewModel = makeRemoteMessageViewModel(
+                for: remoteMessage,
+                message: message,
+                presentation: authorizedRemoteMessage.presentation
+              ) else {
+            remoteMessageCandidateState = .unrenderable(messageID: authorizedRemoteMessage.presentation.session.messageID)
             return
         }
 
-        var updatedSession = session
-        updatedSession.message = message
-        guard let viewModel = makeRemoteMessageViewModel(
-            for: remoteMessage,
+        self.authorizedRemoteMessage = AuthorizedRemoteMessage(
+            presentation: authorizedRemoteMessage.presentation,
             message: message,
-            renderSessionID: session.id
-        ) else {
-            withdrawAdmittedRemoteMessage()
-            return
-        }
-        updatedSession.viewModel = viewModel
-        admittedRemoteMessageSession = updatedSession
+            viewModel: viewModel
+        )
     }
 
     private func publishRenderItems() {
-        let shouldUseCoordinatedGate = promoCoordinator.promoCoordinationMode == .coordinated
         var renderItems = [NewTabPageHomeMessageRenderItem]()
+        var didPublishAuthorizedRemoteMessage = false
 
         for (index, message) in messagesSnapshot.enumerated() {
             switch message {
             case .placeholder:
-                let viewModel = makePlaceholderViewModel(for: message)
                 renderItems.append(NewTabPageHomeMessageRenderItem(
                     id: "local-message-\(index)",
+                    content: .message(makePlaceholderViewModel(for: message))
+                ))
+            case .remoteMessage(let remoteMessage):
+                guard promoCoordinator.promoCoordinationMode == .legacy else {
+                    if !didPublishAuthorizedRemoteMessage,
+                       let authorizedRemoteMessage,
+                       authorizedRemoteMessage.presentation.session.messageID == remoteMessage.id {
+                        renderItems.append(makeRenderItem(for: authorizedRemoteMessage))
+                        didPublishAuthorizedRemoteMessage = true
+                    }
+                    continue
+                }
+                guard let viewModel = makeLegacyRemoteMessageViewModel(for: remoteMessage, message: message) else {
+                    continue
+                }
+                renderItems.append(NewTabPageHomeMessageRenderItem(
+                    id: "remote-message-\(remoteMessage.id)",
                     content: .message(viewModel)
                 ))
-
-            case .remoteMessage(let remoteMessage):
-                if shouldUseCoordinatedGate {
-                    guard remoteMessage.id == remoteMessageCandidate?.remoteMessageID else {
-                        assertionFailure("Expected at most one remote message candidate")
-                        continue
-                    }
-                    let gateIdentity = remoteMessageGateIdentity(for: remoteMessage.id)
-                    let renderSession: NewTabPageRemoteMessageRenderSession?
-                    if let session = admittedRemoteMessageSession,
-                       session.identity.promoID == remoteMessage.id,
-                       session.gateID == gateIdentity.id {
-                        renderSession = NewTabPageRemoteMessageRenderSession(
-                            id: session.id,
-                            viewModel: session.viewModel
-                        )
-                    } else {
-                        renderSession = nil
-                    }
-
-                    renderItems.append(NewTabPageHomeMessageRenderItem(
-                        id: "remote-message-gate-\(gateIdentity.id.uuidString)",
-                        content: .remoteMessageGate(NewTabPageRemoteMessageGate(
-                            id: gateIdentity.id,
-                            messageID: remoteMessage.id,
-                            renderSession: renderSession
-                        ))
-                    ))
-                } else {
-                    remoteMessageGateIdentity = nil
-                    visibleRemoteMessageGateID = nil
-                    visibleRemoteMessageGateMountIDs.removeAll()
-                    guard let viewModel = makeLegacyRemoteMessageViewModel(
-                        for: remoteMessage,
-                        message: message
-                    ) else {
-                        continue
-                    }
-                    renderItems.append(NewTabPageHomeMessageRenderItem(
-                        id: "remote-message-\(remoteMessage.id)",
-                        content: .message(viewModel)
-                    ))
-                }
             }
         }
 
+        if let authorizedRemoteMessage, !didPublishAuthorizedRemoteMessage {
+            renderItems.append(makeRenderItem(for: authorizedRemoteMessage))
+        }
+
         homeMessageRenderItems = renderItems
+    }
+
+    private func makeRenderItem(for authorizedRemoteMessage: AuthorizedRemoteMessage) -> NewTabPageHomeMessageRenderItem {
+        let renderSession = NewTabPageRemoteMessageRenderSession(
+            presentation: authorizedRemoteMessage.presentation,
+            viewModel: authorizedRemoteMessage.viewModel
+        )
+        return NewTabPageHomeMessageRenderItem(
+            id: "coordinated-remote-message-\(authorizedRemoteMessage.presentation.id.uuidString)",
+            content: .coordinatedRemoteMessage(renderSession)
+        )
+    }
+
+    private func reportCandidateAndEligibility() {
+        guard promoCoordinator.promoCoordinationMode == .coordinated else {
+            return
+        }
+        rendererRegistration?.update(candidate: remoteMessageCandidateState, isEligible: isEligibleForRemoteMessageRendering)
+    }
+
+    private var isEligibleForRemoteMessageRendering: Bool {
+        isLoaded && !isTornDown && isSurfaceRenderable && attachedToWindowProvider()
     }
 
     // MARK: - View Model Construction
@@ -484,14 +378,9 @@ final class NewTabPageMessagesModel: ObservableObject {
         for remoteMessage: RemoteMessageModel,
         message: HomeMessage
     ) -> HomeMessageViewModel? {
-        // Preserve the feature-off path exactly: refreshing an already-visible NTP records
-        // appearance eagerly, and the SwiftUI view records its normal onAppear separately.
+        // Preserve feature-off behavior: refresh records eagerly and SwiftUI records its ordinary appearance separately.
         didAppear(message)
-
-        return buildRemoteMessageViewModel(
-            for: remoteMessage,
-            message: message
-        ) { [weak self] in
+        return buildRemoteMessageViewModel(for: remoteMessage, message: message) { [weak self] in
             self?.didAppear(message)
         }
     }
@@ -499,16 +388,10 @@ final class NewTabPageMessagesModel: ObservableObject {
     private func makeRemoteMessageViewModel(
         for remoteMessage: RemoteMessageModel,
         message: HomeMessage,
-        renderSessionID: UUID
+        presentation: PromoQueueRemoteMessagePresentation
     ) -> HomeMessageViewModel? {
-        buildRemoteMessageViewModel(
-            for: remoteMessage,
-            message: message
-        ) { [weak self] in
-            self?.recordAppearance(
-                for: message,
-                renderSessionID: renderSessionID
-            )
+        buildRemoteMessageViewModel(for: remoteMessage, message: message) { [weak self] in
+            self?.recordAppearance(for: message, presentation: presentation)
         }
     }
 
@@ -524,52 +407,30 @@ final class NewTabPageMessagesModel: ObservableObject {
             imageLoader: imageLoader,
             pixelReporter: pixelReporter
         ) { @MainActor [weak self] action in
-            guard let action,
-                  let self else {
+            guard let action, let self else {
                 return
             }
 
             switch action {
             case .action(let isSharing):
-                if !isSharing {
-                    await dismissHomeMessage(message)
-                }
+                if !isSharing { await dismissHomeMessage(message) }
                 if remoteMessage.isMetricsEnabled {
-                    pixelFiring.fire(
-                        .remoteMessageActionClicked,
-                        withAdditionalParameters: additionalParameters(for: remoteMessage.id)
-                    )
+                    pixelFiring.fire(.remoteMessageActionClicked, withAdditionalParameters: additionalParameters(for: remoteMessage.id))
                 }
-
             case .primaryAction(let isSharing):
-                if !isSharing {
-                    await dismissHomeMessage(message)
-                }
+                if !isSharing { await dismissHomeMessage(message) }
                 if remoteMessage.isMetricsEnabled {
-                    pixelFiring.fire(
-                        .remoteMessagePrimaryActionClicked,
-                        withAdditionalParameters: additionalParameters(for: remoteMessage.id)
-                    )
+                    pixelFiring.fire(.remoteMessagePrimaryActionClicked, withAdditionalParameters: additionalParameters(for: remoteMessage.id))
                 }
-
             case .secondaryAction(let isSharing):
-                if !isSharing {
-                    await dismissHomeMessage(message)
-                }
+                if !isSharing { await dismissHomeMessage(message) }
                 if remoteMessage.isMetricsEnabled {
-                    pixelFiring.fire(
-                        .remoteMessageSecondaryActionClicked,
-                        withAdditionalParameters: additionalParameters(for: remoteMessage.id)
-                    )
+                    pixelFiring.fire(.remoteMessageSecondaryActionClicked, withAdditionalParameters: additionalParameters(for: remoteMessage.id))
                 }
-
             case .close:
                 await dismissHomeMessage(message)
                 if remoteMessage.isMetricsEnabled {
-                    pixelFiring.fire(
-                        .remoteMessageDismissed,
-                        withAdditionalParameters: additionalParameters(for: remoteMessage.id)
-                    )
+                    pixelFiring.fire(.remoteMessageDismissed, withAdditionalParameters: additionalParameters(for: remoteMessage.id))
                 }
             }
         } onDidAppear: {
@@ -577,232 +438,20 @@ final class NewTabPageMessagesModel: ObservableObject {
         }
     }
 
-    // MARK: - Appearance Accounting
-
     private func recordAppearance(
         for message: HomeMessage,
-        renderSessionID: UUID
+        presentation: PromoQueueRemoteMessagePresentation
     ) {
-        guard var session = admittedRemoteMessageSession,
-              session.id == renderSessionID,
-              !session.appearanceRecorded else {
+        guard authorizedRemoteMessage?.presentation == presentation,
+              rendererRegistration?.confirmAppearance(
+                sessionID: presentation.session.id,
+                presentationID: presentation.id,
+                isAttachedToWindow: isRemoteMessageRendererAttachedToWindow
+              ) == .accepted else {
             return
         }
-
-        session.appearanceRecorded = true
-        admittedRemoteMessageSession = session
         didAppear(message)
     }
-
-    // MARK: - Admission
-
-    private func attemptRemoteMessageAdmission() {
-        guard promoCoordinator.promoCoordinationMode == .coordinated else {
-            return
-        }
-
-        attemptRemoteMessageAdmission(using: promoCoordinator.admitRemoteMessage)
-    }
-
-    private func attemptRemoteMessageAdmission(
-        using admissionHandler: PromoQueueRemoteMessageAdmissionHandler
-    ) {
-        guard isLoaded,
-              !isTornDown,
-              isSurfaceRenderable,
-              attachedToWindowProvider(),
-              let message = remoteMessageCandidate,
-              let messageID = message.remoteMessageID,
-              let gateIdentity = remoteMessageGateIdentity,
-              gateIdentity.messageID == messageID,
-              visibleRemoteMessageGateID == gateIdentity.id,
-              !visibleRemoteMessageGateMountIDs.isEmpty else {
-            return
-        }
-
-        if admittedRemoteMessageSession?.identity.promoID == messageID,
-           admittedRemoteMessageSession?.gateID == gateIdentity.id {
-            return
-        }
-
-        let identity = VisiblePromoIdentity(
-            surfaceID: surfaceID,
-            promoType: .remoteMessage,
-            promoID: messageID
-        )
-
-        let admissionResult = admissionHandler(identity)
-        switch admissionResult {
-        case .acquired(let admission):
-            guard case .remoteMessage(let remoteMessage) = message else {
-                admission.release()
-                return
-            }
-            let renderSessionID = UUID()
-            guard let viewModel = makeRemoteMessageViewModel(
-                for: remoteMessage,
-                message: message,
-                renderSessionID: renderSessionID
-            ) else {
-                admission.release()
-                return
-            }
-            admittedRemoteMessageSession = AdmittedRemoteMessageSession(
-                id: renderSessionID,
-                gateID: gateIdentity.id,
-                identity: identity,
-                admission: admission,
-                message: message,
-                viewModel: viewModel,
-                appearanceRecorded: false,
-                visibleCardMountIDs: [],
-                pendingCardMountIDs: []
-            )
-            publishRenderItems()
-
-        case .deferred:
-            break
-        }
-    }
-
-    private func withdrawAdmittedRemoteMessage() {
-        guard let session = admittedRemoteMessageSession else {
-            return
-        }
-
-        removeAdmittedRemoteMessageSession(matching: session.id)
-    }
-
-    private func removeAdmittedRemoteMessageSession(matching renderSessionID: UUID) {
-        guard let session = admittedRemoteMessageSession,
-              session.id == renderSessionID else {
-            return
-        }
-
-        admittedRemoteMessageSession = nil
-        let outgoingSession = OutgoingAdmittedRemoteMessageSession(
-            session: session,
-            remainingCardMountIDs: session.visibleCardMountIDs,
-            pendingCardMountIDs: session.pendingCardMountIDs,
-            scheduledReleaseID: nil
-        )
-        outgoingAdmittedRemoteMessageSessions[session.id] = outgoingSession
-        publishRenderItems()
-
-        guard outgoingSession.remainingCardMountIDs.isEmpty,
-              outgoingSession.pendingCardMountIDs.isEmpty else {
-            return
-        }
-
-        scheduleReleaseAfterPhysicalRemoval(of: session.id)
-    }
-
-    private func completePhysicalRemovalFromCurrentSession(
-        matching renderSessionID: UUID?,
-        mountID: UUID
-    ) {
-        guard var session = admittedRemoteMessageSession,
-              renderSessionID == nil || session.id == renderSessionID,
-              session.visibleCardMountIDs.remove(mountID) != nil
-                || session.pendingCardMountIDs.remove(mountID) != nil else {
-            return
-        }
-
-        admittedRemoteMessageSession = session
-        guard session.visibleCardMountIDs.isEmpty,
-              session.pendingCardMountIDs.isEmpty else {
-            return
-        }
-
-        removeAdmittedRemoteMessageSession(matching: session.id)
-    }
-
-    private func completePhysicalRemovalFromOutgoingSession(
-        matching renderSessionID: UUID,
-        mountID: UUID
-    ) {
-        guard var outgoingSession = outgoingAdmittedRemoteMessageSessions[renderSessionID] else {
-            return
-        }
-
-        let removedCardMount = outgoingSession.remainingCardMountIDs.remove(mountID) != nil
-        let removedPendingMount = outgoingSession.pendingCardMountIDs.remove(mountID) != nil
-        guard removedCardMount || removedPendingMount else {
-            return
-        }
-
-        outgoingAdmittedRemoteMessageSessions[renderSessionID] = outgoingSession
-        if outgoingSession.remainingCardMountIDs.isEmpty,
-           outgoingSession.pendingCardMountIDs.isEmpty {
-            scheduleReleaseAfterPhysicalRemoval(of: renderSessionID)
-        }
-    }
-
-    private func retainAdmissionForPendingCardMount(
-        renderSessionID: UUID,
-        mountID: UUID
-    ) {
-        if var session = admittedRemoteMessageSession,
-           session.id == renderSessionID,
-           !session.visibleCardMountIDs.contains(mountID) {
-            session.pendingCardMountIDs.insert(mountID)
-            admittedRemoteMessageSession = session
-        }
-
-        if var outgoingSession = outgoingAdmittedRemoteMessageSessions[renderSessionID],
-           !outgoingSession.remainingCardMountIDs.contains(mountID) {
-            outgoingSession.pendingCardMountIDs.insert(mountID)
-            outgoingSession.scheduledReleaseID = nil
-            outgoingAdmittedRemoteMessageSessions[renderSessionID] = outgoingSession
-        }
-    }
-
-    private func completePhysicalRemovalForGateMount(_ mountID: UUID) {
-        completePhysicalRemovalFromCurrentSession(matching: nil, mountID: mountID)
-
-        let matchingOutgoingSessionIDs = outgoingAdmittedRemoteMessageSessions.compactMap { renderSessionID, outgoingSession in
-            outgoingSession.remainingCardMountIDs.contains(mountID)
-                || outgoingSession.pendingCardMountIDs.contains(mountID)
-                ? renderSessionID
-                : nil
-        }
-        for renderSessionID in matchingOutgoingSessionIDs {
-            completePhysicalRemovalFromOutgoingSession(
-                matching: renderSessionID,
-                mountID: mountID
-            )
-        }
-    }
-
-    private func scheduleReleaseAfterPhysicalRemoval(of renderSessionID: UUID) {
-        guard var outgoingSession = outgoingAdmittedRemoteMessageSessions[renderSessionID],
-              outgoingSession.remainingCardMountIDs.isEmpty,
-              outgoingSession.pendingCardMountIDs.isEmpty,
-              outgoingSession.scheduledReleaseID == nil else {
-            return
-        }
-
-        let scheduledReleaseID = UUID()
-        outgoingSession.scheduledReleaseID = scheduledReleaseID
-        outgoingAdmittedRemoteMessageSessions[renderSessionID] = outgoingSession
-
-        // The coordinated card has an identity transition. Its matching card/gate disappearance is therefore
-        // the physical-removal point; retain the admission through the following main turn so the host settles.
-        DispatchQueue.main.async { [self] in
-            guard let outgoingSession = outgoingAdmittedRemoteMessageSessions[renderSessionID],
-                  outgoingSession.scheduledReleaseID == scheduledReleaseID,
-                  outgoingSession.remainingCardMountIDs.isEmpty,
-                  outgoingSession.pendingCardMountIDs.isEmpty else {
-                return
-            }
-
-            outgoingAdmittedRemoteMessageSessions[renderSessionID] = nil
-            outgoingSession.session.admission.release()
-            attemptRemoteMessageAdmission()
-        }
-    }
-
-    // MARK: - Utilities
 
     private func additionalParameters(for messageID: String) -> [String: String] {
         let defaultParameters = [PixelParameters.message: "\(messageID)"]
@@ -811,38 +460,145 @@ final class NewTabPageMessagesModel: ObservableObject {
             with: defaultParameters
         ) ?? defaultParameters
     }
-
-    private func remoteMessageGateIdentity(for messageID: String) -> RemoteMessageGateIdentity {
-        if let remoteMessageGateIdentity,
-           remoteMessageGateIdentity.messageID == messageID {
-            return remoteMessageGateIdentity
-        }
-
-        let identity = RemoteMessageGateIdentity(
-            id: UUID(),
-            messageID: messageID
-        )
-        remoteMessageGateIdentity = identity
-        return identity
-    }
-
 }
 
-// MARK: - NewTabPagePromoRetrying
+// MARK: - NewTabPagePromoRendering
 
-extension NewTabPageMessagesModel: NewTabPagePromoRetrying {
-    var isActiveForPromoRetry: Bool {
-        isLoaded
-            && !isTornDown
-            && isSurfaceRenderable
-            && attachedToWindowProvider()
+extension NewTabPageMessagesModel: NewTabPagePromoRendering {
+    var isRemoteMessageRendererAttachedToWindow: Bool {
+        attachedToWindowProvider()
     }
 
-    func retryRemoteMessageAdmission(using admissionHandler: PromoQueueRemoteMessageAdmissionHandler) {
-        refresh(shouldAttemptAdmission: false)
-        attemptRemoteMessageAdmission(using: admissionHandler)
+    var hasPublishedRemoteMessagePresentation: Bool {
+        authorizedRemoteMessage != nil || pendingRemoteMessageRemoval != nil
     }
 
+    func showRemoteMessage(_ presentation: PromoQueueRemoteMessagePresentation) -> Bool {
+        guard authorizedRemoteMessage == nil,
+              pendingRemoteMessageRemoval == nil else {
+            return false
+        }
+        guard !isTornDown,
+              remoteMessageCandidate?.remoteMessageID == presentation.session.messageID,
+              case .remoteMessage(let remoteMessage) = remoteMessageCandidate,
+              let message = remoteMessageCandidate,
+              let viewModel = makeRemoteMessageViewModel(
+                for: remoteMessage,
+                message: message,
+                presentation: presentation
+              ) else {
+            return false
+        }
+
+        authorizedRemoteMessage = AuthorizedRemoteMessage(
+            presentation: presentation,
+            message: message,
+            viewModel: viewModel
+        )
+        publishRenderItems()
+        return true
+    }
+
+    func hideRemoteMessage(
+        _ presentation: PromoQueueRemoteMessagePresentation,
+        removalID: UUID
+    ) {
+        guard authorizedRemoteMessage?.presentation == presentation,
+              pendingRemoteMessageRemoval == nil,
+              let rendererRegistration else {
+            return
+        }
+
+        pendingRemoteMessageRemoval = PendingRemoteMessageRemoval(
+            presentation: presentation,
+            removalID: removalID,
+            registration: rendererRegistration,
+            didReportTerminal: false
+        )
+
+        if !isRemoteMessageRendererAttachedToWindow {
+            remoteMessageHostDidDetach()
+            return
+        }
+
+        switch removalPath {
+        case .synchronousSourceClear:
+            removeWithoutAnimation(presentation: presentation, removalID: removalID)
+        case .automatic:
+            if #available(iOS 17, *) {
+                removeWithNativeAnimation(presentation: presentation, removalID: removalID)
+            } else {
+                removeWithoutAnimation(presentation: presentation, removalID: removalID)
+            }
+        }
+    }
+
+    @available(iOS 17, *)
+    private func removeWithNativeAnimation(
+        presentation: PromoQueueRemoteMessagePresentation,
+        removalID: UUID
+    ) {
+        SwiftUI.withAnimation(.default, completionCriteria: .removed) { [self] in
+            clearAuthorizedPresentation(matching: presentation)
+        } completion: { [self] in
+            reportRemovalTerminal(
+                presentation: presentation,
+                removalID: removalID,
+                terminal: .animationCompleted
+            )
+        }
+    }
+
+    private func removeWithoutAnimation(
+        presentation: PromoQueueRemoteMessagePresentation,
+        removalID: UUID
+    ) {
+        var transaction = Transaction(animation: nil)
+        transaction.disablesAnimations = true
+        SwiftUI.withTransaction(transaction) { [self] in
+            clearAuthorizedPresentation(matching: presentation)
+        }
+
+        guard authorizedRemoteMessage?.presentation != presentation else {
+            return
+        }
+        reportRemovalTerminal(
+            presentation: presentation,
+            removalID: removalID,
+            terminal: .sourceRemovedWithoutAnimation
+        )
+    }
+
+    private func clearAuthorizedPresentation(matching presentation: PromoQueueRemoteMessagePresentation) {
+        guard authorizedRemoteMessage?.presentation == presentation else {
+            return
+        }
+        authorizedRemoteMessage = nil
+        publishRenderItems()
+    }
+
+    private func reportRemovalTerminal(
+        presentation: PromoQueueRemoteMessagePresentation,
+        removalID: UUID,
+        terminal: PromoQueueRemoteMessageRemovalTerminal
+    ) {
+        guard var pendingRemoval = pendingRemoteMessageRemoval,
+              pendingRemoval.presentation == presentation,
+              pendingRemoval.removalID == removalID,
+              !pendingRemoval.didReportTerminal else {
+            return
+        }
+
+        pendingRemoval.didReportTerminal = true
+        pendingRemoteMessageRemoval = pendingRemoval
+        pendingRemoval.registration.removalDidReachTerminal(
+            sessionID: presentation.session.id,
+            presentationID: presentation.id,
+            removalID: removalID,
+            terminal: terminal
+        )
+        pendingRemoteMessageRemoval = nil
+    }
 }
 
 // MARK: - HomeMessage Helpers

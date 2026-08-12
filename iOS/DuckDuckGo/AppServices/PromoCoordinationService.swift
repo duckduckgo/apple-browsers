@@ -54,35 +54,188 @@ struct ModalPromptProviders {
     let cookiePopupProtectionOptIn: ModalPromptProvider
 }
 
-/// Coordinates app-launch modal prompts with visible new-tab promos.
+enum PromoQueueRemoteMessageLogicalStateSnapshot: Equatable {
+    case idle
+    case owned
+    case draining
+}
+
+enum PromoQueueRemoteMessageDrainContinuationSnapshot: Equatable {
+    case transferSameMessageIfAvailable
+    case endSession
+}
+
+/// Read-only projection of the service-owned RMF state for focused tests and later debug UI integration.
+struct PromoQueueRemoteMessageCoordinationSnapshot: Equatable {
+    let state: PromoQueueRemoteMessageLogicalStateSnapshot
+    let messageID: String?
+    let sessionID: UUID?
+    let rendererID: UUID?
+    let registrationGenerationID: UUID?
+    let presentationID: UUID?
+    let isQueueAppearanceConfirmed: Bool
+    let isPresentationAppearanceReported: Bool?
+    let removalID: UUID?
+    let removalTerminal: PromoQueueRemoteMessageRemovalTerminal?
+    let drainContinuation: PromoQueueRemoteMessageDrainContinuationSnapshot?
+    let registeredRendererCount: Int
+    let eligibleRendererCount: Int
+}
+
+/// Coordinates app-launch modal prompts with one service-owned logical NTP remote-message session.
 ///
-/// Foreground and promo-admission checkpoints reconcile dismissed modals, then weakly registered active promo surfaces
-/// are retried when a slot may be free. The process-wide coordination mode is immutable for this service's lifetime.
+/// Foreground, readiness, modal-release, and renderer checkpoints reconcile weak renderer registrations through one
+/// non-reentrant state machine. The process-wide coordination mode is immutable for this service's lifetime.
 @MainActor
 final class PromoCoordinationService {
-    private final class WeakRemoteMessageRetryRegistration {
-        let id: UUID
-        let surfaceID: UUID
-        weak var target: NewTabPagePromoRetrying?
+    private struct RemoteMessageRegistrationIdentity: Equatable {
+        let rendererID: UUID
+        let generationID: UUID
+    }
 
-        init(id: UUID, surfaceID: UUID, target: NewTabPagePromoRetrying) {
-            self.id = id
-            self.surfaceID = surfaceID
+    private final class WeakRemoteMessageRendererRegistration {
+        let identity: RemoteMessageRegistrationIdentity
+        let stableOrder: UInt64
+        weak var target: NewTabPagePromoRendering?
+        var candidate = PromoQueueRemoteMessageCandidateState.none
+        var isEligible = false
+        var isDeregistered = false
+
+        init(
+            identity: RemoteMessageRegistrationIdentity,
+            stableOrder: UInt64,
+            target: NewTabPagePromoRendering
+        ) {
+            self.identity = identity
+            self.stableOrder = stableOrder
             self.target = target
         }
+    }
+
+    private struct LogicalRemoteMessageSession {
+        let identity: PromoQueueRemoteMessageSession
+        var isQueueAppearanceConfirmed = false
+    }
+
+    private struct OwnedRemoteMessageState {
+        var logicalSession: LogicalRemoteMessageSession
+        let lease: PromoQueueRemoteMessageLease
+        let registrationIdentity: RemoteMessageRegistrationIdentity
+        let presentationID: UUID
+        var isCurrentPresentationAppearanceReported = false
+    }
+
+    private enum RemoteMessageDrainContinuation {
+        case transferSameMessageIfAvailable
+        case endSession
+
+        var snapshot: PromoQueueRemoteMessageDrainContinuationSnapshot {
+            switch self {
+            case .transferSameMessageIfAvailable:
+                return .transferSameMessageIfAvailable
+            case .endSession:
+                return .endSession
+            }
+        }
+    }
+
+    private struct DrainingRemoteMessageState {
+        let logicalSession: LogicalRemoteMessageSession
+        let lease: PromoQueueRemoteMessageLease
+        let outgoingRegistrationIdentity: RemoteMessageRegistrationIdentity
+        let outgoingPresentationID: UUID
+        let wasOutgoingPresentationAppearanceReported: Bool
+        let removalID: UUID
+        let acceptedRemovalTerminal: PromoQueueRemoteMessageRemovalTerminal?
+        let continuation: RemoteMessageDrainContinuation
+    }
+
+    private enum RemoteMessageState {
+        case idle
+        case owned(OwnedRemoteMessageState)
+        case draining(DrainingRemoteMessageState)
     }
 
     private let modalPromptCoordinationManager: ModalPromptCoordinationManaging
     private let launchSourceManager: LaunchSourceManaging
     private let promoQueueLeaseArbiter: PromoQueueLeaseArbitrating
-    private var remoteMessageRetryRegistrations = [WeakRemoteMessageRetryRegistration]()
-    private var isRetryingRemoteMessageRegistrations = false
+    private var remoteMessageRendererRegistrations = [WeakRemoteMessageRendererRegistration]()
+    private var nextRemoteMessageRegistrationOrder: UInt64 = 0
+    private var remoteMessageState = RemoteMessageState.idle
+    private var isReconcilingRemoteMessages = false
+    private var needsRemoteMessageReconciliation = false
+    private var scheduledRemoteMessageSettlementRemovalID: UUID?
+    private var remoteMessageRemovalReadyForSettlementID: UUID?
     private var isApplicationActive = false
     private var isWaitingForForegroundInteractionReadiness = true
     private var foregroundReadinessToken = PromoCoordinationForegroundReadinessToken()
     private weak var deferredModalPromptPresenter: ModalPromptPresenter?
 
     let promoCoordinationMode: PromoCoordinationMode
+
+    var remoteMessageCoordinationSnapshot: PromoQueueRemoteMessageCoordinationSnapshot {
+        let registeredRendererCount = remoteMessageRendererRegistrations.count
+        let eligibleRendererCount = remoteMessageRendererRegistrations.filter { registration in
+            guard !registration.isDeregistered,
+                  registration.isEligible,
+                  registration.target != nil,
+                  case .available = registration.candidate else {
+                return false
+            }
+            return true
+        }.count
+
+        switch remoteMessageState {
+        case .idle:
+            return PromoQueueRemoteMessageCoordinationSnapshot(
+                state: .idle,
+                messageID: nil,
+                sessionID: nil,
+                rendererID: nil,
+                registrationGenerationID: nil,
+                presentationID: nil,
+                isQueueAppearanceConfirmed: false,
+                isPresentationAppearanceReported: nil,
+                removalID: nil,
+                removalTerminal: nil,
+                drainContinuation: nil,
+                registeredRendererCount: registeredRendererCount,
+                eligibleRendererCount: eligibleRendererCount
+            )
+        case .owned(let ownedState):
+            return PromoQueueRemoteMessageCoordinationSnapshot(
+                state: .owned,
+                messageID: ownedState.logicalSession.identity.messageID,
+                sessionID: ownedState.logicalSession.identity.id,
+                rendererID: ownedState.registrationIdentity.rendererID,
+                registrationGenerationID: ownedState.registrationIdentity.generationID,
+                presentationID: ownedState.presentationID,
+                isQueueAppearanceConfirmed: ownedState.logicalSession.isQueueAppearanceConfirmed,
+                isPresentationAppearanceReported: ownedState.isCurrentPresentationAppearanceReported,
+                removalID: nil,
+                removalTerminal: nil,
+                drainContinuation: nil,
+                registeredRendererCount: registeredRendererCount,
+                eligibleRendererCount: eligibleRendererCount
+            )
+        case .draining(let drainingState):
+            return PromoQueueRemoteMessageCoordinationSnapshot(
+                state: .draining,
+                messageID: drainingState.logicalSession.identity.messageID,
+                sessionID: drainingState.logicalSession.identity.id,
+                rendererID: drainingState.outgoingRegistrationIdentity.rendererID,
+                registrationGenerationID: drainingState.outgoingRegistrationIdentity.generationID,
+                presentationID: drainingState.outgoingPresentationID,
+                isQueueAppearanceConfirmed: drainingState.logicalSession.isQueueAppearanceConfirmed,
+                isPresentationAppearanceReported: drainingState.wasOutgoingPresentationAppearanceReported,
+                removalID: drainingState.removalID,
+                removalTerminal: drainingState.acceptedRemovalTerminal,
+                drainContinuation: drainingState.continuation.snapshot,
+                registeredRendererCount: registeredRendererCount,
+                eligibleRendererCount: eligibleRendererCount
+            )
+        }
+    }
 
     convenience init(
         launchSourceManager: LaunchSourceManaging,
@@ -148,7 +301,7 @@ final class PromoCoordinationService {
             guard self?.promoCoordinationMode == .coordinated else {
                 return
             }
-            self?.retryActiveRemoteMessageRegistrations()
+            self?.requestRemoteMessageReconciliation()
         }
     }
 
@@ -173,7 +326,7 @@ final class PromoCoordinationService {
             )
             return
         }
-        retryActiveRemoteMessageRegistrations()
+        requestRemoteMessageReconciliation()
     }
 
     func applicationDidEnterBackground() {
@@ -209,7 +362,7 @@ final class PromoCoordinationService {
 
             deferredModalPromptPresenter = nil
             _ = modalPromptCoordinationManager.reconcilePresentedModal()
-            retryActiveRemoteMessageRegistrations()
+            requestRemoteMessageReconciliation()
         }
 
         guard launchSourceManager.source == .standard else {
@@ -250,141 +403,495 @@ final class PromoCoordinationService {
             }
         case .blockedByModal(let attemptIdentity):
             Logger.modalPrompt.debug(
-                "[Modal Prompt Coordination] - Skipping modal prompt - Modal attempt \(attemptIdentity.debugIdentifier, privacy: .public) owns the global slot."
+                """
+                [Modal Prompt Coordination] - Skipping modal prompt - \
+                Modal attempt \(attemptIdentity.debugIdentifier, privacy: .public) owns the global slot.
+                """
             )
-        case .blockedByVisiblePromo(let identity):
+        case .blockedByRemoteMessage(let session):
             Logger.modalPrompt.debug(
-                "[Modal Prompt Coordination] - Skipping modal prompt - Visible promo \(identity.promoID, privacy: .public) owns the global slot."
+                "[Modal Prompt Coordination] - Skipping modal prompt - Remote message \(session.messageID, privacy: .public) owns the global slot."
             )
         }
     }
 
-    private func admitCoordinatedRemoteMessage(_ identity: VisiblePromoIdentity) -> PromoQueueRemoteMessageAdmissionResult {
-        let didReleaseModalLease = modalPromptCoordinationManager.reconcilePresentedModal()
-        let result: PromoQueueRemoteMessageAdmissionResult
-        switch promoQueueLeaseArbiter.acquireVisiblePromoLease(for: identity) {
+    private func updateRemoteMessageRenderer(
+        identity: RemoteMessageRegistrationIdentity,
+        candidate: PromoQueueRemoteMessageCandidateState,
+        isEligible: Bool
+    ) {
+        guard let registration = remoteMessageRendererRegistration(matching: identity),
+              !registration.isDeregistered else {
+            return
+        }
+
+        registration.candidate = candidate
+        registration.isEligible = isEligible
+        requestRemoteMessageReconciliation()
+    }
+
+    private func confirmRemoteMessageAppearance(
+        registrationIdentity: RemoteMessageRegistrationIdentity,
+        sessionID: UUID,
+        presentationID: UUID,
+        isAttachedToWindow: Bool
+    ) -> PromoQueueRemoteMessageAppearanceResult {
+        guard case .owned(var ownedState) = remoteMessageState,
+              ownedState.logicalSession.identity.id == sessionID,
+              ownedState.presentationID == presentationID,
+              ownedState.registrationIdentity == registrationIdentity,
+              !ownedState.isCurrentPresentationAppearanceReported,
+              let registration = remoteMessageRendererRegistration(matching: registrationIdentity),
+              !registration.isDeregistered,
+              registration.isEligible,
+              case .available(let messageID) = registration.candidate,
+              messageID == ownedState.logicalSession.identity.messageID,
+              isAttachedToWindow,
+              let target = registration.target,
+              target.isRemoteMessageRendererAttachedToWindow else {
+            return .rejected
+        }
+
+        ownedState.isCurrentPresentationAppearanceReported = true
+        ownedState.logicalSession.isQueueAppearanceConfirmed = true
+        remoteMessageState = .owned(ownedState)
+        return .accepted
+    }
+
+    private func remoteMessageRemovalDidReachTerminal(
+        registrationIdentity: RemoteMessageRegistrationIdentity,
+        sessionID: UUID,
+        presentationID: UUID,
+        removalID: UUID,
+        terminal: PromoQueueRemoteMessageRemovalTerminal
+    ) {
+        guard case .draining(let drainingState) = remoteMessageState,
+              drainingState.logicalSession.identity.id == sessionID,
+              drainingState.outgoingPresentationID == presentationID,
+              drainingState.outgoingRegistrationIdentity == registrationIdentity,
+              drainingState.removalID == removalID,
+              drainingState.acceptedRemovalTerminal == nil,
+              scheduledRemoteMessageSettlementRemovalID == nil,
+              remoteMessageRemovalReadyForSettlementID == nil else {
+            return
+        }
+
+        if terminal == .hostDetached {
+            guard let registration = remoteMessageRendererRegistration(matching: registrationIdentity),
+                  let target = registration.target,
+                  !target.isRemoteMessageRendererAttachedToWindow else {
+                Logger.modalPrompt.error(
+                    """
+                    [Promo Queue] - Ignoring an unverified host-detachment terminal for remote message \
+                    \(drainingState.logicalSession.identity.messageID, privacy: .public).
+                    """
+                )
+                return
+            }
+        }
+
+        remoteMessageState = .draining(
+            DrainingRemoteMessageState(
+                logicalSession: drainingState.logicalSession,
+                lease: drainingState.lease,
+                outgoingRegistrationIdentity: drainingState.outgoingRegistrationIdentity,
+                outgoingPresentationID: drainingState.outgoingPresentationID,
+                wasOutgoingPresentationAppearanceReported: drainingState.wasOutgoingPresentationAppearanceReported,
+                removalID: drainingState.removalID,
+                acceptedRemovalTerminal: terminal,
+                continuation: drainingState.continuation
+            )
+        )
+        scheduledRemoteMessageSettlementRemovalID = removalID
+        DispatchQueue.main.async { [weak self] in
+            guard let self,
+                  case .draining(let currentDrainingState) = remoteMessageState,
+                  currentDrainingState.removalID == removalID,
+                  scheduledRemoteMessageSettlementRemovalID == removalID else {
+                return
+            }
+
+            scheduledRemoteMessageSettlementRemovalID = nil
+            remoteMessageRemovalReadyForSettlementID = removalID
+            requestRemoteMessageReconciliation()
+        }
+    }
+
+    private func deregisterRemoteMessageRenderer(identity: RemoteMessageRegistrationIdentity) {
+        guard let registration = remoteMessageRendererRegistration(matching: identity),
+              !registration.isDeregistered else {
+            return
+        }
+
+        registration.isDeregistered = true
+        registration.isEligible = false
+        if !remoteMessageStateReferences(registration.identity) {
+            removeRemoteMessageRendererRegistration(matching: identity)
+        }
+        requestRemoteMessageReconciliation()
+    }
+
+    private func requestRemoteMessageReconciliation() {
+        guard promoCoordinationMode == .coordinated else {
+            return
+        }
+
+        needsRemoteMessageReconciliation = true
+        guard !isReconcilingRemoteMessages else {
+            return
+        }
+
+        isReconcilingRemoteMessages = true
+        defer { isReconcilingRemoteMessages = false }
+
+        while needsRemoteMessageReconciliation {
+            needsRemoteMessageReconciliation = false
+            reconcileOneRemoteMessageStep()
+        }
+    }
+
+    private func reconcileOneRemoteMessageStep() {
+        removeUnusedRemoteMessageRendererRegistrations()
+
+        switch remoteMessageState {
+        case .idle:
+            acquireRemoteMessageSessionIfPossible()
+        case .owned(let ownedState):
+            reconcileOwnedRemoteMessage(ownedState)
+        case .draining(let drainingState):
+            reconcileDrainingRemoteMessage(drainingState)
+        }
+    }
+
+    private func acquireRemoteMessageSessionIfPossible() {
+        guard isApplicationActive,
+              !isWaitingForForegroundInteractionReadiness,
+              let registration = firstEligibleRemoteMessageRenderer() else {
+            return
+        }
+
+        guard case .available(let messageID) = registration.candidate else {
+            return
+        }
+
+        _ = modalPromptCoordinationManager.reconcilePresentedModal()
+
+        let session = PromoQueueRemoteMessageSession(id: UUID(), messageID: messageID)
+        switch promoQueueLeaseArbiter.acquireRemoteMessageLease(for: session) {
         case .acquired(let lease):
-            result = .acquired(makeRemoteMessageAdmission(
+            let logicalSession = LogicalRemoteMessageSession(identity: session)
+            authorizeRemoteMessage(
+                logicalSession: logicalSession,
                 lease: lease,
-                surfaceID: identity.surfaceID
-            ))
+                messageID: messageID
+            )
         case .blockedByModal(let attemptIdentity):
             Logger.modalPrompt.debug(
                 "[Promo Queue] - Deferring RMF while modal attempt \(attemptIdentity.debugIdentifier, privacy: .public) owns the global slot."
             )
-            result = .deferred
-        case .blockedByVisiblePromo(let occupyingIdentity):
-            Logger.modalPrompt.debug(
-                "[Promo Queue] - Deferring RMF while visible promo \(occupyingIdentity.promoID, privacy: .public) owns the global slot."
+        case .blockedByRemoteMessage(let occupyingSession):
+            Logger.modalPrompt.error(
+                "[Promo Queue] - Logical remote message \(occupyingSession.messageID, privacy: .public) is owned outside the service state."
             )
-            result = .deferred
         }
-
-        if didReleaseModalLease {
-            // Excludes the *requesting* surface, whose admission this call has just completed, rather than any identity
-            // carried back by the arbiter's answer.
-            retryActiveRemoteMessageRegistrations(excluding: identity.surfaceID)
-        }
-        return result
     }
 
-    private func makeRemoteMessageAdmission(
-        lease: PromoQueueVisiblePromoLease,
-        surfaceID: UUID
-    ) -> PromoQueueRemoteMessageAdmission {
-        PromoQueueRemoteMessageAdmission { [weak self, lease] in
-            guard lease.release() else {
+    private func authorizeRemoteMessage(
+        logicalSession: LogicalRemoteMessageSession,
+        lease: PromoQueueRemoteMessageLease,
+        messageID: String
+    ) {
+        var attemptedRegistrationIdentities = Set<UUID>()
+
+        while let registration = firstEligibleRemoteMessageRenderer(
+            messageID: messageID,
+            excludingGenerationIDs: attemptedRegistrationIdentities
+        ) {
+            attemptedRegistrationIdentities.insert(registration.identity.generationID)
+            guard let target = registration.target else {
+                removeRemoteMessageRendererRegistration(matching: registration.identity)
+                continue
+            }
+
+            let presentationID = UUID()
+            let ownedState = OwnedRemoteMessageState(
+                logicalSession: logicalSession,
+                lease: lease,
+                registrationIdentity: registration.identity,
+                presentationID: presentationID
+            )
+            remoteMessageState = .owned(ownedState)
+            let presentation = PromoQueueRemoteMessagePresentation(
+                id: presentationID,
+                session: logicalSession.identity
+            )
+
+            guard !target.showRemoteMessage(presentation) else {
                 return
             }
-            self?.offerRemoteMessageReleaseHandoff(excluding: surfaceID)
+
+            guard !target.hasPublishedRemoteMessagePresentation else {
+                Logger.modalPrompt.error(
+                    "[Promo Queue] - Retaining ownership because a renderer rejected authorization while coordinated content remained published."
+                )
+                return
+            }
+
+            guard case .owned(let currentOwnedState) = remoteMessageState,
+                  currentOwnedState.logicalSession.identity == logicalSession.identity,
+                  currentOwnedState.registrationIdentity == registration.identity,
+                  currentOwnedState.presentationID == presentationID else {
+                return
+            }
+
+            if case .available(let currentMessageID) = registration.candidate,
+               currentMessageID == messageID {
+                registration.candidate = .unrenderable(messageID: messageID)
+            }
         }
+
+        remoteMessageState = .idle
+        _ = lease.release()
+        needsRemoteMessageReconciliation = true
     }
 
-    private func deregisterRemoteMessageRetry(for surfaceID: UUID, registrationID: UUID) {
-        remoteMessageRetryRegistrations.removeAll {
-            $0.surfaceID == surfaceID && $0.id == registrationID
+    private func reconcileOwnedRemoteMessage(_ ownedState: OwnedRemoteMessageState) {
+        guard let registration = remoteMessageRendererRegistration(matching: ownedState.registrationIdentity) else {
+            logUnexpectedRemoteMessageRendererLoss(messageID: ownedState.logicalSession.identity.messageID)
+            return
         }
-    }
-
-    private func retryActiveRemoteMessageRegistrations(excluding excludedSurfaceID: UUID? = nil) {
-        retryActiveRemoteMessageRegistrations(
-            excluding: excludedSurfaceID,
-            using: admitRemoteMessage
-        )
-    }
-
-    private func retryActiveRemoteMessageRegistrations(
-        excluding excludedSurfaceID: UUID?,
-        using admissionHandler: PromoQueueRemoteMessageAdmissionHandler
-    ) {
-        guard promoCoordinationMode == .coordinated,
-              isApplicationActive,
-              !isWaitingForForegroundInteractionReadiness,
-              !isRetryingRemoteMessageRegistrations else {
+        guard let target = registration.target else {
+            logUnexpectedRemoteMessageRendererLoss(messageID: ownedState.logicalSession.identity.messageID)
             return
         }
 
-        isRetryingRemoteMessageRegistrations = true
-        defer {
-            isRetryingRemoteMessageRegistrations = false
-            remoteMessageRetryRegistrations.removeAll { $0.target == nil }
+        let continuation: RemoteMessageDrainContinuation?
+        switch registration.candidate {
+        case .available(let messageID) where messageID == ownedState.logicalSession.identity.messageID:
+            continuation = registration.isEligible && !registration.isDeregistered ? nil : .transferSameMessageIfAvailable
+        case .available, .none, .unrenderable:
+            continuation = .endSession
         }
 
-        let registrationsSnapshot = remoteMessageRetryRegistrations
-        for registration in registrationsSnapshot {
-            guard registration.surfaceID != excludedSurfaceID,
-                  remoteMessageRetryRegistrations.contains(where: { $0.id == registration.id }),
-                  let target = registration.target,
-                  target.isActiveForPromoRetry else {
-                continue
+        guard let continuation else {
+            return
+        }
+
+        let removalID = UUID()
+        let drainingState = DrainingRemoteMessageState(
+            logicalSession: ownedState.logicalSession,
+            lease: ownedState.lease,
+            outgoingRegistrationIdentity: ownedState.registrationIdentity,
+            outgoingPresentationID: ownedState.presentationID,
+            wasOutgoingPresentationAppearanceReported: ownedState.isCurrentPresentationAppearanceReported,
+            removalID: removalID,
+            acceptedRemovalTerminal: nil,
+            continuation: continuation
+        )
+        remoteMessageState = .draining(drainingState)
+        let presentation = PromoQueueRemoteMessagePresentation(
+            id: ownedState.presentationID,
+            session: ownedState.logicalSession.identity
+        )
+        target.hideRemoteMessage(presentation, removalID: removalID)
+    }
+
+    private func settleDrainingRemoteMessage(_ drainingState: DrainingRemoteMessageState) {
+        remoteMessageRemovalReadyForSettlementID = nil
+        removeUnusedRemoteMessageRendererRegistrations()
+
+        switch drainingState.continuation {
+        case .endSession:
+            remoteMessageState = .idle
+            _ = drainingState.lease.release()
+            needsRemoteMessageReconciliation = true
+        case .transferSameMessageIfAvailable:
+            let messageID = drainingState.logicalSession.identity.messageID
+            guard firstEligibleRemoteMessageRenderer(messageID: messageID) != nil else {
+                remoteMessageState = .idle
+                _ = drainingState.lease.release()
+                needsRemoteMessageReconciliation = true
+                return
             }
-            target.retryRemoteMessageAdmission(using: admissionHandler)
+
+            authorizeRemoteMessage(
+                logicalSession: drainingState.logicalSession,
+                lease: drainingState.lease,
+                messageID: messageID
+            )
+            // The outgoing record was still state-referenced during the pre-settlement cleanup. Reconcile once more
+            // after authorization so a deregistered or deallocated outgoing generation is removed.
+            needsRemoteMessageReconciliation = true
         }
     }
 
-    private func offerRemoteMessageReleaseHandoff(excluding surfaceID: UUID) {
-        retryActiveRemoteMessageRegistrations(excluding: surfaceID)
+    private func reconcileDrainingRemoteMessage(_ drainingState: DrainingRemoteMessageState) {
+        var drainingState = drainingState
+        if scheduledRemoteMessageSettlementRemovalID == nil,
+           remoteMessageRemovalReadyForSettlementID == nil,
+           remoteMessageRendererRegistration(matching: drainingState.outgoingRegistrationIdentity)?.target == nil {
+            logUnexpectedRemoteMessageRendererLoss(messageID: drainingState.logicalSession.identity.messageID)
+            return
+        }
+
+        if case .transferSameMessageIfAvailable = drainingState.continuation {
+            guard let registration = remoteMessageRendererRegistration(matching: drainingState.outgoingRegistrationIdentity) else {
+                logUnexpectedRemoteMessageRendererLoss(messageID: drainingState.logicalSession.identity.messageID)
+                return
+            }
+
+            switch registration.candidate {
+            case .available(let messageID) where messageID == drainingState.logicalSession.identity.messageID:
+                break
+            case .available, .none, .unrenderable:
+                drainingState = DrainingRemoteMessageState(
+                    logicalSession: drainingState.logicalSession,
+                    lease: drainingState.lease,
+                    outgoingRegistrationIdentity: drainingState.outgoingRegistrationIdentity,
+                    outgoingPresentationID: drainingState.outgoingPresentationID,
+                    wasOutgoingPresentationAppearanceReported: drainingState.wasOutgoingPresentationAppearanceReported,
+                    removalID: drainingState.removalID,
+                    acceptedRemovalTerminal: drainingState.acceptedRemovalTerminal,
+                    continuation: .endSession
+                )
+                remoteMessageState = .draining(drainingState)
+            }
+        }
+
+        guard remoteMessageRemovalReadyForSettlementID == drainingState.removalID else {
+            return
+        }
+        settleDrainingRemoteMessage(drainingState)
     }
 
+    private func firstEligibleRemoteMessageRenderer() -> WeakRemoteMessageRendererRegistration? {
+        remoteMessageRendererRegistrations
+            .filter { registration in
+                guard !registration.isDeregistered,
+                      registration.isEligible,
+                      registration.target != nil else {
+                    return false
+                }
+                guard case .available = registration.candidate else {
+                    return false
+                }
+                return true
+            }
+            .min { $0.stableOrder < $1.stableOrder }
+    }
+
+    private func firstEligibleRemoteMessageRenderer(
+        messageID: String,
+        excludingGenerationIDs: Set<UUID> = []
+    ) -> WeakRemoteMessageRendererRegistration? {
+        remoteMessageRendererRegistrations
+            .filter { registration in
+                guard !registration.isDeregistered,
+                      registration.isEligible,
+                      registration.target != nil,
+                      !excludingGenerationIDs.contains(registration.identity.generationID),
+                      case .available(let candidateMessageID) = registration.candidate else {
+                    return false
+                }
+                return candidateMessageID == messageID
+            }
+            .min { $0.stableOrder < $1.stableOrder }
+    }
+
+    private func remoteMessageRendererRegistration(
+        matching identity: RemoteMessageRegistrationIdentity
+    ) -> WeakRemoteMessageRendererRegistration? {
+        remoteMessageRendererRegistrations.first { $0.identity == identity }
+    }
+
+    private func removeRemoteMessageRendererRegistration(matching identity: RemoteMessageRegistrationIdentity) {
+        remoteMessageRendererRegistrations.removeAll { $0.identity == identity }
+    }
+
+    private func removeUnusedRemoteMessageRendererRegistrations() {
+        remoteMessageRendererRegistrations.removeAll { registration in
+            guard registration.isDeregistered || registration.target == nil else {
+                return false
+            }
+            return !remoteMessageStateReferences(registration.identity)
+        }
+    }
+
+    private func remoteMessageStateReferences(_ identity: RemoteMessageRegistrationIdentity) -> Bool {
+        switch remoteMessageState {
+        case .idle:
+            return false
+        case .owned(let ownedState):
+            return ownedState.registrationIdentity == identity
+        case .draining(let drainingState):
+            return drainingState.outgoingRegistrationIdentity == identity
+        }
+    }
+
+    private func logUnexpectedRemoteMessageRendererLoss(messageID: String) {
+        Logger.modalPrompt.error(
+            "[Promo Queue] - Retaining the global owner because renderer for remote message \(messageID, privacy: .public) was unexpectedly lost."
+        )
+    }
 }
 
 extension PromoCoordinationService: NewTabPagePromoCoordinating {
-    func admitRemoteMessage(_ identity: VisiblePromoIdentity) -> PromoQueueRemoteMessageAdmissionResult {
-        switch promoCoordinationMode {
-        case .legacy:
-            return .deferred
-        case .coordinated:
-            break
+    func registerRemoteMessageRenderer(
+        id rendererID: UUID,
+        target: NewTabPagePromoRendering
+    ) -> NewTabPagePromoRendererRegistration {
+        guard promoCoordinationMode == .coordinated else {
+            return NewTabPagePromoRendererRegistration(isNoOpRegistration: true)
         }
 
-        guard isApplicationActive,
-              !isWaitingForForegroundInteractionReadiness else {
-            return .deferred
+        for registration in remoteMessageRendererRegistrations where registration.identity.rendererID == rendererID {
+            registration.isDeregistered = true
+            registration.isEligible = false
         }
+        removeUnusedRemoteMessageRendererRegistrations()
 
-        return admitCoordinatedRemoteMessage(identity)
-    }
-
-    func registerRemoteMessageRetry(
-        for surfaceID: UUID,
-        target: NewTabPagePromoRetrying
-    ) -> NewTabPagePromoRetryRegistration {
-        let registrationID = UUID()
-        let registration = WeakRemoteMessageRetryRegistration(
-            id: registrationID,
-            surfaceID: surfaceID,
+        let identity = RemoteMessageRegistrationIdentity(
+            rendererID: rendererID,
+            generationID: UUID()
+        )
+        let registration = WeakRemoteMessageRendererRegistration(
+            identity: identity,
+            stableOrder: nextRemoteMessageRegistrationOrder,
             target: target
         )
+        nextRemoteMessageRegistrationOrder += 1
+        remoteMessageRendererRegistrations.append(registration)
+        requestRemoteMessageReconciliation()
 
-        remoteMessageRetryRegistrations.removeAll { $0.surfaceID == surfaceID || $0.target == nil }
-        remoteMessageRetryRegistrations.append(registration)
-
-        return NewTabPagePromoRetryRegistration { [weak self] in
-            self?.deregisterRemoteMessageRetry(
-                for: surfaceID,
-                registrationID: registrationID
-            )
-        }
+        return NewTabPagePromoRendererRegistration(
+            updateHandler: { [weak self] candidate, isEligible in
+                self?.updateRemoteMessageRenderer(
+                    identity: identity,
+                    candidate: candidate,
+                    isEligible: isEligible
+                )
+            },
+            appearanceHandler: { [weak self] sessionID, presentationID, isAttachedToWindow in
+                self?.confirmRemoteMessageAppearance(
+                    registrationIdentity: identity,
+                    sessionID: sessionID,
+                    presentationID: presentationID,
+                    isAttachedToWindow: isAttachedToWindow
+                ) ?? .rejected
+            },
+            removalTerminalHandler: { [weak self] sessionID, presentationID, removalID, terminal in
+                self?.remoteMessageRemovalDidReachTerminal(
+                    registrationIdentity: identity,
+                    sessionID: sessionID,
+                    presentationID: presentationID,
+                    removalID: removalID,
+                    terminal: terminal
+                )
+            },
+            deregistrationHandler: { [weak self] in
+                self?.deregisterRemoteMessageRenderer(identity: identity)
+            }
+        )
     }
 }
 

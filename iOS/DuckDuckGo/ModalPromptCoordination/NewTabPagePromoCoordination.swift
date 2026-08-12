@@ -18,59 +18,112 @@
 //
 
 import Foundation
+import os.log
 
-enum PromoQueueRemoteMessageAdmissionResult {
-    /// Admitted: the caller owns the identity-bound admission and must release it.
-    case acquired(PromoQueueRemoteMessageAdmission)
-    /// The retained candidate can be reconsidered at a later checkpoint.
-    case deferred
+/// Identifies one logical remote-message ownership lifetime. The service mints a new ID for every successful acquisition.
+struct PromoQueueRemoteMessageSession: Hashable {
+    let id: UUID
+    let messageID: String
 }
 
-/// Strongly owns one raw visible lease and releases it at most once. Q2 deliberately records no appearance history.
+/// Identifies one physical renderer authorization within a logical remote-message session.
+struct PromoQueueRemoteMessagePresentation: Hashable {
+    let id: UUID
+    let session: PromoQueueRemoteMessageSession
+}
+
+/// The latest remote-message candidate reported by one renderer.
+enum PromoQueueRemoteMessageCandidateState: Equatable {
+    case none
+    case available(messageID: String)
+    case unrenderable(messageID: String)
+}
+
+/// A verified reason why an outgoing renderer can no longer contribute visible remote-message pixels.
+enum PromoQueueRemoteMessageRemovalTerminal: Equatable {
+    case animationCompleted
+    case hostDetached
+    case sourceRemovedWithoutAnimation
+}
+
+enum PromoQueueRemoteMessageAppearanceResult: Equatable {
+    case accepted
+    case rejected
+}
+
+/// A mounted NTP surface that can render one service-authorized remote-message presentation.
 @MainActor
-final class PromoQueueRemoteMessageAdmission {
-    private enum State {
-        case active
-        case released
+protocol NewTabPagePromoRendering: AnyObject {
+    /// Allows the service to verify a reported host-detachment terminal against the exact renderer generation.
+    var isRemoteMessageRendererAttachedToWindow: Bool { get }
+    /// Defensive proof used when `showRemoteMessage` rejects: `true` means the service must fail closed.
+    var hasPublishedRemoteMessagePresentation: Bool { get }
+
+    /// Returns `false` only when this renderer owns no coordinated presentation and atomically publishes no content.
+    func showRemoteMessage(_ presentation: PromoQueueRemoteMessagePresentation) -> Bool
+
+    /// Begins removal. The exact presentation and removal identities must be echoed through the registration at terminal.
+    func hideRemoteMessage(
+        _ presentation: PromoQueueRemoteMessagePresentation,
+        removalID: UUID
+    )
+}
+
+/// An idempotently removable connection between one renderer generation and the app-scoped coordination service.
+@MainActor
+final class NewTabPagePromoRendererRegistration {
+    typealias UpdateHandler = @MainActor (PromoQueueRemoteMessageCandidateState, Bool) -> Void
+    typealias AppearanceHandler = @MainActor (UUID, UUID, Bool) -> PromoQueueRemoteMessageAppearanceResult
+    typealias RemovalTerminalHandler = @MainActor (UUID, UUID, UUID, PromoQueueRemoteMessageRemovalTerminal) -> Void
+
+    private let updateHandler: UpdateHandler
+    private let appearanceHandler: AppearanceHandler
+    private let removalTerminalHandler: RemovalTerminalHandler
+    private var deregistrationHandler: (@MainActor () -> Void)?
+    private let isNoOpRegistration: Bool
+
+    init(
+        updateHandler: @escaping UpdateHandler = { _, _ in },
+        appearanceHandler: @escaping AppearanceHandler = { _, _, _ in .rejected },
+        removalTerminalHandler: @escaping RemovalTerminalHandler = { _, _, _, _ in },
+        deregistrationHandler: (@MainActor () -> Void)? = nil,
+        isNoOpRegistration: Bool = false
+    ) {
+        self.updateHandler = updateHandler
+        self.appearanceHandler = appearanceHandler
+        self.removalTerminalHandler = removalTerminalHandler
+        self.deregistrationHandler = deregistrationHandler
+        self.isNoOpRegistration = isNoOpRegistration
     }
 
-    private var state = State.active
-    private let releaseHandler: () -> Void
-
-    init(releaseHandler: @escaping () -> Void) {
-        self.releaseHandler = releaseHandler
-    }
-
-    func release() {
-        guard case .active = state else {
+    deinit {
+        guard !isNoOpRegistration, deregistrationHandler != nil else {
             return
         }
-
-        state = .released
-        releaseHandler()
+        Logger.modalPrompt.error(
+            "[Promo Queue] - A renderer registration token deinitialized without explicit deregistration. Ownership will fail closed."
+        )
     }
-}
 
-typealias PromoQueueRemoteMessageAdmissionHandler = @MainActor (VisiblePromoIdentity) -> PromoQueueRemoteMessageAdmissionResult
+    func update(candidate: PromoQueueRemoteMessageCandidateState, isEligible: Bool) {
+        updateHandler(candidate, isEligible)
+    }
 
-/// A mounted NTP surface that can refresh and retry its retained remote-message candidate.
-@MainActor
-protocol NewTabPagePromoRetrying: AnyObject {
-    var isActiveForPromoRetry: Bool { get }
+    func confirmAppearance(
+        sessionID: UUID,
+        presentationID: UUID,
+        isAttachedToWindow: Bool
+    ) -> PromoQueueRemoteMessageAppearanceResult {
+        appearanceHandler(sessionID, presentationID, isAttachedToWindow)
+    }
 
-    /// Refreshes the retained candidate and retries it through the admission route supplied by the coordination owner.
-    ///
-    /// The handler is synchronous and nonescaping so the coordination owner controls admission for the entire retry.
-    func retryRemoteMessageAdmission(using admissionHandler: PromoQueueRemoteMessageAdmissionHandler)
-}
-
-/// An idempotently removable registration for NTP visible-promo retries.
-@MainActor
-final class NewTabPagePromoRetryRegistration {
-    private var deregistrationHandler: (@MainActor () -> Void)?
-
-    init(deregistrationHandler: (@MainActor () -> Void)? = nil) {
-        self.deregistrationHandler = deregistrationHandler
+    func removalDidReachTerminal(
+        sessionID: UUID,
+        presentationID: UUID,
+        removalID: UUID,
+        terminal: PromoQueueRemoteMessageRemovalTerminal
+    ) {
+        removalTerminalHandler(sessionID, presentationID, removalID, terminal)
     }
 
     func deregister() {
@@ -80,14 +133,13 @@ final class NewTabPagePromoRetryRegistration {
     }
 }
 
-/// Coordinates NTP remote-message admission and retry registration.
+/// Coordinates app-scoped selection and ownership for NTP remote-message renderers.
 @MainActor
 protocol NewTabPagePromoCoordinating: AnyObject {
     var promoCoordinationMode: PromoCoordinationMode { get }
 
-    func admitRemoteMessage(_ identity: VisiblePromoIdentity) -> PromoQueueRemoteMessageAdmissionResult
-    func registerRemoteMessageRetry(
-        for surfaceID: UUID,
-        target: NewTabPagePromoRetrying
-    ) -> NewTabPagePromoRetryRegistration
+    func registerRemoteMessageRenderer(
+        id: UUID,
+        target: NewTabPagePromoRendering
+    ) -> NewTabPagePromoRendererRegistration
 }

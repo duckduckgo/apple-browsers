@@ -19,16 +19,6 @@
 
 import Foundation
 
-enum PromoType: Hashable {
-    case remoteMessage
-}
-
-struct VisiblePromoIdentity: Hashable {
-    let surfaceID: UUID
-    let promoType: PromoType
-    let promoID: String
-}
-
 /// Opaque per-acquisition identity that travels with its modal lease through the evaluating, committed, and
 /// presentation-active phases, so a callback for an older attempt can be recognised and ignored.
 struct PromoQueueModalAttemptIdentity: Hashable {
@@ -46,8 +36,8 @@ struct PromoQueueModalAttemptIdentity: Hashable {
 enum PromoQueueActiveOwnerSnapshot: Equatable {
     /// The associated attempt identity names the modal that currently owns the global slot.
     case modal(PromoQueueModalAttemptIdentity)
-    /// The associated promo identity names the visible promo that currently owns the global slot.
-    case visible(VisiblePromoIdentity)
+    /// The associated session names the logical remote message that currently owns the global slot.
+    case remoteMessage(PromoQueueRemoteMessageSession)
 }
 
 struct PromoQueueLeaseSnapshot: Equatable {
@@ -65,12 +55,12 @@ struct PromoQueueLeaseSnapshot: Equatable {
         modalAttemptIdentity != nil
     }
 
-    var visiblePromoIdentity: VisiblePromoIdentity? {
-        guard case .visible(let identity) = activeOwner else {
+    var remoteMessageSession: PromoQueueRemoteMessageSession? {
+        guard case .remoteMessage(let session) = activeOwner else {
             return nil
         }
 
-        return identity
+        return session
     }
 }
 
@@ -79,29 +69,29 @@ enum PromoQueueModalLeaseAcquisitionResult {
     case acquired(PromoQueueModalLease)
     /// A modal lease already owns the global slot, carried as its attempt identity.
     case blockedByModal(PromoQueueModalAttemptIdentity)
-    /// A visible promo already owns the global slot, carried as its identity.
-    case blockedByVisiblePromo(VisiblePromoIdentity)
+    /// A logical remote-message lease already owns the global slot, carried as its session identity.
+    case blockedByRemoteMessage(PromoQueueRemoteMessageSession)
 }
 
-enum PromoQueueVisiblePromoLeaseAcquisitionResult {
+enum PromoQueueRemoteMessageLeaseAcquisitionResult {
     /// The caller now owns the lease and is responsible for releasing it.
-    case acquired(PromoQueueVisiblePromoLease)
+    case acquired(PromoQueueRemoteMessageLease)
     /// A modal lease already owns the global slot, carried as its attempt identity.
     case blockedByModal(PromoQueueModalAttemptIdentity)
-    /// A visible promo already owns the global slot, carried as its identity.
-    case blockedByVisiblePromo(VisiblePromoIdentity)
+    /// A logical remote-message lease already owns the global slot, carried as its session identity.
+    case blockedByRemoteMessage(PromoQueueRemoteMessageSession)
 }
 
 /// The single mutual-exclusion authority for promo slots. It owns no provider policy, RMF selection, cooldown, or persistent history.
 @MainActor
 protocol PromoQueueLeaseArbitrating: AnyObject {
-    /// Read-only view of the current leases, for tests and the debug screen.
+    /// Read-only view of the current lease, for tests and the debug screen.
     var snapshot: PromoQueueLeaseSnapshot { get }
 
     /// Acquires the modal lease, which succeeds only when the global slot is free.
     func acquireModalLease() -> PromoQueueModalLeaseAcquisitionResult
-    /// Acquires a visible-promo lease, which succeeds only when the global slot is free.
-    func acquireVisiblePromoLease(for identity: VisiblePromoIdentity) -> PromoQueueVisiblePromoLeaseAcquisitionResult
+    /// Acquires a logical remote-message lease, which succeeds only when the global slot is free.
+    func acquireRemoteMessageLease(for session: PromoQueueRemoteMessageSession) -> PromoQueueRemoteMessageLeaseAcquisitionResult
 }
 
 @MainActor
@@ -126,7 +116,7 @@ final class PromoQueueModalLease {
 }
 
 @MainActor
-final class PromoQueueVisiblePromoLease {
+final class PromoQueueRemoteMessageLease {
     private var releaseHandler: (() -> Bool)?
 
     fileprivate init(releaseHandler: @escaping () -> Bool) {
@@ -151,19 +141,19 @@ final class PromoQueueLeaseArbiter: PromoQueueLeaseArbitrating {
         weak var token: PromoQueueModalLease?
     }
 
-    /// `id` is minted per acquisition but `identity` is not: the same identity may own the global slot again while an
-    /// earlier token is still armed, so release has to be keyed on `id` rather than on `identity`.
+    /// `id` is minted per acquisition but `session` is supplied by the service. Release must be keyed on the acquisition
+    /// ID so a stale token cannot clear a replacement, including a replacement for the same message.
     ///
     /// `token` is weak for the same reason as `ModalLeaseRecord.token`.
-    private struct VisiblePromoLeaseRecord {
+    private struct RemoteMessageLeaseRecord {
         let id: UUID
-        let identity: VisiblePromoIdentity
-        weak var token: PromoQueueVisiblePromoLease?
+        let session: PromoQueueRemoteMessageSession
+        weak var token: PromoQueueRemoteMessageLease?
     }
 
     private enum ActiveOwner {
         case modal(ModalLeaseRecord)
-        case visible(VisiblePromoLeaseRecord)
+        case remoteMessage(RemoteMessageLeaseRecord)
     }
 
     private var activeOwner: ActiveOwner?
@@ -175,8 +165,8 @@ final class PromoQueueLeaseArbiter: PromoQueueLeaseArbitrating {
         switch activeOwner {
         case .modal(let record):
             ownerSnapshot = .modal(record.attemptIdentity)
-        case .visible(let record):
-            ownerSnapshot = .visible(record.identity)
+        case .remoteMessage(let record):
+            ownerSnapshot = .remoteMessage(record.session)
         case nil:
             ownerSnapshot = nil
         }
@@ -189,8 +179,8 @@ final class PromoQueueLeaseArbiter: PromoQueueLeaseArbitrating {
         switch activeOwner {
         case .modal(let record):
             return .blockedByModal(record.attemptIdentity)
-        case .visible(let record):
-            return .blockedByVisiblePromo(record.identity)
+        case .remoteMessage(let record):
+            return .blockedByRemoteMessage(record.session)
         case nil:
             break
         }
@@ -211,26 +201,26 @@ final class PromoQueueLeaseArbiter: PromoQueueLeaseArbitrating {
         return .acquired(lease)
     }
 
-    func acquireVisiblePromoLease(for identity: VisiblePromoIdentity) -> PromoQueueVisiblePromoLeaseAcquisitionResult {
+    func acquireRemoteMessageLease(for session: PromoQueueRemoteMessageSession) -> PromoQueueRemoteMessageLeaseAcquisitionResult {
         pruneLeasesWithDeallocatedTokens()
 
         switch activeOwner {
         case .modal(let record):
             return .blockedByModal(record.attemptIdentity)
-        case .visible(let record):
-            return .blockedByVisiblePromo(record.identity)
+        case .remoteMessage(let record):
+            return .blockedByRemoteMessage(record.session)
         case nil:
             break
         }
 
         let leaseID = UUID()
-        let lease = PromoQueueVisiblePromoLease { [weak self] in
-            self?.releaseVisiblePromoLease(id: leaseID) ?? false
+        let lease = PromoQueueRemoteMessageLease { [weak self] in
+            self?.releaseRemoteMessageLease(id: leaseID) ?? false
         }
-        activeOwner = .visible(
-            VisiblePromoLeaseRecord(
+        activeOwner = .remoteMessage(
+            RemoteMessageLeaseRecord(
                 id: leaseID,
-                identity: identity,
+                session: session,
                 token: lease
             )
         )
@@ -238,17 +228,17 @@ final class PromoQueueLeaseArbiter: PromoQueueLeaseArbitrating {
     }
 
     /// Reclaims leases whose token deallocated without `release()`, so a dropped token cannot wedge the arbiter for the
-    /// rest of the session: one leaked visible-promo token would otherwise block every launch modal, and a leaked modal
-    /// token would block every visible promo, with no timeout and no recovery.
+    /// rest of the session: one leaked remote-message token would otherwise block every launch modal, and a leaked modal
+    /// token would block every remote message, with no timeout and no recovery.
     private func pruneLeasesWithDeallocatedTokens() {
         let prunedOwnerDescription: String?
         switch activeOwner {
         case .modal(let record) where record.token == nil:
             activeOwner = nil
             prunedOwnerDescription = "modal"
-        case .visible(let record) where record.token == nil:
+        case .remoteMessage(let record) where record.token == nil:
             activeOwner = nil
-            prunedOwnerDescription = "visible promo \(record.identity.promoID)"
+            prunedOwnerDescription = "remote message \(record.session.messageID)"
         default:
             prunedOwnerDescription = nil
         }
@@ -271,9 +261,9 @@ final class PromoQueueLeaseArbiter: PromoQueueLeaseArbitrating {
         activeOwner = nil
     }
 
-    private func releaseVisiblePromoLease(id: UUID) -> Bool {
+    private func releaseRemoteMessageLease(id: UUID) -> Bool {
         // `id` proves the global record is this token's, so a stale token cannot release its replacement.
-        guard case .visible(let record) = activeOwner,
+        guard case .remoteMessage(let record) = activeOwner,
               record.id == id else {
             return false
         }

@@ -12,9 +12,9 @@ When a PR adds or modifies pixel events in Swift, verify that a corresponding pi
 
 A PR introduces a new pixel if it adds or modifies any of the following:
 
-- **iOS:** A new case or changed `name` string in `iOS/Core/PixelEvent.swift`, or in any enum conforming to `PixelKitEvent` under `iOS/`.
-- **macOS:** A new case or changed `name` string in any enum conforming to `PixelKitEvent` under `macOS/` (e.g. `UpdateFlowPixels.swift`, `CrashReportPixels.swift`).
-- **Shared packages:** A new case or changed `name` in any type conforming to `PixelKitEvent` under `SharedPackages/`.
+- **iOS:** A new case or changed `name` string in `iOS/Core/PixelEvent.swift`, or in any enum conforming to `PixelKit.Event` under `iOS/`.
+- **macOS:** A new case or changed `name` string in any enum conforming to `PixelKit.Event` under `macOS/` (e.g. `UpdateFlowPixels.swift`, `CrashReportPixels.swift`).
+- **Shared packages:** A new case or changed `name` in any type conforming to `PixelKit.Event` under `SharedPackages/`.
 
 The pixel name is the string returned by the `name` computed property (e.g. `"m_mac_default-browser"`, `"m_autocomplete_click_phrase"`).
 

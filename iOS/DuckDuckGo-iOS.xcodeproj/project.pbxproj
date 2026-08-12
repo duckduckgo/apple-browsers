@@ -1070,7 +1070,6 @@
 		97C00D062F97ACD100593A53 /* DaxLogoManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97C00D052F97ACD100593A53 /* DaxLogoManagerTests.swift */; };
 		97C00D0C2F98EEE300593A53 /* UnifiedInputContentContainerViewControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97C00D0B2F98EEE300593A53 /* UnifiedInputContentContainerViewControllerTests.swift */; };
 		97D45F44302B5F2B002388C8 /* UnifiedToggleInputModelPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97D45F43302B5F2B002388C8 /* UnifiedToggleInputModelPicker.swift */; };
-		97D45F46302B5F47002388C8 /* UnifiedToggleInputSubscriptionUpsellPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97D45F45302B5F47002388C8 /* UnifiedToggleInputSubscriptionUpsellPresenter.swift */; };
 		97D45F48302B5F59002388C8 /* UpdatedModelPickerFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97D45F47302B5F59002388C8 /* UpdatedModelPickerFeature.swift */; };
 		97D45F4A302B5FAF002388C8 /* UnifiedToggleInputModelPickerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97D45F49302B5FAF002388C8 /* UnifiedToggleInputModelPickerTests.swift */; };
 		97D45F4C302B5FC2002388C8 /* UpdatedModelPickerFeatureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97D45F4B302B5FC2002388C8 /* UpdatedModelPickerFeatureTests.swift */; };
@@ -3910,7 +3909,6 @@
 		97C00D052F97ACD100593A53 /* DaxLogoManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxLogoManagerTests.swift; sourceTree = "<group>"; };
 		97C00D0B2F98EEE300593A53 /* UnifiedInputContentContainerViewControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedInputContentContainerViewControllerTests.swift; sourceTree = "<group>"; };
 		97D45F43302B5F2B002388C8 /* UnifiedToggleInputModelPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputModelPicker.swift; sourceTree = "<group>"; };
-		97D45F45302B5F47002388C8 /* UnifiedToggleInputSubscriptionUpsellPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputSubscriptionUpsellPresenter.swift; sourceTree = "<group>"; };
 		97D45F47302B5F59002388C8 /* UpdatedModelPickerFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdatedModelPickerFeature.swift; sourceTree = "<group>"; };
 		97D45F49302B5FAF002388C8 /* UnifiedToggleInputModelPickerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputModelPickerTests.swift; sourceTree = "<group>"; };
 		97D45F4B302B5FC2002388C8 /* UpdatedModelPickerFeatureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdatedModelPickerFeatureTests.swift; sourceTree = "<group>"; };
@@ -10147,7 +10145,6 @@
 				C18390B42F4F6ED0001939B9 /* UnifiedToggleInputToolbarView.swift */,
 				C18390C32F4F73AE001939B9 /* UnifiedToggleInputHandler.swift */,
 				C18390BA2F4F6F54001939B9 /* UnifiedToggleInputCoordinator.swift */,
-				97D45F45302B5F47002388C8 /* UnifiedToggleInputSubscriptionUpsellPresenter.swift */,
 				97D45F47302B5F59002388C8 /* UpdatedModelPickerFeature.swift */,
 				97D45F43302B5F2B002388C8 /* UnifiedToggleInputModelPicker.swift */,
 				977C2D422FC06B6100C39A04 /* UnifiedToggleInputCoordinatorPixelHelper.swift */,
@@ -14328,7 +14325,6 @@
 				850F93DB2B594AB800823EEA /* ZippedPassKitPreviewHelper.swift in Sources */,
 				4BCD14672B05B682000B1E4C /* NetworkProtectionTermsAndConditionsStore.swift in Sources */,
 				C1F341C92A6926920032057B /* EmailAddressPromptViewController.swift in Sources */,
-				97D45F46302B5F47002388C8 /* UnifiedToggleInputSubscriptionUpsellPresenter.swift in Sources */,
 				311BD1B12836C0CA00AEF6C1 /* AutofillLoginListAuthenticator.swift in Sources */,
 				B652DF13287C373A00C12A9C /* ScriptSourceProviding.swift in Sources */,
 				854A012B2A54412600FCC628 /* ActivityViewController.swift in Sources */,

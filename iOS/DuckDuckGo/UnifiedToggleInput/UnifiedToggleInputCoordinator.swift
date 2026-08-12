@@ -183,7 +183,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private var modelSelector: UTIModelSelector!
     private let isUpdatedModelPickerAvailable: Bool
     private let modelPickerPresenter = UnifiedToggleInputModelPickerPresenter()
-    private let subscriptionUpsellPresenter = UnifiedToggleInputSubscriptionUpsellPresenter()
     private var attachmentController: UTIAttachmentController!
     private var isContentOverlaySuppressed = false
     /// Forces the model chip visible mid-chat for the FE's `showModelPicker` flow; cleared on prompt
@@ -1797,43 +1796,7 @@ private extension UnifiedToggleInputCoordinator {
             from: presentingViewController,
             sourceView: viewController.modelPickerSourceView,
             onSelect: { [weak self] modelID in
-                self?.handleUpdatedModelSelection(modelID)
-            }
-        )
-    }
-
-    func handleUpdatedModelSelection(_ modelID: String) {
-        guard let model = modelStore.models.first(where: { $0.id == modelID }),
-              !model.entityHasAccess,
-              let requiredTier = model.lowestPublicAccessTier else {
-            modelSelector.handleModelSelection(modelID)
-            return
-        }
-
-        switch modelStore.subscriptionState.userTier.upgradeFlow(for: requiredTier) {
-        case .purchase, .upgrade:
-            presentSubscriptionUpsell { [weak self] in
                 self?.modelSelector.handleModelSelection(modelID)
-            }
-        case .none:
-            modelSelector.handleModelSelection(modelID)
-        }
-    }
-
-    func presentSubscriptionUpsell(onSubscribe: @escaping () -> Void) {
-        guard isUpdatedModelPickerAvailable,
-              let presentingViewController = attachmentPresenterViewController else {
-            return
-        }
-
-        subscriptionUpsellPresenter.present(
-            from: presentingViewController,
-            onSubscribe: onSubscribe,
-            onHaveSubscription: {
-                NotificationCenter.default.post(
-                    name: .settingsDeepLinkNotification,
-                    object: SettingsViewModel.SettingsDeepLinkSection.restoreFlow
-                )
             }
         )
     }

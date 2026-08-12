@@ -2098,15 +2098,16 @@ class MainViewController: UIViewController {
             && !daxDialogsManager.subscriptionPromotionPending
             && !chatPathCompletionPending
 
-        // Consumed on every attach, including the ones that record nothing below, so a burn
-        // can't leak its trigger into an unrelated New Tab Page visit later on.
-        let isAfterFire = isAttachingNewTabPageAfterFire
-        isAttachingNewTabPageAfterFire = false
-
         // It's possible for this to be called when in the background of the
         //  switcher, and we only want to show the pixel when it's actually
         // about to shown to the user.
         if presentedViewController == nil || presentedViewController?.isBeingDismissed == true {
+            // Consumed here rather than before the guard, so an attach that happens behind a
+            // presented controller and records nothing cannot swallow the burn's trigger. Moving on
+            // to an existing tab clears it instead, in `attachTab`.
+            let isAfterFire = isAttachingNewTabPageAfterFire
+            isAttachingNewTabPageAfterFire = false
+
             fireNewTabPixels()
             fireNTPShownInstrumentation(openedAfterIdle: openedAfterIdle, hatch: hatch)
             startNewTabPageSessionInstrumentation(isNewTab: isNewTab, willBeginEditing: willBeginEditing, isAfterFire: isAfterFire)
@@ -2600,6 +2601,10 @@ class MainViewController: UIViewController {
     }
 
     private func attachTab(tab: TabViewController) {
+        // The user moved on to an existing tab, so whatever New Tab Page they reach later is not the
+        // page a burn landed them on.
+        isAttachingNewTabPageAfterFire = false
+
         if hasCompletedInitialLoad {
             lastActiveTabStore.recordActiveTab(uid: tab.tabModel.uid)
         }
@@ -7090,13 +7095,17 @@ extension MainViewController {
     }
     
     private func refreshUIAfterClear() {
+        // Set before the empty-tabs branch below: burning every tab shows the switcher first, but the
+        // page the user reaches from there is still a post-burn arrival rather than a blank tab they
+        // asked for. Consumed by whichever New Tab Page attach comes next.
+        isAttachingNewTabPageAfterFire = true
+
         if tabManager.currentTabsModel.tabs.isEmpty && tabManager.currentTabsModel.allowsEmpty {
             showTabSwitcher()
             tabSwitcherController?.updateUIForSelectionMode()
             return
         }
         showBars()
-        isAttachingNewTabPageAfterFire = true
         attachHomeScreen()
         refreshTabBar()
 

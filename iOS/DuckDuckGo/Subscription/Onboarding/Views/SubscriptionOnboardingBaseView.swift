@@ -22,11 +22,17 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import DuckUI
 
+/// The content insets `SubscriptionOnboardingBaseView` applies to every page
+enum SubscriptionOnboardingPageInsets {
+    static let horizontal: CGFloat = 24
+    static let vertical: CGFloat = 20
+}
+
 private enum Metrics {
-    static let horizontalPadding: CGFloat = 24
+    static let horizontalPadding = SubscriptionOnboardingPageInsets.horizontal
     static let navigationButtonSize: CGFloat = 44
     static let navigationGlyphSize: CGFloat = 24
-    static let contentVerticalPadding: CGFloat = 20
+    static let contentVerticalPadding = SubscriptionOnboardingPageInsets.vertical
     static let sectionSpacing: CGFloat = 24
     static let footerSpacing: CGFloat = 8
 }
@@ -99,6 +105,7 @@ struct SubscriptionOnboardingBaseView<Content: View>: View {
     private let header: SubscriptionOnboardingHeaderView?
     private let footer: SubscriptionOnboardingFooter?
     private let scrollsContent: Bool
+    private let declaresNavigationChrome: Bool
     private let content: Content
 
     init(title: String? = nil,
@@ -106,12 +113,14 @@ struct SubscriptionOnboardingBaseView<Content: View>: View {
          header: SubscriptionOnboardingHeaderView? = nil,
          footer: SubscriptionOnboardingFooter? = nil,
          scrollsContent: Bool = true,
+         declaresNavigationChrome: Bool = true,
          @ViewBuilder content: () -> Content) {
         self.title = title
         self.navigationButton = navigationButton
         self.header = header
         self.footer = footer
         self.scrollsContent = scrollsContent
+        self.declaresNavigationChrome = declaresNavigationChrome
         self.content = content()
     }
 
@@ -124,6 +133,17 @@ struct SubscriptionOnboardingBaseView<Content: View>: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(pageBackgroundColor.ignoresSafeArea())
             .safeAreaInset(edge: .bottom) { footerView }
+
+        if declaresNavigationChrome {
+            navigationChrome(around: page)
+        } else {
+            page
+        }
+    }
+
+    @ViewBuilder
+    private func navigationChrome<Page: View>(around page: Page) -> some View {
+        let bar = page
             .navigationBarTitleDisplayMode(.inline)
             .navigationBarBackButtonHidden(true)
             .navigationBarBackground(pageBackgroundColor)
@@ -131,9 +151,9 @@ struct SubscriptionOnboardingBaseView<Content: View>: View {
         // On iOS 26 the toolbar wraps its items in a shared Liquid Glass background (with a drop
         // shadow). Hide it so the leading button shows only its own circular fill.
         if #available(iOS 26.0, *) {
-            page.toolbar { toolbarContent.sharedBackgroundVisibility(.hidden) }
+            bar.toolbar { toolbarContent.sharedBackgroundVisibility(.hidden) }
         } else {
-            page.toolbar { toolbarContent }
+            bar.toolbar { toolbarContent }
         }
     }
 
@@ -248,6 +268,7 @@ private extension SubscriptionOnboardingBaseView {
 private extension View {
     /// Paints the navigation bar with the page color so it matches the flat `surfaceTertiary` page.
     /// `toolbarBackground` is iOS 16+, so on iOS 15 the bar keeps the system default background.
+    // (TODO|Post-iOS15-Drop): drop the fork and apply `toolbarBackground` unconditionally.
     @ViewBuilder
     func navigationBarBackground(_ color: Color) -> some View {
         if #available(iOS 16.0, *) {

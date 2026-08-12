@@ -21,6 +21,7 @@ import UIKit
 import SwiftUI
 import WebKit
 import BrowserServicesKit
+import FoundationExtensions
 import Subscription
 import Core
 import VPN
@@ -31,12 +32,15 @@ import UserNotifications
 import UIComponents
 import Lottie
 import FeatureFlags_iOS
+import Persistence
 
 final class SubscriptionDebugViewController: UITableViewController {
 
     private let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
     private lazy var subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
     private let reporter: SubscriptionDataReporting
+
+    var keyValueStore: ThrowingKeyValueStoring?
 
     private var subscriptionManager: SubscriptionManager {
         AppDependencyProvider.shared.subscriptionManager
@@ -68,6 +72,7 @@ final class SubscriptionDebugViewController: UITableViewController {
         Sections.regionOverride: "Region override for App Store Sandbox",
         Sections.expirationReminder: "Expiration Reminder Notification",
         Sections.onboarding: "Onboarding",
+        Sections.onboardingSubflows: "Onboarding Subflows",
     ]
 
     enum Sections: Int, CaseIterable {
@@ -81,6 +86,7 @@ final class SubscriptionDebugViewController: UITableViewController {
         case regionOverride
         case expirationReminder
         case onboarding
+        case onboardingSubflows
     }
 
     enum AuthorizationRows: Int, CaseIterable {
@@ -130,9 +136,20 @@ final class SubscriptionDebugViewController: UITableViewController {
     }
 
     enum OnboardingRows: Int, CaseIterable {
+        case resetProgress
+        case expireSetupCard
+        case fullFlowAfterSubscription
+    }
+
+    enum OnboardingSubflowRows: Int, CaseIterable {
+        case orderConfirmation
         case welcome
         case vpn
+        case idtr
         case duckAI
+        case pir
+        case progress
+        case progressComplete
         case tapAllowHint
     }
 
@@ -151,6 +168,7 @@ final class SubscriptionDebugViewController: UITableViewController {
         super.viewDidLoad()
         loadStoreKitMetadata()
         loadExpirationReminderStatus()
+        tableView.estimatedRowHeight = tableView.rowHeight
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -331,14 +349,44 @@ final class SubscriptionDebugViewController: UITableViewController {
 
         case .onboarding:
             switch OnboardingRows(rawValue: indexPath.row) {
+            case .resetProgress:
+                cell.textLabel?.text = "Reset Onboarding Progress"
+                cell.accessoryType = .none
+            case .expireSetupCard:
+                cell.textLabel?.text = "Age Setup Card Past 14 Days"
+                cell.accessoryType = .none
+            case .fullFlowAfterSubscription:
+                cell.textLabel?.text = "Full Flow — After Subscription"
+                cell.accessoryType = .disclosureIndicator
+            case .none:
+                break
+            }
+
+        case .onboardingSubflows:
+            switch OnboardingSubflowRows(rawValue: indexPath.row) {
+            case .orderConfirmation:
+                cell.textLabel?.text = "Order Confirmation"
+                cell.accessoryType = .disclosureIndicator
             case .welcome:
                 cell.textLabel?.text = "Welcome"
                 cell.accessoryType = .disclosureIndicator
             case .vpn:
                 cell.textLabel?.text = "VPN"
                 cell.accessoryType = .disclosureIndicator
+            case .idtr:
+                cell.textLabel?.text = "Identity Theft Restoration"
+                cell.accessoryType = .disclosureIndicator
             case .duckAI:
                 cell.textLabel?.text = "Duck.ai"
+                cell.accessoryType = .disclosureIndicator
+            case .pir:
+                cell.textLabel?.text = "Personal Information Removal"
+                cell.accessoryType = .disclosureIndicator
+            case .progress:
+                cell.textLabel?.text = "Progress — Summary (80%)"
+                cell.accessoryType = .disclosureIndicator
+            case .progressComplete:
+                cell.textLabel?.text = "Progress — Completion (100% + confetti)"
                 cell.accessoryType = .disclosureIndicator
             case .tapAllowHint:
                 cell.textLabel?.text = "Tap Allow Hint Overlay"
@@ -366,6 +414,7 @@ final class SubscriptionDebugViewController: UITableViewController {
         case .regionOverride: return RegionOverrideRows.allCases.count
         case .expirationReminder: return ExpirationReminderRows.allCases.count
         case .onboarding: return OnboardingRows.allCases.count
+        case .onboardingSubflows: return OnboardingSubflowRows.allCases.count
         case .none: return 0
         }
     }
@@ -416,9 +465,20 @@ final class SubscriptionDebugViewController: UITableViewController {
             }
         case .onboarding:
             switch OnboardingRows(rawValue: indexPath.row) {
+            case .resetProgress: resetOnboardingProgress()
+            case .expireSetupCard: expireSetupCardWindow()
+            default: break
+            }
+        case .onboardingSubflows:
+            switch OnboardingSubflowRows(rawValue: indexPath.row) {
+            case .orderConfirmation: showOrderConfirmationOnboarding()
             case .welcome: showWelcomeOnboarding()
             case .vpn: showVPNOnboarding()
+            case .idtr: showIDTROnboarding()
             case .duckAI: showDuckAIOnboarding()
+            case .pir: showPIROnboarding()
+            case .progress: showProgressOnboarding(completedItems: [.vpn, .widget, .idtr, .duckAI])
+            case .progressComplete: showProgressOnboarding(completedItems: Set(SubscriptionOnboardingChecklistItem.allCases))
             case .tapAllowHint: showTapAllowHintPlayground()
             default: break
             }
@@ -869,9 +929,54 @@ final class SubscriptionDebugViewController: UITableViewController {
         navigationController?.pushViewController(hostingController, animated: true)
     }
 
+    private func showOrderConfirmationOnboarding() {
+        let hostingController = UIHostingController(
+            rootView: SubscriptionOnboardingOrderConfirmationView(
+                viewModel: SubscriptionOnboardingOrderConfirmationViewModel(
+                    onNext: { [weak self] in self?.dismiss(animated: true) }),
+                navigationButton: .close({ [weak self] in self?.dismiss(animated: true) }))
+                .subscriptionOnboardingNavigationContainer())
+        present(hostingController, animated: true)
+    }
+
+    private func showIDTROnboarding() {
+        showProtectionOverviewOnboarding(content: .idtr)
+    }
+
+    /// The real "start PIR" hand-off needs the Data Broker Protection view-controller provider, which lives
+    /// on `DBPService` and reaches the flow as `SubscriptionOnboardingFlowViewModel.subscriptionSettings`'s
+    /// `pirScreen`. The debug menu has no handle on it, so this standalone row's CTA just dismisses.
+    private func showPIROnboarding() {
+        showProtectionOverviewOnboarding(content: .pir)
+    }
+
+    private func showProtectionOverviewOnboarding(content: SubscriptionOnboardingInfoContent) {
+        let hostingController = UIHostingController(
+            rootView: SubscriptionOnboardingProtectionOverviewView(
+                content: content,
+                navigationButton: .close({ [weak self] in self?.dismiss(animated: true) }),
+                onNext: { [weak self] in self?.dismiss(animated: true) })
+                .subscriptionOnboardingNavigationContainer())
+        present(hostingController, animated: true)
+    }
+
+    private func showProgressOnboarding(completedItems: Set<SubscriptionOnboardingChecklistItem>) {
+        let hostingController = UIHostingController(
+            rootView: SubscriptionOnboardingProgressView(
+                progress: SubscriptionOnboardingProgress(completedItems: completedItems),
+                navigationButton: .close({ [weak self] in self?.dismiss(animated: true) }),
+                onSelectItem: { _ in },
+                onNext: { [weak self] in self?.dismiss(animated: true) })
+                .subscriptionOnboardingNavigationContainer()
+                .graphicLottieRenderer(.app))
+        present(hostingController, animated: true)
+    }
+
     private func showWelcomeOnboarding() {
         let hostingController = UIHostingController(
-            rootView: SubscriptionOnboardingWelcomeView(onClose: { [weak self] in self?.dismiss(animated: true) })
+            rootView: SubscriptionOnboardingWelcomeView(
+                navigationButton: .close({ [weak self] in self?.dismiss(animated: true) }),
+                onNext: { [weak self] in self?.dismiss(animated: true) })
                 .subscriptionOnboardingNavigationContainer())
         present(hostingController, animated: true)
     }
@@ -879,18 +984,53 @@ final class SubscriptionDebugViewController: UITableViewController {
     private func showVPNOnboarding() {
         let hostingController = UIHostingController(
             rootView: SubscriptionOnboardingVPNActivationView(
-                viewModel: SubscriptionOnboardingVPNActivationViewModel(prefetcher: SubscriptionOnboardingPrefetcher(), delegate: self))
+                viewModel: SubscriptionOnboardingVPNActivationViewModel(
+                    prefetcher: SubscriptionOnboardingPrefetcher(),
+                    onNext: { [weak self] in self?.dismiss(animated: true) }),
+                navigationButton: .close({ [weak self] in self?.dismiss(animated: true) }))
                 .subscriptionOnboardingNavigationContainer()
-                .graphicLottieRenderer(Self.onboardingLottieRenderer))
+                .graphicLottieRenderer(.app))
         present(hostingController, animated: true)
     }
 
     private func showDuckAIOnboarding() {
         let hostingController = UIHostingController(
             rootView: SubscriptionOnboardingDuckAIView(
-                viewModel: SubscriptionOnboardingDuckAIViewModel(prefetcher: SubscriptionOnboardingPrefetcher(), delegate: self))
-                .subscriptionOnboardingNavigationContainer())
+                viewModel: SubscriptionOnboardingDuckAIViewModel(
+                    prefetcher: SubscriptionOnboardingPrefetcher(),
+                    onNext: { [weak self] in self?.dismiss(animated: true) },
+                    onRequestChat: { modelID in
+                        SubscriptionOnboardingDuckAIChatLauncher().launch(modelID: modelID)
+                    }),
+                navigationButton: .close({ [weak self] in self?.dismiss(animated: true) }),
+                progress: SubscriptionOnboardingProgress(completedItems: [.vpn, .widget, .idtr]))
+                .subscriptionOnboardingNavigationContainer()
+                .graphicLottieRenderer(.app))
         present(hostingController, animated: true)
+    }
+
+    private func resetOnboardingProgress() {
+        guard let keyValueStore else {
+            showAlert(title: "Failed to reset onboarding progress")
+            return
+        }
+        var store = SubscriptionOnboardingProgressPersistor(keyValueStore: keyValueStore)
+        store.completedItems = []
+        store.cardFirstShownDate = nil
+        store.fullyCompletedAt = nil
+        showAlert(title: "Onboarding progress reset")
+    }
+
+    /// Backdates the card's first display so its 14-day window has already closed. The session latch is
+    /// process-scoped, so a relaunch is still needed to test the "hidden after completion" rule.
+    private func expireSetupCardWindow() {
+        guard let keyValueStore else {
+            showAlert(title: "Failed to age setup card")
+            return
+        }
+        var store = SubscriptionOnboardingProgressPersistor(keyValueStore: keyValueStore)
+        store.cardFirstShownDate = Date().addingTimeInterval(-TimeInterval.days(15))
+        showAlert(title: "Setup card aged past 14 days")
     }
 
     private func showTapAllowHintPlayground() {
@@ -901,34 +1041,10 @@ final class SubscriptionDebugViewController: UITableViewController {
         present(hostingController, animated: true)
     }
 
-    private static let onboardingLottieRenderer = GraphicLottieRenderer { name, playback in
-        AnyView(
-            Lottie.LottieView(animation: .named(name))
-                .playbackMode(playback == .playOnce
-                    ? .playing(.fromProgress(0, toProgress: 1, loopMode: .playOnce))
-                    : .paused(at: .progress(playback == .frozenAtEnd ? 1 : 0)))
-        )
-    }
 }
 
 extension Bool {
     fileprivate var toString: String {
         String(self)
-    }
-}
-
-extension SubscriptionDebugViewController: SubscriptionOnboardingSectionDelegate {
-    func sectionDidComplete(_ section: SubscriptionOnboardingSection) {}
-
-    func sectionDidRequestDuckAIChat(modelID: String?) {
-        SubscriptionOnboardingDuckAIChatLauncher().launch(from: self, modelID: modelID)
-    }
-
-    func sectionDidRequestAdvance() {
-        dismiss(animated: true)
-    }
-
-    func sectionDidRequestGoBack() {
-        dismiss(animated: true)
     }
 }

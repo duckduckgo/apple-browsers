@@ -21,8 +21,7 @@ import SwiftUI
 import DesignResourcesKit
 import UIComponents
 
-/// Derives everything the calendar card renders at `init`; the start dates themselves aren't stored.
-/// `now` and `calendar` are injectable so tests and previews are deterministic.
+/// Derives calendar card data at init; `now` and `calendar` are injectable for tests.
 struct SubscriptionOnboardingFreeTrialCalendarCardModel {
     let trialLength: Int
 

@@ -660,25 +660,6 @@ final class MainCoordinator {
         controller.presentDataBrokerProtectionDashboard()
     }
 
-    func capturePromoCoordinationForegroundReadinessToken() -> PromoCoordinationForegroundReadinessToken {
-        promoCoordinationService.captureForegroundReadinessToken()
-    }
-
-    func presentModalPromptIfNeeded(readinessToken: PromoCoordinationForegroundReadinessToken) {
-        promoCoordinationService.presentModalPromptIfNeeded(
-            from: controller,
-            readinessToken: readinessToken
-        )
-    }
-
-    func prepareModalPromptCoordinationForForeground() {
-        promoCoordinationService.applicationDidBecomeActive()
-    }
-
-    func prepareModalPromptCoordinationForInactivity() {
-        promoCoordinationService.applicationWillResignActive()
-    }
-
     // MARK: App Lifecycle handling
 
     func onForeground(isFirstForeground: Bool) {
@@ -703,7 +684,6 @@ final class MainCoordinator {
     }
 
     func onBackground() {
-        promoCoordinationService.applicationDidEnterBackground()
         resetAppStartTime()
         Task {
             await privacyStats.handleAppTermination()

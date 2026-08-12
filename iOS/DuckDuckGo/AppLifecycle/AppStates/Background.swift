@@ -68,6 +68,7 @@ struct Background: BackgroundHandling {
         services.reportingService.suspend()
         services.eventHubService.suspend()
 
+        services.promoCoordinationService.applicationDidEnterBackground()
         appDependencies.mainCoordinator.onBackground()
 
         updateApplicationShortcutItems()

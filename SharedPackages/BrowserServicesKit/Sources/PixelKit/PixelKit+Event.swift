@@ -36,11 +36,6 @@ extension PixelKit {
     }
 }
 
-/// Compatibility alias for the pre-rename spelling. Retained so out-of-tree conformances keep
-/// compiling; every in-tree conformance uses `PixelKit.Event`. Removed once the migration lands.
-@available(*, deprecated, renamed: "PixelKit.Event")
-public typealias PixelKitEvent = PixelKit.Event
-
 /// Extract Error parameter from the PixelKit.Event, only one error is supported, if multiple errors are found we assert
 public extension PixelKit.Event {
 

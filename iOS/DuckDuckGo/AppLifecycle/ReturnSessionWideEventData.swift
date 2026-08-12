@@ -22,10 +22,8 @@ import Common
 import FoundationExtensions
 import PixelKit
 
-/// Wide-event payload for the return session pixel (`m_ios_wide_return_session`).
-/// Captures every return to the app: an after-idle treatment (NTP or LUT) or an
-/// ordinary return. `PostIdleSessionWideEventData` stays scoped to after-idle
-/// returns and runs alongside this event, so its existing series is unaffected.
+/// Wide-event payload for the return session pixel (`m_ios_wide_return_session`),
+/// covering every return: an after-idle treatment (NTP or LUT) or an ordinary return.
 final class ReturnSessionWideEventData: WideEventData {
 
     static let metadata = WideEventMetadata(
@@ -37,8 +35,7 @@ final class ReturnSessionWideEventData: WideEventData {
         version: "1.0.0"
     )
 
-    /// What the user actually landed on. `ntp` is the after-idle NTP;
-    /// `ntpUserInitiated` is an NTP reached without the treatment.
+    /// `ntp` is the after-idle NTP; `ntpUserInitiated` is an NTP reached without the treatment.
     enum LandedOn: String, Codable, CaseIterable {
         case ntp
         case ntpUserInitiated = "ntp_user_initiated"
@@ -110,10 +107,8 @@ final class ReturnSessionWideEventData: WideEventData {
         self.globalData = globalData
     }
 
-    /// Orphaned flows are cleaned up by `sessionStarted()` which runs
-    /// synchronously before creating a new flow. This avoids a race with
-    /// `WideEventService.resume()` where the cleanup task would complete
-    /// a freshly created flow as UNKNOWN before any user interaction.
+    /// `sessionStarted()` completes orphans synchronously; letting `WideEventService.resume()`
+    /// do it instead would race and complete a fresh flow as UNKNOWN.
     func completionDecision(for trigger: WideEventCompletionTrigger) async -> WideEventCompletionDecision {
         .keepPending
     }
@@ -128,7 +123,6 @@ extension ReturnSessionWideEventData {
         return thresholds.last(where: { $0 <= ms }) ?? 0
     }
 
-    /// Buckets time away with idle-relevant thresholds (lower end, in ms): 1m, 5m, 15m, 30m, 60m.
     static func timeAwayBucketMs(_ ms: Int) -> Int {
         let thresholds = [0, 60_000, 300_000, 900_000, 1_800_000, 3_600_000]
         return thresholds.last(where: { $0 <= ms }) ?? 0
@@ -156,8 +150,7 @@ extension ReturnSessionWideEventData {
 
 extension ReturnSessionWideEventData.StatusReason {
 
-    /// Collapses the submission split back onto the post-idle event's `bar_used`, so that
-    /// pixel keeps reporting exactly the values its existing dashboards were built on.
+    /// Collapses the submission split back onto `bar_used`, keeping the post-idle event's existing values.
     var postIdleReason: PostIdleSessionWideEventData.StatusReason {
         switch self {
         case .searchSubmitted, .aiPromptSubmitted, .urlSubmitted: return .barUsed

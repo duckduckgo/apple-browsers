@@ -20,8 +20,7 @@
 import Foundation
 import PixelKit
 
-/// Interaction state shared by the return-session and post-idle payloads, so a single
-/// user action can be recorded on both in-flight flows.
+/// Interaction state shared by the return-session and post-idle payloads.
 protocol ReturnSessionInteractionData: AnyObject {
     var firstInteractionInterval: WideEvent.MeasuredInterval { get set }
     var pageEngaged: Bool { get set }
@@ -37,9 +36,8 @@ extension PostIdleSessionWideEventData: ReturnSessionInteractionData {}
 
 /// Session-scoped hooks for the return-session wide-event pixel.
 ///
-/// Every return starts a `ios-return-session` flow. After-idle returns additionally start
-/// the older `ios-post-idle-session` flow, which keeps its after-idle-only scope and its
-/// original field set so its existing dashboards are unaffected.
+/// Every return starts an `ios-return-session` flow; after-idle returns also start
+/// the older after-idle-only `ios-post-idle-session` flow.
 ///
 /// The caller decides which surface to fire (based on the user's After Inactivity
 /// setting) and is responsible for any per-surface eligibility gating. The
@@ -49,12 +47,9 @@ extension PostIdleSessionWideEventData: ReturnSessionInteractionData {}
 protocol PostIdleSessionInstrumentation: AnyObject {
 
     /// Stashes this return's time away; consumed by the next `sessionStarted`.
-    /// Used when the session start happens downstream of the launch handling
-    /// (the after-idle NTP starts its session when the NTP actually renders).
     func noteReturn(timeAwayMs: Int?)
 
-    /// A return session began on the given landing surface. `afterIdleSurface` is the
-    /// treatment that started it, or nil for an ordinary return.
+    /// A return session began on `landedOn`. `afterIdleSurface` is nil for an ordinary return.
     func sessionStarted(landedOn: ReturnSessionWideEventData.LandedOn,
                         afterIdleSurface: PostIdleSessionWideEventData.Surface?,
                         focused: Bool)
@@ -223,7 +218,6 @@ final class DefaultPostIdleSessionInstrumentation: PostIdleSessionInstrumentatio
         }
     }
 
-    /// Applies the same mutation to whichever of the two flows are in flight.
     private func recordInteraction(_ mutate: (any ReturnSessionInteractionData) -> Void) {
         let now = dateProvider()
 

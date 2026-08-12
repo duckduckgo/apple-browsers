@@ -2441,8 +2441,6 @@ class MainViewController: UIViewController {
         loadUrlRespectingAIBoundary(url)
     }
 
-    /// Classifies an address-bar submission for the return session: text that
-    /// resolves to a SERP counts as a search, anything else as direct navigation.
     func postIdleSubmissionReason(for query: String) -> ReturnSessionWideEventData.StatusReason {
         guard let url = URL.makeSearchURL(query: query, useUnifiedLogic: isUnifiedURLPredictionEnabled, queryContext: currentTab?.url) else {
             return .searchSubmitted

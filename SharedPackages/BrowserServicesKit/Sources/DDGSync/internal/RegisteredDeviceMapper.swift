@@ -22,13 +22,17 @@ import os.log
 struct RegisteredDeviceMappingResult {
     let devices: [RegisteredDevice]
     let needsCurrentDeviceInfoRepair: Bool
+    let unresolvedNativeDeviceIDs: [String]
+    // Diagnostics for the Sync debug UI only; not used to drive device-list behaviour.
     let debugDevices: [RegisteredDeviceDebugInfo]
 
     init(devices: [RegisteredDevice],
          needsCurrentDeviceInfoRepair: Bool,
+         unresolvedNativeDeviceIDs: [String] = [],
          debugDevices: [RegisteredDeviceDebugInfo] = []) {
         self.devices = devices
         self.needsCurrentDeviceInfoRepair = needsCurrentDeviceInfoRepair
+        self.unresolvedNativeDeviceIDs = unresolvedNativeDeviceIDs
         self.debugDevices = debugDevices
     }
 }
@@ -78,9 +82,23 @@ struct RegisteredDeviceMapper: RegisteredDeviceMapping {
         case failed(UnifiedDeviceInfoFailure)
     }
 
+    private enum MappingSource: Equatable {
+        case deviceInfo
+        case legacy
+        case placeholder
+
+        var debugSource: RegisteredDeviceDebugInfo.Source {
+            switch self {
+            case .deviceInfo: return .deviceInfo
+            case .legacy: return .legacy
+            case .placeholder: return .placeholder
+            }
+        }
+    }
+
     private struct MappingAttempt {
         let device: RegisteredDevice
-        let source: RegisteredDeviceDebugInfo.Source
+        let source: MappingSource
         let unifiedDeviceInfoFailure: UnifiedDeviceInfoFailure?
     }
 
@@ -146,9 +164,16 @@ struct RegisteredDeviceMapper: RegisteredDeviceMapping {
             needsCurrentDeviceInfoRepair: needsCurrentDeviceInfoRepair(in: resolvedMappings,
                                                                        entries: entries,
                                                                        account: account),
+            unresolvedNativeDeviceIDs: zip(entries, resolvedMappings).compactMap { entry, mapping in
+                guard entry.credentialId == nil || entry.credentialId == SyncCredentialID.defaultCredential,
+                      mapping.source == .placeholder else {
+                    return nil
+                }
+                return entry.id
+            },
             debugDevices: resolvedMappings.map {
                 RegisteredDeviceDebugInfo(device: $0.device,
-                                          source: $0.source,
+                                          source: $0.source.debugSource,
                                           deviceInfoIssue: $0.unifiedDeviceInfoFailure?.description)
             })
     }

@@ -169,6 +169,27 @@ final class RegisteredDeviceMapperTests: XCTestCase {
         XCTAssertFalse(result.needsCurrentDeviceInfoRepair)
     }
 
+    func testWhenUnifiedReadIsDisabledAndNativeLegacyFieldsCannotBeDecryptedThenReportsUnresolvedDevice() async {
+        var crypter = CryptingMock()
+        crypter._base64DecodeAndDecrypt = { _ in
+            throw SyncError.failedToDecryptValue("test")
+        }
+        let mapper = RegisteredDeviceMapper(crypter: crypter,
+                                            isScopedAccessCredentialsEnabled: { true },
+                                            canReadUnifiedDeviceList: { false })
+        let entry = RegisteredDeviceEntry(id: "native-device",
+                                          name: "undecryptable-name",
+                                          type: "undecryptable-type",
+                                          info: "ignored-device-info",
+                                          credentialId: SyncCredentialID.defaultCredential)
+
+        let result = await mapper.registeredDevicesWithRepairState(from: [entry], account: makeAccount())
+
+        XCTAssertEqual(result.unresolvedNativeDeviceIDs, ["native-device"])
+        XCTAssertEqual(result.devices.map(\.name), ["Unknown"])
+        XCTAssertFalse(result.needsCurrentDeviceInfoRepair)
+    }
+
     func testWhenUnifiedEntriesAreMixedThenEachEntryFallsBackIndependently() async throws {
         let account = makeAccount()
         let accountInfoKeys = AccountInfoKeyManagingMock()

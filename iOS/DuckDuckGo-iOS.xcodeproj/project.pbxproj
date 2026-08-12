@@ -271,6 +271,14 @@
 		3666D86730017A6800B63F99 /* SubscriptionOnboardingCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3666D86630017A6800B63F99 /* SubscriptionOnboardingCard.swift */; };
 		3666D86D30017B1400B63F99 /* RebrandedPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3666D86B30017B1400B63F99 /* RebrandedPreview.swift */; };
 		3666D8753001917B00B63F99 /* SubscriptionOnboardingChecklistItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3666D8733001917B00B63F99 /* SubscriptionOnboardingChecklistItem.swift */; };
+		36699A30302CD4F600D1E3EE /* PIRAvailability.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36699A2F302CD4F600D1E3EE /* PIRAvailability.swift */; };
+		3677BA07302B78D2004E95E3 /* SubscriptionOnboardingActivationRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3677BA04302B78D2004E95E3 /* SubscriptionOnboardingActivationRecorder.swift */; };
+		3677BA08302B78D2004E95E3 /* SubscriptionOnboardingProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3677BA05302B78D2004E95E3 /* SubscriptionOnboardingProgress.swift */; };
+		3677BA09302B78D2004E95E3 /* SubscriptionOnboardingSessionState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3677BA06302B78D2004E95E3 /* SubscriptionOnboardingSessionState.swift */; };
+		368349D7302689C3009BDEF7 /* SubscriptionOnboardingFlowViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 368349D6302689C3009BDEF7 /* SubscriptionOnboardingFlowViewModel.swift */; };
+		AA00000000000000000EP002 /* SubscriptionOnboardingEntryPoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000000000000000EP001 /* SubscriptionOnboardingEntryPoint.swift */; };
+		368349DF30268B2E009BDEF7 /* SubscriptionOnboardingFlowViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 368349DE30268B2E009BDEF7 /* SubscriptionOnboardingFlowViewModelTests.swift */; };
+		36DD9FE2302BB9A600D12A6A /* SubscriptionOnboardingProgressTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36DD9FE1302BB9A600D12A6A /* SubscriptionOnboardingProgressTests.swift */; };
 		3666D877300193CC00B63F99 /* SubscriptionOnboardingUserText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3666D876300193CC00B63F99 /* SubscriptionOnboardingUserText.swift */; };
 		3666D87A300193EA00B63F99 /* check-color.json in Resources */ = {isa = PBXBuildFile; fileRef = 3666D879300193EA00B63F99 /* check-color.json */; };
 		3666D87D3001AA9600B63F99 /* SubscriptionOnboardingFreeTrialCalendarCardModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3666D87B3001AA9600B63F99 /* SubscriptionOnboardingFreeTrialCalendarCardModelTests.swift */; };
@@ -3209,6 +3217,14 @@
 		3666D86630017A6800B63F99 /* SubscriptionOnboardingCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingCard.swift; sourceTree = "<group>"; };
 		3666D86B30017B1400B63F99 /* RebrandedPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RebrandedPreview.swift; sourceTree = "<group>"; };
 		3666D8733001917B00B63F99 /* SubscriptionOnboardingChecklistItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingChecklistItem.swift; sourceTree = "<group>"; };
+		36699A2F302CD4F600D1E3EE /* PIRAvailability.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PIRAvailability.swift; sourceTree = "<group>"; };
+		3677BA04302B78D2004E95E3 /* SubscriptionOnboardingActivationRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingActivationRecorder.swift; sourceTree = "<group>"; };
+		3677BA05302B78D2004E95E3 /* SubscriptionOnboardingProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingProgress.swift; sourceTree = "<group>"; };
+		3677BA06302B78D2004E95E3 /* SubscriptionOnboardingSessionState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingSessionState.swift; sourceTree = "<group>"; };
+		368349D6302689C3009BDEF7 /* SubscriptionOnboardingFlowViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingFlowViewModel.swift; sourceTree = "<group>"; };
+		368349DE30268B2E009BDEF7 /* SubscriptionOnboardingFlowViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingFlowViewModelTests.swift; sourceTree = "<group>"; };
+		36DD9FE1302BB9A600D12A6A /* SubscriptionOnboardingProgressTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingProgressTests.swift; sourceTree = "<group>"; };
+		AA00000000000000000EP001 /* SubscriptionOnboardingEntryPoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingEntryPoint.swift; sourceTree = "<group>"; };
 		3666D876300193CC00B63F99 /* SubscriptionOnboardingUserText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingUserText.swift; sourceTree = "<group>"; };
 		3666D879300193EA00B63F99 /* check-color.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "check-color.json"; sourceTree = "<group>"; };
 		3666D87B3001AA9600B63F99 /* SubscriptionOnboardingFreeTrialCalendarCardModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingFreeTrialCalendarCardModelTests.swift; sourceTree = "<group>"; };
@@ -7029,6 +7045,7 @@
 			isa = PBXGroup;
 			children = (
 				3666D86B30017B1400B63F99 /* RebrandedPreview.swift */,
+				36699A2F302CD4F600D1E3EE /* PIRAvailability.swift */,
 			);
 			path = Helpers;
 			sourceTree = "<group>";
@@ -7037,6 +7054,11 @@
 			isa = PBXGroup;
 			children = (
 				3666D8733001917B00B63F99 /* SubscriptionOnboardingChecklistItem.swift */,
+				3677BA04302B78D2004E95E3 /* SubscriptionOnboardingActivationRecorder.swift */,
+				3677BA05302B78D2004E95E3 /* SubscriptionOnboardingProgress.swift */,
+				3677BA06302B78D2004E95E3 /* SubscriptionOnboardingSessionState.swift */,
+				AA00000000000000000EP001 /* SubscriptionOnboardingEntryPoint.swift */,
+				9E0FF9FEE1B8698BC36C31CA /* SubscriptionOnboardingSection.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -7059,6 +7081,8 @@
 				E4E4322A55F138794561A14F /* SubscriptionOnboardingConnectionInfoServiceTests.swift */,
 				4F5AFF89CFA3BC33889AEAD0 /* SubscriptionOnboardingVPNActivationViewModelTests.swift */,
 				3901A00979D78E26EF811EEA /* SubscriptionOnboardingSectionTests.swift */,
+				368349DE30268B2E009BDEF7 /* SubscriptionOnboardingFlowViewModelTests.swift */,
+				36DD9FE1302BB9A600D12A6A /* SubscriptionOnboardingProgressTests.swift */,
 			);
 			path = Onboarding;
 			sourceTree = "<group>";
@@ -9871,7 +9895,7 @@
 			isa = PBXGroup;
 			children = (
 				93434FDB10CB6359CBB62C37 /* SubscriptionOnboardingPrefetcher.swift */,
-				9E0FF9FEE1B8698BC36C31CA /* SubscriptionOnboardingSection.swift */,
+				368349D6302689C3009BDEF7 /* SubscriptionOnboardingFlowViewModel.swift */,
 				33BA1D31FEB8CEE8EAE9DEDF /* SubscriptionOnboardingSectionDelegate.swift */,
 			);
 			path = Navigation;
@@ -13804,6 +13828,12 @@
 				C153BE2F2EC4E0A9001B9757 /* AutofillExtensionPromotionHeaderView.swift in Sources */,
 				CBB4A85D2FD318BE00A65956 /* SearchSuggestionsSource.swift in Sources */,
 				3666D8753001917B00B63F99 /* SubscriptionOnboardingChecklistItem.swift in Sources */,
+				36699A30302CD4F600D1E3EE /* PIRAvailability.swift in Sources */,
+				3677BA07302B78D2004E95E3 /* SubscriptionOnboardingActivationRecorder.swift in Sources */,
+				3677BA08302B78D2004E95E3 /* SubscriptionOnboardingProgress.swift in Sources */,
+				3677BA09302B78D2004E95E3 /* SubscriptionOnboardingSessionState.swift in Sources */,
+				368349D7302689C3009BDEF7 /* SubscriptionOnboardingFlowViewModel.swift in Sources */,
+				AA00000000000000000EP002 /* SubscriptionOnboardingEntryPoint.swift in Sources */,
 				C153BE302EC4E0A9001B9757 /* AutofillExtensionPromotionManager.swift in Sources */,
 				310D09212799FD1A00DC0060 /* MIMEType.swift in Sources */,
 				CB6D179D2FA38CAF00ECD5AE /* Logger+ContextualUTI.swift in Sources */,
@@ -14804,6 +14834,8 @@
 				3666D87D3001AA9600B63F99 /* SubscriptionOnboardingFreeTrialCalendarCardModelTests.swift in Sources */,
 				CB781CEA301A8048008DCD60 /* AIChatContextualFloatingInputFeatureTests.swift in Sources */,
 				9CF2A679A5C82A51D01D49C0 /* SubscriptionOnboardingSectionTests.swift in Sources */,
+				368349DF30268B2E009BDEF7 /* SubscriptionOnboardingFlowViewModelTests.swift in Sources */,
+				36DD9FE2302BB9A600D12A6A /* SubscriptionOnboardingProgressTests.swift in Sources */,
 				CB3B4D4E2D63910B006DAD63 /* LaunchActionHandlerTests.swift in Sources */,
 				CBAD0F1F2D02EE45006267B8 /* IdleReturnEvaluatorTests.swift in Sources */,
 				97D99E642F7420A900EE34E7 /* AIVoiceChatIntentTests.swift in Sources */,

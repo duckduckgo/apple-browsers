@@ -460,7 +460,9 @@ struct SubscriptionSettingsViewV2: View {
                 downgradeBanner
                     .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
             }
-            onboardingSetupSection
+            if isOnboardingEnabled {
+                onboardingSetupSection
+            }
             if viewModel.shouldShowUpgrade {
                 upgradeSection
             }
@@ -673,13 +675,11 @@ extension SubscriptionSettingsViewV2 {
     /// disappears once the subscription expires or the flag is turned off.
     var onboardingSetupSection: some View {
         Section {
-            if isOnboardingEnabled {
-                SubscriptionOnboardingSetupCard(visual: .image(Image(.subscription56)),
-                                                progress: onboardingProgress,
-                                                session: settingsViewModel.subscriptionOnboardingSession,
-                                                isPresentingFlow: isShowingOnboarding,
-                                                onContinue: { startOnboarding() })
-            }
+            SubscriptionOnboardingSetupCard(visual: .image(Image(.subscription56)),
+                                            progress: onboardingProgress,
+                                            session: settingsViewModel.subscriptionOnboardingSession,
+                                            isPresentingFlow: isShowingOnboarding,
+                                            onContinue: { startOnboarding() })
         }
         .listRowBackground(Color.clear)
         .listRowInsets(EdgeInsets())

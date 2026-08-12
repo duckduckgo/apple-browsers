@@ -86,7 +86,7 @@ final class SubscriptionOnboardingDuckAIViewModel: ObservableObject {
     private let prefetcher: SubscriptionOnboardingPrefetcher
     private let onComplete: () -> Void
     private let onNext: () -> Void
-    private let onRequestChat: (String?) -> Void
+    private let onRequestChat: (String?) -> Bool
     private var cancellables = Set<AnyCancellable>()
 
     /// Prevents duplicate hand-offs when the interstitial's view is recreated.
@@ -95,7 +95,7 @@ final class SubscriptionOnboardingDuckAIViewModel: ObservableObject {
     init(prefetcher: SubscriptionOnboardingPrefetcher,
          onComplete: @escaping () -> Void = {},
          onNext: @escaping () -> Void = {},
-         onRequestChat: @escaping (String?) -> Void = { _ in }) {
+         onRequestChat: @escaping (String?) -> Bool = { _ in false }) {
         self.prefetcher = prefetcher
         self.onComplete = onComplete
         self.onNext = onNext
@@ -142,19 +142,17 @@ final class SubscriptionOnboardingDuckAIViewModel: ObservableObject {
             prefetcher.updateSelectedModel(selectedModelID)
         }
         onComplete()
+        didHandOffToChat = false
         isShowingInterstitial = true
     }
 
-    /// Requests the chat
+    /// Requests the chat, releasing the interstitial back to the picker if it didn't actually launch.
     func handOffToChat() {
         guard !didHandOffToChat else { return }
         didHandOffToChat = true
-        onRequestChat(selectedModelID)
-    }
-
-    /// Ends the interstitial regardless of whether the hand-off above actually succeeded
-    func dismissInterstitial() {
-        isShowingInterstitial = false
+        if !onRequestChat(selectedModelID) {
+            isShowingInterstitial = false
+        }
     }
 
     /// Leaves Duck.ai without starting a chat, moving the flow to the next section.

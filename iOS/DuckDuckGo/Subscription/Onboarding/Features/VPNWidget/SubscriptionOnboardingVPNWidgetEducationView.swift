@@ -64,7 +64,15 @@ struct SubscriptionOnboardingVPNWidgetEducationView: View {
     }
 
     private var tipsScreen: some View {
-        SubscriptionOnboardingVPNTipsView(title: title, onNext: onNext)
+        SubscriptionOnboardingVPNTipsView(title: title, onNext: advanceFromTips)
+    }
+
+    // (TODO|Post-iOS15-Drop): drop the reset — `NavigationStack` tolerates the overlap.
+    /// Deactivates the local tips link *before* the flow pushes its own sibling link: two simultaneously
+    /// active `NavigationLink`s in one iOS 15 `NavigationView` break the push.
+    private func advanceFromTips() {
+        isShowingTips = false
+        onNext()
     }
 }
 

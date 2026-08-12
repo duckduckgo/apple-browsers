@@ -86,7 +86,6 @@ private extension SubscriptionOnboardingDuckAIView {
             try? await Task.sleep(nanoseconds: UInt64(Self.interstitialDuration * 1_000_000_000))
             guard !Task.isCancelled else { return }
             viewModel.handOffToChat()
-            viewModel.dismissInterstitial()
         }
     }
 }

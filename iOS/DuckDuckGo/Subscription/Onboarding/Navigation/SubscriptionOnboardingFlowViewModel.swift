@@ -84,7 +84,7 @@ final class SubscriptionOnboardingFlowViewModel: ObservableObject {
     let instrumentation: SubscriptionOnboardingInstrumenting
 
     private let onFinish: () -> Void
-    private let onRequestDuckAIChat: (String?) -> Void
+    private let onRequestDuckAIChat: (String?) -> Bool
 
     // MARK: - Init
 
@@ -94,7 +94,7 @@ final class SubscriptionOnboardingFlowViewModel: ObservableObject {
                           progress: SubscriptionOnboardingProgress,
                           onFinish: @escaping () -> Void = {},
                           prefetcher: SubscriptionOnboardingPrefetcher? = nil,
-                          onRequestDuckAIChat: ((String?) -> Void)? = nil,
+                          onRequestDuckAIChat: ((String?) -> Bool)? = nil,
                           instrumentation: SubscriptionOnboardingInstrumenting? = nil,
                           @ViewBuilder pirScreen: @escaping () -> PIRScreen) {
         self.progress = progress
@@ -241,7 +241,7 @@ extension SubscriptionOnboardingFlowViewModel: SubscriptionOnboardingSectionDele
         }
     }
 
-    func sectionDidRequestDuckAIChat(modelID: String?) {
+    func sectionDidRequestDuckAIChat(modelID: String?) -> Bool {
         onRequestDuckAIChat(modelID)
     }
 }

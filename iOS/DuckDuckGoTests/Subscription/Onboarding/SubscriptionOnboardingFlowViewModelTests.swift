@@ -271,11 +271,21 @@ final class SubscriptionOnboardingFlowViewModelTests: XCTestCase {
 
     func testWhenSectionRequestsDuckAIChatThenTheRequestIsForwardedWithItsModel() {
         var requestedModelID: String?
-        let sut = makeSUT(entryPoint: .postCheckout, onRequestDuckAIChat: { requestedModelID = $0 })
+        let sut = makeSUT(entryPoint: .postCheckout, onRequestDuckAIChat: {
+            requestedModelID = $0
+            return true
+        })
 
-        sut.sectionDidRequestDuckAIChat(modelID: "claude-sonnet-5")
+        let launched = sut.sectionDidRequestDuckAIChat(modelID: "claude-sonnet-5")
 
         XCTAssertEqual(requestedModelID, "claude-sonnet-5")
+        XCTAssertTrue(launched)
+    }
+
+    func testWhenTheDuckAIChatDoesNotLaunchThenTheFailureIsForwardedBack() {
+        let sut = makeSUT(entryPoint: .postCheckout, onRequestDuckAIChat: { _ in false })
+
+        XCTAssertFalse(sut.sectionDidRequestDuckAIChat(modelID: "claude-sonnet-5"))
     }
 
     // MARK: - Funnel reporting
@@ -420,7 +430,7 @@ final class SubscriptionOnboardingFlowViewModelTests: XCTestCase {
                          store: MockProgressStore? = nil,
                          instrumentation: SubscriptionOnboardingInstrumenting? = nil,
                          onFinish: @escaping () -> Void = {},
-                         onRequestDuckAIChat: @escaping (String?) -> Void = { _ in }) -> SubscriptionOnboardingFlowViewModel {
+                         onRequestDuckAIChat: @escaping (String?) -> Bool = { _ in true }) -> SubscriptionOnboardingFlowViewModel {
         let store = store ?? MockProgressStore()
         store.completedItems = store.completedItems.union(completed)
         let progress = SubscriptionOnboardingProgress(persistor: store, isPIRAvailable: isPIRAvailable)

@@ -213,6 +213,25 @@ final class SubscriptionOnboardingDuckAIViewModelTests: XCTestCase {
 
         XCTAssertEqual(spy.requestedChatModelIDs, ["a"])
         XCTAssertEqual(spy.completeCount, 1)
+        // A successful hand-off leaves the interstitial up for the launcher's own dismiss animation.
+        XCTAssertTrue(viewModel.isShowingInterstitial)
+    }
+
+    /// A hand-off that never actually launches (e.g. no reachable `MainViewController`) must not leave
+    /// the customer stuck behind the interstitial with no way out.
+    func testWhenHandOffFailsThenInterstitialReturnsToThePicker() async {
+        let spy = SectionOutputSpy()
+        spy.chatRequestSucceeds = false
+        let provider = MockAIModelProvider(models: [model("a", tier: ["plus"])])
+        let (viewModel, _) = makeViewModel(provider: provider, spy: spy)
+        await wait(viewModel.$selectedModelID, until: { $0 != nil }) {
+            viewModel.onAppear()
+        }
+
+        viewModel.startChat()
+        viewModel.handOffToChat()
+
+        XCTAssertFalse(viewModel.isShowingInterstitial)
     }
 
     /// The interstitial's timer and its tap-to-skip can both fire.
@@ -231,10 +250,11 @@ final class SubscriptionOnboardingDuckAIViewModelTests: XCTestCase {
         XCTAssertEqual(spy.requestedChatModelIDs.count, 1)
     }
 
-    /// The interstitial's timer dismisses it unconditionally, so a hand-off that never actually launches
-    /// (e.g. no reachable `MainViewController`) still returns the customer to the model picker.
-    func testWhenDismissingInterstitialThenItNoLongerShowsEvenWithoutHandingOff() async {
+    /// The one-shot guard must not survive past the interstitial that set it, or a hand-off that never
+    /// actually launched (e.g. no reachable `MainViewController`) could never be retried.
+    func testWhenStartingChatAgainAfterAFailedHandOffThenItCanBeRequestedAgain() async {
         let spy = SectionOutputSpy()
+        spy.chatRequestSucceeds = false
         let provider = MockAIModelProvider(models: [model("a", tier: ["plus"])])
         let (viewModel, _) = makeViewModel(provider: provider, spy: spy)
         await wait(viewModel.$selectedModelID, until: { $0 != nil }) {
@@ -242,11 +262,13 @@ final class SubscriptionOnboardingDuckAIViewModelTests: XCTestCase {
         }
 
         viewModel.startChat()
-        XCTAssertTrue(viewModel.isShowingInterstitial)
-
-        viewModel.dismissInterstitial()
-
+        viewModel.handOffToChat()
         XCTAssertFalse(viewModel.isShowingInterstitial)
+
+        viewModel.startChat()
+        viewModel.handOffToChat()
+
+        XCTAssertEqual(spy.requestedChatModelIDs.count, 2)
     }
 
     func testWhenStartChatWithNoModelsThenChatIsRequestedWithoutASelection() async {
@@ -352,9 +374,15 @@ private final class SectionOutputSpy {
     private(set) var nextCount = 0
     private(set) var requestedChatModelIDs: [String?] = []
 
+    /// Mirrors whether `SubscriptionOnboardingDuckAIChatLauncher.launch` actually found a `MainViewController`.
+    var chatRequestSucceeds = true
+
     func recordComplete() { completeCount += 1 }
     func recordNext() { nextCount += 1 }
-    func recordChatRequest(_ modelID: String?) { requestedChatModelIDs.append(modelID) }
+    func recordChatRequest(_ modelID: String?) -> Bool {
+        requestedChatModelIDs.append(modelID)
+        return chatRequestSucceeds
+    }
 }
 
 // MARK: - DefaultSubscriptionOnboardingAIModelProvider

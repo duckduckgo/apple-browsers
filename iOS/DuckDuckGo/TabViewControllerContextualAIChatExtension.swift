@@ -55,10 +55,7 @@ extension TabViewController {
 
     func presentContextualFloatingInput(from presentingViewController: UIViewController) {
         Task { @MainActor in
-            // The surface floats over this page and hides its suggestions while the page moves, so it
-            // needs the scroll view it is sitting on.
-            await aiChatContextualSheetCoordinator.presentFloatingInput(from: presentingViewController,
-                                                                       pageScrollView: webView?.scrollView)
+            await aiChatContextualSheetCoordinator.presentFloatingInput(from: presentingViewController)
         }
     }
 

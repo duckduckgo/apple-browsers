@@ -100,12 +100,6 @@ final class AIChatContextualFloatingInputViewControllerTests: XCTestCase {
         )
     }
 
-    /// The surface is settled once the keyboard has finished appearing — the input rides it, so that is
-    /// when it reaches its final position.
-    private func postKeyboardSettled() {
-        NotificationCenter.default.post(name: UIResponder.keyboardDidShowNotification, object: nil)
-    }
-
     /// The surface only reacts to a keyboard going away once one has arrived for it.
     private func postKeyboardAppeared() {
         NotificationCenter.default.post(name: UIResponder.keyboardWillShowNotification, object: nil)
@@ -330,42 +324,37 @@ final class AIChatContextualFloatingInputViewControllerTests: XCTestCase {
     /// resolve, so the first batches legitimately carry nothing to animate.
     func testAnEmptyBatchDoesNotConsumeTheEntrance() {
         let (subject, _, _) = makeSubject()
-        postKeyboardSettled()
 
-        subject.playChipsEntranceIfNeeded()
-        XCTAssertFalse(subject.hasPlayedChipsEntranceForTesting)
+        subject.showChipsIfNeeded()
+        XCTAssertFalse(subject.hasShownChipsForTesting)
 
         subject.chipsViewController.updateStartActions(suggestions: [], quickActions: [.summarize])
-        subject.playChipsEntranceIfNeeded()
-        XCTAssertTrue(subject.hasPlayedChipsEntranceForTesting)
+        subject.showChipsIfNeeded()
+        XCTAssertTrue(subject.hasShownChipsForTesting)
     }
 
     func testEntranceIsConsumedByTheFirstBatchWithChips() {
         let (subject, _, _) = makeSubject()
-        postKeyboardSettled()
         subject.chipsViewController.updateStartActions(suggestions: [], quickActions: [.summarize])
 
-        subject.playChipsEntranceIfNeeded()
-        XCTAssertTrue(subject.hasPlayedChipsEntranceForTesting)
+        subject.showChipsIfNeeded()
+        XCTAssertTrue(subject.hasShownChipsForTesting)
 
         subject.chipsViewController.updateStartActions(suggestions: [], quickActions: [.summarize, .askAboutPage])
-        subject.playChipsEntranceIfNeeded()
+        subject.showChipsIfNeeded()
 
-        XCTAssertTrue(subject.hasPlayedChipsEntranceForTesting)
+        XCTAssertTrue(subject.hasShownChipsForTesting)
         XCTAssertEqual(subject.chipsViewController.startActionCount, 2)
     }
 
-    /// Suggestions can resolve while the keyboard is still coming up, and the input rides it — dealing then
-    /// would land them on a surface still on its way. They wait, and the settle deals them.
-    func testABatchArrivingBeforeTheSurfaceSettlesWaitsForIt() {
+    /// Suggestions can resolve while the keyboard is still coming up. They show straight away and ride it
+    /// up, rather than waiting for it to stop and landing afterwards.
+    func testABatchArrivingBeforeTheKeyboardSettlesShowsImmediately() {
         let (subject, _, _) = makeSubject()
         subject.chipsViewController.updateStartActions(suggestions: [], quickActions: [.summarize])
 
-        subject.playChipsEntranceIfNeeded()
-        XCTAssertFalse(subject.hasPlayedChipsEntranceForTesting, "the surface has not settled yet")
+        subject.showChipsIfNeeded()
 
-        postKeyboardSettled()
-
-        XCTAssertTrue(subject.hasPlayedChipsEntranceForTesting, "settling deals the batch that was waiting")
+        XCTAssertTrue(subject.hasShownChipsForTesting)
     }
 }

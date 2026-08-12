@@ -55,8 +55,6 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
         static let assumedKeyboardSlideDuration: TimeInterval = 0.25
         /// Longer than this and the finger was resting or scrolling, not tapping.
         static let maximumTapDuration: CFTimeInterval = 0.4
-        /// Quiet time after the page stops moving before the suggestions come back.
-        static let suggestionsReturnDelay: TimeInterval = 0.5
     }
 
     /// The keyboard's own animation, taken from its notifications: moving with the keyboard means running
@@ -85,14 +83,10 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
     /// surface losing the keyboard it was sitting above.
     private var hasKeyboardAppeared = false
 
-    /// Whether the surface has stopped moving. The entrance animation is no substitute — it runs on an
-    /// assumed duration and can finish while the keyboard is still rising.
-    private var hasSettledInPlace = false
-
     /// Stays true for the rest of this surface's life — it is presented once and dismissed once.
     private var isDismissing = false
     private var hasResignedInput = false
-    private var hasPlayedChipsEntrance = false
+    private var hasShownChips = false
 
     /// Where the keyboard goes while this surface leaves. The slide is the same either way; this only decides
     /// when the input resigns.
@@ -105,13 +99,6 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
     }
 
     private var keyboardHandling: KeyboardHandling = .leavesWithSurface
-
-    /// Observed rather than delegated: `BrowserChromeManager` already owns this scroll view's delegate, and the
-    /// chrome's own visibility signal is no substitute — it stays silent on pages whose bars cannot hide.
-    private var pageScrollObservation: NSKeyValueObservation?
-    private weak var pageScrollView: UIScrollView?
-    private var suggestionsReturnWorkItem: DispatchWorkItem?
-    private var areSuggestionsHiddenForScroll = false
 
     /// The view the page-tap recognizer is installed on, so it can be detached even if this controller
     /// has already lost its parent.
@@ -229,11 +216,8 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
     }
 
     /// Adds the floating input over `parent`'s content and mounts the shared input above the keyboard.
-    func install(in parent: UIViewController, pageScrollView: UIScrollView? = nil) {
+    func install(in parent: UIViewController) {
         guard self.parent !== parent else { return }
-
-        self.pageScrollView = pageScrollView
-        observePageScroll()
 
         parent.addChild(self)
         view.translatesAutoresizingMaskIntoConstraints = false
@@ -267,24 +251,17 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
                        animations: {
             self.view.alpha = 1
             self.view.layoutIfNeeded()
-        }, completion: { _ in
-            // With a software keyboard on its way, the surface is still rising with it and `keyboardDidShow`
-            // is what says it has arrived. With a hardware keyboard there is no such signal, so this is it.
-            guard !self.hasKeyboardAppeared else { return }
-            self.markSettledInPlace()
         })
     }
 
-    /// Chips arrive asynchronously with the page context, so the entrance plays on the first batch
-    /// that actually has content rather than at install time.
-    func playChipsEntranceIfNeeded() {
-        guard !hasPlayedChipsEntrance, chipsViewController.startActionCount > 0 else { return }
-        guard hasSettledInPlace else { return }
-        hasPlayedChipsEntrance = true
-        // Resting frames first: each chip's start offset is measured from where it lands.
-        view.layoutIfNeeded()
+    /// Chips arrive asynchronously with the page context, so this waits for the first batch with content
+    /// rather than showing at install time. They sit above the input card, which is pinned to the keyboard
+    /// guide, so they ride up with it rather than landing once it has stopped.
+    func showChipsIfNeeded() {
+        guard !hasShownChips, chipsViewController.startActionCount > 0 else { return }
+        hasShownChips = true
         chipsContainerView.alpha = 1
-        chipsViewController.animateStartActionsIn()
+        chipsViewController.showStartActions()
     }
 
     /// The entrance in reverse: settles back down to where it rose from, fading out as it goes. One alpha for
@@ -320,12 +297,8 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
     }
 
     func remove() {
-        // A removed surface has no business reacting to the keyboard it no longer sits above, or to a page it
-        // no longer floats over.
+        // A removed surface has no business reacting to the keyboard it no longer sits above.
         NotificationCenter.default.removeObserver(self)
-        pageScrollObservation = nil
-        suggestionsReturnWorkItem?.cancel()
-        suggestionsReturnWorkItem = nil
         // Lives on the presenter, so it outlives this controller unless detached explicitly. Detached
         // from the remembered view rather than `parent`, which is already nil if we were detached first.
         presenterView?.removeGestureRecognizer(dismissOnPageTapRecognizer)
@@ -352,8 +325,8 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
         handlePageTap()
     }
 
-    var hasPlayedChipsEntranceForTesting: Bool {
-        hasPlayedChipsEntrance
+    var hasShownChipsForTesting: Bool {
+        hasShownChips
     }
 #endif
 }
@@ -461,58 +434,8 @@ private extension AIChatContextualFloatingInputViewController {
         max(0, view.safeAreaLayoutGuide.layoutFrame.maxY - view.keyboardLayoutGuide.layoutFrame.minY)
     }
 
-    /// The suggestions get out of the way while the page moves, and come back once it has been still for a
-    /// moment. Reading is the point of leaving the page interactive, and they sit over what is being read.
-    func observePageScroll() {
-        guard let pageScrollView else { return }
-        pageScrollObservation = pageScrollView.observe(\.contentOffset, options: [.new]) { [weak self] _, _ in
-            MainActor.assumeIsolated { self?.handlePageScrolled() }
-        }
-    }
-
-    /// Also deals a batch of suggestions that arrived while the surface was still moving.
-    func markSettledInPlace() {
-        guard !hasSettledInPlace else { return }
-        hasSettledInPlace = true
-        playChipsEntranceIfNeeded()
-    }
-
-    func handlePageScrolled() {
-        hideSuggestionsForScrollIfNeeded()
-        scheduleSuggestionsReturn()
-    }
-
-    func hideSuggestionsForScrollIfNeeded() {
-        guard !areSuggestionsHiddenForScroll, hasPlayedChipsEntrance else { return }
-        areSuggestionsHiddenForScroll = true
-        chipsViewController.animateStartActionsOut()
-    }
-
-    /// Restarted on every movement, and re-armed rather than fired while a finger is still down —
-    /// a hand resting mid-scroll is not the page being still.
-    func scheduleSuggestionsReturn() {
-        suggestionsReturnWorkItem?.cancel()
-        let workItem = DispatchWorkItem { [weak self] in
-            guard let self else { return }
-            guard self.pageScrollView?.isDragging != true, self.pageScrollView?.isDecelerating != true else {
-                self.scheduleSuggestionsReturn()
-                return
-            }
-            self.revealSuggestionsAfterScroll()
-        }
-        suggestionsReturnWorkItem = workItem
-        DispatchQueue.main.asyncAfter(deadline: .now() + Constants.suggestionsReturnDelay, execute: workItem)
-    }
-
-    func revealSuggestionsAfterScroll() {
-        guard areSuggestionsHiddenForScroll, !isDismissing else { return }
-        areSuggestionsHiddenForScroll = false
-        chipsViewController.animateStartActionsIn()
-    }
-
     func observeKeyboardAnimation() {
         let names: [Notification.Name] = [UIResponder.keyboardWillShowNotification,
-                                          UIResponder.keyboardDidShowNotification,
                                           UIResponder.keyboardWillChangeFrameNotification,
                                           UIResponder.keyboardWillHideNotification]
         for name in names {
@@ -530,11 +453,6 @@ private extension AIChatContextualFloatingInputViewController {
 
         if notification.name == UIResponder.keyboardWillShowNotification {
             hasKeyboardAppeared = true
-        }
-
-        if notification.name == UIResponder.keyboardDidShowNotification {
-            markSettledInPlace()
-            return
         }
 
         // Something else took the keyboard this surface was sitting above — a long-press text selection,

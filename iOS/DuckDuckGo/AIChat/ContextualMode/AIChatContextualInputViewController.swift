@@ -230,12 +230,8 @@ final class AIChatContextualInputViewController: UIViewController {
         quickActionsView.chipCount
     }
 
-    func animateStartActionsOut() {
-        quickActionsView.animateChipsOut()
-    }
-
-    func animateStartActionsIn() {
-        quickActionsView.animateChipsIn()
+    func showStartActions() {
+        quickActionsView.showChips()
     }
 
     /// Removes this controller's own horizontal inset so a host can align the chips itself.

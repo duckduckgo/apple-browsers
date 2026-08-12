@@ -23,16 +23,6 @@ import UIKit
 
 private enum AIChatQuickActionsViewConstants {
     static let chipSpacing: CGFloat = 8
-
-    /// The stacked deck fades in as one, so no single card reads as more important.
-    static let deckRevealDuration: TimeInterval = 0.12
-    /// Translation only, no scale: every card scaled by the same amount stayed perfectly overlapped, so a
-    /// scale only shrank the whole stack rather than making it read as one.
-    static let spreadDuration: TimeInterval = 0.45
-    static let spreadDamping: CGFloat = 0.78
-    static let spreadInitialVelocity: CGFloat = 0.15
-    /// Quicker than the spread: getting out of the way should not be something the reader waits for.
-    static let collapseDuration: TimeInterval = 0.2
 }
 
 // MARK: - View
@@ -102,67 +92,9 @@ public final class AIChatQuickActionsView<Action: AIChatQuickActionType>: UIView
         chips.count
     }
 
-    /// The chips deal out of a stacked deck. The loader is cleared first because it holds a slot here,
-    /// and the resting frames this measures would otherwise be too low.
-    public func animateChipsIn() {
+    /// Swaps the loader out for the chips, which are already in the stack behind it.
+    public func showChips() {
         setLoading(false)
-        layoutIfNeeded()
-        let cards = chips
-        cards.forEach { $0.transform = .identity }
-        let restingTops = cards.map(\.frame.minY)
-        guard let deckTop = restingTops.last else { return }
-
-        for (card, restingTop) in zip(cards, restingTops) {
-            card.alpha = 0
-            card.transform = CGAffineTransform(translationX: 0, y: deckTop - restingTop)
-        }
-
-        faceDeckWithLastCard(cards)
-
-        UIView.animate(withDuration: AIChatQuickActionsViewConstants.deckRevealDuration,
-                       delay: 0,
-                       options: [.curveEaseOut, .beginFromCurrentState]) {
-            cards.forEach { $0.alpha = 1 }
-        }
-
-        // Every card springs at once: a stagger made dealing and collapsing read as different mechanisms.
-        UIView.animate(withDuration: AIChatQuickActionsViewConstants.spreadDuration,
-                       delay: AIChatQuickActionsViewConstants.deckRevealDuration,
-                       usingSpringWithDamping: AIChatQuickActionsViewConstants.spreadDamping,
-                       initialSpringVelocity: AIChatQuickActionsViewConstants.spreadInitialVelocity,
-                       options: [.beginFromCurrentState]) {
-            cards.forEach { $0.transform = .identity }
-        }
-    }
-
-    /// The reverse of the entrance: the cards gather back into the deck and fade as one.
-    public func animateChipsOut(completion: (() -> Void)? = nil) {
-        layoutIfNeeded()
-        let cards = chips
-        faceDeckWithLastCard(cards)
-        let restingTops = cards.map { $0.frame.minY - $0.transform.ty }
-        guard let deckTop = restingTops.last else {
-            completion?()
-            return
-        }
-
-        UIView.animate(withDuration: AIChatQuickActionsViewConstants.collapseDuration,
-                       delay: 0,
-                       options: [.curveEaseIn, .beginFromCurrentState],
-                       animations: {
-            for (card, restingTop) in zip(cards, restingTops) {
-                card.alpha = 0
-                card.transform = CGAffineTransform(translationX: 0, y: deckTop - restingTop)
-            }
-        }, completion: { _ in
-            completion?()
-        })
-    }
-
-    /// The card the deck forms on sits in front, so the rest gather behind it. Both directions depend
-    /// on this order, so it's stated rather than left to the stack view's default.
-    private func faceDeckWithLastCard(_ cards: [UIView]) {
-        cards.forEach(stackView.bringSubviewToFront)
     }
 
     private var chips: [UIView] {
@@ -196,14 +128,38 @@ private extension AIChatQuickActionsView {
 
     func setupUI() {
         isAccessibilityElement = false
-        addSubview(stackView)
+        let stackHost = installGlassContainerIfAvailable() ?? self
+        stackHost.addSubview(stackView)
 
         NSLayoutConstraint.activate([
-            stackView.topAnchor.constraint(greaterThanOrEqualTo: topAnchor),
-            stackView.bottomAnchor.constraint(equalTo: bottomAnchor),
-            stackView.leadingAnchor.constraint(equalTo: leadingAnchor),
-            stackView.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor),
+            stackView.topAnchor.constraint(greaterThanOrEqualTo: stackHost.topAnchor),
+            stackView.bottomAnchor.constraint(equalTo: stackHost.bottomAnchor),
+            stackView.leadingAnchor.constraint(equalTo: stackHost.leadingAnchor),
+            stackView.trailingAnchor.constraint(lessThanOrEqualTo: stackHost.trailingAnchor),
         ])
+    }
+
+    /// Renders every chip's glass as one combined effect rather than each resolving its own backdrop.
+    /// Returns the view the stack should live in, or nil where the container effect is unavailable.
+    func installGlassContainerIfAvailable() -> UIView? {
+        guard #available(iOS 26.0, *) else { return nil }
+
+        let containerEffect = UIGlassContainerEffect()
+        // Below the chip spacing, so combining their rendering does not also merge them into one pill.
+        containerEffect.spacing = 0
+        let containerView = UIVisualEffectView(effect: containerEffect)
+        containerView.translatesAutoresizingMaskIntoConstraints = false
+        // Interactive glass scales a chip past its bounds on touch.
+        containerView.clipsToBounds = false
+        addSubview(containerView)
+
+        NSLayoutConstraint.activate([
+            containerView.topAnchor.constraint(equalTo: topAnchor),
+            containerView.bottomAnchor.constraint(equalTo: bottomAnchor),
+            containerView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            containerView.trailingAnchor.constraint(equalTo: trailingAnchor),
+        ])
+        return containerView.contentView
     }
 }
 #endif

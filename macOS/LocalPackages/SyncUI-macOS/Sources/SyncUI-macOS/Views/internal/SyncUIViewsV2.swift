@@ -79,4 +79,15 @@ enum SyncUIViewsV2 {
                 .foregroundColor(Color(designSystemColor: .textLink))
         }
     }
+
+    struct TextCaption: View {
+        let text: String
+
+        var body: some View {
+            Text(.init(text))
+                .font(.system(size: 11))
+                .foregroundColor(Color(designSystemColor: .textSecondary))
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
 }

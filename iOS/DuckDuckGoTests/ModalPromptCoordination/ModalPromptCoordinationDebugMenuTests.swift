@@ -25,8 +25,8 @@ import Testing
 @Suite("Modal Prompt Coordination Debug Menu")
 final class ModalPromptCoordinationDebugMenuTests {
 
-    @Test("View model formats modal and logical RMF identities without surface state")
-    func whenSnapshotChangesThenViewModelFormatsEveryReadOnlyValue() throws {
+    @Test("The view model formats service and exposure snapshots")
+    func whenSnapshotsChangeThenViewModelFormatsEveryReadOnlyValue() throws {
         let arbiter = PromoQueueLeaseArbiter()
         guard case .acquired(let modalLease) = arbiter.acquireModalLease() else {
             Issue.record("Expected modal lease acquisition")
@@ -55,7 +55,7 @@ final class ModalPromptCoordinationDebugMenuTests {
                 removalID: removalID,
                 removalTerminal: .hostDetached,
                 drainContinuation: .transferSameMessageIfAvailable,
-                selectedRemoteMessageRendererID: rendererID,
+                selectedRemoteMessageRendererID: nil,
                 renderers: [
                     PromoQueueRemoteMessageRendererSnapshot(
                         rendererID: rendererID,
@@ -63,12 +63,12 @@ final class ModalPromptCoordinationDebugMenuTests {
                         candidate: .available(messageID: remoteMessageSession.messageID),
                         isLocallyReady: true,
                         isAttachedToWindow: true,
-                        isEffectivelyEligible: true,
+                        isEffectivelyEligible: false,
                         isDeregistered: false
                     )
                 ],
-                registeredRendererCount: 3,
-                eligibleRendererCount: 2
+                registeredRendererCount: 1,
+                eligibleRendererCount: 0
             ),
             modalAttemptPhase: .committed(modalLease.attemptIdentity),
             hasPendingModalPrompt: true,
@@ -119,7 +119,7 @@ final class ModalPromptCoordinationDebugMenuTests {
         )
         #expect(viewModel.formattedRemoteMessageState == "Draining")
         #expect(viewModel.formattedRemoteMessageIdentity == "debug-promo — session \(sessionID.uuidString)")
-        #expect(viewModel.formattedSelectedRemoteMessageRenderer == rendererID.uuidString)
+        #expect(viewModel.formattedSelectedRemoteMessageRenderer == "None")
         #expect(viewModel.formattedRemoteMessageRenderer == "\(rendererID.uuidString) — generation \(generationID.uuidString)")
         #expect(viewModel.formattedRemoteMessagePresentation == presentationID.uuidString)
         #expect(
@@ -128,11 +128,11 @@ final class ModalPromptCoordinationDebugMenuTests {
         )
         #expect(viewModel.formattedRemoteMessageQueueAppearance == "Confirmed")
         #expect(viewModel.formattedRemoteMessagePhysicalAppearance == "Reported")
-        #expect(viewModel.formattedRemoteMessageRendererCounts == "3 registered — 2 eligible")
+        #expect(viewModel.formattedRemoteMessageRendererCounts == "1 registered — 0 eligible")
         #expect(
             viewModel.formattedRemoteMessageRenderers
                 == "\(rendererID.uuidString) — generation \(generationID.uuidString) — available(debug-promo) — "
-                    + "locally ready — attached — effectively eligible — registered"
+                    + "locally ready — attached — effectively ineligible — registered"
         )
         #expect(viewModel.formattedLastConfirmedModalAppearance == "timestamp:1800000000")
         #expect(viewModel.formattedLastConfirmedRemoteMessageAppearance == "timestamp:1800000001")
@@ -141,7 +141,7 @@ final class ModalPromptCoordinationDebugMenuTests {
 
         provider.snapshot = PromoQueueDebugSnapshot(
             mode: .legacy,
-            activeOwner: .modal(modalLease.attemptIdentity),
+            activeOwner: nil,
             remoteMessageCoordination: PromoQueueRemoteMessageCoordinationSnapshot(
                 state: .idle,
                 messageID: nil,
@@ -179,7 +179,7 @@ final class ModalPromptCoordinationDebugMenuTests {
         #expect(provider.snapshotReadCount == 2)
         #expect(exposureProvider.snapshotReadCount == 2)
         #expect(viewModel.formattedPromoQueueMode == "Legacy")
-        #expect(viewModel.formattedActiveOwner == "Modal — \(modalLease.attemptIdentity.debugIdentifier)")
+        #expect(viewModel.formattedActiveOwner == "None")
         #expect(viewModel.formattedModalAttemptPhase == "Idle")
         #expect(viewModel.formattedPendingModalState == "No")
         #expect(viewModel.formattedSuppressionState == "No")

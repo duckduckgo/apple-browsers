@@ -99,7 +99,7 @@ final class PromoQueueRemoteMessageCooldownKeyValueFilesStore: PromoQueueRemoteM
     ///
     /// In particular, a successful persistence read made only for diagnostics must not become the fallback for a
     /// later production read failure. Locally confirmed appearances remain authoritative for the current process.
-    func lastConfirmedRemoteMessageTimestampForPromoQueueDiagnostics() -> TimeInterval? {
+    fileprivate func lastConfirmedRemoteMessageTimestampForPromoQueueDiagnostics() -> TimeInterval? {
         if case .value(let timestamp) = locallyWrittenValue {
             return timestamp
         }
@@ -149,7 +149,6 @@ protocol PromoQueueCooldownPolicying: AnyObject {
     func evaluateRemoteMessageAdmission(now: Date) -> PromoQueueCooldownDecision
     func evaluateModalAdmission(now: Date) -> PromoQueueCooldownDecision
     func recordConfirmedRemoteMessageAppearance(at date: Date)
-    func snapshot(now: Date) -> PromoQueueCooldownSnapshot
 }
 
 @MainActor
@@ -169,24 +168,25 @@ final class PromoQueueCooldownPolicy: PromoQueueCooldownPolicying {
     }
 
     func evaluateRemoteMessageAdmission(now: Date) -> PromoQueueCooldownDecision {
-        let nextEligibility = snapshot(now: now).nextRemoteMessageEligibility
+        let lastAppearance = [
+            modalPresentationStore.lastPresentationTimestamp,
+            remoteMessagePresentationStore.lastConfirmedRemoteMessageTimestamp,
+        ]
+            .compactMap { $0 }
+            .map(Date.init(timeIntervalSince1970:))
+            .max()
+        let nextEligibility = lastAppearance?.addingTimeInterval(Self.remoteMessageTargetInterval)
         return decision(now: now, nextEligibility: nextEligibility)
     }
 
     func evaluateModalAdmission(now: Date) -> PromoQueueCooldownDecision {
-        let nextEligibility = snapshot(now: now).nextModalEligibility
+        let nextEligibility = remoteMessagePresentationStore.lastConfirmedRemoteMessageTimestamp
+            .map { Date(timeIntervalSince1970: $0).addingTimeInterval(Self.modalAfterRemoteMessageInterval) }
         return decision(now: now, nextEligibility: nextEligibility)
     }
 
     func recordConfirmedRemoteMessageAppearance(at date: Date) {
         remoteMessagePresentationStore.lastConfirmedRemoteMessageTimestamp = date.timeIntervalSince1970
-    }
-
-    func snapshot(now _: Date) -> PromoQueueCooldownSnapshot {
-        PromoQueueCooldownSnapshot.make(
-            lastModalTimestamp: modalPresentationStore.lastPresentationTimestamp,
-            lastRemoteMessageTimestamp: remoteMessagePresentationStore.lastConfirmedRemoteMessageTimestamp
-        )
     }
 
     private func decision(now: Date, nextEligibility: Date?) -> PromoQueueCooldownDecision {

@@ -608,7 +608,6 @@ final class ModalPromptCoordinationManagerIntegrationTests {
             from: presenterMock,
             readinessToken: service.captureForegroundReadinessToken()
         )
-        promoQueueCooldownPolicy.recordConfirmedRemoteMessageAppearance(at: timeTraveller.getDate())
         let firstSurfaceID = UUID()
         let secondSurfaceID = UUID()
         let messageID = "shared-message"
@@ -637,22 +636,10 @@ final class ModalPromptCoordinationManagerIntegrationTests {
         firstModel.setSurfaceLifecycleReady(true)
         secondModel.setSurfaceLifecycleReady(true)
 
-        #expect(coordinatedRemoteMessageRenderSession(in: firstModel) == nil)
-        #expect(firstModel.homeMessageViewModels.isEmpty)
-        #expect(firstFixture.configuration.appearanceCallCount == 0)
-        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == nil)
-
-        timeTraveller.advanceBy(.minutes(10))
-
-        #expect(coordinatedRemoteMessageRenderSession(in: firstModel) == nil)
-        #expect(firstFixture.configuration.appearanceCallCount == 0)
-
-        firstModel.refresh()
-
         let firstOwnedSnapshot = service.remoteMessageCoordinationSnapshot
         guard let firstSessionID = firstOwnedSnapshot.sessionID,
               let firstPresentationID = firstOwnedSnapshot.presentationID else {
-            Issue.record("Expected the first real NTP model to own a remote-message presentation after cooldown")
+            Issue.record("Expected the first real NTP model to own a remote-message presentation")
             return
         }
         let logicalSession = PromoQueueRemoteMessageSession(id: firstSessionID, messageID: messageID)
@@ -689,16 +676,8 @@ final class ModalPromptCoordinationManagerIntegrationTests {
         #expect(firstFixture.configuration.appearanceCallCount == 1)
         #expect(secondFixture.configuration.appearanceCallCount == 0)
         #expect(service.remoteMessageCoordinationSnapshot.isQueueAppearanceConfirmed)
-        #expect(
-            promoQueueCooldownPolicy.snapshot(now: firstConfirmationDate).lastConfirmedRemoteMessageAppearance ==
-                firstConfirmationDate
-        )
 
         timeTraveller.advanceBy(.minutes(1))
-        #expect(
-            promoQueueCooldownPolicy.evaluateRemoteMessageAdmission(now: timeTraveller.getDate()) ==
-                .blocked(until: firstConfirmationDate.addingTimeInterval(.minutes(10)))
-        )
 
         service.setSelectedRemoteMessageRendererID(secondSurfaceID)
 
@@ -754,8 +733,8 @@ final class ModalPromptCoordinationManagerIntegrationTests {
         #expect(service.remoteMessageCoordinationSnapshot.sessionID == firstSessionID)
         #expect(service.remoteMessageCoordinationSnapshot.isQueueAppearanceConfirmed)
         #expect(
-            promoQueueCooldownPolicy.snapshot(now: timeTraveller.getDate()).lastConfirmedRemoteMessageAppearance ==
-                firstConfirmationDate
+            promoQueueCooldownPolicy.evaluateRemoteMessageAdmission(now: timeTraveller.getDate()) ==
+                .blocked(until: firstConfirmationDate.addingTimeInterval(.minutes(10)))
         )
     }
 

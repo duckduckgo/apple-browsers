@@ -50,14 +50,12 @@ final class MockPromoQueueCooldownPolicy: PromoQueueCooldownPolicying {
     var modalAdmissionDecision: PromoQueueCooldownDecision = .eligible
     var remoteMessageAdmissionDecisionProvider: ((Date) -> PromoQueueCooldownDecision)?
     var modalAdmissionDecisionProvider: ((Date) -> PromoQueueCooldownDecision)?
-    var snapshotToReturn: PromoQueueCooldownSnapshot = .empty
     var onEvaluateRemoteMessageAdmission: ((Date) -> Void)?
     var onEvaluateModalAdmission: ((Date) -> Void)?
 
     private(set) var remoteMessageAdmissionDates = [Date]()
     private(set) var modalAdmissionDates = [Date]()
     private(set) var confirmedRemoteMessageAppearanceDates = [Date]()
-    private(set) var snapshotDates = [Date]()
 
     func evaluateRemoteMessageAdmission(now: Date) -> PromoQueueCooldownDecision {
         remoteMessageAdmissionDates.append(now)
@@ -73,11 +71,6 @@ final class MockPromoQueueCooldownPolicy: PromoQueueCooldownPolicying {
 
     func recordConfirmedRemoteMessageAppearance(at date: Date) {
         confirmedRemoteMessageAppearanceDates.append(date)
-    }
-
-    func snapshot(now: Date) -> PromoQueueCooldownSnapshot {
-        snapshotDates.append(now)
-        return snapshotToReturn
     }
 }
 

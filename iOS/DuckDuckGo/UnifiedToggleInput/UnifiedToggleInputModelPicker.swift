@@ -30,6 +30,7 @@ struct UnifiedToggleInputModelPickerContent {
         let subtitle: String?
         let provider: AIChatModel.ModelProvider
         let isDimmed: Bool
+        let requiredTierBadgeText: String?
 
         var emphasizedName: String {
             guard !isDimmed else { return "" }
@@ -59,7 +60,9 @@ struct UnifiedToggleInputModelPickerContent {
         itemsWithoutRecommendationLabel = groupedAvailableModels.withoutLabel.map {
             Item(model: $0, isDimmed: false, allowsSubtitle: true)
         }
-        gatedItems = groupedModels.gated.map { Item(model: $0.model, isDimmed: true, allowsSubtitle: false) }
+        gatedItems = groupedModels.gated.map {
+            Item(model: $0.model, isDimmed: true, allowsSubtitle: false, requiredTier: $0.requiredTier)
+        }
         self.selectedModelID = selectedModelID
         showsAvailableItemsSeparator = Self.shouldShowAvailableItemsSeparator(
             hasItemsWithRecommendationLabel: !groupedAvailableModels.withLabel.isEmpty,
@@ -91,14 +94,32 @@ struct UnifiedToggleInputModelPickerContent {
 }
 
 private extension UnifiedToggleInputModelPickerContent.Item {
-    init(model: AIChatModel, isDimmed: Bool, allowsSubtitle: Bool) {
+    init(
+        model: AIChatModel,
+        isDimmed: Bool,
+        allowsSubtitle: Bool,
+        requiredTier: AIChatModelPublicAccessTier? = nil) {
         self.init(
             id: model.id,
             name: model.name,
             subtitle: allowsSubtitle ? model.label?.localizedText : nil,
             provider: model.provider,
-            isDimmed: isDimmed
+            isDimmed: isDimmed,
+            requiredTierBadgeText: requiredTier?.modelPickerBadgeText
         )
+    }
+}
+
+private extension AIChatModelPublicAccessTier {
+    var modelPickerBadgeText: String? {
+        switch self {
+        case .free:
+            return nil
+        case .plus:
+            return UserText.aiChatPlusModelsSectionHeader.uppercased()
+        case .pro:
+            return UserText.aiChatProModelsSectionHeader.uppercased()
+        }
     }
 }
 
@@ -299,7 +320,6 @@ private struct UnifiedToggleInputModelPickerRow: View {
         .buttonStyle(.plain)
         .accessibilityIdentifier("ModelPicker.\(item.id)")
         .accessibilityAddTraits(isSelected ? .isSelected : [])
-        .opacity(item.isDimmed ? Metrics.disabledOpacity : 1)
         .frame(height: item.subtitle == nil ? Metrics.standardHeight : Metrics.subtitleHeight)
     }
 
@@ -320,13 +340,9 @@ private struct UnifiedToggleInputModelPickerRow: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
+            .opacity(item.isDimmed ? Metrics.disabledOpacity : 1)
 
-            Image(systemName: "checkmark")
-                .font(.body.weight(.semibold))
-                .foregroundStyle(Color(designSystemColor: .textPrimary))
-                .frame(width: Metrics.selectionWidth, height: Metrics.selectionHeight)
-                .opacity(isSelected ? 1 : 0)
-                .accessibilityHidden(true)
+            trailingContent
         }
         .padding(.leading, Metrics.leadingPadding)
         .padding(.trailing, Metrics.trailingPadding)
@@ -353,6 +369,24 @@ private struct UnifiedToggleInputModelPickerRow: View {
             .lineLimit(1)
     }
 
+    @ViewBuilder
+    private var trailingContent: some View {
+        if let requiredTierBadgeText = item.requiredTierBadgeText {
+            Text(requiredTierBadgeText)
+                .font(.footnote.weight(.medium))
+                .foregroundStyle(Color(designSystemColor: .textSecondary))
+                .lineLimit(1)
+                .frame(height: Metrics.trailingContentHeight)
+        } else {
+            Image(systemName: "checkmark")
+                .font(.body.weight(.semibold))
+                .foregroundStyle(Color(designSystemColor: .textPrimary))
+                .frame(width: Metrics.checkmarkWidth, height: Metrics.trailingContentHeight)
+                .opacity(isSelected ? 1 : 0)
+                .accessibilityHidden(true)
+        }
+    }
+
     private func icon(for provider: AIChatModel.ModelProvider) -> UIImage {
         switch provider {
         case .openAI:
@@ -373,8 +407,8 @@ private extension UnifiedToggleInputModelPickerRow {
     enum Metrics {
         static let standardHeight: CGFloat = 40
         static let subtitleHeight: CGFloat = 60
-        static let selectionWidth: CGFloat = 24
-        static let selectionHeight: CGFloat = 22
+        static let checkmarkWidth: CGFloat = 24
+        static let trailingContentHeight: CGFloat = 22
         static let itemSpacing: CGFloat = 6
         static let leadingSpacing: CGFloat = 8
         static let textSpacing: CGFloat = 2

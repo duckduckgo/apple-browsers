@@ -152,6 +152,11 @@ final class SubscriptionOnboardingDuckAIViewModel: ObservableObject {
         onRequestChat(selectedModelID)
     }
 
+    /// Ends the interstitial regardless of whether the hand-off above actually succeeded
+    func dismissInterstitial() {
+        isShowingInterstitial = false
+    }
+
     /// Leaves Duck.ai without starting a chat, moving the flow to the next section.
     func skip() {
         onNext()

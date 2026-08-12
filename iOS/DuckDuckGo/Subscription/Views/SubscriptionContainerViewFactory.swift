@@ -66,7 +66,8 @@ enum SubscriptionContainerViewFactory {
                                     dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
                                     wideEvent: WideEventManaging,
                                     featureFlagger: FeatureFlagger,
-                                    onboardingKeyValueStore: ThrowingKeyValueStoring?) -> some View {
+                                    onboardingKeyValueStore: ThrowingKeyValueStoring?,
+                                    meetsPIRLocaleRequirement: @escaping () -> Bool) -> some View {
 
         let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: subscriptionUserDefaults,
                                                                          pixelHandler: SubscriptionPixelHandler(source: .mainApp, pixelKit: PixelKit.shared))
@@ -114,7 +115,8 @@ enum SubscriptionContainerViewFactory {
                                                                        expirationReminderScheduler: AppDependencyProvider.shared.subscriptionExpirationReminderScheduler,
                                                                        isExpirationReminderFeatureEnabled: { featureFlagger.isFeatureOn(.subscriptionExpirationReminderNotification) }),
             dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider,
-            onboardingKeyValueStore: onboardingKeyValueStore
+            onboardingKeyValueStore: onboardingKeyValueStore,
+            meetsPIRLocaleRequirement: meetsPIRLocaleRequirement
         )
         viewModel.email.setEmailFlowMode(.restoreFlow)
         return SubscriptionContainerView(currentView: .subscribe, viewModel: viewModel, featureFlagger: featureFlagger)
@@ -133,7 +135,8 @@ enum SubscriptionContainerViewFactory {
                                    dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
                                    wideEvent: WideEventManaging,
                                    featureFlagger: FeatureFlagger,
-                                   onboardingKeyValueStore: ThrowingKeyValueStoring?) -> some View {
+                                   onboardingKeyValueStore: ThrowingKeyValueStoring?,
+                                   meetsPIRLocaleRequirement: @escaping () -> Bool) -> some View {
         if let redirectURLComponents,
            SubscriptionPurchaseFlowPath.isPlansPath(redirectURLComponents.path) {
             makePlansFlowV2(redirectURLComponents: redirectURLComponents,
@@ -157,7 +160,8 @@ enum SubscriptionContainerViewFactory {
                                 dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider,
                                 wideEvent: wideEvent,
                                 featureFlagger: featureFlagger,
-                                onboardingKeyValueStore: onboardingKeyValueStore)
+                                onboardingKeyValueStore: onboardingKeyValueStore,
+                                meetsPIRLocaleRequirement: meetsPIRLocaleRequirement)
         }
     }
 
@@ -203,7 +207,9 @@ enum SubscriptionContainerViewFactory {
                                                        userScript: SubscriptionPagesUserScript(),
                                                        userScriptsDependencies: userScriptsDependencies,
                                                        subFeature: subscriptionPagesUseSubscriptionFeature,
-                                                       dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider)
+                                                       dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider,
+                                                       onboardingKeyValueStore: nil,
+                                                       meetsPIRLocaleRequirement: { false })
         viewModel.email.setEmailFlowMode(.restoreFlow)
         return SubscriptionContainerView(currentView: .restore, viewModel: viewModel, featureFlagger: featureFlagger)
             .environmentObject(navigationCoordinator)
@@ -267,7 +273,9 @@ enum SubscriptionContainerViewFactory {
                                                                        requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager),
                                                                        expirationReminderScheduler: AppDependencyProvider.shared.subscriptionExpirationReminderScheduler,
                                                                        isExpirationReminderFeatureEnabled: { featureFlagger.isFeatureOn(.subscriptionExpirationReminderNotification) }),
-            dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider
+            dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider,
+            onboardingKeyValueStore: nil,
+            meetsPIRLocaleRequirement: { false }
         )
         return SubscriptionContainerView(currentView: .subscribe, viewModel: viewModel, featureFlagger: featureFlagger)
             .environmentObject(navigationCoordinator)
@@ -315,7 +323,9 @@ enum SubscriptionContainerViewFactory {
                                                                        requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager),
                                                                        expirationReminderScheduler: AppDependencyProvider.shared.subscriptionExpirationReminderScheduler,
                                                                        isExpirationReminderFeatureEnabled: { featureFlagger.isFeatureOn(.subscriptionExpirationReminderNotification) }),
-            dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider
+            dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider,
+            onboardingKeyValueStore: nil,
+            meetsPIRLocaleRequirement: { false }
         )
 
         viewModel.email.setEmailFlowMode(emailFlow)

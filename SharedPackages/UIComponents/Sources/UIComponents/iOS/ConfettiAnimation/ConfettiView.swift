@@ -182,6 +182,7 @@ private struct ConfettiCanvas: View, Animatable {
     private func draw(in graphics: inout GraphicsContext, size: CGSize) {
         let tick = progress * configuration.duration * Self.ticksPerSecond
         let anchor = CGPoint(x: size.width * origin.x, y: size.height * origin.y)
+        let shadings = resolvedShadings(in: graphics)
 
         for particle in particles {
             let opacity = particle.opacity(atProgress: progress)
@@ -192,6 +193,7 @@ private struct ConfettiCanvas: View, Animatable {
 
             let offset = particle.offset(atTick: tick, configuration: configuration)
             let variant = particle.variant
+            let shading = shadings[particle.colorIndex]
 
             // The transform goes on the context rather than into `Path.applying`, which would rebuild both
             // paths — 100+ curve segments each for the star and blob outlines — for every particle, every
@@ -202,13 +204,18 @@ private struct ConfettiCanvas: View, Animatable {
             layer.rotate(by: .radians(particle.rotation(atProgress: progress)))
             layer.scaleBy(x: scale, y: scale)
 
-            layer.fill(variant.body, with: .color(particle.color.fill))
+            layer.fill(variant.body, with: shading.body)
 
             if variant.clipsOutlineToBody {
                 layer.clip(to: variant.body)
             }
-            layer.fill(variant.outline, with: .color(particle.color.stroke))
+            layer.fill(variant.outline, with: shading.outline)
         }
+    }
+
+    private func resolvedShadings(in graphics: GraphicsContext) -> [(body: GraphicsContext.Shading, outline: GraphicsContext.Shading)] {
+        let palette = configuration.colors.isEmpty ? ConfettiColor.brand : configuration.colors
+        return palette.map { (graphics.resolve(.color($0.fill)), graphics.resolve(.color($0.stroke))) }
     }
 }
 
@@ -234,7 +241,7 @@ private struct Particle {
     private static let fadeMidFraction: Double = 0.6
 
     let variant: ConfettiShape.Variant
-    let color: ConfettiColor
+    let colorIndex: Int
     let angle: Double
     /// `cos`/`sin` of `angle` and the wobble's starting phase, all fixed at init — recomputing them per
     /// frame was ~54,000 redundant transcendental calls over a single burst.
@@ -254,7 +261,7 @@ private struct Particle {
     init(configuration: ConfettiView.Configuration, using generator: inout SeededGenerator) {
         let shape = configuration.shapes.randomElement(using: &generator) ?? .rect
         variant = shape.variants.randomElement(using: &generator) ?? ConfettiShape.rect.variants[0]
-        color = configuration.colors.randomElement(using: &generator) ?? ConfettiColor.brandMandarin
+        colorIndex = configuration.colors.indices.randomElement(using: &generator) ?? 0
 
         // Straight up is -90°, with the spread opening symmetrically around it.
         let spread = configuration.spreadDegrees * .pi / 180

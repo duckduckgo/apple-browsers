@@ -104,8 +104,11 @@ final class SubscriptionFlowViewModel: ObservableObject {
     /// `nil` unless this flow came from `makeSubscribeFlowV2`
     private let onboardingKeyValueStore: ThrowingKeyValueStoring?
 
+    private let meetsPIRLocaleRequirement: () -> Bool
+
     private var isPIRAvailable: Bool {
         PIRAvailability.isAvailable(isPIREnabled: isPIREnabled,
+                                    meetsLocaleRequirement: meetsPIRLocaleRequirement(),
                                     provider: dataBrokerProtectionViewControllerProvider)
     }
 
@@ -165,7 +168,8 @@ final class SubscriptionFlowViewModel: ObservableObject {
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          wideEvent: WideEventManaging = AppDependencyProvider.shared.wideEvent,
          dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
-         onboardingKeyValueStore: ThrowingKeyValueStoring?) {
+         onboardingKeyValueStore: ThrowingKeyValueStoring?,
+         meetsPIRLocaleRequirement: @escaping () -> Bool) {
         self.initialURL = initialURL
         self.flowType = flowType
         self.userScript = userScript
@@ -177,6 +181,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
         self.wideEvent = wideEvent
         self.dataBrokerProtectionViewControllerProvider = dataBrokerProtectionViewControllerProvider
         self.onboardingKeyValueStore = onboardingKeyValueStore
+        self.meetsPIRLocaleRequirement = meetsPIRLocaleRequirement
         let allowedDomains = AsyncHeadlessWebViewSettings.makeAllowedDomains(baseURL: subscriptionManager.url(for: .baseURL),
                                                                              isInternalUser: isInternalUser)
 

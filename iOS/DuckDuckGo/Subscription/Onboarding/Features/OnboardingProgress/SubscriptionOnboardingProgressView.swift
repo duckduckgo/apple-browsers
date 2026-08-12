@@ -46,7 +46,6 @@ struct SubscriptionOnboardingProgressView: View {
     @ObservedObject private var pirLaunch: SubscriptionOnboardingPIRLaunchState
 
     @State private var completedItems: Set<SubscriptionOnboardingChecklistItem>
-    @State private var percentage: Int
 
     @State private var didTriggerConfetti = false
 
@@ -64,7 +63,6 @@ struct SubscriptionOnboardingProgressView: View {
         self.onPIRPresentationChanged = onPIRPresentationChanged
         _pirLaunch = ObservedObject(wrappedValue: pirLaunch ?? SubscriptionOnboardingPIRLaunchState())
         _completedItems = State(initialValue: progress.completedItems)
-        _percentage = State(initialValue: progress.percentage)
         self.title = title
         self.navigationButton = navigationButton
         self.onSelectItem = onSelectItem
@@ -97,9 +95,13 @@ struct SubscriptionOnboardingProgressView: View {
         }
     }
 
+    private var percentage: Int {
+        SubscriptionOnboardingChecklistItem.completionPercentage(completed: completedItems,
+                                                                checklist: progress.checklistItems)
+    }
+
     private func refresh() {
         completedItems = progress.completedItems
-        percentage = progress.percentage
 
         guard shouldCelebrate, !didTriggerConfetti else { return }
         didTriggerConfetti = true

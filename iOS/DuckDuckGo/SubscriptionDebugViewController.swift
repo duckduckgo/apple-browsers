@@ -21,6 +21,7 @@ import UIKit
 import SwiftUI
 import WebKit
 import BrowserServicesKit
+import FoundationExtensions
 import Subscription
 import Core
 import VPN
@@ -1038,7 +1039,7 @@ final class SubscriptionDebugViewController: UITableViewController {
             return
         }
         var store = SubscriptionOnboardingProgressPersistor(keyValueStore: keyValueStore)
-        store.cardFirstShownDate = Date().addingTimeInterval(-15 * 24 * 60 * 60)
+        store.cardFirstShownDate = Date().addingTimeInterval(-TimeInterval.days(15))
         showAlert(title: "Setup card aged past 14 days")
     }
 
@@ -1055,18 +1056,5 @@ final class SubscriptionDebugViewController: UITableViewController {
 extension Bool {
     fileprivate var toString: String {
         String(self)
-    }
-}
-
-
-extension SubscriptionDebugViewController: SubscriptionOnboardingSectionDelegate {
-    func sectionDidComplete(_ section: SubscriptionOnboardingSection) {}
-
-    func sectionDidRequestDuckAIChat(modelID: String?) {
-        SubscriptionOnboardingDuckAIChatLauncher().launch(modelID: modelID)
-    }
-
-    func sectionDidRequestAdvance() {
-        dismiss(animated: true)
     }
 }

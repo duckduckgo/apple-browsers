@@ -19,7 +19,7 @@
 
 import SwiftUI
 
-// (TODO|Post-iOS15-Drop): fold back into the flow view model, which can then publish more than `path`.
+// (TODO|Post-iOS15-Drop): fold back into the flow view model
 /// The PIR launch's presentation
 @MainActor
 final class SubscriptionOnboardingPIRLaunchState: ObservableObject {

@@ -18,8 +18,13 @@
 //
 
 import Foundation
+import FoundationExtensions
 import Persistence
 import os.log
+
+/// Serializes the read-decide-write sequences below across every `SubscriptionOnboardingProgressPersisting`
+/// conformer.
+private let progressLock = NSLock()
 
 /// Storage for onboarding progress. Reads and writes only — no rules about what the values mean.
 protocol SubscriptionOnboardingProgressPersisting {
@@ -33,12 +38,16 @@ protocol SubscriptionOnboardingProgressPersisting {
 extension SubscriptionOnboardingProgressPersisting {
 
     mutating func markComplete(_ item: SubscriptionOnboardingChecklistItem) {
+        progressLock.lock()
+        defer { progressLock.unlock() }
         guard !completedItems.contains(item) else { return }
         completedItems.insert(item)
     }
 
     /// First write wins, so a later display cannot extend the 14-day window.
     mutating func recordCardFirstShownIfNeeded(now: Date) {
+        progressLock.lock()
+        defer { progressLock.unlock() }
         guard cardFirstShownDate == nil else { return }
         cardFirstShownDate = now
     }
@@ -88,7 +97,7 @@ struct SubscriptionOnboardingProgressPersistor: SubscriptionOnboardingProgressPe
 struct SubscriptionOnboardingProgress {
 
     /// How long the Subscription Settings card lives, measured from its first display.
-    private static let cardLifetime: TimeInterval = 14 * 24 * 60 * 60
+    private static let cardLifetime: TimeInterval = .days(14)
 
     /// Four items when PIR is unreachable, so that customer's ceiling is still 100%.
     let checklistItems: [SubscriptionOnboardingChecklistItem]
@@ -114,24 +123,32 @@ struct SubscriptionOnboardingProgress {
         persistor.markComplete(item)
     }
 
-    /// Two rules, both from the PRD:
-    ///
     /// - On reaching 100% the card stays up for the rest of that run and goes on the next launch
     /// - It expires 14 days after it first appeared, whether or not the customer finished.
-    ///
-    /// Writes as it decides. Seed `@State` from ``previewShouldShowSetupCard``
-    /// instead.
     mutating func shouldShowSetupCard(now: Date, session: SubscriptionOnboardingSessionStating) -> Bool {
         if percentage >= 100 {
-            if persistor.fullyCompletedAt == nil {
-                persistor.fullyCompletedAt = now
+            let wasAlreadyComplete: Bool
+            do {
+                progressLock.lock()
+                defer { progressLock.unlock() }
+                wasAlreadyComplete = persistor.fullyCompletedAt != nil
+                if !wasAlreadyComplete {
+                    persistor.fullyCompletedAt = now
+                }
+            }
+
+            if !wasAlreadyComplete {
                 session.recordCompletedDuringThisSession()
             }
             guard session.didCompleteDuringThisSession else { return false }
         }
 
         persistor.recordCardFirstShownIfNeeded(now: now)
-        // A failed write leaves no anchor to measure from; showing the card beats hiding it forever.
+        return isWithinCardLifetime(now: now)
+    }
+
+    // A failed write leaves no anchor to measure from; but showing the card beats hiding it forever.
+    private func isWithinCardLifetime(now: Date) -> Bool {
         guard let firstShown = persistor.cardFirstShownDate else { return true }
         return now.timeIntervalSince(firstShown) < Self.cardLifetime
     }
@@ -143,8 +160,7 @@ struct SubscriptionOnboardingProgress {
         if percentage >= 100 {
             guard session.didCompleteDuringThisSession || persistor.fullyCompletedAt != nil else { return false }
         }
-        guard let firstShown = persistor.cardFirstShownDate else { return true }
-        return now.timeIntervalSince(firstShown) < Self.cardLifetime
+        return isWithinCardLifetime(now: now)
     }
 }
 

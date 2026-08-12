@@ -236,8 +236,6 @@ private extension SubscriptionOnboardingBaseView {
 
     /// A footer button's underlying control: a `Button` for a tap action, or a `NavigationLink` for a push
     /// destination. The button style is applied by the caller so both cases share it.
-    // (TODO|Post-iOS15-Drop): `NavigationLink(destination:)` builds its destination eagerly and re-derives it
-    // on every body pass. Move to `NavigationLink(value:)` + `navigationDestination(for:)`.
     @ViewBuilder
     func footerControl(_ button: SubscriptionOnboardingFooterButton) -> some View {
         switch button.action {

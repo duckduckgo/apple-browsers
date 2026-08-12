@@ -209,6 +209,7 @@ final class SettingsViewModel: ObservableObject {
     /// Whether this customer can use PIR: the feature flag is on and the app exposes a PIR view controller.
     var isPIRAvailable: Bool {
         PIRAvailability.isAvailable(isPIREnabled: isPIREnabled,
+                                    meetsLocaleRequirement: meetsLocaleRequirement,
                                     provider: dataBrokerProtectionViewControllerProvider)
     }
 

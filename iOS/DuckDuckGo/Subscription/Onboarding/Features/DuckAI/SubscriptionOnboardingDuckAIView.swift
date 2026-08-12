@@ -39,7 +39,7 @@ struct SubscriptionOnboardingDuckAIView: View {
     @State private var isShowingInfoSheet = false
 
     /// How long the interstitial holds before the chat is requested, if the customer doesn't tap through.
-    private static let interstitialDuration: TimeInterval = 3
+    private static let interstitialDuration: TimeInterval = 2
 
     init(viewModel: @autoclosure @escaping () -> SubscriptionOnboardingDuckAIViewModel,
          title: String? = nil,
@@ -86,6 +86,7 @@ private extension SubscriptionOnboardingDuckAIView {
             try? await Task.sleep(nanoseconds: UInt64(Self.interstitialDuration * 1_000_000_000))
             guard !Task.isCancelled else { return }
             viewModel.handOffToChat()
+            viewModel.dismissInterstitial()
         }
     }
 }

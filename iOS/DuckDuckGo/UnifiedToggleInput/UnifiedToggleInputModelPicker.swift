@@ -29,16 +29,13 @@ struct UnifiedToggleInputModelPickerContent {
         let name: String
         let subtitle: String?
         let provider: AIChatModel.ModelProvider
-        let isDimmed: Bool
         let requiredTierBadgeText: String?
 
         var emphasizedName: String {
-            guard !isDimmed else { return "" }
-            return name.split(separator: " ", maxSplits: 1).first.map(String.init) ?? name
+            name.split(separator: " ", maxSplits: 1).first.map(String.init) ?? name
         }
 
         var remainingName: String {
-            guard !isDimmed else { return name }
             let components = name.split(separator: " ", maxSplits: 1).map(String.init)
             return components.count > 1 ? " \(components[1])" : ""
         }
@@ -55,13 +52,13 @@ struct UnifiedToggleInputModelPickerContent {
         let groupedModels = AIChatModelSectionBuilder.groupByAccess(models: models)
         let groupedAvailableModels = AIChatModelSectionBuilder.groupByRecommendationLabel(models: groupedModels.accessible)
         itemsWithRecommendationLabel = groupedAvailableModels.withLabel.map {
-            Item(model: $0, isDimmed: false, allowsSubtitle: true)
+            Item(model: $0, allowsSubtitle: true)
         }
         itemsWithoutRecommendationLabel = groupedAvailableModels.withoutLabel.map {
-            Item(model: $0, isDimmed: false, allowsSubtitle: true)
+            Item(model: $0, allowsSubtitle: true)
         }
         gatedItems = groupedModels.gated.map {
-            Item(model: $0.model, isDimmed: true, allowsSubtitle: false, requiredTier: $0.requiredTier)
+            Item(model: $0.model, allowsSubtitle: false, requiredTier: $0.requiredTier)
         }
         self.selectedModelID = selectedModelID
         showsAvailableItemsSeparator = Self.shouldShowAvailableItemsSeparator(
@@ -96,7 +93,6 @@ struct UnifiedToggleInputModelPickerContent {
 private extension UnifiedToggleInputModelPickerContent.Item {
     init(
         model: AIChatModel,
-        isDimmed: Bool,
         allowsSubtitle: Bool,
         requiredTier: AIChatModelPublicAccessTier? = nil) {
         self.init(
@@ -104,7 +100,6 @@ private extension UnifiedToggleInputModelPickerContent.Item {
             name: model.name,
             subtitle: allowsSubtitle ? model.label?.localizedText : nil,
             provider: model.provider,
-            isDimmed: isDimmed,
             requiredTierBadgeText: requiredTier?.modelPickerBadgeText
         )
     }
@@ -340,7 +335,6 @@ private struct UnifiedToggleInputModelPickerRow: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .opacity(item.isDimmed ? Metrics.disabledOpacity : 1)
 
             trailingContent
         }
@@ -415,7 +409,6 @@ private extension UnifiedToggleInputModelPickerRow {
         static let leadingPadding: CGFloat = 6
         static let trailingPadding: CGFloat = 8
         static let iconSize: CGFloat = 16
-        static let disabledOpacity = 0.3
     }
 }
 

@@ -1,5 +1,5 @@
 //
-//  PixelKit.Event.swift
+//  PixelKit+Event.swift
 //
 //  Copyright © 2023 DuckDuckGo. All rights reserved.
 //

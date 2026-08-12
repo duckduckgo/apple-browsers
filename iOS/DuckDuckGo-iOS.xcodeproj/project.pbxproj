@@ -271,6 +271,16 @@
 		3666D86730017A6800B63F99 /* SubscriptionOnboardingCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3666D86630017A6800B63F99 /* SubscriptionOnboardingCard.swift */; };
 		3666D86D30017B1400B63F99 /* RebrandedPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3666D86B30017B1400B63F99 /* RebrandedPreview.swift */; };
 		3666D8753001917B00B63F99 /* SubscriptionOnboardingChecklistItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3666D8733001917B00B63F99 /* SubscriptionOnboardingChecklistItem.swift */; };
+		36DD9FD7302B88A600D12A6A /* GraphicLottieRenderer+App.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36DD9FD6302B88A600D12A6A /* GraphicLottieRenderer+App.swift */; };
+		36DD9FD9302BA75500D12A6A /* SubscriptionOnboardingProtectionOverviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36DD9FD8302BA75500D12A6A /* SubscriptionOnboardingProtectionOverviewView.swift */; };
+		368349D5302689AC009BDEF7 /* SubscriptionOnboardingFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 368349D4302689AC009BDEF7 /* SubscriptionOnboardingFlowView.swift */; };
+		368349DD30268A09009BDEF7 /* SubscriptionOnboardingLauncher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 368349DC30268A09009BDEF7 /* SubscriptionOnboardingLauncher.swift */; };
+		368349DB302689D8009BDEF7 /* SubscriptionOnboardingViewFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 368349DA302689D8009BDEF7 /* SubscriptionOnboardingViewFactory.swift */; };
+		36E82751302657A800147F78 /* subscription-hero.json in Resources */ = {isa = PBXBuildFile; fileRef = 36E82750302657A800147F78 /* subscription-hero.json */; };
+		36E8274B3026506A00147F78 /* SubscriptionOnboardingOrderConfirmationViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36E8274A3026506A00147F78 /* SubscriptionOnboardingOrderConfirmationViewModelTests.swift */; };
+		36E8274D3026508B00147F78 /* SubscriptionOnboardingProgressCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36E8274C3026508B00147F78 /* SubscriptionOnboardingProgressCardView.swift */; };
+		36E8274830264E8300147F78 /* SubscriptionOnboardingOrderConfirmationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36E8274630264E8300147F78 /* SubscriptionOnboardingOrderConfirmationView.swift */; };
+		36E8274930264E8300147F78 /* SubscriptionOnboardingOrderConfirmationViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36E8274730264E8300147F78 /* SubscriptionOnboardingOrderConfirmationViewModel.swift */; };
 		36699A30302CD4F600D1E3EE /* PIRAvailability.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36699A2F302CD4F600D1E3EE /* PIRAvailability.swift */; };
 		3677BA07302B78D2004E95E3 /* SubscriptionOnboardingActivationRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3677BA04302B78D2004E95E3 /* SubscriptionOnboardingActivationRecorder.swift */; };
 		3677BA08302B78D2004E95E3 /* SubscriptionOnboardingProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3677BA05302B78D2004E95E3 /* SubscriptionOnboardingProgress.swift */; };
@@ -3217,6 +3227,16 @@
 		3666D86630017A6800B63F99 /* SubscriptionOnboardingCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingCard.swift; sourceTree = "<group>"; };
 		3666D86B30017B1400B63F99 /* RebrandedPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RebrandedPreview.swift; sourceTree = "<group>"; };
 		3666D8733001917B00B63F99 /* SubscriptionOnboardingChecklistItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingChecklistItem.swift; sourceTree = "<group>"; };
+		36DD9FD6302B88A600D12A6A /* GraphicLottieRenderer+App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "GraphicLottieRenderer+App.swift"; sourceTree = "<group>"; };
+		36DD9FD8302BA75500D12A6A /* SubscriptionOnboardingProtectionOverviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingProtectionOverviewView.swift; sourceTree = "<group>"; };
+		368349D4302689AC009BDEF7 /* SubscriptionOnboardingFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingFlowView.swift; sourceTree = "<group>"; };
+		368349DC30268A09009BDEF7 /* SubscriptionOnboardingLauncher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingLauncher.swift; sourceTree = "<group>"; };
+		368349DA302689D8009BDEF7 /* SubscriptionOnboardingViewFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingViewFactory.swift; sourceTree = "<group>"; };
+		36E82750302657A800147F78 /* subscription-hero.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = subscription-hero.json; sourceTree = "<group>"; };
+		36E8274A3026506A00147F78 /* SubscriptionOnboardingOrderConfirmationViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingOrderConfirmationViewModelTests.swift; sourceTree = "<group>"; };
+		36E8274C3026508B00147F78 /* SubscriptionOnboardingProgressCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OnboardingProgress/SubscriptionOnboardingProgressCardView.swift"; sourceTree = "<group>"; };
+		36E8274630264E8300147F78 /* SubscriptionOnboardingOrderConfirmationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OrderConfirmation/SubscriptionOnboardingOrderConfirmationView.swift"; sourceTree = "<group>"; };
+		36E8274730264E8300147F78 /* SubscriptionOnboardingOrderConfirmationViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OrderConfirmation/SubscriptionOnboardingOrderConfirmationViewModel.swift"; sourceTree = "<group>"; };
 		36699A2F302CD4F600D1E3EE /* PIRAvailability.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PIRAvailability.swift; sourceTree = "<group>"; };
 		3677BA04302B78D2004E95E3 /* SubscriptionOnboardingActivationRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingActivationRecorder.swift; sourceTree = "<group>"; };
 		3677BA05302B78D2004E95E3 /* SubscriptionOnboardingProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingProgress.swift; sourceTree = "<group>"; };
@@ -6114,6 +6134,7 @@
 			isa = PBXGroup;
 			children = (
 				6FB864C42ED0CE1100E8333F /* ListExtension.swift */,
+				36DD9FD6302B88A600D12A6A /* GraphicLottieRenderer+App.swift */,
 				1E24295D293F57FA00584836 /* LottieView.swift */,
 				1E162604296840D80004127F /* Triangle.swift */,
 				1E1626062968413B0004127F /* ViewExtension.swift */,
@@ -7029,10 +7050,7 @@
 			isa = PBXGroup;
 			children = (
 				3666D86630017A6800B63F99 /* SubscriptionOnboardingCard.swift */,
-				3666D85C30016E4D00B63F99 /* SubscriptionOnboardingProgressView.swift */,
-				36208F763005742400EB6335 /* SubscriptionOnboardingSetupCard.swift */,
 				36208F743005707600EB6335 /* SubscriptionOnboardingShowcaseCard.swift */,
-				3666D85B30016E4D00B63F99 /* SubscriptionOnboardingFreeTrialCalendarCard.swift */,
 				178EFB7398B7AB474F366BAA /* SubscriptionOnboardingBaseView.swift */,
 				D7916A1677761825AA258550 /* SubscriptionOnboardingHeaderView.swift */,
 				805FC085FDE8FE82A5752D91 /* SubscriptionOnboardingNavigationContainer.swift */,
@@ -7068,6 +7086,7 @@
 			children = (
 				3666D879300193EA00B63F99 /* check-color.json */,
 				476A68112A66CB1C5BBDC94E /* vpn-v4.json */,
+				36E82750302657A800147F78 /* subscription-hero.json */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -7427,6 +7446,15 @@
 				70AA0BDA5B192D7F634F5112 /* SubscriptionOnboardingWelcomeView.swift */,
 				1FB20C7A9A1F8C8AB5BA4C81 /* DuckAI */,
 				DFA8FBBD246E7F2032437DD6 /* VPN */,
+				36DD9FD8302BA75500D12A6A /* SubscriptionOnboardingProtectionOverviewView.swift */,
+				36208F763005742400EB6335 /* SubscriptionOnboardingSetupCard.swift */,
+				3666D85C30016E4D00B63F99 /* SubscriptionOnboardingProgressView.swift */,
+				36E8274C3026508B00147F78 /* SubscriptionOnboardingProgressCardView.swift */,
+				3666D85B30016E4D00B63F99 /* SubscriptionOnboardingFreeTrialCalendarCard.swift */,
+				36E8274630264E8300147F78 /* SubscriptionOnboardingOrderConfirmationView.swift */,
+				36E8274730264E8300147F78 /* SubscriptionOnboardingOrderConfirmationViewModel.swift */,
+				E7B55B2CA9642F8C5023F9E9 /* SubscriptionOnboardingVPNWidgetEducationView.swift */,
+				9779E9CF15760D18FCBCD448 /* SubscriptionOnboardingVPNTipsView.swift */,
 			);
 			path = Features;
 			sourceTree = "<group>";
@@ -9896,6 +9924,9 @@
 			children = (
 				93434FDB10CB6359CBB62C37 /* SubscriptionOnboardingPrefetcher.swift */,
 				368349D6302689C3009BDEF7 /* SubscriptionOnboardingFlowViewModel.swift */,
+				368349D4302689AC009BDEF7 /* SubscriptionOnboardingFlowView.swift */,
+				368349DA302689D8009BDEF7 /* SubscriptionOnboardingViewFactory.swift */,
+				368349DC30268A09009BDEF7 /* SubscriptionOnboardingLauncher.swift */,
 				33BA1D31FEB8CEE8EAE9DEDF /* SubscriptionOnboardingSectionDelegate.swift */,
 			);
 			path = Navigation;
@@ -11182,8 +11213,6 @@
 				1FE82A5A9A4070D8CD2EF9B2 /* SubscriptionOnboardingVPNActivationView.swift */,
 				27F51104EAB9108C45BEA81D /* SubscriptionOnboardingVPNActivationViewModel.swift */,
 				400B261D8DC4DF44729F8CAD /* TapAllowHintOverlayWindow.swift */,
-				E7B55B2CA9642F8C5023F9E9 /* SubscriptionOnboardingVPNWidgetEducationView.swift */,
-				9779E9CF15760D18FCBCD448 /* SubscriptionOnboardingVPNTipsView.swift */,
 				F773BFAFFD82A0D714B8F35D /* SubscriptionOnboardingConnectionInfoService.swift */,
 				82B9BA7199137531335CBA79 /* SubscriptionOnboardingVPNInfoCard.swift */,
 				CF4EACA555AC4CBD6835C219 /* SubscriptionOnboardingListItemView.swift */,
@@ -13076,6 +13105,7 @@
 				0A6CC0EF23904D5400E4F627 /* Settings.bundle in Resources */,
 				85A9C37920E0E00C00073340 /* HomeRow.xcassets in Resources */,
 				3666D87A300193EA00B63F99 /* check-color.json in Resources */,
+				36E82751302657A800147F78 /* subscription-hero.json in Resources */,
 				1E908BF229827C480008C8F3 /* autoconsent-bundle.js in Resources */,
 				ED39ED412FE607620011B7C3 /* confirmation-prompt-128.json in Resources */,
 				F143C2B21E49D78C00CFDE3A /* Assets.xcassets in Resources */,
@@ -13828,6 +13858,14 @@
 				C153BE2F2EC4E0A9001B9757 /* AutofillExtensionPromotionHeaderView.swift in Sources */,
 				CBB4A85D2FD318BE00A65956 /* SearchSuggestionsSource.swift in Sources */,
 				3666D8753001917B00B63F99 /* SubscriptionOnboardingChecklistItem.swift in Sources */,
+				36DD9FD7302B88A600D12A6A /* GraphicLottieRenderer+App.swift in Sources */,
+				36DD9FD9302BA75500D12A6A /* SubscriptionOnboardingProtectionOverviewView.swift in Sources */,
+				368349D5302689AC009BDEF7 /* SubscriptionOnboardingFlowView.swift in Sources */,
+				368349DD30268A09009BDEF7 /* SubscriptionOnboardingLauncher.swift in Sources */,
+				368349DB302689D8009BDEF7 /* SubscriptionOnboardingViewFactory.swift in Sources */,
+				36E8274830264E8300147F78 /* SubscriptionOnboardingOrderConfirmationView.swift in Sources */,
+				36E8274930264E8300147F78 /* SubscriptionOnboardingOrderConfirmationViewModel.swift in Sources */,
+				36E8274D3026508B00147F78 /* SubscriptionOnboardingProgressCardView.swift in Sources */,
 				36699A30302CD4F600D1E3EE /* PIRAvailability.swift in Sources */,
 				3677BA07302B78D2004E95E3 /* SubscriptionOnboardingActivationRecorder.swift in Sources */,
 				3677BA08302B78D2004E95E3 /* SubscriptionOnboardingProgress.swift in Sources */,
@@ -14836,6 +14874,7 @@
 				9CF2A679A5C82A51D01D49C0 /* SubscriptionOnboardingSectionTests.swift in Sources */,
 				368349DF30268B2E009BDEF7 /* SubscriptionOnboardingFlowViewModelTests.swift in Sources */,
 				36DD9FE2302BB9A600D12A6A /* SubscriptionOnboardingProgressTests.swift in Sources */,
+				36E8274B3026506A00147F78 /* SubscriptionOnboardingOrderConfirmationViewModelTests.swift in Sources */,
 				CB3B4D4E2D63910B006DAD63 /* LaunchActionHandlerTests.swift in Sources */,
 				CBAD0F1F2D02EE45006267B8 /* IdleReturnEvaluatorTests.swift in Sources */,
 				97D99E642F7420A900EE34E7 /* AIVoiceChatIntentTests.swift in Sources */,

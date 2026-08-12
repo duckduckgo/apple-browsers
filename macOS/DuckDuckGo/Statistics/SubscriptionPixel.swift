@@ -31,7 +31,7 @@ enum SubscriptionAppMenuEntryStatus: String {
     case freeIneligible = "free-ineligible"
 }
 
-enum SubscriptionPixel: PixelKitEvent {
+enum SubscriptionPixel: PixelKit.Event {
     // Subscription
     case subscriptionActive(AuthVersion)
     case subscriptionOfferScreenImpression(origin: String?)
@@ -406,7 +406,7 @@ enum SubscriptionPixel: PixelKitEvent {
 
 }
 
-enum SubscriptionErrorPixel: PixelKitEvent {
+enum SubscriptionErrorPixel: PixelKit.Event {
 
     case subscriptionKeychainAccessError(accessType: AccountKeychainAccessType,
                                        accessError: AccountKeychainAccessError,

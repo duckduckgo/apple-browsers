@@ -171,7 +171,7 @@ final public class OnboardingSharedPixelHandler: OnboardingSharedPixelHandling {
 
 }
 
-public enum OnboardingSharedPixelEvent: PixelKitEvent, Equatable {
+public enum OnboardingSharedPixelEvent: PixelKit.Event, Equatable {
     // Linear onboarding events
     case welcome(EngagementEvent)
     case skipOnboarding(EngagementEvent) // iOS only

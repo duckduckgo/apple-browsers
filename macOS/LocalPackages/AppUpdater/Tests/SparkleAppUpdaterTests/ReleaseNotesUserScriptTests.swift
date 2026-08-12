@@ -272,9 +272,9 @@ private final class StubSparkleUpdateController: NSObject, SparkleUpdateControll
 }
 
 private final class CapturingPixelFiring: PixelFiring {
-    var firedEvents: [PixelKitEvent] = []
+    var firedEvents: [PixelKit.Event] = []
 
-    func fire(_ event: PixelKitEvent,
+    func fire(_ event: PixelKit.Event,
               frequency: PixelKit.Frequency,
               includeAppVersionParameter: Bool,
               withAdditionalParameters: [String: String]?,

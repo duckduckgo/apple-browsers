@@ -21,7 +21,7 @@ import PixelKit
 
 // MARK: - StartupMetricsPixel
 
-struct StartupMetricsPixel: PixelKitEvent {
+struct StartupMetricsPixel: PixelKit.Event {
 
     // MARK: - System
 

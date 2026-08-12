@@ -23,7 +23,7 @@ import Foundation
 public typealias ConversionWindow = ClosedRange<Int>
 public typealias NumberOfCalls = Int
 
-struct ExperimentEvent: PixelKitEvent {
+struct ExperimentEvent: PixelKit.Event {
     var name: String
     var parameters: [String: String]?
     var standardParameters: [PixelKitStandardParameter]? {
@@ -48,7 +48,7 @@ extension PixelKit {
     struct ExperimentConfig {
         static var featureFlagger: FeatureFlagger?
         static var eventTracker: ExperimentEventTracking = ExperimentEventTracker()
-        static var fireFunction: (PixelKitEvent, PixelKit.Frequency, Bool) -> Void = { event, frequency, includeAppVersion in
+        static var fireFunction: (PixelKit.Event, PixelKit.Frequency, Bool) -> Void = { event, frequency, includeAppVersion in
             fire(event, frequency: frequency, includeAppVersionParameter: includeAppVersion)
         }
     }
@@ -57,7 +57,7 @@ extension PixelKit {
     public static func configureExperimentKit(
         featureFlagger: FeatureFlagger,
         eventTracker: ExperimentEventTracking = ExperimentEventTracker(),
-        fire: @escaping (PixelKitEvent, PixelKit.Frequency, Bool) -> Void = { event, frequency, includeAppVersion in
+        fire: @escaping (PixelKit.Event, PixelKit.Frequency, Bool) -> Void = { event, frequency, includeAppVersion in
             fire(event, frequency: frequency, includeAppVersionParameter: includeAppVersion)
         }
     ) {

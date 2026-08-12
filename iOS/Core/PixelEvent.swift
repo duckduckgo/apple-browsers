@@ -4187,7 +4187,7 @@ extension Pixel.Event {
 
 // This is a temporary mapper from PixelKit to Pixel events for MaliciousSiteProtection
 // Malicious Site Protection BSK library depends on PixelKit which is not ready yet to be ported to iOS.
-// The below code maps between `PixelKitEvent` to `Pixel.Event` in order to use `Pixel.fire` on the client.
+// The below code maps between `PixelKit.Event` to `Pixel.Event` in order to use `Pixel.fire` on the client.
 public extension Pixel.Event {
 
     enum MaliciousSiteProtectionEvent: Equatable {
@@ -4232,7 +4232,7 @@ public extension Pixel.Event {
             }
         }
 
-        private var event: PixelKitEvent {
+        private var event: PixelKit.Event {
             switch self {
             case .errorPageShown(let category, let clientSideHit):
                 return MaliciousSiteProtection.Event.errorPageShown(category: category, clientSideHit: clientSideHit)

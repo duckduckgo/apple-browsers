@@ -1,5 +1,5 @@
 //
-//  PixelKitEvent.swift
+//  PixelKit.Event.swift
 //
 //  Copyright © 2023 DuckDuckGo. All rights reserved.
 //
@@ -24,17 +24,25 @@ public enum PixelKitStandardParameter {
     case pixelSource
 }
 
-/// An event that can be fired using PixelKit.
-public protocol PixelKitEvent {
-    var name: String { get }
-    var standardParameters: [PixelKitStandardParameter]? { get }
-    var parameters: [String: String]? { get }
-    /// Automatically implemented by the below extension using reflection, please implement the error, if needed as enum parameter
-    var error: NSError? { get }
+extension PixelKit {
+
+    /// An event that can be fired using PixelKit.
+    public protocol Event {
+        var name: String { get }
+        var standardParameters: [PixelKitStandardParameter]? { get }
+        var parameters: [String: String]? { get }
+        /// Automatically implemented by the below extension using reflection, please implement the error, if needed as enum parameter
+        var error: NSError? { get }
+    }
 }
 
-/// Extract Error parameter from the PixelKitEvent, only one error is supported, if multiple errors are found we assert
-public extension PixelKitEvent {
+/// Compatibility alias for the pre-rename spelling. Retained so out-of-tree conformances keep
+/// compiling; every in-tree conformance uses `PixelKit.Event`. Removed once the migration lands.
+@available(*, deprecated, renamed: "PixelKit.Event")
+public typealias PixelKitEvent = PixelKit.Event
+
+/// Extract Error parameter from the PixelKit.Event, only one error is supported, if multiple errors are found we assert
+public extension PixelKit.Event {
 
     var error: NSError? {
         let mirror = Mirror(reflecting: self)
@@ -51,7 +59,7 @@ public extension PixelKitEvent {
             for child in associatedMirror.children {
                 if let error = child.value as? NSError {
                     guard resultError == nil else {
-                        assertionFailure("Multiple errors found in PixelKitEvent, only one error is supported")
+                        assertionFailure("Multiple errors found in PixelKit.Event, only one error is supported")
                         return resultError
                     }
                     resultError = error

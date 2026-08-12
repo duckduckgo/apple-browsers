@@ -34,15 +34,15 @@ public final class PixelKitMock: PixelFiring {
         self.expectedFireCalls = expectedFireCalls
     }
 
-    public func fire(_ event: PixelKitEvent) {
+    public func fire(_ event: PixelKit.Event) {
         fire(event, frequency: .standard)
     }
 
-    public func fire(_ event: PixelKitEvent, frequency: PixelKit.Frequency) {
+    public func fire(_ event: PixelKit.Event, frequency: PixelKit.Frequency) {
         fire(event, frequency: frequency, includeAppVersionParameter: true, withAdditionalParameters: nil, onComplete: { _, _ in })
     }
 
-    public func fire(_ event: PixelKitEvent,
+    public func fire(_ event: PixelKit.Event,
                      frequency: PixelKit.Frequency,
                      includeAppVersionParameter: Bool,
                      withAdditionalParameters parameters: [String: String]?,
@@ -58,11 +58,11 @@ public final class PixelKitMock: PixelFiring {
 }
 
 public struct ExpectedFireCall: Equatable {
-    let pixel: PixelKitEvent
+    let pixel: PixelKit.Event
     let frequency: PixelKit.Frequency
     let includeAppVersionParameter: Bool
 
-    public init(pixel: PixelKitEvent, frequency: PixelKit.Frequency, includeAppVersionParameter: Bool = true) {
+    public init(pixel: PixelKit.Event, frequency: PixelKit.Frequency, includeAppVersionParameter: Bool = true) {
         self.pixel = pixel
         self.frequency = frequency
         self.includeAppVersionParameter = includeAppVersionParameter

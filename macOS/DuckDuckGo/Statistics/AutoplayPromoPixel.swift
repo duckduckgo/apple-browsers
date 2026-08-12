@@ -20,14 +20,14 @@ import PixelKit
 
 /// Pixels for the Autoplay Discoverability Promo, which auto-opens the Permission Center the first time a page displays the autoplay policy.
 /// - Note: The promo runs at most once per install, so plain standard pixels are enough to bound their volume.
-enum AutoplayPromoPixel: PixelKitEvent, Equatable {
+enum AutoplayPromoPixel: PixelKit.Event, Equatable {
 
     case shown
     case engaged
     case autoDismissed
     case settingsLinkClicked
 
-    // MARK: - PixelKitEvent
+    // MARK: - PixelKit.Event
 
     var name: String {
         switch self {

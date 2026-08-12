@@ -269,7 +269,7 @@ public final class PixelKit {
     // MARK: - Public Fire
 
     /// Main function for firing pixels
-    public func fire(_ event: PixelKitEvent,
+    public func fire(_ event: PixelKit.Event,
                      frequency: Frequency = .standard,
                      withHeaders headers: [String: String]? = nil,
                      withAdditionalParameters params: [String: String]? = nil,
@@ -325,7 +325,7 @@ public final class PixelKit {
              onComplete: onComplete)
     }
 
-    public static func fire(_ event: PixelKitEvent,
+    public static func fire(_ event: PixelKit.Event,
                             frequency: Frequency = .standard,
                             withHeaders headers: [String: String] = [:],
                             withAdditionalParameters parameters: [String: String]? = nil,
@@ -764,7 +764,7 @@ public final class PixelKit {
             effectiveFireRequest(pixelName, headers, parameters, allowedQueryReservedCharacters, callBackOnMainThread, onComplete)
         }
 
-    private func prefixedAndSuffixedName(for event: PixelKitEvent, namePrefix: String?, doNotEnforcePrefix: Bool = false) -> String {
+    private func prefixedAndSuffixedName(for event: PixelKit.Event, namePrefix: String?, doNotEnforcePrefix: Bool = false) -> String {
 
         if let pixelWithCustomPrefix = event as? PixelKitEventWithCustomPrefix {
             return pixelWithCustomPrefix.namePrefix + event.name + platformSuffix
@@ -843,11 +843,11 @@ public final class PixelKit {
         Self.shared?.cohort(from: cohortLocalDate, dateGenerator: dateGenerator) ?? ""
     }
 
-    public static func pixelLastFireDate(event: PixelKitEvent, frequency: Frequency, namePrefix: String? = nil) throws -> Date? {
+    public static func pixelLastFireDate(event: PixelKit.Event, frequency: Frequency, namePrefix: String? = nil) throws -> Date? {
         try Self.shared?.pixelLastFireDate(event: event, frequency: frequency, namePrefix: namePrefix)
     }
 
-    public func pixelLastFireDate(event: PixelKitEvent, frequency: Frequency, namePrefix: String? = nil) throws -> Date? {
+    public func pixelLastFireDate(event: PixelKit.Event, frequency: Frequency, namePrefix: String? = nil) throws -> Date? {
         try pixelLastFireDate(pixelName: prefixedAndSuffixedName(for: event, namePrefix: namePrefix), frequency: frequency)
     }
 
@@ -967,7 +967,7 @@ public final class PixelKit {
         }
     }
 
-    public func clearFrequencyHistoryFor(pixel: PixelKitEvent) {
+    public func clearFrequencyHistoryFor(pixel: PixelKit.Event) {
         guard let name = Self.shared?.userDefaultsKeyName(forPixelName: pixel.name) else {
             return
         }

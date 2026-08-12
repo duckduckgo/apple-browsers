@@ -37,7 +37,7 @@ final class NewTabPageShownPixelSenderTests: XCTestCase {
     var customizationModel: NewTabPageCustomizationModel!
     var handler: NewTabPageShownPixelSender!
     var keyValueStore: MockKeyValueStore!
-    var firePixelCalls: [PixelKitEvent] = []
+    var firePixelCalls: [PixelKit.Event] = []
 
     @MainActor
     override func setUp() async throws {

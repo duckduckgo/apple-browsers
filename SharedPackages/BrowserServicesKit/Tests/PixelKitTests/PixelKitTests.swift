@@ -28,7 +28,7 @@ final class PixelKitTests: XCTestCase {
 
     /// Test events for convenience
 
-    private enum TestEvent: String, PixelKitEvent {
+    private enum TestEvent: String, PixelKit.Event {
 
         case testEventPrefixed = "m_mac_testEventPrefixed"
         case testEvent
@@ -51,7 +51,7 @@ final class PixelKitTests: XCTestCase {
 
     }
 
-    private enum TestEventV2: String, PixelKitEvent {
+    private enum TestEventV2: String, PixelKit.Event {
 
         case testEvent
         case testEventWithoutParameters
@@ -899,7 +899,7 @@ final class PixelKitTests: XCTestCase {
             self.completions = completions
         }
 
-        func fire(_ event: PixelKitEvent,
+        func fire(_ event: PixelKit.Event,
                   frequency: PixelKit.Frequency,
                   includeAppVersionParameter: Bool,
                   withAdditionalParameters parameters: [String: String]?,

@@ -652,7 +652,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             return nil
         }
         hasAttachedPageContext = payload.enabled
-        let pixel: PixelKitEvent = {
+        let pixel: PixelKit.Event = {
             if payload.enabled {
                 return AIChatPixel.aiChatPageContextAdded(automaticEnabled: storage.shouldAutomaticallySendPageContext)
             }
@@ -934,7 +934,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     @MainActor
-    private func fireSyncDailyAndStandardPixel(_ pixel: PixelKitEvent) {
+    private func fireSyncDailyAndStandardPixel(_ pixel: PixelKit.Event) {
         pixelFiring?.fire(pixel, frequency: .dailyAndStandard)
     }
 

@@ -21,7 +21,7 @@ import Foundation
 import PixelKit
 import Networking
 
-enum SubscriptionPixel: PixelKitEvent {
+enum SubscriptionPixel: PixelKit.Event {
     // Subscription
     case subscriptionActive
     // Auth

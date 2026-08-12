@@ -231,13 +231,13 @@ final class TabTerminationTelemetryTests: XCTestCase {
 private final class MockTabTerminationPixelFiring: PixelFiring {
 
     struct Call {
-        let event: PixelKitEvent
+        let event: PixelKit.Event
         let frequency: PixelKit.Frequency
     }
 
     private(set) var calls: [Call] = []
 
-    func fire(_ event: PixelKitEvent,
+    func fire(_ event: PixelKit.Event,
               frequency: PixelKit.Frequency,
               includeAppVersionParameter: Bool,
               withAdditionalParameters: [String: String]?,

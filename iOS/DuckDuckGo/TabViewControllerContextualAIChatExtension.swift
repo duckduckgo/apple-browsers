@@ -53,6 +53,12 @@ extension TabViewController {
         }
     }
 
+    func presentContextualFloatingInput(from presentingViewController: UIViewController) {
+        Task { @MainActor in
+            await aiChatContextualSheetCoordinator.presentFloatingInput(from: presentingViewController)
+        }
+    }
+
     /// Presents the sheet with `text` attached as its own context. Nothing is submitted — the selection
     /// is there for the user to ask about, so the page is not auto-attached on top of it.
     @MainActor
@@ -69,6 +75,12 @@ extension TabViewController {
             restoreURL: restoreURLForContextualSheet(),
             from: presentingViewController
         )
+    }
+
+    /// A conversation this tab can return to: either still live in the coordinator, or persisted by an
+    /// earlier launch and waiting to be restored.
+    var hasContextualChatToReopen: Bool {
+        aiChatContextualSheetCoordinator.sessionState.hasActiveChat || tabModel.contextualChatURL != nil
     }
 
     /// The persisted chat to restore, for both the plain and the selection-carrying entry points —

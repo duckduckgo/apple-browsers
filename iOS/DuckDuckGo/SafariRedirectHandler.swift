@@ -20,7 +20,43 @@
 import Core
 import Common
 import FoundationExtensions
+import PixelKit
 import PrivacyConfig
+
+enum SafariRedirectPixel {
+    case loadURLRequested
+    case loopErrorPageShown
+    case reportBrokenSiteFromErrorPage
+
+    var name: String {
+        switch self {
+        case .loadURLRequested:
+            return "m_webview_external-scheme-navigation_safari-redirect_load-url-requested"
+        case .loopErrorPageShown:
+            return "m_webview_external-scheme-navigation_safari-redirect-loop_error-page-shown"
+        case .reportBrokenSiteFromErrorPage:
+            return "m_webview_external-scheme-navigation_safari-redirect-loop_error-page_report-broken-site"
+        }
+    }
+
+    func fireDailyAndCount() {
+        PixelKit.fire(dailyPixel, frequency: .legacyDailyNoSuffix)
+        PixelKit.fire(countPixel)
+    }
+
+    var dailyPixel: SafariRedirectScheduledPixel { SafariRedirectScheduledPixel(name: name + "_daily") }
+    var countPixel: SafariRedirectScheduledPixel { SafariRedirectScheduledPixel(name: name + "_count") }
+}
+
+struct SafariRedirectScheduledPixel: PixelKitEvent, PixelKitEventWithCustomPrefix {
+    let name: String
+
+    var parameters: [String: String]? { nil }
+
+    var standardParameters: [PixelKitStandardParameter]? { nil }
+
+    var namePrefix: String { "" }
+}
 
 protocol SafariRedirectHandling: AnyObject {
     /// Whether the given URL was loaded after a suppressed x-safari redirect (for breakage reports).

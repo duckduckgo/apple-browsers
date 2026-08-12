@@ -38,6 +38,8 @@ public struct BrokenSiteReport {
         case appMenu
         /// From the privacy dashboard's "Website not working?"
         case dashboard
+        /// From a browser error page
+        case errorPage
         /// From the app menu's "Disable Privacy Protection"
         case onProtectionsOffMenu
         /// From the privacy dashboard's on protections toggle off
@@ -51,6 +53,7 @@ public struct BrokenSiteReport {
             switch self {
             case .appMenu: return "menu"
             case .dashboard: return "dashboard"
+            case .errorPage: return "error_page"
             case .onProtectionsOffMenu: return "on_protections_off_menu"
             case .onProtectionsOffDashboard: return "on_protections_off_dashboard_main"
             case .prompt: return "reload-three-times-within-20-seconds" // previously multiple events were under this; now there's only one
@@ -116,6 +119,7 @@ public struct BrokenSiteReport {
     let model: String
     let variant: String
     let isAfterSuppressedXSafariRedirect: Bool
+    let isAfterTabTermination: Bool
 #endif
 
 #if os(macOS)
@@ -231,6 +235,7 @@ public struct BrokenSiteReport {
         isForceDarkModeEnabled: Bool?,
         autoplayBlockingMode: String? = nil,
         isAfterSuppressedXSafariRedirect: Bool = false,
+        isAfterTabTermination: Bool = false,
         pageLoadTiming: WKPageLoadTiming? = nil,
         breakageData: String? = nil,
         loadedWebExtensions: String? = nil,
@@ -270,6 +275,7 @@ public struct BrokenSiteReport {
         self.isForceDarkModeEnabled = isForceDarkModeEnabled
         self.autoplayBlockingMode = autoplayBlockingMode
         self.isAfterSuppressedXSafariRedirect = isAfterSuppressedXSafariRedirect
+        self.isAfterTabTermination = isAfterTabTermination
         self.breakageData = breakageData
         self.loadedWebExtensions = loadedWebExtensions
         self.adBlockingExtensionScriptletsVersion = adBlockingExtensionScriptletsVersion
@@ -367,6 +373,9 @@ public struct BrokenSiteReport {
         result["variant"] = variant
         if isAfterSuppressedXSafariRedirect {
             result["isAfterSuppressedXSafariRedirect"] = "true"
+        }
+        if isAfterTabTermination {
+            result["isAfterTabTermination"] = "true"
         }
 #endif
 

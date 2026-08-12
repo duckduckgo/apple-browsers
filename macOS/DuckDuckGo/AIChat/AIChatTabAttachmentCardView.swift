@@ -117,11 +117,7 @@ final class AIChatTabAttachmentCardView: NSView {
         cardView.addSubview(titleLabel)
         addSubview(removeButton) // outside the card so its overflow can clip past the corner.
 
-        let displayTitle = attachment.title.isEmpty ? attachment.url.host ?? attachment.url.absoluteString : attachment.title
-        titleLabel.stringValue = displayTitle
-        // Surface the full title on hover (the most useful thing to disambiguate truncated entries);
-        // the URL would be more accurate but is rarely what the user wants to read.
-        titleLabel.toolTip = displayTitle
+        update(with: attachment)
 
         removeButton.image = DesignSystemImages.Glyphs.Size16.clearSolid
         removeButton.imageScaling = .scaleNone
@@ -167,6 +163,16 @@ final class AIChatTabAttachmentCardView: NSView {
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    /// Re-renders a reused card whose tab navigated, or whose title / favicon just landed.
+    func update(with attachment: AIChatTabAttachment) {
+        let displayTitle = attachment.title.isEmpty ? attachment.url.host ?? attachment.url.absoluteString : attachment.title
+        titleLabel.stringValue = displayTitle
+        // Surface the full title on hover (the most useful thing to disambiguate truncated entries);
+        // the URL would be more accurate but is rarely what the user wants to read.
+        titleLabel.toolTip = displayTitle
+        pagePreviewView.updateFavicon(attachment.favicon)
     }
 
     @objc private func removeButtonClicked() {
@@ -226,7 +232,7 @@ final class AIChatTabAttachmentCardView: NSView {
     // MARK: - Appearance
 
     private func updateAppearance() {
-        NSAppearance.withAppAppearance {
+        effectiveAppearance.performAsCurrentDrawingAppearance {
             let surfaceColor = NSColor(designSystemColor: .surfaceSecondary)
             let removeButtonBackgroundColor = NSColor(named: Constants.removeButtonBackgroundColorName) ?? .white
             let removeButtonIconColor = NSColor(named: Constants.removeButtonIconColorName) ?? .black
@@ -303,6 +309,10 @@ private final class AIChatTabPagePreviewView: NSView {
         updateAppearance()
     }
 
+    func updateFavicon(_ favicon: NSImage?) {
+        faviconView.image = favicon ?? DesignSystemImages.Glyphs.Size16.pageContentAttach
+    }
+
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
@@ -317,7 +327,7 @@ private final class AIChatTabPagePreviewView: NSView {
     }
 
     private func updateAppearance() {
-        NSAppearance.withAppAppearance {
+        effectiveAppearance.performAsCurrentDrawingAppearance {
             // A subtler tint than the surrounding card surface so the thumbnail reads as a nested
             // page preview rather than a flat solid block.
             let backgroundColor = NSColor(designSystemColor: .surfaceTertiary)

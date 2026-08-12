@@ -1621,11 +1621,6 @@ extension Pixel {
         // MARK: WebView Error Page Shown
         case webViewErrorPageShown
 
-        // MARK: External Scheme Navigation
-        case webViewExternalSchemeNavigationSafariRedirectLoadURLRequested
-        case webViewExternalSchemeNavigationSafariRedirectLoopErrorPageShown
-        case webViewExternalSchemeNavigationSafariRedirectLoopErrorPageReportSiteBreakage
-
         // MARK: Browsing
         case stopPageLoad
 
@@ -1861,6 +1856,11 @@ extension Pixel {
 
         case aiChatContextualQuickActionAskAboutPageShown
         case aiChatContextualQuickActionAskAboutPageSelected
+        case aiChatContextualAddressBarMenuShown
+        case aiChatContextualAddressBarMenuNewChatSelected
+        case aiChatContextualAddressBarMenuAskAboutPageSelected
+        case aiChatContextualFloatingInputDismissedWithoutSubmission
+        case aiChatContextualFloatingInputPromotedToSheet
         case aiChatContextualSuggestionSelected
         case aiChatContextualSuggestionsViewed
         case aiChatContextualHeaderTitleTapped
@@ -3545,11 +3545,6 @@ extension Pixel.Event {
         // MARK: - WebView Error Page shown
         case .webViewErrorPageShown: return "m_errorpageshown"
 
-        // MARK: - External Scheme Navigation
-        case .webViewExternalSchemeNavigationSafariRedirectLoadURLRequested: return "m_webview_external-scheme-navigation_safari-redirect_load-url-requested"
-        case .webViewExternalSchemeNavigationSafariRedirectLoopErrorPageShown: return "m_webview_external-scheme-navigation_safari-redirect-loop_error-page-shown"
-        case .webViewExternalSchemeNavigationSafariRedirectLoopErrorPageReportSiteBreakage: return "m_webview_external-scheme-navigation_safari-redirect-loop_error-page_report-broken-site"
-
         // MARK: - DuckPlayer FE Application Telemetry
         case .duckPlayerLandscapeLayoutImpressions: return "duckplayer_landscape_layout_impressions"
 
@@ -3776,6 +3771,11 @@ extension Pixel.Event {
         case .aiChatPageContextExtractionPrevented: return "aichat_page_context_extraction_prevented"
         case .aiChatContextualQuickActionAskAboutPageShown: return "m_aichat_contextual_quick_action_ask_about_page_shown"
         case .aiChatContextualQuickActionAskAboutPageSelected: return "m_aichat_contextual_quick_action_ask_about_page_selected"
+        case .aiChatContextualAddressBarMenuShown: return "aichat_contextual_address_bar_menu_shown"
+        case .aiChatContextualAddressBarMenuNewChatSelected: return "aichat_contextual_address_bar_menu_new_chat_selected"
+        case .aiChatContextualAddressBarMenuAskAboutPageSelected: return "aichat_contextual_address_bar_menu_ask_about_page_selected"
+        case .aiChatContextualFloatingInputDismissedWithoutSubmission: return "aichat_contextual_floating_input_dismissed_without_submission"
+        case .aiChatContextualFloatingInputPromotedToSheet: return "aichat_contextual_floating_input_promoted_to_sheet"
         case .aiChatContextualSuggestionSelected: return "aichat_contextual_suggestion_selected"
         case .aiChatContextualSuggestionsViewed: return "aichat_contextual_suggestions_viewed"
         case .aiChatContextualHeaderTitleTapped: return "aichat_contextual_header_title_tapped"

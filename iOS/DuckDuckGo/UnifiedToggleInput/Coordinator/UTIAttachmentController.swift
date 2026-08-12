@@ -414,6 +414,30 @@ final class UTIAttachmentController {
         view.showValidationError(message)
     }
 
+    /// Rejected files are excluded: they are never sent, so counting them would hide the contextual
+    /// sheet's suggestions over something the user cannot submit.
+    var attachmentCount: Int {
+        view.currentAttachments().filter {
+            switch $0 {
+            case .image, .file: return true
+            case .invalidFile: return false
+            }
+        }.count
+    }
+
+    /// For something the input refused that isn't an attachment.
+    func presentRejectionBanner(_ message: String) {
+        presentTransientValidationError(message)
+    }
+
+    /// Needed because `presentRejectionBanner` deliberately survives re-syncs, so nothing else clears
+    /// it. Falls back to any attachment-derived message rather than blanking the banner outright.
+    func clearRejectionBanner() {
+        guard transientValidationMessage != nil else { return }
+        transientValidationMessage = nil
+        syncValidationErrorForCurrentMode()
+    }
+
     /// Shows a limit/rejection banner that survives async re-syncs, unlike an attachment-derived one which `syncValidationError` recomputes from the current attachments.
     private func presentTransientValidationError(_ message: String) {
         transientValidationMessage = message

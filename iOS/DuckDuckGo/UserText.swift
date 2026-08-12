@@ -108,6 +108,8 @@ public struct UserText {
     public static let actionPrint = NSLocalizedString("action.title.print", value: "Print", comment: "Print action in the menu header")
     public static let actionPrintSite = NSLocalizedString("action.title.print.site", value: "Print", comment: "Print action in the menu list")
     public static let actionOpenAIChat = NSLocalizedString("action.title.duckai", value: "Duck.ai", comment: "Open AI Chat action in the menu list")
+    public static let actionAskAIChat = NotLocalizedString("action.title.aiChat.askDuckAI", value: "Ask Duck.ai", comment: "Edit-menu action shown on text selected in the browser; attaches the selection to Duck.ai so the user can ask their own question about it")
+    public static let actionSearchWithDuckDuckGo = NotLocalizedString("action.title.searchWithDuckDuckGo", value: "Search with DuckDuckGo", comment: "Edit-menu action shown on text selected in the browser; opens a DuckDuckGo search for the selected text in a new tab")
     public static let actionToggleAIChatContextualSheet = NSLocalizedString("action.title.aiChat.toggleContextualSheet", value: "Toggle Duck.ai sheet", comment: "Accessibility label for the icon half of the iPad Duck.ai chrome chip; tapping toggles the contextual chat sheet for the current page.")
     public static let accessibilityLabelOpenAIChat = NSLocalizedString("accessibility.label.aiChat.openDuckAI", value: "Open Duck.ai", comment: "Accessibility label for the text half of the iPad Duck.ai chrome chip; tapping opens a new Duck.ai tab. The visible label reads \"Duck.ai\".")
     public static let actionHideAIChatDuckAIButton = NSLocalizedString("action.title.aiChat.hideDuckAIButton", value: "Hide Duck.ai Shortcut", comment: "Long-press menu item on the iPad Duck.ai chrome chip that hides the Duck.ai (open) button half.")
@@ -995,8 +997,8 @@ public struct UserText {
 
     public static let macWaitlistAvailableNotificationTitle = NSLocalizedString("mac-waitlist.available.notification.title", value: "DuckDuckGo for Mac is ready!", comment: "Title for the macOS waitlist notification")
     /// https://app.asana.com/1/137249556945/project/38424471409662/task/1211224788080468
-    public static let inactivityNotificationTitle = NotLocalizedString("inactivity.notification.title", value: "Control your online experience", comment: "Title for inactivity notification. Used on for en_US locale only.")
-    public static let inactivityNotificationBody = NotLocalizedString("inactivity.notification.body", value: "Use DuckDuckGo to avoid the ads that track you around the web and reduce your online footprint.", comment: "Body for inactivity notification. Used on for en_US locale only.")
+    public static let inactivityNotificationTitle = NSLocalizedString("inactivity.notification.title", value: "Control your online experience", comment: "Title for the notification sent after a period of inactivity.")
+    public static let inactivityNotificationBody = NSLocalizedString("inactivity.notification.body", value: "Use DuckDuckGo to avoid the ads that track you around the web and reduce your online footprint.", comment: "Body for the notification sent after a period of inactivity.")
     public static func subscriptionExpirationReminderNotificationTitle(daysUntilTrialEnds: Int) -> String {
         let unit = daysUntilTrialEnds == 1 ? "day" : "days"
         return "Your trial ends in \(daysUntilTrialEnds) \(unit)"
@@ -2257,6 +2259,15 @@ public struct UserText {
     public static let aiChatAttachmentFileEncrypted = NSLocalizedString("aichat.attachment.file.encrypted", value: "We can't read the files attached because at least one of them is encrypted.", comment: "Error message displayed when one or more attached files are encrypted and cannot be read")
     public static let aiChatAttachmentFileUnreadable = NSLocalizedString("aichat.attachment.file.unreadable", value: "We can't read one of the files attached. Please check that it isn't corrupted and try again.", comment: "Error message displayed when one or more attached files cannot be read")
     public static let aiChatAttachmentUnavailable = NSLocalizedString("aichat.attachment.unavailable", value: "Attachments are temporarily unavailable. Please try again later.", comment: "Generic fallback error message displayed when attachments cannot be validated because the backend-provided attachment limits are unavailable")
+    public static let aiChatTextSelectionTitle = NotLocalizedString("duckai.text-selection.context-title", value: "Text selection", comment: "Generic title shown on the Duck.ai attachment chip when the attached content is a user text selection rather than a full web page")
+    public static func aiChatTextSelectionWordCount(_ count: Int) -> String {
+        let message = NotLocalizedString("duckai.text-selection.word-count", value: count == 1 ? "%d word" : "%d words", comment: "Prefix on the Duck.ai attachment chip for a text selection, giving the size of the selection before a snippet of it. The inline plural replaces the Localizable.stringsdict rule, which NotLocalizedString bypasses; restore both when this returns to NSLocalizedString.")
+        return String.localizedStringWithFormat(message, count)
+    }
+    public static func aiChatTextSelectionLimitReached(_ limit: Int) -> String {
+        let message = NotLocalizedString("duckai.text-selection.limit-reached", value: "You can add up to %d text selections. Remove one to add another.", comment: "Message shown when the user selects text and asks Duck.ai about it but has already attached the maximum number of selections. Parameter is that maximum.")
+        return message.format(arguments: limit)
+    }
     public static func aiChatAttachmentUnsupportedFileType(acceptedFileType: String) -> String {
         let message = NSLocalizedString("aichat.attachment.unsupported.file.type.single", value: "This file type is not supported, please attach a %@.", comment: "Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF.")
         return message.format(arguments: acceptedFileType)
@@ -2316,6 +2327,20 @@ public struct UserText {
     public static let aiChatBasicModelsSectionHeader = NotLocalizedString("aichat.model-picker.subscribed-basic-section-header", value: "Basic Models", comment: "Section header in the model picker menu for basic/free models when the user has an active subscription")
     public static let aiChatPlusModelsSectionHeader = NotLocalizedString("aichat.model-picker.plus-section-header", value: "Plus", comment: "Section header in the model picker menu for models available from the DuckDuckGo Plus tier")
     public static let aiChatProModelsSectionHeader = NotLocalizedString("aichat.model-picker.pro-section-header", value: "Pro", comment: "Section header in the model picker menu for models available from the DuckDuckGo Pro tier")
+    public static let aiChatModelPickerProExclusive = NotLocalizedString(
+        "aichat.model-picker.pro-exclusive",
+        value: "Pro Exclusive",
+        comment: "Section header for Pro-only models shown to DuckDuckGo Plus subscribers")
+    public static let aiChatModelPickerTryForFree = NotLocalizedString("aichat.model-picker.try-for-free", value: "TRY FOR FREE", comment: "Button in the model picker that opens the DuckDuckGo subscription purchase flow")
+    public static let aiChatModelPickerUpgrade = NotLocalizedString("aichat.model-picker.upgrade", value: "UPGRADE", comment: "Button in the model picker that opens the DuckDuckGo subscription upgrade flow")
+    public static let aiChatModelPickerEffortTitle = NotLocalizedString(
+        "aichat.model-picker.effort-title",
+        value: "Effort",
+        comment: "Title of the reasoning effort submenu in the model picker")
+    public static let aiChatModelPickerModelsSectionHeader = NotLocalizedString(
+        "aichat.model-picker.models-section-header",
+        value: "Models",
+        comment: "Section header above models in the model picker")
 
     public static let settingsAIChatExperimentalMainSwitch = NotLocalizedString("settings.aichat.native.experimental", value: "Experimental Duck.ai", comment: "")
     public static let settingsAIChatExperimentalSection = NotLocalizedString("settings.aichat.experimental.section.title", value: "Experimental Duck.ai (internal only) ", comment: "")
@@ -2840,6 +2865,22 @@ public struct UserText {
             static let onboardingGotItButton = NSLocalizedString("contextual.onboarding.got-it.button", value: "Got it!", comment: "During onboarding steps this button is shown and takes either to the next steps or closes the onboarding.")
             static let onboardingFinalScreenTitle = NSLocalizedString("contextual.onboarding.final-screen.title", value: "You’ve got this!", comment: "Title of the last screen of the onboarding to the browser app")
             static let onboardingFinalScreenButton = NSLocalizedString("contextual.onboarding.final-screen.button", value: "High five!", comment: "Button on the last screen of the onboarding, it will dismiss the onboarding screen.")
+
+            /// NA Experiment (Segment app onboarding by download reason): the alternative Search-flow
+            /// end-of-journey dialog shown to treatment users on the Search path (browse privately / no AI /
+            /// block ads) who opted into AI chat in the address bar (Toggle = ON). Experiment-only copy,
+            /// hence NotLocalizedString.
+            enum EndOfJourneyTryAI {
+                static let title = NotLocalizedString("contextual.onboarding.eoj-try-ai.title", value: "Chat privately with popular AIs in Duck.ai", comment: "Title of the alternative onboarding end-of-journey dialog promoting Duck.ai. 'Duck.ai' is a brand name and should not be translated.")
+                static let message = NotLocalizedString("contextual.onboarding.eoj-ai.message", value: "Chats are anonymized, no account required. And it’s free!", comment: "Body of the alternative onboarding end-of-journey dialog promoting Duck.ai.")
+                static let primaryButton = NotLocalizedString("contextual.onboarding.eoj-try-ai.chat-completion.primary-button", value: "Try Duck.ai", comment: "Primary button on the alternative onboarding end-of-journey dialog; opens Duck.ai. 'Duck.ai' is a brand name and should not be translated.")
+                static let secondaryButton = NotLocalizedString("contextual.onboarding.eoj-try-ai.secondary-button", value: "Skip", comment: "Secondary button on the alternative onboarding end-of-journey dialog; skips to the new tab page.")
+            }
+
+            enum EndOfJourney {
+                static let aiMessage = NotLocalizedString("contextual.onboarding.eoj.private-ai-chat.message", value: "Start a private AI chat with Duck.ai or toggle to Search for protected browsing.", comment: "Body of the onboarding end-of-journey dialog for users who chose the AI-chat download reason. 'Duck.ai' is a brand name and should not be translated.")
+            }
+
             static let tryASearchOption1English = NSLocalizedString("contextual.onboarding.try-search.option1-English", value: "how to say “duck” in spanish", comment: "Browser Search query for how to say duck in english")
             static let tryASearchOption1International = NSLocalizedString("contextual.onboarding.try-search.option1international", value: "how to say “duck” in english", comment: "Browser Search query for how to say duck in english")
             static let tryASearchOption2English = NSLocalizedString("contextual.onboarding.try-search.option2-english", value: "mighty ducks cast", comment: "Search query for the cast of Mighty Ducks")

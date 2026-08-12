@@ -28,7 +28,55 @@ typealias PixelKitFiring = PixelFiring
 @MainActor
 protocol TabTerminationTelemetry {
     func webContentProcessDidTerminate(activeTabCount: Int)
-    func didReceiveMemoryWarning()
+    func didReceiveMemoryWarning(activeTabCount: Int)
+}
+
+struct TabEvictionSettings {
+
+    private enum Constants {
+        static let defaultMemoryWarningTelemetryWindow: TimeInterval = 60
+        static let defaultPhoneCapacity = 20
+        static let defaultPadCapacity = 10
+        static let memoryWarningTelemetryWindowKey = "memoryWarningTelemetryWindowSeconds"
+        static let phoneCapacityKey = "maxCapacityPhone"
+        static let padCapacityKey = "maxCapacityPad"
+    }
+
+    private let privacyConfigurationManager: PrivacyConfigurationManaging
+
+    init(privacyConfigurationManager: PrivacyConfigurationManaging) {
+        self.privacyConfigurationManager = privacyConfigurationManager
+    }
+
+    var memoryWarningTelemetryWindow: TimeInterval {
+        positiveNumber(forKey: Constants.memoryWarningTelemetryWindowKey,
+                       subfeature: .tabEvictionOnMemoryWarning) ?? Constants.defaultMemoryWarningTelemetryWindow
+    }
+
+    func maximumCapacity(isPad: Bool) -> Int {
+        let key = isPad ? Constants.padCapacityKey : Constants.phoneCapacityKey
+        let defaultValue = isPad ? Constants.defaultPadCapacity : Constants.defaultPhoneCapacity
+        guard let value = positiveNumber(forKey: key, subfeature: .tabLRUEviction),
+              value.rounded(.towardZero) == value,
+              value < Double(Int.max) else {
+            return defaultValue
+        }
+        return Int(value)
+    }
+
+    private func positiveNumber(forKey key: String, subfeature: iOSBrowserConfigSubfeature) -> Double? {
+        guard let json = privacyConfigurationManager.privacyConfig.settings(for: subfeature),
+              let data = json.data(using: .utf8),
+              let dictionary = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let value = dictionary[key],
+              !(value is Bool),
+              let number = value as? NSNumber,
+              number.doubleValue.isFinite,
+              number.doubleValue > 0 else {
+            return nil
+        }
+        return number.doubleValue
+    }
 }
 
 @MainActor
@@ -40,19 +88,23 @@ final class DefaultTabTerminationTelemetry: TabTerminationTelemetry {
     private let applicationState: @MainActor () -> UIApplication.State
     private let memoryFootprint: @MainActor () -> UInt64?
     private let date: () -> Date
+    private let memoryWarningTelemetryWindow: () -> TimeInterval
     private var lastMemoryWarningDate: Date?
+    private var memoryWarningDates = [Date]()
 
     init(featureFlagger: FeatureFlagger,
          keyValueStore: KeyValueStoring,
          pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
          applicationState: (@MainActor () -> UIApplication.State)? = nil,
          memoryFootprint: (@MainActor () -> UInt64?)? = nil,
+         memoryWarningTelemetryWindow: @escaping () -> TimeInterval = { 60 },
          date: @escaping () -> Date = Date.init) {
         self.featureFlagger = featureFlagger
         self.occurrenceStore = TabTerminationTelemetryOccurrenceStore(keyValueStore: keyValueStore)
         self.pixelFiring = pixelFiring
         self.applicationState = applicationState ?? { UIApplication.shared.applicationState }
         self.memoryFootprint = memoryFootprint ?? { Self.currentMemoryFootprint() }
+        self.memoryWarningTelemetryWindow = memoryWarningTelemetryWindow
         self.date = date
     }
 
@@ -82,9 +134,17 @@ final class DefaultTabTerminationTelemetry: TabTerminationTelemetry {
         }
     }
 
-    func didReceiveMemoryWarning() {
+    func didReceiveMemoryWarning(activeTabCount: Int) {
         guard featureFlagger.isFeatureOn(.tabTerminationTelemetry) else { return }
-        lastMemoryWarningDate = date()
+        let warningDate = date()
+        lastMemoryWarningDate = warningDate
+        memoryWarningDates.removeAll {
+            $0 > warningDate || warningDate.timeIntervalSince($0) > memoryWarningTelemetryWindow()
+        }
+        memoryWarningDates.append(warningDate)
+
+        pixelFiring?.fire(TabTerminationTelemetryPixel.memoryWarningActiveTabs(.init(activeTabCount)), frequency: .dailyAndCount)
+        pixelFiring?.fire(TabTerminationTelemetryPixel.memoryWarningOccurrence(.init(memoryWarningDates.count)), frequency: .standard)
     }
 
     nonisolated static func currentMemoryFootprint() -> UInt64? {
@@ -136,6 +196,8 @@ enum TabTerminationTelemetryPixel: PixelKitEvent, PixelKitEventWithCustomPrefix 
     case memory(MemoryBucket)
     case activeTabs(ActiveTabBucket)
     case timeSinceMemoryWarning(TimeBucket)
+    case memoryWarningActiveTabs(ActiveTabBucket)
+    case memoryWarningOccurrence(OccurrenceBucket)
 
     var name: String {
         switch self {
@@ -155,6 +217,10 @@ enum TabTerminationTelemetryPixel: PixelKitEvent, PixelKitEventWithCustomPrefix 
             return "debug_webkit_termination_active-tabs_\(bucket.rawValue)"
         case .timeSinceMemoryWarning(let bucket):
             return "debug_webkit_termination_time-since-memory-warning_\(bucket.rawValue)"
+        case .memoryWarningActiveTabs(let bucket):
+            return "debug_memory_warning_active-tabs_\(bucket.rawValue)"
+        case .memoryWarningOccurrence(let bucket):
+            return "debug_memory_warning_occurrence-in-window_\(bucket.rawValue)"
         }
     }
 

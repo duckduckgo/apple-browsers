@@ -2956,6 +2956,12 @@
 /* Title for the Import Passwords Promotion banner */
 "import.passwords.promo.title" = "パスワードをDuckDuckGoにインポート";
 
+/* Body for the notification sent after a period of inactivity. */
+"inactivity.notification.body" = "DuckDuckGoを使用すると、広告によってウェブでの活動を追跡されることがなくなり、オンラインでの痕跡を減らすことができます。";
+
+/* Title for the notification sent after a period of inactivity. */
+"inactivity.notification.title" = "オンライン体験を管理する";
+
 /* Placeholder text for the duck.ai input field */
 "input.field.placeholder.duckai" = "非公開でなんでも聞いてください";
 

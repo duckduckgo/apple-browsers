@@ -251,6 +251,20 @@ final class UnifiedToggleInputView: UIView {
         set { toolsToolbar.modelPickerMenu = newValue }
     }
 
+    var usesUpdatedModelPickerPresentation: Bool {
+        get { toolsToolbar.usesUpdatedModelPickerPresentation }
+        set { toolsToolbar.usesUpdatedModelPickerPresentation = newValue }
+    }
+
+    var onUpdatedModelPickerTapped: (() -> Void)? {
+        get { toolsToolbar.onUpdatedModelPickerTapped }
+        set { toolsToolbar.onUpdatedModelPickerTapped = newValue }
+    }
+
+    var modelPickerSourceView: UIView {
+        toolsToolbar.modelPickerSourceView
+    }
+
     @discardableResult
     func presentModelPickerMenu() -> Bool {
         toolsToolbar.presentModelPickerMenu()
@@ -355,10 +369,9 @@ final class UnifiedToggleInputView: UIView {
         set { toolsToolbar.isImageButtonHidden = newValue }
     }
 
-    func setEditMode(_ editing: Bool) {
+    func setEditMode(_ editing: Bool, showsReplaceDisclaimer: Bool) {
         toolsToolbar.isEditing = editing
-        // TODO: gate on the FE-supplied `hasResponsesToLose`; shown whenever editing for now.
-        setEditReplaceDisclaimerCardVisible(editing)
+        setEditReplaceDisclaimerCardVisible(showsReplaceDisclaimer)
     }
 
     private func setEditReplaceDisclaimerCardVisible(_ visible: Bool) {
@@ -442,6 +455,13 @@ final class UnifiedToggleInputView: UIView {
     }
 
     // MARK: - Page-Context Chip
+
+    /// Driven directly rather than through a view model: unlike page context there is no auto-attach
+    /// or navigation state to reconcile. `onRemove` receives the removed selection's id.
+    func setSelectionContextChips(_ items: [(id: String, title: String, favicon: UIImage?)], onRemove: @escaping (String) -> Void) {
+        attachmentsStrip.onSelectionContextRemove = onRemove
+        attachmentsStrip.setSelectionContextChips(items)
+    }
 
     func bindPageContextChip(to viewModel: UnifiedToggleInputPageContextChipViewModel) {
         pageContextChipCancellables.removeAll()
@@ -1284,7 +1304,9 @@ final class UnifiedToggleInputView: UIView {
     }
 
     private func updateAttachmentsStripLayout() {
-        let hasVisibleStripItems = !attachmentsStrip.attachments.isEmpty || attachmentsStrip.hasVisiblePageContext
+        let hasVisibleStripItems = !attachmentsStrip.attachments.isEmpty
+            || attachmentsStrip.hasVisiblePageContext
+            || attachmentsStrip.hasVisibleSelectionContext
         let showStrip = hasVisibleStripItems && isExpanded && handler.currentToggleState == .aiChat
         attachmentsStripHeightConstraint.constant = showStrip ? UnifiedToggleInputAttachmentsStripView.Constants.stripHeight : 0
         attachmentsStrip.alpha = showStrip ? 1 : 0

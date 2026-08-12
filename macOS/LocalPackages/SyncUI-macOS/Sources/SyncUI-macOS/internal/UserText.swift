@@ -42,6 +42,15 @@ enum UserText {
     static let syncFooter = NSLocalizedString("preferences.sync.card-footer", bundle: Bundle.module, value: "Support for certain data types depends on the platform. [Learn More](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/sync-and-backup-privacy/)", comment: "Footer / caption on the Sync card in sync settings")
     static let syncFooterUpdated = NSLocalizedString("preferences.sync.card-footer-updated", bundle: Bundle.module, value: "Support for certain data types varies by platform. [Learn More](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/sync-and-backup-privacy/)", comment: "Footer / caption on the Sync card in sync settings")
 
+    // Begin Sync card (V2 — simplifiedSyncSetupV2). Not localized while behind the feature flag.
+    static let beginSyncTitleV2 = NotLocalizedString("preferences.begin-sync-v2.card-title", value: "Keep DuckDuckGo in sync!", comment: "Begin Syncing card title in sync settings (V2)")
+    static let beginSyncDescriptionV2 = NotLocalizedString("preferences.begin-sync-v2.card-description", value: "Your autofill data, bookmarks, and Duck.ai chats, end-to-end encrypted across your DuckDuckGo apps.", comment: "Begin Syncing card description in sync settings (V2)")
+    static let beginSyncButtonV2 = NotLocalizedString("preferences.begin-sync-v2.card-button", value: "Sync with Another Device", comment: "Button text on the Begin Syncing card in sync settings (V2)")
+    static let beginSyncFooterV2 = NotLocalizedString("preferences.begin-sync-v2.card-footer", value: "Don’t have DuckDuckGo on another device? [Get the DuckDuckGo app?](https://duckduckgo.com/app/devices)", comment: "Footer under the Begin Syncing card in sync settings (V2). The [text](url) markdown is a link and must be preserved.")
+    static let syncThisDeviceTitleV2 = NotLocalizedString("preferences.sync-this-device-v2.title", value: "Sync this Device", comment: "Title of the row to start syncing and backing up this device in sync settings (V2)")
+    static let recoverSyncedDataTitleV2 = NotLocalizedString("preferences.recover-synced-data-v2.section-title", value: "Recover Synced Data", comment: "Recover Synced Data section title in sync settings (V2)")
+    static let recoverCodeButtonV2 = NotLocalizedString("preferences.recover-synced-data-v2.button", value: "I Have a Recovery Code", comment: "Button to recover synced data with a recovery code in sync settings (V2)")
+
     // Options
     static let otherOptionsSectionTitle = NSLocalizedString("preferences.other-options.section-title", bundle: Bundle.module, value: "Other Options", comment: "Sync settings. Other Options section title")
     static let syncThisDeviceLink = NSLocalizedString("preferences.sync-this-device.link-title", bundle: Bundle.module, value: "Sync and Back Up This Device", comment: "Sync settings. Title of a link to start setting up sync and backup the device")

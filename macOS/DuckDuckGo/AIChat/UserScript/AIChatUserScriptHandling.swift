@@ -195,6 +195,17 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     var isFireWindowProvider: (() -> Bool)?
 
+    /// Surface that opened this chat, consumed once at load and retained for the conversation's pixels.
+    private var conversationSource: AIChatConversationSource?
+    private var didConsumeConversationSource = false
+    private let conversationSourceHandler: AIChatConversationSourceHandler
+
+    /// Whether page context with content is currently attached to this chat — set by the native
+    /// auto-attach push and updated by the frontend's add/remove toggle. Read at prompt submit for
+    /// the conversation pixels' `hasPageContext`. Best-effort, mirroring Windows: only sidebar chats
+    /// (whose underlying page is attachable) can report true.
+    private var hasAttachedPageContext = false
+
     init(
         storage: AIChatPreferencesStorage,
         messageHandling: AIChatMessageHandling = AIChatMessageHandler(),
@@ -207,7 +218,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         aiChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptErrorEvent>? = nil,
         freeTrialConversionService: FreeTrialConversionInstrumentationService = Application.appDelegate.freeTrialConversionService,
         notificationCenter: NotificationCenter = .default,
-        voiceChatFailureHandler: DuckAiVoiceChatFailureHandling? = nil
+        voiceChatFailureHandler: DuckAiVoiceChatFailureHandling? = nil,
+        conversationSourceHandler: AIChatConversationSourceHandler = Application.appDelegate.aiChatConversationSourceHandler
     ) {
         self.storage = storage
         self.messageHandling = messageHandling
@@ -220,6 +232,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         self.notificationCenter = notificationCenter
         self.featureFlagger = featureFlagger
         self.freeTrialConversionService = freeTrialConversionService
+        self.conversationSourceHandler = conversationSourceHandler
         self.voiceChatFailureHandler = voiceChatFailureHandler ?? DuckAiVoiceChatFailureHandler(
             permissionCenterPresenter: NotificationCenterPermissionCenterPresenter(
                 notificationCenter: notificationCenter,
@@ -252,6 +265,13 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     public func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) async -> Encodable? {
+        // Consume exactly once, at load, before the user can submit a prompt. Guarded by a flag (not
+        // by `conversationSource == nil`) so a chat that loaded with an empty mailbox can't later
+        // steal a different chat's pending source on a subsequent config fetch.
+        if !didConsumeConversationSource {
+            didConsumeConversationSource = true
+            conversationSource = conversationSourceHandler.consumeData()
+        }
         let isFireWindow = isFireWindowProvider?() ?? false
         return messageHandling.getNativeConfigValues(isFireWindow: isFireWindow)
     }
@@ -434,6 +454,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     func submitAIChatPageContext(_ pageContext: AIChatPageContextData?) {
+        hasAttachedPageContext = pageContext.map { $0.attached != false && !$0.content.isEmpty } ?? false
         pageContextSubject.send(pageContext)
     }
 
@@ -630,6 +651,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         guard let payload: TogglePageContextTelemetry = DecodableHelper.decode(from: params) else {
             return nil
         }
+        hasAttachedPageContext = payload.enabled
         let pixel: PixelKitEvent = {
             if payload.enabled {
                 return AIChatPixel.aiChatPageContextAdded(automaticEnabled: storage.shouldAutomaticallySendPageContext)
@@ -1035,7 +1057,7 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
             pageContextConsumedSubject.send()
             // Selections were consumed by the prompt; clear the pull-store so a later init doesn't resurrect them.
             messageHandling.clearSelectionContexts()
-            pixelFiring?.fire(AIChatPixel.aiChatMetricStartNewConversation, frequency: .standard)
+            pixelFiring?.fire(AIChatPixel.aiChatMetricStartNewConversation(isOpenedFromAskDuckAiButton: conversationSource?.isAskDuckAiButton ?? false, hasPageContext: hasAttachedPageContext), frequency: .standard)
             DispatchQueue.main.async { [self] in
                 refreshAtbs(completion: completion)
             }
@@ -1044,7 +1066,7 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
             markDuckAIActivatedIfNeeded(metric)
             pageContextConsumedSubject.send()
             messageHandling.clearSelectionContexts()
-            pixelFiring?.fire(AIChatPixel.aiChatMetricSentPromptOngoingChat, frequency: .standard)
+            pixelFiring?.fire(AIChatPixel.aiChatMetricSentPromptOngoingChat(isOpenedFromAskDuckAiButton: conversationSource?.isAskDuckAiButton ?? false, hasPageContext: hasAttachedPageContext), frequency: .standard)
             DispatchQueue.main.async { [self] in
                 refreshAtbs(completion: completion)
             }

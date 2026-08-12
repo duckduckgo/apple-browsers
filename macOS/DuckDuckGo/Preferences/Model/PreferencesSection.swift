@@ -286,3 +286,21 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
         }
     }
 }
+
+enum PreferencesScrollAnchor: Hashable {
+    case permissions
+}
+
+struct PreferencesDestination: Hashable {
+
+    let pane: PreferencePaneIdentifier
+    let scrollAnchor: PreferencesScrollAnchor?
+
+    static var aiChat: PreferencesDestination {
+        PreferencesDestination(pane: .aiChat, scrollAnchor: nil)
+    }
+
+    static var generalPermissions: PreferencesDestination {
+        PreferencesDestination(pane: .general, scrollAnchor: .permissions)
+    }
+}

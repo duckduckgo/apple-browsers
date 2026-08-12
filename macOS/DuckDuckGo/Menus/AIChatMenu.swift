@@ -320,26 +320,32 @@ extension AIChatMenu.Actions {
 
     @MainActor
     static func makeDefault(
+        conversationSource: AIChatConversationSource,
         remoteSettings: AIChatRemoteSettings,
         tabOpener: AIChatTabOpening,
         historyCleaner: AIChatHistoryCleaning,
         windowControllersManager: WindowControllersManagerProtocol,
-        aiChatSyncCleaner: @escaping () -> AIChatSyncCleaning?
+        aiChatSyncCleaner: @escaping () -> AIChatSyncCleaning?,
+        aiChatConversationSourceHandler: AIChatConversationSourceHandler = Application.appDelegate.aiChatConversationSourceHandler
     ) -> AIChatMenu.Actions {
         AIChatMenu.Actions(
             openNewChat: {
+                aiChatConversationSourceHandler.setData(conversationSource)
                 tabOpener.openAIChatTab(with: .newChat, behavior: .newTab(selected: true))
             },
             openNewVoiceChat: {
                 let sourceCollection = windowControllersManager.lastKeyMainWindowController?
                     .mainViewController.tabCollectionViewModel
+                aiChatConversationSourceHandler.setData(.voice)
                 tabOpener.openVoiceSession(inSourceCollection: sourceCollection, behavior: .newTab(selected: true))
             },
             openNewImageChat: {
                 let url = AIChatURLParameters.imageModeURL(from: remoteSettings.aiChatURL)
+                aiChatConversationSourceHandler.setData(.imageGeneration)
                 tabOpener.openAIChatTab(with: .url(url), behavior: .newTab(selected: true))
             },
             openChat: { suggestion in
+                aiChatConversationSourceHandler.setData(.recentChat)
                 tabOpener.openAIChatTab(with: .existingChat(chatId: suggestion.chatId), behavior: .currentTab)
             },
             deleteAllChats: {

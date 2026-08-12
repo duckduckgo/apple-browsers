@@ -143,7 +143,8 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
                                     voiceSearchHelper: MockVoiceSearchHelper(),
                                     launchSourceManager: MockLaunchSourceManager(),
                                     darkReaderFeatureSettings: MockDarkReaderFeatureSettings(),
-                                    adBlockingAvailability: StubAdBlockingAvailability()
+                                    adBlockingAvailability: StubAdBlockingAvailability(),
+                                    eventHub: StubEventHub()
         )
         let fireExecutor = FireExecutor(tabManager: tabManager,
                                         websiteDataManager: mockWebsiteDataManager,

@@ -136,6 +136,19 @@ public extension SingleUseColor {
 
         case alertGreen
         case calendarStripYellow
+
+        /// The confetti burst's particle palette. Each brand hue supplies a body fill and a darker outline,
+        /// since a confetti particle is drawn as a filled shape with its own outline.
+        case confettiMandarinFill
+        case confettiMandarinStroke
+        case confettiPondwaterFill
+        case confettiPondwaterStroke
+        case confettiLilypadFill
+        case confettiLilypadStroke
+        case confettiBlossomFill
+        case confettiBlossomStroke
+        case confettiPollenFill
+        case confettiPollenStroke
     }
 
 }

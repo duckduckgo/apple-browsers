@@ -45,6 +45,10 @@ enum SubscriptionPixel: PixelKitEvent {
     case subscriptionVPNWidgetClick
     case subscriptionVPNShortcutClick
     case subscriptionVPNNotificationClick
+    // Subscription Onboarding Flow
+    case subscriptionOnboardingConnectionInfoFailure(Error)
+    case subscriptionOnboardingAIModelsFailure(Error)
+    case subscriptionOnboardingSubscriptionFailure(Error)
 
     var name: String {
         switch self {
@@ -69,6 +73,10 @@ enum SubscriptionPixel: PixelKitEvent {
         case .subscriptionVPNWidgetClick: return "subscription_vpn_widget_click"
         case .subscriptionVPNShortcutClick: return "subscription_vpn_shortcut_click"
         case .subscriptionVPNNotificationClick: return "subscription_vpn_notification_click"
+            // Subscription Onboarding Flow
+        case .subscriptionOnboardingConnectionInfoFailure: return "subscription_onboarding_connection-info_failure"
+        case .subscriptionOnboardingAIModelsFailure: return "subscription_onboarding_ai-models_failure"
+        case .subscriptionOnboardingSubscriptionFailure: return "subscription_onboarding_subscription_failure"
         }
     }
 
@@ -126,7 +134,10 @@ enum SubscriptionPixel: PixelKitEvent {
                 .subscriptionVPNAddressBarClick,
                 .subscriptionVPNWidgetClick,
                 .subscriptionVPNShortcutClick,
-                .subscriptionVPNNotificationClick:
+                .subscriptionVPNNotificationClick,
+                .subscriptionOnboardingConnectionInfoFailure,
+                .subscriptionOnboardingAIModelsFailure,
+                .subscriptionOnboardingSubscriptionFailure:
             return [.pixelSource]
         }
     }

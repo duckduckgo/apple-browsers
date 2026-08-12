@@ -158,16 +158,16 @@ final class PromoQueueLeaseArbiter: PromoQueueLeaseArbitrating {
 
     private var activeOwner: ActiveOwner?
 
-    /// Prunes before reading so neither the debug screen nor a caller can observe a lease whose token is already gone.
+    /// Observational projection of the current lease. A record whose weak token has deallocated is reported as idle,
+    /// but reads never mutate arbitration state; the next acquisition performs reclamation.
     var snapshot: PromoQueueLeaseSnapshot {
-        pruneLeasesWithDeallocatedTokens()
         let ownerSnapshot: PromoQueueActiveOwnerSnapshot?
         switch activeOwner {
-        case .modal(let record):
+        case .modal(let record) where record.token != nil:
             ownerSnapshot = .modal(record.attemptIdentity)
-        case .remoteMessage(let record):
+        case .remoteMessage(let record) where record.token != nil:
             ownerSnapshot = .remoteMessage(record.session)
-        case nil:
+        default:
             ownerSnapshot = nil
         }
         return PromoQueueLeaseSnapshot(activeOwner: ownerSnapshot)

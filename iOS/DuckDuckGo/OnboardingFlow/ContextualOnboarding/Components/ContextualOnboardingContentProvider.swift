@@ -29,13 +29,16 @@ protocol ContextualOnboardingContentProviding {
 struct ContextualOnboardingContentProvider: ContextualOnboardingContentProviding {
     private let tryAIContentProvider: OnboardingEndOfJourneyTryAIContentProviding
     private let downloadReasonProvider: OnboardingDownloadReasonHandling
+    private let searchExperienceProvider: OnboardingSearchExperienceProvider
 
     init(
         tryAIContentProvider: OnboardingEndOfJourneyTryAIContentProviding = OnboardingEndOfJourneyTryAIProvider(),
-        downloadReasonProvider: OnboardingDownloadReasonHandling = OnboardingManager()
+        downloadReasonProvider: OnboardingDownloadReasonHandling = OnboardingManager(),
+        searchExperienceProvider: OnboardingSearchExperienceProvider = OnboardingSearchExperience()
     ) {
         self.tryAIContentProvider = tryAIContentProvider
         self.downloadReasonProvider = downloadReasonProvider
+        self.searchExperienceProvider = searchExperienceProvider
     }
 }
 
@@ -69,23 +72,47 @@ enum OnboardingEndOfJourneyAction: Equatable {
 extension ContextualOnboardingContentProvider {
 
     var endOfJourneyContent: OnboardingEndOfJourneyContent {
+        // The Try-AI nudge takes precedence; it only ever qualifies within the download-reason experiment.
         if let tryAI = tryAIContentProvider.dialogContent {
-            return OnboardingEndOfJourneyContent(
-                icon: .duckAI,
-                title: tryAI.title,
-                message: tryAI.message,
-                primaryCTA: tryAI.primaryCTA,
-                primaryAction: .tryDuckAI,
-                secondaryCTA: tryAI.secondaryCTA,
-                secondaryAction: .skip,
-                daxAnimation: OnboardingRebranding.contextualThumbsUpDaxAnimation,
-                isManuallyDismissable: false
-            )
+            return tryAIVariantContent(tryAI)
         }
-        if downloadReasonProvider.currentDownloadReason == .privateAIChat {
+        if let reason = downloadReasonProvider.currentDownloadReason {
+            return endOfJourneyForDownloadReasonFlow(reason: reason)
+        }
+        return endOfJourneyForStandardFlow()
+    }
+
+    /// Download-reason experiment (treatment). Its AI copy is a non-localized string, so it's used only for
+    /// these enrolled users — shown when they came for private AI chat, or already started an AI chat.
+    private func endOfJourneyForDownloadReasonFlow(reason: OnboardingDownloadReason) -> OnboardingEndOfJourneyContent {
+        if reason == .privateAIChat || searchExperienceProvider.didStartAIChatDuringOnboarding {
             return standardContent(message: UserText.Onboarding.ContextualOnboarding.EndOfJourney.aiMessage)
         }
         return standardContent()
+    }
+
+    /// Non-experiment users. When they started an AI chat, use the existing localized Duck.ai completion copy
+    /// (the experiment's non-localized copy must not leak here); otherwise the standard completion.
+    private func endOfJourneyForStandardFlow() -> OnboardingEndOfJourneyContent {
+        if searchExperienceProvider.didStartAIChatDuringOnboarding {
+            return standardContent(message: UserText.Onboarding.DuckAIQuery.completionOnboardingMessage)
+        }
+        return standardContent()
+    }
+
+    /// The Try-AI variant — Duck.ai icon, two buttons, not manually dismissable.
+    private func tryAIVariantContent(_ tryAI: OnboardingEndOfJourneyTryAIContent) -> OnboardingEndOfJourneyContent {
+        OnboardingEndOfJourneyContent(
+            icon: .duckAI,
+            title: tryAI.title,
+            message: tryAI.message,
+            primaryCTA: tryAI.primaryCTA,
+            primaryAction: .tryDuckAI,
+            secondaryCTA: tryAI.secondaryCTA,
+            secondaryAction: .skip,
+            daxAnimation: OnboardingRebranding.contextualThumbsUpDaxAnimation,
+            isManuallyDismissable: false
+        )
     }
 
     /// The standard "You've got this!" end-of-journey — single button, Dax animation, manually dismissable.

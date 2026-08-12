@@ -5800,11 +5800,19 @@ extension MainViewController: PopoverSuggestionsHosting {
 
     /// Hides the container but keeps the list surfaces alive, avoiding remove/reinstall flicker on toggle.
     func hidePopover() {
-        suggestionTrayController?.clearKeyboardSelections()
-        suggestionTrayController?.deactivatePromoSurfaceExposure()
-        viewCoordinator.omniBar.showSeparator()
-        viewCoordinator.suggestionTrayContainer.isHidden = true
-        currentTab?.webView.accessibilityElementsHidden = false
+        NewTabPagePromoSurfaceHandoff.showNewTabPage(
+            hideHostedSurface: {
+                suggestionTrayController?.clearKeyboardSelections()
+                suggestionTrayController?.deactivatePromoSurfaceExposure()
+                viewCoordinator.omniBar.showSeparator()
+                viewCoordinator.suggestionTrayContainer.isHidden = true
+                currentTab?.webView.accessibilityElementsHidden = false
+            },
+            activateNewTabPage: {
+                let isCoveredByUnifiedInput = unifiedToggleInputCoordinator?.computeRenderState().isContentVisible == true
+                newTabPageViewController?.setPromoSurfaceActive(!isCoveredByUnifiedInput)
+            }
+        )
     }
 }
 

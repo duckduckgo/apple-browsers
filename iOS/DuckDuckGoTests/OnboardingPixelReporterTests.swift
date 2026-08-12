@@ -190,7 +190,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.setDefault(.shown)])
         XCTAssertEqual(sharedPixelHandlerMock.receivedSource, .duckAICustomProductPage)
         XCTAssertEqual(sharedPixelHandlerMock.receivedFlow, .duckAI)
-        XCTAssertNil(sharedPixelHandlerMock.receivedVariant)
+        XCTAssertNotNil(sharedPixelHandlerMock.receivedVariant)
     }
 
     func testWhenMeasureChooseBrowserCTAActionThenLegacyChooseBrowserPressedAndSetDefaultEngageSharedPixelsFire() {
@@ -215,7 +215,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.setDefault(.clicked(.engage))])
         XCTAssertEqual(sharedPixelHandlerMock.receivedSource, .duckAICustomProductPage)
         XCTAssertEqual(sharedPixelHandlerMock.receivedFlow, .duckAI)
-        XCTAssertNil(sharedPixelHandlerMock.receivedVariant)
+        XCTAssertNotNil(sharedPixelHandlerMock.receivedVariant)
     }
 
     func testWhenMeasureAiComparisonImpressionThenAiComparisonShownSharedPixelFires() {
@@ -336,7 +336,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.setDefault(.clicked(.dismiss))])
         XCTAssertEqual(sharedPixelHandlerMock.receivedSource, .duckAICustomProductPage)
         XCTAssertEqual(sharedPixelHandlerMock.receivedFlow, .duckAI)
-        XCTAssertNil(sharedPixelHandlerMock.receivedVariant)
+        XCTAssertNotNil(sharedPixelHandlerMock.receivedVariant)
     }
 
     // MARK: - Custom Interactions
@@ -1317,6 +1317,42 @@ final class OnboardingPixelReporterTests: XCTestCase {
         // THEN
         XCTAssertEqual(sharedPixelHandlerMock.receivedSource, .default)
         XCTAssertEqual(sharedPixelHandlerMock.receivedFlow, .tailoredByDownloadReason)
+    }
+
+    func testWhenMeasureSetDefaultBrowserImpressionThenCarriesStoredDownloadReasonVariant() {
+        // GIVEN — a download reason was selected earlier in the tailored flow.
+        sharedPixelsStorageMock.onboardingVariant = .downloadReasonAdBlocking
+
+        // WHEN
+        sut.measureSetDefaultBrowserImpression()
+
+        // THEN
+        XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.setDefault(.shown)])
+        XCTAssertEqual(sharedPixelHandlerMock.receivedVariant, .downloadReasonAdBlocking)
+    }
+
+    func testWhenMeasureChooseBrowserCTAActionThenCarriesStoredDownloadReasonVariant() {
+        // GIVEN — a download reason was selected earlier in the tailored flow.
+        sharedPixelsStorageMock.onboardingVariant = .downloadReasonSearch
+
+        // WHEN
+        sut.measureChooseBrowserCTAAction()
+
+        // THEN
+        XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.setDefault(.clicked(.engage))])
+        XCTAssertEqual(sharedPixelHandlerMock.receivedVariant, .downloadReasonSearch)
+    }
+
+    func testWhenMeasureSetDefaultBrowserSkippedThenCarriesStoredDownloadReasonVariant() {
+        // GIVEN — a download reason was selected earlier in the tailored flow.
+        sharedPixelsStorageMock.onboardingVariant = .downloadReasonNoAI
+
+        // WHEN
+        sut.measureSetDefaultBrowserSkipped()
+
+        // THEN
+        XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.setDefault(.clicked(.dismiss))])
+        XCTAssertEqual(sharedPixelHandlerMock.receivedVariant, .downloadReasonNoAI)
     }
 
     func testWhenMeasureDownloadReasonSelectionThenDownloadChoiceClickedFiresWithMappedReason() {

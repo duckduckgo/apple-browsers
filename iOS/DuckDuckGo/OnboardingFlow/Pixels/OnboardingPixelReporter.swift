@@ -262,14 +262,16 @@ extension OnboardingPixelReporter: OnboardingIntroPixelReporting {
         fire(event: .onboardingIntroComparisonChartShownUnique, unique: true)
         sharedPixelHandler.fire(.setDefault(.shown),
                                 source: sharedPixelsStorage.onboardingSource,
-                                flow: sharedPixelsStorage.onboardingFlow)
+                                flow: sharedPixelsStorage.onboardingFlow,
+                                variant: sharedPixelsStorage.onboardingVariant)
     }
 
     func measureChooseBrowserCTAAction() {
         fire(event: .onboardingIntroChooseBrowserCTAPressed, unique: false)
         sharedPixelHandler.fire(.setDefault(.clicked(.engage)),
                                 source: sharedPixelsStorage.onboardingSource,
-                                flow: sharedPixelsStorage.onboardingFlow)
+                                flow: sharedPixelsStorage.onboardingFlow,
+                                variant: sharedPixelsStorage.onboardingVariant)
     }
 
     func measureAiIntroImpression() {
@@ -388,7 +390,8 @@ extension OnboardingPixelReporter: OnboardingIntroPixelReporting {
     func measureSetDefaultBrowserSkipped() {
         sharedPixelHandler.fire(.setDefault(.clicked(.dismiss)),
                                 source: sharedPixelsStorage.onboardingSource,
-                                flow: sharedPixelsStorage.onboardingFlow)
+                                flow: sharedPixelsStorage.onboardingFlow,
+                                variant: sharedPixelsStorage.onboardingVariant)
     }
 
 }

@@ -118,6 +118,10 @@ extension OnboardingView {
     /// Screens whose *shape* differs — e.g. the single-select model picker — get their own view
     /// rather than bending this one with mode flags. Same shape → reuse; different shape → new view.
     struct PersonalizationToggleTemplate: View {
+        private enum Metrics {
+            static let contentTopPadding: CGFloat = 24
+        }
+
         @Environment(\.onboardingTheme) private var onboardingTheme
         @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -144,7 +148,7 @@ extension OnboardingView {
         var body: some View {
             LinearDialogContentContainer(
                 metrics: .init(
-                    outerSpacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing,
+                    outerSpacing: Metrics.contentTopPadding,
                     textSpacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing,
                     contentSpacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing,
                     actionsSpacing: onboardingTheme.linearOnboardingMetrics.actionsSpacing

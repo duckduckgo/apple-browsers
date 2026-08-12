@@ -9028,7 +9028,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Erhalte Zugang zu den fortschrittlichen KI-Modellen in Duck.ai, indem du DuckDuckGo abonnierst, was auch unser VPN und andere Premium-Datenschutzmaßnahmen beinhaltet."
+            "value" : "Hol dir Zugang zu fortschrittlichen KI-Modellen in Duck.ai, unserem VPN und weiteren Premium-Schutzfunktionen, indem du DuckDuckGo abonnierst."
           }
         },
         "en" : {
@@ -9040,43 +9040,43 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Obtén acceso a modelos avanzados de IA en Duck.ai suscribiéndote a DuckDuckGo, que también incluye nuestra VPN y otras protecciones de privacidad premium."
+            "value" : "Obtén acceso a modelos avanzados de IA en Duck.ai, nuestra VPN y otras protecciones prémium suscribiéndote a DuckDuckGo."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Accédez à des modèles d'IA avancés dans Duck.ai en vous abonnant à DuckDuckGo, qui comprend également notre VPN et d'autres protections de confidentialité premium."
+            "value" : "Accédez à des modèles d'IA avancés dans Duck.ai, à notre VPN et à d'autres protections Premium en vous abonnant à DuckDuckGo."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Accedi ai modelli avanzati di AI su Duck.ai abbonandoti a DuckDuckGo, che include anche la nostra VPN e altre protezioni della privacy premium."
+            "value" : "Accedi ai modelli avanzati di AI su Duck.ai, alla nostra VPN e ad altre protezioni premium abbonandoti a DuckDuckGo."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Krijg toegang tot geavanceerde AI-modellen in Duck.ai door je te abonneren op DuckDuckGo, dat ook onze VPN en andere premium privacybescherming omvat."
+            "value" : "Krijg toegang tot geavanceerde AI-modellen in Duck.ai, onze VPN en andere premium beschermingen door je te abonneren op DuckDuckGo."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Uzyskaj dostęp do zaawansowanych modeli sztucznej inteligencji w Duck.ai, subskrybując DuckDuckGo, co obejmuje również naszą sieć VPN i inne usługi ochrony prywatności premium."
+            "value" : "Uzyskaj dostęp do zaawansowanych modeli sztucznej inteligencji w Duck.ai, naszej sieci VPN i innych usług ochrony premium, subskrybując DuckDuckGo."
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Obtém acesso a modelos avançados de IA no Duck.ai ao subscreveres o DuckDuckGo, que também inclui a nossa VPN e outras proteções de privacidade premium."
+            "value" : "Obtém acesso a modelos avançados de IA no Duck.ai, à nossa VPN e a outras proteções premium ao subscreveres o DuckDuckGo."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Подписка DuckDuckGo позволит вам пользоваться продвинутыми ИИ-моделями в Duck.ai, а также сервисом VPN и другими видами повышенной защиты."
+            "value" : "Подписка DuckDuckGo откроет вам доступ к продвинутым ИИ-моделям в Duck.ai, нашему VPN и другим видам премиум-защиты."
           }
         }
       }
@@ -12292,8 +12292,8 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "DuckDuckGo kann Cookie-Einstellungen automatisch verwalten, um die Privatsphäre zu maximieren, Cookies zu minimieren und diese Pop-ups zu schließen."
+            "state" : "translated",
+            "value" : "DuckDuckGo kann Cookie-Pop-ups automatisch verwalten, um die Privatsphäre zu maximieren und Cookies zu minimieren, bevor du sie überhaupt siehst."
           }
         },
         "en" : {
@@ -12304,44 +12304,44 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "DuckDuckGo puede gestionar automáticamente tus preferencias de cookies para maximizar la privacidad, minimizar las cookies y cerrar estas ventanas emergentes."
+            "state" : "translated",
+            "value" : "DuckDuckGo puede gestionar automáticamente las ventanas emergentes de cookies para maximizar la privacidad y minimizar las cookies antes incluso de que las veas."
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "DuckDuckGo peut gérer automatiquement les préférences en matière de cookies pour maximiser la confidentialité, minimiser les cookies et fermer ces fenêtres contextuelles."
+            "state" : "translated",
+            "value" : "DuckDuckGo peut gérer automatiquement les fenêtres contextuelles de cookies afin de maximiser la confidentialité et de minimiser les cookies avant même qu'ils ne soient visibles."
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "DuckDuckGo può gestire automaticamente le preferenze sui cookie per massimizzare la privacy, ridurre al minimo i cookie e chiudere questi popup."
+            "state" : "translated",
+            "value" : "DuckDuckGo può gestire automaticamente i popup sui cookie per massimizzare la privacy e ridurre al minimo i cookie prima ancora che tu li veda."
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "DuckDuckGo kan automatisch je cookievoorkeuren beheren om je privacy te maximaliseren, het aantal cookies te minimaliseren en deze pop-ups te sluiten."
+            "state" : "translated",
+            "value" : "DuckDuckGo kan cookiepop-ups automatisch beheren om je privacy te maximaliseren en het aantal cookies te minimaliseren, nog voordat je ze ziet."
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "DuckDuckGo może automatycznie zarządzać preferencjami dotyczącymi plików cookie, aby zmaksymalizować prywatność, zminimalizować liczbę plików cookie i zamknąć te wyskakujące okienka."
+            "state" : "translated",
+            "value" : "DuckDuckGo może automatycznie zarządzać wyskakującymi okienkami dotyczącymi plików cookie, aby lepiej chronić Twoją prywatność i ograniczyć liczbę plików cookie, zanim okienka w ogóle się wyświetlą."
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "O DuckDuckGo pode gerir automaticamente as preferências de cookies para maximizar a privacidade, minimizar os cookies e fechar estes pop-ups."
+            "state" : "translated",
+            "value" : "O DuckDuckGo pode gerir automaticamente os pop-ups de cookies para maximizar a privacidade e minimizar os cookies antes mesmo de os veres."
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "DuckDuckGo может автоматически управлять настройками файлов cookie, чтобы обеспечить максимальную конфиденциальность, минимизировать использование cookie и закрывать соответствующие всплывающие окна."
+            "state" : "translated",
+            "value" : "DuckDuckGo может автоматически управлять всплывающими окнами cookie, чтобы обеспечить максимальную конфиденциальность и минимизировать использование cookie еще до того, как вы их увидите."
           }
         }
       }
@@ -105278,8 +105278,8 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Wir werden versuchen, nur die privatesten verfügbaren Cookie-Optionen für dich auszuwählen und diese Pop-ups dann zu schließen."
+            "state" : "translated",
+            "value" : "Wir werden versuchen, so viele Cookies wie möglich für dich abzulehnen und dann die Pop-ups zu schließen."
           }
         },
         "en" : {
@@ -105290,44 +105290,44 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Intentaremos seleccionar solo las opciones de cookies más privadas disponibles para ti y, a continuación, cerrar estas ventanas emergentes."
+            "state" : "translated",
+            "value" : "Intentaremos rechazar el mayor número de cookies posible por ti y, a continuación, cerrar las ventanas emergentes."
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Nous nous efforcerons de ne sélectionner que les options de cookies les plus respectueuses de la vie privée pour vous, puis de fermer ces fenêtres contextuelles."
+            "state" : "translated",
+            "value" : "Nous nous efforcerons de rejeter le plus grand nombre de cookies possible pour vous, puis de fermer ces fenêtres contextuelles."
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Cercheremo di selezionare solo le opzioni dei cookie più private disponibili per te, quindi di chiudere questi popup."
+            "state" : "translated",
+            "value" : "Cercheremo di rifiutare il maggior numero possibile di cookie per te, quindi di chiudere i pop-up."
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "We proberen alleen de meest privacyvriendelijke cookie-opties voor je te selecteren en sluiten daarna deze pop-ups."
+            "state" : "translated",
+            "value" : "We proberen zoveel mogelijk cookies voor je af te wijzen en sluiten daarna de pop-ups."
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Postaramy się wybrać dla Ciebie tylko najbardziej prywatne dostępne opcje plików cookie, a następnie zamknąć te wyskakujące okienka."
+            "state" : "translated",
+            "value" : "Postaramy się odrzucić dla Ciebie jak najwięcej plików cookie, a następnie zamknąć wyskakujące okienka."
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Vamos tentar selecionar apenas as opções de cookies mais privadas disponíveis por ti e, em seguida, fechar estes pop-ups."
+            "state" : "translated",
+            "value" : "Vamos tentar rejeitar o máximo de cookies possível por ti e, em seguida, fechar os pop-ups."
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Мы постараемся выбрать для вас только максимально конфиденциальные настройки файлов cookie, а затем закроем эти окна."
+            "state" : "translated",
+            "value" : "Мы постараемся отклонить для вас как можно больше файлов cookie, а затем закроем эти окна."
           }
         }
       }
@@ -105338,8 +105338,8 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Cookie-Pop-ups automatisch verwalten"
+            "state" : "translated",
+            "value" : "Optionale Cookies ablehnen"
           }
         },
         "en" : {
@@ -105350,44 +105350,44 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Administrar automáticamente las ventanas emergentes de cookies"
+            "state" : "translated",
+            "value" : "Rechazar cookies opcionales"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Gérer automatiquement les fenêtres contextuelles (cookies)"
+            "state" : "translated",
+            "value" : "Rejeter les cookies optionnels"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Gestione automatica dei popup dei cookie"
+            "state" : "translated",
+            "value" : "Rifiuta i cookie opzionali"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Cookiepop-ups automatisch beheren"
+            "state" : "translated",
+            "value" : "Optionele cookies afwijzen"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Automatycznie zarządzaj okienkami z prośbą o zgodę"
+            "state" : "translated",
+            "value" : "Odrzuć opcjonalne pliki cookie"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Gerir automaticamente pop-ups de cookies"
+            "state" : "translated",
+            "value" : "Rejeitar cookies opcionais"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Автоматическое управление окнами выбора файлов cookie"
+            "state" : "translated",
+            "value" : "Отклонить дополнительные файлы cookie"
           }
         }
       }
@@ -105398,8 +105398,8 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Lass DuckDuckGo dir außerdem einen Klick ersparen, indem Cookies in deinem Namen akzeptiert werden, um Pop-ups zu schließen, bei denen du dich nicht abmelden kannst."
+            "state" : "translated",
+            "value" : "Falls es keine Option zum Ablehnen gibt, ersparen wir dir einen Klick, akzeptieren diese Cookies für dich und schließen die Pop-ups."
           }
         },
         "en" : {
@@ -105410,44 +105410,44 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Deja también que DuckDuckGo te ahorre un clic al aceptar las cookies en tu nombre para cerrar las ventanas emergentes que no te dejan rechazarlas."
+            "state" : "translated",
+            "value" : "Si no hay opción de rechazarlas, te ahorraremos un clic, aceptaremos estas cookies por ti y cerraremos las ventanas emergentes."
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Laissez aussi DuckDuckGo vous épargner un clic en acceptant les cookies en votre nom pour fermer les fenêtres contextuelles qui ne vous permettent pas de refuser leur utilisation."
+            "state" : "translated",
+            "value" : "Si aucune option de refus n’est proposée, nous vous épargnerons un clic, accepterons ces cookies à votre place et fermerons les fenêtres contextuelles."
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Lascia inoltre che DuckDuckGo ti faccia risparmiare un clic accettando i cookie per tuo conto, per chiudere i pop-up che non ti permettono di rifiutare."
+            "state" : "translated",
+            "value" : "Se non è prevista un'opzione di rifiuto, ti risparmieremo un clic, accetteremo questi cookie per te e chiuderemo i popup."
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Laat DuckDuckGo je ook een klik besparen door namens jou cookies te accepteren om pop-ups te sluiten waarbij je je niet kunt afmelden."
+            "state" : "translated",
+            "value" : "Als er geen weigeroptie is, besparen we je een klik, accepteren we deze cookies voor je en sluiten we de pop-ups."
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Pozwól też DuckDuckGo zaoszczędzić Ci kliknięcie, akceptując w twoim imieniu pliki cookie, aby zamknąć wyskakujące okienka, z których nie możesz zrezygnować."
+            "state" : "translated",
+            "value" : "Jeśli nie będzie opcji odrzucenia plików cookie, zaoszczędzimy Ci klikania, akceptując je za Ciebie i zamykając wyskakujące okienka."
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Permite também que o DuckDuckGo te poupe um clique, aceitando cookies em teu nome para fechar pop-ups sem opção de exclusão."
+            "state" : "translated",
+            "value" : "Se não houver opção de rejeição, vamos poupar-te um clique, aceitar estes cookies por ti e fechar os pop-ups."
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Также разрешите DuckDuckGo экономить вам время, принимая файлы cookie за вас, чтобы закрывать всплывающие окна без возможности отказа."
+            "state" : "translated",
+            "value" : "Если возможности отказаться от отслеживания нет, мы сэкономим ваше время, примем эти файлы cookie за вас и закроем всплывающие окна."
           }
         }
       }
@@ -105458,8 +105458,8 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Pop-ups ohne Abmeldemöglichkeit"
+            "state" : "translated",
+            "value" : "Cookies akzeptieren, die nicht abgelehnt werden können"
           }
         },
         "en" : {
@@ -105470,44 +105470,44 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Ventanas emergentes sin opción de rechazarlas"
+            "state" : "translated",
+            "value" : "Aceptar cookies sin opción de rechazarlas"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Fenêtres contextuelles sans option de refus"
+            "state" : "translated",
+            "value" : "Accepter les cookies qui ne peuvent pas être refusés"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Popup senza possibilità di rifiutare"
+            "state" : "translated",
+            "value" : "Accetta i cookie che non prevedono il rifiuto"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Pop-ups zonder afmeldmogelijkheid"
+            "state" : "translated",
+            "value" : "Accepteer cookies die niet kunnen worden afgewezen"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Wyskakujące okienka bez możliwości rezygnacji"
+            "state" : "translated",
+            "value" : "Akceptuj pliki cookie, których nie można odrzucić"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Pop-ups sem opção de exclusão"
+            "state" : "translated",
+            "value" : "Aceitar cookies que não podem ser rejeitados"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Всплывающие окна без возможности отказа"
+            "state" : "translated",
+            "value" : "Принимать файлы cookie, от которых нельзя отказаться"
           }
         }
       }

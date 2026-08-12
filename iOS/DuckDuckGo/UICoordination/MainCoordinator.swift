@@ -900,6 +900,7 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
 
     func showNewTabPageAfterIdleReturn(timeAwayMs: Int?) {
         if voiceShortcutFeature.isAvailable, voiceSessionStateManager.isVoiceSessionActive {
+            startUntreatedReturnSession(timeAwayMs: timeAwayMs)
             return
         }
 
@@ -911,6 +912,7 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
         // We require a non-nil current tab here: if there is no current tab,
         // we still want to fall through to `newTab(...)` to create one.
         if let currentTab = tabManager.currentTabsModel.currentTab, currentTab.link == nil {
+            startUntreatedReturnSession(timeAwayMs: timeAwayMs)
             return
         }
 
@@ -928,6 +930,12 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
     }
 
     func recordOrdinaryReturn(timeAwayMs: Int?) {
+        startUntreatedReturnSession(timeAwayMs: timeAwayMs)
+    }
+
+    /// A return where no after-idle treatment was applied, so `after_idle` stays false and
+    /// the post-idle event — which only reports on treated returns — is not started.
+    private func startUntreatedReturnSession(timeAwayMs: Int?) {
         controller.postIdleSessionInstrumentation.noteReturn(timeAwayMs: timeAwayMs)
         controller.postIdleSessionInstrumentation.sessionStarted(landedOn: landedOnForCurrentTab(), afterIdleSurface: nil, focused: false)
     }

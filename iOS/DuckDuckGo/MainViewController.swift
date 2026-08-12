@@ -5993,6 +5993,19 @@ extension MainViewController: NewTabPageControllerDelegate {
         self.onSelectFavorite(favorite)
     }
 
+    func newTabPageDidScroll(_ controller: NewTabPageViewController) {
+        recordNewTabPageSessionAction { $0.scrollView() }
+    }
+
+    func newTabPage(_ controller: NewTabPageViewController, didInteractWithMessage interaction: NewTabPageMessageInteraction) {
+        recordNewTabPageSessionAction { instrumentation in
+            switch interaction {
+            case .callToAction: instrumentation.clickMessageCta()
+            case .dismiss: instrumentation.clickMessageDismiss()
+            }
+        }
+    }
+
     func newTabPageDidEditFavorite(_ controller: NewTabPageViewController, favorite: BookmarkEntity) {
         segueToEditBookmark(favorite)
     }

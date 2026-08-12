@@ -48,33 +48,24 @@ final class UnifiedToggleInputModelPickerTests: XCTestCase {
         XCTAssertNil(content.itemsWithRecommendationLabel.last?.subtitle)
     }
 
-    func testWhenFreeOrPlusUserHasBothAvailableGroupsThenContentDoesNotShowAvailableSeparator() {
+    func testWhenAvailableModelsHaveAndDoNotHaveRecommendationLabelsThenContentShowsSeparatorForEveryUserTier() {
         let models = [
-            makeModel(id: "with", entityHasAccess: true, accessTier: ["free", "plus"], label: .everydayUse),
-            makeModel(id: "without", entityHasAccess: true, accessTier: ["free", "plus"]),
+            makeModel(id: "with", entityHasAccess: true, accessTier: ["free", "plus", "pro", "internal"], label: .everydayUse),
+            makeModel(id: "without", entityHasAccess: true, accessTier: ["free", "plus", "pro", "internal"]),
         ]
 
-        XCTAssertFalse(makeContent(models: models, userTier: .free).showsAvailableItemsSeparator)
-        XCTAssertFalse(makeContent(models: models, userTier: .plus).showsAvailableItemsSeparator)
+        for userTier in [AIChatUserTier.free, .plus, .pro, .internal] {
+            XCTAssertTrue(makeContent(models: models, userTier: userTier).showsAvailableItemsSeparator)
+        }
     }
 
-    func testWhenProOrInternalUserHasBothAvailableGroupsThenContentShowsAvailableSeparator() {
-        let models = [
-            makeModel(id: "with", entityHasAccess: true, accessTier: ["pro", "internal"], label: .everydayUse),
-            makeModel(id: "without", entityHasAccess: true, accessTier: ["pro", "internal"]),
-        ]
-
-        XCTAssertTrue(makeContent(models: models, userTier: .pro).showsAvailableItemsSeparator)
-        XCTAssertTrue(makeContent(models: models, userTier: .internal).showsAvailableItemsSeparator)
-    }
-
-    func testWhenProUserHasOnlyOneAvailableGroupThenContentDoesNotShowAvailableSeparator() {
+    func testWhenOnlyOneAvailableGroupExistsThenContentDoesNotShowAvailableSeparator() {
         let onlyLabeled = makeContent(models: [
-            makeModel(id: "with", entityHasAccess: true, accessTier: ["pro"], label: .everydayUse),
-        ], userTier: .pro)
+            makeModel(id: "with", entityHasAccess: true, accessTier: ["free"], label: .everydayUse),
+        ])
         let onlyUnlabeled = makeContent(models: [
-            makeModel(id: "without", entityHasAccess: true, accessTier: ["pro"]),
-        ], userTier: .pro)
+            makeModel(id: "without", entityHasAccess: true, accessTier: ["free"]),
+        ])
 
         XCTAssertFalse(onlyLabeled.showsAvailableItemsSeparator)
         XCTAssertFalse(onlyUnlabeled.showsAvailableItemsSeparator)
@@ -128,8 +119,8 @@ final class UnifiedToggleInputModelPickerTests: XCTestCase {
         ])
 
         XCTAssertNil(content.gatedItems.first?.subtitle)
-        XCTAssertEqual(content.gatedItems.first?.emphasizedName, "")
-        XCTAssertEqual(content.gatedItems.first?.remainingName, "Claude Sonnet 4.6")
+        XCTAssertEqual(content.gatedItems.first?.emphasizedName, "Claude")
+        XCTAssertEqual(content.gatedItems.first?.remainingName, " Sonnet 4.6")
     }
 
     func testWhenGatedModelsHaveLabelsThenContentKeepsBackendOrderAndDoesNotIncludeThemInAvailableGroups() {
@@ -144,48 +135,44 @@ final class UnifiedToggleInputModelPickerTests: XCTestCase {
         XCTAssertTrue(content.gatedItems.allSatisfy { $0.subtitle == nil })
     }
 
-    func testWhenFreeUserHasGatedPlusModelThenContentOffersPurchase() {
+    func testWhenGatedModelRequiresPlusThenContentUsesPlusBadge() {
         let content = makeContent(models: [
             makeModel(id: "plus", entityHasAccess: false, accessTier: ["plus", "pro"]),
-        ], userTier: .free)
+        ])
 
-        XCTAssertEqual(content.callToAction?.title, UserText.aiChatModelPickerTryForFree)
-        XCTAssertEqual(content.callToAction?.requiredTier, .plus)
-        XCTAssertEqual(content.callToAction?.appearance, .tryForFree)
+        XCTAssertEqual(content.gatedItems.first?.requiredTierBadgeText, UserText.aiChatPlusModelsSectionHeader.uppercased())
     }
 
-    func testWhenPlusUserHasGatedProModelThenContentOffersUpgrade() {
+    func testWhenGatedModelRequiresProThenContentUsesProBadge() {
         let content = makeContent(models: [
             makeModel(id: "pro", entityHasAccess: false, accessTier: ["pro"]),
-        ], userTier: .plus)
+        ])
 
-        XCTAssertEqual(content.callToAction?.title, UserText.aiChatModelPickerUpgrade)
-        XCTAssertEqual(content.callToAction?.requiredTier, .pro)
-        XCTAssertEqual(content.callToAction?.appearance, .upgrade)
+        XCTAssertEqual(content.gatedItems.first?.requiredTierBadgeText, UserText.aiChatProModelsSectionHeader.uppercased())
     }
 
-    func testWhenFreeUserHasGatedModelsThenContentUsesAdvancedModelsTitle() {
+    func testWhenModelIsAccessibleThenContentDoesNotIncludeRequiredTierBadge() {
+        let content = makeContent(models: [
+            makeModel(id: "plus", entityHasAccess: true, accessTier: ["plus"]),
+        ], userTier: .plus)
+
+        XCTAssertNil(content.availableItems.first?.requiredTierBadgeText)
+    }
+
+    func testWhenFreeUserHasGatedModelsThenContentUsesTryFreeTitle() {
         let content = makeContent(models: [
             makeModel(id: "plus", entityHasAccess: false, accessTier: ["plus"]),
         ], userTier: .free)
 
-        XCTAssertEqual(content.gatedSectionTitle, UserText.aiChatAdvancedModelsSectionHeader)
+        XCTAssertEqual(content.gatedSectionTitle, UserText.aiChatModelPickerTryFree)
     }
 
-    func testWhenPlusUserHasGatedModelsThenContentUsesProExclusiveTitle() {
+    func testWhenPlusUserHasGatedModelsThenContentUsesAvailableWithProTitle() {
         let content = makeContent(models: [
             makeModel(id: "pro", entityHasAccess: false, accessTier: ["pro"]),
         ], userTier: .plus)
 
-        XCTAssertEqual(content.gatedSectionTitle, UserText.aiChatModelPickerProExclusive)
-    }
-
-    func testWhenNoSubscriptionChangeCanUnlockGatedModelsThenContentHasNoCallToAction() {
-        let content = makeContent(models: [
-            makeModel(id: "pro", entityHasAccess: false, accessTier: ["pro"]),
-        ], userTier: .pro)
-
-        XCTAssertNil(content.callToAction)
+        XCTAssertEqual(content.gatedSectionTitle, UserText.aiChatModelPickerAvailableWithPro)
     }
 
     func testPreferredHeightUsesRowKindsAndGatedSectionChrome() {
@@ -195,7 +182,7 @@ final class UnifiedToggleInputModelPickerTests: XCTestCase {
             makeModel(id: "gated", entityHasAccess: false, accessTier: ["plus"]),
         ])
 
-        XCTAssertEqual(content.preferredHeight, 216)
+        XCTAssertEqual(content.preferredHeight, 237)
     }
 
     func testPreferredHeightIncludesAvailableSeparatorForProUser() {

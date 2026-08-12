@@ -177,6 +177,7 @@ final class AIChatContextualSheetCoordinator {
             isCurrentPageAttachable: { [weak pageContextHandler] in pageContextHandler?.isCurrentPageAttachable() ?? true }
         )
         self.sessionState.updateUnifiedToggleInputActive(isWebUTIEnabled, isImmediateContextual: isImmediateContextualUTIEnabled)
+        self.sessionState.inputAttachmentCount = { [weak self] in self?.persistentUTIHost?.attachmentCount ?? 0 }
         self.sessionEffectCancellable = self.sessionState.effects
             .sink { [weak self] effect in
                 guard case .deliverPageContext(let context, let targets) = effect else { return }
@@ -205,15 +206,28 @@ final class AIChatContextualSheetCoordinator {
     // MARK: - Public Methods
 
     /// Presents the contextual AI chat sheet.
+    ///
+    /// - Parameter skippingAutoAttach: `true` when the sheet opens because the user attached a text
+    ///   selection. The page is not attached on top of it; its signals are still collected.
     func presentSheet(from presentingViewController: UIViewController,
-                      restoreURL: URL? = nil) async {
+                      restoreURL: URL? = nil,
+                      skippingAutoAttach: Bool = false) async {
         sessionState.refreshAutoAttachSetting()
         sessionState.updateUnifiedToggleInputActive(isWebUTIEnabled, isImmediateContextual: isImmediateContextualUTIEnabled)
         clearStaleManualContextIfNeeded()
 
         startObservingContextUpdates()
 
-        if currentPageURL != nil, sessionState.shouldTriggerAutoCollect(for: currentPageURL) {
+        if skippingAutoAttach {
+            // An already-attached page keeps its own signals, and pushing the stripped signals-only
+            // payload over it would clear the attached context on the frontend.
+            if currentPageURL != nil, sessionState.intendedAttachedContext == nil {
+                sessionState.markPendingSignalsOnlyCollection()
+                pageContextHandler.triggerContextCollection(trigger: .tabContent)
+            } else {
+                pageContextHandler.reportAttachabilityMeasurement(trigger: .navigation)
+            }
+        } else if currentPageURL != nil, sessionState.shouldTriggerAutoCollect(for: currentPageURL) {
             if sessionState.showsSuggestionsStartSurface {
                 sessionState.beginLoadingSuggestions()
             }
@@ -235,21 +249,29 @@ final class AIChatContextualSheetCoordinator {
         }
     }
 
-    /// Attaches text selected on the page and presents the sheet, submitting nothing. At the cap the
-    /// selection is refused with a banner and the sheet still presents.
-    func attachSelection(text: String,
-                         url: URL?,
-                         faviconBase64: String?,
-                         restoreURL: URL? = nil,
-                         from presentingViewController: UIViewController) async {
+    /// Runs a Duck.ai action on text selected in the page, presenting the sheet either way.
+    ///
+    /// `ask` attaches the selection; at the cap it is refused with a banner and the sheet still presents.
+    /// The submitting actions attach nothing and clear any selections already attached.
+    func handleSelectionAction(_ action: AIChatTextSelectionAction,
+                               selection selectedText: AIChatPageTextSelection,
+                               restoreURL: URL? = nil,
+                               from presentingViewController: UIViewController) async {
         let selection = AIChatSelectionContextBuilder.makeSelection(
-            text: text,
-            url: url,
-            faviconBase64: faviconBase64
+            text: selectedText.text,
+            url: selectedText.url,
+            faviconBase64: selectedText.faviconBase64
         )
-        let didHitCap = !sessionState.attachSelection(selection)
 
-        await presentSheet(from: presentingViewController, restoreURL: restoreURL)
+        var didHitCap = false
+        if action.attachesSelection {
+            didHitCap = !sessionState.attachSelection(selection)
+        } else {
+            // Submitting consumes whatever was collected, so the input is clean for the next question.
+            sessionState.clearAttachedSelections()
+        }
+
+        await presentSheet(from: presentingViewController, restoreURL: restoreURL, skippingAutoAttach: true)
         refreshSelectionChips()
 
         if didHitCap {
@@ -456,6 +478,9 @@ private extension AIChatContextualSheetCoordinator {
         }
         host.onPromptDelivered = { [weak self] in
             self?.sessionState.markUTIContextDelivered()
+        }
+        host.onAttachmentsChanged = { [weak self] in
+            self?.sessionState.refreshForAttachmentChange()
         }
         host.onAIVoiceChatRequested = { [weak self] in
             guard let self else { return }

@@ -2163,6 +2163,55 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         AIChatSelectionContextBuilder.makeSelection(text: content, url: URL(string: "https://example.com/article"))
     }
 
+    // MARK: - Signals-only collection
+
+    func testSignalsOnlyCollectionRetainsSignalsWithoutMakingThePageAttachable() {
+        sessionState.markPendingSignalsOnlyCollection()
+
+        sessionState.updateContext(makeTestContext())
+
+        // Must not land in `latestContext`, which feeds the paths that would attach the page.
+        XCTAssertNotNil(sessionState.lastCollectedContext)
+        XCTAssertNil(sessionState.latestContext)
+        XCTAssertNil(sessionState.intendedAttachedContext)
+    }
+
+    func testClearingSelectionsResolvesSuggestionsBackToPageScope() {
+        mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
+        sessionState.attachSelection(makeSelection())
+        XCTAssertEqual(sessionState.viewState.suggestionsLoadState, .loading)
+
+        sessionState.clearAttachedSelections()
+
+        // Clearing is a scope change like removal, so the row must be resolved again.
+        XCTAssertEqual(sessionState.viewState.suggestionsLoadState, .loading)
+        XCTAssertTrue(sessionState.viewState.suggestions.isEmpty)
+    }
+
+    // MARK: - Suggestions hidden beyond one attachment
+
+    func testTwoSelectionsHideTheSuggestions() {
+        sessionState.beginLoadingSuggestions()
+        sessionState.attachSelection(makeSelection("first"))
+        sessionState.attachSelection(makeSelection("second"))
+
+        XCTAssertTrue(sessionState.viewState.suggestions.isEmpty)
+    }
+
+    /// The hide rule counts attachments of *any* kind, so one selection plus one image hides them too.
+    func testASelectionPlusAnInputAttachmentHidesTheSuggestions() {
+        sessionState.inputAttachmentCount = { 1 }
+        sessionState.attachSelection(makeSelection())
+
+        XCTAssertTrue(sessionState.viewState.suggestions.isEmpty)
+    }
+
+    func testAttachedSelectionSuppressesThePageScopedQuickActions() {
+        sessionState.attachSelection(makeSelection())
+
+        XCTAssertTrue(sessionState.viewState.quickActions.isEmpty)
+    }
+
     // MARK: - Attached Text Selections
 
     func testAttachSelectionAppendsAndReportsSuccess() {

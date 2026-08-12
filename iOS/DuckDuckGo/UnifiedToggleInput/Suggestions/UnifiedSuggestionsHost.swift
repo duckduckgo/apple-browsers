@@ -42,7 +42,6 @@ final class UnifiedSuggestionsHost {
     /// Built once on first `.favorites` render; NTP has a heavy init, so don't rebuild per body pass.
     private var cachedFavoritesController: NewTabPageViewController?
     private var isSurfaceHostActive = false
-    private var isFavoritesContentResolved = false
 
     /// Single-host path only: the duck.ai surface's source/VM, attached lazily and detached on
     /// disappear (mirrors the legacy per-host lifecycle). Nil on the old single-surface path.
@@ -85,13 +84,8 @@ final class UnifiedSuggestionsHost {
         viewModel.$content
             .removeDuplicates()
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] content in
+            .sink { [weak self] _ in
                 guard let self else { return }
-                if case .favorites = content {
-                    isFavoritesContentResolved = true
-                } else {
-                    isFavoritesContentResolved = false
-                }
                 updateFavoritesPromoSurfaceActivity()
                 onContentChanged?()
             }
@@ -240,7 +234,7 @@ final class UnifiedSuggestionsHost {
 
     private func updateFavoritesPromoSurfaceActivity() {
         let isActive = isSurfaceHostActive
-            && isFavoritesContentResolved
+            && viewModel.isShowingFavorites
             && !viewModel.isFireTab
 
         cachedFavoritesController?.setPromoSurfaceRenderable(isActive)

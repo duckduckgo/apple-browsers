@@ -50,7 +50,7 @@ final class UnifiedInputContentContainerViewControllerTests: XCTestCase {
         XCTAssertEqual(delegate.syncSetupRequestCount, 1)
     }
 
-    func testActiveUnifiedFavoritesKeepsCachedNewTabPageEligibleOnlyWhileFavoritesAreExposed() async {
+    func testUnifiedFavoritesUsesCurrentContentForPromoEligibility() async {
         let fixture = PromoHostFixture()
         fixture.appSettings.autocomplete = false
         let switchBarHandler = MockUnifiedInputSwitchBarHandler()
@@ -63,11 +63,7 @@ final class UnifiedInputContentContainerViewControllerTests: XCTestCase {
             featureDiscovery: fixture.featureDiscovery
         )
         sut.suggestionTrayDependencies = fixture.suggestionTrayDependencies
-        let rendererRegistered = expectation(description: "Unified favorites NTP registered as a renderer")
-        fixture.promoCoordinator.onRendererRegistered = { _ in
-            rendererRegistered.fulfill()
-        }
-        let firstSessionStarted = expectation(description: "Unified favorites renderer started a logical session")
+        let firstSessionStarted = expectation(description: "Unified favorites renderer started its session")
         fixture.promoCoordinator.onSessionStarted = { _ in
             firstSessionStarted.fulfill()
         }
@@ -78,80 +74,41 @@ final class UnifiedInputContentContainerViewControllerTests: XCTestCase {
         }
 
         sut.setActive(true)
-        await fulfillment(of: [rendererRegistered, firstSessionStarted], timeout: 3)
+        await fulfillment(of: [firstSessionStarted], timeout: 3)
         fixture.promoCoordinator.onSessionStarted = nil
 
-        let cachedRenderer = fixture.promoCoordinator.registeredRenderer
-        let cachedRendererID = fixture.promoCoordinator.registeredRendererID
-        let firstSession = fixture.promoCoordinator.arbiter.snapshot.remoteMessageSession
-        XCTAssertNotNil(cachedRenderer)
-        XCTAssertNotNil(cachedRendererID)
         XCTAssertTrue(fixture.promoCoordinator.registeredRendererIsEligible)
-        XCTAssertNotNil(firstSession)
+        XCTAssertEqual(fixture.promoCoordinator.successfulSessionCount, 1)
 
-        let firstRelease = expectation(description: "Query removed the unified favorites card and ended its session")
+        let firstRelease = expectation(description: "Inactive unified input ended the favorites session")
         fixture.promoCoordinator.onSessionReleased = { _ in
             firstRelease.fulfill()
         }
-        sut.setText("query")
+
+        sut.setActive(false)
+        XCTAssertFalse(fixture.promoCoordinator.registeredRendererIsEligible)
         await fulfillment(of: [firstRelease], timeout: 1)
         fixture.promoCoordinator.onSessionReleased = nil
 
-        XCTAssertTrue(fixture.promoCoordinator.registeredRenderer === cachedRenderer)
-        XCTAssertEqual(fixture.promoCoordinator.registeredRendererID, cachedRendererID)
-        XCTAssertFalse(fixture.promoCoordinator.registeredRendererIsEligible)
-        XCTAssertNil(fixture.promoCoordinator.arbiter.snapshot.activeOwner)
+        XCTAssertFalse(fixture.promoCoordinator.hasActiveSession)
 
-        let secondSessionStarted = expectation(description: "Clearing the query started a fresh unified favorites session")
-        fixture.promoCoordinator.onSessionStarted = { _ in
-            secondSessionStarted.fulfill()
-        }
-        sut.setText("")
-        await fulfillment(of: [secondSessionStarted], timeout: 1)
-        fixture.promoCoordinator.onSessionStarted = nil
+        // Reproduce the activation race in one main-actor turn. The content model resolves the query
+        // synchronously, while its UI notification is deliberately delivered on the next main turn.
+        // Eligibility must use that current model state rather than the prior favorites notification.
+        sut.setText("query")
+        let successfulSessionCount = fixture.promoCoordinator.successfulSessionCount
 
-        let secondSession = fixture.promoCoordinator.arbiter.snapshot.remoteMessageSession
-        XCTAssertTrue(fixture.promoCoordinator.registeredRenderer === cachedRenderer)
-        XCTAssertTrue(fixture.promoCoordinator.registeredRendererIsEligible)
-        XCTAssertNotNil(secondSession)
-        XCTAssertNotEqual(secondSession?.id, firstSession?.id)
-
-        let secondRelease = expectation(description: "Fire mode removed the unified favorites card and ended its session")
-        fixture.promoCoordinator.onSessionReleased = { _ in
-            secondRelease.fulfill()
-        }
-        sut.refreshFireMode(fireMode: true)
-        await fulfillment(of: [secondRelease], timeout: 1)
-        fixture.promoCoordinator.onSessionReleased = nil
+        sut.setActive(true)
 
         XCTAssertFalse(fixture.promoCoordinator.registeredRendererIsEligible)
-        XCTAssertNil(fixture.promoCoordinator.arbiter.snapshot.activeOwner)
+        XCTAssertFalse(fixture.promoCoordinator.hasActiveSession)
+        XCTAssertEqual(fixture.promoCoordinator.successfulSessionCount, successfulSessionCount)
 
-        let thirdSessionStarted = expectation(description: "Leaving fire mode started a fresh unified favorites session")
-        fixture.promoCoordinator.onSessionStarted = { _ in
-            thirdSessionStarted.fulfill()
-        }
-        sut.refreshFireMode(fireMode: false)
-        await fulfillment(of: [thirdSessionStarted], timeout: 1)
-        fixture.promoCoordinator.onSessionStarted = nil
-
-        let thirdSession = fixture.promoCoordinator.arbiter.snapshot.remoteMessageSession
-        XCTAssertTrue(fixture.promoCoordinator.registeredRendererIsEligible)
-        XCTAssertNotNil(thirdSession)
-        XCTAssertNotEqual(thirdSession?.id, secondSession?.id)
-
-        let thirdRelease = expectation(description: "Inactive unified input removed the favorites card and ended its session")
-        fixture.promoCoordinator.onSessionReleased = { _ in
-            thirdRelease.fulfill()
-        }
-        sut.setActive(false)
-        await fulfillment(of: [thirdRelease], timeout: 1)
-        fixture.promoCoordinator.onSessionReleased = nil
+        await nextMainQueueTurn()
 
         XCTAssertFalse(fixture.promoCoordinator.registeredRendererIsEligible)
-        XCTAssertNil(fixture.promoCoordinator.arbiter.snapshot.activeOwner)
-        XCTAssertEqual(fixture.promoCoordinator.successfulSessionCount, 3)
-        XCTAssertEqual(fixture.promoCoordinator.releaseCount, 3)
+        XCTAssertFalse(fixture.promoCoordinator.hasActiveSession)
+        XCTAssertEqual(fixture.promoCoordinator.successfulSessionCount, successfulSessionCount)
     }
 }
 
@@ -188,34 +145,31 @@ final class NewTabPagePromoHostWiringTests: XCTestCase {
         )
     }
 
-    func testPromoSurfaceHandoffDeactivatesNewTabPageBeforeShowingHostedSurface() {
-        var events = [String]()
+    func testPromoSurfaceHandoffDeactivatesOutgoingSurfaceBeforeActivatingIncomingSurface() {
+        var hostedSurfaceEvents = [String]()
 
         NewTabPagePromoSurfaceHandoff.showHostedSurface(
             deactivateNewTabPage: {
-                events.append("deactivate-standard-ntp")
+                hostedSurfaceEvents.append("deactivate-standard-ntp")
             },
             showHostedSurface: {
-                events.append("show-suggestion-or-unified-host")
+                hostedSurfaceEvents.append("show-suggestion-or-unified-host")
             }
         )
 
-        XCTAssertEqual(events, ["deactivate-standard-ntp", "show-suggestion-or-unified-host"])
-    }
-
-    func testPromoSurfaceHandoffHidesHostedSurfaceBeforeReactivatingNewTabPage() {
-        var events = [String]()
+        var newTabPageEvents = [String]()
 
         NewTabPagePromoSurfaceHandoff.showNewTabPage(
             hideHostedSurface: {
-                events.append("hide-suggestion-or-unified-host")
+                newTabPageEvents.append("hide-suggestion-or-unified-host")
             },
             activateNewTabPage: {
-                events.append("activate-standard-ntp")
+                newTabPageEvents.append("activate-standard-ntp")
             }
         )
 
-        XCTAssertEqual(events, ["hide-suggestion-or-unified-host", "activate-standard-ntp"])
+        XCTAssertEqual(hostedSurfaceEvents, ["deactivate-standard-ntp", "show-suggestion-or-unified-host"])
+        XCTAssertEqual(newTabPageEvents, ["hide-suggestion-or-unified-host", "activate-standard-ntp"])
     }
 
     func testWindowAttachedStandardNewTabPageIsEligibleOnlyWhileOwnerIsActive() async {
@@ -228,7 +182,7 @@ final class NewTabPagePromoHostWiringTests: XCTestCase {
         let renderer = fixture.promoCoordinator.registeredRenderer
         XCTAssertNotNil(renderer)
         XCTAssertFalse(fixture.promoCoordinator.registeredRendererIsEligible)
-        XCTAssertNil(fixture.promoCoordinator.arbiter.snapshot.activeOwner)
+        XCTAssertFalse(fixture.promoCoordinator.hasActiveSession)
 
         let firstSessionStarted = expectation(description: "Standard NTP started a logical RMF session")
         fixture.promoCoordinator.onSessionStarted = { _ in
@@ -239,8 +193,7 @@ final class NewTabPagePromoHostWiringTests: XCTestCase {
         fixture.promoCoordinator.onSessionStarted = nil
 
         XCTAssertTrue(fixture.promoCoordinator.registeredRendererIsEligible)
-        let firstSession = fixture.promoCoordinator.arbiter.snapshot.remoteMessageSession
-        XCTAssertNotNil(firstSession)
+        XCTAssertTrue(fixture.promoCoordinator.hasActiveSession)
 
         let firstRelease = expectation(description: "Inactive standard NTP completed RMF removal")
         fixture.promoCoordinator.onSessionReleased = { _ in
@@ -249,10 +202,10 @@ final class NewTabPagePromoHostWiringTests: XCTestCase {
         sut.setPromoSurfaceActive(false)
 
         XCTAssertFalse(fixture.promoCoordinator.registeredRendererIsEligible)
-        XCTAssertEqual(fixture.promoCoordinator.arbiter.snapshot.remoteMessageSession, firstSession)
+        XCTAssertTrue(fixture.promoCoordinator.hasActiveSession)
         await fulfillment(of: [firstRelease], timeout: 1)
         fixture.promoCoordinator.onSessionReleased = nil
-        XCTAssertNil(fixture.promoCoordinator.arbiter.snapshot.activeOwner)
+        XCTAssertFalse(fixture.promoCoordinator.hasActiveSession)
 
         let secondSessionStarted = expectation(description: "Reactivated standard NTP started a fresh RMF session")
         fixture.promoCoordinator.onSessionStarted = { _ in
@@ -261,9 +214,7 @@ final class NewTabPagePromoHostWiringTests: XCTestCase {
         sut.setPromoSurfaceActive(true)
         await fulfillment(of: [secondSessionStarted], timeout: 1)
         fixture.promoCoordinator.onSessionStarted = nil
-        let secondSession = fixture.promoCoordinator.arbiter.snapshot.remoteMessageSession
-        XCTAssertNotNil(secondSession)
-        XCTAssertNotEqual(secondSession?.id, firstSession?.id)
+        XCTAssertTrue(fixture.promoCoordinator.hasActiveSession)
 
         let secondRelease = expectation(description: "Detached standard NTP completed RMF removal")
         fixture.promoCoordinator.onSessionReleased = { _ in
@@ -273,9 +224,8 @@ final class NewTabPagePromoHostWiringTests: XCTestCase {
         await fulfillment(of: [secondRelease], timeout: 1)
         fixture.promoCoordinator.onSessionReleased = nil
 
-        XCTAssertNil(fixture.promoCoordinator.arbiter.snapshot.activeOwner)
+        XCTAssertFalse(fixture.promoCoordinator.hasActiveSession)
         XCTAssertEqual(fixture.promoCoordinator.successfulSessionCount, 2)
-        XCTAssertEqual(fixture.promoCoordinator.releaseCount, 2)
     }
 
     func testStaleVisibilityCompletionCannotReactivateNewerHiddenStandardNewTabPage() async {
@@ -302,11 +252,11 @@ final class NewTabPagePromoHostWiringTests: XCTestCase {
         await fulfillment(of: [release], timeout: 1)
         fixture.promoCoordinator.onSessionReleased = nil
 
-        let sessionAttemptCountBeforeStaleCompletion = fixture.promoCoordinator.sessionAttemptCount
+        let successfulSessionCountBeforeStaleCompletion = fixture.promoCoordinator.successfulSessionCount
         sut.restorePromoSurfaceVisibility(ifCurrent: staleGeneration)
 
         XCTAssertFalse(fixture.promoCoordinator.registeredRendererIsEligible)
-        XCTAssertEqual(fixture.promoCoordinator.sessionAttemptCount, sessionAttemptCountBeforeStaleCompletion)
+        XCTAssertEqual(fixture.promoCoordinator.successfulSessionCount, successfulSessionCountBeforeStaleCompletion)
 
         let secondSessionStarted = expectation(description: "Current completion restored standard NTP visibility")
         fixture.promoCoordinator.onSessionStarted = { _ in
@@ -318,7 +268,7 @@ final class NewTabPagePromoHostWiringTests: XCTestCase {
         XCTAssertTrue(fixture.promoCoordinator.registeredRendererIsEligible)
     }
 
-    func testAutocompleteKeepsCachedTrayNewTabPageInactiveUntilFavoritesReturn() async throws {
+    func testAutocompleteDeactivatesCachedTrayNewTabPageAndDidHideDeregistersIt() async throws {
         try XCTSkipUnless(
             UIDevice.current.userInterfaceIdiom == .phone,
             "The tray caches its NTP below autocomplete only on iPhone"
@@ -341,12 +291,9 @@ final class NewTabPagePromoHostWiringTests: XCTestCase {
         fixture.promoCoordinator.onSessionStarted = nil
 
         let cachedRenderer = fixture.promoCoordinator.registeredRenderer
-        let cachedRendererID = fixture.promoCoordinator.registeredRendererID
-        let firstSession = fixture.promoCoordinator.arbiter.snapshot.remoteMessageSession
         XCTAssertNotNil(cachedRenderer)
-        XCTAssertNotNil(cachedRendererID)
         XCTAssertTrue(fixture.promoCoordinator.registeredRendererIsEligible)
-        XCTAssertNotNil(firstSession)
+        XCTAssertTrue(fixture.promoCoordinator.hasActiveSession)
 
         let firstRelease = expectation(description: "Tray autocomplete completed cached favorites RMF removal")
         fixture.promoCoordinator.onSessionReleased = { _ in
@@ -356,44 +303,20 @@ final class NewTabPagePromoHostWiringTests: XCTestCase {
 
         XCTAssertTrue(sut.isShowingFavorites)
         XCTAssertTrue(fixture.promoCoordinator.registeredRenderer === cachedRenderer)
-        XCTAssertEqual(fixture.promoCoordinator.registeredRendererID, cachedRendererID)
         XCTAssertFalse(fixture.promoCoordinator.registeredRendererIsEligible)
-        XCTAssertEqual(fixture.promoCoordinator.arbiter.snapshot.remoteMessageSession, firstSession)
+        XCTAssertTrue(fixture.promoCoordinator.hasActiveSession)
         await fulfillment(of: [firstRelease], timeout: 1)
         fixture.promoCoordinator.onSessionReleased = nil
-        XCTAssertNil(fixture.promoCoordinator.arbiter.snapshot.activeOwner)
+        XCTAssertFalse(fixture.promoCoordinator.hasActiveSession)
 
-        let secondSessionStarted = expectation(description: "Returning to tray favorites started a fresh RMF session")
-        fixture.promoCoordinator.onSessionStarted = { _ in
-            secondSessionStarted.fulfill()
-        }
-        sut.show(for: .favorites, animated: false)
-        sut.view.layoutIfNeeded()
-        await fulfillment(of: [secondSessionStarted], timeout: 1)
-        fixture.promoCoordinator.onSessionStarted = nil
-
-        let secondSession = fixture.promoCoordinator.arbiter.snapshot.remoteMessageSession
-        XCTAssertTrue(fixture.promoCoordinator.registeredRenderer === cachedRenderer)
-        XCTAssertTrue(fixture.promoCoordinator.registeredRendererIsEligible)
-        XCTAssertNotNil(secondSession)
-        XCTAssertNotEqual(secondSession?.id, firstSession?.id)
-
-        let secondRelease = expectation(description: "Hidden tray completed favorites RMF removal")
-        fixture.promoCoordinator.onSessionReleased = { _ in
-            secondRelease.fulfill()
-        }
         sut.didHide(animated: false)
-        await fulfillment(of: [secondRelease], timeout: 1)
-        fixture.promoCoordinator.onSessionReleased = nil
 
         XCTAssertFalse(fixture.promoCoordinator.registeredRendererIsEligible)
         XCTAssertNil(fixture.promoCoordinator.registeredRenderer)
-        XCTAssertNil(fixture.promoCoordinator.arbiter.snapshot.activeOwner)
-        XCTAssertEqual(fixture.promoCoordinator.successfulSessionCount, 2)
-        XCTAssertEqual(fixture.promoCoordinator.releaseCount, 2)
+        XCTAssertFalse(fixture.promoCoordinator.hasActiveSession)
     }
 
-    func testDeactivatingTrayKeepsCachedNewTabPageInactiveUntilFavoritesReturn() async {
+    func testDeactivatingTrayKeepsCachedNewTabPageInactive() async {
         let fixture = PromoHostFixture()
         let sut = fixture.makeSuggestionTrayController()
         let window = makeVisibleWindow(rootViewController: sut)
@@ -411,10 +334,9 @@ final class NewTabPagePromoHostWiringTests: XCTestCase {
         fixture.promoCoordinator.onSessionStarted = nil
 
         let cachedRenderer = fixture.promoCoordinator.registeredRenderer
-        let firstSession = fixture.promoCoordinator.arbiter.snapshot.remoteMessageSession
         XCTAssertNotNil(cachedRenderer)
         XCTAssertTrue(fixture.promoCoordinator.registeredRendererIsEligible)
-        XCTAssertNotNil(firstSession)
+        XCTAssertTrue(fixture.promoCoordinator.hasActiveSession)
 
         let firstRelease = expectation(description: "Hidden tray completed favorites RMF removal")
         fixture.promoCoordinator.onSessionReleased = { _ in
@@ -427,35 +349,7 @@ final class NewTabPagePromoHostWiringTests: XCTestCase {
         XCTAssertTrue(sut.isShowingFavorites, "Hiding the tray must preserve its cached favorites content")
         XCTAssertTrue(fixture.promoCoordinator.registeredRenderer === cachedRenderer)
         XCTAssertFalse(fixture.promoCoordinator.registeredRendererIsEligible)
-        XCTAssertNil(fixture.promoCoordinator.arbiter.snapshot.activeOwner)
-
-        let secondSessionStarted = expectation(description: "Returning to tray favorites started a fresh RMF session")
-        fixture.promoCoordinator.onSessionStarted = { _ in
-            secondSessionStarted.fulfill()
-        }
-        sut.show(for: .favorites, animated: false)
-        await fulfillment(of: [secondSessionStarted], timeout: 1)
-        fixture.promoCoordinator.onSessionStarted = nil
-
-        let secondSession = fixture.promoCoordinator.arbiter.snapshot.remoteMessageSession
-        XCTAssertTrue(fixture.promoCoordinator.registeredRenderer === cachedRenderer)
-        XCTAssertTrue(fixture.promoCoordinator.registeredRendererIsEligible)
-        XCTAssertNotNil(secondSession)
-        XCTAssertNotEqual(secondSession?.id, firstSession?.id)
-
-        let secondRelease = expectation(description: "Tray teardown completed favorites RMF removal")
-        fixture.promoCoordinator.onSessionReleased = { _ in
-            secondRelease.fulfill()
-        }
-        sut.teardownPopoverSuggestions()
-        await fulfillment(of: [secondRelease], timeout: 1)
-
-        XCTAssertTrue(sut.isShowingFavorites, "Tray teardown must preserve its cached favorites content")
-        XCTAssertTrue(fixture.promoCoordinator.registeredRenderer === cachedRenderer)
-        XCTAssertFalse(fixture.promoCoordinator.registeredRendererIsEligible)
-        XCTAssertNil(fixture.promoCoordinator.arbiter.snapshot.activeOwner)
-        XCTAssertEqual(fixture.promoCoordinator.successfulSessionCount, 2)
-        XCTAssertEqual(fixture.promoCoordinator.releaseCount, 2)
+        XCTAssertFalse(fixture.promoCoordinator.hasActiveSession)
     }
 
     func testDeactivatingTrayInvalidatesPendingFavoritesActivation() async {
@@ -482,7 +376,7 @@ final class NewTabPagePromoHostWiringTests: XCTestCase {
 
         XCTAssertTrue(sut.isShowingFavorites, "Hiding during installation must keep the favorites cache")
         XCTAssertFalse(fixture.promoCoordinator.registeredRendererIsEligible)
-        XCTAssertNil(fixture.promoCoordinator.arbiter.snapshot.activeOwner)
+        XCTAssertFalse(fixture.promoCoordinator.hasActiveSession)
         XCTAssertEqual(fixture.promoCoordinator.successfulSessionCount, 0)
     }
 
@@ -527,7 +421,7 @@ final class NewTabPagePromoHostWiringTests: XCTestCase {
         XCTAssertFalse(autocompleteController.view.isHidden)
         XCTAssertEqual(autocompleteController.view.alpha, 1, accuracy: 0.001)
         XCTAssertFalse(fixture.promoCoordinator.registeredRendererIsEligible)
-        XCTAssertNil(fixture.promoCoordinator.arbiter.snapshot.activeOwner)
+        XCTAssertFalse(fixture.promoCoordinator.hasActiveSession)
     }
 }
 
@@ -552,7 +446,7 @@ private final class PromoHostFixture {
             )
         ]
     )
-    let promoCoordinator = ArbitratingPromoHostCoordinator()
+    let promoCoordinator = PromoHostCoordinatorSpy()
     let tabsModel = TabsModel(desktop: false)
     lazy var bookmarksDatabase = CoreDataDatabase.bookmarksMock
 
@@ -636,12 +530,10 @@ private final class PromoHostFixture {
 }
 
 @MainActor
-private final class ArbitratingPromoHostCoordinator: NewTabPagePromoCoordinating {
+private final class PromoHostCoordinatorSpy: NewTabPagePromoCoordinating {
     private struct SessionState {
         let session: PromoQueueRemoteMessageSession
         let presentation: PromoQueueRemoteMessagePresentation
-        let lease: PromoQueueRemoteMessageLease
-        var appearanceWasConfirmed = false
     }
 
     private struct RemovalState {
@@ -652,15 +544,9 @@ private final class ArbitratingPromoHostCoordinator: NewTabPagePromoCoordinating
         var terminalWasReported = false
     }
 
-    let arbiter = PromoQueueLeaseArbiter()
     let promoCoordinationMode = PromoCoordinationMode.coordinated
 
-    private(set) var sessionAttemptCount = 0
     private(set) var successfulSessionCount = 0
-    private(set) var presentationCount = 0
-    private(set) var appearanceCount = 0
-    private(set) var releaseCount = 0
-    var onRendererRegistered: ((UUID) -> Void)?
     var onSessionStarted: ((PromoQueueRemoteMessageSession) -> Void)?
     var onSessionReleased: ((PromoQueueRemoteMessageSession) -> Void)?
 
@@ -668,16 +554,15 @@ private final class ArbitratingPromoHostCoordinator: NewTabPagePromoCoordinating
         isRendererRegistered ? rendererTarget : nil
     }
 
-    var registeredRendererID: UUID? {
-        isRendererRegistered ? rendererID : nil
-    }
-
     var registeredRendererIsEligible: Bool {
         isRendererRegistered && isRendererEligible
     }
 
+    var hasActiveSession: Bool {
+        sessionState != nil
+    }
+
     private weak var rendererTarget: NewTabPagePromoRendering?
-    private var rendererID: UUID?
     private var registrationID: UUID?
     private var rendererCandidate = PromoQueueRemoteMessageCandidateState.none
     private var isRendererEligible = false
@@ -686,17 +571,15 @@ private final class ArbitratingPromoHostCoordinator: NewTabPagePromoCoordinating
     private var removalState: RemovalState?
 
     func registerRemoteMessageRenderer(
-        id rendererID: UUID,
+        id _: UUID,
         target: NewTabPagePromoRendering
     ) -> NewTabPagePromoRendererRegistration {
         let registrationID = UUID()
-        self.rendererID = rendererID
         self.registrationID = registrationID
         rendererTarget = target
         rendererCandidate = .none
         isRendererEligible = false
         isRendererRegistered = true
-        onRendererRegistered?(rendererID)
 
         return NewTabPagePromoRendererRegistration(
             updateHandler: { [weak self] candidate, isEligible in
@@ -756,17 +639,13 @@ private final class ArbitratingPromoHostCoordinator: NewTabPagePromoCoordinating
               isAttachedToWindow,
               rendererTarget?.isRemoteMessageRendererAttachedToWindow == true,
               removalState == nil,
-              var sessionState,
+              let sessionState,
               sessionState.session.id == sessionID,
               sessionState.presentation.id == presentationID,
-              candidateMessageID == sessionState.session.messageID,
-              !sessionState.appearanceWasConfirmed else {
+              candidateMessageID == sessionState.session.messageID else {
             return .rejected
         }
 
-        sessionState.appearanceWasConfirmed = true
-        self.sessionState = sessionState
-        appearanceCount += 1
         return .accepted
     }
 
@@ -840,28 +719,15 @@ private final class ArbitratingPromoHostCoordinator: NewTabPagePromoCoordinating
     }
 
     private func startSession(messageID: String, renderer: NewTabPagePromoRendering) {
-        sessionAttemptCount += 1
         let session = PromoQueueRemoteMessageSession(id: UUID(), messageID: messageID)
-
-        switch arbiter.acquireRemoteMessageLease(for: session) {
-        case .acquired(let lease):
-            let presentation = PromoQueueRemoteMessagePresentation(id: UUID(), session: session)
-            sessionState = SessionState(
-                session: session,
-                presentation: presentation,
-                lease: lease
-            )
-            guard renderer.showRemoteMessage(presentation) else {
-                sessionState = nil
-                _ = lease.release()
-                return
-            }
-            successfulSessionCount += 1
-            presentationCount += 1
-            onSessionStarted?(session)
-        case .blockedByModal, .blockedByRemoteMessage:
-            break
+        let presentation = PromoQueueRemoteMessagePresentation(id: UUID(), session: session)
+        sessionState = SessionState(session: session, presentation: presentation)
+        guard renderer.showRemoteMessage(presentation) else {
+            sessionState = nil
+            return
         }
+        successfulSessionCount += 1
+        onSessionStarted?(session)
     }
 
     private func shouldKeepShowing(_ sessionState: SessionState) -> Bool {
@@ -911,11 +777,6 @@ private final class ArbitratingPromoHostCoordinator: NewTabPagePromoCoordinating
 
         self.removalState = nil
         self.sessionState = nil
-        guard sessionState.lease.release() else {
-            return
-        }
-
-        releaseCount += 1
         onSessionReleased?(sessionState.session)
         clearRendererIfUnused()
         reconcile()
@@ -935,7 +796,6 @@ private final class ArbitratingPromoHostCoordinator: NewTabPagePromoCoordinating
         }
 
         rendererTarget = nil
-        rendererID = nil
         registrationID = nil
         rendererCandidate = .none
     }

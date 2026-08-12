@@ -184,6 +184,7 @@ public protocol PrivacyDashboardControllerDelegate: AnyObject {
         switch entryPoint {
         case .report: source = .appMenu
         case .dashboard: source = .dashboard
+        case .errorPage: source = .errorPage
         case .prompt: source = .prompt
         case .toggleReport: source = .onProtectionsOffMenu
         }

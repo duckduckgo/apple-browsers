@@ -4021,6 +4021,18 @@
 /* Special error page title for pages that can only be opened in Safari */
 "prompt.general-page-problem.title" = "Această pagină se încarcă doar în Safari";
 
+/* Error page message shown after repeated tab terminations */
+"prompt.tab-termination-error-page.message" = "Încărcarea acestei pagini s-a oprit de mai multe ori. Încearcă să reîncarci sau trimite-ne feedback.";
+
+/* Button that reloads a page after repeated tab terminations */
+"prompt.tab-termination-error-page.reload" = "Reîncarcă";
+
+/* Button that opens site feedback after repeated tab terminations */
+"prompt.tab-termination-error-page.send-feedback" = "Trimite feedback";
+
+/* Error page title shown after repeated tab terminations */
+"prompt.tab-termination-error-page.title" = "Nu am putut încărca această pagină";
+
 /* Default native error page message */
 "prompt.web-page-load-error.message" = "Acest site are un certificat de securitate incorect și vizitarea sa este posibil să nu prezinte siguranță.";
 

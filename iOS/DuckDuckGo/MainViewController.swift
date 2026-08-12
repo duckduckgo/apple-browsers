@@ -6370,8 +6370,8 @@ extension MainViewController: TabDelegate {
         return tab.tabModel.daxEasterEggLogoURL
     }
 
-    func tabDidRequestReportBrokenSite(tab: TabViewController) {
-        segueToReportBrokenSite()
+    func tabDidRequestReportBrokenSite(tab: TabViewController, entryPoint: PrivacyDashboardEntryPoint) {
+        segueToReportBrokenSite(entryPoint: entryPoint)
     }
 
     func tab(_ tab: TabViewController, didRequestToggleReportWithCompletionHandler completionHandler: @escaping (Bool) -> Void) {
@@ -6499,7 +6499,11 @@ extension MainViewController: TabDelegate {
     func tabContentProcessDidTerminate(tab: TabViewController) {
         findInPageView?.done()
         tabManager.webContentProcessDidTerminate()
-        tabManager.invalidateCache(forController: tab)
+
+        // Only reload current if the app is not in the background - need to ensure we reload in
+        //  in inactive state in case we're coming to the foreground
+        let shouldReload = UIApplication.shared.applicationState != .background
+        tabManager.invalidateCache(forController: tab, reloadCurrent: shouldReload)
     }
 
     func showBars() {

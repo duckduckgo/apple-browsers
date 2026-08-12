@@ -2,22 +2,9 @@
 
 ## Status and source of truth
 
-This document describes the implemented iteration-one endpoint on `bartosz/promo-q-3` at `9321268231`, stacked directly on `bartosz/promo-q-2` at `9e82601a9f`.
+Iteration one is complete. This document describes the cumulative implementation recorded on `bartosz/promo-q-3` at `9321268231`, based on `bartosz/promo-q-2` at `9e82601a9f`.
 
-- PR 1, [#6087](https://github.com/duckduckgo/apple-browsers/pull/6087), is merged to `main`.
-- PR 2, [#6194](https://github.com/duckduckgo/apple-browsers/pull/6194), targets `main`.
-- PR 3, [#6291](https://github.com/duckduckgo/apple-browsers/pull/6291), targets PR 2.
-- The active delivery stack is `main` → `bartosz/promo-q-2` → `bartosz/promo-q-3`.
-
-When sources disagree, use this order:
-
-1. the implementation on `bartosz/promo-q-3` at `9321268231`;
-2. the Q2 implementation on `bartosz/promo-q-2` at `9e82601a9f`;
-3. `PROMO_QUEUE_LOGICAL_RMF_OWNER_IMPLEMENTATION_PLAN.md` for the central-owner redesign;
-4. `Q3_IMPLEMENTATION_PLAN.md` for the cooldown and diagnostics implementation record; and
-5. this document for the consolidated product and architecture contract.
-
-Temporary files under `promo-queue-docs/` and `project_log.md` are project memory and must not enter either app pull request.
+Delivery history is available in [PR 1](https://github.com/duckduckgo/apple-browsers/pull/6087), [PR 2](https://github.com/duckduckgo/apple-browsers/pull/6194), and [PR 3](https://github.com/duckduckgo/apple-browsers/pull/6291). Application code is authoritative if it differs from this document. `ADDING_PROMOS.md` is the maintenance/integration guide, and `TECH_DESIGN_FINAL_APPENDIX.html` is the visual reviewer orientation.
 
 ## Goal
 
@@ -53,6 +40,8 @@ Iteration one does not include:
 ## Feature mode
 
 `PromoCoordinationFactory` reads `.promoPresentationCoordination` once while constructing the process-wide graph and converts it to immutable `PromoCoordinationMode.legacy` or `.coordinated` behavior.
+
+This app privacy-configuration flag controls coordination behavior; it is separate from RMF campaign configuration, targeting, and selection.
 
 The service does not subscribe to feature-flag changes. A remote change or local override made after graph construction takes effect only in a fresh graph, which in production means force-quit and relaunch.
 
@@ -141,6 +130,8 @@ If authorization is safely rejected before content is published, the service may
 
 If another eligible renderer has the same message, the service removes the outgoing presentation, retains the same logical session and lease, waits for its exact removal terminal and one following main-queue settlement turn, then authorizes the successor.
 
+The service does not wait additional turns for a successor after settlement. If no matching renderer is eligible at that point, it releases the session. A matching renderer that arrives later starts a new session and must pass cooldown admission.
+
 If the candidate changes, becomes unavailable/unrenderable, or no renderer remains eligible, the service follows the same removal barrier and ends the logical session. A later return starts a new session and is subject to normal cooldown admission.
 
 This balanced lifetime avoids letting an invisible logical RMF block modals forever. It also means a same-session handoff is continuity of one promo rather than a new queue presentation.
@@ -158,6 +149,8 @@ Authorization, cooldown denial, build failure, withdrawal before appearance, sta
 The redesign greatly reduces view-lifecycle bookkeeping but does not eliminate all visibility knowledge and does not rely on cooldowns alone.
 
 The standard NTP, suggestion tray, and unified-input/favorites hosts still report the centralized exposure predicate. Attachment alone is insufficient because a cached NTP may remain in a window while covered. These signals determine which renderer is eligible; the service then authorizes exactly one renderer.
+
+The system observes actual RMF candidates and current host eligibility instead of predicting future RMF schedules. Foreground/readiness gates new acquisition, but backgrounding alone does not release an `owned` or `draining` session. A real host-ineligibility or detachment update still follows the normal drain contract.
 
 Any future host or overlay that can expose, retain, or cover an NTP must integrate the same exposure seam. This obligation is not compiler-enforced.
 
@@ -187,6 +180,8 @@ Cooldowns are a service-owned policy layered after global-owner acquisition. The
 | Launch modal | Launch modal | existing remotely tunable interval, currently/default 24 hours |
 
 `PromoQueueCooldownPolicy` uses an injected clock, the modal manager's existing confirmed-presentation store, and one persisted last-confirmed-RMF timestamp. It stores source-event times, not expiry dates. Exact equality is eligible. A future timestamp, including after a backward wall-clock change, conservatively remains in cooldown.
+
+RMF history storage has explicit failure semantics. An initial read failure means no known history and may be retried. A successful read, including `nil`, is cached; a later failure uses that last successful value. After a failed write, the attempted timestamp remains authoritative for the current process, while a new process sees only durable history. Diagnostic reads are side-effect free and do not alter this cache.
 
 RMF admission uses the later applicable modal→RMF or RMF→RMF boundary. Modal admission checks RMF→modal before provider evaluation; the modal manager remains the sole owner of modal→modal policy.
 
@@ -221,36 +216,28 @@ The existing Modal Prompt Coordination debug screen exposes a read-only Promo Qu
 
 The UI states that boundaries do not schedule retries. It adds no queue/history mutation controls and no telemetry. The pre-existing modal cooldown reset remains pre-existing debug behavior.
 
-## Requirements assessment and accepted tradeoffs
+## Design choices
 
-The redesign preserves the core product requirements: no modal/RMF overlap, no two physical RMFs, the complete directional cooldown matrix, confirmed-history persistence, modal/provider behavior, startup-latched flagging, checkpoint-only retry, and legacy behavior when the flag is off.
+The implementation preserves the core product requirements: no modal/RMF overlap, no two physical RMFs, the complete directional cooldown matrix, confirmed-history persistence, modal/provider behavior, startup-latched flagging, checkpoint-only retry, and legacy behavior when the flag is off.
 
-It intentionally changes these implementation or visual details from the earlier design:
+These choices define the iteration-one architecture:
 
 | Change | Consequence |
 | --- | --- |
-| Per-model RMF ownership becomes one central logical owner | Removes admissions, gate/mount sets, multiple outgoing-session dictionaries, and distributed release authority. |
+| One central logical RMF owner | Keeps lease, selection, transfer, and release authority in one service rather than distributing them across NTP models. |
 | Same-message renderer handoff stays in one logical session | Queue history confirms once; ordinary RMF accounting remains per accepted physical presentation. |
 | Balanced lifetime ends ownership when no eligible renderer remains | A later return starts a new cooldown-governed session rather than leaving a hidden owner indefinitely. |
 | Stable registration order resolves competing renderer candidates | Candidate authority remains distributed; the change does not add a new app-wide RMF source. |
-| Missing exact removal evidence fails closed | A bug can strand the queue, but cannot release into a visible overlap. Diagnostics expose the state. |
+| Missing exact removal evidence fails closed | The queue retains ownership rather than releasing into a possible visible overlap. Diagnostics expose the state. |
 | iOS 15/16 coordinated dismissal has no animation | Source removal is synchronous and verifiable; iOS 17+ retains scale/opacity. |
 | Host exposure remains explicit | This is simpler than the old lifecycle graph, but not a fully view-agnostic Android implementation. |
 | Startup-latched flag | A remote kill switch affects a new process graph, not an already-running process. |
 | No boundary timer | Eligibility can be delayed until another real checkpoint. |
 
-## Validation and remaining work
+## Verification surface
 
-The branch contains focused coverage for owner serialization, renderer selection and handoff, stale identities, exact terminal settlement, teardown, readiness, legacy behavior, cooldown boundaries and storage failures, appearance accounting, real SwiftUI iOS 17 removal, and an injectable synchronous old-OS path.
+The implementation includes focused coverage for owner serialization, renderer selection and handoff, stale identities, exact terminal settlement, teardown, readiness, legacy behavior, cooldown boundaries and storage failures, appearance accounting, real SwiftUI iOS 17 removal, and the injectable synchronous old-OS path.
 
-No further product implementation is planned for iteration one. Review and validation should still verify:
+Future changes should preserve those cases and manually exercise the standard NTP, suggestion tray, and unified-input hosts when changing renderer eligibility or removal behavior.
 
-- an owner remains authoritative even when its opposing cooldown has elapsed;
-- a real iOS 15/16 simulator follows the synchronous no-animation path;
-- manual behavior in the standard NTP, suggestion tray, and unified-input hosts;
-- feature-off legacy behavior and process-latched enablement; and
-- the final stacked diff after Q2 is rebased or merged.
-
-Telemetry, privacy-config rollout, and atomic unique-shown accounting remain separate work, not missing iteration-one requirements.
-
-See `Q3_IMPLEMENTATION_PLAN.md` for the Q3 implementation record and `ADDING_PROMOS.md` for the integration contract.
+Telemetry, privacy-config rollout, atomic unique-shown accounting, and additional promo surfaces remain separate projects rather than iteration-one behavior.

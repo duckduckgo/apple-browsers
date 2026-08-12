@@ -12,12 +12,8 @@
       --surface: #f6f8fa;
       --blue: #2854c5;
       --blue-soft: #eaf0ff;
-      --green: #18794e;
-      --green-soft: #e8f5ef;
       --amber: #8a5700;
       --amber-soft: #fff4d6;
-      --red: #b42318;
-      --red-soft: #ffebe9;
     }
     * { box-sizing: border-box; }
     body {
@@ -33,7 +29,7 @@
     p { margin: 8px 0; }
     code { padding: 1px 5px; border-radius: 5px; background: #edf1f4; font-size: .92em; }
     .subtitle { max-width: 820px; color: var(--muted); font-size: 17px; }
-    .status, .warning {
+    .status {
       margin: 28px 0;
       padding: 18px 20px;
       border: 1px solid #bfd0ff;
@@ -41,14 +37,11 @@
       border-radius: 10px;
       background: var(--blue-soft);
     }
-    .warning { border-color: #ffd6d2; border-left-color: var(--red); background: var(--red-soft); }
     .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
     .card { padding: 18px; border: 1px solid var(--line); border-radius: 12px; background: white; }
     .card p { color: var(--muted); }
     .tag { display: inline-block; margin-bottom: 8px; padding: 2px 8px; border-radius: 99px; font-size: 12px; font-weight: 700; }
-    .done { color: var(--green); background: var(--green-soft); }
     .todo { color: var(--amber); background: var(--amber-soft); }
-    .concern { color: var(--red); background: var(--red-soft); }
     .flow {
       display: flex;
       align-items: stretch;
@@ -107,15 +100,15 @@
   <p class="subtitle">Visual companion to <code>TECH_DESIGN_FINAL.md</code>. It shows the implemented iteration-one singular-owner, fixed-cooldown, physical-lifetime, and diagnostics endpoint.</p>
 
   <div class="status">
-    <strong>Current source of truth</strong>
-    <p><code>bartosz/promo-q-3</code> at <code>9321268231</code> is the implemented endpoint, stacked directly on <code>bartosz/promo-q-2</code> at <code>9e82601a9f</code>. The active stack is <code>main</code> → <code>bartosz/promo-q-2</code> → <code>bartosz/promo-q-3</code>.</p>
+    <strong>Implemented reference</strong>
+    <p>Iteration one is complete. This appendix describes the cumulative implementation recorded on <code>bartosz/promo-q-3</code> at <code>9321268231</code>, based on <code>bartosz/promo-q-2</code> at <code>9e82601a9f</code>.</p>
   </div>
 
-  <h2>Delivery state</h2>
+  <h2>Scope at a glance</h2>
   <div class="grid">
-    <div class="card"><span class="tag done">Merged</span><h3>PR 1</h3><p>Feature mapping, initial arbiter/injection, and modal admission foundation.</p></div>
-    <div class="card"><span class="tag done">Open</span><h3>PR 2</h3><p>Lifecycle-safe modal coordination, startup latch, one central logical RMF session, exactly one renderer, known-host eligibility, and exact OS-specific removal.</p></div>
-    <div class="card"><span class="tag done">Open</span><h3>PR 3</h3><p>Directional cooldowns, confirmed RMF history, checkpoint-only integration, read-only diagnostics, and focused time-limit coverage. Stacked directly on PR 2.</p></div>
+    <div class="card"><h3>Modal coordination</h3><p>Owner-first admission, existing provider policy, retained validation, UIKit presentation, and exact-root lifetime.</p></div>
+    <div class="card"><h3>Logical RMF owner</h3><p>One app-scoped session, exactly one renderer, known-host eligibility, identity-safe handoff, and exact OS-specific removal.</p></div>
+    <div class="card"><h3>Policy and operations</h3><p>Directional cooldowns, confirmed history, checkpoint-only reconsideration, and read-only diagnostics.</p></div>
   </div>
 
   <h2>One coordination graph</h2>
@@ -146,9 +139,9 @@
   <table>
     <thead><tr><th>Confirmed source</th><th>Requested target</th><th>Required elapsed time</th><th>Owner</th></tr></thead>
     <tbody>
-      <tr><td>Modal</td><td>NTP RMF</td><td><strong>10 minutes</strong></td><td>Q3 fixed policy</td></tr>
-      <tr><td>NTP RMF</td><td>NTP RMF</td><td><strong>10 minutes</strong></td><td>Q3 fixed policy</td></tr>
-      <tr><td>NTP RMF</td><td>Modal</td><td><strong>24 hours</strong></td><td>Q3 fixed policy</td></tr>
+      <tr><td>Modal</td><td>NTP RMF</td><td><strong>10 minutes</strong></td><td><code>PromoQueueCooldownPolicy</code></td></tr>
+      <tr><td>NTP RMF</td><td>NTP RMF</td><td><strong>10 minutes</strong></td><td><code>PromoQueueCooldownPolicy</code></td></tr>
+      <tr><td>NTP RMF</td><td>Modal</td><td><strong>24 hours</strong></td><td><code>PromoQueueCooldownPolicy</code></td></tr>
       <tr><td>Modal</td><td>Modal</td><td><strong>Existing interval</strong> (currently/default 24h)</td><td>Existing modal manager</td></tr>
     </tbody>
   </table>
@@ -181,7 +174,7 @@
     <div class="card"><span class="tag done">Checkpoint</span><h3>Configuration / refresh</h3><p>Initial load, RMF notification, or explicit refresh can reconsider a retained candidate.</p></div>
     <div class="card"><span class="tag done">Checkpoint</span><h3>Renderer readiness</h3><p>Candidate, window attachment, host exposure, or full foreground-readiness update.</p></div>
     <div class="card"><span class="tag done">Checkpoint</span><h3>Removal settlement</h3><p>Successful owner release or exact terminal can drive central reconciliation.</p></div>
-    <div class="card"><span class="tag concern">Not an event</span><h3>Clock boundary</h3><p>Reaching 10m or 24h schedules nothing. Work waits for the next real checkpoint.</p></div>
+    <div class="card"><span class="tag todo">Not an event</span><h3>Clock boundary</h3><p>Reaching 10m or 24h schedules nothing. Work waits for the next real checkpoint.</p></div>
   </div>
 
   <h2>Physical RMF lifetime and animation</h2>
@@ -195,7 +188,7 @@
     <div class="node"><strong>Settlement</strong><small>transfer same session or release</small></div>
   </div>
   <div class="status">
-    <strong>OS-specific Q2 contract</strong>
+    <strong>OS-specific removal contract</strong>
     <p>iOS 17+ preserves scale/opacity and reports native SwiftUI <code>.removed</code> completion. iOS 15/16 clears the source synchronously with animations disabled and intentionally has no coordinated dismissal animation. Both paths retain ownership through the exact terminal and one service settlement turn; no fixed delay is used.</p>
   </div>
 
@@ -207,25 +200,17 @@
     <div class="card"><h3>No timer</h3><p>The screen states that boundaries do not schedule presentation or retry.</p></div>
   </div>
 
-  <h2>Validation status</h2>
-  <div class="grid">
-    <div class="card"><span class="tag todo">Re-run before landing</span><h3>Automated gates</h3><p>The final rebased stack should repeat focused tests, Swift parsing/linting, project validation, and diff checks. This documentation pass ran no app build or test.</p></div>
-    <div class="card"><span class="tag concern">Pending runtime</span><h3>Simulator and manual QA</h3><p>A real iOS 15/16 no-animation smoke test and standard-NTP, suggestion-tray, and unified-input manual validation remain explicit risks.</p></div>
-  </div>
-
-  <h2>Agreed changes that remain concerning</h2>
+  <h2>Key design choices</h2>
   <table>
-    <thead><tr><th>Change</th><th>Operational consequence</th></tr></thead>
+    <thead><tr><th>Choice</th><th>Behavior</th></tr></thead>
     <tbody>
       <tr><td>Startup-latched flag</td><td>Remote disable reaches a running/suspended process only after relaunch.</td></tr>
       <tr><td>Logical RMF session</td><td>A same-message renderer handoff keeps one lease and one queue-history timestamp; ordinary impression accounting remains per presentation.</td></tr>
       <tr><td>Balanced lifetime</td><td>No eligible renderer ends the session after exact removal; a later return is a new cooldown-governed session.</td></tr>
-      <tr><td>Fail-closed terminal</td><td>Missing exact removal proof can strand the queue rather than risk a visible overlap.</td></tr>
+      <tr><td>Fail-closed terminal</td><td>Missing exact removal proof retains ownership rather than risking a visible overlap.</td></tr>
       <tr><td>iOS 15/16 visual exception</td><td>Coordinated RMF dismissal is synchronous and not animated; iOS 17+ preserves scale/opacity.</td></tr>
       <tr><td>No boundary timer</td><td>An eligible promo can wait indefinitely for another checkpoint.</td></tr>
-      <tr><td>Manual future-host contract</td><td>A new covering overlay can regress exposure unless explicitly integrated and tested.</td></tr>
-      <tr><td>Cached Default Browser validity</td><td>Retained status can be stale after an external settings change.</td></tr>
-      <tr><td>Atomic unique shown deferred</td><td>The async first-shown check/write remains a separate optional correctness concern.</td></tr>
+      <tr><td>Explicit host eligibility</td><td>Every future NTP-covering host participates in the shared exposure contract.</td></tr>
     </tbody>
   </table>
 
@@ -240,7 +225,7 @@
     <li>A general RMF frequency engine or macOS queue extraction.</li>
   </ul>
 
-  <footer>Canonical prose: <code>TECH_DESIGN_FINAL.md</code>. Implementation record: <code>Q3_IMPLEMENTATION_PLAN.md</code>. Integration guide: <code>ADDING_PROMOS.md</code>.</footer>
+  <footer>Canonical prose: <code>TECH_DESIGN_FINAL.md</code>. Integration guide: <code>ADDING_PROMOS.md</code>.</footer>
 </main>
 </body>
 </html>

@@ -9,7 +9,7 @@ Iteration one coordinates only:
 
 It is a main-actor mutual-exclusion and fixed-cooldown seam, not a general promo scheduler. Do not route badges, settings rows, notification bars, onboarding, arbitrary UIKit presentations, or other promo surfaces through it without a new product/design decision.
 
-Read `TECH_DESIGN_FINAL.md` for the current contract and `PROMO_QUEUE_LOGICAL_RMF_OWNER_IMPLEMENTATION_PLAN.md` for the central RMF rationale.
+Read `TECH_DESIGN_FINAL.md` for the complete contract and `TECH_DESIGN_FINAL_APPENDIX.html` for a visual system overview.
 
 ## Core model
 
@@ -78,6 +78,8 @@ Retain the returned `NewTabPagePromoRendererRegistration` for the renderer lifet
 
 Report `isEligible` from the centralized host exposure/window/lifecycle predicate. Reporting a candidate is not authorization to publish it.
 
+Registering the same renderer ID again creates a new registration generation and stable-order entry. Do not replace a selected or draining generation in place. During explicit teardown, first remove the presentation or prove exact host detachment, then deregister; losing the registration token or weak renderer target is not permission to release ownership and must fail closed.
+
 The renderer implements `NewTabPagePromoRendering`:
 
 - `showRemoteMessage(_:)` atomically publishes only the authorized presentation and returns whether it succeeded;
@@ -98,6 +100,8 @@ Keep these identities separate:
 Echo the exact identities through appearance and removal callbacks. Never infer that a callback belongs to the current session from message ID alone.
 
 The service chooses one eligible renderer in stable registration order. A same-message handoff retains the logical session and lease, removes the outgoing presentation, waits for its exact terminal and one settlement turn, then authorizes the successor. A changed/missing/unrenderable candidate ends the session after the same barrier.
+
+The RMF message ID is the logical content identity. A same-ID payload update remains in the existing session and keeps the currently authorized content until the replacement builds. If that build fails, report the candidate as unrenderable and end the session through the normal drain path rather than withdrawing locally. Materially different campaign content must use a new ID; a different ID requires fresh ownership and cooldown admission.
 
 ### Removal
 
@@ -168,6 +172,8 @@ Cooldown passage is not an event. Reconcile at real candidate, renderer eligibil
 
 A cooldown is only a minimum delay for a new session. A still-owned promo remains the blocker after the interval has elapsed.
 
+Storage failures follow the production policy contract: retry an initial failed read, cache every successful read including `nil`, use the last successful value after later read failure, and treat an attempted failed write as authoritative within the running process. A relaunched process sees only durable history. Diagnostic reads must remain side-effect free.
+
 ## Reconciliation and failure policy
 
 The service owns a coalescing, non-reentrant `idle` / `owned` / `draining` reconciliation loop. Renderer callbacks request reconciliation; they do not perform independent cross-renderer handoff.
@@ -175,6 +181,7 @@ The service owns a coalescing, non-reentrant `idle` / `owned` / `draining` recon
 - Stable registration order resolves idle contention.
 - Same-message transfer retains ownership until outgoing settlement.
 - No eligible renderer ends the balanced logical session after exact removal.
+- Background/readiness gates new acquisition; backgrounding alone does not release an owned or draining session.
 - Stale or duplicate callbacks are no-ops.
 - Unexpected renderer loss, published-content inconsistency, or a missing terminal fails closed.
 - Process death clears transient ownership; persisted confirmed history preserves cooldown behavior after relaunch.

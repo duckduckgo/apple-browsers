@@ -18,9 +18,8 @@
 
 import Foundation
 
-/// Shares cancellation between the runner task and callback-driven work that may execute in other tasks or executors,
-/// where `Task.isCancelled` does not reflect cancellation of the runner. Access is locked because captcha and
-/// email-confirmation polling can read the state off the main actor.
+/// Shares cancellation with WebView action handling, CAPTCHA polling, and email-confirmation polling.
+/// Access is locked because those paths may check cancellation concurrently with the runner cancelling.
 public final class SubJobRunnerCancellationState {
 
     private let lock = NSLock()
@@ -36,11 +35,10 @@ public final class SubJobRunnerCancellationState {
     }
 
     public var shouldRunNextStep: Bool {
-        // The caller's predicate is arbitrary code, so it runs outside the lock.
         !isCancelled && shouldRunNextStepHandler()
     }
 
-    /// Returns `true` only when cancellation transitions from `false` to `true`.
+    /// Returns `true` only for the first cancellation request.
     public func markCancelled() -> Bool {
         lock.withLock {
             guard !cancelled else { return false }

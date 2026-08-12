@@ -18,7 +18,7 @@
 
 import Foundation
 
-/// Atomically transfers ownership of the runner continuation to one terminal callback.
+/// Ensures that only the first callback can finish the suspended operation.
 public final class SubJobRunnerContinuationState<ReturnValue>: @unchecked Sendable {
 
     private let lock = NSLock()

@@ -869,6 +869,9 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
 
     func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSelectSuggestion suggestion: ContextualSuggestedPrompt) {
         guard featureFlagger.isFeatureOn(.contextualSuggestedPrompts) else { return }
+        // These act on the attached selection, so they must not take the page route below: it attaches
+        // the whole page and submits the label as prompt text.
+        guard AIChatTextSelectionAction(selectionSuggestionID: suggestion.id) == nil else { return }
         cancelSuggestionSubmission()
         pixelHandler.fireSuggestionSelected(suggestionId: suggestion.id, pageType: sessionState.viewState.suggestionsPageType)
         contextualInputViewController.setStartActionsDimmed(true)

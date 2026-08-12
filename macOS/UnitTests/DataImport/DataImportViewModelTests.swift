@@ -1569,7 +1569,7 @@ final class DataImportViewModelTests: XCTestCase {
 
     func testReportModel_includesCorrectSourceVersion() {
         // GIVEN
-        model = DataImportViewModel(importSource: .chrome, syncFeatureVisibility: .hide)
+        model = DataImportViewModel(importSource: .safari, syncFeatureVisibility: .hide)
 
         // WHEN
         let reportModel = model.reportModel

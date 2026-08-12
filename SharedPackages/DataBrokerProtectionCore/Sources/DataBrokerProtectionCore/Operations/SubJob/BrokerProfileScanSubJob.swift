@@ -408,6 +408,10 @@ struct BrokerProfileScanSubJob {
                     try database.add(reAppearanceEvent)
                     try database.updateRemovedDate(nil, on: id)
                 }
+                if dependencies.featureFlagger.isExtractedProfileRefreshOn,
+                   let identifier = extractedProfile.identifier, !identifier.isEmpty {
+                    try database.updateExtractedProfile(existingProfile.refreshed(from: extractedProfile), on: id)
+                }
                 Logger.dataBrokerProtection.log("Extracted profile already exists in database: \(id.description)")
             } else {
                 try scheduleNewOptOutJob(from: extractedProfile,

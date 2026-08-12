@@ -122,6 +122,7 @@ final class BrowserTabViewController: NSViewController {
     private weak var previouslySelectedTab: Tab?
 
     private var hoverLabelWorkItem: DispatchWorkItem?
+    private var hoveredLinkTooltipPresenter: HoveredLinkTooltipPresenter?
 
     private var lastURL: URL?
     private weak var lastTab: Tab?
@@ -282,6 +283,17 @@ final class BrowserTabViewController: NSViewController {
         super.viewDidLoad()
 
         hoverLabelContainer.alphaValue = 0
+
+        // Owns the show/hide and dynamic positioning of the hovered-link
+        // tooltip. The presenter falls back to the existing in-window
+        // `hoverLabelContainer` for the default presentation and uses a
+        // borderless child window for the below-the-window and
+        // above-the-cursor presentations.
+        hoveredLinkTooltipPresenter = HoveredLinkTooltipPresenter(
+            inWindowContainer: hoverLabelContainer,
+            inWindowLabel: hoverLabel,
+            hostView: view
+        )
 
         if let webViewContainer {
             removeChild(in: self.containerStackView, webViewContainer: webViewContainer)
@@ -618,6 +630,8 @@ final class BrowserTabViewController: NSViewController {
 
         if self.webView === webView {
             self.webView = nil
+            hoveredLinkTooltipPresenter?.setWebView(nil)
+            hoveredLinkTooltipPresenter?.reset()
         }
 
         if webView.window === view.window, webView.isInspectorShown {
@@ -944,6 +958,10 @@ final class BrowserTabViewController: NSViewController {
             }
             cleanUpRemoteWebViewIfNeeded(newWebView)
             webView = newWebView
+
+            // Tell the tooltip presenter about the new WebView so it can use
+            // the WebView's bounds for the cursor-leaves-WebView dismissal.
+            hoveredLinkTooltipPresenter?.setWebView(newWebView)
 
             addWebViewToViewHierarchy(newWebView, tab: tabViewModel.tab)
             if let webViewSnapshot {
@@ -1716,38 +1734,19 @@ extension BrowserTabViewController: TabDelegate {
 
     func windowDidResignKey() {
         pinnedTabsDelegatesCancellable = nil
-        scheduleHoverLabelUpdatesForUrl(nil)
+        // Dismiss the tooltip immediately (no fade) on window deactivation so
+        // a floating tooltip never lingers attached to a no-longer-key window.
+        hoveredLinkTooltipPresenter?.reset()
         subscribeToTabSelectedInCurrentKeyWindow()
     }
 
     private func scheduleHoverLabelUpdatesForUrl(_ url: URL?) {
-        // cancel previous animation, if any
+        // Tell the presenter to show / hide the tooltip. The presenter handles
+        // dynamic positioning (in-window, below window, above cursor) based on
+        // the cursor's last-known location, fullscreen / zoomed state, and
+        // available space below the window — see HoveredLinkTooltipPresenter.
         hoverLabelWorkItem?.cancel()
-
-        // schedule an animation if needed
-        var animationItem: DispatchWorkItem?
-        var delay: Double = 0
-        if url == nil && hoverLabelContainer.alphaValue > 0 {
-            // schedule a fade out
-            delay = 0.1
-            animationItem = DispatchWorkItem { [weak self] in
-                self?.hoverLabelContainer.animator().alphaValue = 0
-            }
-        } else if url != nil && hoverLabelContainer.alphaValue < 1 {
-            // schedule a fade in
-            delay = 0.5
-            animationItem = DispatchWorkItem { [weak self] in
-                self?.hoverLabel.stringValue = url?.absoluteString ?? ""
-                self?.hoverLabelContainer.animator().alphaValue = 1
-            }
-        } else {
-            hoverLabel.stringValue = url?.absoluteString ?? ""
-        }
-
-        if let item = animationItem {
-            hoverLabelWorkItem = item
-            DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: item)
-        }
+        hoveredLinkTooltipPresenter?.update(url: url)
     }
 
     func tab(_ tab: Tab, requestedSaveAutofillData autofillData: AutofillData) {
@@ -1976,12 +1975,36 @@ extension BrowserTabViewController {
             guard let self else { return event }
             return self.mouseDown(with: event)
         }.store(in: &cancellables)
+
+        // Mouse-moved events are filtered at the window level unless the
+        // window opts in. Without this the local monitor below would never
+        // fire, so the hovered-link tooltip presenter wouldn't be able to
+        // flip its presentation as the cursor approaches the window edges.
+        view.window?.acceptsMouseMovedEvents = true
+
+        // Track mouse moves anywhere in the parent window so the
+        // tooltip presenter can:
+        //  * flip the tooltip to the floating below-window / above-cursor
+        //    presentation when the cursor approaches the bottom edge, and
+        //  * dismiss a stuck tooltip when the cursor moves out of the
+        //    WebView bounds (e.g. into the Web Inspector pane, where the
+        //    in-page hover script's `mouseout` doesn't fire).
+        NSEvent.addLocalCancellableMonitor(forEventsMatching: .mouseMoved) { [weak self] event in
+            guard let self else { return event }
+            self.handleMouseMovedEventForTooltip(event)
+            return event
+        }.store(in: &cancellables)
     }
 
     func mouseDown(with event: NSEvent) -> NSEvent? {
         guard event.window === self.view.window else { return event }
         tabViewModel?.tab.autofill?.didClick(at: event.locationInWindow)
         return event
+    }
+
+    private func handleMouseMovedEventForTooltip(_ event: NSEvent) {
+        guard event.window === self.view.window else { return }
+        hoveredLinkTooltipPresenter?.mouseDidMove(to: event.locationInWindow)
     }
 
 }

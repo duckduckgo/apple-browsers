@@ -2,7 +2,7 @@
 
 ## Outcome
 
-Q3 completes iteration one on top of the agreed `bartosz/promo-q-2-fixes` endpoint. It adds the directional cooldown policy, restores the coordinated RMF removal animation, exposes current diagnostic state, and proves the new behavior at the existing lifecycle checkpoints.
+Q3 completes iteration one on top of the consolidated `bartosz/promo-q-2` endpoint. It adds the directional cooldown policy, restores the coordinated RMF removal animation, exposes current diagnostic state, and proves the new behavior at the existing lifecycle checkpoints.
 
 The intended endpoint is:
 
@@ -10,10 +10,10 @@ The intended endpoint is:
 
 ## Baseline and branch strategy
 
-- Authoritative base at the time of this plan: `bartosz/promo-q-2-fixes` at `37b99b0d78`.
-- `bartosz/promo-q-2-fixes` is stacked on `bartosz/promo-q-2` and contains the complete agreed Q2 endpoint.
-- Create a fresh final-PR branch directly from the frozen `bartosz/promo-q-2-fixes` tip and implement this document against its current APIs.
-- If the Q2 stack lands first, create the branch from the resulting `main` instead. If implementation starts while Q2 is still stacked, perform at most one final rebase after the stack lands.
+- Authoritative base: consolidated `bartosz/promo-q-2` at `d7246ea824`, open to `main` as [#6194](https://github.com/duckduckgo/apple-browsers/pull/6194).
+- The accepted simplification and hardening changes formerly reviewed on `bartosz/promo-q-2-fixes` are folded into that branch; the separate fixes PR is closed and is not an active stack layer.
+- Q3 is implemented on `bartosz/promo-q-3` at `6b11771549`, based directly on `bartosz/promo-q-2` and open as draft [#6291](https://github.com/duckduckgo/apple-browsers/pull/6291).
+- After Q2 lands, perform one controlled rebase of Q3 onto the resulting `main` and retarget Q3 to `main`.
 - Keep `promo-queue-docs/` and `project_log.md` out of app PRs.
 
 ## Recommended review shape
@@ -281,7 +281,7 @@ Required scenarios:
 7. Background invalidates stale foreground-readiness callbacks; a fresh full-readiness callback can retry.
 8. Cooldown-denied raw rollback does not cause recursive registry churn.
 
-Q2-fixes already contains broad modal/RMF lifecycle integration tests. Add only the cooldown/checkpoint and animation-specific scenarios; do not duplicate the existing suite.
+Consolidated Q2 already contains broad modal/RMF lifecycle integration tests. Add only the cooldown/checkpoint and animation-specific scenarios; do not duplicate the existing suite.
 
 ## Phase 5 — Add read-only Promo Queue diagnostics
 

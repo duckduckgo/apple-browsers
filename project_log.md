@@ -1,19 +1,24 @@
 # Project Log
 
 ## Current handoff
-- Goal: Validate and, only when explicitly requested, publish the completed iteration-one iOS Promo Queue Q3 slice without putting temporary project documentation on the app branch.
-- Status: Local `bartosz/promo-q-3` is implemented at `29a7e33a80` directly from frozen `bartosz/promo-q-2-fixes` tip `37b99b0d78`. Its four dependency-ordered commits cover removal animation, pure cooldown/history, admission/checkpoints, and read-only diagnostics. The branch is not pushed and no pull request has been opened.
-- Completed: Branch guard and fetch, implementation, focused coverage, strict static validation, forbidden-scope audit, and durable documentation updates. The app branch contains no project documentation, telemetry, privacy-config rollout, live flag transitions, plural owners, provisional reservations, boundary timers, or optional atomic unique-shown work.
-- Next: Execute the focused simulator suites and manual QA for the standard NTP, suggestion tray, and unified-input hosts when the simulator harness is available. Push or open a PR only after a separate explicit request.
-- Blockers: The simulator harness stalled during animation validation, and the later local approval service rejected the final rerun before launch. Runtime and manual visual proof remain pending; static validation is green.
+- Goal: Finish review and landing of iteration-one iOS Promo Queue through the two remaining stacked app PRs without putting temporary project documentation on either app branch.
+- Status: PR 1 is merged. Consolidated `bartosz/promo-q-2` at `d7246ea824` is open to `main` as #6194 and contains the accepted work formerly reviewed in #6280. `bartosz/promo-q-3` at `6b11771549` is open as draft #6291 directly on Q2. The active stack is `main` → `bartosz/promo-q-2` → `bartosz/promo-q-3`.
+- Completed: The reviewer-requested Q2/Q2-fixes fold and Q3 restack are complete. The former fixes PR #6280 is closed; no separate fixes layer remains. Implementation, focused coverage, static validation, forbidden-scope audit, and durable documentation exist outside the app PRs.
+- Next: Finish Q2 and Q3 review, apply approved changes to the lowest owning active branch, land Q2, then perform one controlled Q3 rebase/retarget to `main`. Execute the remaining focused simulator and manual three-host QA when available.
+- Blockers: No branch-topology blocker. Code review plus previously noted runtime and manual visual proof remain pending.
 
 ## Decisions
+### 2026-08-12 — Fold Q2 fixes into one review branch
+- Decision: Fold all accepted `bartosz/promo-q-2-fixes` commits into `bartosz/promo-q-2`, close PR #6280, and keep only `bartosz/promo-q-2` and `bartosz/promo-q-3` stacked above `main`.
+- Why: Reviewers asked to assess the Q2 behavior as one coherent change, and a separate fixes layer no longer improved reviewability.
+- Consequences: Q2 feedback now lands directly on `bartosz/promo-q-2`; Q3 is based directly on Q2. After Q2 merges, Q3 needs one controlled rebase and retarget to `main`. Historical #6280 references remain only where they explain review provenance.
+
 ### 2026-07-28 — Land through three serial app PRs
 - Decision: Use `bartosz/promo-q-1`, `bartosz/promo-q-2`, and `bartosz/promo-q-3` as a serial stack; keep the now-renumbered Step 11 privacy-config rollout separate.
 - Why: This follows the implementation plan's dependency slices while avoiding parallel-stack rebases and repeated propagation of review feedback.
 - Consequences: `bartosz/promo-queue` is only the temporary source snapshot. Normally review feedback flows through merged `main`; because PR 2 was final but not yet merged when PR 3 preparation began, the user explicitly chose to resynchronize the source with final `bartosz/promo-q-2` and base PR 3 directly on it. Nothing under `promo-queue-docs/`, and no `project_log.md`, may enter the app PRs.
 
-- Treat the implementation on `bartosz/promo-q-2-fixes` and the agreed Q2/Q3 simplification plans as authoritative over the pre-simplification `TECH_DESIGN_FINAL.md`; keep the consolidated tech design current with those decisions.
+- Treat consolidated `bartosz/promo-q-2`, including the accepted changes formerly reviewed on `bartosz/promo-q-2-fixes`, and the agreed Q2/Q3 simplification plans as authoritative over the pre-simplification design; keep `TECH_DESIGN_FINAL.md` current with those decisions.
 - Use one app-scoped, main-actor transactional lease arbiter constructed in `Launching` and passed explicitly; do not add another global singleton or extract the macOS queue.
 - Preserve provider order, eligibility, modal-to-modal cooldown, and accounting; on the feature-enabled path acquire the modal lease before any provider is queried because provider evaluation can have side effects. The later fixed modal/RMF directional policy is service-owned. Feature off retains the lease-free legacy overload and existing modal cooldown.
 - Model NTP activity explicitly in all three hosts. Cached focused NTPs can remain mounted and on-window while hidden, so UIKit appearance alone is not authoritative.
@@ -22,11 +27,11 @@
 - Extend the existing Modal Prompt Coordination debug screen. Do not add Promo Queue admission, collision, or cooldown telemetry in iteration one; measurement belongs to a separate project.
 
 ### 2026-08-11 — Adopt the Q2 simplification endpoint and re-plan Q3
-- Decision: Treat `bartosz/promo-q-2-fixes` at `37b99b0d78` as the agreed Q2 endpoint: one immutable process mode, one singular identity-bearing owner, one release-only self-owned RMF admission, truthful physical removal, one guarded weak handoff registry, and the modal/NTP lifecycle adapters.
+- Decision: Treat the implementation originally reviewed on `bartosz/promo-q-2-fixes` at `37b99b0d78`, and now folded into consolidated `bartosz/promo-q-2`, as the agreed Q2 endpoint: one immutable process mode, one singular identity-bearing owner, one release-only self-owned RMF admission, truthful physical removal, one guarded weak handoff registry, and the modal/NTP lifecycle adapters.
 - Flag consequence: Delete live transition semantics from the final design. A kill-switch or local-override change applies only to a new graph; production rollback therefore requires force-quit/relaunch.
 - Ownership consequence: Two NTP RMFs cannot coexist. The 10-minute RMF→RMF rule is a minimum delay after confirmed appearance, but physical ownership can defer the next RMF longer. This is stricter than the original per-surface design and increases hidden-host starvation risk.
 - Retry consequence: Q3 is checkpoint-only. Do not add the old exact-boundary RMF timer; reaching 10 minutes or 24 hours alone does nothing.
-- Q3 scope: Implement the fixed directional policy and confirmed-RMF persistence/appearance confirmation against the singular owner, restore the coordinated scale/opacity removal animation without early release, add current-architecture diagnostics, and add only the focused cooldown/animation coverage missing from Q2-fixes.
+- Q3 scope: Implement the fixed directional policy and confirmed-RMF persistence/appearance confirmation against the singular owner, restore the coordinated scale/opacity removal animation without early release, add current-architecture diagnostics, and add only the focused cooldown/animation coverage missing from consolidated Q2.
 - Old Q3 disposition: `origin/bartosz/promo-q-3` at `59dfec29f7` is pre-simplification evidence. Do not port its live state, plural owners, provisional reservation, boundary scheduler, production in-memory fallbacks, or stale debug rows.
 - Deferred scope: Atomic unique-shown accounting remains optional; telemetry and privacy-config rollout remain separate projects.
 
@@ -131,3 +136,7 @@
 - Added the read-only debug projection in `29a7e33a80`, preserving singular owner and modal attempt identities, live weak-registration count, readiness, confirmed histories, and derived boundaries. Legacy snapshots do not read cooldown history; both direct and settings debug paths receive the same service provider.
 - Final static gates pass: all changed Swift files parse, strict SwiftLint passes with cache disabled, the Xcode project plist validates, and app/docs diffs pass whitespace checks. A focused Xcode run caught and repaired one stale admission initializer, but simulator runtime did not produce a clean final result; animated/disabled transition tests and manual three-host QA remain pending.
 - Re-audited the final app history: no merge/WIP/fixup commits, live flag transition machinery, plural owners, provisional reservation, cooldown timer/scheduler, Promo Queue telemetry/pixels, privacy-config rollout, atomic unique-shown change, or temporary documentation is present. No push or PR action was taken.
+
+### 2026-08-12
+- Verified the reviewer-requested fold on GitHub: PR #6194 now points to consolidated Q2 tip `d7246ea824`; former fixes PR #6280 is closed at the same tip; draft PR #6291 points to Q3 tip `6b11771549` and targets `bartosz/promo-q-2`.
+- Updated the canonical design, implementation/landing plan, Q3 plan, visual appendices, RMF research status notes, and current handoff to show only the active `main` → Q2 → Q3 stack. Historical #6280 entries were retained only when needed to explain how the accepted endpoint was reviewed.

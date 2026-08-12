@@ -141,9 +141,10 @@
 <main>
   <header>
     <h1>iOS Promo Queue</h1>
-    <p class="subtitle">Final cumulative system appendix, derived from the implementation at Q3 head. It explains the app-scoped coordination contract, lifecycle, host integration, cooldowns, developer API, and current review caveats.</p>
+    <p class="subtitle">Point-in-time cumulative system appendix derived from the Q3 revision reviewed below. It explains the app-scoped coordination contract, lifecycle, host integration, cooldowns, developer API, and review caveats at that revision.</p>
     <div class="meta">
-      <span class="tag">Q3 <code>e83b59282e897df8233fea246732f3cd98367429</code></span>
+      <span class="tag">Reviewed Q3 <code>e83b59282e897df8233fea246732f3cd98367429</code></span>
+      <span class="tag">Current stack Q2 <code>d7246ea824</code> → Q3 <code>6b11771549</code></span>
       <span class="tag">Static review 2026-08-12</span>
       <span class="tag">No builds or tests run in final review</span>
       <span class="tag">All access levels verified from Swift sources</span>
@@ -725,20 +726,21 @@
       </table>
     </div>
 
-    <h3>Reviewed revisions and intended bases</h3>
+    <h3>Reviewed revisions and subsequent delivery topology</h3>
+    <p class="callout"><strong>Stack update · 2026-08-12:</strong> The Q2-fixes changes reviewed below were folded into <code>bartosz/promo-q-2</code>, and PR 6280 was closed. The active stack is now <code>main</code> → <code>bartosz/promo-q-2</code> at <code>d7246ea824</code> → <code>bartosz/promo-q-3</code> at <code>6b11771549</code>. The historical rows retain the exact revisions inspected by this report.</p>
     <div class="table-wrap">
       <table>
         <thead><tr><th>Layer</th><th>Intended base reviewed</th><th>Head reviewed</th><th>Ancestry note</th></tr></thead>
         <tbody>
           <tr><td>PR 6087 (merged PR1)</td><td class="sha"><code>9dd3c84efdbc6a3208652324e5c9b34097b7cd8e</code></td><td class="sha"><code>fdb31d0ebef872c7839ee8f7dd2f372f3b9a43c5</code></td><td>GitHub landed a squash/merge commit <code>7fdd4719a1345c8805d3bbb9639c618f7dbb562d</code>, which is the ancestor carried by Q2/current main. The PR head itself need not be an ancestor.</td></tr>
-          <tr><td>PR 6194 (Q2)</td><td class="sha"><code>bd65c05015d20a6c28333147163d0d4d35408a19</code></td><td class="sha"><code>a455a7ca6e24a128a4687f4b02fe5653ec72a5c2</code></td><td>Head is an ancestor of Q2-fixes and Q3.</td></tr>
-          <tr><td>PR 6280 (Q2 fixes)</td><td class="sha"><code>a455a7ca6e24a128a4687f4b02fe5653ec72a5c2</code></td><td class="sha"><code>a746fddacfcd26250776190489e58c18a96d4578</code></td><td>Exact Q2 head as base; head is exact Q3 base.</td></tr>
-          <tr><td>PR 6291 (Q3)</td><td class="sha"><code>a746fddacfcd26250776190489e58c18a96d4578</code></td><td class="sha"><code>e83b59282e897df8233fea246732f3cd98367429</code></td><td>Local branch and fetched remote head matched; cumulative endpoint documented here.</td></tr>
+          <tr><td>PR 6194 (Q2)</td><td class="sha"><code>bd65c05015d20a6c28333147163d0d4d35408a19</code></td><td class="sha"><code>a455a7ca6e24a128a4687f4b02fe5653ec72a5c2</code></td><td>Reviewed before consolidation; current Q2 head is <code>d7246ea824</code> and includes the former fixes layer.</td></tr>
+          <tr><td>PR 6280 (former Q2 fixes)</td><td class="sha"><code>a455a7ca6e24a128a4687f4b02fe5653ec72a5c2</code></td><td class="sha"><code>a746fddacfcd26250776190489e58c18a96d4578</code></td><td>Historical review layer. The PR is closed and its accepted changes are folded into PR 6194.</td></tr>
+          <tr><td>PR 6291 (Q3)</td><td class="sha"><code>a746fddacfcd26250776190489e58c18a96d4578</code></td><td class="sha"><code>e83b59282e897df8233fea246732f3cd98367429</code></td><td>Revision inspected by this report; Q3 now targets consolidated Q2 and currently points to <code>6b11771549</code>.</td></tr>
           <tr><td>Current fetched <code>main</code></td><td>—</td><td class="sha"><code>fe4f65db00ee6ebd8b5d58ab24b22f7835cfbaf8</code></td><td>Contains PR1 landing; Q2’s intended base predates later main movement.</td></tr>
         </tbody>
       </table>
     </div>
-    <p class="footnote">The PR descriptions and all current review threads for PRs 6087, 6194, 6280, and 6291 were inspected. Superseded closed PRs were not used as authority. Previously accepted fixes were reconciled against cumulative Q3 rather than assumed from thread resolution state.</p>
+    <p class="footnote">The PR descriptions and review threads for PRs 6087, 6194, 6280, and 6291 were inspected at the revisions above. PR 6280 is retained here only as historical review provenance; it is no longer an active stack layer.</p>
   </section>
 
   <footer>

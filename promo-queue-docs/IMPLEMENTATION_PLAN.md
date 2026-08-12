@@ -11,11 +11,10 @@ The project remains a narrow iOS coordination seam between launch-modal promos a
 | Slice | Branch / PR | Status | Responsibility |
 | --- | --- | --- | --- |
 | PR 1 | `bartosz/promo-q-1`, merged as [#6087](https://github.com/duckduckgo/apple-browsers/pull/6087) | Merged to `main` | Disabled-by-default iOS feature mapping, initial transactional arbiter/injection, coordinated modal attempt foundation |
-| PR 2 | `bartosz/promo-q-2` at `12e24676eb` → `main` | Open | Lifecycle-safe modal scheduling, provider revalidation, coordinated NTP render gate, all known NTP hosts, feature-off compatibility |
-| PR 2 fixes | `bartosz/promo-q-2-fixes` at `37b99b0d78` → `bartosz/promo-q-2` | Open and agreed | Startup-latched mode, singular global owner, truthful physical RMF release, guarded release handoff, host/readiness hardening, provider simplification |
-| PR 3 | final branch based on the frozen PR 2-fixes endpoint | Remaining | Directional cooldowns, animation correction, debug projection, focused cooldown/animation validation |
+| PR 2 | `bartosz/promo-q-2` at `d7246ea824` → `main`, [#6194](https://github.com/duckduckgo/apple-browsers/pull/6194) | Open | Lifecycle-safe modal scheduling, provider revalidation, coordinated NTP render gate, all known NTP hosts, feature-off compatibility, startup-latched mode, singular global owner, truthful physical RMF release, guarded release handoff, host/readiness hardening, provider simplification |
+| PR 3 | `bartosz/promo-q-3` at `6b11771549` → `bartosz/promo-q-2`, draft [#6291](https://github.com/duckduckgo/apple-browsers/pull/6291) | Open | Directional cooldowns, animation correction, debug projection, focused cooldown/animation validation |
 
-The existing `origin/bartosz/promo-q-3` tip (`59dfec29f7`, draft [#6217](https://github.com/duckduckgo/apple-browsers/pull/6217)) was built on the pre-simplification Q2 architecture. It is not a mergeable implementation baseline. Preserve it as evidence, then rebuild the final slice from the accepted Q2-fixes endpoint when authorized.
+The former `bartosz/promo-q-2-fixes` PR [#6280](https://github.com/duckduckgo/apple-browsers/pull/6280) was closed after its accepted changes were folded into PR 2. It is historical review context, not an active branch in the delivery stack. The only open stack is now `main` → `bartosz/promo-q-2` → `bartosz/promo-q-3`.
 
 Temporary files under `promo-queue-docs/` and `project_log.md` must not be merged into `main` through any app PR.
 
@@ -23,7 +22,7 @@ Temporary files under `promo-queue-docs/` and `project_log.md` must not be merge
 
 For the second and third slices, resolve conflicts in this order:
 
-1. `origin/bartosz/promo-q-2-fixes` implementation;
+1. `origin/bartosz/promo-q-2` implementation, including the accepted changes formerly reviewed in PR #6280;
 2. the agreed shared Q2 simplification plan;
 3. the agreed shared Q3 simplification plan;
 4. `TECH_DESIGN_FINAL.md` and `Q3_IMPLEMENTATION_PLAN.md` in this directory;
@@ -90,11 +89,11 @@ Reconsideration is checkpoint-only. Time reaching a boundary does not itself run
 
 ### PR 1 — merged foundation
 
-PR 1 established the iOS flag mapping, initial app-scoped ownership seam, modal admission, and identity-safe lease foundation. PR 2 fixes legitimately revise parts of this implementation, especially the flag lifecycle and owner representation.
+PR 1 established the iOS flag mapping, initial app-scoped ownership seam, modal admission, and identity-safe lease foundation. Consolidated PR 2 legitimately revises parts of this implementation, especially the flag lifecycle and owner representation.
 
-### PR 2 plus fixes — accepted Q2 endpoint
+### PR 2 — consolidated Q2 endpoint
 
-Together the two open stacked branches must land as one coherent second slice:
+PR 2 contains both the original Q2 work and the accepted simplification/hardening changes formerly reviewed separately in PR #6280:
 
 - lifecycle-safe/cancellable modal scheduling and exact-root reconciliation;
 - provider validity contract and optional safe replacement;
@@ -135,17 +134,17 @@ The old Q3 commits can still supply useful boundary cases, persistence-failure c
 
 ## Review-efficient landing workflow
 
-1. Let review finish on `bartosz/promo-q-2` and `bartosz/promo-q-2-fixes`; keep the fixes branch as the sole place for Q2 review feedback.
-2. Freeze the accepted Q2-fixes tip.
-3. Prefer creating/rebuilding Q3 from merged `main`. If timing requires stacking, base it on the exact frozen Q2-fixes tip and avoid further Q2-only edits in Q3.
-4. Keep Q3 commits dependency-ordered and reviewable, but submit one final app PR rather than creating another stack.
-5. If Q2 feedback arrives after Q3 starts, apply the correction to the lowest owning branch, then perform one controlled Q3 rebase after that branch is final.
-6. Do not repeatedly rebase Q3 for unrelated `main` movement while the Q2 stack is still under review.
+1. Keep all Q2 review feedback and fixes on `bartosz/promo-q-2`.
+2. Keep `bartosz/promo-q-3` based directly on `bartosz/promo-q-2` while both PRs are open.
+3. Keep Q3 commits dependency-ordered and reviewable; do not add another stack layer.
+4. If Q2 feedback arrives after Q3 starts, apply the correction to Q2, then perform one controlled Q3 rebase after Q2 is final.
+5. After Q2 lands, rebase Q3 onto the resulting `main` and retarget it to `main`.
+6. Do not repeatedly rebase Q3 for unrelated `main` movement while Q2 is still under review.
 7. Keep the separate privacy-config rollout out of this repository/PR series.
 
 This minimizes duplicated conflict resolution and review churn while retaining three atomic product slices.
 
-## Tests already present at the Q2-fixes endpoint
+## Tests already present at the consolidated Q2 endpoint
 
 The current stack contains focused coverage for:
 

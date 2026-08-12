@@ -2,16 +2,16 @@
 
 ## Status and source of truth
 
-This document describes the implemented iteration-one endpoint on local branch `bartosz/promo-q-3`, built directly from the frozen `bartosz/promo-q-2-fixes` tip `37b99b0d78`. The app branch remains local: it has not been pushed and no pull request has been opened.
+This document describes the implemented iteration-one endpoint on `bartosz/promo-q-3` at `6b11771549`, stacked directly on consolidated `bartosz/promo-q-2` at `d7246ea824`. Q2 is open to `main` as PR [#6194](https://github.com/duckduckgo/apple-browsers/pull/6194), and Q3 is open to Q2 as draft PR [#6291](https://github.com/duckduckgo/apple-browsers/pull/6291).
 
 When sources disagree, use this order:
 
-1. the implementation on local `bartosz/promo-q-3` at `29a7e33a80`;
-2. the frozen Q2-fixes base `37b99b0d78`;
+1. the implementation on `bartosz/promo-q-3` at `6b11771549`;
+2. the consolidated Q2 base `d7246ea824`, including the accepted changes formerly reviewed in PR #6280;
 3. `Q3_IMPLEMENTATION_PLAN.md` for the approved scope and dependency order; and
 4. this document for the consolidated iteration-one contract.
 
-PR 1 is already on `main`, and PR 2 plus its stacked fixes establish the Q2 foundation. The rebuilt local Q3 endpoint is four dependency-ordered commits: `26f11cee84` (removal animation), `c5cfe59937` (pure cooldown policy and RMF history), `6d2563d963` (admission confirmation, cooldown integration, and checkpoints), and `29a7e33a80` (read-only diagnostics). The older pre-simplification Q3 implementation at `06a2417373` remains evidence only; none of its live-flag, per-surface-owner, provisional-reservation, timer, or stale debug shapes were ported.
+PR 1 is already on `main`. Consolidated PR 2 establishes the complete Q2 foundation, including the simplification and hardening work formerly reviewed as a separate fixes PR. PR 3 adds the dependency-ordered removal-animation, cooldown/history, admission/checkpoint, and read-only diagnostics slices. The active delivery stack is `main` → `bartosz/promo-q-2` → `bartosz/promo-q-3`.
 
 ## Goal
 

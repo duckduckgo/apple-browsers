@@ -1,13 +1,13 @@
 # RMF gap analysis — iteration 2
 
-**Decision pre-read · original research 2026-07-30; iteration-one status refreshed 2026-08-11**
+**Decision pre-read · original research 2026-07-30; iteration-one status refreshed 2026-08-12**
 
 **Apple checkout:** `7fdd4719a1` on `origin/main` (merged PR [#6087](https://github.com/duckduckgo/apple-browsers/pull/6087), 2026-08-04).
 **RMF config checkout:** `5764096` on `main` (2026-07-29).
 
 > **Source rule.** Code and config claims cite these checkouts with `file:line`. Statements from Asana threads are marked **reported (Asana), not code-verifiable**. Effort classes: **S** = bounded days, **M** = coordinated multi-component work, **L** = architectural/multi-release — relative classes, not delivery commitments.
 
-> **Iteration-1 status note (affects several claims below).** The seven-provider modal chain and its modal-to-modal cooldown shipped to `main` **ungated** in Nov 2025 (`105dd6cf34` #2337), and PR 1 is on `main`. The accepted PR 2 endpoint is the open `bartosz/promo-q-2` plus `bartosz/promo-q-2-fixes` stack: startup-latched mode, one singular transient owner, lifecycle-safe modal/RMF admission, truthful physical release, and known-host coverage. The fixed modal→RMF 10m, RMF→RMF 10m, RMF→modal 24h, and existing modal→modal policy remains Q3 work using confirmed history and checkpoint-only reconsideration. The existing PR 3 branch predates this simplification and is evidence only. Promo Queue telemetry is a separate project. RMF itself still has no cooldown engine, so the framework findings below remain valid.
+> **Iteration-1 status note (affects several claims below).** The seven-provider modal chain and its modal-to-modal cooldown shipped to `main` **ungated** in Nov 2025 (`105dd6cf34` #2337), and PR 1 is on `main`. The accepted Q2 endpoint is consolidated in open `bartosz/promo-q-2`: startup-latched mode, one singular transient owner, lifecycle-safe modal/RMF admission, truthful physical release, and known-host coverage. The former fixes PR was folded into Q2 and closed. The fixed modal→RMF 10m, RMF→RMF 10m, RMF→modal 24h, and existing modal→modal policy is implemented in stacked `bartosz/promo-q-3` using confirmed history and checkpoint-only reconsideration. Promo Queue telemetry is a separate project. RMF itself still has no cooldown engine, so the framework findings below remain valid.
 
 ---
 
@@ -178,7 +178,7 @@ These are the reasons RMF loses when it *could* have carried the promo:
 | "Shortest auto-dismiss is 1d, no hour/minute options; opt-in; omitted → persists indefinitely" (DRI) | **Real, exactly** | `max($0,1)` clamp `JsonToRemoteMessageModelMapper.swift:167`; `Int?` days; schema `minimum: 1`, not required; enforcement `RemoteMessagingStore.swift:282-289` |
 | "We already support `dismissAfterDaysShown`… basic auto-dismiss is in place" (advisor/Android DRI) | **True but non-responsive** | the mechanism exists (since 2026-05-12) — none of the three contested specifics were wrong; also iOS-schema-only |
 | Impression-count auto-dismiss exists somewhere | **False** | no counter anywhere in the package (grep) |
-| An undismissed RMF card defers launch modals on every foreground where it renders (DRI) | **Real by design** (queue on) | `acquireModalLease` fails while any visible-promo lease exists in `PromoQueueLeaseArbiter.swift`; reconsidered next foreground (TECH_DESIGN rule 1). Bounded by dismissal/`dismissAfterDaysShown`/config change. The final PR 2 stack wires the lease through all three NTP hosts. |
+| An undismissed RMF card defers launch modals on every foreground where it renders (DRI) | **Real by design** (queue on) | `acquireModalLease` fails while any visible-promo lease exists in `PromoQueueLeaseArbiter.swift`; reconsidered next foreground (TECH_DESIGN rule 1). Bounded by dismissal/`dismissAfterDaysShown`/config change. Consolidated PR 2 wires the lease through all three NTP hosts. |
 | Remotely-controlled "max times shown" is being brought over (advisor) | **Not yet in code or schema** | no such field in either repo — **reported (Asana), not code-verifiable** as a plan |
 | Iteration-1 cooldowns are hardcoded / are remote (contradictory statements) | **Different rows have different ownership** | modal→modal remains remote-tunable through `promptCooldownInterval` (currently/default 24h); modal→RMF and RMF→RMF are fixed 10m; RMF→modal is fixed 24h. The fixed rows live in the app coordination layer, not RMF. |
 | `cards_list` works on macOS via dedicated tab | **False** | mapped to `.dedicatedTab` (`DefaultRemoteMessagingSurfacesProvider.swift:29`) which no fetch/renderer consumes; message persists invisibly |

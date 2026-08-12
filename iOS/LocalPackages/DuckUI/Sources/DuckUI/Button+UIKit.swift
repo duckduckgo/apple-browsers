@@ -17,7 +17,6 @@
 //  limitations under the License.
 //
 
-import MetricBuilder
 import SwiftUI
 import UIKit
 
@@ -43,7 +42,7 @@ private extension UIButton {
     func applyFilledStyle(colors: PrimaryButtonColors, compact: Bool) {
         var buttonConfiguration = UIButton.Configuration.filled()
         buttonConfiguration.contentInsets = compact ? ButtonAppearanceConstants.compactContentInsets : ButtonAppearanceConstants.contentInsets
-        buttonConfiguration.background.cornerRadius = ContainerMetrics.cornerRadius
+        buttonConfiguration.cornerStyle = .capsule
 
         configuration = buttonConfiguration
         configurationUpdateHandler = { button in
@@ -52,7 +51,7 @@ private extension UIButton {
             let background: UIColor
             let foreground: UIColor
             if !button.isEnabled {
-                background = UIColor(colors.disabled)
+                background = UIColor(colors.disabled).withDisabledOpacity
                 foreground = UIColor(colors.textDisabled)
             } else if button.isHighlighted {
                 background = UIColor(colors.pressed)
@@ -62,12 +61,14 @@ private extension UIButton {
                 foreground = UIColor(colors.text)
             }
 
+            let titleFont = ButtonAppearanceConstants.titleFont(compact: compact, traits: button.traitCollection)
+
             // Set resolved color rather than baseBackgroundColor, so UIKit doesn't apply extra dimming
             configuration.background.backgroundColor = background
             configuration.baseForegroundColor = foreground
             configuration.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
                 var transformed = incoming
-                transformed.font = compact ? ButtonAppearanceConstants.compactTitleFont : ButtonAppearanceConstants.titleFont
+                transformed.font = titleFont
                 transformed.foregroundColor = foreground
                 return transformed
             }
@@ -77,9 +78,26 @@ private extension UIButton {
     }
 }
 
+private extension UIColor {
+    var withDisabledOpacity: UIColor {
+        UIColor { [self] traits in
+            resolvedColor(with: traits).withAlphaComponent(Consts.disabledOpacity)
+        }
+    }
+}
+
 private enum ButtonAppearanceConstants {
     static let compactContentInsets: NSDirectionalEdgeInsets = NSDirectionalEdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16)
     static let contentInsets: NSDirectionalEdgeInsets = NSDirectionalEdgeInsets(top: 16, leading: 24, bottom: 16, trailing: 24)
-    static let compactTitleFont: UIFont = .systemFont(ofSize: UIFont.preferredFont(forTextStyle: .subheadline) .pointSize, weight: .medium)
-    static let titleFont: UIFont = .systemFont(ofSize: UIFont.preferredFont(forTextStyle: .body).pointSize, weight: .medium)
+
+    /// The UIKit equivalent of the SwiftUI styles' `ddgButtonDynamicTypeCap()`, capping the font size at `DynamicTypeSize.accessibility3`
+    static let maximumContentSizeCategory: UIContentSizeCategory = .accessibilityExtraLarge
+
+    static func titleFont(compact: Bool, traits: UITraitCollection) -> UIFont {
+        let textStyle: UIFont.TextStyle = compact ? .subheadline : .body
+        let maximumTraits = UITraitCollection(preferredContentSizeCategory: maximumContentSizeCategory)
+        let pointSize = min(UIFont.preferredFont(forTextStyle: textStyle, compatibleWith: traits).pointSize,
+                            UIFont.preferredFont(forTextStyle: textStyle, compatibleWith: maximumTraits).pointSize)
+        return .systemFont(ofSize: pointSize, weight: .medium)
+    }
 }

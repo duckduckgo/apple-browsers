@@ -64,7 +64,7 @@ struct SyncEnabledViewV2<ViewModel>: View where ViewModel: ManagementViewModel {
         }
 
         // Intro text
-        Text(.init(UserText.syncEnabledFooterV2))
+        Text(.init(model.isAIChatSyncEnabled ? UserText.syncEnabledFooterV2 : UserText.syncEnabledFooterWithoutAIChatV2))
             .font(.system(size: 13))
             .foregroundColor(Color(designSystemColor: .textSecondary))
             .fixedSize(horizontal: false, vertical: true)

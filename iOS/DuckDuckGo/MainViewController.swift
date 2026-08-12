@@ -1161,7 +1161,8 @@ class MainViewController: UIViewController {
                canShowVPNInUI {
                 segueToVPN(source: entryPoint.screenSource, scrollToStrictRouting: scrollToStrictRouting)
             } else {
-                PixelKit.fire(entryPoint.subscriptionFunnelClickPixel, frequency: .dailyAndCount)
+                let isSubscriptionActive = (try? await subscriptionManager.getSubscription())?.isActive
+                PixelKit.fire(entryPoint.subscriptionFunnelClickPixel(isSubscriptionActive), frequency: .dailyAndCount)
                 segueToDuckDuckGoSubscription(origin: entryPoint.subscriptionFunnelOrigin.rawValue)
             }
         }

@@ -198,12 +198,9 @@ private final class MockTabTerminationErrorPagePixelFiring: PixelFiring {
 
     private(set) var calls: [Call] = []
 
-    func fire(_ event: PixelKit.Event,
+    func fire(event: PixelKit.Event,
               frequency: PixelKit.Frequency,
-              includeAppVersionParameter: Bool,
-              withAdditionalParameters: [String: String]?,
-              withNamePrefix: String?,
-              doNotEnforcePrefix: Bool,
+              options: PixelKit.Options,
               onComplete: @escaping PixelKit.CompletionBlock) {
         calls.append(.init(event: event, frequency: frequency))
         onComplete(true, nil)

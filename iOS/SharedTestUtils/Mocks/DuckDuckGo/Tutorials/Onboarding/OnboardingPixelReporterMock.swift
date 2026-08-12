@@ -413,9 +413,9 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
         didCallMeasureKeepDuckAIImpression = true
     }
 
-    func measureKeepDuckAISelection(isEnabled: Bool) {
+    func measureKeepDuckAISelection(shouldKeep: Bool) {
         didCallMeasureKeepDuckAISelection = true
-        didCaptureKeepDuckAISelection = isEnabled
+        didCaptureKeepDuckAISelection = shouldKeep
     }
 
     func measureDuckPlayerImpression() {

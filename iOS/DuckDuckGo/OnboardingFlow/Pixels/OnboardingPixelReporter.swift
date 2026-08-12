@@ -131,7 +131,7 @@ protocol OnboardingDownloadReasonPixelReporting {
     func measureAISearchSettingsImpression()
     func measureAISearchSettingsSelection(searchAssistEnabled: Bool, aiGeneratedImagesEnabled: Bool)
     func measureKeepDuckAIImpression()
-    func measureKeepDuckAISelection(isEnabled: Bool)
+    func measureKeepDuckAISelection(shouldKeep: Bool)
     func measureDuckPlayerImpression()
     func measureDuckPlayerSelection(youTubeAdBlockingEnabled: Bool, duckPlayerEnabled: Bool)
 }
@@ -705,8 +705,8 @@ extension OnboardingPixelReporter: OnboardingDownloadReasonPixelReporting {
         fireTailoredStepPixel(.preferencesDuckAI(.shown))
     }
 
-    func measureKeepDuckAISelection(isEnabled: Bool) {
-        fireTailoredStepPixel(.preferencesDuckAI(.clicked(isEnabled ? .on : .off)))
+    func measureKeepDuckAISelection(shouldKeep: Bool) {
+        fireTailoredStepPixel(.preferencesDuckAI(.clicked(shouldKeep ? .on : .off)))
     }
 
     func measureDuckPlayerImpression() {

@@ -1424,7 +1424,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
 
     func testWhenMeasureKeepDuckAISelectionEnabledThenDuckAIOnClickedFires() {
         // WHEN
-        sut.measureKeepDuckAISelection(isEnabled: true)
+        sut.measureKeepDuckAISelection(shouldKeep: true)
 
         // THEN
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.preferencesDuckAI(.clicked(.on))])
@@ -1432,7 +1432,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
 
     func testWhenMeasureKeepDuckAISelectionDisabledThenDuckAIOffClickedFires() {
         // WHEN
-        sut.measureKeepDuckAISelection(isEnabled: false)
+        sut.measureKeepDuckAISelection(shouldKeep: false)
 
         // THEN
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.preferencesDuckAI(.clicked(.off))])

@@ -1,5 +1,5 @@
 //
-//  SubscriptionOnboardingPIRLaunchState.swift
+//  PIRAvailability.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -17,11 +17,13 @@
 //  limitations under the License.
 //
 
-import SwiftUI
+import DataBrokerProtection_iOS
 
-// (TODO|Post-iOS15-Drop): fold back into the flow view model
-/// The PIR launch's presentation
-@MainActor
-final class SubscriptionOnboardingPIRLaunchState: ObservableObject {
-    @Published var isPresentingPIR = false
+/// Shared by `SettingsViewModel` and `SubscriptionFlowViewModel`.
+enum PIRAvailability {
+    static func isAvailable(isPIREnabled: Bool,
+                            meetsLocaleRequirement: Bool,
+                            provider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?) -> Bool {
+        isPIREnabled && meetsLocaleRequirement && provider != nil
+    }
 }

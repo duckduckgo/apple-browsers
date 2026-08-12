@@ -342,6 +342,7 @@ class MainViewController: UIViewController {
                                                   featureDiscovery: featureDiscovery,
                                                   aiChatSettings: aiChatSettings,
                                                   productSurfaceTelemetry: productSurfaceTelemetry,
+                                                  onboardingActivationRecorder: SubscriptionOnboardingActivationRecorder(keyValueStore: keyValueStore),
                                                   duckAiFireModeStorageHandler: duckAiFireModeStorageHandler)
         manager.delegate = self
         manager.isFireModeProvider = { [weak self] in self?.tabManager.currentBrowsingMode == .fire }

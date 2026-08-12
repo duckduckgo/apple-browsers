@@ -33,7 +33,6 @@ let package = Package(
     dependencies: [
         .package(path: "../../../SharedPackages/Infrastructure/DesignResourcesKit"),
         .package(path: "../../../SharedPackages/Infrastructure/DesignResourcesKitIcons"),
-        .package(path: "../../../SharedPackages/Infrastructure/MetricBuilder"),
         .package(path: "../../../SharedPackages/UIComponents"),
     ],
     targets: [
@@ -42,7 +41,6 @@ let package = Package(
             dependencies: [
                 "DesignResourcesKit",
                 "DesignResourcesKitIcons",
-                "MetricBuilder",
                 "UIComponents",
             ],
             swiftSettings: [

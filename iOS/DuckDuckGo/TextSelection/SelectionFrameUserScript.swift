@@ -42,9 +42,14 @@ struct SelectionFrame {
         webView.evaluateJavaScript(script, in: frameInfo, in: contentWorld, completionHandler: completionHandler)
     }
 
-    func selectedText(from value: Any) -> String? {
+    /// - Parameter requiringLiveSelection: For callers that did not come from the selection menu. The
+    ///   stored text is returned either way, but with this set a selection the user has since dropped is
+    ///   refused — losing focus hides a selection without clearing it, so a stale one is otherwise
+    ///   indistinguishable from a current one.
+    func selectedText(from value: Any, requiringLiveSelection: Bool = false) -> String? {
         guard let result = value as? [String: Any],
               result["frameToken"] as? String == frameToken else { return nil }
+        if requiringLiveSelection, result["isLive"] as? Bool != true { return nil }
         return result["selectedText"] as? String
     }
 }

@@ -17,18 +17,16 @@
 
     Object.defineProperty(window, '__ddgSelectionFrame', {
         value: Object.freeze({
-            // One-shot: a read happens only because the user picked an action, and the text is then spent.
-            // Leaving it readable let a later sheet open re-attach a selection the user had already
-            // submitted and could no longer see, since losing focus hides the selection without firing
-            // selectionchange. Clearing lastHasSelection re-arms the deduplicated post(true), so the next
-            // selectionchange reports again rather than the frame going silently untracked.
+            // `isLive` reports whether the document still holds a selection right now. The stored text is
+            // still what gets returned, so mutation that fires no selectionchange cannot alter it, but a
+            // caller that did not come from the selection menu can refuse a selection the user has since
+            // dropped — losing focus hides a selection without firing selectionchange, which otherwise let
+            // a later sheet open re-attach text the user had already submitted.
             readSelection: function() {
-                var spent = snapshot;
-                snapshot = '';
-                lastHasSelection = null;
                 return {
                     frameToken: frameToken,
-                    selectedText: spent
+                    selectedText: snapshot,
+                    isLive: selectionText().trim().length > 0
                 };
             }
         }),

@@ -102,17 +102,15 @@ final class SelectionFrameUserScriptTests: XCTestCase {
     /// Covers the mechanism only: storing at selection time rules out mutation that fires no
     /// selectionchange, not a page that replaces the selection and so updates what is stored.
     func testTheTextIsSnapshotWhenSelectedRatherThanWhenRead() {
-        XCTAssertTrue(sut.source.contains("var spent = snapshot"))
+        XCTAssertTrue(sut.source.contains("selectedText: snapshot"))
         XCTAssertTrue(sut.source.contains("snapshot = text"))
     }
 
-    /// A submitted selection must not be re-attachable: losing focus hides it without firing
-    /// selectionchange, so a later sheet open would otherwise pick up text the user cannot see.
-    func testReadingASelectionSpendsItAndReArmsReporting() {
-        XCTAssertTrue(sut.source.contains("var spent = snapshot"))
-        XCTAssertTrue(sut.source.contains("snapshot = ''"))
-        XCTAssertTrue(sut.source.contains("lastHasSelection = null"))
-        XCTAssertTrue(sut.source.contains("selectedText: spent"))
+    /// The read reports liveness separately from the text, so an entry point that did not come from the
+    /// selection menu can refuse a selection the user has since dropped. Reading must not be destructive:
+    /// a second action on the same selection has to keep working.
+    func testTheReadReportsWhetherTheSelectionIsStillLive() {
+        XCTAssertTrue(sut.source.contains("isLive: selectionText().trim().length > 0"))
     }
 
     /// An out-of-view third-party iframe could otherwise select its own text and have that read instead.

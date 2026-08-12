@@ -158,9 +158,13 @@ final class WebView: WKWebView {
 
     /// The user's selection, trimmed, or nil when nothing usable is selected. Lets an entry point other
     /// than the edit menu pick a selection up. Same content world as `withCurrentSelection`.
+    ///
+    /// Requires the selection to still be live, unlike the edit-menu path: this entry point fires whenever
+    /// the sheet is opened, so a selection the user submitted earlier and can no longer see must not be
+    /// picked up again.
     func currentSelection() async -> String? {
         await withCheckedContinuation { continuation in
-            readSelection { continuation.resume(returning: $0) }
+            readSelection(requiringLiveSelection: true) { continuation.resume(returning: $0) }
         }
     }
 
@@ -172,7 +176,7 @@ final class WebView: WKWebView {
     ///
     /// Deliberately the completion-handler overload: `evaluateJavaScript`'s `async` twin bridges the result
     /// back as `()` in this content world, so the selection never arrives.
-    private func readSelection(_ completion: @escaping (String?) -> Void) {
+    private func readSelection(requiringLiveSelection: Bool = false, _ completion: @escaping (String?) -> Void) {
         guard let frame = selectionFrameProvider?() else {
             completion(nil)
             return
@@ -180,7 +184,7 @@ final class WebView: WKWebView {
 
         let handler: (Result<Any, Error>) -> Void = { result in
             guard case .success(let value) = result,
-                  let text = frame.selectedText(from: value) else {
+                  let text = frame.selectedText(from: value, requiringLiveSelection: requiringLiveSelection) else {
                 completion(nil)
                 return
             }

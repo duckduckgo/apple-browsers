@@ -527,7 +527,8 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         messagesConfiguration.homeMessages = [
             .mockRemote(id: "message-a", withType: .small(titleText: "Title", descriptionText: "Body")),
         ]
-        let sut = createSUT(promoCoordinator: promoCoordinator)
+        let surfaceID = UUID()
+        let sut = createSUT(surfaceID: surfaceID, promoCoordinator: promoCoordinator)
         let probe = RemoteMessageWindowAttachmentProbe()
         let mountedHost = mountRemoteMessageRenderHost(model: sut, probe: probe)
         defer {
@@ -569,7 +570,7 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         }
 
         sut.load()
-        promoCoordinator.setSelectedRemoteMessageRendererID(sut.surfaceID)
+        promoCoordinator.setSelectedRemoteMessageRendererID(surfaceID)
         sut.setSurfaceLifecycleReady(true)
         XCTAssertTrue(sut.showRemoteMessage(presentation))
         await fulfillment(of: [didAttach], timeout: 1)
@@ -607,14 +608,24 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         XCTAssertLessThan(detachedEventIndex, settlementEventIndex)
     }
 
-    func testWhenSynchronousSourceClearIsInjectedThenMountedSourceDisappearsWithoutWaitingForAnimationTerminal() async throws {
+    func testWhenSynchronousRemovalPathRunsThenMountedSourceDisappearsWithoutWaitingForAnimationTerminal() async throws {
         let promoCoordinator = RendererCoordinatorMock(promoCoordinationMode: .coordinated)
         messagesConfiguration.homeMessages = [
             .mockRemote(id: "message-a", withType: .small(titleText: "Title", descriptionText: "Body")),
         ]
+        let removalPath: NewTabPageRemoteMessageRemovalPath
+        if #available(iOS 17, *) {
+            // Exercise the approved old-OS path on current CI without replacing real old-runtime coverage.
+            removalPath = .synchronousSourceClear
+        } else {
+            // On iOS 15/16 this proves production's automatic availability dispatch selects that path.
+            removalPath = .automatic
+        }
+        let surfaceID = UUID()
         let sut = createSUT(
+            surfaceID: surfaceID,
             promoCoordinator: promoCoordinator,
-            remoteMessageRemovalPath: .synchronousSourceClear
+            remoteMessageRemovalPath: removalPath
         )
         let probe = RemoteMessageWindowAttachmentProbe()
         let mountedHost = mountRemoteMessageRenderHost(model: sut, probe: probe)
@@ -629,7 +640,9 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         let didAttach = expectation(description: "The authorized remote message attached to the test window")
         let didDetach = expectation(description: "The synchronously cleared remote message detached from the test window")
         let didObserveRemovalTransaction = expectation(description: "The mounted host observed the synchronous removal transaction")
+        let didReachSettlement = expectation(description: "The outgoing view detached before service settlement")
         var wasSourceClearedAtTerminal = false
+        var wasProbeDetachedAtSettlement = false
         probe.onAttachmentChanged = { isAttached in
             if isAttached {
                 didAttach.fulfill()
@@ -642,10 +655,14 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         }
         promoCoordinator.onRemovalTerminal = { _ in
             wasSourceClearedAtTerminal = self.coordinatedRenderSession(in: sut) == nil
+            DispatchQueue.main.async {
+                wasProbeDetachedAtSettlement = !probe.isAttachedToWindow
+                didReachSettlement.fulfill()
+            }
         }
 
         sut.load()
-        promoCoordinator.setSelectedRemoteMessageRendererID(sut.surfaceID)
+        promoCoordinator.setSelectedRemoteMessageRendererID(surfaceID)
         sut.setSurfaceLifecycleReady(true)
         XCTAssertTrue(sut.showRemoteMessage(presentation))
         await fulfillment(of: [didAttach], timeout: 1)
@@ -667,7 +684,8 @@ final class NewTabPageMessagesModelTests: XCTestCase {
             )]
         )
 
-        await fulfillment(of: [didObserveRemovalTransaction, didDetach], timeout: 1)
+        await fulfillment(of: [didObserveRemovalTransaction, didDetach, didReachSettlement], timeout: 1)
+        XCTAssertTrue(wasProbeDetachedAtSettlement)
         XCTAssertFalse(probe.isAttachedToWindow)
         XCTAssertEqual(
             probe.removalTransaction,
@@ -719,10 +737,11 @@ final class NewTabPageMessagesModelTests: XCTestCase {
             .mockRemote(id: "message-a", withType: .small(titleText: "Title", descriptionText: "Body")),
         ]
         var isAttached = true
-        let sut = createSUT(promoCoordinator: promoCoordinator)
+        let surfaceID = UUID()
+        let sut = createSUT(surfaceID: surfaceID, promoCoordinator: promoCoordinator)
         sut.setSurfaceAttachmentProvider { isAttached }
         sut.load()
-        promoCoordinator.setSelectedRemoteMessageRendererID(sut.surfaceID)
+        promoCoordinator.setSelectedRemoteMessageRendererID(surfaceID)
         sut.setSurfaceLifecycleReady(true)
         let presentation = makePresentation(messageID: "message-a")
         let removalID = UUID()
@@ -1026,16 +1045,18 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         imageLoader: RemoteMessagingImageLoading? = nil,
         remoteMessageRemovalPath: NewTabPageRemoteMessageRemovalPath = .automatic
     ) -> NewTabPageMessagesModel {
+        let surfaceID = UUID()
         let sut = createSUT(
+            surfaceID: surfaceID,
             promoCoordinator: promoCoordinator,
             imageLoader: imageLoader,
             remoteMessageRemovalPath: remoteMessageRemovalPath
         )
         sut.setSurfaceAttachmentProvider { true }
         sut.load()
-        promoCoordinator.setSelectedRemoteMessageRendererID(sut.surfaceID)
+        promoCoordinator.setSelectedRemoteMessageRendererID(surfaceID)
         sut.setSurfaceLifecycleReady(true)
-        XCTAssertEqual(promoCoordinator.selectedRendererID, sut.surfaceID)
+        XCTAssertEqual(promoCoordinator.selectedRendererID, surfaceID)
         return sut
     }
 

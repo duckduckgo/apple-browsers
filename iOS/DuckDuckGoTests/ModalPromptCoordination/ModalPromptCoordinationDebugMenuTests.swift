@@ -25,7 +25,8 @@ import Testing
 @Suite("Modal Prompt Coordination Debug Menu")
 final class ModalPromptCoordinationDebugMenuTests {
 
-    @Test("The view model formats service and exposure snapshots")
+    @available(iOS 16, *)
+    @Test("The view model formats service and exposure snapshots", .timeLimit(.minutes(1)))
     func whenSnapshotsChangeThenViewModelFormatsEveryReadOnlyValue() throws {
         let arbiter = PromoQueueLeaseArbiter()
         guard case .acquired(let modalLease) = arbiter.acquireModalLease() else {
@@ -206,7 +207,8 @@ final class ModalPromptCoordinationDebugMenuTests {
         _ = modalLease
     }
 
-    @Test("Unavailable Projection Leaves Existing Modal Cooldown Reset Intact")
+    @available(iOS 16, *)
+    @Test("Unavailable Projection Leaves Existing Modal Cooldown Reset Intact", .timeLimit(.minutes(1)))
     func whenSnapshotProviderIsUnavailableThenOnlyExistingCooldownControlRemainsActive() {
         let store = MockPromptCooldownStore()
         store.lastPresentationTimestamp = 1_800_000_000

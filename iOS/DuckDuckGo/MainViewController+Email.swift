@@ -49,6 +49,7 @@ extension MainViewController {
                 }
                 let pasteBoard = UIPasteboard.general
                 pasteBoard.string = emailManager.emailAddressFor(alias)
+                self.newTabPageSessionInstrumentation.visitEnded(terminalAction: .emailCopied)
                 let addressBarBottom = self.appSettings.currentAddressBarPosition.isBottom
                 ActionMessageView.present(message: UserText.emailBrowsingMenuAlert,
                                           presentationLocation: .withBottomBar(andAddressBarBottom: addressBarBottom))

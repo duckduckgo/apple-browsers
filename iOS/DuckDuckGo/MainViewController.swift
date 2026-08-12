@@ -1213,6 +1213,7 @@ class MainViewController: UIViewController {
     private func keyboardWillHide() {
         if !didSendGestureDismissPixel, newTabPageViewController?.isDragging == true, keyboardShowing {
             Pixel.fire(pixel: .addressBarGestureDismiss)
+            recordNewTabPageSessionAction { $0.dismissKeyboard() }
             didSendGestureDismissPixel = true
         }
         collapseExpandedUTIOnKeyboardDismiss()
@@ -2236,6 +2237,7 @@ class MainViewController: UIViewController {
     }
 
     @objc func onPasswordsPressed() {
+        recordNewTabPageSessionAction { $0.tapPasswordsToolbarItem() }
         launchAutofillLogins(source: .newTabPageToolbar)
     }
 
@@ -4617,12 +4619,15 @@ extension MainViewController: BrowserChromeDelegate {
         }
 
         postIdleSessionInstrumentation.sessionEnded(reason: .favoriteSelected)
+        recordNewTabPageSessionAction { $0.tapFavorite() }
         newTabPageViewController?.chromeDelegate = nil
         dismissOmniBar()
         favicons.loadFavicon(forDomain: url.host, intoCache: .fireproof, fromCache: .tabs)
         if url.isBookmarklet() {
+            // Runs against the current page rather than navigating, so the visit continues.
             executeBookmarklet(url)
         } else {
+            endNewTabPageSessionWithLoad(of: url)
             loadUrlRespectingAIBoundary(url)
         }
         showHomeRowReminder()
@@ -4881,6 +4886,7 @@ extension MainViewController: OmniBarDelegate {
     }
 
     private func launchBrowsingMenu() {
+        recordNewTabPageSessionAction { $0.openMenu() }
         guard let tab = currentTab ?? tabManager.current(createIfNeeded: true) else {
             return
         }
@@ -5054,6 +5060,7 @@ extension MainViewController: OmniBarDelegate {
     }
 
     @objc func onToolbarBookmarksPressed() {
+        recordNewTabPageSessionAction { $0.tapBookmarksToolbarItem() }
         Pixel.fire(pixel: .bookmarksOpenFromToolbar)
         onBookmarksPressed()
     }
@@ -5255,6 +5262,7 @@ extension MainViewController: OmniBarDelegate {
             ntpAfterIdleInstrumentation.backButtonUsedFromNTP(afterIdle: tab.openedAfterIdle)
         }
         postIdleSessionInstrumentation.backPressed()
+        recordNewTabPageSessionAction { $0.utiBackArrow() }
         performCancel()
     }
 
@@ -5626,6 +5634,7 @@ extension MainViewController: OmniBarDelegate {
             ntpAfterIdleInstrumentation.backButtonUsedFromNTP(afterIdle: tab.openedAfterIdle)
         }
         postIdleSessionInstrumentation.backPressed()
+        recordNewTabPageSessionAction { $0.utiBackArrow() }
     }
 
     /// Delegate method called when the AI Chat left button is tapped
@@ -6392,6 +6401,7 @@ extension MainViewController: TabDelegate {
     }
 
     func tabDidRequestAIChatHistory(tab: TabViewController, source: AIChatHistorySource) {
+        recordNewTabPageSessionAction { $0.menuChats() }
         openAIChatHistory(source: source)
     }
 
@@ -6435,6 +6445,7 @@ extension MainViewController: TabDelegate {
     }
 
     func tabDidRequestBookmarks(tab: TabViewController) {
+        recordNewTabPageSessionAction { $0.menuBookmarks() }
         Pixel.fire(pixel: .bookmarksButtonPressed,
                    withAdditionalParameters: [PixelParameters.originatedFromMenu: "1"])
         onBookmarksPressed()
@@ -6445,6 +6456,7 @@ extension MainViewController: TabDelegate {
     }
     
     func tabDidRequestDownloads(tab: TabViewController) {
+        recordNewTabPageSessionAction { $0.menuDownloads() }
         segueToDownloads()
     }
     
@@ -6478,6 +6490,7 @@ extension MainViewController: TabDelegate {
     }
 
     func tabDidRequestSettingsToVPN(_ tab: TabViewController) {
+        recordNewTabPageSessionAction { $0.menuVpn() }
         segueToVPN(source: .browserMenu)
     }
 
@@ -6902,6 +6915,7 @@ extension MainViewController: UIGestureRecognizerDelegate {
 extension MainViewController: GestureToolbarButtonDelegate {
     
     func singleTapDetected(in sender: GestureToolbarButton) {
+        recordNewTabPageSessionAction { $0.tapBookmarksToolbarItem() }
         Pixel.fire(pixel: .bookmarksButtonPressed,
                    withAdditionalParameters: [PixelParameters.originatedFromMenu: "0"])
         onBookmarksPressed()

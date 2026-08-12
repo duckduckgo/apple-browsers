@@ -17,13 +17,11 @@
 //  limitations under the License.
 //
 
-import UIKit
 import Foundation
 import FoundationExtensions
 import Persistence
 import PersistenceTestingUtils
 import RemoteMessaging
-import SwiftUI
 import Testing
 @testable import DuckDuckGo
 
@@ -436,32 +434,28 @@ final class ModalPromptCoordinationManagerIntegrationTests {
             surfaceID: surfaceID,
             coordinator: service,
             isOpenedAfterIdle: true
-        ) { _ in }
+        )
         let messagesModel = fixture.model
         let messagesConfiguration = fixture.configuration
+        defer {
+            messagesModel.tearDown()
+        }
         messagesModel.setSurfaceAttachmentProvider { true }
         messagesModel.load()
         messagesModel.setSurfaceRenderable(true)
-        guard let gate = remoteMessageGate(in: messagesModel) else {
-            Issue.record("Expected the after-idle RMF candidate to publish its coordinated gate")
-            return
-        }
-        messagesModel.remoteMessageGateDidAppear(
-            gateID: gate.id,
-            messageID: gate.messageID,
-            mountID: UUID()
-        )
 
         #expect(messagesConfiguration.lastRefreshOpenedAfterIdle == true)
         #expect(messagesConfiguration.refreshCallCount == 1)
         #expect(messagesModel.homeMessageViewModels.isEmpty)
-        #expect(gate.renderSession == nil)
+        #expect(coordinatedRemoteMessageRenderSession(in: messagesModel) == nil)
         #expect(messagesConfiguration.appearanceCallCount == 0)
         #expect(promoQueueLeaseArbiter.snapshot.hasModalLease)
-        #expect(promoQueueLeaseArbiter.snapshot.visiblePromoIdentity == nil)
+        #expect(service.remoteMessageCoordinationSnapshot.state == .idle)
+        #expect(service.remoteMessageCoordinationSnapshot.registeredRendererCount == 1)
+        #expect(service.remoteMessageCoordinationSnapshot.eligibleRendererCount == 1)
 
         // Fire the committed attempt while inactive. The real manager releases its owner and invokes the service's
-        // release callback, but coordinated RMF retry remains closed throughout the background transition.
+        // release callback, but renderer reconciliation remains closed throughout the background transition.
         service.applicationWillResignActive()
         scheduler.executeScheduledBlock()
 
@@ -485,31 +479,33 @@ final class ModalPromptCoordinationManagerIntegrationTests {
             readinessToken: service.captureForegroundReadinessToken()
         )
 
-        let expectedIdentity = VisiblePromoIdentity(
-            surfaceID: surfaceID,
-            promoType: .remoteMessage,
-            promoID: messageID
-        )
-        #expect(messagesConfiguration.refreshCallCount == 2)
+        #expect(messagesConfiguration.refreshCallCount == 1)
         #expect(messagesConfiguration.lastRefreshOpenedAfterIdle == true)
         #expect(messagesModel.homeMessageViewModels.map(\.messageId) == [messageID])
-        #expect(remoteMessageRenderSession(in: messagesModel) != nil)
         #expect(messagesConfiguration.appearanceCallCount == 0)
         #expect(messagesConfiguration.lastAppearedHomeMessage == nil)
-        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .visible(expectedIdentity))
+        guard let sessionID = service.remoteMessageCoordinationSnapshot.sessionID else {
+            Issue.record("Expected the after-idle renderer to receive a logical remote-message session")
+            return
+        }
+        let expectedSession = PromoQueueRemoteMessageSession(id: sessionID, messageID: messageID)
+        guard let renderSession = coordinatedRemoteMessageRenderSession(in: messagesModel) else {
+            Issue.record("Expected direct coordinated remote-message content after readiness")
+            return
+        }
+        #expect(service.remoteMessageCoordinationSnapshot.state == .owned)
+        #expect(service.remoteMessageCoordinationSnapshot.rendererID == surfaceID)
+        #expect(renderSession.presentation.session == expectedSession)
+        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .remoteMessage(expectedSession))
 
         messagesModel.setSurfaceRenderable(false)
-        await withCheckedContinuation { continuation in
-            DispatchQueue.main.async {
-                continuation.resume()
-            }
-        }
+        await waitForMainQueueSettlement()
         #expect(promoQueueLeaseArbiter.snapshot.activeOwner == nil)
     }
 
     @available(iOS 16, *)
-    @Test("Two Real NTP Models Handoff Only After SwiftUI Physical Removal", .timeLimit(.minutes(1)))
-    func whenFirstMountedRemoteMessageDisappearsThenSecondMountedModelReceivesHandoff() async {
+    @Test("Two Real NTP Models Handoff The Same Message Only After Exact Removal Settlement", .timeLimit(.minutes(1)))
+    func whenFirstRemoteMessageRendererBecomesIneligibleThenSameMessageSessionTransfersAfterSettlement() async {
         let manager = ModalPromptCoordinationManager(
             providers: [],
             cooldownManager: cooldownManager,
@@ -529,116 +525,202 @@ final class ModalPromptCoordinationManagerIntegrationTests {
         )
         let firstSurfaceID = UUID()
         let secondSurfaceID = UUID()
-        let firstIdentity = VisiblePromoIdentity(
-            surfaceID: firstSurfaceID,
-            promoType: .remoteMessage,
-            promoID: "first"
-        )
-        let secondIdentity = VisiblePromoIdentity(
-            surfaceID: secondSurfaceID,
-            promoType: .remoteMessage,
-            promoID: "second"
-        )
-        let lifecycle = TwoModelRemoteMessageLifecycleRecorder()
+        let messageID = "shared-message"
         let firstFixture = makeRemoteMessageModel(
-            messageID: firstIdentity.promoID,
+            messageID: messageID,
             surfaceID: firstSurfaceID,
             coordinator: service
-        ) { [promoQueueLeaseArbiter = self.promoQueueLeaseArbiter] event in
-            switch event {
-            case .cardDidAppear:
-                lifecycle.record(.firstCardDidAppear)
-            case .cardDidDisappear:
-                lifecycle.ownerAtFirstCardDisappearance = promoQueueLeaseArbiter.snapshot.activeOwner
-                lifecycle.record(.firstCardDidDisappear)
-            case .gateDidDisappear:
-                lifecycle.record(.firstGateDidDisappear)
-            case .gateDidAppear:
-                break
-            }
-        }
+        )
         let firstModel = firstFixture.model
         let secondFixture = makeRemoteMessageModel(
-            messageID: secondIdentity.promoID,
+            messageID: messageID,
             surfaceID: secondSurfaceID,
             coordinator: service
-        ) { event in
-            switch event {
-            case .gateDidAppear:
-                lifecycle.record(.secondGateDidAppear)
-            case .cardDidAppear:
-                lifecycle.record(.secondCardDidAppear)
-            case .cardDidDisappear, .gateDidDisappear:
-                break
-            }
-        }
-        let secondModel = secondFixture.model
-        let hostState = TwoModelRemoteMessageHostState()
-        let hostingController = UIHostingController(
-            rootView: TwoModelRemoteMessageGateHost(
-                firstModel: firstModel,
-                secondModel: secondModel,
-                state: hostState
-            )
         )
-        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        let secondModel = secondFixture.model
         defer {
             firstModel.tearDown()
             secondModel.tearDown()
-            window.isHidden = true
         }
 
-        firstModel.setSurfaceAttachmentProvider { [weak hostingController] in
-            hostingController?.viewIfLoaded?.window != nil
-        }
-        secondModel.setSurfaceAttachmentProvider { [weak hostingController] in
-            hostingController?.viewIfLoaded?.window != nil
-        }
+        firstModel.setSurfaceAttachmentProvider { true }
+        secondModel.setSurfaceAttachmentProvider { true }
         firstModel.load()
         secondModel.load()
         firstModel.setSurfaceRenderable(true)
         secondModel.setSurfaceRenderable(true)
-        window.rootViewController = hostingController
-        window.isHidden = false
 
-        guard await lifecycle.wait(for: .firstCardDidAppear) else {
-            Issue.record("Timed out waiting for the first mounted RMF card to appear")
+        let firstOwnedSnapshot = service.remoteMessageCoordinationSnapshot
+        guard let firstSessionID = firstOwnedSnapshot.sessionID,
+              let firstPresentationID = firstOwnedSnapshot.presentationID else {
+            Issue.record("Expected the first real NTP model to own a remote-message presentation")
             return
         }
-        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .visible(firstIdentity))
-
-        hostState.isSecondGatePresented = true
-        guard await lifecycle.wait(for: .secondGateDidAppear) else {
-            Issue.record("Timed out waiting for the blocked second RMF gate to appear")
+        let logicalSession = PromoQueueRemoteMessageSession(id: firstSessionID, messageID: messageID)
+        guard let firstRenderSession = coordinatedRemoteMessageRenderSession(in: firstModel) else {
+            Issue.record("Expected the first real NTP model to publish direct coordinated content")
             return
         }
+        #expect(firstOwnedSnapshot.state == .owned)
+        #expect(firstOwnedSnapshot.rendererID == firstSurfaceID)
+        #expect(firstRenderSession.presentation.session == logicalSession)
+        #expect(firstRenderSession.presentation.id == firstPresentationID)
+        #expect(firstModel.homeMessageViewModels.map(\.messageId) == [messageID])
+        #expect(coordinatedRemoteMessageRenderSession(in: secondModel) == nil)
+        #expect(secondModel.homeMessageViewModels.isEmpty)
+        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .remoteMessage(logicalSession))
+        #expect(firstFixture.configuration.appearanceCallCount == 0)
+        #expect(secondFixture.configuration.appearanceCallCount == 0)
+        #expect(!firstOwnedSnapshot.isQueueAppearanceConfirmed)
+        #expect(firstOwnedSnapshot.isPresentationAppearanceReported == false)
 
-        #expect(remoteMessageRenderSession(in: secondModel) == nil)
-        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .visible(firstIdentity))
+        firstRenderSession.viewModel.onDidAppear()
 
-        firstFixture.configuration.homeMessages = [makeRemoteMessage(messageID: "first-replacement")]
-        firstModel.refresh()
-        guard await lifecycle.wait(for: .firstCardDidDisappear) else {
-            Issue.record("Timed out waiting for the outgoing first RMF card to disappear")
+        let firstConfirmedSnapshot = service.remoteMessageCoordinationSnapshot
+        #expect(firstFixture.configuration.appearanceCallCount == 1)
+        #expect(secondFixture.configuration.appearanceCallCount == 0)
+        #expect(firstConfirmedSnapshot.sessionID == firstSessionID)
+        #expect(firstConfirmedSnapshot.presentationID == firstPresentationID)
+        #expect(firstConfirmedSnapshot.isQueueAppearanceConfirmed)
+        #expect(firstConfirmedSnapshot.isPresentationAppearanceReported == true)
+
+        firstRenderSession.viewModel.onDidAppear()
+
+        #expect(firstFixture.configuration.appearanceCallCount == 1)
+        #expect(secondFixture.configuration.appearanceCallCount == 0)
+        #expect(service.remoteMessageCoordinationSnapshot.isQueueAppearanceConfirmed)
+
+        firstModel.setSurfaceRenderable(false)
+
+        let drainingSnapshot = service.remoteMessageCoordinationSnapshot
+        #expect(drainingSnapshot.state == .draining)
+        #expect(drainingSnapshot.sessionID == firstSessionID)
+        #expect(drainingSnapshot.presentationID == firstPresentationID)
+        #expect(drainingSnapshot.rendererID == firstSurfaceID)
+        #expect(drainingSnapshot.removalID != nil)
+        #expect(drainingSnapshot.removalTerminal == .sourceRemovedWithoutAnimation)
+        #expect(drainingSnapshot.isQueueAppearanceConfirmed)
+        #expect(drainingSnapshot.isPresentationAppearanceReported == true)
+        #expect(coordinatedRemoteMessageRenderSession(in: firstModel) == nil)
+        #expect(coordinatedRemoteMessageRenderSession(in: secondModel) == nil)
+        #expect(firstModel.homeMessageViewModels.isEmpty)
+        #expect(secondModel.homeMessageViewModels.isEmpty)
+        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .remoteMessage(logicalSession))
+
+        await waitForMainQueueSettlement()
+
+        let transferredSnapshot = service.remoteMessageCoordinationSnapshot
+        guard let transferredRenderSession = coordinatedRemoteMessageRenderSession(in: secondModel) else {
+            Issue.record("Expected the second real NTP model to publish the transferred presentation")
             return
         }
-        guard await lifecycle.wait(for: .firstGateDidDisappear) else {
-            Issue.record("Timed out waiting for the outgoing first RMF gate to disappear")
-            return
+        #expect(transferredSnapshot.state == .owned)
+        #expect(transferredSnapshot.messageID == messageID)
+        #expect(transferredSnapshot.sessionID == firstSessionID)
+        #expect(transferredSnapshot.presentationID != firstPresentationID)
+        #expect(transferredSnapshot.rendererID == secondSurfaceID)
+        #expect(transferredSnapshot.isQueueAppearanceConfirmed)
+        #expect(transferredSnapshot.isPresentationAppearanceReported == false)
+        #expect(transferredRenderSession.presentation.session == logicalSession)
+        #expect(transferredRenderSession.presentation.id == transferredSnapshot.presentationID)
+        #expect(firstModel.homeMessageViewModels.isEmpty)
+        #expect(secondModel.homeMessageViewModels.map(\.messageId) == [messageID])
+        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .remoteMessage(logicalSession))
+
+        transferredRenderSession.viewModel.onDidAppear()
+
+        let transferredConfirmedSnapshot = service.remoteMessageCoordinationSnapshot
+        #expect(firstFixture.configuration.appearanceCallCount == 1)
+        #expect(secondFixture.configuration.appearanceCallCount == 1)
+        #expect(transferredConfirmedSnapshot.sessionID == firstSessionID)
+        #expect(transferredConfirmedSnapshot.presentationID == transferredRenderSession.presentation.id)
+        #expect(transferredConfirmedSnapshot.isQueueAppearanceConfirmed)
+        #expect(transferredConfirmedSnapshot.isPresentationAppearanceReported == true)
+
+        transferredRenderSession.viewModel.onDidAppear()
+
+        #expect(firstFixture.configuration.appearanceCallCount == 1)
+        #expect(secondFixture.configuration.appearanceCallCount == 1)
+        #expect(service.remoteMessageCoordinationSnapshot.sessionID == firstSessionID)
+        #expect(service.remoteMessageCoordinationSnapshot.isQueueAppearanceConfirmed)
+    }
+
+    @available(iOS 16, *)
+    @Test("A Different RMF Message Starts A Fresh Logical Session After Removal Settlement", .timeLimit(.minutes(1)))
+    func whenWaitingRendererHasDifferentMessageThenItReceivesAFreshSessionAfterSettlement() async {
+        let manager = ModalPromptCoordinationManager(
+            providers: [],
+            cooldownManager: cooldownManager,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            modalPromptScheduling: schedulerMock
+        )
+        let service = PromoCoordinationService(
+            launchSourceManager: MockLaunchSourceManager(),
+            modalPromptCoordinationManager: manager,
+            promoCoordinationMode: .coordinated,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter
+        )
+        service.applicationDidBecomeActive()
+        service.presentModalPromptIfNeeded(
+            from: presenterMock,
+            readinessToken: service.captureForegroundReadinessToken()
+        )
+        let firstMessageID = "first-message"
+        let secondMessageID = "second-message"
+        let firstFixture = makeRemoteMessageModel(
+            messageID: firstMessageID,
+            surfaceID: UUID(),
+            coordinator: service
+        )
+        let secondFixture = makeRemoteMessageModel(
+            messageID: secondMessageID,
+            surfaceID: UUID(),
+            coordinator: service
+        )
+        defer {
+            firstFixture.model.tearDown()
+            secondFixture.model.tearDown()
         }
 
-        #expect(lifecycle.ownerAtFirstCardDisappearance == .visible(firstIdentity))
+        firstFixture.model.setSurfaceAttachmentProvider { true }
+        secondFixture.model.setSurfaceAttachmentProvider { true }
+        firstFixture.model.load()
+        secondFixture.model.load()
+        firstFixture.model.setSurfaceRenderable(true)
+        secondFixture.model.setSurfaceRenderable(true)
 
-        guard await lifecycle.wait(for: .secondCardDidAppear) else {
-            Issue.record("Timed out waiting for the second RMF card to receive the release handoff")
+        guard let firstSessionID = service.remoteMessageCoordinationSnapshot.sessionID else {
+            Issue.record("Expected the first message to own a logical session")
             return
         }
+        let firstLogicalSession = PromoQueueRemoteMessageSession(id: firstSessionID, messageID: firstMessageID)
+        #expect(service.remoteMessageCoordinationSnapshot.messageID == firstMessageID)
+        #expect(firstFixture.model.homeMessageViewModels.map(\.messageId) == [firstMessageID])
+        #expect(coordinatedRemoteMessageRenderSession(in: firstFixture.model)?.presentation.session.id == firstSessionID)
+        #expect(secondFixture.model.homeMessageViewModels.isEmpty)
+        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .remoteMessage(firstLogicalSession))
 
-        #expect(firstModel.isActiveForPromoRetry)
-        #expect(remoteMessageGate(in: firstModel)?.messageID == "first-replacement")
-        #expect(remoteMessageRenderSession(in: firstModel) == nil)
-        #expect(remoteMessageRenderSession(in: secondModel) != nil)
-        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .visible(secondIdentity))
+        firstFixture.model.setSurfaceRenderable(false)
+
+        #expect(service.remoteMessageCoordinationSnapshot.state == .draining)
+        #expect(service.remoteMessageCoordinationSnapshot.sessionID == firstSessionID)
+        #expect(secondFixture.model.homeMessageViewModels.isEmpty)
+        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .remoteMessage(firstLogicalSession))
+
+        await waitForMainQueueSettlement()
+
+        guard let secondSessionID = service.remoteMessageCoordinationSnapshot.sessionID else {
+            Issue.record("Expected the different message to acquire a fresh logical session")
+            return
+        }
+        let secondLogicalSession = PromoQueueRemoteMessageSession(id: secondSessionID, messageID: secondMessageID)
+        #expect(service.remoteMessageCoordinationSnapshot.state == .owned)
+        #expect(service.remoteMessageCoordinationSnapshot.messageID == secondMessageID)
+        #expect(secondSessionID != firstSessionID)
+        #expect(firstFixture.model.homeMessageViewModels.isEmpty)
+        #expect(secondFixture.model.homeMessageViewModels.map(\.messageId) == [secondMessageID])
+        #expect(coordinatedRemoteMessageRenderSession(in: secondFixture.model)?.presentation.session == secondLogicalSession)
+        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .remoteMessage(secondLogicalSession))
     }
 
     private func makeRemoteMessageModel(
@@ -646,7 +728,7 @@ final class ModalPromptCoordinationManagerIntegrationTests {
         surfaceID: UUID,
         coordinator: NewTabPagePromoCoordinating,
         isOpenedAfterIdle: Bool = false,
-        lifecycleObserver: @escaping (NewTabPageRemoteMessageLifecycleEvent) -> Void
+        remoteMessageRemovalPath: NewTabPageRemoteMessageRemovalPath = .synchronousSourceClear
     ) -> (model: NewTabPageMessagesModel, configuration: HomePageMessagesConfigurationMock) {
         let configuration = HomePageMessagesConfigurationMock(
             homeMessages: [makeRemoteMessage(messageID: messageID)]
@@ -658,7 +740,7 @@ final class ModalPromptCoordinationManagerIntegrationTests {
             messageActionHandler: MockRemoteMessagingActionHandler(),
             imageLoader: MockRemoteMessagingImageLoader(),
             promoCoordinator: coordinator,
-            remoteMessageLifecycleObserver: lifecycleObserver,
+            remoteMessageRemovalPath: remoteMessageRemovalPath,
             isOpenedAfterIdle: { isOpenedAfterIdle }
         )
         return (model, configuration)
@@ -677,19 +759,23 @@ final class ModalPromptCoordinationManagerIntegrationTests {
         )
     }
 
-    private func remoteMessageRenderSession(
+    private func coordinatedRemoteMessageRenderSession(
         in model: NewTabPageMessagesModel
     ) -> NewTabPageRemoteMessageRenderSession? {
-        remoteMessageGate(in: model)?.renderSession
-    }
-
-    private func remoteMessageGate(in model: NewTabPageMessagesModel) -> NewTabPageRemoteMessageGate? {
         model.homeMessageRenderItems.lazy.compactMap { item in
-            guard case .remoteMessageGate(let gate) = item.content else {
+            guard case .coordinatedRemoteMessage(let renderSession) = item.content else {
                 return nil
             }
-            return gate
+            return renderSession
         }.first
+    }
+
+    private func waitForMainQueueSettlement() async {
+        await withCheckedContinuation { continuation in
+            DispatchQueue.main.async {
+                continuation.resume()
+            }
+        }
     }
 }
 
@@ -707,78 +793,5 @@ private final class ImmediateScheduler: ModalPromptScheduling {
     func scheduleOnNextMainTurn(execute: @escaping @MainActor () -> Void) -> ModalPromptScheduledTask {
         execute()
         return ModalPromptScheduledTask()
-    }
-}
-
-@MainActor
-private final class TwoModelRemoteMessageLifecycleRecorder {
-    enum Event: Hashable {
-        case firstCardDidAppear
-        case firstCardDidDisappear
-        case firstGateDidDisappear
-        case secondGateDidAppear
-        case secondCardDidAppear
-    }
-
-    var ownerAtFirstCardDisappearance: PromoQueueActiveOwnerSnapshot?
-
-    private var recordedEvents = Set<Event>()
-
-    func record(_ event: Event) {
-        recordedEvents.insert(event)
-    }
-
-    func wait(for event: Event) async -> Bool {
-        for _ in 0..<200 {
-            if recordedEvents.contains(event) {
-                return true
-            }
-            try? await Task.sleep(nanoseconds: 10_000_000)
-        }
-
-        return recordedEvents.contains(event)
-    }
-}
-
-@MainActor
-private final class TwoModelRemoteMessageHostState: ObservableObject {
-    @Published var isSecondGatePresented = false
-}
-
-private struct TwoModelRemoteMessageGateHost: View {
-    @ObservedObject var firstModel: NewTabPageMessagesModel
-    @ObservedObject var secondModel: NewTabPageMessagesModel
-    @ObservedObject var state: TwoModelRemoteMessageHostState
-
-    var body: some View {
-        VStack {
-            if let gate = remoteMessageGate(in: firstModel) {
-                NewTabPageRemoteMessageGateMountView(
-                    gate: gate,
-                    messagesModel: firstModel,
-                    maximumWidth: 320
-                )
-                .id(gate.id)
-            }
-
-            if state.isSecondGatePresented,
-               let gate = remoteMessageGate(in: secondModel) {
-                NewTabPageRemoteMessageGateMountView(
-                    gate: gate,
-                    messagesModel: secondModel,
-                    maximumWidth: 320
-                )
-                .id(gate.id)
-            }
-        }
-    }
-
-    private func remoteMessageGate(in model: NewTabPageMessagesModel) -> NewTabPageRemoteMessageGate? {
-        model.homeMessageRenderItems.lazy.compactMap { item in
-            guard case .remoteMessageGate(let gate) = item.content else {
-                return nil
-            }
-            return gate
-        }.first
     }
 }

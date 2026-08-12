@@ -80,9 +80,12 @@ jobs:
     - name: Update Homebrew
       run: brew update
 
+    - name: Install Node.js
+      if: runner.environment == 'self-hosted'
+      run: asdf install nodejs 18.16.0
+
     - name: Start PIR Fake Broker
       run: |
-        asdf install nodejs 18.16.0
         cd pir-fake-broker
         cd scripts
         ./install-prerequisites.sh

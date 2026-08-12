@@ -158,7 +158,7 @@ struct SubscriptionOnboardingProgress {
     /// the real, write-performing decision once the view has actually appeared.
     func previewShouldShowSetupCard(now: Date, session: SubscriptionOnboardingSessionStating) -> Bool {
         if percentage >= 100 {
-            guard session.didCompleteDuringThisSession || persistor.fullyCompletedAt != nil else { return false }
+            guard session.didCompleteDuringThisSession else { return false }
         }
         return isWithinCardLifetime(now: now)
     }

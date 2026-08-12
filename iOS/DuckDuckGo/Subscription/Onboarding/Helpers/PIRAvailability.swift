@@ -22,8 +22,8 @@ import DataBrokerProtection_iOS
 /// Shared by `SettingsViewModel` and `SubscriptionFlowViewModel`.
 enum PIRAvailability {
     static func isAvailable(isPIREnabled: Bool,
-                             meetsLocaleRequirement: Bool,
-                             provider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?) -> Bool {
+                            meetsLocaleRequirement: Bool,
+                            provider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?) -> Bool {
         isPIREnabled && meetsLocaleRequirement && provider != nil
     }
 }

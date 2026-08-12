@@ -195,12 +195,13 @@ final class SubscriptionOnboardingProgressTests: XCTestCase {
         XCTAssertFalse(progress.previewShouldShowSetupCard(now: Date(), session: SubscriptionOnboardingSessionState()))
     }
 
-    func testPreviewReflectsAnAlreadyRecordedCompletionFromAnEarlierRun() {
+    func testPreviewAgreesWithTheRealAnswerAfterCompletionInAnEarlierSession() {
         var progress = makeProgress(isPIRAvailable: false, completed: [.vpn, .widget, .idtr, .duckAI])
         _ = progress.shouldShowSetupCard(now: Date(), session: SubscriptionOnboardingSessionState())
 
-        // A fresh session, as the next launch would supply — the persisted `fullyCompletedAt` must be enough.
-        XCTAssertTrue(progress.previewShouldShowSetupCard(now: Date(), session: SubscriptionOnboardingSessionState()))
+        // A fresh session, as the next launch would supply. The preview must hide here too, or the
+        // real, .onAppear-driven decision would immediately override it and the card would flash.
+        XCTAssertFalse(progress.previewShouldShowSetupCard(now: Date(), session: SubscriptionOnboardingSessionState()))
     }
 
     // MARK: - Setup card 14-day window

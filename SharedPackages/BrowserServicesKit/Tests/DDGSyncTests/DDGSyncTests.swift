@@ -644,62 +644,21 @@ final class DDGSyncTests: XCTestCase {
                                         deviceType: "iOS")
         await fulfillment(of: [migrationScheduled], timeout: 1)
 
-        let cachedProtectedKeysData = try XCTUnwrap((dependencies.secureStore as? SecureStorageStub)?.theProtectedKeysData)
-        let cachedProtectedKeys = try JSONDecoder.snakeCaseKeys.decode([ProtectedKey].self, from: cachedProtectedKeysData)
-
-        XCTAssertEqual(scopedAccess.ensureAccountInfoProtectedKeysCalls.map(\.userId), [SyncAccount.mock.userId])
-        XCTAssertEqual(Set(cachedProtectedKeys.map(\.kid)), Set(["ai-chat-key", "account-info-key"]))
-        XCTAssertEqual(cachedProtectedKeys.count, 2)
         let migrationCall = try XCTUnwrap(migrationCoordinator.calls.first)
         XCTAssertEqual(migrationCall.account.deviceId, SyncAccount.mock.deviceId)
     }
 
-    func testWhenUnifiedDeviceListWritingIsDisabledThenLoginDoesNotEnsureAccountInfoKeys() async throws {
-        dependencies.canWriteUnifiedDeviceList = { false }
-        (dependencies.secureStore as? SecureStorageStub)?.theAccount = nil
-        let loginKey = makeProtectedKey(kid: "ai-chat-key", encryptedWith: "ddg", purpose: "ai_chats")
-        (dependencies.account as? AccountManagingMock)?.loginStub = LoginResult(account: .mock,
-                                                                                devices: [],
-                                                                                keys: [loginKey])
-        let scopedAccess = try XCTUnwrap(dependencies.scopedAccess as? ScopedAccessCredentialManagingMock)
-        scopedAccess.ensureAccountInfoProtectedKeysStub = [
-            makeProtectedKey(kid: "account-info-key", encryptedWith: "ddg", purpose: "account_info")
-        ]
+    func testWhenDebugMigrationIsResetThenItCanRunAgain() async throws {
+        let migrationCoordinator = DeviceInfoMigrationCoordinatingMock()
+        dependencies.createDeviceInfoMigrationCoordinatorStub = migrationCoordinator
         let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
 
-        _ = try await syncService.login(.init(userId: "userId", primaryKey: Data()),
-                                        deviceName: "iPhone",
-                                        deviceType: "iOS")
+        try await syncService.runDeviceInfoMigrationForDebug()
+        syncService.resetDeviceInfoMigrationForDebug()
+        try await syncService.runDeviceInfoMigrationForDebug()
 
-        let cachedProtectedKeysData = try XCTUnwrap((dependencies.secureStore as? SecureStorageStub)?.theProtectedKeysData)
-        let cachedProtectedKeys = try JSONDecoder.snakeCaseKeys.decode([ProtectedKey].self, from: cachedProtectedKeysData)
-
-        XCTAssertTrue(scopedAccess.ensureAccountInfoProtectedKeysCalls.isEmpty)
-        XCTAssertEqual(cachedProtectedKeys.map(\.kid), ["ai-chat-key"])
-    }
-
-    func testWhenEnsuringAccountInfoKeysFailsThenLoginStillSucceedsAndResponseKeysAreCached() async throws {
-        dependencies.canWriteUnifiedDeviceList = { true }
-        (dependencies.secureStore as? SecureStorageStub)?.theAccount = nil
-        let loginKey = makeProtectedKey(kid: "ai-chat-key", encryptedWith: "ddg", purpose: "ai_chats")
-        (dependencies.account as? AccountManagingMock)?.loginStub = LoginResult(account: .mock,
-                                                                                devices: [.mock],
-                                                                                keys: [loginKey])
-        let scopedAccess = try XCTUnwrap(dependencies.scopedAccess as? ScopedAccessCredentialManagingMock)
-        scopedAccess.ensureAccountInfoProtectedKeysError = SyncError.invalidDataInResponse("account_info registration failed")
-        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
-
-        let devices = try await syncService.login(.init(userId: "userId", primaryKey: Data()),
-                                                  deviceName: "iPhone",
-                                                  deviceType: "iOS")
-
-        let cachedProtectedKeysData = try XCTUnwrap((dependencies.secureStore as? SecureStorageStub)?.theProtectedKeysData)
-        let cachedProtectedKeys = try JSONDecoder.snakeCaseKeys.decode([ProtectedKey].self, from: cachedProtectedKeysData)
-
-        XCTAssertEqual(devices.map(\.id), [RegisteredDevice.mock.id])
-        XCTAssertNotNil((dependencies.secureStore as? SecureStorageStub)?.theAccount)
-        XCTAssertEqual(scopedAccess.ensureAccountInfoProtectedKeysCalls.count, 1)
-        XCTAssertEqual(cachedProtectedKeys.map(\.kid), ["ai-chat-key"])
+        XCTAssertEqual(migrationCoordinator.calls.count, 2)
+        XCTAssertEqual(migrationCoordinator.resetCallCount, 1)
     }
 
     func testWhenScopedPasswordRecoveryFailsDuringLoginThenNativeLoginStillSucceeds() async throws {

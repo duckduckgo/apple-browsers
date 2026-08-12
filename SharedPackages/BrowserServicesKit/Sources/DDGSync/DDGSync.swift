@@ -330,8 +330,21 @@ public class DDGSync: DDGSyncing {
         guard let account = try dependencies.secureStore.account() else {
             throw SyncError.accountNotFound
         }
+
+        // Let an automatic migration finish before starting the explicit debug run.
+        if let migrationTask = deviceInfoMigrationTask,
+           let migrationTaskID = deviceInfoMigrationTaskID {
+            await migrationTask.value
+            clearCompletedDeviceInfoMigrationTask(withID: migrationTaskID)
+        }
+
         scheduleDeviceInfoMigration(for: account)
-        await deviceInfoMigrationTask?.value
+        let migrationTask = deviceInfoMigrationTask
+        let migrationTaskID = deviceInfoMigrationTaskID
+        await migrationTask?.value
+        if let migrationTaskID {
+            clearCompletedDeviceInfoMigrationTask(withID: migrationTaskID)
+        }
     }
 
     public func resetDeviceInfoMigrationForDebug() {
@@ -492,6 +505,7 @@ public class DDGSync: DDGSyncing {
             do {
                 deviceInfoMigrationTask?.cancel()
                 deviceInfoMigrationTask = nil
+                deviceInfoMigrationTaskID = nil
                 try dependencies.secureStore.removeAccount()
                 deviceInfoMigrationCoordinator.reset()
                 didRemoveAccount = true
@@ -673,28 +687,29 @@ public class DDGSync: DDGSyncing {
         return (try? JSONDecoder.snakeCaseKeys.decode([ProtectedKey].self, from: data)) ?? []
     }
 
-    private func ensureAccountInfoProtectedKeysIfNeeded(for account: SyncAccount) async -> [ProtectedKey] {
-        guard dependencies.syncFeatureFlags.canWriteUnifiedDeviceList() else {
-            return []
-        }
-
-        do {
-            return try await dependencies.scopedAccess.ensureAccountInfoProtectedKeys(for: account)
-        } catch {
-            let errorType = String(describing: Swift.type(of: error))
-            Logger.sync.error("Sync-UnifiedDevices: failed to ensure account_info protected keys after login: \(errorType)")
-            return []
-        }
-    }
-
     private func scheduleDeviceInfoMigration(for account: SyncAccount) {
         guard deviceInfoMigrationTask == nil else {
             return
         }
         let deviceInfoMigrationCoordinator = deviceInfoMigrationCoordinator
-        deviceInfoMigrationTask = Task {
+        let taskID = UUID()
+        deviceInfoMigrationTaskID = taskID
+        let task = Task {
             await deviceInfoMigrationCoordinator.migrateCurrentDeviceIfNeeded(for: account)
         }
+        deviceInfoMigrationTask = task
+        Task { [weak self] in
+            await task.value
+            self?.clearCompletedDeviceInfoMigrationTask(withID: taskID)
+        }
+    }
+
+    private func clearCompletedDeviceInfoMigrationTask(withID taskID: UUID) {
+        guard deviceInfoMigrationTaskID == taskID else {
+            return
+        }
+        deviceInfoMigrationTask = nil
+        deviceInfoMigrationTaskID = nil
     }
 
     private func cancelDeviceInfoMigrationAndWait() async {
@@ -704,6 +719,7 @@ public class DDGSync: DDGSyncing {
         deviceInfoMigrationTask.cancel()
         await deviceInfoMigrationTask.value
         self.deviceInfoMigrationTask = nil
+        deviceInfoMigrationTaskID = nil
     }
 
     private func persistRecoveredThirdPartyScopedPasswordIfAvailable(from accessCredentials: [AccessCredential]?, account: SyncAccount) {
@@ -768,6 +784,7 @@ public class DDGSync: DDGSyncing {
     private func removeAccount(reason: SyncError.AccountRemovedReason) throws {
         deviceInfoMigrationTask?.cancel()
         deviceInfoMigrationTask = nil
+        deviceInfoMigrationTaskID = nil
         dependencies.scheduler.isEnabled = false
         startSyncCancellable?.cancel()
         syncQueueCancellable?.cancel()
@@ -823,4 +840,5 @@ public class DDGSync: DDGSyncing {
     private var syncDidFinishCancellable: AnyCancellable?
     private var syncQueueRequestErrorCancellable: AnyCancellable?
     private var deviceInfoMigrationTask: Task<Void, Never>?
+    private var deviceInfoMigrationTaskID: UUID?
 }

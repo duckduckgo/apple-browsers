@@ -4021,6 +4021,18 @@
 /* Special error page title for pages that can only be opened in Safari */
 "prompt.general-page-problem.title" = "Denne side indlæses kun i Safari";
 
+/* Error page message shown after repeated tab terminations */
+"prompt.tab-termination-error-page.message" = "Denne side stoppede med at indlæse flere gange. Prøv at genindlæse, eller send os feedback.";
+
+/* Button that reloads a page after repeated tab terminations */
+"prompt.tab-termination-error-page.reload" = "Genindlæs";
+
+/* Button that opens site feedback after repeated tab terminations */
+"prompt.tab-termination-error-page.send-feedback" = "Send tilbagemelding";
+
+/* Error page title shown after repeated tab terminations */
+"prompt.tab-termination-error-page.title" = "Vi kunne ikke indlæse denne side";
+
 /* Default native error page message */
 "prompt.web-page-load-error.message" = "Dette websted har et ugyldigt sikkerhedscertifikat og er muligvis ikke sikkert at besøge.";
 

@@ -353,6 +353,10 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216049537026986
     case aiChatContextualUnifiedToggleInput
 
+    /// Address-bar Duck.ai menu plus the floating contextual input. iPhone only.
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1215757651854873
+    case aiChatContextualFloatingInput
+
     /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1216575765851990
     case unifiedToggleInputAttachmentPaste
 
@@ -390,6 +394,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217109908046478?focus=true
     case tabTerminationTelemetry
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217125840097313?focus=true
+    case tabTerminationErrorPage
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217244101759199?focus=true
     case tabEvictionOnMemoryWarning
@@ -813,6 +820,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.aiChatTabHideToggle))
         case .aiChatContextualUnifiedToggleInput:
             Config(source: .remoteReleasable(AIChatSubfeature.contextualUnifiedToggleInput))
+        case .aiChatContextualFloatingInput:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.contextualFloatingInput))
         case .unifiedToggleInputAttachmentPaste:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.unifiedToggleInputAttachmentPaste))
         case .freeTrialConversionWideEvent:
@@ -841,11 +850,12 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.launchTimeMetrics), supportsLocalOverriding: true)
         case .tabTerminationTelemetry:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.tabTerminationTelemetry), supportsLocalOverriding: true)
+        case .tabTerminationErrorPage:
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.tabTerminationErrorPage))
         case .tabEvictionOnMemoryWarning:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.tabEvictionOnMemoryWarning), supportsLocalOverriding: true)
         case .tabLRUEviction:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.tabLRUEviction), supportsLocalOverriding: true)
-
         case .appRebranding:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.appRebranding), supportsLocalOverriding: true)
         case .webExtensions:

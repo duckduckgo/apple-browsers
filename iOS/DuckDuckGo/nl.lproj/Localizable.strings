@@ -4021,6 +4021,18 @@
 /* Special error page title for pages that can only be opened in Safari */
 "prompt.general-page-problem.title" = "Deze pagina wordt alleen geladen in Safari";
 
+/* Error page message shown after repeated tab terminations */
+"prompt.tab-termination-error-page.message" = "Deze pagina is meerdere keren gestopt met laden. Probeer hem opnieuw te laden of stuur ons feedback.";
+
+/* Button that reloads a page after repeated tab terminations */
+"prompt.tab-termination-error-page.reload" = "Opnieuw laden";
+
+/* Button that opens site feedback after repeated tab terminations */
+"prompt.tab-termination-error-page.send-feedback" = "Verstuur feedback";
+
+/* Error page title shown after repeated tab terminations */
+"prompt.tab-termination-error-page.title" = "We kunnen deze pagina niet laden";
+
 /* Default native error page message */
 "prompt.web-page-load-error.message" = "Deze website heeft een ongeldig beveiligingscertificaat en is mogelijk niet veilig.";
 

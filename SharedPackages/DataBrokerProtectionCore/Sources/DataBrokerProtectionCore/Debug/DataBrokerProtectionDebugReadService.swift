@@ -20,7 +20,6 @@ import Foundation
 
 public protocol DataBrokerProtectionDebugReadProviding {
     var iOSRuntimeStatus: DBPDebugIOSRuntimeStatus? { get }
-    var resourceUsage: DBPDebugResourceUsage? { get }
 
     var agentVersion: String { get }
     var schedulerStateString: String { get }
@@ -37,7 +36,6 @@ public protocol DataBrokerProtectionDebugReadProviding {
 
 public extension DataBrokerProtectionDebugReadProviding {
     var iOSRuntimeStatus: DBPDebugIOSRuntimeStatus? { nil }
-    var resourceUsage: DBPDebugResourceUsage? { nil }
 }
 
 public struct DataBrokerProtectionDebugReadService {
@@ -70,11 +68,6 @@ public struct DataBrokerProtectionDebugReadService {
                                    description: "iOS PIR profile state and Secure Vault readiness snapshot."), at: 0)
         }
 
-        if provider.resourceUsage != nil {
-            endpoints.insert(.init(path: "/api/resource-usage",
-                                   description: "Latest macOS PIR agent CPU, memory, and pressure report."), at: 0)
-        }
-
         return endpoints
     }
 
@@ -88,10 +81,6 @@ public struct DataBrokerProtectionDebugReadService {
 
     public func runtimeStatus() -> DBPDebugIOSRuntimeStatus? {
         provider.iOSRuntimeStatus
-    }
-
-    public func resourceUsage() -> DBPDebugResourceUsage? {
-        provider.resourceUsage
     }
 
     public func snapshot() throws -> DebugSnapshot {

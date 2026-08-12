@@ -17,11 +17,9 @@
 //
 
 import Foundation
-import DataBrokerProtectionCore
 import os.log
 
 public protocol ResourceMonitoring: AnyObject {
-    var debugResourceUsage: DBPDebugResourceUsage { get }
     func start()
     func stop()
 }
@@ -57,21 +55,14 @@ public final class ResourceMonitor: ResourceMonitoring, @unchecked Sendable {
         static let bytesPerGibibyte = Double(1 << 30)
     }
 
-    // Mutable monitoring state is accessed only on this queue; debug reads use the locked store below.
+    // Mutable monitoring state is accessed only on this queue.
     private let monitorQueue = DispatchQueue(label: "com.duckduckgo.pir.resource-monitor", qos: .utility)
-    // Stores the latest published state for reads that do not run on monitorQueue.
-    private let resourceUsageStore = ResourceUsageStore()
 
     private let webContentProcessIDProvider = WebContentProcessIDProvider()
     private let pixelReporter: ResourceUsagePixelReporting
     private var activeRun: ActiveRun?
 
     // MARK: - Public API
-
-    /// A thread-safe view of the monitor state exposed by the debug server.
-    public var debugResourceUsage: DBPDebugResourceUsage {
-        resourceUsageStore.get()
-    }
 
     public init() {
         pixelReporter = ResourceUsagePixelReporter()
@@ -143,7 +134,6 @@ public final class ResourceMonitor: ResourceMonitoring, @unchecked Sendable {
             timer: timer,
             memoryPressureSource: memoryPressureSource
         )
-        resourceUsageStore.setMonitoring(true)
         timer.resume()
         memoryPressureSource.resume()
     }
@@ -158,7 +148,6 @@ public final class ResourceMonitor: ResourceMonitoring, @unchecked Sendable {
         activeRun?.timer.cancel()
         activeRun?.memoryPressureSource.cancel()
         activeRun = nil
-        resourceUsageStore.setMonitoring(false)
     }
 
     // MARK: - Sampling and Publication
@@ -175,7 +164,7 @@ public final class ResourceMonitor: ResourceMonitoring, @unchecked Sendable {
 
         activeRun?.cpuSamplesUntilNextReport = Constants.cpuSamplesPerReport
         activeRun?.memory.recordSample(webContentPIDs: webContentPIDs)
-        publishDebugSnapshot()
+        makeAndLogSnapshot()
     }
 
     @discardableResult
@@ -183,23 +172,21 @@ public final class ResourceMonitor: ResourceMonitoring, @unchecked Sendable {
         let webContentPIDs = webContentProcessIDProvider.currentProcessIDs()
         activeRun?.cpu.recordSample(webContentPIDs: Set(webContentPIDs ?? []))
         activeRun?.memory.recordSample(webContentPIDs: webContentPIDs)
-        return publishDebugSnapshot()
+        return makeAndLogSnapshot()
     }
 }
 
-// MARK: - Debugging & logging
+// MARK: - Snapshot & Logging
 
 private extension ResourceMonitor {
     @discardableResult
-    private func publishDebugSnapshot() -> ResourceSnapshot? {
+    private func makeAndLogSnapshot() -> ResourceSnapshot? {
         guard let activeRun else { return nil }
 
         let snapshot = ResourceSnapshot(
-            reportedAt: Date(),
             cpu: activeRun.cpu.makeReport(),
             memory: activeRun.memory.makeReport()
         )
-        resourceUsageStore.publish(DBPDebugResourceUsage.Sample(snapshot))
         log(snapshot)
         return snapshot
     }
@@ -231,61 +218,5 @@ private extension ResourceMonitor {
             return String(format: "%.2f GiB (%llu bytes)", value / Constants.bytesPerGibibyte, bytes)
         }
         return String(format: "%.1f MiB (%llu bytes)", value / Constants.bytesPerMebibyte, bytes)
-    }
-}
-
-private extension DBPDebugResourceUsage.Sample {
-    init(_ snapshot: ResourceSnapshot) {
-        self.init(
-            reportedAt: snapshot.reportedAt,
-            cpu: .init(
-                totalTimeSeconds: snapshot.cpu.totalTime,
-                agentTimeSeconds: snapshot.cpu.agentTime,
-                webContentTimeSeconds: snapshot.cpu.webContentTime,
-                averagePercent: snapshot.cpu.averagePercent
-            ),
-            memory: .init(
-                agent: .init(
-                    footprintBytes: snapshot.memory.agent.footprintBytes,
-                    peakFootprintBytes: snapshot.memory.agent.peakFootprintBytes
-                ),
-                webContent: .init(
-                    footprintBytes: snapshot.memory.webContent.footprintBytes,
-                    peakFootprintBytes: snapshot.memory.webContent.peakFootprintBytes,
-                    processCount: snapshot.memory.webContent.processCount
-                ),
-                hadCriticalPressure: snapshot.memory.hadCriticalPressure
-            )
-        )
-    }
-}
-
-// MARK: - Private
-
-// Every access is serialized by the lock; Sendable allows debug-server reads off the main actor.
-private final class ResourceUsageStore: @unchecked Sendable {
-    private let lock = NSLock()
-    private var resourceUsage = DBPDebugResourceUsage(isMonitoring: false, latestSample: nil)
-
-    func get() -> DBPDebugResourceUsage {
-        lock.withLock { resourceUsage }
-    }
-
-    func setMonitoring(_ isMonitoring: Bool) {
-        lock.withLock {
-            resourceUsage = DBPDebugResourceUsage(
-                isMonitoring: isMonitoring,
-                latestSample: resourceUsage.latestSample
-            )
-        }
-    }
-
-    func publish(_ sample: DBPDebugResourceUsage.Sample) {
-        lock.withLock {
-            resourceUsage = DBPDebugResourceUsage(
-                isMonitoring: resourceUsage.isMonitoring,
-                latestSample: sample
-            )
-        }
     }
 }

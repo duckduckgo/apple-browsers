@@ -58,8 +58,6 @@ public struct ResourceSnapshot: Equatable, Sendable {
         public let hadCriticalPressure: Bool
     }
 
-    /// The publication time, used to establish report freshness and cadence.
-    public let reportedAt: Date
     public let cpu: CPUUsage
     public let memory: MemoryUsage
 }

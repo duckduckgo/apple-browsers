@@ -632,8 +632,6 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionDebugReadProvidi
 
     public var lastSchedulerTrigger: Date? { activityScheduler.lastTriggerTimestamp }
 
-    public var resourceUsage: DBPDebugResourceUsage? { resourceMonitor?.debugResourceUsage }
-
     public var environmentName: String {
         debugSettings.selectedEnvironment == .production ? "production" : "staging"
     }

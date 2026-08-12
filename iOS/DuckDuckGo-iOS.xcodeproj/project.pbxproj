@@ -14815,7 +14815,6 @@
 				D88C403FE39ACF7BAD379AAF /* SubscriptionOnboardingWelcomeView.swift in Sources */,
 				E6D1E41391739570657B247A /* SubscriptionOnboardingDuckAIViewModel.swift in Sources */,
 				3BAFAD0D77C9236ADC71C43C /* SubscriptionOnboardingDuckAIView.swift in Sources */,
-				0B5268FDE6E57852467954E2 /* SubscriptionOnboardingDuckAIChatLauncher.swift in Sources */,
 				A5C666D853CAAD6AAD9BDB8A /* SubscriptionOnboardingVPNActivationView.swift in Sources */,
 				9C9CD1DC620E3580AB799BDB /* SubscriptionOnboardingVPNActivationViewModel.swift in Sources */,
 				4ADA4336F13D8AE5C22EA011 /* TapAllowHintOverlayWindow.swift in Sources */,

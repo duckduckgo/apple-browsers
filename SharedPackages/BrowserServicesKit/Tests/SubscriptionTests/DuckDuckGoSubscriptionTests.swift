@@ -75,7 +75,6 @@ final class DuckDuckGoSubscriptionTests: XCTestCase {
         XCTAssertNil(sut.trialLengthInDays(calendar: calendar))
     }
 
-    /// The model reports the real length. Whether a given UI can render it is the caller's business.
     func testWhenTrialIsLongerThanAMonthThenTheFullLengthIsStillReturned() {
         let sut = subscription(startedAt: date(2026, 5, 7),
                                expiresOrRenewsAt: date(2026, 8, 7),

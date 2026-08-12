@@ -159,8 +159,7 @@ final class SubscriptionOnboardingDuckAIViewModelTests: XCTestCase {
     }
 
     func testWhenStartChatThenTheDuckAIStepCompletesBeforeTheInterstitialShows() async {
-        // The interstitial renders the checklist, so completing at hand-off instead would show Duck.ai
-        // outstanding on the very screen that is opening it. Tech spec: complete when the in-flow chat starts.
+        // Complete at chat start, not hand-off, or the interstitial would show Duck.ai as still outstanding on its own screen.
         let spy = SectionOutputSpy()
         let provider = MockAIModelProvider(models: [model("a", tier: ["plus"])])
         let (viewModel, _) = makeViewModel(provider: provider, spy: spy)
@@ -217,8 +216,7 @@ final class SubscriptionOnboardingDuckAIViewModelTests: XCTestCase {
         XCTAssertTrue(viewModel.isShowingInterstitial)
     }
 
-    /// A hand-off that never actually launches (e.g. no reachable `MainViewController`) must not leave
-    /// the customer stuck behind the interstitial with no way out.
+    /// A failed hand-off must not leave the customer stuck behind the interstitial.
     func testWhenHandOffFailsThenInterstitialReturnsToThePicker() async {
         let spy = SectionOutputSpy()
         spy.chatRequestSucceeds = false
@@ -250,8 +248,7 @@ final class SubscriptionOnboardingDuckAIViewModelTests: XCTestCase {
         XCTAssertEqual(spy.requestedChatModelIDs.count, 1)
     }
 
-    /// The one-shot guard must not survive past the interstitial that set it, or a hand-off that never
-    /// actually launched (e.g. no reachable `MainViewController`) could never be retried.
+    /// The one-shot guard must not survive past the interstitial that set it, or a failed hand-off could never be retried.
     func testWhenStartingChatAgainAfterAFailedHandOffThenItCanBeRequestedAgain() async {
         let spy = SectionOutputSpy()
         spy.chatRequestSucceeds = false
@@ -367,8 +364,7 @@ private final class MockAIModelProvider: SubscriptionOnboardingAIModelProviding 
     }
 }
 
-/// Records the view model's outputs. It no longer knows which section it belongs to — mapping a completion
-/// onto `.duckAI` is the flow's job — so the meaningful assertion is that completion fired.
+/// Records the view model's outputs; mapping completion onto `.duckAI` is the flow's job, not this spy's.
 private final class SectionOutputSpy {
     private(set) var completeCount = 0
     private(set) var nextCount = 0

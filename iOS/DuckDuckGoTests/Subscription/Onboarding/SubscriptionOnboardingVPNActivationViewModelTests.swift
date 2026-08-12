@@ -765,8 +765,7 @@ private final class MockVPNLocationProvider: SubscriptionOnboardingVPNLocationPr
     }
 }
 
-/// Records the view model's outputs. It no longer knows which section it belongs to — mapping a completion
-/// onto `.vpnActivation` is the flow's job — so the meaningful assertion is that completion fired, and once.
+/// Records the view model's outputs; mapping completion onto `.vpnActivation` is the flow's job, not this spy's.
 private final class SectionOutputSpy {
     private(set) var completeCount = 0
     private(set) var nextCount = 0

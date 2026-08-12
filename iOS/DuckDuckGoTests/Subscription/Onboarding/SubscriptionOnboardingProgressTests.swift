@@ -239,8 +239,7 @@ final class SubscriptionOnboardingProgressTests: XCTestCase {
                                                     session: SubscriptionOnboardingSessionState()))
     }
 
-    /// The anchor is the first *display*, not the purchase, so a customer who ignores Settings for a month
-    /// still gets a full window when they finally look.
+    /// The anchor is the first *display*, not the purchase, so a delayed first look still gets a full window.
     func testWhenTheCardIsFirstShownLateThenTheWindowStartsThen() {
         var progress = makeProgress(isPIRAvailable: true, completed: [.vpn])
         let late = Date(timeIntervalSince1970: 1_000_000).addingTimeInterval(60 * day)

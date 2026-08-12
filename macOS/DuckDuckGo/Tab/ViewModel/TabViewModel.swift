@@ -71,6 +71,7 @@ final class TabViewModel: NSObject {
 
     @Published private(set) var addressBarString: String = ""
     @Published private(set) var passiveAddressBarAttributedString = NSAttributedString()
+    @Published private(set) var passiveAddressBarDisplaysPlaceholder = false
 
     var lastAddressBarTextFieldValue: AddressBarTextField.Value?
 
@@ -164,6 +165,7 @@ final class TabViewModel: NSObject {
         subscribeToTabError()
         subscribeToPermissions()
         subscribeToPreferences()
+        subscribeToAddressBarDuckAIState()
         subscribeToWebViewDidFinishNavigation()
         subscribeToYouTubeAdBlockAnimationTrigger()
         tab.$isLoading
@@ -336,6 +338,20 @@ final class TabViewModel: NSObject {
             }.store(in: &cancellables)
     }
 
+    private func subscribeToAddressBarDuckAIState() {
+        guard DesignSystemRebrand.isAppRebranded() else {
+            return
+        }
+
+        tab.addressBarSharedTextState.$isInDuckAIMode
+            .removeDuplicates()
+            .dropFirst()
+            .sink { [weak self] inDuckAIMode in
+                self?.updatePassiveAddressBarString(inDuckAIMode: inDuckAIMode)
+            }
+            .store(in: &cancellables)
+    }
+
     private var isThereZoomPerWebsite: Bool {
         guard let urlString = tab.url?.absoluteString else { return false }
         guard !tab.burnerMode.isBurner else { return false }
@@ -405,11 +421,35 @@ final class TabViewModel: NSObject {
         }()
     }
 
-    private func updatePassiveAddressBarString(showFullURL: Bool? = nil) {
+    /// Determines the display string for the passive text field.
+    /// - Note:
+    ///     Duck.ai mode takes precedence over all other trusted indicators. The passive text field is used to center the address bar placeholder.
+    private func updatePassiveAddressBarString(showFullURL: Bool? = nil, inDuckAIMode: Bool? = nil) {
         let showFullURL = showFullURL ?? appearancePreferences.showFullURL
-        passiveAddressBarAttributedString = switch tab.content {
+        let inDuckAIMode = inDuckAIMode ?? addressBarSharedTextState.isInDuckAIMode
+        let placeholder = placeholder(tabContent: tab.content, inDuckAIMode: inDuckAIMode)
+
+        passiveAddressBarAttributedString = placeholder ?? trustedIndicator(tabContent: tab.content, showFullURL: showFullURL)
+        passiveAddressBarDisplaysPlaceholder = placeholder != nil
+
+    }
+
+    private func placeholder(tabContent: TabContent, inDuckAIMode: Bool) -> NSAttributedString? {
+        guard DesignSystemRebrand.isAppRebranded() else {
+            return nil
+        }
+
+        if inDuckAIMode {
+            return .addressBarPlaceholderForDuckAI
+        }
+
+        return [.newtab, .none].contains(tabContent) ? .addressBarPlaceholder : nil
+    }
+
+    private func trustedIndicator(tabContent: TabContent, showFullURL: Bool) -> NSAttributedString {
+        switch tabContent {
         case .newtab, .none:
-            .init() // empty
+            .init() // legacy: empty
         case .onboarding:
             .onboardingTrustedIndicator
         case .settings:
@@ -611,6 +651,8 @@ extension TabViewModel {
     }
 }
 
+// MARK: - NSAttributedString + Trust Indicators
+
 private extension NSAttributedString {
 
     private typealias Component = NSAttributedString
@@ -686,4 +728,25 @@ private extension NSAttributedString {
     static let aiChatTrustedIndicator = singlePartTrustedIndicatorAttributedString(with: DesignSystemImages.Color.Size16.duckAI,
                                                                                    title: UserText.aiChatAddressBarTrustedIndicator)
 
+}
+
+// MARK: - NSAttributedString + Placeholders
+
+private extension NSAttributedString {
+
+    private static func placehoderAttributedString(title: String) -> NSAttributedString {
+        guard let icon = NSImage(systemSymbolName: "magnifyingglass", accessibilityDescription: nil) else {
+            return NSAttributedString(string: title)
+        }
+
+        return singlePartTrustedIndicatorAttributedString(with: icon, title: title)
+    }
+
+    static var addressBarPlaceholder: NSAttributedString {
+        placehoderAttributedString(title: UserText.addressBarPlaceholder)
+    }
+
+    static var addressBarPlaceholderForDuckAI: NSAttributedString {
+        NSAttributedString(string: UserText.aiChatOmnibarPlaceholder)
+    }
 }

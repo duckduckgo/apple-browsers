@@ -1768,7 +1768,6 @@ extension Pixel {
         case aiChatNewAddressBarPickerV2Confirmed
         
         // MARK: Experimental Omnibar Metrics
-        case aiChatExperimentalOmnibarShown
         case aiChatExperimentalOmnibarPromptSubmitted
         case aiChatExperimentalOmnibarQuerySubmitted
         case aiChatExperimentalOmnibarModeSwitched
@@ -2079,12 +2078,6 @@ extension Pixel {
 
         case webExtensionDailyAdBlockingState
 
-        case webExtensionAdBlockingDetectedAdBlockerDaily
-        case webExtensionAdBlockingDetectedPlayabilityErrorDaily
-        case webExtensionAdBlockingDetectedVideoAdDaily
-        case webExtensionAdBlockingDetectedStaticAdDaily
-        case webExtensionAdBlockingDetectedBufferingDaily
-
         // MARK: - Fire Mode
         case browsingModeSwitched
         case tabSwitcherModeToggled
@@ -2106,21 +2099,6 @@ extension Pixel {
 }
 
 extension Pixel.Event: Equatable {}
-
-extension Pixel.Event {
-    /// Maps a C-S-S `webEvent` `type` string to the matching pixel case.
-    /// Returns `nil` for unknown types so the caller can no-op.
-    public static func adBlockingDetectedEvent(type: String) -> Pixel.Event? {
-        switch type {
-        case "youtube_adBlocker": return .webExtensionAdBlockingDetectedAdBlockerDaily
-        case "youtube_playabilityError": return .webExtensionAdBlockingDetectedPlayabilityErrorDaily
-        case "youtube_videoAd": return .webExtensionAdBlockingDetectedVideoAdDaily
-        case "youtube_staticAd": return .webExtensionAdBlockingDetectedStaticAdDaily
-        case "youtube_buffering": return .webExtensionAdBlockingDetectedBufferingDaily
-        default: return nil
-        }
-    }
-}
 
 extension Pixel.Event {
 
@@ -3708,7 +3686,6 @@ extension Pixel.Event {
         case .aiChatNewAddressBarPickerV2Confirmed: return "m_aichat_new_address_bar_picker_v2_confirmed"
         
         // MARK: Experimental Omnibar Metrics
-        case .aiChatExperimentalOmnibarShown: return "m_aichat_experimental_omnibar_shown"
         case .aiChatExperimentalOmnibarPromptSubmitted: return "m_aichat_experimental_omnibar_prompt_submitted"
         case .aiChatExperimentalOmnibarQuerySubmitted: return "m_aichat_experimental_omnibar_query_submitted"
         case .aiChatExperimentalOmnibarModeSwitched: return "m_aichat_experimental_omnibar_mode_switched"
@@ -4076,12 +4053,6 @@ extension Pixel.Event {
         case .webExtensionAdBlockingPickerAlwaysOff: return "m_web_extension_ad_blocking_picker_always_off"
         case .webExtensionAdBlockingPickerDisableUntilRelaunch: return "m_web_extension_ad_blocking_picker_disable_until_relaunch"
         case .webExtensionAdBlockingBreakageReportEntered: return "m_web_extension_ad_blocking_breakage_report_entered"
-
-        case .webExtensionAdBlockingDetectedAdBlockerDaily: return "m_web_extension_adblocking_detected_ad_blocker_daily"
-        case .webExtensionAdBlockingDetectedPlayabilityErrorDaily: return "m_web_extension_adblocking_detected_playability_error_daily"
-        case .webExtensionAdBlockingDetectedVideoAdDaily: return "m_web_extension_adblocking_detected_video_ad_daily"
-        case .webExtensionAdBlockingDetectedStaticAdDaily: return "m_web_extension_adblocking_detected_static_ad_daily"
-        case .webExtensionAdBlockingDetectedBufferingDaily: return "m_web_extension_adblocking_detected_buffering_daily"
 
         // MARK: - Fire Mode
         case .browsingModeSwitched: return "m_browsing-mode_switched"

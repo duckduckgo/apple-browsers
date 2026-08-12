@@ -27,6 +27,7 @@ import Subscription
 import Persistence
 import DDGSync
 import Configuration
+import EventHub
 import SetDefaultBrowserUI
 import SystemSettingsPiPTutorial
 import DataBrokerProtection_iOS
@@ -92,6 +93,7 @@ final class MainCoordinator {
     private let darkReaderFeatureSettings: DarkReaderFeatureSettings
     private var darkReaderCancellables = Set<AnyCancellable>()
     private var youTubeAdBlockingCancellable: AnyCancellable?
+    private let nativeMessagingSupport = NativeMessagingSupport()
     private var webExtensionLoadTask: Task<Void, Never>?
     private var isWebExtensionLoadPending = false
     private var protectedDataCancellable: AnyCancellable?
@@ -137,7 +139,8 @@ final class MainCoordinator {
          sharedSecureVault: (any AutofillSecureVault)? = nil,
          syncAutoRestoreDecisionManager: SyncAutoRestoreDecisionManaging = AppDependencyProvider.shared.syncAutoRestoreDecisionManager,
          wideEvent: WideEventManaging,
-         onboardingManager: OnboardingManaging
+         onboardingManager: OnboardingManaging,
+         eventHub: EventHubManaging
     ) throws {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
@@ -219,7 +222,8 @@ final class MainCoordinator {
                                 duckAiNativeStorageHandler: contentBlockingService.duckAiNativeStorageHandler,
                                 duckAiFireModeStorageHandler: contentBlockingService.duckAiFireModeStorageHandler,
                                 toggleModeStorage: toggleModeStorage,
-                                adBlockingAvailability: contentBlockingService.adBlockingAvailability)
+                                adBlockingAvailability: contentBlockingService.adBlockingAvailability,
+                                eventHub: eventHub)
         let fireExecutor = FireExecutor(tabManager: tabManager,
                                         websiteDataManager: websiteDataManager,
                                         daxDialogsManager: daxDialogsManager,
@@ -557,7 +561,7 @@ final class MainCoordinator {
     @available(iOS 18.4, *)
     private func enabledEmbeddedExtensionTypes() -> Set<DuckDuckGoWebExtensionType> {
         var enabledTypes: Set<DuckDuckGoWebExtensionType> = []
-        if featureFlagger.isFeatureOn(.embeddedExtension) {
+        if featureFlagger.isFeatureOn(.embeddedExtension), nativeMessagingSupport.isSupported {
             enabledTypes.insert(.embedded)
         }
         if darkReaderFeatureSettings.isForceDarkModeEnabled == true {

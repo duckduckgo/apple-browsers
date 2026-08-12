@@ -2956,6 +2956,12 @@
 /* Title for the Import Passwords Promotion banner */
 "import.passwords.promo.title" = "Şifrelerinizi DuckDuckGo'ya aktarın";
 
+/* Body for the notification sent after a period of inactivity. */
+"inactivity.notification.body" = "Sizi internette takip eden reklamlardan kaçınmak ve çevrimiçi ayak izinizi azaltmak için DuckDuckGo kullanın.";
+
+/* Title for the notification sent after a period of inactivity. */
+"inactivity.notification.title" = "Çevrimiçi deneyiminizin kontrolünü elinize alın";
+
 /* Placeholder text for the duck.ai input field */
 "input.field.placeholder.duckai" = "Gizli bir şekilde her şeyi sorabilirsiniz";
 

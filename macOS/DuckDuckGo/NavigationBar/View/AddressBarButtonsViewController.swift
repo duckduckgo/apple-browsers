@@ -58,7 +58,7 @@ protocol AddressBarButtonsViewControllerDelegate: AnyObject {
     func addressBarButtonsViewControllerHideAIChatButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController)
     func addressBarButtonsViewControllerHideAskAIChatButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController)
     func addressBarButtonsViewControllerHideSearchModeToggleClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController)
-    func addressBarButtonsViewController(_ addressBarButtonsViewController: AddressBarButtonsViewController, openSettingsPane pane: PreferencePaneIdentifier)
+    func addressBarButtonsViewController(_ addressBarButtonsViewController: AddressBarButtonsViewController, openSettings destination: PreferencesDestination)
     func addressBarButtonsViewControllerAIChatButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController)
     func addressBarButtonsViewControllerSearchModeToggleChanged(_ addressBarButtonsViewController: AddressBarButtonsViewController, isAIChatMode: Bool)
 }
@@ -1251,6 +1251,7 @@ final class AddressBarButtonsViewController: NSViewController {
         PixelKit.fire(pixel, frequency: .dailyAndStandard)
         if !isSidebarCurrentlyOpen {
             PixelKit.fire(AIChatPixel.aiChatAddressBarButtonClicked(action: .sidebar), frequency: .dailyAndStandard)
+            NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.addressBar)
         }
 
         aiChatCoordinator.toggleSidebar()
@@ -1263,6 +1264,7 @@ final class AddressBarButtonsViewController: NSViewController {
             aiChatCoordinator.collapseSidebar(withAnimation: false)
         }
 
+        NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.addressBar)
         if let value = textFieldValue, !value.isEmpty {
             PixelKit.fire(AIChatPixel.aiChatAddressBarButtonClicked(action: .tabWithPrompt), frequency: .dailyAndStandard)
             let query = aiChatAddressBarPromptExtractor.extractAIChatQuery(for: value)
@@ -1592,6 +1594,7 @@ final class AddressBarButtonsViewController: NSViewController {
                 shouldSelectNewTab: true
             )
 
+            NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.contextMenu)
             if let value = textFieldValue {
                 let query = aiChatAddressBarPromptExtractor.extractAIChatQuery(for: value)
                 aiChatTabOpener.openAIChatTab(with: query, behavior: behavior)
@@ -1607,6 +1610,9 @@ final class AddressBarButtonsViewController: NSViewController {
                                          shouldAutomaticallySendPageContext: aiChatMenuConfig.shouldAutomaticallySendPageContextTelemetryValue,
                                          minutesSinceSidebarHidden: aiChatCoordinator.sidebarHiddenAt(for: tab.uuid)?.minutesSinceNow())
                 PixelKit.fire(pixel, frequency: .dailyAndStandard)
+                if !isSidebarCurrentlyOpen {
+                    NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.contextMenu)
+                }
             }
 
             // Default is new tab, menu action forces sidebar
@@ -1634,7 +1640,7 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     @objc func openAIChatSettingsContextMenuAction(_ sender: NSMenuItem) {
-        delegate?.addressBarButtonsViewController(self, openSettingsPane: .aiChat)
+        delegate?.addressBarButtonsViewController(self, openSettings: .aiChat)
     }
 
     private func updateAIChatDividerVisibility() {
@@ -2114,9 +2120,9 @@ final class AddressBarButtonsViewController: NSViewController {
             setPermissionsNeedReload: { [weak tabViewModel] in
                 tabViewModel?.tab.permissions.setPermissionsNeedReload()
             },
-            openSettingsPane: { [weak self] pane in
+            openSettings: { [weak self] destination in
                 guard let self else { return }
-                delegate?.addressBarButtonsViewController(self, openSettingsPane: pane)
+                delegate?.addressBarButtonsViewController(self, openSettings: destination)
             },
             hasTemporaryPopupAllowance: tabViewModel.tab.popupHandling?.popupsTemporarilyAllowedForCurrentPage ?? false,
             pageInitiatedPopupOpened: tabViewModel.tab.popupHandling?.pageInitiatedPopupOpened ?? false,

@@ -643,6 +643,7 @@ public extension DesignSystemImages {
             public static var tabMobileAlertDot: DesignSystemImage { .init(resource: .tabMobileAlertDot24) }
             public static var tabNew: DesignSystemImage { .init(resource: .tabNew24) }
             public static var tag: DesignSystemImage { .init(resource: .tag24) }
+            public static var textSelect: DesignSystemImage { .init(resource: .textSelect24) }
             public static var thinking: DesignSystemImage { .init(resource: .thinking24) }
             public static var timer: DesignSystemImage { .init(resource: .timer24) }
             public static var trash: DesignSystemImage { .init(resource: .trash24) }

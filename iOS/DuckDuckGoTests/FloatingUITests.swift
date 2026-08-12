@@ -83,42 +83,6 @@ final class FloatingUIManagerTests: XCTestCase {
 
 final class FloatingUILayoutPolicyTests: XCTestCase {
 
-    func testWhenTopAddressBarThenAdditionalSafeAreaInsetsApplyOmniBarHeightToTopOnly() {
-        let insets = FloatingUILayoutPolicy.webViewAdditionalSafeAreaInsets(
-            addressBarPosition: .top,
-            isUnifiedToggleInputAffectingLayout: false,
-            omniBarHeight: 52
-        )
-
-        XCTAssertEqual(insets, UIEdgeInsets(top: 52, left: 0, bottom: 0, right: 0))
-    }
-
-    func testWhenBottomAddressBarThenAdditionalSafeAreaInsetsAreZero() {
-        let insets = FloatingUILayoutPolicy.webViewAdditionalSafeAreaInsets(
-            addressBarPosition: .bottom,
-            isUnifiedToggleInputAffectingLayout: false,
-            omniBarHeight: 52
-        )
-
-        XCTAssertEqual(insets, .zero)
-    }
-
-    func testWhenUnifiedToggleInputAffectsLayoutThenInsetsAreZero() {
-        let topInsets = FloatingUILayoutPolicy.webViewAdditionalSafeAreaInsets(
-            addressBarPosition: .top,
-            isUnifiedToggleInputAffectingLayout: true,
-            omniBarHeight: 52
-        )
-        XCTAssertEqual(topInsets, .zero)
-
-        let bottomInsets = FloatingUILayoutPolicy.webViewAdditionalSafeAreaInsets(
-            addressBarPosition: .bottom,
-            isUnifiedToggleInputAffectingLayout: true,
-            omniBarHeight: 52
-        )
-        XCTAssertEqual(bottomInsets, .zero)
-    }
-
     func testWhenBarsVisibleThenBottomObscuredHeightIsToolbarSlot() {
         let height = FloatingUILayoutPolicy.webViewBottomObscuredHeight(
             barsVisibilityPercent: 1,
@@ -162,6 +126,50 @@ final class FloatingUILayoutPolicyTests: XCTestCase {
         )
 
         XCTAssertEqual(height, 70, accuracy: 0.001)
+    }
+
+    func testWhenBarsVisibleThenTopObscuredHeightIsExpandedChrome() {
+        let height = FloatingUILayoutPolicy.webViewTopObscuredHeight(
+            barsVisibilityPercent: 1,
+            expandedChromeHeight: 111,
+            topCapsuleObscuredHeight: 91,
+            safeAreaTop: 59
+        )
+
+        XCTAssertEqual(height, 111, accuracy: 0.001)
+    }
+
+    func testWhenBarsHiddenAndTopCapsuleVisibleThenTopObscuredHeightTracksCapsule() {
+        let height = FloatingUILayoutPolicy.webViewTopObscuredHeight(
+            barsVisibilityPercent: 0,
+            expandedChromeHeight: 111,
+            topCapsuleObscuredHeight: 91,
+            safeAreaTop: 59
+        )
+
+        XCTAssertEqual(height, 91, accuracy: 0.001)
+    }
+
+    func testWhenBarsHiddenAndNoTopCapsuleThenTopObscuredHeightIsSafeArea() {
+        let height = FloatingUILayoutPolicy.webViewTopObscuredHeight(
+            barsVisibilityPercent: 0,
+            expandedChromeHeight: 111,
+            topCapsuleObscuredHeight: 0,
+            safeAreaTop: 59
+        )
+
+        XCTAssertEqual(height, 59, accuracy: 0.001)
+    }
+
+    func testWhenPartiallyHiddenThenTopObscuredHeightIsMaxOfShrinkingChromeAndCapsule() {
+        let height = FloatingUILayoutPolicy.webViewTopObscuredHeight(
+            barsVisibilityPercent: 0.5,
+            expandedChromeHeight: 111,
+            topCapsuleObscuredHeight: 91,
+            safeAreaTop: 59
+        )
+
+        XCTAssertEqual(height, 91, accuracy: 0.001)
     }
 
     func testWhenFloatingBottomAddressBarAndNotMinimalChromeThenOmnibarIsHostedInToolbar() {
@@ -339,6 +347,127 @@ final class WebViewPreviewSnapshotGeometryTests: XCTestCase {
         let contentInset = UIEdgeInsets(top: 60, left: 0, bottom: 60, right: 0)
 
         XCTAssertNil(WebViewPreviewSnapshotGeometry.visibleRect(webViewBounds: bounds, contentInset: contentInset))
+    }
+
+    func testWhenCapturingFullBoundsThenContentInsetsDoNotCropTheViewport() {
+        let bounds = CGRect(x: 0, y: 0, width: 320, height: 640)
+        let contentInset = UIEdgeInsets(top: 50, left: 0, bottom: 30, right: 0)
+
+        XCTAssertEqual(WebViewPreviewSnapshotGeometry.visibleRect(webViewBounds: bounds,
+                                                                  contentInset: contentInset,
+                                                                  capturesFullBounds: true),
+                       bounds)
+    }
+}
+
+final class WebViewScrollViewInsetUpdaterTests: XCTestCase {
+
+    func testWhenManagingInsetsThenAutomaticAdjustmentIsDisabledAndCanBeRestored() {
+        let scrollView = UIScrollView()
+        scrollView.contentInsetAdjustmentBehavior = .automatic
+        scrollView.automaticallyAdjustsScrollIndicatorInsets = true
+
+        let behavior = WebViewScrollViewInsetUpdater.beginManaging(scrollView)
+
+        XCTAssertEqual(scrollView.contentInsetAdjustmentBehavior, .never)
+        XCTAssertFalse(scrollView.automaticallyAdjustsScrollIndicatorInsets)
+
+        WebViewScrollViewInsetUpdater.endManaging(scrollView, restoring: behavior)
+
+        XCTAssertEqual(scrollView.contentInsetAdjustmentBehavior, .automatic)
+        XCTAssertTrue(scrollView.automaticallyAdjustsScrollIndicatorInsets)
+    }
+
+    func testWhenContentInsetsAreUnchangedThenContentOffsetIsUnchanged() {
+        let scrollView = UIScrollView()
+        let insets = UIEdgeInsets(top: 20, left: 0, bottom: 30, right: 0)
+        scrollView.contentInset = insets
+        scrollView.contentOffset = CGPoint(x: 0, y: 40)
+
+        WebViewScrollViewInsetUpdater.update(scrollView, insets: insets)
+
+        XCTAssertEqual(scrollView.contentOffset, CGPoint(x: 0, y: 40))
+    }
+
+    func testWhenPinnedToTopThenUpdatingInsetsPreservesPinnedPosition() {
+        let scrollView = UIScrollView()
+        scrollView.contentInset = UIEdgeInsets(top: 20, left: 0, bottom: 0, right: 0)
+        scrollView.contentOffset = CGPoint(x: 0, y: -20)
+
+        WebViewScrollViewInsetUpdater.update(scrollView,
+                                             insets: UIEdgeInsets(top: 50, left: 0, bottom: 30, right: 0))
+
+        XCTAssertEqual(scrollView.contentOffset.y, -50)
+    }
+
+    func testWhenNotPinnedToTopThenUpdatingInsetsPreservesContentOffset() {
+        let scrollView = UIScrollView(frame: CGRect(x: 0, y: 0, width: 320, height: 640))
+        scrollView.contentSize = CGSize(width: 320, height: 2_000)
+        scrollView.contentInset = UIEdgeInsets(top: 20, left: 0, bottom: 0, right: 0)
+        scrollView.contentOffset = CGPoint(x: 0, y: 40)
+
+        WebViewScrollViewInsetUpdater.update(scrollView,
+                                             insets: UIEdgeInsets(top: 50, left: 0, bottom: 30, right: 0))
+
+        XCTAssertEqual(scrollView.contentOffset.y, 40)
+    }
+
+    func testWhenUpdatingInsetsThenBothScrollIndicatorInsetsAreUpdated() {
+        let scrollView = UIScrollView()
+        let insets = UIEdgeInsets(top: 50, left: 2, bottom: 30, right: 4)
+
+        WebViewScrollViewInsetUpdater.update(scrollView, insets: insets)
+
+        XCTAssertEqual(scrollView.verticalScrollIndicatorInsets, insets)
+        XCTAssertEqual(scrollView.horizontalScrollIndicatorInsets, insets)
+    }
+
+    func testWhenClearingInsetsThenContentAndIndicatorInsetsAreZero() {
+        let scrollView = UIScrollView()
+        let insets = UIEdgeInsets(top: 50, left: 2, bottom: 30, right: 4)
+        scrollView.contentInset = insets
+        scrollView.verticalScrollIndicatorInsets = insets
+        scrollView.horizontalScrollIndicatorInsets = insets
+        scrollView.contentOffset = CGPoint(x: 0, y: 40)
+
+        WebViewScrollViewInsetUpdater.update(scrollView, insets: .zero)
+
+        XCTAssertEqual(scrollView.contentInset, .zero)
+        XCTAssertEqual(scrollView.verticalScrollIndicatorInsets, .zero)
+        XCTAssertEqual(scrollView.horizontalScrollIndicatorInsets, .zero)
+    }
+
+    func testWhenChromeTransitionIsInProgressThenPreviouslyAppliedInsetsAreKept() {
+        XCTAssertFalse(
+            WebViewScrollViewInsetUpdater.shouldUpdateDuringChromeTransition(
+                barsVisibilityPercent: 0.5,
+                hasAppliedInsets: true
+            )
+        )
+    }
+
+    func testWhenChromeTransitionReachesEndpointsThenInsetsAreUpdated() {
+        XCTAssertTrue(
+            WebViewScrollViewInsetUpdater.shouldUpdateDuringChromeTransition(
+                barsVisibilityPercent: 0,
+                hasAppliedInsets: true
+            )
+        )
+        XCTAssertTrue(
+            WebViewScrollViewInsetUpdater.shouldUpdateDuringChromeTransition(
+                barsVisibilityPercent: 1,
+                hasAppliedInsets: true
+            )
+        )
+    }
+
+    func testWhenInsetsHaveNotBeenAppliedThenTheyAreUpdatedDuringChromeTransition() {
+        XCTAssertTrue(
+            WebViewScrollViewInsetUpdater.shouldUpdateDuringChromeTransition(
+                barsVisibilityPercent: 0.5,
+                hasAppliedInsets: false
+            )
+        )
     }
 }
 

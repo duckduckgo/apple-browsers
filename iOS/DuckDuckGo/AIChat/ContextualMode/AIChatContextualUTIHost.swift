@@ -126,6 +126,30 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
         chipViewModel.clearAttached()
     }
 
+    /// One chip per attached selection, alongside the page-context chip. An empty list removes them all.
+    func setSelectionChips(_ items: [(id: String, title: String, favicon: UIImage?)], onRemove: @escaping (String) -> Void) {
+        coordinator.viewController.setSelectionContextChips(items, onRemove: onRemove)
+    }
+
+    /// Images and files currently in the input.
+    var attachmentCount: Int {
+        coordinator.attachmentCount
+    }
+
+    /// Fires when the input's attachments change.
+    var onAttachmentsChanged: (() -> Void)? {
+        get { coordinator.onAttachmentsChanged }
+        set { coordinator.onAttachmentsChanged = newValue }
+    }
+
+    func presentRejectionBanner(_ message: String) {
+        coordinator.presentRejectionBanner(message)
+    }
+
+    func clearRejectionBanner() {
+        coordinator.clearRejectionBanner()
+    }
+
     func showAttachAffordance() {
         chipViewModel.showAttachAffordance()
     }

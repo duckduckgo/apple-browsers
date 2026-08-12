@@ -365,7 +365,7 @@
         "description": "Duration in seconds (as a floating-point string)"
     },
     "onboardingEventType": {
-        "key": "e",
+        "key": "event",
         "type": "string",
         "description": "Event type to classify what happened at each onboarding step",
         "enum": ["shown", "clicked", "confirmed"]
@@ -377,15 +377,16 @@
         "enum": ["engage", "dismiss"]
     },
     "onboardingInstallType": {
-        "key": "it",
+        "key": "installType",
         "type": "string",
         "description": "Install type to distinguish between first-time installs and reinstalls during onboarding",
         "enum": ["new", "reinstall"]
     },
     "onboardingDaysSinceInstall": {
-        "key": "d",
-        "type": "integer",
-        "description": "Days since install when the value is between 0 and 28 inclusive during onboarding"
+        "key": "daysSinceInstall",
+        "type": "string",
+        "description": "Bucketed days since install during onboarding",
+        "enum": ["0", "1-3", "4-10", "11-28", "28+"]
     },
     "onboardingSource": {
         "key": "source",

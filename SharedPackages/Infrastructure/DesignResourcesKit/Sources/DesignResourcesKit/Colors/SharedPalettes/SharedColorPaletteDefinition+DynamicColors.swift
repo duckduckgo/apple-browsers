@@ -352,13 +352,23 @@ extension SharedColorPaletteDefinition {
         case .fireModeAccent:
             return DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin50, darkColor: RebrandingColor.Mandarin.mandarin40)
         case .fireButtonGradientStart:
-            return DynamicColor(staticColor: RebrandingColor.Mandarin.mandarin50)
+            return DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin50, darkColor: RebrandingColor.Mandarin.mandarin40)
         case .fireButtonGradientEnd:
-            return DynamicColor(staticColor: RebrandingColor.Red.red50)
+            return DynamicColor(lightColor: RebrandingColor.Red.red50, darkColor: RebrandingColor.Red.red40)
         case .fireButtonPressedGradientStart:
             return DynamicColor(staticColor: RebrandingColor.Mandarin.mandarin60)
         case .fireButtonPressedGradientEnd:
             return DynamicColor(staticColor: RebrandingColor.Red.red70)
+        case .fireDialogKnobFill:
+            return DynamicColor(staticColor: Color(0xFFFFFF))
+        case .fireDialogTabBackground:
+            return DynamicColor(lightColor: Color(designSystemColor: .controlsFillPrimary), darkColor: Color(designSystemColor: .surfaceCanvas))
+        case .fireDialogTabBackgroundSelected:
+            return DynamicColor(lightColor: Color(designSystemColor: .surfaceTertiary), darkColor: Color(designSystemColor: .surfaceSecondary))
+        case .fireDialogTabShadowPrimary:
+            return DynamicColor(lightColor: Color(designSystemColor: .shadowPrimary), darkColor: .shade(0.06))
+        case .fireDialogTabShadowSecondary:
+            return DynamicColor(lightColor: Color(designSystemColor: .shadowTertiary), darkColor: .shade(0.16))
         }
     }
 }

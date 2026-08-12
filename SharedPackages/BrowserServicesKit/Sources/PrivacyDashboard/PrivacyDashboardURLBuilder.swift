@@ -70,7 +70,7 @@ private extension URL {
     func addingOpenerParameterIfNeeded(from configuration: PrivacyDashboardURLBuilder.Configuration) -> URL {
         if case .startScreen(let entryPoint) = configuration {
             switch entryPoint {
-            case .toggleReport, .report:
+            case .toggleReport, .report, .errorPage:
                 return appendingParameter(name: Constant.openerKey, value: Constant.menuScreenKey)
             default:
                 break

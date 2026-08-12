@@ -110,6 +110,7 @@ final class AIChatContextualChatSessionState {
     private let pixelHandler: AIChatContextualModePixelFiring
     private let featureFlagger: FeatureFlagger
     private let suggestedPromptsProvider: ContextualSuggestedPromptsProviding
+    private let floatingInputFeature: AIChatContextualFloatingInputFeatureProviding
 
     /// When false, page-context quick actions are suppressed. Fail-open (always attachable) by default.
     private let isCurrentPageAttachable: () -> Bool
@@ -177,11 +178,13 @@ final class AIChatContextualChatSessionState {
          pixelHandler: AIChatContextualModePixelFiring,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          suggestedPromptsProvider: ContextualSuggestedPromptsProviding = DefaultContextualSuggestedPromptsProvider(),
+         floatingInputFeature: AIChatContextualFloatingInputFeatureProviding = AIChatContextualFloatingInputFeature(),
          isCurrentPageAttachable: @escaping () -> Bool = { true }) {
         self.aiChatSettings = aiChatSettings
         self.pixelHandler = pixelHandler
         self.featureFlagger = featureFlagger
         self.suggestedPromptsProvider = suggestedPromptsProvider
+        self.floatingInputFeature = floatingInputFeature
         self.isCurrentPageAttachable = isCurrentPageAttachable
         self.wasAutoAttachEnabled = aiChatSettings.isAutomaticContextAttachmentEnabled
         rebuildViewState()
@@ -795,6 +798,15 @@ private extension AIChatContextualChatSessionState {
         }
         // No "Ask about page" for pages that can't be attached — it would no-op on tap.
         guard isCurrentPageAttachable() else { return [] }
+        // Dropped only while the strip is actually offering its own re-attach button, which takes an
+        // explicit removal — feature availability alone would also drop it after a new chat, where the
+        // strip has cleared that offer and neither affordance would be left.
+        let actions = quickActionsIgnoringReattachAffordance()
+        guard floatingInputFeature.isAvailable, userDowngradedToPlaceholder else { return actions }
+        return actions.filter { $0 != .askAboutPage }
+    }
+
+    private func quickActionsIgnoringReattachAffordance() -> [AIChatContextualQuickAction] {
         if featureFlagger.isFeatureOn(.contextualSuggestedPrompts) {
             switch chipState {
             case .placeholder: return [.askAboutPage]

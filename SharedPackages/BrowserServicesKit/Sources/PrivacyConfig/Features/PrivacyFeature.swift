@@ -274,6 +274,7 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case freemiumPIR
     case optOutRetryError96Hours
     case deferredSecureVaultInit
+    case extractedProfileRefresh
 }
 
 public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
@@ -369,6 +370,10 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables Unified Toggle Input inside the iOS contextual AI chat sheet.
     case contextualUnifiedToggleInput
+
+    /// Enables the address-bar Duck.ai menu and the floating contextual input that replaces the
+    /// pre-submit contextual sheet on iPhone.
+    case contextualFloatingInput
 
     /// Kill switch for routing native image/file paste into the unified input attachment strip.
     case unifiedToggleInputAttachmentPaste

@@ -147,6 +147,8 @@ class TabViewController: UIViewController {
     var error: UIView!
     
     var errorInfoImage: UIImageView!
+    var errorInfoImageWidthConstraint: NSLayoutConstraint!
+    var errorInfoImageHeightConstraint: NSLayoutConstraint!
     var errorHeader: UILabel!
     var errorMessage: UILabel!
     
@@ -195,13 +197,21 @@ class TabViewController: UIViewController {
 
     var preventUniversalLinksOnce = false
     private var shouldUseSafariOnlyUserAgentForNextMainFrameNavigation = false
-    private var safariRedirectLoopErrorURL: URL?
+    private enum ActionableErrorPage {
+        case safariRedirectLoop(URL)
+        case tabTermination
+    }
+    private var actionableErrorPage: ActionableErrorPage?
+    private var isAfterTabTermination: Bool {
+        guard case .tabTermination = actionableErrorPage else { return false }
+        return true
+    }
     private var defaultErrorHeaderText = ""
     lazy var errorActionButton: UIButton = {
         let button = UIButton(type: .system)
         button.translatesAutoresizingMaskIntoConstraints = false
         button.isHidden = true
-        button.addTarget(self, action: #selector(onOpenInSafariFromErrorPage), for: .touchUpInside)
+        button.addTarget(self, action: #selector(onErrorPagePrimaryAction), for: .touchUpInside)
         return button
     }()
     lazy var errorReportBrokenSiteButton: UIButton = {
@@ -697,6 +707,7 @@ class TabViewController: UIViewController {
     let sharedSecureVault: (any AutofillSecureVault)?
     let privacyStats: PrivacyStatsProviding
     private let pixelFiring: (any PixelKitFiring)?
+    private let tabTerminationErrorPageInstrumentation: any TabTerminationErrorPageInstrumenting
 
     private(set) var aiChatContentHandler: AIChatContentHandling
     private(set) var voiceSearchHelper: VoiceSearchHelperProtocol
@@ -776,7 +787,8 @@ class TabViewController: UIViewController {
          addressBarURLFilter: AddressBarURLFiltering = AddressBarURLFilter(),
          adBlockingAvailability: AdBlockingAvailabilityProviding,
          eventHub: EventHubManaging,
-         pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
+         pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
+         tabTerminationErrorPageInstrumentation: (any TabTerminationErrorPageInstrumenting)? = nil) {
 
         self.tabModel = tabModel
         self.viewModel = TabViewModel(tab: tabModel, historyManager: historyManager)
@@ -808,6 +820,8 @@ class TabViewController: UIViewController {
         self.sharedSecureVault = sharedSecureVault
         self.privacyStats = privacyStats
         self.pixelFiring = pixelFiring
+        self.tabTerminationErrorPageInstrumentation = tabTerminationErrorPageInstrumentation
+            ?? DefaultTabTerminationErrorPageInstrumentation(pixelFiring: pixelFiring)
         self.tabURLInterceptor = TabURLInterceptorDefault(featureFlagger: featureFlagger) {
             return AppDependencyProvider.shared.subscriptionManager.isSubscriptionPurchaseEligible
         }
@@ -1652,6 +1666,10 @@ class TabViewController: UIViewController {
             }
         }
 
+        if handleBackFromTabTerminationErrorPage() {
+            return
+        }
+
         if isError {
             hideErrorMessage()
             if let url = webView.url, safariRedirectHandler.isAfterSuppressedXSafariRedirect(for: url), webView.canGoBack {
@@ -1675,6 +1693,21 @@ class TabViewController: UIViewController {
             delegate?.tabDidRequestClose(self)
         }
 
+    }
+
+    private func handleBackFromTabTerminationErrorPage() -> Bool {
+        guard case .tabTermination = actionableErrorPage else { return false }
+
+        if webView.canGoBack, webView.goBack() != nil {
+            duckPlayerNavigationHandler.handleGoBack(webView: webView)
+            chromeDelegate?.omniBar.endEditing()
+        } else if openingTab != nil {
+            stashReopenableStateOnOpener()
+            delegate?.tabDidRequestClose(self)
+        } else if let url {
+            load(url: url)
+        }
+        return true
     }
 
     /// Records the closed tab's URL on the opener so its forward button can re-open it.
@@ -1709,7 +1742,7 @@ class TabViewController: UIViewController {
         errorMessage.text = formattedErrorMessage(message)
         errorActionButton.isHidden = true
         errorReportBrokenSiteButton.isHidden = true
-        safariRedirectLoopErrorURL = nil
+        actionableErrorPage = nil
         error.layoutIfNeeded()
     }
 
@@ -1729,11 +1762,11 @@ class TabViewController: UIViewController {
         errorHeader.text = defaultErrorHeaderText
         errorActionButton.isHidden = true
         errorReportBrokenSiteButton.isHidden = true
-        safariRedirectLoopErrorURL = nil
+        actionableErrorPage = nil
     }
 
     private func showSafariRedirectLoopError(for url: URL) {
-        safariRedirectLoopErrorURL = url
+        actionableErrorPage = .safariRedirectLoop(url)
         webView.isHidden = true
         error.isHidden = false
         setErrorInfoImage(resource: .shieldAlert96)
@@ -1747,8 +1780,28 @@ class TabViewController: UIViewController {
         webpageDidFailToLoad()
     }
 
-    private func setErrorInfoImage(resource: ImageResource = AppRebrand.isAppRebranded() ? .daxAccident : .daxAccidentLegacy) {
+    func showTabTerminationErrorPage() {
+        actionableErrorPage = .tabTermination
+        webView.isHidden = true
+        error.isHidden = false
+        setErrorInfoImage(resource: .webAlert128, size: CGSize(width: 128, height: 96))
+        errorHeader.text = UserText.tabTerminationErrorPageTitle
+        errorMessage.text = UserText.tabTerminationErrorPageMessage
+        errorActionButton.setTitle(UserText.tabTerminationErrorPageReloadButton, for: .normal)
+        errorActionButton.isHidden = false
+        errorReportBrokenSiteButton.setTitle(UserText.tabTerminationErrorPageSendFeedbackButton, for: .normal)
+        errorReportBrokenSiteButton.isHidden = false
+        error.layoutIfNeeded()
+        hideProgressIndicator()
+        webpageDidFailToLoad(preservePrivacyInfo: true)
+        tabTerminationErrorPageInstrumentation.errorPageShown()
+    }
+
+    private func setErrorInfoImage(resource: ImageResource = AppRebrand.isAppRebranded() ? .daxAccident : .daxAccidentLegacy,
+                                   size: CGSize = CGSize(width: 296, height: 188)) {
         errorInfoImage.image = UIImage(resource: resource)
+        errorInfoImageWidthConstraint.constant = size.width
+        errorInfoImageHeightConstraint.constant = size.height
         errorInfoImage.isHidden = false
     }
 
@@ -2019,6 +2072,7 @@ class TabViewController: UIViewController {
                                                                      isForceDarkModeEnabled: darkReaderFeatureSettings.isForceDarkModeEnabled,
                                                                      autoplayBlockingMode: autoplaySettings.currentAutoplayBlockingMode.rawValue,
                                                                      isAfterSuppressedXSafariRedirect: safariRedirectHandler.isAfterSuppressedXSafariRedirect(for: currentURL),
+                                                                     isAfterTabTermination: isAfterTabTermination,
                                                                      loadedWebExtensions: loadedWebExtensions,
                                                                      adBlockingExtensionScriptletsVersion: adBlockingScriptletsVersion,
                                                                      cpmExtensionLoaded: cpmExtensionLoaded,
@@ -2766,14 +2820,24 @@ extension TabViewController: WKNavigationDelegate {
         notifyDelegateIfDuckAINavigationFailed(error: error)
     }
 
-    private func webpageDidFailToLoad() {
+    private func webpageDidFailToLoad(preservePrivacyInfo: Bool = false) {
         Logger.general.debug("webpageLoading failed")
 
         wasLoadingStoppedExternally = false
 
         if isError {
             showBars(animated: true)
-            privacyInfo = PrivacyInfo(url: .empty, parentEntity: nil, protectionStatus: .init(unprotectedTemporary: false, enabledFeatures: [], allowlisted: false, denylisted: false), isSpecialErrorPageVisible: true)
+            if preservePrivacyInfo {
+                privacyInfo?.isSpecialErrorPageVisible = true
+            } else {
+                privacyInfo = PrivacyInfo(url: .empty,
+                                          parentEntity: nil,
+                                          protectionStatus: .init(unprotectedTemporary: false,
+                                                                  enabledFeatures: [],
+                                                                  allowlisted: false,
+                                                                  denylisted: false),
+                                          isSpecialErrorPageVisible: true)
+            }
             onPrivacyInfoChanged()
         }
 
@@ -4147,15 +4211,30 @@ extension TabViewController: UserContentControllerDelegate {
     }
 
     @objc
-    func onOpenInSafariFromErrorPage() {
-        guard let safariRedirectLoopErrorURL else { return }
-        openExternally(url: makeXSafariHTTPSURL(from: safariRedirectLoopErrorURL))
+    func onErrorPagePrimaryAction() {
+        switch actionableErrorPage {
+        case .safariRedirectLoop(let url):
+            openExternally(url: makeXSafariHTTPSURL(from: url))
+        case .tabTermination:
+            tabTerminationErrorPageInstrumentation.reloadSelected()
+            refresh()
+        case nil:
+            return
+        }
     }
 
     @objc
     func onReportBrokenSiteFromErrorPage() {
-        DailyPixel.fireDailyAndCount(pixel: .webViewExternalSchemeNavigationSafariRedirectLoopErrorPageReportSiteBreakage, error: nil, withAdditionalParameters: [:])
-        delegate?.tabDidRequestReportBrokenSite(tab: self)
+        switch actionableErrorPage {
+        case .tabTermination:
+            tabTerminationErrorPageInstrumentation.sendFeedbackSelected()
+        case .safariRedirectLoop:
+            SafariRedirectPixel.reportBrokenSiteFromErrorPage.fireDailyAndCount()
+        case nil:
+            return
+        }
+
+        delegate?.tabDidRequestReportBrokenSite(tab: self, entryPoint: .errorPage)
     }
 
 }
@@ -5294,13 +5373,13 @@ extension TabViewController: SERPSettingsUserScriptDelegate {
 extension TabViewController: SafariRedirectHandlerDelegate {
 
     func safariRedirectHandler(_ handler: SafariRedirectHandling, didRequestLoadURL url: URL) {
-        DailyPixel.fireDailyAndCount(pixel: .webViewExternalSchemeNavigationSafariRedirectLoadURLRequested, error: nil, withAdditionalParameters: [:])
+        SafariRedirectPixel.loadURLRequested.fireDailyAndCount()
         shouldUseSafariOnlyUserAgentForNextMainFrameNavigation = true
         load(url: url, didUpgradeURL: false)
     }
 
     func safariRedirectHandler(_ handler: SafariRedirectHandling, didRequestShowSafariRedirectLoopErrorForURL url: URL) {
-        DailyPixel.fireDailyAndCount(pixel: .webViewExternalSchemeNavigationSafariRedirectLoopErrorPageShown, error: nil, withAdditionalParameters: [:])
+        SafariRedirectPixel.loopErrorPageShown.fireDailyAndCount()
         shouldUseSafariOnlyUserAgentForNextMainFrameNavigation = false
         showSafariRedirectLoopError(for: url)
     }

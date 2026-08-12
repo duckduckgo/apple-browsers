@@ -4021,6 +4021,18 @@
 /* Special error page title for pages that can only be opened in Safari */
 "prompt.general-page-problem.title" = "Αυτή η σελίδα φορτώνει μόνο στο Safari";
 
+/* Error page message shown after repeated tab terminations */
+"prompt.tab-termination-error-page.message" = "Αυτή η σελίδα σταμάτησε να φορτώνει πολλές φορές. Δοκίμασε να κάνεις επαναφόρτωση ή στείλε μας σχόλια.";
+
+/* Button that reloads a page after repeated tab terminations */
+"prompt.tab-termination-error-page.reload" = "Επαναφόρτωση";
+
+/* Button that opens site feedback after repeated tab terminations */
+"prompt.tab-termination-error-page.send-feedback" = "Αποστολή σχολίου";
+
+/* Error page title shown after repeated tab terminations */
+"prompt.tab-termination-error-page.title" = "Δεν μπορέσαμε να φορτώσουμε τη σελίδα αυτή";
+
 /* Default native error page message */
 "prompt.web-page-load-error.message" = "Ο ιστότοπος αυτός διαθέτει μη έγκυρο πιστοποιητικό ασφαλείας και ενδέχεται να μην είναι ασφαλές να το επισκεφτείτε.";
 

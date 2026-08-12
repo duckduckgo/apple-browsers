@@ -4021,6 +4021,18 @@
 /* Special error page title for pages that can only be opened in Safari */
 "prompt.general-page-problem.title" = "Тази страница се зарежда само в Safari";
 
+/* Error page message shown after repeated tab terminations */
+"prompt.tab-termination-error-page.message" = "Тази страница спря да се зарежда няколко пъти. Опитайте да презаредите или ни изпратете обратна връзка.";
+
+/* Button that reloads a page after repeated tab terminations */
+"prompt.tab-termination-error-page.reload" = "Презареждане";
+
+/* Button that opens site feedback after repeated tab terminations */
+"prompt.tab-termination-error-page.send-feedback" = "Изпращане на обратна връзка";
+
+/* Error page title shown after repeated tab terminations */
+"prompt.tab-termination-error-page.title" = "Не успяхме да заредим тази страница";
+
 /* Default native error page message */
 "prompt.web-page-load-error.message" = "Този уебсайт има невалиден сертификат за сигурност и отварянето му може да не е безопасно.";
 

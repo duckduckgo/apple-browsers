@@ -582,7 +582,7 @@ final class TabManagerTests: XCTestCase {
 
         let firstController = try XCTUnwrap(manager.current(createIfNeeded: true))
         _ = manager.select(tabs[1])
-        manager.invalidateCache(forController: firstController)
+        manager.invalidateCache(forController: firstController, reloadCurrent: false)
 
         XCTAssertEqual(cacheDelegate.evictionReasons, [.webContentProcessTermination])
         XCTAssertNil(manager.controller(for: tabs[0]))
@@ -598,6 +598,49 @@ final class TabManagerTests: XCTestCase {
         XCTAssertEqual(telemetry.webContentProcessTerminationActiveTabCounts, [0])
     }
 
+    func testWhenTerminationThresholdIsReachedThenCurrentTabShowsErrorPage() throws {
+        let detector = MockTabTerminationErrorPageDetector(shouldShowErrorPage: true)
+        let tabsModel = TabsModel(desktop: false)
+        tabsModel.insert(
+            tab: Tab(link: Link(title: "example", url: URL(string: "https://example.com")!)),
+            placement: .atEnd,
+            selectNewTab: true)
+        let manager = try makeManager(
+            tabsModel,
+            tabTerminationErrorPageDetector: detector)
+        let controller = try XCTUnwrap(manager.current(createIfNeeded: true))
+        controller.url = URL(string: "https://example.com")!
+
+        XCTAssertFalse(try XCTUnwrap(controller.makeBreakageAdditionalInfo()).isAfterTabTermination)
+
+        manager.invalidateCache(forController: controller, reloadCurrent: true)
+
+        XCTAssertEqual(detector.checkedTabIDs, [controller.tabModel.uid])
+        XCTAssertFalse(controller.error.isHidden)
+        XCTAssertEqual(controller.errorHeader.text, UserText.tabTerminationErrorPageTitle)
+        XCTAssertTrue(try XCTUnwrap(controller.makeBreakageAdditionalInfo()).isAfterTabTermination)
+    }
+
+    func testWhenCurrentTabTerminatesWithoutReloadThenTerminationIsNotRecorded() throws {
+        let detector = MockTabTerminationErrorPageDetector(shouldShowErrorPage: true)
+        let tabsModel = TabsModel(desktop: false)
+        tabsModel.insert(
+            tab: Tab(link: Link(title: "example", url: URL(string: "https://example.com")!)),
+            placement: .atEnd,
+            selectNewTab: true)
+        let manager = try makeManager(
+            tabsModel,
+            tabTerminationErrorPageDetector: detector)
+        let controller = try XCTUnwrap(manager.current(createIfNeeded: true))
+        controller.url = URL(string: "https://example.com")!
+
+        manager.invalidateCache(forController: controller, reloadCurrent: false)
+
+        XCTAssertTrue(detector.checkedTabIDs.isEmpty)
+        XCTAssertTrue(controller.error.isHidden)
+        XCTAssertFalse(try XCTUnwrap(controller.makeBreakageAdditionalInfo()).isAfterTabTermination)
+    }
+
     func makeManager(_ model: TabsModel,
                      fireModel: TabsModel? = nil,
                      previewsSource: TabPreviewsSource = MockTabPreviewsSource(),
@@ -606,6 +649,7 @@ final class TabManagerTests: XCTestCase {
                      launchSourceManager: LaunchSourceManaging = MockLaunchSourceManager(),
                      normalStore: ThrowingKeyValueStoring? = nil,
                      tabTerminationTelemetry: (any TabTerminationTelemetry)? = nil,
+                     tabTerminationErrorPageDetector: (any TabTerminationErrorPageDetecting)? = nil,
                      privacyConfigurationManager: PrivacyConfigurationManaging = MockPrivacyConfigurationManager(),
                      applicationState: (@MainActor () -> UIApplication.State)? = nil,
                      isPad: Bool = false) throws -> TabManager {
@@ -651,6 +695,7 @@ final class TabManagerTests: XCTestCase {
                           adBlockingAvailability: StubAdBlockingAvailability(),
                           eventHub: StubEventHub(),
                           tabTerminationTelemetry: tabTerminationTelemetry,
+                          tabTerminationErrorPageDetector: tabTerminationErrorPageDetector,
                           applicationState: applicationState,
                           isPad: isPad)
     }
@@ -717,5 +762,26 @@ private final class MockTabControllerCacheDelegate: TabControllerCacheDelegate {
                     didEvictController controller: TabViewController,
                     reason: TabControllerCacheEvictionReason) {
         evictionReasons.append(reason)
+    }
+}
+
+@MainActor
+private final class MockTabTerminationErrorPageDetector: TabTerminationErrorPageDetecting {
+
+    private let shouldShowErrorPage: Bool
+    private(set) var checkedTabIDs: [String] = []
+    private(set) var removedTabIDs: [String] = []
+
+    init(shouldShowErrorPage: Bool) {
+        self.shouldShowErrorPage = shouldShowErrorPage
+    }
+
+    func shouldShowErrorPage(forTabID tabID: String) -> Bool {
+        checkedTabIDs.append(tabID)
+        return shouldShowErrorPage
+    }
+
+    func removeHistory(forTabID tabID: String) {
+        removedTabIDs.append(tabID)
     }
 }

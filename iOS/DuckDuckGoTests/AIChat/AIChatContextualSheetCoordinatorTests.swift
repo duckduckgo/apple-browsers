@@ -332,6 +332,21 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         XCTAssertNil(sut.sheetViewController)
     }
 
+    /// Both callers delete the conversation, so leaving the URL on the tab would let the address bar
+    /// restore a chat the user just deleted — including after a relaunch.
+    @MainActor
+    func testClearActiveChatClearsThePersistedChatURL() async {
+        // Given
+        await sut.presentSheet(from: mockPresentingVC)
+        mockDelegate.contextualChatURLUpdates = []
+
+        // When
+        sut.clearActiveChat()
+
+        // Then
+        XCTAssertEqual(mockDelegate.contextualChatURLUpdates, [nil])
+    }
+
     @MainActor
     func testClearActiveChatThenPresentCreatesNewSheet() async {
         // Given

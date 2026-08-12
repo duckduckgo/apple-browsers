@@ -4021,6 +4021,18 @@
 /* Special error page title for pages that can only be opened in Safari */
 "prompt.general-page-problem.title" = "Ova se stranica učitava samo u Safariju";
 
+/* Error page message shown after repeated tab terminations */
+"prompt.tab-termination-error-page.message" = "Ova se stranica prestala učitavati više puta. Pokušaj je ponovo učitati ili nam pošalji povratne informacije.";
+
+/* Button that reloads a page after repeated tab terminations */
+"prompt.tab-termination-error-page.reload" = "Ponovno učitaj";
+
+/* Button that opens site feedback after repeated tab terminations */
+"prompt.tab-termination-error-page.send-feedback" = "Pošalji povratne informacije";
+
+/* Error page title shown after repeated tab terminations */
+"prompt.tab-termination-error-page.title" = "Učitavanje ove stranice nije uspjelo";
+
 /* Default native error page message */
 "prompt.web-page-load-error.message" = "Ovo web-mjesto ima nevažeći sigurnosni certifikat i možda ga nije sigurno posjetiti.";
 

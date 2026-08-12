@@ -66,8 +66,7 @@ enum SubscriptionContainerViewFactory {
                                     dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
                                     wideEvent: WideEventManaging,
                                     featureFlagger: FeatureFlagger,
-                                    onboardingKeyValueStore: ThrowingKeyValueStoring? = nil,
-                                    meetsPIRLocaleRequirement: @escaping () -> Bool = { false }) -> some View {
+                                    onboardingKeyValueStore: ThrowingKeyValueStoring?) -> some View {
 
         let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: subscriptionUserDefaults,
                                                                          pixelHandler: SubscriptionPixelHandler(source: .mainApp, pixelKit: PixelKit.shared))
@@ -115,8 +114,7 @@ enum SubscriptionContainerViewFactory {
                                                                        expirationReminderScheduler: AppDependencyProvider.shared.subscriptionExpirationReminderScheduler,
                                                                        isExpirationReminderFeatureEnabled: { featureFlagger.isFeatureOn(.subscriptionExpirationReminderNotification) }),
             dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider,
-            onboardingKeyValueStore: onboardingKeyValueStore,
-            meetsPIRLocaleRequirement: meetsPIRLocaleRequirement
+            onboardingKeyValueStore: onboardingKeyValueStore
         )
         viewModel.email.setEmailFlowMode(.restoreFlow)
         return SubscriptionContainerView(currentView: .subscribe, viewModel: viewModel, featureFlagger: featureFlagger)
@@ -135,8 +133,7 @@ enum SubscriptionContainerViewFactory {
                                    dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
                                    wideEvent: WideEventManaging,
                                    featureFlagger: FeatureFlagger,
-                                   onboardingKeyValueStore: ThrowingKeyValueStoring? = nil,
-                                   meetsPIRLocaleRequirement: @escaping () -> Bool = { false }) -> some View {
+                                   onboardingKeyValueStore: ThrowingKeyValueStoring?) -> some View {
         if let redirectURLComponents,
            SubscriptionPurchaseFlowPath.isPlansPath(redirectURLComponents.path) {
             makePlansFlowV2(redirectURLComponents: redirectURLComponents,
@@ -160,8 +157,7 @@ enum SubscriptionContainerViewFactory {
                                 dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider,
                                 wideEvent: wideEvent,
                                 featureFlagger: featureFlagger,
-                                onboardingKeyValueStore: onboardingKeyValueStore,
-                                meetsPIRLocaleRequirement: meetsPIRLocaleRequirement)
+                                onboardingKeyValueStore: onboardingKeyValueStore)
         }
     }
 

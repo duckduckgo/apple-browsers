@@ -118,6 +118,9 @@ struct SubscriptionOnboardingProgress {
     ///
     /// - On reaching 100% the card stays up for the rest of that run and goes on the next launch
     /// - It expires 14 days after it first appeared, whether or not the customer finished.
+    ///
+    /// Writes as it decides. Seed `@State` from ``previewShouldShowSetupCard``
+    /// instead.
     mutating func shouldShowSetupCard(now: Date, session: SubscriptionOnboardingSessionStating) -> Bool {
         if percentage >= 100 {
             if persistor.fullyCompletedAt == nil {
@@ -129,6 +132,17 @@ struct SubscriptionOnboardingProgress {
 
         persistor.recordCardFirstShownIfNeeded(now: now)
         // A failed write leaves no anchor to measure from; showing the card beats hiding it forever.
+        guard let firstShown = persistor.cardFirstShownDate else { return true }
+        return now.timeIntervalSince(firstShown) < Self.cardLifetime
+    }
+
+    /// A read-only preview of ``shouldShowSetupCard(now:session:)`` from whatever is already persisted —
+    /// never writes. Safe to call from a View `init` to seed `@State`; `.onAppear`'s `refresh()` then calls
+    /// the real, write-performing decision once the view has actually appeared.
+    func previewShouldShowSetupCard(now: Date, session: SubscriptionOnboardingSessionStating) -> Bool {
+        if percentage >= 100 {
+            guard session.didCompleteDuringThisSession || persistor.fullyCompletedAt != nil else { return false }
+        }
         guard let firstShown = persistor.cardFirstShownDate else { return true }
         return now.timeIntervalSince(firstShown) < Self.cardLifetime
     }

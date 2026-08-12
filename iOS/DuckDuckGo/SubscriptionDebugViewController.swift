@@ -39,6 +39,8 @@ final class SubscriptionDebugViewController: UITableViewController {
     private lazy var subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
     private let reporter: SubscriptionDataReporting
 
+    var keyValueStore: ThrowingKeyValueStoring?
+
     private var subscriptionManager: SubscriptionManager {
         AppDependencyProvider.shared.subscriptionManager
     }
@@ -995,10 +997,14 @@ final class SubscriptionDebugViewController: UITableViewController {
     }
 
     private func showOnboardingFlow(entryPoint: SubscriptionOnboardingEntryPoint) {
+        guard let keyValueStore else {
+            ActionMessageView.present(message: "Failed to load onboarding progress")
+            return
+        }
         let flow = SubscriptionOnboardingFlowViewModel(
             entryPoint: entryPoint,
             progress: SubscriptionOnboardingProgress(
-                persistor: SubscriptionOnboardingProgressPersistor(keyValueStore: subscriptionUserDefaults),
+                persistor: SubscriptionOnboardingProgressPersistor(keyValueStore: keyValueStore),
                 isPIRAvailable: false),
             onFinish: { [weak self] in
                 self?.dismiss(animated: true)
@@ -1013,7 +1019,11 @@ final class SubscriptionDebugViewController: UITableViewController {
     }
 
     private func resetOnboardingProgress() {
-        var store = SubscriptionOnboardingProgressPersistor(keyValueStore: subscriptionUserDefaults)
+        guard let keyValueStore else {
+            showAlert(title: "Failed to reset onboarding progress")
+            return
+        }
+        var store = SubscriptionOnboardingProgressPersistor(keyValueStore: keyValueStore)
         store.completedItems = []
         store.cardFirstShownDate = nil
         store.fullyCompletedAt = nil
@@ -1023,7 +1033,11 @@ final class SubscriptionDebugViewController: UITableViewController {
     /// Backdates the card's first display so its 14-day window has already closed. The session latch is
     /// process-scoped, so a relaunch is still needed to test the "hidden after completion" rule.
     private func expireSetupCardWindow() {
-        var store = SubscriptionOnboardingProgressPersistor(keyValueStore: subscriptionUserDefaults)
+        guard let keyValueStore else {
+            showAlert(title: "Failed to age setup card")
+            return
+        }
+        var store = SubscriptionOnboardingProgressPersistor(keyValueStore: keyValueStore)
         store.cardFirstShownDate = Date().addingTimeInterval(-15 * 24 * 60 * 60)
         showAlert(title: "Setup card aged past 14 days")
     }

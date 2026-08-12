@@ -23,16 +23,12 @@ import XCTest
 /// The rule deciding whether a purchase flow offers post-checkout onboarding.
 final class SubscriptionOnboardingPostCheckoutTriggerTests: XCTestCase {
 
-    func testWhenAFirstPurchaseReachesTheWelcomePageThenOnboardingIsRequested() {
+    func testWhenAFirstPurchaseCompletesThenOnboardingIsRequested() {
         XCTAssertTrue(shouldRequest())
     }
 
     func testWhenTheFlowIsAPlanUpdateThenOnboardingIsNotRequested() {
         XCTAssertFalse(shouldRequest(flowType: .planUpdate))
-    }
-
-    func testWhenTheCustomerIsNotYetAtTheWelcomePageThenOnboardingIsNotRequested() {
-        XCTAssertFalse(shouldRequest(isAtWelcomePage: false))
     }
 
     /// The restore, email, and plan-update flows are built without a store, which is what keeps them out.
@@ -44,7 +40,7 @@ final class SubscriptionOnboardingPostCheckoutTriggerTests: XCTestCase {
         XCTAssertFalse(shouldRequest(isFeatureEnabled: false))
     }
 
-    /// The welcome page is re-enterable by back navigation or reload, so the offer is made once per purchase.
+    /// A defensive re-invocation of the purchase-completed hook must not re-offer the flow.
     func testWhenOnboardingWasAlreadyRequestedThenItIsNotRequestedAgain() {
         XCTAssertFalse(shouldRequest(didAlreadyRequest: true))
     }
@@ -53,12 +49,10 @@ final class SubscriptionOnboardingPostCheckoutTriggerTests: XCTestCase {
 
     /// Defaults describe the one case that should fire, so each test names only the condition it breaks.
     private func shouldRequest(flowType: SubscriptionFlowType = .firstPurchase,
-                               isAtWelcomePage: Bool = true,
                                hasOnboardingStore: Bool = true,
                                isFeatureEnabled: Bool = true,
                                didAlreadyRequest: Bool = false) -> Bool {
         SubscriptionFlowViewModel.shouldRequestOnboarding(flowType: flowType,
-                                                          isAtWelcomePage: isAtWelcomePage,
                                                           hasOnboardingStore: hasOnboardingStore,
                                                           isFeatureEnabled: isFeatureEnabled,
                                                           didAlreadyRequest: didAlreadyRequest)

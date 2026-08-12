@@ -112,6 +112,8 @@ struct SubscriptionOnboardingViewFactory {
                 onNext: { flow.finish() }))
 
         case .pir:
+            // `.pir` is excluded from `activationSections`, so it never enters `path` and this is unreachable.
+            assertionFailure("`.pir` should not be pushed as a navigable section")
             return AnyView(EmptyView())
         }
     }

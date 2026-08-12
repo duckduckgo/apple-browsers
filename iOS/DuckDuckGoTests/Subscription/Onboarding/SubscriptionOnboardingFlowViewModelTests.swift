@@ -290,6 +290,18 @@ final class SubscriptionOnboardingFlowViewModelTests: XCTestCase {
         XCTAssertTrue(spy.skipped.isEmpty)
     }
 
+    /// Re-entering an already-completed activation section (e.g. via a navigation quirk) must not re-fire the
+    /// completion pixel.
+    func testWhenAnAlreadyCompletedSectionCompletesAgainThenItIsNotReportedTwice() {
+        let spy = SpyInstrumentation()
+        let sut = makeSUT(entryPoint: .postCheckout, instrumentation: spy)
+
+        sut.sectionDidComplete(.vpnActivation)
+        sut.sectionDidComplete(.vpnActivation)
+
+        XCTAssertEqual(spy.completed, [.vpnActivation])
+    }
+
     /// The VPN's on-state "Next" and its permission-denied "Skip" share `advance()`, so the skip is derived
     /// from the item still being incomplete.
     func testWhenLeavingTheVPNStepWithoutTurningItOnThenItIsReportedSkipped() {

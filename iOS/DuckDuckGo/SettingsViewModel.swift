@@ -206,9 +206,10 @@ final class SettingsViewModel: ObservableObject {
         runPrerequisitesDelegate?.meetsLocaleRequirement ?? false
     }
 
-    /// Whether onboarding's PIR step is done.
+    /// Whether this customer can use PIR: the feature flag is on and the app exposes a PIR view controller.
     var isPIRAvailable: Bool {
-        isPIREnabled && meetsLocaleRequirement && dataBrokerProtectionViewControllerProvider != nil
+        PIRAvailability.isAvailable(isPIREnabled: isPIREnabled,
+                                    provider: dataBrokerProtectionViewControllerProvider)
     }
 
     var isPIRActivated: Bool {
@@ -1466,19 +1467,12 @@ extension SettingsViewModel {
 
     private func recordOnboardingActivationsIfNeeded() {
         recordPIRActivationIfNeeded()
-        recordVPNActivationIfNeeded()
     }
 
     /// Backfill only: profiles saved from now on record themselves via `BrokerProfileJobEventsHandler.onProfileSaved`.
     private func recordPIRActivationIfNeeded() {
         guard isPIRActivated else { return }
         SubscriptionOnboardingActivationRecorder(keyValueStore: keyValueStore).recordPIRActivated()
-    }
-
-    /// Marks the VPN step complete when the VPN is already on as the customer arrives here.
-    private func recordVPNActivationIfNeeded() {
-        guard state.networkProtectionConnected else { return }
-        SubscriptionOnboardingActivationRecorder(keyValueStore: keyValueStore).recordVPNActivated()
     }
 
     @MainActor

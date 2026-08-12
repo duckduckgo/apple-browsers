@@ -48,7 +48,7 @@ struct SubscriptionOnboardingFlowView: View {
     var body: some View {
         stack
             .sheet(isPresented: $pirLaunch.isPresentingPIR) { factory.pirLaunchScreen() }
-            .onAppear { flow.startPrefetching() }
+            .onFirstAppear { flow.startPrefetching() }
     }
 
     // (TODO|Post-iOS15-Drop): drop the fork and keep the `NavigationStack` branch.

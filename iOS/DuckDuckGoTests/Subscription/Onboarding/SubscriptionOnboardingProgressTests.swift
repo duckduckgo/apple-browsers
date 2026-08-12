@@ -168,6 +168,41 @@ final class SubscriptionOnboardingProgressTests: XCTestCase {
         XCTAssertEqual(SubscriptionOnboardingProgressPersistor(keyValueStore: keyValueStore).fullyCompletedAt, first)
     }
 
+    // MARK: - Setup card visibility preview (never writes)
+
+    /// Seeded from a View `init`, which SwiftUI can re-run many times per session, so this must never write.
+    func testPreviewNeverWritesEvenAtOneHundredPercent() {
+        let progress = makeProgress(isPIRAvailable: false, completed: [.vpn, .widget, .idtr, .duckAI])
+        let session = SubscriptionOnboardingSessionState()
+
+        _ = progress.previewShouldShowSetupCard(now: Date(), session: session)
+
+        XCTAssertFalse(session.didCompleteDuringThisSession)
+        XCTAssertNil(SubscriptionOnboardingProgressPersistor(keyValueStore: keyValueStore).fullyCompletedAt)
+        XCTAssertNil(SubscriptionOnboardingProgressPersistor(keyValueStore: keyValueStore).cardFirstShownDate)
+    }
+
+    func testPreviewMatchesTheRealAnswerBelowOneHundredPercent() {
+        let progress = makeProgress(isPIRAvailable: true, completed: [.vpn])
+
+        XCTAssertTrue(progress.previewShouldShowSetupCard(now: Date(), session: SubscriptionOnboardingSessionState()))
+    }
+
+    /// Nothing has recorded completion yet, and the preview cannot record it itself, so it must assume "not shown".
+    func testPreviewIsPessimisticAtOneHundredPercentUntilTheRealDecisionHasRun() {
+        let progress = makeProgress(isPIRAvailable: false, completed: [.vpn, .widget, .idtr, .duckAI])
+
+        XCTAssertFalse(progress.previewShouldShowSetupCard(now: Date(), session: SubscriptionOnboardingSessionState()))
+    }
+
+    func testPreviewReflectsAnAlreadyRecordedCompletionFromAnEarlierRun() {
+        var progress = makeProgress(isPIRAvailable: false, completed: [.vpn, .widget, .idtr, .duckAI])
+        _ = progress.shouldShowSetupCard(now: Date(), session: SubscriptionOnboardingSessionState())
+
+        // A fresh session, as the next launch would supply — the persisted `fullyCompletedAt` must be enough.
+        XCTAssertTrue(progress.previewShouldShowSetupCard(now: Date(), session: SubscriptionOnboardingSessionState()))
+    }
+
     // MARK: - Setup card 14-day window
 
     func testWhenTheCardWindowIsStillOpenThenTheCardShows() {

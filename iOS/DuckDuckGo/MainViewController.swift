@@ -3672,10 +3672,7 @@ class MainViewController: UIViewController {
             dataBrokerProtectionViewControllerProvider: dbpIOSPublicInterface,
             wideEvent: AppDependencyProvider.shared.wideEvent,
             featureFlagger: featureFlagger,
-            onboardingKeyValueStore: keyValueStore,
-            meetsPIRLocaleRequirement: { [weak dbpIOSPublicInterface] in
-                dbpIOSPublicInterface?.meetsLocaleRequirement ?? false
-            }
+            onboardingKeyValueStore: keyValueStore
         ))
         viewController.view.backgroundColor = UIColor(designSystemColor: .surface)
         return viewController

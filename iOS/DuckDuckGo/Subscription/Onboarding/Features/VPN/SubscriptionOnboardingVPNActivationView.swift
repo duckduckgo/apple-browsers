@@ -220,13 +220,10 @@ private enum VPNProtection: CaseIterable {
 
 #if DEBUG
 
-import Lottie
-
 private extension SubscriptionOnboardingConnectionInfo {
     static let madrid = SubscriptionOnboardingConnectionInfo(ip: "31.120.130.50", city: "Madrid", country: "ES")
     static let valencia = SubscriptionOnboardingConnectionInfo(ip: "45.132.71.9", city: "Valencia", country: "ES")
 }
-
 
 @MainActor
 private func activationPreview(state: SubscriptionOnboardingVPNActivationViewModel.ConnectionState,

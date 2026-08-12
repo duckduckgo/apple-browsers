@@ -81,7 +81,6 @@ final class SubscriptionOnboardingFlowViewModel: ObservableObject {
     /// Screens read cached results from this rather than fetching for themselves.
     let prefetcher: SubscriptionOnboardingPrefetcher
 
-    /// Per run, so its once-only reporting resets for the next run rather than the next launch.
     let instrumentation: SubscriptionOnboardingInstrumenting
 
     private let onFinish: () -> Void
@@ -214,9 +213,11 @@ final class SubscriptionOnboardingFlowViewModel: ObservableObject {
 extension SubscriptionOnboardingFlowViewModel: SubscriptionOnboardingSectionDelegate {
 
     func sectionDidComplete(_ section: SubscriptionOnboardingSection) {
+        if case .activation(let item) = section.kind {
+            guard !progress.completedItems.contains(item) else { return }
+            progress.markComplete(item)
+        }
         instrumentation.stepCompleted(section)
-        guard case .activation(let item) = section.kind else { return }
-        progress.markComplete(item)
     }
 
     func sectionDidRequestAdvance() {

@@ -35,9 +35,9 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
     typealias ConnectionInfoState = SubscriptionOnboardingPrefetcher.FetchState<SubscriptionOnboardingConnectionInfo>
 
     /// Shown in the IP row of an info card until the corresponding fetch resolves (or when it has no value.
-    static let ipPlaceholder = "-.-.-"
+    static let ipPlaceholder = "XXX.XXX.XX.XXX"
     /// Shown in the location row of an info card until the corresponding fetch resolves.
-    static let locationPlaceholder = "-,-"
+    static let locationPlaceholder = "XX,XX"
 
     @Published private(set) var connectionState: ConnectionState
 

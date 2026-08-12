@@ -667,9 +667,10 @@ private var resubscribeWithWinBackOfferView: some View {
 
 extension SubscriptionSettingsViewV2 {
 
-    /// The "Continue Setup" re-entry card. Shown while any premium protection is still inactive.
+    /// The "Continue Setup" re-entry card. 
     ///
-    /// Reaching 100% keeps the card for the rest of the session; it goes on the next launch.
+    /// Reaching 100% keeps the card for the rest of the session; it goes on the next launch. It also
+    /// disappears once the subscription expires or the flag is turned off.
     var onboardingSetupSection: some View {
         Section {
             if isOnboardingEnabled {
@@ -699,9 +700,15 @@ extension SubscriptionSettingsViewV2 {
             isPIRAvailable: isPIRAvailable)
     }
 
-    /// Checked here rather than inside the card so the flag also covers `startOnboarding()`
+    /// Checked here rather than inside the card so the flag (and subscription state) also covers `startOnboarding()`.
     private var isOnboardingEnabled: Bool {
-        settingsViewModel.featureFlagger.isFeatureOn(.subscriptionOnboarding)
+        settingsViewModel.featureFlagger.isFeatureOn(.subscriptionOnboarding) && hasActiveSubscription
+    }
+
+    /// The card is a re-entry point into an active subscription's onboarding — an expired subscription, or one
+    /// still activating, has nothing left to set up.
+    private var hasActiveSubscription: Bool {
+        configuration == .subscribed || configuration == .trial
     }
 
     /// PIR is gated three ways, and a customer who fails any of them is shown a four-item checklist rather

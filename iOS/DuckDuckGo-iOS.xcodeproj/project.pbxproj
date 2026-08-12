@@ -274,6 +274,7 @@
 		3666D877300193CC00B63F99 /* SubscriptionOnboardingUserText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3666D876300193CC00B63F99 /* SubscriptionOnboardingUserText.swift */; };
 		3666D87A300193EA00B63F99 /* check-color.json in Resources */ = {isa = PBXBuildFile; fileRef = 3666D879300193EA00B63F99 /* check-color.json */; };
 		3666D87D3001AA9600B63F99 /* SubscriptionOnboardingFreeTrialCalendarCardModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3666D87B3001AA9600B63F99 /* SubscriptionOnboardingFreeTrialCalendarCardModelTests.swift */; };
+		36699A30302CD4F600D1E3EE /* PIRAvailability.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36699A2F302CD4F600D1E3EE /* PIRAvailability.swift */; };
 		366A93042FCE0E0B00211BA8 /* SubscriptionExpirationReminderScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 366A93032FCE0E0B00211BA8 /* SubscriptionExpirationReminderScheduler.swift */; };
 		366A93062FCE0E3700211BA8 /* SubscriptionExpirationReminderSchedulerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 366A93052FCE0E3700211BA8 /* SubscriptionExpirationReminderSchedulerTests.swift */; };
 		3677BA07302B78D2004E95E3 /* SubscriptionOnboardingActivationRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3677BA04302B78D2004E95E3 /* SubscriptionOnboardingActivationRecorder.swift */; };
@@ -3221,6 +3222,7 @@
 		3666D876300193CC00B63F99 /* SubscriptionOnboardingUserText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingUserText.swift; sourceTree = "<group>"; };
 		3666D879300193EA00B63F99 /* check-color.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "check-color.json"; sourceTree = "<group>"; };
 		3666D87B3001AA9600B63F99 /* SubscriptionOnboardingFreeTrialCalendarCardModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingFreeTrialCalendarCardModelTests.swift; sourceTree = "<group>"; };
+		36699A2F302CD4F600D1E3EE /* PIRAvailability.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PIRAvailability.swift; sourceTree = "<group>"; };
 		366A93032FCE0E0B00211BA8 /* SubscriptionExpirationReminderScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionExpirationReminderScheduler.swift; sourceTree = "<group>"; };
 		366A93052FCE0E3700211BA8 /* SubscriptionExpirationReminderSchedulerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionExpirationReminderSchedulerTests.swift; sourceTree = "<group>"; };
 		3677BA04302B78D2004E95E3 /* SubscriptionOnboardingActivationRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingActivationRecorder.swift; sourceTree = "<group>"; };
@@ -7041,6 +7043,7 @@
 		3666D86C30017B1400B63F99 /* Helpers */ = {
 			isa = PBXGroup;
 			children = (
+				36699A2F302CD4F600D1E3EE /* PIRAvailability.swift */,
 				3666D86B30017B1400B63F99 /* RebrandedPreview.swift */,
 			);
 			path = Helpers;
@@ -14789,6 +14792,7 @@
 				ABA18ED2F9373DE1F5B57B66 /* RebrandedOnboardingAddressBarPositionPicker.swift in Sources */,
 				BBAFF0312F6A940A00029537 /* SubscriptionPromoModalPromptProvider.swift in Sources */,
 				DA9073A7F6F11BD081C2FA27 /* RebrandedOnboardingSearchExperiencePicker.swift in Sources */,
+				36699A30302CD4F600D1E3EE /* PIRAvailability.swift in Sources */,
 				912A3FDC1F6C41E88FE334D9 /* SearchExperienceToggleAnimationView.swift in Sources */,
 				AAE51CD3558F68CEF6919A73 /* DBPIOSContentBlocking.swift in Sources */,
 				A14E0FE9F5A5E908BBD19F4E /* FireConfirmationPresenter+Suggestions.swift in Sources */,

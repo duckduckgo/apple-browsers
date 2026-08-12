@@ -52,9 +52,8 @@ struct SubscriptionOnboardingSetupCard: View {
         self.isPresentingFlow = isPresentingFlow
         self.onContinue = onContinue
 
-        var seed = progress
-        _percentage = State(initialValue: seed.percentage)
-        _isShowing = State(initialValue: seed.shouldShowSetupCard(now: Date(), session: session))
+        _percentage = State(initialValue: progress.percentage)
+        _isShowing = State(initialValue: progress.previewShouldShowSetupCard(now: Date(), session: session))
     }
 
     var body: some View {

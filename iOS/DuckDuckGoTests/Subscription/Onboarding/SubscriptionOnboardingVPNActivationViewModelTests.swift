@@ -49,10 +49,10 @@ final class SubscriptionOnboardingVPNActivationViewModelTests: XCTestCase {
 
     func testWhenConnectionInfoIsUnresolvedThenTextsArePlaceholders() {
         let viewModel = makeViewModel()
-        XCTAssertEqual(viewModel.originalIPText, "-.-.-")
-        XCTAssertEqual(viewModel.originalLocationText, "-,-")
-        XCTAssertEqual(viewModel.vpnIPText, "-.-.-")
-        XCTAssertEqual(viewModel.vpnLocationText, "-,-")
+        XCTAssertEqual(viewModel.originalIPText, "XXX.XXX.XX.XXX")
+        XCTAssertEqual(viewModel.originalLocationText, "XX,XX")
+        XCTAssertEqual(viewModel.vpnIPText, "XXX.XXX.XX.XXX")
+        XCTAssertEqual(viewModel.vpnLocationText, "XX,XX")
     }
 
     // MARK: - Original IP fetch
@@ -89,8 +89,8 @@ final class SubscriptionOnboardingVPNActivationViewModelTests: XCTestCase {
             viewModel.onAppear()
         }
 
-        XCTAssertEqual(viewModel.originalIPText, "-.-.-")
-        XCTAssertEqual(viewModel.originalLocationText, "-,-")
+        XCTAssertEqual(viewModel.originalIPText, "XXX.XXX.XX.XXX")
+        XCTAssertEqual(viewModel.originalLocationText, "XX,XX")
     }
 
     // MARK: - Off / on state
@@ -145,7 +145,7 @@ final class SubscriptionOnboardingVPNActivationViewModelTests: XCTestCase {
         XCTAssertEqual(service.fetchCallCount, 0)
         XCTAssertEqual(viewModel.vpnIPText, "45.132.71.9")
         XCTAssertEqual(viewModel.vpnLocationText, "🇪🇸 Valencia, Spain")
-        XCTAssertEqual(viewModel.originalIPText, "-.-.-")
+        XCTAssertEqual(viewModel.originalIPText, "XXX.XXX.XX.XXX")
     }
 
     func testWhenAlreadyOnAndOnAppearCalledTwiceThenSectionCompletesOnce() {
@@ -192,7 +192,7 @@ final class SubscriptionOnboardingVPNActivationViewModelTests: XCTestCase {
         }
 
         XCTAssertEqual(viewModel.vpnIPText, "45.132.71.9")
-        XCTAssertEqual(viewModel.vpnLocationText, "-,-")
+        XCTAssertEqual(viewModel.vpnLocationText, "XX,XX")
     }
 
     func testWhenTurnedOnThenPreVPNIPIsRetainedInOriginalIPRow() async {

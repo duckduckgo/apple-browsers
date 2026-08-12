@@ -104,14 +104,12 @@ final class SubscriptionFlowViewModel: ObservableObject {
     /// `nil` unless this flow came from `makeSubscribeFlowV2`
     private let onboardingKeyValueStore: ThrowingKeyValueStoring?
 
-    private let meetsPIRLocaleRequirement: () -> Bool
-
-    /// Match `SettingsViewModel.isPIRAvailable`
     private var isPIRAvailable: Bool {
-        isPIREnabled && meetsPIRLocaleRequirement() && dataBrokerProtectionViewControllerProvider != nil
+        PIRAvailability.isAvailable(isPIREnabled: isPIREnabled,
+                                    provider: dataBrokerProtectionViewControllerProvider)
     }
 
-    /// The welcome page is re-enterable by back navigation or reload, so the flow is offered once per purchase.
+    /// Latched so a defensive re-invocation of `onPurchaseCompleted` cannot re-offer the flow.
     private var didRequestOnboarding = false
 
     var onboardingProgress: SubscriptionOnboardingProgress? {
@@ -123,22 +121,19 @@ final class SubscriptionFlowViewModel: ObservableObject {
 
     /// A pure rule so it can be tested
     static func shouldRequestOnboarding(flowType: SubscriptionFlowType,
-                                        isAtWelcomePage: Bool,
                                         hasOnboardingStore: Bool,
                                         isFeatureEnabled: Bool,
                                         didAlreadyRequest: Bool) -> Bool {
         !didAlreadyRequest
             && flowType == .firstPurchase
-            && isAtWelcomePage
             && hasOnboardingStore
             && isFeatureEnabled
     }
 
-    /// The customer reaches the welcome page by acknowledging the web-rendered purchase confirmation
+    /// Called when the App Store purchase itself completes
     private func requestOnboardingIfNeeded() {
         guard Self.shouldRequestOnboarding(
             flowType: flowType,
-            isAtWelcomePage: isCurrentURL(matching: .welcome),
             hasOnboardingStore: onboardingKeyValueStore != nil,
             isFeatureEnabled: featureFlagger.isFeatureOn(.subscriptionOnboarding),
             didAlreadyRequest: didRequestOnboarding) else { return }
@@ -170,8 +165,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          wideEvent: WideEventManaging = AppDependencyProvider.shared.wideEvent,
          dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
-         onboardingKeyValueStore: ThrowingKeyValueStoring? = nil,
-         meetsPIRLocaleRequirement: @escaping () -> Bool = { false }) {
+         onboardingKeyValueStore: ThrowingKeyValueStoring?) {
         self.initialURL = initialURL
         self.flowType = flowType
         self.userScript = userScript
@@ -183,7 +177,6 @@ final class SubscriptionFlowViewModel: ObservableObject {
         self.wideEvent = wideEvent
         self.dataBrokerProtectionViewControllerProvider = dataBrokerProtectionViewControllerProvider
         self.onboardingKeyValueStore = onboardingKeyValueStore
-        self.meetsPIRLocaleRequirement = meetsPIRLocaleRequirement
         let allowedDomains = AsyncHeadlessWebViewSettings.makeAllowedDomains(baseURL: subscriptionManager.url(for: .baseURL),
                                                                              isInternalUser: isInternalUser)
 
@@ -225,7 +218,13 @@ final class SubscriptionFlowViewModel: ObservableObject {
                 self.setTransactionStatus(.idle)
             }
         }
-        
+
+        subFeature.onPurchaseCompleted = {
+            DispatchQueue.main.async {
+                self.requestOnboardingIfNeeded()
+            }
+        }
+
          subFeature.onFeatureSelected = { feature in
              DispatchQueue.main.async {
                  switch feature {
@@ -345,8 +344,6 @@ final class SubscriptionFlowViewModel: ObservableObject {
                 } else {
                     strongSelf.state.viewTitle = strongSelf.flowType.navigationTitle
                 }
-
-                strongSelf.requestOnboardingIfNeeded()
             }
     }
 

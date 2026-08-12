@@ -20,6 +20,9 @@
 "%@ items" = "%@ items";
 
 /* No comment provided by engineer. */
+"%@: %@" = "%1$@: %2$@";
+
+/* No comment provided by engineer. */
 "%@%%" = "%@%%";
 
 /* No comment provided by engineer. */
@@ -948,12 +951,6 @@
 
 /* Login name label for login details on autofill */
 "autofill.logins.details.login-name" = "Tytuł";
-
-/* Message for alert when attempting to save a password that has neither a website nor a username */
-"autofill.logins.details.missing-website-or-username-alert.message" = "Aby zapisać to hasło, wprowadź witrynę lub nazwę użytkownika.";
-
-/* Title for alert when attempting to save a password that has neither a website nor a username */
-"autofill.logins.details.missing-website-or-username-alert.title" = "Wymagana witryna lub nazwa użytkownika";
 
 /* Title when adding new autofill login */
 "autofill.logins.details.new-title" = "Dodaj hasło";
@@ -2956,12 +2953,6 @@
 /* Title for the Import Passwords Promotion banner */
 "import.passwords.promo.title" = "Importuj hasła do DuckDuckGo";
 
-/* Body for the notification sent after a period of inactivity. */
-"inactivity.notification.body" = "Używaj DuckDuckGo, aby unikać reklam śledzących Cię w Internecie i zmniejszyć swój ślad cyfrowy.";
-
-/* Title for the notification sent after a period of inactivity. */
-"inactivity.notification.title" = "Przejmij kontrolę nad swoim środowiskiem online";
-
 /* Placeholder text for the duck.ai input field */
 "input.field.placeholder.duckai" = "Zapytaj o cokolwiek prywatnie";
 
@@ -4020,6 +4011,18 @@
 
 /* Special error page title for pages that can only be opened in Safari */
 "prompt.general-page-problem.title" = "Ta strona ładuje się tylko w Safari";
+
+/* Error page message shown after repeated tab terminations */
+"prompt.tab-termination-error-page.message" = "Ta strona kilkakrotnie przestała się ładować. Spróbuj załadować ponownie lub wyślij nam opinię.";
+
+/* Button that reloads a page after repeated tab terminations */
+"prompt.tab-termination-error-page.reload" = "Załaduj ponownie";
+
+/* Button that opens site feedback after repeated tab terminations */
+"prompt.tab-termination-error-page.send-feedback" = "Wyślij opinię";
+
+/* Error page title shown after repeated tab terminations */
+"prompt.tab-termination-error-page.title" = "Nie udało nam się załadować tej strony";
 
 /* Default native error page message */
 "prompt.web-page-load-error.message" = "Ta witryna ma nieprawidłowy certyfikat bezpieczeństwa i jej odwiedzanie może nie być bezpieczne.";

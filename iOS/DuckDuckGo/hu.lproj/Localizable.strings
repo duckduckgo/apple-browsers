@@ -20,6 +20,9 @@
 "%@ items" = "%@ items";
 
 /* No comment provided by engineer. */
+"%@: %@" = "%1$@: %2$@";
+
+/* No comment provided by engineer. */
 "%@%%" = "%@%%";
 
 /* No comment provided by engineer. */
@@ -948,12 +951,6 @@
 
 /* Login name label for login details on autofill */
 "autofill.logins.details.login-name" = "Cím";
-
-/* Message for alert when attempting to save a password that has neither a website nor a username */
-"autofill.logins.details.missing-website-or-username-alert.message" = "A jelszó mentéséhez adj meg egy webhelyet vagy felhasználónevet.";
-
-/* Title for alert when attempting to save a password that has neither a website nor a username */
-"autofill.logins.details.missing-website-or-username-alert.title" = "Webhely vagy felhasználónév szükséges";
 
 /* Title when adding new autofill login */
 "autofill.logins.details.new-title" = "Jelszó hozzáadása";
@@ -2956,12 +2953,6 @@
 /* Title for the Import Passwords Promotion banner */
 "import.passwords.promo.title" = "Jelszavak importálása a DuckDuckGóba";
 
-/* Body for the notification sent after a period of inactivity. */
-"inactivity.notification.body" = "Használd a DuckDuckGót, hogy elkerüld a weben követő hirdetéseket, és csökkentsd az online lábnyomodat.";
-
-/* Title for the notification sent after a period of inactivity. */
-"inactivity.notification.title" = "Irányítsd az online élményedet";
-
 /* Placeholder text for the duck.ai input field */
 "input.field.placeholder.duckai" = "Kérdezz bármit privátban";
 
@@ -4020,6 +4011,18 @@
 
 /* Special error page title for pages that can only be opened in Safari */
 "prompt.general-page-problem.title" = "Ez az oldal csak Safariban tölthető be";
+
+/* Error page message shown after repeated tab terminations */
+"prompt.tab-termination-error-page.message" = "Az oldal betöltése többször is leállt. Próbálkozz újratöltéssel, vagy küldj nekünk visszajelzést.";
+
+/* Button that reloads a page after repeated tab terminations */
+"prompt.tab-termination-error-page.reload" = "Újratöltés";
+
+/* Button that opens site feedback after repeated tab terminations */
+"prompt.tab-termination-error-page.send-feedback" = "Visszajelzés küldése";
+
+/* Error page title shown after repeated tab terminations */
+"prompt.tab-termination-error-page.title" = "Nem tudtuk betölteni az oldalt";
 
 /* Default native error page message */
 "prompt.web-page-load-error.message" = "A webhely biztonsági tanúsítványa érvénytelen, ezért előfordulhat, hogy a meglátogatása nem biztonságos.";

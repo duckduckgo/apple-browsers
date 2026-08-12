@@ -20,6 +20,9 @@
 "%@ items" = "%@ items";
 
 /* No comment provided by engineer. */
+"%@: %@" = "%1$@: %2$@";
+
+/* No comment provided by engineer. */
 "%@%%" = "%@%%";
 
 /* No comment provided by engineer. */
@@ -948,12 +951,6 @@
 
 /* Login name label for login details on autofill */
 "autofill.logins.details.login-name" = "Titel";
-
-/* Message for alert when attempting to save a password that has neither a website nor a username */
-"autofill.logins.details.missing-website-or-username-alert.message" = "Voer een website of gebruikersnaam in om dit wachtwoord op te slaan.";
-
-/* Title for alert when attempting to save a password that has neither a website nor a username */
-"autofill.logins.details.missing-website-or-username-alert.title" = "Website of gebruikersnaam vereist";
 
 /* Title when adding new autofill login */
 "autofill.logins.details.new-title" = "Wachtwoord toevoegen";
@@ -2956,12 +2953,6 @@
 /* Title for the Import Passwords Promotion banner */
 "import.passwords.promo.title" = "Je wachtwoorden importeren in DuckDuckGo";
 
-/* Body for the notification sent after a period of inactivity. */
-"inactivity.notification.body" = "Gebruik DuckDuckGo om advertenties die je overal op het web volgen te vermijden en je online voetafdruk te verkleinen.";
-
-/* Title for the notification sent after a period of inactivity. */
-"inactivity.notification.title" = "Beheer je online ervaring";
-
 /* Placeholder text for the duck.ai input field */
 "input.field.placeholder.duckai" = "Vraag iets privé";
 
@@ -4020,6 +4011,18 @@
 
 /* Special error page title for pages that can only be opened in Safari */
 "prompt.general-page-problem.title" = "Deze pagina wordt alleen geladen in Safari";
+
+/* Error page message shown after repeated tab terminations */
+"prompt.tab-termination-error-page.message" = "Deze pagina is meerdere keren gestopt met laden. Probeer hem opnieuw te laden of stuur ons feedback.";
+
+/* Button that reloads a page after repeated tab terminations */
+"prompt.tab-termination-error-page.reload" = "Opnieuw laden";
+
+/* Button that opens site feedback after repeated tab terminations */
+"prompt.tab-termination-error-page.send-feedback" = "Verstuur feedback";
+
+/* Error page title shown after repeated tab terminations */
+"prompt.tab-termination-error-page.title" = "We kunnen deze pagina niet laden";
 
 /* Default native error page message */
 "prompt.web-page-load-error.message" = "Deze website heeft een ongeldig beveiligingscertificaat en is mogelijk niet veilig.";

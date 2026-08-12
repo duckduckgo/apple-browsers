@@ -20,6 +20,9 @@
 "%@ items" = "%@ items";
 
 /* No comment provided by engineer. */
+"%@: %@" = "%1$@: %2$@";
+
+/* No comment provided by engineer. */
 "%@%%" = "%@%%";
 
 /* No comment provided by engineer. */
@@ -948,12 +951,6 @@
 
 /* Login name label for login details on autofill */
 "autofill.logins.details.login-name" = "Naslov";
-
-/* Message for alert when attempting to save a password that has neither a website nor a username */
-"autofill.logins.details.missing-website-or-username-alert.message" = "Če želite shraniti to geslo, vnesite spletno mesto ali uporabniško ime.";
-
-/* Title for alert when attempting to save a password that has neither a website nor a username */
-"autofill.logins.details.missing-website-or-username-alert.title" = "Zahtevano spletno mesto ali uporabniško ime";
 
 /* Title when adding new autofill login */
 "autofill.logins.details.new-title" = "Dodajte geslo";
@@ -2956,12 +2953,6 @@
 /* Title for the Import Passwords Promotion banner */
 "import.passwords.promo.title" = "Uvozite gesla v DuckDuckGo";
 
-/* Body for the notification sent after a period of inactivity. */
-"inactivity.notification.body" = "Z DuckDuckGo se izognite oglasom, ki vas spremljajo po spletu, in zmanjšajte svoj spletni odtis.";
-
-/* Title for the notification sent after a period of inactivity. */
-"inactivity.notification.title" = "Nadzorujte svojo spletno izkušnjo";
-
 /* Placeholder text for the duck.ai input field */
 "input.field.placeholder.duckai" = "Vprašajte kar koli zasebno";
 
@@ -4020,6 +4011,18 @@
 
 /* Special error page title for pages that can only be opened in Safari */
 "prompt.general-page-problem.title" = "Ta stran se naloži samo v brskalniku Safari";
+
+/* Error page message shown after repeated tab terminations */
+"prompt.tab-termination-error-page.message" = "Ta stran se je večkrat nehala nalagati. Poskusite znova naložiti ali nam pošljite povratne informacije.";
+
+/* Button that reloads a page after repeated tab terminations */
+"prompt.tab-termination-error-page.reload" = "Ponovno naloži";
+
+/* Button that opens site feedback after repeated tab terminations */
+"prompt.tab-termination-error-page.send-feedback" = "Pošljite povratne informacije";
+
+/* Error page title shown after repeated tab terminations */
+"prompt.tab-termination-error-page.title" = "Te strani nismo mogli naložiti";
 
 /* Default native error page message */
 "prompt.web-page-load-error.message" = "To spletno mesto ima neveljavno varnostno potrdilo in obisk morda ni varen.";

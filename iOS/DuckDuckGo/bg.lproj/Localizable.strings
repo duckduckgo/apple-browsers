@@ -20,6 +20,9 @@
 "%@ items" = "%@ items";
 
 /* No comment provided by engineer. */
+"%@: %@" = "%1$@: %2$@";
+
+/* No comment provided by engineer. */
 "%@%%" = "%@%%";
 
 /* No comment provided by engineer. */
@@ -948,12 +951,6 @@
 
 /* Login name label for login details on autofill */
 "autofill.logins.details.login-name" = "Заглавие";
-
-/* Message for alert when attempting to save a password that has neither a website nor a username */
-"autofill.logins.details.missing-website-or-username-alert.message" = "За да запазите тази парола, въведете уебсайт или потребителско име.";
-
-/* Title for alert when attempting to save a password that has neither a website nor a username */
-"autofill.logins.details.missing-website-or-username-alert.title" = "Изисква се уебсайт или потребителско име";
 
 /* Title when adding new autofill login */
 "autofill.logins.details.new-title" = "Добавяне на парола";
@@ -2956,12 +2953,6 @@
 /* Title for the Import Passwords Promotion banner */
 "import.passwords.promo.title" = "Импортиране на пароли в DuckDuckGo";
 
-/* Body for the notification sent after a period of inactivity. */
-"inactivity.notification.body" = "Използвайте DuckDuckGo, за да избегнете рекламите, които Ви следят в мрежата, и да намалите своя онлайн отпечатък.";
-
-/* Title for the notification sent after a period of inactivity. */
-"inactivity.notification.title" = "Контролирайте онлайн изживяването";
-
 /* Placeholder text for the duck.ai input field */
 "input.field.placeholder.duckai" = "Задайте въпрос поверително";
 
@@ -4020,6 +4011,18 @@
 
 /* Special error page title for pages that can only be opened in Safari */
 "prompt.general-page-problem.title" = "Тази страница се зарежда само в Safari";
+
+/* Error page message shown after repeated tab terminations */
+"prompt.tab-termination-error-page.message" = "Тази страница спря да се зарежда няколко пъти. Опитайте да презаредите или ни изпратете обратна връзка.";
+
+/* Button that reloads a page after repeated tab terminations */
+"prompt.tab-termination-error-page.reload" = "Презареждане";
+
+/* Button that opens site feedback after repeated tab terminations */
+"prompt.tab-termination-error-page.send-feedback" = "Изпращане на обратна връзка";
+
+/* Error page title shown after repeated tab terminations */
+"prompt.tab-termination-error-page.title" = "Не успяхме да заредим тази страница";
 
 /* Default native error page message */
 "prompt.web-page-load-error.message" = "Този уебсайт има невалиден сертификат за сигурност и отварянето му може да не е безопасно.";

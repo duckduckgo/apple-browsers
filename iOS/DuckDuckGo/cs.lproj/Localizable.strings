@@ -20,6 +20,9 @@
 "%@ items" = "%@ items";
 
 /* No comment provided by engineer. */
+"%@: %@" = "%1$@: %2$@";
+
+/* No comment provided by engineer. */
 "%@%%" = "%@%%";
 
 /* No comment provided by engineer. */
@@ -948,12 +951,6 @@
 
 /* Login name label for login details on autofill */
 "autofill.logins.details.login-name" = "Název";
-
-/* Message for alert when attempting to save a password that has neither a website nor a username */
-"autofill.logins.details.missing-website-or-username-alert.message" = "Aby se heslo uložilo, zadej web nebo uživatelské jméno.";
-
-/* Title for alert when attempting to save a password that has neither a website nor a username */
-"autofill.logins.details.missing-website-or-username-alert.title" = "Je nutný web nebo uživatelské jméno";
 
 /* Title when adding new autofill login */
 "autofill.logins.details.new-title" = "Přidat heslo";
@@ -2956,12 +2953,6 @@
 /* Title for the Import Passwords Promotion banner */
 "import.passwords.promo.title" = "Importuj svá hesla do DuckDuckGo";
 
-/* Body for the notification sent after a period of inactivity. */
-"inactivity.notification.body" = "Používej DuckDuckGo – vyhneš se reklamám, které tě sledují po celém internetu, a zmenšíš svou digitální stopu.";
-
-/* Title for the notification sent after a period of inactivity. */
-"inactivity.notification.title" = "Tvůj pohyb online, pod kontrolou";
-
 /* Placeholder text for the duck.ai input field */
 "input.field.placeholder.duckai" = "Zeptej se soukromě na cokoli";
 
@@ -4020,6 +4011,18 @@
 
 /* Special error page title for pages that can only be opened in Safari */
 "prompt.general-page-problem.title" = "Tato stránka se načítá pouze v Safari";
+
+/* Error page message shown after repeated tab terminations */
+"prompt.tab-termination-error-page.message" = "Tato stránka se několikrát přestala načítat. Zkus stránku načíst znovu nebo nám pošli zpětnou vazbu.";
+
+/* Button that reloads a page after repeated tab terminations */
+"prompt.tab-termination-error-page.reload" = "Načíst znovu";
+
+/* Button that opens site feedback after repeated tab terminations */
+"prompt.tab-termination-error-page.send-feedback" = "Odeslat zpětnou vazbu";
+
+/* Error page title shown after repeated tab terminations */
+"prompt.tab-termination-error-page.title" = "Nepodařilo se nám načíst tuto stránku";
 
 /* Default native error page message */
 "prompt.web-page-load-error.message" = "Tento web má neplatný certifikát zabezpečení a nemusí být bezpečné ho navštívit.";

@@ -115,19 +115,32 @@ private struct SyncedDevicesListV2: View {
         .onHover { hovering in
             hoveredDevice = hovering ? device : nil
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityAction(named: Text(deviceActionTitle(for: device))) {
+            deviceActionHandler(for: device)?(device)
+        }
     }
 
     @ViewBuilder
     private func deviceAction(for device: SyncDevice) -> some View {
-        let title = device.isCurrent ? UserText.currentDeviceDetails : UserText.removeDeviceButton
-        let action = device.isCurrent ? presentDeviceDetails : presentRemoveDevice
+        let title = deviceActionTitle(for: device)
+        let action = deviceActionHandler(for: device)
 
         if let action {
             Button(title) {
                 action(device)
             }
+            .accessibilityHidden(true)
             .visibility(hoveredDevice?.id == device.id ? .visible : .gone)
         }
+    }
+
+    private func deviceActionTitle(for device: SyncDevice) -> String {
+        device.isCurrent ? UserText.currentDeviceDetails : UserText.removeDeviceButton
+    }
+
+    private func deviceActionHandler(for device: SyncDevice) -> ((SyncDevice) -> Void)? {
+        device.isCurrent ? presentDeviceDetails : presentRemoveDevice
     }
 
     private var separator: some View {

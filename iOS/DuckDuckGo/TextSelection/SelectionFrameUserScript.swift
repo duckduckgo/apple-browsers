@@ -19,7 +19,6 @@
 
 import WebKit
 import UserScript
-import os.log
 
 /// A frame that can be evaluated in, without exposing the `WKFrameInfo` it wraps.
 ///
@@ -42,14 +41,9 @@ struct SelectionFrame {
         webView.evaluateJavaScript(script, in: frameInfo, in: contentWorld, completionHandler: completionHandler)
     }
 
-    /// - Parameter requiringLiveSelection: For callers that did not come from the selection menu. The
-    ///   stored text is returned either way, but with this set a selection the user has since dropped is
-    ///   refused — losing focus hides a selection without clearing it, so a stale one is otherwise
-    ///   indistinguishable from a current one.
-    func selectedText(from value: Any, requiringLiveSelection: Bool = false) -> String? {
+    func selectedText(from value: Any) -> String? {
         guard let result = value as? [String: Any],
               result["frameToken"] as? String == frameToken else { return nil }
-        if requiringLiveSelection, result["isLive"] as? Bool != true { return nil }
         return result["selectedText"] as? String
     }
 }
@@ -57,39 +51,41 @@ struct SelectionFrame {
 /// Tracks which frame holds the page's text selection, so a selection made inside an iframe can be read.
 ///
 /// Reports only whether a selection exists, never its text.
-final class SelectionFrameUserScript: NSObject, UserScript {
+final class SelectionFrameUserScript: NSObject, Subfeature {
 
-    private enum MessageName {
-        static let selectionChanged = "selectionFrameChanged"
+    private enum MessageName: String {
+        case isEnabled
+        case selectionChanged = "selectionFrameChanged"
     }
 
     static let readSelectionScript = "window.__ddgSelectionFrame.readSelection()"
 
-    /// An empty source leaves the feature inert rather than taking the app down with it.
-    var source: String = {
-        do {
-            return try SelectionFrameUserScript.loadJS("selectionframe", from: .main)
-        } catch {
-            (error as? UserScriptError)?.fireLoadJSFailedPixelIfNeeded()
-            Logger.aiChat.error("Failed to load selectionframe.js: \(error.localizedDescription)")
-            return ""
-        }
-    }()
-
-    var injectionTime: WKUserScriptInjectionTime = .atDocumentStart
-
-    /// An iframe has to be able to report its own selection.
-    var forMainFrameOnly: Bool = false
-
-    var messageNames: [String] = [MessageName.selectionChanged]
+    let featureName = "textSelection"
+    let messageOriginPolicy: MessageOriginPolicy = .all
+    weak var broker: UserScriptMessageBroker?
 
     /// The frame holding the selection.
     private(set) var frameWithSelection: SelectionFrame?
 
+    private let isEnabled: Bool
     private var trackedFrameToken: String?
 
-    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-        update(with: message.body, from: message.frameInfo)
+    init(isEnabled: Bool) {
+        self.isEnabled = isEnabled
+    }
+
+    func handler(forMethodNamed methodName: String) -> Subfeature.Handler? {
+        switch MessageName(rawValue: methodName) {
+        case .isEnabled:
+            return { [isEnabled] _, _ in SelectionFrameEnabledResponse(enabled: isEnabled) }
+        case .selectionChanged:
+            return { [weak self] params, original in
+                self?.update(with: params, from: original.frameInfo)
+                return nil
+            }
+        case nil:
+            return nil
+        }
     }
 
     /// Split from the handler for testing: `WKScriptMessage` cannot be constructed, `WKFrameInfo` can be mocked.
@@ -113,4 +109,8 @@ final class SelectionFrameUserScript: NSObject, UserScript {
         frameWithSelection = nil
         trackedFrameToken = nil
     }
+}
+
+struct SelectionFrameEnabledResponse: Encodable, Equatable {
+    let enabled: Bool
 }

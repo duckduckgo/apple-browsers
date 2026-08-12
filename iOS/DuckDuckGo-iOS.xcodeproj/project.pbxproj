@@ -93,7 +93,6 @@
 		1E8AD1DD27C653F800ABA377 /* Downloads.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1E8AD1DC27C653F800ABA377 /* Downloads.xcassets */; };
 		1E908BF129827C480008C8F3 /* AutoconsentUserScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E908BEE29827C480008C8F3 /* AutoconsentUserScript.swift */; };
 		1E908BF229827C480008C8F3 /* autoconsent-bundle.js in Resources */ = {isa = PBXBuildFile; fileRef = 1E908BEF29827C480008C8F3 /* autoconsent-bundle.js */; };
-		AD5E1ED02B0000000000F30A /* selectionframe.js in Resources */ = {isa = PBXBuildFile; fileRef = AD5E1ED02B0000000000F309 /* selectionframe.js */; };
 		1E908BF329827C480008C8F3 /* AutoconsentManagement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E908BF029827C480008C8F3 /* AutoconsentManagement.swift */; };
 		1E9529A12C4E748B006E80D4 /* UINavigationControllerExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E9529A02C4E748B006E80D4 /* UINavigationControllerExtension.swift */; };
 		1EA1DA252F460653005387D0 /* AutoconsentMessageHandlerDelegate+iOS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EA1DA242F460653005387D0 /* AutoconsentMessageHandlerDelegate+iOS.swift */; };
@@ -3021,7 +3020,6 @@
 		1E8AD1DC27C653F800ABA377 /* Downloads.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Downloads.xcassets; sourceTree = "<group>"; };
 		1E908BEE29827C480008C8F3 /* AutoconsentUserScript.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AutoconsentUserScript.swift; sourceTree = "<group>"; };
 		1E908BEF29827C480008C8F3 /* autoconsent-bundle.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = "autoconsent-bundle.js"; sourceTree = "<group>"; };
-		AD5E1ED02B0000000000F309 /* selectionframe.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = selectionframe.js; sourceTree = "<group>"; };
 		1E908BF029827C480008C8F3 /* AutoconsentManagement.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AutoconsentManagement.swift; sourceTree = "<group>"; };
 		1E9529A02C4E748B006E80D4 /* UINavigationControllerExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UINavigationControllerExtension.swift; sourceTree = "<group>"; };
 		1EA1DA242F460653005387D0 /* AutoconsentMessageHandlerDelegate+iOS.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AutoconsentMessageHandlerDelegate+iOS.swift"; sourceTree = "<group>"; };
@@ -6216,7 +6214,6 @@
 			isa = PBXGroup;
 			children = (
 				AD5E1ED02B0000000000F109 /* SelectionFrameUserScript.swift */,
-				AD5E1ED02B0000000000F309 /* selectionframe.js */,
 			);
 			path = TextSelection;
 			sourceTree = "<group>";
@@ -13045,7 +13042,6 @@
 				85A9C37920E0E00C00073340 /* HomeRow.xcassets in Resources */,
 				3666D87A300193EA00B63F99 /* check-color.json in Resources */,
 				1E908BF229827C480008C8F3 /* autoconsent-bundle.js in Resources */,
-				AD5E1ED02B0000000000F30A /* selectionframe.js in Resources */,
 				ED39ED412FE607620011B7C3 /* confirmation-prompt-128.json in Resources */,
 				F143C2B21E49D78C00CFDE3A /* Assets.xcassets in Resources */,
 				310C24E82E6B6D1900D5A372 /* NewAddressBarPicker.xcassets in Resources */,

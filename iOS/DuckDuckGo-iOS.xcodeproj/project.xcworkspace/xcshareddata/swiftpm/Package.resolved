@@ -1,5 +1,5 @@
 {
-  "originHash" : "f893b40e34d394d293a09969026383ab4bbe513a7f7401b6a16a055a8424b2a9",
+  "originHash" : "e6b7490d28d95b4456c3276b23513e51196d4aeab2a6d1eeaafb9a51b51a09d4",
   "pins" : [
     {
       "identity" : "apple-toolbox",
@@ -33,8 +33,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
-        "revision" : "d35665e13add70752e51c2442529a2a2d32bd318",
-        "version" : "16.6.0"
+        "branch" : "pr-releases/pete/ios-text-selection",
+        "revision" : "49d2c958270ac6937cb8e996ae2744b2125217f4"
       }
     },
     {

@@ -28,7 +28,7 @@ final class SelectionFrameUserScriptTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        sut = SelectionFrameUserScript()
+        sut = SelectionFrameUserScript(isEnabled: true)
     }
 
     override func tearDown() {
@@ -44,85 +44,36 @@ final class SelectionFrameUserScriptTests: XCTestCase {
         ["hasSelection": hasSelection, "frameToken": token]
     }
 
-    // MARK: - Injection
+    // MARK: - Messaging
 
-    func testRunsInEveryFrame() {
-        XCTAssertFalse(sut.forMainFrameOnly)
+    func testWhenInspectingFeatureNameThenItMatchesContentScopeScripts() {
+        XCTAssertEqual(sut.featureName, "textSelection")
     }
 
-    func testInjectsAtDocumentStart() {
-        XCTAssertEqual(sut.injectionTime, .atDocumentStart)
+    func testWhenRequestingKnownMethodsThenHandlersAreReturned() {
+        XCTAssertNotNil(sut.handler(forMethodNamed: "isEnabled"))
+        XCTAssertNotNil(sut.handler(forMethodNamed: "selectionFrameChanged"))
     }
 
-    /// A rename on one side only would silently stop tracking.
-    func testListensOnTheNameTheScriptPostsTo() {
-        XCTAssertEqual(sut.messageNames, ["selectionFrameChanged"])
-        XCTAssertTrue(sut.source.contains("messageHandlers.selectionFrameChanged"))
+    func testWhenRequestingUnknownMethodThenHandlerIsNil() {
+        XCTAssertNil(sut.handler(forMethodNamed: "unknown"))
     }
 
-    /// An empty source means the resource is missing from the bundle.
-    func testTheScriptIsBundledWithTheApp() {
-        XCTAssertFalse(sut.source.isEmpty)
+    func testWhenFeatureIsEnabledThenEnableRequestReturnsTrue() async throws {
+        let handler = try XCTUnwrap(sut.handler(forMethodNamed: "isEnabled"))
+
+        let response = try await handler([:], WKScriptMessage())
+
+        XCTAssertEqual(response as? SelectionFrameEnabledResponse, SelectionFrameEnabledResponse(enabled: true))
     }
 
-    func testOnlyReportsOnTheEmptyToNonEmptyTransition() {
-        XCTAssertTrue(sut.source.contains("lastHasSelection"))
-        XCTAssertTrue(sut.source.contains("selectionchange"))
-    }
+    func testWhenFeatureIsDisabledThenEnableRequestReturnsFalse() async throws {
+        sut = SelectionFrameUserScript(isEnabled: false)
+        let handler = try XCTUnwrap(sut.handler(forMethodNamed: "isEnabled"))
 
-    func testEachFrameMintsATokenAndSendsItWithEveryMessage() {
-        XCTAssertTrue(sut.source.contains("var frameToken ="))
-        XCTAssertTrue(sut.source.contains("frameToken: frameToken"))
-    }
+        let response = try await handler([:], WKScriptMessage())
 
-    func testReadSelectionReturnsTheFrameTokenWithTheText() {
-        XCTAssertTrue(sut.source.contains("readSelection"))
-        XCTAssertTrue(sut.source.contains("selectedText:"))
-    }
-
-    func testAFrameReleasesItsClaimOnPageHide() {
-        XCTAssertTrue(sut.source.contains("pagehide"))
-    }
-
-    func testAFrameRestoresItsClaimFromTheBackForwardCache() {
-        XCTAssertTrue(sut.source.contains("pageshow"))
-        XCTAssertTrue(sut.source.contains("event.persisted"))
-    }
-
-    /// A selection appearing must not wait on the debounce.
-    func testASelectionAppearingIsReportedImmediately() {
-        XCTAssertTrue(sut.source.contains("post(true)"))
-    }
-
-    /// A frame that never held a selection has no claim to release.
-    func testOnlyAFrameThatHeldASelectionReportsOnPageHide() {
-        XCTAssertTrue(sut.source.contains("lastHasSelection === true"))
-    }
-
-    /// Covers the mechanism only: storing at selection time rules out mutation that fires no
-    /// selectionchange, not a page that replaces the selection and so updates what is stored.
-    func testTheTextIsSnapshotWhenSelectedRatherThanWhenRead() {
-        XCTAssertTrue(sut.source.contains("selectedText: snapshot"))
-        XCTAssertTrue(sut.source.contains("snapshot = text"))
-    }
-
-    /// The read reports liveness separately from the text, so an entry point that did not come from the
-    /// selection menu can refuse a selection the user has since dropped. Reading must not be destructive:
-    /// a second action on the same selection has to keep working.
-    func testTheReadReportsWhetherTheSelectionIsStillLive() {
-        XCTAssertTrue(sut.source.contains("isLive: selectionText().trim().length > 0"))
-    }
-
-    /// An out-of-view third-party iframe could otherwise select its own text and have that read instead.
-    func testASubframeOnlyClaimsTheSelectionWhileFocusIsInsideIt() {
-        XCTAssertTrue(sut.source.contains("ancestorOrigins"))
-        XCTAssertTrue(sut.source.contains("document.hasFocus()"))
-    }
-
-    /// The text is read later, only once the user picks a menu item.
-    func testNeverSendsTheSelectedText() {
-        XCTAssertFalse(sut.source.contains("postMessage({ text"))
-        XCTAssertTrue(sut.source.contains("hasSelection: hasSelection"))
+        XCTAssertEqual(response as? SelectionFrameEnabledResponse, SelectionFrameEnabledResponse(enabled: false))
     }
 
     // MARK: - Tracking

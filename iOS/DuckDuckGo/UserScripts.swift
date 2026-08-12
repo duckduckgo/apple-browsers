@@ -60,8 +60,7 @@ final class UserScripts: UserScriptsProvider {
     private(set) var faviconScript = FaviconUserScript()
     private(set) var findInPageScript = FindInPageUserScript()
 
-    /// Only created when the text-selection feature is on, evaluated once per `UserScripts`.
-    private(set) var selectionFrameScript: SelectionFrameUserScript?
+    private(set) var selectionFrameScript: SelectionFrameUserScript
     private(set) var fullScreenVideoScript = FullScreenVideoUserScript()
     private(set) var printingSubfeature = PrintingSubfeature()
     private(set) var trackerProtectionSubfeature = TrackerProtectionSubfeature()
@@ -78,7 +77,7 @@ final class UserScripts: UserScriptsProvider {
         isAutoconsentExtensionAvailable = sourceProvider.webExtensionAvailability?.isAutoconsentExtensionAvailable ?? false
 
         let textSelectionFeature = textSelectionFeature ?? AIChatTextSelectionFeature(featureFlagger: featureFlagger)
-        selectionFrameScript = textSelectionFeature.isEnabled ? SelectionFrameUserScript() : nil
+        selectionFrameScript = SelectionFrameUserScript(isEnabled: textSelectionFeature.isEnabled)
 
         autofillUserScript = AutofillUserScript(scriptSourceProvider: sourceProvider.autofillSourceProvider)
         autofillUserScript.sessionKey = sourceProvider.contentScopeProperties.sessionKey
@@ -160,6 +159,7 @@ final class UserScripts: UserScriptsProvider {
         contentScopeUserScriptIsolated.registerSubfeature(delegate: aiChatUserScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: subscriptionUserScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: serpSettingsUserScript)
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: selectionFrameScript)
         if let duckAiNativeStorageUserScript {
             contentScopeUserScriptIsolated.registerSubfeature(delegate: duckAiNativeStorageUserScript)
         }
@@ -187,7 +187,6 @@ final class UserScripts: UserScriptsProvider {
     lazy var userScripts: [UserScript] = {
         var scripts: [UserScript?] = [
             findInPageScript,
-            selectionFrameScript,
             fullScreenVideoScript,
             autofillUserScript,
             loginFormDetectionScript,

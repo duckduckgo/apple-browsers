@@ -163,6 +163,7 @@ final class AIChatContextualChatSessionState {
     private var isProcessingNavigation = false
 
     private var pendingSignalsOnlyCollection = false
+    private var suppressesAutoAttachForSelectionEntry = false
 
     private(set) var suggestionsLoadState: SuggestionsLoadState = .loaded
     private(set) var suggestions: [ContextualSuggestedPrompt] = []
@@ -359,6 +360,7 @@ final class AIChatContextualChatSessionState {
         if !preservingSelections {
             attachedSelections = []
         }
+        suppressesAutoAttachForSelectionEntry = false
         lastCollectedContext = nil
         frontendState = .noChat
         chipState = .placeholder
@@ -436,6 +438,7 @@ final class AIChatContextualChatSessionState {
     func notifyPageChanged(pageURL: URL? = nil) {
         Logger.aiChat.debug("[SessionState] Page navigation detected")
         isProcessingNavigation = true
+        suppressesAutoAttachForSelectionEntry = false
         // A real navigation means any subsequent context update is fresh, even if it later
         // resolves to a URL that was already submitted (e.g. the user navigated away and back).
         deliveredContextURLWithNoNavigationSince = nil
@@ -517,6 +520,20 @@ final class AIChatContextualChatSessionState {
         beginLoadingSuggestions()
     }
 
+    /// Suppresses auto-attach for a sheet opened from a text selection, until the user navigates, attaches
+    /// the page themselves, or opens the sheet again without a selection.
+    ///
+    /// `pendingSignalsOnlyCollection` alone is not enough: it is consumed by the first context update to
+    /// arrive, so an emission already in flight when the sheet opened would spend it and let the collection
+    /// we actually triggered fall through to auto-attach, attaching the page a moment after the selection.
+    func suppressAutoAttachForSelectionEntry() {
+        suppressesAutoAttachForSelectionEntry = true
+    }
+
+    func allowAutoAttachAgain() {
+        suppressesAutoAttachForSelectionEntry = false
+    }
+
     func beginLoadingSuggestions() {
         guard featureFlagger.isFeatureOn(.contextualSuggestedPrompts), !hasActiveChat else { return }
         suggestionsResolveTask?.cancel()
@@ -567,7 +584,7 @@ final class AIChatContextualChatSessionState {
 
         if isManualAttachInProgress {
             handleManualAttach(context)
-        } else if shouldAutoCollectContext {
+        } else if shouldAutoCollectContext, !suppressesAutoAttachForSelectionEntry {
             handleAutoAttach(context)
         } else {
             Logger.aiChat.debug("[SessionState] Context updated without chip change (auto-attach OFF)")
@@ -678,6 +695,7 @@ private extension AIChatContextualChatSessionState {
         if isShowingNativeInput || isUnifiedToggleInputActive {
             chipState = .attached(context)
             userDowngradedToPlaceholder = false
+            suppressesAutoAttachForSelectionEntry = false
             // A manual attach is always fresh: clear the delivered marker so it is not read as a stale echo.
             deliveredContextURLWithNoNavigationSince = nil
             Logger.aiChat.debug("[SessionState] Manually attached context")

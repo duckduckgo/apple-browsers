@@ -1192,7 +1192,7 @@ class TabViewController: UIViewController {
         }
 
         webView.selectionFrameProvider = { [weak self] in
-            self?.userScripts?.selectionFrameScript?.frameWithSelection
+            self?.userScripts?.selectionFrameScript.frameWithSelection
         }
     }
 
@@ -2147,7 +2147,7 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
-        userScripts?.selectionFrameScript?.reset()
+        userScripts?.selectionFrameScript.reset()
 
         if let url = webView.url {
             let finalURL = duckPlayerNavigationHandler.getDuckURLFor(url)
@@ -3870,7 +3870,7 @@ extension TabViewController: WKUIDelegate {
     }
 
     private func handleWebContentProcessDidTerminate(_ webView: WKWebView, reasonName: String?) {
-        userScripts?.selectionFrameScript?.reset()
+        userScripts?.selectionFrameScript.reset()
 
         let isDuckAITab = webView.url?.isDuckAIURL == true
         if isDuckAITab {

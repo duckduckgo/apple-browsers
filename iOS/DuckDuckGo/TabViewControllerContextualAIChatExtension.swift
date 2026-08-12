@@ -31,21 +31,6 @@ extension TabViewController {
     /// - Parameter presentingViewController: The view controller to present the sheet from.
     func presentContextualAIChatSheet(from presentingViewController: UIViewController) {
         Task { @MainActor in
-            // Opening the sheet with text selected means the same as picking "Ask Duck.ai" from the
-            // selection menu, so treat it identically rather than silently dropping the selection.
-            let selection = isAskAIChatSelectionItemAvailable
-                ? await (webView as? WebView)?.currentSelection()
-                : nil
-
-            // Reading the selection suspends, so this tab may no longer be the visible one by the time
-            // it returns — presenting then would put this tab's chat over a different tab's page.
-            guard view.window != nil else { return }
-
-            if let selection {
-                await presentContextualAIChatSheet(withSelectedText: selection, from: presentingViewController)
-                return
-            }
-
             await aiChatContextualSheetCoordinator.presentSheet(
                 from: presentingViewController,
                 restoreURL: restoreURLForContextualSheet()

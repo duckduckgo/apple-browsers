@@ -218,7 +218,12 @@ final class AIChatContextualSheetCoordinator {
 
         startObservingContextUpdates()
 
+        if !skippingAutoAttach {
+            sessionState.allowAutoAttachAgain()
+        }
+
         if skippingAutoAttach {
+            sessionState.suppressAutoAttachForSelectionEntry()
             // An already-attached page keeps its own signals, and pushing the stripped signals-only
             // payload over it would clear the attached context on the frontend.
             if currentPageURL != nil, sessionState.intendedAttachedContext == nil {

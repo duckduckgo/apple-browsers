@@ -214,13 +214,13 @@ struct DataBrokerRunCustomJSONView: View {
                 }
             }
 
-            Text("Broker job execution config")
+            Text(verbatim: "Broker job execution config")
                 .font(.headline)
                 .padding(.top, 6)
 
             VStack(alignment: .leading, spacing: 0) {
                 ForEach(brokerJobExecutionConfigLines, id: \.name) { item in
-                    Text("\(item.name): \(item.value)")
+                    Text(verbatim: "\(item.name): \(item.value)")
                         .padding(.top, 6)
                 }
             }
@@ -282,9 +282,11 @@ struct DataBrokerRunCustomJSONView: View {
                     }
                     .disabled(jsonText.isEmpty)
 
-                    Toggle("Use configured timeouts", isOn: $viewModel.usesConfiguredTimeouts)
-                        .toggleStyle(.checkbox)
-                        .help("Applies the scan and opt-out job timeouts shown below.")
+                    Toggle(isOn: $viewModel.usesConfiguredTimeouts) {
+                        Text(verbatim: "Use configured timeouts")
+                    }
+                    .toggleStyle(.checkbox)
+                    .help(Text(verbatim: "Applies the scan and opt-out job timeouts shown below."))
                 }
 
                 if jsonText.isEmpty {

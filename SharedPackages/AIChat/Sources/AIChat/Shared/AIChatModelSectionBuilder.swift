@@ -37,6 +37,13 @@ public enum AIChatModelSectionBuilder {
         return (accessible, gated)
     }
 
+    /// Groups models by the presence of a backend-provided recommendation label while preserving API order within each group.
+    public static func groupByRecommendationLabel(models: [AIChatModel]) -> (withLabel: [AIChatModel], withoutLabel: [AIChatModel]) {
+        let withLabel = models.filter { $0.label != nil }
+        let withoutLabel = models.filter { $0.label == nil }
+        return (withLabel, withoutLabel)
+    }
+
     /// PoC ordering: per-tier "recommended" first, rest keep API order. Delete when backend ships ordering (task 1216559729471554).
     public static func orderedAccessibleModels(_ models: [AIChatModel], userTier: AIChatUserTier) -> [AIChatModel] {
         var remaining = models

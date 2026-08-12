@@ -130,6 +130,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216731632905182
     case dbpDeferredSecureVaultInit
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217396600005661
+    case dbpExtractedProfileRefresh
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866711635701
     case crashReportOptInStatusResetting
 
@@ -330,6 +333,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1212289671815991
     case unifiedToggleInput
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217271232291839
+    case updatedModelPicker
 
     /// Forward-only new-user cutoff for the unified toggle input rollout. On by default; ship a
     /// privacy-config entry disabling it to stop *new* (un-granted) users from receiving UTI
@@ -663,6 +669,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(DBPSubfeature.optOutRetryError96Hours))
         case .dbpDeferredSecureVaultInit:
             Config(source: .remoteReleasable(DBPSubfeature.deferredSecureVaultInit), supportsLocalOverriding: true)
+        case .dbpExtractedProfileRefresh:
+            Config(defaultValue: .enabled, source: .remoteReleasable(DBPSubfeature.extractedProfileRefresh), supportsLocalOverriding: true)
         case .crashReportOptInStatusResetting:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.crashReportOptInStatusResetting), supportsLocalOverriding: false)
         case .syncSeamlessAccountSwitching:
@@ -795,6 +803,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.showWhatsNewPromptOnDemand))
         case .unifiedToggleInput:
             Config(source: .remoteReleasable(AIChatSubfeature.unifiedToggleInput))
+        case .updatedModelPicker:
+            Config(source: .remoteReleasable(AIChatSubfeature.updatedModelPicker))
         case .unifiedToggleInputIncludeNewUsers:
             Config(defaultValue: .enabled,
                    source: .remoteReleasable(AIChatSubfeature.unifiedToggleInputIncludeNewUsers),

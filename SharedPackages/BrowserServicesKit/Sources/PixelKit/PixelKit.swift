@@ -268,18 +268,19 @@ public final class PixelKit {
 
     // MARK: - Public Fire
 
-    /// Main function for firing pixels
-    public func fire(_ event: PixelKit.Event,
-                     frequency: Frequency = .standard,
-                     withHeaders headers: [String: String]? = nil,
-                     withAdditionalParameters params: [String: String]? = nil,
-                     withNamePrefix namePrefix: String? = nil,
-                     allowedQueryReservedCharacters: CharacterSet? = nil,
-                     includeAppVersionParameter: Bool = true,
-                     doNotEnforcePrefix: Bool = false,
-                     onComplete: @escaping CompletionBlock = { _, _ in }) {
+    /// The `PixelFiring` witness, and the single place the real firing logic lives.
+    ///
+    /// Callers should not use this directly. The public entry points are `fire(_:frequency:options:)`
+    /// for fire-and-forget and `fireAsync(_:frequency:options:)` when the outcome matters; both are
+    /// supplied by the `PixelFiring` extension and funnel into here.
+    public func fire(event: PixelKit.Event,
+                     frequency: Frequency,
+                     options: Options,
+                     onComplete: @escaping CompletionBlock) {
 
-        let pixelName = prefixedAndSuffixedName(for: event, namePrefix: namePrefix, doNotEnforcePrefix: doNotEnforcePrefix)
+        let pixelName = prefixedAndSuffixedName(for: event,
+                                                namePrefix: options.namePrefix,
+                                                doNotEnforcePrefix: !options.enforcePrefix)
 
         if !dryRun {
             if frequency == .daily, pixelHasBeenFiredDailyToday(pixelName) {
@@ -295,7 +296,7 @@ public final class PixelKit {
         }
 
         let newParams: [String: String]?
-        switch (event.parameters, params) {
+        switch (event.parameters, options.additionalParameters) {
         case (.some(let parameters), .none):
             newParams = parameters
         case (.none, .some(let parameters)):
@@ -316,15 +317,69 @@ public final class PixelKit {
 
         fire(pixelNamed: pixelName,
              frequency: frequency,
-             withHeaders: headers,
+             withHeaders: options.headers,
              withAdditionalParameters: newParams,
              withError: event.error,
-             allowedQueryReservedCharacters: allowedQueryReservedCharacters,
-             includeAppVersionParameter: includeAppVersionParameter,
+             allowedQueryReservedCharacters: options.allowedQueryReservedCharacters,
+             includeAppVersionParameter: options.includeAppVersionParameter,
              standardParameters: event.standardParameters ?? [],
              onComplete: onComplete)
     }
 
+    /// Legacy wide-parameter entry point.
+    ///
+    /// Superseded by `fire(_:frequency:options:)` and `fireAsync(_:frequency:options:)`. Retained
+    /// only so call sites can migrate incrementally, and removed once they have. Not marked
+    /// deprecated on purpose: Swift resolves a concrete method ahead of a protocol extension
+    /// method, so every unmigrated `fire(event, frequency:)` call still lands here and would
+    /// otherwise emit a deprecation warning.
+    public func fire(_ event: PixelKit.Event,
+                     frequency: Frequency = .standard,
+                     withHeaders headers: [String: String]? = nil,
+                     withAdditionalParameters params: [String: String]? = nil,
+                     withNamePrefix namePrefix: String? = nil,
+                     allowedQueryReservedCharacters: CharacterSet? = nil,
+                     includeAppVersionParameter: Bool = true,
+                     doNotEnforcePrefix: Bool = false,
+                     onComplete: @escaping CompletionBlock = { _, _ in }) {
+
+        fire(event: event,
+             frequency: frequency,
+             options: Options(headers: headers,
+                              additionalParameters: params,
+                              namePrefix: namePrefix,
+                              allowedQueryReservedCharacters: allowedQueryReservedCharacters,
+                              includeAppVersionParameter: includeAppVersionParameter,
+                              enforcePrefix: !doNotEnforcePrefix),
+             onComplete: onComplete)
+    }
+
+    /// Fires a pixel on the shared instance and returns immediately.
+    ///
+    /// No-ops when PixelKit has not been set up, matching the previous behaviour.
+    public static func fire(_ event: PixelKit.Event,
+                            frequency: Frequency = .standard,
+                            options: Options = .default) {
+        Self.shared?.fire(event, frequency: frequency, options: options)
+    }
+
+    /// Fires a pixel on the shared instance and waits for the request to complete.
+    ///
+    /// - Throws: `PixelKitError.notConfigured` if PixelKit has not been set up. The synchronous
+    ///   variant silently no-ops in that case, but a caller that awaited a result cannot honestly
+    ///   be told the pixel was either sent or suppressed.
+    @discardableResult
+    public static func fireAsync(_ event: PixelKit.Event,
+                                 frequency: Frequency = .standard,
+                                 options: Options = .default) async throws -> FireResult {
+        guard let shared = Self.shared else {
+            throw PixelKitError.notConfigured
+        }
+        return try await shared.fireAsync(event, frequency: frequency, options: options)
+    }
+
+    /// Legacy wide-parameter static entry point. See the instance method above for why this is not
+    /// marked deprecated.
     public static func fire(_ event: PixelKit.Event,
                             frequency: Frequency = .standard,
                             withHeaders headers: [String: String] = [:],

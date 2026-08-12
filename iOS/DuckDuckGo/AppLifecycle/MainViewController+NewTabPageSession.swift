@@ -20,6 +20,7 @@
 import Core
 import Foundation
 import Suggestions
+import UIKit
 import VPN
 
 private extension ConnectionStatus {
@@ -64,6 +65,28 @@ extension MainViewController {
         } else {
             newTabPageSessionInstrumentation.vpnOff()
         }
+    }
+
+    /// Opens a visit when the app returns to a New Tab Page that is already on screen.
+    ///
+    /// Backgrounding ends the visit, and foregrounding does not re-attach the page, so the arrival
+    /// has nothing else to announce it. Without this, everything the user does after coming back
+    /// goes unrecorded until some other surface replaces the page.
+    func registerForNewTabPageSessionForegroundNotification() {
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(onForegroundWithNewTabPageOnScreen),
+                                               name: UIApplication.willEnterForegroundNotification,
+                                               object: nil)
+    }
+
+    @objc
+    private func onForegroundWithNewTabPageOnScreen() {
+        guard isNewTabPageVisible else { return }
+
+        // Not a burn arrival: a burn reports itself through the attach it causes.
+        startNewTabPageSessionInstrumentation(isNewTab: false,
+                                              willBeginEditing: keyboardShowing,
+                                              isAfterFire: false)
     }
 
     /// Records a New Tab Page action, but only while the New Tab Page is the surface on screen.

@@ -67,7 +67,7 @@
                                 },
                                 "trigger": {
                                     "type": "string",
-                                    "description": "What opened the New Tab Page. `app_open` = the New Tab Page was the surface the app launched into; `new_tab_opened` = the user opened a new tab within an already running app; `new_tab_opened_after_fire` = the New Tab Page the app lands on once the Fire button has cleared everything, which is a different intent from deliberately opening a blank tab.",
+                                    "description": "What opened the New Tab Page. `app_open` = the New Tab Page was the surface the app opened into, whether from a cold launch or a return from the background; `new_tab_opened` = the user opened a new tab within an already running app; `new_tab_opened_after_fire` = the New Tab Page the app lands on once the Fire button has cleared everything, which is a different intent from deliberately opening a blank tab.",
                                     "enum": ["app_open", "new_tab_opened", "new_tab_opened_after_fire"]
                                 },
                                 "launch_keyboard_mode": {

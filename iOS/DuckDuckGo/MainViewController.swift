@@ -779,6 +779,7 @@ class MainViewController: UIViewController {
         registerForPageRefreshPatterns()
         registerForSyncFeatureFlagsUpdates()
         registerForAppBackgroundNotification()
+        registerForNewTabPageSessionForegroundNotification()
         registerForDownloadMenuAlertNotifications()
 
         decorate()
@@ -2143,9 +2144,9 @@ class MainViewController: UIViewController {
 
     /// Opens a New Tab Page visit for the Starting Experience Success Rate wide event.
     ///
-    /// Re-attachments that are none of a launch, a new tab or a burn, such as switching to an
-    /// already empty tab, report `appOpen`.
-    private func startNewTabPageSessionInstrumentation(isNewTab: Bool, willBeginEditing: Bool, isAfterFire: Bool) {
+    /// Reported as `appOpen` when the arrival is none of a new tab or a burn: a cold launch, a
+    /// return from the background, or switching to an already empty tab.
+    func startNewTabPageSessionInstrumentation(isNewTab: Bool, willBeginEditing: Bool, isAfterFire: Bool) {
         let trigger: NewTabPageSessionWideEventData.Trigger
         if isAfterFire {
             trigger = .newTabOpenedAfterFire

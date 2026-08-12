@@ -87,6 +87,10 @@ protocol NewTabPageSessionInstrumentation: AnyObject {
     func vpnOn()
     func vpnOff()
 
+    /// The user was handed to another screen inside the app, such as Bookmarks or the VPN
+    /// settings. The time they spend there does not count as inactivity.
+    func noteUserLeftForAnotherScreen()
+
     // MARK: - Terminals
 
     /// A user action ended the visit. `terminalAction` decides the reported outcome.
@@ -143,6 +147,14 @@ final class DefaultNewTabPageSessionInstrumentation: NewTabPageSessionInstrument
     /// The action recorded last, so that a run of the same one counts as a single step.
     private var lastRecordedAction: ReferenceWritableKeyPath<NewTabPageSessionWideEventData, Bool>?
 
+    /// Set while the user is on another screen the app sent them to, so their next appearance is
+    /// read as a return rather than as a visit that went quiet.
+    private var isAwaitingReturnFromAnotherScreen = false
+
+    /// Total time spent on other screens, discounted from the overall cap so a long detour cannot
+    /// exhaust it on its own.
+    private var timeSpentOnOtherScreens: TimeInterval = 0
+
     init(wideEvent: WideEventManaging,
          dateProvider: @escaping () -> Date = { Date() },
          isEnabled: @escaping () -> Bool = { true },
@@ -193,6 +205,8 @@ final class DefaultNewTabPageSessionInstrumentation: NewTabPageSessionInstrument
                                                   globalData: WideEventGlobalData(sampleRate: sampleRate()))
         activeVisit = visit
         lastRecordedAction = nil
+        isAwaitingReturnFromAnotherScreen = false
+        timeSpentOnOtherScreens = 0
         // The framework consults the sample rate only here. A visit the sampler drops still
         // runs locally, and its later calls no-op.
         wideEvent.startFlow(visit)
@@ -232,6 +246,11 @@ final class DefaultNewTabPageSessionInstrumentation: NewTabPageSessionInstrument
     func emailCopied() { recordAction(\.emailCopied) }
     func vpnOn() { recordAction(\.vpnOn) }
     func vpnOff() { recordAction(\.vpnOff) }
+
+    func noteUserLeftForAnotherScreen() {
+        guard activeVisit != nil, lockedTerminal == nil else { return }
+        isAwaitingReturnFromAnotherScreen = true
+    }
 
     // MARK: - Terminals
 
@@ -307,12 +326,21 @@ final class DefaultNewTabPageSessionInstrumentation: NewTabPageSessionInstrument
 
         let now = dateProvider()
 
+        // Reading a screen the app opened is not abandoning the visit, so the gap it produced is
+        // discounted rather than counted against either threshold. Forgiven once per departure:
+        // whatever the user does next starts a fresh gap that counts normally.
+        if isAwaitingReturnFromAnotherScreen {
+            isAwaitingReturnFromAnotherScreen = false
+            timeSpentOnOtherScreens += now.timeIntervalSince(visit.lastActionAt)
+            visit.lastActionAt = now
+        }
+
         // Inactivity wins over the overall cap when both have elapsed: a visit that went
         // quiet was abandoned, whatever its total length.
         if now.timeIntervalSince(visit.lastActionAt) >= NewTabPageSessionWideEventData.noActionTimeout {
             lockedTerminal = .noActionTimeout
         } else if let startedAt = visit.sessionInterval.start,
-                  now.timeIntervalSince(startedAt) >= NewTabPageSessionWideEventData.maxSessionDuration {
+                  now.timeIntervalSince(startedAt) - timeSpentOnOtherScreens >= NewTabPageSessionWideEventData.maxSessionDuration {
             lockedTerminal = .maxDurationExceeded
         }
     }

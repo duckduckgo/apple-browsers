@@ -20,10 +20,51 @@
 import Core
 import Foundation
 import Suggestions
+import VPN
+
+private extension ConnectionStatus {
+
+    /// Treats the handshake as already on, so a toggle sampled mid-connect is not read as unchanged.
+    var isConnectedForSessionInstrumentation: Bool {
+        switch self {
+        case .connected, .connecting:
+            return true
+        case .notConfigured, .disconnected, .disconnecting, .reasserting, .snoozing:
+            return false
+        }
+    }
+}
 
 /// Call sites for the New Tab Page session wide event, which measures how often a visit to the
 /// New Tab Page ends in the user reaching what they came for.
 extension MainViewController {
+
+    /// Notes the VPN state as the user leaves the New Tab Page for the VPN screen, so a change
+    /// made while they are there can be attributed to them on their return.
+    func noteNewTabPageSessionVPNStateBeforeLeaving() {
+        guard isNewTabPageVisible else { return }
+        vpnConnectedWhenLeavingNewTabPage = AppDependencyProvider.shared.connectionObserver.recentValue.isConnectedForSessionInstrumentation
+    }
+
+    /// Records a VPN toggle the user made after leaving for the VPN screen.
+    ///
+    /// The state is sampled rather than observed, because the connection publisher also fires for
+    /// reconnects the user had nothing to do with. Sampling only around a deliberate visit to the
+    /// screen keeps those out, at the cost of attributing a self-healing reconnect during that
+    /// visit to the user.
+    func recordNewTabPageSessionVPNChangeIfNeeded() {
+        guard let wasConnected = vpnConnectedWhenLeavingNewTabPage else { return }
+        vpnConnectedWhenLeavingNewTabPage = nil
+
+        let isConnected = AppDependencyProvider.shared.connectionObserver.recentValue.isConnectedForSessionInstrumentation
+        guard isConnected != wasConnected, isNewTabPageVisible else { return }
+
+        if isConnected {
+            newTabPageSessionInstrumentation.vpnOn()
+        } else {
+            newTabPageSessionInstrumentation.vpnOff()
+        }
+    }
 
     /// Records a New Tab Page action, but only while the New Tab Page is the surface on screen.
     ///
@@ -32,6 +73,7 @@ extension MainViewController {
     /// whatever replaced it.
     func recordNewTabPageSessionAction(_ record: (NewTabPageSessionInstrumentation) -> Void) {
         guard isNewTabPageVisible else { return }
+        recordNewTabPageSessionVPNChangeIfNeeded()
         record(newTabPageSessionInstrumentation)
     }
 
@@ -62,6 +104,23 @@ extension MainViewController {
             case .aiChat: instrumentation.switchToggleToAiChat()
             }
         }
+    }
+
+    /// Records opening a screen from the browsing menu.
+    ///
+    /// The visit stays open: the menu takes the user somewhere else in the app, and they usually
+    /// come back. Ending it here would lose everything they do next, including the selection the
+    /// entry leads to.
+    func recordNewTabPageSessionMenuEntry(_ record: (NewTabPageSessionInstrumentation) -> Void) {
+        recordNewTabPageSessionAction(record)
+        recordNewTabPageSessionDeparture()
+    }
+
+    /// Marks that the user is now reading a screen the app opened over the New Tab Page, so the
+    /// time they spend there is not mistaken for abandoning the visit.
+    func recordNewTabPageSessionDeparture() {
+        guard isNewTabPageVisible else { return }
+        newTabPageSessionInstrumentation.noteUserLeftForAnotherScreen()
     }
 
     /// Ends the visit on the customizable toolbar button doing something other than burning.
@@ -96,8 +155,8 @@ extension MainViewController {
             terminalAction = .loadSearchSuggestion
         case .website(let url):
             terminalAction = url.isBookmarklet() ? nil : .loadWebsite
-        case .bookmark:
-            terminalAction = .selectBookmark
+        case .bookmark(_, let url, _, _):
+            terminalAction = url.isBookmarklet() ? nil : .loadWebsite
         case .historyEntry(_, let url, _):
             // History covers both past searches and past sites, so the URL decides which.
             terminalAction = url.isDuckDuckGoSearch ? .loadSerp : .loadWebsite

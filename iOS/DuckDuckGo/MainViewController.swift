@@ -206,6 +206,9 @@ class MainViewController: UIViewController {
     /// Set by the data clearing path so the New Tab Page it lands on is attributed to the
     /// Fire button rather than to an ordinary new tab. Consumed by the next visit start.
     private var isAttachingNewTabPageAfterFire = false
+    /// VPN connection state as the user left the New Tab Page for the VPN screen, so a toggle made
+    /// there can be told apart from a reconnect that happened on its own.
+    var vpnConnectedWhenLeavingNewTabPage: Bool?
     let duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation
     let syncAutoRestoreHandler: SyncAutoRestoreHandling
     private let lastActiveTabStore: LastActiveTabStoring
@@ -1448,6 +1451,7 @@ class MainViewController: UIViewController {
             ntpAfterIdleInstrumentation.appBackgroundedFromNTP(afterIdle: tab.openedAfterIdle)
         }
         postIdleSessionInstrumentation.sessionCancelledByBackground()
+        recordNewTabPageSessionVPNChangeIfNeeded()
         newTabPageSessionInstrumentation.visitBackgrounded()
 
         /// Resign the web view's first responder when backgrounding with the tab switcher
@@ -2238,6 +2242,7 @@ class MainViewController: UIViewController {
 
     @objc func onPasswordsPressed() {
         recordNewTabPageSessionAction { $0.tapPasswordsToolbarItem() }
+        recordNewTabPageSessionDeparture()
         launchAutofillLogins(source: .newTabPageToolbar)
     }
 
@@ -5061,6 +5066,7 @@ extension MainViewController: OmniBarDelegate {
 
     @objc func onToolbarBookmarksPressed() {
         recordNewTabPageSessionAction { $0.tapBookmarksToolbarItem() }
+        recordNewTabPageSessionDeparture()
         Pixel.fire(pixel: .bookmarksOpenFromToolbar)
         onBookmarksPressed()
     }
@@ -6263,6 +6269,7 @@ extension MainViewController: TabDelegate {
     }
 
     func tabDidRequestNewTab(_ tab: TabViewController) {
+        recordNewTabPageSessionMenuEntry { $0.menuItemSelected() }
         _ = findInPageView?.resignFirstResponder()
         // Pre-arm logo hiding BEFORE newTab() because attachHomeScreen() may call
         // omniBar.beginEditing(animated:) when KeyboardSettings.onNewTab is enabled, which
@@ -6275,6 +6282,7 @@ extension MainViewController: TabDelegate {
     }
 
     func tabDidRequestNewVoiceChat(_ tab: TabViewController) {
+        recordNewTabPageSessionMenuEntry { $0.menuItemSelected() }
         // Same as the Duck.ai header Plus-menu "New Voice Chat".
         aiChatTabChatHeaderDidTapNewVoiceChat()
     }
@@ -6394,6 +6402,7 @@ extension MainViewController: TabDelegate {
     }
 
     func tabDidRequestAIChat(tab: TabViewController) {
+        recordNewTabPageSessionMenuEntry { $0.menuItemSelected() }
         fireAIChatUsagePixelAndSetFeatureUsed(tab.link == nil ? .browsingMenuAIChatNewTabPage : .browsingMenuAIChatWebPage)
         if DevicePlatform.isIpad {
             newTab(allowingKeyboard: false)
@@ -6414,7 +6423,7 @@ extension MainViewController: TabDelegate {
     }
 
     func tabDidRequestAIChatHistory(tab: TabViewController, source: AIChatHistorySource) {
-        recordNewTabPageSessionAction { $0.menuChats() }
+        recordNewTabPageSessionMenuEntry { $0.menuChats() }
         openAIChatHistory(source: source)
     }
 
@@ -6458,7 +6467,7 @@ extension MainViewController: TabDelegate {
     }
 
     func tabDidRequestBookmarks(tab: TabViewController) {
-        recordNewTabPageSessionAction { $0.menuBookmarks() }
+        recordNewTabPageSessionMenuEntry { $0.menuBookmarks() }
         Pixel.fire(pixel: .bookmarksButtonPressed,
                    withAdditionalParameters: [PixelParameters.originatedFromMenu: "1"])
         onBookmarksPressed()
@@ -6469,13 +6478,17 @@ extension MainViewController: TabDelegate {
     }
     
     func tabDidRequestDownloads(tab: TabViewController) {
-        recordNewTabPageSessionAction { $0.menuDownloads() }
+        recordNewTabPageSessionMenuEntry { $0.menuDownloads() }
         segueToDownloads()
     }
     
     func tab(_ tab: TabViewController,
              didRequestAutofillLogins account: SecureVaultModels.WebsiteAccount?,
              source: AutofillSettingsSource, extensionPromotionManager: AutofillExtensionPromotionManaging? = nil) {
+        // In-page autofill reaches this too, so the source is what identifies the menu entry.
+        if source == .overflow {
+            recordNewTabPageSessionMenuEntry { $0.menuPasswords() }
+        }
         launchAutofillLogins(with: currentTab?.url, currentTabUid: tab.tabModel.uid, source: source, selectedAccount: account, extensionPromotionManager: extensionPromotionManager)
     }
 
@@ -6485,6 +6498,7 @@ extension MainViewController: TabDelegate {
     }
 
     func tabDidRequestSettings(tab: TabViewController) {
+        recordNewTabPageSessionMenuEntry { $0.menuItemSelected() }
         segueToSettings()
     }
 
@@ -6503,7 +6517,8 @@ extension MainViewController: TabDelegate {
     }
 
     func tabDidRequestSettingsToVPN(_ tab: TabViewController) {
-        recordNewTabPageSessionAction { $0.menuVpn() }
+        recordNewTabPageSessionMenuEntry { $0.menuVpn() }
+        noteNewTabPageSessionVPNStateBeforeLeaving()
         segueToVPN(source: .browserMenu)
     }
 
@@ -6838,11 +6853,14 @@ extension MainViewController: TabSwitcherDelegate {
 
 extension MainViewController: BookmarksDelegate {
     func bookmarksDidSelect(url: URL) {
+        recordNewTabPageSessionAction { $0.selectBookmark() }
 
         dismissOmniBar()
         if url.isBookmarklet() {
+            // Runs against the current page rather than navigating, so the visit continues.
             executeBookmarklet(url)
         } else {
+            endNewTabPageSessionWithLoad(of: url)
             loadUrlRespectingAIBoundary(url)
         }
     }
@@ -6929,6 +6947,7 @@ extension MainViewController: GestureToolbarButtonDelegate {
     
     func singleTapDetected(in sender: GestureToolbarButton) {
         recordNewTabPageSessionAction { $0.tapBookmarksToolbarItem() }
+        recordNewTabPageSessionDeparture()
         Pixel.fire(pixel: .bookmarksButtonPressed,
                    withAdditionalParameters: [PixelParameters.originatedFromMenu: "0"])
         onBookmarksPressed()
@@ -7595,6 +7614,10 @@ extension MainViewController {
 
 // MARK: - AutofillLoginSettingsListViewControllerDelegate
 extension MainViewController: AutofillLoginListViewControllerDelegate {
+    func autofillLoginListViewControllerDidSelectAccount(_ controller: AutofillLoginListViewController) {
+        recordNewTabPageSessionAction { $0.selectPassword() }
+    }
+
     func autofillLoginListViewControllerDidFinish(_ controller: AutofillLoginListViewController) {
         controller.dismiss(animated: true)
     }
@@ -7949,6 +7972,8 @@ extension MainViewController {
             self.launchAutofillLogins(with: currentTab?.url, currentTabUid: currentTab?.tabModel.uid, source: .customizedToolbarButton, selectedAccount: nil)
 
         case .vpn:
+            self.noteNewTabPageSessionVPNStateBeforeLeaving()
+            self.recordNewTabPageSessionDeparture()
             self.presentNetworkProtectionStatusSettingsModal(entryPoint: .toolbar)
 
         case .share:
@@ -8030,6 +8055,7 @@ extension MainViewController {
             onFirePressed()
 
         case .vpn:
+            noteNewTabPageSessionVPNStateBeforeLeaving()
             presentNetworkProtectionStatusSettingsModal(entryPoint: .addressBar)
 
         case .zoom:

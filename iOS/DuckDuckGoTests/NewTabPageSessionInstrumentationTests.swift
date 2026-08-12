@@ -133,6 +133,13 @@ struct NewTabPageSessionInstrumentationTests {
             ActionCase(name: "dismissKeyboard", invoke: { $0.dismissKeyboard() }, flag: \.dismissKeyboard),
             ActionCase(name: "scrollView", invoke: { $0.scrollView() }, flag: \.scrollView),
             ActionCase(name: "utiBackArrow", invoke: { $0.utiBackArrow() }, flag: \.utiBackArrow),
+            ActionCase(name: "menuItemSelected", invoke: { $0.menuItemSelected() }, flag: \.menuItemSelected),
+            ActionCase(name: "selectBookmark", invoke: { $0.selectBookmark() }, flag: \.selectBookmark),
+            ActionCase(name: "selectPassword", invoke: { $0.selectPassword() }, flag: \.selectPassword),
+            ActionCase(name: "selectDownload", invoke: { $0.selectDownload() }, flag: \.selectDownload),
+            ActionCase(name: "emailCopied", invoke: { $0.emailCopied() }, flag: \.emailCopied),
+            ActionCase(name: "vpnOn", invoke: { $0.vpnOn() }, flag: \.vpnOn),
+            ActionCase(name: "vpnOff", invoke: { $0.vpnOff() }, flag: \.vpnOff),
         ]
     }
 
@@ -494,6 +501,44 @@ struct NewTabPageSessionInstrumentationTests {
         sut.typeInInput()
 
         #expect(activeVisit(wideEvent)?.actionCount == 4)
+    }
+
+    @available(iOS 16, *)
+    @Test("Time on a screen the app opened is not counted as inactivity", .timeLimit(.minutes(1)))
+    func timeOnAnotherScreenDoesNotTimeOut() {
+        let (sut, wideEvent, clock) = makeSUT()
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: true)
+
+        sut.openMenu()
+        sut.noteUserLeftForAnotherScreen()
+
+        // Longer than the inactivity timeout, spent reading the screen rather than doing nothing.
+        clock.advance(by: 90)
+        sut.selectPassword()
+
+        #expect(wideEvent.completions.isEmpty)
+        #expect(activeVisit(wideEvent)?.selectPassword == true)
+
+        sut.visitEnded(terminalAction: .loadWebsite)
+        #expect(lastCompletion(wideEvent)?.0.terminalAction == .loadWebsite)
+        #expect(lastCompletion(wideEvent)?.1 == .success)
+    }
+
+    @available(iOS 16, *)
+    @Test("Only the departure is forgiven, so going quiet afterwards still times out", .timeLimit(.minutes(1)))
+    func inactivityAfterReturningStillTimesOut() {
+        let (sut, wideEvent, clock) = makeSUT()
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: true)
+
+        sut.openMenu()
+        sut.noteUserLeftForAnotherScreen()
+        clock.advance(by: 90)
+        sut.selectPassword()
+
+        clock.advance(by: 45)
+        sut.visitBackgrounded()
+
+        #expect(lastCompletion(wideEvent)?.0.terminalAction == .noActionTimeout)
     }
 
     @available(iOS 16, *)

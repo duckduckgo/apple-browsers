@@ -4,7 +4,7 @@
         "owners": ["dus7"],
         "meta": {
             "type": "ios-new-tab-page-session",
-            "version": "0.0"
+            "version": "1.0"
         },
         "feature": {
             "name": "new-tab-page-session",
@@ -32,7 +32,7 @@
                     },
                     "terminal_action": {
                         "type": "string",
-                        "description": "The single action that ended the visit. The first eighteen values (`load_serp` through `custom_button`) are user actions and map to SUCCESS. `custom_button` is the customizable toolbar button set to something other than Fire, reachable on the New Tab Page only while icon customization is enabled. `no_action_timeout` (the user took no action for 30 seconds) and `max_duration_exceeded` (the visit reached the 2 minute overall limit without ending) map to FAILURE. `app_backgrounded` maps to CANCELLED. `app_terminated` maps to UNKNOWN and is used for a visit recovered after the app was killed.",
+                        "description": "The single action that ended the visit, meaning the user left the New Tab Page. The first eleven values (`load_serp` through `custom_button`) map to SUCCESS. `custom_button` is the customizable toolbar button set to something other than Fire, reachable on the New Tab Page only while icon customization is enabled. `no_action_timeout` (the user took no action for 30 seconds) and `max_duration_exceeded` (the visit reached the 2 minute overall limit without ending) map to FAILURE. `app_backgrounded` maps to CANCELLED. `app_terminated` maps to UNKNOWN and is used for a visit recovered after the app was killed. Steps that leave the user on the New Tab Page, such as copying a private email address or opening the browsing menu, are recorded under `actions` instead and let the visit continue.",
                         "enum": [
                             "load_serp",
                             "load_search_suggestion",
@@ -43,14 +43,7 @@
                             "last_tab_loaded",
                             "select_other_tab",
                             "swipe_to_other_tab",
-                            "select_bookmark",
-                            "select_password",
-                            "select_download",
                             "delete_data",
-                            "vpn_on",
-                            "vpn_off",
-                            "email_copied",
-                            "menu_item_selected",
                             "custom_button",
                             "no_action_timeout",
                             "max_duration_exceeded",
@@ -176,6 +169,34 @@
                             "uti_back_arrow": {
                                 "type": "boolean",
                                 "description": "True if the user tapped the back arrow in the Unified Toggle Input during the visit"
+                            },
+                            "menu_item_selected": {
+                                "type": "boolean",
+                                "description": "True if the user selected a top level menu entry that has no flag of its own, such as New Tab, Settings or Duck.ai, during the visit"
+                            },
+                            "select_bookmark": {
+                                "type": "boolean",
+                                "description": "True if the user opened a bookmark from the Bookmarks screen during the visit"
+                            },
+                            "select_password": {
+                                "type": "boolean",
+                                "description": "True if the user opened a saved login from the Passwords screen during the visit"
+                            },
+                            "select_download": {
+                                "type": "boolean",
+                                "description": "True if the user opened a download from the Downloads screen during the visit"
+                            },
+                            "email_copied": {
+                                "type": "boolean",
+                                "description": "True if a new private email address was copied to the clipboard during the visit"
+                            },
+                            "vpn_on": {
+                                "type": "boolean",
+                                "description": "True if the VPN went from off to on across a visit the user made to the VPN screen. Read by sampling the connection state when the user leaves for that screen and again when they return, so a tunnel that reconnects by itself while they are on the screen is attributed to them."
+                            },
+                            "vpn_off": {
+                                "type": "boolean",
+                                "description": "True if the VPN went from on to off across a visit the user made to the VPN screen. Sampled the same way as `vpn_on`."
                             }
                         }
                     }

@@ -76,6 +76,17 @@ protocol NewTabPageSessionInstrumentation: AnyObject {
     /// The back arrow that leaves search mode, in the omnibar's unified text input.
     func utiBackArrow()
 
+    /// A top level menu entry with no flag of its own, such as New Tab or Settings.
+    func menuItemSelected()
+
+    func selectBookmark()
+    func selectPassword()
+    func selectDownload()
+    func emailCopied()
+
+    func vpnOn()
+    func vpnOff()
+
     // MARK: - Terminals
 
     /// A user action ended the visit. `terminalAction` decides the reported outcome.
@@ -214,6 +225,13 @@ final class DefaultNewTabPageSessionInstrumentation: NewTabPageSessionInstrument
     func dismissKeyboard() { recordAction(\.dismissKeyboard) }
     func scrollView() { recordStreamedAction(\.scrollView) }
     func utiBackArrow() { recordAction(\.utiBackArrow) }
+    func menuItemSelected() { recordAction(\.menuItemSelected) }
+    func selectBookmark() { recordAction(\.selectBookmark) }
+    func selectPassword() { recordAction(\.selectPassword) }
+    func selectDownload() { recordAction(\.selectDownload) }
+    func emailCopied() { recordAction(\.emailCopied) }
+    func vpnOn() { recordAction(\.vpnOn) }
+    func vpnOff() { recordAction(\.vpnOff) }
 
     // MARK: - Terminals
 

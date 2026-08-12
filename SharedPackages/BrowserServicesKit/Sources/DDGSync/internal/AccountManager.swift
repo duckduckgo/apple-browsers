@@ -401,6 +401,7 @@ struct UpdateDevices {
         let id: String
         let name: String?
         let type: String?
+        /// Unlike name and type, nil omits this field and clears any stored device info.
         let info: String?
     }
 

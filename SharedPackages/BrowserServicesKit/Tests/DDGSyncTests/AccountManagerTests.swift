@@ -632,6 +632,22 @@ final class AccountManagerTests: XCTestCase {
         XCTAssertEqual(encodedUpdate["info"] as? String, "encrypted-info")
     }
 
+    func testWhenEncodingUpdateDevicesParametersWithoutInfoThenOmitsInfo() throws {
+        let deviceUpdate = UpdateDevices.Update(
+            id: "device-1",
+            name: "encrypted-name",
+            type: "encrypted-type",
+            info: nil)
+        let parameters = UpdateDevices.Parameters(updates: [deviceUpdate])
+
+        let data = try JSONEncoder.snakeCaseKeys.encode(parameters)
+        let body = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        let updates = try XCTUnwrap(body["updates"] as? [[String: Any]])
+        let encodedUpdate = try XCTUnwrap(updates.first)
+
+        XCTAssertEqual(Set(encodedUpdate.keys), ["id", "name", "type"])
+    }
+
     func testWhenDecodingUpdateDevicesResultThenMapsLegacyAndUnifiedDevices() throws {
         let json = """
         {

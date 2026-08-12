@@ -36,7 +36,7 @@ extension TabNavigationTestHelpers {
         )
         app.addressBar.pasteURL(url)
         XCTAssertTrue(
-            app.windows.firstMatch.webViews[title].waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            app.windows.firstMatch.webViews[title].waitForExistence(timeout: UITests.Timeouts.localTestServer),
             "Visited site didn't load with the expected title in a reasonable timeframe."
         )
     }

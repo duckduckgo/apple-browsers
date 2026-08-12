@@ -45,7 +45,7 @@ final class TabNavigationInterfaceTests: UITestCase, TabNavigationTestHelpers {
             link.click()
         }
 
-        XCTAssertTrue(app.tabs["Opened Tab"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCTAssertTrue(app.tabs["Opened Tab"].waitForExistence(timeout: UITests.Timeouts.localTestServer))
         XCTAssertEqual(app.windows.count, 1)
         XCTAssertTrue(app.webViews["Page #1"].exists)
         XCTAssertTrue(app.tabs["Page #1"].exists)
@@ -79,7 +79,7 @@ final class TabNavigationInterfaceTests: UITestCase, TabNavigationTestHelpers {
             link.click()
         }
 
-        XCTAssertTrue(app.webViews["Opened Tab"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCTAssertTrue(app.webViews["Opened Tab"].waitForExistence(timeout: UITests.Timeouts.localTestServer))
         XCTAssertEqual(app.windows.count, 1)
         XCTAssertFalse(app.webViews["Page #3"].exists)
         XCTAssertTrue(app.tabs["Opened Tab"].exists)
@@ -121,7 +121,7 @@ final class TabNavigationInterfaceTests: UITestCase, TabNavigationTestHelpers {
         XCTAssertTrue(backgroundWindow.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         XCTAssertEqual(app.windows.count, 2)
 
-        XCTAssertTrue(backgroundWindow.webViews["New Window Page"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCTAssertTrue(backgroundWindow.webViews["New Window Page"].waitForExistence(timeout: UITests.Timeouts.localTestServer))
         XCTAssertFalse(mainWindow.webViews["New Window Page"].exists)
 
         XCTAssertTrue(mainWindow.webViews["Page #5"].exists)
@@ -150,7 +150,7 @@ final class TabNavigationInterfaceTests: UITestCase, TabNavigationTestHelpers {
         XCTAssertTrue(backgroundWindow.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         XCTAssertEqual(app.windows.count, 2)
 
-        XCTAssertTrue(backgroundWindow.webViews["New Window Page"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCTAssertTrue(backgroundWindow.webViews["New Window Page"].waitForExistence(timeout: UITests.Timeouts.localTestServer))
         XCTAssertFalse(mainWindow.webViews["New Window Page"].exists)
 
         XCTAssertTrue(mainWindow.webViews["Page #6"].exists)

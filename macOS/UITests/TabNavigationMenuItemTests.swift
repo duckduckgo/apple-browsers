@@ -89,7 +89,7 @@ final class TabNavigationMenuItemTests: UITestCase, TabNavigationTestHelpers {
             bookmarkItem.click()
         }
 
-        XCTAssertTrue(app.tabs["Page #13"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCTAssertTrue(app.tabs["Page #13"].waitForExistence(timeout: UITests.Timeouts.localTestServer))
         XCTAssertEqual(app.windows.count, 1)
         XCTAssertTrue(app.webViews["Other Page"].exists)    // Original page still visible
         XCTAssertFalse(app.webViews["Page #13"].exists)     // Bookmark page in background
@@ -121,7 +121,7 @@ final class TabNavigationMenuItemTests: UITestCase, TabNavigationTestHelpers {
             bookmarkItem.click()
         }
 
-        XCTAssertTrue(app.webViews["Page #13"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCTAssertTrue(app.webViews["Page #13"].waitForExistence(timeout: UITests.Timeouts.localTestServer))
         XCTAssertEqual(app.windows.count, 1)
         XCTAssertFalse(app.webViews["Other Page"].exists)   // Original page now in background
         XCTAssertTrue(app.tabs["Page #13"].exists)
@@ -220,7 +220,7 @@ final class TabNavigationMenuItemTests: UITestCase, TabNavigationTestHelpers {
 
         bookmarkItem.middleClick()
 
-        XCTAssertTrue(app.tabs["Page #13"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCTAssertTrue(app.tabs["Page #13"].waitForExistence(timeout: UITests.Timeouts.localTestServer))
         XCTAssertEqual(app.windows.count, 1)
         XCTAssertTrue(app.webViews["Other Page"].exists)    // Original page still visible
         XCTAssertFalse(app.webViews["Page #13"].exists)     // Bookmark page in background
@@ -252,7 +252,7 @@ final class TabNavigationMenuItemTests: UITestCase, TabNavigationTestHelpers {
             bookmarkItem.middleClick()
         }
 
-        XCTAssertTrue(app.webViews["Page #13"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCTAssertTrue(app.webViews["Page #13"].waitForExistence(timeout: UITests.Timeouts.localTestServer))
         XCTAssertEqual(app.windows.count, 1)
         XCTAssertFalse(app.webViews["Other Page"].exists)   // Original page now in background
         XCTAssertTrue(app.tabs["Page #13"].exists)
@@ -906,7 +906,7 @@ final class TabNavigationMenuItemTests: UITestCase, TabNavigationTestHelpers {
         var panelBookmarkItem = panelBookmarkTargetItem(in: mainWindow)
         panelBookmarkItem.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click()
         // Target page should be active in the current tab.
-        XCTAssertTrue(app.webViews["Panel Bookmark Target"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCTAssertTrue(app.webViews["Panel Bookmark Target"].waitForExistence(timeout: UITests.Timeouts.localTestServer))
         // No new window should be created.
         XCTAssertEqual(app.windows.count, 1)
         // Source page should no longer be active.
@@ -941,7 +941,7 @@ final class TabNavigationMenuItemTests: UITestCase, TabNavigationTestHelpers {
             commandShiftPanelBookmarkClick.click()
         }
         // Target page should be active.
-        XCTAssertTrue(app.webViews["Panel Bookmark Target"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCTAssertTrue(app.webViews["Panel Bookmark Target"].waitForExistence(timeout: UITests.Timeouts.localTestServer))
         // No new window should be created.
         XCTAssertEqual(app.windows.count, 1)
         // Source page should no longer be active.

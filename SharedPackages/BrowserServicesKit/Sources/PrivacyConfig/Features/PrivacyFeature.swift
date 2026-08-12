@@ -603,7 +603,6 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case syncCreditCards
     case syncIdentities
     case aiChatSync
-    case aiChatSyncPromo
     case allowSingleDeviceOnConnectScreen
     case scopedAccessCredentials
     case canUseV2ConnectFlow

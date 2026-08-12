@@ -26,6 +26,7 @@ import PrivacyConfig
 import DataBrokerProtection_iOS
 import PixelKit
 import FeatureFlags_iOS
+import Persistence
 
 enum SubscriptionFlowType {
     case firstPurchase
@@ -88,6 +89,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
         var selectedFeature: SelectedFeature = .none
         var viewTitle: String = UserText.subscriptionTitle
         var shouldGoBackToSettings: Bool = false
+        var shouldPresentOnboarding: Bool = false
     }
     
     // Read only View State - Should only be modified from the VM
@@ -95,6 +97,51 @@ final class SubscriptionFlowViewModel: ObservableObject {
 
     var isPIREnabled: Bool {
         featureFlagger.isFeatureOn(.personalInformationRemoval)
+    }
+
+    // MARK: - Post-checkout onboarding
+
+    /// `nil` unless this flow came from `makeSubscribeFlowV2`
+    private let onboardingKeyValueStore: ThrowingKeyValueStoring?
+
+    private let meetsPIRLocaleRequirement: () -> Bool
+
+    private var isPIRAvailable: Bool {
+        PIRAvailability.isAvailable(isPIREnabled: isPIREnabled,
+                                    meetsLocaleRequirement: meetsPIRLocaleRequirement(),
+                                    provider: dataBrokerProtectionViewControllerProvider)
+    }
+
+    /// Latched so a defensive re-invocation of `onPurchaseCompleted` cannot re-offer the flow.
+    private var didRequestOnboarding = false
+
+    var onboardingProgress: SubscriptionOnboardingProgress? {
+        guard let onboardingKeyValueStore else { return nil }
+        return SubscriptionOnboardingProgress(
+            persistor: SubscriptionOnboardingProgressPersistor(keyValueStore: onboardingKeyValueStore),
+            isPIRAvailable: isPIRAvailable)
+    }
+
+    /// A pure rule so it can be tested
+    static func shouldRequestOnboarding(flowType: SubscriptionFlowType,
+                                        hasOnboardingStore: Bool,
+                                        isFeatureEnabled: Bool,
+                                        didAlreadyRequest: Bool) -> Bool {
+        !didAlreadyRequest
+            && flowType == .firstPurchase
+            && hasOnboardingStore
+            && isFeatureEnabled
+    }
+
+    /// Called when the App Store purchase itself completes
+    private func requestOnboardingIfNeeded() {
+        guard Self.shouldRequestOnboarding(
+            flowType: flowType,
+            hasOnboardingStore: onboardingKeyValueStore != nil,
+            isFeatureEnabled: featureFlagger.isFeatureOn(.subscriptionOnboarding),
+            didAlreadyRequest: didRequestOnboarding) else { return }
+        didRequestOnboarding = true
+        state.shouldPresentOnboarding = true
     }
 
     /// Returns the subscription URL type based on the current flow type
@@ -120,7 +167,9 @@ final class SubscriptionFlowViewModel: ObservableObject {
          urlOpener: URLOpener = UIApplication.shared,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          wideEvent: WideEventManaging = AppDependencyProvider.shared.wideEvent,
-         dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?) {
+         dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
+         onboardingKeyValueStore: ThrowingKeyValueStoring?,
+         meetsPIRLocaleRequirement: @escaping () -> Bool) {
         self.initialURL = initialURL
         self.flowType = flowType
         self.userScript = userScript
@@ -131,6 +180,8 @@ final class SubscriptionFlowViewModel: ObservableObject {
         self.featureFlagger = featureFlagger
         self.wideEvent = wideEvent
         self.dataBrokerProtectionViewControllerProvider = dataBrokerProtectionViewControllerProvider
+        self.onboardingKeyValueStore = onboardingKeyValueStore
+        self.meetsPIRLocaleRequirement = meetsPIRLocaleRequirement
         let allowedDomains = AsyncHeadlessWebViewSettings.makeAllowedDomains(baseURL: subscriptionManager.url(for: .baseURL),
                                                                              isInternalUser: isInternalUser)
 
@@ -172,7 +223,13 @@ final class SubscriptionFlowViewModel: ObservableObject {
                 self.setTransactionStatus(.idle)
             }
         }
-        
+
+        subFeature.onPurchaseCompleted = {
+            DispatchQueue.main.async {
+                self.requestOnboardingIfNeeded()
+            }
+        }
+
          subFeature.onFeatureSelected = { feature in
              DispatchQueue.main.async {
                  switch feature {

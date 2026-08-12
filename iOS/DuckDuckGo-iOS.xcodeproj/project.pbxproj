@@ -271,6 +271,9 @@
 		3666D86730017A6800B63F99 /* SubscriptionOnboardingCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3666D86630017A6800B63F99 /* SubscriptionOnboardingCard.swift */; };
 		3666D86D30017B1400B63F99 /* RebrandedPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3666D86B30017B1400B63F99 /* RebrandedPreview.swift */; };
 		3666D8753001917B00B63F99 /* SubscriptionOnboardingChecklistItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3666D8733001917B00B63F99 /* SubscriptionOnboardingChecklistItem.swift */; };
+		36DD9FE5302BB9CE00D12A6A /* SubscriptionOnboardingInstrumentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36DD9FE3302BB9CE00D12A6A /* SubscriptionOnboardingInstrumentation.swift */; };
+		36DD9FDE302BB99300D12A6A /* SubscriptionOnboardingInstrumentationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36DD9FDD302BB99300D12A6A /* SubscriptionOnboardingInstrumentationTests.swift */; };
+		36DD9FE0302BB99D00D12A6A /* SubscriptionOnboardingPostCheckoutTriggerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36DD9FDF302BB99D00D12A6A /* SubscriptionOnboardingPostCheckoutTriggerTests.swift */; };
 		36DD9FD7302B88A600D12A6A /* GraphicLottieRenderer+App.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36DD9FD6302B88A600D12A6A /* GraphicLottieRenderer+App.swift */; };
 		36DD9FD9302BA75500D12A6A /* SubscriptionOnboardingProtectionOverviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36DD9FD8302BA75500D12A6A /* SubscriptionOnboardingProtectionOverviewView.swift */; };
 		368349D5302689AC009BDEF7 /* SubscriptionOnboardingFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 368349D4302689AC009BDEF7 /* SubscriptionOnboardingFlowView.swift */; };
@@ -3227,6 +3230,9 @@
 		3666D86630017A6800B63F99 /* SubscriptionOnboardingCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingCard.swift; sourceTree = "<group>"; };
 		3666D86B30017B1400B63F99 /* RebrandedPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RebrandedPreview.swift; sourceTree = "<group>"; };
 		3666D8733001917B00B63F99 /* SubscriptionOnboardingChecklistItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingChecklistItem.swift; sourceTree = "<group>"; };
+		36DD9FE3302BB9CE00D12A6A /* SubscriptionOnboardingInstrumentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Pixels/SubscriptionOnboardingInstrumentation.swift"; sourceTree = "<group>"; };
+		36DD9FDD302BB99300D12A6A /* SubscriptionOnboardingInstrumentationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingInstrumentationTests.swift; sourceTree = "<group>"; };
+		36DD9FDF302BB99D00D12A6A /* SubscriptionOnboardingPostCheckoutTriggerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingPostCheckoutTriggerTests.swift; sourceTree = "<group>"; };
 		36DD9FD6302B88A600D12A6A /* GraphicLottieRenderer+App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "GraphicLottieRenderer+App.swift"; sourceTree = "<group>"; };
 		36DD9FD8302BA75500D12A6A /* SubscriptionOnboardingProtectionOverviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingProtectionOverviewView.swift; sourceTree = "<group>"; };
 		368349D4302689AC009BDEF7 /* SubscriptionOnboardingFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingFlowView.swift; sourceTree = "<group>"; };
@@ -7036,6 +7042,7 @@
 			isa = PBXGroup;
 			children = (
 				3666D878300193DB00B63F99 /* Resources */,
+				36DD9FE3302BB9CE00D12A6A /* SubscriptionOnboardingInstrumentation.swift */,
 				3666D876300193CC00B63F99 /* SubscriptionOnboardingUserText.swift */,
 				3666D8743001917B00B63F99 /* Models */,
 				3666D86C30017B1400B63F99 /* Helpers */,
@@ -7102,6 +7109,8 @@
 				3901A00979D78E26EF811EEA /* SubscriptionOnboardingSectionTests.swift */,
 				368349DE30268B2E009BDEF7 /* SubscriptionOnboardingFlowViewModelTests.swift */,
 				36DD9FE1302BB9A600D12A6A /* SubscriptionOnboardingProgressTests.swift */,
+				36DD9FDD302BB99300D12A6A /* SubscriptionOnboardingInstrumentationTests.swift */,
+				36DD9FDF302BB99D00D12A6A /* SubscriptionOnboardingPostCheckoutTriggerTests.swift */,
 			);
 			path = Onboarding;
 			sourceTree = "<group>";
@@ -13866,6 +13875,7 @@
 				36E8274830264E8300147F78 /* SubscriptionOnboardingOrderConfirmationView.swift in Sources */,
 				36E8274930264E8300147F78 /* SubscriptionOnboardingOrderConfirmationViewModel.swift in Sources */,
 				36E8274D3026508B00147F78 /* SubscriptionOnboardingProgressCardView.swift in Sources */,
+				36DD9FE5302BB9CE00D12A6A /* SubscriptionOnboardingInstrumentation.swift in Sources */,
 				36699A30302CD4F600D1E3EE /* PIRAvailability.swift in Sources */,
 				3677BA07302B78D2004E95E3 /* SubscriptionOnboardingActivationRecorder.swift in Sources */,
 				3677BA08302B78D2004E95E3 /* SubscriptionOnboardingProgress.swift in Sources */,
@@ -14875,6 +14885,8 @@
 				368349DF30268B2E009BDEF7 /* SubscriptionOnboardingFlowViewModelTests.swift in Sources */,
 				36DD9FE2302BB9A600D12A6A /* SubscriptionOnboardingProgressTests.swift in Sources */,
 				36E8274B3026506A00147F78 /* SubscriptionOnboardingOrderConfirmationViewModelTests.swift in Sources */,
+				36DD9FDE302BB99300D12A6A /* SubscriptionOnboardingInstrumentationTests.swift in Sources */,
+				36DD9FE0302BB99D00D12A6A /* SubscriptionOnboardingPostCheckoutTriggerTests.swift in Sources */,
 				CB3B4D4E2D63910B006DAD63 /* LaunchActionHandlerTests.swift in Sources */,
 				CBAD0F1F2D02EE45006267B8 /* IdleReturnEvaluatorTests.swift in Sources */,
 				97D99E642F7420A900EE34E7 /* AIVoiceChatIntentTests.swift in Sources */,

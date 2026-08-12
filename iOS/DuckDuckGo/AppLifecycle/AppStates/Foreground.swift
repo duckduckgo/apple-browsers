@@ -127,6 +127,8 @@ struct Foreground: ForegroundHandling {
         Logger.lifecycle.info("\(type(of: self)): \(#function)")
 
         configureAppearance()
+        // Capture before starting asynchronous readiness work. Backgrounding replaces the service token, so a stale
+        // callback from this foreground cycle cannot reopen coordinated promo admission.
         let promoCoordinationReadinessToken = appDependencies.mainCoordinator.capturePromoCoordinationForegroundReadinessToken()
 
         interactionManager.start(

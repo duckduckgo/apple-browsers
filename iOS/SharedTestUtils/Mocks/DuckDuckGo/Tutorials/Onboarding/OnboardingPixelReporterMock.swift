@@ -426,4 +426,22 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
         didCallMeasureDuckPlayerSelection = true
         didCaptureDuckPlayerSelection = (youTubeAdBlockingEnabled, duckPlayerEnabled)
     }
+
+    // MARK: - Try Duck.ai End of Journey
+
+    private(set) var didCallMeasureEndOfJourneyTryDuckAIImpression = false
+    private(set) var didCallMeasureEndOfJourneyTryDuckAICTAAction = false
+    private(set) var didCallMeasureEndOfJourneyTryDuckAISkipAction = false
+
+    func measureEndOfJourneyTryDuckAIImpression() {
+        didCallMeasureEndOfJourneyTryDuckAIImpression = true
+    }
+
+    func measureEndOfJourneyTryDuckAICTAAction() {
+        didCallMeasureEndOfJourneyTryDuckAICTAAction = true
+    }
+
+    func measureEndOfJourneyTryDuckAISkipAction() {
+        didCallMeasureEndOfJourneyTryDuckAISkipAction = true
+    }
 }

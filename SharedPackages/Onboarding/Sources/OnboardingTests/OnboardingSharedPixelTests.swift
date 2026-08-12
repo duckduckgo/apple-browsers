@@ -524,6 +524,29 @@ final class OnboardingSharedPixelTests: XCTestCase {
             XCTAssertEqual(event.pixel.parameters?["value"], expectedValue, "Failed for \(value)")
         }
     }
+
+    func testWhenEndTryDuckAIEventThenUsesExpectedNameAndValue() throws {
+        // GIVEN
+        let cases: [(OnboardingSharedPixelEvent, String, String?)] = [
+            (.endTryDuckAI(.shown), "shown", nil),
+            (.endTryDuckAI(.clicked(.engage)), "clicked", "engage"),
+            (.endTryDuckAI(.clicked(.dismiss)), "clicked", "dismiss")
+        ]
+
+        for (pixelEvent, expectedEvent, expectedValue) in cases {
+            let pixelFiring = PixelKitMock()
+            let pixelHandler = makeHandler(pixelFiring: pixelFiring)
+
+            // WHEN
+            pixelHandler.fire(pixelEvent)
+
+            // THEN
+            let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
+            XCTAssertEqual(event.pixel.name, "onboarding_end-try-duckai")
+            XCTAssertEqual(event.pixel.parameters?["event"], expectedEvent, "Failed for \(pixelEvent)")
+            XCTAssertEqual(event.pixel.parameters?["value"], expectedValue, "Failed for \(pixelEvent)")
+        }
+    }
 }
 
 private extension OnboardingSharedPixelHandling {

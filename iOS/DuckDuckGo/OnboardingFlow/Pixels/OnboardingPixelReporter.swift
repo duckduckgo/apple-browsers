@@ -107,6 +107,9 @@ protocol OnboardingDaxDialogsReporting {
     func measureEndOfJourneyDialogDismissButtonTapped()
     func measureSubscriptionDialogNewTabDismissButtonTapped()
     func measureEndOfJourneyDialogCTAAction()
+    func measureEndOfJourneyTryDuckAIImpression()
+    func measureEndOfJourneyTryDuckAICTAAction()
+    func measureEndOfJourneyTryDuckAISkipAction()
 }
 
 
@@ -182,6 +185,14 @@ final class OnboardingPixelReporter {
         } else {
             pixel.fire(pixel: event, withAdditionalParameters: additionalParameters, includedParameters: includedParameters)
         }
+    }
+
+    // Fires a shared onboarding pixel with the current stored context (source, flow and variant).
+    private func fireSharedPixel(_ event: OnboardingSharedPixelEvent) {
+        sharedPixelHandler.fire(event,
+                                source: sharedPixelsStorage.onboardingSource,
+                                flow: sharedPixelsStorage.onboardingFlow,
+                                variant: sharedPixelsStorage.onboardingVariant)
     }
 
 }
@@ -444,10 +455,7 @@ extension OnboardingPixelReporter: OnboardingDaxDialogsReporting {
     }
 
     func measureScreenImpression(_ event: OnboardingSharedPixelEvent) {
-        sharedPixelHandler.fire(event,
-                                source: sharedPixelsStorage.onboardingSource,
-                                flow: sharedPixelsStorage.onboardingFlow,
-                                variant: sharedPixelsStorage.onboardingVariant)
+        fireSharedPixel(event)
     }
 
     func measureSearchResultsDialogGotItAction() {
@@ -605,6 +613,18 @@ extension OnboardingPixelReporter: OnboardingDaxDialogsReporting {
                                 variant: sharedPixelsStorage.onboardingVariant)
     }
 
+    func measureEndOfJourneyTryDuckAIImpression() {
+        fireSharedPixel(.endTryDuckAI(.shown))
+    }
+
+    func measureEndOfJourneyTryDuckAICTAAction() {
+        fireSharedPixel(.endTryDuckAI(.clicked(.engage)))
+    }
+
+    func measureEndOfJourneyTryDuckAISkipAction() {
+        fireSharedPixel(.endTryDuckAI(.clicked(.dismiss)))
+    }
+
 }
 
 // MARK: - OnboardingPixelReporter + Add To Dock
@@ -670,59 +690,51 @@ extension OnboardingPixelReporter: OnboardingDownloadReasonPixelReporting {
     }
 
     func measureSearchPrivacySettingsImpression() {
-        fireTailoredStepPixel(.preferencesSerp(.shown))
+        fireSharedPixel(.preferencesSerp(.shown))
     }
 
     func measureSearchPrivacySettingsSelection(recentlyVisitedSitesEnabled: Bool, safeSearchEnabled: Bool) {
-        fireTailoredStepPixel(.preferencesSerp(.clicked(recentlyVisitedSitesEnabled: recentlyVisitedSitesEnabled, safeSearchEnabled: safeSearchEnabled)))
+        fireSharedPixel(.preferencesSerp(.clicked(recentlyVisitedSitesEnabled: recentlyVisitedSitesEnabled, safeSearchEnabled: safeSearchEnabled)))
     }
 
     func measureAIModelImpression() {
-        fireTailoredStepPixel(.preferencesAIModel(.shown))
+        fireSharedPixel(.preferencesAIModel(.shown))
     }
 
     func measureAIModelSelection(model: String) {
-        fireTailoredStepPixel(.preferencesAIModel(.clicked(model: model)))
+        fireSharedPixel(.preferencesAIModel(.clicked(model: model)))
     }
 
     func measureToggleInputModeImpression() {
-        fireTailoredStepPixel(.preferencesAIToggleMode(.shown))
+        fireSharedPixel(.preferencesAIToggleMode(.shown))
     }
 
     func measureToggleInputModeSelection(openNewTabsWithAIChat: Bool) {
-        fireTailoredStepPixel(.preferencesAIToggleMode(.clicked(openNewTabsWithAIChat: openNewTabsWithAIChat)))
+        fireSharedPixel(.preferencesAIToggleMode(.clicked(openNewTabsWithAIChat: openNewTabsWithAIChat)))
     }
 
     func measureAISearchSettingsImpression() {
-        fireTailoredStepPixel(.preferencesAISearch(.shown))
+        fireSharedPixel(.preferencesAISearch(.shown))
     }
 
     func measureAISearchSettingsSelection(searchAssistEnabled: Bool, aiGeneratedImagesEnabled: Bool) {
-        fireTailoredStepPixel(.preferencesAISearch(.clicked(searchAssistEnabled: searchAssistEnabled, aiGeneratedImagesEnabled: aiGeneratedImagesEnabled)))
+        fireSharedPixel(.preferencesAISearch(.clicked(searchAssistEnabled: searchAssistEnabled, aiGeneratedImagesEnabled: aiGeneratedImagesEnabled)))
     }
 
     func measureKeepDuckAIImpression() {
-        fireTailoredStepPixel(.preferencesDuckAI(.shown))
+        fireSharedPixel(.preferencesDuckAI(.shown))
     }
 
     func measureKeepDuckAISelection(shouldKeep: Bool) {
-        fireTailoredStepPixel(.preferencesDuckAI(.clicked(shouldKeep ? .on : .off)))
+        fireSharedPixel(.preferencesDuckAI(.clicked(shouldKeep ? .on : .off)))
     }
 
     func measureDuckPlayerImpression() {
-        fireTailoredStepPixel(.preferencesYoutube(.shown))
+        fireSharedPixel(.preferencesYoutube(.shown))
     }
 
     func measureDuckPlayerSelection(youTubeAdBlockingEnabled: Bool, duckPlayerEnabled: Bool) {
-        fireTailoredStepPixel(.preferencesYoutube(.clicked(youTubeAdBlockingEnabled: youTubeAdBlockingEnabled, duckPlayerEnabled: duckPlayerEnabled)))
-    }
-
-    // Fires a tailored-step pixel with the source, flow and the stored download-reason variant.
-    private func fireTailoredStepPixel(_ event: OnboardingSharedPixelEvent) {
-        sharedPixelHandler.fire(event,
-                                source: sharedPixelsStorage.onboardingSource,
-                                flow: sharedPixelsStorage.onboardingFlow,
-                                variant: sharedPixelsStorage.onboardingVariant)
+        fireSharedPixel(.preferencesYoutube(.clicked(youTubeAdBlockingEnabled: youTubeAdBlockingEnabled, duckPlayerEnabled: duckPlayerEnabled)))
     }
 
 }

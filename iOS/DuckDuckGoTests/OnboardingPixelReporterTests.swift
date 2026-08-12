@@ -1261,6 +1261,36 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(sharedPixelHandlerMock.receivedVariant, .duckAISearch)
     }
 
+    // MARK: - Try Duck.ai End of Journey
+
+    func testWhenMeasureEndOfJourneyTryDuckAIImpressionThenEndOfJourneyTryDuckAIShownFiresWithVariant() {
+        // GIVEN
+        sharedPixelsStorageMock.onboardingVariant = .downloadReasonSearch
+
+        // WHEN
+        sut.measureEndOfJourneyTryDuckAIImpression()
+
+        // THEN
+        XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.endTryDuckAI(.shown)])
+        XCTAssertEqual(sharedPixelHandlerMock.receivedVariant, .downloadReasonSearch)
+    }
+
+    func testWhenMeasureEndOfJourneyTryDuckAICTAActionThenEndOfJourneyTryDuckAIEngageFires() {
+        // WHEN
+        sut.measureEndOfJourneyTryDuckAICTAAction()
+
+        // THEN
+        XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.endTryDuckAI(.clicked(.engage))])
+    }
+
+    func testWhenMeasureEndOfJourneyTryDuckAISkipActionThenEndOfJourneyTryDuckAIDismissFires() {
+        // WHEN
+        sut.measureEndOfJourneyTryDuckAISkipAction()
+
+        // THEN
+        XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.endTryDuckAI(.clicked(.dismiss))])
+    }
+
     // MARK: - Download Reason Segmented Flow
 
     func testWhenMeasureTailoredStepImpressionsThenCorrectShownPixelsFire() {

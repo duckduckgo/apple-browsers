@@ -211,6 +211,7 @@ public enum OnboardingSharedPixelEvent: PixelKit.Event, Equatable {
     case trackersBlocked(EngagementEvent)
     case fireButton(EngagementEvent)
     case end(EngagementEvent)
+    case endTryDuckAI(EngagementEvent) // iOS only — the Try Duck.ai end-of-journey dialog
     case subscriptionPromo(EngagementEvent) // iOS only
 
     // Segmented onboarding (download-reason) events — iOS only
@@ -409,6 +410,7 @@ private extension OnboardingSharedPixelEvent {
         case .trackersBlocked: return "trackers-blocked"
         case .fireButton: return "fire-button"
         case .end: return "end"
+        case .endTryDuckAI: return "end-try-duckai"
         case .subscriptionPromo: return "subscription-promo"
         case .downloadChoice: return "download-choice"
         case .preferencesSerp: return "preferences_serp"
@@ -441,6 +443,7 @@ private extension OnboardingSharedPixelEvent {
                 .trackersBlocked(let event),
                 .fireButton(let event),
                 .end(let event),
+                .endTryDuckAI(let event),
                 .subscriptionPromo(let event):
             switch event {
             case .shown:
@@ -559,6 +562,7 @@ private extension OnboardingSharedPixelEvent {
                 .trackersBlocked(let event),
                 .fireButton(let event),
                 .end(let event),
+                .endTryDuckAI(let event),
                 .subscriptionPromo(let event):
             switch event {
             case .shown, .confirmed:

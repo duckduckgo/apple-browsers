@@ -17,10 +17,7 @@
 //  limitations under the License.
 //
 
-import Core
 import Foundation
-import PersistenceTestingUtils
-import PrivacyConfig
 import Testing
 import UIKit
 @testable import DuckDuckGo
@@ -28,81 +25,50 @@ import UIKit
 @MainActor
 @Suite("Promo Coordination - Service Promo Queue")
 final class PromoCoordinationServicePromoQueueTests {
-    private let launchSourceManagerMock: MockLaunchSourceManager
-    private let contextualOnboardingMock: MockContextualOnboardingStatusProvider
-    private let managerMock: MockModalPromptCoordinationManager
-    private let presenterMock: MockModalPromptPresenter
-    private let promoQueueLeaseArbiter: PromoQueueLeaseArbiter
+    private let launchSourceManagerMock = MockLaunchSourceManager()
+    private let managerMock = MockModalPromptCoordinationManager()
+    private let presenterMock = MockModalPromptPresenter()
+    private let promoQueueLeaseArbiter = PromoQueueLeaseArbiter()
     private var sut: PromoCoordinationService!
 
-    init() {
-        launchSourceManagerMock = MockLaunchSourceManager()
-        contextualOnboardingMock = MockContextualOnboardingStatusProvider(hasSeenOnboarding: true)
-        managerMock = MockModalPromptCoordinationManager()
-        presenterMock = MockModalPromptPresenter()
-        promoQueueLeaseArbiter = PromoQueueLeaseArbiter()
-    }
-
-    // MARK: - Modal Admission
+    // MARK: - Modal Mutual Exclusion
 
     @available(iOS 16, *)
-    @Test("Coordinated Modal Evaluation Acquires The Global Owner Before Calling Manager", .timeLimit(.minutes(1)))
-    func whenPromoQueueIsCoordinatedThenManagerReceivesAcquiredLease() {
+    @Test("Coordinated modal evaluation acquires the global owner before calling the manager", .timeLimit(.minutes(1)))
+    func whenModalIsEvaluatedThenManagerReceivesAcquiredLease() {
         launchSourceManagerMock.source = .standard
         presenterMock.presentedViewController = nil
         makeSUT()
 
         presentModalPromptIfNeeded()
 
-        #expect(managerMock.capturedModalLease != nil)
-        guard let attemptIdentity = managerMock.capturedModalLease?.attemptIdentity else {
+        guard let lease = managerMock.capturedModalLease else {
             Issue.record("Expected the manager to retain the modal lease")
             return
         }
-        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .modal(attemptIdentity))
+        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .modal(lease.attemptIdentity))
     }
 
     @available(iOS 16, *)
-    @Test("Visible Global Owner Blocks Modal Manager And Provider Evaluation", .timeLimit(.minutes(1)))
-    func whenVisiblePromoOwnsGlobalSlotThenModalProvidersAreNotQueried() throws {
+    @Test("A logical remote-message owner blocks modal evaluation", .timeLimit(.minutes(1)))
+    func whenRemoteMessageOwnsGlobalSlotThenModalManagerIsNotCalled() {
         launchSourceManagerMock.source = .standard
         presenterMock.presentedViewController = nil
-        let provider = MockModalPromptProvider()
-        let identity = makeIdentity(promoID: "owner")
-        guard case .acquired(let visibleLease) = promoQueueLeaseArbiter.acquireVisiblePromoLease(for: identity) else {
-            Issue.record("Expected visible owner acquisition")
-            return
-        }
-        let providers = ModalPromptProviders(
-            newAddressBarPicker: provider,
-            defaultBrowser: provider,
-            winBackOffer: provider,
-            subscriptionPromo: provider,
-            subscriptionPromoExistingUser: provider,
-            whatsNew: provider,
-            cookiePopupProtectionOptIn: provider
-        )
-        sut = PromoCoordinationService(
-            launchSourceManager: launchSourceManagerMock,
-            keyValueStore: try MockKeyValueFileStore(),
-            contextualOnboardingStatusProvider: contextualOnboardingMock,
-            privacyConfigManager: MockPrivacyConfigurationManager(),
-            providers: providers,
-            promoCoordinationMode: .coordinated,
-            promoQueueLeaseArbiter: promoQueueLeaseArbiter
-        )
+        makeSUT()
+        let fixture = registerRenderer(messageID: "owner")
+        let presentation = fixture.renderer.shownPresentations.first
+        managerMock.resetRecordedInteractions()
 
-        sut.applicationDidBecomeActive()
         presentModalPromptIfNeeded()
 
-        #expect(!provider.didCallProvideModalPrompt)
-        #expect(!presenterMock.didCallPresent)
-        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .visible(identity))
-        _ = visibleLease
+        #expect(presentation != nil)
+        #expect(!managerMock.didCallPresentModalPromptIfNeeded)
+        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == presentation.map { .remoteMessage($0.session) })
+        _ = fixture.registration
     }
 
     @available(iOS 16, *)
-    @Test("Legacy Modal Evaluation Bypasses The Arbiter", .timeLimit(.minutes(1)))
+    @Test("Legacy modal evaluation bypasses the arbiter", .timeLimit(.minutes(1)))
     func whenPromoQueueIsLegacyThenManagerUsesLeaseFreePath() {
         launchSourceManagerMock.source = .standard
         presenterMock.presentedViewController = nil
@@ -113,720 +79,749 @@ final class PromoCoordinationServicePromoQueueTests {
         #expect(managerMock.didCallPresentModalPromptIfNeeded)
         #expect(managerMock.capturedModalLease == nil)
         #expect(promoQueueLeaseArbiter.snapshot.activeOwner == nil)
-        #expect(managerMock.reconcilePresentedModalCallCount == 0)
     }
 
-    @available(iOS 16, *)
-    @Test("Real No-Provider Release Wakes A Waiter That Became Eligible After Readiness Drain", .timeLimit(.minutes(1)))
-    func whenRealManagerFindsNoProviderThenItsReleaseCallbackRetriesExactlyOnce() {
-        launchSourceManagerMock.source = .standard
-        presenterMock.presentedViewController = nil
-        let cooldownManager = MockPromptCooldownManager()
-        cooldownManager.cooldownInfoToReturn = .notInCoolDown
-        let realManager = ModalPromptCoordinationManager(
-            providers: [],
-            cooldownManager: cooldownManager,
-            onboardingStatusProvider: contextualOnboardingMock,
-            modalPromptScheduling: MockModalPromptScheduler()
-        )
-        sut = PromoCoordinationService(
-            launchSourceManager: launchSourceManagerMock,
-            modalPromptCoordinationManager: realManager,
-            promoCoordinationMode: .coordinated,
-            promoQueueLeaseArbiter: promoQueueLeaseArbiter
-        )
-        let identity = makeIdentity(promoID: "late-waiter")
-        let target = MockNewTabPagePromoRetryTarget()
-        var retainedAdmission: PromoQueueRemoteMessageAdmission?
-        target.customRetryHandler = { [weak target] admissionHandler in
-            guard let target, target.retryCount > 1 else {
-                return
-            }
-            guard case .acquired(let admission) = admissionHandler(identity) else {
-                Issue.record("Expected the real manager's no-provider release to free the owner before notifying")
-                return
-            }
-            retainedAdmission = admission
-        }
-        let registration = sut.registerRemoteMessageRetry(for: identity.surfaceID, target: target)
-
-        sut.applicationDidBecomeActive()
-        presentModalPromptIfNeeded()
-
-        #expect(target.retryCount == 2)
-        #expect(retainedAdmission != nil)
-        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .visible(identity))
-        _ = registration
-    }
-
-    // MARK: - Admission Facade
+    // MARK: - Selection And Acquisition
 
     @available(iOS 16, *)
-    @Test("Legacy Mode Defers RMF Admission Without Arbitrating", .timeLimit(.minutes(1)))
-    func whenPromoQueueIsLegacyThenRemoteMessageAdmissionIsDeferred() {
-        makeSUT(mode: .legacy)
-        let result = sut.admitRemoteMessage(makeIdentity(promoID: "rmf"))
-
-        guard case .deferred = result else {
-            Issue.record("Expected legacy mode to bypass coordinated admission")
-            return
-        }
-        #expect(managerMock.reconcilePresentedModalCallCount == 0)
-        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == nil)
-    }
-
-    @available(iOS 16, *)
-    @Test("Legacy Foreground Lifecycle Does Not Refresh Registered RMF Models", .timeLimit(.minutes(1)))
-    func whenLegacyServiceReturnsToForegroundThenRetryRegistryRemainsUnused() {
-        makeSUT(mode: .legacy)
-        let target = MockNewTabPagePromoRetryTarget()
-        let registration = sut.registerRemoteMessageRetry(for: UUID(), target: target)
-
-        sut.applicationWillResignActive()
-        sut.applicationDidBecomeActive()
-        managerMock.coordinatedAttemptReleaseHandler?()
-
-        #expect(target.retryCount == 0)
-        #expect(managerMock.applicationWillResignActiveCallCount == 1)
-        #expect(managerMock.applicationDidBecomeActiveCallCount == 1)
-        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == nil)
-        _ = registration
-    }
-
-    @available(iOS 16, *)
-    @Test("Modal Global Owner Is Exposed To RMF As Deferred", .timeLimit(.minutes(1)))
-    func whenModalOwnsGlobalSlotThenRemoteMessageAdmissionIsDeferred() {
+    @Test("The service owns the logical lease before renderer publication", .timeLimit(.minutes(1)))
+    func whenRendererIsAuthorizedThenLogicalLeaseAlreadyExists() {
         makeSUT()
-        guard case .acquired(let modalLease) = promoQueueLeaseArbiter.acquireModalLease() else {
-            Issue.record("Expected modal owner acquisition")
+        let renderer = ControllableRemoteMessageRenderer()
+        var ownerObservedDuringShow: PromoQueueActiveOwnerSnapshot?
+        renderer.onShow = { [promoQueueLeaseArbiter] _ in
+            ownerObservedDuringShow = promoQueueLeaseArbiter.snapshot.activeOwner
+        }
+        let fixture = registerRenderer(renderer: renderer, messageID: "message")
+
+        guard let presentation = renderer.shownPresentations.first else {
+            Issue.record("Expected the renderer to be authorized")
             return
         }
+        #expect(ownerObservedDuringShow == .remoteMessage(presentation.session))
+        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .remoteMessage(presentation.session))
+        _ = fixture.registration
+    }
 
-        let result = sut.admitRemoteMessage(makeIdentity(promoID: "rmf"))
+    @available(iOS 16, *)
+    @Test("A modal owner blocks all renderer publication", .timeLimit(.minutes(1)))
+    func whenModalOwnsGlobalSlotThenRendererIsNotShown() throws {
+        makeSUT()
+        let modalLease = try acquiredModalLease()
 
-        guard case .deferred = result else {
-            Issue.record("Expected the public facade to collapse the modal denial to deferred")
-            return
-        }
-        #expect(managerMock.reconcilePresentedModalCallCount == 1)
+        let fixture = registerRenderer(messageID: "message")
+
+        #expect(fixture.renderer.shownPresentations.isEmpty)
         #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .modal(modalLease.attemptIdentity))
+        _ = fixture.registration
     }
 
     @available(iOS 16, *)
-    @Test("Visible Global Owner Defers Every Other Surface Without Changing Owner", .timeLimit(.minutes(1)))
-    func whenVisibleOwnerExistsThenAnotherSurfaceIsDeferred() {
-        makeSUT()
-        let ownerIdentity = makeIdentity(promoID: "owner")
-        let waiterIdentity = makeIdentity(promoID: "waiter")
-        guard case .acquired(let ownerAdmission) = sut.admitRemoteMessage(ownerIdentity) else {
-            Issue.record("Expected initial admission")
-            return
-        }
-
-        guard case .deferred = sut.admitRemoteMessage(waiterIdentity) else {
-            Issue.record("Expected global visible serialization")
-            return
-        }
-        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .visible(ownerIdentity))
-        _ = ownerAdmission
-    }
-
-    @available(iOS 16, *)
-    @Test("Detached Modal Reconciliation Completes Requester Admission Before Retrying Others", .timeLimit(.minutes(1)))
-    func whenAdmissionReleasesDetachedModalThenRequesterOwnsBeforeRetrySnapshot() {
-        makeSUT()
-        guard case .acquired(let modalLease) = promoQueueLeaseArbiter.acquireModalLease() else {
-            Issue.record("Expected modal owner acquisition")
-            return
-        }
-        managerMock.reconcilePresentedModalResult = true
-        managerMock.onReconcilePresentedModal = {
-            modalLease.release()
-        }
-        let requesterIdentity = makeIdentity(promoID: "requester")
-        let waiterIdentity = makeIdentity(promoID: "waiter")
-        let requesterTarget = MockNewTabPagePromoRetryTarget()
-        let waiterTarget = MockNewTabPagePromoRetryTarget()
-        waiterTarget.identityToAdmitOnRetry = waiterIdentity
-        let requesterRegistration = sut.registerRemoteMessageRetry(
-            for: requesterIdentity.surfaceID,
-            target: requesterTarget
-        )
-        let waiterRegistration = sut.registerRemoteMessageRetry(for: waiterIdentity.surfaceID, target: waiterTarget)
-
-        guard case .acquired(let requesterAdmission) = sut.admitRemoteMessage(requesterIdentity) else {
-            Issue.record("Expected the triggering surface to acquire before the retry snapshot")
-            return
-        }
-
-        #expect(requesterTarget.retryCount == 0)
-        #expect(waiterTarget.retryCount == 1)
-        #expect(waiterTarget.retainedAdmission == nil)
-        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .visible(requesterIdentity))
-        _ = (requesterAdmission, requesterRegistration, waiterRegistration)
-    }
-
-    @available(iOS 16, *)
-    @Test("Stale Modal Verification Cannot Wake Around A Replacement Visible Owner", .timeLimit(.minutes(1)))
-    func whenStaleModalVerificationRunsAfterReplacementAcquiresThenItDoesNotDrainOrClearReplacement() {
-        launchSourceManagerMock.source = .standard
-        presenterMock.presentedViewController = nil
-        presenterMock.shouldCompletePresentation = false
-        let provider = MockModalPromptProvider()
-        let cooldownManager = MockPromptCooldownManager()
-        cooldownManager.cooldownInfoToReturn = .notInCoolDown
-        let scheduler = MockModalPromptScheduler()
-        let realManager = ModalPromptCoordinationManager(
-            providers: [provider],
-            cooldownManager: cooldownManager,
-            onboardingStatusProvider: contextualOnboardingMock,
-            modalPromptScheduling: scheduler
-        )
-        sut = PromoCoordinationService(
-            launchSourceManager: launchSourceManagerMock,
-            modalPromptCoordinationManager: realManager,
-            promoCoordinationMode: .coordinated,
-            promoQueueLeaseArbiter: promoQueueLeaseArbiter
-        )
-
+    @Test("Stable registration order selects exactly one eligible renderer", .timeLimit(.minutes(1)))
+    func whenSeveralRenderersAreWaitingThenOldestEligibleRendererIsSelected() {
+        makeSUT(readyForInteractions: false)
         sut.applicationDidBecomeActive()
-        presentModalPromptIfNeeded()
-        scheduler.executeScheduledBlock()
+        let first = registerRenderer(messageID: "message")
+        let second = registerRenderer(messageID: "message")
 
-        let replacementIdentity = makeIdentity(promoID: "replacement")
-        guard case .acquired(let replacementAdmission) = sut.admitRemoteMessage(replacementIdentity) else {
-            Issue.record("Expected reconciliation to release the detached modal before replacement admission")
-            return
-        }
-        let waiterIdentity = makeIdentity(promoID: "waiter")
-        let waiter = MockNewTabPagePromoRetryTarget()
-        waiter.identityToAdmitOnRetry = waiterIdentity
-        let waiterRegistration = sut.registerRemoteMessageRetry(for: waiterIdentity.surfaceID, target: waiter)
-
-        scheduler.executeNextMainTurnBlock(includingCancelled: true)
-
-        #expect(waiter.retryCount == 0)
-        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .visible(replacementIdentity))
-        _ = (replacementAdmission, waiterRegistration)
-    }
-
-    @available(iOS 16, *)
-    @Test("Admission Release Frees The Global Owner And Duplicate Release Is Inert", .timeLimit(.minutes(1)))
-    func whenAdmissionReleasesThenGlobalSlotCanBeReacquired() {
-        makeSUT()
-        let firstIdentity = makeIdentity(promoID: "first")
-        let secondIdentity = makeIdentity(promoID: "second")
-        let secondTarget = MockNewTabPagePromoRetryTarget()
-        secondTarget.identityToAdmitOnRetry = secondIdentity
-        let registration = sut.registerRemoteMessageRetry(for: secondIdentity.surfaceID, target: secondTarget)
-        guard case .acquired(let firstAdmission) = sut.admitRemoteMessage(firstIdentity) else {
-            Issue.record("Expected initial admission")
-            return
-        }
-
-        firstAdmission.release()
-
-        #expect(secondTarget.retryCount == 1)
-        #expect(secondTarget.retainedAdmission != nil)
-        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .visible(secondIdentity))
-
-        firstAdmission.release()
-
-        #expect(secondTarget.retryCount == 1)
-        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .visible(secondIdentity))
-        _ = registration
-    }
-
-    @available(iOS 16, *)
-    @Test("Visible Release Handoff Never Evaluates Modal Providers", .timeLimit(.minutes(1)))
-    func whenVisibleOwnerReleasesThenOnlyRemoteMessageWaitersAreEvaluated() {
-        let provider = MockModalPromptProvider()
-        let cooldownManager = MockPromptCooldownManager()
-        cooldownManager.cooldownInfoToReturn = .notInCoolDown
-        let manager = ModalPromptCoordinationManager(
-            providers: [provider],
-            cooldownManager: cooldownManager,
-            onboardingStatusProvider: contextualOnboardingMock,
-            modalPromptScheduling: MockModalPromptScheduler()
-        )
-        sut = PromoCoordinationService(
-            launchSourceManager: launchSourceManagerMock,
-            modalPromptCoordinationManager: manager,
-            promoCoordinationMode: .coordinated,
-            promoQueueLeaseArbiter: promoQueueLeaseArbiter
-        )
         makeReadyForInteractions()
-        let ownerIdentity = makeIdentity(promoID: "owner")
-        let waiterIdentity = makeIdentity(promoID: "waiter")
-        let waiter = MockNewTabPagePromoRetryTarget()
-        waiter.identityToAdmitOnRetry = waiterIdentity
-        let registration = sut.registerRemoteMessageRetry(for: waiterIdentity.surfaceID, target: waiter)
-        guard case .acquired(let ownerAdmission) = sut.admitRemoteMessage(ownerIdentity) else {
-            Issue.record("Expected initial admission")
-            return
-        }
 
-        ownerAdmission.release()
-
-        #expect(!provider.didCallProvideModalPrompt)
-        #expect(waiter.retryCount == 1)
-        #expect(waiter.retainedAdmission != nil)
-        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .visible(waiterIdentity))
-        _ = registration
-    }
-
-    // MARK: - Stable Release Handoff
-
-    @available(iOS 16, *)
-    @Test("Release Excludes Releaser And Uses Stable Active Registration Order", .timeLimit(.minutes(1)))
-    func whenOwnerReleasesThenFirstActiveOtherSurfaceGetsGlobalOwner() {
-        makeSUT()
-        let ownerIdentity = makeIdentity(promoID: "owner")
-        let firstWaiterIdentity = makeIdentity(promoID: "first-waiter")
-        let laterWaiterIdentity = makeIdentity(promoID: "later-waiter")
-        guard case .acquired(let ownerAdmission) = sut.admitRemoteMessage(ownerIdentity) else {
-            Issue.record("Expected initial admission")
-            return
-        }
-
-        var retryOrder = [String]()
-        let ownerTarget = MockNewTabPagePromoRetryTarget()
-        ownerTarget.identityToAdmitOnRetry = ownerIdentity
-        let ownerRegistration = sut.registerRemoteMessageRetry(for: ownerIdentity.surfaceID, target: ownerTarget)
-        let inactiveTarget = MockNewTabPagePromoRetryTarget()
-        inactiveTarget.isActiveForPromoRetry = false
-        let inactiveRegistration = sut.registerRemoteMessageRetry(for: UUID(), target: inactiveTarget)
-        let replacedSurfaceID = UUID()
-        let staleTarget = MockNewTabPagePromoRetryTarget()
-        let staleRegistration = sut.registerRemoteMessageRetry(for: replacedSurfaceID, target: staleTarget)
-        let replacementTarget = MockNewTabPagePromoRetryTarget()
-        replacementTarget.isActiveForPromoRetry = false
-        let replacementRegistration = sut.registerRemoteMessageRetry(for: replacedSurfaceID, target: replacementTarget)
-        let deallocatedRegistration: NewTabPagePromoRetryRegistration
-        do {
-            let deallocatedTarget = MockNewTabPagePromoRetryTarget()
-            deallocatedRegistration = sut.registerRemoteMessageRetry(for: UUID(), target: deallocatedTarget)
-        }
-        let firstWaiter = MockNewTabPagePromoRetryTarget()
-        firstWaiter.identityToAdmitOnRetry = firstWaiterIdentity
-        firstWaiter.retryObserver = { retryOrder.append("first") }
-        let firstWaiterRegistration = sut.registerRemoteMessageRetry(
-            for: firstWaiterIdentity.surfaceID,
-            target: firstWaiter
-        )
-        let laterWaiter = MockNewTabPagePromoRetryTarget()
-        laterWaiter.identityToAdmitOnRetry = laterWaiterIdentity
-        laterWaiter.retryObserver = { retryOrder.append("later") }
-        let laterWaiterRegistration = sut.registerRemoteMessageRetry(
-            for: laterWaiterIdentity.surfaceID,
-            target: laterWaiter
-        )
-
-        ownerAdmission.release()
-
-        #expect(ownerTarget.retryCount == 0)
-        #expect(inactiveTarget.retryCount == 0)
-        #expect(staleTarget.retryCount == 0)
-        #expect(replacementTarget.retryCount == 0)
-        #expect(retryOrder == ["first", "later"])
-        #expect(firstWaiter.retainedAdmission != nil)
-        #expect(laterWaiter.retainedAdmission == nil)
-        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .visible(firstWaiterIdentity))
-        #expect(!managerMock.didCallPresentModalPromptIfNeeded)
-        _ = (
-            ownerRegistration,
-            inactiveRegistration,
-            staleRegistration,
-            replacementRegistration,
-            deallocatedRegistration,
-            firstWaiterRegistration,
-            laterWaiterRegistration
-        )
+        #expect(first.renderer.shownPresentations.count == 1)
+        #expect(second.renderer.shownPresentations.isEmpty)
+        #expect(promoQueueLeaseArbiter.snapshot.remoteMessageSession == first.renderer.shownPresentations.first?.session)
+        _ = (first.registration, second.registration)
     }
 
     @available(iOS 16, *)
-    @Test("Synchronous Waiter Release Lets Outer Drain Reach The Next Waiter", .timeLimit(.minutes(1)))
-    func whenFirstWaiterReleasesSynchronouslyThenLaterWaiterAcquiresInSameDrain() {
-        makeSUT()
-        let ownerIdentity = makeIdentity(promoID: "owner")
-        let rollingBackIdentity = makeIdentity(promoID: "rollback")
-        let retainedIdentity = makeIdentity(promoID: "retained")
-        guard case .acquired(let ownerAdmission) = sut.admitRemoteMessage(ownerIdentity) else {
-            Issue.record("Expected initial admission")
-            return
-        }
-        var retryOrder = [String]()
-        let rollingBackTarget = MockNewTabPagePromoRetryTarget()
-        rollingBackTarget.retryObserver = { retryOrder.append("rollback") }
-        rollingBackTarget.customRetryHandler = { admissionHandler in
-            guard case .acquired(let admission) = admissionHandler(rollingBackIdentity) else {
-                Issue.record("Expected first waiter acquisition")
-                return
-            }
-            admission.release()
-        }
-        let retainedTarget = MockNewTabPagePromoRetryTarget()
-        retainedTarget.identityToAdmitOnRetry = retainedIdentity
-        retainedTarget.retryObserver = { retryOrder.append("retained") }
-        let rollingBackRegistration = sut.registerRemoteMessageRetry(
-            for: rollingBackIdentity.surfaceID,
-            target: rollingBackTarget
-        )
-        let retainedRegistration = sut.registerRemoteMessageRetry(
-            for: retainedIdentity.surfaceID,
-            target: retainedTarget
-        )
-
-        ownerAdmission.release()
-
-        #expect(retryOrder == ["rollback", "retained"])
-        #expect(rollingBackTarget.retryCount == 1)
-        #expect(retainedTarget.retryCount == 1)
-        #expect(retainedTarget.retainedAdmission != nil)
-        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .visible(retainedIdentity))
-        _ = (rollingBackRegistration, retainedRegistration)
-    }
-
-    @available(iOS 16, *)
-    @Test("Registration Mutation And Nested Checkpoint Defer Replacement Entries", .timeLimit(.minutes(1)))
-    func whenRetryMutatesRegistryThenOnlyUntouchedSnapshotEntryAcquires() {
-        makeSUT()
-        let ownerIdentity = makeIdentity(promoID: "owner")
-        let untouchedIdentity = makeIdentity(promoID: "untouched")
-        guard case .acquired(let ownerAdmission) = sut.admitRemoteMessage(ownerIdentity) else {
-            Issue.record("Expected initial admission")
-            return
-        }
-        let mutatingTarget = MockNewTabPagePromoRetryTarget()
-        let selfReplacementTarget = MockNewTabPagePromoRetryTarget()
-        let oldTarget = MockNewTabPagePromoRetryTarget()
-        let replacementTarget = MockNewTabPagePromoRetryTarget()
-        let untouchedTarget = MockNewTabPagePromoRetryTarget()
-        untouchedTarget.identityToAdmitOnRetry = untouchedIdentity
-        let mutatingSurfaceID = UUID()
-        var mutatingRegistration: NewTabPagePromoRetryRegistration? = sut.registerRemoteMessageRetry(
-            for: mutatingSurfaceID,
-            target: mutatingTarget
-        )
-        let replacedSurfaceID = UUID()
-        let oldRegistration = sut.registerRemoteMessageRetry(for: replacedSurfaceID, target: oldTarget)
-        let untouchedRegistration = sut.registerRemoteMessageRetry(
-            for: untouchedIdentity.surfaceID,
-            target: untouchedTarget
-        )
-        var selfReplacementRegistration: NewTabPagePromoRetryRegistration?
-        var replacementRegistration: NewTabPagePromoRetryRegistration?
-        mutatingTarget.customRetryHandler = { [unowned sut = sut!] _ in
-            mutatingRegistration?.deregister()
-            selfReplacementRegistration = sut.registerRemoteMessageRetry(
-                for: mutatingSurfaceID,
-                target: selfReplacementTarget
-            )
-            oldRegistration.deregister()
-            replacementRegistration = sut.registerRemoteMessageRetry(
-                for: replacedSurfaceID,
-                target: replacementTarget
-            )
-            sut.applicationDidBecomeActive()
-        }
-
-        ownerAdmission.release()
-
-        #expect(mutatingTarget.retryCount == 1)
-        #expect(selfReplacementTarget.retryCount == 0)
-        #expect(oldTarget.retryCount == 0)
-        #expect(replacementTarget.retryCount == 0)
-        #expect(untouchedTarget.retryCount == 1)
-        #expect(untouchedTarget.retainedAdmission != nil)
-        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .visible(untouchedIdentity))
-        _ = (
-            mutatingRegistration,
-            selfReplacementRegistration,
-            untouchedRegistration,
-            replacementRegistration
-        )
-    }
-
-    @available(iOS 16, *)
-    @Test("Stale Registration Token Cannot Remove Its Replacement", .timeLimit(.minutes(1)))
-    func whenRegistrationIsReplacedThenOldTokenCannotRemoveReplacement() {
-        makeSUT()
-        let surfaceID = UUID()
-        let firstTarget = MockNewTabPagePromoRetryTarget()
-        let replacementTarget = MockNewTabPagePromoRetryTarget()
-        let firstRegistration = sut.registerRemoteMessageRetry(for: surfaceID, target: firstTarget)
-        let replacementRegistration = sut.registerRemoteMessageRetry(for: surfaceID, target: replacementTarget)
-
-        firstRegistration.deregister()
-        managerMock.coordinatedAttemptReleaseHandler?()
-
-        #expect(firstTarget.retryCount == 0)
-        #expect(replacementTarget.retryCount == 1)
-        _ = replacementRegistration
-    }
-
-    // MARK: - Readiness
-
-    @available(iOS 16, *)
-    @Test("Cold Start Keeps Admission Closed Until Full Interaction Readiness", .timeLimit(.minutes(1)))
-    func whenColdStartBecomesActiveThenAdmissionWaitsForInteractionReadiness() {
-        launchSourceManagerMock.source = .standard
-        presenterMock.presentedViewController = nil
+    @Test("A renderer rejection tries the next same-message renderer under the retained lease", .timeLimit(.minutes(1)))
+    func whenFirstRendererRejectsThenNextMatchingRendererIsSelected() {
         makeSUT(readyForInteractions: false)
-        let identity = makeIdentity(promoID: "cold-start-waiter")
-        let waiter = MockNewTabPagePromoRetryTarget()
-        waiter.identityToAdmitOnRetry = identity
-        let registration = sut.registerRemoteMessageRetry(for: identity.surfaceID, target: waiter)
-        let readinessToken = sut.captureForegroundReadinessToken()
-
-        guard case .deferred = sut.admitRemoteMessage(identity) else {
-            Issue.record("Expected cold-start direct admission to remain closed")
-            return
-        }
         sut.applicationDidBecomeActive()
-        guard case .deferred = sut.admitRemoteMessage(identity) else {
-            Issue.record("Expected becoming active alone to keep direct admission closed")
-            return
-        }
+        let rejectingRenderer = ControllableRemoteMessageRenderer()
+        rejectingRenderer.showResults = [false]
+        let first = registerRenderer(renderer: rejectingRenderer, messageID: "message")
+        let second = registerRenderer(messageID: "message")
 
-        #expect(waiter.retryCount == 0)
-        #expect(managerMock.reconcilePresentedModalCallCount == 0)
-        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == nil)
+        makeReadyForInteractions()
 
-        sut.presentModalPromptIfNeeded(from: presenterMock, readinessToken: readinessToken)
-
-        #expect(waiter.retryCount == 1)
-        #expect(waiter.retainedAdmission != nil)
-        #expect(managerMock.reconcilePresentedModalCallCount == 2)
-        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .visible(identity))
-        #expect(!managerMock.didCallPresentModalPromptIfNeeded)
-        _ = registration
+        #expect(first.renderer.shownPresentations.count == 1)
+        #expect(second.renderer.shownPresentations.count == 1)
+        #expect(first.renderer.shownPresentations.first?.session == second.renderer.shownPresentations.first?.session)
+        #expect(promoQueueLeaseArbiter.snapshot.remoteMessageSession == second.renderer.shownPresentations.first?.session)
+        _ = (first.registration, second.registration)
     }
 
     @available(iOS 16, *)
-    @Test("Current Readiness During Temporary Inactivity Resumes RMF Admission On Return", .timeLimit(.minutes(1)))
-    func whenCurrentReadinessArrivesDuringTemporaryInactivityThenReturnPerformsHandoff() {
-        launchSourceManagerMock.source = .standard
-        presenterMock.presentedViewController = nil
+    @Test("All renderer rejections release without publishing", .timeLimit(.minutes(1)))
+    func whenEveryMatchingRendererRejectsThenLogicalOwnerIsReleased() {
         makeSUT(readyForInteractions: false)
-        let identity = makeIdentity(promoID: "temporarily-inactive-waiter")
-        let waiter = MockNewTabPagePromoRetryTarget()
-        waiter.identityToAdmitOnRetry = identity
-        let registration = sut.registerRemoteMessageRetry(for: identity.surfaceID, target: waiter)
-        let readinessToken = sut.captureForegroundReadinessToken()
-
         sut.applicationDidBecomeActive()
-        sut.applicationWillResignActive()
-        sut.presentModalPromptIfNeeded(from: presenterMock, readinessToken: readinessToken)
+        let firstRenderer = ControllableRemoteMessageRenderer()
+        firstRenderer.showResults = [false]
+        let secondRenderer = ControllableRemoteMessageRenderer()
+        secondRenderer.showResults = [false]
+        let first = registerRenderer(renderer: firstRenderer, messageID: "message")
+        let second = registerRenderer(renderer: secondRenderer, messageID: "message")
 
-        #expect(waiter.retryCount == 0)
-        #expect(managerMock.reconcilePresentedModalCallCount == 0)
-        #expect(!managerMock.didCallPresentModalPromptIfNeeded)
+        makeReadyForInteractions()
+
+        #expect(firstRenderer.shownPresentations.count == 1)
+        #expect(secondRenderer.shownPresentations.count == 1)
         #expect(promoQueueLeaseArbiter.snapshot.activeOwner == nil)
-        guard case .deferred = sut.admitRemoteMessage(identity) else {
-            Issue.record("Expected direct admission to remain closed while inactive")
-            return
-        }
-
-        sut.applicationDidBecomeActive()
-
-        #expect(waiter.retryCount == 1)
-        #expect(waiter.retainedAdmission != nil)
-        #expect(managerMock.reconcilePresentedModalCallCount == 2)
-        #expect(!managerMock.didCallPresentModalPromptIfNeeded)
-        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .visible(identity))
-        _ = registration
+        _ = (first.registration, second.registration)
     }
 
     @available(iOS 16, *)
-    @Test("Current Readiness During Temporary Inactivity Defers Modal Pass Until Return", .timeLimit(.minutes(1)))
-    func whenCurrentReadinessArrivesDuringTemporaryInactivityThenModalWaitsUntilActive() {
-        launchSourceManagerMock.source = .standard
-        presenterMock.presentedViewController = nil
+    @Test("An occupied renderer rejection fails closed", .timeLimit(.minutes(1)))
+    func whenRejectingRendererReportsPublishedContentThenOwnerIsRetained() {
         makeSUT(readyForInteractions: false)
-        let readinessToken = sut.captureForegroundReadinessToken()
-
         sut.applicationDidBecomeActive()
-        sut.applicationWillResignActive()
-        sut.presentModalPromptIfNeeded(from: presenterMock, readinessToken: readinessToken)
+        let occupiedRenderer = ControllableRemoteMessageRenderer()
+        occupiedRenderer.showResults = [false]
+        occupiedRenderer.hasPublishedRemoteMessagePresentation = true
+        occupiedRenderer.retainsPublishedContentOnRejection = true
+        let first = registerRenderer(renderer: occupiedRenderer, messageID: "message")
+        let second = registerRenderer(messageID: "message")
 
-        #expect(managerMock.reconcilePresentedModalCallCount == 0)
-        #expect(!managerMock.didCallPresentModalPromptIfNeeded)
-        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == nil)
+        makeReadyForInteractions()
 
-        sut.applicationDidBecomeActive()
-
-        #expect(managerMock.reconcilePresentedModalCallCount == 1)
-        #expect(managerMock.didCallPresentModalPromptIfNeeded)
-        #expect(managerMock.capturedPresenter === presenterMock)
-        #expect(managerMock.capturedModalLease != nil)
+        #expect(first.renderer.shownPresentations.count == 1)
+        #expect(first.renderer.hasPublishedRemoteMessagePresentation)
+        #expect(second.renderer.shownPresentations.isEmpty)
+        #expect(sut.remoteMessageCoordinationSnapshot.state == .owned)
+        #expect(promoQueueLeaseArbiter.snapshot.remoteMessageSession == first.renderer.shownPresentations.first?.session)
+        _ = (first.registration, second.registration)
     }
 
+    // MARK: - Appearance
+
     @available(iOS 16, *)
-    @Test("Temporary Inactivity Defers Admission And Successful Release Handoff Until Active", .timeLimit(.minutes(1)))
-    func whenOwnerReleasesDuringTemporaryInactivityThenReturnPerformsHandoff() {
+    @Test("Appearance is accepted once per physical presentation and never releases ownership", .timeLimit(.minutes(1)))
+    func whenCurrentPresentationAppearsThenOnlyItsFirstTruthfulAppearanceIsAccepted() {
         makeSUT()
-        let ownerIdentity = makeIdentity(promoID: "owner")
-        let waiterIdentity = makeIdentity(promoID: "waiter")
-        let waiter = MockNewTabPagePromoRetryTarget()
-        waiter.identityToAdmitOnRetry = waiterIdentity
-        let registration = sut.registerRemoteMessageRetry(for: waiterIdentity.surfaceID, target: waiter)
-        guard case .acquired(let ownerAdmission) = sut.admitRemoteMessage(ownerIdentity) else {
-            Issue.record("Expected initial admission")
+        let fixture = registerRenderer(messageID: "message")
+        guard let presentation = fixture.renderer.shownPresentations.first else {
+            Issue.record("Expected an authorized presentation")
             return
         }
 
-        sut.applicationWillResignActive()
-        guard case .deferred = sut.admitRemoteMessage(waiterIdentity) else {
-            Issue.record("Expected direct admission to close while inactive")
-            return
-        }
-        ownerAdmission.release()
+        let firstResult = fixture.registration.confirmAppearance(
+            sessionID: presentation.session.id,
+            presentationID: presentation.id,
+            isAttachedToWindow: true
+        )
+        let duplicateResult = fixture.registration.confirmAppearance(
+            sessionID: presentation.session.id,
+            presentationID: presentation.id,
+            isAttachedToWindow: true
+        )
 
-        #expect(waiter.retryCount == 0)
-        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == nil)
-
-        sut.applicationDidBecomeActive()
-
-        #expect(waiter.retryCount == 1)
-        #expect(waiter.retainedAdmission != nil)
-        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .visible(waiterIdentity))
-        _ = registration
+        #expect(firstResult == .accepted)
+        #expect(duplicateResult == .rejected)
+        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .remoteMessage(presentation.session))
+        _ = fixture.registration
     }
 
     @available(iOS 16, *)
-    @Test("Background Handoff Waits For Full Foreground Interaction Readiness", .timeLimit(.minutes(1)))
-    func whenOwnerReleasesInBackgroundThenReadinessCheckpointPerformsHandoff() {
+    @Test("Detached, stale, and draining appearances are rejected", .timeLimit(.minutes(1)))
+    func whenAppearanceIsNotForTheCurrentVisiblePresentationThenItIsRejected() {
+        makeSUT()
+        let fixture = registerRenderer(messageID: "message")
+        guard let presentation = fixture.renderer.shownPresentations.first else {
+            Issue.record("Expected an authorized presentation")
+            return
+        }
+
+        #expect(fixture.registration.confirmAppearance(
+            sessionID: presentation.session.id,
+            presentationID: presentation.id,
+            isAttachedToWindow: false
+        ) == .rejected)
+        #expect(fixture.registration.confirmAppearance(
+            sessionID: UUID(),
+            presentationID: presentation.id,
+            isAttachedToWindow: true
+        ) == .rejected)
+
+        fixture.registration.update(candidate: .available(messageID: "message"), isEligible: false)
+
+        #expect(fixture.registration.confirmAppearance(
+            sessionID: presentation.session.id,
+            presentationID: presentation.id,
+            isAttachedToWindow: true
+        ) == .rejected)
+        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .remoteMessage(presentation.session))
+        _ = fixture.registration
+    }
+
+    // MARK: - Draining And Transfer
+
+    @available(iOS 16, *)
+    @Test("A same-message transfer retains one logical session until exact removal settles", .timeLimit(.minutes(1)))
+    func whenSelectedRendererLosesEligibilityThenSuccessorWaitsForTerminal() async {
+        makeSUT()
+        let first = registerRenderer(messageID: "message")
+        let second = registerRenderer(messageID: "message")
+        guard let outgoingPresentation = first.renderer.shownPresentations.first else {
+            Issue.record("Expected the first renderer to own the session")
+            return
+        }
+
+        first.registration.update(candidate: .available(messageID: "message"), isEligible: false)
+
+        #expect(first.renderer.hideRequests.count == 1)
+        #expect(second.renderer.shownPresentations.isEmpty)
+        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .remoteMessage(outgoingPresentation.session))
+
+        first.renderer.finishLastRemoval(using: first.registration)
+
+        #expect(second.renderer.shownPresentations.isEmpty)
+        await waitForMainQueueSettlement()
+
+        #expect(second.renderer.shownPresentations.count == 1)
+        #expect(second.renderer.shownPresentations.first?.session == outgoingPresentation.session)
+        #expect(second.renderer.shownPresentations.first?.id != outgoingPresentation.id)
+        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .remoteMessage(outgoingPresentation.session))
+        _ = (first.registration, second.registration)
+    }
+
+    @available(iOS 16, *)
+    @Test("A transfer retries a rejecting successor under the same logical lease", .timeLimit(.minutes(1)))
+    func whenFirstTransferSuccessorRejectsThenNextSuccessorKeepsTheSession() async {
+        makeSUT()
+        let outgoing = registerRenderer(messageID: "message")
+        let rejectingRenderer = ControllableRemoteMessageRenderer()
+        rejectingRenderer.showResults = [false]
+        let rejectingSuccessor = registerRenderer(renderer: rejectingRenderer, messageID: "message")
+        let acceptingSuccessor = registerRenderer(messageID: "message")
+        guard let outgoingPresentation = outgoing.renderer.shownPresentations.first else {
+            Issue.record("Expected the outgoing renderer to own the session")
+            return
+        }
+
+        outgoing.registration.update(candidate: .available(messageID: "message"), isEligible: false)
+        outgoing.renderer.finishLastRemoval(using: outgoing.registration)
+        await waitForMainQueueSettlement()
+
+        #expect(rejectingRenderer.shownPresentations.count == 1)
+        #expect(!rejectingRenderer.hasPublishedRemoteMessagePresentation)
+        #expect(acceptingSuccessor.renderer.shownPresentations.count == 1)
+        #expect(rejectingRenderer.shownPresentations.first?.session == outgoingPresentation.session)
+        #expect(acceptingSuccessor.renderer.shownPresentations.first?.session == outgoingPresentation.session)
+        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .remoteMessage(outgoingPresentation.session))
+        _ = (outgoing.registration, rejectingSuccessor.registration, acceptingSuccessor.registration)
+    }
+
+    @available(iOS 16, *)
+    @Test("A successor registered after terminal settlement starts a fresh session", .timeLimit(.minutes(1)))
+    func whenMatchingSuccessorRegistersAfterReleaseThenItGetsFreshSession() async {
+        makeSUT()
+        let outgoing = registerRenderer(messageID: "message")
+        guard let outgoingPresentation = outgoing.renderer.shownPresentations.first else {
+            Issue.record("Expected the outgoing renderer to own the session")
+            return
+        }
+
+        outgoing.registration.update(candidate: .available(messageID: "message"), isEligible: false)
+        outgoing.renderer.finishLastRemoval(using: outgoing.registration)
+        await waitForMainQueueSettlement()
+
+        #expect(sut.remoteMessageCoordinationSnapshot.state == .idle)
+        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == nil)
+
+        let successor = registerRenderer(messageID: "message")
+        guard let successorPresentation = successor.renderer.shownPresentations.first else {
+            Issue.record("Expected the late successor to acquire a session")
+            return
+        }
+
+        #expect(successorPresentation.session.messageID == outgoingPresentation.session.messageID)
+        #expect(successorPresentation.session.id != outgoingPresentation.session.id)
+        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .remoteMessage(successorPresentation.session))
+        _ = (outgoing.registration, successor.registration)
+    }
+
+    @available(iOS 16, *)
+    @Test("An exact old terminal callback is inert after a fresh same-message session acquires", .timeLimit(.minutes(1)))
+    func whenOldExactTerminalReplaysAfterFreshSessionThenNewOwnerIsUnchanged() async {
+        makeSUT()
+        let outgoing = registerRenderer(messageID: "message")
+        guard let outgoingPresentation = outgoing.renderer.shownPresentations.first else {
+            Issue.record("Expected the outgoing renderer to own the session")
+            return
+        }
+
+        outgoing.registration.update(candidate: .none, isEligible: false)
+        guard let oldHideRequest = outgoing.renderer.hideRequests.last else {
+            Issue.record("Expected a pending old hide request")
+            return
+        }
+        outgoing.renderer.finishLastRemoval(using: outgoing.registration)
+        await waitForMainQueueSettlement()
+
+        let successor = registerRenderer(messageID: "message")
+        guard let successorPresentation = successor.renderer.shownPresentations.first else {
+            Issue.record("Expected a fresh same-message session")
+            return
+        }
+        #expect(successorPresentation.session.id != outgoingPresentation.session.id)
+
+        outgoing.registration.removalDidReachTerminal(
+            sessionID: outgoingPresentation.session.id,
+            presentationID: outgoingPresentation.id,
+            removalID: oldHideRequest.removalID,
+            terminal: .animationCompleted
+        )
+        await waitForMainQueueSettlement()
+
+        #expect(sut.remoteMessageCoordinationSnapshot.state == .owned)
+        #expect(sut.remoteMessageCoordinationSnapshot.sessionID == successorPresentation.session.id)
+        #expect(sut.remoteMessageCoordinationSnapshot.presentationID == successorPresentation.id)
+        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .remoteMessage(successorPresentation.session))
+        _ = (outgoing.registration, successor.registration)
+    }
+
+    @available(iOS 16, *)
+    @Test("Different-message replacement starts a fresh logical session", .timeLimit(.minutes(1)))
+    func whenWaitingRendererHasDifferentMessageThenItAcquiresAfterOldSessionEnds() async {
+        makeSUT()
+        let first = registerRenderer(messageID: "first")
+        let second = registerRenderer(messageID: "second")
+        guard let firstPresentation = first.renderer.shownPresentations.first else {
+            Issue.record("Expected the first renderer to own the session")
+            return
+        }
+
+        first.registration.update(candidate: .available(messageID: "first"), isEligible: false)
+        first.renderer.finishLastRemoval(using: first.registration)
+        await waitForMainQueueSettlement()
+
+        guard let secondPresentation = second.renderer.shownPresentations.first else {
+            Issue.record("Expected the different message to acquire after release")
+            return
+        }
+        #expect(secondPresentation.session.messageID == "second")
+        #expect(secondPresentation.session.id != firstPresentation.session.id)
+        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .remoteMessage(secondPresentation.session))
+        _ = (first.registration, second.registration)
+    }
+
+    @available(iOS 16, *)
+    @Test("Candidate invalidation ends the old session instead of resurrecting it", .timeLimit(.minutes(1)))
+    func whenSelectedCandidateBecomesNilThenSameIDWaiterGetsFreshSession() async {
+        makeSUT()
+        let first = registerRenderer(messageID: "message")
+        let second = registerRenderer(messageID: "message")
+        guard let oldPresentation = first.renderer.shownPresentations.first else {
+            Issue.record("Expected the first renderer to own the session")
+            return
+        }
+
+        first.registration.update(candidate: .none, isEligible: false)
+        first.renderer.finishLastRemoval(using: first.registration)
+        await waitForMainQueueSettlement()
+
+        guard let replacementPresentation = second.renderer.shownPresentations.first else {
+            Issue.record("Expected the waiting candidate to make a fresh admission")
+            return
+        }
+        #expect(replacementPresentation.session.messageID == oldPresentation.session.messageID)
+        #expect(replacementPresentation.session.id != oldPresentation.session.id)
+        _ = (first.registration, second.registration)
+    }
+
+    @available(iOS 16, *)
+    @Test("The outgoing renderer may be selected again only after terminal settlement", .timeLimit(.minutes(1)))
+    func whenOutgoingRendererBecomesEligibleDuringDrainThenItIsReconsideredAfterTerminal() async {
+        makeSUT()
+        let fixture = registerRenderer(messageID: "message")
+        guard let firstPresentation = fixture.renderer.shownPresentations.first else {
+            Issue.record("Expected an authorized presentation")
+            return
+        }
+
+        fixture.registration.update(candidate: .available(messageID: "message"), isEligible: false)
+        fixture.registration.update(candidate: .available(messageID: "message"), isEligible: true)
+
+        #expect(fixture.renderer.shownPresentations.count == 1)
+        fixture.renderer.finishLastRemoval(using: fixture.registration)
+        await waitForMainQueueSettlement()
+
+        #expect(fixture.renderer.shownPresentations.count == 2)
+        #expect(fixture.renderer.shownPresentations.last?.session == firstPresentation.session)
+        #expect(fixture.renderer.shownPresentations.last?.id != firstPresentation.id)
+        _ = fixture.registration
+    }
+
+    @available(iOS 16, *)
+    @Test("Missing removal terminal fails closed", .timeLimit(.minutes(1)))
+    func whenOutgoingRendererNeverReportsTerminalThenItKeepsBlockingAllPromos() {
         launchSourceManagerMock.source = .standard
         presenterMock.presentedViewController = nil
         makeSUT()
-        let ownerIdentity = makeIdentity(promoID: "owner")
-        let waiterIdentity = makeIdentity(promoID: "waiter")
-        let waiter = MockNewTabPagePromoRetryTarget()
-        waiter.identityToAdmitOnRetry = waiterIdentity
-        let registration = sut.registerRemoteMessageRetry(for: waiterIdentity.surfaceID, target: waiter)
-        guard case .acquired(let ownerAdmission) = sut.admitRemoteMessage(ownerIdentity) else {
-            Issue.record("Expected initial admission")
+        let first = registerRenderer(messageID: "first")
+        let second = registerRenderer(messageID: "second")
+        guard let presentation = first.renderer.shownPresentations.first else {
+            Issue.record("Expected the first renderer to own the session")
             return
         }
 
-        sut.applicationDidEnterBackground()
-        ownerAdmission.release()
-        sut.applicationDidBecomeActive()
-
-        #expect(waiter.retryCount == 0)
-        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == nil)
-        guard case .deferred = sut.admitRemoteMessage(waiterIdentity) else {
-            Issue.record("Expected direct admission to wait for UI readiness")
-            return
-        }
-
+        first.registration.update(candidate: .available(messageID: "first"), isEligible: false)
+        managerMock.resetRecordedInteractions()
         presentModalPromptIfNeeded()
 
-        #expect(waiter.retryCount == 1)
-        #expect(waiter.retainedAdmission != nil)
-        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .visible(waiterIdentity))
+        #expect(first.renderer.hideRequests.count == 1)
+        #expect(second.renderer.shownPresentations.isEmpty)
         #expect(!managerMock.didCallPresentModalPromptIfNeeded)
-        _ = registration
+        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .remoteMessage(presentation.session))
+        _ = (first.registration, second.registration)
     }
 
     @available(iOS 16, *)
-    @Test("Stale Readiness Cannot Open An Active Next Foreground", .timeLimit(.minutes(1)))
-    func whenStaleReadinessArrivesAfterNextForegroundBecomesActiveThenItCannotOpenAdmission() {
-        launchSourceManagerMock.source = .standard
-        presenterMock.presentedViewController = nil
+    @Test("Duplicate and stale removal callbacks are inert", .timeLimit(.minutes(1)))
+    func whenRemovalCallbackDoesNotMatchThenItCannotReleaseTheSession() async {
         makeSUT()
-        let waiterIdentity = makeIdentity(promoID: "waiter")
-        let waiter = MockNewTabPagePromoRetryTarget()
-        waiter.identityToAdmitOnRetry = waiterIdentity
-        let registration = sut.registerRemoteMessageRetry(for: waiterIdentity.surfaceID, target: waiter)
-        let staleReadinessToken = sut.captureForegroundReadinessToken()
+        let fixture = registerRenderer(messageID: "message")
+        guard let presentation = fixture.renderer.shownPresentations.first else {
+            Issue.record("Expected an authorized presentation")
+            return
+        }
+        fixture.registration.update(candidate: .none, isEligible: false)
+        guard let hideRequest = fixture.renderer.hideRequests.last else {
+            Issue.record("Expected a hide request")
+            return
+        }
 
-        sut.applicationDidEnterBackground()
-        let currentReadinessToken = sut.captureForegroundReadinessToken()
-        sut.presentModalPromptIfNeeded(
-            from: presenterMock,
-            readinessToken: staleReadinessToken
+        fixture.registration.removalDidReachTerminal(
+            sessionID: presentation.session.id,
+            presentationID: presentation.id,
+            removalID: UUID(),
+            terminal: .animationCompleted
         )
+        await waitForMainQueueSettlement()
+        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .remoteMessage(presentation.session))
+
+        fixture.registration.removalDidReachTerminal(
+            sessionID: presentation.session.id,
+            presentationID: presentation.id,
+            removalID: hideRequest.removalID,
+            terminal: .animationCompleted
+        )
+        fixture.registration.removalDidReachTerminal(
+            sessionID: presentation.session.id,
+            presentationID: presentation.id,
+            removalID: hideRequest.removalID,
+            terminal: .animationCompleted
+        )
+        await waitForMainQueueSettlement()
+
+        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == nil)
+        _ = fixture.registration
+    }
+
+    @available(iOS 16, *)
+    @Test("Hiding before accepted appearance never confirms the queue session", .timeLimit(.minutes(1)))
+    func whenPresentationDrainsBeforeAppearanceThenQueueConfirmationStaysFalse() async {
+        makeSUT()
+        let fixture = registerRenderer(messageID: "message")
+        guard let presentation = fixture.renderer.shownPresentations.first else {
+            Issue.record("Expected an authorized presentation")
+            return
+        }
+
+        #expect(!sut.remoteMessageCoordinationSnapshot.isQueueAppearanceConfirmed)
+        fixture.registration.update(candidate: .none, isEligible: false)
+
+        #expect(sut.remoteMessageCoordinationSnapshot.state == .draining)
+        #expect(!sut.remoteMessageCoordinationSnapshot.isQueueAppearanceConfirmed)
+        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .remoteMessage(presentation.session))
+
+        fixture.renderer.finishLastRemoval(using: fixture.registration)
+        #expect(!sut.remoteMessageCoordinationSnapshot.isQueueAppearanceConfirmed)
+        await waitForMainQueueSettlement()
+
+        #expect(sut.remoteMessageCoordinationSnapshot.state == .idle)
+        #expect(!sut.remoteMessageCoordinationSnapshot.isQueueAppearanceConfirmed)
+        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == nil)
+        _ = fixture.registration
+    }
+
+    @available(iOS 16, *)
+    @Test("Host detachment is accepted only after exact renderer verification", .timeLimit(.minutes(1)))
+    func whenHostDetachedTerminalIsReportedThenAttachmentIsRevalidated() async {
+        makeSUT()
+        let fixture = registerRenderer(messageID: "message")
+        guard let presentation = fixture.renderer.shownPresentations.first else {
+            Issue.record("Expected an authorized presentation")
+            return
+        }
+        fixture.registration.update(candidate: .none, isEligible: false)
+
+        fixture.renderer.finishLastRemoval(using: fixture.registration, terminal: .hostDetached)
+        await waitForMainQueueSettlement()
+        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .remoteMessage(presentation.session))
+
+        fixture.renderer.isRemoteMessageRendererAttachedToWindow = false
+        fixture.renderer.finishLastRemoval(using: fixture.registration, terminal: .hostDetached)
+        await waitForMainQueueSettlement()
+        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == nil)
+        _ = fixture.registration
+    }
+
+    @available(iOS 16, *)
+    @Test("A late animation completion is inert after verified host detachment", .timeLimit(.minutes(1)))
+    func whenHostDetachmentSettlesThenLateAnimationCannotAffectTheNextOwner() async {
+        makeSUT()
+        let outgoing = registerRenderer(messageID: "first")
+        let successor = registerRenderer(messageID: "second")
+        guard let outgoingPresentation = outgoing.renderer.shownPresentations.first else {
+            Issue.record("Expected the outgoing renderer to own the session")
+            return
+        }
+
+        outgoing.registration.update(candidate: .none, isEligible: false)
+        guard let hideRequest = outgoing.renderer.hideRequests.last else {
+            Issue.record("Expected a pending hide request")
+            return
+        }
+        outgoing.renderer.isRemoteMessageRendererAttachedToWindow = false
+        outgoing.renderer.finishLastRemoval(using: outgoing.registration, terminal: .hostDetached)
+        await waitForMainQueueSettlement()
+
+        guard let successorPresentation = successor.renderer.shownPresentations.first else {
+            Issue.record("Expected the successor to acquire after verified detachment")
+            return
+        }
+        outgoing.registration.removalDidReachTerminal(
+            sessionID: outgoingPresentation.session.id,
+            presentationID: outgoingPresentation.id,
+            removalID: hideRequest.removalID,
+            terminal: .animationCompleted
+        )
+        await waitForMainQueueSettlement()
+
+        #expect(successorPresentation.session.id != outgoingPresentation.session.id)
+        #expect(sut.remoteMessageCoordinationSnapshot.state == .owned)
+        #expect(sut.remoteMessageCoordinationSnapshot.sessionID == successorPresentation.session.id)
+        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .remoteMessage(successorPresentation.session))
+        _ = (outgoing.registration, successor.registration)
+    }
+
+    @available(iOS 16, *)
+    @Test("A synchronous removal terminal is coalesced and still waits one main turn", .timeLimit(.minutes(1)))
+    func whenHideReportsTerminalSynchronouslyThenSuccessorIsNotPublishedReentrantly() async {
+        makeSUT()
+        let firstRenderer = ControllableRemoteMessageRenderer()
+        let first = registerRenderer(renderer: firstRenderer, messageID: "message")
+        let second = registerRenderer(messageID: "message")
+        firstRenderer.onHide = { [weak firstRenderer] presentation, removalID in
+            firstRenderer?.registration?.removalDidReachTerminal(
+                sessionID: presentation.session.id,
+                presentationID: presentation.id,
+                removalID: removalID,
+                terminal: .sourceRemovedWithoutAnimation
+            )
+        }
+
+        first.registration.update(candidate: .available(messageID: "message"), isEligible: false)
+
+        #expect(second.renderer.shownPresentations.isEmpty)
+        await waitForMainQueueSettlement()
+        #expect(second.renderer.shownPresentations.count == 1)
+        _ = (first.registration, second.registration)
+    }
+
+    // MARK: - Registration And Lifecycle
+
+    @available(iOS 16, *)
+    @Test("A non-selected renderer cannot affect the selected session", .timeLimit(.minutes(1)))
+    func whenNonSelectedRendererUpdatesOrDeregistersThenOwnerIsUnchanged() {
+        makeSUT()
+        let selected = registerRenderer(messageID: "message")
+        let waiting = registerRenderer(messageID: "message")
+        let selectedPresentation = selected.renderer.shownPresentations.first
+
+        waiting.registration.update(candidate: .none, isEligible: false)
+        waiting.registration.deregister()
+
+        #expect(selected.renderer.hideRequests.isEmpty)
+        #expect(promoQueueLeaseArbiter.snapshot.remoteMessageSession == selectedPresentation?.session)
+        _ = selected.registration
+    }
+
+    @available(iOS 16, *)
+    @Test("A stale registration generation cannot remove its replacement", .timeLimit(.minutes(1)))
+    func whenRendererIDIsRegisteredAgainThenOldGenerationUpdatesAreIgnored() {
+        makeSUT(readyForInteractions: false)
         sut.applicationDidBecomeActive()
-        sut.presentModalPromptIfNeeded(
-            from: presenterMock,
-            readinessToken: staleReadinessToken
-        )
+        let rendererID = UUID()
+        let stale = registerRenderer(rendererID: rendererID, messageID: "stale")
+        let replacement = registerRenderer(rendererID: rendererID, messageID: "replacement")
 
-        #expect(waiter.retryCount == 0)
-        #expect(managerMock.reconcilePresentedModalCallCount == 0)
-        guard case .deferred = sut.admitRemoteMessage(waiterIdentity) else {
-            Issue.record("Expected the active foreground to reject readiness from the previous foreground")
+        stale.registration.update(candidate: .available(messageID: "stale-again"), isEligible: true)
+        makeReadyForInteractions()
+
+        #expect(stale.renderer.shownPresentations.isEmpty)
+        #expect(replacement.renderer.shownPresentations.first?.session.messageID == "replacement")
+        _ = (stale.registration, replacement.registration)
+    }
+
+    @available(iOS 16, *)
+    @Test("A selected old generation retains its terminal capability after re-registration", .timeLimit(.minutes(1)))
+    func whenSelectedRendererIDIsRegisteredAgainThenOldGenerationCanFinishTransfer() async {
+        makeSUT()
+        let rendererID = UUID()
+        let selected = registerRenderer(rendererID: rendererID, messageID: "message")
+        let originalSession = selected.renderer.shownPresentations.first?.session
+
+        let replacement = registerRenderer(rendererID: rendererID, messageID: "message")
+
+        #expect(selected.renderer.hideRequests.count == 1)
+        #expect(replacement.renderer.shownPresentations.isEmpty)
+        selected.renderer.finishLastRemoval(using: selected.registration)
+        await waitForMainQueueSettlement()
+
+        #expect(replacement.renderer.shownPresentations.first?.session == originalSession)
+        #expect(sut.remoteMessageCoordinationSnapshot.state == .owned)
+        _ = replacement.registration
+    }
+
+    @available(iOS 16, *)
+    @Test("Unexpected selected target loss fails closed", .timeLimit(.minutes(1)))
+    func whenSelectedWeakTargetDisappearsThenLogicalOwnerRemainsBlocked() {
+        makeSUT()
+        var renderer: ControllableRemoteMessageRenderer? = ControllableRemoteMessageRenderer()
+        weak var weakRenderer = renderer
+        guard let registration = renderer.map({ target in
+            sut.registerRemoteMessageRenderer(id: UUID(), target: target)
+        }) else {
+            Issue.record("Expected renderer construction to succeed")
             return
         }
+        renderer?.registration = registration
+        registration.update(candidate: .available(messageID: "message"), isEligible: true)
+        let session = promoQueueLeaseArbiter.snapshot.remoteMessageSession
 
-        sut.presentModalPromptIfNeeded(
-            from: presenterMock,
-            readinessToken: currentReadinessToken
-        )
+        renderer = nil
+        registration.update(candidate: .none, isEligible: false)
 
-        #expect(waiter.retryCount == 1)
-        #expect(waiter.retainedAdmission != nil)
-        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .visible(waiterIdentity))
-        #expect(!managerMock.didCallPresentModalPromptIfNeeded)
+        #expect(weakRenderer == nil)
+        #expect(sut.remoteMessageCoordinationSnapshot.state == .owned)
+        #expect(sut.remoteMessageCoordinationSnapshot.registeredRendererCount == 1)
+        #expect(promoQueueLeaseArbiter.snapshot.remoteMessageSession == session)
+        guard case .blockedByRemoteMessage(let blockedSession) = promoQueueLeaseArbiter.acquireModalLease() else {
+            Issue.record("Expected the unexpectedly lost renderer to retain the logical owner")
+            return
+        }
+        #expect(blockedSession == session)
         _ = registration
     }
 
     @available(iOS 16, *)
-    @Test("Background Retains Existing Visible Owner And Forwards Lifecycle", .timeLimit(.minutes(1)))
-    func whenServiceBackgroundsThenExistingAdmissionRemainsOwner() {
+    @Test("Selected renderer deregistration retains ownership until exact terminal", .timeLimit(.minutes(1)))
+    func whenSelectedRendererDeregistersThenLeaseRemainsUntilRemovalSettles() async {
         makeSUT()
-        let identity = makeIdentity(promoID: "owner")
-        guard case .acquired(let admission) = sut.admitRemoteMessage(identity) else {
-            Issue.record("Expected visible admission")
-            return
-        }
+        let fixture = registerRenderer(messageID: "message")
+        let presentation = fixture.renderer.shownPresentations.first
+
+        fixture.registration.deregister()
+
+        #expect(fixture.renderer.hideRequests.count == 1)
+        #expect(promoQueueLeaseArbiter.snapshot.remoteMessageSession == presentation?.session)
+        fixture.renderer.finishLastRemoval(using: fixture.registration)
+        await waitForMainQueueSettlement()
+        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == nil)
+    }
+
+    @available(iOS 16, *)
+    @Test("Background alone retains an existing logical owner", .timeLimit(.minutes(1)))
+    func whenApplicationBackgroundsThenOwnedRendererIsNotDrained() {
+        makeSUT()
+        let fixture = registerRenderer(messageID: "message")
+        let presentation = fixture.renderer.shownPresentations.first
 
         sut.applicationWillResignActive()
         sut.applicationDidEnterBackground()
         sut.applicationDidBecomeActive()
 
+        #expect(fixture.renderer.hideRequests.isEmpty)
+        #expect(promoQueueLeaseArbiter.snapshot.remoteMessageSession == presentation?.session)
         #expect(managerMock.applicationWillResignActiveCallCount == 1)
         #expect(managerMock.applicationDidEnterBackgroundCallCount == 1)
         #expect(managerMock.applicationDidBecomeActiveCallCount == 1)
-        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .visible(identity))
-        _ = admission
+        _ = fixture.registration
     }
 
     @available(iOS 16, *)
-    @Test("Abandoned Admission Is Reclaimed Only At A Later Checkpoint", .timeLimit(.minutes(1)))
-    func whenAdmissionDeallocatesThenWaiterRecoversAtExplicitCheckpoint() {
+    @Test("Renderer ineligibility still drains an owner while the app is backgrounded", .timeLimit(.minutes(1)))
+    func whenRendererBecomesIneligibleInBackgroundThenItsOwnerDrainsNormally() async {
         makeSUT()
-        let ownerIdentity = makeIdentity(promoID: "owner")
-        let waiterIdentity = makeIdentity(promoID: "waiter")
-        let waiter = MockNewTabPagePromoRetryTarget()
-        waiter.identityToAdmitOnRetry = waiterIdentity
-        let registration = sut.registerRemoteMessageRetry(for: waiterIdentity.surfaceID, target: waiter)
-        weak var abandonedAdmission: PromoQueueRemoteMessageAdmission?
+        let fixture = registerRenderer(messageID: "message")
+        let presentation = fixture.renderer.shownPresentations.first
 
-        do {
-            guard case .acquired(let admission) = sut.admitRemoteMessage(ownerIdentity) else {
-                Issue.record("Expected initial admission")
-                return
-            }
-            abandonedAdmission = admission
-            guard case .deferred = sut.admitRemoteMessage(waiterIdentity) else {
-                Issue.record("Expected waiter deferral")
-                return
-            }
-        }
+        sut.applicationWillResignActive()
+        sut.applicationDidEnterBackground()
 
-        #expect(abandonedAdmission == nil)
-        #expect(waiter.retryCount == 0)
+        #expect(fixture.renderer.hideRequests.isEmpty)
+        #expect(promoQueueLeaseArbiter.snapshot.remoteMessageSession == presentation?.session)
 
-        sut.applicationDidBecomeActive()
+        fixture.registration.update(candidate: .available(messageID: "message"), isEligible: false)
 
-        #expect(waiter.retryCount == 1)
-        #expect(waiter.retainedAdmission != nil)
-        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .visible(waiterIdentity))
-        _ = registration
+        #expect(fixture.renderer.hideRequests.count == 1)
+        #expect(sut.remoteMessageCoordinationSnapshot.state == .draining)
+        #expect(promoQueueLeaseArbiter.snapshot.remoteMessageSession == presentation?.session)
+
+        fixture.renderer.finishLastRemoval(using: fixture.registration)
+        await waitForMainQueueSettlement()
+
+        #expect(sut.remoteMessageCoordinationSnapshot.state == .idle)
+        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == nil)
+        _ = fixture.registration
     }
+
+    @available(iOS 16, *)
+    @Test("Cold start waits for full foreground interaction readiness", .timeLimit(.minutes(1)))
+    func whenColdStartIsOnlyActiveThenRendererWaitsForReadinessCheckpoint() {
+        makeSUT(readyForInteractions: false)
+        sut.applicationDidBecomeActive()
+        let fixture = registerRenderer(messageID: "message")
+
+        #expect(fixture.renderer.shownPresentations.isEmpty)
+        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == nil)
+
+        makeReadyForInteractions()
+
+        #expect(fixture.renderer.shownPresentations.count == 1)
+        _ = fixture.registration
+    }
+
+    @available(iOS 16, *)
+    @Test("Modal release is a renderer reconciliation checkpoint", .timeLimit(.minutes(1)))
+    func whenModalOwnerReleasesThenWaitingRendererIsReconciled() throws {
+        makeSUT()
+        let modalLease = try acquiredModalLease()
+        let fixture = registerRenderer(messageID: "message")
+        #expect(fixture.renderer.shownPresentations.isEmpty)
+
+        modalLease.release()
+        managerMock.coordinatedAttemptReleaseHandler?()
+
+        #expect(fixture.renderer.shownPresentations.count == 1)
+        _ = fixture.registration
+    }
+
+    @available(iOS 16, *)
+    @Test("Legacy service registration is inert", .timeLimit(.minutes(1)))
+    func whenLegacyServiceIsAskedToRegisterThenItDoesNotArbitrateOrRender() {
+        makeSUT(mode: .legacy)
+        let fixture = registerRenderer(messageID: "message")
+
+        #expect(fixture.renderer.shownPresentations.isEmpty)
+        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == nil)
+        _ = fixture.registration
+    }
+
+    // MARK: - Helpers
 
     private func makeSUT(mode: PromoCoordinationMode = .coordinated, readyForInteractions: Bool = true) {
         sut = PromoCoordinationService(
@@ -859,41 +854,94 @@ final class PromoCoordinationServicePromoQueueTests {
         )
     }
 
-    private func makeIdentity(surfaceID: UUID = UUID(), promoID: String) -> VisiblePromoIdentity {
-        VisiblePromoIdentity(
-            surfaceID: surfaceID,
-            promoType: .remoteMessage,
-            promoID: promoID
-        )
+    private func registerRenderer(
+        rendererID: UUID = UUID(),
+        renderer: ControllableRemoteMessageRenderer? = nil,
+        messageID: String,
+        isEligible: Bool = true
+    ) -> RendererFixture {
+        let renderer = renderer ?? ControllableRemoteMessageRenderer()
+        let registration = sut.registerRemoteMessageRenderer(id: rendererID, target: renderer)
+        renderer.registration = registration
+        registration.update(candidate: .available(messageID: messageID), isEligible: isEligible)
+        return RendererFixture(renderer: renderer, registration: registration)
+    }
+
+    private func acquiredModalLease() throws -> PromoQueueModalLease {
+        guard case .acquired(let lease) = promoQueueLeaseArbiter.acquireModalLease() else {
+            throw TestError.expectedModalLease
+        }
+        return lease
+    }
+
+    private func waitForMainQueueSettlement() async {
+        await withCheckedContinuation { continuation in
+            DispatchQueue.main.async {
+                continuation.resume()
+            }
+        }
     }
 }
 
 @MainActor
-private final class MockNewTabPagePromoRetryTarget: NewTabPagePromoRetrying {
-    var isActiveForPromoRetry = true
-    var identityToAdmitOnRetry: VisiblePromoIdentity?
-    var retryObserver: (() -> Void)?
-    var customRetryHandler: ((PromoQueueRemoteMessageAdmissionHandler) -> Void)?
-    private(set) var retryCount = 0
-    private(set) var retainedAdmission: PromoQueueRemoteMessageAdmission?
+private struct RendererFixture {
+    let renderer: ControllableRemoteMessageRenderer
+    let registration: NewTabPagePromoRendererRegistration
+}
 
-    func retryRemoteMessageAdmission(using admissionHandler: PromoQueueRemoteMessageAdmissionHandler) {
-        retryCount += 1
-        retryObserver?()
-        if let customRetryHandler {
-            customRetryHandler(admissionHandler)
-            return
-        }
-
-        guard let identityToAdmitOnRetry else {
-            return
-        }
-
-        switch admissionHandler(identityToAdmitOnRetry) {
-        case .acquired(let admission):
-            retainedAdmission = admission
-        case .deferred:
-            break
-        }
+@MainActor
+private final class ControllableRemoteMessageRenderer: NewTabPagePromoRendering {
+    struct HideRequest {
+        let presentation: PromoQueueRemoteMessagePresentation
+        let removalID: UUID
     }
+
+    var isRemoteMessageRendererAttachedToWindow = true
+    var hasPublishedRemoteMessagePresentation = false
+    var retainsPublishedContentOnRejection = false
+    var showResults = [Bool]()
+    var onShow: ((PromoQueueRemoteMessagePresentation) -> Void)?
+    var onHide: ((PromoQueueRemoteMessagePresentation, UUID) -> Void)?
+    var registration: NewTabPagePromoRendererRegistration?
+    private(set) var shownPresentations = [PromoQueueRemoteMessagePresentation]()
+    private(set) var hideRequests = [HideRequest]()
+
+    func showRemoteMessage(_ presentation: PromoQueueRemoteMessagePresentation) -> Bool {
+        shownPresentations.append(presentation)
+        onShow?(presentation)
+        let result = showResults.isEmpty ? true : showResults.removeFirst()
+        if result || !retainsPublishedContentOnRejection {
+            hasPublishedRemoteMessagePresentation = result
+        }
+        return result
+    }
+
+    func hideRemoteMessage(
+        _ presentation: PromoQueueRemoteMessagePresentation,
+        removalID: UUID
+    ) {
+        hideRequests.append(HideRequest(presentation: presentation, removalID: removalID))
+        onHide?(presentation, removalID)
+    }
+
+    func finishLastRemoval(
+        using registration: NewTabPagePromoRendererRegistration,
+        terminal: PromoQueueRemoteMessageRemovalTerminal = .animationCompleted
+    ) {
+        guard let request = hideRequests.last else {
+            Issue.record("Expected a pending hide request")
+            return
+        }
+        hasPublishedRemoteMessagePresentation = false
+        registration.removalDidReachTerminal(
+            sessionID: request.presentation.session.id,
+            presentationID: request.presentation.id,
+            removalID: request.removalID,
+            terminal: terminal
+        )
+    }
+}
+
+private enum TestError: Error {
+    case expectedModalLease
 }

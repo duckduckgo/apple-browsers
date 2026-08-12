@@ -824,8 +824,8 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
         #expect(promoQueueLeaseArbiter.snapshot.hasModalLease)
         #expect(!sut.didActuallyPresentModalPromptThisSession)
         #expect(!sut.reconcilePresentedModal())
-        guard case .blockedByModal = promoQueueLeaseArbiter.acquireVisiblePromoLease(for: makeVisiblePromoIdentity()) else {
-            Issue.record("Expected the in-flight modal presentation to keep blocking visible promo admission")
+        guard case .blockedByModal = promoQueueLeaseArbiter.acquireRemoteMessageLease(for: makeRemoteMessageSession()) else {
+            Issue.record("Expected the in-flight modal presentation to keep blocking remote-message acquisition")
             return
         }
 
@@ -838,8 +838,8 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
         #expect(sut.didActuallyPresentModalPromptThisSession)
         #expect(provider.didPresentModalCallCount == 1)
         #expect(cooldownManagerMock.recordLastPromptPresentationTimestampCallCount == 1)
-        guard case .blockedByModal = promoQueueLeaseArbiter.acquireVisiblePromoLease(for: makeVisiblePromoIdentity()) else {
-            Issue.record("Expected reconciliation to block visible promo admission with the restored modal lease")
+        guard case .blockedByModal = promoQueueLeaseArbiter.acquireRemoteMessageLease(for: makeRemoteMessageSession()) else {
+            Issue.record("Expected reconciliation to block remote-message acquisition with the restored modal lease")
             return
         }
     }
@@ -867,20 +867,20 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
         _ = sut.presentModalPromptIfNeeded(from: presenterMock, with: modalLease)
         schedulerMock.executeScheduledBlock()
         schedulerMock.executeNextMainTurnBlock()
-        let visibleIdentity = makeVisiblePromoIdentity()
-        guard case .acquired(let visibleLease) = promoQueueLeaseArbiter.acquireVisiblePromoLease(for: visibleIdentity) else {
-            Issue.record("Expected visible promo admission after UIKit refused the modal presentation")
+        let remoteMessageSession = makeRemoteMessageSession()
+        guard case .acquired(let remoteMessageLease) = promoQueueLeaseArbiter.acquireRemoteMessageLease(for: remoteMessageSession) else {
+            Issue.record("Expected remote-message acquisition after UIKit refused the modal presentation")
             return
         }
 
         #expect(sut.modalAttemptPhase == .idle)
         #expect(sut.shouldSuppressOtherSessionPromos)
         #expect(!promoQueueLeaseArbiter.snapshot.hasModalLease)
-        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .visible(visibleIdentity))
+        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .remoteMessage(remoteMessageSession))
         #expect(!sut.didActuallyPresentModalPromptThisSession)
         #expect(provider.didPresentModalCallCount == 0)
         #expect(cooldownManagerMock.recordLastPromptPresentationTimestampCallCount == 0)
-        _ = visibleLease
+        _ = remoteMessageLease
     }
 
     @available(iOS 16, *)
@@ -960,11 +960,10 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
         return lease
     }
 
-    private func makeVisiblePromoIdentity() -> VisiblePromoIdentity {
-        VisiblePromoIdentity(
-            surfaceID: UUID(),
-            promoType: .remoteMessage,
-            promoID: "message"
+    private func makeRemoteMessageSession() -> PromoQueueRemoteMessageSession {
+        PromoQueueRemoteMessageSession(
+            id: UUID(),
+            messageID: "message"
         )
     }
 }

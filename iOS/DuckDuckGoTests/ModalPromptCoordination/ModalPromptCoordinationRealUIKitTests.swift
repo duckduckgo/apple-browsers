@@ -212,10 +212,9 @@ final class ModalPromptCoordinationRealUIKitTests {
         #expect(exactRoot.presentingViewController === presentationHost)
         #expect(sut.modalAttemptPhase == .presentationActive(lease.attemptIdentity))
 
-        let waitingPromoIdentity = VisiblePromoIdentity(
-            surfaceID: UUID(),
-            promoType: .remoteMessage,
-            promoID: "waiting-promo"
+        let waitingRemoteMessageSession = PromoQueueRemoteMessageSession(
+            id: UUID(),
+            messageID: "waiting-promo"
         )
 
         // WHEN dismissal starts but UIKit still presents and windows the exact root.
@@ -224,14 +223,14 @@ final class ModalPromptCoordinationRealUIKitTests {
                 continuation.resume()
             }
 
-            // THEN the modal still owns the lease and blocks a waiting visible promo for the whole animation.
+            // THEN the modal still owns the lease and blocks a waiting remote-message session for the whole animation.
             #expect(exactRoot.isBeingDismissed)
             #expect(exactRoot.presentingViewController === presentationHost)
             #expect(exactRoot.viewIfLoaded?.window != nil)
             #expect(!sut.reconcilePresentedModal())
             #expect(sut.modalAttemptPhase == .presentationActive(lease.attemptIdentity))
-            guard case .blockedByModal = promoQueueLeaseArbiter.acquireVisiblePromoLease(for: waitingPromoIdentity) else {
-                Issue.record("Expected the dismissing modal to keep blocking visible promo admission")
+            guard case .blockedByModal = promoQueueLeaseArbiter.acquireRemoteMessageLease(for: waitingRemoteMessageSession) else {
+                Issue.record("Expected the dismissing modal to keep blocking remote-message acquisition")
                 return
             }
         }
@@ -241,16 +240,16 @@ final class ModalPromptCoordinationRealUIKitTests {
         #expect(exactRoot.presentingViewController == nil)
         #expect(exactRoot.viewIfLoaded?.window == nil)
 
-        // THEN reconciliation releases the modal lease and the waiting promo can be admitted.
+        // THEN reconciliation releases the modal lease and the waiting remote-message session can acquire it.
         #expect(sut.reconcilePresentedModal())
         #expect(sut.modalAttemptPhase == .idle)
         #expect(!promoQueueLeaseArbiter.snapshot.hasModalLease)
-        guard case .acquired(let visiblePromoLease) = promoQueueLeaseArbiter.acquireVisiblePromoLease(for: waitingPromoIdentity) else {
-            Issue.record("Expected visible promo admission after the dismissed modal detached")
+        guard case .acquired(let remoteMessageLease) = promoQueueLeaseArbiter.acquireRemoteMessageLease(for: waitingRemoteMessageSession) else {
+            Issue.record("Expected remote-message acquisition after the dismissed modal detached")
             return
         }
-        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .visible(waitingPromoIdentity))
-        _ = visiblePromoLease
+        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .remoteMessage(waitingRemoteMessageSession))
+        _ = remoteMessageLease
     }
 
     // MARK: - Standard Launch Ordering

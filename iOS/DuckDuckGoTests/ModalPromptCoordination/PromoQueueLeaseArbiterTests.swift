@@ -37,54 +37,68 @@ struct PromoQueueLeaseArbiterTests {
 
         #expect(arbiter.snapshot.hasModalLease)
         #expect(arbiter.snapshot.activeOwner == .modal(lease.attemptIdentity))
-        #expect(arbiter.snapshot.visiblePromoIdentity == nil)
+        #expect(arbiter.snapshot.remoteMessageSession == nil)
     }
 
     @available(iOS 16, *)
-    @Test("Visible promo lease can be acquired from idle", .timeLimit(.minutes(1)))
-    func acquireVisiblePromoLeaseFromIdle() throws {
+    @Test("Logical remote-message lease can be acquired from idle", .timeLimit(.minutes(1)))
+    func acquireRemoteMessageLeaseFromIdle() throws {
         let arbiter = PromoQueueLeaseArbiter()
-        let identity = makeVisiblePromoIdentity()
+        let session = makeRemoteMessageSession()
 
-        let lease = try acquiredLease(from: arbiter.acquireVisiblePromoLease(for: identity))
+        let lease = try acquiredLease(from: arbiter.acquireRemoteMessageLease(for: session))
 
         #expect(!arbiter.snapshot.hasModalLease)
-        #expect(arbiter.snapshot.activeOwner == .visible(identity))
+        #expect(arbiter.snapshot.activeOwner == .remoteMessage(session))
+        #expect(arbiter.snapshot.remoteMessageSession == session)
         _ = lease
     }
 
     @available(iOS 16, *)
-    @Test("Visible promo blocks modal acquisition with its identity", .timeLimit(.minutes(1)))
-    func visiblePromoBlocksModalAcquisition() throws {
+    @Test("Logical owner identity consists of message and session", .timeLimit(.minutes(1)))
+    func logicalOwnerIdentityUsesMessageAndSession() throws {
         let arbiter = PromoQueueLeaseArbiter()
-        let identity = makeVisiblePromoIdentity()
-        let lease = try acquiredLease(from: arbiter.acquireVisiblePromoLease(for: identity))
+        let sessionID = UUID()
+        let session = makeRemoteMessageSession(sessionID: sessionID, messageID: "message")
+        let lease = try acquiredLease(from: arbiter.acquireRemoteMessageLease(for: session))
+
+        #expect(arbiter.snapshot.remoteMessageSession?.id == sessionID)
+        #expect(arbiter.snapshot.remoteMessageSession?.messageID == "message")
+        _ = lease
+    }
+
+    @available(iOS 16, *)
+    @Test("Logical remote message blocks modal acquisition with its session", .timeLimit(.minutes(1)))
+    func remoteMessageBlocksModalAcquisition() throws {
+        let arbiter = PromoQueueLeaseArbiter()
+        let session = makeRemoteMessageSession()
+        let lease = try acquiredLease(from: arbiter.acquireRemoteMessageLease(for: session))
 
         let result = arbiter.acquireModalLease()
 
-        guard case .blockedByVisiblePromo(let occupyingIdentity) = result else {
-            Issue.record("Expected modal acquisition to be blocked by the visible promo")
+        guard case .blockedByRemoteMessage(let occupyingSession) = result else {
+            Issue.record("Expected modal acquisition to be blocked by the logical remote message")
             return
         }
-        #expect(occupyingIdentity == identity)
+        #expect(occupyingSession == session)
         #expect(!arbiter.snapshot.hasModalLease)
         _ = lease
     }
 
     @available(iOS 16, *)
-    @Test("Modal lease blocks visible promo acquisition", .timeLimit(.minutes(1)))
-    func modalLeaseBlocksVisiblePromoAcquisition() throws {
+    @Test("Modal lease blocks logical remote-message acquisition", .timeLimit(.minutes(1)))
+    func modalLeaseBlocksRemoteMessageAcquisition() throws {
         let arbiter = PromoQueueLeaseArbiter()
         let modalLease = try acquiredLease(from: arbiter.acquireModalLease())
 
-        let result = arbiter.acquireVisiblePromoLease(for: makeVisiblePromoIdentity())
+        let result = arbiter.acquireRemoteMessageLease(for: makeRemoteMessageSession())
 
         guard case .blockedByModal(let attemptIdentity) = result else {
-            Issue.record("Expected visible promo acquisition to be blocked by the modal")
+            Issue.record("Expected logical remote-message acquisition to be blocked by the modal")
             return
         }
         #expect(attemptIdentity == modalLease.attemptIdentity)
-        #expect(arbiter.snapshot.visiblePromoIdentity == nil)
+        #expect(arbiter.snapshot.remoteMessageSession == nil)
         _ = modalLease
     }
 
@@ -106,36 +120,36 @@ struct PromoQueueLeaseArbiterTests {
     }
 
     @available(iOS 16, *)
-    @Test("A visible promo blocks a different promo on a different surface", .timeLimit(.minutes(1)))
-    func visiblePromoBlocksDifferentPromoOnDifferentSurface() throws {
+    @Test("A logical remote message blocks another logical session", .timeLimit(.minutes(1)))
+    func remoteMessageBlocksAnotherLogicalSession() throws {
         let arbiter = PromoQueueLeaseArbiter()
-        let firstIdentity = makeVisiblePromoIdentity(surfaceID: UUID(), promoID: "first")
-        let secondIdentity = makeVisiblePromoIdentity(surfaceID: UUID(), promoID: "second")
-        let firstLease = try acquiredLease(from: arbiter.acquireVisiblePromoLease(for: firstIdentity))
+        let firstSession = makeRemoteMessageSession(messageID: "first")
+        let secondSession = makeRemoteMessageSession(messageID: "second")
+        let firstLease = try acquiredLease(from: arbiter.acquireRemoteMessageLease(for: firstSession))
 
-        let result = arbiter.acquireVisiblePromoLease(for: secondIdentity)
+        let result = arbiter.acquireRemoteMessageLease(for: secondSession)
 
-        guard case .blockedByVisiblePromo(let occupyingIdentity) = result else {
-            Issue.record("Expected the global visible owner to block every other surface and promo")
+        guard case .blockedByRemoteMessage(let occupyingSession) = result else {
+            Issue.record("Expected the global logical owner to block another remote-message session")
             return
         }
-        #expect(occupyingIdentity == firstIdentity)
-        #expect(arbiter.snapshot.activeOwner == .visible(firstIdentity))
+        #expect(occupyingSession == firstSession)
+        #expect(arbiter.snapshot.activeOwner == .remoteMessage(firstSession))
         _ = firstLease
     }
 
     @available(iOS 16, *)
-    @Test("Releasing the visible owner permits a different visible acquisition", .timeLimit(.minutes(1)))
-    func releasingVisibleOwnerPermitsDifferentVisibleAcquisition() throws {
+    @Test("Releasing the logical owner permits a different logical acquisition", .timeLimit(.minutes(1)))
+    func releasingRemoteMessageOwnerPermitsDifferentAcquisition() throws {
         let arbiter = PromoQueueLeaseArbiter()
-        let firstIdentity = makeVisiblePromoIdentity(promoID: "first")
-        let secondIdentity = makeVisiblePromoIdentity(promoID: "second")
-        let firstLease = try acquiredLease(from: arbiter.acquireVisiblePromoLease(for: firstIdentity))
+        let firstSession = makeRemoteMessageSession(messageID: "first")
+        let secondSession = makeRemoteMessageSession(messageID: "second")
+        let firstLease = try acquiredLease(from: arbiter.acquireRemoteMessageLease(for: firstSession))
 
         #expect(firstLease.release())
-        let secondLease = try acquiredLease(from: arbiter.acquireVisiblePromoLease(for: secondIdentity))
+        let secondLease = try acquiredLease(from: arbiter.acquireRemoteMessageLease(for: secondSession))
 
-        #expect(arbiter.snapshot.activeOwner == .visible(secondIdentity))
+        #expect(arbiter.snapshot.activeOwner == .remoteMessage(secondSession))
         _ = secondLease
     }
 
@@ -155,28 +169,29 @@ struct PromoQueueLeaseArbiterTests {
     }
 
     @available(iOS 16, *)
-    @Test("Releasing a visible promo lease more than once is harmless", .timeLimit(.minutes(1)))
-    func duplicateVisiblePromoReleaseIsHarmless() throws {
+    @Test("A stale remote-message lease cannot release its same-message replacement", .timeLimit(.minutes(1)))
+    func staleRemoteMessageReleaseCannotClearReplacement() throws {
         let arbiter = PromoQueueLeaseArbiter()
-        let identity = makeVisiblePromoIdentity()
-        let lease = try acquiredLease(from: arbiter.acquireVisiblePromoLease(for: identity))
+        let firstSession = makeRemoteMessageSession(messageID: "message")
+        let replacementSession = makeRemoteMessageSession(messageID: "message")
+        let firstLease = try acquiredLease(from: arbiter.acquireRemoteMessageLease(for: firstSession))
 
-        #expect(lease.release())
-        let reacquiredLease = try acquiredLease(from: arbiter.acquireVisiblePromoLease(for: identity))
+        #expect(firstLease.release())
+        let replacementLease = try acquiredLease(from: arbiter.acquireRemoteMessageLease(for: replacementSession))
 
-        #expect(!lease.release())
-        #expect(arbiter.snapshot.activeOwner == .visible(identity))
-        _ = reacquiredLease
+        #expect(!firstLease.release())
+        #expect(arbiter.snapshot.activeOwner == .remoteMessage(replacementSession))
+        _ = replacementLease
     }
 
     @available(iOS 16, *)
-    @Test("A dropped visible promo token stops blocking modal acquisition", .timeLimit(.minutes(1)))
-    func droppedVisiblePromoTokenStopsBlockingModalAcquisition() throws {
+    @Test("A dropped remote-message token stops blocking modal acquisition", .timeLimit(.minutes(1)))
+    func droppedRemoteMessageTokenStopsBlockingModalAcquisition() throws {
         let arbiter = PromoQueueLeaseArbiter()
-        let identity = makeVisiblePromoIdentity()
+        let session = makeRemoteMessageSession()
         do {
-            let droppedLease = try acquiredLease(from: arbiter.acquireVisiblePromoLease(for: identity))
-            #expect(arbiter.snapshot.activeOwner == .visible(identity))
+            let droppedLease = try acquiredLease(from: arbiter.acquireRemoteMessageLease(for: session))
+            #expect(arbiter.snapshot.activeOwner == .remoteMessage(session))
             _ = droppedLease
         }
 
@@ -187,8 +202,8 @@ struct PromoQueueLeaseArbiterTests {
     }
 
     @available(iOS 16, *)
-    @Test("A dropped modal token stops blocking visible promo acquisition", .timeLimit(.minutes(1)))
-    func droppedModalTokenStopsBlockingVisiblePromoAcquisition() throws {
+    @Test("A dropped modal token stops blocking remote-message acquisition", .timeLimit(.minutes(1)))
+    func droppedModalTokenStopsBlockingRemoteMessageAcquisition() throws {
         let arbiter = PromoQueueLeaseArbiter()
         do {
             let droppedLease = try acquiredLease(from: arbiter.acquireModalLease())
@@ -196,18 +211,18 @@ struct PromoQueueLeaseArbiterTests {
             _ = droppedLease
         }
 
-        let identity = makeVisiblePromoIdentity()
-        let visibleLease = try acquiredLease(from: arbiter.acquireVisiblePromoLease(for: identity))
+        let session = makeRemoteMessageSession()
+        let remoteMessageLease = try acquiredLease(from: arbiter.acquireRemoteMessageLease(for: session))
 
-        #expect(arbiter.snapshot.activeOwner == .visible(identity))
-        _ = visibleLease
+        #expect(arbiter.snapshot.activeOwner == .remoteMessage(session))
+        _ = remoteMessageLease
     }
 
-    private func makeVisiblePromoIdentity(
-        surfaceID: UUID = UUID(),
-        promoID: String = "message"
-    ) -> VisiblePromoIdentity {
-        VisiblePromoIdentity(surfaceID: surfaceID, promoType: .remoteMessage, promoID: promoID)
+    private func makeRemoteMessageSession(
+        sessionID: UUID = UUID(),
+        messageID: String = "message"
+    ) -> PromoQueueRemoteMessageSession {
+        PromoQueueRemoteMessageSession(id: sessionID, messageID: messageID)
     }
 
     private func acquiredLease(
@@ -220,8 +235,8 @@ struct PromoQueueLeaseArbiterTests {
     }
 
     private func acquiredLease(
-        from result: PromoQueueVisiblePromoLeaseAcquisitionResult
-    ) throws -> PromoQueueVisiblePromoLease {
+        from result: PromoQueueRemoteMessageLeaseAcquisitionResult
+    ) throws -> PromoQueueRemoteMessageLease {
         guard case .acquired(let lease) = result else {
             throw TestError.expectedAcquiredLease
         }

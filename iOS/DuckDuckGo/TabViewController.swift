@@ -2950,6 +2950,11 @@ extension TabViewController: WKNavigationDelegate {
                                                                            token: token) {
                 modifiedRequest = signalled
                 didModifyRequest = true
+                // Fires only when we mutate the request, i.e. the first pass — the cancel+reload re-enters
+                // with signals already present so `signalledRequest` returns nil, avoiding a double count.
+                if cohort == .treatment {
+                    fireSearchTokenAttachPixel(token: token)
+                }
             }
         }
 
@@ -5219,6 +5224,31 @@ private extension WKProcessTerminationReason {
         case .requestedByClient: return "requested_by_client"
         case .crash: return "crash"
         case .exceededSharedProcessCrashLimit: return "exceeded_shared_process_crash_limit"
+        }
+    }
+}
+
+// MARK: - Search Token (Dindex) experiment diagnostics
+
+private extension TabViewController {
+
+    /// Fires the treatment-only `m_search-token_serp-attach` diagnostic for a SERP navigation the interceptor
+    /// just decorated: whether a token was attached and its length bucket. Daily+count, low-cardinality, no PII.
+    func fireSearchTokenAttachPixel(token: String?) {
+        DailyPixel.fireDailyAndCount(pixel: .searchTokenSerpAttach, withAdditionalParameters: [
+            "outcome": token != nil ? "attached" : "no_token",
+            "token_length": Self.tokenLengthBucket(token?.count ?? 0)
+        ])
+    }
+
+    // A normal token is ~347 chars; buckets bracket that so truncation (1_256) and oversize (513_plus)
+    // stand out from the normal range (257_512).
+    static func tokenLengthBucket(_ length: Int) -> String {
+        switch length {
+        case 0: return "0"
+        case 1...256: return "1_256"
+        case 257...512: return "257_512"
+        default: return "513_plus"
         }
     }
 }

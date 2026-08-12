@@ -1,0 +1,42 @@
+// Search Token (Dindex) experiment diagnostics — treatment cohort only.
+// Separate from the param-locked experiment_metrics_* pixels so they can carry diagnostic params.
+{
+    "m_search-token_serp-attach": {
+        "description": "Fires once per treatment-cohort variant-b SERP navigation the interceptor decorates, recording whether the client attached an X-DDG-Search-Token header and the token's length bucket. Compare 'attached' against the backend's received-a-header count to separate warming gap from header-stripped-in-transit.",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "outcome",
+                "description": "Whether a live token was attached to the SERP request",
+                "type": "string",
+                "enum": ["attached", "no_token"]
+            },
+            {
+                "key": "token_length",
+                "description": "Bucketed length of the attached token (0 when none attached). A normal token is ~347 chars, so 257_512 is the expected range; 1_256 flags truncation and 513_plus oversize.",
+                "type": "string",
+                "enum": ["0", "1_256", "257_512", "513_plus"]
+            }
+        ],
+        "expires": "2026-10-12"
+    },
+    "m_search-token_fetch": {
+        "description": "Fires on each warm token fetch attempt (treatment cohort), recording the result. Disambiguates whether a warming gap is caused by fetches failing versus warm never triggering.",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "result",
+                "description": "Outcome of the token fetch",
+                "type": "string",
+                "enum": ["success", "http_error", "transport_error"]
+            }
+        ],
+        "expires": "2026-10-12"
+    }
+}

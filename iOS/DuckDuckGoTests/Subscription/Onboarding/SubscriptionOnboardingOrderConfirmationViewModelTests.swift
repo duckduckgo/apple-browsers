@@ -134,8 +134,7 @@ final class SubscriptionOnboardingOrderConfirmationViewModelTests: XCTestCase {
     // Spans that aren't trials at all (zero-length, reversed dates) are rejected by
     // `DuckDuckGoSubscription.trialLengthInDays(calendar:)` and covered by its own tests.
 
-    /// One day past the widest strip the card can draw, so this guards the limit rather than a span so long
-    /// it would fail under any limit.
+    /// One day past the widest strip the card can draw, guarding the limit rather than an arbitrarily long span.
     func testWhenTheTrialIsLongerThanTheStripCanDrawThenNoCardIsShown() async {
         let start = date(2026, 5, 7)
         let sut = makeViewModel(subscription: subscription(startedAt: start,

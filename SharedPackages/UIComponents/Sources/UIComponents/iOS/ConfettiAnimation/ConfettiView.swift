@@ -21,10 +21,7 @@
 import SwiftUI
 import DesignResourcesKit
 
-/// A one-shot confetti burst. Draws all particles in a single `Canvas` pass; each particle is a closed-form function of progress.
-///
-/// Particles are deterministically seeded at init (not on appear) so bursts are reproducible. Progress animates via `Animatable` rather than `TimelineView`.
-/// Under Reduce Motion, nothing is drawn (celebration is decorative).
+/// A one-shot confetti burst, deterministically seeded at init so bursts are reproducible. Draws nothing under Reduce Motion.
 public struct ConfettiView: View {
 
     public struct Configuration {

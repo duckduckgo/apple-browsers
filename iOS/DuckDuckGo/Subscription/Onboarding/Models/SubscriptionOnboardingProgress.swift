@@ -22,8 +22,7 @@ import FoundationExtensions
 import Persistence
 import os.log
 
-/// Serializes the read-decide-write sequences below across every `SubscriptionOnboardingProgressPersisting`
-/// conformer.
+/// Serializes the read-decide-write sequences below across every `SubscriptionOnboardingProgressPersisting` conformer.
 private let progressLock = NSLock()
 
 /// Storage for onboarding progress. Reads and writes only — no rules about what the values mean.
@@ -67,8 +66,7 @@ struct SubscriptionOnboardingProgressPersistor: SubscriptionOnboardingProgressPe
         self.keyValueStore = keyValueStore
     }
 
-    /// Unrecognised raw values are dropped rather than failing the whole read, so a downgrade after a new
-    /// checklist item ships leaves the remaining progress intact.
+    /// Unrecognised raw values are dropped rather than failing the whole read, so a downgrade after a new checklist item ships leaves the remaining progress intact.
     var completedItems: Set<SubscriptionOnboardingChecklistItem> {
         get {
             let stored = read(.completedItems) as? [String] ?? []
@@ -90,10 +88,7 @@ struct SubscriptionOnboardingProgressPersistor: SubscriptionOnboardingProgressPe
 
 // MARK: - Progress
 
-/// This customer's checklist and how much of it they have completed.
-///
-/// Every reader goes through this — the flow, the progress screen and the Subscription Settings card — so
-/// none of them can disagree about a customer's completion.
+/// This customer's checklist and how much of it they have completed; every reader (flow, progress screen, settings card) goes through this so none of them can disagree.
 struct SubscriptionOnboardingProgress {
 
     /// How long the Subscription Settings card lives, measured from its first display.
@@ -123,8 +118,7 @@ struct SubscriptionOnboardingProgress {
         persistor.markComplete(item)
     }
 
-    /// - On reaching 100% the card stays up for the rest of that run and goes on the next launch
-    /// - It expires 14 days after it first appeared, whether or not the customer finished.
+    /// Stays up for the rest of the run once complete, and expires 14 days after it first appeared regardless.
     mutating func shouldShowSetupCard(now: Date, session: SubscriptionOnboardingSessionStating) -> Bool {
         if percentage >= 100 {
             let wasAlreadyComplete: Bool
@@ -153,9 +147,7 @@ struct SubscriptionOnboardingProgress {
         return now.timeIntervalSince(firstShown) < Self.cardLifetime
     }
 
-    /// A read-only preview of ``shouldShowSetupCard(now:session:)`` from whatever is already persisted —
-    /// never writes. Safe to call from a View `init` to seed `@State`; `.onAppear`'s `refresh()` then calls
-    /// the real, write-performing decision once the view has actually appeared.
+    /// A non-writing preview of ``shouldShowSetupCard(now:session:)``, safe to call from a View `init`.
     func previewShouldShowSetupCard(now: Date, session: SubscriptionOnboardingSessionStating) -> Bool {
         if percentage >= 100 {
             guard session.didCompleteDuringThisSession else { return false }

@@ -4217,8 +4217,7 @@ extension TabViewController: UserContentControllerDelegate {
             openExternally(url: makeXSafariHTTPSURL(from: url))
         case .tabTermination:
             tabTerminationErrorPageInstrumentation.reloadSelected()
-            hideErrorMessage()
-            reload()
+            refresh()
         case nil:
             return
         }

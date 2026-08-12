@@ -232,7 +232,13 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         windowAttachmentProbe.isHidden = true
         windowAttachmentProbe.isUserInteractionEnabled = false
         windowAttachmentProbe.onWindowChanged = { [weak self] in
-            self?.updatePromoSurfaceExposure()
+            guard let self else {
+                return
+            }
+            updatePromoSurfaceExposure()
+            if viewIfLoaded?.window == nil {
+                messagesModel.remoteMessageHostDidDetach()
+            }
         }
         view.addSubview(windowAttachmentProbe)
 
@@ -315,6 +321,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
 
     func tearDownPromoSurface() {
         messagesModel.tearDown()
+        messagesModel.remoteMessageHostDidDetach()
     }
 
     private func setPromoSurfaceCovered(_ isCovered: Bool) {
@@ -457,6 +464,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         chromeDelegate = nil
         removeFromParent()
         view.removeFromSuperview()
+        messagesModel.remoteMessageHostDidDetach()
     }
 
     func showNextDaxDialog() {

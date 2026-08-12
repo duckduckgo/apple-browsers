@@ -231,8 +231,11 @@ private extension NewTabPageView {
             case .message(let messageModel):
                 homeMessageView(messageModel)
 
-            case .remoteMessageGate(let gate):
-                remoteMessageGate(gate)
+            case .coordinatedRemoteMessage(let renderSession):
+                HomeMessageView(viewModel: renderSession.viewModel)
+                    .frame(maxWidth: horizontalSizeClass == .regular ? Metrics.messageMaximumWidthPad : Metrics.messageMaximumWidth)
+                    .transition(coordinatedRemoteMessageTransition)
+                    .id(renderSession.presentation.id)
             }
         }
     }
@@ -243,12 +246,9 @@ private extension NewTabPageView {
             .transition(.scale.combined(with: .opacity))
     }
 
-    @ViewBuilder
-    private func remoteMessageGate(_ gate: NewTabPageRemoteMessageGate) -> some View {
-        NewTabPageRemoteMessageGateMountView(
-            gate: gate,
-            messagesModel: messagesModel,
-            maximumWidth: horizontalSizeClass == .regular ? Metrics.messageMaximumWidthPad : Metrics.messageMaximumWidth
+    private var coordinatedRemoteMessageTransition: AnyTransition {
+        NewTabPageRemoteMessageTransition.make(
+            usesAnimatedRemoval: messagesModel.usesAnimatedRemoteMessageRemoval
         )
     }
 
@@ -281,77 +281,15 @@ private extension NewTabPageView {
     }
 }
 
-/// The production coordinated remote-message subtree, exposed internally so host tests exercise
-/// the same gate, card, and disappearance callbacks as the NTP.
-struct NewTabPageRemoteMessageGateMountView: View {
-    let gate: NewTabPageRemoteMessageGate
-    let messagesModel: NewTabPageMessagesModel
-    let maximumWidth: CGFloat
-
-    var body: some View {
-        RemoteMessageGateMountView(gate: gate, messagesModel: messagesModel) { mountID in
-            if let renderSession = gate.renderSession {
-                HomeMessageView(viewModel: renderSession.viewModel)
-                    .frame(maxWidth: maximumWidth)
-                    // Coordinated ownership ends after the real removal callback. An identity transition keeps that
-                    // callback a trustworthy physical-removal boundary on every supported SwiftUI runtime.
-                    .transition(.identity)
-                    .id(renderSession.id)
-                    .onAppear {
-                        messagesModel.remoteMessageCardDidAppear(
-                            renderSessionID: renderSession.id,
-                            mountID: mountID
-                        )
-                    }
-                    .onDisappear {
-                        messagesModel.remoteMessageDidDisappear(
-                            renderSessionID: renderSession.id,
-                            mountID: mountID
-                        )
-                    }
-            } else {
-                Color.clear
-                    .frame(height: 0)
-            }
+enum NewTabPageRemoteMessageTransition {
+    static func make(usesAnimatedRemoval: Bool) -> AnyTransition {
+        guard usesAnimatedRemoval else {
+            return .identity
         }
-    }
-}
-
-/// Gives each physical SwiftUI gate mount an identity for balanced appearance and disappearance callbacks.
-private struct RemoteMessageGateMountView<Content: View>: View {
-    @State private var mountID = UUID()
-
-    let gate: NewTabPageRemoteMessageGate
-    let messagesModel: NewTabPageMessagesModel
-    let content: (UUID) -> Content
-
-    init(
-        gate: NewTabPageRemoteMessageGate,
-        messagesModel: NewTabPageMessagesModel,
-        @ViewBuilder content: @escaping (UUID) -> Content
-    ) {
-        self.gate = gate
-        self.messagesModel = messagesModel
-        self.content = content
-    }
-
-    var body: some View {
-        content(mountID)
-            .onAppear {
-                messagesModel.remoteMessageGateDidAppear(
-                    gateID: gate.id,
-                    messageID: gate.messageID,
-                    mountID: mountID,
-                    renderSessionID: gate.renderSession?.id
-                )
-            }
-            .onDisappear {
-                messagesModel.remoteMessageGateDidDisappear(
-                    gateID: gate.id,
-                    messageID: gate.messageID,
-                    mountID: mountID
-                )
-            }
+        return .asymmetric(
+            insertion: .identity,
+            removal: .scale.combined(with: .opacity)
+        )
     }
 }
 
@@ -450,15 +388,11 @@ private func makePreviewMessagesModel(homeMessages: [HomeMessage]) -> NewTabPage
 private final class PreviewNewTabPagePromoCoordinator: NewTabPagePromoCoordinating {
     let promoCoordinationMode = PromoCoordinationMode.legacy
 
-    func admitRemoteMessage(_ identity: VisiblePromoIdentity) -> PromoQueueRemoteMessageAdmissionResult {
-        .deferred
-    }
-
-    func registerRemoteMessageRetry(
-        for surfaceID: UUID,
-        target: NewTabPagePromoRetrying
-    ) -> NewTabPagePromoRetryRegistration {
-        NewTabPagePromoRetryRegistration()
+    func registerRemoteMessageRenderer(
+        id: UUID,
+        target: NewTabPagePromoRendering
+    ) -> NewTabPagePromoRendererRegistration {
+        NewTabPagePromoRendererRegistration()
     }
 }
 

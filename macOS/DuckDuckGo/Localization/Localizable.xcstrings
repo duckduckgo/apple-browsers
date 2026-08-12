@@ -19390,13 +19390,13 @@
       }
     },
     "bookmarks.bar.context-menu.reorder-by-name" : {
-      "comment" : "Sort by name permanently menu item for bookmark folder context menus",
+      "comment" : "Sort by Name Permanently menu item for bookmark folder context menus",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Sort by name permanently"
+            "value" : "Sort by Name Permanently"
           }
         }
       }
@@ -22166,7 +22166,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Sort by name permanently"
+            "value" : "Sort by Name Permanently"
           }
         }
       }

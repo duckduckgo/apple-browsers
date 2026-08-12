@@ -3520,7 +3520,6 @@
 		B6CC26692BAD959500F53F8D /* DownloadProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6CC26672BAD959500F53F8D /* DownloadProgress.swift */; };
 		B6CC266C2BAD9CD800F53F8D /* FileProgressPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6CC266B2BAD9CD800F53F8D /* FileProgressPresenter.swift */; };
 		B6CC266D2BAD9CD800F53F8D /* FileProgressPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6CC266B2BAD9CD800F53F8D /* FileProgressPresenter.swift */; };
-		B6D574B429472253008ED1B6 /* FBProtectionTabExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6D574B329472253008ED1B6 /* FBProtectionTabExtension.swift */; };
 		B6D6A5DD2982A4CE001F5F11 /* Tab+Navigation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B61E2CD4294346C000773D8A /* Tab+Navigation.swift */; };
 		B6DA06E42913ECEE00225DE2 /* ContextMenuManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6DA06E32913ECEE00225DE2 /* ContextMenuManager.swift */; };
 		B6DA06E62913F39400225DE2 /* MenuItemSelectors.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6DA06E52913F39400225DE2 /* MenuItemSelectors.swift */; };
@@ -3533,7 +3532,6 @@
 		B6DE57F62B05EA9000CD54B9 /* SheetHostingWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6DE57F52B05EA9000CD54B9 /* SheetHostingWindow.swift */; };
 		B6DE57F72B05EA9000CD54B9 /* SheetHostingWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6DE57F52B05EA9000CD54B9 /* SheetHostingWindow.swift */; };
 		B6E1491029A5C30500AAFBE8 /* ContentBlockingTabExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6D574B12947224C008ED1B6 /* ContentBlockingTabExtension.swift */; };
-		B6E1491129A5C30A00AAFBE8 /* FBProtectionTabExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6D574B329472253008ED1B6 /* FBProtectionTabExtension.swift */; };
 		B6E319382953446000DD3BCF /* Assertions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6E319372953446000DD3BCF /* Assertions.swift */; };
 		B6E3E5502BBFCDEE00A41922 /* OpenDownloadsCellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6E3E54F2BBFCDEE00A41922 /* OpenDownloadsCellView.swift */; };
 		B6E3E5512BBFCDEE00A41922 /* OpenDownloadsCellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6E3E54F2BBFCDEE00A41922 /* OpenDownloadsCellView.swift */; };
@@ -6729,7 +6727,6 @@
 		B6CC26672BAD959500F53F8D /* DownloadProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadProgress.swift; sourceTree = "<group>"; };
 		B6CC266B2BAD9CD800F53F8D /* FileProgressPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileProgressPresenter.swift; sourceTree = "<group>"; };
 		B6D574B12947224C008ED1B6 /* ContentBlockingTabExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ContentBlockingTabExtension.swift; sourceTree = "<group>"; };
-		B6D574B329472253008ED1B6 /* FBProtectionTabExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FBProtectionTabExtension.swift; sourceTree = "<group>"; };
 		B6DA06E32913ECEE00225DE2 /* ContextMenuManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextMenuManager.swift; sourceTree = "<group>"; };
 		B6DA06E52913F39400225DE2 /* MenuItemSelectors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuItemSelectors.swift; sourceTree = "<group>"; };
 		B6DA44012616B28300DD1EC2 /* PixelDataStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PixelDataStore.swift; sourceTree = "<group>"; };
@@ -12341,7 +12338,6 @@
 				373C82502D8326E4004FBBBE /* FaviconsTabExtension.swift */,
 				8F16A73746AF35E5F7248523 /* TabSuspensionExtension.swift */,
 				B4B283A52E00FF3D2C8240EA /* EventHubTabExtension.swift */,
-				B6D574B329472253008ED1B6 /* FBProtectionTabExtension.swift */,
 				B6C00ECC292F89D9009C73A6 /* FindInPageTabExtension.swift */,
 				B66260DF29AC6EBD00E9E3EE /* HistoryTabExtension.swift */,
 				B6C00ED4292FB21E009C73A6 /* HoveredLinkTabExtension.swift */,
@@ -15616,7 +15612,6 @@
 				B696AFFC2AC5924800C93203 /* FileLineError.swift in Sources */,
 				F1D43AEF2B98D8DF00BAB743 /* MainMenuActions+VanillaBrowser.swift in Sources */,
 				369A0CE92FAE24FB00494F41 /* URL+SubscriptionAttribution.swift in Sources */,
-				B6E1491129A5C30A00AAFBE8 /* FBProtectionTabExtension.swift in Sources */,
 				BB6C58692EFF01CA00B07E6B /* BaseURLDebugSettings.swift in Sources */,
 				840B66872F3A023C001E20C6 /* UpdatesDebugMenu.swift in Sources */,
 				BB6C586A2EFF01CA00B07E6B /* BaseURLDebugMenu.swift in Sources */,
@@ -17978,7 +17973,6 @@
 				B6104E9B2BA9C173008636B2 /* DownloadResumeData.swift in Sources */,
 				85D885B026A590A90077C374 /* NSNotificationName+PasswordManager.swift in Sources */,
 				B610F2BB27A145C500FCEBE9 /* RulesCompilationMonitor.swift in Sources */,
-				B6D574B429472253008ED1B6 /* FBProtectionTabExtension.swift in Sources */,
 				85AC3B3525DA82A600C7D2AA /* DataTaskProviding.swift in Sources */,
 				56406D4B2C636A8900BF8FA2 /* SpecialPagesUserScriptExtension.swift in Sources */,
 				31521AC02CC013AD00248E6F /* AIChatMenuVisibilityConfigurable.swift in Sources */,

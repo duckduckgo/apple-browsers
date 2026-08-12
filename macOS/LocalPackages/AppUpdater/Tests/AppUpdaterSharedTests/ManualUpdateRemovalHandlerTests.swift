@@ -18,7 +18,7 @@
 
 import AppUpdaterShared
 import AppUpdaterTestHelpers
-import FeatureFlags
+import FeatureFlags_macOS
 import Persistence
 import PersistenceTestingUtils
 import PrivacyConfig

@@ -18,7 +18,7 @@
 
 import AppKit
 import Combine
-import FeatureFlags
+import FeatureFlags_macOS
 import MaliciousSiteProtection
 import PixelKit
 import PreferencesUI_macOS
@@ -348,6 +348,7 @@ extension Preferences {
                             TextMenuItemCaption(UserText.autoplayCaption)
                         }
                     }
+                    .id(PreferencesScrollAnchor.permissions)
                 }
             }
             .sheet(isPresented: isPresentingAddToDockDemoVideo) {

@@ -949,6 +949,12 @@
 /* Login name label for login details on autofill */
 "autofill.logins.details.login-name" = "Τίτλος";
 
+/* Message for alert when attempting to save a password that has neither a website nor a username */
+"autofill.logins.details.missing-website-or-username-alert.message" = "Για να αποθηκεύσετε αυτόν τον κωδικό πρόσβασης, εισαγάγετε έναν ιστότοπο ή ένα όνομα χρήστη.";
+
+/* Title for alert when attempting to save a password that has neither a website nor a username */
+"autofill.logins.details.missing-website-or-username-alert.title" = "Απαιτείται ιστότοπος ή όνομα χρήστη";
+
 /* Title when adding new autofill login */
 "autofill.logins.details.new-title" = "Προσθήκη κωδικού πρόσβασης";
 
@@ -2950,6 +2956,12 @@
 /* Title for the Import Passwords Promotion banner */
 "import.passwords.promo.title" = "Εισαγάγετε τους κωδικούς πρόσβασής σας στο DuckDuckGo";
 
+/* Body for the notification sent after a period of inactivity. */
+"inactivity.notification.body" = "Χρησιμοποίησε το DuckDuckGo για να αποφύγεις τις διαφημίσεις που σε ακολουθούν στο διαδίκτυο και να μειώσεις το διαδικτυακό σου αποτύπωμα.";
+
+/* Title for the notification sent after a period of inactivity. */
+"inactivity.notification.title" = "Πάρε τον έλεγχο της διαδικτυακής σου εμπειρίας";
+
 /* Placeholder text for the duck.ai input field */
 "input.field.placeholder.duckai" = "Ρώτα οτιδήποτε ιδιωτικά";
 
@@ -4008,6 +4020,18 @@
 
 /* Special error page title for pages that can only be opened in Safari */
 "prompt.general-page-problem.title" = "Αυτή η σελίδα φορτώνει μόνο στο Safari";
+
+/* Error page message shown after repeated tab terminations */
+"prompt.tab-termination-error-page.message" = "Αυτή η σελίδα σταμάτησε να φορτώνει πολλές φορές. Δοκίμασε να κάνεις επαναφόρτωση ή στείλε μας σχόλια.";
+
+/* Button that reloads a page after repeated tab terminations */
+"prompt.tab-termination-error-page.reload" = "Επαναφόρτωση";
+
+/* Button that opens site feedback after repeated tab terminations */
+"prompt.tab-termination-error-page.send-feedback" = "Αποστολή σχολίου";
+
+/* Error page title shown after repeated tab terminations */
+"prompt.tab-termination-error-page.title" = "Δεν μπορέσαμε να φορτώσουμε τη σελίδα αυτή";
 
 /* Default native error page message */
 "prompt.web-page-load-error.message" = "Ο ιστότοπος αυτός διαθέτει μη έγκυρο πιστοποιητικό ασφαλείας και ενδέχεται να μην είναι ασφαλές να το επισκεφτείτε.";

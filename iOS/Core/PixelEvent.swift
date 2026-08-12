@@ -1127,6 +1127,7 @@ extension Pixel {
         case syncAutoRestorePreservedAccountClearFailed
 
         case syncSetupBarcodeScreenShown
+        case syncSetupScanQRScreenShown
         case syncSetupBarcodeScannerSuccess
         case syncSetupBarcodeScannerFailed
         case syncSetupBarcodeCodeCopied
@@ -1620,11 +1621,6 @@ extension Pixel {
         // MARK: WebView Error Page Shown
         case webViewErrorPageShown
 
-        // MARK: External Scheme Navigation
-        case webViewExternalSchemeNavigationSafariRedirectLoadURLRequested
-        case webViewExternalSchemeNavigationSafariRedirectLoopErrorPageShown
-        case webViewExternalSchemeNavigationSafariRedirectLoopErrorPageReportSiteBreakage
-
         // MARK: Browsing
         case stopPageLoad
 
@@ -1767,7 +1763,6 @@ extension Pixel {
         case aiChatNewAddressBarPickerV2Confirmed
         
         // MARK: Experimental Omnibar Metrics
-        case aiChatExperimentalOmnibarShown
         case aiChatExperimentalOmnibarPromptSubmitted
         case aiChatExperimentalOmnibarQuerySubmitted
         case aiChatExperimentalOmnibarModeSwitched
@@ -1861,6 +1856,11 @@ extension Pixel {
 
         case aiChatContextualQuickActionAskAboutPageShown
         case aiChatContextualQuickActionAskAboutPageSelected
+        case aiChatContextualAddressBarMenuShown
+        case aiChatContextualAddressBarMenuNewChatSelected
+        case aiChatContextualAddressBarMenuAskAboutPageSelected
+        case aiChatContextualFloatingInputDismissedWithoutSubmission
+        case aiChatContextualFloatingInputPromotedToSheet
         case aiChatContextualSuggestionSelected
         case aiChatContextualSuggestionsViewed
         case aiChatContextualHeaderTitleTapped
@@ -2078,12 +2078,6 @@ extension Pixel {
 
         case webExtensionDailyAdBlockingState
 
-        case webExtensionAdBlockingDetectedAdBlockerDaily
-        case webExtensionAdBlockingDetectedPlayabilityErrorDaily
-        case webExtensionAdBlockingDetectedVideoAdDaily
-        case webExtensionAdBlockingDetectedStaticAdDaily
-        case webExtensionAdBlockingDetectedBufferingDaily
-
         // MARK: - Fire Mode
         case browsingModeSwitched
         case tabSwitcherModeToggled
@@ -2105,21 +2099,6 @@ extension Pixel {
 }
 
 extension Pixel.Event: Equatable {}
-
-extension Pixel.Event {
-    /// Maps a C-S-S `webEvent` `type` string to the matching pixel case.
-    /// Returns `nil` for unknown types so the caller can no-op.
-    public static func adBlockingDetectedEvent(type: String) -> Pixel.Event? {
-        switch type {
-        case "youtube_adBlocker": return .webExtensionAdBlockingDetectedAdBlockerDaily
-        case "youtube_playabilityError": return .webExtensionAdBlockingDetectedPlayabilityErrorDaily
-        case "youtube_videoAd": return .webExtensionAdBlockingDetectedVideoAdDaily
-        case "youtube_staticAd": return .webExtensionAdBlockingDetectedStaticAdDaily
-        case "youtube_buffering": return .webExtensionAdBlockingDetectedBufferingDaily
-        default: return nil
-        }
-    }
-}
 
 extension Pixel.Event {
 
@@ -3212,6 +3191,7 @@ extension Pixel.Event {
         case .syncAutoRestorePreservedAccountClearFailed: return "sync-auto-restore_preserved_account_clear_failed"
 
         case .syncSetupBarcodeScreenShown: return "sync_setup_barcode_screen_shown"
+        case .syncSetupScanQRScreenShown: return "sync_setup_scan_qr_screen_shown"
         case .syncSetupBarcodeScannerSuccess: return "sync_setup_barcode_scanner_success"
         case .syncSetupBarcodeScannerFailed: return "sync_setup_barcode_scanner_failed"
         case .syncSetupBarcodeCodeCopied: return "sync_setup_barcode_code_copied"
@@ -3565,11 +3545,6 @@ extension Pixel.Event {
         // MARK: - WebView Error Page shown
         case .webViewErrorPageShown: return "m_errorpageshown"
 
-        // MARK: - External Scheme Navigation
-        case .webViewExternalSchemeNavigationSafariRedirectLoadURLRequested: return "m_webview_external-scheme-navigation_safari-redirect_load-url-requested"
-        case .webViewExternalSchemeNavigationSafariRedirectLoopErrorPageShown: return "m_webview_external-scheme-navigation_safari-redirect-loop_error-page-shown"
-        case .webViewExternalSchemeNavigationSafariRedirectLoopErrorPageReportSiteBreakage: return "m_webview_external-scheme-navigation_safari-redirect-loop_error-page_report-broken-site"
-
         // MARK: - DuckPlayer FE Application Telemetry
         case .duckPlayerLandscapeLayoutImpressions: return "duckplayer_landscape_layout_impressions"
 
@@ -3706,7 +3681,6 @@ extension Pixel.Event {
         case .aiChatNewAddressBarPickerV2Confirmed: return "m_aichat_new_address_bar_picker_v2_confirmed"
         
         // MARK: Experimental Omnibar Metrics
-        case .aiChatExperimentalOmnibarShown: return "m_aichat_experimental_omnibar_shown"
         case .aiChatExperimentalOmnibarPromptSubmitted: return "m_aichat_experimental_omnibar_prompt_submitted"
         case .aiChatExperimentalOmnibarQuerySubmitted: return "m_aichat_experimental_omnibar_query_submitted"
         case .aiChatExperimentalOmnibarModeSwitched: return "m_aichat_experimental_omnibar_mode_switched"
@@ -3797,6 +3771,11 @@ extension Pixel.Event {
         case .aiChatPageContextExtractionPrevented: return "aichat_page_context_extraction_prevented"
         case .aiChatContextualQuickActionAskAboutPageShown: return "m_aichat_contextual_quick_action_ask_about_page_shown"
         case .aiChatContextualQuickActionAskAboutPageSelected: return "m_aichat_contextual_quick_action_ask_about_page_selected"
+        case .aiChatContextualAddressBarMenuShown: return "aichat_contextual_address_bar_menu_shown"
+        case .aiChatContextualAddressBarMenuNewChatSelected: return "aichat_contextual_address_bar_menu_new_chat_selected"
+        case .aiChatContextualAddressBarMenuAskAboutPageSelected: return "aichat_contextual_address_bar_menu_ask_about_page_selected"
+        case .aiChatContextualFloatingInputDismissedWithoutSubmission: return "aichat_contextual_floating_input_dismissed_without_submission"
+        case .aiChatContextualFloatingInputPromotedToSheet: return "aichat_contextual_floating_input_promoted_to_sheet"
         case .aiChatContextualSuggestionSelected: return "aichat_contextual_suggestion_selected"
         case .aiChatContextualSuggestionsViewed: return "aichat_contextual_suggestions_viewed"
         case .aiChatContextualHeaderTitleTapped: return "aichat_contextual_header_title_tapped"
@@ -4074,12 +4053,6 @@ extension Pixel.Event {
         case .webExtensionAdBlockingPickerAlwaysOff: return "m_web_extension_ad_blocking_picker_always_off"
         case .webExtensionAdBlockingPickerDisableUntilRelaunch: return "m_web_extension_ad_blocking_picker_disable_until_relaunch"
         case .webExtensionAdBlockingBreakageReportEntered: return "m_web_extension_ad_blocking_breakage_report_entered"
-
-        case .webExtensionAdBlockingDetectedAdBlockerDaily: return "m_web_extension_adblocking_detected_ad_blocker_daily"
-        case .webExtensionAdBlockingDetectedPlayabilityErrorDaily: return "m_web_extension_adblocking_detected_playability_error_daily"
-        case .webExtensionAdBlockingDetectedVideoAdDaily: return "m_web_extension_adblocking_detected_video_ad_daily"
-        case .webExtensionAdBlockingDetectedStaticAdDaily: return "m_web_extension_adblocking_detected_static_ad_daily"
-        case .webExtensionAdBlockingDetectedBufferingDaily: return "m_web_extension_adblocking_detected_buffering_daily"
 
         // MARK: - Fire Mode
         case .browsingModeSwitched: return "m_browsing-mode_switched"

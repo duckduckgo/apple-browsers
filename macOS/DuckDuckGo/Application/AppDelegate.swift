@@ -39,7 +39,8 @@ import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
 import DDGSync
 import DuckAiDataStore
-import FeatureFlags
+import EventHub
+import FeatureFlags_macOS
 import FoundationExtensions
 import Freemium
 import History
@@ -248,6 +249,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         promptHandler: AIChatPromptHandler.shared,
         aiChatTabManaging: windowControllersManager
     )
+    /// App-scoped mailbox that carries the surface that opened a Duck.ai chat to the conversation pixels.
+    /// Open surfaces stamp it via `NSApp.delegateTyped.aiChatConversationSourceHandler`; the user-script
+    /// handler is injected the same instance.
+    let aiChatConversationSourceHandler = AIChatConversationSourceHandler()
     let aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
     let aiChatSessionStore: AIChatSessionStoring
     let aiChatPreferences: AIChatPreferences
@@ -292,6 +297,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let remoteMessagingClient: RemoteMessagingClient!
     let onboardingContextualDialogsManager: ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater
     let defaultBrowserAndDockPromptService: DefaultBrowserAndDockPromptService
+    let eventHubIntegration: MacOSEventHubIntegration
     private lazy var webNotificationClickHandler = WebNotificationClickHandler(tabFinder: windowControllersManager)
     let userChurnScheduler: UserChurnBackgroundActivityScheduler
     lazy var vpnUpsellPopoverPresenter = DefaultVPNUpsellPopoverPresenter(
@@ -1043,6 +1049,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         onboardingContextualDialogsManager = ContextualDialogsManager(
             trackerMessageProvider: TrackerMessageProvider(
                 entityProviding: privacyFeatures.contentBlocking.contentBlockingManager
+            ),
+            subscriptionUpsellExperiment: OnboardingSubscriptionUpsellExperiment(
+                featureFlagger: featureFlagger,
+                subscriptionManager: subscriptionManager
             )
         )
 
@@ -1054,6 +1064,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                                                 uiHosting: { windowControllersManager.activeViewController },
                                                                                 isOnboardingCompletedProvider: { onboardingManager.state == .onboardingCompleted },
                                                                                 dockCustomization: dockCustomization)
+        // Dedicated store: EventHub flushes often and `KeyValueFileStore.set` rewrites the whole file.
+        // `try?` — telemetry runs in memory rather than failing launch.
+        eventHubIntegration = MacOSEventHubIntegration(
+            privacyConfigurationManager: privacyConfigurationManager,
+            keyValueStore: try? KeyValueFileStore(location: URL.sandboxApplicationSupportURL, name: "EventHubKeyValueStore"))
 
         if AppVersion.runType.requiresEnvironment {
             remoteMessagingClient = RemoteMessagingClient(
@@ -1391,6 +1406,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // https://app.asana.com/0/1177771139624306/1207024603216659/f
         LottieConfiguration.shared.renderingEngine = .mainThread
 
+        // Must run before the first web view is created, as WebKit caches its text
+        // checking state – updating later would only take effect on next launch
+        grammarFeaturesManager.manage()
+
         configurationManager.start()
 
         let isFirstLaunch = LocalStatisticsStore().atb == nil
@@ -1434,6 +1453,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             let dependencies = PromoDependencies(
                 keyValueStore: keyValueStore,
                 isExternallyActivated: urlEventHandlerResult.willOpenWindows,
+                isNewUserProvider: { AppDelegate.isNewUser },
                 isOnboardingCompletedProvider: { OnboardingActionsManager.isOnboardingFinished },
                 activeRemoteMessageModel: activeRemoteMessageModel,
                 defaultBrowserAndDockPromptService: defaultBrowserAndDockPromptService,
@@ -1460,8 +1480,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 WindowsManager.openNewWindow(isOpenedAutomatically: true, lazyLoadTabs: true)
             }
         }
-
-        grammarFeaturesManager.manage()
 
         applyPreferredTheme()
 
@@ -1530,12 +1548,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         startAutomationServerIfNeeded()
 
+        // This is also called in applicationDidBecomeActive, but we're also calling it here, since
+        // applicationDidBecomeActive returns early on `didFinishLaunching` when it's delivered during
+        // startup (e.g. if a modal alert is shown first). EventHub cannot start any measurement period
+        // until it has been foregrounded at least once, so missing that first activation would leave it
+        // silently inert. Calling it twice is harmless — it re-checks already-settled state.
+        eventHubIntegration.applicationDidBecomeActive()
+
         PixelKit.fire(GeneralPixel.launch, doNotEnforcePrefix: true)
         profilerToken.stop()
     }
 
     func applicationDidResignActive(_ notification: Notification) {
         cleanScreenTimeDataOnMacOS26()
+        eventHubIntegration.applicationDidResignActive()
     }
 
     private func cleanScreenTimeDataOnMacOS26() {
@@ -1601,6 +1627,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         defaultBrowserAndDockPromptService.applicationDidBecomeActive()
+        eventHubIntegration.applicationDidBecomeActive()
 
         Task { @MainActor in
             await autoconsentStatsPopoverCoordinator.checkAndShowDialogIfNeeded()
@@ -1854,10 +1881,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 stateRestorationManager?.applicationWillTerminate()
             },
 
-            // 6. Auto-clear (burn on quit)
+            // 6. EventHub pending telemetry flush
+            .perform { [eventHubIntegration] in
+                eventHubIntegration.applicationWillTerminate()
+            },
+
+            // 7. Auto-clear (burn on quit)
             autoClearHandler,
 
-            // 7. Privacy stats cleanup
+            // 8. Privacy stats cleanup
             .terminationDecider { [privacyStats] _ in
                 .async(Task {
                     await privacyStats.handleAppTermination()
@@ -1865,7 +1897,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 })
             },
 
-            // 8. Close windows before quitting while waiting for ⌘Q release
+            // 9. Close windows before quitting while waiting for ⌘Q release
             .perform {
                 NSApp.visibleWindows.forEach { $0.close() }
             }
@@ -2205,6 +2237,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 },
                 isPairingV2CodeEnabled: { [featureFlagger] in
                     featureFlagger.isFeatureOn(.syncCanShowV2ConnectCode)
+                },
+                canWriteUnifiedDeviceList: { [featureFlagger] in
+                    featureFlagger.isFeatureOn(.syncCanWriteUnifiedDeviceList)
+                },
+                canReadUnifiedDeviceList: { [featureFlagger] in
+                    featureFlagger.isFeatureOn(.syncCanReadUnifiedDeviceList)
                 }
             )
         )

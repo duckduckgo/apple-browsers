@@ -24,7 +24,7 @@ import Common
 import ConcurrencyExtensions
 import Configuration
 import DesignResourcesKitIcons
-import FeatureFlags
+import FeatureFlags_macOS
 import FoundationExtensions
 import History
 import OSLog
@@ -1289,6 +1289,7 @@ final class MainMenu: NSMenu {
 
     @MainActor private func makeAIChatMenu() -> AIChatMenu {
         let actions = AIChatMenu.Actions.makeDefault(
+            conversationSource: .mainMenu,
             remoteSettings: AIChatRemoteSettings(),
             tabOpener: NSApp.delegateTyped.aiChatTabOpener,
             historyCleaner: aiChatHistoryCleaner,

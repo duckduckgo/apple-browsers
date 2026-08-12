@@ -133,6 +133,9 @@ extension OnboardingPixelReporter: OnboardingDialogsReporting {
             fire(ContextualOnboardingPixel.tryFireButtonDismissed, .uniqueByName)
         case .highFive:
             fire(ContextualOnboardingPixel.finalDialogDismissed, .uniqueByName)
+        case .subscriptionUpsell:
+            // The upsell reports through the experiment's own metrics instead.
+            break
         }
     }
 
@@ -150,6 +153,8 @@ extension OnboardingPixelReporter: OnboardingDialogsReporting {
             sharedPixelHandler.fire(.fireButton(.clicked(.dismiss)))
         case .highFive:
             sharedPixelHandler.fire(.end(.clicked(.dismiss)))
+        case .subscriptionUpsell:
+            break
         }
     }
 
@@ -175,6 +180,8 @@ extension OnboardingPixelReporter: OnboardingDialogsReporting {
             sharedPixelHandler.fire(.fireButton(.shown))
         case .highFive:
             sharedPixelHandler.fire(.end(.shown))
+        case .subscriptionUpsell:
+            break
         }
     }
 
@@ -194,7 +201,8 @@ extension OnboardingPixelReporter: OnboardingDialogsReporting {
             sharedPixelHandler.fire(.end(.clicked(.engage)))
         case .tryASearch,
                 .tryASite,
-                .tryFireButton:
+                .tryFireButton,
+                .subscriptionUpsell:
             break
         }
     }

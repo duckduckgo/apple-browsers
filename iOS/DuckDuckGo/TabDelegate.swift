@@ -90,7 +90,7 @@ protocol TabDelegate: AnyObject {
     ///   - logoURL: The extracted logo URL, or nil if no logo was found or the page reset to default
     func tab(_ tab: TabViewController, didExtractDaxEasterEggLogoURL logoURL: String?)
 
-    func tabDidRequestReportBrokenSite(tab: TabViewController)
+    func tabDidRequestReportBrokenSite(tab: TabViewController, entryPoint: PrivacyDashboardEntryPoint)
 
     func tab(_ tab: TabViewController, didRequestToggleReportWithCompletionHandler completionHandler: @escaping (Bool) -> Void)
 
@@ -101,6 +101,12 @@ protocol TabDelegate: AnyObject {
     func tabDidRequestDownloads(tab: TabViewController)
 
     func tabDidRequestAIChat(tab: TabViewController)
+
+    /// Called when the user picks Ask Duck.ai from the web view's text-selection edit menu.
+    func tab(_ tab: TabViewController, didRequestAIChatForSelectedText text: String)
+
+    /// Called when the user picks Search with DuckDuckGo from the web view's text-selection edit menu.
+    func tab(_ tab: TabViewController, didRequestSearchForSelectedText text: String)
 
     func tabDidRequestAIChatHistory(tab: TabViewController, source: AIChatHistorySource)
 

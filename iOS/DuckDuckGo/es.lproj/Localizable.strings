@@ -949,6 +949,12 @@
 /* Login name label for login details on autofill */
 "autofill.logins.details.login-name" = "Título";
 
+/* Message for alert when attempting to save a password that has neither a website nor a username */
+"autofill.logins.details.missing-website-or-username-alert.message" = "Para guardar esta contraseña, introduce un sitio web o un nombre de usuario.";
+
+/* Title for alert when attempting to save a password that has neither a website nor a username */
+"autofill.logins.details.missing-website-or-username-alert.title" = "Se requiere un sitio web o nombre de usuario";
+
 /* Title when adding new autofill login */
 "autofill.logins.details.new-title" = "Añadir contraseña";
 
@@ -2950,6 +2956,12 @@
 /* Title for the Import Passwords Promotion banner */
 "import.passwords.promo.title" = "Importa tus contraseñas a DuckDuckGo";
 
+/* Body for the notification sent after a period of inactivity. */
+"inactivity.notification.body" = "Usa DuckDuckGo para evitar los anuncios que te rastrean por la web y reducir tu huella digital.";
+
+/* Title for the notification sent after a period of inactivity. */
+"inactivity.notification.title" = "Controla tu experiencia en línea";
+
 /* Placeholder text for the duck.ai input field */
 "input.field.placeholder.duckai" = "Pregunta cualquier cosa en privado";
 
@@ -4008,6 +4020,18 @@
 
 /* Special error page title for pages that can only be opened in Safari */
 "prompt.general-page-problem.title" = "Esta página solo carga en Safari";
+
+/* Error page message shown after repeated tab terminations */
+"prompt.tab-termination-error-page.message" = "Esta página ha dejado de cargarse varias veces. Intenta volver a cargar o envíanos tus comentarios.";
+
+/* Button that reloads a page after repeated tab terminations */
+"prompt.tab-termination-error-page.reload" = "Volver a cargar";
+
+/* Button that opens site feedback after repeated tab terminations */
+"prompt.tab-termination-error-page.send-feedback" = "Enviar comentarios";
+
+/* Error page title shown after repeated tab terminations */
+"prompt.tab-termination-error-page.title" = "No hemos podido cargar esta página";
 
 /* Default native error page message */
 "prompt.web-page-load-error.message" = "El certificado de seguridad de este sitio no es válido y puede que no sea seguro visitarlo.";

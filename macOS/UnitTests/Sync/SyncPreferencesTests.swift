@@ -19,7 +19,7 @@
 import Bookmarks
 import BrowserServicesKit
 import Combine
-import FeatureFlags
+import FeatureFlags_macOS
 import Persistence
 import XCTest
 import PersistenceTestingUtils

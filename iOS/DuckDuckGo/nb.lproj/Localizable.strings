@@ -949,6 +949,12 @@
 /* Login name label for login details on autofill */
 "autofill.logins.details.login-name" = "Tittel";
 
+/* Message for alert when attempting to save a password that has neither a website nor a username */
+"autofill.logins.details.missing-website-or-username-alert.message" = "For å lagre dette passordet må du oppgi et nettsted eller et brukernavn.";
+
+/* Title for alert when attempting to save a password that has neither a website nor a username */
+"autofill.logins.details.missing-website-or-username-alert.title" = "Nettsted eller brukernavn er nødvendig";
+
 /* Title when adding new autofill login */
 "autofill.logins.details.new-title" = "Legg til passord";
 
@@ -2950,6 +2956,12 @@
 /* Title for the Import Passwords Promotion banner */
 "import.passwords.promo.title" = "Importer passordene dine til DuckDuckGo";
 
+/* Body for the notification sent after a period of inactivity. */
+"inactivity.notification.body" = "Bruk DuckDuckGo for å unngå annonsene som sporer deg rundt om på nettet, og reduser det digitale fotavtrykket ditt.";
+
+/* Title for the notification sent after a period of inactivity. */
+"inactivity.notification.title" = "Kontroller opplevelsen din på nettet";
+
 /* Placeholder text for the duck.ai input field */
 "input.field.placeholder.duckai" = "Spør om hva som helst, privat";
 
@@ -4008,6 +4020,18 @@
 
 /* Special error page title for pages that can only be opened in Safari */
 "prompt.general-page-problem.title" = "Denne siden lastes bare i Safari";
+
+/* Error page message shown after repeated tab terminations */
+"prompt.tab-termination-error-page.message" = "Denne siden sluttet å laste flere ganger. Prøv å laste siden på nytt eller send oss tilbakemelding.";
+
+/* Button that reloads a page after repeated tab terminations */
+"prompt.tab-termination-error-page.reload" = "Last på nytt";
+
+/* Button that opens site feedback after repeated tab terminations */
+"prompt.tab-termination-error-page.send-feedback" = "Send tilbakemelding";
+
+/* Error page title shown after repeated tab terminations */
+"prompt.tab-termination-error-page.title" = "Vi kunne ikke laste denne siden";
 
 /* Default native error page message */
 "prompt.web-page-load-error.message" = "Dette nettstedet har et ugyldig sikkerhetssertifikat og kan være utrygt å gå til.";

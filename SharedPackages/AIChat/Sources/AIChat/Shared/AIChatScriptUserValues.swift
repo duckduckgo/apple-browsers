@@ -118,6 +118,7 @@ public struct AIChatNativeConfigValues: Codable {
     public let supportsMultipleContexts: Bool
     public let supportsTabPicker: Bool
     public let supportsNativeStorage: Bool
+    public let supportsNativePromptEditing: Bool
     /// `true` when the native side supplies page-type signals so the duck.ai web app can render
     /// page-tailored suggested prompts ("suggestions").
     public let supportsSuggestions: Bool
@@ -205,6 +206,7 @@ public struct AIChatNativeConfigValues: Codable {
                 supportsMultipleContexts: Bool = false,
                 supportsTabPicker: Bool = false,
                 supportsNativeStorage: Bool = false,
+                supportsNativePromptEditing: Bool = false,
                 supportsSuggestions: Bool = false,
                 supportsNativeVoicePermissionHandler: Bool = false,
                 supportsNativeDictationPermissionHandler: Bool = false,
@@ -230,6 +232,7 @@ public struct AIChatNativeConfigValues: Codable {
         self.supportsMultipleContexts = supportsMultipleContexts
         self.supportsTabPicker = supportsTabPicker
         self.supportsNativeStorage = supportsNativeStorage
+        self.supportsNativePromptEditing = supportsNativePromptEditing
         self.supportsSuggestions = supportsSuggestions
         self.supportsNativeVoicePermissionHandler = supportsNativeVoicePermissionHandler
         self.supportsNativeDictationPermissionHandler = supportsNativeDictationPermissionHandler

@@ -96,13 +96,41 @@
         "description": "Fired when user submits their first prompt in a new Duck.ai conversation",
         "owners": ["pikorddg"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "pixelSource", "channel"]
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "isOpenedFromAskDuckAiButton",
+                "description": "Whether the chat this prompt was submitted in was opened from the tab-bar Ask Duck.ai button, by any of its gestures: the menu's 'New Chat', a middle-click on the button, or its sidebar entry ('Ask About Page' / 'Open Sidebar'). False for every other surface, and for a chat nothing was recorded for (a session restored at startup or a direct navigation to duck.ai).",
+                "type": "boolean"
+            },
+            {
+                "key": "hasPageContext",
+                "description": "Whether page context with content was attached to the chat when the prompt was submitted. In practice only sidebar chats can report true, since a full-tab Duck.ai chat is never attachable. Text selections do not count (separate channel). Best-effort native signal, matching Windows' win_aichat_start_new_conversation.",
+                "type": "boolean"
+            }
+        ]
     },
     "m_mac_aichat_sent_prompt_ongoing_chat": {
         "description": "Fired when user submits a prompt in an ongoing Duck.ai conversation",
         "owners": ["pikorddg"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "pixelSource", "channel"]
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "isOpenedFromAskDuckAiButton",
+                "description": "Whether the chat this prompt was submitted in was opened from the tab-bar Ask Duck.ai button, by any of its gestures: the menu's 'New Chat', a middle-click on the button, or its sidebar entry ('Ask About Page' / 'Open Sidebar'). False for every other surface, and for a chat nothing was recorded for (a session restored at startup or a direct navigation to duck.ai).",
+                "type": "boolean"
+            },
+            {
+                "key": "hasPageContext",
+                "description": "Whether page context with content was attached to the chat when the prompt was submitted. In practice only sidebar chats can report true, since a full-tab Duck.ai chat is never attachable. Text selections do not count (separate channel). Best-effort native signal, matching Windows' win_aichat_sent_prompt_ongoing_chat.",
+                "type": "boolean"
+            }
+        ]
     },
     "m_mac_aichat_suggestion_selected": {
         "description": "Fired when the user taps a sidebar page-suggestion chip (including ask-about-page, which only attaches the page and does not submit a prompt)",
@@ -342,6 +370,41 @@
     },
     "m_mac_aichat_subscription-funnel_click": {
         "description": "Fired when the user clicks the CTA on a Duck.ai subscription-funnel entry point (e.g. an upgrade/subscribe button) in the web frontend. The website pixel is suppressed in-app, so the frontend reports the surface over the reportMetric bridge and the native layer fires this pixel with the funnel origin. See https://app.asana.com/1/137249556945/task/1216395339071571",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionFunnelOrigin"]
+    },
+    "m_mac_aichat_subscription-funnel_subscribe-modal_impression": {
+        "description": "Fired when the Duck.ai subscribe modal is shown in the web frontend. The frontend reports the modal over the reportMetric bridge and the native layer fires this pixel with the funnel origin of the entry point the modal was opened from. See https://app.asana.com/1/137249556945/task/1216395339071571",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionFunnelOrigin"]
+    },
+    "m_mac_aichat_subscription-funnel_subscribe-modal_subscribe_click": {
+        "description": "Fired when the user clicks the subscribe CTA in the Duck.ai subscribe modal. The frontend reports the click over the reportMetric bridge and the native layer fires this pixel with the funnel origin of the entry point the modal was opened from. See https://app.asana.com/1/137249556945/task/1216395339071571",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionFunnelOrigin"]
+    },
+    "m_mac_aichat_subscription-funnel_subscribe-modal_activate_click": {
+        "description": "Fired when the user clicks the \"I have a subscription\" CTA in the Duck.ai subscribe modal. The frontend reports the click over the reportMetric bridge and the native layer fires this pixel with the funnel origin of the entry point the modal was opened from. See https://app.asana.com/1/137249556945/task/1216395339071571",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionFunnelOrigin"]
+    },
+    "m_mac_aichat_subscription-funnel_upgrade-to-pro-modal_impression": {
+        "description": "Fired when the Duck.ai upgrade-to-Pro modal is shown to an existing Plus subscriber in the web frontend. The frontend reports the modal over the reportMetric bridge and the native layer fires this pixel with the funnel origin of the entry point the modal was opened from. See https://app.asana.com/1/137249556945/task/1216395339071571",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionFunnelOrigin"]
+    },
+    "m_mac_aichat_subscription-funnel_upgrade-to-pro-modal_upgrade_click": {
+        "description": "Fired when the user clicks the upgrade CTA in the Duck.ai upgrade-to-Pro modal. The frontend reports the click over the reportMetric bridge and the native layer fires this pixel with the funnel origin of the entry point the modal was opened from. See https://app.asana.com/1/137249556945/task/1216395339071571",
         "owners": ["tomasstrba"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],

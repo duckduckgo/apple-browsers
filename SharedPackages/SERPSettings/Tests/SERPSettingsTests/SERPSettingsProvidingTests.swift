@@ -84,12 +84,12 @@ final class SERPSettingsProvidingTests: XCTestCase {
         XCTAssertEqual(provider.serpSettingValue(forKey: SERPSettingsConstants.safeSearch), "-2")
     }
 
-    func testSettingSafeSearchToDefault_removesKey() {
+    func testSettingSafeSearchToDefault_persistsExplicitValue() {
         provider.safeSearch = .off
-        XCTAssertNotNil(provider.serpSettingValue(forKey: SERPSettingsConstants.safeSearch))
+        XCTAssertEqual(provider.serpSettingValue(forKey: SERPSettingsConstants.safeSearch), "-2")
 
-        provider.safeSearch = .moderate // the default, which has no wire value (stored as key-absence)
-        XCTAssertNil(provider.serpSettingValue(forKey: SERPSettingsConstants.safeSearch))
+        provider.safeSearch = .moderate // the default — still written explicitly, so native stays authoritative
+        XCTAssertEqual(provider.serpSettingValue(forKey: SERPSettingsConstants.safeSearch), "-1")
         XCTAssertEqual(provider.safeSearch, .moderate)
     }
 
@@ -125,23 +125,26 @@ final class SERPSettingsProvidingTests: XCTestCase {
         XCTAssertTrue(provider.hideAIGeneratedImages)
     }
 
-    // MARK: - Setting the default removes the key
+    // MARK: - Setting the default persists the value explicitly
 
-    func testSettingSearchAssistToDefault_removesKey() {
+    // Every synced setting always persists the explicit value, even the default. Keeping the key
+    // present makes native authoritative at the SERP's load-time read, so an open SERP can't fall
+    // back to a stale localStorage cache and clobber a native write.
+    func testSettingSearchAssistToDefault_persistsExplicitValue() {
         provider.searchAssistFrequency = .often
-        XCTAssertNotNil(provider.serpSettingValue(forKey: SERPSettingsConstants.searchAssistKey))
+        XCTAssertEqual(provider.serpSettingValue(forKey: SERPSettingsConstants.searchAssistKey), "3")
 
-        provider.searchAssistFrequency = .sometimes // the default
-        XCTAssertNil(provider.serpSettingValue(forKey: SERPSettingsConstants.searchAssistKey))
+        provider.searchAssistFrequency = .sometimes // the default — still written explicitly
+        XCTAssertEqual(provider.serpSettingValue(forKey: SERPSettingsConstants.searchAssistKey), "2")
         XCTAssertEqual(provider.searchAssistFrequency, .sometimes)
     }
 
-    func testSettingHideAIGeneratedImagesToDefault_removesKey() {
+    func testSettingHideAIGeneratedImagesToDefault_persistsExplicitValue() {
         provider.hideAIGeneratedImages = true
-        XCTAssertNotNil(provider.serpSettingValue(forKey: SERPSettingsConstants.hideAIGeneratedImagesKey))
+        XCTAssertEqual(provider.serpSettingValue(forKey: SERPSettingsConstants.hideAIGeneratedImagesKey), "1")
 
-        provider.hideAIGeneratedImages = false // the default (show)
-        XCTAssertNil(provider.serpSettingValue(forKey: SERPSettingsConstants.hideAIGeneratedImagesKey))
+        provider.hideAIGeneratedImages = false // the default (show) — still written explicitly
+        XCTAssertEqual(provider.serpSettingValue(forKey: SERPSettingsConstants.hideAIGeneratedImagesKey), "-1")
         XCTAssertFalse(provider.hideAIGeneratedImages)
     }
 
@@ -149,8 +152,8 @@ final class SERPSettingsProvidingTests: XCTestCase {
         provider.searchAssistFrequency = .often
         provider.hideAIGeneratedImages = true
 
-        provider.hideAIGeneratedImages = false // default, removes kbj only
-        XCTAssertNil(provider.serpSettingValue(forKey: SERPSettingsConstants.hideAIGeneratedImagesKey))
+        provider.hideAIGeneratedImages = false // default, rewrites kbj explicitly; leaves kbe untouched
+        XCTAssertEqual(provider.serpSettingValue(forKey: SERPSettingsConstants.hideAIGeneratedImagesKey), "-1")
         XCTAssertEqual(provider.serpSettingValue(forKey: SERPSettingsConstants.searchAssistKey), "3")
     }
 

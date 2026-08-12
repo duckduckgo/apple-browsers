@@ -1,5 +1,5 @@
 {
-  "originHash" : "b5f785ed7bb45e674d302c57c311496801d7bc90e92b1c91eee777a9ab7228a4",
+  "originHash" : "1f57c62c0e732f087e96505c897471428fe701212ebf86282a99f3a2afca2b55",
   "pins" : [
     {
       "identity" : "apple-toolbox",
@@ -33,8 +33,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
-        "revision" : "2b57f4b72186080efade861494eef5ad6f3853a1",
-        "version" : "15.23.0"
+        "revision" : "d35665e13add70752e51c2442529a2a2d32bd318",
+        "version" : "16.6.0"
       }
     },
     {
@@ -204,8 +204,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/swift-snapshot-testing",
       "state" : {
-        "revision" : "ad5e3190cc63dc288f28546f9c6827efc1e9d495",
-        "version" : "1.19.2"
+        "revision" : "59a99c458de4d2dee580529b61b4f78dca7b7fa6",
+        "version" : "1.19.4"
       }
     },
     {

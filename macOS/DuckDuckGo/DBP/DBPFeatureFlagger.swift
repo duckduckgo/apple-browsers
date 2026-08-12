@@ -20,7 +20,7 @@ import Foundation
 import DataBrokerProtectionCore
 import DataBrokerProtection_macOS
 import PrivacyConfig
-import FeatureFlags
+import FeatureFlags_macOS
 import PixelKit
 
 final class DBPFeatureFlagger: DBPFeatureFlagging {
@@ -42,6 +42,10 @@ final class DBPFeatureFlagger: DBPFeatureFlagging {
 
     var isOptOutRetryErrorFrequencyExperimentOn: Bool {
         featureFlagger.isFeatureOn(.dbpOptOutRetryError96Hours)
+    }
+
+    var isExtractedProfileRefreshOn: Bool {
+        featureFlagger.isFeatureOn(.dbpExtractedProfileRefresh)
     }
 
     init(featureFlagger: FeatureFlagger) {

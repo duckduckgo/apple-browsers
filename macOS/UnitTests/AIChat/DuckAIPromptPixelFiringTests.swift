@@ -48,8 +48,13 @@ final class DuckAIPromptPixelFiringTests: XCTestCase {
         (.tabPickerCanceled, .aiChatAddressBarAttachPickerCanceled),
         (.modelSelected, .aiChatAddressBarModelSelected),
         (.reasoningEffortSelected, .aiChatAddressBarReasoningEffortSelected),
-        (.subscriptionUpsellTriggered(currentTier: "free", requiredTier: "plus", flowType: "modal"),
-         .aiChatAddressBarSubscriptionUpsellTriggered(currentTier: "free", requiredTier: "plus", flowType: "modal")),
+        (.modelPickerShown, .aiChatAddressBarModelPickerShown(origin: "funnel_addressbar_macos__modelpicker")),
+        (.reasoningPickerShown, .aiChatAddressBarReasoningPickerShown(origin: "funnel_addressbar_macos__reasoningdropdown")),
+        (.subscriptionUpsellShown(origin: "funnel_addressbar_macos__modelpicker"),
+         .aiChatAddressBarSubscriptionUpsellShown(origin: "funnel_addressbar_macos__modelpicker")),
+        (.subscriptionUpsellTriggered(currentTier: "free", requiredTier: "plus", flowType: "modal", origin: "funnel_addressbar_macos__modelpicker"),
+         .aiChatAddressBarSubscriptionUpsellTriggered(currentTier: "free", requiredTier: "plus", flowType: "modal",
+                                                      origin: "funnel_addressbar_macos__modelpicker")),
         (.voiceChatOpened, nil)
     ]
 
@@ -79,9 +84,28 @@ final class DuckAIPromptPixelFiringTests: XCTestCase {
         (.tabPickerCanceled, nil),
         (.modelSelected, .modelSelected),
         (.reasoningEffortSelected, .reasoningEffortSelected),
-        (.subscriptionUpsellTriggered(currentTier: "free", requiredTier: "plus", flowType: "modal"), nil),
+        (.modelPickerShown, .modelPickerShown(origin: "funnel_promptbar_macos__modelpicker")),
+        (.reasoningPickerShown, .reasoningPickerShown(origin: "funnel_promptbar_macos__reasoningdropdown")),
+        (.subscriptionUpsellShown(origin: "x"), nil),
+        (.subscriptionUpsellTriggered(currentTier: "free", requiredTier: "plus", flowType: "modal", origin: "x"), nil),
         (.voiceChatOpened, .newVoiceChat)
     ]
+
+    /// Names are asserted as literals because the mapping tables build expected and actual from the
+    /// same enum; they have to stay in step with the keys in the pixel definition files.
+    private static let pickerImpressionNames: [(AIChatPixel, String)] = [
+        (.aiChatAddressBarModelPickerShown(origin: "x"), "aichat_addressbar_model_picker_shown"),
+        (.aiChatAddressBarReasoningPickerShown(origin: "x"), "aichat_addressbar_reasoning_picker_shown")
+    ]
+
+    func testPickerImpressionPixelNames() {
+        for (pixel, expectedName) in Self.pickerImpressionNames {
+            XCTAssertEqual(pixel.name, expectedName)
+        }
+        XCTAssertEqual(PromptBarPixel.modelPickerShown(origin: "x").name, "aichat_promptbar_model_picker_shown")
+        XCTAssertEqual(PromptBarPixel.reasoningPickerShown(origin: "x").name, "aichat_promptbar_reasoning_picker_shown")
+        XCTAssertEqual(PromptBarPixel.modelPickerShown(origin: "x").parameters, ["origin": "x"])
+    }
 
     func testWhenAddressBarHandlerMapsAnEvent_ThenItKeepsThePixelItFiredBefore() {
         for (event, expected) in Self.addressBarMapping {

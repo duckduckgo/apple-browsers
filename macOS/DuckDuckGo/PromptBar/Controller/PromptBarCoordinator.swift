@@ -18,7 +18,7 @@
 
 import AppKit
 import Combine
-import FeatureFlags
+import FeatureFlags_macOS
 import PrivacyConfig
 
 /// Owns the Prompt Bar's entry points: the global shortcut and the menu bar icon click.

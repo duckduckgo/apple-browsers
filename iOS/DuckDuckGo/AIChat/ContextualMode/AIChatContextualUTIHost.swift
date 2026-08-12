@@ -24,7 +24,7 @@ import os.log
 
 /// Owns a `UnifiedToggleInputCoordinator` configured for the contextual chat surface.
 @MainActor
-final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
+final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextualFloatingInputHosting {
 
     private let coordinator: UnifiedToggleInputCoordinator
     let chipViewModel: UnifiedToggleInputPageContextChipViewModel
@@ -34,6 +34,10 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
     private weak var pendingUserScriptToBind: AIChatUserScript?
     private var isBoundToUserScript = false
     private var hasDeliveredFirstPrompt = false
+
+    /// The input's bottom while it follows the keyboard, and the fixed pin that replaces it once frozen.
+    private var keyboardBottomConstraint: NSLayoutConstraint?
+    private var frozenBottomConstraint: NSLayoutConstraint?
     private let startsPreSubmit: Bool
     private var cancellables = Set<AnyCancellable>()
     private let duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation
@@ -61,6 +65,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
         lastUsedModelProvider: DuckAiLastUsedModelProviding? = nil,
         voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding = DuckAIVoiceShortcutFeature(),
         unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
+        floatingInputFeature: AIChatContextualFloatingInputFeatureProviding = AIChatContextualFloatingInputFeature(),
         startsPreSubmit: Bool = false
     ) {
         self.hasActiveChat = hasActiveChat
@@ -78,13 +83,15 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
             duckAIWideEventInstrumentation: wideEventInstrumentation,
             duckAIWideEventFlowScope: duckAIWideEventFlowScope,
             contextualStartsPreSubmit: startsPreSubmit,
-            attachmentPasteEnabled: unifiedToggleInputFeature.isAttachmentPasteEnabled
+            attachmentPasteEnabled: unifiedToggleInputFeature.isAttachmentPasteEnabled,
+            placesAttachmentsAboveInput: floatingInputFeature.isAvailable
         )
         self.chipViewModel = UnifiedToggleInputPageContextChipViewModel(
             originatingURLPublisher: originatingURLPublisher,
             initialAttachedContext: initialAttachedContext,
             initialAttachmentDeliveryState: initialAttachmentDeliveryState,
-            isAutoAttachEnabled: isAutoAttachEnabled
+            isAutoAttachEnabled: isAutoAttachEnabled,
+            showsAttachAffordance: floatingInputFeature.isAvailable
         )
         coordinator.delegate = self
         coordinator.updateAIVoiceChatAvailability(voiceShortcutFeature.isAvailable)
@@ -124,6 +131,30 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
 
     func clearAttachedContext() {
         chipViewModel.clearAttached()
+    }
+
+    /// One chip per attached selection, alongside the page-context chip. An empty list removes them all.
+    func setSelectionChips(_ items: [(id: String, title: String, favicon: UIImage?)], onRemove: @escaping (String) -> Void) {
+        coordinator.viewController.setSelectionContextChips(items, onRemove: onRemove)
+    }
+
+    /// Images and files currently in the input.
+    var attachmentCount: Int {
+        coordinator.attachmentCount
+    }
+
+    /// Fires when the input's attachments change.
+    var onAttachmentsChanged: (() -> Void)? {
+        get { coordinator.onAttachmentsChanged }
+        set { coordinator.onAttachmentsChanged = newValue }
+    }
+
+    func presentRejectionBanner(_ message: String) {
+        coordinator.presentRejectionBanner(message)
+    }
+
+    func clearRejectionBanner() {
+        coordinator.clearRejectionBanner()
     }
 
     func showAttachAffordance() {
@@ -191,33 +222,84 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
         Logger.contextualUTI.info("Installed at bottom of contextual web chat")
     }
 
-    func mountAtSheetLevel(in sheetViewController: UIViewController) -> UIView {
-        coordinator.attachmentPresentingViewController = sheetViewController
+    @discardableResult
+    func mount(in parent: UIViewController) -> UIView {
+        coordinator.attachmentPresentingViewController = parent
 
         let viewController = coordinator.viewController
-        guard viewController.parent !== sheetViewController else {
+        guard viewController.parent !== parent else {
             return viewController.view
         }
+
+        // A dismissal animating out may still hold the input, and a child can only have one parent.
+        detachInput()
 
         // Install + lay out without animation. Otherwise the half-sheet's slide-up animation
         // captures the UTI's first layout pass and interpolates from a zero-frame at (0,0),
         // making the bar fly in from the top-left.
         UIView.performWithoutAnimation {
-            sheetViewController.addChild(viewController)
-            sheetViewController.view.addSubview(viewController.view)
+            parent.addChild(viewController)
+            parent.view.addSubview(viewController.view)
             viewController.view.translatesAutoresizingMaskIntoConstraints = false
+            let bottom = viewController.view.bottomAnchor.constraint(equalTo: parent.view.keyboardLayoutGuide.topAnchor)
+            keyboardBottomConstraint = bottom
             NSLayoutConstraint.activate([
-                viewController.view.leadingAnchor.constraint(equalTo: sheetViewController.view.leadingAnchor),
-                viewController.view.trailingAnchor.constraint(equalTo: sheetViewController.view.trailingAnchor),
-                viewController.view.bottomAnchor.constraint(equalTo: sheetViewController.view.keyboardLayoutGuide.topAnchor),
+                viewController.view.leadingAnchor.constraint(equalTo: parent.view.leadingAnchor),
+                viewController.view.trailingAnchor.constraint(equalTo: parent.view.trailingAnchor),
+                bottom,
             ])
-            viewController.didMove(toParent: sheetViewController)
+            viewController.didMove(toParent: parent)
             coordinator.showExpanded(activatesInput: false)
             applyCurrentRenderState()
-            sheetViewController.view.layoutIfNeeded()
+            parent.view.layoutIfNeeded()
         }
-        Logger.contextualUTI.info("Mounted at bottom of contextual sheet")
+        Logger.contextualUTI.info("Mounted above the keyboard")
         return viewController.view
+    }
+
+    /// Edges of the visible input card, for aligning content sitting around the bar.
+    var inputCardTopAnchor: NSLayoutYAxisAnchor { coordinator.viewController.inputCardTopAnchor }
+    var inputCardLeadingAnchor: NSLayoutXAxisAnchor { coordinator.viewController.inputCardLeadingAnchor }
+    var inputCardTrailingAnchor: NSLayoutXAxisAnchor { coordinator.viewController.inputCardTrailingAnchor }
+
+    /// Pins the input where it currently sits, so a keyboard that moves or changes height afterwards cannot
+    /// drag it. For a surface animating itself out: its own motion is then the only thing moving it.
+    func freezeInputPosition() {
+        let view = coordinator.viewController.view
+        guard let parentView = view?.superview,
+              let view,
+              keyboardBottomConstraint?.isActive == true else { return }
+
+        // From `center` and `bounds` rather than `frame`, which carries any transform the animation applies.
+        let restingBottom = view.center.y + view.bounds.height / 2
+        keyboardBottomConstraint?.isActive = false
+        let frozen = view.bottomAnchor.constraint(equalTo: parentView.bottomAnchor,
+                                                 constant: restingBottom - parentView.bounds.maxY)
+        frozen.isActive = true
+        frozenBottomConstraint = frozen
+    }
+
+    /// Detaches the input so it can be mounted elsewhere, but only if `parent` still holds it: a surface
+    /// animating out finishes after the next one may already have mounted it.
+    func unmount(from parent: UIViewController) {
+        guard coordinator.viewController.parent === parent else { return }
+        detachInput()
+    }
+
+    private func detachInput() {
+        // Ahead of the mounted check, so a surface that lost its parent some other way still leaves these
+        // behind. Rebuilt by the next mount, against whatever parent that is.
+        frozenBottomConstraint?.isActive = false
+        frozenBottomConstraint = nil
+        keyboardBottomConstraint = nil
+
+        let viewController = coordinator.viewController
+        guard viewController.parent != nil else { return }
+        // Handed back clean: this view is reused across mounts, and a slide leaves a transform on it.
+        viewController.view.transform = .identity
+        viewController.willMove(toParent: nil)
+        viewController.view.removeFromSuperview()
+        viewController.removeFromParent()
     }
 
     func activateInput() {
@@ -235,6 +317,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
     func prepareForNewChat() {
         hasDeliveredFirstPrompt = !startsPreSubmit
         clearAttachedContext()
+        chipViewModel.clearReattachOffer()
         if startsPreSubmit, let currentUserScript {
             coordinator.unbind()
             isBoundToUserScript = false

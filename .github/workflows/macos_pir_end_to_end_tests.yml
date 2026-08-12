@@ -42,7 +42,7 @@ jobs:
         include:
           - xcode-version: "26.4"
             runner: bitrise:macos26-m4
-            runner-name: bitrise-macos26-m4
+            runner-name: bitrise-macos26-m4 # runner label without reserved characters, for use in the artifact name
 
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.runner }}

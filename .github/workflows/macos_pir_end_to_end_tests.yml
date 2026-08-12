@@ -38,10 +38,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: [macos-26]
+        runner: [bitrise:macos26-m4]
         include:
           - xcode-version: "26.4"
-            runner: macos-26
+            runner: bitrise:macos26-m4
 
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.runner }}
@@ -149,12 +149,20 @@ jobs:
         xcode-version: ${{ matrix.xcode-version }}
 
     - name: Restore Xcode Compilation Cache
+      if: runner.environment != 'self-hosted'
       uses: actions/cache/restore@v5
       with:
         path: macOS/DerivedData/CompilationCache.noindex
         key: xcode-compilation-cache-pir-e2e
         restore-keys: |
           xcode-compilation-cache-pir-e2e-
+
+    - name: Setup Bitrise Build Cache
+      if: runner.environment == 'self-hosted'
+      uses: ./.github/actions/bitrise-build-cache
+      with:
+        token: ${{ secrets.BITRISE_BUILD_CACHE_AUTH_TOKEN }}
+        workspace-id: ${{ secrets.BITRISE_BUILD_CACHE_WORKSPACE_ID }}
 
     - name: Wait for PIR Fake Broker
       run: |
@@ -198,7 +206,7 @@ jobs:
           PRIVACYPRO_STAGING_ACCESS_TOKEN_V2: ${{ secrets.PRIVACYPRO_STAGING_ACCESS_TOKEN_V2 }}
 
     - name: Compute Compilation Cache hash
-      if: github.ref == 'refs/heads/main'
+      if: runner.environment != 'self-hosted' && github.ref == 'refs/heads/main'
       id: compilation-cache-hash
       run: |
         if [ -d "DerivedData/CompilationCache.noindex" ]; then
@@ -209,7 +217,7 @@ jobs:
         fi
 
     - name: Save Xcode Compilation Cache
-      if: github.ref == 'refs/heads/main' && steps.compilation-cache-hash.outputs.hash
+      if: runner.environment != 'self-hosted' && github.ref == 'refs/heads/main' && steps.compilation-cache-hash.outputs.hash
       uses: actions/cache/save@v5
       with:
         path: macOS/DerivedData/CompilationCache.noindex

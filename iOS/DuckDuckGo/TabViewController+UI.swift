@@ -18,11 +18,18 @@
 //
 
 import DesignResourcesKit
+import DesignResourcesKitIcons
+import DuckUI
 import UIKit
 
 extension TabViewController {
 
     func setupErrorActionButton() {
+        guard AppRebrand.isAppRebranded() == false else {
+            errorActionButton.applyPrimaryStyle()
+            return
+        }
+
         var buttonConfiguration = UIButton.Configuration.filled()
         buttonConfiguration.baseForegroundColor = UIColor(designSystemColor: .buttonsPrimaryText)
         buttonConfiguration.baseBackgroundColor = UIColor(designSystemColor: .buttonsPrimaryDefault)

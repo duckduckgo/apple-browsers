@@ -24,7 +24,7 @@ import UIComponents
 
 // MARK: - Shared colors
 
-private struct PrimaryButtonColors {
+internal struct PrimaryButtonColors {
     let standard: Color
     let pressed: Color
     let disabled: Color

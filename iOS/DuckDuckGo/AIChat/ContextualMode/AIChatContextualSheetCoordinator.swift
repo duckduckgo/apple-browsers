@@ -95,6 +95,7 @@ final class AIChatContextualSheetCoordinator {
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     private let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
     private let debugSettings: AIChatDebugSettingsHandling
+    private let onboardingActivationRecorder: SubscriptionOnboardingActivationRecording
     private let isFireTab: Bool
     static let contextualContextCollectionTimeout: TimeInterval = 5
 
@@ -181,6 +182,7 @@ final class AIChatContextualSheetCoordinator {
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
          debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
+         onboardingActivationRecorder: SubscriptionOnboardingActivationRecording = NullSubscriptionOnboardingActivationRecorder(),
          pixelHandler: AIChatContextualModePixelFiring = AIChatContextualModePixelHandler(),
          selectionJourneyScopeID: String = UUID().uuidString,
          selectionJourneyInstrumentation: DuckAISelectionJourneyInstrumenting? = nil) {
@@ -198,6 +200,7 @@ final class AIChatContextualSheetCoordinator {
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
         self.duckAiFireModeStorageHandler = duckAiFireModeStorageHandler
         self.debugSettings = debugSettings
+        self.onboardingActivationRecorder = onboardingActivationRecorder
         self.pixelHandler = pixelHandler
         self.selectionJourneyInstrumentation = selectionJourneyInstrumentation ?? DefaultDuckAISelectionJourneyInstrumentation(
             wideEvent: AppDependencyProvider.shared.wideEvent,
@@ -944,6 +947,7 @@ private extension AIChatContextualSheetCoordinator {
                 return await self.collectFreshContextAndWait(timeout: Self.contextualContextCollectionTimeout)
             },
             pixelHandler: pixelHandler,
+            onboardingActivationRecorder: onboardingActivationRecorder,
             utiHostInstaller: { [weak self] contextualChatViewController in
                 guard let self else { return nil }
                 guard self.isWebUTIEnabled else { return nil }

@@ -471,6 +471,7 @@ final class SubscriptionDebugViewController: UITableViewController {
             switch OnboardingRows(rawValue: indexPath.row) {
             case .resetProgress: resetOnboardingProgress()
             case .expireSetupCard: expireSetupCardWindow()
+            case .fullFlowAfterSubscription: showOnboardingFlow(entryPoint: .postCheckout)
             default: break
             }
         case .onboardingSubflows:
@@ -1019,6 +1020,28 @@ final class SubscriptionDebugViewController: UITableViewController {
                 .subscriptionOnboardingNavigationContainer()
                 .graphicLottieRenderer(.app))
         present(hostingController, animated: true)
+    }
+
+    private func showOnboardingFlow(entryPoint: SubscriptionOnboardingEntryPoint) {
+        guard let keyValueStore else {
+            ActionMessageView.present(message: "Failed to load onboarding progress")
+            return
+        }
+        let flow = SubscriptionOnboardingFlowViewModel(
+            entryPoint: entryPoint,
+            progress: SubscriptionOnboardingProgress(
+                persistor: SubscriptionOnboardingProgressPersistor(keyValueStore: keyValueStore),
+                isPIRAvailable: false),
+            onFinish: { [weak self] in
+                self?.dismiss(animated: true)
+                guard entryPoint == .postCheckout else { return }
+                NotificationCenter.default.post(name: .settingsDeepLinkNotification,
+                                                object: SettingsViewModel.SettingsDeepLinkSection.subscriptionSettings)
+            },
+            // No Data Broker Protection provider here, so PIR falls back to the move-to-desktop screen.
+            pirScreen: { SubscriptionPIRMoveToDesktopView() })
+        let root = SubscriptionOnboardingLauncher.launch(flow: flow)
+        present(UIHostingController(rootView: root), animated: true)
     }
 
     private func resetOnboardingProgress() {

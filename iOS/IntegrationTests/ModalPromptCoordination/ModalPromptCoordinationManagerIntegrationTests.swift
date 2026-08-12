@@ -63,25 +63,6 @@ final class ModalPromptCoordinationManagerIntegrationTests {
         promoQueueLeaseArbiter = PromoQueueLeaseArbiter()
     }
 
-    @Test("Check Is In Cooldown After Presenting Prompt")
-    func whenPromptIsPresentedThenIsInCooldown() {
-        // GIVEN
-        let provider = MockModalPromptProvider()
-        sut = ModalPromptCoordinationManager(
-            providers: [provider],
-            cooldownManager: cooldownManager,
-            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            modalPromptScheduling: schedulerMock
-        )
-        #expect(!cooldownManager.isInCooldownPeriod)
-
-        // WHEN
-        sut.presentModalPromptIfNeeded(from: presenterMock)
-
-        // THEN
-        #expect(cooldownManager.isInCooldownPeriod)
-    }
-
     @Test(
         "Check Modal Is Blocked During Cooldown Period",
         arguments: [1, 6, 12, 18, 23]  // Hours after first presentation

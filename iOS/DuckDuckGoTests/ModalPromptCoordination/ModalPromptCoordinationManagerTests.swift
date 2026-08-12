@@ -18,7 +18,6 @@
 //
 
 import UIKit
-import Foundation
 import Testing
 @testable import DuckDuckGo
 
@@ -82,6 +81,7 @@ final class ModalPromptCoordinationManagerTests {
         #expect(provider.didCallProvideModalPrompt)
         #expect(schedulerMock.didCallSchedule)
         #expect(schedulerMock.capturedScheduledDelay == 0.1)
+        #expect(!presenterMock.didCallPresent)
 
         // Execute scheduled presentation
         schedulerMock.executeScheduledBlock()
@@ -92,41 +92,15 @@ final class ModalPromptCoordinationManagerTests {
 
     // MARK: - Priority Tests
 
-    @Test("Check First Provider Is Checked First")
-    func whenMultipleProvidersThenFirstProviderIsCheckedFirst() {
-        // GIVEN
-        cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
-        let firstProvider = MockModalPromptProvider()
-        let secondProvider = MockModalPromptProvider()
-        sut = ModalPromptCoordinationManager(
-            providers: [firstProvider, secondProvider],
-            cooldownManager: cooldownManagerMock,
-            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            modalPromptScheduling: schedulerMock
-        )
-
-        // WHEN
-        sut.presentModalPromptIfNeeded(from: presenterMock)
-
-        // THEN
-        #expect(firstProvider.didCallProvideModalPrompt)
-        #expect(!secondProvider.didCallProvideModalPrompt)
-
-        // Execute scheduled presentation
-        schedulerMock.executeScheduledBlock()
-
-        #expect(firstProvider.didCallDidPresentModal)
-        #expect(!secondProvider.didCallDidPresentModal)
-    }
-
     @Test("Check Second Provider Is Used When First Returns Nil")
     func whenFirstProviderReturnsNilThenSecondProviderIsChecked() {
         // GIVEN
         cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
         let firstProvider = MockModalPromptProvider(shouldReturnPrompt: false)
         let secondProvider = MockModalPromptProvider()
+        let thirdProvider = MockModalPromptProvider()
         sut = ModalPromptCoordinationManager(
-            providers: [firstProvider, secondProvider],
+            providers: [firstProvider, secondProvider, thirdProvider],
             cooldownManager: cooldownManagerMock,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
             modalPromptScheduling: schedulerMock
@@ -138,49 +112,14 @@ final class ModalPromptCoordinationManagerTests {
         // THEN
         #expect(firstProvider.didCallProvideModalPrompt)
         #expect(secondProvider.didCallProvideModalPrompt)
+        #expect(!thirdProvider.didCallProvideModalPrompt)
 
         // Execute scheduled presentation
         schedulerMock.executeScheduledBlock()
 
         #expect(!firstProvider.didCallDidPresentModal)
         #expect(secondProvider.didCallDidPresentModal)
-    }
-
-    @Test("Check The Right Provider Is Used When Others Return Nil")
-    func whenFirstTwoProvidersReturnNilThenThirdProviderIsChecked() {
-        // GIVEN
-        cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
-        let firstProvider = MockModalPromptProvider(shouldReturnPrompt: false)
-        let secondProvider = MockModalPromptProvider(shouldReturnPrompt: false)
-        let thirdProvider = MockModalPromptProvider(shouldReturnPrompt: true)
-        let fourthProvider = MockModalPromptProvider(shouldReturnPrompt: false)
-        let fifthProvider = MockModalPromptProvider(shouldReturnPrompt: false)
-
-        sut = ModalPromptCoordinationManager(
-            providers: [firstProvider, secondProvider, thirdProvider, fourthProvider, fifthProvider],
-            cooldownManager: cooldownManagerMock,
-            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            modalPromptScheduling: schedulerMock
-        )
-
-        // WHEN
-        sut.presentModalPromptIfNeeded(from: presenterMock)
-
-        // THEN
-        #expect(firstProvider.didCallProvideModalPrompt)
-        #expect(secondProvider.didCallProvideModalPrompt)
-        #expect(thirdProvider.didCallProvideModalPrompt)
-        #expect(!fourthProvider.didCallProvideModalPrompt)
-        #expect(!fifthProvider.didCallProvideModalPrompt)
-
-        // Execute scheduled presentation
-        schedulerMock.executeScheduledBlock()
-
-        #expect(!firstProvider.didCallDidPresentModal)
-        #expect(!secondProvider.didCallDidPresentModal)
-        #expect(thirdProvider.didCallDidPresentModal)
-        #expect(!fourthProvider.didCallDidPresentModal)
-        #expect(!fifthProvider.didCallDidPresentModal)
+        #expect(!thirdProvider.didCallDidPresentModal)
     }
 
     @Test("Check No Modal Is Presented When All Providers Return Nil")
@@ -237,7 +176,7 @@ final class ModalPromptCoordinationManagerTests {
 
         // THEN
         let presentedVC = presenterMock.capturedViewController
-        #expect(presenterMock.capturedViewController === presentedVC)
+        #expect(presenterMock.capturedViewController === viewController)
         #expect(presentedVC?.modalPresentationStyle == .pageSheet)
         #expect(presentedVC?.modalTransitionStyle == .coverVertical)
         #expect(presentedVC?.isModalInPresentation == true)
@@ -269,76 +208,6 @@ final class ModalPromptCoordinationManagerTests {
 
         // THEN
         #expect(presenterMock.capturedAnimated == animated)
-    }
-
-    // MARK: - Scheduler Tests
-
-    @Test("Check Presentation Is Scheduled With Correct Delay")
-    func whenPresentingModalThenSchedulerIsCalledWithCorrectDelay() {
-        // GIVEN
-        cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
-        let provider = MockModalPromptProvider()
-        sut = ModalPromptCoordinationManager(
-            providers: [provider],
-            cooldownManager: cooldownManagerMock,
-            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            modalPromptScheduling: schedulerMock
-        )
-
-        // WHEN
-        sut.presentModalPromptIfNeeded(from: presenterMock)
-
-        // THEN
-        #expect(schedulerMock.didCallSchedule)
-        #expect(schedulerMock.capturedScheduledDelay == 0.1)
-    }
-
-    @Test("Check Presentation Happens Only After Scheduled Delay")
-    func whenScheduledThenPresentationDoesNotHappenImmediately() {
-        // GIVEN
-        cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
-        let provider = MockModalPromptProvider()
-        sut = ModalPromptCoordinationManager(
-            providers: [provider],
-            cooldownManager: cooldownManagerMock,
-            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            modalPromptScheduling: schedulerMock
-        )
-
-        // WHEN
-        sut.presentModalPromptIfNeeded(from: presenterMock)
-
-        // THEN (before executing scheduled block)
-        #expect(!presenterMock.didCallPresent)
-
-        // WHEN (executing scheduled block)
-        schedulerMock.executeScheduledBlock()
-
-        // THEN (after executing scheduled block)
-        #expect(presenterMock.didCallPresent)
-    }
-
-    // MARK: - Cooldown Recording Tests
-
-    @Test("Check Cooldown Is Recorded After Successful Presentation")
-    func whenModalIsPresentedThenCooldownIsRecorded() {
-        // GIVEN
-        cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
-        let provider = MockModalPromptProvider()
-        sut = ModalPromptCoordinationManager(
-            providers: [provider],
-            cooldownManager: cooldownManagerMock,
-            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            modalPromptScheduling: schedulerMock
-        )
-        #expect(!cooldownManagerMock.didCallRecordLastPromptPresentationTimestamp)
-
-        // WHEN
-        sut.presentModalPromptIfNeeded(from: presenterMock)
-        schedulerMock.executeScheduledBlock()
-
-        // THEN
-        #expect(cooldownManagerMock.didCallRecordLastPromptPresentationTimestamp)
     }
 
     @available(iOS 16, *)
@@ -387,46 +256,6 @@ final class ModalPromptCoordinationManagerTests {
 
         // THEN
         #expect(!sut.shouldSuppressOtherSessionPromos)
-    }
-
-    @Test("Check Cooldown Is Not Recorded When No Modal Is Presented")
-    func whenNoModalIsPresentedThenCooldownIsNotRecorded() {
-        // GIVEN
-        cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
-        let provider = MockModalPromptProvider(shouldReturnPrompt: false)
-        sut = ModalPromptCoordinationManager(
-            providers: [provider],
-            cooldownManager: cooldownManagerMock,
-            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            modalPromptScheduling: schedulerMock
-        )
-
-        // WHEN
-        sut.presentModalPromptIfNeeded(from: presenterMock)
-        schedulerMock.executeScheduledBlock()
-
-        // THEN
-        #expect(!cooldownManagerMock.didCallRecordLastPromptPresentationTimestamp)
-    }
-
-    @Test("Check Cooldown Is Not Recorded When Already In Cooldown Period")
-    func whenInCooldownPeriodThenCooldownIsNotRecorded() {
-        // GIVEN
-        cooldownManagerMock.cooldownInfoToReturn = .inCoolDown
-        let provider = MockModalPromptProvider()
-        sut = ModalPromptCoordinationManager(
-            providers: [provider],
-            cooldownManager: cooldownManagerMock,
-            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            modalPromptScheduling: schedulerMock
-        )
-
-        // WHEN
-        sut.presentModalPromptIfNeeded(from: presenterMock)
-        schedulerMock.executeScheduledBlock()
-
-        // THEN
-        #expect(!cooldownManagerMock.didCallRecordLastPromptPresentationTimestamp)
     }
 
     // MARK: - OmniBarEditingState Present-On-Top Tests

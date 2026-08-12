@@ -1243,6 +1243,9 @@ extension MainViewController: UnifiedToggleInputDelegate {
     }
 
     func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?) {
+        // Recorded before the branches below, which end the visit on their own terminals.
+        recordNewTabPageSessionAction { $0.hitSubmit() }
+
         // Match omnibar toggle: URL-shaped submissions from non-Duck.ai origin load the URL even when toggle is Duck.ai. Attachments suppress (no sensible URL-load with attachments).
         // On a Duck.ai tab, keep prompt semantics so users can ask the model about a URL by name.
         if currentTab?.isAITab != true,
@@ -1250,6 +1253,9 @@ extension MainViewController: UnifiedToggleInputDelegate {
            let url = URL(trimmedAddressBarString: prompt, useUnifiedLogic: isUnifiedURLPredictionEnabled),
            url.isValid(usingUnifiedLogic: isUnifiedURLPredictionEnabled) {
             unifiedToggleInputCoordinator?.recordDuckAIPromptInterpretedAsURL()
+            // `loadUrlRespectingAIBoundary` carries no terminal of its own, so without this the visit
+            // would stay open and later report a timeout despite the user having navigated.
+            endNewTabPageSessionWithLoad(of: url)
             loadUrlRespectingAIBoundary(url)
             return
         }

@@ -310,7 +310,8 @@ struct NewTabPageSessionInstrumentationTests {
         sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .up, toggleEnabled: false)
 
         clock.advance(by: 2)
-        sut.visitEnded(terminalAction: .selectOtherTab)
+        // Not a tab change, which with no action would be dropped as a pass-through.
+        sut.visitEnded(terminalAction: .loadWebsite)
 
         guard let completion = lastCompletion(wideEvent) else {
             Issue.record("Expected a completion")
@@ -633,6 +634,49 @@ struct NewTabPageSessionInstrumentationTests {
         sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .up, toggleEnabled: false)
         #expect(wideEvent.completions.isEmpty)
         #expect(wideEvent.discarded.isEmpty)
+    }
+
+    @available(iOS 16, *)
+    @Test("A tab change with no action is dropped as a pass-through",
+          arguments: [NewTabPageSessionWideEventData.TerminalAction.selectOtherTab, .swipeToOtherTab])
+    func tabChangeWithoutActionIsDiscarded(terminalAction: NewTabPageSessionWideEventData.TerminalAction) {
+        let (sut, wideEvent, clock) = makeSUT()
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: true)
+
+        clock.advance(by: 1)
+        sut.visitEnded(terminalAction: terminalAction)
+
+        #expect(wideEvent.completions.isEmpty)
+        #expect(wideEvent.discarded.count == 1)
+    }
+
+    @available(iOS 16, *)
+    @Test("A tab change after an action is reported", .timeLimit(.minutes(1)))
+    func tabChangeAfterActionIsCompleted() {
+        let (sut, wideEvent, clock) = makeSUT()
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: true)
+
+        clock.advance(by: 1)
+        sut.tapTabViewerToolbar()
+        sut.visitEnded(terminalAction: .selectOtherTab)
+
+        #expect(wideEvent.discarded.isEmpty)
+        #expect(lastCompletion(wideEvent)?.0.terminalAction == .selectOtherTab)
+    }
+
+    @available(iOS 16, *)
+    @Test("An inactive visit still reports its timeout rather than being dropped", .timeLimit(.minutes(1)))
+    func timedOutVisitWithoutActionIsNotDiscarded() {
+        let (sut, wideEvent, clock) = makeSUT()
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: true)
+
+        // The no-action failure the success rate exists to capture, so the pass-through rule
+        // must not swallow it even though the tab changed afterwards.
+        clock.advance(by: 31)
+        sut.visitEnded(terminalAction: .swipeToOtherTab)
+
+        #expect(wideEvent.discarded.isEmpty)
+        #expect(lastCompletion(wideEvent)?.0.terminalAction == .noActionTimeout)
     }
 
     @available(iOS 16, *)

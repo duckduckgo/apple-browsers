@@ -263,6 +263,11 @@ final class DefaultNewTabPageSessionInstrumentation: NewTabPageSessionInstrument
         // after we had already declared it abandoned.
         let outcome = lockedTerminal ?? terminalAction
 
+        if isPassingThrough(visit, endingOn: outcome) {
+            discard(visit)
+            return
+        }
+
         visit.sessionInterval.end = now
         if lockedTerminal == nil {
             markFirstInteractionIfNeeded(on: visit, at: now)
@@ -343,6 +348,31 @@ final class DefaultNewTabPageSessionInstrumentation: NewTabPageSessionInstrument
                   now.timeIntervalSince(startedAt) - timeSpentOnOtherScreens >= NewTabPageSessionWideEventData.maxSessionDuration {
             lockedTerminal = .maxDurationExceeded
         }
+    }
+
+    /// Whether the user crossed the New Tab Page on the way somewhere else without using it.
+    ///
+    /// Swiping between tabs attaches the page for a moment when it passes an empty one, and the
+    /// next swipe closes it again. Reporting those as successes would let swiping habits lift the
+    /// success rate on visits where the user never asked the surface for anything.
+    ///
+    /// Only tab changes qualify: every other terminal needs an action to reach, and the timeouts
+    /// are the deliberate no-action failures the rate exists to capture.
+    private func isPassingThrough(_ visit: NewTabPageSessionWideEventData,
+                                  endingOn terminalAction: NewTabPageSessionWideEventData.TerminalAction) -> Bool {
+        guard visit.actionCount == 0 else { return false }
+
+        switch terminalAction {
+        case .selectOtherTab, .swipeToOtherTab: return true
+        default: return false
+        }
+    }
+
+    private func discard(_ visit: NewTabPageSessionWideEventData) {
+        wideEvent.discardFlow(visit)
+        activeVisit = nil
+        lockedTerminal = nil
+        lastRecordedAction = nil
     }
 
     private func complete(_ visit: NewTabPageSessionWideEventData,

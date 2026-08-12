@@ -1,5 +1,5 @@
 //
-//  ModalPromptCoordinationDebugMenu.swift
+//  PromptCoordinationDebugMenu.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -21,7 +21,7 @@ import SwiftUI
 import Persistence
 import class Common.EventMapping
 
-struct ModalPromptCoordinationDebugView: View {
+struct PromptCoordinationDebugView: View {
     @StateObject private var viewModel: ModalPromptCoordinationDebugViewModel
 
     init(

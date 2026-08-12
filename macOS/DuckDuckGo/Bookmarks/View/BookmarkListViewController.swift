@@ -31,6 +31,8 @@ protocol BookmarkListViewControllerDelegate: AnyObject {
 }
 
 final class BookmarkListViewController: NSViewController {
+    weak var hostWindow: NSWindow?
+    override var undoManager: UndoManager? { hostWindow?.undoManager ?? super.undoManager }
 
     fileprivate enum Constants {
         static let preferredContentSize = CGSize(width: 420, height: 500)

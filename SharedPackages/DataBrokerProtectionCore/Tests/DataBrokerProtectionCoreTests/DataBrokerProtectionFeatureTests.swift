@@ -77,6 +77,30 @@ final class DataBrokerProtectionFeatureTests: XCTestCase {
         XCTAssertEqual(mockCSSDelegate.profiles?.count, 2)
     }
 
+    func testWhenExtractActionCarriesExtras_thenDelegateSendsThemOnTheProfile() async {
+        let profiles = NSArray(objects: ["name": "Jane Smith",
+                                         "addresses": [["city": "Springfield", "state": "IL", "extras": ["zip": "62701"]]],
+                                         "extras": ["county": "Sangamon"]])
+        let params = ["result": ["success": ["actionID": "1", "actionType": "extract", "response": profiles] as [String: Any]]]
+        let sut = DataBrokerProtectionFeature(delegate: mockCSSDelegate, executionConfig: BrokerJobExecutionConfig(), shouldContinueActionHandler: { true })
+
+        await sut.parseActionCompleted(params: params)
+
+        XCTAssertNil(mockCSSDelegate.lastError)
+        XCTAssertEqual(mockCSSDelegate.profiles?.first?.extras, ["county": "Sangamon"])
+        XCTAssertEqual(mockCSSDelegate.profiles?.first?.addresses?.first?.extras, ["zip": "62701"])
+    }
+
+    func testWhenExtrasAreMalformed_thenDelegateSendsParsingError() async {
+        let profiles = NSArray(objects: ["name": "Jane Smith", "extras": ["county": 42]])
+        let params = ["result": ["success": ["actionID": "1", "actionType": "extract", "response": profiles] as [String: Any]]]
+        let sut = DataBrokerProtectionFeature(delegate: mockCSSDelegate, executionConfig: BrokerJobExecutionConfig(), shouldContinueActionHandler: { true })
+
+        await sut.parseActionCompleted(params: params)
+
+        XCTAssertEqual(mockCSSDelegate.lastError as? DataBrokerProtectionError, DataBrokerProtectionError.parsingErrorObjectFailed)
+    }
+
     func testWhenUnknownActionIsParsed_thenDelegateSendsParsingError() async {
         let params = ["result": ["success": ["actionID": "1", "actionType": "unknown"] as [String: Any]]]
         let sut = DataBrokerProtectionFeature(delegate: mockCSSDelegate, executionConfig: BrokerJobExecutionConfig(), shouldContinueActionHandler: { true })

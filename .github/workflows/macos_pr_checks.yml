@@ -48,6 +48,10 @@ on:
         required: true
       APPLE_GH_RO_PAT:
         required: true
+      BITRISE_BUILD_CACHE_AUTH_TOKEN:
+        required: true
+      BITRISE_BUILD_CACHE_WORKSPACE_ID:
+        required: true
       MATCH_PASSWORD:
         required: true
       SSH_PRIVATE_KEY_FASTLANE_MATCH:
@@ -101,7 +105,7 @@ jobs:
 
     name: Test Shell Scripts
 
-    runs-on: macos-26
+    runs-on: ubuntu-latest
 
     needs: should-run-checks
     if: needs.should-run-checks.outputs.should_run == 'true'
@@ -118,7 +122,7 @@ jobs:
         ref: ${{ inputs.branch || github.ref_name }}
 
     - name: Install Bats
-      run: brew install bats-core
+      run: sudo npm install -g bats
 
     - name: Run Bats tests
       run: bats --formatter junit scripts/tests/* > bats-tests.xml
@@ -157,9 +161,9 @@ jobs:
             flavor: Non-Sandbox
           - cache-key: sandbox-
             flavor: Sandbox
-          - runs-on: macos-26
+          - runs-on: bitrise:macos26-m4
             flavor: Non-Sandbox
-          - runs-on: macos-26-xlarge
+          - runs-on: bitrise:macos26-m4-xlarge
             flavor: Sandbox
 
     runs-on: ${{ matrix.runs-on }}
@@ -252,12 +256,20 @@ jobs:
       uses: ./.github/actions/select-xcode-version
 
     - name: Restore Xcode Compilation Cache
+      if: runner.environment != 'self-hosted'
       uses: actions/cache/restore@v5
       with:
         path: macOS/DerivedData/CompilationCache.noindex
         key: xcode-compilation-cache-${{ matrix.flavor }}
         restore-keys: |
           xcode-compilation-cache-${{ matrix.flavor }}-
+
+    - name: Setup Bitrise Build Cache
+      if: runner.environment == 'self-hosted'
+      uses: ./.github/actions/bitrise-build-cache
+      with:
+        token: ${{ secrets.BITRISE_BUILD_CACHE_AUTH_TOKEN }}
+        workspace-id: ${{ secrets.BITRISE_BUILD_CACHE_WORKSPACE_ID }}
 
     - name: Build for testing
       id: build-for-testing
@@ -318,7 +330,7 @@ jobs:
           || { mv "$(grep -m 1 '.*\.xcresult' ${{ matrix.flavor }}-integrationtests-xcodebuild.log | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')" ./${{ matrix.flavor }}-integrationtests.xcresult && exit 1; }
 
     - name: Compute Compilation Cache hash
-      if: github.ref == 'refs/heads/main'
+      if: runner.environment != 'self-hosted' && github.ref == 'refs/heads/main'
       id: compilation-cache-hash
       run: |
         if [ -d "DerivedData/CompilationCache.noindex" ]; then
@@ -329,7 +341,7 @@ jobs:
         fi
 
     - name: Save Xcode Compilation Cache
-      if: github.ref == 'refs/heads/main' && steps.compilation-cache-hash.outputs.hash
+      if: runner.environment != 'self-hosted' && github.ref == 'refs/heads/main' && steps.compilation-cache-hash.outputs.hash
       uses: actions/cache/save@v5
       with:
         path: macOS/DerivedData/CompilationCache.noindex
@@ -519,10 +531,10 @@ jobs:
       inputs.skip-release-build != true &&
       needs.should-run-checks.outputs.should_run == 'true'
 
-    runs-on: macos-26
+    runs-on: bitrise:macos26-m4
     timeout-minutes: 60
     env:
-      RUNS_ON: macos-26 # keep this in sync with runs-on above
+      RUNS_ON: bitrise:macos26-m4 # keep this in sync with runs-on above
 
     outputs:
       changed_files: ${{ steps.changed-strings-files.outputs.changed_files }}
@@ -597,12 +609,20 @@ jobs:
       uses: ./.github/actions/select-xcode-version
 
     - name: Restore Xcode Compilation Cache
+      if: runner.environment != 'self-hosted'
       uses: actions/cache/restore@v5
       with:
         path: macOS/DerivedData/CompilationCache.noindex
         key: xcode-compilation-cache-release
         restore-keys: |
           xcode-compilation-cache-release-
+
+    - name: Setup Bitrise Build Cache
+      if: runner.environment == 'self-hosted'
+      uses: ./.github/actions/bitrise-build-cache
+      with:
+        token: ${{ secrets.BITRISE_BUILD_CACHE_AUTH_TOKEN }}
+        workspace-id: ${{ secrets.BITRISE_BUILD_CACHE_WORKSPACE_ID }}
 
     - name: Build the app
       run: |
@@ -618,7 +638,7 @@ jobs:
           | xcbeautify
 
     - name: Compute Compilation Cache hash
-      if: github.ref == 'refs/heads/main'
+      if: runner.environment != 'self-hosted' && github.ref == 'refs/heads/main'
       id: compilation-cache-hash
       run: |
         if [ -d "DerivedData/CompilationCache.noindex" ]; then
@@ -629,7 +649,7 @@ jobs:
         fi
 
     - name: Save Xcode Compilation Cache
-      if: github.ref == 'refs/heads/main' && steps.compilation-cache-hash.outputs.hash
+      if: runner.environment != 'self-hosted' && github.ref == 'refs/heads/main' && steps.compilation-cache-hash.outputs.hash
       uses: actions/cache/save@v5
       with:
         path: macOS/DerivedData/CompilationCache.noindex

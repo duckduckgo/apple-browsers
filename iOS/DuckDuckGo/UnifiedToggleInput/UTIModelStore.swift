@@ -174,7 +174,8 @@ final class UTIModelStore {
                     supportedTools: remote.supportedTools.compactMap(AIChatRAGTool.init(rawValue:)),
                     entityHasAccess: remote.entityHasAccess,
                     accessTier: remote.accessTier,
-                    supportedReasoningEffort: remote.supportedReasoningEffort
+                    supportedReasoningEffort: remote.supportedReasoningEffort,
+                    label: remote.label
                 )
             }
             return AIChatModel(remoteModel: remote, userTier: userTier)

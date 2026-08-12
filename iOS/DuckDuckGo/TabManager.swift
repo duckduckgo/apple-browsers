@@ -21,6 +21,7 @@ import Common
 import FoundationExtensions
 import Core
 import DDGSync
+import EventHub
 import FeatureFlags_iOS
 import WebKit
 import BrowserServicesKit
@@ -145,6 +146,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     private let onboardingPixelReporter: OnboardingPixelReporting
     private let featureFlagger: FeatureFlagger
     private let tabTerminationTelemetry: any TabTerminationTelemetry
+    private let tabTerminationErrorPageDetector: any TabTerminationErrorPageDetecting
     private let tabEvictionSettings: TabEvictionSettings
     private let applicationState: @MainActor () -> UIApplication.State
     private let isPad: Bool
@@ -183,6 +185,9 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
 
     /// Single app-lifetime instance shared across all tabs, MainViewController, and SettingsViewModel.
     let adBlockingAvailability: AdBlockingAvailabilityProviding
+
+    /// Single app-lifetime instance, handed to every tab so it can report its own web and navigation events.
+    let eventHub: EventHubManaging
 
     weak var delegate: TabDelegate?
     weak var aiChatContentDelegate: AIChatContentHandlingDelegate?
@@ -230,7 +235,9 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
          duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
          toggleModeStorage: ToggleModeStoring = ToggleModeStorage(),
          adBlockingAvailability: AdBlockingAvailabilityProviding,
+         eventHub: EventHubManaging,
          tabTerminationTelemetry: (any TabTerminationTelemetry)? = nil,
+         tabTerminationErrorPageDetector: (any TabTerminationErrorPageDetecting)? = nil,
          applicationState: (@MainActor () -> UIApplication.State)? = nil,
          isPad: Bool? = nil
     ) {
@@ -256,6 +263,9 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             featureFlagger: featureFlagger,
             keyValueStore: UserDefaults.app,
             memoryWarningTelemetryWindow: { tabEvictionSettings.memoryWarningTelemetryWindow })
+        self.tabTerminationErrorPageDetector = tabTerminationErrorPageDetector ?? TabTerminationErrorPageDetector(
+            featureFlagger: featureFlagger,
+            privacyConfigurationManager: privacyConfigurationManager)
         self.applicationState = applicationState ?? { UIApplication.shared.applicationState }
         self.isPad = isPad ?? (UIDevice.current.userInterfaceIdiom == .pad)
         self.contentScopeExperimentManager = contentScopeExperimentManager
@@ -280,6 +290,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         self.toggleModeStorage = toggleModeStorage
         self.darkReaderFeatureSettings = darkReaderFeatureSettings
         self.adBlockingAvailability = adBlockingAvailability
+        self.eventHub = eventHub
         registerForNotifications()
     }
 
@@ -370,7 +381,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               autoplaySettings: autoplaySettings,
                                                               duckAiNativeStorageHandler: duckAiNativeStorageHandler,
                                                               duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
-                                                              adBlockingAvailability: adBlockingAvailability)
+                                                              adBlockingAvailability: adBlockingAvailability,
+                                                              eventHub: eventHub)
         controller.applyInheritedAttribution(inheritedAttribution)
         controller.attachWebView(configuration: configuration,
                                  interactionStateData: interactionState,
@@ -499,7 +511,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               autoplaySettings: autoplaySettings,
                                                               duckAiNativeStorageHandler: duckAiNativeStorageHandler,
                                                               duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
-                                                              adBlockingAvailability: adBlockingAvailability)
+                                                              adBlockingAvailability: adBlockingAvailability,
+                                                              eventHub: eventHub)
         controller.attachWebView(configuration: configCopy,
                                  andLoadRequest: request,
                                  consumeCookies: !currentTabsModel.hasActiveTabs,
@@ -648,6 +661,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         if let index = tabControllerCache.firstIndex(of: controller) {
             tabControllerCache.remove(at: index)
         }
+        tabTerminationErrorPageDetector.removeHistory(forTabID: controller.tabModel.uid)
         controller.dismiss()
     }
 
@@ -702,15 +716,22 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     }
 
     @MainActor
-    func invalidateCache(forController controller: TabViewController) {
+    func invalidateCache(forController controller: TabViewController, reloadCurrent: Bool) {
         if current() === controller {
-            DailyPixel.fireDailyAndCount(pixel: .webKitTerminationDidReloadCurrentTab, pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
-
-            if controller.url?.isDuckAIURL == true {
-                DailyPixel.fireDailyAndCount(pixel: .aiChatTabDidReloadAfterTermination)
+            if reloadCurrent, tabTerminationErrorPageDetector.shouldShowErrorPage(forTabID: controller.tabModel.uid) {
+                controller.showTabTerminationErrorPage()
+                return
             }
 
-            current()?.reload()
+            if reloadCurrent {
+                DailyPixel.fireDailyAndCount(pixel: .webKitTerminationDidReloadCurrentTab, pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
+
+                if controller.url?.isDuckAIURL == true {
+                    DailyPixel.fireDailyAndCount(pixel: .aiChatTabDidReloadAfterTermination)
+                }
+
+                current()?.reload()
+            }
         } else {
             evictFromCache(controller, reason: .webContentProcessTermination)
         }

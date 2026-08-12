@@ -256,6 +256,7 @@ extension FileDownloadManager: WebKitDownloadTaskDelegate {
                 NSFileWriteVolumeReadOnlyError,   // EROFS   — read-only filesystem
                 NSFileWriteNoPermissionError,     // EACCES/EPERM — no write permission
                 NSFileNoSuchFileError,            // ENOENT  — parent dir removed / volume unmounted
+                NSFileWriteInvalidFileNameError,  // ENAMETOOLONG — suggested filename too long for the filesystem
                 NSFileWriteUnknownError,          // catch-all for unexpected write failures
             ]
             Logger.fileDownload.error("Failed to create file in the Downloads folder: \(error)")

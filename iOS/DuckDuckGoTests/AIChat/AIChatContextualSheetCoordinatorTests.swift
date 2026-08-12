@@ -207,14 +207,27 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         super.tearDown()
     }
 
-    // MARK: - attachSelection Tests
+    // MARK: - handleSelectionAction Tests
 
     @MainActor
     func testAttachSelectionAttachesAndPresentsTheSheet() async {
-        await sut.attachSelection(text: "selected text", url: URL(string: "https://example.com"), faviconBase64: nil, from: mockPresentingVC)
+        await sut.handleSelectionAction(.ask, selection: .init(text: "selected text", url: URL(string: "https://example.com"), faviconBase64: nil), from: mockPresentingVC)
 
         XCTAssertEqual(sut.sessionState.attachedSelections.map(\.content), ["selected text"])
         XCTAssertNotNil(sut.sheetViewController)
+    }
+
+    /// The signals-only payload is content-free and marked unattached, so pushing it while a page is
+    /// attached would clear that page on the frontend while the chip still shows it.
+    @MainActor
+    func testSelectionActionDoesNotCollectSignalsWhileAPageIsAttached() async {
+        sut.sessionState.attachContextFromSuggestionTap(makeTestContext(title: "Attached"))
+        mockPageContextHandler.triggerContextCollectionCallCount = 0
+
+        await sut.handleSelectionAction(.ask, selection: .init(text: "selected text", url: URL(string: "https://example.com"), faviconBase64: nil), from: mockPresentingVC)
+
+        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 0)
+        XCTAssertNotNil(sut.sessionState.intendedAttachedContext)
     }
 
     /// Reading a selection suspends, so two taps on the omnibar icon can both reach here with the same
@@ -223,8 +236,8 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     func testAttachingTheSameSelectionTwiceAttachesItOnce() async {
         let url = URL(string: "https://example.com")
 
-        await sut.attachSelection(text: "selected text", url: url, faviconBase64: nil, from: mockPresentingVC)
-        await sut.attachSelection(text: "selected text", url: url, faviconBase64: nil, from: mockPresentingVC)
+        await sut.handleSelectionAction(.ask, selection: .init(text: "selected text", url: url, faviconBase64: nil), from: mockPresentingVC)
+        await sut.handleSelectionAction(.ask, selection: .init(text: "selected text", url: url, faviconBase64: nil), from: mockPresentingVC)
 
         XCTAssertEqual(sut.sessionState.attachedSelections.count, 1)
     }
@@ -234,7 +247,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     func testAttachSelectionRestoresThePersistedChat() async {
         let restoreURL = URL(string: "https://duckduckgo.com/?chatID=abc")!
 
-        await sut.attachSelection(text: "selected text", url: URL(string: "https://example.com"), faviconBase64: nil, restoreURL: restoreURL, from: mockPresentingVC)
+        await sut.handleSelectionAction(.ask, selection: .init(text: "selected text", url: URL(string: "https://example.com"), faviconBase64: nil), restoreURL: restoreURL, from: mockPresentingVC)
 
         XCTAssertEqual(sut.sessionState.contextualChatURL, restoreURL)
     }
@@ -317,6 +330,21 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
         // Then
         XCTAssertNil(sut.sheetViewController)
+    }
+
+    /// Both callers delete the conversation, so leaving the URL on the tab would let the address bar
+    /// restore a chat the user just deleted — including after a relaunch.
+    @MainActor
+    func testClearActiveChatClearsThePersistedChatURL() async {
+        // Given
+        await sut.presentSheet(from: mockPresentingVC)
+        mockDelegate.contextualChatURLUpdates = []
+
+        // When
+        sut.clearActiveChat()
+
+        // Then
+        XCTAssertEqual(mockDelegate.contextualChatURLUpdates, [nil])
     }
 
     @MainActor

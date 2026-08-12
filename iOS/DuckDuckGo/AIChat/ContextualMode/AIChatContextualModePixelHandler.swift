@@ -37,6 +37,15 @@ protocol AIChatContextualModePixelFiring {
     func fireFireButtonTapped()
     func fireFireButtonConfirmed()
 
+    // MARK: - Address Bar Menu
+    func fireAddressBarMenuShown()
+    func fireAddressBarMenuNewChatSelected()
+    func fireAddressBarMenuAskAboutPageSelected()
+
+    // MARK: - Floating Input
+    func fireFloatingInputDismissedWithoutSubmission()
+    func fireFloatingInputPromotedToSheet()
+
     // MARK: - Suggested Prompts
     func fireAskAboutPageSuggestionSelected(pageType: SuggestionsPageType)
     func fireSuggestionSelected(suggestionId: String, pageType: SuggestionsPageType)
@@ -150,6 +159,26 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
 
     func fireQuickActionAskAboutPageSelected() {
         firePixel(.aiChatContextualQuickActionAskAboutPageSelected)
+    }
+
+    func fireAddressBarMenuShown() {
+        firePixel(.aiChatContextualAddressBarMenuShown)
+    }
+
+    func fireAddressBarMenuNewChatSelected() {
+        firePixel(.aiChatContextualAddressBarMenuNewChatSelected)
+    }
+
+    func fireAddressBarMenuAskAboutPageSelected() {
+        firePixel(.aiChatContextualAddressBarMenuAskAboutPageSelected)
+    }
+
+    func fireFloatingInputDismissedWithoutSubmission() {
+        firePixel(.aiChatContextualFloatingInputDismissedWithoutSubmission)
+    }
+
+    func fireFloatingInputPromotedToSheet() {
+        firePixel(.aiChatContextualFloatingInputPromotedToSheet)
     }
 
     func fireFireButtonTapped() {

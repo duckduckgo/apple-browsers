@@ -67,13 +67,44 @@ final class BookmarksContextMenu: NSMenu {
     }
 
     override func update() {
-        items = Self.menuItems(
-            for: bookmarksContextMenuDelegate?.selectedItems() ?? [],
-            target: self,
-            forSearch: bookmarksContextMenuDelegate?.isSearching ?? false,
-            includeManageBookmarksItem: bookmarksContextMenuDelegate?.shouldIncludeManageBookmarksItem ?? true,
-            includeReorderByNameItem: featureFlagger.isFeatureOn(.bookmarksReorderByName)
-        )
+        items = makeMenuItems()
+    }
+
+    private func makeMenuItems() -> [NSMenuItem] {
+        let selectedItems = bookmarksContextMenuDelegate?.selectedItems() ?? []
+
+        // the Bookmarks root is represented by a PseudoFolder, so it has no BaseBookmarkEntity to build a menu from
+        if isBookmarksRootTheOnlySelectedItem(in: selectedItems) {
+            guard featureFlagger.isFeatureOn(.bookmarksReorderByName) else {
+                return []
+            }
+
+            return Self.rootMenuItems(
+                topLevelEntities: bookmarkManager.list?.topLevelEntities ?? [],
+                target: self
+            )
+        } else {
+            return Self.menuItems(
+                for: selectedItems,
+                target: self,
+                forSearch: bookmarksContextMenuDelegate?.isSearching ?? false,
+                includeManageBookmarksItem: bookmarksContextMenuDelegate?.shouldIncludeManageBookmarksItem ?? true,
+                includeReorderByNameItem: featureFlagger.isFeatureOn(.bookmarksReorderByName)
+            )
+        }
+    }
+
+    private func isBookmarksRootTheOnlySelectedItem(in selectedItems: [Any]) -> Bool {
+        guard selectedItems.count == 1, let selectedItem = selectedItems.first else {
+            return false
+        }
+
+        let representedObject = (selectedItem as? BookmarkNode)?.representedObject ?? selectedItem
+        guard let pseudoFolder = representedObject as? PseudoFolder else {
+            return false
+        }
+
+        return pseudoFolder == .bookmarks
     }
 
 }
@@ -200,7 +231,10 @@ extension BookmarksContextMenu {
         ]
 
         if includeReorderByNameItem {
-            items.insert(reorderByNameMenuItem(folder: folder, target: target), at: 5)
+            items.insert(contentsOf: [
+                NSMenuItem.separator(),
+                reorderByNameMenuItem(folder: folder, target: target),
+            ], at: 5)
         }
         if includeManageBookmarksItem {
             items.append(manageBookmarksMenuItem(target: target))
@@ -211,6 +245,32 @@ extension BookmarksContextMenu {
         }
 
         return items
+    }
+
+    /// Creates the menu items for the Bookmarks root (`PseudoFolder.bookmarks`).
+    ///
+    /// Unlike a real folder the root can‘t be renamed, deleted or moved, so only the actions that make sense
+    /// for it are offered. "Open All" acts on bookmarks stored directly at the root, matching folder behaviour.
+    ///
+    /// - Parameters:
+    ///   - topLevelEntities: The entities stored directly at the root, in their current order.
+    ///   - target: The target to associate to the `NSMenuItem`
+    static func rootMenuItems(
+        topLevelEntities: [BaseBookmarkEntity],
+        target: AnyObject?
+    ) -> [NSMenuItem] {
+        let root = BookmarksRootMenuItem(topLevelEntities: topLevelEntities)
+        // disable "Open All" if no Bookmarks stored directly at the root
+        let hasBookmarks = !root.bookmarks.isEmpty
+
+        return [
+            openInNewTabsMenuItem(root: root, target: target, enabled: hasBookmarks),
+            openAllInNewWindowMenuItem(root: root, target: target, enabled: hasBookmarks),
+            NSMenuItem.separator(),
+            reorderByNameMenuItem(root: root, target: target),
+            NSMenuItem.separator(),
+            addNewFolderMenuItem(entity: nil, target: target),
+        ]
     }
 
     // MARK: - Single Bookmark Menu Items
@@ -277,6 +337,11 @@ extension BookmarksContextMenu {
             .withImage(DesignSystemImages.Glyphs.Size12.arrowUpDown)
     }
 
+    static func reorderByNameMenuItem(root: BookmarksRootMenuItem, target: AnyObject?) -> NSMenuItem {
+        NSMenuItem(title: UserText.bookmarksBarContextMenuReorderByName, action: #selector(FolderMenuItemSelectors.reorderByName(_:)), target: target, representedObject: root)
+            .withImage(DesignSystemImages.Glyphs.Size12.arrowUpDown)
+    }
+
     static func showInFolderMenuItem(bookmark: Bookmark?, target: AnyObject?) -> NSMenuItem {
         NSMenuItem(title: UserText.showInFolder, action: #selector(BookmarkSearchMenuItemSelectors.showInFolder(_:)), target: target, representedObject: bookmark)
     }
@@ -292,6 +357,20 @@ extension BookmarksContextMenu {
 
     static func openAllInNewWindowMenuItem(folder: BookmarkFolder?, target: AnyObject?, enabled: Bool) -> NSMenuItem {
         let item = NSMenuItem(title: UserText.openAllTabsInNewWindow, action: #selector(FolderMenuItemSelectors.openAllInNewWindow(_:)), target: target, representedObject: folder)
+            .withImage(DesignSystemImages.Glyphs.Size12.windowNew)
+        item.isEnabled = enabled
+        return item
+    }
+
+    static func openInNewTabsMenuItem(root: BookmarksRootMenuItem, target: AnyObject?, enabled: Bool) -> NSMenuItem {
+        let item = NSMenuItem(title: UserText.openAllInNewTabs, action: #selector(FolderMenuItemSelectors.openInNewTabs(_:)), target: target, representedObject: root)
+            .withImage(DesignSystemImages.Glyphs.Size12.tabNew)
+        item.isEnabled = enabled
+        return item
+    }
+
+    static func openAllInNewWindowMenuItem(root: BookmarksRootMenuItem, target: AnyObject?, enabled: Bool) -> NSMenuItem {
+        let item = NSMenuItem(title: UserText.openAllTabsInNewWindow, action: #selector(FolderMenuItemSelectors.openAllInNewWindow(_:)), target: target, representedObject: root)
             .withImage(DesignSystemImages.Glyphs.Size12.windowNew)
         item.isEnabled = enabled
         return item
@@ -463,12 +542,22 @@ extension BookmarksContextMenu: BookmarkMenuItemSelectors {
 extension BookmarksContextMenu: FolderMenuItemSelectors {
     @MainActor
     @objc func reorderByName(_ sender: NSMenuItem) {
-        guard let folder = sender.representedObject as? BookmarkFolder else {
+        switch sender.representedObject {
+        case let folder as BookmarkFolder:
+            bookmarkManager.reorderByName(
+                folder.children,
+                withinParentFolder: .parent(uuid: folder.id),
+                undoManager: bookmarksContextMenuDelegate?.undoManager
+            )
+        case let root as BookmarksRootMenuItem:
+            bookmarkManager.reorderByName(
+                root.topLevelEntities,
+                withinParentFolder: .root,
+                undoManager: bookmarksContextMenuDelegate?.undoManager
+            )
+        default:
             assertionFailure("Failed to retrieve BookmarkFolder from Reorder by Name context menu item")
-            return
         }
-
-        bookmarkManager.reorderByName(folder.children, withinParentFolder: .parent(uuid: folder.id))
     }
 
     @MainActor
@@ -531,19 +620,30 @@ extension BookmarksContextMenu: FolderMenuItemSelectors {
         } else if let bookmarks = sender.representedObject as? [Bookmark] {
             let tabs = Tab.with(contentsOf: bookmarks, burnerMode: tabCollection.burnerMode)
             tabCollection.append(tabs: tabs, andSelect: true)
+        } else if let root = sender.representedObject as? BookmarksRootMenuItem {
+            let tabs = Tab.with(contentsOf: root.bookmarks, burnerMode: tabCollection.burnerMode)
+            tabCollection.append(tabs: tabs, andSelect: true)
         }
     }
 
     @MainActor
     @objc func openAllInNewWindow(_ sender: NSMenuItem) {
-        guard let tabCollection = windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel,
-              let folder = sender.representedObject as? BookmarkFolder
-        else {
+        guard let tabCollection = windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel else {
             assertionFailure("Cannot open all in new window")
             return
         }
 
-        let newTabCollection = TabCollection.withContentOfBookmark(folder: folder, burnerMode: tabCollection.burnerMode)
+        let newTabCollection: TabCollection
+        switch sender.representedObject {
+        case let folder as BookmarkFolder:
+            newTabCollection = TabCollection.withContentOfBookmark(folder: folder, burnerMode: tabCollection.burnerMode)
+        case let root as BookmarksRootMenuItem:
+            newTabCollection = TabCollection(tabs: Tab.with(contentsOf: root.bookmarks, burnerMode: tabCollection.burnerMode))
+        default:
+            assertionFailure("Cannot open all in new window")
+            return
+        }
+
         let tabCollectionViewModel = TabCollectionViewModel(tabCollection: newTabCollection, burnerMode: tabCollection.burnerMode)
         windowControllersManager.openNewWindow(with: tabCollectionViewModel, burnerMode: tabCollection.burnerMode)
     }

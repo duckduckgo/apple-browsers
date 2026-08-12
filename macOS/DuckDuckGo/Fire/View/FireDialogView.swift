@@ -95,8 +95,6 @@ struct FireDialogView: ModalView {
     }
     @State private var isAnimatingHistoryOverlay: Bool = false
 
-    private let historyDateFormatter: HistoryViewDateFormatting = DefaultHistoryViewDateFormatter()
-
     private var isShowingAnyOverlay: Bool {
         isShowingSitesOverlay || isShowingChatsOverlay || isShowingHistoryOverlay
     }
@@ -526,6 +524,7 @@ struct FireDialogView: ModalView {
     private var sitesOverlayList: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
+                Spacer(minLength: 11)
                 ForEach(viewModel.selectable, id: \.domain) { item in
                     sitesOverlayRow(for: item)
                 }
@@ -542,7 +541,7 @@ struct FireDialogView: ModalView {
             .padding(.trailing, 32)
             .padding(.vertical, 4)
         }
-        .padding(.top, 11)
+        .scrollBounceBasedOnSize()
         .padding(.trailing, 8)
         .background(
             CustomRoundedCornersShape(tl: 16, tr: 16, bl: 0, br: 0)
@@ -643,6 +642,7 @@ struct FireDialogView: ModalView {
     private var chatsOverlayList: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
+                Spacer(minLength: 11)
                 ForEach(viewModel.chats, id: \.chatId) { chat in
                     HStack(spacing: 12) {
                         Image(nsImage: DesignSystemImages.Glyphs.Size16.aiChat)
@@ -664,7 +664,7 @@ struct FireDialogView: ModalView {
             .padding(.trailing, 32)
             .padding(.vertical, 4)
         }
-        .padding(.top, 11)
+        .scrollBounceBasedOnSize()
         .padding(.trailing, 8)
         .background(
             CustomRoundedCornersShape(tl: 16, tr: 16, bl: 0, br: 0)
@@ -708,22 +708,28 @@ struct FireDialogView: ModalView {
 
             Spacer(minLength: 8)
 
-            Button(action: { isShowingHistoryOverlay = false }) {
-                Image(nsImage: DesignSystemImages.Glyphs.Size16.close)
-                    .resizable()
-                    .frame(width: 12, height: 12)
+            HStack(alignment: .center, spacing: 8) {
+                if viewModel.historyVisits.count > Constants.historyOverlayMaxVisibleItems {
+                    seeFullHistoryButton(accessibilityIdentifier: "FireDialogView.seeFullHistoryButton")
+                }
+
+                Button(action: { isShowingHistoryOverlay = false }) {
+                    Image(nsImage: DesignSystemImages.Glyphs.Size16.close)
+                        .resizable()
+                        .frame(width: 12, height: 12)
+                }
+                .buttonStyle(
+                    StandardButtonStyle(topPadding: 6,
+                                        bottomPadding: 6,
+                                        horizontalPadding: 6,
+                                        backgroundColor: Color(designSystemColor: .controlsFillPrimary),
+                                        backgroundPressedColor: Color(designSystemColor: .controlsFillPrimary))
+                )
+                .clipShape(Circle())
+                .accessibilityLabel(UserText.close)
+                .accessibilityIdentifier("FireDialogView.historyOverlayCloseButton")
+                .keyboardShortcut(.cancelAction)
             }
-            .buttonStyle(
-                StandardButtonStyle(topPadding: 6,
-                                    bottomPadding: 6,
-                                    horizontalPadding: 6,
-                                    backgroundColor: Color(designSystemColor: .controlsFillPrimary),
-                                    backgroundPressedColor: Color(designSystemColor: .controlsFillPrimary))
-            )
-            .clipShape(Circle())
-            .accessibilityLabel(UserText.close)
-            .accessibilityIdentifier("FireDialogView.historyOverlayCloseButton")
-            .keyboardShortcut(.cancelAction)
         }
         .padding(.top, 24)
         .padding(.horizontal, Constants.horizontalPadding)
@@ -733,19 +739,24 @@ struct FireDialogView: ModalView {
     private var historyOverlayList: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
+                Spacer(minLength: 11)
                 ForEach(viewModel.historyVisits.sorted { $0.date > $1.date }.prefix(Constants.historyOverlayMaxVisibleItems), id: \.self) { visit in
                     historyOverlayRow(for: visit)
                 }
 
                 if viewModel.historyVisits.count > Constants.historyOverlayMaxVisibleItems {
-                    seeFullHistoryButton
+                    seeFullHistoryButton(accessibilityIdentifier: "FireDialogView.seeFullHistoryListButton")
+                        .padding(.top, 12)
+                        .padding(.bottom, 20)
+                        .padding(.leading, 8)
+                        .frame(maxWidth: .infinity, alignment: .center)
                 }
             }
             .padding(.leading, 24)
             .padding(.trailing, 32)
             .padding(.vertical, 4)
         }
-        .padding(.top, 11)
+        .scrollBounceBasedOnSize()
         .padding(.trailing, 8)
         .background(
             CustomRoundedCornersShape(tl: 16, tr: 16, bl: 0, br: 0)
@@ -759,19 +770,28 @@ struct FireDialogView: ModalView {
         .padding(.horizontal, 8)
     }
 
-    private var seeFullHistoryButton: some View {
+    /// The same button appears twice when the list is capped: once in the overlay header and once below the last
+    /// visit, so it stays reachable without scrolling back up. Each instance needs its own accessibility identifier.
+    private func seeFullHistoryButton(accessibilityIdentifier: String) -> some View {
         Button {
             viewModel.openFullHistory()
         } label: {
-            Text(UserText.fireDialogSeeFullHistory)
-                .font(.system(size: 12, weight: .medium))
-                .foregroundColor(style.selectedForeground)
-                .frame(maxWidth: .infinity, alignment: .center)
+            Text(UserText.fireDialogShowAllHistory)
+                .font(.system(size: 11))
+                .foregroundColor(Color(designSystemColor: .textSecondary))
+                .lineLimit(1)
+                .fixedSize()
         }
-        .buttonStyle(.plain)
+        .buttonStyle(
+            StandardButtonStyle(topPadding: 5,
+                                bottomPadding: 5,
+                                horizontalPadding: 8,
+                                backgroundColor: Color(designSystemColor: .controlsFillPrimary),
+                                backgroundPressedColor: Color(designSystemColor: .controlsFillSecondary),
+                                cornerRadius: 12)
+        )
         .cursor(.pointingHand)
-        .padding(.vertical, 12)
-        .accessibilityIdentifier("FireDialogView.seeFullHistoryButton")
+        .accessibilityIdentifier(accessibilityIdentifier)
     }
 
     private func historyOverlayRow(for visit: Visit) -> some View {
@@ -796,7 +816,7 @@ struct FireDialogView: ModalView {
             .frame(maxWidth: .infinity, alignment: .leading)
             .help(visitViewModel.title)
 
-            Text(historyDateFormatter.timeString(for: visit.date))
+            Text(viewModel.historyDateFormatter.shortString(for: visit.date))
                 .font(.system(size: 11))
                 .foregroundColor(Color(designSystemColor: .textTertiary))
                 .fixedSize()
@@ -964,10 +984,10 @@ struct FireDialogView: ModalView {
                             Group {
                                 if AppVersion.isLiquidGlassSupported {
                                     Capsule(style: .continuous)
-                                        .fill(Color(designSystemColor: .buttonsSecondaryFillDefault))
+                                        .fill(Color(designSystemColor: .controlsFillPrimary))
                                 } else {
                                     RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                        .fill(Color(designSystemColor: .buttonsSecondaryFillDefault))
+                                        .fill(Color(designSystemColor: .controlsFillPrimary))
                                 }
                             }
                         )

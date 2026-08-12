@@ -54,6 +54,7 @@ actor WideEventService {
         await processSubscriptionPurchaseCompletion(trigger: trigger)
         await processCompletion(DataImportWideEventData.self, trigger: trigger)
         await processCompletion(PostIdleSessionWideEventData.self, trigger: trigger)
+        await processCompletion(NewTabPageSessionWideEventData.self, trigger: trigger)
 
         if includingLaunchOnlyEvents {
             // Launch-only: only a cold launch proves a still-pending refresh is genuinely stalled.

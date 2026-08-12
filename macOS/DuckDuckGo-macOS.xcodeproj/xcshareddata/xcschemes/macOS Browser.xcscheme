@@ -432,9 +432,9 @@
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "SyncUITests"
-               BuildableName = "SyncUITests"
-               BlueprintName = "SyncUITests"
+               BlueprintIdentifier = "SyncUI-macOSTests"
+               BuildableName = "SyncUI-macOSTests"
+               BlueprintName = "SyncUI-macOSTests"
                ReferencedContainer = "container:LocalPackages/SyncUI-macOS">
             </BuildableReference>
          </TestableReference>
@@ -466,6 +466,16 @@
                BuildableName = "URLPredictorTests"
                BlueprintName = "URLPredictorTests"
                ReferencedContainer = "container:../SharedPackages/URLPredictor">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "EventHubTests"
+               BuildableName = "EventHubTests"
+               BlueprintName = "EventHubTests"
+               ReferencedContainer = "container:../SharedPackages/EventHub">
             </BuildableReference>
          </TestableReference>
          <TestableReference

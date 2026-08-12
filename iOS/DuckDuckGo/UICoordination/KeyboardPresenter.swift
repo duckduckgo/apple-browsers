@@ -37,8 +37,7 @@ final class KeyboardPresenter: KeyboardPresenting {
     init(mainViewController: MainViewController) {
         self.isKeyboardOnAppLaunchEnabled = { KeyboardSettings().onAppLaunch }
         self.scheduleKeyboardPresentation = { delay, action in
-            let workItem = DispatchWorkItem(block: action)
-            DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: workItem)
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: action)
         }
         self.enterSearch = { mainViewController.enterSearch() }
     }

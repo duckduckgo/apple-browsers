@@ -162,9 +162,13 @@ final class ContextualMenuTests: XCTestCase {
         let delta = Bookmark(id: "delta", url: "https://delta.example", title: "delta", isFavorite: false)
         let bravo = Bookmark(id: "bravo", url: "https://bravo.example", title: "Bravo", isFavorite: false)
         let folder = BookmarkFolder(id: "folder", title: "Folder", children: [charlie, alpha, delta, bravo])
-        let menu = BookmarksContextMenu.folderMenu(with: folder, isReorderByNameEnabled: true)
-        let bookmarkManager = try XCTUnwrap(menu.bookmarkManager as? MockBookmarkManager)
-        bookmarkManager.sortMode = .nameDescending
+        let undoManager = UndoManager()
+        let (bookmarkManager, bookmarkStore) = ReorderBookmarkManagerTestFactory.makeManager(sortMode: .nameDescending)
+        let menu = BookmarksContextMenu.folderMenu(
+            with: folder,
+            isReorderByNameEnabled: true,
+            undoManager: undoManager,
+            bookmarkManager: bookmarkManager)
         let menuItem = try XCTUnwrap(menu.items.first(where: { $0.title == UserText.bookmarksBarContextMenuReorderByName }))
 
         // WHEN
@@ -172,12 +176,13 @@ final class ContextualMenuTests: XCTestCase {
 
         // THEN
         XCTAssertEqual(
-            bookmarkManager.moveObjectsCalled,
+            bookmarkStore.moveObjectsCalls.last,
             .init(
                 objectUUIDs: [alpha.id, bravo.id, charlie.id, delta.id],
                 toIndex: 0,
                 withinParentFolder: .parent(uuid: folder.id)))
         XCTAssertEqual(bookmarkManager.sortMode, .manual)
+        XCTAssertTrue(undoManager.canUndo)
     }
 
     @MainActor
@@ -194,16 +199,18 @@ final class ContextualMenuTests: XCTestCase {
         for children in testChildren {
             // GIVEN
             let folder = BookmarkFolder(id: "folder", title: "Folder", children: children)
-            let menu = BookmarksContextMenu.folderMenu(with: folder, isReorderByNameEnabled: true)
-            let bookmarkManager = try XCTUnwrap(menu.bookmarkManager as? MockBookmarkManager)
-            bookmarkManager.sortMode = .nameDescending
+            let (bookmarkManager, bookmarkStore) = ReorderBookmarkManagerTestFactory.makeManager(sortMode: .nameDescending)
+            let menu = BookmarksContextMenu.folderMenu(
+                with: folder,
+                isReorderByNameEnabled: true,
+                bookmarkManager: bookmarkManager)
             let menuItem = try XCTUnwrap(menu.items.first(where: { $0.title == UserText.bookmarksBarContextMenuReorderByName }))
 
             // WHEN
             try perform(menuItem)
 
             // THEN
-            XCTAssertNil(bookmarkManager.moveObjectsCalled)
+            XCTAssertTrue(bookmarkStore.moveObjectsCalls.isEmpty)
             XCTAssertEqual(bookmarkManager.sortMode, .manual)
         }
     }
@@ -214,10 +221,12 @@ final class ContextualMenuTests: XCTestCase {
         let zulu = Bookmark(id: "zulu", url: "https://zulu.example", title: "Zulu", isFavorite: false)
         let alpha = Bookmark(id: "alpha", url: "https://alpha.example", title: "Alpha", isFavorite: false)
         let folder = BookmarkFolder(id: "folder", title: "Folder", children: [zulu, alpha])
-        let menu = BookmarksContextMenu.folderMenu(with: folder, isReorderByNameEnabled: true)
-        let bookmarkManager = try XCTUnwrap(menu.bookmarkManager as? MockBookmarkManager)
-        bookmarkManager.sortMode = .nameDescending
-        bookmarkManager.moveObjectsError = NSError(domain: "ContextualMenuTests", code: 1)
+        let (bookmarkManager, bookmarkStore) = ReorderBookmarkManagerTestFactory.makeManager(sortMode: .nameDescending)
+        bookmarkStore.moveObjectsError = NSError(domain: "ContextualMenuTests", code: 1)
+        let menu = BookmarksContextMenu.folderMenu(
+            with: folder,
+            isReorderByNameEnabled: true,
+            bookmarkManager: bookmarkManager)
         let menuItem = try XCTUnwrap(menu.items.first(where: { $0.title == UserText.bookmarksBarContextMenuReorderByName }))
 
         // WHEN
@@ -225,7 +234,7 @@ final class ContextualMenuTests: XCTestCase {
 
         // THEN
         XCTAssertEqual(
-            bookmarkManager.moveObjectsCalled,
+            bookmarkStore.moveObjectsCalls.last,
             .init(objectUUIDs: [alpha.id, zulu.id], toIndex: 0, withinParentFolder: .parent(uuid: folder.id)))
         XCTAssertEqual(bookmarkManager.sortMode, .nameDescending)
     }
@@ -979,9 +988,14 @@ final class ContextualMenuTests: XCTestCase {
         let alpha = BookmarkFolder(id: "alpha", title: "Alpha")
         let delta = Bookmark(id: "delta", url: "https://delta.example", title: "delta", isFavorite: false)
         let bravo = Bookmark(id: "bravo", url: "https://bravo.example", title: "Bravo", isFavorite: false)
-        let menu = BookmarksContextMenu.rootMenu(topLevelEntities: [charlie, alpha, delta, bravo], isReorderByNameEnabled: true)
-        let bookmarkManager = try XCTUnwrap(menu.bookmarkManager as? MockBookmarkManager)
-        bookmarkManager.sortMode = .nameDescending
+        let undoManager = UndoManager()
+        let entities: [BaseBookmarkEntity] = [charlie, alpha, delta, bravo]
+        let (bookmarkManager, bookmarkStore) = ReorderBookmarkManagerTestFactory.makeManager(sortMode: .nameDescending, bookmarks: entities)
+        let menu = BookmarksContextMenu.rootMenu(
+            topLevelEntities: entities,
+            isReorderByNameEnabled: true,
+            undoManager: undoManager,
+            bookmarkManager: bookmarkManager)
         let menuItem = try XCTUnwrap(menu.items.first(where: { $0.title == UserText.bookmarksBarContextMenuReorderByName }))
 
         // WHEN
@@ -989,12 +1003,13 @@ final class ContextualMenuTests: XCTestCase {
 
         // THEN
         XCTAssertEqual(
-            bookmarkManager.moveObjectsCalled,
+            bookmarkStore.moveObjectsCalls.last,
             .init(
                 objectUUIDs: [alpha.id, bravo.id, charlie.id, delta.id],
                 toIndex: 0,
                 withinParentFolder: .root))
         XCTAssertEqual(bookmarkManager.sortMode, .manual)
+        XCTAssertTrue(undoManager.canUndo)
     }
 
     @MainActor
@@ -1002,10 +1017,13 @@ final class ContextualMenuTests: XCTestCase {
         // GIVEN
         let zulu = Bookmark(id: "zulu", url: "https://zulu.example", title: "Zulu", isFavorite: false)
         let alpha = Bookmark(id: "alpha", url: "https://alpha.example", title: "Alpha", isFavorite: false)
-        let menu = BookmarksContextMenu.rootMenu(topLevelEntities: [zulu, alpha], isReorderByNameEnabled: true)
-        let bookmarkManager = try XCTUnwrap(menu.bookmarkManager as? MockBookmarkManager)
-        bookmarkManager.sortMode = .nameDescending
-        bookmarkManager.moveObjectsError = NSError(domain: "ContextualMenuTests", code: 1)
+        let entities: [BaseBookmarkEntity] = [zulu, alpha]
+        let (bookmarkManager, bookmarkStore) = ReorderBookmarkManagerTestFactory.makeManager(sortMode: .nameDescending, bookmarks: entities)
+        bookmarkStore.moveObjectsError = NSError(domain: "ContextualMenuTests", code: 1)
+        let menu = BookmarksContextMenu.rootMenu(
+            topLevelEntities: entities,
+            isReorderByNameEnabled: true,
+            bookmarkManager: bookmarkManager)
         let menuItem = try XCTUnwrap(menu.items.first(where: { $0.title == UserText.bookmarksBarContextMenuReorderByName }))
 
         // WHEN
@@ -1013,7 +1031,7 @@ final class ContextualMenuTests: XCTestCase {
 
         // THEN
         XCTAssertEqual(
-            bookmarkManager.moveObjectsCalled,
+            bookmarkStore.moveObjectsCalls.last,
             .init(objectUUIDs: [alpha.id, zulu.id], toIndex: 0, withinParentFolder: .root))
         XCTAssertEqual(bookmarkManager.sortMode, .nameDescending)
     }
@@ -1243,11 +1261,14 @@ extension BookmarksContextMenu {
     static func folderMenu(
         with bookmarkFolder: BookmarkFolder,
         enableManageBookmarks: Bool = true,
-        isReorderByNameEnabled: Bool = false) -> BookmarksContextMenu {
+        isReorderByNameEnabled: Bool = false,
+        undoManager: UndoManager? = nil,
+        bookmarkManager: BookmarkManager? = nil) -> BookmarksContextMenu {
         let delegate = MockBookmarksContextMenuDelegate()
         delegate.selectedBookmarkItems = [bookmarkFolder]
         delegate.shouldIncludeManageBookmarksItem = enableManageBookmarks
-        let bkman = MockBookmarkManager(list: .init(entities: [bookmarkFolder], topLevelEntities: [BookmarkFolder(id: PseudoFolder.bookmarks.id, title: "Bookmarks", children: [bookmarkFolder])]))
+        delegate.undoManager = undoManager
+        let bkman = bookmarkManager ?? MockBookmarkManager(list: .init(entities: [bookmarkFolder], topLevelEntities: [BookmarkFolder(id: PseudoFolder.bookmarks.id, title: "Bookmarks", children: [bookmarkFolder])]))
         let featureFlagger = MockFeatureFlagger(featuresStub: [
             FeatureFlag.bookmarksReorderByName.rawValue: isReorderByNameEnabled
         ])
@@ -1278,11 +1299,14 @@ extension BookmarksContextMenu {
     static func rootMenu(
         topLevelEntities: [BaseBookmarkEntity],
         pseudoFolder: PseudoFolder = .bookmarks,
-        isReorderByNameEnabled: Bool = false) -> BookmarksContextMenu {
+        isReorderByNameEnabled: Bool = false,
+        undoManager: UndoManager? = nil,
+        bookmarkManager: BookmarkManager? = nil) -> BookmarksContextMenu {
         let delegate = MockBookmarksContextMenuDelegate()
         delegate.selectedBookmarkItems = [BookmarkNode(representedObject: pseudoFolder, parent: nil)]
         delegate.shouldIncludeManageBookmarksItem = false
-        let bkman = MockBookmarkManager(list: .init(entities: topLevelEntities, topLevelEntities: topLevelEntities))
+        delegate.undoManager = undoManager
+        let bkman = bookmarkManager ?? MockBookmarkManager(list: .init(entities: topLevelEntities, topLevelEntities: topLevelEntities))
         let featureFlagger = MockFeatureFlagger(featuresStub: [
             FeatureFlag.bookmarksReorderByName.rawValue: isReorderByNameEnabled
         ])

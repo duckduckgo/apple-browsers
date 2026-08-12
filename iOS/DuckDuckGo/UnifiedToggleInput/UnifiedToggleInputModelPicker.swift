@@ -389,13 +389,6 @@ private struct UnifiedToggleInputModelPickerRow: View {
 
     private var rowContent: some View {
         HStack(spacing: Metrics.itemSpacing) {
-            Image(systemName: "checkmark")
-                .font(.body.weight(.semibold))
-                .foregroundStyle(Color(designSystemColor: .textPrimary))
-                .frame(width: Metrics.selectionWidth, height: Metrics.selectionHeight)
-                .opacity(isSelected ? 1 : 0)
-                .accessibilityHidden(true)
-
             HStack(spacing: Metrics.leadingSpacing) {
                 providerIcon
 
@@ -411,6 +404,13 @@ private struct UnifiedToggleInputModelPickerRow: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
+
+            Image(systemName: "checkmark")
+                .font(.body.weight(.semibold))
+                .foregroundStyle(Color(designSystemColor: .textPrimary))
+                .frame(width: Metrics.selectionWidth, height: Metrics.selectionHeight)
+                .opacity(isSelected ? 1 : 0)
+                .accessibilityHidden(true)
         }
         .padding(.leading, Metrics.leadingPadding)
         .padding(.trailing, Metrics.trailingPadding)

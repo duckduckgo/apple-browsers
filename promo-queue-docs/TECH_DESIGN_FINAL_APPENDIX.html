@@ -108,27 +108,27 @@
 
   <div class="status">
     <strong>Current source of truth</strong>
-    <p><code>bartosz/promo-q-3</code> at <code>6b11771549</code> is the implemented endpoint, stacked directly on consolidated <code>bartosz/promo-q-2</code> at <code>d7246ea824</code>. The active stack is <code>main</code> → <code>bartosz/promo-q-2</code> → <code>bartosz/promo-q-3</code>.</p>
+    <p><code>bartosz/promo-q-3</code> at <code>9321268231</code> is the implemented endpoint, stacked directly on <code>bartosz/promo-q-2</code> at <code>9e82601a9f</code>. The active stack is <code>main</code> → <code>bartosz/promo-q-2</code> → <code>bartosz/promo-q-3</code>.</p>
   </div>
 
   <h2>Delivery state</h2>
   <div class="grid">
     <div class="card"><span class="tag done">Merged</span><h3>PR 1</h3><p>Feature mapping, initial arbiter/injection, and modal admission foundation.</p></div>
-    <div class="card"><span class="tag done">Open</span><h3>PR 2</h3><p>Lifecycle-safe modal and RMF coordination, startup latch, singular owner, known hosts, truthful release, handoff, and the accepted simplification/hardening fixes folded into one PR.</p></div>
-    <div class="card"><span class="tag done">Draft</span><h3>PR 3</h3><p>Directional cooldowns, confirmed RMF history, scale/opacity terminal completion, checkpoint coverage, and read-only diagnostics. Stacked directly on PR 2.</p></div>
+    <div class="card"><span class="tag done">Open</span><h3>PR 2</h3><p>Lifecycle-safe modal coordination, startup latch, one central logical RMF session, exactly one renderer, known-host eligibility, and exact OS-specific removal.</p></div>
+    <div class="card"><span class="tag done">Open</span><h3>PR 3</h3><p>Directional cooldowns, confirmed RMF history, checkpoint-only integration, read-only diagnostics, and focused time-limit coverage. Stacked directly on PR 2.</p></div>
   </div>
 
   <h2>One coordination graph</h2>
   <div class="flow" aria-label="Promo Queue architecture">
     <div class="node"><strong>Factory</strong><small>samples flag once</small></div>
     <div class="arrow">→</div>
-    <div class="node"><strong>Service</strong><small>admission, readiness, policy, retry registry</small></div>
+    <div class="node"><strong>Service</strong><small>logical session, renderer selection, policy</small></div>
     <div class="arrow">→</div>
     <div class="node"><strong>Arbiter</strong><small>one identity-bearing owner</small></div>
   </div>
   <div class="grid" style="margin-top:16px">
     <div class="card"><h3>Modal adapter</h3><p>Provider order, existing modal cooldown, pending work, UIKit presentation, exact-root lifetime.</p></div>
-    <div class="card"><h3>NTP adapter</h3><p>Candidate, gate/session/mount identity, host exposure, appearance confirmation, physical removal.</p></div>
+    <div class="card"><h3>Renderer registry</h3><p>Weak registrations report candidate and eligibility; one renderer receives a physical presentation authorization.</p></div>
     <div class="card"><h3>Cooldown policy</h3><p>Existing confirmed-modal history plus one confirmed-RMF timestamp; pure fixed directional decisions.</p></div>
   </div>
 
@@ -138,7 +138,7 @@
     <div class="arrow">↔</div>
     <div class="node"><strong>Modal</strong><small>attempt identity</small></div>
     <div class="arrow">or</div>
-    <div class="node"><strong>RMF</strong><small>surface + message identity</small></div>
+    <div class="node"><strong>RMF</strong><small>message + logical session identity</small></div>
   </div>
   <p>No modal/RMF coexistence and no two RMF owners. Release is identity-checked and stale-safe. The arbiter owns no history or product policy.</p>
 
@@ -152,18 +152,18 @@
       <tr><td>Modal</td><td>Modal</td><td><strong>Existing interval</strong> (currently/default 24h)</td><td>Existing modal manager</td></tr>
     </tbody>
   </table>
-  <p>Exact equality is eligible. RMF history is written only on the first matching admitted card appearance. Modal history keeps its existing confirmed-presentation source.</p>
+  <p>Exact equality is eligible. RMF queue history is written on the first accepted appearance of a logical session. A same-session renderer handoff does not restart it; ordinary RMF accounting remains per accepted physical presentation.</p>
 
   <h2>RMF transaction</h2>
   <div class="sequence">
-    <div>Require current app/UI, host, window, and gate readiness.</div>
+    <div>Receive a candidate and eligibility checkpoint from registered renderers.</div>
     <div>Reconcile any stale exact modal root.</div>
     <div>Acquire the singular RMF owner.</div>
     <div>Evaluate modal→RMF and RMF→RMF boundaries.</div>
     <div>On denial, release raw ownership; retain and account nothing.</div>
-    <div>On success, publish the admitted session.</div>
-    <div>First matching card appearance confirms RMF history, then shown accounting.</div>
-    <div>Final physical removal plus one main turn releases and may hand off.</div>
+    <div>On success, authorize exactly one physical renderer presentation.</div>
+    <div>First accepted session appearance confirms queue history; every accepted presentation performs ordinary accounting once.</div>
+    <div>Exact removal terminal plus one settlement turn transfers the same session or releases it.</div>
   </div>
 
   <h2>Modal transaction</h2>
@@ -179,38 +179,38 @@
   <h2>Checkpoint-only liveness</h2>
   <div class="grid">
     <div class="card"><span class="tag done">Checkpoint</span><h3>Configuration / refresh</h3><p>Initial load, RMF notification, or explicit refresh can reconsider a retained candidate.</p></div>
-    <div class="card"><span class="tag done">Checkpoint</span><h3>UI readiness</h3><p>Gate mount, window attachment, host exposure, or full foreground readiness.</p></div>
-    <div class="card"><span class="tag done">Checkpoint</span><h3>Owner release</h3><p>Successful modal/RMF release and same-surface post-removal retry.</p></div>
+    <div class="card"><span class="tag done">Checkpoint</span><h3>Renderer readiness</h3><p>Candidate, window attachment, host exposure, or full foreground-readiness update.</p></div>
+    <div class="card"><span class="tag done">Checkpoint</span><h3>Removal settlement</h3><p>Successful owner release or exact terminal can drive central reconciliation.</p></div>
     <div class="card"><span class="tag concern">Not an event</span><h3>Clock boundary</h3><p>Reaching 10m or 24h schedules nothing. Work waits for the next real checkpoint.</p></div>
   </div>
 
   <h2>Physical RMF lifetime and animation</h2>
   <div class="flow" aria-label="RMF removal lifetime">
-    <div class="node"><strong>Logical withdrawal</strong><small>remove inner content</small></div>
+    <div class="node"><strong>Owned</strong><small>one logical session + renderer</small></div>
     <div class="arrow">→</div>
-    <div class="node"><strong>Scale + opacity</strong><small>owner remains held</small></div>
+    <div class="node"><strong>Draining</strong><small>owner and session remain held</small></div>
     <div class="arrow">→</div>
-    <div class="node"><strong>All mounts gone</strong><small>identity matched</small></div>
+    <div class="node"><strong>Exact terminal</strong><small>session + presentation + removal</small></div>
     <div class="arrow">→</div>
-    <div class="node"><strong>Next main turn</strong><small>release once</small></div>
+    <div class="node"><strong>Settlement</strong><small>transfer same session or release</small></div>
   </div>
   <div class="status">
-    <strong>Resolved in Q3</strong>
-    <p>The coordinated card uses scale/opacity. <code>onDisappear</code> starts removal, a visually inert animatable token reports the transition's terminal value, and the owner releases after identity-checked completion plus the following main turn. No fixed delay is used.</p>
+    <strong>OS-specific Q2 contract</strong>
+    <p>iOS 17+ preserves scale/opacity and reports native SwiftUI <code>.removed</code> completion. iOS 15/16 clears the source synchronously with animations disabled and intentionally has no coordinated dismissal animation. Both paths retain ownership through the exact terminal and one service settlement turn; no fixed delay is used.</p>
   </div>
 
   <h2>Diagnostics</h2>
   <div class="grid">
     <div class="card"><h3>Process</h3><p>Immutable mode, app/UI readiness, and reminder that overrides require relaunch.</p></div>
-    <div class="card"><h3>Ownership</h3><p>Singular owner identity, modal phase, pending work, and suppression state.</p></div>
+    <div class="card"><h3>Logical RMF</h3><p><code>idle</code>/<code>owned</code>/<code>draining</code>, message/session, renderer/generation, presentation/removal, terminal, and continuation.</p></div>
     <div class="card"><h3>History</h3><p>Confirmed modal/RMF timestamps and derived next target boundaries.</p></div>
     <div class="card"><h3>No timer</h3><p>The screen states that boundaries do not schedule presentation or retry.</p></div>
   </div>
 
   <h2>Validation status</h2>
   <div class="grid">
-    <div class="card"><span class="tag done">Passed</span><h3>Static gates</h3><p>Swift parsing, strict SwiftLint, Xcode project plist validation, and diff checks.</p></div>
-    <div class="card"><span class="tag concern">Pending runtime</span><h3>Simulator and manual QA</h3><p>The simulator harness and approval service prevented a clean final test result. Animated/disabled removal and all three known NTP hosts still require runtime confirmation.</p></div>
+    <div class="card"><span class="tag todo">Re-run before landing</span><h3>Automated gates</h3><p>The final rebased stack should repeat focused tests, Swift parsing/linting, project validation, and diff checks. This documentation pass ran no app build or test.</p></div>
+    <div class="card"><span class="tag concern">Pending runtime</span><h3>Simulator and manual QA</h3><p>A real iOS 15/16 no-animation smoke test and standard-NTP, suggestion-tray, and unified-input manual validation remain explicit risks.</p></div>
   </div>
 
   <h2>Agreed changes that remain concerning</h2>
@@ -218,7 +218,10 @@
     <thead><tr><th>Change</th><th>Operational consequence</th></tr></thead>
     <tbody>
       <tr><td>Startup-latched flag</td><td>Remote disable reaches a running/suspended process only after relaunch.</td></tr>
-      <tr><td>Singular RMF owner</td><td>A second card cannot coexist after 10m; a hidden retained host can starve all promos.</td></tr>
+      <tr><td>Logical RMF session</td><td>A same-message renderer handoff keeps one lease and one queue-history timestamp; ordinary impression accounting remains per presentation.</td></tr>
+      <tr><td>Balanced lifetime</td><td>No eligible renderer ends the session after exact removal; a later return is a new cooldown-governed session.</td></tr>
+      <tr><td>Fail-closed terminal</td><td>Missing exact removal proof can strand the queue rather than risk a visible overlap.</td></tr>
+      <tr><td>iOS 15/16 visual exception</td><td>Coordinated RMF dismissal is synchronous and not animated; iOS 17+ preserves scale/opacity.</td></tr>
       <tr><td>No boundary timer</td><td>An eligible promo can wait indefinitely for another checkpoint.</td></tr>
       <tr><td>Manual future-host contract</td><td>A new covering overlay can regress exposure unless explicitly integrated and tested.</td></tr>
       <tr><td>Cached Default Browser validity</td><td>Retained status can be stale after an external settings change.</td></tr>
@@ -229,7 +232,7 @@
   <h2>Explicitly absent</h2>
   <ul>
     <li>Live flag transition machinery.</li>
-    <li>Per-surface/plural RMF ownership.</li>
+    <li>Per-model admissions, gate/mount sets, outgoing-session dictionaries, and plural RMF ownership.</li>
     <li>Provisional cooldown reservation.</li>
     <li>Cooldown deadline scheduler or timer.</li>
     <li>New Promo Queue telemetry.</li>

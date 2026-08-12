@@ -5,133 +5,146 @@
 Iteration one coordinates only:
 
 - launch-modal promos evaluated by `PromoCoordinationService`; and
-- RMF cards rendered in a known New Tab Page host.
+- RMF cards rendered by a known New Tab Page host.
 
 It is a main-actor mutual-exclusion and fixed-cooldown seam, not a general promo scheduler. Do not route badges, settings rows, notification bars, onboarding, arbitrary UIKit presentations, or other promo surfaces through it without a new product/design decision.
 
-Read `TECH_DESIGN_FINAL.md` for the contract and `Q3_IMPLEMENTATION_PLAN.md` for the final implementation record.
+Read `TECH_DESIGN_FINAL.md` for the current contract and `PROMO_QUEUE_LOGICAL_RMF_OWNER_IMPLEMENTATION_PLAN.md` for the central RMF rationale.
 
 ## Core model
 
 There is one app-scoped `PromoQueueLeaseArbiter` with one active owner:
 
 ```text
-none | modal(attempt identity) | remoteMessage(surface + message identity)
+none | modal(attemptID) | remoteMessage(messageID, logicalSessionID)
 ```
 
-Any owner blocks every other coordinated request. The arbiter is transient and history-free. It owns no provider priority, RMF targeting, cooldown, persistence, presentation, or retry timing.
-
-The service owns admission and the fixed cross-promo cooldown policy. UI owners retain identity-bound tokens for the complete real lifetime of their promo.
+Any owner blocks every other coordinated request. `PromoCoordinationService` is the only RMF lease holder and authorizes exactly one physical renderer at a time. The arbiter owns no provider priority, RMF targeting, cooldown, persistence, presentation, or retry timing.
 
 Never:
 
-- construct a second arbiter for another host;
+- construct a second arbiter or service graph for another host;
 - add a `.shared` queue singleton;
-- query the arbiter and mutate it later as two separate operations;
+- put renderer identity in the logical owner;
+- let an NTP model acquire or release its own RMF lease;
+- reintroduce gate IDs, mount sets, or per-model outgoing-session state;
 - store leases in user defaults;
-- inject the arbiter or cooldown store into SwiftUI views/providers;
-- add a per-surface owner dictionary or provisional cooldown reservation; or
-- add a cooldown deadline timer.
+- inject the arbiter or cooldown store into SwiftUI views or providers;
+- add a provisional reservation or cooldown timer; or
+- release because a cooldown elapsed.
 
 ## Feature mode
 
-`PromoCoordinationFactory` samples `.promoPresentationCoordination` once and creates immutable `.legacy` or `.coordinated` behavior for the service graph.
+`PromoCoordinationFactory` samples `.promoPresentationCoordination` once and creates immutable `.legacy` or `.coordinated` behavior for the graph.
 
 - Do not subscribe to live flag changes.
-- Local overrides must be set before graph construction.
+- Set local overrides before graph construction.
 - Force-quit/relaunch after changing the flag.
-- Legacy mode must keep the established lease-free modal flow and direct/eager RMF behavior.
-
-If immediate in-process rollback becomes a requirement again, treat it as a new architecture decision rather than restoring the removed transition machinery piecemeal.
+- Legacy mode must preserve lease-free modal evaluation and direct/eager RMF behavior.
+- Legacy NTP models must not register a coordinated renderer or read/write queue history.
 
 ## Adding or changing a launch-modal provider
 
-The service acquires modal ownership before the manager evaluates any provider. Provider evaluation may have side effects, so code must not query a provider while an RMF owns the queue or while the fixed RMF→modal cooldown is active.
+The service acquires modal ownership and checks the fixed RMF→modal boundary before the manager evaluates any provider. Provider evaluation may have side effects, so do not query providers while RMF owns the queue or the fixed cooldown is active.
 
 The manager remains responsible for:
 
 - provider ordering and first-eligible selection;
-- per-provider onboarding/eligibility;
+- per-provider onboarding and eligibility;
 - the existing remotely tunable modal→modal cooldown;
 - prepared work and the inherited `0.1`-second presentation delay;
 - UIKit presentation and exact-root lifetime; and
 - provider shown/accounting callbacks.
 
-Implement `ModalPromptProvider.isModalPromptStillValidForPresentation(_:)` when prepared or retained work can become stale. Make the check read-only. Conform to `InvalidModalPromptReplacing` only when repeating preparation is known to be safe; the default is no replacement.
+Implement `ModalPromptProvider.isModalPromptStillValidForPresentation(_:)` when retained work can become stale. Keep it read-only. Conform to `InvalidModalPromptReplacing` only when repeating preparation is known to be safe.
 
-Do not release ownership when a nested child is presented or dismissed. The selected modal root ends the attempt only after an approved checkpoint proves that exact root is detached.
+Do not release ownership when a nested child is presented or dismissed. End the attempt only after an approved checkpoint proves the exact selected modal root is detached.
 
-Provider tests should cover:
+## Adding or changing an NTP RMF renderer
 
-- no evaluation before owner/cooldown admission;
-- immediate and retained revalidation;
-- replacement only for explicitly safe providers;
-- no-provider/cooldown release without accounting; and
-- exact-root attachment, nested presentation, and dismissal.
+### Registration and candidate reporting
 
-## NTP RMF integration
-
-### Admission boundary
-
-An RMF card can be built and published only when the model is loaded, active, renderable, attached to a window, has a mounted matching gate, and receives `.acquired(admission)` from the service.
-
-The public NTP facade intentionally exposes only:
+In coordinated mode, an NTP model registers through:
 
 ```text
-acquired(admission) | deferred
+registerRemoteMessageRenderer(id:target:)
 ```
 
-Lease conflicts, readiness, and cooldown reasons stay inside service/policy diagnostics. A deferred candidate remains in the model and is not rendered, marked shown, dismissed, or consumed.
+Retain the returned `NewTabPagePromoRendererRegistration` for the renderer lifetime and explicitly deregister during teardown. Report:
 
-### Identity and physical lifetime
+- `.none` when no RMF candidate exists;
+- `.available(messageID:)` when the exact candidate can be built; or
+- `.unrenderable(messageID:)` when a scheduled RMF cannot be represented.
 
-Keep separate stable identities for:
+Report `isEligible` from the centralized host exposure/window/lifecycle predicate. Reporting a candidate is not authorization to publish it.
 
-- the NTP surface;
-- the candidate gate;
-- the admitted render session; and
-- each physical SwiftUI mount.
+The renderer implements `NewTabPagePromoRendering`:
 
-Same-ID refresh is one continuous admitted session. A changed ID withdraws the old inner card and cannot acquire the replacement until the old admission releases.
+- `showRemoteMessage(_:)` atomically publishes only the authorized presentation and returns whether it succeeded;
+- `hideRemoteMessage(_:removalID:)` begins exact removal;
+- `isRemoteMessageRendererAttachedToWindow` supports terminal verification; and
+- `hasPublishedRemoteMessagePresentation` lets the service fail closed after an inconsistent rejection.
 
-Logical withdrawal is not physical disappearance. `onDisappear` begins removal but does not complete it. Move the admission into outgoing-session state, use the coordinated transition's inert animatable terminal callback to mark matching physical completion, then wait one following main turn before releasing. Every callback must match the render session and mount it changes.
+### Identity and ownership
 
-The coordinated card retains the legacy scale/opacity transition. Never call the terminal-completion seam early, switch it to `.identity` merely to simplify lifecycle callbacks, or guess animation completion with a fixed delay.
+Keep these identities separate:
+
+- stable renderer ID;
+- service-minted registration generation;
+- logical session ID plus message ID;
+- physical presentation ID; and
+- removal ID.
+
+Echo the exact identities through appearance and removal callbacks. Never infer that a callback belongs to the current session from message ID alone.
+
+The service chooses one eligible renderer in stable registration order. A same-message handoff retains the logical session and lease, removes the outgoing presentation, waits for its exact terminal and one settlement turn, then authorizes the successor. A changed/missing/unrenderable candidate ends the session after the same barrier.
+
+### Removal
+
+Do not use `onDisappear` as the release authority and do not guess with a fixed delay.
+
+- On iOS 17+, clear with scale/opacity using `withAnimation(..., completionCriteria: .removed)` and report `.animationCompleted` from the native completion.
+- On iOS 15/16, synchronously clear inside a transaction with animations disabled, use `.identity`, verify the source is gone, then report `.sourceRemovedWithoutAnimation`.
+- If the exact renderer is physically detached, report `.hostDetached` only after verifying detachment.
+
+The iOS 15/16 coordinated dismissal intentionally has no animation. Do not restore one without a separately proven exact terminal. A missing or unverifiable terminal must fail closed rather than time-release the lease.
 
 ### Appearance and accounting
 
-On the first matching card appearance:
+For each authorized physical presentation:
 
-1. confirm the RMF cooldown appearance through the admission;
-2. mark the session appearance as recorded; and
-3. run ordinary RMF shown accounting.
+1. ask the registration to confirm the exact session/presentation appearance, including current window attachment;
+2. continue only if the service accepts it; and
+3. perform ordinary RMF shown accounting once for that physical presentation.
 
-Confirmation is once per admitted render session. Duplicate `onAppear`, remount, same-ID refresh, stale session callbacks, and confirmation after release do nothing. Withdrawal or build failure before appearance writes no RMF history.
+The service confirms persisted queue history only on the first accepted appearance of the logical session. A same-session renderer handoff can perform another ordinary physical appearance accounting event, but it does not restart the Promo Queue cooldown timestamp.
 
-Normal shown accounting is once per admitted appearance. Atomic `remoteMessageShownUnique` persistence is an independent optional correctness change; do not silently mix it into a new surface integration.
+Authorization, denial, build failure, withdrawal before appearance, stale callback, and removal write no queue history.
+
+Atomic `remoteMessageShownUnique` persistence remains an independent optional correctness change. Do not silently mix it into a renderer integration.
 
 ## Host exposure contract
 
-The known hosts are:
+Known hosts are:
 
 - standard NTP;
 - suggestion tray/favorites NTP; and
 - unified-input/favorites NTP.
 
-Use the centralized exposure predicate and outgoing-before-incoming handoff. UIKit appearance or `view.window` alone is not enough: a cached controller can remain attached while hidden by autocomplete, Duck.ai content, an overlay, or opacity.
+Use the centralized exposure predicate and outgoing-before-incoming host handoff. `view.window` alone is not enough: a cached controller can remain attached while autocomplete, Duck.ai, or another overlay covers it.
 
-Async transition/completion callbacks must carry a generation or identity so stale completion cannot reactivate a covered host.
+Async host callbacks must carry generation identity so stale completion cannot reactivate an old renderer.
 
 A future host or overlay that can cover or retain an NTP must explicitly:
 
-1. define the stable surface owner;
-2. report logical renderability and coverage;
-3. perform outgoing-before-incoming handoff;
-4. invalidate stale async completions;
-5. preserve window/gate readiness; and
-6. add direct host tests.
+1. register one stable renderer;
+2. report its candidate and logical eligibility;
+3. perform outgoing-before-incoming exposure updates;
+4. invalidate stale async completion;
+5. preserve window/readiness checks; and
+6. add direct host and handoff tests.
 
-This obligation is not compiler-enforced. Missing it can let a hidden NTP starve every promo under singular ownership.
+This obligation is not compiler-enforced. The redesign removes distributed mount bookkeeping; it does not eliminate the need to know which physical host can actually render.
 
 ## Cooldown contract
 
@@ -140,65 +153,53 @@ This obligation is not compiler-enforced. Missing it can let a hidden NTP starve
 | Modal | RMF | 10 minutes |
 | RMF | RMF | 10 minutes |
 | RMF | Modal | 24 hours |
-| Modal | Modal | Existing remote-tunable interval, currently/default 24 hours |
+| Modal | Modal | Existing remotely tunable interval, currently/default 24 hours |
 
 The service-owned policy reuses the modal manager's persisted confirmed-modal timestamp and owns one persisted confirmed-RMF timestamp. It stores event times, not expiry dates.
 
 Admission order is significant:
 
-- RMF: readiness → modal reconciliation → acquire global owner → evaluate cooldown → return admission;
+- RMF: readiness/eligible renderer → modal reconciliation → acquire global owner → evaluate cooldown → authorize presentation;
 - modal: service gates → acquire global owner → evaluate RMF→modal → enter manager.
 
-Acquiring first serializes requests. Do not add a provisional reservation.
+Acquiring first serializes requests. Exact boundary equality is eligible. Future timestamps conservatively extend the wait. Denial releases raw ownership and consumes no provider/RMF accounting or timestamp state.
 
-Exact boundary equality is eligible. Future timestamps conservatively extend the wait. Denial releases raw ownership and consumes no provider/RMF accounting or timestamp state.
+Cooldown passage is not an event. Reconcile at real candidate, renderer eligibility, host exposure, foreground-readiness, successful-release, and removal-settlement checkpoints. Do not add a deadline timer.
 
-Cooldown passage is not an event. Do not add a timer. Reconsider retained work at existing real checkpoints: configuration/refresh, gate mount, window/host exposure, foreground readiness, successful owner release, and same-surface retry after physical removal.
+A cooldown is only a minimum delay for a new session. A still-owned promo remains the blocker after the interval has elapsed.
 
-With singular ownership, 10 minutes is a minimum RMF→RMF delay, not permission to overlap two cards. A second RMF still waits for the first card's physical removal.
+## Reconciliation and failure policy
 
-## Retry and release handoff
+The service owns a coalescing, non-reentrant `idle` / `owned` / `draining` reconciliation loop. Renderer callbacks request reconciliation; they do not perform independent cross-renderer handoff.
 
-Each NTP model owns its retained candidate and a weak service registration. The service owns no blocked RMF content.
-
-Registry-wide handoff is allowed only after a token successfully releases the current owner. It must:
-
-- run only while app/UI readiness is valid;
-- exclude the releasing surface;
-- preserve registration order;
-- iterate a snapshot;
-- re-check membership and target liveness before each callback;
-- skip inactive targets; and
-- suppress nested drains.
-
-Stale/double release and cooldown-denied raw rollback do not drain the registry. RMF release never starts modal evaluation.
+- Stable registration order resolves idle contention.
+- Same-message transfer retains ownership until outgoing settlement.
+- No eligible renderer ends the balanced logical session after exact removal.
+- Stale or duplicate callbacks are no-ops.
+- Unexpected renderer loss, published-content inconsistency, or a missing terminal fails closed.
+- Process death clears transient ownership; persisted confirmed history preserves cooldown behavior after relaunch.
 
 ## Construction and diagnostics
 
-There is one coordination graph. The service convenience initializer creates one modal cooldown store, passes that exact instance to both the existing manager and directional policy, and adds one persisted production RMF timestamp store.
+Construct one service graph. The service construction path creates one modal cooldown store, passes it to the manager and directional policy, and creates one persisted RMF timestamp store.
 
-The debug projection is read-only and shows:
-
-- immutable process mode;
-- singular owner identity;
-- modal phase and pending/suppression state;
-- readiness/retry count where useful;
-- confirmed modal/RMF timestamps; and
-- derived next-RMF/next-modal boundaries with a note that no timer is scheduled.
-
-Do not expose stale transition, plural-lease, provisional-reservation, or timer fields. Do not add new Promo Queue telemetry as part of an integration.
+The debug projection is read-only and reports process mode, global owner, modal state, logical RMF state and identities, renderer counts, removal state, confirmed history, and derived boundaries. It must not schedule retries or mutate history. Do not add Promo Queue telemetry as part of an integration.
 
 ## Test checklist for any extension
 
-- Acquisition is main-actor and atomic.
-- Blocked work is retained and unaccounted.
-- Stale and duplicate release cannot clear a newer owner.
-- Physical lifetime covers the full visible transition.
-- Background/foreground and host coverage cannot admit hidden content.
-- The process-latched feature-off path remains legacy.
-- Cooldown checks use confirmed history and exact boundaries.
-- Time passage alone is a no-op; a real checkpoint retries.
+- Acquisition and reconciliation are main-actor and atomic.
+- At most one renderer is authorized.
+- Publication happens only after ownership and cooldown admission.
+- Same-message transfer waits for exact terminal and settlement.
+- Changed candidate ends the old session before a new one can start.
+- Stale renderer/session/presentation/removal identities cannot alter current state.
+- Missing removal evidence fails closed.
+- The iOS 17+ animated and iOS 15/16 synchronous paths both preserve ownership safety.
+- Appearance confirms queue history once per logical session and ordinary accounting once per accepted presentation.
+- Host coverage and foreground changes cannot authorize hidden content.
+- Feature-off behavior remains legacy and performs no coordinated history access.
+- Time passage alone is a no-op; a real checkpoint reconciles.
 - No provider is queried before modal owner/cooldown admission.
-- No new queue pixel, scheduler, provisional token, or second arbiter is introduced.
+- No new queue pixel, scheduler, provisional token, per-model admission, or second arbiter is introduced.
 
 If a proposed surface needs different coexistence, priority, frequency, persistence, preemption, or rollback semantics, stop and write a new design decision. Those requirements are outside iteration one.

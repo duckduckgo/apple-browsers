@@ -141,25 +141,27 @@
 <main>
   <header>
     <h1>iOS Promo Queue</h1>
-    <p class="subtitle">Point-in-time cumulative system appendix derived from the Q3 revision reviewed below. It explains the app-scoped coordination contract, lifecycle, host integration, cooldowns, developer API, and review caveats at that revision.</p>
+    <p class="subtitle">Historical point-in-time cumulative review of the Q3 revision named below. Its findings and diagrams are preserved as review provenance and do not describe the final central logical-owner implementation.</p>
     <div class="meta">
       <span class="tag">Reviewed Q3 <code>e83b59282e897df8233fea246732f3cd98367429</code></span>
-      <span class="tag">Current stack Q2 <code>d7246ea824</code> → Q3 <code>6b11771549</code></span>
+      <span class="tag">Current stack Q2 <code>9e82601a9f</code> → Q3 <code>9321268231</code></span>
       <span class="tag">Static review 2026-08-12</span>
       <span class="tag">No builds or tests run in final review</span>
       <span class="tag">All access levels verified from Swift sources</span>
     </div>
   </header>
 
+  <p class="callout warning"><strong>Superseded architecture · 2026-08-12:</strong> This report inspected an earlier per-model admission/mount implementation. Q2 now centralizes one logical RMF session and one authorized renderer in <code>PromoCoordinationService</code>. Its iOS 17+ path uses native <code>.removed</code>; iOS 15/16 intentionally clears synchronously without a dismissal animation, so the historical <code>CATransaction</code> finding no longer applies. The earlier iPad handback finding was addressed as part of the accepted Q2 integration. Use <code>TECH_DESIGN_FINAL.md</code> and <code>TECH_DESIGN_FINAL_APPENDIX.html</code> for the current system.</p>
+
   <section aria-labelledby="review-status">
     <h2 id="review-status">Review status</h2>
     <div class="grid-2">
       <div class="card green">
         <h3>Implemented foundation</h3>
-        <p>The cumulative branch implements the agreed process-latched mode, one global modal/RMF owner, modal retention and revalidation, readiness-gated RMF admission, directional cooldown policy, appearance confirmation, weak stable retry registry, and read-only diagnostics.</p>
+        <p>At the inspected revision, the cumulative branch implemented the process-latched mode, one global modal/RMF owner, modal retention/revalidation, per-model RMF admission and handoff, directional cooldown policy, appearance confirmation, and diagnostics. Those RMF mechanics were later replaced by the central logical owner described in the supersession banner.</p>
       </div>
       <div class="card red">
-        <h3>Release caveats</h3>
+        <h3>Findings at the reviewed revision</h3>
         <ol>
           <li><strong>High:</strong> on iOS 15/16, a <code>CATransaction</code> completion is not authoritative for SwiftUI’s scale/opacity removal transition and can release ownership early.</li>
           <li><strong>Medium:</strong> the iPad <code>hidePopover()</code> path deactivates the tray surface but does not reactivate the exposed standard NTP.</li>
@@ -167,7 +169,7 @@
         <p class="source">Sources: <code>NewTabPageMessagesModel.swift:47–56, 752–785, 883–909</code>; <code>MainViewController.swift:3159–3193, 5781–5788</code>; <code>PopoverSuggestionsCoordinator.swift:104–120</code>.</p>
       </div>
     </div>
-    <p class="callout warning"><strong>Interpretation:</strong> the design is functionally present but not fully conformant at Q3 head because two production paths violate the physical-removal and host-exposure invariants. The diagrams below show the intended architecture and label the current divergence where it occurs.</p>
+    <p class="callout warning"><strong>Historical interpretation:</strong> the inspected revision was not fully conformant because two paths violated its physical-removal and host-exposure invariants. Both findings predate and are superseded by the central logical-owner redesign. The diagrams below intentionally remain point-in-time evidence.</p>
   </section>
 
   <nav aria-labelledby="contents">
@@ -181,7 +183,7 @@
       <li><a href="#lifecycle">Lifecycle, readiness, and physical removal</a></li>
       <li><a href="#cooldowns">Cooldown and appearance-confirmation flow</a></li>
       <li><a href="#conflicts">Conflict-resolution matrix</a></li>
-      <li><a href="#api">Externally consumed system API</a></li>
+      <li><a href="#api">Historical externally consumed system API</a></li>
       <li><a href="#traceability">Technical-design traceability</a></li>
       <li><a href="#workflows">Developer workflows</a></li>
       <li><a href="#tradeoffs">Tradeoffs and limitations</a></li>
@@ -339,7 +341,7 @@
     <div class="diagram">
       <svg viewBox="0 0 1100 610" role="img" aria-labelledby="object-title object-desc">
         <title id="object-title">Promo Queue high-level object graph</title>
-        <desc id="object-desc">The lifecycle and factory feed one coordination service, which uses the global arbiter, modal manager, cooldown policy, debug projection, and weak retry registry to coordinate NTP models and hosts.</desc>
+        <desc id="object-desc">Historical object graph: lifecycle and factory feed one coordination service, which uses the global arbiter, modal manager, cooldown policy, debug projection, and weak retry registry to coordinate NTP models and hosts.</desc>
         <defs><marker id="arr-obj" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#1d4f91"/></marker><marker id="arr-obj-green" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#176b4d"/></marker></defs>
         <rect x="390" y="30" width="320" height="70" rx="12" fill="#e8f1fb" stroke="#1d4f91" stroke-width="2"/>
         <text x="550" y="58" text-anchor="middle" font-size="18" font-weight="700" fill="#14213d">PromoCoordinationFactory</text>
@@ -452,7 +454,7 @@
               <text x="545" y="561" text-anchor="middle">release + NTP handoff</text>
             </g>
             <rect x="155" y="535" width="300" height="84" rx="9" fill="#fdecea" stroke="#a1281e" stroke-width="2"/>
-            <text x="305" y="558" text-anchor="middle" font-size="12" font-weight="700" fill="#a1281e">Current divergence on iOS 15/16</text>
+            <text x="305" y="558" text-anchor="middle" font-size="12" font-weight="700" fill="#a1281e">Historical divergence on iOS 15/16</text>
             <text x="305" y="580" text-anchor="middle" font-size="12" fill="#14213d">CATransaction completion can precede the</text>
             <text x="305" y="600" text-anchor="middle" font-size="12" fill="#14213d">SwiftUI scale/opacity physical terminal.</text>
           </svg>
@@ -489,7 +491,7 @@
       <div class="step"><strong>Settle</strong><br>one following main-queue turn</div><span class="arrow">→</span>
       <div class="step"><strong>Release/handoff</strong><br>clear exact owner; offer other active NTPs, then same surface</div>
     </div>
-    <p class="callout warning"><strong>Current code caveat:</strong> iOS 17+ uses <code>withAnimation(... completionCriteria: .removed)</code>. The iOS 15/16 fallback treats a surrounding <code>CATransaction</code> as the physical terminal even though the <code>@Published</code> mutation and SwiftUI’s later render transaction are not the same transaction. This makes the red transition above untrustworthy on supported older OS versions.</p>
+    <p class="callout warning"><strong>Historical code caveat:</strong> the inspected revision used native <code>.removed</code> on iOS 17+ and an unreliable <code>CATransaction</code> fallback on iOS 15/16. Current Q2 removed that fallback and instead performs synchronous animations-disabled source removal on iOS 15/16.</p>
   </section>
 
   <section id="cooldowns" aria-labelledby="cooldowns-heading">
@@ -536,7 +538,7 @@
     <h2 id="conflicts-heading">Conflict-resolution matrix</h2>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Situation</th><th>Current owner / condition</th><th>Request outcome</th><th>Retained work and handoff</th><th>Evidence</th></tr></thead>
+        <thead><tr><th>Situation</th><th>Owner / condition at reviewed revision</th><th>Request outcome</th><th>Retained work and handoff</th><th>Evidence</th></tr></thead>
         <tbody>
           <tr><td>Modal ↔ modal</td><td>One modal attempt in evaluating, committed, or presentation-active phase.</td><td>Second modal cannot acquire; provider evaluation does not run.</td><td>Current attempt stays owner through exact-root detachment. Existing provider order and modal cooldown remain authoritative.</td><td><code>PromoQueueLeaseArbiter.swift:166–192</code>; <code>ModalPromptCoordinationManager.swift:181–217, 304–347</code></td></tr>
           <tr><td>Modal → RMF</td><td>Modal attempt owns the slot, or a confirmed modal is within 10m.</td><td>RMF admission is deferred before card construction/publication.</td><td>Candidate remains in the NTP model. Successful modal release offers registered RMFs a stable-order retry.</td><td><code>PromoCoordinationService.swift:305–341, 369–407</code></td></tr>
@@ -544,7 +546,7 @@
           <tr><td>RMF ↔ RMF</td><td>Any NTP RMF owns the one global slot; confirmed RMF also starts global 10m cooldown.</td><td>Other NTPs defer, even with a different ID.</td><td>Successful physical release offers the next active weak registration, then same-surface retry.</td><td><code>PromoQueueLeaseArbiter.swift:194–218</code>; <code>PromoCoordinationService.swift:344–407</code></td></tr>
           <tr><td>Multiple NTPs</td><td>Each model has a stable surface ID, but ownership is global.</td><td>Only one admission can be active.</td><td>Registry is weak, stable-order, mutation-safe, and reentrancy-guarded.</td><td><code>PromoCoordinationService.swift:80–100, 363–407, 428–447</code></td></tr>
           <tr><td>Hidden or covered host</td><td>Owner/visible/window/render-location/cover predicate is false, or gate is unmounted.</td><td>No admission; an admitted card is logically withdrawn and should retain ownership until physical removal.</td><td>Exposure changes are checkpoints. Outgoing host must deactivate before incoming host activates.</td><td><code>NewTabPageViewController.swift:30–64, 276–315</code>; <code>NewTabPageMessagesModel.swift:267–285, 659–681</code></td></tr>
-          <tr><td>iPad popover hides</td><td>Tray deactivates and ancestor container hides; standard NTP is exposed.</td><td><span class="status partial">Current defect:</span> standard NTP remains inactive.</td><td>Retained/existing standard-NTP RMF can starve until an unrelated reactivation.</td><td><code>MainViewController.swift:5781–5788</code> versus correct handback at <code>3181–3193</code></td></tr>
+          <tr><td>iPad popover hides</td><td>Tray deactivates and ancestor container hides; standard NTP is exposed.</td><td><span class="status partial">Historical defect:</span> standard NTP remained inactive at the reviewed revision.</td><td>The finding is superseded by the accepted Q2 integration.</td><td><code>MainViewController.swift:5781–5788</code> versus correct handback at <code>3181–3193</code></td></tr>
           <tr><td>Foreground not ready</td><td>App inactive or current readiness token has not completed.</td><td>RMF deferred; modal presenter retained during temporary inactivity.</td><td>Matching callback/current-cycle reactivation drains RMFs, then continues modal pass. Stale full-background tokens are rejected.</td><td><code>PromoCoordinationService.swift:192–250, 411–425</code></td></tr>
         </tbody>
       </table>
@@ -552,7 +554,8 @@
   </section>
 
   <section id="api" aria-labelledby="api-heading">
-    <h2 id="api-heading">Externally consumed system API</h2>
+    <h2 id="api-heading">Historical externally consumed system API</h2>
+    <p class="callout warning">This section documents the API at the reviewed revision. Do not use it as integration guidance; the current renderer-registration contract is documented in <code>ADDING_PROMOS.md</code>.</p>
     <p>“System API” here means the interfaces consumed across Promo Queue’s internal components. It does <em>not</em> mean Swift <code>public</code>. Almost every coordination symbol has module-internal access; no queue/lease API is exported from the iOS app module.</p>
     <div class="table-wrap">
       <table>
@@ -727,16 +730,16 @@
     </div>
 
     <h3>Reviewed revisions and subsequent delivery topology</h3>
-    <p class="callout"><strong>Stack update · 2026-08-12:</strong> The Q2-fixes changes reviewed below were folded into <code>bartosz/promo-q-2</code>, and PR 6280 was closed. The active stack is now <code>main</code> → <code>bartosz/promo-q-2</code> at <code>d7246ea824</code> → <code>bartosz/promo-q-3</code> at <code>6b11771549</code>. The historical rows retain the exact revisions inspected by this report.</p>
+    <p class="callout"><strong>Stack and architecture update · 2026-08-12:</strong> The active stack is <code>main</code> → <code>bartosz/promo-q-2</code> at <code>9e82601a9f</code> → <code>bartosz/promo-q-3</code> at <code>9321268231</code>. Q2 now contains the central logical RMF owner. The rows below retain the exact older revisions inspected by this report.</p>
     <div class="table-wrap">
       <table>
         <thead><tr><th>Layer</th><th>Intended base reviewed</th><th>Head reviewed</th><th>Ancestry note</th></tr></thead>
         <tbody>
           <tr><td>PR 6087 (merged PR1)</td><td class="sha"><code>9dd3c84efdbc6a3208652324e5c9b34097b7cd8e</code></td><td class="sha"><code>fdb31d0ebef872c7839ee8f7dd2f372f3b9a43c5</code></td><td>GitHub landed a squash/merge commit <code>7fdd4719a1345c8805d3bbb9639c618f7dbb562d</code>, which is the ancestor carried by Q2/current main. The PR head itself need not be an ancestor.</td></tr>
-          <tr><td>PR 6194 (Q2)</td><td class="sha"><code>bd65c05015d20a6c28333147163d0d4d35408a19</code></td><td class="sha"><code>a455a7ca6e24a128a4687f4b02fe5653ec72a5c2</code></td><td>Reviewed before consolidation; current Q2 head is <code>d7246ea824</code> and includes the former fixes layer.</td></tr>
+          <tr><td>PR 6194 (Q2)</td><td class="sha"><code>bd65c05015d20a6c28333147163d0d4d35408a19</code></td><td class="sha"><code>a455a7ca6e24a128a4687f4b02fe5653ec72a5c2</code></td><td>Historical revision; current Q2 head is <code>9e82601a9f</code> and implements the central logical owner.</td></tr>
           <tr><td>PR 6280 (former Q2 fixes)</td><td class="sha"><code>a455a7ca6e24a128a4687f4b02fe5653ec72a5c2</code></td><td class="sha"><code>a746fddacfcd26250776190489e58c18a96d4578</code></td><td>Historical review layer. The PR is closed and its accepted changes are folded into PR 6194.</td></tr>
-          <tr><td>PR 6291 (Q3)</td><td class="sha"><code>a746fddacfcd26250776190489e58c18a96d4578</code></td><td class="sha"><code>e83b59282e897df8233fea246732f3cd98367429</code></td><td>Revision inspected by this report; Q3 now targets consolidated Q2 and currently points to <code>6b11771549</code>.</td></tr>
-          <tr><td>Current fetched <code>main</code></td><td>—</td><td class="sha"><code>fe4f65db00ee6ebd8b5d58ab24b22f7835cfbaf8</code></td><td>Contains PR1 landing; Q2’s intended base predates later main movement.</td></tr>
+          <tr><td>PR 6291 (Q3)</td><td class="sha"><code>a746fddacfcd26250776190489e58c18a96d4578</code></td><td class="sha"><code>e83b59282e897df8233fea246732f3cd98367429</code></td><td>Historical revision inspected by this report; current Q3 points to <code>9321268231</code> on central-owner Q2.</td></tr>
+          <tr><td><code>main</code> at historical review time</td><td>—</td><td class="sha"><code>fe4f65db00ee6ebd8b5d58ab24b22f7835cfbaf8</code></td><td>Contained PR1 landing; Q2’s intended base predated later main movement.</td></tr>
         </tbody>
       </table>
     </div>

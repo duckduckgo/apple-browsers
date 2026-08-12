@@ -2,12 +2,20 @@
 
 ## Current handoff
 - Goal: Finish review and landing of iteration-one iOS Promo Queue through the two remaining stacked app PRs without putting temporary project documentation on either app branch.
-- Status: PR 1 is merged. Consolidated `bartosz/promo-q-2` at `d7246ea824` is open to `main` as #6194 and contains the accepted work formerly reviewed in #6280. `bartosz/promo-q-3` at `6b11771549` is open as draft #6291 directly on Q2. The active stack is `main` → `bartosz/promo-q-2` → `bartosz/promo-q-3`.
-- Completed: The reviewer-requested Q2/Q2-fixes fold and Q3 restack are complete. The former fixes PR #6280 is closed; no separate fixes layer remains. Implementation, focused coverage, static validation, forbidden-scope audit, and durable documentation exist outside the app PRs.
-- Next: Finish Q2 and Q3 review, apply approved changes to the lowest owning active branch, land Q2, then perform one controlled Q3 rebase/retarget to `main`. Execute the remaining focused simulator and manual three-host QA when available.
-- Blockers: No branch-topology blocker. Code review plus previously noted runtime and manual visual proof remain pending.
+- Status: PR 1 is merged. `bartosz/promo-q-2` at `9e82601a9f` is open to `main` as #6194. `bartosz/promo-q-3` at `9321268231` is stacked directly on Q2 as #6291. The active stack remains `main` → `bartosz/promo-q-2` → `bartosz/promo-q-3`.
+- Completed: Q2 now uses one service-owned logical RMF session and exactly one authorized renderer, replacing the distributed per-model admission/mount lifecycle. Q3 was rebased onto that endpoint and preserves the complete directional cooldown matrix, confirmed history, checkpoint-only reconsideration, and read-only diagnostics. Canonical documentation reflects the redesign.
+- Next: Complete final cumulative review, apply any approved fixes to the lowest owning active branch, land Q2, then perform one controlled Q3 rebase/retarget to `main`. Execute the remaining real iOS 15/16 smoke test and manual standard-NTP/suggestion-tray/unified-input QA when available.
+- Blockers: No architecture or branch-topology blocker. Review plus runtime/manual validation remain pending.
 
 ## Decisions
+### 2026-08-12 — Centralize logical RMF ownership in Q2
+- Decision: Replace the distributed per-NTP admission, gate/mount, and outgoing-session state with one `PromoCoordinationService`-owned logical RMF session and one authorized renderer. Keep the same lease across a same-message renderer transfer until an exact non-visible terminal and one settlement turn.
+- Safety: The redesign still prevents modal/RMF and RMF/RMF visible overlap. Cooldowns do not release ownership or prove disappearance; existing host exposure remains the renderer-eligibility input.
+- Cooldown consequence: Queue history confirms once per logical RMF session. A same-session renderer handoff does not restart the queue timestamp, while ordinary RMF accounting remains once per accepted physical presentation. A later new session must pass the normal 10-minute RMF boundary.
+- Removal consequence: iOS 17+ preserves scale/opacity with native `.removed`. iOS 15/16 synchronously clears with animations disabled and deliberately has no coordinated dismissal animation. Missing or unverifiable terminals fail closed.
+- Implementation: Q2 ends at `9e82601a9f` through `ea66bd7bef`, `ea60ee258d`, and `9e82601a9f`. Q3 was adapted directly on top and ends at `9321268231` through five cooldown/diagnostics commits.
+- Supersession: This replaces the per-model/self-owned RMF admission and universal-animation mechanics in the 2026-08-11 entry. Its startup-latched flag, singular owner, checkpoint-only retry, and deferred-scope decisions remain current.
+
 ### 2026-08-12 — Fold Q2 fixes into one review branch
 - Decision: Fold all accepted `bartosz/promo-q-2-fixes` commits into `bartosz/promo-q-2`, close PR #6280, and keep only `bartosz/promo-q-2` and `bartosz/promo-q-3` stacked above `main`.
 - Why: Reviewers asked to assess the Q2 behavior as one coherent change, and a separate fixes layer no longer improved reviewability.
@@ -140,3 +148,6 @@
 ### 2026-08-12
 - Verified the reviewer-requested fold on GitHub: PR #6194 now points to consolidated Q2 tip `d7246ea824`; former fixes PR #6280 is closed at the same tip; draft PR #6291 points to Q3 tip `6b11771549` and targets `bartosz/promo-q-2`.
 - Updated the canonical design, implementation/landing plan, Q3 plan, visual appendices, RMF research status notes, and current handoff to show only the active `main` → Q2 → Q3 stack. Historical #6280 entries were retained only when needed to explain how the accepted endpoint was reviewed.
+- Audited the implemented central logical-owner redesign at Q2 `9e82601a9f` and the rebased cooldown/diagnostics layer at Q3 `9321268231`. Confirmed one service-owned RMF lease, one selected renderer, exact terminal-plus-settlement release, the complete cooldown matrix, and dormant legacy behavior.
+- Rewrote the canonical technical design, delivery plan, Q3 implementation record, integration guide, central-owner implementation status, and project handoff. The docs now explicitly record once-per-logical-session queue history and per-physical-presentation ordinary accounting, retained host eligibility signals, fail-closed removal, and the approved iOS 15/16 no-animation path.
+- No app code, branch checkout, commit, push, build, or test run was performed during this documentation pass.

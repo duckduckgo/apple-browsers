@@ -51,7 +51,7 @@ Check that the `parameters` array accounts for all parameters the pixel includes
 - **Missing `appVersion`.** Many pixels include `appVersion` by default. The definition should list `"appVersion"` unless the Swift call site explicitly opts out of it.
 - **Missing error parameters.** If the pixel event carries an `Error` (via an associated value or the `error` property), the definition must include `"errorCode"` and `"errorDomain"`. If the error may have an underlying error, also include `"underlyingErrorCode"` and `"underlyingErrorDomain"`.
 - **Missing `pixelSource`.** If the pixel event's `standardParameters` property returns `[.pixelSource]`, the definition must include `"pixelSource"`.
-- **Missing custom parameters.** Check the pixel event's `parameters` computed property and any `withAdditionalParameters:` arguments at the call site. Every key that appears in the parameters dictionary must be represented in the definition — either as a reference to the params dictionary or as an inline parameter object.
+- **Missing custom parameters.** Check the pixel event's `parameters` computed property and any extra parameters supplied at the call site. On PixelKit these arrive either as `withAdditionalParameters:` (legacy form) or inside the options argument, as `options: .parameters([...])` or `PixelKit.Options(additionalParameters: [...])`. Every key that appears in the parameters dictionary must be represented in the definition — either as a reference to the params dictionary or as an inline parameter object.
 
 Parameters can be either:
 - A string referencing `params_dictionary.json5` (e.g. `"appVersion"`, `"errorCode"`)

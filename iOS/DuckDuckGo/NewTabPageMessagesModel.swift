@@ -72,7 +72,7 @@ final class NewTabPageMessagesModel: ObservableObject {
         return false
     }
 
-    let surfaceID: UUID
+    private let surfaceID: UUID
 
     private struct AuthorizedRemoteMessage {
         let presentation: PromoQueueRemoteMessagePresentation

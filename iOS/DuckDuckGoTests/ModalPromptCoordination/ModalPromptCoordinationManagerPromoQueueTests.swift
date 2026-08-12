@@ -160,7 +160,8 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
         #expect(!schedulerMock.didCallSchedule)
     }
 
-    @Test("Modal Prompt Provider Defaults Are Safe")
+    @available(iOS 16, *)
+    @Test("Modal Prompt Provider Defaults Are Safe", .timeLimit(.minutes(1)))
     func modalPromptProviderDefaultsGateOnOnboardingAndPreservePreparedWork() {
         let provider: any ModalPromptProvider = DefaultBehaviorModalPromptProvider()
         let configuration = ModalPromptConfiguration(viewController: UIViewController())

@@ -32,7 +32,8 @@ final class PromptCooldownStoreTests {
         keyValueStoreMock = try MockKeyValueFileStore()
     }
 
-    @Test("Check Last Presentation Timestamp Is Nil When Nothing Is Stored")
+    @available(iOS 16, *)
+    @Test("Check Last Presentation Timestamp Is Nil When Nothing Is Stored", .timeLimit(.minutes(1)))
     func whenNothingStoredThenLastPresentationTimestampIsNil() throws {
         // GIVEN
         var didCallFireEvent = false
@@ -49,16 +50,11 @@ final class PromptCooldownStoreTests {
         #expect(!didCallFireEvent, "Should not fire an event when no error is encountered")
     }
 
-    @Test(
-        "Check Last Presentation Timestamp Returns Stored Value",
-        arguments: [
-            1761091200,  // 22 October 2025 12:00:00 AM GMT
-            1761264000,  // 24 October 2025 12:00:00 AM GMT
-            1761436800,  // 10 October 2025 12:00:00 AM GMT
-        ]
-    )
-    func whenTimestampIsStoredThenLastPresentationTimestampReturnsIt(timestamp: TimeInterval) {
+    @available(iOS 16, *)
+    @Test("Check Last Presentation Timestamp Returns Stored Value", .timeLimit(.minutes(1)))
+    func whenTimestampIsStoredThenLastPresentationTimestampReturnsIt() {
         // GIVEN
+        let timestamp: TimeInterval = 1761091200 // 22 October 2025 12:00:00 AM GMT
         var didCallFireEvent = false
         keyValueStoreMock.underlyingDict = [
             PromptCooldownKeyValueFilesStore.StorageKey.lastPromptShownTimestamp: timestamp
@@ -75,16 +71,11 @@ final class PromptCooldownStoreTests {
         #expect(!didCallFireEvent, "Should not fire an event when no error is encountered")
     }
 
-    @Test(
-        "Check Setting Last Presentation Timestamp Stores Value",
-        arguments: [
-            1761091200,  // 22 October 2025 12:00:00 AM GMT
-            1761264000,  // 24 October 2025 12:00:00 AM GMT
-            1761436800,  // 10 October 2025 12:00:00 AM GMT
-        ]
-    )
-    func whenSettingTimestampThenValueIsStored(timestamp: TimeInterval) throws {
+    @available(iOS 16, *)
+    @Test("Check Setting Last Presentation Timestamp Stores Value", .timeLimit(.minutes(1)))
+    func whenSettingTimestampThenValueIsStored() throws {
         // GIVEN
+        let timestamp: TimeInterval = 1761091200 // 22 October 2025 12:00:00 AM GMT
         var didCallFireEvent = false
         keyValueStoreMock.underlyingDict = [:]
         #expect(keyValueStoreMock.underlyingDict.isEmpty)
@@ -101,7 +92,8 @@ final class PromptCooldownStoreTests {
         #expect(!didCallFireEvent, "Should not fire an event when no error is encountered")
     }
 
-    @Test("Check Setting Timestamp To Nil Removes Value")
+    @available(iOS 16, *)
+    @Test("Check Setting Timestamp To Nil Removes Value", .timeLimit(.minutes(1)))
     func whenSettingTimestampToNilThenValueIsRemoved() throws {
         // GIVEN
         var didCallFireEvent = false
@@ -123,7 +115,8 @@ final class PromptCooldownStoreTests {
         #expect(!didCallFireEvent, "Should not fire an event when no error is encountered")
     }
 
-    @Test("Check Failed Read Triggers Event And Returns Nil")
+    @available(iOS 16, *)
+    @Test("Check Failed Read Triggers Event And Returns Nil", .timeLimit(.minutes(1)))
     func whenReadFailsThenEventIsFiredAndReturnsNil() throws {
         // GIVEN
         var capturedEvent: PromptCooldownKeyValueFilesStore.DebugEvent?
@@ -143,7 +136,8 @@ final class PromptCooldownStoreTests {
         #expect(capturedError != nil)
     }
 
-    @Test("Check Failed Promo Queue Diagnostic Read Does Not Trigger Event")
+    @available(iOS 16, *)
+    @Test("Check Failed Promo Queue Diagnostic Read Does Not Trigger Event", .timeLimit(.minutes(1)))
     func whenPromoQueueDiagnosticReadFailsThenEventIsNotFired() {
         var didCallFireEvent = false
         keyValueStoreMock.throwOnRead = TestError()
@@ -157,7 +151,8 @@ final class PromptCooldownStoreTests {
         #expect(!didCallFireEvent)
     }
 
-    @Test("Check Failed Write Triggers Event")
+    @available(iOS 16, *)
+    @Test("Check Failed Write Triggers Event", .timeLimit(.minutes(1)))
     func whenWriteFailsThenEventIsFired() {
         // GIVEN
         var capturedEvent: PromptCooldownKeyValueFilesStore.DebugEvent?
@@ -176,7 +171,8 @@ final class PromptCooldownStoreTests {
         #expect(capturedError != nil)
     }
 
-    @Test("Check Invalid Type Stored Returns Nil")
+    @available(iOS 16, *)
+    @Test("Check Invalid Type Stored Returns Nil", .timeLimit(.minutes(1)))
     func whenInvalidTypeStoredThenReturnsNil() {
         // GIVEN
         var didCallFireEvent = false

@@ -23,25 +23,23 @@ import Foundation
 @MainActor
 final class MockNewTabPagePromoCoordinator: NewTabPagePromoCoordinating {
     var promoCoordinationMode: PromoCoordinationMode
-    var admitRemoteMessageResult: PromoQueueRemoteMessageAdmissionResult = .deferred
 
-    private(set) var admittedIdentities = [VisiblePromoIdentity]()
-    private(set) var registeredRetrySurfaceIDs = [UUID]()
+    private(set) var registeredRendererIDs = [UUID]()
+    private(set) var registeredRendererTargets = [UUID: NewTabPagePromoRendering]()
+    private(set) var rendererRegistrations = [UUID: NewTabPagePromoRendererRegistration]()
 
     init(promoCoordinationMode: PromoCoordinationMode = .legacy) {
         self.promoCoordinationMode = promoCoordinationMode
     }
 
-    func admitRemoteMessage(_ identity: VisiblePromoIdentity) -> PromoQueueRemoteMessageAdmissionResult {
-        admittedIdentities.append(identity)
-        return admitRemoteMessageResult
-    }
-
-    func registerRemoteMessageRetry(
-        for surfaceID: UUID,
-        target: NewTabPagePromoRetrying
-    ) -> NewTabPagePromoRetryRegistration {
-        registeredRetrySurfaceIDs.append(surfaceID)
-        return NewTabPagePromoRetryRegistration()
+    func registerRemoteMessageRenderer(
+        id: UUID,
+        target: NewTabPagePromoRendering
+    ) -> NewTabPagePromoRendererRegistration {
+        let registration = NewTabPagePromoRendererRegistration()
+        registeredRendererIDs.append(id)
+        registeredRendererTargets[id] = target
+        rendererRegistrations[id] = registration
+        return registration
     }
 }

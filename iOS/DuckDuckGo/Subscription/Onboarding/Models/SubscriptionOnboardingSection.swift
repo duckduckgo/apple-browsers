@@ -19,22 +19,33 @@
 
 /// A section of the post-subscription onboarding flow; a section may span several screens internally.
 enum SubscriptionOnboardingSection: CaseIterable {
+    case orderConfirmation
     case welcome
-    case vpn
+    case vpnActivation
+    case vpnWidget
+    case idtr
     case duckAI
+    case progress
+    case pir
 
-    /// How a section counts toward the flow's progress. 
     enum Kind: Equatable {
-        /// Activates a specific premium protection; contributes to the completion percentage.
         case activation(SubscriptionOnboardingChecklistItem)
         case overview
+        case progressTracker
     }
 
     var kind: Kind {
         switch self {
-        case .welcome: .overview
-        case .vpn: .activation(.vpn)
+        case .orderConfirmation, .welcome: .overview
+        case .vpnActivation: .activation(.vpn)
+        case .vpnWidget: .activation(.widget)
+        case .idtr: .activation(.idtr)
         case .duckAI: .activation(.duckAI)
+        case .progress: .progressTracker
+        case .pir: .activation(.pir)
         }
     }
+
+    /// In-flow sections (excludes .pir, overview, and progress).
+    static let activationSections: [SubscriptionOnboardingSection] = [.vpnActivation, .vpnWidget, .idtr, .duckAI]
 }

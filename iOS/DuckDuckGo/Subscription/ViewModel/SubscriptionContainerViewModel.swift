@@ -21,6 +21,7 @@ import Foundation
 import Subscription
 import Combine
 import DataBrokerProtection_iOS
+import Persistence
 
 final class SubscriptionContainerViewModel: ObservableObject {
 
@@ -38,7 +39,9 @@ final class SubscriptionContainerViewModel: ObservableObject {
          userScript: SubscriptionPagesUserScript,
          userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
          subFeature: any SubscriptionPagesUseSubscriptionFeature,
-         dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?) {
+         dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
+         onboardingKeyValueStore: ThrowingKeyValueStoring?,
+         meetsPIRLocaleRequirement: @escaping () -> Bool) {
 
         self.userScript = userScript
 
@@ -52,7 +55,9 @@ final class SubscriptionContainerViewModel: ObservableObject {
                                               userScriptsDependencies: userScriptsDependencies,
                                               subFeature: subFeature,
                                               subscriptionManager: subscriptionManager,
-                                              dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider)
+                                              dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider,
+                                              onboardingKeyValueStore: onboardingKeyValueStore,
+                                              meetsPIRLocaleRequirement: meetsPIRLocaleRequirement)
         self.restore = SubscriptionRestoreViewModel(userScript: userScript,
                                                     subFeature: subFeature)
         self.email = SubscriptionEmailViewModel(isInternalUser: isInternalUser,

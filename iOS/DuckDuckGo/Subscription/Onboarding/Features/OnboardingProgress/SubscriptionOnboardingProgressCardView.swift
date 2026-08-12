@@ -1,5 +1,5 @@
 //
-//  SubscriptionOnboardingProgressView.swift
+//  SubscriptionOnboardingProgressCardView.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -24,7 +24,7 @@ import UIComponents
 
 /// The completion progress card. The percentage and items come from the caller, so the same card renders
 /// both the intermediate and complete states.
-struct SubscriptionOnboardingProgressView: View {
+struct SubscriptionOnboardingProgressCardView: View {
     private enum Metrics {
         static let headerPadding: CGFloat = 24
         static let percentageFontSize: CGFloat = 34
@@ -63,10 +63,10 @@ struct SubscriptionOnboardingProgressView: View {
 
 // MARK: - Layout
 
-private extension SubscriptionOnboardingProgressView {
+private extension SubscriptionOnboardingProgressCardView {
     var progressHeader: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text(verbatim: "\(clampedPercentage)%")
+            Text(verbatim: "\(percentage)%")
                 // No dax token at this display size
                 .font(.system(size: Metrics.percentageFontSize, weight: .bold))
                 .foregroundColor(Color(designSystemColor: .textPrimary))
@@ -75,18 +75,12 @@ private extension SubscriptionOnboardingProgressView {
                 .daxHeadline()
                 .foregroundColor(Color(designSystemColor: .textSecondary))
 
-            SubscriptionOnboardingProgressBar(percentage: clampedPercentage)
+            SubscriptionOnboardingProgressBar(percentage: percentage)
                 .padding(.top, Metrics.progressBarTopSpacing)
         }
         .padding(Metrics.headerPadding)
     }
 
-    // TODO|htang: remove once percentage clamping is centralized in SubscriptionOnboardingFlowViewModel.
-    var clampedPercentage: Int {
-        min(max(percentage, 0), 100)
-    }
-
-    /// The tap action for the row at `index`, or `nil` when it isn't selectable — only an incomplete PIR row is.
     var rowSelectAction: (Int) -> (() -> Void)? {
         guard let onSelect else { return { _ in nil } }
         return CardItemList.selectAction(over: items, where: isSelectable) { onSelect($0) }
@@ -104,10 +98,9 @@ private extension SubscriptionOnboardingProgressView {
         }
     }
 
-    /// Completed rows show the animated check
+    /// Completed rows show the animated check.
     func visual(for item: SubscriptionOnboardingChecklistItem) -> Graphic {
         if completedItems.contains(item) {
-            // TODO|htang: production host must inject a graphicLottieRenderer that honors .frozenAtEnd (Reduce Motion); only a preview renderer exists so far.
             return .lottie(name: "check-color")
         }
         let glyph = item == .pir
@@ -116,21 +109,20 @@ private extension SubscriptionOnboardingProgressView {
         return .image(Image(uiImage: glyph))
     }
 
-    /// Only an incomplete PIR row is interactive — so only it is tappable and shows a chevron.
+    /// Only an incomplete PIR row is interactive, otherwise the row does nothing.
     func isSelectable(_ item: SubscriptionOnboardingChecklistItem) -> Bool {
-        item == .pir && !completedItems.contains(item)
+        onSelect != nil && item == .pir && !completedItems.contains(item)
     }
 }
 
 // MARK: - Progress Bar
 
-/// The completion screen's progress bar: a solid green fill on a light-grey track. 
 private struct SubscriptionOnboardingProgressBar: View {
     private enum Metrics {
         static let trackHeight: CGFloat = 12
     }
 
-    /// The completion percentage, expected in `0...100` (the caller clamps it).
+    /// The completion percentage, bounded to `0...100`
     let percentage: Int
 
     var body: some View {
@@ -158,64 +150,53 @@ private extension SubscriptionOnboardingProgressBar {
 
 #if DEBUG
 
-import Lottie
-
-private struct SubscriptionOnboardingProgressViewPreview: View {
+private struct SubscriptionOnboardingProgressCardViewPreview: View {
     let pirComplete: Bool
 
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
-                SubscriptionOnboardingProgressView(
-                    percentage: 75,
+                SubscriptionOnboardingProgressCardView(
+                    percentage: 80,
                     items: Self.items,
                     completedItems: pirComplete ? Set(Self.items) : Self.completedExceptPIR,
                     onSelect: { _ in })
-                SubscriptionOnboardingProgressView(
+                SubscriptionOnboardingProgressCardView(
                     percentage: 100,
                     items: Self.items,
                     completedItems: Set(Self.items))
-                SubscriptionOnboardingProgressView(
-                    percentage: 75,
+                SubscriptionOnboardingProgressCardView(
+                    percentage: 80,
                     items: Self.items,
                     completedItems: Self.completedExceptVPN)
             }
             .padding()
         }
         .background(Color(designSystemColor: .surfaceTertiary).ignoresSafeArea())
-        .graphicLottieRenderer(Self.previewLottieRenderer)
+        .graphicLottieRenderer(.app)
     }
 
-    private static let items: [SubscriptionOnboardingChecklistItem] = [.vpn, .idtr, .duckAI, .pir]
-    private static let completedExceptPIR: Set<SubscriptionOnboardingChecklistItem> = [.vpn, .idtr, .duckAI]
-    private static let completedExceptVPN: Set<SubscriptionOnboardingChecklistItem> = [.idtr, .duckAI, .pir]
-
-    /// Renders the completed-check Lottie (`check-color`) in previews; at runtime the app injects its
-    /// own renderer.
-    private static let previewLottieRenderer = GraphicLottieRenderer { name, _ in
-        AnyView(
-            Lottie.LottieView(animation: .named(name))
-                .playbackMode(.playing(.fromProgress(0, toProgress: 1, loopMode: .playOnce)))
-        )
-    }
+    private static let items = SubscriptionOnboardingChecklistItem.allCases
+    private static let completedExceptPIR: Set<SubscriptionOnboardingChecklistItem> = [.vpn, .widget, .idtr, .duckAI]
+    private static let completedExceptVPN: Set<SubscriptionOnboardingChecklistItem> = [.widget, .idtr, .duckAI, .pir]
 }
 
 #Preview("Light") {
     RebrandedPreview {
-        SubscriptionOnboardingProgressViewPreview(pirComplete: false)
+        SubscriptionOnboardingProgressCardViewPreview(pirComplete: false)
     }
 }
 
 #Preview("Dark") {
     RebrandedPreview {
-        SubscriptionOnboardingProgressViewPreview(pirComplete: false)
+        SubscriptionOnboardingProgressCardViewPreview(pirComplete: false)
     }
     .preferredColorScheme(.dark)
 }
 
 #Preview("Large Text") {
     RebrandedPreview {
-        SubscriptionOnboardingProgressViewPreview(pirComplete: false)
+        SubscriptionOnboardingProgressCardViewPreview(pirComplete: false)
     }
     .dynamicTypeSize(.accessibility5)
 }

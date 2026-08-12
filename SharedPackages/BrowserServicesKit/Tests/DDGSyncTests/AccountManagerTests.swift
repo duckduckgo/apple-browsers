@@ -974,7 +974,7 @@ final class AccountManagerTests: XCTestCase {
         XCTAssertFalse(api.createRequestCallArgs.contains { $0.url == endpoints.logoutDevice })
     }
 
-    func testWhenFetchingDevicesWithScopedAccessEnabledThenFallsBackUndecryptableEntriesWithoutLogout() async throws {
+    func testWhenFetchingDevicesWithUnifiedReadEnabledThenFallsBackUndecryptableEntriesWithoutLogout() async throws {
         let api = RemoteAPIRequestCreatingMock()
         let endpoints = Endpoints(baseURL: Self.baseURL)
         var crypter = CryptingMock()
@@ -984,7 +984,8 @@ final class AccountManagerTests: XCTestCase {
         let accountManager = AccountManager(endpoints: endpoints,
                                             api: api,
                                             crypter: crypter,
-                                            isScopedAccessCredentialsEnabled: { true })
+                                            isScopedAccessCredentialsEnabled: { true },
+                                            canReadUnifiedDeviceList: { true })
         api.fakeRequests[devicesURL(for: endpoints)] = makeJSONRequest("""
         {
             "devices": {
@@ -1014,6 +1015,56 @@ final class AccountManagerTests: XCTestCase {
         XCTAssertEqual(devices.map(\.type), ["unknown", "unknown"])
         XCTAssertEqual(devices.map(\.credentialId), [SyncCredentialID.thirdParty, SyncCredentialID.defaultCredential])
         XCTAssertFalse(api.createRequestCallArgs.contains { $0.url == endpoints.logoutDevice })
+    }
+
+    func testWhenFetchingDevicesWithScopedAccessEnabledAndUnifiedReadDisabledThenRetainsLegacyDecryptFailureBehavior() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        var crypter = CryptingMock()
+        crypter._base64DecodeAndDecrypt = { _ in
+            throw SyncError.failedToDecryptValue("test")
+        }
+        let accountManager = AccountManager(endpoints: endpoints,
+                                            api: api,
+                                            crypter: crypter,
+                                            isScopedAccessCredentialsEnabled: { true },
+                                            canReadUnifiedDeviceList: { false })
+        api.fakeRequests[devicesURL(for: endpoints)] = makeJSONRequest("""
+        {
+            "devices": {
+                "entries_v2": [
+                    {
+                        "id": "third-party-device",
+                        "name": "undecryptable-name",
+                        "type": "undecryptable-type",
+                        "info": "ignored-device-info",
+                        "credential_id": "3party"
+                    },
+                    {
+                        "id": "native-device",
+                        "name": "undecryptable-name",
+                        "type": "undecryptable-type",
+                        "info": "ignored-device-info",
+                        "credential_id": "ddg"
+                    }
+                ]
+            }
+        }
+        """)
+        api.fakeRequests[endpoints.logoutDevice] = makeJSONRequest("""
+        {
+            "device_id": "native-device"
+        }
+        """)
+
+        let result = try await accountManager.fetchDevicesForAccount(makeAccount(primaryKey: Data()))
+
+        XCTAssertEqual(result.devices.map(\.id), ["third-party-device"])
+        XCTAssertEqual(result.devices.map(\.name), ["Browser"])
+        XCTAssertEqual(result.devices.map(\.type), ["unknown"])
+        XCTAssertEqual(result.devices.map(\.credentialId), [SyncCredentialID.thirdParty])
+        XCTAssertFalse(result.needsCurrentDeviceInfoRepair)
+        XCTAssertEqual(api.createRequestCallArgs.filter { $0.url == endpoints.logoutDevice }.count, 1)
     }
 
     func testWhenFetchingDevicesWithScopedAccessDisabledThenLegacyUndecryptableDeviceIsLoggedOut() async throws {

@@ -247,7 +247,7 @@ public class DDGSync: DDGSyncing {
         }
 
         do {
-            try await dependencies.account.fetchDevicesForAccount(account).devices
+            return try await dependencies.account.fetchDevicesForAccount(account).devices
         } catch {
             throw handleUnauthenticatedAndMap(error)
         }

@@ -90,7 +90,6 @@ final class PromoCoordinationServicePromoQueueTests {
         #expect(!snapshot.isWaitingForForegroundInteractionReadiness)
         #expect(snapshot.cooldown == cooldownSnapshot)
         #expect(promoQueueCooldownDebugSnapshotProvider.snapshotDates == [currentDate])
-        #expect(promoQueueCooldownPolicy.snapshotDates.isEmpty)
         #expect(promoQueueCooldownPolicy.remoteMessageAdmissionDates == remoteMessageAdmissionDates)
         #expect(promoQueueCooldownPolicy.modalAdmissionDates == modalAdmissionDates)
         #expect(promoQueueCooldownPolicy.confirmedRemoteMessageAppearanceDates == confirmedRemoteMessageAppearanceDates)
@@ -128,7 +127,6 @@ final class PromoCoordinationServicePromoQueueTests {
             currentDate,
             currentDate
         ])
-        #expect(promoQueueCooldownPolicy.snapshotDates.isEmpty)
         #expect(promoQueueCooldownPolicy.remoteMessageAdmissionDates == remoteMessageAdmissionDates)
         #expect(promoQueueCooldownPolicy.modalAdmissionDates == modalAdmissionDates)
         #expect(promoQueueCooldownPolicy.confirmedRemoteMessageAppearanceDates == confirmedRemoteMessageAppearanceDates)
@@ -136,8 +134,9 @@ final class PromoCoordinationServicePromoQueueTests {
     }
 
     @available(iOS 16, *)
-    @Test("The legacy debug snapshot does not read Promo Queue history", .timeLimit(.minutes(1)))
-    func whenLegacyDebugSnapshotIsReadThenCooldownHistoryRemainsUntouched() {
+    @Test("The legacy debug snapshot does not access arbitration or Promo Queue history", .timeLimit(.minutes(1)))
+    func whenLegacyDebugSnapshotIsReadThenCoordinationStateRemainsUntouched() {
+        let snapshotCountingArbiter = SnapshotCountingPromoQueueLeaseArbiter()
         promoQueueCooldownDebugSnapshotProvider.snapshotToReturn = PromoQueueCooldownSnapshot(
             lastConfirmedModalAppearance: currentDate,
             lastConfirmedRemoteMessageAppearance: currentDate,
@@ -146,7 +145,11 @@ final class PromoCoordinationServicePromoQueueTests {
         )
         managerMock.hasPendingModalPrompt = true
         managerMock.shouldSuppressOtherSessionPromos = true
-        makeSUT(mode: .legacy, readyForInteractions: false)
+        makeSUT(
+            mode: .legacy,
+            readyForInteractions: false,
+            leaseArbiter: snapshotCountingArbiter
+        )
 
         let snapshot = sut.promoQueueDebugSnapshot
 
@@ -161,8 +164,8 @@ final class PromoCoordinationServicePromoQueueTests {
         #expect(!snapshot.isApplicationActive)
         #expect(snapshot.isWaitingForForegroundInteractionReadiness)
         #expect(snapshot.cooldown == .empty)
+        #expect(snapshotCountingArbiter.snapshotReadCount == 0)
         #expect(promoQueueCooldownDebugSnapshotProvider.snapshotDates.isEmpty)
-        #expect(promoQueueCooldownPolicy.snapshotDates.isEmpty)
     }
 
     // MARK: - Modal Mutual Exclusion
@@ -190,21 +193,27 @@ final class PromoCoordinationServicePromoQueueTests {
     }
 
     @available(iOS 16, *)
-    @Test("A logical remote-message owner blocks modal evaluation", .timeLimit(.minutes(1)))
-    func whenRemoteMessageOwnsGlobalSlotThenModalManagerIsNotCalled() {
+    @Test("A logical remote-message owner blocks modal and RMF admission after cooldown expiry", .timeLimit(.minutes(1)))
+    func whenRemoteMessageOwnsGlobalSlotAfterCooldownExpiryThenOtherAdmissionsRemainBlocked() {
         launchSourceManagerMock.source = .standard
         presenterMock.presentedViewController = nil
         makeSUT()
         let fixture = registerRenderer(messageID: "owner", shouldSelect: true)
         let presentation = fixture.renderer.shownPresentations.first
+        let remoteMessageAdmissionDates = promoQueueCooldownPolicy.remoteMessageAdmissionDates
         managerMock.resetRecordedInteractions()
 
+        currentDate = currentDate.addingTimeInterval(24 * 60 * 60 + 1)
+        let waitingFixture = registerRenderer(messageID: "waiting", shouldSelect: true)
         presentModalPromptIfNeeded()
 
         #expect(presentation != nil)
+        #expect(waitingFixture.renderer.shownPresentations.isEmpty)
         #expect(!managerMock.didCallPresentModalPromptIfNeeded)
+        #expect(promoQueueCooldownPolicy.remoteMessageAdmissionDates == remoteMessageAdmissionDates)
+        #expect(promoQueueCooldownPolicy.modalAdmissionDates.isEmpty)
         #expect(promoQueueLeaseArbiter.snapshot.activeOwner == presentation.map { .remoteMessage($0.session) })
-        _ = fixture.registration
+        _ = (fixture.registration, waitingFixture.registration)
     }
 
     @available(iOS 16, *)
@@ -354,11 +363,12 @@ final class PromoCoordinationServicePromoQueueTests {
     }
 
     @available(iOS 16, *)
-    @Test("A modal owner blocks all renderer publication", .timeLimit(.minutes(1)))
-    func whenModalOwnsGlobalSlotThenRendererIsNotShown() throws {
+    @Test("A modal owner blocks renderer publication after cooldown expiry", .timeLimit(.minutes(1)))
+    func whenModalOwnsGlobalSlotAfterCooldownExpiryThenRendererIsNotShown() throws {
         makeSUT()
         let modalLease = try acquiredModalLease()
 
+        currentDate = currentDate.addingTimeInterval(10 * 60 + 1)
         let fixture = registerRenderer(messageID: "message", shouldSelect: true)
 
         #expect(fixture.renderer.shownPresentations.isEmpty)
@@ -368,32 +378,54 @@ final class PromoCoordinationServicePromoQueueTests {
     }
 
     @available(iOS 16, *)
-    @Test("Remote-message cooldown denial retains the candidate for a later checkpoint", .timeLimit(.minutes(1)))
-    func whenRemoteMessageCooldownInitiallyBlocksThenAReleaseCheckpointRetriesTheCandidate() {
+    @Test("A confirmed session's cooldown retains a late successor until a checkpoint", .timeLimit(.minutes(1)))
+    func whenConfirmedSessionEndsThenCooldownWaitsForCheckpointBeforeStartingFreshSession() async {
         let initialDate = currentDate
         let eligibilityDate = initialDate.addingTimeInterval(10 * 60)
+        var admissionCount = 0
         promoQueueCooldownPolicy.remoteMessageAdmissionDecisionProvider = { now in
-            now < eligibilityDate ? .blocked(until: eligibilityDate) : .eligible
+            admissionCount += 1
+            return admissionCount == 1 || now >= eligibilityDate ? .eligible : .blocked(until: eligibilityDate)
         }
         makeSUT()
 
-        let fixture = registerRenderer(messageID: "message", shouldSelect: true)
+        let outgoing = registerRenderer(messageID: "message", shouldSelect: true)
+        guard let outgoingPresentation = outgoing.renderer.shownPresentations.first else {
+            Issue.record("Expected the outgoing renderer to own the initial session")
+            return
+        }
+        #expect(outgoing.registration.confirmAppearance(
+            sessionID: outgoingPresentation.session.id,
+            presentationID: outgoingPresentation.id,
+            isAttachedToWindow: true
+        ) == .accepted)
+        outgoing.registration.update(candidate: .none, isLocallyReady: false)
+        outgoing.renderer.finishLastRemoval(using: outgoing.registration)
+        await waitForMainQueueSettlement()
 
-        #expect(fixture.renderer.shownPresentations.isEmpty)
+        let successor = registerRenderer(messageID: "message", shouldSelect: true)
+
+        #expect(successor.renderer.shownPresentations.isEmpty)
         #expect(promoQueueLeaseArbiter.snapshot.activeOwner == nil)
-        #expect(promoQueueCooldownPolicy.remoteMessageAdmissionDates == [initialDate])
+        #expect(promoQueueCooldownPolicy.confirmedRemoteMessageAppearanceDates == [initialDate])
+        #expect(promoQueueCooldownPolicy.remoteMessageAdmissionDates == [initialDate, initialDate])
 
         currentDate = eligibilityDate.addingTimeInterval(1)
 
-        #expect(fixture.renderer.shownPresentations.isEmpty)
-        #expect(promoQueueCooldownPolicy.remoteMessageAdmissionDates == [initialDate])
+        #expect(successor.renderer.shownPresentations.isEmpty)
+        #expect(promoQueueCooldownPolicy.remoteMessageAdmissionDates == [initialDate, initialDate])
 
         managerMock.coordinatedAttemptReleaseHandler?()
 
-        #expect(fixture.renderer.shownPresentations.count == 1)
-        #expect(promoQueueCooldownPolicy.remoteMessageAdmissionDates == [initialDate, currentDate])
-        #expect(promoQueueLeaseArbiter.snapshot.remoteMessageSession == fixture.renderer.shownPresentations.first?.session)
-        _ = fixture.registration
+        guard let successorPresentation = successor.renderer.shownPresentations.first else {
+            Issue.record("Expected the checkpoint to authorize the retained successor")
+            return
+        }
+        #expect(successorPresentation.session.messageID == outgoingPresentation.session.messageID)
+        #expect(successorPresentation.session.id != outgoingPresentation.session.id)
+        #expect(promoQueueCooldownPolicy.remoteMessageAdmissionDates == [initialDate, initialDate, currentDate])
+        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .remoteMessage(successorPresentation.session))
+        _ = (outgoing.registration, successor.registration)
     }
 
     @available(iOS 16, *)
@@ -1213,12 +1245,16 @@ final class PromoCoordinationServicePromoQueueTests {
 
     // MARK: - Helpers
 
-    private func makeSUT(mode: PromoCoordinationMode = .coordinated, readyForInteractions: Bool = true) {
+    private func makeSUT(
+        mode: PromoCoordinationMode = .coordinated,
+        readyForInteractions: Bool = true,
+        leaseArbiter: PromoQueueLeaseArbitrating? = nil
+    ) {
         sut = PromoCoordinationService(
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: managerMock,
             promoCoordinationMode: mode,
-            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
+            promoQueueLeaseArbiter: leaseArbiter ?? promoQueueLeaseArbiter,
             promoQueueCooldownPolicy: promoQueueCooldownPolicy,
             promoQueueCooldownDebugSnapshotProvider: promoQueueCooldownDebugSnapshotProvider,
             dateProvider: { [unowned self] in currentDate }
@@ -1285,6 +1321,24 @@ private struct RendererFixture {
     let rendererID: UUID
     let renderer: ControllableRemoteMessageRenderer
     let registration: NewTabPagePromoRendererRegistration
+}
+
+@MainActor
+private final class SnapshotCountingPromoQueueLeaseArbiter: PromoQueueLeaseArbitrating {
+    private(set) var snapshotReadCount = 0
+
+    var snapshot: PromoQueueLeaseSnapshot {
+        snapshotReadCount += 1
+        return PromoQueueLeaseSnapshot(activeOwner: nil)
+    }
+
+    func acquireModalLease() -> PromoQueueModalLeaseAcquisitionResult {
+        fatalError("Legacy debug projection must not acquire a modal lease")
+    }
+
+    func acquireRemoteMessageLease(for session: PromoQueueRemoteMessageSession) -> PromoQueueRemoteMessageLeaseAcquisitionResult {
+        fatalError("Legacy debug projection must not acquire a remote-message lease")
+    }
 }
 
 @MainActor

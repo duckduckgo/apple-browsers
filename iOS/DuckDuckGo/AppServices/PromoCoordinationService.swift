@@ -999,18 +999,21 @@ extension PromoCoordinationService: RecentModalPromptStatusProviding {
 
 extension PromoCoordinationService: PromoQueueDebugSnapshotProviding {
     var promoQueueDebugSnapshot: PromoQueueDebugSnapshot {
+        let activeOwner: PromoQueueActiveOwnerSnapshot?
         let cooldownSnapshot: PromoQueueCooldownSnapshot
         switch promoCoordinationMode {
         case .legacy:
-            // The legacy path must not activate either persisted Promo Queue history read.
+            // The legacy path must not touch the arbiter or activate either persisted Promo Queue history read.
+            activeOwner = nil
             cooldownSnapshot = .empty
         case .coordinated:
+            activeOwner = promoQueueLeaseArbiter.snapshot.activeOwner
             cooldownSnapshot = promoQueueCooldownDebugSnapshotProvider?.snapshot(now: dateProvider()) ?? .empty
         }
 
         return PromoQueueDebugSnapshot(
             mode: promoCoordinationMode,
-            activeOwner: promoQueueLeaseArbiter.snapshot.activeOwner,
+            activeOwner: activeOwner,
             remoteMessageCoordination: remoteMessageCoordinationSnapshot,
             modalAttemptPhase: modalPromptCoordinationManager.modalAttemptPhase,
             hasPendingModalPrompt: modalPromptCoordinationManager.hasPendingModalPrompt,

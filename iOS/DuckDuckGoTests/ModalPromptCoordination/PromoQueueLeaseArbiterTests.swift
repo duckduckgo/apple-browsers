@@ -185,8 +185,8 @@ struct PromoQueueLeaseArbiterTests {
     }
 
     @available(iOS 16, *)
-    @Test("A dropped remote-message token stops blocking modal acquisition", .timeLimit(.minutes(1)))
-    func droppedRemoteMessageTokenStopsBlockingModalAcquisition() throws {
+    @Test("A dropped remote-message token is observed as idle and reclaimed on modal acquisition", .timeLimit(.minutes(1)))
+    func droppedRemoteMessageTokenIsObservedAsIdleAndReclaimedOnModalAcquisition() throws {
         let arbiter = PromoQueueLeaseArbiter()
         let session = makeRemoteMessageSession()
         do {
@@ -202,8 +202,8 @@ struct PromoQueueLeaseArbiterTests {
     }
 
     @available(iOS 16, *)
-    @Test("A dropped modal token stops blocking remote-message acquisition", .timeLimit(.minutes(1)))
-    func droppedModalTokenStopsBlockingRemoteMessageAcquisition() throws {
+    @Test("A dropped modal token is observed as idle and reclaimed on remote-message acquisition", .timeLimit(.minutes(1)))
+    func droppedModalTokenIsObservedAsIdleAndReclaimedOnRemoteMessageAcquisition() throws {
         let arbiter = PromoQueueLeaseArbiter()
         do {
             let droppedLease = try acquiredLease(from: arbiter.acquireModalLease())
@@ -211,6 +211,7 @@ struct PromoQueueLeaseArbiterTests {
             _ = droppedLease
         }
 
+        #expect(arbiter.snapshot.activeOwner == nil)
         let session = makeRemoteMessageSession()
         let remoteMessageLease = try acquiredLease(from: arbiter.acquireRemoteMessageLease(for: session))
 

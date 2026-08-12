@@ -42,6 +42,7 @@ jobs:
         include:
           - xcode-version: "26.4"
             runner: bitrise:macos26-m4
+            runner-name: bitrise-macos26-m4
 
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.runner }}
@@ -81,6 +82,7 @@ jobs:
 
     - name: Start PIR Fake Broker
       run: |
+        asdf install nodejs 18.16.0
         cd pir-fake-broker
         cd scripts
         ./install-prerequisites.sh
@@ -262,7 +264,7 @@ jobs:
       uses: actions/upload-artifact@v6
       if: failure() || cancelled()
       with:
-        name: "BuildLogs ${{ matrix.runner }}"
+        name: "BuildLogs ${{ matrix.runner-name }}"
         path: |
           macOS/xcodebuild.log
           macOS/pir-process.log

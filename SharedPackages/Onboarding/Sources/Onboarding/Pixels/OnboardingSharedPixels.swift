@@ -344,7 +344,7 @@ public enum OnboardingSharedPixelEvent: PixelKit.Event, Equatable {
     /// The Search/AI address-bar toggle-mode screen.
     public enum AIToggleModeEvent: Equatable {
         case shown
-        case clicked(enabled: Bool)
+        case clicked(openNewTabsWithAIChat: Bool)
     }
 
     /// The "Keep Duck.ai on / Turn Duck.ai off" screen.
@@ -647,8 +647,8 @@ private extension OnboardingSharedPixelEvent {
             switch event {
             case .shown:
                 return nil
-            case .clicked(let enabled):
-                return String(enabled)
+            case .clicked(let openNewTabsWithAIChat):
+                return String(openNewTabsWithAIChat)
             }
         case .preferencesDuckAI(let event):
             switch event {

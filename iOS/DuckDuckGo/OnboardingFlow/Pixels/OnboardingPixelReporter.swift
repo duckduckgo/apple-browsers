@@ -117,7 +117,26 @@ protocol OnboardingAddToDockReporting {
     func measureAddToDockTutorialDismissCTAAction()
 }
 
-typealias LinearOnboardingPixelReporting = OnboardingIntroPixelReporting & OnboardingAddToDockReporting
+/// Reporting for the download-reason segmented onboarding flow (treatment cohort only): the download-reason
+/// screen and the tailored preferences steps that follow it.
+protocol OnboardingDownloadReasonPixelReporting {
+    func measureDownloadReasonImpression()
+    func measureDownloadReasonSelection(_ reason: OnboardingDownloadReason)
+    func measureSearchPrivacySettingsImpression()
+    func measureSearchPrivacySettingsSelection(recentlyVisitedSitesEnabled: Bool, safeSearchEnabled: Bool)
+    func measureAIModelImpression()
+    func measureAIModelSelection(model: String)
+    func measureToggleInputModeImpression()
+    func measureToggleInputModeSelection(openNewTabsWithAIChat: Bool)
+    func measureAISearchSettingsImpression()
+    func measureAISearchSettingsSelection(searchAssistEnabled: Bool, aiGeneratedImagesEnabled: Bool)
+    func measureKeepDuckAIImpression()
+    func measureKeepDuckAISelection(isEnabled: Bool)
+    func measureDuckPlayerImpression()
+    func measureDuckPlayerSelection(youTubeAdBlockingEnabled: Bool, duckPlayerEnabled: Bool)
+}
+
+typealias LinearOnboardingPixelReporting = OnboardingIntroPixelReporting & OnboardingAddToDockReporting & OnboardingDownloadReasonPixelReporting
 typealias OnboardingPixelReporting = LinearOnboardingPixelReporting & OnboardingCustomInteractionPixelReporting & OnboardingDaxDialogsReporting
 
 // MARK: - Implementation
@@ -624,6 +643,95 @@ extension OnboardingPixelParameter.Variant {
             self = .duckAIChat
         case .search:
             self = .duckAISearch
+        }
+    }
+
+}
+
+// MARK: - OnboardingPixelReporter + Download Reason Segmented Flow
+
+extension OnboardingPixelReporter: OnboardingDownloadReasonPixelReporting {
+
+    func measureDownloadReasonImpression() {
+        sharedPixelHandler.fire(.downloadChoice(.shown),
+                                source: sharedPixelsStorage.onboardingSource,
+                                flow: sharedPixelsStorage.onboardingFlow)
+    }
+
+    func measureDownloadReasonSelection(_ reason: OnboardingDownloadReason) {
+        sharedPixelHandler.fire(.downloadChoice(.clicked(.init(reason))),
+                                source: sharedPixelsStorage.onboardingSource,
+                                flow: sharedPixelsStorage.onboardingFlow)
+        // Persist the chosen reason as the variant so every subsequent tailored-step pixel carries it.
+        sharedPixelsStorage.onboardingVariant = OnboardingPixelParameter.Variant(reason)
+    }
+
+    func measureSearchPrivacySettingsImpression() {
+        fireTailoredStepPixel(.preferencesSerp(.shown))
+    }
+
+    func measureSearchPrivacySettingsSelection(recentlyVisitedSitesEnabled: Bool, safeSearchEnabled: Bool) {
+        fireTailoredStepPixel(.preferencesSerp(.clicked(recentlyVisitedSitesEnabled: recentlyVisitedSitesEnabled, safeSearchEnabled: safeSearchEnabled)))
+    }
+
+    func measureAIModelImpression() {
+        fireTailoredStepPixel(.preferencesAIModel(.shown))
+    }
+
+    func measureAIModelSelection(model: String) {
+        fireTailoredStepPixel(.preferencesAIModel(.clicked(model: model)))
+    }
+
+    func measureToggleInputModeImpression() {
+        fireTailoredStepPixel(.preferencesAIToggleMode(.shown))
+    }
+
+    func measureToggleInputModeSelection(openNewTabsWithAIChat: Bool) {
+        fireTailoredStepPixel(.preferencesAIToggleMode(.clicked(openNewTabsWithAIChat: openNewTabsWithAIChat)))
+    }
+
+    func measureAISearchSettingsImpression() {
+        fireTailoredStepPixel(.preferencesAISearch(.shown))
+    }
+
+    func measureAISearchSettingsSelection(searchAssistEnabled: Bool, aiGeneratedImagesEnabled: Bool) {
+        fireTailoredStepPixel(.preferencesAISearch(.clicked(searchAssistEnabled: searchAssistEnabled, aiGeneratedImagesEnabled: aiGeneratedImagesEnabled)))
+    }
+
+    func measureKeepDuckAIImpression() {
+        fireTailoredStepPixel(.preferencesDuckAI(.shown))
+    }
+
+    func measureKeepDuckAISelection(isEnabled: Bool) {
+        fireTailoredStepPixel(.preferencesDuckAI(.clicked(isEnabled ? .on : .off)))
+    }
+
+    func measureDuckPlayerImpression() {
+        fireTailoredStepPixel(.preferencesYoutube(.shown))
+    }
+
+    func measureDuckPlayerSelection(youTubeAdBlockingEnabled: Bool, duckPlayerEnabled: Bool) {
+        fireTailoredStepPixel(.preferencesYoutube(.clicked(youTubeAdBlockingEnabled: youTubeAdBlockingEnabled, duckPlayerEnabled: duckPlayerEnabled)))
+    }
+
+    // Fires a tailored-step pixel with the source, flow and the stored download-reason variant.
+    private func fireTailoredStepPixel(_ event: OnboardingSharedPixelEvent) {
+        sharedPixelHandler.fire(event,
+                                source: sharedPixelsStorage.onboardingSource,
+                                flow: sharedPixelsStorage.onboardingFlow,
+                                variant: sharedPixelsStorage.onboardingVariant)
+    }
+
+}
+
+private extension OnboardingSharedPixelEvent.DownloadChoiceEvent.Value {
+
+    init(_ reason: OnboardingDownloadReason) {
+        switch reason {
+        case .browserPrivately: self = .search
+        case .privateAIChat: self = .aiChat
+        case .noAI: self = .noAI
+        case .blockAds: self = .adBlocking
         }
     }
 

@@ -1261,6 +1261,155 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(sharedPixelHandlerMock.receivedVariant, .duckAISearch)
     }
 
+    // MARK: - Download Reason Segmented Flow
+
+    func testWhenMeasureTailoredStepImpressionsThenCorrectShownPixelsFire() {
+        // WHEN
+        sut.measureDownloadReasonImpression()
+        sut.measureSearchPrivacySettingsImpression()
+        sut.measureAIModelImpression()
+        sut.measureToggleInputModeImpression()
+        sut.measureAISearchSettingsImpression()
+        sut.measureKeepDuckAIImpression()
+        sut.measureDuckPlayerImpression()
+
+        // THEN
+        XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [
+            .downloadChoice(.shown),
+            .preferencesSerp(.shown),
+            .preferencesAIModel(.shown),
+            .preferencesAIToggleMode(.shown),
+            .preferencesAISearch(.shown),
+            .preferencesDuckAI(.shown),
+            .preferencesYoutube(.shown)
+        ])
+    }
+
+    func testWhenMeasureDownloadReasonImpressionThenNoVariantIsCarried() {
+        // WHEN
+        sut.measureDownloadReasonImpression()
+
+        // THEN
+        XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.downloadChoice(.shown)])
+        XCTAssertNil(sharedPixelHandlerMock.receivedVariant)
+    }
+
+    func testWhenMeasureTailoredStepImpressionThenStoredVariantIsCarried() {
+        // GIVEN
+        sharedPixelsStorageMock.onboardingVariant = .downloadReasonSearch
+
+        // WHEN
+        sut.measureSearchPrivacySettingsImpression()
+
+        // THEN
+        XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.preferencesSerp(.shown)])
+        XCTAssertEqual(sharedPixelHandlerMock.receivedVariant, .downloadReasonSearch)
+    }
+
+    func testWhenSegmentedFlowStepFiresThenCarriesTreatmentSourceAndFlow() {
+        // GIVEN
+        sharedPixelsStorageMock.onboardingSource = .default
+        sharedPixelsStorageMock.onboardingFlow = .tailoredByDownloadReason
+
+        // WHEN
+        sut.measureDownloadReasonImpression()
+
+        // THEN
+        XCTAssertEqual(sharedPixelHandlerMock.receivedSource, .default)
+        XCTAssertEqual(sharedPixelHandlerMock.receivedFlow, .tailoredByDownloadReason)
+    }
+
+    func testWhenMeasureDownloadReasonSelectionThenDownloadChoiceClickedFiresWithMappedReason() {
+        // WHEN
+        sut.measureDownloadReasonSelection(.browserPrivately)
+        sut.measureDownloadReasonSelection(.privateAIChat)
+        sut.measureDownloadReasonSelection(.noAI)
+        sut.measureDownloadReasonSelection(.blockAds)
+
+        // THEN
+        XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [
+            .downloadChoice(.clicked(.search)),
+            .downloadChoice(.clicked(.aiChat)),
+            .downloadChoice(.clicked(.noAI)),
+            .downloadChoice(.clicked(.adBlocking))
+        ])
+        // The download-choice pixel itself carries no variant (the variant is set from this choice).
+        XCTAssertNil(sharedPixelHandlerMock.receivedVariant)
+    }
+
+    func testWhenMeasureDownloadReasonSelectionThenChosenReasonPersistedAsVariant() {
+        let expectedVariants: [(OnboardingDownloadReason, OnboardingPixelParameter.Variant)] = [
+            (.browserPrivately, .downloadReasonSearch),
+            (.privateAIChat, .downloadReasonAIChat),
+            (.noAI, .downloadReasonNoAI),
+            (.blockAds, .downloadReasonAdBlocking)
+        ]
+
+        for (reason, expectedVariant) in expectedVariants {
+            // WHEN
+            sut.measureDownloadReasonSelection(reason)
+
+            // THEN
+            XCTAssertEqual(sharedPixelsStorageMock.onboardingVariant, expectedVariant, "Failed for reason \(reason)")
+        }
+    }
+
+    func testWhenMeasureSearchPrivacySettingsSelectionThenSerpClickedFires() {
+        // WHEN
+        sut.measureSearchPrivacySettingsSelection(recentlyVisitedSitesEnabled: true, safeSearchEnabled: false)
+
+        // THEN
+        XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.preferencesSerp(.clicked(recentlyVisitedSitesEnabled: true, safeSearchEnabled: false))])
+    }
+
+    func testWhenMeasureAIModelSelectionThenAIModelClickedFires() {
+        // WHEN
+        sut.measureAIModelSelection(model: "claude")
+
+        // THEN
+        XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.preferencesAIModel(.clicked(model: "claude"))])
+    }
+
+    func testWhenMeasureToggleInputModeSelectionThenToggleModeClickedFires() {
+        // WHEN
+        sut.measureToggleInputModeSelection(openNewTabsWithAIChat: true)
+
+        // THEN
+        XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.preferencesAIToggleMode(.clicked(openNewTabsWithAIChat: true))])
+    }
+
+    func testWhenMeasureAISearchSettingsSelectionThenAISearchClickedFires() {
+        // WHEN
+        sut.measureAISearchSettingsSelection(searchAssistEnabled: false, aiGeneratedImagesEnabled: true)
+
+        // THEN
+        XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.preferencesAISearch(.clicked(searchAssistEnabled: false, aiGeneratedImagesEnabled: true))])
+    }
+
+    func testWhenMeasureKeepDuckAISelectionEnabledThenDuckAIOnClickedFires() {
+        // WHEN
+        sut.measureKeepDuckAISelection(isEnabled: true)
+
+        // THEN
+        XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.preferencesDuckAI(.clicked(.on))])
+    }
+
+    func testWhenMeasureKeepDuckAISelectionDisabledThenDuckAIOffClickedFires() {
+        // WHEN
+        sut.measureKeepDuckAISelection(isEnabled: false)
+
+        // THEN
+        XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.preferencesDuckAI(.clicked(.off))])
+    }
+
+    func testWhenMeasureDuckPlayerSelectionThenYoutubeClickedFires() {
+        // WHEN
+        sut.measureDuckPlayerSelection(youTubeAdBlockingEnabled: true, duckPlayerEnabled: false)
+
+        // THEN
+        XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.preferencesYoutube(.clicked(youTubeAdBlockingEnabled: true, duckPlayerEnabled: false))])
+    }
+
 }
 
 private final class MockOnboardingSharedPixelHandling: OnboardingSharedPixelHandling {

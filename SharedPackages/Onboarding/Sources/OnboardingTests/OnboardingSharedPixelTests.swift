@@ -495,7 +495,7 @@ final class OnboardingSharedPixelTests: XCTestCase {
             let pixelHandler = makeHandler(pixelFiring: pixelFiring)
 
             // WHEN
-            pixelHandler.fire(.preferencesAIToggleMode(.clicked(enabled: enabled)))
+            pixelHandler.fire(.preferencesAIToggleMode(.clicked(openNewTabsWithAIChat: enabled)))
 
             // THEN
             let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)

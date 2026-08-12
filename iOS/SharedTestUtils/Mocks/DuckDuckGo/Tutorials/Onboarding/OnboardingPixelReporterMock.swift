@@ -22,7 +22,7 @@ import Core
 import Onboarding
 @testable import DuckDuckGo
 
-final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, OnboardingCustomInteractionPixelReporting, OnboardingDaxDialogsReporting, OnboardingAddToDockReporting {
+final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, OnboardingCustomInteractionPixelReporting, OnboardingDaxDialogsReporting, OnboardingAddToDockReporting, OnboardingDownloadReasonPixelReporting {
 
     private(set) var didCallMeasureOnboardingIntroImpression = false
     private(set) var didCallMeasureSkipOnboardingCTAAction = false
@@ -338,5 +338,92 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
 
     func measureSubscriptionDialogNewTabDismissButtonTapped() {
         didCallMeasureSubscriptionPromoDialogNewTabDismissButtonTapped = true
+    }
+
+    // MARK: - Download Reason Segmented Flow
+
+    private(set) var didCallMeasureDownloadReasonImpression = false
+    private(set) var didCallMeasureDownloadReasonSelection = false
+    private(set) var didCaptureDownloadReasonSelection: OnboardingDownloadReason?
+    private(set) var didCallMeasureSearchPrivacySettingsImpression = false
+    private(set) var didCallMeasureSearchPrivacySettingsSelection = false
+    private(set) var didCaptureSearchPrivacySettingsSelection: (recentlyVisitedSitesEnabled: Bool, safeSearchEnabled: Bool)?
+    private(set) var didCallMeasureAIModelImpression = false
+    private(set) var didCallMeasureAIModelSelection = false
+    private(set) var didCaptureAIModelSelection: String?
+    private(set) var didCallMeasureToggleInputModeImpression = false
+    private(set) var didCallMeasureToggleInputModeSelection = false
+    private(set) var didCaptureToggleInputModeSelection: Bool?
+    private(set) var didCallMeasureAISearchSettingsImpression = false
+    private(set) var didCallMeasureAISearchSettingsSelection = false
+    private(set) var didCaptureAISearchSettingsSelection: (searchAssistEnabled: Bool, aiGeneratedImagesEnabled: Bool)?
+    private(set) var didCallMeasureKeepDuckAIImpression = false
+    private(set) var didCallMeasureKeepDuckAISelection = false
+    private(set) var didCaptureKeepDuckAISelection: Bool?
+    private(set) var didCallMeasureDuckPlayerImpression = false
+    private(set) var didCallMeasureDuckPlayerSelection = false
+    private(set) var didCaptureDuckPlayerSelection: (youTubeAdBlockingEnabled: Bool, duckPlayerEnabled: Bool)?
+
+    func measureDownloadReasonImpression() {
+        didCallMeasureDownloadReasonImpression = true
+    }
+
+    func measureDownloadReasonSelection(_ reason: OnboardingDownloadReason) {
+        didCallMeasureDownloadReasonSelection = true
+        didCaptureDownloadReasonSelection = reason
+    }
+
+    func measureSearchPrivacySettingsImpression() {
+        didCallMeasureSearchPrivacySettingsImpression = true
+    }
+
+    func measureSearchPrivacySettingsSelection(recentlyVisitedSitesEnabled: Bool, safeSearchEnabled: Bool) {
+        didCallMeasureSearchPrivacySettingsSelection = true
+        didCaptureSearchPrivacySettingsSelection = (recentlyVisitedSitesEnabled, safeSearchEnabled)
+    }
+
+    func measureAIModelImpression() {
+        didCallMeasureAIModelImpression = true
+    }
+
+    func measureAIModelSelection(model: String) {
+        didCallMeasureAIModelSelection = true
+        didCaptureAIModelSelection = model
+    }
+
+    func measureToggleInputModeImpression() {
+        didCallMeasureToggleInputModeImpression = true
+    }
+
+    func measureToggleInputModeSelection(openNewTabsWithAIChat: Bool) {
+        didCallMeasureToggleInputModeSelection = true
+        didCaptureToggleInputModeSelection = openNewTabsWithAIChat
+    }
+
+    func measureAISearchSettingsImpression() {
+        didCallMeasureAISearchSettingsImpression = true
+    }
+
+    func measureAISearchSettingsSelection(searchAssistEnabled: Bool, aiGeneratedImagesEnabled: Bool) {
+        didCallMeasureAISearchSettingsSelection = true
+        didCaptureAISearchSettingsSelection = (searchAssistEnabled, aiGeneratedImagesEnabled)
+    }
+
+    func measureKeepDuckAIImpression() {
+        didCallMeasureKeepDuckAIImpression = true
+    }
+
+    func measureKeepDuckAISelection(isEnabled: Bool) {
+        didCallMeasureKeepDuckAISelection = true
+        didCaptureKeepDuckAISelection = isEnabled
+    }
+
+    func measureDuckPlayerImpression() {
+        didCallMeasureDuckPlayerImpression = true
+    }
+
+    func measureDuckPlayerSelection(youTubeAdBlockingEnabled: Bool, duckPlayerEnabled: Bool) {
+        didCallMeasureDuckPlayerSelection = true
+        didCaptureDuckPlayerSelection = (youTubeAdBlockingEnabled, duckPlayerEnabled)
     }
 }

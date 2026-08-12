@@ -19389,6 +19389,18 @@
         }
       }
     },
+    "bookmarks.bar.context-menu.reorder-by-name" : {
+      "comment" : "Sort by name permanently menu item for bookmark folder context menus",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Sort by name permanently"
+          }
+        }
+      }
+    },
     "bookmarks.bar.folder.empty" : {
       "comment" : "Empty state for a bookmarks bar folder",
       "extractionState" : "extracted_with_value",
@@ -22143,6 +22155,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "По убыванию"
+          }
+        }
+      }
+    },
+    "bookmarks.undo-action.reorder-by-name" : {
+      "comment" : "Undo and redo action name for permanently sorting bookmarks by name",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Sort by name permanently"
           }
         }
       }
@@ -113387,6 +113411,42 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Сортировать по названию"
+          }
+        }
+      }
+    },
+    "tooltip.bookmarks.sort.view" : {
+      "comment" : "Tooltip to activate the bookmark sort view",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Sort bookmarks view"
+          }
+        }
+      }
+    },
+    "tooltip.bookmarks.sort.view.name.title" : {
+      "comment" : "Title when bookmark sort by name is enabled",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Sort View by Name"
+          }
+        }
+      }
+    },
+    "tooltip.bookmarks.sort.view.title" : {
+      "comment" : "Title for the bookmark sort view button",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Sort View"
           }
         }
       }

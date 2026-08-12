@@ -278,12 +278,147 @@ final class SubscriptionOnboardingFlowViewModelTests: XCTestCase {
         XCTAssertEqual(requestedModelID, "claude-sonnet-5")
     }
 
+    // MARK: - Funnel reporting
+
+    func testWhenASectionCompletesThenItIsReportedCompleted() {
+        let spy = SpyInstrumentation()
+        let sut = makeSUT(entryPoint: .postCheckout, instrumentation: spy)
+
+        sut.sectionDidComplete(.vpnActivation)
+
+        XCTAssertEqual(spy.completed, [.vpnActivation])
+        XCTAssertTrue(spy.skipped.isEmpty)
+    }
+
+    /// Re-entering an already-completed activation section (e.g. via a navigation quirk) must not re-fire the
+    /// completion pixel.
+    func testWhenAnAlreadyCompletedSectionCompletesAgainThenItIsNotReportedTwice() {
+        let spy = SpyInstrumentation()
+        let sut = makeSUT(entryPoint: .postCheckout, instrumentation: spy)
+
+        sut.sectionDidComplete(.vpnActivation)
+        sut.sectionDidComplete(.vpnActivation)
+
+        XCTAssertEqual(spy.completed, [.vpnActivation])
+    }
+
+    /// The VPN's on-state "Next" and its permission-denied "Skip" share `advance()`, so the skip is derived
+    /// from the item still being incomplete.
+    func testWhenLeavingTheVPNStepWithoutTurningItOnThenItIsReportedSkipped() {
+        let spy = SpyInstrumentation()
+        let sut = makeSUT(entryPoint: .postCheckout, instrumentation: spy)
+        sut.proceed()
+        sut.proceed()
+        XCTAssertEqual(sut.currentSection, .vpnActivation)
+
+        sut.sectionDidRequestAdvance()
+
+        XCTAssertEqual(spy.skipped, [.vpnActivation])
+    }
+
+    func testWhenLeavingTheVPNStepAfterTurningItOnThenNoSkipIsReported() {
+        let spy = SpyInstrumentation()
+        let sut = makeSUT(entryPoint: .postCheckout, instrumentation: spy)
+        sut.proceed()
+        sut.proceed()
+        sut.sectionDidComplete(.vpnActivation)
+
+        sut.sectionDidRequestAdvance()
+
+        XCTAssertTrue(spy.skipped.isEmpty)
+    }
+
+    /// Advancing from Duck.ai is itself the skip: starting a chat shows the interstitial instead of advancing.
+    func testWhenLeavingDuckAIThenItIsReportedSkipped() {
+        let spy = SpyInstrumentation()
+        let sut = makeSUT(entryPoint: .subscriptionSettings,
+                          completed: [.vpn, .widget, .idtr],
+                          instrumentation: spy)
+        XCTAssertEqual(sut.currentSection, .duckAI)
+
+        sut.sectionDidRequestAdvance()
+
+        XCTAssertEqual(spy.skipped, [.duckAI])
+    }
+
+    func testWhenLeavingAStepWithNoSkipCTAThenNoSkipIsReported() {
+        for section in [SubscriptionOnboardingSection.orderConfirmation, .welcome, .vpnWidget, .idtr] {
+            let spy = SpyInstrumentation()
+            let sut = makeSUT(entryPoint: .postCheckout, instrumentation: spy)
+            while sut.currentSection != section, sut.currentSection != nil {
+                sut.proceed()
+            }
+            // Activation steps mark themselves complete before advancing; overviews have no item at all.
+            if case .activation = section.kind {
+                sut.sectionDidComplete(section)
+            }
+
+            sut.sectionDidRequestAdvance()
+
+            XCTAssertTrue(spy.skipped.isEmpty, "\(section) should have no skip CTA to report")
+        }
+    }
+
+    // MARK: - Funnel reporting, PIR sheet
+
+    func testWhenThePIRSheetOpensThenItIsReportedShown() {
+        let spy = SpyInstrumentation()
+        let sut = makeSUT(entryPoint: .postCheckout, instrumentation: spy)
+
+        sut.reportPIRPresentation(true)
+
+        XCTAssertEqual(spy.shown, [.pir])
+        XCTAssertTrue(spy.completed.isEmpty)
+    }
+
+    func testWhenThePIRSheetClosesAfterAProfileIsSavedThenItIsReportedCompleted() {
+        let spy = SpyInstrumentation()
+        let store = MockProgressStore()
+        let sut = makeSUT(entryPoint: .postCheckout, store: store, instrumentation: spy)
+        sut.reportPIRPresentation(true)
+
+        // What saving a Data Broker Protection profile writes, from outside the flow.
+        store.completedItems.insert(.pir)
+        sut.reportPIRPresentation(false)
+
+        XCTAssertEqual(spy.shown, [.pir])
+        XCTAssertEqual(spy.completed, [.pir])
+    }
+
+    /// Closing the sheet is not a skip — PIR has a close button, not a skip CTA.
+    func testWhenThePIRSheetClosesWithoutAProfileThenNothingFurtherIsReported() {
+        let spy = SpyInstrumentation()
+        let sut = makeSUT(entryPoint: .postCheckout, instrumentation: spy)
+        sut.reportPIRPresentation(true)
+
+        sut.reportPIRPresentation(false)
+
+        XCTAssertEqual(spy.shown, [.pir])
+        XCTAssertTrue(spy.completed.isEmpty)
+        XCTAssertTrue(spy.skipped.isEmpty)
+    }
+
+    // MARK: - Funnel reporting, shown
+
+    /// `shown` must come from the screen appearing, never from the factory building it — on iOS 15 a
+    /// `NavigationLink` builds its destination before pushing it.
+    func testWhenAScreenIsBuiltThenItIsNotYetReportedShown() {
+        let spy = SpyInstrumentation()
+        let sut = makeSUT(entryPoint: .postCheckout, instrumentation: spy)
+        let factory = SubscriptionOnboardingViewFactory(flow: sut)
+
+        _ = factory.screen(for: .welcome)
+
+        XCTAssertTrue(spy.shown.isEmpty)
+    }
+
     // MARK: - Helpers
 
     private func makeSUT(entryPoint: SubscriptionOnboardingEntryPoint,
                          completed: Set<SubscriptionOnboardingChecklistItem> = [],
                          isPIRAvailable: Bool = true,
                          store: MockProgressStore? = nil,
+                         instrumentation: SubscriptionOnboardingInstrumenting? = nil,
                          onFinish: @escaping () -> Void = {},
                          onRequestDuckAIChat: @escaping (String?) -> Void = { _ in }) -> SubscriptionOnboardingFlowViewModel {
         let store = store ?? MockProgressStore()
@@ -293,8 +428,23 @@ final class SubscriptionOnboardingFlowViewModelTests: XCTestCase {
                                                   progress: progress,
                                                   onFinish: onFinish,
                                                   onRequestDuckAIChat: onRequestDuckAIChat,
+                                                  instrumentation: instrumentation ?? NullSubscriptionOnboardingInstrumentation(),
                                                   pirScreen: { EmptyView() })
     }
+}
+
+/// Records what the flow reported, so a test can assert the funnel rather than only the pixel names.
+private final class SpyInstrumentation: SubscriptionOnboardingInstrumenting {
+    private(set) var shown: [SubscriptionOnboardingSection] = []
+    private(set) var completed: [SubscriptionOnboardingSection] = []
+    private(set) var skipped: [SubscriptionOnboardingSection] = []
+
+    /// Deliberately unrecorded: asserting it would mean calling `startPrefetching()`, which starts real
+    /// fetches. The flow-start pixel is covered by `SubscriptionOnboardingInstrumentationTests`.
+    func flowStarted() {}
+    func stepShown(_ section: SubscriptionOnboardingSection) { shown.append(section) }
+    func stepCompleted(_ section: SubscriptionOnboardingSection) { completed.append(section) }
+    func stepSkipped(_ section: SubscriptionOnboardingSection) { skipped.append(section) }
 }
 
 /// A reference-typed persistor so a test can observe writes the flow makes through its own copy.

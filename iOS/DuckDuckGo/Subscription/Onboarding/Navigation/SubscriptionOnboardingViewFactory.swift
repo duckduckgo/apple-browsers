@@ -42,7 +42,8 @@ struct SubscriptionOnboardingViewFactory {
     }
 
     func screen(for section: SubscriptionOnboardingSection) -> AnyView {
-        content(for: section)
+        AnyView(content(for: section)
+            .onFirstAppear { flow.instrumentation.stepShown(section) })
     }
 
     private func content(for section: SubscriptionOnboardingSection) -> AnyView {
@@ -107,6 +108,7 @@ struct SubscriptionOnboardingViewFactory {
                     guard item == .pir else { return }
                     flow.isPresentingPIR = true
                 },
+                onPIRPresentationChanged: { flow.reportPIRPresentation($0) },
                 onNext: { flow.finish() }))
 
         case .pir:

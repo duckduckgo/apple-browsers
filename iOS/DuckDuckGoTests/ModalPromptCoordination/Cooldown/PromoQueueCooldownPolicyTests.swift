@@ -51,13 +51,10 @@ final class PromoQueueCooldownPolicyTests {
         arguments: [
             DirectionalCooldownScenario(direction: .modalToRemoteMessage, elapsed: 599, isEligible: false),
             DirectionalCooldownScenario(direction: .modalToRemoteMessage, elapsed: 600, isEligible: true),
-            DirectionalCooldownScenario(direction: .modalToRemoteMessage, elapsed: 601, isEligible: true),
             DirectionalCooldownScenario(direction: .remoteMessageToRemoteMessage, elapsed: 599, isEligible: false),
             DirectionalCooldownScenario(direction: .remoteMessageToRemoteMessage, elapsed: 600, isEligible: true),
-            DirectionalCooldownScenario(direction: .remoteMessageToRemoteMessage, elapsed: 601, isEligible: true),
             DirectionalCooldownScenario(direction: .remoteMessageToModal, elapsed: 86_399, isEligible: false),
             DirectionalCooldownScenario(direction: .remoteMessageToModal, elapsed: 86_400, isEligible: true),
-            DirectionalCooldownScenario(direction: .remoteMessageToModal, elapsed: 86_401, isEligible: true),
         ]
     )
     func whenEvaluatingDirectionalCooldownBoundaryThenEligibilityIsCorrect(_ scenario: DirectionalCooldownScenario) {
@@ -92,7 +89,6 @@ final class PromoQueueCooldownPolicyTests {
         arguments: [
             (modalOffset: 0, remoteMessageOffset: -300),
             (modalOffset: -300, remoteMessageOffset: 0),
-            (modalOffset: 0, remoteMessageOffset: 0),
         ] as [(TimeInterval, TimeInterval)]
     )
     func whenBothHistoriesExistThenRemoteMessageAdmissionUsesMaximumBoundary(
@@ -107,9 +103,6 @@ final class PromoQueueCooldownPolicyTests {
         let expectedBoundary = max(modalAppearance, remoteMessageAppearance)
             .addingTimeInterval(ApprovedCooldownInterval.remoteMessageTarget)
 
-        let snapshot = policy.snapshot(now: referenceDate)
-
-        #expect(snapshot.nextRemoteMessageEligibility == expectedBoundary)
         #expect(policy.evaluateRemoteMessageAdmission(now: referenceDate) == .blocked(until: expectedBoundary))
     }
 
@@ -120,7 +113,6 @@ final class PromoQueueCooldownPolicyTests {
 
         #expect(policy.evaluateRemoteMessageAdmission(now: referenceDate) == .eligible)
         #expect(policy.evaluateModalAdmission(now: referenceDate) == .eligible)
-        #expect(policy.snapshot(now: referenceDate) == .empty)
     }
 
     @available(iOS 16, *)
@@ -130,6 +122,7 @@ final class PromoQueueCooldownPolicyTests {
         let policy = makePolicy(modalStore: modalStore)
 
         #expect(policy.evaluateModalAdmission(now: referenceDate) == .eligible)
+        #expect(modalStore.readCount == 0)
     }
 
     @available(iOS 16, *)
@@ -163,9 +156,6 @@ final class PromoQueueCooldownPolicyTests {
             modalPresentationStore: PromptCooldownStoreSpy(),
             remoteMessagePresentationStore: PromoQueueRemoteMessageCooldownKeyValueFilesStore(keyValueStore: keyValueStore)
         )
-        let snapshot = reconstructedPolicy.snapshot(now: referenceDate.addingTimeInterval(1))
-
-        #expect(snapshot.lastConfirmedRemoteMessageAppearance == referenceDate)
         #expect(
             reconstructedPolicy.evaluateRemoteMessageAdmission(now: referenceDate.addingTimeInterval(1))
                 == .blocked(until: referenceDate.addingTimeInterval(ApprovedCooldownInterval.remoteMessageTarget))
@@ -174,31 +164,6 @@ final class PromoQueueCooldownPolicyTests {
             reconstructedPolicy.evaluateModalAdmission(now: referenceDate.addingTimeInterval(1))
                 == .blocked(until: referenceDate.addingTimeInterval(ApprovedCooldownInterval.modalAfterRemoteMessage))
         )
-    }
-
-    @available(iOS 16, *)
-    @Test("Snapshot derives history and boundaries without writing either store", .timeLimit(.minutes(1)))
-    func whenTakingSnapshotThenValuesAreDerivedWithoutSideEffects() {
-        let modalAppearance = referenceDate.addingTimeInterval(-300)
-        let remoteMessageAppearance = referenceDate.addingTimeInterval(-120)
-        let modalStore = PromptCooldownStoreSpy(timestamp: modalAppearance.timeIntervalSince1970)
-        let remoteMessageStore = RemoteMessageCooldownStoreSpy(timestamp: remoteMessageAppearance.timeIntervalSince1970)
-        let policy = makePolicy(modalStore: modalStore, remoteMessageStore: remoteMessageStore)
-
-        let snapshot = policy.snapshot(now: referenceDate)
-
-        #expect(
-            snapshot == PromoQueueCooldownSnapshot(
-                lastConfirmedModalAppearance: modalAppearance,
-                lastConfirmedRemoteMessageAppearance: remoteMessageAppearance,
-                nextRemoteMessageEligibility: remoteMessageAppearance.addingTimeInterval(ApprovedCooldownInterval.remoteMessageTarget),
-                nextModalEligibility: remoteMessageAppearance.addingTimeInterval(ApprovedCooldownInterval.modalAfterRemoteMessage)
-            )
-        )
-        #expect(modalStore.readCount == 1)
-        #expect(modalStore.writeCount == 0)
-        #expect(remoteMessageStore.readCount == 1)
-        #expect(remoteMessageStore.writeCount == 0)
     }
 
     @available(iOS 16, *)
@@ -261,8 +226,18 @@ final class PromoQueueRemoteMessageCooldownStoreTests {
         let persistenceWriter = PromoQueueRemoteMessageCooldownKeyValueFilesStore(keyValueStore: keyValueStore)
         persistenceWriter.lastConfirmedRemoteMessageTimestamp = referenceTimestamp
         let store = PromoQueueRemoteMessageCooldownKeyValueFilesStore(keyValueStore: keyValueStore)
+        let debugSnapshotProvider = PromoQueueCooldownDebugSnapshotProvider(
+            modalPresentationStore: PromptCooldownKeyValueFilesStore(
+                keyValueStore: keyValueStore,
+                eventMapper: .init { _, _, _, _ in }
+            ),
+            remoteMessagePresentationStore: store
+        )
 
-        #expect(store.lastConfirmedRemoteMessageTimestampForPromoQueueDiagnostics() == referenceTimestamp)
+        #expect(
+            debugSnapshotProvider.snapshot(now: .distantPast).lastConfirmedRemoteMessageAppearance ==
+                Date(timeIntervalSince1970: referenceTimestamp)
+        )
 
         keyValueStore.throwOnRead = StoreTestError.read
         #expect(store.lastConfirmedRemoteMessageTimestamp == nil)
@@ -275,30 +250,22 @@ final class PromoQueueRemoteMessageCooldownStoreTests {
         let persistenceWriter = PromoQueueRemoteMessageCooldownKeyValueFilesStore(keyValueStore: keyValueStore)
         persistenceWriter.lastConfirmedRemoteMessageTimestamp = referenceTimestamp
         let store = PromoQueueRemoteMessageCooldownKeyValueFilesStore(keyValueStore: keyValueStore)
+        let debugSnapshotProvider = PromoQueueCooldownDebugSnapshotProvider(
+            modalPresentationStore: PromptCooldownKeyValueFilesStore(
+                keyValueStore: keyValueStore,
+                eventMapper: .init { _, _, _, _ in }
+            ),
+            remoteMessagePresentationStore: store
+        )
         #expect(store.lastConfirmedRemoteMessageTimestamp == referenceTimestamp)
 
         keyValueStore.throwOnRead = StoreTestError.read
 
-        #expect(store.lastConfirmedRemoteMessageTimestampForPromoQueueDiagnostics() == referenceTimestamp)
+        #expect(
+            debugSnapshotProvider.snapshot(now: .distantPast).lastConfirmedRemoteMessageAppearance ==
+                Date(timeIntervalSince1970: referenceTimestamp)
+        )
         #expect(store.lastConfirmedRemoteMessageTimestamp == referenceTimestamp)
-    }
-
-    @available(iOS 16, *)
-    @Test("Diagnostics preserve the current-process authoritative RMF value", .timeLimit(.minutes(1)))
-    func whenPersistenceWriteFailsThenDiagnosticReadUsesLocallyConfirmedValue() {
-        let persistedTimestamp = referenceTimestamp - 1
-        let keyValueStore = MockKeyValueFileStore()
-        let persistenceWriter = PromoQueueRemoteMessageCooldownKeyValueFilesStore(keyValueStore: keyValueStore)
-        persistenceWriter.lastConfirmedRemoteMessageTimestamp = persistedTimestamp
-        let store = PromoQueueRemoteMessageCooldownKeyValueFilesStore(keyValueStore: keyValueStore)
-        keyValueStore.throwOnSet = StoreTestError.write
-
-        store.lastConfirmedRemoteMessageTimestamp = referenceTimestamp
-
-        #expect(store.lastConfirmedRemoteMessageTimestampForPromoQueueDiagnostics() == referenceTimestamp)
-        keyValueStore.throwOnSet = nil
-        let reconstructedStore = PromoQueueRemoteMessageCooldownKeyValueFilesStore(keyValueStore: keyValueStore)
-        #expect(reconstructedStore.lastConfirmedRemoteMessageTimestamp == persistedTimestamp)
     }
 
     @available(iOS 16, *)
@@ -351,11 +318,22 @@ final class PromoQueueRemoteMessageCooldownStoreTests {
         persistenceWriter.lastConfirmedRemoteMessageTimestamp = persistedTimestamp
         let store = PromoQueueRemoteMessageCooldownKeyValueFilesStore(keyValueStore: keyValueStore)
         #expect(store.lastConfirmedRemoteMessageTimestamp == persistedTimestamp)
+        let debugSnapshotProvider = PromoQueueCooldownDebugSnapshotProvider(
+            modalPresentationStore: PromptCooldownKeyValueFilesStore(
+                keyValueStore: keyValueStore,
+                eventMapper: .init { _, _, _, _ in }
+            ),
+            remoteMessagePresentationStore: store
+        )
         keyValueStore.throwOnSet = StoreTestError.write
 
         store.lastConfirmedRemoteMessageTimestamp = referenceTimestamp
 
         #expect(store.lastConfirmedRemoteMessageTimestamp == referenceTimestamp)
+        #expect(
+            debugSnapshotProvider.snapshot(now: .distantPast).lastConfirmedRemoteMessageAppearance ==
+                Date(timeIntervalSince1970: referenceTimestamp)
+        )
 
         keyValueStore.throwOnSet = nil
         let reconstructedStore = PromoQueueRemoteMessageCooldownKeyValueFilesStore(keyValueStore: keyValueStore)

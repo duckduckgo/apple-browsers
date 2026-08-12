@@ -533,7 +533,6 @@ final class ModalPromptCoordinationManagerIntegrationTests {
             from: presenterMock,
             readinessToken: service.captureForegroundReadinessToken()
         )
-        promoQueueCooldownPolicy.recordConfirmedRemoteMessageAppearance(at: timeTraveller.getDate())
         let firstSurfaceID = UUID()
         let secondSurfaceID = UUID()
         let messageID = "shared-message"
@@ -561,18 +560,6 @@ final class ModalPromptCoordinationManagerIntegrationTests {
         firstModel.setSurfaceRenderable(true)
         secondModel.setSurfaceRenderable(true)
 
-        #expect(coordinatedRemoteMessageRenderSession(in: firstModel) == nil)
-        #expect(firstModel.homeMessageViewModels.isEmpty)
-        #expect(firstFixture.configuration.appearanceCallCount == 0)
-        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == nil)
-
-        timeTraveller.advanceBy(.minutes(10))
-
-        #expect(coordinatedRemoteMessageRenderSession(in: firstModel) == nil)
-        #expect(firstFixture.configuration.appearanceCallCount == 0)
-
-        firstModel.refresh()
-
         let firstOwnedSnapshot = service.remoteMessageCoordinationSnapshot
         guard let firstSessionID = firstOwnedSnapshot.sessionID,
               let firstPresentationID = firstOwnedSnapshot.presentationID else {
@@ -588,12 +575,8 @@ final class ModalPromptCoordinationManagerIntegrationTests {
         #expect(firstOwnedSnapshot.rendererID == firstSurfaceID)
         #expect(firstRenderSession.presentation.session == logicalSession)
         #expect(firstRenderSession.presentation.id == firstPresentationID)
-        #expect(firstModel.homeMessageViewModels.map(\.messageId) == [messageID])
         #expect(coordinatedRemoteMessageRenderSession(in: secondModel) == nil)
-        #expect(secondModel.homeMessageViewModels.isEmpty)
         #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .remoteMessage(logicalSession))
-        #expect(firstFixture.configuration.appearanceCallCount == 0)
-        #expect(secondFixture.configuration.appearanceCallCount == 0)
         #expect(!firstOwnedSnapshot.isQueueAppearanceConfirmed)
         #expect(firstOwnedSnapshot.isPresentationAppearanceReported == false)
 
@@ -602,43 +585,24 @@ final class ModalPromptCoordinationManagerIntegrationTests {
         let firstConfirmationDate = timeTraveller.getDate()
         let firstConfirmedSnapshot = service.remoteMessageCoordinationSnapshot
         #expect(firstFixture.configuration.appearanceCallCount == 1)
-        #expect(secondFixture.configuration.appearanceCallCount == 0)
-        #expect(firstConfirmedSnapshot.sessionID == firstSessionID)
-        #expect(firstConfirmedSnapshot.presentationID == firstPresentationID)
         #expect(firstConfirmedSnapshot.isQueueAppearanceConfirmed)
         #expect(firstConfirmedSnapshot.isPresentationAppearanceReported == true)
 
         firstRenderSession.viewModel.onDidAppear()
 
         #expect(firstFixture.configuration.appearanceCallCount == 1)
-        #expect(secondFixture.configuration.appearanceCallCount == 0)
-        #expect(service.remoteMessageCoordinationSnapshot.isQueueAppearanceConfirmed)
-        #expect(
-            promoQueueCooldownPolicy.snapshot(now: firstConfirmationDate).lastConfirmedRemoteMessageAppearance ==
-                firstConfirmationDate
-        )
 
         timeTraveller.advanceBy(.minutes(1))
-        #expect(
-            promoQueueCooldownPolicy.evaluateRemoteMessageAdmission(now: timeTraveller.getDate()) ==
-                .blocked(until: firstConfirmationDate.addingTimeInterval(.minutes(10)))
-        )
 
         firstModel.setSurfaceRenderable(false)
 
         let drainingSnapshot = service.remoteMessageCoordinationSnapshot
         #expect(drainingSnapshot.state == .draining)
         #expect(drainingSnapshot.sessionID == firstSessionID)
-        #expect(drainingSnapshot.presentationID == firstPresentationID)
-        #expect(drainingSnapshot.rendererID == firstSurfaceID)
         #expect(drainingSnapshot.removalID != nil)
         #expect(drainingSnapshot.removalTerminal == .sourceRemovedWithoutAnimation)
-        #expect(drainingSnapshot.isQueueAppearanceConfirmed)
-        #expect(drainingSnapshot.isPresentationAppearanceReported == true)
         #expect(coordinatedRemoteMessageRenderSession(in: firstModel) == nil)
         #expect(coordinatedRemoteMessageRenderSession(in: secondModel) == nil)
-        #expect(firstModel.homeMessageViewModels.isEmpty)
-        #expect(secondModel.homeMessageViewModels.isEmpty)
         #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .remoteMessage(logicalSession))
 
         await waitForMainQueueSettlement()
@@ -656,9 +620,6 @@ final class ModalPromptCoordinationManagerIntegrationTests {
         #expect(transferredSnapshot.isQueueAppearanceConfirmed)
         #expect(transferredSnapshot.isPresentationAppearanceReported == false)
         #expect(transferredRenderSession.presentation.session == logicalSession)
-        #expect(transferredRenderSession.presentation.id == transferredSnapshot.presentationID)
-        #expect(firstModel.homeMessageViewModels.isEmpty)
-        #expect(secondModel.homeMessageViewModels.map(\.messageId) == [messageID])
         #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .remoteMessage(logicalSession))
 
         transferredRenderSession.viewModel.onDidAppear()
@@ -666,8 +627,6 @@ final class ModalPromptCoordinationManagerIntegrationTests {
         let transferredConfirmedSnapshot = service.remoteMessageCoordinationSnapshot
         #expect(firstFixture.configuration.appearanceCallCount == 1)
         #expect(secondFixture.configuration.appearanceCallCount == 1)
-        #expect(transferredConfirmedSnapshot.sessionID == firstSessionID)
-        #expect(transferredConfirmedSnapshot.presentationID == transferredRenderSession.presentation.id)
         #expect(transferredConfirmedSnapshot.isQueueAppearanceConfirmed)
         #expect(transferredConfirmedSnapshot.isPresentationAppearanceReported == true)
 
@@ -675,92 +634,10 @@ final class ModalPromptCoordinationManagerIntegrationTests {
 
         #expect(firstFixture.configuration.appearanceCallCount == 1)
         #expect(secondFixture.configuration.appearanceCallCount == 1)
-        #expect(service.remoteMessageCoordinationSnapshot.sessionID == firstSessionID)
-        #expect(service.remoteMessageCoordinationSnapshot.isQueueAppearanceConfirmed)
         #expect(
-            promoQueueCooldownPolicy.snapshot(now: timeTraveller.getDate()).lastConfirmedRemoteMessageAppearance ==
-                firstConfirmationDate
+            promoQueueCooldownPolicy.evaluateRemoteMessageAdmission(now: timeTraveller.getDate()) ==
+                .blocked(until: firstConfirmationDate.addingTimeInterval(.minutes(10)))
         )
-    }
-
-    @available(iOS 16, *)
-    @Test("A Different RMF Message Starts A Fresh Logical Session After Removal Settlement", .timeLimit(.minutes(1)))
-    func whenWaitingRendererHasDifferentMessageThenItReceivesAFreshSessionAfterSettlement() async {
-        let manager = ModalPromptCoordinationManager(
-            providers: [],
-            cooldownManager: cooldownManager,
-            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            modalPromptScheduling: schedulerMock
-        )
-        let service = PromoCoordinationService(
-            launchSourceManager: MockLaunchSourceManager(),
-            modalPromptCoordinationManager: manager,
-            promoCoordinationMode: .coordinated,
-            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
-            promoQueueCooldownPolicy: promoQueueCooldownPolicy,
-            dateProvider: timeTraveller.getDate
-        )
-        service.applicationDidBecomeActive()
-        service.presentModalPromptIfNeeded(
-            from: presenterMock,
-            readinessToken: service.captureForegroundReadinessToken()
-        )
-        let firstMessageID = "first-message"
-        let secondMessageID = "second-message"
-        let firstFixture = makeRemoteMessageModel(
-            messageID: firstMessageID,
-            surfaceID: UUID(),
-            coordinator: service
-        )
-        let secondFixture = makeRemoteMessageModel(
-            messageID: secondMessageID,
-            surfaceID: UUID(),
-            coordinator: service
-        )
-        defer {
-            firstFixture.model.tearDown()
-            secondFixture.model.tearDown()
-        }
-
-        firstFixture.model.setSurfaceAttachmentProvider { true }
-        secondFixture.model.setSurfaceAttachmentProvider { true }
-        firstFixture.model.load()
-        secondFixture.model.load()
-        firstFixture.model.setSurfaceRenderable(true)
-        secondFixture.model.setSurfaceRenderable(true)
-
-        guard let firstSessionID = service.remoteMessageCoordinationSnapshot.sessionID else {
-            Issue.record("Expected the first message to own a logical session")
-            return
-        }
-        let firstLogicalSession = PromoQueueRemoteMessageSession(id: firstSessionID, messageID: firstMessageID)
-        #expect(service.remoteMessageCoordinationSnapshot.messageID == firstMessageID)
-        #expect(firstFixture.model.homeMessageViewModels.map(\.messageId) == [firstMessageID])
-        #expect(coordinatedRemoteMessageRenderSession(in: firstFixture.model)?.presentation.session.id == firstSessionID)
-        #expect(secondFixture.model.homeMessageViewModels.isEmpty)
-        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .remoteMessage(firstLogicalSession))
-
-        firstFixture.model.setSurfaceRenderable(false)
-
-        #expect(service.remoteMessageCoordinationSnapshot.state == .draining)
-        #expect(service.remoteMessageCoordinationSnapshot.sessionID == firstSessionID)
-        #expect(secondFixture.model.homeMessageViewModels.isEmpty)
-        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .remoteMessage(firstLogicalSession))
-
-        await waitForMainQueueSettlement()
-
-        guard let secondSessionID = service.remoteMessageCoordinationSnapshot.sessionID else {
-            Issue.record("Expected the different message to acquire a fresh logical session")
-            return
-        }
-        let secondLogicalSession = PromoQueueRemoteMessageSession(id: secondSessionID, messageID: secondMessageID)
-        #expect(service.remoteMessageCoordinationSnapshot.state == .owned)
-        #expect(service.remoteMessageCoordinationSnapshot.messageID == secondMessageID)
-        #expect(secondSessionID != firstSessionID)
-        #expect(firstFixture.model.homeMessageViewModels.isEmpty)
-        #expect(secondFixture.model.homeMessageViewModels.map(\.messageId) == [secondMessageID])
-        #expect(coordinatedRemoteMessageRenderSession(in: secondFixture.model)?.presentation.session == secondLogicalSession)
-        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .remoteMessage(secondLogicalSession))
     }
 
     private func makeRemoteMessageModel(

@@ -408,6 +408,7 @@ struct Launching: LaunchingHandling {
                                statisticsService: statisticsService,
                                keyValueFileStoreService: appKeyValueFileStoreService,
                                defaultBrowserPromptService: defaultBrowserPromptService,
+                               promoCoordinationService: promoCoordinationService,
                                winBackOfferService: winBackOfferService,
                                systemSettingsPiPTutorialService: systemSettingsPiPTutorialService,
                                inactivityNotificationSchedulerService: inactivityNotificationSchedulerService,

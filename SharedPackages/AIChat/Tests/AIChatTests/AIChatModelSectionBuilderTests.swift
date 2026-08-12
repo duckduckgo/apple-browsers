@@ -49,6 +49,30 @@ final class AIChatModelSectionBuilderTests: XCTestCase {
         XCTAssertEqual(gated.first?.requiredTier, .plus)
     }
 
+    // MARK: - groupByRecommendationLabel
+
+    func testWhenModelsHaveRecommendationLabelsThenGroupsPreserveAPIOrder() {
+        let models = [
+            makeModel(id: "without-1", entityHasAccess: true, accessTier: ["free"]),
+            makeModel(id: "with-1", entityHasAccess: true, accessTier: ["free"], label: .everydayUse),
+            makeModel(id: "unknown", entityHasAccess: true, accessTier: ["free"], label: .unknown("FUTURE_LABEL")),
+            makeModel(id: "without-2", entityHasAccess: true, accessTier: ["free"]),
+            makeModel(id: "with-2", entityHasAccess: true, accessTier: ["free"], label: .usesLimitsFaster),
+        ]
+
+        let grouped = AIChatModelSectionBuilder.groupByRecommendationLabel(models: models)
+
+        XCTAssertEqual(grouped.withLabel.map(\.id), ["with-1", "unknown", "with-2"])
+        XCTAssertEqual(grouped.withoutLabel.map(\.id), ["without-1", "without-2"])
+    }
+
+    func testWhenModelsAreEmptyThenRecommendationLabelGroupsAreEmpty() {
+        let grouped = AIChatModelSectionBuilder.groupByRecommendationLabel(models: [])
+
+        XCTAssertTrue(grouped.withLabel.isEmpty)
+        XCTAssertTrue(grouped.withoutLabel.isEmpty)
+    }
+
     // MARK: - Ordering (PoC recommended-first)
 
     func testWhenFreeUserThenNanoMiniAndHaikuAreHoistedInThatOrderRestKeepAPIOrder() {
@@ -137,7 +161,8 @@ final class AIChatModelSectionBuilderTests: XCTestCase {
         id: String,
         name: String? = nil,
         entityHasAccess: Bool,
-        accessTier: [String]
+        accessTier: [String],
+        label: AIChatModelLabel? = nil
     ) -> AIChatModel {
         AIChatModel(
             id: id,
@@ -146,7 +171,8 @@ final class AIChatModelSectionBuilderTests: XCTestCase {
             provider: .openAI,
             supportsImageUpload: false,
             entityHasAccess: entityHasAccess,
-            accessTier: accessTier
+            accessTier: accessTier,
+            label: label
         )
     }
 }

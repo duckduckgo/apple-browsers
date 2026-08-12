@@ -289,6 +289,7 @@ final class AIChatMenuTests: XCTestCase {
         let historyCleaner = StubAIChatHistoryCleaner(result: .success(()))
         let syncCleaner = StubAIChatSyncCleaning()
         let defaultActions = AIChatMenu.Actions.makeDefault(
+            conversationSource: .mainMenu,
             remoteSettings: AIChatRemoteSettings(),
             tabOpener: MockAIChatTabOpener(),
             historyCleaner: historyCleaner,
@@ -306,6 +307,7 @@ final class AIChatMenuTests: XCTestCase {
         let historyCleaner = StubAIChatHistoryCleaner(result: .failure(NSError(domain: "test", code: 0)))
         let syncCleaner = StubAIChatSyncCleaning()
         let defaultActions = AIChatMenu.Actions.makeDefault(
+            conversationSource: .mainMenu,
             remoteSettings: AIChatRemoteSettings(),
             tabOpener: MockAIChatTabOpener(),
             historyCleaner: historyCleaner,
@@ -321,6 +323,7 @@ final class AIChatMenuTests: XCTestCase {
     func testDeleteAllChats_succeedsWhenSyncCleanerIsNil() async {
         let historyCleaner = StubAIChatHistoryCleaner(result: .success(()))
         let defaultActions = AIChatMenu.Actions.makeDefault(
+            conversationSource: .mainMenu,
             remoteSettings: AIChatRemoteSettings(),
             tabOpener: MockAIChatTabOpener(),
             historyCleaner: historyCleaner,
@@ -337,6 +340,7 @@ final class AIChatMenuTests: XCTestCase {
         let historyCleaner = StubAIChatHistoryCleaner(result: .success(()))
         var syncCleaner: StubAIChatSyncCleaning?
         let defaultActions = AIChatMenu.Actions.makeDefault(
+            conversationSource: .mainMenu,
             remoteSettings: AIChatRemoteSettings(),
             tabOpener: MockAIChatTabOpener(),
             historyCleaner: historyCleaner,

@@ -274,6 +274,7 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case freemiumPIR
     case optOutRetryError96Hours
     case deferredSecureVaultInit
+    case extractedProfileRefresh
 }
 
 public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
@@ -353,6 +354,8 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     case omnibarDefaultPosition
 
     case unifiedToggleInput
+
+    case updatedModelPicker
 
     /// Forward-only lever for the unified toggle input rollout. When disabled, *new* (un-granted)
     /// users stop receiving the unified toggle input; users who have already been granted it keep

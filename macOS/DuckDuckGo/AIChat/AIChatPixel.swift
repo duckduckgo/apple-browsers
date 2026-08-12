@@ -420,11 +420,11 @@ enum AIChatPixel: PixelKitEvent {
 
     // MARK: - Prompt Metrics
 
-    /// Event Trigger: User submits their first prompt in a new Duck.ai conversation
-    case aiChatMetricStartNewConversation
+    /// Event Trigger: User submits their first prompt in a new Duck.ai conversation.
+    case aiChatMetricStartNewConversation(isOpenedFromAskDuckAiButton: Bool, hasPageContext: Bool)
 
-    /// Event Trigger: User submits a prompt in an ongoing Duck.ai conversation
-    case aiChatMetricSentPromptOngoingChat
+    /// Event Trigger: User submits a prompt in an ongoing Duck.ai conversation.
+    case aiChatMetricSentPromptOngoingChat(isOpenedFromAskDuckAiButton: Bool, hasPageContext: Bool)
 
     /// Event Trigger: User taps a sidebar page-suggestion chip (a tailored prompt or "Ask about this page").
     /// `suggestionId` is the FE's fixed catalog key; `pageType` is the FE's coarse page classification.
@@ -930,8 +930,6 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatNtpWebSearchSubmitted,
                 .aiChatViewAllChatsClicked,
                 .aiChatModelsFetchFailed,
-                .aiChatMetricStartNewConversation,
-                .aiChatMetricSentPromptOngoingChat,
                 .aiChatTermsAcceptedDuplicateSyncOff,
                 .aiChatTermsAcceptedDuplicateSyncOn,
                 .aiChatOpenDuckAiMainMenu,
@@ -962,6 +960,12 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatNtpCustomizeResponsesOpened,
                 .serpSettingsUnrecognizedValue:
             return nil
+        case .aiChatMetricStartNewConversation(let isOpenedFromAskDuckAiButton, let hasPageContext),
+                .aiChatMetricSentPromptOngoingChat(let isOpenedFromAskDuckAiButton, let hasPageContext):
+            return [
+                "isOpenedFromAskDuckAiButton": isOpenedFromAskDuckAiButton ? "true" : "false",
+                "hasPageContext": hasPageContext ? "true" : "false"
+            ]
         case .aiChatAddressBarSubscriptionUpsellTriggered(let currentTier, let requiredTier, let flowType, let origin):
             return ["current_tier": currentTier, "required_tier": requiredTier, "flow_type": flowType, "origin": origin]
         case .aiChatAddressBarSubscriptionUpsellShown(let origin),

@@ -75,6 +75,7 @@ public protocol DataBrokerProtectionRepository: EmailConfirmationSupporting {
                                                   profileQueryId: Int64,
                                                   extractedProfileId: Int64) throws
     func updateRemovedDate(_ date: Date?, on extractedProfileId: Int64) throws
+    func updateExtractedProfile(_ extractedProfile: ExtractedProfile, on extractedProfileId: Int64) throws
 
     func add(_ historyEvent: HistoryEvent) throws
     func fetchLastEvent(brokerId: Int64, profileQueryId: Int64) throws -> HistoryEvent?
@@ -389,6 +390,15 @@ public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository 
             try vault.updateRemovedDate(for: extractedProfileId, with: date)
         } catch {
             handleError(error, context: "DataBrokerProtectionDatabase.updateRemovedDate date on extractedProfileId")
+            throw error
+        }
+    }
+
+    public func updateExtractedProfile(_ extractedProfile: ExtractedProfile, on extractedProfileId: Int64) throws {
+        do {
+            try vault.updateExtractedProfile(extractedProfile, for: extractedProfileId)
+        } catch {
+            handleError(error, context: "DataBrokerProtectionDatabase.updateExtractedProfile on extractedProfileId")
             throw error
         }
     }

@@ -44,6 +44,8 @@ public struct AIChatModel {
     public let supportedReasoningEffort: [AIChatReasoningEffort]
     /// Per-effort access metadata from the `/models` API. `nil` when the backend omits the field.
     public let reasoningEffortAccess: [AIChatReasoningEffortAccess]?
+    /// Suggested usage label returned by the `/models` API.
+    public let label: AIChatModelLabel?
 
     public enum ModelProvider {
         case openAI
@@ -76,7 +78,8 @@ public struct AIChatModel {
         entityHasAccess: Bool,
         accessTier: [String] = [],
         supportedReasoningEffort: [AIChatReasoningEffort] = [],
-        reasoningEffortAccess: [AIChatReasoningEffortAccess]? = nil
+        reasoningEffortAccess: [AIChatReasoningEffortAccess]? = nil,
+        label: AIChatModelLabel? = nil
     ) {
         self.id = id
         self.name = name
@@ -90,6 +93,7 @@ public struct AIChatModel {
         self.accessTier = accessTier
         self.supportedReasoningEffort = supportedReasoningEffort
         self.reasoningEffortAccess = reasoningEffortAccess
+        self.label = label
     }
 
     public func supportsTool(_ tool: AIChatRAGTool) -> Bool {

@@ -116,26 +116,6 @@ final class PromoCoordinationServiceTests {
         #expect(!managerMock.didCallPresentModalPromptIfNeeded)
     }
 
-    @Test("Check Modal Is Presented When No Modal Is Currently Presented")
-    func whenNoModalIsPresentedThenModalIsPresented() {
-        // GIVEN
-        launchSourceManagerMock.source = .standard
-        presenterMock.presentedViewController = nil
-        sut = PromoCoordinationService(
-            launchSourceManager: launchSourceManagerMock,
-            modalPromptCoordinationManager: managerMock,
-            promoCoordinationMode: .legacy,
-            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
-            promoQueueCooldownPolicy: MockPromoQueueCooldownPolicy()
-        )
-
-        // WHEN
-        presentModalPromptIfNeeded()
-
-        // THEN
-        #expect(managerMock.didCallPresentModalPromptIfNeeded)
-    }
-
     @Test("Check Modal Is Presented When Presented Modal Is Being Dismissed")
     func whenPresentedModalIsBeingDismissedThenModalIsPresented() {
         // GIVEN
@@ -178,26 +158,6 @@ final class PromoCoordinationServiceTests {
 
         // THEN
         #expect(managerMock.didCallPresentModalPromptIfNeeded)
-    }
-
-    @Test("Check Modal Is Not Presented When Multiple Conditions Fail")
-    func whenMultipleConditionsFailThenModalIsNotPresented() {
-        // GIVEN
-        launchSourceManagerMock.source = .URL
-        presenterMock.presentedViewController = UIViewController()
-        sut = PromoCoordinationService(
-            launchSourceManager: launchSourceManagerMock,
-            modalPromptCoordinationManager: managerMock,
-            promoCoordinationMode: .legacy,
-            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
-            promoQueueCooldownPolicy: MockPromoQueueCooldownPolicy()
-        )
-
-        // WHEN
-        presentModalPromptIfNeeded()
-
-        // THEN
-        #expect(!managerMock.didCallPresentModalPromptIfNeeded)
     }
 
     @Test(

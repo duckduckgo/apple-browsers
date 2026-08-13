@@ -889,7 +889,7 @@ final class AddressBarViewController: NSViewController {
         // update box position on the next pass after text editor layout is updated
         DispatchQueue.main.async {
             self.refreshSwitchToTabVisibility(isHidden: false)
-            self.switchToTabBoxMinXConstraint.constant = editor.textSize.width + Constants.switchToTabMinXPadding
+            self.switchToTabBoxMinXConstraint.constant = targetMinX
         }
     }
 

@@ -223,23 +223,23 @@
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion", "unified_input_surface"]
     },
-    "m_aichat_unified_input_edit_received": {
+    "aichat_unified_input_edit_received": {
         "description": "Fires when the frontend requests to edit a previously sent message and the Unified Toggle Input enters edit mode.",
-        "owners": ["pikorddg", "aataraxiaa"],
+        "owners": ["SabrinaTardio"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion", "unified_input_surface"]
     },
-    "m_aichat_unified_input_edit_submitted": {
+    "aichat_unified_input_edit_submitted": {
         "description": "Fires when the user submits an edited message from the Unified Toggle Input.",
-        "owners": ["pikorddg", "aataraxiaa"],
+        "owners": ["SabrinaTardio"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion", "unified_input_surface"]
     },
-    "m_aichat_unified_input_edit_cancelled": {
+    "aichat_unified_input_edit_cancelled": {
         "description": "Fires when the user leaves edit mode in the Unified Toggle Input without submitting (cancel button or sheet dismissal).",
-        "owners": ["pikorddg", "aataraxiaa"],
+        "owners": ["SabrinaTardio"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion", "unified_input_surface"]

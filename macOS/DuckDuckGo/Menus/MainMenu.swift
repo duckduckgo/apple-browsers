@@ -927,7 +927,10 @@ final class MainMenu: NSMenu {
 
             // All items below will be automatically sorted alphabetically
             NSMenuItem(title: "Clear WebKit Cache", action: #selector(AppDelegate.debugClearWebViewCache)).withAccessibilityIdentifier("MainMenu.clearWebKitCache")
-            NSMenuItem(title: "Install Firefox Extension (spike)", action: #selector(AppDelegate.debugInstallFirefoxExtension)).withAccessibilityIdentifier("MainMenu.installFirefoxExtension")
+            NSMenuItem(title: "Firefox Extension") {
+                NSMenuItem(title: "Open Install URL", action: #selector(AppDelegate.debugInstallFirefoxExtensionByOpeningURL)).withAccessibilityIdentifier("MainMenu.firefoxExtension.openURL")
+                NSMenuItem(title: "Download & Open XPI", action: #selector(AppDelegate.debugInstallFirefoxExtensionByDownloadingXPI)).withAccessibilityIdentifier("MainMenu.firefoxExtension.downloadXPI")
+            }
             NSMenuItem(title: "Favicons") {
                 NSMenuItem(title: "Clear In-Memory Cache", action: #selector(AppDelegate.debugClearFaviconsCache)).withAccessibilityIdentifier("MainMenu.clearFaviconsCache")
                 NSMenuItem(title: "Inspect", action: #selector(MainViewController.inspectFavicons(_:))).withAccessibilityIdentifier("MainMenu.inspectFavicons")

@@ -64,17 +64,107 @@ final class FirefoxExtensionInstallerTests: XCTestCase {
         )
     }
 
+    func testWhenFirefoxIsNotInstalledThenInstallByDownloadingXPIDoesNotDownloadAndCompletesWithFalse() {
+        var downloadCallCount = 0
+        var launchCalls: [(URL, URL)] = []
+        let installer = makeSUT(
+            firefoxApplicationURL: nil,
+            launch: { launchCalls.append(($0, $1)) },
+            downloadXPI: { _, completion in
+                downloadCallCount += 1
+                completion(nil)
+            }
+        )
+
+        let expectation = expectation(description: "completion called")
+        var result: Bool?
+        installer.installDDGExtensionByDownloadingXPI { success in
+            result = success
+            expectation.fulfill()
+        }
+        waitForExpectations(timeout: 1)
+
+        XCTAssertEqual(downloadCallCount, 0)
+        XCTAssertTrue(launchCalls.isEmpty)
+        XCTAssertEqual(result, false)
+    }
+
+    func testWhenDownloadFailsThenInstallByDownloadingXPIDoesNotLaunchAndCompletesWithFalse() {
+        let firefoxAppURL = URL(fileURLWithPath: "/Applications/Firefox.app")
+        var launchCalls: [(URL, URL)] = []
+        let installer = makeSUT(
+            firefoxApplicationURL: firefoxAppURL,
+            launch: { launchCalls.append(($0, $1)) },
+            downloadXPI: { _, completion in completion(nil) }
+        )
+
+        let expectation = expectation(description: "completion called")
+        var result: Bool?
+        installer.installDDGExtensionByDownloadingXPI { success in
+            result = success
+            expectation.fulfill()
+        }
+        waitForExpectations(timeout: 1)
+
+        XCTAssertTrue(launchCalls.isEmpty)
+        XCTAssertEqual(result, false)
+    }
+
+    func testWhenDownloadSucceedsThenInstallByDownloadingXPILaunchesLocalFileAndCompletesWithTrue() {
+        let firefoxAppURL = URL(fileURLWithPath: "/Applications/Firefox.app")
+        let localFileURL = URL(fileURLWithPath: "/tmp/duckduckgo-for-firefox.xpi")
+        var launchCalls: [(URL, URL)] = []
+        let installer = makeSUT(
+            firefoxApplicationURL: firefoxAppURL,
+            launch: { launchCalls.append(($0, $1)) },
+            downloadXPI: { _, completion in completion(localFileURL) }
+        )
+
+        let expectation = expectation(description: "completion called")
+        var result: Bool?
+        installer.installDDGExtensionByDownloadingXPI { success in
+            result = success
+            expectation.fulfill()
+        }
+        waitForExpectations(timeout: 1)
+
+        XCTAssertEqual(launchCalls.count, 1)
+        XCTAssertEqual(launchCalls.first?.0, localFileURL)
+        XCTAssertEqual(launchCalls.first?.1, firefoxAppURL)
+        XCTAssertEqual(result, true)
+    }
+
+    func testInstallByDownloadingXPIPassesInstallURLToDownload() {
+        let installURL = URL(string: "https://example.com/extension.xpi")!
+        var downloadedURLs: [URL] = []
+        let installer = makeSUT(
+            installURL: installURL,
+            downloadXPI: { xpiURL, completion in
+                downloadedURLs.append(xpiURL)
+                completion(nil)
+            }
+        )
+
+        let expectation = expectation(description: "completion called")
+        installer.installDDGExtensionByDownloadingXPI { _ in expectation.fulfill() }
+        waitForExpectations(timeout: 1)
+
+        XCTAssertEqual(downloadedURLs, [installURL])
+    }
+
     // MARK: - Helpers
 
     private func makeSUT(
         installURL: URL = FirefoxExtensionInstaller.InstallURL.directXPI,
         firefoxApplicationURL: URL? = URL(fileURLWithPath: "/Applications/Firefox.app"),
-        launch: @escaping (URL, URL) -> Void = { _, _ in }
+        launch: @escaping (URL, URL) -> Void = { _, _ in },
+        downloadXPI: @escaping (URL, @escaping (URL?) -> Void) -> Void = { _, completion in completion(nil) }
     ) -> FirefoxExtensionInstaller {
         FirefoxExtensionInstaller(
             installURL: installURL,
             firefoxApplicationURL: { firefoxApplicationURL },
-            launch: launch
+            launch: launch,
+            downloadXPI: downloadXPI
         )
     }
 }

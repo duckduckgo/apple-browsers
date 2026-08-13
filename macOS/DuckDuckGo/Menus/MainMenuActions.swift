@@ -555,8 +555,13 @@ extension AppDelegate {
     }
 
     @MainActor
-    @objc func debugInstallFirefoxExtension(_ sender: Any?) {
+    @objc func debugInstallFirefoxExtensionByOpeningURL(_ sender: Any?) {
         FirefoxExtensionInstaller().installDDGExtension()
+    }
+
+    @MainActor
+    @objc func debugInstallFirefoxExtensionByDownloadingXPI(_ sender: Any?) {
+        FirefoxExtensionInstaller().installDDGExtensionByDownloadingXPI()
     }
 
     @MainActor

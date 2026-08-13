@@ -438,7 +438,10 @@ class MainViewController: UIViewController {
         let settings = SearchTokenExperimentSettings(privacyConfigurationManager: privacyConfigurationManager)
         return SearchTokenFetcher(requester: SearchTokenRequest(tokenURL: .searchToken),
                                   ttlProvider: { settings.tokenTTL },
-                                  windowProvider: { settings.refreshWindow })
+                                  windowProvider: { settings.refreshWindow },
+                                  onFetchResult: { result in
+            PixelKit.fire(SearchTokenPixel.fetch(result: result.rawValue), frequency: .dailyAndCount)
+        })
     }()
 
     /// Whether the ad-blocking rollout's Duck Player default (disable) should be applied at onboarding
@@ -2114,7 +2117,7 @@ class MainViewController: UIViewController {
         // about to shown to the user.
         if presentedViewController == nil || presentedViewController?.isBeingDismissed == true {
             fireNewTabPixels()
-            fireNTPShownInstrumentation(openedAfterIdle: openedAfterIdle, hatch: hatch)
+            fireNTPShownInstrumentation(openedAfterIdle: openedAfterIdle, hatch: hatch, focused: willBeginEditing)
             startNewTabPageSessionInstrumentation(isNewTab: isNewTab, willBeginEditing: willBeginEditing, isAfterFire: isAfterFire)
         }
 
@@ -2133,7 +2136,7 @@ class MainViewController: UIViewController {
         unifiedToggleInputCoordinator?.setEscapeHatch(hatch)
     }
 
-    private func fireNTPShownInstrumentation(openedAfterIdle: Bool, hatch: EscapeHatchModel?) {
+    private func fireNTPShownInstrumentation(openedAfterIdle: Bool, hatch: EscapeHatchModel?, focused: Bool) {
         ntpAfterIdleInstrumentation.ntpShown(afterIdle: openedAfterIdle)
         // Fire the card impression once per presentation here (not from the card's onAppear): the same hatch
         // model is mounted in several hosts — NTP, suggestions, AI-chat history — so a view-level hook counts
@@ -2142,7 +2145,7 @@ class MainViewController: UIViewController {
             ntpAfterIdleInstrumentation.escapeHatchShown()
         }
         if openedAfterIdle {
-            postIdleSessionInstrumentation.sessionStarted(surface: .ntp)
+            postIdleSessionInstrumentation.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: focused)
         }
     }
 
@@ -2453,6 +2456,13 @@ class MainViewController: UIViewController {
         loadUrlRespectingAIBoundary(url)
     }
 
+    func postIdleSubmissionReason(for query: String) -> ReturnSessionWideEventData.StatusReason {
+        guard let url = URL.makeSearchURL(query: query, useUnifiedLogic: isUnifiedURLPredictionEnabled, queryContext: currentTab?.url) else {
+            return .searchSubmitted
+        }
+        return url.isDuckDuckGoSearch ? .searchSubmitted : .urlSubmitted
+    }
+
     func stopLoading() {
         currentTab?.stopLoading()
     }
@@ -2490,7 +2500,7 @@ class MainViewController: UIViewController {
         if currentTab.tabModel.link == nil {
             ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: currentTab.tabModel.openedAfterIdle)
         }
-        postIdleSessionInstrumentation.sessionEnded(reason: .barUsed)
+        postIdleSessionInstrumentation.sessionEnded(reason: .aiPromptSubmitted)
         prepareTabForRequest {
             currentTab.load(
                 query,
@@ -4101,7 +4111,7 @@ class MainViewController: UIViewController {
         if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
             ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: tab.openedAfterIdle)
         }
-        postIdleSessionInstrumentation.sessionEnded(reason: .barUsed)
+        postIdleSessionInstrumentation.sessionEnded(reason: .aiPromptSubmitted)
         openAIChatInVoiceMode()
     }
 
@@ -4190,10 +4200,10 @@ class MainViewController: UIViewController {
             // Dismiss contextual onboarding before opening duck.ai via UTI.
             currentTab.contextualOnboardingPresenter.dismissContextualOnboardingIfNeeded(from: currentTab)
             let chatURL = currentTab.aiChatContentHandler.buildQueryURL(query: query, autoSend: autoSend, flowType: flowType, tools: tools)
-            // Mirror the in-place `.barUsed` so the new-tab branch keeps idle-session parity.
+            // Mirror the in-place `.aiPromptSubmitted` so the new-tab branch keeps idle-session parity.
             // Gated on `!fromDeepLink` so external entries aren't reclassified as address-bar submissions.
             if !fromDeepLink {
-                postIdleSessionInstrumentation.sessionEnded(reason: .barUsed)
+                postIdleSessionInstrumentation.sessionEnded(reason: .aiPromptSubmitted)
             }
             // Stage prompt singleton before `loadUrlInNewTab` — matches legacy `setData → load` order.
             // Per-tab payload runs in completion since it targets the newly-selected chat tab.
@@ -4676,11 +4686,19 @@ extension MainViewController: BrowserChromeDelegate {
     }
 
 
+    private func postIdleSubmissionReason(for suggestion: Suggestion) -> ReturnSessionWideEventData.StatusReason {
+        switch suggestion {
+        case .phrase, .unknown: return .searchSubmitted
+        case .askAIChat: return .aiPromptSubmitted
+        case .website, .bookmark, .historyEntry, .internalPage, .openTab: return .urlSubmitted
+        }
+    }
+
     func handleSuggestionSelected(_ suggestion: Suggestion) {
         if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
             ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: tab.openedAfterIdle)
         }
-        postIdleSessionInstrumentation.sessionEnded(reason: .barUsed)
+        postIdleSessionInstrumentation.sessionEnded(reason: postIdleSubmissionReason(for: suggestion))
         newTabPageViewController?.chromeDelegate = nil
         dismissOmniBar()
         viewCoordinator.omniBar.cancel()
@@ -4860,7 +4878,7 @@ extension MainViewController: OmniBarDelegate {
         if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
             ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: tab.openedAfterIdle)
         }
-        postIdleSessionInstrumentation.sessionEnded(reason: .barUsed)
+        postIdleSessionInstrumentation.sessionEnded(reason: postIdleSubmissionReason(for: query))
         loadQuery(query)
         hideNotificationBarIfBrokenSitePromptShown()
         showHomeRowReminder()
@@ -7541,7 +7559,7 @@ extension MainViewController: VoiceSearchViewControllerDelegate {
             if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
                 ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: tab.openedAfterIdle)
             }
-            postIdleSessionInstrumentation.sessionEnded(reason: .barUsed)
+            postIdleSessionInstrumentation.sessionEnded(reason: .searchSubmitted)
             loadQuery(query)
 
         case .AIChat:
@@ -7550,7 +7568,7 @@ extension MainViewController: VoiceSearchViewControllerDelegate {
                 if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
                     ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: tab.openedAfterIdle)
                 }
-                postIdleSessionInstrumentation.sessionEnded(reason: .barUsed)
+                postIdleSessionInstrumentation.sessionEnded(reason: .aiPromptSubmitted)
                 coordinator.submitVoicePrompt(query)
             } else {
                 performCancel()

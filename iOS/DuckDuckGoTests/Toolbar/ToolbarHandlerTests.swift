@@ -82,6 +82,28 @@ class ToolbarHandlerTests: XCTestCase {
         XCTAssertEqual(mockToolbar.arrangedToolbarButtonViews, initialItems)
     }
 
+    func testToolbarButtonsHaveSquareTouchTargets() {
+        toolbarHandler.updateToolbarWithState(.pageLoaded(currentTab: mockNavigatable))
+
+        for button in mockToolbar.arrangedToolbarButtonViews {
+            XCTAssertTrue(button.constraints.contains { $0.firstAttribute == .width && $0.constant == BrowserChromeButton.toolbarButtonSize })
+            XCTAssertTrue(button.constraints.contains { $0.firstAttribute == .height && $0.constant == BrowserChromeButton.toolbarButtonSize })
+        }
+    }
+
+    func testReplacementTabSwitcherHasSquareTouchTarget() {
+        let tabSwitcherButton = TabSwitcherStaticButton(showMenuOnLongPress: false)
+
+        toolbarHandler.setTabSwitcherView(tabSwitcherButton)
+
+        XCTAssertTrue(tabSwitcherButton.constraints.contains {
+            $0.firstAttribute == .width && $0.constant == BrowserChromeButton.toolbarButtonSize
+        })
+        XCTAssertTrue(tabSwitcherButton.constraints.contains {
+            $0.firstAttribute == .height && $0.constant == BrowserChromeButton.toolbarButtonSize
+        })
+    }
+
     func testBackButtonEnabledState() {
         mockNavigatable = MockNavigatable(canGoBack: true, canGoForward: false)
         toolbarHandler.updateToolbarWithState(.pageLoaded(currentTab: mockNavigatable))

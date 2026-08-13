@@ -2475,6 +2475,8 @@
 		D1A2B3C4E5F60001AABB0003 /* PostIdleSessionWideEventDataTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A2B3C4E5F60001AABB0004 /* PostIdleSessionWideEventDataTests.swift */; };
 		D1A2B3C4E5F60001AABB0005 /* PostIdleSessionInstrumentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A2B3C4E5F60001AABB0006 /* PostIdleSessionInstrumentation.swift */; };
 		D1A2B3C4E5F60001AABB0007 /* PostIdleSessionInstrumentationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A2B3C4E5F60001AABB0008 /* PostIdleSessionInstrumentationTests.swift */; };
+		D1A2B3C4E5F60001AABB0101 /* ReturnSessionWideEventData.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A2B3C4E5F60001AABB0102 /* ReturnSessionWideEventData.swift */; };
+		D1A2B3C4E5F60001AABB0103 /* ReturnSessionWideEventDataTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A2B3C4E5F60001AABB0104 /* ReturnSessionWideEventDataTests.swift */; };
 		D1A2B3C4E5F60002AABB0001 /* NewTabPageSessionWideEventData.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A2B3C4E5F60002AABB0002 /* NewTabPageSessionWideEventData.swift */; };
 		D1A2B3C4E5F60002AABB0003 /* NewTabPageSessionWideEventDataTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A2B3C4E5F60002AABB0004 /* NewTabPageSessionWideEventDataTests.swift */; };
 		D1A2B3C4E5F60002AABB0005 /* NewTabPageSessionInstrumentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A2B3C4E5F60002AABB0006 /* NewTabPageSessionInstrumentation.swift */; };
@@ -5360,6 +5362,8 @@
 		D1A2B3C4E5F60001AABB0004 /* PostIdleSessionWideEventDataTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostIdleSessionWideEventDataTests.swift; sourceTree = "<group>"; };
 		D1A2B3C4E5F60001AABB0006 /* PostIdleSessionInstrumentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostIdleSessionInstrumentation.swift; sourceTree = "<group>"; };
 		D1A2B3C4E5F60001AABB0008 /* PostIdleSessionInstrumentationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostIdleSessionInstrumentationTests.swift; sourceTree = "<group>"; };
+		D1A2B3C4E5F60001AABB0102 /* ReturnSessionWideEventData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReturnSessionWideEventData.swift; sourceTree = "<group>"; };
+		D1A2B3C4E5F60001AABB0104 /* ReturnSessionWideEventDataTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReturnSessionWideEventDataTests.swift; sourceTree = "<group>"; };
 		D1A2B3C4E5F60002AABB0002 /* NewTabPageSessionWideEventData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageSessionWideEventData.swift; sourceTree = "<group>"; };
 		D1A2B3C4E5F60002AABB0004 /* NewTabPageSessionWideEventDataTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageSessionWideEventDataTests.swift; sourceTree = "<group>"; };
 		D1A2B3C4E5F60002AABB0006 /* NewTabPageSessionInstrumentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageSessionInstrumentation.swift; sourceTree = "<group>"; };
@@ -10861,6 +10865,7 @@
 				E0742FD8DD5F46AB8243A001 /* IdleReturnTabCountInstrumentation.swift */,
 				E0742FD8DD5F46AB8243A0B1 /* AppReturnInstrumentation.swift */,
 				D1A2B3C4E5F60001AABB0002 /* PostIdleSessionWideEventData.swift */,
+				D1A2B3C4E5F60001AABB0102 /* ReturnSessionWideEventData.swift */,
 				D1A2B3C4E5F60001AABB0006 /* PostIdleSessionInstrumentation.swift */,
 				D1A2B3C4E5F60002AABB0002 /* NewTabPageSessionWideEventData.swift */,
 				D1A2B3C4E5F60002AABB0006 /* NewTabPageSessionInstrumentation.swift */,
@@ -11841,6 +11846,7 @@
 				A1B2C3D4E5F60002AABBA002 /* IdleReturnTabCountInstrumentationTests.swift */,
 				A1B2C3D4E5F60002AABBA0B2 /* AppReturnInstrumentationTests.swift */,
 				D1A2B3C4E5F60001AABB0004 /* PostIdleSessionWideEventDataTests.swift */,
+				D1A2B3C4E5F60001AABB0104 /* ReturnSessionWideEventDataTests.swift */,
 				D1A2B3C4E5F60001AABB0008 /* PostIdleSessionInstrumentationTests.swift */,
 				D1A2B3C4E5F60002AABB0004 /* NewTabPageSessionWideEventDataTests.swift */,
 				D1A2B3C4E5F60002AABB0008 /* NewTabPageSessionInstrumentationTests.swift */,
@@ -13591,6 +13597,7 @@
 				2CCD716C578642B8BCA1A001 /* IdleReturnTabCountInstrumentation.swift in Sources */,
 				2CCD716C578642B8BCA1A0B1 /* AppReturnInstrumentation.swift in Sources */,
 				D1A2B3C4E5F60001AABB0001 /* PostIdleSessionWideEventData.swift in Sources */,
+				D1A2B3C4E5F60001AABB0101 /* ReturnSessionWideEventData.swift in Sources */,
 				D1A2B3C4E5F60001AABB0005 /* PostIdleSessionInstrumentation.swift in Sources */,
 				D1A2B3C4E5F60002AABB0001 /* NewTabPageSessionWideEventData.swift in Sources */,
 				D1A2B3C4E5F60002AABB0005 /* NewTabPageSessionInstrumentation.swift in Sources */,
@@ -14816,6 +14823,7 @@
 				A1B2C3D4E5F60002AABBA001 /* IdleReturnTabCountInstrumentationTests.swift in Sources */,
 				A1B2C3D4E5F60002AABBA0B1 /* AppReturnInstrumentationTests.swift in Sources */,
 				D1A2B3C4E5F60001AABB0003 /* PostIdleSessionWideEventDataTests.swift in Sources */,
+				D1A2B3C4E5F60001AABB0103 /* ReturnSessionWideEventDataTests.swift in Sources */,
 				CBB4A8492FD2FB6600A65956 /* DuckAISuggestionsPipelineTests.swift in Sources */,
 				D1A2B3C4E5F60001AABB0007 /* PostIdleSessionInstrumentationTests.swift in Sources */,
 				D1A2B3C4E5F60002AABB0003 /* NewTabPageSessionWideEventDataTests.swift in Sources */,

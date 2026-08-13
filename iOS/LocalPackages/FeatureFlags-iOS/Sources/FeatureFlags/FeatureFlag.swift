@@ -508,6 +508,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217191536064244?focus=true
     case syncCanWriteUnifiedDeviceList
 
+    /// https://app.asana.com/1/137249556945/task/1216792120319849
+    case syncCanUsePatchEndpointForLegacyDeviceRename
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217191536064256?focus=true
     case syncCanReadUnifiedDeviceList
 
@@ -907,6 +910,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(SyncSubfeature.canShowV2ConnectCode))
         case .syncCanWriteUnifiedDeviceList:
             Config(source: .remoteReleasable(SyncSubfeature.canWriteUnifiedDeviceList))
+        case .syncCanUsePatchEndpointForLegacyDeviceRename:
+            Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.canUsePatchEndpointForLegacyDeviceRename))
         case .syncCanReadUnifiedDeviceList:
             Config(source: .remoteReleasable(SyncSubfeature.canReadUnifiedDeviceList))
         case .simplifiedSyncSetupV2:

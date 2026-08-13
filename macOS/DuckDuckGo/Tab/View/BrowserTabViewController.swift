@@ -878,10 +878,9 @@ final class BrowserTabViewController: NSViewController {
     private func handleContextualOnboardingOnManualDismiss(dialogType: ContextualDialogType) {
         let displayedDialogType = displayedDialogType(forRoot: dialogType)
         onboardingPixelReporter.measureDialogManuallyDismissed(dialogType: displayedDialogType)
-        // High Five follows the standard onboarding dismissal flow: the next new tab advances to the upsell.
-        if displayedDialogType == .subscriptionUpsell,
-           onboardingDialogTypeProvider.lastDialog == .subscriptionUpsell {
-            onboardingDialogTypeProvider.gotItPressed()
+        if displayedDialogType == .highFive || displayedDialogType == .subscriptionUpsell,
+           onboardingDialogTypeProvider.lastDialog == displayedDialogType {
+            onboardingDialogTypeProvider.manuallyDismissedDialog()
         }
         handleContextualOnboardingOnDismiss(dialogType: displayedDialogType)
     }

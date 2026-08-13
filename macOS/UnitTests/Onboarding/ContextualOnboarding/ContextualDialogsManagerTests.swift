@@ -98,6 +98,39 @@ class ContextualDialogsManagerTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("Dismissing High Five defers the treatment upsell until the next new tab", .timeLimit(.minutes(1)))
+    func testWhenTreatmentDismissesHighFiveThenUpsellIsDeferred() async {
+        subscriptionUpsellExperiment.cohortStub = .treatment
+        manager.state = .ongoing
+        manager.lastDialog = .highFive
+        stateStorage.contextualDialogsSeen = ["highFive"]
+
+        manager.manuallyDismissedDialog()
+
+        #expect(manager.lastDialog == .highFive)
+        #expect(manager.state == .ongoing)
+
+        let tab = await Tab(content: .newtab)
+        #expect(manager.dialogTypeForTab(tab, privacyInfo: nil) == .subscriptionUpsell)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Dismissing High Five keeps the existing flow outside treatment", .timeLimit(.minutes(1)))
+    func testWhenNotTreatmentDismissesHighFiveThenOnboardingCompletes() {
+        let cohorts: [FeatureFlag.OnboardingSubscriptionUpsellCohort?] = [.control, nil]
+        for cohort in cohorts {
+            subscriptionUpsellExperiment.cohortStub = cohort
+            manager.state = .ongoing
+            manager.lastDialog = .highFive
+
+            manager.manuallyDismissedDialog()
+
+            #expect(manager.lastDialog == nil)
+            #expect(manager.state == .onboardingCompleted)
+        }
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("Control and unresolved cohorts complete at High Five", .timeLimit(.minutes(1)))
     func testWhenNotTreatmentThenHighFiveCompletesOnboarding() {
         let cohorts: [FeatureFlag.OnboardingSubscriptionUpsellCohort?] = [.control, nil]

@@ -733,9 +733,10 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         } else {
             view = UIVisualEffectView()
         }
-        view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         return view
     }
+
+    private var glassEffectConstraints: [NSLayoutConstraint] = []
     private var floatingHostToContainerConstraints: [NSLayoutConstraint] = []
     private var floatingHostToGlassContentConstraints: [NSLayoutConstraint] = []
     private var chromeContentContainerView: UIView {
@@ -806,50 +807,62 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
             makeOpaque()
             return
         }
-        opaqueEffect.removeFromSuperview()
+        UIView.performWithoutAnimation {
+            opaqueEffect.removeFromSuperview()
 
-        // `UIGlassEffect`'s tint is fixed at construction time, so the glass view is rebuilt on the
-        // fly to reflect the current fire-mode tint.
-        floatingHostToGlassContentConstraints.forEach { $0.isActive = false }
-        floatingHostToContainerConstraints.forEach { $0.isActive = false }
-        floatingGlassContentHostView.removeFromSuperview()
-        glassEffect.removeFromSuperview()
+            // `UIGlassEffect`'s tint is fixed at construction time, so the glass view is rebuilt on the
+            // fly to reflect the current fire-mode tint.
+            NSLayoutConstraint.deactivate(glassEffectConstraints)
+            NSLayoutConstraint.deactivate(floatingHostToGlassContentConstraints)
+            NSLayoutConstraint.deactivate(floatingHostToContainerConstraints)
+            floatingGlassContentHostView.removeFromSuperview()
+            glassEffect.removeFromSuperview()
 
-        glassEffect = makeGlassEffectView()
-        glassEffect.frame = searchAreaContainerView.bounds
-        searchAreaContainerView.insertSubview(glassEffect, at: 0)
-
-        if fireMode {
-            // We don't want the text field to adapt to content behind the omnibar, so making it a
-            // sibling of the glass (pinned to the container) prevents that.
-            searchAreaContainerView.addSubview(floatingGlassContentHostView)
-            floatingHostToContainerConstraints.forEach { $0.isActive = true }
-        } else {
-            // As a child of the glass the text color will automatically adapt to the content behind
-            // the omnibar.
-            glassEffect.contentView.addSubview(floatingGlassContentHostView)
-            floatingHostToGlassContentConstraints = [
-                floatingGlassContentHostView.topAnchor.constraint(equalTo: glassEffect.contentView.topAnchor),
-                floatingGlassContentHostView.leadingAnchor.constraint(equalTo: glassEffect.contentView.leadingAnchor),
-                floatingGlassContentHostView.trailingAnchor.constraint(equalTo: glassEffect.contentView.trailingAnchor),
-                floatingGlassContentHostView.bottomAnchor.constraint(equalTo: glassEffect.contentView.bottomAnchor)
+            glassEffect = makeGlassEffectView()
+            glassEffect.translatesAutoresizingMaskIntoConstraints = false
+            searchAreaContainerView.insertSubview(glassEffect, at: 0)
+            glassEffectConstraints = [
+                glassEffect.topAnchor.constraint(equalTo: searchAreaContainerView.topAnchor),
+                glassEffect.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor),
+                glassEffect.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor),
+                glassEffect.bottomAnchor.constraint(equalTo: searchAreaContainerView.bottomAnchor)
             ]
-            NSLayoutConstraint.activate(floatingHostToGlassContentConstraints)
-        }
+            NSLayoutConstraint.activate(glassEffectConstraints)
 
-        // Clear any opaque fill left by a prior `makeOpaque()` so the glass shows through.
-        setFieldBackgroundColor(.clear)
+            if fireMode {
+                // We don't want the text field to adapt to content behind the omnibar, so making it a
+                // sibling of the glass (pinned to the container) prevents that.
+                searchAreaContainerView.addSubview(floatingGlassContentHostView)
+                NSLayoutConstraint.activate(floatingHostToContainerConstraints)
+            } else {
+                // As a child of the glass the text color will automatically adapt to the content behind
+                // the omnibar.
+                glassEffect.contentView.addSubview(floatingGlassContentHostView)
+                floatingHostToGlassContentConstraints = [
+                    floatingGlassContentHostView.topAnchor.constraint(equalTo: glassEffect.contentView.topAnchor),
+                    floatingGlassContentHostView.leadingAnchor.constraint(equalTo: glassEffect.contentView.leadingAnchor),
+                    floatingGlassContentHostView.trailingAnchor.constraint(equalTo: glassEffect.contentView.trailingAnchor),
+                    floatingGlassContentHostView.bottomAnchor.constraint(equalTo: glassEffect.contentView.bottomAnchor)
+                ]
+                NSLayoutConstraint.activate(floatingHostToGlassContentConstraints)
+            }
+
+            // Clear any opaque fill left by a prior `makeOpaque()` so the glass shows through.
+            setFieldBackgroundColor(.clear)
+            searchAreaContainerView.layoutIfNeeded()
+        }
     }
 
     func makeOpaque() {
         if isFloatingUIEnabled {
-            floatingHostToGlassContentConstraints.forEach { $0.isActive = false }
+            NSLayoutConstraint.deactivate(floatingHostToGlassContentConstraints)
             if floatingGlassContentHostView.superview !== searchAreaContainerView {
                 floatingGlassContentHostView.removeFromSuperview()
                 searchAreaContainerView.addSubview(floatingGlassContentHostView)
             }
-            floatingHostToContainerConstraints.forEach { $0.isActive = true }
+            NSLayoutConstraint.activate(floatingHostToContainerConstraints)
         }
+        NSLayoutConstraint.deactivate(glassEffectConstraints)
         glassEffect.removeFromSuperview()
         opaqueEffect.removeFromSuperview()
 

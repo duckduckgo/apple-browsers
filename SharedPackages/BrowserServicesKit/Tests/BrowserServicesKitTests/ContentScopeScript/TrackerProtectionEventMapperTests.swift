@@ -456,114 +456,6 @@ final class TrackerProtectionEventMapperTests: XCTestCase {
                        "Similar domain name must not accidentally match temp-list entry")
     }
 
-    // MARK: - CTL Supplementary TDS (Option A validation)
-
-    private func makeCtlTDS() -> TrackerData {
-        let ctlRule = KnownTracker.Rule(
-            rule: "facebook\\.net/.*sdk\\.js",
-            surrogate: nil,
-            action: .blockCTLFB,
-            options: nil,
-            exceptions: nil)
-        let tracker = KnownTracker(
-            domain: "facebook.net",
-            defaultAction: .ignore,
-            owner: KnownTracker.Owner(name: "Facebook Inc", displayName: "Facebook", ownedBy: nil),
-            prevalence: 0.8,
-            subdomains: nil,
-            categories: nil,
-            rules: [ctlRule])
-        let entity = Entity(displayName: "Facebook", domains: ["facebook.net", "facebook.com"], prevalence: 0.8)
-        return TrackerData(
-            trackers: ["facebook.net": tracker],
-            entities: ["Facebook Inc": entity],
-            domains: ["facebook.net": "Facebook Inc", "facebook.com": "Facebook Inc"],
-            cnames: nil)
-    }
-
-    func testCTLRuleBlockedWhenCTLTDSIncludedInSupplementary() {
-        let mapper = TrackerProtectionEventMapper(
-            tld: tld,
-            mainTrackerData: makeTestTDS(),
-            supplementaryTrackerData: [makeCtlTDS()],
-            unprotectedSites: [],
-            tempList: [],
-            contentBlockingEnabled: true,
-            trackerAllowlist: [:])
-
-        let observation = TrackerProtectionSubfeature.ResourceObservation(
-            url: "https://connect.facebook.net/en_US/sdk.js",
-            resourceType: "script",
-            potentiallyBlocked: true,
-            pageUrl: "https://example.com")
-        let result = mapper.classifyResource(observation)
-
-        XCTAssertNotNil(result, "CTL rule in supplementary TDS must produce a DetectedRequest")
-        XCTAssertTrue(result!.isBlocked, "CTL rule must classify as blocked when CTL TDS is included")
-    }
-
-    func testCTLRuleNotBlockedWhenCTLTDSExcludedFromSupplementary() {
-        let mapper = TrackerProtectionEventMapper(
-            tld: tld,
-            mainTrackerData: makeTestTDS(),
-            supplementaryTrackerData: [],
-            unprotectedSites: [],
-            tempList: [],
-            contentBlockingEnabled: true,
-            trackerAllowlist: [:])
-
-        let observation = TrackerProtectionSubfeature.ResourceObservation(
-            url: "https://connect.facebook.net/en_US/sdk.js",
-            resourceType: "script",
-            potentiallyBlocked: false,
-            pageUrl: "https://example.com")
-        let result = mapper.classifyResource(observation)
-
-        XCTAssertNil(result, "Without CTL TDS, facebook.net must not be classified as a tracker")
-    }
-
-    func testNonCTLTrackerUnaffectedByCTLTDSPresence() {
-        let mapper = TrackerProtectionEventMapper(
-            tld: tld,
-            mainTrackerData: makeTestTDS(),
-            supplementaryTrackerData: [makeCtlTDS()],
-            unprotectedSites: [],
-            tempList: [],
-            contentBlockingEnabled: true,
-            trackerAllowlist: [:])
-
-        let observation = TrackerProtectionSubfeature.ResourceObservation(
-            url: "https://tracker.com/pixel.js",
-            resourceType: "script",
-            potentiallyBlocked: true,
-            pageUrl: "https://example.com")
-        let result = mapper.classifyResource(observation)
-
-        XCTAssertNotNil(result)
-        XCTAssertTrue(result!.isBlocked, "Non-CTL tracker must remain blocked regardless of CTL TDS presence")
-    }
-
-    func testNonCTLTrackerStillBlockedWhenCTLTDSExcluded() {
-        let mapper = TrackerProtectionEventMapper(
-            tld: tld,
-            mainTrackerData: makeTestTDS(),
-            supplementaryTrackerData: [],
-            unprotectedSites: [],
-            tempList: [],
-            contentBlockingEnabled: true,
-            trackerAllowlist: [:])
-
-        let observation = TrackerProtectionSubfeature.ResourceObservation(
-            url: "https://tracker.com/pixel.js",
-            resourceType: "script",
-            potentiallyBlocked: true,
-            pageUrl: "https://example.com")
-        let result = mapper.classifyResource(observation)
-
-        XCTAssertNotNil(result)
-        XCTAssertTrue(result!.isBlocked, "Non-CTL tracker must remain blocked when CTL TDS is excluded")
-    }
-
     // MARK: - Multi-TDS Loop Parity with Legacy ContentBlockerRulesUserScript
     //
     // These pin the documented contract of `classifyUrl`'s multi-TDS loop so any future
@@ -575,11 +467,21 @@ final class TrackerProtectionEventMapperTests: XCTestCase {
     /// supplementary candidate must survive — matching legacy semantics where the main
     /// resolver's `nil` result does not overwrite `detectedTracker`.
     func testSupplementaryNonBlockedCandidateSurvivesWhenMainTDSReturnsNil() {
-        // Supplementary TDS contains facebook.net with default-ignore — yields a
+        // Supplementary TDS contains other-tracker.net with default-ignore — yields a
         // non-blocked candidate. Main TDS contains only tracker.com so it returns nil
-        // for facebook.net (mirrors splitter contract: supplementary trackers are
+        // for other-tracker.net (mirrors splitter contract: supplementary trackers are
         // removed from main).
-        let supplementary = makeCtlTDS()
+        let supplementaryTracker = KnownTracker(
+            domain: "other-tracker.net",
+            defaultAction: .ignore,
+            owner: KnownTracker.Owner(name: "Other Tracker Inc", displayName: "Other Tracker", ownedBy: nil),
+            prevalence: 0.1, subdomains: nil, categories: nil, rules: nil)
+        let supplementary = TrackerData(
+            trackers: ["other-tracker.net": supplementaryTracker],
+            entities: ["Other Tracker Inc": Entity(displayName: "Other Tracker",
+                                                   domains: ["other-tracker.net"], prevalence: 0.1)],
+            domains: ["other-tracker.net": "Other Tracker Inc"],
+            cnames: nil)
         let mapper = TrackerProtectionEventMapper(
             tld: tld,
             mainTrackerData: makeTestTDS(),
@@ -589,10 +491,11 @@ final class TrackerProtectionEventMapperTests: XCTestCase {
             contentBlockingEnabled: true,
             trackerAllowlist: [:])
 
-        // facebook.net/some.js does not match the CTL `sdk.js` rule, so the supplementary
-        // resolver returns a non-blocked candidate (ignore-default + no matching rule).
+        // other-tracker.net is recognized only by the supplementary TDS (ignore-default),
+        // so the supplementary resolver returns a non-blocked candidate while main TDS
+        // has no entry for it at all.
         let observation = TrackerProtectionSubfeature.ResourceObservation(
-            url: "https://connect.facebook.net/some-other.js",
+            url: "https://other-tracker.net/some.js",
             resourceType: "script",
             potentiallyBlocked: false,
             pageUrl: "https://example.com")
@@ -601,7 +504,7 @@ final class TrackerProtectionEventMapperTests: XCTestCase {
 
         XCTAssertNotNil(result, "Supplementary non-blocked candidate must survive when main TDS returns nil")
         XCTAssertFalse(result!.isBlocked, "Candidate from supplementary TDS must remain non-blocked")
-        XCTAssertEqual(result?.eTLDplus1, "facebook.net",
+        XCTAssertEqual(result?.eTLDplus1, "other-tracker.net",
                        "Returned candidate must be the supplementary TDS's classification")
     }
 
@@ -687,137 +590,4 @@ final class TrackerProtectionEventMapperTests: XCTestCase {
         XCTAssertEqual(result?.entityName, "Sup",
                        "Supplementary blocked result must short-circuit; main TDS must not run")
     }
-
-    // MARK: - CTL-Inactive Parity (authentic split-TDS validation)
-    // Uses ClickToLoadRulesSplitter with a facebook.net CTL fixture (macOS-only).
-
-    #if os(macOS)
-
-    // swiftlint:disable line_length
-    private static let ctlExampleRules = """
-    {
-      "trackers": {
-            "facebook.net": {
-                "domain": "facebook.net",
-                "owner": { "name": "Facebook, Inc.", "displayName": "Facebook", "privacyPolicy": "https://www.facebook.com/privacy/explanation", "url": "https://facebook.com" },
-                "prevalence": 0.268, "fingerprinting": 2, "cookies": 0.208, "categories": [],
-                "default": "ignore",
-                "rules": [
-                    { "rule": "facebook\\\\.net/.*/all\\\\.js", "surrogate": "fb-sdk.js", "action": "block-ctl-fb", "fingerprinting": 1, "cookies": 0.0000408 },
-                    { "rule": "facebook\\\\.net/.*/fbevents\\\\.js", "fingerprinting": 1, "cookies": 0.108 },
-                    { "rule": "facebook\\\\.net/[a-z_A-Z]+/sdk\\\\.js", "surrogate": "fb-sdk.js", "action": "block-ctl-fb", "fingerprinting": 1, "cookies": 0.000334 },
-                    { "rule": "facebook\\\\.net/signals/config/", "fingerprinting": 1, "cookies": 0.000101 },
-                    { "rule": "facebook\\\\.net\\\\/signals\\\\/plugins\\\\/openbridge3\\\\.js", "fingerprinting": 1, "cookies": 0 },
-                    { "rule": "facebook\\\\.net/.*/sdk/.*customerchat\\\\.js", "fingerprinting": 1, "cookies": 0.00000681 },
-                    { "rule": "facebook\\\\.net\\\\/en_US\\\\/messenger\\\\.Extensions\\\\.js", "fingerprinting": 1, "cookies": 0 },
-                    { "rule": "facebook\\\\.net\\\\/en_US\\\\/sdk\\\\/xfbml\\\\.save\\\\.js", "fingerprinting": 1, "cookies": 0 },
-                    { "rule": "facebook\\\\.net/", "action": "block-ctl-fb" }
-                ]
-            }
-      },
-      "entities": { "Facebook, Inc.": { "domains": ["facebook.net"], "displayName": "Facebook", "prevalence": 0.1 } },
-      "domains": { "facebook.net": "Facebook, Inc." },
-      "cnames": {}
-    }
-    """
-    // swiftlint:enable line_length
-
-    /// Builds the same split TDS that production uses via ClickToLoadRulesSplitter,
-    /// then creates a mapper that models CTL-inactive state: main TDS = withoutBlockCTL,
-    /// supplementary = [] (CTL TDS excluded per Option A).
-    private func makeCtlInactiveMapper() throws -> TrackerProtectionEventMapper {
-        let fullTDS = try JSONDecoder().decode(
-            TrackerData.self, from: Self.ctlExampleRules.data(using: .utf8)!)
-        let dataSet = TrackerDataManager.DataSet(tds: fullTDS, etag: "test")
-        let ruleList = ContentBlockerRulesList(
-            name: "TrackerDataSet", trackerData: nil, fallbackTrackerData: dataSet)
-        let splits = try XCTUnwrap(ClickToLoadRulesSplitter(rulesList: ruleList).split())
-
-        return TrackerProtectionEventMapper(
-            tld: tld,
-            mainTrackerData: splits.withoutBlockCTL.fallbackTrackerData.tds,
-            supplementaryTrackerData: [],
-            unprotectedSites: [],
-            tempList: [],
-            contentBlockingEnabled: true,
-            trackerAllowlist: [:])
-    }
-
-    func testCTLInactiveCatchAllProducesNonBlockedEvent() throws {
-        let mapper = try makeCtlInactiveMapper()
-        let observation = TrackerProtectionSubfeature.ResourceObservation(
-            url: "https://www.facebook.net/some.js",
-            resourceType: "script",
-            potentiallyBlocked: false,
-            pageUrl: "https://example.com")
-
-        let result = mapper.classifyResource(observation)
-
-        XCTAssertNotNil(result, "CTL-inactive catch-all must still produce a DetectedRequest")
-        XCTAssertFalse(result!.isBlocked, "CTL-inactive catch-all must not be blocked")
-        if case .allowed(reason: .ruleException) = result?.state {} else {
-            XCTFail("Expected .ruleException for CTL-inactive ignore-default tracker, got \(String(describing: result?.state))")
-        }
-    }
-
-    func testCTLInactiveSDKProducesNonBlockedEvent() throws {
-        let mapper = try makeCtlInactiveMapper()
-        let observation = TrackerProtectionSubfeature.ResourceObservation(
-            url: "https://www.facebook.net/EN/sdk.js",
-            resourceType: "script",
-            potentiallyBlocked: false,
-            pageUrl: "https://example.com")
-
-        let result = mapper.classifyResource(observation)
-
-        XCTAssertNotNil(result, "CTL-inactive SDK must still produce a DetectedRequest")
-        XCTAssertFalse(result!.isBlocked, "CTL-inactive SDK must not be blocked")
-        if case .allowed(reason: .ruleException) = result?.state {} else {
-            XCTFail("Expected .ruleException for CTL-inactive SDK, got \(String(describing: result?.state))")
-        }
-    }
-
-    func testCTLInactiveNonCTLRuleStillBlocked() throws {
-        let mapper = try makeCtlInactiveMapper()
-        let observation = TrackerProtectionSubfeature.ResourceObservation(
-            url: "https://www.facebook.net/signals/config/config.js",
-            resourceType: "script",
-            potentiallyBlocked: true,
-            pageUrl: "https://example.com")
-
-        let result = mapper.classifyResource(observation)
-
-        XCTAssertNotNil(result, "Non-CTL facebook.net rule must still produce a DetectedRequest")
-        XCTAssertTrue(result!.isBlocked, "Non-CTL rule must remain blocked even when CTL is inactive")
-    }
-
-    func testCTLActiveSDKIsBlocked() throws {
-        let fullTDS = try JSONDecoder().decode(
-            TrackerData.self, from: Self.ctlExampleRules.data(using: .utf8)!)
-        let dataSet = TrackerDataManager.DataSet(tds: fullTDS, etag: "test")
-        let ruleList = ContentBlockerRulesList(
-            name: "TrackerDataSet", trackerData: nil, fallbackTrackerData: dataSet)
-        let splits = try XCTUnwrap(ClickToLoadRulesSplitter(rulesList: ruleList).split())
-
-        let mapper = TrackerProtectionEventMapper(
-            tld: tld,
-            mainTrackerData: splits.withoutBlockCTL.fallbackTrackerData.tds,
-            supplementaryTrackerData: [splits.withBlockCTL.fallbackTrackerData.tds],
-            unprotectedSites: [],
-            tempList: [],
-            contentBlockingEnabled: true,
-            trackerAllowlist: [:])
-
-        let observation = TrackerProtectionSubfeature.ResourceObservation(
-            url: "https://www.facebook.net/EN/sdk.js",
-            resourceType: "script",
-            potentiallyBlocked: true,
-            pageUrl: "https://example.com")
-
-        let result = mapper.classifyResource(observation)
-
-        XCTAssertNotNil(result, "CTL-active SDK must produce a DetectedRequest")
-        XCTAssertTrue(result!.isBlocked, "CTL-active SDK must be blocked")
-    }
-    #endif
 }

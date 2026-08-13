@@ -1,5 +1,5 @@
 {
-  "originHash" : "44d57b63cd73e215a97d3d1e7e527f0e28284c3e95d8949c0aa22c78d49775ab",
+  "originHash" : "efb9fcd0467068838457999f2886c03e71fbb5bc900ad58b8a3540db0becaf6e",
   "pins" : [
     {
       "identity" : "apple-toolbox",
@@ -231,8 +231,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/TrackerRadarKit.git",
       "state" : {
-        "revision" : "6d2db2a50cbd6d0a33d40864953bbef523489b28",
-        "version" : "3.1.0"
+        "revision" : "6ae7e79e77a4deb03fb5f21a73d701cae4132281",
+        "version" : "4.0.0"
       }
     },
     {

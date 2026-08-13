@@ -159,18 +159,6 @@ class TrackerResolverTests: XCTestCase {
                                                       options: nil,
                                                       exceptions: KnownTracker.Rule.Matching(domains: ["attributed.com"],
                                                                                              types: nil)),
-                                    KnownTracker.Rule(rule: "tracker\\.com/ctl-block/.*",
-                                                      surrogate: nil,
-                                                      action: .blockCTLFB,
-                                                      options: nil,
-                                                      exceptions: KnownTracker.Rule.Matching(domains: ["other.com"],
-                                                                                             types: nil)),
-                                    KnownTracker.Rule(rule: "tracker\\.com/ctl-surrogate/.*",
-                                                      surrogate: "fb-sdk.js",
-                                                      action: .blockCTLFB,
-                                                      options: nil,
-                                                      exceptions: KnownTracker.Rule.Matching(domains: ["other.com"],
-                                                                                             types: nil)),
                                     KnownTracker.Rule(rule: "tracker\\.com/ignore/.*",
                                                       surrogate: nil,
                                                       action: .ignore,
@@ -277,45 +265,6 @@ class TrackerResolverTests: XCTestCase {
         XCTAssertEqual(blockTrackerRuleAttributedException?.entityName, entity.displayName)
         XCTAssertEqual(blockTrackerRuleAttributedException?.category, tracker.category)
         XCTAssertEqual(blockTrackerRuleAttributedException?.prevalence, tracker.prevalence)
-
-        let blockTrackerRuleCTLBlock = resolver.trackerFromUrl("https://tracker.com/ctl-block/s.js",
-                                                                     pageUrlString: "https://example.com",
-                                                                     resourceType: "image",
-                                                                     potentiallyBlocked: true)
-
-        XCTAssertNotNil(blockTrackerRuleCTLBlock)
-        XCTAssert(blockTrackerRuleCTLBlock?.isBlocked ?? false)
-        XCTAssertEqual(blockTrackerRuleCTLBlock?.state, .blocked)
-        XCTAssertEqual(blockTrackerRuleCTLBlock?.ownerName, tracker.owner?.name)
-        XCTAssertEqual(blockTrackerRuleCTLBlock?.entityName, entity.displayName)
-        XCTAssertEqual(blockTrackerRuleCTLBlock?.category, tracker.category)
-        XCTAssertEqual(blockTrackerRuleCTLBlock?.prevalence, tracker.prevalence)
-
-        let blockTrackerRuleCTLSurrogate = resolver.trackerFromUrl("https://tracker.com/ctl-surrogate/s.js",
-                                                                     pageUrlString: "https://example.com",
-                                                                     resourceType: "image",
-                                                                     potentiallyBlocked: true)
-
-        XCTAssertNotNil(blockTrackerRuleCTLSurrogate)
-        XCTAssert(blockTrackerRuleCTLSurrogate?.isBlocked ?? false)
-        XCTAssertEqual(blockTrackerRuleCTLSurrogate?.state, .blocked)
-        XCTAssertEqual(blockTrackerRuleCTLSurrogate?.ownerName, tracker.owner?.name)
-        XCTAssertEqual(blockTrackerRuleCTLSurrogate?.entityName, entity.displayName)
-        XCTAssertEqual(blockTrackerRuleCTLSurrogate?.category, tracker.category)
-        XCTAssertEqual(blockTrackerRuleCTLSurrogate?.prevalence, tracker.prevalence)
-
-        let ignoreTrackerRuleCTLException = resolver.trackerFromUrl("https://tracker.com/ctl-block/s.js",
-                                                                     pageUrlString: "https://other.com",
-                                                                     resourceType: "image",
-                                                                     potentiallyBlocked: true)
-
-        XCTAssertNotNil(ignoreTrackerRuleCTLException)
-        XCTAssertFalse(ignoreTrackerRuleCTLException?.isBlocked ?? true)
-        XCTAssertEqual(ignoreTrackerRuleCTLException?.state, BlockingState.allowed(reason: .ruleException))
-        XCTAssertEqual(ignoreTrackerRuleCTLException?.ownerName, tracker.owner?.name)
-        XCTAssertEqual(ignoreTrackerRuleCTLException?.entityName, entity.displayName)
-        XCTAssertEqual(ignoreTrackerRuleCTLException?.category, tracker.category)
-        XCTAssertEqual(ignoreTrackerRuleCTLException?.prevalence, tracker.prevalence)
 
     }
 

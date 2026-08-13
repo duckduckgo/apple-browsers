@@ -216,6 +216,7 @@ jobs:
         echo $! > log_stream.pid
 
     - name: Resolve package dependencies
+      if: runner.environment != 'self-hosted'
       working-directory: macOS
       run: |
         max_attempts=5

@@ -283,7 +283,7 @@ public final class WideEvent: WideEventManaging {
     }
 }
 
-public struct WideEventPixelKitEvent: PixelKitEvent {
+public struct WideEventPixelKitEvent: PixelKit.Event {
     public let name: String
     public let parameters: [String: String]?
     public let standardParameters: [PixelKitStandardParameter]?

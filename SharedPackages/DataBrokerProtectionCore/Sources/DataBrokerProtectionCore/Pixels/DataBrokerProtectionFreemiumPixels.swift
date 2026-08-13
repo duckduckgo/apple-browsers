@@ -48,7 +48,7 @@ public class DataBrokerProtectionFreemiumPixelHandler: EventMapping<DataBrokerPr
     }
 }
 
-public enum DataBrokerProtectionFreemiumPixels: PixelKitEvent {
+public enum DataBrokerProtectionFreemiumPixels: PixelKit.Event {
 
     // Before the first scan
     case newTabScanImpression

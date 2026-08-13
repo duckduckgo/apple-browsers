@@ -20,7 +20,7 @@ import Foundation
 import PixelKit
 
 /// Tracks site loading performance metrics received via push notifications from Content Scope Scripts
-enum SiteLoadingPerformancePixel: PixelKitEvent, PixelKitEventWithCustomPrefix {
+enum SiteLoadingPerformancePixel: PixelKit.Event, PixelKitEventWithCustomPrefix {
 
     // MARK: - Parameter Names
 

@@ -19,7 +19,7 @@
 import Foundation
 import PixelKit
 
-enum AutofillPixelKitEvent: PixelKitEvent {
+enum AutofillPixelKitEvent: PixelKit.Event {
     enum Parameter {
         static let lastUsed = "last_used"
     }

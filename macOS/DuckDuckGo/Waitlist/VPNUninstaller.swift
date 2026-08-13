@@ -77,7 +77,7 @@ final class VPNUninstaller: VPNUninstalling {
         }
     }
 
-    enum IPCUninstallAttempt: PixelKitEvent {
+    enum IPCUninstallAttempt: PixelKit.Event {
         case prevented
         case begin
         case cancelled(_ reason: UninstallCancellationReason)

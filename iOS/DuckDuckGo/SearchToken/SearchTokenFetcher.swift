@@ -34,10 +34,18 @@ import os.log
 /// else `nil`. Only fetching is UA-aware; retrieval never withholds a live token.
 final class SearchTokenFetcher {
 
+    /// Outcome of a warm fetch, reported to `onFetchResult` for the `search-token_fetch` diagnostic pixel.
+    enum FetchResult: String {
+        case success
+        case httpError = "http_error"      // non-2xx status from the token endpoint
+        case transportError = "transport_error"  // no HTTP response (timeout, offline, DNS, …)
+    }
+
     private let requester: SearchTokenRequesting
     private let ttlProvider: () -> TimeInterval
     private let windowProvider: () -> TimeInterval
     private let now: () -> Date
+    private let onFetchResult: (_ result: FetchResult) -> Void
 
     private let lock = NSLock()
     private var cachedToken: String?
@@ -48,11 +56,13 @@ final class SearchTokenFetcher {
     init(requester: SearchTokenRequesting,
          ttlProvider: @escaping () -> TimeInterval = { 300 },
          windowProvider: @escaping () -> TimeInterval = { 120 },
-         now: @escaping () -> Date = Date.init) {
+         now: @escaping () -> Date = Date.init,
+         onFetchResult: @escaping (_ result: FetchResult) -> Void = { _ in }) {
         self.requester = requester
         self.ttlProvider = ttlProvider
         self.windowProvider = windowProvider
         self.now = now
+        self.onFetchResult = onFetchResult
     }
 
     /// The cached token while it is still within its TTL, otherwise `nil`. Synchronous, non-blocking.
@@ -79,8 +89,17 @@ final class SearchTokenFetcher {
         do {
             let token = try await requester.requestToken(userAgent: userAgent)
             cache(token: token, userAgent: userAgent)
+            onFetchResult(.success)
             Logger.general.debug("SearchToken: fetched (len=\(token.count, privacy: .public))")
         } catch {
+            let result: FetchResult
+            if let reqError = error as? SearchTokenRequest.RequestError,
+               case .unexpectedStatusCode = reqError {
+                result = .httpError
+            } else {
+                result = .transportError
+            }
+            onFetchResult(result)
             Logger.general.debug("SearchToken: fetch failed: \(error.localizedDescription, privacy: .public)")
         }
     }

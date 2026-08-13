@@ -22,7 +22,7 @@ import os.log
 
 final class PixelKitEventWithCustomPrefixTests: XCTestCase {
 
-    enum TestEvent: String, PixelKitEvent, PixelKitEventWithCustomPrefix {
+    enum TestEvent: String, PixelKit.Event, PixelKitEventWithCustomPrefix {
         /// Both test events are the same but the macOS one adds the "mac" prefix, since prefixes aren't
         /// centrally managed anymore.
         case macEvent

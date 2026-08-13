@@ -1049,6 +1049,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         onboardingContextualDialogsManager = ContextualDialogsManager(
             trackerMessageProvider: TrackerMessageProvider(
                 entityProviding: privacyFeatures.contentBlocking.contentBlockingManager
+            ),
+            subscriptionUpsellExperiment: OnboardingSubscriptionUpsellExperiment(
+                featureFlagger: featureFlagger,
+                subscriptionManager: subscriptionManager
             )
         )
 

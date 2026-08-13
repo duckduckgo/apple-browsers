@@ -42,6 +42,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216010708822357
     case onboardingChromeExtension
 
+    /// Subscription upsell screen at the end of contextual onboarding
+    /// https://app.asana.com/1/137249556945/task/1210565180535541
+    case onboardingSubscriptionUpsell
+
     /// Simplified Fire dialog
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216512684334175
     case fireDialogSimplified
@@ -506,6 +510,12 @@ extension FeatureFlag: FeatureFlagDescribing {
         case treatment
     }
 
+    /// Cohorts for the onboarding subscription upsell experiment
+    public enum OnboardingSubscriptionUpsellCohort: String, FeatureFlagCohortDescribing {
+        case control
+        case treatment
+    }
+
     private struct Config {
         let defaultValue: FeatureFlagDefaultValue
         let source: FeatureFlagSource
@@ -544,6 +554,11 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.appRebranding))
         case .onboardingChromeExtension:
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingChromeExtension), cohortType: OnboardingChromeExtensionCohort.self)
+        case .onboardingSubscriptionUpsell:
+            Config(defaultValue: .disabled,
+                   source: .remoteReleasable(PrivacyProSubfeature.onboardingSubscriptionUpsellExperiment),
+                   cohortType: OnboardingSubscriptionUpsellCohort.self,
+                   category: .subscription)
         case .fireDialogSimplified:
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.fireDialogSimplified))
         case .unknownUsernameCategorization:

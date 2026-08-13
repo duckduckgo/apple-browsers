@@ -19,7 +19,7 @@
 import PixelKit
 import DDGSync
 
-enum SyncFeatureUsagePixels: PixelKitEvent {
+enum SyncFeatureUsagePixels: PixelKit.Event {
     private enum ParameterKeys {
         static let connectedDevices = "connected_devices"
     }
@@ -52,7 +52,7 @@ enum SyncFeatureUsagePixels: PixelKitEvent {
     }
 }
 
-enum SyncSwitchAccountPixelKitEvent: PixelKitEvent {
+enum SyncSwitchAccountPixelKitEvent: PixelKit.Event {
     case syncAskUserToSwitchAccount
     case syncUserAcceptedSwitchingAccount
     case syncUserCancelledSwitchingAccount
@@ -88,7 +88,7 @@ enum SyncSwitchAccountPixelKitEvent: PixelKitEvent {
     }
 }
 
-enum SyncSetupPixelKitEvent: PixelKitEvent {
+enum SyncSetupPixelKitEvent: PixelKit.Event {
 
     enum ParameterKey {
         static let source = "source"

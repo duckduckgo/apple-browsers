@@ -325,6 +325,7 @@ extension XCUIApplication {
             "The address bar text field didn't become available in a reasonable timeframe."
         )
         addressBar.pasteURL(url, pressingEnter: true)
+        Self.dismissLocalNetworkPromptIfPresent()
         XCTAssertTrue(
             windows.firstMatch.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Visited site didn't load with the expected title in a reasonable timeframe."
@@ -344,6 +345,7 @@ extension XCUIApplication {
             "The address bar text field didn't become available in a reasonable timeframe."
         )
         addressBar.pasteURL(url, pressingEnter: true)
+        Self.dismissLocalNetworkPromptIfPresent()
         if let expectedLabel {
             XCTAssertTrue(
                 windows.firstMatch.webViews[expectedLabel].waitForExistence(timeout: UITests.Timeouts.navigation),
@@ -375,6 +377,27 @@ extension XCUIApplication {
             progressIndicator.waitForNonExistence(timeout: UITests.Timeouts.navigation),
             "Progress did not reach 100% in a reasonable timeframe (current value: \(progressIndicator.value as? Double ??? "<nil>"))."
         )
+    }
+
+    /// Dismisses the macOS "Allow … to find devices on local networks?" system prompt if it's on
+    /// screen. It's a TCC alert owned by `UserNotificationCenter`, so it floats above our window and
+    /// steals key focus: while it's up the browser window isn't hittable and the next click/wait
+    /// fails at a nondeterministic point — a recurring source of flakiness on the macOS 15+ CI VMs.
+    /// Tapping "Allow" lets the tests-server loopback traffic proceed unchanged.
+    @discardableResult
+    static func dismissLocalNetworkPromptIfPresent() -> Bool {
+        let notificationCenter = XCUIApplication(bundleIdentifier: "com.apple.UserNotificationCenter")
+        for label in ["Allow", "Don’t Allow", "Don't Allow"] {
+            // `.firstMatch`: UserNotificationCenter can surface the same label more than once
+            // (nested hierarchy / stacked notifications); a bare query would fail `.click()` with
+            // "multiple matching elements". Any match dismisses the prompt.
+            let button = notificationCenter.buttons[label].firstMatch
+            if button.exists {
+                button.click()
+                return true
+            }
+        }
+        return false
     }
 
     // MARK: - Bookmarks

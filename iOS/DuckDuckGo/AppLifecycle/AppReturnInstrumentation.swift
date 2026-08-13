@@ -20,7 +20,7 @@
 import Foundation
 import PixelKit
 
-enum AppReturnPixel: PixelKitEvent, PixelKitEventWithCustomPrefix {
+enum AppReturnPixel: PixelKit.Event, PixelKitEventWithCustomPrefix {
 
     case appReturn
 

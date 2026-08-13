@@ -21,7 +21,7 @@ import PixelKit
 /**
  * This enum keeps pixels related to Bookmarks.
  */
-enum BookmarksPixel: PixelKitEvent {
+enum BookmarksPixel: PixelKit.Event {
     /**
      * Event Trigger: Bookmark data finishes loading successfully.
      *

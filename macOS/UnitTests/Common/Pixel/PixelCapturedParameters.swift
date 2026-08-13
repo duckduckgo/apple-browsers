@@ -20,7 +20,7 @@ import Foundation
 import PixelKit
 
 struct PixelCapturedParameters {
-    var event: PixelKitEvent?
+    var event: PixelKit.Event?
     var frequency: PixelKit.Frequency = .standard
     var headers: [String: String] = [:]
     var parameters: [String: String]?

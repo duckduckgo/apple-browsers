@@ -897,7 +897,7 @@ private final class MockSubscriptionPixelHandler: SubscriptionPixelHandling {
     }
 }
 
-private struct SubscriptionPixelEvent: PixelKitEvent {
+private struct SubscriptionPixelEvent: PixelKit.Event {
     let name: String
     let parameters: [String: String]?
     let standardParameters: [PixelKitStandardParameter]? = [.pixelSource]

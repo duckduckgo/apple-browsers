@@ -303,6 +303,28 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
 
         XCTAssertEqual(glassView.frame, searchContainer.bounds)
     }
+
+    func testWhenGlassAppearanceIsUnchangedThenMakingGlassPreservesGlassView() throws {
+        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        barView.frame = CGRect(x: 0, y: 0, width: 390, height: DefaultOmniBarView.expectedHeight)
+        barView.layoutIfNeeded()
+        let glassView = try XCTUnwrap(firstGlassView(in: barView.searchContainer))
+
+        barView.makeGlass()
+
+        XCTAssertTrue(firstGlassView(in: barView.searchContainer) === glassView)
+    }
+
+    func testWhenFireModeChangesThenGlassViewIsRebuilt() throws {
+        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        barView.frame = CGRect(x: 0, y: 0, width: 390, height: DefaultOmniBarView.expectedHeight)
+        barView.layoutIfNeeded()
+        let glassView = try XCTUnwrap(firstGlassView(in: barView.searchContainer))
+
+        barView.refreshFireMode(fireMode: true)
+
+        XCTAssertFalse(firstGlassView(in: barView.searchContainer) === glassView)
+    }
 }
 
 final class FloatingDomainCapsuleControllerTests: XCTestCase {

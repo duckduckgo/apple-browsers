@@ -722,6 +722,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     private let stackView = TopLevelStackView()
 
     private lazy var glassEffect: UIVisualEffectView = makeGlassEffectView()
+    private var glassEffectFireMode: Bool?
 
     private func makeGlassEffectView() -> UIVisualEffectView {
         let view: UIVisualEffectView
@@ -807,6 +808,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
             makeOpaque()
             return
         }
+        guard glassEffect.superview !== searchAreaContainerView || glassEffectFireMode != fireMode else { return }
         UIView.performWithoutAnimation {
             opaqueEffect.removeFromSuperview()
 
@@ -828,6 +830,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
                 glassEffect.bottomAnchor.constraint(equalTo: searchAreaContainerView.bottomAnchor)
             ]
             NSLayoutConstraint.activate(glassEffectConstraints)
+            glassEffectFireMode = fireMode
 
             if fireMode {
                 // We don't want the text field to adapt to content behind the omnibar, so making it a

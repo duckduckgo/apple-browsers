@@ -453,6 +453,8 @@ struct UserText {
     static let fireDialogFireproofSites = NSLocalizedString("fire.dialog.fireproof.sites", value: "Fireproof sites won't be cleared", comment: "Category of domains in fire button dialog")
     static let fireDialogClearSites = NSLocalizedString("fire.dialog.clear.sites", value: "Selected sites will be cleared", comment: "Category of domains in fire button dialog")
     static let fireDialogDeletingData = NSLocalizedString("fire.dialog.deliting.data", value: "Deleting browsing data…", comment: "Text shown in dialog while removing browsing data")
+    static let fireDialogDeletingDataFromThisTab = NSLocalizedString("fire.dialog.deleting.data.from.this.tab", value: "Deleting browsing data from this tab…", comment: "Text shown in dialog while removing browsing data of the current tab")
+    static let fireDialogDeletingAllData = NSLocalizedString("fire.dialog.deleting.all.data", value: "Deleting all browsing data…", comment: "Text shown in dialog while removing all browsing data")
     static let fireInfoDialogTitle = NSLocalizedString("fire.info.dialog.title", value: "Leave No Trace", comment: "Title of the dialog that explains the Fire feature.")
     static let fireInfoDialogDescription = NSLocalizedString("fire.info.dialog.description", value: "Data, browsing history, and cookies can build up in your browser over time. Use the Fire Button to clear it all away.", comment: "Description in the dialog that explains the Fire feature.")
     static let fireDialogFireWindowTitle = NSLocalizedString("fire.dialog.fire-window.title", value: "Open New Fire Window", comment: "Title of the part of the dialog where the user can open a fire window.")

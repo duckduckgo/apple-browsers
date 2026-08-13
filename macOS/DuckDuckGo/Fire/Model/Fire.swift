@@ -201,7 +201,7 @@ final class Fire: FireProtocol {
     private var dispatchGroup: DispatchGroup?
 
     enum BurningData: Equatable {
-        case specificDomains(_ domains: Set<String>, closesTabs: Bool)
+        case specificDomains(_ domains: Set<String>, closesTabs: Bool, scope: BurningScope)
         case all
 
         /// Whether the burn closes/replaces tabs (all-data, window or tab burns) and therefore
@@ -212,7 +212,7 @@ final class Fire: FireProtocol {
             switch self {
             case .all:
                 return true
-            case .specificDomains(_, closesTabs: let closesTabs):
+            case .specificDomains(_, closesTabs: let closesTabs, scope: _):
                 return closesTabs
             }
         }
@@ -222,6 +222,16 @@ final class Fire: FireProtocol {
             guard closesTabs else { return false }
             return decider.shouldShowFireAnimation
         }
+    }
+
+    /// The part of the browser a burn is scoped to. Mirrors `BurningEntity` without its payload,
+    /// so that the burning progress dialog can describe what is being deleted.
+    enum BurningScope: Equatable {
+        /// New Tab Page privacy-feed site burn — no tab or window is burned.
+        case none
+        case tab
+        case window
+        case allWindows
     }
 
     /// Represents what should be "burned" (tabs/windows) and for which domains; `close` controls whether UI is closed or only state is cleared.
@@ -278,6 +288,19 @@ final class Fire: FireProtocol {
                 return "window"
             case .allWindows:
                 return "all_windows"
+            }
+        }
+
+        var scope: BurningScope {
+            switch self {
+            case .none:
+                return .none
+            case .tab:
+                return .tab
+            case .window:
+                return .window
+            case .allWindows:
+                return .allWindows
             }
         }
 
@@ -386,7 +409,7 @@ final class Fire: FireProtocol {
         let domains = domainsToBurn(from: entity)
         assert(domains.areAllETLDPlus1(tld: tld))
 
-        burningData = .specificDomains(domains, closesTabs: entity.closesTabs)
+        burningData = .specificDomains(domains, closesTabs: entity.closesTabs, scope: entity.scope)
 
         dataClearingWideEventService?.start(.clearLastSessionState)
         let lastSessionStateResult = burnLastSessionState()

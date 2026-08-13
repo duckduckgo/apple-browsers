@@ -332,6 +332,8 @@ final class FireViewController: NSViewController {
                         return
                     }
 
+                deletingDataLabel.stringValue = burningData.deletingDataMessage
+
                 // Use the feature flag-aware method to determine if animation should play
                 if burningData.shouldPlayFireAnimation(decider: self.visualizeFireAnimationDecider) {
                     Task {
@@ -380,6 +382,9 @@ final class FireViewController: NSViewController {
         closeAllChildWindows()
 
         guard visualizeFireAnimationDecider.shouldShowFireAnimation else { return }
+
+        // This burn isn't scoped to a tab or to all data, so drop any text left by a previous burn.
+        deletingDataLabel.stringValue = UserText.fireDialogDeletingData
 
         await waitForFireAnimationViewIfNeeded()
         await withUnsafeContinuation { (continuation: UnsafeContinuation<Void, Never>) in

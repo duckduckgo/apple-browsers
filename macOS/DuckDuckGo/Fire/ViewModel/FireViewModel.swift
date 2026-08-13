@@ -31,10 +31,25 @@ extension Fire.BurningData {
      */
     func shouldDelayShowingDialog(decider: VisualizeFireSettingsDecider) -> Bool {
         switch self {
-        case .specificDomains(_, false):
+        case .specificDomains(_, false, _):
             return decider.shouldShowFireAnimation
         default:
             return false
+        }
+    }
+
+    /// Text of the modal dialog shown while data is being deleted.
+    ///
+    /// It describes the scope of the burn for a single tab burn and for an all-data burn,
+    /// and stays generic for all other burns.
+    var deletingDataMessage: String {
+        switch self {
+        case .all:
+            return UserText.fireDialogDeletingAllData
+        case .specificDomains(_, _, .tab):
+            return UserText.fireDialogDeletingDataFromThisTab
+        case .specificDomains:
+            return UserText.fireDialogDeletingData
         }
     }
 }

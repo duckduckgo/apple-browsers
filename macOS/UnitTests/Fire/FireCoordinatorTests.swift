@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import Combine
 import Common
 import FoundationExtensions
 import PixelKitTestingUtilities
@@ -244,6 +245,59 @@ struct FireCoordinatorTests {
         await coordinator.handleDialogResult(result, tabCollectionViewModel: tabCollectionViewModel, isAllHistorySelected: true)
 
         #expect(pixelFiring.actualFireCalls == pixelFiring.expectedFireCalls)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1))) func testHandleDialogResult_ForCurrentTab_ShowsTabScopedDeletingDataMessage() async throws {
+        let result = FireDialogResult(clearingOption: .currentTab,
+                                      includeHistory: true,
+                                      includeTabsAndWindows: true,
+                                      includeCookiesAndSiteData: true,
+                                      includeChatHistory: false)
+
+        let messages = await deletingDataMessages(for: result, isAllHistorySelected: true)
+
+        #expect(messages == [UserText.fireDialogDeletingDataFromThisTab])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1))) func testHandleDialogResult_ForAllData_ShowsAllDataDeletingDataMessage() async throws {
+        let result = FireDialogResult(clearingOption: .allData,
+                                      includeHistory: true,
+                                      includeTabsAndWindows: true,
+                                      includeCookiesAndSiteData: true,
+                                      includeChatHistory: false)
+
+        let messages = await deletingDataMessages(for: result, isAllHistorySelected: true)
+
+        #expect(messages == [UserText.fireDialogDeletingAllData])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1))) func testHandleDialogResult_ForCurrentWindow_ShowsGenericDeletingDataMessage() async throws {
+        let result = FireDialogResult(clearingOption: .currentWindow,
+                                      includeHistory: true,
+                                      includeTabsAndWindows: true,
+                                      includeCookiesAndSiteData: true,
+                                      includeChatHistory: false)
+
+        let messages = await deletingDataMessages(for: result, isAllHistorySelected: true)
+
+        #expect(messages == [UserText.fireDialogDeletingData])
+    }
+
+    /// Collects the text of the burning progress dialog for all burns started by `result`.
+    private func deletingDataMessages(for result: FireDialogResult, isAllHistorySelected: Bool) async -> [String] {
+        let coordinator = makeCoordinator()
+        var messages = [String]()
+        let cancellable = coordinator.fireViewModel.fire.burningDataPublisher
+            .compactMap { $0?.deletingDataMessage }
+            .sink { messages.append($0) }
+        defer { cancellable.cancel() }
+
+        await coordinator.handleDialogResult(result, tabCollectionViewModel: tabCollectionViewModel, isAllHistorySelected: isAllHistorySelected)
+
+        return messages
     }
 
     @available(iOS 16, macOS 13, *)

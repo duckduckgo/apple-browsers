@@ -227,7 +227,7 @@ jobs:
           os_table='[
             {"runner": "bitrise:macos26-m4", "os-version": "26", "xcode-version": "26.4", "per-test": true,  "latest": true},
             {"runner": "macos-14", "os-version": "14", "xcode-version": "16.2", "per-test": true, "latest": false},
-            {"runner": "bitrise:macos15-m4", "os-version": "15", "xcode-version": "26.2", "per-test": false, "latest": false}
+            {"runner": "bitrise:macos15-m4-xlarge", "os-version": "15", "xcode-version": "26.2", "per-test": false, "latest": false}
           ]'
 
           # What the single-job runners run. When the caller asked for specific classes they run

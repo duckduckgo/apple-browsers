@@ -124,6 +124,7 @@ final class AddressBarViewController: NSViewController {
     @IBOutlet var buttonsContainerViewLeadingConstraint: NSLayoutConstraint!
     @IBOutlet var buttonsContainerViewTrailingConstraint: NSLayoutConstraint!
     @IBOutlet var switchToTabBoxMinXConstraint: NSLayoutConstraint!
+    @IBOutlet var switchToTabBoxTrailingConstraint: NSLayoutConstraint!
     @IBOutlet var passiveTextFieldMinXConstraint: NSLayoutConstraint!
     @IBOutlet var activeTextFieldMinXConstraint: NSLayoutConstraint!
     @IBOutlet var addressBarTextTrailingConstraint: NSLayoutConstraint!
@@ -872,22 +873,29 @@ final class AddressBarViewController: NSViewController {
 
     private func updateSwitchToTabBoxAppearance() {
         guard case .editing(.openTabSuggestion) = mode,
-              addressBarTextField.isVisible, let editor = addressBarTextField.editor,
-              view.frame.size.width > 280 else {
-            switchToTabBox.isHidden = true
-            switchToTabBox.alphaValue = 0
+              addressBarTextField.isVisible, let editor = addressBarTextField.editor else {
+            refreshSwitchToTabVisibility(isHidden: true)
             return
         }
 
-        if !switchToTabBox.isVisible {
-            switchToTabBox.isShown = true
-            switchToTabBox.alphaValue = 0
+        let targetMinX = editor.textSize.width + Constants.switchToTabMinXPadding
+        let requiredWidth = targetMinX + switchToTabBox.fittingSize.width + switchToTabBoxTrailingConstraint.constant
+
+        guard requiredWidth <= view.bounds.width else {
+            refreshSwitchToTabVisibility(isHidden: true)
+            return
         }
+
         // update box position on the next pass after text editor layout is updated
         DispatchQueue.main.async {
-            self.switchToTabBox.alphaValue = 1
+            self.refreshSwitchToTabVisibility(isHidden: false)
             self.switchToTabBoxMinXConstraint.constant = editor.textSize.width + Constants.switchToTabMinXPadding
         }
+    }
+
+    private func refreshSwitchToTabVisibility(isHidden: Bool) {
+        switchToTabBox.isHidden = isHidden
+        switchToTabBox.alphaValue = isHidden ? 0 : 1
     }
 
     private func updateShadowViewPresence(_ isFirstResponder: Bool) {

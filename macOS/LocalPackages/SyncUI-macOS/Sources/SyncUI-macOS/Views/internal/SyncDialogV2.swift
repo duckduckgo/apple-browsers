@@ -48,4 +48,3 @@ struct SyncDialogV2<Content, Buttons>: View where Content: View, Buttons: View {
         )
     }
 }
-

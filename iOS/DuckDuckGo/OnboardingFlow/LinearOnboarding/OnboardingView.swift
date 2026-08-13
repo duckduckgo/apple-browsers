@@ -401,7 +401,11 @@ extension OnboardingView {
             configuration: BubbleBackedDialogConfiguration
         ) -> some View {
             let isIntroStep: Bool = if case .startOnboardingDialog = state.type { true } else { false }
-            return makeBubbleView(configuration: configuration, stepInfo: state.step) {
+            return makeBubbleView(
+                configuration: configuration,
+                stepInfo: state.step,
+                hasDaxAnimation: daxAnimation(for: state.type) != nil
+            ) {
                 VStack {
                     bubbleBackedDialogContent(for: state.type)
                         .opacity(showBubbleContent ? 1 : 0)
@@ -431,12 +435,13 @@ extension OnboardingView {
         private func makeBubbleView<Content: View>(
             configuration: BubbleBackedDialogConfiguration,
             stepInfo: ViewState.Intro.StepInfo,
+            hasDaxAnimation: Bool,
             @ViewBuilder content: @escaping () -> Content
         ) -> some View {
-            // Leading tails are mirrored (theme 0.8 → 0.2 from left); trailing tails use the
-            // offset directly. Hidden on compact viewports / AX text sizes.
+            // Leading tails are mirrored (theme 0.8 → 0.2 from left); trailing tails use the offset
+            // directly. Dropped when the content has no Dax to anchor to, and on compact viewports / AX text sizes.
             let tail: OnboardingBubbleView<Content>.TailPosition? = configuration.tail.flatMap { tail in
-                guard !OnboardingBubbleAnimationMetrics.shouldHideBubbleTail(for: dynamicTypeSize) else { return nil }
+                guard hasDaxAnimation, !OnboardingBubbleAnimationMetrics.shouldHideBubbleTail(for: dynamicTypeSize) else { return nil }
                 switch tail.direction {
                 case .leading: return .bottom(offset: 1 - tail.offset, direction: .leading)
                 case .trailing: return .bottom(offset: tail.offset, direction: .trailing)

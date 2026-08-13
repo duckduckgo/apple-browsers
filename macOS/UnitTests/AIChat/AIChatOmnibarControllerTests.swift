@@ -2285,8 +2285,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         XCTAssertEqual(mockBadgeImpressionPersistor.viewCount, 2)
     }
 
-    /// The model picker's header is a plain title with no badge, so the impression cap no longer
-    /// changes how it renders — it only mutes the reasoning picker's badge.
+    /// Both pickers render plain text now, so the impression cap no longer changes what is shown.
     func testModelPickerItems_headerUnchangedWhenImpressionCapReached() async {
         featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarSubscriptionUpsell.rawValue] = true
         await loadModels([
@@ -2330,7 +2329,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         )
     }
 
-    func testReasoningPickerItems_freeUserUpsellOn_gatedEffortHasTryForFreeBadge() async {
+    func testReasoningPickerItems_gatedEffortIsTaggedWithItsTier() async {
         featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarReasoningEffort.rawValue] = true
         featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarSubscriptionUpsell.rawValue] = true
         mockPreferences.selectedModelId = "reasoning-model"
@@ -2341,14 +2340,14 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         let open = items.first { $0.effort == .low }
 
         XCTAssertEqual(gated?.isGated, true)
-        XCTAssertEqual(gated?.upsellBadge, UserText.aiChatModelPickerTryForFree)
-        XCTAssertNil(gated?.trailingText, "Upsell badge replaces the plain PLUS/PRO label")
+        XCTAssertEqual(gated?.trailingText, UserText.aiChatModelPickerTierBadgePlus)
         XCTAssertEqual(gated?.isSelected, false)
         XCTAssertEqual(open?.isGated, false)
-        XCTAssertNil(open?.upsellBadge)
+        XCTAssertNil(open?.trailingText, "An effort the user can already use carries no tag")
     }
 
-    func testReasoningPickerItems_freeUserTrialIneligible_gatedEffortHasUpgradeBadge() async {
+    /// The tag names the tier that unlocks the effort, so it doesn't change with trial eligibility.
+    func testReasoningPickerItems_tierTagIsIndependentOfTrialEligibility() async {
         featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarReasoningEffort.rawValue] = true
         featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarSubscriptionUpsell.rawValue] = true
         mockPreferences.selectedModelId = "reasoning-model"
@@ -2356,10 +2355,10 @@ final class AIChatOmnibarControllerTests: XCTestCase {
 
         let gated = controller.reasoningPickerItems().first { $0.effort == .medium }
 
-        XCTAssertEqual(gated?.upsellBadge, UserText.aiChatModelPickerUpgrade)
+        XCTAssertEqual(gated?.trailingText, UserText.aiChatModelPickerTierBadgePlus)
     }
 
-    func testReasoningPickerItems_upsellOff_gatedEffortShowsTierLabelNoBadge() async {
+    func testReasoningPickerItems_upsellOff_gatedEffortStillShowsTierTag() async {
         featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarReasoningEffort.rawValue] = true
         // Upsell flag left off.
         mockPreferences.selectedModelId = "reasoning-model"
@@ -2368,11 +2367,10 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         let gated = controller.reasoningPickerItems().first { $0.effort == .medium }
 
         XCTAssertEqual(gated?.isGated, true)
-        XCTAssertNil(gated?.upsellBadge, "No badge when the upsell is off")
         XCTAssertEqual(gated?.trailingText, UserText.aiChatModelPickerTierBadgePlus)
     }
 
-    func testReasoningPickerItems_recordsOneImpressionWhenUpsellBadgeShown() async {
+    func testReasoningPickerItems_recordsOneImpressionWhenUpsellShown() async {
         featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarReasoningEffort.rawValue] = true
         featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarSubscriptionUpsell.rawValue] = true
         mockPreferences.selectedModelId = "reasoning-model"

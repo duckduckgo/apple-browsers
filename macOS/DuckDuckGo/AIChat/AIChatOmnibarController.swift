@@ -1499,11 +1499,8 @@ enum AIChatModelPickerItem {
 struct AIChatReasoningPickerItem {
     let effort: AIChatReasoningEffort
     let isSelected: Bool
-    /// PLUS/PRO label, shown for a gated effort when the upsell is off.
+    /// Plus/Pro tag naming the tier a gated effort needs.
     let trailingText: String?
-    /// "Try for Free"/"Upgrade" badge, shown for a gated effort when the upsell is on.
-    let upsellBadge: String?
-    let isBadgeMuted: Bool
     let isGated: Bool
 }
 
@@ -1563,24 +1560,20 @@ extension AIChatOmnibarController {
         // the chip agree on what's "current".
         let current = displayedReasoningEffort ?? pickerReasoningEfforts.first
         var items: [AIChatReasoningPickerItem] = []
-        var showedUpsellBadge = false
+        var showedUpsell = false
         for effort in pickerReasoningEfforts {
             let requiredTier = requiredTier(for: effort)
             let isGated = requiredTier != nil
-            let showsUpsell = isGated && isSubscriptionUpsellEnabled
-            showedUpsellBadge = showedUpsellBadge || showsUpsell
+            showedUpsell = showedUpsell || (isGated && isSubscriptionUpsellEnabled)
             items.append(AIChatReasoningPickerItem(
                 effort: effort,
                 isSelected: effort == current && !isGated,
-                trailingText: showsUpsell ? nil : tierBadge(for: requiredTier),
-                upsellBadge: showsUpsell ? (shouldOfferFreeTrial ? UserText.aiChatModelPickerTryForFree
-                                                                 : UserText.aiChatModelPickerUpgrade) : nil,
-                isBadgeMuted: isBadgeMuted,
+                trailingText: tierBadge(for: requiredTier),
                 isGated: isGated
             ))
         }
         // One impression per open, matching the model picker.
-        if showedUpsellBadge { recordBadgeImpression() }
+        if showedUpsell { recordBadgeImpression() }
         return items
     }
 

@@ -7144,11 +7144,6 @@ extension MainViewController {
     }
     
     private func refreshUIAfterClear() {
-        // Set before the empty-tabs branch below: burning every tab shows the switcher first, but the
-        // page the user reaches from there is still a post-burn arrival rather than a blank tab they
-        // asked for. Consumed by whichever New Tab Page attach comes next.
-        isAttachingNewTabPageAfterFire = true
-
         if tabManager.currentTabsModel.tabs.isEmpty && tabManager.currentTabsModel.allowsEmpty {
             showTabSwitcher()
             tabSwitcherController?.updateUIForSelectionMode()
@@ -7368,6 +7363,14 @@ extension MainViewController: FireExecutorDelegate {
     
     func willStartBurningData(fireRequest: FireRequest) {
         self.clearInProgress = true
+
+        // Marked here rather than from the UI refresh that follows, because a tab scoped burn
+        // rebuilds the screen through `closeTab` instead and would otherwise land the user on a
+        // New Tab Page that looks like one they asked for. Cleared unused in `attachTab`, so a burn
+        // that drops the user on an existing tab does not carry over.
+        if fireRequest.trigger == .manualFire {
+            isAttachingNewTabPageAfterFire = true
+        }
         if #available(iOS 18.4, *) {
             webExtensionEventsCoordinator?.extensionsWillUnload()
             webExtensionManager?.unloadAllExtensions()

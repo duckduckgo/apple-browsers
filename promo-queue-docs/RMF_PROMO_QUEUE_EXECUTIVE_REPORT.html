@@ -1,0 +1,566 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>RMF &amp; iOS Promo Queue — Executive Report</title>
+  <style>
+    :root {
+      --ink: #15212b;
+      --muted: #536371;
+      --line: #d8e0e7;
+      --surface: #f5f8fa;
+      --surface-strong: #eaf1f6;
+      --navy: #173a55;
+      --blue: #1769aa;
+      --blue-soft: #e9f4fc;
+      --teal: #087f73;
+      --teal-soft: #e6f6f3;
+      --amber: #8a5a00;
+      --amber-soft: #fff4d8;
+      --red: #a13b32;
+      --red-soft: #fcefed;
+      --white: #fff;
+      --shadow: 0 8px 24px rgba(21, 33, 43, .07);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--white);
+      font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      text-rendering: optimizeLegibility;
+    }
+    a { color: var(--blue); text-underline-offset: 2px; }
+    a:focus-visible { outline: 3px solid #f0b429; outline-offset: 3px; }
+    code {
+      padding: .08em .34em;
+      border-radius: 4px;
+      background: #edf2f5;
+      font: .9em ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      overflow-wrap: anywhere;
+    }
+    .skip-link {
+      position: absolute;
+      left: 16px;
+      top: -80px;
+      z-index: 10;
+      padding: 10px 14px;
+      color: white;
+      background: var(--navy);
+      border-radius: 6px;
+    }
+    .skip-link:focus { top: 12px; }
+    main { max-width: 1100px; margin: 0 auto; padding: 48px 28px 72px; }
+    header { padding-bottom: 34px; border-bottom: 1px solid var(--line); }
+    .eyebrow {
+      display: inline-flex;
+      gap: 7px;
+      align-items: center;
+      margin-bottom: 14px;
+      color: var(--blue);
+      font-size: 12px;
+      font-weight: 750;
+      letter-spacing: .09em;
+      text-transform: uppercase;
+    }
+    .eyebrow::before { content: ""; width: 22px; height: 3px; background: var(--blue); }
+    h1 { max-width: 850px; margin: 0; font-size: clamp(34px, 6vw, 58px); line-height: 1.03; letter-spacing: -.035em; }
+    h2 { margin: 52px 0 16px; font-size: clamp(24px, 3vw, 31px); line-height: 1.2; letter-spacing: -.018em; }
+    h3 { margin: 0 0 7px; font-size: 17px; line-height: 1.3; }
+    p { margin: 8px 0; }
+    .dek { max-width: 790px; margin: 18px 0 0; color: var(--muted); font-size: 18px; }
+    .meta { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 20px; color: var(--muted); font-size: 13px; }
+    .meta span { display: inline-flex; gap: 6px; }
+    .meta code { white-space: nowrap; overflow-wrap: normal; }
+    .callout {
+      margin: 28px 0 0;
+      padding: 20px 22px;
+      border: 1px solid #b9d8ee;
+      border-left: 5px solid var(--blue);
+      border-radius: 10px;
+      background: var(--blue-soft);
+      font-size: 17px;
+    }
+    .callout strong { color: var(--navy); }
+    .summary-grid, .cards, .two-col, .glossary {
+      display: grid;
+      gap: 14px;
+    }
+    .summary-grid { grid-template-columns: repeat(3, 1fr); margin-top: 18px; }
+    .cards { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+    .two-col { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .glossary { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .card {
+      padding: 17px 18px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--white);
+      box-shadow: var(--shadow);
+    }
+    .card p { color: var(--muted); }
+    .summary-grid .card { box-shadow: none; background: var(--surface); }
+    .tag {
+      display: inline-block;
+      margin-bottom: 8px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      color: var(--navy);
+      background: var(--surface-strong);
+      font-size: 11px;
+      font-weight: 750;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+    .tag.teal { color: #075e56; background: var(--teal-soft); }
+    .tag.amber { color: var(--amber); background: var(--amber-soft); }
+    .section-intro { max-width: 840px; color: var(--muted); font-size: 16px; }
+    .source { white-space: nowrap; font-size: 11px; font-weight: 750; vertical-align: super; }
+
+    figure.diagram {
+      margin: 20px 0;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--surface);
+      break-inside: avoid;
+    }
+    figure.diagram figcaption { margin-top: 12px; color: var(--muted); font-size: 13px; }
+    .diagram-title { margin: 0 0 14px; color: var(--navy); font-weight: 750; }
+    .before-after { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .lane { padding: 15px; border: 1px solid var(--line); border-radius: 9px; background: var(--white); }
+    .lane.before { border-top: 4px solid #7d8b96; }
+    .lane.after { border-top: 4px solid var(--teal); }
+    .lane-label { display: block; margin-bottom: 12px; font-weight: 750; }
+    .mini-flow { display: flex; align-items: center; gap: 7px; }
+    .node {
+      flex: 1 1 0;
+      min-width: 0;
+      padding: 10px 9px;
+      border: 1px solid #b9c7d2;
+      border-radius: 7px;
+      background: white;
+      text-align: center;
+      font-size: 13px;
+      line-height: 1.3;
+    }
+    .node strong { display: block; color: var(--navy); }
+    .node small { display: block; margin-top: 3px; color: var(--muted); }
+    .node.service { color: white; border-color: var(--blue); background: var(--blue); }
+    .node.service strong, .node.service small { color: white; }
+    .node.good { border-color: #86c9c0; background: var(--teal-soft); }
+    .node.warn { border-color: #e5c574; background: var(--amber-soft); }
+    .arrow { flex: 0 0 auto; color: var(--blue); font-weight: 800; }
+    .object-map { display: grid; grid-template-columns: 1fr auto 1.12fr auto 1fr; gap: 9px; align-items: center; }
+    .stack { display: grid; gap: 8px; }
+    .step-flow { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
+    .step {
+      position: relative;
+      padding: 34px 10px 12px;
+      border: 1px solid #b9c7d2;
+      border-radius: 8px;
+      background: white;
+      text-align: center;
+      font-size: 12.5px;
+      line-height: 1.35;
+    }
+    .step::before {
+      content: attr(data-step);
+      position: absolute;
+      top: 8px;
+      left: 50%;
+      width: 20px;
+      height: 20px;
+      transform: translateX(-50%);
+      border-radius: 50%;
+      color: white;
+      background: var(--blue);
+      font-size: 11px;
+      font-weight: 800;
+      line-height: 20px;
+    }
+    .handoff { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr; gap: 8px; align-items: center; }
+    .handoff .node { min-height: 82px; display: grid; place-content: center; }
+    .branch { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: stretch; }
+    .branch-col { display: grid; gap: 8px; }
+    .flag { padding: 14px; border: 1px solid #b9c7d2; border-radius: 9px; background: white; text-align: center; }
+    .flag.legacy { border-top: 4px solid #7d8b96; }
+    .flag.coordinated { border-top: 4px solid var(--teal); }
+
+    .table-wrap { margin: 18px 0; overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; }
+    table { width: 100%; border-collapse: collapse; background: white; }
+    .table-wrap table { min-width: 720px; }
+    caption { padding: 11px 13px; color: var(--muted); background: var(--surface); text-align: left; font-size: 12px; }
+    th, td { padding: 11px 13px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    th { color: var(--navy); background: var(--surface); font-size: 12px; letter-spacing: .03em; text-transform: uppercase; }
+    tr:last-child td { border-bottom: 0; }
+    td:first-child { font-weight: 700; }
+    ul { margin: 10px 0; padding-left: 22px; }
+    li { margin: 5px 0; }
+    .compact-list li { margin: 3px 0; }
+    .definition {
+      padding: 13px 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+    }
+    .definition dt { color: var(--navy); font-weight: 750; }
+    .definition dd { margin: 3px 0 0; color: var(--muted); }
+    .safety {
+      padding: 16px 18px;
+      border: 1px solid #e4c276;
+      border-left: 5px solid var(--amber);
+      border-radius: 9px;
+      background: var(--amber-soft);
+    }
+    .os { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; }
+    .os .card { box-shadow: none; }
+    .sources { font-size: 13px; }
+    .sources ol { margin: 10px 0; padding-left: 28px; }
+    .sources li { padding-left: 4px; }
+    .sources code { background: transparent; padding: 0; }
+    footer { margin-top: 50px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; }
+
+    @media (max-width: 820px) {
+      .summary-grid, .glossary { grid-template-columns: 1fr; }
+      .before-after, .two-col, .os { grid-template-columns: 1fr; }
+      .object-map, .handoff, .branch { grid-template-columns: 1fr; }
+      .object-map > .arrow, .handoff > .arrow, .branch > .arrow { transform: rotate(90deg); text-align: center; }
+      .step-flow { grid-template-columns: repeat(2, 1fr); }
+      .mini-flow { flex-wrap: wrap; }
+      .mini-flow .node { flex-basis: 38%; }
+    }
+    @media (max-width: 520px) {
+      main { padding: 32px 16px 52px; }
+      .meta span { flex-wrap: wrap; margin-top: 4px; }
+      .meta span strong { flex: 0 0 100%; }
+      .step-flow { grid-template-columns: 1fr; }
+      figure.diagram { padding: 14px; }
+      th, td { padding: 9px 10px; }
+    }
+    @media print {
+      @page { size: A4; margin: 14mm; }
+      body { font-size: 11pt; }
+      main { max-width: none; padding: 0; }
+      header { padding-bottom: 18px; }
+      h1 { font-size: 32pt; }
+      h2 { margin-top: 28px; font-size: 19pt; break-after: avoid; }
+      h3 { break-after: avoid; }
+      a { color: inherit; text-decoration: none; }
+      .card, figure.diagram { box-shadow: none; }
+      .card, .table-wrap, .definition, .safety { break-inside: avoid; }
+      .summary-grid { grid-template-columns: repeat(3, 1fr); }
+      .glossary { grid-template-columns: repeat(2, 1fr); }
+      footer { margin-top: 28px; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#report">Skip to report</a>
+  <main id="report">
+    <header>
+      <div class="eyebrow">Executive brief · iOS · RMF</div>
+      <h1>RMF rendering under Promo Queue</h1>
+      <p class="dek">Cumulative implementation through PR&nbsp;3, focused on how an already-selected New Tab Page RMF becomes one authorized, physically rendered card.</p>
+      <div class="meta" aria-label="Review metadata">
+        <span><strong>Reviewed:</strong> 13 Aug 2026</span>
+        <span><strong>PR heads:</strong> 6087 <code>fdb31d0</code> · 6194 <code>475f110</code> · 6291 <code>1f115b8</code></span>
+        <span><strong>Final code:</strong> <code>bartosz/promo-q-3</code></span>
+      </div>
+      <div class="callout">
+        <strong>Executive conclusion.</strong> RMF remains the authority for campaign configuration, targeting, scheduled-message selection, dismissal, and ordinary shown state. When <code>promoPresentationCoordination</code> is enabled, Promo Queue becomes the authority for <em>when</em> and <em>which physical NTP host</em> may publish that selected candidate. When disabled, the previous direct/eager RMF path is preserved.
+      </div>
+      <div class="summary-grid" aria-label="Key conclusions">
+        <div class="card"><span class="tag">Unchanged</span><h3>RMF product policy</h3><p>Shared selection, targeting, campaign config, dismissal, and shown/unique-shown storage are not moved into Promo Queue.</p></div>
+        <div class="card"><span class="tag teal">Changed</span><h3>Physical publication</h3><p>One app-scoped service authorizes exactly one registered NTP renderer and owns handoff through verified removal.</p></div>
+        <div class="card"><span class="tag amber">Operational</span><h3>Timing and proof</h3><p>Confirmed appearances create directional cooldown history; time alone never retries; missing removal proof fails closed.</p></div>
+      </div>
+    </header>
+
+    <section aria-labelledby="before-after-heading">
+      <h2 id="before-after-heading">The rendering change in one view</h2>
+      <figure class="diagram" aria-labelledby="diagram-1-title">
+        <div class="diagram-title" id="diagram-1-title">1 · RMF rendering before versus after Promo Queue</div>
+        <div class="before-after">
+          <div class="lane before">
+            <span class="lane-label">Before / legacy</span>
+            <div class="mini-flow">
+              <div class="node"><strong>RMF candidate</strong><small>selected upstream</small></div><span class="arrow" aria-hidden="true">→</span>
+              <div class="node"><strong>NTP model</strong><small>builds + publishes</small></div><span class="arrow" aria-hidden="true">→</span>
+              <div class="node"><strong>SwiftUI</strong><small>renders directly</small></div>
+            </div>
+            <p>Every mounted model mapped RMF eagerly and used the legacy appearance-accounting path; there was no app-wide physical-renderer authorization or modal/RMF exclusion.</p>
+          </div>
+          <div class="lane after">
+            <span class="lane-label">Coordinated</span>
+            <div class="mini-flow">
+              <div class="node"><strong>Candidate</strong><small>reported, not published</small></div><span class="arrow" aria-hidden="true">→</span>
+              <div class="node service"><strong>Service</strong><small>owns session + selects renderer</small></div><span class="arrow" aria-hidden="true">→</span>
+              <div class="node good"><strong>One NTP</strong><small>builds after authorization</small></div>
+            </div>
+            <p>Publication follows global ownership, host eligibility, cooldown admission, and one exact renderer authorization.</p>
+          </div>
+        </div>
+        <figcaption>Promo Queue inserts an authorization seam between RMF candidate discovery and pixels; it does not replace RMF candidate policy. <a class="source" href="#s1">S1</a> <a class="source" href="#s2">S2</a></figcaption>
+      </figure>
+    </section>
+
+    <section aria-labelledby="pr-map-heading">
+      <h2 id="pr-map-heading">RMF-related change map by PR</h2>
+      <div class="table-wrap">
+        <table>
+          <colgroup><col style="width:18%"><col style="width:55%"><col style="width:27%"></colgroup>
+          <caption>Only responsibilities material to iOS NTP RMF rendering are shown.</caption>
+          <thead><tr><th scope="col">PR</th><th scope="col">RMF impact</th><th scope="col">Primary files</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>PR 1 · 6087</td>
+              <td>Added the disabled-by-default flag, global lease/service foundation, modal-side ownership, NTP coordination protocols, and dependency wiring. <strong>RMF still rendered directly;</strong> the injected coordinator was not yet used by the model.</td>
+              <td><code>PromoQueueLeaseArbiter.swift</code><br><code>PromoCoordinationService.swift</code><br><code>NewTabPagePromoCoordination.swift</code><br>NTP host constructors</td>
+            </tr>
+            <tr>
+              <td>PR 2 · 6194</td>
+              <td>Introduced the actual coordinated renderer: startup-latched mode, central logical RMF session, renderer registrations/generations, candidate and host-eligibility reporting, authorized publication, exact appearance/removal, and cross-host handoff.</td>
+              <td><code>NewTabPageMessagesModel.swift</code><br><code>NewTabPageView.swift</code><br><code>NewTabPageViewController.swift</code><br><code>SuggestionTrayViewController.swift</code><br><code>UnifiedSuggestionsHost.swift</code></td>
+            </tr>
+            <tr>
+              <td>PR 3 · 6291</td>
+              <td>Added directional cooldown admission, separate persisted confirmed-RMF history, once-per-logical-session queue confirmation, read-only diagnostics, and a live unified-host eligibility fix. The renderer model itself changed only by tightening <code>surfaceID</code> access.</td>
+              <td><code>PromoQueueCooldownPolicy.swift</code><br><code>PromoCoordinationService.swift</code><br><code>UnifiedSuggestionsHost.swift</code><br><code>PromptCoordinationDebugMenu.swift</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section aria-labelledby="unchanged-heading">
+      <h2 id="unchanged-heading">Unchanged RMF responsibilities</h2>
+      <p class="section-intro">The cumulative stack does not change the shared RMF engine or <code>HomePageConfiguration</code>. Promo Queue receives the result of existing selection and adds only presentation coordination plus a separate cooldown timestamp. <a class="source" href="#s1">S1</a></p>
+      <div class="cards">
+        <div class="card"><h3>Selection &amp; targeting</h3><p>Scheduled NTP message lookup, surface matching, <code>afterIdle</code>/<code>noTrigger</code> filtering, onboarding suppression, targeting, and campaign configuration remain upstream.</p></div>
+        <div class="card"><h3>Dismissal &amp; actions</h3><p>RMF dismissal still updates the shared store and emits its change notification. Existing action handling, image loading, and action/dismiss pixels remain in the NTP/RMF path.</p></div>
+        <div class="card"><h3>Shown state</h3><p><code>remoteMessageShown</code>, <code>remoteMessageShownUnique</code>, and shared shown-state persistence remain in <code>HomePageConfiguration.didAppear</code>. Atomic unique-shown reservation remains out of scope.</p></div>
+      </div>
+    </section>
+
+    <section aria-labelledby="interaction-heading">
+      <h2 id="interaction-heading">Who owns what now</h2>
+      <figure class="diagram" aria-labelledby="diagram-2-title">
+        <div class="diagram-title" id="diagram-2-title">2 · High-level RMF object interaction</div>
+        <div class="object-map">
+          <div class="stack">
+            <div class="node"><strong>HomePageConfiguration</strong><small>selects scheduled RMF; owns dismissal/accounting</small></div>
+            <div class="node"><strong>RemoteMessagingStore</strong><small>campaign and shown state</small></div>
+          </div>
+          <span class="arrow" aria-hidden="true">→</span>
+          <div class="stack">
+            <div class="node good"><strong>NewTabPageMessagesModel</strong><small>discovers candidate; registers; builds/publishes only when authorized</small></div>
+            <div class="node"><strong>Renderer registration</strong><small>generation-bound updates, appearance, removal terminal</small></div>
+          </div>
+          <span class="arrow" aria-hidden="true">⇄</span>
+          <div class="stack">
+            <div class="node service"><strong>PromoCoordinationService</strong><small>one session, renderer selection, handoff, cooldown, settlement</small></div>
+            <div class="node"><strong>Lease arbiter</strong><small>one modal or one logical RMF owner</small></div>
+            <div class="node"><strong>SwiftUI NTP view</strong><small>renders the model's authorized item</small></div>
+          </div>
+        </div>
+        <figcaption>The registration is the identity-safe control channel; SwiftUI has no queue, lease, or cooldown responsibility. <a class="source" href="#s3">S3</a> <a class="source" href="#s4">S4</a></figcaption>
+      </figure>
+
+      <p><code>NewTabPageMessagesModel</code> is now both a candidate client and a service-controlled physical renderer. In coordinated mode it keeps ordinary local placeholders direct, but suppresses RMF from the published collection until <code>showRemoteMessage</code> authorizes a specific presentation. It then constructs the existing <code>HomeMessageViewModel</code>, publishes a presentation-keyed render item, and lets <code>NewTabPageView</code> render it. <a class="source" href="#s2">S2</a> <a class="source" href="#s5">S5</a></p>
+    </section>
+
+    <section aria-labelledby="transaction-heading">
+      <h2 id="transaction-heading">The coordinated RMF transaction</h2>
+      <figure class="diagram" aria-labelledby="diagram-3-title">
+        <div class="diagram-title" id="diagram-3-title">3 · Candidate → authorization → rendering → appearance → removal</div>
+        <div class="step-flow">
+          <div class="step" data-step="1"><strong>Discover</strong><br>Existing configuration returns an NTP RMF.</div>
+          <div class="step" data-step="2"><strong>Report</strong><br>Model sends message ID + truthful host eligibility.</div>
+          <div class="step" data-step="3"><strong>Admit</strong><br>Service reconciles, acquires the one owner, checks cooldown.</div>
+          <div class="step" data-step="4"><strong>Authorize</strong><br>One renderer builds and atomically publishes one presentation.</div>
+          <div class="step" data-step="5"><strong>Confirm</strong><br>Exact, eligible, attached appearance is accepted; accounting runs.</div>
+          <div class="step" data-step="6"><strong>Drain</strong><br>Exact removal terminal + one main-queue settlement turn precede transfer/release.</div>
+        </div>
+        <figcaption>Candidate availability is optimistic: view-model construction is deferred until authorization; a build failure becomes <code>unrenderable</code> and follows the service lifecycle. <a class="source" href="#s2">S2</a> <a class="source" href="#s4">S4</a></figcaption>
+      </figure>
+
+      <div class="two-col">
+        <div class="card">
+          <h3>Identity is layered by lifetime</h3>
+          <ul class="compact-list">
+            <li><strong>Renderer ID:</strong> stable NTP model/surface.</li>
+            <li><strong>Registration generation:</strong> one attachment epoch; stale generations cannot mutate replacements.</li>
+            <li><strong>Logical session:</strong> session UUID + message ID; owns the global lease.</li>
+            <li><strong>Presentation ID:</strong> one physical authorization within that session.</li>
+            <li><strong>Removal ID:</strong> one exact outgoing hide operation.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Same message, two cases</h3>
+          <ul class="compact-list">
+            <li><strong>Payload update on one renderer:</strong> rebuild the view model while preserving the presentation and SwiftUI row identity.</li>
+            <li><strong>Handoff to another renderer:</strong> retain logical session + lease, remove the outgoing card, then mint a new presentation for the successor.</li>
+            <li>If no matching renderer is eligible at settlement, end the session; a later return must pass cooldown as a new session.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section aria-labelledby="one-renderer-heading">
+      <h2 id="one-renderer-heading">How exactly one physical NTP renderer wins</h2>
+      <p class="section-intro">Each standard-NTP, suggestion-tray/favorites, and unified-input/favorites model registers independently. The host layer orders exposure changes; the service is the final serialization boundary. There is no hard-coded host-type priority. <a class="source" href="#s6">S6</a> <a class="source" href="#s7">S7</a></p>
+      <figure class="diagram" aria-labelledby="diagram-4-title">
+        <div class="diagram-title" id="diagram-4-title">4 · Cross-renderer handoff between NTP hosts</div>
+        <div class="handoff">
+          <div class="node good"><strong>Standard NTP</strong><small>eligible + authorized<br>session A / presentation 1</small></div>
+          <span class="arrow" aria-hidden="true">→</span>
+          <div class="node warn"><strong>Outgoing first</strong><small>mark standard ineligible; service enters draining</small></div>
+          <span class="arrow" aria-hidden="true">→</span>
+          <div class="node warn"><strong>Proof barrier</strong><small>exact removal ID terminal + settlement turn</small></div>
+          <span class="arrow" aria-hidden="true">→</span>
+          <div class="node good"><strong>Tray or unified host</strong><small>same session A<br>new presentation 2</small></div>
+        </div>
+        <figcaption>Host handoff preserves one logical RMF and never makes the incoming renderer visible before the outgoing pixels are proven gone. <a class="source" href="#s4">S4</a> <a class="source" href="#s6">S6</a></figcaption>
+      </figure>
+
+      <div class="cards">
+        <div class="card"><h3>Eligibility predicate</h3><p>Loaded, not torn down, owner active, render location ready, explicitly visible, not covered, and attached to a window.</p></div>
+        <div class="card"><h3>Ordered host exposure</h3><p>Deactivate outgoing before showing incoming; hide hosted surface before reactivating standard NTP. Stale async tray completions carry a generation guard.</p></div>
+        <div class="card"><h3>Service backstop</h3><p>If multiple registrations are nevertheless eligible, the service picks the first in stable registration order and holds only one <code>owned</code> presentation.</p></div>
+      </div>
+    </section>
+
+    <section aria-labelledby="appearance-heading">
+      <h2 id="appearance-heading">Appearance, accounting, and cooldown are distinct</h2>
+      <div class="table-wrap">
+        <table class="accounting-table">
+          <colgroup><col style="width:15%"><col style="width:37%"><col style="width:28%"><col style="width:20%"></colgroup>
+          <thead><tr><th scope="col">Layer</th><th scope="col">When it occurs</th><th scope="col">Frequency</th><th scope="col">Owner</th></tr></thead>
+          <tbody>
+            <tr><td>Appearance confirmation</td><td>Service accepts the exact current session, presentation, generation, message, eligibility, and attachment.</td><td>Once per physical presentation.</td><td><code>PromoCoordinationService</code></td></tr>
+            <tr><td>Promo Queue RMF history</td><td>First accepted appearance in a logical session.</td><td>Once per logical session, including across handoff.</td><td>Separate persisted Promo Queue timestamp.</td></tr>
+            <tr><td>Ordinary RMF shown / unique-shown</td><td>Only after appearance confirmation is accepted.</td><td>Once per accepted physical presentation; existing unique-shown store logic still applies.</td><td><code>HomePageConfiguration.didAppear</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="two-col">
+        <div class="card">
+          <h3>Directional spacing</h3>
+          <ul class="compact-list">
+            <li>Confirmed modal → next RMF: <strong>10 minutes</strong>.</li>
+            <li>Confirmed RMF → next RMF session: <strong>10 minutes</strong>.</li>
+            <li>Confirmed RMF → next modal: <strong>24 hours</strong>.</li>
+            <li>Modal → modal remains existing modal policy.</li>
+          </ul>
+          <p>RMF admission uses the later applicable modal or RMF history boundary. Same-session handoff is not a new admission. <a class="source" href="#s8">S8</a></p>
+        </div>
+        <div class="card">
+          <h3>Checkpoint-only reconsideration</h3>
+          <p>Cooldown expiry schedules nothing. A blocked, still-reported candidate is retried only after a real checkpoint:</p>
+          <ul class="compact-list">
+            <li>RMF configuration notification, refresh, or candidate update;</li>
+            <li>registration, eligibility, attachment, visibility, or host-exposure change;</li>
+            <li>foreground interaction readiness/reactivation;</li>
+            <li>modal-owner release or exact RMF removal settlement.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section aria-labelledby="removal-heading">
+      <h2 id="removal-heading">Physical removal and failure behavior</h2>
+      <div class="os">
+        <div class="card"><span class="tag teal">iOS 17+</span><h3>Animated, native completion</h3><p>Clear the authorized source inside <code>withAnimation(..., completionCriteria: .removed)</code>. SwiftUI uses scale + opacity for removal; only native completion reports <code>.animationCompleted</code>.</p></div>
+        <div class="card"><span class="tag">iOS 15 / 16</span><h3>Synchronous, no animation</h3><p>Clear inside a transaction with animations disabled and use an identity transition. After verifying the source is clear, report <code>.sourceRemovedWithoutAnimation</code>.</p></div>
+      </div>
+      <div class="safety" style="margin-top:14px">
+        <strong>Fail closed means collision safety wins over availability.</strong> Stale or mismatched generation/session/presentation/removal callbacks are ignored. Unverified detachment, a missing terminal, unexpected selected-renderer loss, or an inconsistent authorization rejection retains the global owner. That can block all coordinated promos for the process, but it prevents a successor or modal from appearing while old RMF pixels may still exist. <a class="source" href="#s2">S2</a> <a class="source" href="#s4">S4</a>
+      </div>
+    </section>
+
+    <section aria-labelledby="flag-heading">
+      <h2 id="flag-heading">Feature-flag routing</h2>
+      <figure class="diagram" aria-labelledby="diagram-5-title">
+        <div class="diagram-title" id="diagram-5-title">5 · Legacy versus coordinated behavior</div>
+        <div class="branch">
+          <div class="flag"><strong><code>PromoCoordinationFactory</code></strong><br><small>reads <code>promoPresentationCoordination</code> once while building the process graph</small></div>
+          <span class="arrow" aria-hidden="true">→</span>
+          <div class="branch-col">
+            <div class="flag legacy"><strong>OFF · legacy (default)</strong><br><small>No renderer registration, arbiter, or Promo Queue history access. Direct/eager RMF publication and legacy animation/accounting remain.</small></div>
+            <div class="flag coordinated"><strong>ON · coordinated</strong><br><small>Register candidates, authorize one renderer, confirm appearance, enforce cooldown, and retain ownership through exact removal.</small></div>
+          </div>
+        </div>
+        <figcaption>The mode is immutable for that service graph; a remote or local flag change requires a fresh graph—normally force-quit and relaunch. The flag is separate from RMF campaign configuration. <a class="source" href="#s9">S9</a></figcaption>
+      </figure>
+    </section>
+
+    <section aria-labelledby="preserve-heading">
+      <h2 id="preserve-heading">What future RMF/NTP work must preserve</h2>
+      <div class="two-col">
+        <div class="card">
+          <h3>Renderer contract</h3>
+          <ul class="compact-list">
+            <li>Never publish coordinated RMF before service authorization.</li>
+            <li>A failed <code>showRemoteMessage</code> must mean no coordinated content was published.</li>
+            <li>Carry exact generation, session, presentation, and removal identities through callbacks.</li>
+            <li>Do not release via <code>onDisappear</code>, a guessed delay, or cooldown passage.</li>
+            <li>Explicitly deregister only after removal or verified physical detachment.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Host contract</h3>
+          <ul class="compact-list">
+            <li>Use the shared exposure predicate; window attachment alone is insufficient.</li>
+            <li>Perform outgoing-before-incoming handoff whenever a host or overlay covers an attached NTP.</li>
+            <li>Invalidate stale async host completions with generation identity.</li>
+            <li>Preserve one app-scoped service/arbiter graph and checkpoint-driven retry.</li>
+            <li>Exercise standard NTP, suggestion tray, and unified input when changing rendering or removal.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section aria-labelledby="glossary-heading">
+      <h2 id="glossary-heading">Glossary</h2>
+      <dl class="glossary">
+        <div class="definition"><dt>Candidate</dt><dd>An upstream-selected NTP RMF known to a renderer; not permission to publish.</dd></div>
+        <div class="definition"><dt>Renderer</dt><dd>One physical NTP model/host capable of displaying an RMF card.</dd></div>
+        <div class="definition"><dt>Registration generation</dt><dd>One renderer attachment epoch used to reject callbacks from an older registration.</dd></div>
+        <div class="definition"><dt>Logical session</dt><dd>One global RMF ownership lifetime for a message; it may span physical hosts.</dd></div>
+        <div class="definition"><dt>Presentation</dt><dd>One authorization to one renderer within a logical session.</dd></div>
+        <div class="definition"><dt>Draining</dt><dd>The state in which the session and lease remain held while outgoing pixels are removed.</dd></div>
+        <div class="definition"><dt>Removal terminal</dt><dd>Verified evidence that one exact outgoing presentation can no longer contribute visible pixels.</dd></div>
+        <div class="definition"><dt>Settlement turn</dt><dd>One following main-queue turn after terminal evidence, before transfer or release.</dd></div>
+        <div class="definition"><dt>Appearance confirmation</dt><dd>Service acceptance that an exact authorized presentation is current, eligible, and attached.</dd></div>
+        <div class="definition"><dt>Ordinary accounting</dt><dd>Existing RMF shown pixel, unique-shown check, and shown-state update.</dd></div>
+        <div class="definition"><dt>Checkpoint</dt><dd>A real state change that asks the service to reconsider work; time passage alone is not one.</dd></div>
+        <div class="definition"><dt>Fail closed</dt><dd>Retain ownership when disappearance cannot be proven, preventing possible promo overlap.</dd></div>
+      </dl>
+    </section>
+
+    <section class="sources" aria-labelledby="sources-heading">
+      <h2 id="sources-heading">Concise source references</h2>
+      <ol>
+        <li id="s1"><code>iOS/DuckDuckGo/HomePageConfiguration.swift:52–117</code> — unchanged candidate selection, dismissal, shown/unique-shown accounting.</li>
+        <li id="s2"><code>iOS/DuckDuckGo/NewTabPageMessagesModel.swift:145–190, 245–357, 377–454, 467–601</code> — registration, discovery, deferred construction/publication, appearance, removal.</li>
+        <li id="s3"><code>iOS/DuckDuckGo/ModalPromptCoordination/NewTabPagePromoCoordination.swift:23–145</code> — session, presentation, candidate, terminal, and registration contracts.</li>
+        <li id="s4"><code>iOS/DuckDuckGo/AppServices/PromoCoordinationService.swift:461–565, 581–890, 894–951</code> — confirmation, reconciliation, stable selection, handoff, settlement, fail-closed behavior.</li>
+        <li id="s5"><code>iOS/DuckDuckGo/NewTabPageView.swift:228–253, 284–293</code> — authorized render item and OS-sensitive transition.</li>
+        <li id="s6"><code>iOS/DuckDuckGo/NewTabPageViewController.swift:31–63, 173–181, 235–323</code> — host exposure predicate, stable surface ID, ordered handoff.</li>
+        <li id="s7"><code>iOS/DuckDuckGo/MainViewController.swift:3172–3206</code>; <code>SuggestionTrayViewController.swift:318–389</code>; <code>UnifiedToggleInput/MainViewController+UnifiedToggleInput.swift:916–938</code>; <code>UnifiedSuggestionsHost.swift:84–92, 235–241</code> — three-host exposure coordination.</li>
+        <li id="s8"><code>iOS/DuckDuckGo/ModalPromptCoordination/Cooldown/PromoQueueCooldownPolicy.swift:42–112, 147–197</code> — persisted confirmed-RMF history and directional cooldowns.</li>
+        <li id="s9"><code>iOS/DuckDuckGo/ModalPromptCoordination/Factory/PromoCoordinationFactory.swift:34–41</code>; <code>FeatureFlag.swift:833–834</code> — process-latched mode and default-disabled flag.</li>
+      </ol>
+    </section>
+
+    <footer>
+      Scope: RMF effects of Promo Queue PRs 1–3 only. Application code at PR&nbsp;3 head <code>1f115b8042</code> is treated as authoritative. Supporting documents reviewed: <code>TECH_DESIGN_FINAL.md</code>, <code>ADDING_PROMOS.md</code>, and <code>TECH_DESIGN_FINAL_APPENDIX.html</code>.
+    </footer>
+  </main>
+</body>
+</html>

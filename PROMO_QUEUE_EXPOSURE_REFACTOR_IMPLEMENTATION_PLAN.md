@@ -3,10 +3,37 @@
 ## Status
 
 - Planning document only.
-- Target baseline: latest `bartosz/promo-q-3` cumulative implementation.
+- Implementation target: `bartosz/promo-q-2`, the head branch of PR 6194.
+- Downstream branch: `bartosz/promo-q-3`, the head branch of PR 6291, stacked on `bartosz/promo-q-2`.
 - Architecture size: medium, compatibility-first refactor.
-- Do not push changes unless the user explicitly asks.
-- Follow repository rules before editing or running tests. In particular, do not run tests, commit, or push without explicit user permission.
+- Local implementation commits on `bartosz/promo-q-2` are explicitly authorized.
+- A final local rebase of `bartosz/promo-q-3` onto the updated `bartosz/promo-q-2` is explicitly authorized.
+- Never push or force-push either branch. The user must review all local commits and the rebased stack first.
+- Tests are not authorized by this instruction. Follow repository rules and ask the user before running any test command.
+
+## Branch and PR topology
+
+The fix must be placed in the PR where the concern was raised:
+
+| Pull request | Base | Head | Role in this plan |
+|---|---|---|---|
+| [PR 6194](https://github.com/duckduckgo/apple-browsers/pull/6194) | `main` | `bartosz/promo-q-2` | Implementation target. Add the exposure refactor and its PR 2 tests here. |
+| [PR 6291](https://github.com/duckduckgo/apple-browsers/pull/6291) | `bartosz/promo-q-2` | `bartosz/promo-q-3` | Downstream cooldown/diagnostics work. Do not implement the exposure refactor directly here; rebase it after PR 2 is updated. |
+
+Alessandro's comment concerns the host-exposure architecture introduced in PR 6194. Therefore all reusable production changes—selected-renderer gating, the UI exposure controller, host resolution, suppression tokens, overlay integration, legacy-API removal, and their direct tests—belong on `bartosz/promo-q-2`.
+
+PR 6291 must remain a clean stacked delta containing its own cooldown/diagnostic work plus only the adaptations required to compile and preserve behavior after rebasing onto the updated PR 2.
+
+### Observed local state when this plan was updated
+
+Treat these hashes as orientation only and fetch current remote refs before implementation:
+
+- GitHub currently shows PR 6194 as `main <- bartosz/promo-q-2`.
+- GitHub currently shows PR 6291 as `bartosz/promo-q-2 <- bartosz/promo-q-3`.
+- The local `bartosz/promo-q-2` ref was at `12e24676eb`, while `origin/bartosz/promo-q-2` was at `475f1106b0`; the histories were divergent rather than a simple fast-forward.
+- The local `bartosz/promo-q-3` contained the local plan commit `d7fb4d571f` above `origin/bartosz/promo-q-3` at `1f115b8042`.
+
+Do not implement from the stale/divergent local PR 2 ref and do not discard either local tip. The branch-preparation procedure below requires preserving recoverable backup refs before aligning the working branches.
 
 ## Required reading
 
@@ -30,6 +57,34 @@ Read:
 ```
 
 Before editing, verify the current branch, HEAD, worktree state, and whether the implementation has changed since this plan was written. Do not discard unrelated user changes. Line numbers below are orientation points, not immutable contracts.
+
+The implementation plan was originally researched against the cumulative PR 3 branch. Before editing PR 2, repeat every code inventory against `bartosz/promo-q-2`. Do not assume PR 3-only cooldown, debug-projection, test-hygiene, or removal-animation follow-ups already exist on PR 2, and do not backport them merely to make this plan's later-stack references available.
+
+## Local branch preparation
+
+Complete this preflight before Phase 0. It is part of the implementation task, but it must not lose any existing local work.
+
+1. Read this plan completely while it is available on the current PR 3 branch.
+2. Inspect `git status`, current worktrees, local branch tips, upstream tips, and the commits unique to each side.
+3. If this plan has uncommitted edits on PR 3, preserve them before switching. A local plan-only commit is allowed; never push it. Do not add this plan file to a PR 2 implementation commit.
+4. Fetch the current `main`, `bartosz/promo-q-2`, and `bartosz/promo-q-3` remote refs. Fetching is allowed; pushing is not.
+5. Confirm the live PR topology still matches the table above. If either PR base/head has changed, stop and update the branch procedure before implementation.
+6. Create recoverable backup refs, using the repository's `codex/` prefix, for the pre-existing local PR 2 and PR 3 tips. Record their hashes in the final handoff.
+7. If local `bartosz/promo-q-2` still diverges from the PR head, do not merge or rebase its stale local-only commits into PR 6194. After preserving the backup ref, align local `bartosz/promo-q-2` to the fetched `origin/bartosz/promo-q-2` PR head. Do not use a destructive reset without the recoverable backup.
+8. Do not align, reset, or rebase `bartosz/promo-q-3` yet. Preserve its current local-only commits, including the plan document, until the final stack-rebase phase.
+9. Switch to the aligned local `bartosz/promo-q-2` and verify that the worktree contains exactly the PR 2 baseline before editing.
+
+Recommended safety properties for the preparation—not mandatory literal command spelling—are:
+
+```text
+backup ref -> old local PR 2 tip
+backup ref -> old local PR 3 tip
+local bartosz/promo-q-2 -> fetched PR 6194 head
+local bartosz/promo-q-3 -> unchanged until final rebase
+no remote ref changed
+```
+
+If the agent cannot establish those properties without overwriting unknown work, stop and ask the user rather than guessing.
 
 ## Problem to solve
 
@@ -58,7 +113,9 @@ The target design makes those cases fail closed or pass through a narrow infrast
 
 ## Decision summary
 
-Keep the existing `PromoCoordinationService` ownership, draining, appearance, modal, cooldown, and accounting machinery. Add one UI-owned `NewTabPagePromoExposureController` that derives exactly one selected renderer ID and manages scoped occlusion blockers.
+Keep the PR 2 `PromoCoordinationService` ownership, draining, appearance, modal, and accounting machinery. Add one UI-owned `NewTabPagePromoExposureController` that derives exactly one selected renderer ID and manages scoped occlusion blockers.
+
+Do not pull PR 3's directional-cooldown implementation or read-only debug projection into PR 2. After the PR 2 implementation is committed, rebase PR 3 and adapt its cooldown/diagnostic code to the new selected-renderer and blocker model without changing its product semantics.
 
 The service gains one additional admission condition:
 
@@ -87,7 +144,7 @@ Do not include any of the following in this refactor:
 - Rewriting `PromoQueueLeaseArbiter`.
 - Rewriting `ModalPromptCoordinationManager` or changing exact modal-root lifetime.
 - Changing candidate selection, RMF dismissal, RMF content construction, or `HomePageConfiguration` accounting.
-- Changing cooldown directions, durations, session-history semantics, or ordinary RMF impression semantics.
+- Adding PR 3 cooldown behavior to PR 2, or changing cooldown directions, durations, session-history semantics, or ordinary RMF impression semantics when PR 3 is rebased.
 - Pausing an owned RMF session indefinitely underneath a temporary blocker. Preserve the current drain/end/re-admission behavior unless product explicitly approves different lease semantics.
 - Changing the feature-off/legacy rendering and eager-accounting behavior.
 - Replacing `MainViewController` navigation with a clean-slate route or presentation stack.
@@ -110,7 +167,7 @@ Treat these as hard acceptance criteria throughout every phase:
 9. An RMF appearance is accepted only for the exact session, presentation, renderer generation, selected renderer, local readiness, and live attachment.
 10. Queue history and ordinary RMF `didAppear` accounting happen only after accepted appearance.
 11. Renderer handoff preserves the logical session where the current implementation does so and does not create extra queue-history writes.
-12. Directional cooldown behavior remains unchanged.
+12. PR 2 does not acquire PR 3's directional-cooldown implementation. After the final rebase, PR 3 cooldown behavior remains unchanged.
 13. Foreground/full-interaction readiness remains required for new acquisition.
 14. The feature-off path remains behaviorally unchanged and does not start using queue storage, arbitration, selection, or blockers.
 15. Missing integration fails closed: suppress the promo and expose a diagnostic rather than guessing a renderer or allowing overlap.
@@ -362,9 +419,19 @@ The refactor deliberately prefers promo suppression to collision or false accoun
 
 ## Phased implementation
 
-Each phase should leave the coordinated path internally consistent. Do not remove an old safety gate in the same step that first introduces its replacement unless the tests and wiring land atomically. Logical phases may become separate reviewable changes, but do not commit or push without explicit user permission.
+Each phase should leave the coordinated path internally consistent. Do not remove an old safety gate in the same step that first introduces its replacement unless the tests and wiring land atomically. Local commits are authorized, but every implementation commit through Phase 5 must be made on `bartosz/promo-q-2`. Never push.
 
 **Activation-order requirement:** Phases 1 and 2 may be developed sequentially, but selected-ID enforcement and the production resolver must land atomically. A production service that requires a selected ID while nothing supplies one would suppress every coordinated RMF. If the work must be split into independently runnable changes, Phase 1 may add storage/API/tests without activating the new gate; activate `existing eligibility && selected-ID match` only after Phase 2 supplies the root resolver. Do not add a fallback that interprets `nil` as “choose the first eligible renderer.”
+
+### Suggested local commit boundaries on PR 2
+
+Use judgment based on compileability and reviewability. A sensible structure is:
+
+1. **Selected renderer and UI resolver** — service gate, exposure controller, host IDs/providers, standard/tray/UTI resolver integration, and direct tests. Selection enforcement and production resolver must be enabled together.
+2. **Scoped suppression** — blocker tokens, standard visibility transitions, managed Dax/onboarding overlay session, and direct tests.
+3. **Legacy exposure cleanup** — remove the old four-setter/handoff plumbing, narrow local readiness, update mocks/fixtures, and complete PR 2 documentation/tests.
+
+Do not make a PR 2 commit that imports PR 3 cooldown or debug-screen work. Do not squash, amend, or reorder pre-existing PR 2 commits unless required and explicitly discussed in the final handoff. Newly created local implementation commits may be amended while still unpushed if needed for a coherent result.
 
 ### Phase 0 — Baseline, inventory, and characterization
 
@@ -372,7 +439,7 @@ Objective: establish the exact current behavior and enumerate every producer bef
 
 Tasks:
 
-1. Record the current branch/HEAD and cumulative diff baseline.
+1. Record the aligned `bartosz/promo-q-2` HEAD, `origin/main` baseline, and PR 2-only diff. Verify all implementation edits and commits occur on PR 2.
 2. Re-run searches for every producer/consumer of:
    - `setPromoSurfaceActive`
    - `setPromoSurfaceRenderable`
@@ -385,7 +452,7 @@ Tasks:
 3. Confirm standard, tray, and UTI construction, caching, teardown, and remount behavior.
 4. Confirm all code paths that alter relevant MainView container visibility or alpha.
 5. Confirm feature-flag latching and legacy bypass behavior.
-6. Identify the existing debug snapshot/menu representation to extend.
+6. Identify the minimal PR 2 diagnostics/test projections already present. Separately inspect PR 3's downstream debug projection so the new exposure state can be integrated during the final rebase; do not copy that projection into PR 2.
 7. Add or update characterization tests only where current transition timing is not already pinned.
 
 Exit criteria:
@@ -411,12 +478,12 @@ Service changes:
    - authorization/publication;
    - owned-renderer reconciliation;
    - transfer after draining;
-   - eligible-renderer counts and debug state;
+   - any PR 2 eligibility counts/internal diagnostics used by tests;
    - appearance acceptance.
 7. Preserve selection through an exact drain; changing selection does not release the lease directly.
 8. Selecting an unregistered ID remains fail closed until the exact renderer registers.
 9. Deselecting the owner makes it ineffective and enters the existing hide/drain path.
-10. Feature-off behavior ignores this selection without reading/writing queue, cooldown, or history state.
+10. Feature-off behavior ignores this selection without reading/writing queue or history state. Do not introduce a dependency on PR 3 cooldown storage.
 
 Test changes:
 
@@ -471,7 +538,7 @@ Host-specific requirements:
 
 Exit criteria:
 
-- Cross-host selection is explained by one resolver/debug snapshot.
+- Cross-host selection is explained by one resolver plus PR 2's minimal internal diagnostics; PR 3's debug projection will consume these facts after rebase.
 - New renderers that are registered with the service but absent from UI selection fail closed.
 - The old exposure booleans still provide temporary redundant safety until Phase 4.
 
@@ -537,11 +604,11 @@ Exit criteria:
 
 - No production caller uses any of the four old setters.
 - No handoff helper remains.
-- One debug snapshot explains selected renderer, local readiness, blockers, effective eligibility, ownership, and drain state.
+- PR 2 exposes enough internal/test diagnostics to explain selected renderer, local readiness, blockers, effective eligibility, ownership, and drain state without importing PR 3's debug UI.
 
-### Phase 5 — Documentation, full verification, and cleanup
+### Phase 5 — Finish and commit the PR 2 implementation
 
-Objective: make the new integration contract clear and verify all original guarantees.
+Objective: make the new integration contract clear, verify all original guarantees that exist in PR 2, and leave the updated PR 2 branch in locally reviewable commits.
 
 Documentation updates:
 
@@ -563,19 +630,73 @@ Verification:
 - Start with focused unit tests for the service, exposure controller, blockers, tray, and UTI.
 - Then run approved integration/real-host tests covering modal/RMF handoff and SwiftUI removal.
 - Perform any approved manual simulator checks on both the modern animation path and an appropriate older-iOS runtime where available.
-- Inspect the final diff for accidental changes to HomePageConfiguration, modal lifetime, cooldown policy, accounting order, or feature-off behavior.
+- Inspect the PR 2 diff for accidental changes to HomePageConfiguration, modal lifetime, accounting order, feature-off behavior, or any backport of PR 3 cooldown/diagnostic functionality.
+- Commit the completed implementation and approved test/documentation changes locally on `bartosz/promo-q-2`.
+- Ensure the worktree is clean and record the updated PR 2 tip before touching PR 3.
 
 Exit criteria:
 
-- All acceptance criteria below are met.
+- All acceptance criteria below that apply to PR 2 before the stack rebase are met.
 - Documentation describes the new narrow contract rather than the removed booleans.
 - No compatibility/shadow state remains unless explicitly retained with a removal task and rationale.
+- `bartosz/promo-q-2` contains the complete exposure refactor in local commits and has not been pushed.
+
+### Phase 6 — Rebase the stacked PR 3 branch locally
+
+Objective: replay PR 6291's cooldown/diagnostic delta, plus all preserved local PR 3-only commits, onto the updated local PR 2 without duplicating or weakening the exposure refactor.
+
+This is the final branch-mutation phase. Do not start it until Phase 5 is committed and the PR 2 worktree is clean.
+
+Pre-rebase record:
+
+1. Record:
+   - the fetched PR 2 head used as the original stack base (`oldQ2Tip`);
+   - the updated local PR 2 tip (`newQ2Tip`);
+   - the current local PR 3 tip (`oldQ3Tip`);
+   - the PR 3 backup ref created during branch preparation.
+2. Inspect the ordered commits in `oldQ2Tip..oldQ3Tip`. They should be PR 3-only cooldown/diagnostic/follow-up commits plus known local-only commits such as this plan. If PR 2 implementation commits appear in that range, stop and repair the stack definition before rebasing.
+3. Verify no uncommitted or untracked work would be lost when switching branches.
+
+Rebase:
+
+1. Switch to local `bartosz/promo-q-3`.
+2. Rebase the exact PR 3-only range from `oldQ2Tip` onto `newQ2Tip`. Prefer an explicit `--onto` rebase when it makes the stack boundary unambiguous.
+3. Preserve all known local PR 3-only commits, including the plan document, unless the user separately asks to drop or relocate them.
+4. Resolve conflicts semantically, commit by commit. Do not resolve a conflicted file wholesale with “ours” or “theirs.”
+5. If a conflict cannot be resolved with confidence, abort the rebase and report it; the backup refs must make this fully recoverable.
+
+Conflict rules:
+
+- PR 2 owns selected-renderer gating, exposure resolution, blocker semantics, host integration, legacy-setter removal, and direct tests.
+- PR 3 owns directional cooldown policy, confirmed-appearance cooldown integration, read-only queue diagnostics, and its own test/debug follow-ups.
+- In `PromoCoordinationService`, preserve both: PR 2 effective renderer eligibility and PR 3 cooldown admission/confirmation. Neither may bypass the other.
+- In debug projections, retain PR 3 cooldown/owner information and integrate PR 2 candidate ID, effective selected ID, local/effective eligibility, and blocker reasons where the projection's scope supports them.
+- In `NewTabPageMessagesModel` and removal code, preserve the exact PR 2 terminal contract and any PR 3-only hygiene fixes. Do not reintroduce an old exposure setter to make a conflict easier.
+- In tests, retain PR 2 selection/blocker/handoff coverage and PR 3 cooldown/diagnostic coverage. Update helpers so coordinated renderers are selected explicitly.
+- Do not duplicate PR 2 implementation commits on PR 3. They must arrive through the updated base.
+
+Post-rebase verification:
+
+1. Confirm `bartosz/promo-q-2` is an ancestor of `bartosz/promo-q-3` and that their merge base equals `newQ2Tip`.
+2. Inspect `bartosz/promo-q-2..bartosz/promo-q-3`. It must contain only the intended PR 3/local-plan delta—not a second copy of the exposure refactor.
+3. Compare the old and rebased PR 3 commit ranges with `git range-diff`. Investigate every non-mechanical semantic difference.
+4. Inspect the cumulative PR 3 tree for all invariants in this document, especially appearance accounting, cooldown confirmation, exact removal, selected-renderer gating, and feature-off behavior.
+5. Run relevant tests. rerun the affected PR 2 suites on the rebased PR 3 tree plus PR 3 cooldown/diagnostic suites.
+6. Leave `bartosz/promo-q-3` clean and local. Never push or force-push.
+7. Record the final local tips of both branches and the backup refs for user review.
+
+Exit criteria:
+
+- Updated PR 2 is the exact base of local PR 3.
+- PR 3 retains its original feature scope and adopts the new exposure APIs without semantic regression.
+- Both branches are locally committed, clean, recoverable, and unpushed.
+- The final handoff contains enough hashes and range-diff context for the user to review before deciding whether anything should be pushed.
 
 ## Expected production file areas
 
 Exact placement should follow the repository's existing target membership and project structure.
 
-### New or substantially changed
+### New or substantially changed on PR 2
 
 - `iOS/DuckDuckGo/ModalPromptCoordination/NewTabPagePromoExposureController.swift` or the nearest existing Promo Queue coordination directory
 - `iOS/DuckDuckGo/AppServices/PromoCoordinationService.swift`
@@ -587,15 +708,24 @@ Exact placement should follow the repository's existing target membership and pr
 - `iOS/DuckDuckGo/UnifiedToggleInput/UnifiedInputContentContainerViewController.swift`
 - `iOS/DuckDuckGo/UnifiedToggleInput/Suggestions/UnifiedSuggestionsHost.swift`
 - relevant `MainViewController` unified-input extensions and intent-handling extension
-- existing Promo Queue debug snapshot/menu files
+- minimal internal/test diagnostics needed to make missing selection and blocker state detectable, without importing PR 3's debug screen
 - dependency bundles and test mocks required to inject the UI controller
+
+### Adapted only when PR 3 is rebased
+
+- PR 3 Promo Queue read-only debug snapshot/menu files
+- PR 3 cooldown integration in `PromoCoordinationService.swift`
+- PR 3 cooldown, confirmation, time-limit, and debug-projection tests
+- any PR 3 test-hygiene follow-ups that reference removed exposure APIs
+
+These changes should occur through semantic conflict resolution or a clearly identified PR 3 compatibility commit. They must not be backported into the PR 2 implementation merely because this plan was researched on the cumulative branch.
 
 ### Expected to remain functionally unchanged
 
 - `iOS/DuckDuckGo/HomePageConfiguration.swift`
 - `PromoQueueLeaseArbiter`
 - `ModalPromptCoordinationManager`
-- queue cooldown policy/storage
+- PR 3 queue cooldown policy/storage while implementing PR 2
 - RMF candidate selection and dismissal persistence
 - `HomeMessageView` appearance callback semantics
 - iOS 17+ and older-iOS physical-removal implementation
@@ -639,8 +769,10 @@ Add focused tests around observable guarantees, not private implementation detai
 - Appearance after deselection or suppression is rejected.
 - Rejected appearance writes no queue history or ordinary RMF accounting.
 - Modal remains blocked throughout RMF draining.
-- Directional cooldown and logical-session behavior are unchanged.
+- PR 2 logical-session behavior is unchanged and no PR 3 cooldown behavior is introduced.
 - Two renderers with independent message configuration objects still coordinate globally.
+
+After PR 3 is rebased, additionally verify that directional cooldown admission and confirmed-appearance recording are unchanged and use the new effective selected-renderer gate correctly.
 
 ### Standard NTP
 
@@ -675,7 +807,7 @@ Add focused tests around observable guarantees, not private implementation detai
 
 - No coordinated renderer registration or effective-selection dependency.
 - No lease acquisition.
-- No queue cooldown/history access introduced.
+- No queue/history access is introduced on PR 2; after the rebase, PR 3 cooldown storage remains untouched in legacy mode.
 - Legacy candidate publication and eager/visible accounting remain unchanged.
 
 ### Existing suites likely affected
@@ -688,11 +820,14 @@ Add focused tests around observable guarantees, not private implementation detai
 - suggestion-tray host tests
 - Dax/onboarding controller tests
 - feature-flag isolation tests
-- debug snapshot tests and shared mocks/previews that construct NTP dependencies
+- shared mocks/previews that construct NTP dependencies
+- after the final rebase only: PR 3 cooldown, time-limit, and debug snapshot tests
 
 ## Diagnostics requirements
 
-Extend the existing debug representation so an engineer can answer, without reconstructing booleans across controllers:
+On PR 2, expose minimal ephemeral/internal diagnostics and debug logging so an engineer can answer the questions below without reconstructing booleans across controllers. Do not backport PR 3's user-facing/read-only debug projection.
+
+During the final PR 3 rebase, integrate the same exposure facts into PR 3's existing debug representation where appropriate:
 
 - What renderer IDs are registered, and with what generations?
 - Which renderer is the UI route candidate?
@@ -710,6 +845,7 @@ Diagnostics must follow existing logging/privacy rules and should not create per
 
 The implementation is complete when all of the following are true:
 
+- [ ] Every reusable exposure-refactor production change and direct test is committed locally on `bartosz/promo-q-2`.
 - [ ] The service requires an explicit selected renderer in coordinated mode.
 - [ ] No selected renderer means no coordinated RMF publication.
 - [ ] Standard, tray, and unified-input hosts resolve through one UI-owned controller.
@@ -727,6 +863,11 @@ The implementation is complete when all of the following are true:
 - [ ] No admission logic was moved into `HomePageConfiguration`.
 - [ ] No release authority depends on SwiftUI `onDisappear`.
 - [ ] Documentation explains the new integration contract.
+- [ ] `bartosz/promo-q-3` is rebased locally so its merge base with PR 2 is the updated `bartosz/promo-q-2` tip.
+- [ ] The PR 3-only range still contains only cooldown/diagnostic/follow-up work and known local plan commits, with no duplicate PR 2 implementation.
+- [ ] PR 3 directional cooldown and debug behavior remain intact after adapting to the new exposure APIs.
+- [ ] Both branch tips and backup refs are recorded for review.
+- [ ] Neither branch has been pushed or force-pushed.
 
 ## Residual limitation and explicit tradeoff
 
@@ -742,17 +883,20 @@ The chosen tradeoff is:
 
 Product should explicitly accept the possibility that a leaked blocker or missing route registration suppresses RMF delivery until the surface is recreated or the defect is corrected. Do not silently change this to fail-open behavior during implementation.
 
-Temporary suppression also retains the current session/cooldown semantics: making an owned renderer ineffective initiates the existing drain. Once that logical session ends, later blocker release may require fresh admission and may be rejected by the RMF→RMF cooldown. Changing blockers to pause ownership underneath overlays would extend lease lifetime and modal suppression, so treat that as a separate product decision rather than an incidental refactor.
+Temporary suppression retains the existing session semantics on PR 2: making an owned renderer ineffective initiates the existing drain rather than pausing ownership under the overlay. After PR 3 is rebased, once that logical session ends, later blocker release may require fresh admission and may be rejected by PR 3's RMF→RMF cooldown. Do not backport that cooldown into PR 2. Changing blockers to pause ownership underneath overlays would extend lease lifetime and modal suppression, so treat that as a separate product decision rather than an incidental refactor.
 
 ## Final implementation handoff
 
 When handing the completed work back, report:
 
-1. The final selected-renderer and blocker ownership model.
-2. Every removed legacy API and its replacement.
-3. Any old producer intentionally retained and why.
-4. Whether feature-off behavior was directly verified.
-5. Which focused and integration tests were added or updated.
-6. Which tests were actually run, only if permission was granted.
-7. Remaining arbitrary-overlay limitations and diagnostics.
-8. Any deviation from this plan, especially changes touching removal, modal lifetime, accounting, cooldowns, or `HomePageConfiguration`.
+1. Original/final PR 2 hashes, original/final PR 3 hashes, and both backup refs.
+2. The local commits created on PR 2, grouped by phase.
+3. The `range-diff` assessment for PR 3 before and after rebase, including any semantic conflict resolutions.
+4. Confirmation that neither branch was pushed or force-pushed.
+5. The final selected-renderer and blocker ownership model.
+6. Every removed legacy API and its replacement.
+7. Any old producer intentionally retained and why.
+8. Whether feature-off behavior was directly verified.
+9. Which focused and integration tests were added or updated.
+11. Remaining arbitrary-overlay limitations and diagnostics.
+12. Any deviation from this plan, especially changes touching removal, modal lifetime, accounting, cooldowns, PR boundaries, or `HomePageConfiguration`.

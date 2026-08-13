@@ -192,18 +192,15 @@ private struct MockTabTerminationErrorPageSettings: TabTerminationErrorPageSetti
 private final class MockTabTerminationErrorPagePixelFiring: PixelFiring {
 
     struct Call {
-        let event: PixelKitEvent
+        let event: PixelKit.Event
         let frequency: PixelKit.Frequency
     }
 
     private(set) var calls: [Call] = []
 
-    func fire(_ event: PixelKitEvent,
+    func fire(event: PixelKit.Event,
               frequency: PixelKit.Frequency,
-              includeAppVersionParameter: Bool,
-              withAdditionalParameters: [String: String]?,
-              withNamePrefix: String?,
-              doNotEnforcePrefix: Bool,
+              options: PixelKit.Options,
               onComplete: @escaping PixelKit.CompletionBlock) {
         calls.append(.init(event: event, frequency: frequency))
         onComplete(true, nil)

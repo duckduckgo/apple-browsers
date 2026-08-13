@@ -92,6 +92,9 @@ jobs:
         submodules: recursive
         ref: ${{ inputs.commit-sha || env.branch }}
 
+    - name: Print macOS version
+      run: sw_vers
+
     - name: Assert release branch
       if: env.destination == 'appstore' || env.destination == 'testflight'
       run: |
@@ -240,6 +243,9 @@ jobs:
       with:
         submodules: recursive
         ref: ${{ inputs.commit-sha || env.branch }}
+
+    - name: Print macOS version
+      run: sw_vers
 
     - name: Setup Ruby and dependencies
       uses: ./.github/actions/setup-ruby

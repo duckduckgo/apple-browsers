@@ -12,9 +12,9 @@ When a PR adds or modifies pixel events in Swift, verify that a corresponding pi
 
 A PR introduces a new pixel if it adds or modifies any of the following:
 
-- **iOS:** A new case or changed `name` string in `iOS/Core/PixelEvent.swift`, or in any enum conforming to `PixelKitEvent` under `iOS/`.
-- **macOS:** A new case or changed `name` string in any enum conforming to `PixelKitEvent` under `macOS/` (e.g. `UpdateFlowPixels.swift`, `CrashReportPixels.swift`).
-- **Shared packages:** A new case or changed `name` in any type conforming to `PixelKitEvent` under `SharedPackages/`.
+- **iOS:** A new case or changed `name` string in `iOS/Core/PixelEvent.swift`, or in any enum conforming to `PixelKit.Event` under `iOS/`.
+- **macOS:** A new case or changed `name` string in any enum conforming to `PixelKit.Event` under `macOS/` (e.g. `UpdateFlowPixels.swift`, `CrashReportPixels.swift`).
+- **Shared packages:** A new case or changed `name` in any type conforming to `PixelKit.Event` under `SharedPackages/`.
 
 The pixel name is the string returned by the `name` computed property (e.g. `"m_mac_default-browser"`, `"m_autocomplete_click_phrase"`).
 
@@ -51,7 +51,7 @@ Check that the `parameters` array accounts for all parameters the pixel includes
 - **Missing `appVersion`.** Many pixels include `appVersion` by default. The definition should list `"appVersion"` unless the Swift call site explicitly opts out of it.
 - **Missing error parameters.** If the pixel event carries an `Error` (via an associated value or the `error` property), the definition must include `"errorCode"` and `"errorDomain"`. If the error may have an underlying error, also include `"underlyingErrorCode"` and `"underlyingErrorDomain"`.
 - **Missing `pixelSource`.** If the pixel event's `standardParameters` property returns `[.pixelSource]`, the definition must include `"pixelSource"`.
-- **Missing custom parameters.** Check the pixel event's `parameters` computed property and any `withAdditionalParameters:` arguments at the call site. Every key that appears in the parameters dictionary must be represented in the definition — either as a reference to the params dictionary or as an inline parameter object.
+- **Missing custom parameters.** Check the pixel event's `parameters` computed property and any extra parameters supplied at the call site. On PixelKit these arrive either as `withAdditionalParameters:` (legacy form) or inside the options argument, as `options: .parameters([...])` or `PixelKit.Options(additionalParameters: [...])`. Every key that appears in the parameters dictionary must be represented in the definition — either as a reference to the params dictionary or as an inline parameter object.
 
 Parameters can be either:
 - A string referencing `params_dictionary.json5` (e.g. `"appVersion"`, `"errorCode"`)

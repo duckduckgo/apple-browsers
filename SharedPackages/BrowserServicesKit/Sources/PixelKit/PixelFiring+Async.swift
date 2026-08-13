@@ -20,25 +20,26 @@ import Foundation
 
 extension PixelFiring {
 
-    /// Async/await variant of PixelKit `fire`
+    /// Fires a pixel and waits for the request to complete.
     ///
-    /// - Returns: `true` if a request was fired, `false` if it was suppressed by frequency rules.
-    /// - Throws: the underlying error if firing the request failed.
+    /// Prefer the synchronous `fire` unless the caller genuinely needs the outcome: awaiting a
+    /// pixel makes the caller wait on a network round trip.
+    ///
+    /// - Returns: `.sent` if a request was sent, `.suppressed` if the event's frequency rules
+    ///   suppressed it. Suppression is a normal outcome, not a failure.
+    /// - Throws: the underlying error if sending the request failed.
     @discardableResult
-    public func fireAsync(_ event: PixelKitEvent,
+    public func fireAsync(_ event: PixelKit.Event,
                           frequency: PixelKit.Frequency = .standard,
-                          includeAppVersionParameter: Bool = true,
-                          withAdditionalParameters parameters: [String: String]? = nil,
-                          withNamePrefix namePrefix: String? = nil,
-                          doNotEnforcePrefix: Bool = false) async throws -> Bool {
+                          options: PixelKit.Options = .default) async throws -> PixelKit.FireResult {
         let firstCompletion = OneTimeFlag()
         return try await withCheckedThrowingContinuation { continuation in
-            fire(event,
+            fire(event: event,
                  frequency: frequency,
-                 includeAppVersionParameter: includeAppVersionParameter,
-                 withAdditionalParameters: parameters,
-                 withNamePrefix: namePrefix,
-                 doNotEnforcePrefix: doNotEnforcePrefix) { fired, error in
+                 options: options) { fired, error in
+                // Multi-request frequencies such as `.dailyAndCount` complete more than once.
+                // Resolve on the first completion and drop the rest, otherwise the second resume
+                // traps.
                 guard firstCompletion.trySet() else { return }
 
                 if let error {
@@ -46,7 +47,7 @@ extension PixelFiring {
                     return
                 }
 
-                continuation.resume(returning: fired)
+                continuation.resume(returning: fired ? .sent : .suppressed)
             }
         }
     }

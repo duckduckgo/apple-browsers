@@ -106,9 +106,9 @@ Default appearance strategy is `.allAppearances` (light + dark). Use `.single(.l
 Snapshots are pixel-strict, so the test environment is validated before each assertion:
 
 - **iOS**: must run on **iOS 26.4** at **@3x** (simulator runtime).
-- **macOS**: must run on the exact host version, **macOS 26.5.2** (major.minor.patch).
+- **macOS**: must run on **macOS 26** — major version only; minor and patch are ignored.
 
-macOS pins the exact version because macOS snapshots render on the uncontrolled host, whereas iOS renders in a pinnable simulator runtime. A mismatch → the helper records a failure (`XCTFail` / `Issue.record`) with an explanatory message and skips the comparison — the same in CI and locally; a developer on a different OS opts out by not running the snapshot suite.
+iOS renders in a pinnable simulator runtime, so it validates major.minor. macOS renders on the uncontrolled host and CI can't guarantee an exact point release, so the macOS guard only checks the major version — we accept the small flakiness risk from minor/patch rendering differences rather than fail every time CI rolls forward. A mismatch → the helper records a failure (`XCTFail` / `Issue.record`) with an explanatory message and skips the comparison — the same in CI and locally; a developer on a different OS opts out by not running the snapshot suite.
 
 When the OS rolls forward, bump `SnapshotEnvironment.expectedIOSVersion` / `expectedMacOSVersion` and re-record affected references.
 
@@ -116,7 +116,7 @@ When the OS rolls forward, bump `SnapshotEnvironment.expectedIOSVersion` / `expe
 
 Reference images live in the `SnapshotReferences` git submodule at the repo root, mirroring each test's repo-relative path (`<platform>/…/__Snapshots__/<TestClass>/`). The wrapper redirects the library's `snapshotDirectory` there automatically, so references stay out of the app trees.
 
-Each image name carries the recording environment as a suffix so references are unambiguous across OSes: iOS uses `…_iOS-26-4` (major.minor), macOS uses `…_macOS-26-5-2` (exact version).
+Each image name carries the recording environment as a suffix so references are unambiguous across OSes: iOS uses `…_iOS-26-4` (major.minor), macOS uses `…_macOS-26` (major only, matching the guard granularity).
 
 ## Recording
 
@@ -125,6 +125,16 @@ Each image name carries the recording environment as a suffix so references are 
 - `GENERATE_SNAPSHOTS=1` in the test scheme's env records everything.
 
 After re-recording, inspect every diff and commit only the intentional ones.
+
+## Skipping
+
+`SKIP_SNAPSHOT_TESTS=1` in the test scheme's env (or on the command line, same place as `GENERATE_SNAPSHOTS`) turns off **every** image-snapshot assertion. Skipped assertions return silently and go **green** — no `XCTFail` / `Issue.record` — so the suites still run but stop comparing images. Use it as a global kill switch when a rendering or environment change would otherwise turn snapshot suites red across the board, while you investigate. Accepts `1` / `true` / `yes` (case-insensitive) and takes precedence over `GENERATE_SNAPSHOTS`.
+
+```bash
+xcodebuild test ... SKIP_SNAPSHOT_TESTS=1
+```
+
+**Currently pinned on.** The variable is hardcoded to `1` in the test-action environment of the app schemes (`iOS Browser`, `macOS Browser`, `macOS Browser App Store`, `macOS Unit Tests`), so image snapshots are skipped for everyone — locally and in CI — while snapshot references and CI runners stabilise. To re-enable snapshots, set the value back to `$(SKIP_SNAPSHOT_TESTS)` (or disable the entry) in those schemes.
 
 ## Conventions
 

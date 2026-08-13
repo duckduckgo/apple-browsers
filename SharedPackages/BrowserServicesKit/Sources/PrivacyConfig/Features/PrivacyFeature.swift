@@ -29,7 +29,6 @@ public enum PrivacyFeature: String {
     case gpc
     case httpsUpgrade = "https"
     case autoconsent
-    case clickToLoad
     case autofill
     case autofillBreakageReporter
     case ampLinks
@@ -607,7 +606,6 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case syncCreditCards
     case syncIdentities
     case aiChatSync
-    case aiChatSyncPromo
     case allowSingleDeviceOnConnectScreen
     case scopedAccessCredentials
     case canUseV2ConnectFlow

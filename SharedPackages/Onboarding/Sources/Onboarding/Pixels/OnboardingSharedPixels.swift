@@ -165,13 +165,12 @@ final public class OnboardingSharedPixelHandler: OnboardingSharedPixelHandling {
 
         pixelFiring?.fire(event,
                           frequency: .uniqueByNameAndParameters,
-                          withAdditionalParameters: additionalParameters,
-                          withNamePrefix: platform.pixelPrefix)
+                          options: .parameters(additionalParameters, namePrefix: platform.pixelPrefix))
     }
 
 }
 
-public enum OnboardingSharedPixelEvent: PixelKitEvent, Equatable {
+public enum OnboardingSharedPixelEvent: PixelKit.Event, Equatable {
     // Linear onboarding events
     case welcome(EngagementEvent)
     case skipOnboarding(EngagementEvent) // iOS only

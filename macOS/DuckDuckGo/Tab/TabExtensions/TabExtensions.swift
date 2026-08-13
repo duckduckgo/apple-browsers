@@ -141,15 +141,8 @@ extension TabExtensionsBuilder {
             HTTPSUpgradeTabExtension(httpsUpgrade: dependencies.privacyFeatures.httpsUpgrade)
         }
 
-        let fbProtection = add {
-            FBProtectionTabExtension(privacyConfigurationManager: dependencies.privacyFeatures.contentBlocking.privacyConfigurationManager,
-                                     userContentControllerFuture: args.userContentControllerFuture,
-                                     clickToLoadUserScriptPublisher: userScripts.map(\.?.clickToLoadScript))
-        }
-
         let contentBlocking = add {
-            ContentBlockingTabExtension(fbBlockingEnabledProvider: fbProtection.value,
-                                        userContentControllerFuture: args.userContentControllerFuture,
+            ContentBlockingTabExtension(userContentControllerFuture: args.userContentControllerFuture,
                                         cbaTimeReporter: dependencies.cbaTimeReporter,
                                         privacyConfigurationManager: dependencies.privacyFeatures.contentBlocking.privacyConfigurationManager,
                                         trackerProtectionSubfeaturePublisher: userScripts.map(\.?.trackerProtectionSubfeature),
@@ -403,10 +396,8 @@ extension TestTabExtensionsBuilder {
     // override Tab Extensions initialisation registered in TabExtensionsBuilder.registerExtensions for Unit Tests
     func overrideExtensions(with args: TabExtensionsBuilderArguments, dependencies: TabExtensionDependencies) {
         /** ```
-         let fbProtection = get(FBProtectionTabExtension.self)
-
          let contentBlocking = override {
-         ContentBlockingTabExtension(fbBlockingEnabledProvider: fbProtection.value)
+         ContentBlockingTabExtension(cbaTimeReporter: nil)
          }
          override {
          HistoryTabExtension(trackersPublisher: contentBlocking.trackersPublisher)

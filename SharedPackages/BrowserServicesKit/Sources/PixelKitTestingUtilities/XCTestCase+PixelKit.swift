@@ -57,7 +57,7 @@ public extension XCTestCase {
     /// They're not a complete list of parameters for the event, as the fire call may contain extra information
     /// that results in additional parameters.  Ideally we want most (if not all) that information to eventually
     /// make part of the pixel definition.
-    func knownExpectedParameters(for event: PixelKitEvent) -> [String: String] {
+    func knownExpectedParameters(for event: PixelKit.Event) -> [String: String] {
         var expectedParameters = [String: String]()
 
         if let error = event.error {
@@ -89,7 +89,7 @@ public extension XCTestCase {
 
     // MARK: - Pixel Firing Expectations
 
-    func fire(_ event: PixelKitEvent,
+    func fire(_ event: PixelKit.Event,
               frequency: PixelKit.Frequency,
               doNotEnforcePrefix: Bool = false,
               and expectations: PixelFireExpectations,
@@ -105,7 +105,7 @@ public extension XCTestCase {
     /// Provides some snapshot of a fired pixel so that external libraries can validate all the expected info is included.
     ///
     /// This method also checks that there is internal consistency in the expected fields.
-    func verifyThat(_ event: PixelKitEvent,
+    func verifyThat(_ event: PixelKit.Event,
                     frequency: PixelKit.Frequency,
                     doNotEnforcePrefix: Bool = false,
                     meets expectations: PixelFireExpectations,

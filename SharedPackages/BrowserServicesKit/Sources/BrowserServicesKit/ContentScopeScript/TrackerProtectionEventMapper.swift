@@ -175,12 +175,12 @@ public struct TrackerProtectionEventMapper {
     /// pipeline exactly so the C-S-S-driven classification is observationally identical to
     /// the WKScriptMessage-driven one. Any divergence here is a behavior regression.
     ///
-    /// 1. Try each supplementary TDS (CTL, ad-attribution) with ad-click vendor.
+    /// 1. Try each supplementary TDS (ad-attribution) with ad-click vendor.
     ///    If any returns blocked, use it immediately.
     /// 2. Fall back to the main TDS without vendor.
     /// 3. Main result unconditionally overwrites non-blocked supplementary candidates.
-    ///    This matches legacy semantics. It is safe in practice because the splitters
-    ///    (`AdClickAttributionRulesSplitter`, `ClickToLoadRulesSplitter`) remove the
+    ///    This matches legacy semantics. It is safe in practice because the splitter
+    ///    (`AdClickAttributionRulesSplitter`) removes the
     ///    supplementary trackers from the main TDS, so main returns nil for those URLs
     ///    and the supplementary candidate survives. If the splitter contract were ever
     ///    weakened, both the legacy script and this mapper would change behavior in

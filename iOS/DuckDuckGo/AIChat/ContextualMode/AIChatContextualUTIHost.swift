@@ -49,6 +49,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     /// Fires on every prompt delivery so the session state can mark context delivered and re-render the chip.
     var onPromptDelivered: (() -> Void)?
     var onAIVoiceChatRequested: (() -> Void)?
+    var onEditModeChange: ((Bool) -> Void)?
 
     var attachedContextURL: URL? {
         chipViewModel.attachedContext.flatMap { URL(string: $0.contextData.url) }
@@ -310,6 +311,10 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         coordinator.viewController.deactivateInput()
     }
 
+    func endEditMode() {
+        coordinator.endEditMode()
+    }
+
     func submitQuickActionPrompt(_ prompt: String) {
         coordinator.submitProgrammatic(text: prompt)
     }
@@ -387,6 +392,9 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     func unifiedToggleInputDidCommitMode(_ mode: TextEntryMode) {}
     func unifiedToggleInputDidRequestFire() {}
     func unifiedToggleInputDidRequestAppMenu() {}
+    func unifiedToggleInputDidChangeEditMode(_ isEditing: Bool) {
+        onEditModeChange?(isEditing)
+    }
 }
 
 // MARK: - Duck.ai Wide Event

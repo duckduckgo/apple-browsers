@@ -489,8 +489,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     @MainActor
     func getAIChatOpenTabs(params: Any, message: UserScriptMessage) async -> Encodable? {
-        // Source tabs from all windows (except Fire Windows) relative to the window the picker was
-        // opened in — see `AIChatTabPickerSource`. A Fire Window only sees its own tabs.
+        // Every regular window's tabs relative to the one the picker was opened in; a Fire Window
+        // sees only its own — see `AIChatTabPickerSource`.
         guard let origin = AIChatTabPickerSource.originTabCollectionViewModel(for: message.messageWebView, in: windowControllersManager) else {
             return AIChatOpenTabsResponse(tabs: [])
         }
@@ -652,7 +652,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             return nil
         }
         hasAttachedPageContext = payload.enabled
-        let pixel: PixelKitEvent = {
+        let pixel: PixelKit.Event = {
             if payload.enabled {
                 return AIChatPixel.aiChatPageContextAdded(automaticEnabled: storage.shouldAutomaticallySendPageContext)
             }
@@ -934,7 +934,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     @MainActor
-    private func fireSyncDailyAndStandardPixel(_ pixel: PixelKitEvent) {
+    private func fireSyncDailyAndStandardPixel(_ pixel: PixelKit.Event) {
         pixelFiring?.fire(pixel, frequency: .dailyAndStandard)
     }
 

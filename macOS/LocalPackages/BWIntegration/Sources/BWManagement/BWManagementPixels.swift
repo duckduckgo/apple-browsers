@@ -18,7 +18,7 @@
 
 import PixelKit
 
-enum BWManagementPixels: PixelKitEvent {
+enum BWManagementPixels: PixelKit.Event {
 
     case bitwardenNotResponding
     case bitwardenRespondedCannotDecrypt

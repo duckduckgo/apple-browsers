@@ -797,6 +797,7 @@ extension DefaultOmniBarViewController {
 extension DefaultOmniBarViewController: OmniBarEditingStateViewControllerDelegate {
 
     func onQueryUpdated(_ query: String) {
+        omniDelegate?.onOmniBarTextEdited(query)
     }
 
     func onQuerySubmitted(_ query: String) {

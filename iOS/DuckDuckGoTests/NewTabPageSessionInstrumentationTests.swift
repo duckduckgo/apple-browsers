@@ -515,11 +515,13 @@ struct NewTabPageSessionInstrumentationTests {
 
         // Longer than the inactivity timeout, spent reading the screen rather than doing nothing.
         clock.advance(by: 90)
+        // Picking a login happens on the Passwords screen, so the user has not returned yet.
         sut.selectPassword()
 
         #expect(wideEvent.completions.isEmpty)
         #expect(activeVisit(wideEvent)?.selectPassword == true)
 
+        sut.noteUserReturnedFromAnotherScreen()
         sut.visitEnded(terminalAction: .loadWebsite)
         #expect(lastCompletion(wideEvent)?.0.terminalAction == .loadWebsite)
         #expect(lastCompletion(wideEvent)?.1 == .success)
@@ -535,11 +537,34 @@ struct NewTabPageSessionInstrumentationTests {
         sut.noteUserLeftForAnotherScreen()
         clock.advance(by: 90)
         sut.selectPassword()
+        sut.noteUserReturnedFromAnotherScreen()
 
         clock.advance(by: 45)
         sut.visitBackgrounded()
 
         #expect(lastCompletion(wideEvent)?.0.terminalAction == .noActionTimeout)
+    }
+
+    @available(iOS 16, *)
+    @Test("Acting on the other screen does not end the excluded time", .timeLimit(.minutes(1)))
+    func actingOnAnotherScreenKeepsTimeExcluded() {
+        let (sut, wideEvent, clock) = makeSUT()
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: true)
+
+        sut.openMenu()
+        sut.noteUserLeftForAnotherScreen()
+
+        // Picking a login, then reading the details screen for longer than the inactivity
+        // timeout before coming back.
+        clock.advance(by: 10)
+        sut.selectPassword()
+        clock.advance(by: 90)
+        sut.noteUserReturnedFromAnotherScreen()
+
+        clock.advance(by: 5)
+        sut.visitEnded(terminalAction: .loadWebsite)
+
+        #expect(lastCompletion(wideEvent)?.0.terminalAction == .loadWebsite)
     }
 
     @available(iOS 16, *)

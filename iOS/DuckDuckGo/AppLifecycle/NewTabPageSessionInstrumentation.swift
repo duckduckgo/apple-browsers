@@ -91,6 +91,10 @@ protocol NewTabPageSessionInstrumentation: AnyObject {
     /// settings. The time they spend there does not count as inactivity.
     func noteUserLeftForAnotherScreen()
 
+    /// The user is back on the New Tab Page with that screen gone. Anything they do while still
+    /// on it, such as picking a login, is not a return.
+    func noteUserReturnedFromAnotherScreen()
+
     // MARK: - Terminals
 
     /// A user action ended the visit. `terminalAction` decides the reported outcome.
@@ -252,6 +256,15 @@ final class DefaultNewTabPageSessionInstrumentation: NewTabPageSessionInstrument
         isAwaitingReturnFromAnotherScreen = true
     }
 
+    func noteUserReturnedFromAnotherScreen() {
+        guard let visit = activeVisit, isAwaitingReturnFromAnotherScreen else { return }
+
+        isAwaitingReturnFromAnotherScreen = false
+        let now = dateProvider()
+        timeSpentOnOtherScreens += now.timeIntervalSince(visit.lastActionAt)
+        visit.lastActionAt = now
+    }
+
     // MARK: - Terminals
 
     func visitEnded(terminalAction: NewTabPageSessionWideEventData.TerminalAction) {
@@ -329,16 +342,11 @@ final class DefaultNewTabPageSessionInstrumentation: NewTabPageSessionInstrument
     private func lockTerminalIfTimedOut() {
         guard let visit = activeVisit, lockedTerminal == nil else { return }
 
-        let now = dateProvider()
+        // Reading a screen the app opened is not abandoning the visit, so neither threshold
+        // advances while the user is still on it. The gap it produced is discounted on return.
+        guard !isAwaitingReturnFromAnotherScreen else { return }
 
-        // Reading a screen the app opened is not abandoning the visit, so the gap it produced is
-        // discounted rather than counted against either threshold. Forgiven once per departure:
-        // whatever the user does next starts a fresh gap that counts normally.
-        if isAwaitingReturnFromAnotherScreen {
-            isAwaitingReturnFromAnotherScreen = false
-            timeSpentOnOtherScreens += now.timeIntervalSince(visit.lastActionAt)
-            visit.lastActionAt = now
-        }
+        let now = dateProvider()
 
         // Inactivity wins over the overall cap when both have elapsed: a visit that went
         // quiet was abandoned, whatever its total length.

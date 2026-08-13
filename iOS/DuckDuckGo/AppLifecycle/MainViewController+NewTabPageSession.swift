@@ -96,6 +96,13 @@ extension MainViewController {
     /// whatever replaced it.
     func recordNewTabPageSessionAction(_ record: (NewTabPageSessionInstrumentation) -> Void) {
         guard isNewTabPageVisible else { return }
+
+        // Acting with a screen still presented, such as picking a login in Passwords, happens
+        // during the detour rather than after it, so it must not end the excluded time.
+        if presentedViewController == nil {
+            newTabPageSessionInstrumentation.noteUserReturnedFromAnotherScreen()
+        }
+
         recordNewTabPageSessionVPNChangeIfNeeded()
         record(newTabPageSessionInstrumentation)
     }

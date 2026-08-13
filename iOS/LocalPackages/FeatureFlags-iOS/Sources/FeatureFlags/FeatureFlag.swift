@@ -353,6 +353,10 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216049537026986
     case aiChatContextualUnifiedToggleInput
 
+    /// Address-bar Duck.ai menu plus the floating contextual input. iPhone only.
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1215757651854873
+    case aiChatContextualFloatingInput
+
     /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1216575765851990
     case unifiedToggleInputAttachmentPaste
 
@@ -496,10 +500,7 @@ public enum FeatureFlag: String {
     case iPadDuckAIBarControls
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215359554019438?focus=true
-    case floatingUI
-
-    /// https://app.asana.com/1/137249556945/project/392891325557410/task/1216807388526023
-    case tabSwitcherJuly2026
+    case floatingUIAugust2026
 
     /// https://app.asana.com/1/137249556945/project/1211150618152277/task/1213745858492635?focus=true
     case removeChatHistory
@@ -816,6 +817,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.aiChatTabHideToggle))
         case .aiChatContextualUnifiedToggleInput:
             Config(source: .remoteReleasable(AIChatSubfeature.contextualUnifiedToggleInput))
+        case .aiChatContextualFloatingInput:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.contextualFloatingInput))
         case .unifiedToggleInputAttachmentPaste:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.unifiedToggleInputAttachmentPaste))
         case .freeTrialConversionWideEvent:
@@ -908,10 +911,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.walletPassDownload))
         case .aiChatChromeShortcutIPad:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.iPadChromeShortcut))
-        case .floatingUI:
-            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.floatingUI))
-        case .tabSwitcherJuly2026:
-            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.tabSwitcherJuly2026))
+        case .floatingUIAugust2026:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.floatingUIAugust2026))
         case .removeChatHistory:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.removeChatHistory))
         case .aiChatTabSwitcherRichCard:

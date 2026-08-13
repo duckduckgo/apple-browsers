@@ -379,7 +379,9 @@ class MainViewController: UIViewController {
     let productSurfaceTelemetry: ProductSurfaceTelemetry
 
     private let aichatFullModeFeature: AIChatFullModeFeatureProviding
-    private let aiChatContextualModeFeature: AIChatContextualModeFeatureProviding
+    let aiChatContextualModeFeature: AIChatContextualModeFeatureProviding
+    lazy var aiChatContextualFloatingInputFeature: AIChatContextualFloatingInputFeatureProviding = AIChatContextualFloatingInputFeature()
+    let duckAIAddressBarPixelHandler: AIChatContextualModePixelFiring = AIChatContextualModePixelHandler()
     let voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding
     lazy var unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature()
     private lazy var floatingUIManager: FloatingUIManaging = FloatingUIManager(
@@ -439,7 +441,10 @@ class MainViewController: UIViewController {
         let settings = SearchTokenExperimentSettings(privacyConfigurationManager: privacyConfigurationManager)
         return SearchTokenFetcher(requester: SearchTokenRequest(tokenURL: .searchToken),
                                   ttlProvider: { settings.tokenTTL },
-                                  windowProvider: { settings.refreshWindow })
+                                  windowProvider: { settings.refreshWindow },
+                                  onFetchResult: { result in
+            PixelKit.fire(SearchTokenPixel.fetch(result: result.rawValue), frequency: .dailyAndCount)
+        })
     }()
 
     /// Whether the ad-blocking rollout's Duck Player default (disable) should be applied at onboarding
@@ -1098,7 +1103,16 @@ class MainViewController: UIViewController {
             return
         }
 
-        currentTab.aiChatContextualSheetCoordinator.$isSheetPresented
+        // Every runtime input to `duckAIAddressBarEntry`, so the button can never disagree with what a tap
+        // does. `isHomeTab`, the remaining input, only changes with navigation, which refreshes the omnibar.
+        let coordinator = currentTab.aiChatContextualSheetCoordinator
+        let sessionState = coordinator.sessionState
+        let hasActiveChat = sessionState.$viewState
+            .map { _ in sessionState.hasActiveChat }
+            .removeDuplicates()
+        Publishers.CombineLatest3(coordinator.$isSheetPresented, coordinator.$isFloatingInputPresented, hasActiveChat)
+            .removeDuplicates { $0 == $1 }
+            .dropFirst()
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in self?.refreshAIChatChromeChip() }
             .store(in: &aiChatChromeChipCancellables)
@@ -1110,8 +1124,9 @@ class MainViewController: UIViewController {
         let isSheetPresented = currentTab?.aiChatContextualSheetCoordinator.isSheetPresented ?? false
         // iPhone-only: iPad's tabs-bar chip already indicates sheet state, so avoid a duplicate.
         if UIDevice.current.userInterfaceIdiom == .phone {
-            omniBar.barView.updateAIChatButtonForContextualSheet(isPresented: isSheetPresented)
+            omniBar.barView.updateAIChatButtonForContextualSurface(isPresented: duckAIAddressBarEntry == .dismissContextualSurface)
         }
+        refreshDuckAIAddressBarMenu()
         guard let tabsBarController else { return }
         tabsBarController.updateAIChatChipState(isContextualSheetPresented: isSheetPresented)
     }
@@ -2110,7 +2125,7 @@ class MainViewController: UIViewController {
             isAttachingNewTabPageAfterFire = false
 
             fireNewTabPixels()
-            fireNTPShownInstrumentation(openedAfterIdle: openedAfterIdle, hatch: hatch)
+            fireNTPShownInstrumentation(openedAfterIdle: openedAfterIdle, hatch: hatch, focused: willBeginEditing)
             startNewTabPageSessionInstrumentation(isNewTab: isNewTab, willBeginEditing: willBeginEditing, isAfterFire: isAfterFire)
         }
 
@@ -2129,7 +2144,7 @@ class MainViewController: UIViewController {
         unifiedToggleInputCoordinator?.setEscapeHatch(hatch)
     }
 
-    private func fireNTPShownInstrumentation(openedAfterIdle: Bool, hatch: EscapeHatchModel?) {
+    private func fireNTPShownInstrumentation(openedAfterIdle: Bool, hatch: EscapeHatchModel?, focused: Bool) {
         ntpAfterIdleInstrumentation.ntpShown(afterIdle: openedAfterIdle)
         // Fire the card impression once per presentation here (not from the card's onAppear): the same hatch
         // model is mounted in several hosts — NTP, suggestions, AI-chat history — so a view-level hook counts
@@ -2138,7 +2153,7 @@ class MainViewController: UIViewController {
             ntpAfterIdleInstrumentation.escapeHatchShown()
         }
         if openedAfterIdle {
-            postIdleSessionInstrumentation.sessionStarted(surface: .ntp)
+            postIdleSessionInstrumentation.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: focused)
         }
     }
 
@@ -2453,6 +2468,13 @@ class MainViewController: UIViewController {
         loadUrlRespectingAIBoundary(url)
     }
 
+    func postIdleSubmissionReason(for query: String) -> ReturnSessionWideEventData.StatusReason {
+        guard let url = URL.makeSearchURL(query: query, useUnifiedLogic: isUnifiedURLPredictionEnabled, queryContext: currentTab?.url) else {
+            return .searchSubmitted
+        }
+        return url.isDuckDuckGoSearch ? .searchSubmitted : .urlSubmitted
+    }
+
     func stopLoading() {
         currentTab?.stopLoading()
     }
@@ -2490,7 +2512,7 @@ class MainViewController: UIViewController {
         if currentTab.tabModel.link == nil {
             ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: currentTab.tabModel.openedAfterIdle)
         }
-        postIdleSessionInstrumentation.sessionEnded(reason: .barUsed)
+        postIdleSessionInstrumentation.sessionEnded(reason: .aiPromptSubmitted)
         prepareTabForRequest {
             currentTab.load(
                 query,
@@ -2728,6 +2750,7 @@ class MainViewController: UIViewController {
 
     func refreshOmniBar() {
         updateOmniBarLoadingState()
+        refreshDuckAIAddressBarMenu()
         viewCoordinator.omniBar.refreshFireMode(fireMode: isCurrentTabFireTab())
         // A fresh NTP has no `TabViewController` yet; drive UTI from the tab model so fire-mode still applies.
         unifiedToggleInputCoordinator?.updateIsFireTab(isCurrentTabFireTab())
@@ -4108,7 +4131,7 @@ class MainViewController: UIViewController {
         if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
             ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: tab.openedAfterIdle)
         }
-        postIdleSessionInstrumentation.sessionEnded(reason: .barUsed)
+        postIdleSessionInstrumentation.sessionEnded(reason: .aiPromptSubmitted)
         openAIChatInVoiceMode()
     }
 
@@ -4197,10 +4220,10 @@ class MainViewController: UIViewController {
             // Dismiss contextual onboarding before opening duck.ai via UTI.
             currentTab.contextualOnboardingPresenter.dismissContextualOnboardingIfNeeded(from: currentTab)
             let chatURL = currentTab.aiChatContentHandler.buildQueryURL(query: query, autoSend: autoSend, flowType: flowType, tools: tools)
-            // Mirror the in-place `.barUsed` so the new-tab branch keeps idle-session parity.
+            // Mirror the in-place `.aiPromptSubmitted` so the new-tab branch keeps idle-session parity.
             // Gated on `!fromDeepLink` so external entries aren't reclassified as address-bar submissions.
             if !fromDeepLink {
-                postIdleSessionInstrumentation.sessionEnded(reason: .barUsed)
+                postIdleSessionInstrumentation.sessionEnded(reason: .aiPromptSubmitted)
             }
             // Stage prompt singleton before `loadUrlInNewTab` — matches legacy `setData → load` order.
             // Per-tab payload runs in completion since it targets the newly-selected chat tab.
@@ -4686,11 +4709,19 @@ extension MainViewController: BrowserChromeDelegate {
     }
 
 
+    private func postIdleSubmissionReason(for suggestion: Suggestion) -> ReturnSessionWideEventData.StatusReason {
+        switch suggestion {
+        case .phrase, .unknown: return .searchSubmitted
+        case .askAIChat: return .aiPromptSubmitted
+        case .website, .bookmark, .historyEntry, .internalPage, .openTab: return .urlSubmitted
+        }
+    }
+
     func handleSuggestionSelected(_ suggestion: Suggestion) {
         if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
             ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: tab.openedAfterIdle)
         }
-        postIdleSessionInstrumentation.sessionEnded(reason: .barUsed)
+        postIdleSessionInstrumentation.sessionEnded(reason: postIdleSubmissionReason(for: suggestion))
         endNewTabPageSessionWithSuggestion(suggestion)
         newTabPageViewController?.chromeDelegate = nil
         dismissOmniBar()
@@ -4882,7 +4913,7 @@ extension MainViewController: OmniBarDelegate {
         if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
             ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: tab.openedAfterIdle)
         }
-        postIdleSessionInstrumentation.sessionEnded(reason: .barUsed)
+        postIdleSessionInstrumentation.sessionEnded(reason: postIdleSubmissionReason(for: query))
         recordNewTabPageSessionAction { $0.hitSubmit() }
         loadQuery(query)
         hideNotificationBarIfBrokenSitePromptShown()
@@ -5455,15 +5486,24 @@ extension MainViewController: OmniBarDelegate {
         ViewHighlighter.hideAll()
         hideSuggestionTray()
 
-        let shouldPresentContextualSheet = currentTab?.tabModel.isHomeTab == false
-            && aiChatContextualModeFeature.isAvailable
-            && prefilledText == nil
+        guard prefilledText == nil else {
+            openAIChatFromAddressBar(prefilledText: prefilledText)
+            return
+        }
 
-        if let currentTab, shouldPresentContextualSheet {
+        switch duckAIAddressBarEntry {
+        case .menu:
+            // Unreachable: the menu is the button's primary action, and everything the entry is derived from
+            // re-attaches it on change, so a tap in this state is consumed by the menu itself.
+            break
+        case .contextualSheet:
+            guard let currentTab else { return }
             omniBar.endEditing()
             currentTab.presentContextualAIChatSheet(from: self)
-        } else {
-            openAIChatFromAddressBar(prefilledText: prefilledText)
+        case .dismissContextualSurface:
+            dismissContextualDuckAISurface()
+        case .legacyDuckAI:
+            openAIChatFromAddressBar(prefilledText: nil)
         }
     }
 
@@ -5526,6 +5566,7 @@ extension MainViewController: OmniBarDelegate {
 
     func onDidBeginEditing() {
         // Omnibar got focus. Lift minimal chrome bar above keyboard.
+        dismissFloatingContextualInputIfPresented()
         refreshMinimalChromeBottomAnchor()
         warmSearchTokenIfEligible()
     }
@@ -7612,7 +7653,7 @@ extension MainViewController: VoiceSearchViewControllerDelegate {
             if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
                 ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: tab.openedAfterIdle)
             }
-            postIdleSessionInstrumentation.sessionEnded(reason: .barUsed)
+            postIdleSessionInstrumentation.sessionEnded(reason: .searchSubmitted)
             loadQuery(query)
 
         case .AIChat:
@@ -7621,7 +7662,7 @@ extension MainViewController: VoiceSearchViewControllerDelegate {
                 if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
                     ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: tab.openedAfterIdle)
                 }
-                postIdleSessionInstrumentation.sessionEnded(reason: .barUsed)
+                postIdleSessionInstrumentation.sessionEnded(reason: .aiPromptSubmitted)
                 coordinator.submitVoicePrompt(query)
             } else {
                 performCancel()

@@ -272,6 +272,10 @@ public class DDGSync: DDGSyncing {
                 return try await deviceInfoMigrationCoordinator.renameCurrentDevice(to: name, for: account)
             }
 
+            if dependencies.syncFeatureFlags.canUsePatchEndpointForLegacyDeviceRename() {
+                return try await deviceInfoMigrationCoordinator.renameCurrentDeviceWithoutUnifiedInfo(to: name, for: account)
+            }
+
             let result = try await dependencies.account.refreshToken(account, deviceName: name)
             try dependencies.secureStore.persistAccount(result.account)
             persistRecoveredThirdPartyScopedPasswordIfAvailable(from: result.accessCredentials, account: result.account)

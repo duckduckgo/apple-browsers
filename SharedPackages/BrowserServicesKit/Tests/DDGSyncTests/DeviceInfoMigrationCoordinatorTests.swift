@@ -125,6 +125,84 @@ final class DeviceInfoMigrationCoordinatorTests: XCTestCase {
         XCTAssertTrue(coordinator.hasCompletedMigration(for: persistedAccount))
     }
 
+    func testWhenRenameWithoutUnifiedInfoSucceedsThenOnlyCurrentDeviceLegacyFieldsArePatchedAndRenamedAccountIsPersisted() async throws {
+        let returnedDevices = [RegisteredDevice(id: "device-1", name: "Device 1", type: "iOS")]
+        accountManager.updateDeviceStub = returnedDevices
+
+        let devices = try await coordinator.renameCurrentDeviceWithoutUnifiedInfo(to: "Renamed Device", for: .mock)
+
+        XCTAssertEqual(devices.map(\.id), returnedDevices.map(\.id))
+        XCTAssertTrue(scopedAccess.ensureAccountInfoProtectedKeysCalls.isEmpty)
+        XCTAssertTrue(deviceInfoCodec.encryptCalls.isEmpty)
+        let call = try XCTUnwrap(accountManager.updateDeviceCalls.first)
+        XCTAssertEqual(accountManager.updateDeviceCalls.count, 1)
+        XCTAssertEqual(call.account.deviceId, SyncAccount.mock.deviceId)
+        XCTAssertEqual(call.update.id, SyncAccount.mock.deviceId)
+        XCTAssertEqual(call.update.name, "encrypted_Renamed Device")
+        XCTAssertEqual(call.update.type, "encrypted_\(SyncAccount.mock.deviceType)")
+        XCTAssertNil(call.update.info)
+
+        let persistedAccount = try XCTUnwrap(secureStore.theAccount)
+        XCTAssertEqual(persistedAccount.deviceId, SyncAccount.mock.deviceId)
+        XCTAssertEqual(persistedAccount.deviceName, "Renamed Device")
+        XCTAssertEqual(persistedAccount.deviceType, SyncAccount.mock.deviceType)
+        XCTAssertEqual(persistedAccount.userId, SyncAccount.mock.userId)
+        XCTAssertEqual(persistedAccount.primaryKey, SyncAccount.mock.primaryKey)
+        XCTAssertEqual(persistedAccount.secretKey, SyncAccount.mock.secretKey)
+        XCTAssertEqual(persistedAccount.token, SyncAccount.mock.token)
+        XCTAssertEqual(persistedAccount.state, SyncAccount.mock.state)
+        XCTAssertFalse(coordinator.hasCompletedMigration(for: persistedAccount))
+    }
+
+    func testWhenRenameWithoutUnifiedInfoSucceedsThenExistingMigrationMarkerIsPreserved() async throws {
+        await coordinator.migrateCurrentDeviceIfNeeded(for: .mock)
+        XCTAssertTrue(coordinator.hasCompletedMigration(for: .mock))
+
+        _ = try await coordinator.renameCurrentDeviceWithoutUnifiedInfo(to: "Renamed Device", for: .mock)
+
+        let renamedAccount = try XCTUnwrap(secureStore.theAccount)
+        XCTAssertTrue(coordinator.hasCompletedMigration(for: renamedAccount))
+        XCTAssertEqual(accountManager.updateDeviceCalls.count, 2)
+        XCTAssertNil(accountManager.updateDeviceCalls.last?.update.info)
+    }
+
+    func testWhenRenameWithoutUnifiedInfoEncryptionFailsThenAccountAndMigrationMarkerAreUnchanged() async {
+        crypter._encryptAndBase64Encode = { _ in throw TestError.expected }
+        coordinator = makeCoordinator()
+
+        do {
+            _ = try await coordinator.renameCurrentDeviceWithoutUnifiedInfo(to: "Renamed Device", for: .mock)
+            XCTFail("Expected rename to throw")
+        } catch TestError.expected {
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+
+        XCTAssertTrue(scopedAccess.ensureAccountInfoProtectedKeysCalls.isEmpty)
+        XCTAssertTrue(deviceInfoCodec.encryptCalls.isEmpty)
+        XCTAssertTrue(accountManager.updateDeviceCalls.isEmpty)
+        XCTAssertEqual(secureStore.theAccount?.deviceName, SyncAccount.mock.deviceName)
+        XCTAssertFalse(coordinator.hasCompletedMigration(for: .mock))
+    }
+
+    func testWhenRenameWithoutUnifiedInfoPatchFailsThenAccountAndMigrationMarkerAreUnchanged() async {
+        accountManager.updateDeviceError = SyncError.unexpectedStatusCode(500)
+
+        do {
+            _ = try await coordinator.renameCurrentDeviceWithoutUnifiedInfo(to: "Renamed Device", for: .mock)
+            XCTFail("Expected rename to throw")
+        } catch let error as SyncError {
+            XCTAssertEqual(error, .unexpectedStatusCode(500))
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+
+        XCTAssertEqual(accountManager.updateDeviceCalls.count, 1)
+        XCTAssertNil(accountManager.updateDeviceCalls.first?.update.info)
+        XCTAssertEqual(secureStore.theAccount?.deviceName, SyncAccount.mock.deviceName)
+        XCTAssertFalse(coordinator.hasCompletedMigration(for: .mock))
+    }
+
     func testWhenRenameKeyPreparationFailsThenAccountAndMigrationMarkerAreUnchanged() async {
         scopedAccess.ensureAccountInfoProtectedKeysError = TestError.expected
 

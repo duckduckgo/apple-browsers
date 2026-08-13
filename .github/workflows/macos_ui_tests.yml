@@ -107,9 +107,8 @@ jobs:
     if: needs.should-run-checks.outputs.should_run == 'true'
 
     outputs:
-      runner: ${{ steps.define-runners.outputs.runner }}
-      include: ${{ steps.define-runners.outputs.include }}
-      test: ${{ steps.list-tests.outputs.test }}
+      # One entry per job to run, each carrying its runner, OS, Xcode and test selection.
+      include: ${{ steps.define-matrix.outputs.include }}
       all-os-versions: ${{ steps.define-runners.outputs.all-os-versions }}
       start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
       # The UI Tests matrix runs each user mode as a separate job (ui-tests-production /
@@ -138,20 +137,10 @@ jobs:
           # scheduled runs don't have inputs so let's default to true for all_os_versions
           if [[ "${{ inputs.all_os_versions }}" == "false" || "${{ github.event_name }}" == "pull_request" || "${{ github.event_name }}" == "push" ]]; then
             all_os_versions='false'
-            runner='["bitrise:macos26-m4"]'
-            include='[{"runner": "bitrise:macos26-m4", "os-version": "26", "xcode-version": "26.4"}]'
           else
             all_os_versions='true'
-            runner='["macos-14", "bitrise:macos15-m4", "bitrise:macos26-m4"]'
-            include=$(jq -c <<< '[
-              {"runner": "macos-14", "os-version": "14", "xcode-version": "16.2"},
-              {"runner": "bitrise:macos15-m4", "os-version": "15", "xcode-version": "26.2"},
-              {"runner": "bitrise:macos26-m4", "os-version": "26", "xcode-version": "26.4"}
-            ]')
           fi
           echo "all-os-versions=${all_os_versions}" >> $GITHUB_OUTPUT
-          echo "runner=${runner}" >> $GITHUB_OUTPUT
-          echo "include=${include}" >> $GITHUB_OUTPUT
 
       - name: Define user-modes
         id: define-user-modes
@@ -222,8 +211,40 @@ jobs:
 
           echo "test=${test}" >> $GITHUB_OUTPUT
 
+      - name: Define matrix
+        id: define-matrix
+        env:
+          TESTS: ${{ steps.list-tests.outputs.test }}
+          ALL_OS_VERSIONS: ${{ steps.define-runners.outputs.all-os-versions }}
+        run: |
+          # The latest macOS gets one job per test class, so the classes run in parallel and each
+          # one reports separately. Older macOS versions are a regression safety net rather than the
+          # primary signal, so they get a single job that runs every test, to keep runner usage down.
+          # An empty "test" tells macos_run_ui_test.yml to run the whole UI Tests target.
+          per_test_os='[
+            {"runner": "bitrise:macos26-m4", "os-version": "26", "xcode-version": "26.4"}
+          ]'
+          if [[ "$ALL_OS_VERSIONS" == "true" ]]; then
+            all_tests_os='[
+              {"runner": "bitrise:macos15-m4", "os-version": "15", "xcode-version": "26.2"}
+            ]'
+          else
+            all_tests_os='[]'
+          fi
+
+          include=$(jq -c -n \
+            --argjson per_test_os "$per_test_os" \
+            --argjson all_tests_os "$all_tests_os" \
+            --argjson tests "$TESTS" \
+            '[ $per_test_os[] as $os | $tests[] | $os + {test: .} ]
+             + [ $all_tests_os[] | . + {test: ""} ]')
+
+          echo "include=${include}" >> $GITHUB_OUTPUT
+          echo "Matrix has $(jq 'length' <<< "$include") job(s):"
+          jq -r '.[] | "  macOS \(.["os-version"]): \(if .test == "" then "all tests" else .test end)"' <<< "$include"
+
   # UI Tests run as two jobs, one per user mode, each calling the reusable macos_run_ui_test.yml
-  # helper once per (runner x test) combination. Both modes in a single matrix would exceed GitHub's
+  # helper once per matrix entry. Both modes in a single matrix would exceed GitHub's
   # 256-configuration limit.
   # Each job runs only when its mode was requested (production by default; internal for
   # user_modes=internal/both and the scheduled run). Internal-mode failures stay non-gating via
@@ -235,8 +256,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: ${{ fromJSON(needs.setup-tests.outputs.runner) }}
-        test: ${{ fromJSON(needs.setup-tests.outputs.test) }}
         include: ${{ fromJSON(needs.setup-tests.outputs.include) }}
     uses: ./.github/workflows/macos_run_ui_test.yml
     with:
@@ -256,8 +275,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: ${{ fromJSON(needs.setup-tests.outputs.runner) }}
-        test: ${{ fromJSON(needs.setup-tests.outputs.test) }}
         include: ${{ fromJSON(needs.setup-tests.outputs.include) }}
     uses: ./.github/workflows/macos_run_ui_test.yml
     with:

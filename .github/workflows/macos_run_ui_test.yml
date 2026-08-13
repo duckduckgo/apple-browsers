@@ -1,7 +1,11 @@
 name: macOS - Run UI Test
 
-# Reusable helper that runs a single UITestCase class, on one runner, in one user mode.
-# Called by macos_ui_tests.yml once per (runner × test) matrix combination, per user-mode leg.
+# Reusable helper that runs UI tests on one runner, in one user mode.
+# The 'test' input selects what to run: a space-separated list of UITestCase classes, or an empty
+# string to run the whole UI Tests target in this single job.
+# Called by macos_ui_tests.yml once per matrix entry, per user-mode leg. The latest macOS gets one
+# entry per test class, so the classes run in parallel; older macOS versions get a single entry
+# with an empty 'test' that runs everything in one job.
 # Splitting the UI Tests matrix into per-user-mode legs that each call this workflow keeps every
 # leg under GitHub's 256-configuration matrix limit while defining the run steps only once.
 
@@ -25,9 +29,10 @@ on:
         required: true
         type: string
       test:
-        description: "The UITestCase class to run"
-        required: true
+        description: "Space-separated UITestCase classes to run. Empty runs the whole UI Tests target."
+        required: false
         type: string
+        default: ''
       user-mode:
         description: "'production' = production behaviour (release-gating). 'internal' = isInternalUser=true (advance warning, non-gating)."
         required: true
@@ -47,7 +52,7 @@ jobs:
     # Avoid '/' in the job name: GitHub joins the reusable-workflow job name onto the caller with
     # ' / ' and the UI splits that path on ' / ', so a '/' here would break the name into fake tree
     # nodes. It is also used to build the report filename, where '/' is a path separator.
-    name: ${{ inputs.test }} (macOS ${{ inputs.os-version }}${{ inputs.user-mode == 'internal' && ', internal' || '' }})
+    name: ${{ inputs.test || 'All Tests' }} (macOS ${{ inputs.os-version }}${{ inputs.user-mode == 'internal' && ', internal' || '' }})
     runs-on: ${{ inputs.runner }}
 
     # Internal-mode failures are advance warning for features still gated to internal users; they
@@ -57,12 +62,16 @@ jobs:
     continue-on-error: ${{ inputs.user-mode == 'internal' }}
 
     concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}-${{ inputs.runner }}-${{ inputs.test }}-${{ inputs.user-mode }}-${{ inputs.build-type }}
+      group: ${{ github.workflow }}-${{ github.ref }}-${{ inputs.runner }}-${{ inputs.test || 'All Tests' }}-${{ inputs.user-mode }}-${{ inputs.build-type }}
       cancel-in-progress: true
 
-    timeout-minutes: 120
+    # Running the whole target in one job takes much longer than running a single test class.
+    timeout-minutes: ${{ inputs.test == '' && 360 || 120 }}
 
     env:
+      # Identifies this job in names, reports and artifacts. The 'env' context is not available in
+      # the job's 'name' and 'concurrency' keys, so those two repeat the expression inline.
+      test-label: ${{ inputs.test || 'All Tests' }}
       scheme: ${{ inputs.build-type == 'appstore' && 'macOS UI Tests App Store CI' || 'macOS UI Tests CI' }}
       app-name: ${{ inputs.build-type == 'appstore' && 'DuckDuckGo App Store Review' || 'DuckDuckGo Review' }}
       app-bundle-id: ${{ inputs.build-type == 'appstore' && 'com.duckduckgo.mobile.ios.review' || 'com.duckduckgo.macos.browser.review' }}
@@ -298,7 +307,21 @@ jobs:
     - name: Run UI Tests
       id: run-ui-tests
       working-directory: macOS
+      env:
+        TESTS: ${{ inputs.test }}
       run: |
+        # One -only-testing flag per requested class. No flags at all makes xcodebuild run the
+        # whole UI Tests target, which is how the older macOS versions run every test in one job.
+        only_testing=()
+        for test_class in $TESTS; do
+          only_testing+=("-only-testing:UI Tests/${test_class}")
+        done
+        if [[ ${#only_testing[@]} -eq 0 ]]; then
+          echo "No test filter: running the whole UI Tests target."
+        else
+          echo "Running only: ${only_testing[*]}"
+        fi
+
         defaults write ${{ env.app-bundle-id }} moveToApplicationsFolderAlertSuppress 1
         set -o pipefail && xcodebuild test-without-building \
           -scheme "${{ env.scheme }}" \
@@ -308,7 +331,7 @@ jobs:
           -test-iterations 2 \
           -retry-tests-on-failure \
           -test-repetition-relaunch-enabled YES \
-          '-only-testing:UI Tests/${{ inputs.test }}' \
+          "${only_testing[@]}" \
           ${{ env.extra-xcargs }} \
           "TEST_RUNNER_INTERNAL_USER_MODE=${{ inputs.user-mode == 'internal' && 'true' || 'false' }}" \
         | tee -a xcodebuild.log \
@@ -339,12 +362,13 @@ jobs:
       if: always() && steps.run-ui-tests.outcome != 'skipped'
       working-directory: macOS
       run: |
-        test_id="${{ inputs.test }} (macOS ${{ inputs.os-version }}${{ inputs.user-mode == 'internal' && ', internal' || '' }})"
+        test_id="${{ env.test-label }} (macOS ${{ inputs.os-version }}${{ inputs.user-mode == 'internal' && ', internal' || '' }})"
         file="${test_id}.xml"
         echo "file=$file" >> $GITHUB_OUTPUT
         xcbeautify --report junit --report-path . --junit-report-filename "$file" < ui-tests.log
-        # Replace the default test suite name with the test id for better grouping in the test report
-        sed -i '' "s/Selected tests/${test_id}/" "$file"
+        # Replace the default test suite name with the test id for better grouping in the test report.
+        # xcodebuild calls the suite 'Selected tests' when -only-testing is passed, 'All tests' otherwise.
+        sed -i '' -E "s/Selected tests|All tests/${test_id}/" "$file"
 
     # Upload test report as artifact for the test-report job
     # that publishes a combined report for all test cases
@@ -352,7 +376,7 @@ jobs:
       uses: actions/upload-artifact@v6
       if: always() && steps.run-ui-tests.outcome != 'skipped'
       with:
-        name: "testreport-${{ inputs.test }}-macos${{ inputs.os-version }}-${{ inputs.user-mode }}"
+        name: "testreport-${{ env.test-label }}-macos${{ inputs.os-version }}-${{ inputs.user-mode }}"
         path: "macOS/${{ steps.prepare-test-report.outputs.file }}"
         retention-days: 1
 
@@ -360,7 +384,7 @@ jobs:
       uses: actions/upload-artifact@v6
       if: always() && steps.check-failures.outputs.had_failures == 'true' && steps.run-ui-tests.outcome == 'success'
       with:
-        name: "xcresult-${{ inputs.test }}-macos${{ inputs.os-version }}-${{ inputs.user-mode }}"
+        name: "xcresult-${{ env.test-label }}-macos${{ inputs.os-version }}-${{ inputs.user-mode }}"
         path: "macOS/DerivedData/Logs/Test/*.xcresult"
         retention-days: 1
 
@@ -368,7 +392,7 @@ jobs:
       uses: actions/upload-artifact@v6
       if: always() && steps.check-failures.outputs.had_failures == 'true' && steps.run-ui-tests.outcome == 'success'
       with:
-        name: "app-console-${{ inputs.test }}-macos${{ inputs.os-version }}-${{ inputs.user-mode }}"
+        name: "app-console-${{ env.test-label }}-macos${{ inputs.os-version }}-${{ inputs.user-mode }}"
         path: "macOS/app-console.log"
         if-no-files-found: warn
         retention-days: 1
@@ -378,12 +402,12 @@ jobs:
       working-directory: ${{ github.workspace }}
       run: |
         mkdir -p failure-marker
-        echo "macos-ui:${{ inputs.user-mode }}:${{ inputs.test }}:${{ inputs.os-version }}" > failure-marker/marker.txt
+        echo "macos-ui:${{ inputs.user-mode }}:${{ env.test-label }}:${{ inputs.os-version }}" > failure-marker/marker.txt
     - name: Upload failure marker
       if: failure() || cancelled()
       uses: actions/upload-artifact@v6
       with:
-        name: failure-marker-macos-ui-${{ inputs.user-mode }}-${{ inputs.test }}-${{ inputs.os-version }}
+        name: failure-marker-macos-ui-${{ inputs.user-mode }}-${{ env.test-label }}-${{ inputs.os-version }}
         path: failure-marker/
         retention-days: 1
 
@@ -395,7 +419,7 @@ jobs:
 
         # Create staging directory with timestamp, OS version and failing test name
         timestamp=$(date +"%Y-%m-%d_%H-%M-%S")
-        archive_name="BuildLogs ${{ inputs.test }} (macOS ${{ inputs.os-version }}${{ inputs.user-mode == 'internal' && ' internal' || '' }}) ${timestamp}"
+        archive_name="BuildLogs ${{ env.test-label }} (macOS ${{ inputs.os-version }}${{ inputs.user-mode == 'internal' && ' internal' || '' }}) ${timestamp}"
         echo "Creating archive directory: $archive_name"
         mkdir -p "$archive_name"
 

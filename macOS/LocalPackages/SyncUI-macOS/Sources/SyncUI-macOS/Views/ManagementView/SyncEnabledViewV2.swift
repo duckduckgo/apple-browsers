@@ -64,11 +64,7 @@ struct SyncEnabledViewV2<ViewModel>: View where ViewModel: ManagementViewModel {
         }
 
         // Intro text
-        Text(.init(model.isAIChatSyncEnabled ? UserText.syncEnabledFooterV2 : UserText.syncEnabledFooterWithoutAIChatV2))
-            .font(.system(size: 13))
-            .foregroundColor(Color(designSystemColor: .textSecondary))
-            .fixedSize(horizontal: false, vertical: true)
-            .multilineTextAlignment(.center)
+        SyncUIViewsV2.TextDetailSecondaryLeftAligned(text: model.isAIChatSyncEnabled ? UserText.syncEnabledFooterV2 : UserText.syncEnabledFooterWithoutAIChatV2)
 
         // My Devices
         PreferencePaneSection(UserText.myDevicesV2) {

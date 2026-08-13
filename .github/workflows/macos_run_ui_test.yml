@@ -111,6 +111,10 @@ jobs:
       if: inputs.os-version != '14'
       run: screenresolution set 1920x1080x32@60
 
+    - name: Remove .ruby-version
+      if: runner.environment == 'self-hosted'
+      run: rm -f .ruby-version
+
     - name: Setup Ruby and dependencies
       uses: ./.github/actions/setup-ruby
       with:

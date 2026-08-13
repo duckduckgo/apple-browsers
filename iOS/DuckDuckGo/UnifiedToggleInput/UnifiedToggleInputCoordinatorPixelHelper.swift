@@ -60,9 +60,8 @@ enum UnifiedToggleInputPixelSurface: String {
     case contextualChat = "contextual_chat"
 }
 
-/// The page the user was on when submitting a prompt, sent as the `page_type` param.
-/// Distinct from `surface` (where the prompt was typed): an address-bar prompt can be
-/// typed over the NTP, a SERP, or a website.
+/// The page a prompt was submitted from, sent as `page_type`. Distinct from `surface`
+/// (where it was typed): an address-bar prompt can be typed over NTP, SERP, or a website.
 enum UnifiedToggleInputPromptPageType: String {
     case ntp
     case serp

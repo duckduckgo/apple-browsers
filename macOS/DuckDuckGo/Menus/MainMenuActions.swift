@@ -565,6 +565,11 @@ extension AppDelegate {
     }
 
     @MainActor
+    @objc func debugInstallFirefoxExtensionByOpeningListingPage(_ sender: Any?) {
+        FirefoxExtensionInstaller(installURL: FirefoxExtensionInstaller.InstallURL.listingPage).installDDGExtension()
+    }
+
+    @MainActor
     @objc func exportMemoryAllocationStats(_ sender: Any?) {
         do {
             let exporter = MemoryAllocationStatsExporter()

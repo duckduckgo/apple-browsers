@@ -929,6 +929,7 @@ final class MainMenu: NSMenu {
             NSMenuItem(title: "Clear WebKit Cache", action: #selector(AppDelegate.debugClearWebViewCache)).withAccessibilityIdentifier("MainMenu.clearWebKitCache")
             NSMenuItem(title: "Firefox Extension") {
                 NSMenuItem(title: "Open Install URL", action: #selector(AppDelegate.debugInstallFirefoxExtensionByOpeningURL)).withAccessibilityIdentifier("MainMenu.firefoxExtension.openURL")
+                NSMenuItem(title: "Open Listing Page", action: #selector(AppDelegate.debugInstallFirefoxExtensionByOpeningListingPage)).withAccessibilityIdentifier("MainMenu.firefoxExtension.openListingPage")
                 NSMenuItem(title: "Download & Open XPI", action: #selector(AppDelegate.debugInstallFirefoxExtensionByDownloadingXPI)).withAccessibilityIdentifier("MainMenu.firefoxExtension.downloadXPI")
             }
             NSMenuItem(title: "Favicons") {

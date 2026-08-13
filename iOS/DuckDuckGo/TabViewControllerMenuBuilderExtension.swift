@@ -555,8 +555,7 @@ extension TabViewController {
                  action: { [weak self] in
             DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuNewChatTabTapped)
             Pixel.fire(pixel: .browsingMenuAIChat)
-            self?.fireAIChatEntryPointPixelForMenu()
-            self?.openNewChatInNewTab()
+            self?.requestNewAIChatTabFromMenu()
         })
     }
 
@@ -569,19 +568,14 @@ extension TabViewController {
                  action: { [weak self] in
             DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuNewChatTabTapped)
             Pixel.fire(pixel: .browsingMenuAIChat)
-            self?.fireAIChatEntryPointPixelForMenu()
-            self?.openNewChatInNewTab()
+            self?.requestNewAIChatTabFromMenu()
         })
     }
 
-    /// `openNewChatInNewTab` loads a URL directly instead of going through
-    /// `openAIChat(source:)`, so the entry pixel has to be fired here.
-    private func fireAIChatEntryPointPixelForMenu() {
-        AIChatEntryPointPixel.fire(source: link == nil ? .browsingMenuNTP : .browsingMenuWebpage,
-                                   duckAIEnabled: aiChatSettings.isAIChatEnabled,
-                                   toggleEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
-                                   opensNewTab: true,
-                                   hasPrompt: false)
+    /// The delegate reports the entry, because `TabURLInterceptor` may cancel this navigation
+    /// and re-enter `openAIChat`, which would otherwise report the same entry a second time.
+    private func requestNewAIChatTabFromMenu() {
+        delegate?.tabDidRequestNewAIChatTab(tab: self)
     }
 
     private func buildDuckAiChatsEntry(withSmallIcon smallIcon: Bool = true) -> BrowsingMenuEntry {

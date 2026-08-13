@@ -209,6 +209,9 @@ class MainViewController: UIViewController {
     /// VPN connection state as the user left the New Tab Page for the VPN screen, so a toggle made
     /// there can be told apart from a reconnect that happened on its own.
     var vpnConnectedWhenLeavingNewTabPage: Bool?
+    /// The entry whose duck.ai navigation `TabURLInterceptor` is about to cancel, so the
+    /// re-entry reports that source instead of a second `direct_url`.
+    private var interceptedDuckAIEntrySource: AIChatEntryPointSource?
     let duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation
     let syncAutoRestoreHandler: SyncAutoRestoreHandling
     private let lastActiveTabStore: LastActiveTabStoring
@@ -3687,10 +3690,12 @@ class MainViewController: UIViewController {
 
                 // The direct-navigation pixels are not fired here: the interceptor sees every
                 // duck.ai navigation, so it cannot tell a typed address from an in-page link.
+                // An entry that already deferred to us reports under its own source, not `direct_url`.
+                let source = self?.consumeInterceptedDuckAIEntrySource() ?? .directURL
                 if let query = query {
-                    self?.openAIChat(source: .directURL, query, autoSend: shouldAutoSend, payload: payload)
+                    self?.openAIChat(source: source, query, autoSend: shouldAutoSend, payload: payload)
                 } else {
-                    self?.openAIChat(source: .directURL, payload: payload)
+                    self?.openAIChat(source: source, payload: payload)
                 }
             }
             .store(in: &urlInterceptorCancellables)
@@ -4115,6 +4120,24 @@ class MainViewController: UIViewController {
         !(aichatFullModeFeature.isAvailable || DevicePlatform.isIpad)
     }
 
+    /// Reports an entry that is about to load a duck.ai URL itself. When `TabURLInterceptor` is
+    /// active it cancels that navigation and re-enters `openAIChat`, so defer to the interceptor
+    /// with the real source rather than reporting the same entry twice.
+    func reportDuckAIEntryForUpcomingNavigation(source: AIChatEntryPointSource, opensNewTab: Bool, hasPrompt: Bool) {
+        guard !duckAINavigationIsIntercepted else {
+            interceptedDuckAIEntrySource = source
+            return
+        }
+        fireAIChatEntryPointPixel(source: source, opensNewTab: opensNewTab, hasPrompt: hasPrompt)
+    }
+
+    /// Set only immediately before the navigation the interceptor is about to cancel, so a stale
+    /// value cannot outlive it.
+    private func consumeInterceptedDuckAIEntrySource() -> AIChatEntryPointSource? {
+        defer { interceptedDuckAIEntrySource = nil }
+        return interceptedDuckAIEntrySource
+    }
+
     /// `source` has no default on purpose: the compiler enumerates every entry
     /// path, so a new Duck.ai entry point can't ship without attribution.
     func openAIChat(source: AIChatEntryPointSource,
@@ -4127,6 +4150,7 @@ class MainViewController: UIViewController {
                     reasoningEffort: AIChatReasoningEffort? = nil,
                     images: [AIChatNativePrompt.NativePromptImage]? = nil,
                     files: [AIChatNativePrompt.NativePromptFile]? = nil,
+                    reportsNewTab: Bool? = nil,
                     fromDeepLink: Bool = false) {
 
         // A query means the user asked something and a response is what they are waiting for;
@@ -4145,10 +4169,11 @@ class MainViewController: UIViewController {
                 reasoningEffort: reasoningEffort,
                 images: images,
                 files: files,
+                reportsNewTab: reportsNewTab,
                 fromDeepLink: fromDeepLink
             )
         } else {
-            fireAIChatEntryPointPixel(source: source, opensNewTab: false, hasPrompt: query?.isEmpty == false)
+            fireAIChatEntryPointPixel(source: source, opensNewTab: reportsNewTab ?? false, hasPrompt: query?.isEmpty == false)
             aiChatViewControllerManager.openAIChat(
                 query,
                 payload: payload,
@@ -4185,9 +4210,8 @@ class MainViewController: UIViewController {
         openAIChatInVoiceMode(deepLinkSource: source)
     }
 
-    /// - Parameter deepLinkSource: The resolved deep-link entry, or nil when voice was started
-    ///   in-app. Reported as `source`, so a widget voice entry is attributed to the widget;
-    ///   `m_aichat_voice_entry_point_tapped` is what separates voice from text.
+    /// `deepLinkSource` is nil when voice was started in-app, so a widget voice entry is
+    /// attributed to the widget; `m_aichat_voice_entry_point_tapped` separates voice from text.
     private func openAIChatInVoiceMode(deepLinkSource: AIChatEntryPointSource? = nil) {
         // Voice mode bypasses `openAIChat`, so fire the entry pixel directly.
         let source = deepLinkSource ?? .voice
@@ -4255,6 +4279,7 @@ class MainViewController: UIViewController {
                                  reasoningEffort: AIChatReasoningEffort? = nil,
                                  images: [AIChatNativePrompt.NativePromptImage]? = nil,
                                  files: [AIChatNativePrompt.NativePromptFile]? = nil,
+                                 reportsNewTab: Bool? = nil,
                                  fromDeepLink: Bool = false) {
         guard tabManager.current(createIfNeeded: true) != nil else {
             assertionFailure("openAIChatInTab: no current tab available")
@@ -4272,7 +4297,11 @@ class MainViewController: UIViewController {
                 unifiedToggleInputAvailable: unifiedToggleInputFeature.isAvailable
             ) == .openInNewTab
         }()
-        fireAIChatEntryPointPixel(source: source, opensNewTab: shouldOpenInNewTab, hasPrompt: query?.isEmpty == false)
+        // `reportsNewTab` only overrides what is reported: callers that created the tab themselves
+        // land here with a blank current tab, which would otherwise read as no new tab.
+        fireAIChatEntryPointPixel(source: source,
+                                  opensNewTab: reportsNewTab ?? shouldOpenInNewTab,
+                                  hasPrompt: query?.isEmpty == false)
         if shouldOpenInNewTab, let currentTab {
             // Dismiss contextual onboarding before opening duck.ai via UTI.
             currentTab.contextualOnboardingPresenter.dismissContextualOnboardingIfNeeded(from: currentTab)
@@ -4866,7 +4895,7 @@ extension MainViewController: OmniBarDelegate {
             targetIsAI: true,
             unifiedToggleInputAvailable: unifiedToggleInputFeature.isAvailable
         ) == .openInNewTab
-        fireAIChatEntryPointPixel(source: .chatHistoryOpenChat, opensNewTab: opensNewTab, hasPrompt: false)
+        reportDuckAIEntryForUpcomingNavigation(source: .chatHistoryOpenChat, opensNewTab: opensNewTab, hasPrompt: false)
         // Route through boundary helper so NTP transforms in-place; web→chat spawns a new tab; chat→chat stays. Matches `onPromptSubmitted`.
         loadUrlRespectingAIBoundary(url)
     }
@@ -6566,9 +6595,19 @@ extension MainViewController: TabDelegate {
         fireAIChatUsagePixelAndSetFeatureUsed(tab.link == nil ? .browsingMenuAIChatNewTabPage : .browsingMenuAIChatWebPage)
         let source: AIChatEntryPointSource = tab.link == nil ? .browsingMenuNTP : .browsingMenuWebpage
         if DevicePlatform.isIpad {
+            // The tab is created here, so `openAIChatInTab` would see it blank and report no new tab.
             newTab(allowingKeyboard: false, startsNewTabPageSessionVisit: false)
+            openAIChat(source: source, reportsNewTab: true)
+            return
         }
         openAIChat(source: source)
+    }
+
+    func tabDidRequestNewAIChatTab(tab: TabViewController) {
+        reportDuckAIEntryForUpcomingNavigation(source: tab.link == nil ? .browsingMenuNTP : .browsingMenuWebpage,
+                                               opensNewTab: true,
+                                               hasPrompt: false)
+        tab.openNewChatInNewTab()
     }
 
     func tab(_ tab: TabViewController, didRequestAIChatForSelectedText text: String) {
@@ -7012,8 +7051,9 @@ extension MainViewController: TabSwitcherDelegate {
 
     func tabSwitcherDidRequestAIChatTab(tabSwitcher: TabSwitcherViewController) {
         fireAIChatUsagePixelAndSetFeatureUsed(.openAIChatFromTabManager)
+        // The tab is created here, so `openAIChatInTab` would see it blank and report no new tab.
         newTab(allowingKeyboard: false)
-        openAIChat(source: .tabSwitcher)
+        openAIChat(source: .tabSwitcher, reportsNewTab: true)
     }
 
     private func tabSwitcherNewTabWithAnimation() {

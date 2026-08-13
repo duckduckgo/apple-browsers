@@ -34,6 +34,7 @@ protocol AIChatDeepLinkPresenting: UIViewController {
         reasoningEffort: AIChatReasoningEffort?,
         images: [AIChatNativePrompt.NativePromptImage]?,
         files: [AIChatNativePrompt.NativePromptFile]?,
+        reportsNewTab: Bool?,
         fromDeepLink: Bool
     )
 }
@@ -52,6 +53,7 @@ extension AIChatDeepLinkPresenting {
             reasoningEffort: nil,
             images: nil,
             files: nil,
+            reportsNewTab: nil,
             fromDeepLink: fromDeepLink
         )
     }

@@ -1188,10 +1188,8 @@ extension MainViewController {
         loadQuery(query)
     }
 
-    /// Reports a typed duck.ai address submitted through the UTI. This is the only place a typed
-    /// address can be told apart from an in-page link or deep link to Duck.ai, and it runs whether
-    /// or not `TabURLInterceptor` goes on to cancel the navigation. Mirrors `loadQuery`'s URL
-    /// resolution so detection matches what actually gets navigated.
+    /// The only place a typed duck.ai address can be told apart from an in-page or deep link.
+    /// Mirrors `loadQuery`'s URL resolution so detection matches what gets navigated.
     private func fireDirectDuckAINavigationPixelIfNeeded(for query: String) {
         guard let url = URL.makeSearchURL(query: query,
                                           useUnifiedLogic: isUnifiedURLPredictionEnabled,

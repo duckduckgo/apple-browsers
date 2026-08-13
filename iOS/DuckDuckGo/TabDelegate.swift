@@ -102,6 +102,10 @@ protocol TabDelegate: AnyObject {
 
     func tabDidRequestAIChat(tab: TabViewController)
 
+    /// Called for the browsing menu's new-chat entries, which load a duck.ai URL in a new tab.
+    /// Routed through the delegate so the entry pixel is reported alongside the interceptor state.
+    func tabDidRequestNewAIChatTab(tab: TabViewController)
+
     /// Called when the user picks Ask Duck.ai from the web view's text-selection edit menu.
     func tab(_ tab: TabViewController, didRequestAIChatForSelectedText text: String)
 

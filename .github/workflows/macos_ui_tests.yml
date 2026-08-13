@@ -142,9 +142,9 @@ jobs:
             include='[{"runner": "bitrise:macos26-m4", "os-version": "26", "xcode-version": "26.4"}]'
           else
             all_os_versions='true'
-            runner='["bitrise:macos14-m4", "bitrise:macos15-m4", "bitrise:macos26-m4"]'
+            runner='["macos-14", "bitrise:macos15-m4", "bitrise:macos26-m4"]'
             include=$(jq -c <<< '[
-              {"runner": "bitrise:macos14-m4", "os-version": "14", "xcode-version": "16.2"},
+              {"runner": "macos-14", "os-version": "14", "xcode-version": "16.2"},
               {"runner": "bitrise:macos15-m4", "os-version": "15", "xcode-version": "26.2"},
               {"runner": "bitrise:macos26-m4", "os-version": "26", "xcode-version": "26.4"}
             ]')

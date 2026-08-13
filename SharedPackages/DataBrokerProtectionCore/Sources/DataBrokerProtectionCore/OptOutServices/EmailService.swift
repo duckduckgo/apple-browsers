@@ -28,7 +28,7 @@ public enum EmailError: Error, Equatable, Codable {
     case cantDecodeEmailLink
     case unknownStatusReceived(email: String)
     case cancelled
-    case httpError(statusCode: Int)
+    case httpError(statusCode: Int, message: String?)
     case unknownHTTPError
     case extractionError
     case requestError
@@ -101,7 +101,7 @@ public struct EmailService: EmailServiceProtocol {
         request.setValue(authHeader, forHTTPHeaderField: "Authorization")
 
         let (data, response) = try await urlSession.data(for: request)
-        try validateHTTPResponse(response)
+        try validateHTTPResponse(response, body: data)
 
         do {
             let emailData = try JSONDecoder().decode(EmailData.self, from: data)
@@ -113,11 +113,12 @@ public struct EmailService: EmailServiceProtocol {
         }
     }
 
-    private func validateHTTPResponse(_ response: URLResponse) throws {
+    private func validateHTTPResponse(_ response: URLResponse, body: Data) throws {
         if let httpResponse = response as? HTTPURLResponse {
             if !(200...299).contains(httpResponse.statusCode) {
                 servicePixel.fireGenerateEmailHTTPError(statusCode: httpResponse.statusCode)
-                throw EmailError.httpError(statusCode: httpResponse.statusCode)
+                throw EmailError.httpError(statusCode: httpResponse.statusCode,
+                                           message: String(decoding: body.prefix(200), as: UTF8.self))
             }
         } else {
             servicePixel.fireGenerateEmailHTTPError(statusCode: 0)
@@ -225,8 +226,11 @@ extension EmailError: LocalizedError {
             return "Unknown email status received"
         case .cancelled:
             return "Email operation cancelled"
-        case .httpError(let statusCode):
-            return "Email HTTP error \(statusCode)"
+        case .httpError(let statusCode, let message):
+            guard let message, !message.isEmpty else {
+                return "Email HTTP error \(statusCode)"
+            }
+            return "Email HTTP error \(statusCode): \(message)"
         case .unknownHTTPError:
             return "Unknown email HTTP error"
         case .extractionError:

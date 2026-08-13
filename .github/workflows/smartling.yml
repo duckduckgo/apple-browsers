@@ -51,9 +51,6 @@ jobs:
 
     steps:
 
-      - name: Print macOS version
-        run: sw_vers
-
       - name: Determine trigger and parameters
         id: params
         env:
@@ -122,6 +119,9 @@ jobs:
           submodules: recursive
           ref: ${{ steps.params.outputs.branch }}
           persist-credentials: true
+
+      - name: Print macOS version
+        run: sw_vers
 
       - name: Parse job details from PR comments
         if: steps.params.outputs.needs_comment_parsing == 'true'

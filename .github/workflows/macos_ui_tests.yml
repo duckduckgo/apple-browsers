@@ -118,13 +118,13 @@ jobs:
       run-production: ${{ steps.define-user-modes.outputs.run-production }}
       run-internal: ${{ steps.define-user-modes.outputs.run-internal }}
     steps:
-      - name: Print macOS version
-        run: sw_vers
-
       - name: Check out repository
         uses: actions/checkout@v6
         with:
           ref: ${{ inputs.branch || github.sha }}
+
+      - name: Print macOS version
+        run: sw_vers
 
       - name: Start measuring duration
         id: start-duration

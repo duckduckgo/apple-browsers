@@ -23,9 +23,6 @@ jobs:
       RUNS_ON: macos-26
 
     steps:
-    - name: Print macOS version
-      run: sw_vers
-
     - name: Register SSH keys for private repos
       uses: webfactory/ssh-agent@v0.10.0
       with:
@@ -35,6 +32,9 @@ jobs:
       uses: actions/checkout@v6
       with:
         submodules: recursive
+
+    - name: Print macOS version
+      run: sw_vers
 
     - name: Start measuring duration
       id: start-duration
@@ -148,11 +148,11 @@ jobs:
     timeout-minutes: 240
 
     steps:
-    - name: Print macOS version
-      run: sw_vers
-
     - name: Check out the code
       uses: actions/checkout@v6 # Don't need submodules here as this is only for the tests folder
+
+    - name: Print macOS version
+      run: sw_vers
 
     - name: Start measuring duration
       id: start-duration
@@ -225,11 +225,11 @@ jobs:
     timeout-minutes: 240
 
     steps:
-    - name: Print macOS version
-      run: sw_vers
-
     - name: Check out the code
       uses: actions/checkout@v6 # Don't need submodules here as this is only for the tests folder
+
+    - name: Print macOS version
+      run: sw_vers
 
     - name: Start measuring duration
       id: start-duration

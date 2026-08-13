@@ -58,9 +58,6 @@ jobs:
     timeout-minutes: 60
 
     steps:
-    - name: Print macOS version
-      run: sw_vers
-
     - name: Register SSH keys for private repos
       uses: webfactory/ssh-agent@v0.10.0
       with:
@@ -73,6 +70,9 @@ jobs:
       with:
         submodules: recursive
         ref: ${{ inputs.branch || github.sha }}
+
+    - name: Print macOS version
+      run: sw_vers
 
     - name: Start measuring duration
       id: start-duration

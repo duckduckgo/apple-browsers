@@ -83,15 +83,15 @@ jobs:
 
     steps:
 
-    - name: Print macOS version
-      run: sw_vers
-
     - name: Check out the code
       uses: actions/checkout@v6
       with:
         fetch-depth: 0 # Fetch all history and tags in order to look up tags
         submodules: recursive
         ref: ${{ inputs.commit-sha || env.BRANCH }}
+
+    - name: Print macOS version
+      run: sw_vers
 
     - name: Assert release branch
       run: |

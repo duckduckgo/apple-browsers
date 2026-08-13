@@ -38,13 +38,13 @@ jobs:
 
     steps:
 
-      - name: Print macOS version
-        run: sw_vers
-
       - name: Check out the code
         uses: actions/checkout@v6
         with:
           ref: ${{ github.ref_name }}
+
+      - name: Print macOS version
+        run: sw_vers
 
       - name: Assert hotfix release branch
         run: |
@@ -84,15 +84,15 @@ jobs:
 
     steps:
 
-      - name: Print macOS version
-        run: sw_vers
-
       - name: Check out the code
         uses: actions/checkout@v6
         with:
           fetch-depth: 0 # Fetch all history and tags in order to extract Asana task URLs from git log
           ref: ${{ github.ref_name }}
           submodules: recursive
+
+      - name: Print macOS version
+        run: sw_vers
 
       - name: Setup Ruby and dependencies
         uses: ./.github/actions/setup-ruby

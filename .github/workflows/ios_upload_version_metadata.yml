@@ -30,13 +30,13 @@ jobs:
     timeout-minutes: 5
 
     steps:
-      - name: Print macOS version
-        run: sw_vers
-
       - name: Check out the code
         uses: actions/checkout@v6
         with:
           submodules: recursive
+
+      - name: Print macOS version
+        run: sw_vers
 
       - name: Set up Ruby and Bundler
         uses: ./.github/actions/setup-ruby

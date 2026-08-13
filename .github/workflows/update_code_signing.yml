@@ -25,9 +25,6 @@ jobs:
 
     steps:
 
-      - name: Print macOS version
-        run: sw_vers
-
       - name: Register SSH keys for access to certificates
         uses: webfactory/ssh-agent@v0.10.0
         with:
@@ -35,6 +32,9 @@ jobs:
 
       - name: Check out the code
         uses: actions/checkout@v6
+
+      - name: Print macOS version
+        run: sw_vers
 
       - name: Setup Ruby and dependencies for iOS
         if: startsWith(inputs.target, 'ios')

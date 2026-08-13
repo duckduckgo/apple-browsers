@@ -28,13 +28,13 @@ jobs:
       build-number: ${{ steps.update-build-number.outputs.build-number }}
 
     steps:
-    - name: Print macOS version
-      run: sw_vers
-
     - name: Check out the code
       uses: actions/checkout@v6
       with:
         submodules: recursive
+
+    - name: Print macOS version
+      run: sw_vers
 
     - name: Assert main branch
       run: |

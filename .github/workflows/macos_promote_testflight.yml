@@ -17,9 +17,6 @@ jobs:
     runs-on: macos-26
 
     steps:
-    - name: Print macOS version
-      run: sw_vers
-
     - name: Check out the code
       uses: actions/checkout@v6
       with:
@@ -30,6 +27,9 @@ jobs:
           macOS/Gemfile.lock
           macOS/fastlane
           macOS/scripts
+
+    - name: Print macOS version
+      run: sw_vers
 
     - name: Setup Ruby and dependencies
       uses: ./.github/actions/setup-ruby

@@ -22,15 +22,15 @@ jobs:
 
     steps:
 
-      - name: Print macOS version
-        run: sw_vers
-
       - name: Check out the code
         uses: actions/checkout@v6
         with:
           token: ${{ secrets.GHA_ELEVATED_PERMISSIONS_TOKEN }}
           submodules: recursive
           fetch-depth: 0
+
+      - name: Print macOS version
+        run: sw_vers
 
       - name: Assert main branch
         run: |

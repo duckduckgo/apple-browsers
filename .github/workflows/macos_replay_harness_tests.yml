@@ -16,13 +16,13 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - name: Print macOS version
-        run: sw_vers
-
       - name: Check out the code
         uses: actions/checkout@v6
         with:
           persist-credentials: false
+
+      - name: Print macOS version
+        run: sw_vers
 
       - name: Run replay harness tests
         working-directory: macOS/scripts/crossbench

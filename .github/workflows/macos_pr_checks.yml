@@ -178,9 +178,6 @@ jobs:
       pr_reviewers: ${{ steps.fetch_commit_author.outputs.pr_reviewers }}
 
     steps:
-    - name: Print macOS version
-      run: sw_vers
-
     - name: Register SSH keys for private repos
       uses: webfactory/ssh-agent@v0.10.0
       with:
@@ -200,6 +197,9 @@ jobs:
       with:
         submodules: recursive
         ref: ${{ inputs.branch || github.ref_name }}
+
+    - name: Print macOS version
+      run: sw_vers
 
     - name: Start measuring duration
       id: start-duration-tests
@@ -543,9 +543,6 @@ jobs:
       changed_files: ${{ steps.changed-strings-files.outputs.changed_files }}
 
     steps:
-    - name: Print macOS version
-      run: sw_vers
-
     - name: Register SSH keys for private repos
       uses: webfactory/ssh-agent@v0.10.0
       with:
@@ -557,6 +554,9 @@ jobs:
       uses: actions/checkout@v6
       with:
         submodules: recursive
+
+    - name: Print macOS version
+      run: sw_vers
 
     - name: Start measuring duration
       id: start-duration-release-build

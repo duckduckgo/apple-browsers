@@ -37,13 +37,13 @@ jobs:
       should_skip: ${{ steps.check-upload.outputs.should_skip }}
 
     steps:
-    - name: Print macOS version
-      run: sw_vers
-
     - name: Check out the code
       uses: actions/checkout@v6
       with:
         submodules: recursive
+
+    - name: Print macOS version
+      run: sw_vers
 
     - name: Register SSH keys for private repos
       uses: webfactory/ssh-agent@v0.10.0
@@ -173,13 +173,13 @@ jobs:
       destination: ${{ github.event.inputs.destination || inputs.destination || 'Latest Experimental Group' }}
 
     steps:
-    - name: Print macOS version
-      run: sw_vers
-
     - name: Check out the code
       uses: actions/checkout@v6
       with:
         submodules: recursive
+
+    - name: Print macOS version
+      run: sw_vers
 
     - name: Download build artifacts
       uses: actions/download-artifact@v7

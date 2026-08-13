@@ -110,9 +110,6 @@ jobs:
       branch: ${{ inputs.branch || github.ref_name }}
 
     steps:
-    - name: Print macOS version
-      run: sw_vers
-
     - name: Register SSH keys for private repos
       uses: webfactory/ssh-agent@v0.10.0
       with:
@@ -125,6 +122,9 @@ jobs:
       with:
         submodules: recursive
         ref: ${{ inputs.commit-sha || env.branch }}
+
+    - name: Print macOS version
+      run: sw_vers
 
     - name: Validate architecture selection
       env:
@@ -400,9 +400,6 @@ jobs:
 
     steps:
 
-    - name: Print macOS version
-      run: sw_vers
-
     - name: Check out the code
       uses: actions/checkout@v6
       with:
@@ -418,6 +415,9 @@ jobs:
           macOS/fastlane
           macOS/scripts/assets
           macOS/scripts/validate_release_artifact.sh
+
+    - name: Print macOS version
+      run: sw_vers
 
     - name: Start measuring duration
       id: start-duration
@@ -594,9 +594,6 @@ jobs:
       failure: ${{ (needs.export-notarized-app.result == 'failure') || (needs.create-dmg.result == 'failure') }}
 
     steps:
-      - name: Print macOS version
-        run: sw_vers
-
       - name: Check out the code
         uses: actions/checkout@v6
         with:
@@ -609,6 +606,9 @@ jobs:
             macOS/Gemfile
             macOS/Gemfile.lock
             macOS/fastlane
+
+      - name: Print macOS version
+        run: sw_vers
 
       - name: Setup Ruby and dependencies
         uses: ./.github/actions/setup-ruby

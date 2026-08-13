@@ -35,9 +35,6 @@ jobs:
 
     steps:
 
-      - name: Print macOS version
-        run: sw_vers
-
       - name: Set working directory
         id: set-working-directory
         run: |
@@ -59,6 +56,9 @@ jobs:
         with:
           submodules: recursive
           ref: ${{ inputs.branch }}
+
+      - name: Print macOS version
+        run: sw_vers
 
       - name: Setup Ruby and dependencies
         uses: ./.github/actions/setup-ruby

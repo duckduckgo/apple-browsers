@@ -37,13 +37,13 @@ jobs:
       asana_task_id: ${{ steps.task-id.outputs.asana_task_id }}
 
     steps:
-      - name: Print macOS version
-        run: sw_vers
-
       - name: Check out the code
         uses: actions/checkout@v6
         with:
           ref: ${{ github.ref_name }}
+
+      - name: Print macOS version
+        run: sw_vers
 
       - name: Assert hotfix release branch
         run: |
@@ -85,15 +85,15 @@ jobs:
 
     steps:
 
-      - name: Print macOS version
-        run: sw_vers
-
       - name: Check out the code
         uses: actions/checkout@v6
         with:
           fetch-depth: 0 # Fetch all history and tags in order to extract Asana task URLs from git log
           ref: ${{ github.ref_name }}
           submodules: recursive
+
+      - name: Print macOS version
+        run: sw_vers
 
       - name: Set commit SHA output
         id: set-commit-sha

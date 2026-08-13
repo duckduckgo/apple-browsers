@@ -42,11 +42,11 @@ jobs:
       build-variants-2: ${{ steps.get-build-variants.outputs.build-variants-2 }}
 
     steps:
-      - name: Print macOS version
-        run: sw_vers
-
       - name: Check out repository
         uses: actions/checkout@v6
+
+      - name: Print macOS version
+        run: sw_vers
 
       - name: Fetch Build Variants
         id: get-build-variants
@@ -65,9 +65,6 @@ jobs:
 
     steps:
 
-      - name: Print macOS version
-        run: sw_vers
-
       - name: Check out the code
         uses: actions/checkout@v6
         with:
@@ -77,6 +74,9 @@ jobs:
             macOS/Gemfile.lock
             macOS/fastlane
             macOS/scripts
+
+      - name: Print macOS version
+        run: sw_vers
 
       - name: Download release app
         env:
@@ -130,9 +130,6 @@ jobs:
       failure: ${{ needs.create-variants-1.result == 'failure' || needs.create-variants-2.result == 'failure' }}
 
     steps:
-      - name: Print macOS version
-        run: sw_vers
-
       - name: Check out the code
         if: ${{ env.success || env.failure }} # Don't execute when cancelled
         uses: actions/checkout@v6
@@ -143,6 +140,10 @@ jobs:
             macOS/Gemfile.lock
             macOS/fastlane
             macOS/scripts
+
+      - name: Print macOS version
+        if: ${{ env.success || env.failure }} # Don't execute when cancelled
+        run: sw_vers
 
       - name: Setup Ruby and dependencies
         if: ${{ env.success || env.failure }} # Don't execute when cancelled

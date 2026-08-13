@@ -17,11 +17,11 @@ jobs:
     runs-on: macos-latest
 
     steps:
-      - name: Print macOS version
-        run: sw_vers
-
       - name: Checkout Code
         uses: actions/checkout@v6
+
+      - name: Print macOS version
+        run: sw_vers
 
       - name: Cache Mint packages
         uses: actions/cache@v5

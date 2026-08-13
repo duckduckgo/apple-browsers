@@ -32,7 +32,7 @@ final class NewTabPageSessionWideEventData: WideEventData {
         mobileMetaType: "ios-new-tab-page-session",
         // API requires both; only mobileMetaType is read on iOS.
         desktopMetaType: "macos-new-tab-page-session",
-        version: "1.0.0"
+        version: "1.1.0"
     )
 
     enum Trigger: String, Codable, CaseIterable {
@@ -60,17 +60,13 @@ final class NewTabPageSessionWideEventData: WideEventData {
         case lastTabLoaded = "last_tab_loaded"
         case selectOtherTab = "select_other_tab"
         case swipeToOtherTab = "swipe_to_other_tab"
-        case selectBookmark = "select_bookmark"
-        case selectPassword = "select_password"
-        case selectDownload = "select_download"
         case deleteData = "delete_data"
-        case vpnOn = "vpn_on"
-        case vpnOff = "vpn_off"
-        case emailCopied = "email_copied"
-        case menuItemSelected = "menu_item_selected"
         /// The customizable toolbar button, when set to something other than Fire.
         /// Only reachable while the New Tab Page icon customization flag is on.
         case customButton = "custom_button"
+        /// A top level browsing menu entry with no terminal of its own, such as New Tab or
+        /// Settings. Those replace the New Tab Page for good, so the visit ends here.
+        case menuItemSelected = "menu_item_selected"
         case noActionTimeout = "no_action_timeout"
         case maxDurationExceeded = "max_duration_exceeded"
         case appBackgrounded = "app_backgrounded"
@@ -89,15 +85,9 @@ final class NewTabPageSessionWideEventData: WideEventData {
                  .lastTabLoaded,
                  .selectOtherTab,
                  .swipeToOtherTab,
-                 .selectBookmark,
-                 .selectPassword,
-                 .selectDownload,
                  .deleteData,
-                 .vpnOn,
-                 .vpnOff,
-                 .emailCopied,
-                 .menuItemSelected,
-                 .customButton:
+                 .customButton,
+                 .menuItemSelected:
                 // No reason attached: the sender would copy it into
                 // `status_reason`, duplicating `terminal_action` and forcing every
                 // success value into the schema's `status_reason` enum.
@@ -159,6 +149,12 @@ final class NewTabPageSessionWideEventData: WideEventData {
     var dismissKeyboard: Bool = false
     var scrollView: Bool = false
     var utiBackArrow: Bool = false
+    var selectBookmark: Bool = false
+    var selectPassword: Bool = false
+    var selectDownload: Bool = false
+    var emailCopied: Bool = false
+    var vpnOn: Bool = false
+    var vpnOff: Bool = false
 
     init(trigger: Trigger,
          launchKeyboardMode: LaunchKeyboardMode,
@@ -243,6 +239,12 @@ extension NewTabPageSessionWideEventData {
             (WideEventParameter.NewTabPageSessionFeature.dismissKeyboard, dismissKeyboard),
             (WideEventParameter.NewTabPageSessionFeature.scrollView, scrollView),
             (WideEventParameter.NewTabPageSessionFeature.utiBackArrow, utiBackArrow),
+            (WideEventParameter.NewTabPageSessionFeature.selectBookmark, selectBookmark),
+            (WideEventParameter.NewTabPageSessionFeature.selectPassword, selectPassword),
+            (WideEventParameter.NewTabPageSessionFeature.selectDownload, selectDownload),
+            (WideEventParameter.NewTabPageSessionFeature.emailCopied, emailCopied),
+            (WideEventParameter.NewTabPageSessionFeature.vpnOn, vpnOn),
+            (WideEventParameter.NewTabPageSessionFeature.vpnOff, vpnOff),
         ])
     }
 }
@@ -283,5 +285,11 @@ extension WideEventParameter {
         static let dismissKeyboard = "feature.data.ext.actions.dismiss_keyboard"
         static let scrollView = "feature.data.ext.actions.scroll_view"
         static let utiBackArrow = "feature.data.ext.actions.uti_back_arrow"
+        static let selectBookmark = "feature.data.ext.actions.select_bookmark"
+        static let selectPassword = "feature.data.ext.actions.select_password"
+        static let selectDownload = "feature.data.ext.actions.select_download"
+        static let emailCopied = "feature.data.ext.actions.email_copied"
+        static let vpnOn = "feature.data.ext.actions.vpn_on"
+        static let vpnOff = "feature.data.ext.actions.vpn_off"
     }
 }

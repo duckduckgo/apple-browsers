@@ -62,7 +62,7 @@
             {
                 "key": "feature.data.ext.terminal_action",
                 "type": "string",
-                "description": "The single action that ended the visit. The first eighteen values map to SUCCESS; no_action_timeout (30 seconds of inactivity) and max_duration_exceeded (2 minute overall limit) map to FAILURE; app_backgrounded maps to CANCELLED; app_terminated maps to UNKNOWN.",
+                "description": "The single action that ended the visit, meaning the user left the New Tab Page. The first twelve values map to SUCCESS, including menu_item_selected for a top level menu entry with no terminal of its own, such as New Tab or Settings; no_action_timeout (30 seconds of inactivity) and max_duration_exceeded (2 minute overall limit) map to FAILURE; app_backgrounded maps to CANCELLED; app_terminated maps to UNKNOWN. Steps that leave the user on the New Tab Page are recorded under actions instead.",
                 "enum": [
                     "load_serp",
                     "load_search_suggestion",
@@ -73,15 +73,9 @@
                     "last_tab_loaded",
                     "select_other_tab",
                     "swipe_to_other_tab",
-                    "select_bookmark",
-                    "select_password",
-                    "select_download",
                     "delete_data",
-                    "vpn_on",
-                    "vpn_off",
-                    "email_copied",
-                    "menu_item_selected",
                     "custom_button",
+                    "menu_item_selected",
                     "no_action_timeout",
                     "max_duration_exceeded",
                     "app_backgrounded",
@@ -232,6 +226,36 @@
                 "key": "feature.data.ext.actions.uti_back_arrow",
                 "type": "boolean",
                 "description": "Whether the user tapped the back arrow in the Unified Toggle Input during the visit."
+            },
+            {
+                "key": "feature.data.ext.actions.select_bookmark",
+                "type": "boolean",
+                "description": "Whether the user opened a bookmark from the Bookmarks screen during the visit."
+            },
+            {
+                "key": "feature.data.ext.actions.select_password",
+                "type": "boolean",
+                "description": "Whether the user opened a saved login from the Passwords screen during the visit."
+            },
+            {
+                "key": "feature.data.ext.actions.select_download",
+                "type": "boolean",
+                "description": "Whether the user opened a download from the Downloads screen during the visit."
+            },
+            {
+                "key": "feature.data.ext.actions.email_copied",
+                "type": "boolean",
+                "description": "Whether a new private email address was copied to the clipboard during the visit."
+            },
+            {
+                "key": "feature.data.ext.actions.vpn_on",
+                "type": "boolean",
+                "description": "Whether the VPN went from off to on across a visit the user made to the VPN screen."
+            },
+            {
+                "key": "feature.data.ext.actions.vpn_off",
+                "type": "boolean",
+                "description": "Whether the VPN went from on to off across a visit the user made to the VPN screen."
             }
         ]
     }

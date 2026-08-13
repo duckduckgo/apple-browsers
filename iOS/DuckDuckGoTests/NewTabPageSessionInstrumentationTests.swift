@@ -133,6 +133,12 @@ struct NewTabPageSessionInstrumentationTests {
             ActionCase(name: "dismissKeyboard", invoke: { $0.dismissKeyboard() }, flag: \.dismissKeyboard),
             ActionCase(name: "scrollView", invoke: { $0.scrollView() }, flag: \.scrollView),
             ActionCase(name: "utiBackArrow", invoke: { $0.utiBackArrow() }, flag: \.utiBackArrow),
+            ActionCase(name: "selectBookmark", invoke: { $0.selectBookmark() }, flag: \.selectBookmark),
+            ActionCase(name: "selectPassword", invoke: { $0.selectPassword() }, flag: \.selectPassword),
+            ActionCase(name: "selectDownload", invoke: { $0.selectDownload() }, flag: \.selectDownload),
+            ActionCase(name: "emailCopied", invoke: { $0.emailCopied() }, flag: \.emailCopied),
+            ActionCase(name: "vpnOn", invoke: { $0.vpnOn() }, flag: \.vpnOn),
+            ActionCase(name: "vpnOff", invoke: { $0.vpnOff() }, flag: \.vpnOff),
         ]
     }
 
@@ -303,7 +309,8 @@ struct NewTabPageSessionInstrumentationTests {
         sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .up, toggleEnabled: false)
 
         clock.advance(by: 2)
-        sut.visitEnded(terminalAction: .selectOtherTab)
+        // Not a tab change, which with no action would be dropped as a pass-through.
+        sut.visitEnded(terminalAction: .loadWebsite)
 
         guard let completion = lastCompletion(wideEvent) else {
             Issue.record("Expected a completion")
@@ -473,9 +480,103 @@ struct NewTabPageSessionInstrumentationTests {
 
         #expect(wideEvent.completions.isEmpty)
         let visit = activeVisit(wideEvent)
-        #expect(visit?.actionCount == 5)
+        // An uninterrupted run of the same action is one step.
+        #expect(visit?.actionCount == 1)
         #expect(visit?.lastActionAt == clock.now)
         #expect(visit?.typeInInput == true)
+    }
+
+    @available(iOS 16, *)
+    @Test("Returning to an earlier action after another one counts as a new step", .timeLimit(.minutes(1)))
+    func returningToAnActionCountsAgain() {
+        let (sut, wideEvent, _) = makeSUT()
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .up, toggleEnabled: false)
+
+        sut.tapInputBar()
+        sut.typeInInput()
+        sut.typeInInput()
+        sut.typeInInput()
+        sut.tapDuckaiButton()
+        sut.typeInInput()
+        sut.typeInInput()
+
+        #expect(activeVisit(wideEvent)?.actionCount == 4)
+    }
+
+    @available(iOS 16, *)
+    @Test("Time on a screen the app opened is not counted as inactivity", .timeLimit(.minutes(1)))
+    func timeOnAnotherScreenDoesNotTimeOut() {
+        let (sut, wideEvent, clock) = makeSUT()
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: true)
+
+        sut.openMenu()
+        sut.noteUserLeftForAnotherScreen()
+
+        // Longer than the inactivity timeout, spent reading the screen rather than doing nothing.
+        clock.advance(by: 90)
+        // Picking a login happens on the Passwords screen, so the user has not returned yet.
+        sut.selectPassword()
+
+        #expect(wideEvent.completions.isEmpty)
+        #expect(activeVisit(wideEvent)?.selectPassword == true)
+
+        sut.noteUserReturnedFromAnotherScreen()
+        sut.visitEnded(terminalAction: .loadWebsite)
+        #expect(lastCompletion(wideEvent)?.0.terminalAction == .loadWebsite)
+        #expect(lastCompletion(wideEvent)?.1 == .success)
+    }
+
+    @available(iOS 16, *)
+    @Test("Only the departure is forgiven, so going quiet afterwards still times out", .timeLimit(.minutes(1)))
+    func inactivityAfterReturningStillTimesOut() {
+        let (sut, wideEvent, clock) = makeSUT()
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: true)
+
+        sut.openMenu()
+        sut.noteUserLeftForAnotherScreen()
+        clock.advance(by: 90)
+        sut.selectPassword()
+        sut.noteUserReturnedFromAnotherScreen()
+
+        clock.advance(by: 45)
+        sut.visitBackgrounded()
+
+        #expect(lastCompletion(wideEvent)?.0.terminalAction == .noActionTimeout)
+    }
+
+    @available(iOS 16, *)
+    @Test("Acting on the other screen does not end the excluded time", .timeLimit(.minutes(1)))
+    func actingOnAnotherScreenKeepsTimeExcluded() {
+        let (sut, wideEvent, clock) = makeSUT()
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: true)
+
+        sut.openMenu()
+        sut.noteUserLeftForAnotherScreen()
+
+        // Picking a login, then reading the details screen for longer than the inactivity
+        // timeout before coming back.
+        clock.advance(by: 10)
+        sut.selectPassword()
+        clock.advance(by: 90)
+        sut.noteUserReturnedFromAnotherScreen()
+
+        clock.advance(by: 5)
+        sut.visitEnded(terminalAction: .loadWebsite)
+
+        #expect(lastCompletion(wideEvent)?.0.terminalAction == .loadWebsite)
+    }
+
+    @available(iOS 16, *)
+    @Test("Repeated taps each count, so an unresponsive control is visible in the total", .timeLimit(.minutes(1)))
+    func repeatedTapsEachCount() {
+        let (sut, wideEvent, _) = makeSUT()
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: false)
+
+        sut.tapFavorite()
+        sut.tapFavorite()
+        sut.tapFavorite()
+
+        #expect(activeVisit(wideEvent)?.actionCount == 3)
     }
 
     // MARK: - Max duration
@@ -493,8 +594,7 @@ struct NewTabPageSessionInstrumentationTests {
             sut.scrollView()
         }
 
-        // The cap elapses on the 12th tick, and the check runs before the action is recorded,
-        // so only the first 11 count.
+        // The cap elapses on the 12th tick, but locking the terminal does not end the visit.
         #expect(wideEvent.completions.isEmpty)
 
         sut.visitBackgrounded()
@@ -506,7 +606,7 @@ struct NewTabPageSessionInstrumentationTests {
         #expect(wideEvent.completions.count == 1)
         #expect(completion.0.terminalAction == .maxDurationExceeded)
         #expect(completion.1 == .failure)
-        #expect(completion.0.actionCount == 11)
+        #expect(completion.0.actionCount == 1)
         #expect(completion.0.sessionInterval.end == startStamp.addingTimeInterval(130))
     }
 
@@ -561,6 +661,80 @@ struct NewTabPageSessionInstrumentationTests {
     }
 
     @available(iOS 16, *)
+    @Test("A tab change with no action is dropped as a pass-through",
+          arguments: [NewTabPageSessionWideEventData.TerminalAction.selectOtherTab, .swipeToOtherTab])
+    func tabChangeWithoutActionIsDiscarded(terminalAction: NewTabPageSessionWideEventData.TerminalAction) {
+        let (sut, wideEvent, clock) = makeSUT()
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: true)
+
+        clock.advance(by: 1)
+        sut.visitEnded(terminalAction: terminalAction)
+
+        #expect(wideEvent.completions.isEmpty)
+        #expect(wideEvent.discarded.count == 1)
+    }
+
+    @available(iOS 16, *)
+    @Test("A tab change after an action is reported", .timeLimit(.minutes(1)))
+    func tabChangeAfterActionIsCompleted() {
+        let (sut, wideEvent, clock) = makeSUT()
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: true)
+
+        clock.advance(by: 1)
+        sut.tapTabViewerToolbar()
+        sut.visitEnded(terminalAction: .selectOtherTab)
+
+        #expect(wideEvent.discarded.isEmpty)
+        #expect(lastCompletion(wideEvent)?.0.terminalAction == .selectOtherTab)
+    }
+
+    @available(iOS 16, *)
+    @Test("Closing the page drops the visit, actions and all", .timeLimit(.minutes(1)))
+    func visitDiscardedDropsTheVisit() {
+        let (sut, wideEvent, clock) = makeSUT()
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: true)
+
+        clock.advance(by: 1)
+        sut.tapTabViewerToolbar()
+        sut.visitDiscarded()
+
+        #expect(wideEvent.completions.isEmpty)
+        #expect(wideEvent.discarded.count == 1)
+
+        // Nothing is left behind for a later terminal to complete.
+        sut.visitBackgrounded()
+        #expect(wideEvent.completions.isEmpty)
+    }
+
+    @available(iOS 16, *)
+    @Test("An already abandoned visit reports its timeout even if its page is closed", .timeLimit(.minutes(1)))
+    func visitDiscardedAfterTimeoutStillReports() {
+        let (sut, wideEvent, clock) = makeSUT()
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: true)
+
+        clock.advance(by: 31)
+        sut.visitDiscarded()
+
+        #expect(wideEvent.discarded.isEmpty)
+        #expect(lastCompletion(wideEvent)?.0.terminalAction == .noActionTimeout)
+    }
+
+    @available(iOS 16, *)
+    @Test("An inactive visit still reports its timeout rather than being dropped", .timeLimit(.minutes(1)))
+    func timedOutVisitWithoutActionIsNotDiscarded() {
+        let (sut, wideEvent, clock) = makeSUT()
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: true)
+
+        // The no-action failure the success rate exists to capture, so the pass-through rule
+        // must not swallow it even though the tab changed afterwards.
+        clock.advance(by: 31)
+        sut.visitEnded(terminalAction: .swipeToOtherTab)
+
+        #expect(wideEvent.discarded.isEmpty)
+        #expect(lastCompletion(wideEvent)?.0.terminalAction == .noActionTimeout)
+    }
+
+    @available(iOS 16, *)
     @Test("A superseded visit is discarded rather than completed", .timeLimit(.minutes(1)))
     func supersededVisitIsDiscarded() {
         let (sut, wideEvent, clock) = makeSUT()
@@ -590,9 +764,8 @@ struct NewTabPageSessionInstrumentationTests {
             return
         }
 
-        // The Fire button clears everything and lands on a fresh New Tab Page, which starts
-        // the next visit. The interrupted one has no terminal of its own until the data
-        // clearing hook is wired, so it is dropped rather than reported.
+        // A visit replaced while still active has no terminal to report, and counting it either
+        // way would skew the success rate, so it is dropped.
         clock.advance(by: 3)
         sut.visitStarted(trigger: .newTabOpenedAfterFire, launchKeyboardMode: .down, toggleEnabled: true)
 
@@ -607,6 +780,32 @@ struct NewTabPageSessionInstrumentationTests {
         let completion = lastCompletion(wideEvent)
         #expect(completion?.0.trigger == .newTabOpenedAfterFire)
         #expect(completion?.0.terminalAction == .appBackgrounded)
+    }
+
+    @available(iOS 16, *)
+    @Test("A burn reported before the after-fire visit keeps the interrupted visit", .timeLimit(.minutes(1)))
+    func burnReportedBeforeReattachCompletesInterruptedVisit() {
+        let (sut, wideEvent, clock) = makeSUT()
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: true)
+        sut.tapFireButton()
+
+        // Ordering the real wiring depends on: the burn ends the visit, and only then does
+        // clearing land on a fresh New Tab Page.
+        clock.advance(by: 4)
+        sut.visitEnded(terminalAction: .deleteData)
+        sut.visitStarted(trigger: .newTabOpenedAfterFire, launchKeyboardMode: .down, toggleEnabled: true)
+
+        #expect(wideEvent.discarded.isEmpty)
+        guard let completion = lastCompletion(wideEvent) else {
+            Issue.record("Expected the interrupted visit to be reported")
+            return
+        }
+        #expect(completion.0.trigger == .appOpen)
+        #expect(completion.0.terminalAction == .deleteData)
+        #expect(completion.1 == .success)
+        #expect(completion.0.tapFireButton)
+        #expect(completion.0.sessionInterval.durationMilliseconds == 4_000)
+        #expect(activeVisit(wideEvent)?.trigger == .newTabOpenedAfterFire)
     }
 
     @available(iOS 16, *)

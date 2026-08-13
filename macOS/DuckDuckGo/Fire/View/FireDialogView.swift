@@ -1005,6 +1005,7 @@ struct FireDialogView: ModalView {
                         selectedCookieDomains: viewModel.selectedCookieDomainsForScope,
                         selectedVisits: viewModel.historyVisits
                     )
+                    viewModel.didConfirmDataClearing()
                     onConfirm?(.burn(options: result))
                     dismiss()
                 } label: {

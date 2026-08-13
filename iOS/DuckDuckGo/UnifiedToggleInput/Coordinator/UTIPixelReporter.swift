@@ -108,20 +108,19 @@ final class UTIPixelReporter {
 
     // MARK: - Message edit
 
-    /// The frontend requested to edit a previously sent message and edit mode was entered.
     func reportEditReceived() {
         withContext { firing.fire(.unifiedToggleInputEditReceived, ["surface": $0.surface.rawValue]) }
     }
 
-    /// The user submitted the edited message.
     func reportEditSubmitted() {
         withContext { firing.fire(.unifiedToggleInputEditSubmitted, ["surface": $0.surface.rawValue]) }
     }
 
-    /// The user left edit mode without submitting (cancel button or sheet dismissal).
     func reportEditCancelled() {
         withContext { firing.fire(.unifiedToggleInputEditCancelled, ["surface": $0.surface.rawValue]) }
     }
+    
+    // MARK: - Voice
 
     func reportVoiceTapped(hasPendingPageContext: Bool) {
         withContext {

@@ -812,17 +812,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     func endEditMode() {
         guard isEditing else { return }
         isEditing = false
-        // A pending continuation here means the edit is ending without a submit (the submit path
-        // resolves it first), so this is a genuine cancel rather than post-submit teardown.
-        let wasCancelled = editContinuation != nil
         resolveEdit(.cancelled)
         resetToolsSelection()
         clearAttachments()
         setText("")
         showCollapsed()
-        if wasCancelled {
-            pixelReporter.reportEditCancelled()
-        }
+        pixelReporter.reportEditCancelled()
     }
 
     private func resolveEdit(_ reply: EditPromptReply) {

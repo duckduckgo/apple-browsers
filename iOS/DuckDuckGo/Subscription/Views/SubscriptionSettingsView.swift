@@ -66,8 +66,6 @@ struct SubscriptionSettingsViewV2: View {
     // MARK: - Onboarding state
 
     @State private var isShowingOnboarding = false
-    /// Built when the customer taps the card.
-    @State private var onboardingFlow: AnyView?
 
     var body: some View {
         optionsView
@@ -476,9 +474,11 @@ struct SubscriptionSettingsViewV2: View {
         .padding(.top, -20)
         .navigationTitle(UserText.settingsPProManageSubscription)
         .applyInsetGroupedListStyle()
-        .sheet(isPresented: $isShowingOnboarding,
-               onDismiss: { onboardingFlow = nil }) {
-            onboardingFlow
+        .sheet(isPresented: $isShowingOnboarding) {
+            SubscriptionOnboardingLauncher.launch(
+                flow: .subscriptionSettings(progress: onboardingProgress,
+                                            onFinish: { isShowingOnboarding = false },
+                                            pirScreen: { pirDestination }))
         }
         .onChange(of: viewModel.state.shouldDismissView) { value in
             if value {
@@ -669,10 +669,7 @@ private var resubscribeWithWinBackOfferView: some View {
 
 extension SubscriptionSettingsViewV2 {
 
-    /// The "Continue Setup" re-entry card. 
-    ///
-    /// Reaching 100% keeps the card for the rest of the session; it goes on the next launch. It also
-    /// disappears once the subscription expires or the flag is turned off.
+    /// The "Continue Setup" re-entry card.
     var onboardingSetupSection: some View {
         Section {
             SubscriptionOnboardingSetupCard(visual: .image(Image(.subscription56)),
@@ -686,10 +683,6 @@ extension SubscriptionSettingsViewV2 {
     }
 
     func startOnboarding() {
-        onboardingFlow = SubscriptionOnboardingLauncher.launch(
-            flow: .subscriptionSettings(progress: onboardingProgress,
-                                        onFinish: { isShowingOnboarding = false },
-                                        pirScreen: { pirDestination }))
         isShowingOnboarding = true
     }
 
@@ -705,19 +698,15 @@ extension SubscriptionSettingsViewV2 {
         settingsViewModel.featureFlagger.isFeatureOn(.subscriptionOnboarding) && hasActiveSubscription
     }
 
-    /// The card is a re-entry point into an active subscription's onboarding — an expired subscription, or one
-    /// still activating, has nothing left to set up.
+    /// An expired or still-activating subscription has nothing left to set up.
     private var hasActiveSubscription: Bool {
         configuration == .subscribed || configuration == .trial
     }
 
-    /// PIR is gated three ways, and a customer who fails any of them is shown a four-item checklist rather
-    /// than a row they could never tick — which also makes their completion ceiling 100% instead of 80%.
+    /// Unavailable customers get a four-item checklist instead of a row they could never tick.
     private var isPIRAvailable: Bool { settingsViewModel.isPIRAvailable }
 
-    /// The PIR screen the flow pushes from its own stack, matching what Settings already pushes from its
-    /// PIR row (`SettingsSubscriptionView`). `LazyView` there is unnecessary — the flow only asks for this
-    /// when it reaches the PIR section.
+    /// Same destination Settings' own PIR row pushes.
     @ViewBuilder
     private var pirDestination: some View {
         if let provider = settingsViewModel.dataBrokerProtectionViewControllerProvider {

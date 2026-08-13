@@ -872,7 +872,7 @@ final class AddressBarViewController: NSViewController {
     }
 
     private func updateSwitchToTabBoxAppearance() {
-        guard let _ = calculateSwitchToTabBoxMinX() else {
+        guard calculateSwitchToTabBoxMinX() != nil else {
             refreshSwitchToTabVisibility(isHidden: true)
             return
         }

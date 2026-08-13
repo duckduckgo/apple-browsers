@@ -25,9 +25,6 @@
       <FileRef
          location = "group:DataBrokerProtectionCore">
       </FileRef>
-      <FileRef
-         location = "group:EventHub">
-      </FileRef>
       <FileSystemSynchronizedGroup
          location = "group:Infrastructure"
          name = "Infrastructure">

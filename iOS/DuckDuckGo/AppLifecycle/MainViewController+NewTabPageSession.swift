@@ -168,6 +168,20 @@ extension MainViewController {
         newTabPageSessionInstrumentation.visitEnded(terminalAction: .menuItemSelected)
     }
 
+    /// Drops the visit when the tab hosting it is closed.
+    ///
+    /// The page the visit was measuring no longer exists, and closing a tab is neither reaching
+    /// something nor failing to: New Tab Pages are cheap and users keep several around. Without
+    /// this the visit outlives its page, because closing a tab selects an existing one rather than
+    /// attaching another New Tab Page to supersede it, and it later reports a bogus timeout or
+    /// backgrounding. Only the visible page carries a visit, so other closed tabs are irrelevant.
+    func discardNewTabPageSessionIfHostingTabClosed(_ closingTabs: [Tab]) {
+        guard isNewTabPageVisible, let hostingTabUid = currentTab?.tabModel.uid else { return }
+        guard closingTabs.contains(where: { $0.uid == hostingTabUid }) else { return }
+
+        newTabPageSessionInstrumentation.visitDiscarded()
+    }
+
     /// Marks that the user is now reading a screen the app opened over the New Tab Page, so the
     /// time they spend there is not mistaken for abandoning the visit.
     func recordNewTabPageSessionDeparture() {

@@ -689,6 +689,37 @@ struct NewTabPageSessionInstrumentationTests {
     }
 
     @available(iOS 16, *)
+    @Test("Closing the page drops the visit, actions and all", .timeLimit(.minutes(1)))
+    func visitDiscardedDropsTheVisit() {
+        let (sut, wideEvent, clock) = makeSUT()
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: true)
+
+        clock.advance(by: 1)
+        sut.tapTabViewerToolbar()
+        sut.visitDiscarded()
+
+        #expect(wideEvent.completions.isEmpty)
+        #expect(wideEvent.discarded.count == 1)
+
+        // Nothing is left behind for a later terminal to complete.
+        sut.visitBackgrounded()
+        #expect(wideEvent.completions.isEmpty)
+    }
+
+    @available(iOS 16, *)
+    @Test("An already abandoned visit reports its timeout even if its page is closed", .timeLimit(.minutes(1)))
+    func visitDiscardedAfterTimeoutStillReports() {
+        let (sut, wideEvent, clock) = makeSUT()
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: true)
+
+        clock.advance(by: 31)
+        sut.visitDiscarded()
+
+        #expect(wideEvent.discarded.isEmpty)
+        #expect(lastCompletion(wideEvent)?.0.terminalAction == .noActionTimeout)
+    }
+
+    @available(iOS 16, *)
     @Test("An inactive visit still reports its timeout rather than being dropped", .timeLimit(.minutes(1)))
     func timedOutVisitWithoutActionIsNotDiscarded() {
         let (sut, wideEvent, clock) = makeSUT()

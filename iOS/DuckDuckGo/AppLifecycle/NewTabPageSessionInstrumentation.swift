@@ -99,6 +99,10 @@ protocol NewTabPageSessionInstrumentation: AnyObject {
 
     /// App was backgrounded with a visit still open. Completes as CANCELLED.
     func visitBackgrounded()
+
+    /// The page the visit was measuring is gone, so the visit has no outcome to report and is
+    /// dropped rather than completed.
+    func visitDiscarded()
 }
 
 /// Reads the wide event sample rate from the feature's remote settings, so the volume can be
@@ -291,6 +295,21 @@ final class DefaultNewTabPageSessionInstrumentation: NewTabPageSessionInstrument
 
         visit.sessionInterval.end = dateProvider()
         complete(visit, with: lockedTerminal ?? .appBackgrounded)
+    }
+
+    func visitDiscarded() {
+        lockTerminalIfTimedOut()
+        guard let visit = activeVisit else { return }
+
+        // A visit already abandoned had its outcome before the page went away, so closing the
+        // page does not erase it.
+        if let lockedTerminal {
+            visit.sessionInterval.end = dateProvider()
+            complete(visit, with: lockedTerminal)
+            return
+        }
+
+        discard(visit)
     }
 
     // MARK: - Helpers

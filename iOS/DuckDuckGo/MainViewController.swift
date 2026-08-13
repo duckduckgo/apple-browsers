@@ -6862,6 +6862,8 @@ extension MainViewController: TabSwitcherDelegate {
 
     /// Per-tab close side effects `bulkRemoveTabs` skips: Duck.ai generation instrumentation + (18.4+) web-extension close events.
     func notifyTabsWillClose(_ tabs: [Tab]) {
+        discardNewTabPageSessionIfHostingTabClosed(tabs)
+
         for tab in tabs {
             reportDuckAITabClosedIfNeeded(tab)
         }

@@ -247,9 +247,6 @@ jobs:
     runs-on: [ self-hosted, apple ]
 
     steps:
-      - name: Print macOS version
-        run: sw_vers
-
       - name: Download ClickHouse rows TSV
         # A cancelled or early-failed benchmark job may never have uploaded this;
         # that is not a reason to skip the attempts insert below.

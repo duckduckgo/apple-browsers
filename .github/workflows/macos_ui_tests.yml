@@ -216,11 +216,11 @@ jobs:
         env:
           TESTS: ${{ steps.list-tests.outputs.test }}
           ALL_OS_VERSIONS: ${{ steps.define-runners.outputs.all-os-versions }}
+          SINGLE_TEST_CLASS: ${{ inputs.single_test_class }}
         run: |
           # The latest macOS gets one job per test class, so the classes run in parallel and each
           # one reports separately. Older macOS versions are a regression safety net rather than the
-          # primary signal, so they get a single job that runs every test, to keep runner usage down.
-          # An empty "test" tells macos_run_ui_test.yml to run the whole UI Tests target.
+          # primary signal, so they get a single job, to keep runner usage down.
           per_test_os='[
             {"runner": "bitrise:macos26-m4", "os-version": "26", "xcode-version": "26.4"}
           ]'
@@ -232,12 +232,23 @@ jobs:
             all_tests_os='[]'
           fi
 
+          # What that single older-macOS job runs. When the caller asked for specific classes, it
+          # runs exactly those, as one space-separated list. Otherwise it gets an empty string,
+          # which tells macos_run_ui_test.yml to run the whole UI Tests target. Passing the full
+          # class list instead of "" would be equivalent but would make an unusable job name.
+          if [[ -n "$SINGLE_TEST_CLASS" ]]; then
+            legacy_test=$(jq -r 'join(" ")' <<< "$TESTS")
+          else
+            legacy_test=''
+          fi
+
           include=$(jq -c -n \
             --argjson per_test_os "$per_test_os" \
             --argjson all_tests_os "$all_tests_os" \
             --argjson tests "$TESTS" \
+            --arg legacy_test "$legacy_test" \
             '[ $per_test_os[] as $os | $tests[] | $os + {test: .} ]
-             + [ $all_tests_os[] | . + {test: ""} ]')
+             + [ $all_tests_os[] | . + {test: $legacy_test} ]')
 
           echo "include=${include}" >> $GITHUB_OUTPUT
           echo "Matrix has $(jq 'length' <<< "$include") job(s):"

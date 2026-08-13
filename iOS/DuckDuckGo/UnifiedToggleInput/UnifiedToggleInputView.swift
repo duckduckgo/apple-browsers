@@ -134,7 +134,7 @@ final class UnifiedToggleInputView: UIView {
 
         static let editDisclaimerOverlap: CGFloat = 44
         static let editDisclaimerTopGap: CGFloat = 12
-        static let editDisclaimerIconSize: CGFloat = 24
+        static let editDisclaimerIconSize: CGFloat = 16
         static let editDisclaimerIconTextGap: CGFloat = 12
         static let editDisclaimerContentLeading: CGFloat = 20
         static let editDisclaimerContentBottom: CGFloat = 12
@@ -393,7 +393,8 @@ final class UnifiedToggleInputView: UIView {
         card.isUserInteractionEnabled = false
         card.isHidden = true
 
-        let icon = UIImageView(image: DesignSystemImages.Color.Size24.infoFeedback)
+        let icon = UIImageView(image: DesignSystemImages.Glyphs.Size16.info)
+        icon.tintColor = UIColor(designSystemColor: .textSecondary)
         icon.translatesAutoresizingMaskIntoConstraints = false
         icon.contentMode = .scaleAspectFit
         icon.setContentHuggingPriority(.required, for: .horizontal)

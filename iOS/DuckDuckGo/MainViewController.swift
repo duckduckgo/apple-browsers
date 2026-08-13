@@ -7094,7 +7094,14 @@ extension MainViewController {
         firePixels(for: request)
         productSurfaceTelemetry.dataClearingUsed()
         endNewTabPageSessionWithDataClearing()
-        
+
+        // A single tab burn rebuilds the UI from inside the burn itself, so the New Tab Page has
+        // already attached by the time `didFinishBurningTabs` runs. Wider scopes are marked later,
+        // in `refreshUIAfterClear`, where the attach still lies ahead.
+        if case .tab = request.scope {
+            isAttachingNewTabPageAfterFire = true
+        }
+
         fireExecutor.prepare(for: request)
         
         fireButtonAnimator.animate {

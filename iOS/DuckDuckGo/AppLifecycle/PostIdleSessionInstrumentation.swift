@@ -20,7 +20,24 @@
 import Foundation
 import PixelKit
 
-/// Session-scoped hooks for the post-idle wide-event pixel.
+/// Interaction state shared by the return-session and post-idle payloads.
+protocol ReturnSessionInteractionData: AnyObject {
+    var firstInteractionInterval: WideEvent.MeasuredInterval { get set }
+    var pageEngaged: Bool { get set }
+    var toggleUsed: Bool { get set }
+    var backPressed: Bool { get set }
+    var openingScreenChanged: Bool { get set }
+    var closeTabTapped: Bool { get set }
+    var burnTabTapped: Bool { get set }
+}
+
+extension ReturnSessionWideEventData: ReturnSessionInteractionData {}
+extension PostIdleSessionWideEventData: ReturnSessionInteractionData {}
+
+/// Session-scoped hooks for the return-session wide-event pixel.
+///
+/// Every return starts an `ios-return-session` flow; after-idle returns also start
+/// the older after-idle-only `ios-post-idle-session` flow.
 ///
 /// The caller decides which surface to fire (based on the user's After Inactivity
 /// setting) and is responsible for any per-surface eligibility gating. The
@@ -29,8 +46,13 @@ import PixelKit
 /// the previous one.
 protocol PostIdleSessionInstrumentation: AnyObject {
 
-    /// The post-idle surface (NTP or LUT) was displayed.
-    func sessionStarted(surface: PostIdleSessionWideEventData.Surface)
+    /// Stashes this return's time away; consumed by the next `sessionStarted`.
+    func noteReturn(timeAwayMs: Int?)
+
+    /// A return session began on `landedOn`. `afterIdleSurface` is nil for an ordinary return.
+    func sessionStarted(landedOn: ReturnSessionWideEventData.LandedOn,
+                        afterIdleSurface: PostIdleSessionWideEventData.Surface?,
+                        focused: Bool)
 
     /// User scrolled or activated an in-page link. Idempotent within a session.
     func pageEngaged()
@@ -38,7 +60,7 @@ protocol PostIdleSessionInstrumentation: AnyObject {
     /// User toggled between search and Duck.ai.
     func toggleUsed()
 
-    /// User pressed back / cancel from the post-idle surface.
+    /// User pressed back / cancel from the landing surface.
     func backPressed()
 
     /// User changed the Opening Screen option from the escape hatch's settings menu.
@@ -50,8 +72,8 @@ protocol PostIdleSessionInstrumentation: AnyObject {
     /// User burned the open tab from the escape hatch's menu. Idempotent within a session.
     func burnTabTapped()
 
-    /// Terminal user action ended the session (bar used, return-to-page, etc.).
-    func sessionEnded(reason: PostIdleSessionWideEventData.StatusReason)
+    /// Terminal user action ended the session (submission, return-to-page, etc.).
+    func sessionEnded(reason: ReturnSessionWideEventData.StatusReason)
 
     /// App was backgrounded with a session still active. Completes as CANCELLED.
     func sessionCancelledByBackground()
@@ -61,9 +83,11 @@ final class DefaultPostIdleSessionInstrumentation: PostIdleSessionInstrumentatio
 
     private let wideEvent: WideEventManaging
     private let dateProvider: () -> Date
-    private var activeSessionID: String?
+    private var returnSessionID: String?
+    private var postIdleSessionID: String?
     /// Skips `updateFlow` (synchronous disk I/O) on every scroll tick after the first.
     private var pageEngagedSent = false
+    private var pendingTimeAwayMs: Int?
 
     init(wideEvent: WideEventManaging,
          dateProvider: @escaping () -> Date = { Date() }) {
@@ -71,11 +95,17 @@ final class DefaultPostIdleSessionInstrumentation: PostIdleSessionInstrumentatio
         self.dateProvider = dateProvider
     }
 
-    func sessionStarted(surface: PostIdleSessionWideEventData.Surface) {
+    func noteReturn(timeAwayMs: Int?) {
+        pendingTimeAwayMs = timeAwayMs
+    }
+
+    func sessionStarted(landedOn: ReturnSessionWideEventData.LandedOn,
+                        afterIdleSurface: PostIdleSessionWideEventData.Surface?,
+                        focused: Bool) {
         // If a session is already active, cancel it before starting a new one.
         // Quick background-foreground cycles over the idle threshold can trigger
         // this; the previous session is reported as CANCELLED so we don't lose it.
-        if activeSessionID != nil {
+        if returnSessionID != nil || postIdleSessionID != nil {
             sessionCancelledByBackground()
         }
 
@@ -85,89 +115,101 @@ final class DefaultPostIdleSessionInstrumentation: PostIdleSessionInstrumentatio
         // WideEventService.resume() which would otherwise complete new flows as UNKNOWN.
         completeOrphanedFlows()
 
-        let data = PostIdleSessionWideEventData(surface: surface, startedAt: dateProvider())
-        activeSessionID = data.globalData.id
+        let startedAt = dateProvider()
+        let returnData = ReturnSessionWideEventData(landedOn: landedOn,
+                                                    afterIdle: afterIdleSurface != nil,
+                                                    startedAt: startedAt,
+                                                    timeAwayMs: pendingTimeAwayMs,
+                                                    focused: focused)
+        pendingTimeAwayMs = nil
+        returnSessionID = returnData.globalData.id
         pageEngagedSent = false
-        wideEvent.startFlow(data)
+        wideEvent.startFlow(returnData)
+
+        guard let afterIdleSurface else { return }
+        let postIdleData = PostIdleSessionWideEventData(surface: afterIdleSurface, startedAt: startedAt)
+        postIdleSessionID = postIdleData.globalData.id
+        wideEvent.startFlow(postIdleData)
     }
 
     func pageEngaged() {
         guard !pageEngagedSent else { return }
         pageEngagedSent = true
-        updateActiveSession { data in
-            data.pageEngaged = true
-            markFirstInteractionIfNeeded(on: data, at: dateProvider())
-        }
+        recordInteraction { $0.pageEngaged = true }
     }
 
     func toggleUsed() {
-        updateActiveSession { data in
-            data.toggleUsed = true
-            markFirstInteractionIfNeeded(on: data, at: dateProvider())
-        }
+        recordInteraction { $0.toggleUsed = true }
     }
 
     func backPressed() {
-        updateActiveSession { data in
-            data.backPressed = true
-            markFirstInteractionIfNeeded(on: data, at: dateProvider())
-        }
+        recordInteraction { $0.backPressed = true }
     }
 
     func openingScreenChanged() {
-        updateActiveSession { data in
-            data.openingScreenChanged = true
-            markFirstInteractionIfNeeded(on: data, at: dateProvider())
-        }
+        recordInteraction { $0.openingScreenChanged = true }
     }
 
     func closeTabTapped() {
-        updateActiveSession { data in
-            data.closeTabTapped = true
-            markFirstInteractionIfNeeded(on: data, at: dateProvider())
-        }
+        recordInteraction { $0.closeTabTapped = true }
     }
 
     func burnTabTapped() {
-        updateActiveSession { data in
-            data.burnTabTapped = true
-            markFirstInteractionIfNeeded(on: data, at: dateProvider())
-        }
+        recordInteraction { $0.burnTabTapped = true }
     }
 
-    func sessionEnded(reason: PostIdleSessionWideEventData.StatusReason) {
-        guard let globalID = activeSessionID,
-              let data = wideEvent.getFlowData(PostIdleSessionWideEventData.self, globalID: globalID) else {
-            activeSessionID = nil
-            return
-        }
-
+    func sessionEnded(reason: ReturnSessionWideEventData.StatusReason) {
         let now = dateProvider()
-        data.statusReason = reason
-        data.sessionInterval.end = now
-        markFirstInteractionIfNeeded(on: data, at: now)
 
-        wideEvent.completeFlow(data, status: .success(reason: reason.rawValue), onComplete: { _, _ in })
-        activeSessionID = nil
+        if let globalID = returnSessionID,
+           let data = wideEvent.getFlowData(ReturnSessionWideEventData.self, globalID: globalID) {
+            data.statusReason = reason
+            data.sessionInterval.end = now
+            markFirstInteractionIfNeeded(on: data, at: now)
+            wideEvent.completeFlow(data, status: .success(reason: reason.rawValue), onComplete: { _, _ in })
+        }
+        returnSessionID = nil
+
+        if let globalID = postIdleSessionID,
+           let data = wideEvent.getFlowData(PostIdleSessionWideEventData.self, globalID: globalID) {
+            let postIdleReason = reason.postIdleReason
+            data.statusReason = postIdleReason
+            data.sessionInterval.end = now
+            markFirstInteractionIfNeeded(on: data, at: now)
+            wideEvent.completeFlow(data, status: .success(reason: postIdleReason.rawValue), onComplete: { _, _ in })
+        }
+        postIdleSessionID = nil
     }
 
     func sessionCancelledByBackground() {
-        guard let globalID = activeSessionID,
-              let data = wideEvent.getFlowData(PostIdleSessionWideEventData.self, globalID: globalID) else {
-            activeSessionID = nil
-            return
+        let now = dateProvider()
+
+        if let globalID = returnSessionID,
+           let data = wideEvent.getFlowData(ReturnSessionWideEventData.self, globalID: globalID) {
+            data.statusReason = .appBackgrounded
+            data.sessionInterval.end = now
+            wideEvent.completeFlow(data, status: .cancelled, onComplete: { _, _ in })
         }
+        returnSessionID = nil
 
-        data.statusReason = .appBackgrounded
-        data.sessionInterval.end = dateProvider()
-
-        wideEvent.completeFlow(data, status: .cancelled, onComplete: { _, _ in })
-        activeSessionID = nil
+        if let globalID = postIdleSessionID,
+           let data = wideEvent.getFlowData(PostIdleSessionWideEventData.self, globalID: globalID) {
+            data.statusReason = .appBackgrounded
+            data.sessionInterval.end = now
+            wideEvent.completeFlow(data, status: .cancelled, onComplete: { _, _ in })
+        }
+        postIdleSessionID = nil
     }
 
     // MARK: - Helpers
 
     private func completeOrphanedFlows() {
+        for orphan in wideEvent.getAllFlowData(ReturnSessionWideEventData.self) {
+            wideEvent.completeFlow(
+                orphan,
+                status: .unknown(reason: ReturnSessionWideEventData.appTerminatedReason),
+                onComplete: { _, _ in })
+        }
         for orphan in wideEvent.getAllFlowData(PostIdleSessionWideEventData.self) {
             wideEvent.completeFlow(
                 orphan,
@@ -176,12 +218,25 @@ final class DefaultPostIdleSessionInstrumentation: PostIdleSessionInstrumentatio
         }
     }
 
-    private func updateActiveSession(_ mutate: (inout PostIdleSessionWideEventData) -> Void) {
-        guard let globalID = activeSessionID else { return }
-        wideEvent.updateFlow(globalID: globalID, update: mutate)
+    private func recordInteraction(_ mutate: (any ReturnSessionInteractionData) -> Void) {
+        let now = dateProvider()
+
+        if let globalID = returnSessionID {
+            wideEvent.updateFlow(globalID: globalID) { (data: inout ReturnSessionWideEventData) in
+                mutate(data)
+                markFirstInteractionIfNeeded(on: data, at: now)
+            }
+        }
+
+        if let globalID = postIdleSessionID {
+            wideEvent.updateFlow(globalID: globalID) { (data: inout PostIdleSessionWideEventData) in
+                mutate(data)
+                markFirstInteractionIfNeeded(on: data, at: now)
+            }
+        }
     }
 
-    private func markFirstInteractionIfNeeded(on data: PostIdleSessionWideEventData, at date: Date) {
+    private func markFirstInteractionIfNeeded(on data: any ReturnSessionInteractionData, at date: Date) {
         guard data.firstInteractionInterval.end == nil else { return }
         data.firstInteractionInterval.end = date
     }

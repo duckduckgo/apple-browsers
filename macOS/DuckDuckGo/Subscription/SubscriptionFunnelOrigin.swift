@@ -54,6 +54,10 @@ enum SubscriptionFunnelOrigin: String {
     /// https://app.asana.com/1/137249556945/project/1207260194172075/task/1213994750860324
     case newTabPageNextStepsCard = "funnel_onboarding_macOS__nextstepscard"
 
+    /// User entered the funnel via the subscription upsell at the end of contextual onboarding.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217302662203337
+    case onboardingSubscriptionUpsell = "funnel_onboarding_macos__subscriptionupsell"
+
     /// User entered the funnel via the subscription promo on the Fire Window home page.
     /// https://app.asana.com/1/137249556945/project/1207260194172075/task/1214355390442152
     case fireWindowPromo = "funnel_newtab_macos__firewindowvpn"

@@ -894,10 +894,17 @@ final class AddressBarViewController: NSViewController {
             return nil
         }
 
-        let minX = editor.textSize.width + Constants.switchToTabMinXPadding
-        let requiredWidth = minX + switchToTabBox.fittingSize.width + switchToTabBoxTrailingConstraint.constant
+        let trailingInset = switchToTabBoxTrailingConstraint.constant
+        let switchToWidth = switchToTabBox.fittingSize.width
 
-        return requiredWidth <= view.bounds.width ? minX : nil
+        /// We're placing the `SwitchToTabBox` component at the tail of the Address Bar text.
+        /// But such location is also limited by the actually visible width.
+        let textWidth = min(editor.textSize.width, max(0, addressBarTextField.bounds.width - switchToWidth))
+
+        let switchToMinX = Constants.switchToTabMinXPadding + textWidth
+        let requiredWidth = switchToMinX + switchToWidth + trailingInset
+
+        return requiredWidth <= view.bounds.width ? switchToMinX : nil
     }
 
     private func refreshSwitchToTabVisibility(isHidden: Bool) {

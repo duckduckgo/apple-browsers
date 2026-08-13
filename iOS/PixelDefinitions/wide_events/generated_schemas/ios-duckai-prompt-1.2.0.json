@@ -161,9 +161,15 @@
                                                 "voice",
                                                 "onboarding",
                                                 "direct_url",
+                                                "serp",
                                                 "icon_shortcut",
-                                                "restored_tab",
                                                 "contextual_chat",
+                                                "widget_quick_actions",
+                                                "widget_quick_actions_medium",
+                                                "widget_favorite",
+                                                "widget_lock_screen",
+                                                "widget_control_center",
+                                                "siri",
                                                 "deep_link_other"
                                             ]
                                         },

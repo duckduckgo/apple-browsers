@@ -35,10 +35,33 @@ struct DeviceInfoUpdateBuilder {
             throw DeviceInfoMigrationError.encryptedDeviceInfoTooLarge
         }
 
-        return UpdateDevices.Update(
-            id: deviceID,
-            name: try crypter.encryptAndBase64Encode(deviceName, using: primaryKey),
-            type: try crypter.encryptAndBase64Encode(deviceType, using: primaryKey),
-            info: encryptedDeviceInfo)
+        return try makeUpdate(deviceID: deviceID,
+                              deviceName: deviceName,
+                              deviceType: deviceType,
+                              primaryKey: primaryKey,
+                              encryptedDeviceInfo: encryptedDeviceInfo)
+    }
+
+    /// Builds an update with `info` omitted, which clears server-side `device_info` under the PATCH contract.
+    func makeUpdateWithoutUnifiedInfo(deviceID: String,
+                                      deviceName: String,
+                                      deviceType: String,
+                                      primaryKey: Data) throws -> UpdateDevices.Update {
+        try makeUpdate(deviceID: deviceID,
+                       deviceName: deviceName,
+                       deviceType: deviceType,
+                       primaryKey: primaryKey,
+                       encryptedDeviceInfo: nil)
+    }
+
+    private func makeUpdate(deviceID: String,
+                            deviceName: String,
+                            deviceType: String,
+                            primaryKey: Data,
+                            encryptedDeviceInfo: String?) throws -> UpdateDevices.Update {
+        UpdateDevices.Update(id: deviceID,
+                             name: try crypter.encryptAndBase64Encode(deviceName, using: primaryKey),
+                             type: try crypter.encryptAndBase64Encode(deviceType, using: primaryKey),
+                             info: encryptedDeviceInfo)
     }
 }

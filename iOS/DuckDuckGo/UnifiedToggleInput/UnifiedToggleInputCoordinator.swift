@@ -811,13 +811,20 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     func endEditMode() {
         guard isEditing else { return }
+        exitEditMode(reply: .cancelled)
+        pixelReporter.reportEditCancelled()
+    }
+
+    /// Shared teardown for leaving edit mode: resolves the pending edit with `reply` and resets the
+    /// input. Callers fire the matching pixel, so submit-driven teardown isn't also counted as a cancel.
+    private func exitEditMode(reply: EditPromptReply) {
+        guard isEditing else { return }
         isEditing = false
-        resolveEdit(.cancelled)
+        resolveEdit(reply)
         resetToolsSelection()
         clearAttachments()
         setText("")
         showCollapsed()
-        pixelReporter.reportEditCancelled()
     }
 
     private func resolveEdit(_ reply: EditPromptReply) {
@@ -1575,8 +1582,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
                 ? UnifiedToggleInputFileEncoder.encode(viewController.currentAttachments)
                 : nil
             pixelReporter.reportEditSubmitted()
-            resolveEdit(.submit(prompt: text, images: images, files: files))
-            endEditMode()
+            exitEditMode(reply: .submit(prompt: text, images: images, files: files))
             return
         }
 

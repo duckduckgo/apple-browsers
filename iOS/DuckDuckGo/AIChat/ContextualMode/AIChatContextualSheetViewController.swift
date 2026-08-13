@@ -82,6 +82,16 @@ protocol AIChatContextualSheetViewControllerDelegate: AnyObject {
     func aiChatContextualSheetViewControllerDidConfirmDeleteChat(_ viewController: AIChatContextualSheetViewController)
 }
 
+/// Capsule chrome for a group of header buttons, so the header can host either style without
+/// caring which one it got. Controls go in `contentView`.
+private protocol ContextualHeaderPill: UIView {
+    var contentView: UIView { get }
+    /// `UIGlassEffect`'s style is fixed at construction, so glass chrome rebuilds on a light/dark flip.
+    func refreshGlassForCurrentTraits()
+}
+
+extension AIChatHeaderGlassPill: ContextualHeaderPill {}
+
 /// Contextual sheet view controller. Configures UX and actions.
 final class AIChatContextualSheetViewController: UIViewController {
 
@@ -92,7 +102,7 @@ final class AIChatContextualSheetViewController: UIViewController {
         static let headerHeight: CGFloat = 44
         static let headerButtonSize: CGFloat = 44
         static let headerHorizontalPadding: CGFloat = 16
-        static let titleSpacing: CGFloat = 8
+        static let titleSpacing: CGFloat = 4
         static let titleTapHorizontalPadding: CGFloat = 8
         static let contentTopPadding: CGFloat = 8
         static let dimmingAlpha: CGFloat = 0.3
@@ -106,7 +116,11 @@ final class AIChatContextualSheetViewController: UIViewController {
     // MARK: - Types
 
     /// A view that automatically keeps its corner radius at half its height (pill shape).
-    private final class PillView: UIView {
+    fileprivate final class PillView: UIView, ContextualHeaderPill {
+        var contentView: UIView { self }
+
+        func refreshGlassForCurrentTraits() {}
+
         override func layoutSubviews() {
             super.layoutSubviews()
             layer.cornerRadius = bounds.height / 2
@@ -140,6 +154,9 @@ final class AIChatContextualSheetViewController: UIViewController {
     private let featureFlagger: FeatureFlagger
     private let suggestionsReader: AIChatSuggestionsReading?
     private let persistentUTIHost: AIChatContextualUTIHost?
+
+    /// Glass capsules and the Duck.ai bubble icon, matching the Duck.ai tab header.
+    private let usesGlassHeader: Bool
     private var recentChatsPopup: AIChatRecentChatsPopupViewController?
     private var popupWindow: UIWindow?
     private var isFetchingRecentChats = false
@@ -200,13 +217,7 @@ final class AIChatContextualSheetViewController: UIViewController {
         return view
     }()
 
-    private lazy var leftButtonContainer: UIView = {
-        let view = PillView()
-        view.backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
-        view.clipsToBounds = true
-        view.translatesAutoresizingMaskIntoConstraints = false
-        return view
-    }()
+    private lazy var leftButtonContainer: ContextualHeaderPill = makeHeaderPill()
 
     private lazy var leftButtonStack: UIStackView = {
         let stack = UIStackView()
@@ -254,7 +265,8 @@ final class AIChatContextualSheetViewController: UIViewController {
     private var titleHostView: UIView { titleTapControl ?? titleContainer }
 
     private lazy var titleIconView: UIImageView = {
-        let imageView = UIImageView(image: DesignSystemImages.Color.Size24.duckAI)
+        let icon = usesGlassHeader ? DesignSystemImages.Color.Size24.aiChat : DesignSystemImages.Color.Size24.duckAI
+        let imageView = UIImageView(image: icon)
         imageView.contentMode = .scaleAspectFit
         imageView.translatesAutoresizingMaskIntoConstraints = false
         return imageView
@@ -269,13 +281,19 @@ final class AIChatContextualSheetViewController: UIViewController {
         return label
     }()
 
-    private lazy var rightButtonContainer: UIView = {
-        let view = PillView()
-        view.backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
-        view.clipsToBounds = true
-        view.translatesAutoresizingMaskIntoConstraints = false
-        return view
-    }()
+    private lazy var rightButtonContainer: ContextualHeaderPill = makeHeaderPill()
+
+    /// Glass on the new look — same chrome the Duck.ai tab header uses — flat fill on the original.
+    private func makeHeaderPill() -> ContextualHeaderPill {
+        guard usesGlassHeader else {
+            let pill = PillView()
+            pill.backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
+            pill.clipsToBounds = true
+            pill.translatesAutoresizingMaskIntoConstraints = false
+            return pill
+        }
+        return AIChatHeaderGlassPill(cornerRadius: Constants.headerButtonSize / 2, shadowStyle: .restingOnChrome)
+    }
 
     private lazy var rightButtonStack: UIStackView = {
         let stack = UIStackView()
@@ -343,7 +361,9 @@ final class AIChatContextualSheetViewController: UIViewController {
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          persistentUTIHost: AIChatContextualUTIHost? = nil,
          suggestionsReader: AIChatSuggestionsReading? = nil,
+         floatingInputFeature: AIChatContextualFloatingInputFeatureProviding = AIChatContextualFloatingInputFeature(),
          opensOntoSubmittedChat: Bool = false) {
+        self.usesGlassHeader = floatingInputFeature.isAvailable
         self.sessionState = sessionState
         self.aiChatSettings = aiChatSettings
         self.voiceSearchHelper = voiceSearchHelper
@@ -452,6 +472,12 @@ final class AIChatContextualSheetViewController: UIViewController {
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         updateShadowPath()
+    }
+
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        guard traitCollection.userInterfaceStyle != previousTraitCollection?.userInterfaceStyle else { return }
+        [leftButtonContainer, rightButtonContainer].forEach { $0.refreshGlassForCurrentTraits() }
     }
 
     override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
@@ -952,6 +978,11 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
     }
 
     func contextualInputViewControllerDidTapVoice(_ viewController: AIChatContextualInputViewController) {
+        presentVoiceSearch()
+    }
+
+    /// Also the entry point for the UTI's microphone, which dictates into whichever input is on screen.
+    func presentVoiceSearch() {
         let voiceSearchController = VoiceSearchViewController(preferredTarget: .AIChat, hideToggle: true)
         voiceSearchController.delegate = self
         voiceSearchController.modalTransitionStyle = .crossDissolve
@@ -970,7 +1001,11 @@ extension AIChatContextualSheetViewController: VoiceSearchViewControllerDelegate
 
     func voiceSearchViewController(_ viewController: VoiceSearchViewController, didFinishQuery query: String?, target: VoiceSearchTarget) {
         viewController.dismiss(animated: true)
-        if let query, !query.isEmpty {
+        guard let query, !query.isEmpty else { return }
+        if let persistentUTIHost {
+            persistentUTIHost.setText(query)
+            persistentUTIHost.activateInput()
+        } else {
             contextualInputViewController.setText(query)
         }
     }
@@ -1276,16 +1311,12 @@ private extension AIChatContextualSheetViewController {
 
         view.addSubview(headerView)
 
+        let leadingButtons = [expandButton] + (suggestionsReader != nil ? [recentChatsButton] : [])
+        let trailingButtons = [fireButton, closeButton]
+
         headerView.addSubview(leftButtonContainer)
-        leftButtonContainer.addSubview(leftButtonStack)
-        leftButtonStack.addArrangedSubview(expandButton)
-        if suggestionsReader != nil {
-            leftButtonStack.addArrangedSubview(recentChatsButton)
-            NSLayoutConstraint.activate([
-                recentChatsButton.widthAnchor.constraint(equalToConstant: Constants.headerButtonSize),
-                recentChatsButton.heightAnchor.constraint(equalToConstant: Constants.headerButtonSize),
-            ])
-        }
+        leftButtonContainer.contentView.addSubview(leftButtonStack)
+        leadingButtons.forEach(leftButtonStack.addArrangedSubview)
         if featureFlagger.isFeatureOn(.contextualSuggestedPrompts) {
             let tapControl = makeTitleTapControl()
             titleTapControl = tapControl
@@ -1309,14 +1340,14 @@ private extension AIChatContextualSheetViewController {
         titleContainer.addArrangedSubview(titleLabel)
 
         headerView.addSubview(rightButtonContainer)
-        rightButtonContainer.addSubview(rightButtonStack)
-        rightButtonStack.addArrangedSubview(fireButton)
+        rightButtonContainer.contentView.addSubview(rightButtonStack)
+        trailingButtons.forEach(rightButtonStack.addArrangedSubview)
         fireButton.isHidden = true
-        NSLayoutConstraint.activate([
-            fireButton.widthAnchor.constraint(equalToConstant: Constants.headerButtonSize),
-            fireButton.heightAnchor.constraint(equalToConstant: Constants.headerButtonSize),
-        ])
-        rightButtonStack.addArrangedSubview(closeButton)
+
+        NSLayoutConstraint.activate((leadingButtons + trailingButtons).flatMap {
+            [$0.widthAnchor.constraint(equalToConstant: Constants.headerButtonSize),
+             $0.heightAnchor.constraint(equalToConstant: Constants.headerButtonSize)]
+        })
 
         view.addSubview(contentContainerView)
 
@@ -1353,13 +1384,10 @@ private extension AIChatContextualSheetViewController {
             leftButtonContainer.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: Constants.headerHorizontalPadding),
             leftButtonContainer.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
 
-            leftButtonStack.topAnchor.constraint(equalTo: leftButtonContainer.topAnchor),
-            leftButtonStack.leadingAnchor.constraint(equalTo: leftButtonContainer.leadingAnchor),
-            leftButtonStack.trailingAnchor.constraint(equalTo: leftButtonContainer.trailingAnchor),
-            leftButtonStack.bottomAnchor.constraint(equalTo: leftButtonContainer.bottomAnchor),
-
-            expandButton.widthAnchor.constraint(equalToConstant: Constants.headerButtonSize),
-            expandButton.heightAnchor.constraint(equalToConstant: Constants.headerButtonSize),
+            leftButtonStack.topAnchor.constraint(equalTo: leftButtonContainer.contentView.topAnchor),
+            leftButtonStack.leadingAnchor.constraint(equalTo: leftButtonContainer.contentView.leadingAnchor),
+            leftButtonStack.trailingAnchor.constraint(equalTo: leftButtonContainer.contentView.trailingAnchor),
+            leftButtonStack.bottomAnchor.constraint(equalTo: leftButtonContainer.contentView.bottomAnchor),
 
             titleHostView.centerXAnchor.constraint(equalTo: headerView.centerXAnchor),
             titleHostView.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
@@ -1367,13 +1395,10 @@ private extension AIChatContextualSheetViewController {
             rightButtonContainer.trailingAnchor.constraint(equalTo: headerView.trailingAnchor, constant: -Constants.headerHorizontalPadding),
             rightButtonContainer.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
 
-            rightButtonStack.topAnchor.constraint(equalTo: rightButtonContainer.topAnchor),
-            rightButtonStack.leadingAnchor.constraint(equalTo: rightButtonContainer.leadingAnchor),
-            rightButtonStack.trailingAnchor.constraint(equalTo: rightButtonContainer.trailingAnchor),
-            rightButtonStack.bottomAnchor.constraint(equalTo: rightButtonContainer.bottomAnchor),
-
-            closeButton.widthAnchor.constraint(equalToConstant: Constants.headerButtonSize),
-            closeButton.heightAnchor.constraint(equalToConstant: Constants.headerButtonSize),
+            rightButtonStack.topAnchor.constraint(equalTo: rightButtonContainer.contentView.topAnchor),
+            rightButtonStack.leadingAnchor.constraint(equalTo: rightButtonContainer.contentView.leadingAnchor),
+            rightButtonStack.trailingAnchor.constraint(equalTo: rightButtonContainer.contentView.trailingAnchor),
+            rightButtonStack.bottomAnchor.constraint(equalTo: rightButtonContainer.contentView.bottomAnchor),
 
             contentContainerView.topAnchor.constraint(equalTo: headerView.bottomAnchor, constant: Constants.contentTopPadding),
             contentContainerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),

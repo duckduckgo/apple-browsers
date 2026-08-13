@@ -210,6 +210,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     var isAITabExpanded: Bool { stateMachine.isAITabExpanded }
     var isAITabCollapsed: Bool { stateMachine.isAITabCollapsed }
     var isContextualChatState: Bool { stateMachine.isContextualChatState }
+    var isContextualChatCollapsed: Bool { stateMachine.isContextualChatCollapsed }
     var isOmnibarEditing: Bool { stateMachine.isOmnibarEditing }
     var omnibarState: UnifiedToggleInputDisplayState.OmnibarState? { stateMachine.omnibarState }
     var isSearchOnAITab: Bool { stateMachine.isSearchOnAITab(inputMode: inputMode) }
@@ -474,11 +475,13 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             viewController.modelName = cachedLabel
         }
 
-        // Contextual chat boots in expanded form; no collapsed/inactive states are reachable.
+        viewController.handler.prefersDictationOverVoiceChat = stateMachine.prefersDictationOverVoiceChat
+
+        // Contextual chat boots expanded; the collapsed pill is reached later, on deactivation.
         // The chat is already post-submit by the time the contextual UTI installs, so
         // `hasSubmittedPrompt` should reflect that — drives follow-up placeholder + model chip hide.
         if host == .contextualChat {
-            displayState = .contextualChat
+            displayState = .contextualChat(.expanded)
             hasSubmittedPrompt = !contextualStartsPreSubmit
             syncHasSubmittedPromptToHandler()
             modelSelector.updateModelChipVisibility()
@@ -707,12 +710,15 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     // MARK: - AI Tab State
 
+    /// The display state carrying `expansion` on whichever Duck.ai surface hosts this UTI.
+    private func duckAISurfaceState(_ expansion: UnifiedToggleInputDisplayState.ExpansionState) -> UnifiedToggleInputDisplayState {
+        host == .contextualChat ? .contextualChat(expansion) : .aiTab(expansion)
+    }
+
     func showCollapsed() {
-        // Contextual chat has no AI tab collapsed mode; the host always renders expanded.
-        if host == .contextualChat { return }
         keyboardMonitor.disarm()
         let previousDisplayState = displayState
-        displayState = .aiTab(.collapsed)
+        displayState = duckAISurfaceState(.collapsed)
         setInitialInputMode(.aiChat)
         isInputVisibleForKeyboard = true
 
@@ -726,7 +732,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         guard !isOnboardingLocked else { return }
         keyboardMonitor.disarm()
         let previousDisplayState = displayState
-        displayState = host == .contextualChat ? .contextualChat : .aiTab(.expanded)
+        displayState = duckAISurfaceState(.expanded)
         // Pixels fire only on a real transition into expanded — header re-entries (Plus → New Chat) call this too but don't actually show either UI.
         if host == .omnibar, previousDisplayState != .aiTab(.expanded) {
             pixelReporter.reportOmnibarInputSurfaceShown()
@@ -2060,6 +2066,7 @@ private extension UnifiedToggleInputCoordinator {
                 let isCollapsedAIVoiceChatButton = viewController.handler.isAIVoiceChatEnabled
                     && viewController.inputMode == .aiChat
                     && !isInputPaneExpanded
+                    && !stateMachine.prefersDictationOverVoiceChat
                 if isCollapsedAIVoiceChatButton {
                     delegate?.unifiedToggleInputDidRequestAIVoiceChat()
                 } else {

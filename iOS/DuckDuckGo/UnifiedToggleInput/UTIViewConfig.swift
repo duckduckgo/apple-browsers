@@ -59,4 +59,7 @@ struct UTIViewConfig: Equatable {
     var isInlineDismissHidden: Bool
     /// True when the UTI is hosted by a Duck.ai tab.
     var isAITab: Bool
+    /// The collapsed pill offers dictation rather than Duck.ai voice chat. The contextual sheet is
+    /// a chat surface already — sending users out to voice mode from it is the wrong destination.
+    var prefersDictationWhenCollapsed: Bool
 }

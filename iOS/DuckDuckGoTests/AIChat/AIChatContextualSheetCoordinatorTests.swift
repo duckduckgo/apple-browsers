@@ -132,6 +132,10 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         }
     }
 
+    private struct MockFloatingInputFeature: AIChatContextualFloatingInputFeatureProviding {
+        let isAvailable: Bool
+    }
+
     private final class MockPresentingViewController: UIViewController {
         var presentedVC: UIViewController?
         var presentAnimated: Bool?
@@ -179,6 +183,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
             featureDiscovery: MockFeatureDiscovery(),
             featureFlagger: mockFeatureFlagger,
             unifiedToggleInputFeature: mockUnifiedToggleInputFeature,
+            floatingInputFeature: MockFloatingInputFeature(isAvailable: false),
             pageContextHandler: mockPageContextHandler,
             tabURLPublishers: AIChatTabURLPublishers(
                 originating: originatingTabURLSubject.eraseToAnyPublisher(),
@@ -1184,6 +1189,65 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         // Then - the chip still gets the context, wrapped without a favicon
         XCTAssertEqual(host.chipViewModel.attachedContext?.contextData.title, "Tapped")
         XCTAssertNil(host.chipViewModel.attachedContext?.favicon)
+    }
+
+    // MARK: - New Chat Hand-Off Tests
+
+    /// The default SUT leaves the floating input unavailable, so these rebuild it to reach the
+    /// hand-off branch. The feature is a value injected at init — flipping it later wouldn't take.
+    @MainActor
+    private func makeCoordinatorWithFloatingInput() -> AIChatContextualSheetCoordinator {
+        let coordinator = AIChatContextualSheetCoordinator(
+            voiceSearchHelper: MockVoiceSearchHelper(),
+            aiChatSettings: mockSettings,
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            contentBlockingAssetsPublisher: contentBlockingSubject.eraseToAnyPublisher(),
+            featureDiscovery: MockFeatureDiscovery(),
+            featureFlagger: mockFeatureFlagger,
+            unifiedToggleInputFeature: mockUnifiedToggleInputFeature,
+            floatingInputFeature: MockFloatingInputFeature(isAvailable: true),
+            pageContextHandler: mockPageContextHandler,
+            tabURLPublishers: AIChatTabURLPublishers(
+                originating: originatingTabURLSubject.eraseToAnyPublisher(),
+                didFinish: didFinishTabURLSubject.eraseToAnyPublisher()
+            )
+        )
+        coordinator.delegate = mockDelegate
+        return coordinator
+    }
+
+    @MainActor
+    func testNewChatOpensAFreshDuckAITabCarryingNoChatID() async {
+        sut = makeCoordinatorWithFloatingInput()
+        await sut.presentSheet(from: mockPresentingVC)
+
+        sut.aiChatContextualSheetViewControllerDidRequestNewChat(sut.sheetViewController!)
+
+        XCTAssertEqual(mockDelegate.didRequestExpandURLs.count, 1)
+        XCTAssertNil(mockDelegate.didRequestExpandURLs.first?.duckAIChatID, "New Chat must open an empty chat, not the one being left")
+    }
+
+    /// The tab must stop offering to reopen a chat that has moved out to its own tab.
+    @MainActor
+    func testNewChatDetachesTheChatFromTheTab() async {
+        sut = makeCoordinatorWithFloatingInput()
+        await sut.presentSheet(from: mockPresentingVC)
+        mockDelegate.contextualChatURLUpdates = []
+
+        sut.aiChatContextualSheetViewControllerDidRequestNewChat(sut.sheetViewController!)
+
+        XCTAssertEqual(mockDelegate.contextualChatURLUpdates, [nil])
+    }
+
+    /// Detached, not deleted — the conversation stays in Duck.ai history.
+    @MainActor
+    func testNewChatDoesNotDeleteTheChatItLeaves() async {
+        sut = makeCoordinatorWithFloatingInput()
+        await sut.presentSheet(from: mockPresentingVC)
+
+        sut.aiChatContextualSheetViewControllerDidRequestNewChat(sut.sheetViewController!)
+
+        XCTAssertTrue(mockDelegate.deletedChatIDs.isEmpty)
     }
 
     // MARK: - New Chat Reset Tests

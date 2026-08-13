@@ -48,7 +48,8 @@ protocol AIChatContextualSheetCoordinatorDelegate: AnyObject {
     /// Called when the user requests to load a URL externally.
     func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestToLoad url: URL)
 
-    /// Called when the user taps expand to open duck.ai in a new tab with the given chat URL.
+    /// Called to open duck.ai in a new tab at the given URL — the expand button's chat URL, or a
+    /// chat-ID-free URL when New Chat hands the session off to a fresh tab.
     func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestExpandWithURL url: URL)
 
     /// Called when the user taps "View all chats" to open the native chat history page.
@@ -638,6 +639,10 @@ private extension AIChatContextualSheetCoordinator {
                 self.delegate?.aiChatContextualSheetCoordinatorDidRequestNewVoiceChat(self)
             }
         }
+        host.setVoiceSearchAvailable(voiceSearchHelper.isVoiceSearchEnabled)
+        host.onVoiceSearchRequested = { [weak self] in
+            self?.sheetViewController?.presentVoiceSearch()
+        }
         self.persistentUTIHost = host
         return host
     }
@@ -979,7 +984,21 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
     }
 
     func aiChatContextualSheetViewControllerDidRequestNewChat(_ viewController: AIChatContextualSheetViewController) {
-        resetToNativeInputState()
+        guard floatingInputFeature.isAvailable else {
+            resetToNativeInputState()
+            return
+        }
+        handOffNewChatToNewTab()
+    }
+
+    /// New Chat moves the conversation out of the sheet rather than restarting it in place: a fresh
+    /// Duck.ai tab opens and this session resets, so the tab stops offering to reopen the old chat.
+    /// The old chat is only detached — it stays in Duck.ai history.
+    private func handOffNewChatToNewTab() {
+        let sheet = sheetViewController
+        delegate?.aiChatContextualSheetCoordinator(self, didRequestExpandWithURL: aiChatSettings.aiChatURL)
+        clearActiveChat()
+        sheet?.dismiss(animated: true)
     }
 
     func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController, didSubmitPrompt prompt: String) {

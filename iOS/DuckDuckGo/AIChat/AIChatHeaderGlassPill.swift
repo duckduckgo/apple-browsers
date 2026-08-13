@@ -26,12 +26,28 @@ final class AIChatHeaderGlassPill: UIView {
 
     let contentView = UIView()
 
+    /// How much separation the pill needs from what's behind it.
+    enum ShadowStyle {
+        /// Floating over page content, which scrolls and can be any colour.
+        case floating
+        /// Sitting on solid chrome, where the floating shadow has nothing to fall on and just
+        /// darkens the surface. Still needs a little lift, or glass on white reads as nothing.
+        case restingOnChrome
+
+        var opacity: Float { self == .floating ? 0.16 : 0.10 }
+        var dimmedOpacity: Float { self == .floating ? 0.04 : 0.03 }
+        var offset: CGSize { self == .floating ? CGSize(width: 0, height: 8) : CGSize(width: 0, height: 1) }
+        var radius: CGFloat { self == .floating ? 16 : 3 }
+    }
+
     private let cornerRadius: CGFloat
+    private let shadowStyle: ShadowStyle
     private let clipHost = UIView()
     private var glassEffectView: UIVisualEffectView?
 
-    init(cornerRadius: CGFloat) {
+    init(cornerRadius: CGFloat, shadowStyle: ShadowStyle = .floating) {
         self.cornerRadius = cornerRadius
+        self.shadowStyle = shadowStyle
         super.init(frame: .zero)
         translatesAutoresizingMaskIntoConstraints = false
 
@@ -93,9 +109,9 @@ final class AIChatHeaderGlassPill: UIView {
 
     func applyShadow(dimmed: Bool) {
         layer.shadowColor = UIColor.black.cgColor
-        layer.shadowOpacity = dimmed ? 0.04 : 0.16
-        layer.shadowOffset = CGSize(width: 0, height: 8)
-        layer.shadowRadius = 16
+        layer.shadowOpacity = dimmed ? shadowStyle.dimmedOpacity : shadowStyle.opacity
+        layer.shadowOffset = shadowStyle.offset
+        layer.shadowRadius = shadowStyle.radius
         layer.borderWidth = 0
         layer.borderColor = nil
         clipsToBounds = false

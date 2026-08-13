@@ -78,7 +78,6 @@ extension MainViewController {
 
     private func duckAIAddressBarMenuChildren() -> [UIMenuElement] {
         DuckAIAddressBarMenuFactory.makeActions(
-            pageFavicon: currentPageFavicon(),
             onNewChat: { [weak self] in
                 self?.duckAIAddressBarPixelHandler.fireAddressBarMenuNewChatSelected()
                 self?.openFreshDuckAIChatFromAddressBarMenu()
@@ -88,13 +87,6 @@ extension MainViewController {
                 self?.askAboutCurrentPageFromAddressBar()
             }
         )
-    }
-
-    private func currentPageFavicon() -> UIImage? {
-        guard let domain = currentTab?.url?.host else { return nil }
-        let result = FaviconsHelper.loadFaviconSync(forDomain: domain, usingCache: .tabs, useFakeFavicon: false)
-        guard !result.isFake else { return nil }
-        return result.image
     }
 
     /// `openAIChat()` rather than `openAIChatFromAddressBar`: the latter sends the omnibar's text as

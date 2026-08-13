@@ -23,11 +23,13 @@ import UIKit
 /// render computation and every `displayState`-derived boolean.
 enum UnifiedToggleInputDisplayState: Equatable {
     case hidden
-    case contextualChat
-    case aiTab(AITabState)
+    case contextualChat(ExpansionState)
+    case aiTab(ExpansionState)
     case omnibar(OmnibarState)
 
-    enum AITabState: Equatable, CaseIterable {
+    /// Shared by the two Duck.ai surfaces: both show either the expanded input pane or the
+    /// collapsed footer pill that the fire / voice accessories flank.
+    enum ExpansionState: Equatable, CaseIterable {
         case collapsed
         case expanded
     }

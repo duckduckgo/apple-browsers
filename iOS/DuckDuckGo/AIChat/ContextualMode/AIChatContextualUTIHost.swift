@@ -39,6 +39,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     private var keyboardBottomConstraint: NSLayoutConstraint?
     private var frozenBottomConstraint: NSLayoutConstraint?
     private let startsPreSubmit: Bool
+    private let floatingInputFeature: AIChatContextualFloatingInputFeatureProviding
     private var cancellables = Set<AnyCancellable>()
     private let duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation
     private let duckAIWideEventFlowScope = DuckAIWideEventFlowScope.contextual(UUID())
@@ -49,6 +50,9 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     /// Fires on every prompt delivery so the session state can mark context delivered and re-render the chip.
     var onPromptDelivered: (() -> Void)?
     var onAIVoiceChatRequested: (() -> Void)?
+
+    /// Raised by the input's microphone, which dictates into the field rather than opening voice chat.
+    var onVoiceSearchRequested: (() -> Void)?
 
     var attachedContextURL: URL? {
         chipViewModel.attachedContext.flatMap { URL(string: $0.contextData.url) }
@@ -70,6 +74,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     ) {
         self.hasActiveChat = hasActiveChat
         self.startsPreSubmit = startsPreSubmit
+        self.floatingInputFeature = floatingInputFeature
         self.hasDeliveredFirstPrompt = !startsPreSubmit
         let wideEventInstrumentation = DefaultDuckAIWideEventInstrumentation(
             wideEvent: AppDependencyProvider.shared.wideEvent
@@ -91,7 +96,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
             initialAttachedContext: initialAttachedContext,
             initialAttachmentDeliveryState: initialAttachmentDeliveryState,
             isAutoAttachEnabled: isAutoAttachEnabled,
-            showsAttachAffordance: floatingInputFeature.isAvailable
+            showsAttachAffordance: { floatingInputFeature.isAvailable && !hasActiveChat() }
         )
         coordinator.delegate = self
         coordinator.updateAIVoiceChatAvailability(voiceShortcutFeature.isAvailable)
@@ -118,6 +123,21 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
                 self?.applyCurrentRenderState()
             }
             .store(in: &cancellables)
+
+        NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)
+            .sink { [weak self] _ in
+                self?.collapseForKeyboardDismissal()
+            }
+            .store(in: &cancellables)
+    }
+
+    /// This UTI gets no keyboard visibility of its own — the browser's observer only feeds the
+    /// omnibar's coordinator — so tapping the chat content hides the keyboard while the input keeps
+    /// its expanded toolbar. Still first responder means a hardware keyboard, which isn't a dismissal.
+    private func collapseForKeyboardDismissal() {
+        guard !coordinator.isContextualChatCollapsed,
+              !coordinator.viewController.isInputFirstResponder else { return }
+        deactivateInput()
     }
 
     /// Re-evaluates the attach button/menu for the current page (e.g. page-context attachability after navigation).
@@ -215,7 +235,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
             ])
             contextualChatViewController.anchorWebViewBottom(to: viewController.view.topAnchor)
             viewController.didMove(toParent: contextualChatViewController)
-            coordinator.showExpanded()
+            applyHostedExpansion(activatesInput: true)
             applyCurrentRenderState()
             contextualChatViewController.view.layoutIfNeeded()
         }
@@ -249,12 +269,23 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
                 bottom,
             ])
             viewController.didMove(toParent: parent)
-            coordinator.showExpanded(activatesInput: false)
+            applyHostedExpansion(activatesInput: false)
             applyCurrentRenderState()
             parent.view.layoutIfNeeded()
         }
         Logger.contextualUTI.info("Mounted above the keyboard")
         return viewController.view
+    }
+
+    /// Installing or mounting must not decide focus — the surface that opened this UTI already did.
+    /// A sheet that opens onto a submitted chat has no keyboard, so expanding here would leave the
+    /// toolbar row up with nothing behind it.
+    private func applyHostedExpansion(activatesInput: Bool) {
+        if coordinator.isContextualChatCollapsed {
+            coordinator.showCollapsed()
+        } else {
+            coordinator.showExpanded(activatesInput: activatesInput)
+        }
     }
 
     /// Edges of the visible input card, for aligning content sitting around the bar.
@@ -306,8 +337,23 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         coordinator.showExpanded()
     }
 
+    /// Collapses to the plain pill, which drops first responder on the way. Without the collapsed
+    /// pill the sheet's input has no collapsed form, so it only gives up first responder.
     func deactivateInput() {
-        coordinator.viewController.deactivateInput()
+        guard floatingInputFeature.isAvailable else {
+            coordinator.viewController.deactivateInput()
+            return
+        }
+        coordinator.showCollapsed()
+    }
+
+    func setVoiceSearchAvailable(_ available: Bool) {
+        coordinator.viewController.isVoiceSearchAvailable = available
+    }
+
+    /// Drops a dictated query into the field for the user to review before sending.
+    func setText(_ text: String) {
+        coordinator.viewController.text = text
     }
 
     func submitQuickActionPrompt(_ prompt: String) {
@@ -351,6 +397,8 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     private func handlePromptSubmittedFromUserScript() {
         if !hasDeliveredFirstPrompt {
             hasDeliveredFirstPrompt = true
+            // The offer was made on the pre-chat surface; the chat it starts is where it stops applying.
+            chipViewModel.clearReattachOffer()
             onPromptSubmitted?()
             commitDeferredBindIfNeeded()
         }
@@ -378,7 +426,9 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     }
 
     func unifiedToggleInputDidSubmitQuery(_ query: String) {}
-    func unifiedToggleInputDidRequestVoiceSearch() {}
+    func unifiedToggleInputDidRequestVoiceSearch() {
+        onVoiceSearchRequested?()
+    }
     func unifiedToggleInputDidRequestAIVoiceChat() {
         onAIVoiceChatRequested?()
     }

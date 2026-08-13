@@ -23,17 +23,14 @@ import UIKit
 /// Builds the address-bar Duck.ai menu offering a fresh chat or a chat about the current page.
 enum DuckAIAddressBarMenuFactory {
 
-    static func makeMenu(pageFavicon: UIImage?,
-                         onNewChat: @escaping () -> Void,
+    static func makeMenu(onNewChat: @escaping () -> Void,
                          onAskAboutPage: @escaping () -> Void) -> UIMenu {
-        UIMenu(title: UserText.duckAiFeatureName, children: makeActions(pageFavicon: pageFavicon,
-                                                                       onNewChat: onNewChat,
+        UIMenu(title: UserText.duckAiFeatureName, children: makeActions(onNewChat: onNewChat,
                                                                        onAskAboutPage: onAskAboutPage))
     }
 
     /// Each action sits in its own inline group so UIKit draws a separator between them.
-    static func makeActions(pageFavicon: UIImage?,
-                            onNewChat: @escaping () -> Void,
+    static func makeActions(onNewChat: @escaping () -> Void,
                             onAskAboutPage: @escaping () -> Void) -> [UIMenuElement] {
         [
             UIMenu(title: "", options: .displayInline, children: [
@@ -44,7 +41,7 @@ enum DuckAIAddressBarMenuFactory {
             ]),
             UIMenu(title: "", options: .displayInline, children: [
                 UIAction(title: UserText.aiChatAttachmentOptionAskAboutPage,
-                         image: pageFavicon ?? DesignSystemImages.Glyphs.Size16.tabContent) { _ in
+                         image: DesignSystemImages.Glyphs.Size16.chevronCircleDown) { _ in
                     onAskAboutPage()
                 }
             ])

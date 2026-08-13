@@ -90,6 +90,15 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
         }
     }
 
+    /// On a surface that dictates rather than opening voice chat, the voice-chat leg must not keep the
+    /// button on screen — dictation off would otherwise leave a microphone that does nothing on tap.
+    var prefersDictationOverVoiceChat: Bool = false {
+        didSet {
+            guard prefersDictationOverVoiceChat != oldValue else { return }
+            updateButtonState()
+        }
+    }
+
     var isAIVoiceChatEnabled: Bool = false {
         didSet {
             guard isAIVoiceChatEnabled != oldValue else { return }
@@ -254,6 +263,7 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
 
     private func updateButtonState() {
         let aiVoiceChatAvailable = !isExpanded && isAIVoiceChatEnabled && currentToggleState == .aiChat
+            && !prefersDictationOverVoiceChat
         let voiceAvailable = !hidesVoiceButton && (isVoiceSearchEnabled || aiVoiceChatAvailable)
         let nextButtonState: SwitchBarButtonState
 

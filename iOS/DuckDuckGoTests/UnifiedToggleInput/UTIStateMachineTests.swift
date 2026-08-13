@@ -31,13 +31,15 @@ final class UTIStateMachineTests: XCTestCase {
 
     /// One row per display state, asserting the whole predicate vector. Adding a top-level display
     /// state fails to compile here (the switch is exhaustive) and forces a new row; adding an
-    /// `AITabState` / `OmnibarState` sub-case grows `allDisplayStates` on its own. That's the point.
+    /// `ExpansionState` / `OmnibarState` sub-case grows `allDisplayStates` on its own. That's the point.
     private struct Expectation {
         let isOmnibarSession: Bool
         let isAITabState: Bool
         let isAITabExpanded: Bool
         let isAITabCollapsed: Bool
         let isContextualChatState: Bool
+        let isContextualChatExpanded: Bool
+        let isContextualChatCollapsed: Bool
         let isOmnibarEditing: Bool
         let isDuckAISurfaceForAttribution: Bool
         let isInputPaneExpanded: Bool
@@ -51,42 +53,55 @@ final class UTIStateMachineTests: XCTestCase {
         switch displayState {
         case .hidden:
             return Expectation(isOmnibarSession: false, isAITabState: false, isAITabExpanded: false,
-                               isAITabCollapsed: false, isContextualChatState: false, isOmnibarEditing: false,
+                               isAITabCollapsed: false, isContextualChatState: false, isContextualChatExpanded: false,
+                               isContextualChatCollapsed: false, isOmnibarEditing: false,
                                isDuckAISurfaceForAttribution: false, isInputPaneExpanded: false,
                                isInputEditing: false, isActive: false, omnibarState: nil, pixelSurface: .addressBar)
-        case .contextualChat:
+        case .contextualChat(.expanded):
             return Expectation(isOmnibarSession: false, isAITabState: false, isAITabExpanded: false,
-                               isAITabCollapsed: false, isContextualChatState: true, isOmnibarEditing: false,
+                               isAITabCollapsed: false, isContextualChatState: true, isContextualChatExpanded: true,
+                               isContextualChatCollapsed: false, isOmnibarEditing: false,
                                isDuckAISurfaceForAttribution: true, isInputPaneExpanded: true,
                                isInputEditing: true, isActive: true, omnibarState: nil, pixelSurface: .contextualChat)
+        case .contextualChat(.collapsed):
+            return Expectation(isOmnibarSession: false, isAITabState: false, isAITabExpanded: false,
+                               isAITabCollapsed: false, isContextualChatState: true, isContextualChatExpanded: false,
+                               isContextualChatCollapsed: true, isOmnibarEditing: false,
+                               isDuckAISurfaceForAttribution: true, isInputPaneExpanded: false,
+                               isInputEditing: false, isActive: true, omnibarState: nil, pixelSurface: .contextualChat)
         case .aiTab(.collapsed):
             return Expectation(isOmnibarSession: false, isAITabState: true, isAITabExpanded: false,
-                               isAITabCollapsed: true, isContextualChatState: false, isOmnibarEditing: false,
+                               isAITabCollapsed: true, isContextualChatState: false, isContextualChatExpanded: false,
+                               isContextualChatCollapsed: false, isOmnibarEditing: false,
                                isDuckAISurfaceForAttribution: true, isInputPaneExpanded: false,
                                isInputEditing: false, isActive: true, omnibarState: nil, pixelSurface: .duckAI)
         case .aiTab(.expanded):
             return Expectation(isOmnibarSession: false, isAITabState: true, isAITabExpanded: true,
-                               isAITabCollapsed: false, isContextualChatState: false, isOmnibarEditing: false,
+                               isAITabCollapsed: false, isContextualChatState: false, isContextualChatExpanded: false,
+                               isContextualChatCollapsed: false, isOmnibarEditing: false,
                                isDuckAISurfaceForAttribution: true, isInputPaneExpanded: true,
                                isInputEditing: true, isActive: true, omnibarState: nil, pixelSurface: .duckAI)
         case .omnibar(.active):
             return Expectation(isOmnibarSession: true, isAITabState: false, isAITabExpanded: false,
-                               isAITabCollapsed: false, isContextualChatState: false, isOmnibarEditing: true,
+                               isAITabCollapsed: false, isContextualChatState: false, isContextualChatExpanded: false,
+                               isContextualChatCollapsed: false, isOmnibarEditing: true,
                                isDuckAISurfaceForAttribution: false, isInputPaneExpanded: true,
                                isInputEditing: true, isActive: true, omnibarState: .active, pixelSurface: .addressBar)
         case .omnibar(.inactive):
             return Expectation(isOmnibarSession: true, isAITabState: false, isAITabExpanded: false,
-                               isAITabCollapsed: false, isContextualChatState: false, isOmnibarEditing: false,
+                               isAITabCollapsed: false, isContextualChatState: false, isContextualChatExpanded: false,
+                               isContextualChatCollapsed: false, isOmnibarEditing: false,
                                isDuckAISurfaceForAttribution: false, isInputPaneExpanded: false,
                                isInputEditing: true, isActive: true, omnibarState: .inactive, pixelSurface: .addressBar)
         }
     }
 
-    /// Derived rather than hand-listed so a new `AITabState` / `OmnibarState` case can't be silently
+    /// Derived rather than hand-listed so a new `ExpansionState` / `OmnibarState` case can't be silently
     /// skipped by every test below.
     private static let allDisplayStates: [UnifiedToggleInputDisplayState] =
-        [.hidden, .contextualChat]
-        + UnifiedToggleInputDisplayState.AITabState.allCases.map { .aiTab($0) }
+        [.hidden]
+        + UnifiedToggleInputDisplayState.ExpansionState.allCases.map { .contextualChat($0) }
+        + UnifiedToggleInputDisplayState.ExpansionState.allCases.map { .aiTab($0) }
         + UnifiedToggleInputDisplayState.OmnibarState.allCases.map { .omnibar($0) }
 
     // MARK: - Full predicate vector
@@ -102,6 +117,8 @@ final class UTIStateMachineTests: XCTestCase {
             XCTAssertEqual(sut.isAITabExpanded, expected.isAITabExpanded, "isAITabExpanded — \(context)")
             XCTAssertEqual(sut.isAITabCollapsed, expected.isAITabCollapsed, "isAITabCollapsed — \(context)")
             XCTAssertEqual(sut.isContextualChatState, expected.isContextualChatState, "isContextualChatState — \(context)")
+            XCTAssertEqual(sut.isContextualChatExpanded, expected.isContextualChatExpanded, "isContextualChatExpanded — \(context)")
+            XCTAssertEqual(sut.isContextualChatCollapsed, expected.isContextualChatCollapsed, "isContextualChatCollapsed — \(context)")
             XCTAssertEqual(sut.isOmnibarEditing, expected.isOmnibarEditing, "isOmnibarEditing — \(context)")
             XCTAssertEqual(sut.isDuckAISurfaceForAttribution, expected.isDuckAISurfaceForAttribution, "isDuckAISurfaceForAttribution — \(context)")
             XCTAssertEqual(sut.isInputPaneExpanded, expected.isInputPaneExpanded, "isInputPaneExpanded — \(context)")
@@ -146,6 +163,49 @@ final class UTIStateMachineTests: XCTestCase {
         XCTAssertFalse(sut.isSearchOnAITab(inputMode: .search))
     }
 
+    // MARK: - cardLayout
+
+    private func renderState(for displayState: UnifiedToggleInputDisplayState,
+                             host: UnifiedToggleInputHost,
+                             inputMode: TextEntryMode = .aiChat,
+                             isToggleEnabled: Bool = false) -> UTIRenderState {
+        makeSUT(displayState, host: host).computeRenderState(
+            inputMode: inputMode,
+            textState: .empty,
+            cardPosition: .bottom,
+            isInputVisibleForKeyboard: true,
+            isContentOverlaySuppressed: false,
+            isToggleEnabled: isToggleEnabled,
+            floatingReturnKeyState: .empty
+        )
+    }
+
+    /// The flanked pose carries the fire / menu accessories, which only a Duck.ai tab has. A collapsed
+    /// contextual sheet is the plain pill instead — no accessories, just the field and its voice button.
+    func test_cardLayout_isFlankedOnlyForTheCollapsedAITab() {
+        XCTAssertEqual(renderState(for: .aiTab(.collapsed), host: .omnibar).cardLayout, .flanked)
+        XCTAssertEqual(renderState(for: .contextualChat(.collapsed), host: .contextualChat).cardLayout, .collapsed)
+    }
+
+    func test_cardLayout_isBarePillWhenHidden() {
+        XCTAssertEqual(renderState(for: .hidden, host: .omnibar).cardLayout, .collapsed)
+        XCTAssertEqual(renderState(for: .hidden, host: .contextualChat).cardLayout, .collapsed)
+    }
+
+    func test_cardLayout_keepsTheToolbarCardForExpandedContextualChat() {
+        XCTAssertEqual(renderState(for: .contextualChat(.expanded), host: .contextualChat).cardLayout,
+                       .expanded(showsToggle: false, showsToolbar: true))
+    }
+
+    /// A collapsed sheet has no input pane — both keyboard dismissal and content visibility read this.
+    func test_renderState_forCollapsedContextualChat_isNotExpandedAndHidesContent() {
+        let state = renderState(for: .contextualChat(.collapsed), host: .contextualChat)
+
+        XCTAssertFalse(state.isExpanded)
+        XCTAssertTrue(state.isInputVisible)
+        XCTAssertFalse(state.isContentVisible)
+    }
+
     // MARK: - isInputEditing
 
     /// One assertion per composed term, each labelled with the term it covers, so dropping a term
@@ -154,12 +214,14 @@ final class UTIStateMachineTests: XCTestCase {
         XCTAssertTrue(makeSUT(.omnibar(.active)).isInputEditing, "isOmnibarSession term")
         XCTAssertTrue(makeSUT(.omnibar(.inactive)).isInputEditing, "isOmnibarSession term — inactive still counts as editing")
         XCTAssertTrue(makeSUT(.aiTab(.expanded)).isInputEditing, "isAITabExpanded term")
-        XCTAssertTrue(makeSUT(.contextualChat).isInputEditing, "isContextualChatState term")
+        XCTAssertTrue(makeSUT(.contextualChat(.expanded)).isInputEditing, "isContextualChatExpanded term")
     }
 
-    func test_isInputEditing_isFalseWhenHiddenOrOnACollapsedAITab() {
+    func test_isInputEditing_isFalseWhenHiddenOrOnACollapsedDuckAISurface() {
         XCTAssertFalse(makeSUT(.hidden).isInputEditing)
         XCTAssertFalse(makeSUT(.aiTab(.collapsed)).isInputEditing, "collapsed is the discriminating half of the isAITabExpanded term")
+        XCTAssertFalse(makeSUT(.contextualChat(.collapsed)).isInputEditing,
+                       "collapsed is the discriminating half of the isContextualChatExpanded term")
     }
 
     /// `.omnibar(.inactive)` is editing but not expanded — the one state that separates the two,
@@ -176,7 +238,9 @@ final class UTIStateMachineTests: XCTestCase {
     func test_isDuckAISurfaceForAttribution_coversBothAITabSubStatesAndContextualChat() {
         XCTAssertTrue(makeSUT(.aiTab(.collapsed)).isDuckAISurfaceForAttribution, "isAITabState term")
         XCTAssertTrue(makeSUT(.aiTab(.expanded)).isDuckAISurfaceForAttribution, "isAITabState term — expansion is irrelevant to attribution")
-        XCTAssertTrue(makeSUT(.contextualChat).isDuckAISurfaceForAttribution, "isContextualChatState term")
+        XCTAssertTrue(makeSUT(.contextualChat(.expanded)).isDuckAISurfaceForAttribution, "isContextualChatState term")
+        XCTAssertTrue(makeSUT(.contextualChat(.collapsed)).isDuckAISurfaceForAttribution,
+                      "isContextualChatState term — expansion is irrelevant to attribution")
     }
 
     func test_isDuckAISurfaceForAttribution_isFalseForAddressBarStates() {
@@ -190,7 +254,8 @@ final class UTIStateMachineTests: XCTestCase {
     /// The precedence isn't observable from the predicate vector — no display state hits two
     /// branches — so pin the ordering and the fallback here.
     func test_pixelSurface_prefersContextualChatThenDuckAIThenAddressBar() {
-        XCTAssertEqual(makeSUT(.contextualChat).pixelSurface, .contextualChat, "contextual chat is checked first")
+        XCTAssertEqual(makeSUT(.contextualChat(.expanded)).pixelSurface, .contextualChat, "contextual chat is checked first")
+        XCTAssertEqual(makeSUT(.contextualChat(.collapsed)).pixelSurface, .contextualChat, "collapsing doesn't change the surface")
         XCTAssertEqual(makeSUT(.aiTab(.collapsed)).pixelSurface, .duckAI)
         XCTAssertEqual(makeSUT(.aiTab(.expanded)).pixelSurface, .duckAI)
     }
@@ -219,10 +284,14 @@ final class UTIStateMachineTests: XCTestCase {
             (.omnibar(.active), false, true, true),
             (.omnibar(.active), true, false, false),
             (.omnibar(.active), true, true, true),
-            (.contextualChat, false, false, false),
-            (.contextualChat, false, true, true),
-            (.contextualChat, true, false, false),
-            (.contextualChat, true, true, true),
+            (.contextualChat(.expanded), false, false, false),
+            (.contextualChat(.expanded), false, true, true),
+            (.contextualChat(.expanded), true, false, false),
+            (.contextualChat(.expanded), true, true, true),
+            (.contextualChat(.collapsed), false, false, false),
+            (.contextualChat(.collapsed), false, true, true),
+            (.contextualChat(.collapsed), true, false, false),
+            (.contextualChat(.collapsed), true, true, true),
             (.aiTab(.expanded), false, false, false),
             (.aiTab(.expanded), false, true, true),
             (.aiTab(.expanded), true, false, false),
@@ -267,7 +336,7 @@ final class UTIStateMachineTests: XCTestCase {
     /// `dismissOmnibarKeyboard` replaced a three-case switch with `guard isInputPaneExpanded`, so this
     /// set is now load-bearing for keyboard dismissal.
     func test_isInputPaneExpanded_coversExactlyContextualChatExpandedAITabAndOmnibarEditing() {
-        let expectedTrue: [UnifiedToggleInputDisplayState] = [.contextualChat, .aiTab(.expanded), .omnibar(.active)]
+        let expectedTrue: [UnifiedToggleInputDisplayState] = [.contextualChat(.expanded), .aiTab(.expanded), .omnibar(.active)]
 
         for displayState in Self.allDisplayStates {
             let sut = makeSUT(displayState)

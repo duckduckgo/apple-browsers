@@ -1,9 +1,5 @@
 {
-<<<<<<< HEAD
   "originHash" : "d1911e821037e18b93f63e9987a032bec5718a78bb265398182ef96b8d8a54ec",
-=======
-  "originHash" : "68322b28a37fda3b984120445ef600cae4af32fe33e575481c6a9cfc25369a2c",
->>>>>>> origin/main
   "pins" : [
     {
       "identity" : "apple-toolbox",

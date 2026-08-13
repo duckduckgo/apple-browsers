@@ -279,6 +279,21 @@ struct FireCoordinatorTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1))) func testBurnVisitsFromToday_ShowsGenericDeletingDataMessage() async throws {
+        // Burning today's visits burns all windows, but it only deletes the selected visits.
+        let messages = await deletingDataMessages { coordinator in
+            await coordinator.fireViewModel.fire.burnVisits([],
+                                                            except: coordinator.fireViewModel.fire.fireproofDomains,
+                                                            isToday: true,
+                                                            closeWindows: true,
+                                                            clearSiteData: true,
+                                                            clearChatHistory: false)
+        }
+
+        #expect(messages == [UserText.fireDialogDeletingData])
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1))) func testHandleDialogResult_WhenFireDialogIsNotSimplified_ShowsGenericDeletingDataMessage() async throws {
         let messages = await deletingDataMessages(for: makeDialogResult(clearingOption: .currentTab),
                                                   isAllHistorySelected: true,
@@ -299,6 +314,16 @@ struct FireCoordinatorTests {
     private func deletingDataMessages(for result: FireDialogResult,
                                       isAllHistorySelected: Bool,
                                       isFireDialogSimplified: Bool = true) async -> [String] {
+        await deletingDataMessages(isFireDialogSimplified: isFireDialogSimplified) { coordinator in
+            await coordinator.handleDialogResult(result,
+                                                 tabCollectionViewModel: tabCollectionViewModel,
+                                                 isAllHistorySelected: isAllHistorySelected)
+        }
+    }
+
+    /// Collects the text of the burning progress dialog for all burns started by `burn`.
+    private func deletingDataMessages(isFireDialogSimplified: Bool = true,
+                                      during burn: @MainActor (FireCoordinator) async -> Void) async -> [String] {
         let coordinator = makeCoordinator()
         let featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.fireDialogSimplified.rawValue: isFireDialogSimplified])
         var messages = [String]()
@@ -307,7 +332,7 @@ struct FireCoordinatorTests {
             .sink { messages.append($0) }
         defer { cancellable.cancel() }
 
-        await coordinator.handleDialogResult(result, tabCollectionViewModel: tabCollectionViewModel, isAllHistorySelected: isAllHistorySelected)
+        await burn(coordinator)
 
         return messages
     }

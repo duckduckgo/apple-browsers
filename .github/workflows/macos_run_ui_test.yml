@@ -112,8 +112,8 @@ jobs:
       run: screenresolution set 1920x1080x32@60
 
     - name: Remove .ruby-version
-      if: runner.environment == 'self-hosted'
-      run: rm -f .ruby-version
+      if: contains(inputs.runner, 'macos14')
+      run: rm -f ${{ github.workspace }}/.ruby-version ${{ github.workspace }}/macOS/.ruby-version
 
     - name: Setup Ruby and dependencies
       uses: ./.github/actions/setup-ruby

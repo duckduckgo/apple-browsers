@@ -325,6 +325,16 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
 
         XCTAssertFalse(firstGlassView(in: barView.searchContainer) === glassView)
     }
+
+    func testWhenBottomFloatingBarTemporarilyHasZeroHeightThenCornerRadiusRemainsRounded() {
+        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        barView.frame = CGRect(x: 0, y: 0, width: 390, height: 0)
+        barView.isUsingSmallTopSpacing = true
+
+        barView.layoutIfNeeded()
+
+        XCTAssertGreaterThan(barView.searchContainer.layer.cornerRadius, 0)
+    }
 }
 
 final class FloatingDomainCapsuleControllerTests: XCTestCase {

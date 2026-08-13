@@ -52,6 +52,45 @@ enum SyncFeatureUsagePixels: PixelKit.Event {
     }
 }
 
+enum SyncSettingsPixelKitEvent: PixelKit.Event {
+
+    enum ParameterKey {
+        static let syncPromptOption = "sync_prompt_option"
+    }
+
+    enum AnotherDevicePromptOption: String {
+        case thisDeviceOnly = "this_device_only"
+        case syncAnotherDevice = "sync_another_device"
+    }
+
+    case anotherDevicePromptShown
+    case anotherDevicePromptOptionTapped(option: AnotherDevicePromptOption)
+
+    var name: String {
+        switch self {
+        case .anotherDevicePromptShown: return "settings_sync_another_device_prompt_shown"
+        case .anotherDevicePromptOptionTapped: return "settings_sync_another_device_prompt_option_tapped"
+        }
+    }
+
+    var parameters: [String: String]? {
+        switch self {
+        case .anotherDevicePromptShown:
+            return nil
+        case .anotherDevicePromptOptionTapped(let option):
+            return [ParameterKey.syncPromptOption: option.rawValue]
+        }
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .anotherDevicePromptShown,
+                .anotherDevicePromptOptionTapped:
+            return [.pixelSource]
+        }
+    }
+}
+
 enum SyncSwitchAccountPixelKitEvent: PixelKit.Event {
     case syncAskUserToSwitchAccount
     case syncUserAcceptedSwitchingAccount

@@ -340,5 +340,27 @@
                 "enum": ["host", "joiner"]
             }
         ]
+    },
+    "m_mac_settings_sync_another_device_prompt_shown": {
+        "description": "Fired when the device-selection prompt (sync with another device or just this device) is shown after enabling Sync in the simplified V2 setup.",
+        "owners": ["pballart"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_settings_sync_another_device_prompt_option_tapped": {
+        "description": "Fired when the user taps an option on the device-selection prompt shown after enabling Sync in the simplified V2 setup.",
+        "owners": ["pballart"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "sync_prompt_option",
+                "type": "string",
+                "description": "Which option the user tapped on the device-selection prompt.",
+                "enum": ["this_device_only", "sync_another_device"]
+            }
+        ]
     }
 }

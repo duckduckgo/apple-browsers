@@ -30,7 +30,7 @@ protocol AIChatContextualModeFeatureProviding {
     ///
     /// Returns `true` only when all conditions are met:
     /// - The `contextualDuckAIMode` sub-feature flag is enabled
-    /// - The AI Chat URL domain is `duck.ai`, or a debug custom URL override is set
+    /// - The AI Chat URL domain is `duck.ai`
     /// - On iPhone: the `pageContextFeature` flag is enabled
     /// - On iPad: always enabled
     var isAvailable: Bool { get }
@@ -42,27 +42,20 @@ struct AIChatContextualModeFeature: AIChatContextualModeFeatureProviding {
     private let featureFlagger: any FeatureFlagger
     private let devicePlatform: DevicePlatformProviding.Type
     private let aiChatURLProvider: () -> URL
-    private let debugSettings: AIChatDebugSettingsHandling
 
     init(featureFlagger: any FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self,
-         aiChatURLProvider: @escaping () -> URL = { [settings = AIChatSettings()] in settings.aiChatURL },
-         debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings()) {
+         aiChatURLProvider: @escaping () -> URL = { [settings = AIChatSettings()] in settings.aiChatURL }) {
         self.featureFlagger = featureFlagger
         self.devicePlatform = devicePlatform
         self.aiChatURLProvider = aiChatURLProvider
-        self.debugSettings = debugSettings
     }
 
     /// Whether Duck AI contextual chat mode is available.
     var isAvailable: Bool {
         featureFlagger.isFeatureOn(.contextualDuckAIMode)
             && isPageContextEnabled
-            && isEligibleDuckAIURL
-    }
-
-    private var isEligibleDuckAIURL: Bool {
-        aiChatURLProvider().isStandaloneDuckAIURL || debugSettings.customURL != nil
+            && aiChatURLProvider().isStandaloneDuckAIURL
     }
 
     private var isPageContextEnabled: Bool {

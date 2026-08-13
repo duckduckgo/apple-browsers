@@ -64,6 +64,9 @@ final class NewTabPageSessionWideEventData: WideEventData {
         /// The customizable toolbar button, when set to something other than Fire.
         /// Only reachable while the New Tab Page icon customization flag is on.
         case customButton = "custom_button"
+        /// A top level browsing menu entry with no terminal of its own, such as New Tab or
+        /// Settings. Those replace the New Tab Page for good, so the visit ends here.
+        case menuItemSelected = "menu_item_selected"
         case noActionTimeout = "no_action_timeout"
         case maxDurationExceeded = "max_duration_exceeded"
         case appBackgrounded = "app_backgrounded"
@@ -83,7 +86,8 @@ final class NewTabPageSessionWideEventData: WideEventData {
                  .selectOtherTab,
                  .swipeToOtherTab,
                  .deleteData,
-                 .customButton:
+                 .customButton,
+                 .menuItemSelected:
                 // No reason attached: the sender would copy it into
                 // `status_reason`, duplicating `terminal_action` and forcing every
                 // success value into the schema's `status_reason` enum.
@@ -145,7 +149,6 @@ final class NewTabPageSessionWideEventData: WideEventData {
     var dismissKeyboard: Bool = false
     var scrollView: Bool = false
     var utiBackArrow: Bool = false
-    var menuItemSelected: Bool = false
     var selectBookmark: Bool = false
     var selectPassword: Bool = false
     var selectDownload: Bool = false
@@ -236,7 +239,6 @@ extension NewTabPageSessionWideEventData {
             (WideEventParameter.NewTabPageSessionFeature.dismissKeyboard, dismissKeyboard),
             (WideEventParameter.NewTabPageSessionFeature.scrollView, scrollView),
             (WideEventParameter.NewTabPageSessionFeature.utiBackArrow, utiBackArrow),
-            (WideEventParameter.NewTabPageSessionFeature.menuItemSelected, menuItemSelected),
             (WideEventParameter.NewTabPageSessionFeature.selectBookmark, selectBookmark),
             (WideEventParameter.NewTabPageSessionFeature.selectPassword, selectPassword),
             (WideEventParameter.NewTabPageSessionFeature.selectDownload, selectDownload),
@@ -283,7 +285,6 @@ extension WideEventParameter {
         static let dismissKeyboard = "feature.data.ext.actions.dismiss_keyboard"
         static let scrollView = "feature.data.ext.actions.scroll_view"
         static let utiBackArrow = "feature.data.ext.actions.uti_back_arrow"
-        static let menuItemSelected = "feature.data.ext.actions.menu_item_selected"
         static let selectBookmark = "feature.data.ext.actions.select_bookmark"
         static let selectPassword = "feature.data.ext.actions.select_password"
         static let selectDownload = "feature.data.ext.actions.select_download"

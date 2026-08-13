@@ -133,7 +133,6 @@ struct NewTabPageSessionInstrumentationTests {
             ActionCase(name: "dismissKeyboard", invoke: { $0.dismissKeyboard() }, flag: \.dismissKeyboard),
             ActionCase(name: "scrollView", invoke: { $0.scrollView() }, flag: \.scrollView),
             ActionCase(name: "utiBackArrow", invoke: { $0.utiBackArrow() }, flag: \.utiBackArrow),
-            ActionCase(name: "menuItemSelected", invoke: { $0.menuItemSelected() }, flag: \.menuItemSelected),
             ActionCase(name: "selectBookmark", invoke: { $0.selectBookmark() }, flag: \.selectBookmark),
             ActionCase(name: "selectPassword", invoke: { $0.selectPassword() }, flag: \.selectPassword),
             ActionCase(name: "selectDownload", invoke: { $0.selectDownload() }, flag: \.selectDownload),

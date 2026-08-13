@@ -203,9 +203,10 @@ struct NewTabPageSessionWideEventDataTests {
             .swipeToOtherTab,
             .deleteData,
             .customButton,
+            .menuItemSelected,
         ]
 
-        #expect(successActions.count == 11)
+        #expect(successActions.count == 12)
 
         for action in successActions {
             // No reason attached, so the sender never writes `status_reason` for a
@@ -249,6 +250,7 @@ struct NewTabPageSessionWideEventDataTests {
             (.swipeToOtherTab, "swipe_to_other_tab"),
             (.deleteData, "delete_data"),
             (.customButton, "custom_button"),
+            (.menuItemSelected, "menu_item_selected"),
             (.noActionTimeout, "no_action_timeout"),
             (.maxDurationExceeded, "max_duration_exceeded"),
             (.appBackgrounded, "app_backgrounded"),

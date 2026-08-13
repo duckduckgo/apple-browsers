@@ -3481,7 +3481,11 @@ class MainViewController: UIViewController {
         } else {
             tabManager.addHomeTab()
         }
-        attachHomeScreen(isNewTab: true, allowingKeyboard: allowingKeyboard, previousTab: previousTab, openedAfterIdle: openedAfterIdle)
+        attachHomeScreen(isNewTab: true,
+                         allowingKeyboard: allowingKeyboard,
+                         previousTab: previousTab,
+                         openedAfterIdle: openedAfterIdle,
+                         startsNewTabPageSessionVisit: startsNewTabPageSessionVisit)
         tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
         bindAIChatChromeChipToCurrentTab()
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
@@ -6354,7 +6358,7 @@ extension MainViewController: TabDelegate {
     }
 
     func tabDidRequestNewTab(_ tab: TabViewController) {
-        recordNewTabPageSessionMenuEntry { $0.menuItemSelected() }
+        endNewTabPageSessionWithMenuItem()
         _ = findInPageView?.resignFirstResponder()
         // Pre-arm logo hiding BEFORE newTab() because attachHomeScreen() may call
         // omniBar.beginEditing(animated:) when KeyboardSettings.onNewTab is enabled, which
@@ -6367,7 +6371,7 @@ extension MainViewController: TabDelegate {
     }
 
     func tabDidRequestNewVoiceChat(_ tab: TabViewController) {
-        recordNewTabPageSessionMenuEntry { $0.menuItemSelected() }
+        endNewTabPageSessionWithMenuItem()
         // Same as the Duck.ai header Plus-menu "New Voice Chat".
         aiChatTabChatHeaderDidTapNewVoiceChat()
     }
@@ -6487,7 +6491,6 @@ extension MainViewController: TabDelegate {
     }
 
     func tabDidRequestAIChat(tab: TabViewController) {
-        recordNewTabPageSessionMenuEntry { $0.menuItemSelected() }
         fireAIChatUsagePixelAndSetFeatureUsed(tab.link == nil ? .browsingMenuAIChatNewTabPage : .browsingMenuAIChatWebPage)
         if DevicePlatform.isIpad {
             newTab(allowingKeyboard: false)
@@ -6583,7 +6586,7 @@ extension MainViewController: TabDelegate {
     }
 
     func tabDidRequestSettings(tab: TabViewController) {
-        recordNewTabPageSessionMenuEntry { $0.menuItemSelected() }
+        endNewTabPageSessionWithMenuItem()
         segueToSettings()
     }
 
@@ -7369,7 +7372,6 @@ extension MainViewController: FireExecutorDelegate {
     
     func willStartBurningData(fireRequest: FireRequest) {
         self.clearInProgress = true
-
         if #available(iOS 18.4, *) {
             webExtensionEventsCoordinator?.extensionsWillUnload()
             webExtensionManager?.unloadAllExtensions()

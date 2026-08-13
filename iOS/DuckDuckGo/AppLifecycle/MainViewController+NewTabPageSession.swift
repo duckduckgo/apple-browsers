@@ -146,6 +146,16 @@ extension MainViewController {
         recordNewTabPageSessionDeparture()
     }
 
+    /// Ends the visit on a top level menu entry that has no terminal of its own, such as New Tab
+    /// or Settings.
+    ///
+    /// Those destinations replace the New Tab Page rather than sitting over it, so nothing would
+    /// end the visit afterwards. Reported before the destination is opened, since opening it can
+    /// attach a New Tab Page of its own and supersede the visit being reported.
+    func endNewTabPageSessionWithMenuItem() {
+        newTabPageSessionInstrumentation.visitEnded(terminalAction: .menuItemSelected)
+    }
+
     /// Marks that the user is now reading a screen the app opened over the New Tab Page, so the
     /// time they spend there is not mistaken for abandoning the visit.
     func recordNewTabPageSessionDeparture() {

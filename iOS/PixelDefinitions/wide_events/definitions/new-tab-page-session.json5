@@ -32,7 +32,7 @@
                     },
                     "terminal_action": {
                         "type": "string",
-                        "description": "The single action that ended the visit, meaning the user left the New Tab Page. The first eleven values (`load_serp` through `custom_button`) map to SUCCESS. `custom_button` is the customizable toolbar button set to something other than Fire, reachable on the New Tab Page only while icon customization is enabled. `no_action_timeout` (the user took no action for 30 seconds) and `max_duration_exceeded` (the visit reached the 2 minute overall limit without ending) map to FAILURE. `app_backgrounded` maps to CANCELLED. `app_terminated` maps to UNKNOWN and is used for a visit recovered after the app was killed. Steps that leave the user on the New Tab Page, such as copying a private email address or opening the browsing menu, are recorded under `actions` instead and let the visit continue.",
+                        "description": "The single action that ended the visit, meaning the user left the New Tab Page. The first twelve values (`load_serp` through `menu_item_selected`) map to SUCCESS. `custom_button` is the customizable toolbar button set to something other than Fire, reachable on the New Tab Page only while icon customization is enabled. `menu_item_selected` covers picking a top level browsing menu entry that has no terminal of its own, such as New Tab or Settings, which replaces the New Tab Page for good. `no_action_timeout` (the user took no action for 30 seconds) and `max_duration_exceeded` (the visit reached the 2 minute overall limit without ending) map to FAILURE. `app_backgrounded` maps to CANCELLED. `app_terminated` maps to UNKNOWN and is used for a visit recovered after the app was killed. Steps that leave the user on the New Tab Page, or that lead to a screen the user comes back from, such as copying a private email address or opening Bookmarks from the menu, are recorded under `actions` instead and let the visit continue.",
                         "enum": [
                             "load_serp",
                             "load_search_suggestion",
@@ -45,6 +45,7 @@
                             "swipe_to_other_tab",
                             "delete_data",
                             "custom_button",
+                            "menu_item_selected",
                             "no_action_timeout",
                             "max_duration_exceeded",
                             "app_backgrounded",
@@ -169,10 +170,6 @@
                             "uti_back_arrow": {
                                 "type": "boolean",
                                 "description": "True if the user tapped the back arrow in the Unified Toggle Input during the visit"
-                            },
-                            "menu_item_selected": {
-                                "type": "boolean",
-                                "description": "True if the user selected a top level menu entry that has no flag of its own, such as New Tab, Settings or Duck.ai, during the visit"
                             },
                             "select_bookmark": {
                                 "type": "boolean",

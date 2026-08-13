@@ -1528,7 +1528,9 @@
 		37F636FE3004F5F4007AC9F7 /* FireDialogResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37F636FD3004F5F1007AC9F7 /* FireDialogResult.swift */; };
 		37F636FF3004F5F4007AC9F7 /* FireDialogResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37F636FD3004F5F1007AC9F7 /* FireDialogResult.swift */; };
 		37F637013004F627007AC9F7 /* FireDialogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37F637003004F627007AC9F7 /* FireDialogView.swift */; };
+		37F637113004F627007AC9F7 /* FireDialogDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37F637103004F627007AC9F7 /* FireDialogDebugMenu.swift */; };
 		37F637023004F627007AC9F7 /* FireDialogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37F637003004F627007AC9F7 /* FireDialogView.swift */; };
+		37F637123004F627007AC9F7 /* FireDialogDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37F637103004F627007AC9F7 /* FireDialogDebugMenu.swift */; };
 		37F8ABD32CE3EE5B00CB0294 /* FeatureFlagOverridesMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37F8ABD22CE3EE5B00CB0294 /* FeatureFlagOverridesMenu.swift */; };
 		37F8ABD42CE3EE5B00CB0294 /* FeatureFlagOverridesMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37F8ABD22CE3EE5B00CB0294 /* FeatureFlagOverridesMenu.swift */; };
 		37F9AEB12D131705007FD19B /* NewTabPageLinkOpener.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37F9AEB02D1316FE007FD19B /* NewTabPageLinkOpener.swift */; };
@@ -5570,6 +5572,7 @@
 		37F1C1992FACA6B400260FDC /* TrackerProtectionMemoryGuardrailTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackerProtectionMemoryGuardrailTests.swift; sourceTree = "<group>"; };
 		37F636FD3004F5F1007AC9F7 /* FireDialogResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireDialogResult.swift; sourceTree = "<group>"; };
 		37F637003004F627007AC9F7 /* FireDialogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireDialogView.swift; sourceTree = "<group>"; };
+		37F637103004F627007AC9F7 /* FireDialogDebugMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireDialogDebugMenu.swift; sourceTree = "<group>"; };
 		37F8ABD22CE3EE5B00CB0294 /* FeatureFlagOverridesMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureFlagOverridesMenu.swift; sourceTree = "<group>"; };
 		37F9AEB02D1316FE007FD19B /* NewTabPageLinkOpener.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageLinkOpener.swift; sourceTree = "<group>"; };
 		37FC2A172CF903060048E226 /* MockPrivacyStats.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockPrivacyStats.swift; sourceTree = "<group>"; };
@@ -12232,6 +12235,7 @@
 				37F636FD3004F5F1007AC9F7 /* FireDialogResult.swift */,
 				84796D742E67000C007E6F9F /* LegacyFireDialogView.swift */,
 				37F637003004F627007AC9F7 /* FireDialogView.swift */,
+				37F637103004F627007AC9F7 /* FireDialogDebugMenu.swift */,
 				AAE99B8827088A19008B6BD9 /* FirePopover.swift */,
 				AA6AD95A2704B6DB00159F8A /* FirePopoverViewController.swift */,
 				AAB7320826DD0CD9002FACF9 /* FireViewController.swift */,
@@ -16591,6 +16595,7 @@
 				560EB93A2C789A450080DBC8 /* OnboardingSuggestedSearchesProvider.swift in Sources */,
 				3706FC49293F65D500E42796 /* RoundedSelectionRowView.swift in Sources */,
 				37F637023004F627007AC9F7 /* FireDialogView.swift in Sources */,
+				37F637123004F627007AC9F7 /* FireDialogDebugMenu.swift in Sources */,
 				3706FC4A293F65D500E42796 /* LocalStatisticsStore.swift in Sources */,
 				4B4D60DD2A0C875E00BCD287 /* NetworkProtectionOptionKeyExtension.swift in Sources */,
 				31FC23522DB7A86F00900574 /* AddressBarMenuButton.swift in Sources */,
@@ -18155,6 +18160,7 @@
 				B5C2886C2EC6206100A572F2 /* CASpringAnimationExtension.swift in Sources */,
 				9F6434612BEC82B700D2D8A0 /* AttributionPixelHandler.swift in Sources */,
 				37F637013004F627007AC9F7 /* FireDialogView.swift in Sources */,
+				37F637113004F627007AC9F7 /* FireDialogDebugMenu.swift in Sources */,
 				37D0469F2C7D0EDD00AEAA50 /* CustomBackground.swift in Sources */,
 				B684592225C93BE000DC17B6 /* Publisher.asVoid.swift in Sources */,
 				BB9BDD4A2D09BAA80069E9EF /* TabBarRemoteMessageViewModel.swift in Sources */,

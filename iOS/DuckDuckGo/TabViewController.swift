@@ -1181,6 +1181,10 @@ class TabViewController: UIViewController {
             self?.isSearchSelectionItemAvailable ?? false
         }
 
+        webView.isSelectionFrameAvailable = { [weak self] in
+            self?.userScripts?.selectionFrameScript.frameWithSelection != nil
+        }
+
         webView.askAIChatHandler = { [weak self] text in
             guard let self else { return }
             self.delegate?.tab(self, didRequestAIChatForSelectedText: text)

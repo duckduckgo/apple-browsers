@@ -35,6 +35,7 @@ final class WebView: WKWebView {
     /// Re-evaluated on every menu build, so flag and setting changes take effect immediately.
     var isAskAIChatItemAvailable: (() -> Bool)?
     var isSearchWithDuckDuckGoItemAvailable: (() -> Bool)?
+    var isSelectionFrameAvailable: (() -> Bool)?
 
     /// Receives the trimmed selection when the user picks Ask Duck.ai.
     var askAIChatHandler: ((String) -> Void)?
@@ -123,7 +124,7 @@ final class WebView: WKWebView {
     /// The items to offer, in display order. Selection menu only; the main menu system drives the iPad
     /// menu bar, which has no selection to act on.
     func selectionMenuItems(forSystem system: UIMenuSystem) -> [TextSelectionMenuItem] {
-        guard system != .main else { return [] }
+        guard system != .main, isSelectionFrameAvailable?() == true else { return [] }
 
         var items: [TextSelectionMenuItem] = []
         if isAskAIChatItemAvailable?() == true { items.append(.askAIChat) }

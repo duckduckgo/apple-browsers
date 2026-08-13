@@ -80,7 +80,9 @@ final class SelectionFrameUserScript: NSObject, Subfeature {
             return { [isEnabled] _, _ in SelectionFrameEnabledResponse(enabled: isEnabled) }
         case .selectionChanged:
             return { [weak self] params, original in
-                self?.update(with: params, from: original.frameInfo)
+                await MainActor.run {
+                    self?.update(with: params, from: original.frameInfo)
+                }
                 return nil
             }
         case nil:

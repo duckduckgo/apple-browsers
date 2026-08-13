@@ -99,7 +99,7 @@ struct NewTabPageSessionWideEventDataTests {
         #expect(NewTabPageSessionWideEventData.metadata.pixelName == "new_tab_page_session")
         #expect(NewTabPageSessionWideEventData.metadata.featureName == "new-tab-page-session")
         #expect(NewTabPageSessionWideEventData.metadata.type == "ios-new-tab-page-session")
-        #expect(NewTabPageSessionWideEventData.metadata.version == "1.0.0")
+        #expect(NewTabPageSessionWideEventData.metadata.version == "1.1.0")
     }
 
     @available(iOS 16, *)
@@ -201,18 +201,12 @@ struct NewTabPageSessionWideEventDataTests {
             .lastTabLoaded,
             .selectOtherTab,
             .swipeToOtherTab,
-            .selectBookmark,
-            .selectPassword,
-            .selectDownload,
             .deleteData,
-            .vpnOn,
-            .vpnOff,
-            .emailCopied,
-            .menuItemSelected,
             .customButton,
+            .menuItemSelected,
         ]
 
-        #expect(successActions.count == 18)
+        #expect(successActions.count == 12)
 
         for action in successActions {
             // No reason attached, so the sender never writes `status_reason` for a
@@ -254,15 +248,9 @@ struct NewTabPageSessionWideEventDataTests {
             (.lastTabLoaded, "last_tab_loaded"),
             (.selectOtherTab, "select_other_tab"),
             (.swipeToOtherTab, "swipe_to_other_tab"),
-            (.selectBookmark, "select_bookmark"),
-            (.selectPassword, "select_password"),
-            (.selectDownload, "select_download"),
             (.deleteData, "delete_data"),
-            (.vpnOn, "vpn_on"),
-            (.vpnOff, "vpn_off"),
-            (.emailCopied, "email_copied"),
-            (.menuItemSelected, "menu_item_selected"),
             (.customButton, "custom_button"),
+            (.menuItemSelected, "menu_item_selected"),
             (.noActionTimeout, "no_action_timeout"),
             (.maxDurationExceeded, "max_duration_exceeded"),
             (.appBackgrounded, "app_backgrounded"),

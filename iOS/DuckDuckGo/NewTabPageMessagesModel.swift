@@ -80,6 +80,10 @@ final class NewTabPageMessagesModel: ObservableObject {
 
     // MARK: - Private
 
+    /// Reports which control the user pressed on a message, so the New Tab Page session event can
+    /// record it. The model handles the message itself either way.
+    var onMessageInteraction: ((NewTabPageMessageInteraction) -> Void)?
+
     func refresh() {
         homePageMessagesConfiguration.refresh(openedAfterIdle: isOpenedAfterIdle())
         updateHomeMessageViewModel()
@@ -120,6 +124,8 @@ final class NewTabPageMessagesModel: ObservableObject {
                                                      pixelReporter: pixelReporter) { @MainActor [weak self] action in
                 guard let action,
                       let self else { return }
+
+                self.onMessageInteraction?(action == .close ? .dismiss : .callToAction)
 
                 switch action {
 

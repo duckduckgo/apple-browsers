@@ -122,9 +122,6 @@ jobs:
         with:
           ref: ${{ inputs.branch || github.sha }}
 
-      - name: Print macOS version
-        run: sw_vers
-
       - name: Start measuring duration
         id: start-duration
         uses: ./.github/actions/measure-duration

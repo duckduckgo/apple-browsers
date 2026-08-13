@@ -23,6 +23,7 @@ import Onboarding
 import Persistence
 import PersistenceTestingUtils
 import PrivacyConfig
+import PixelExperimentKit
 @testable import DuckDuckGo
 
 final class OnboardingPixelReporterTests: XCTestCase {
@@ -43,7 +44,8 @@ final class OnboardingPixelReporterTests: XCTestCase {
         userDefaultsMock = UserDefaults(suiteName: Self.suiteName)
         sharedPixelHandlerMock = MockOnboardingSharedPixelHandling()
         initSharedPixelsStorageMock()
-        sut = OnboardingPixelReporter(pixel: OnboardingPixelFireMock.self, uniquePixel: OnboardingUniquePixelFireMock.self, statisticsStore: statisticsStoreMock, calendar: calendar, dateProvider: { self.now }, userDefaults: userDefaultsMock, sharedPixelHandler: sharedPixelHandlerMock, sharedPixelsStorage: sharedPixelsStorageMock)
+        MockExperimentPixelFiring.reset()
+        sut = OnboardingPixelReporter(pixel: OnboardingPixelFireMock.self, uniquePixel: OnboardingUniquePixelFireMock.self, statisticsStore: statisticsStoreMock, calendar: calendar, dateProvider: { self.now }, userDefaults: userDefaultsMock, sharedPixelHandler: sharedPixelHandlerMock, sharedPixelsStorage: sharedPixelsStorageMock, downloadReasonExperimentMetric: OnboardingDownloadReasonExperimentMetric(experimentPixelFiring: MockExperimentPixelFiring.self))
         try super.setUpWithError()
     }
 
@@ -1263,16 +1265,40 @@ final class OnboardingPixelReporterTests: XCTestCase {
 
     // MARK: - Try Duck.ai End of Journey
 
-    func testWhenMeasureEndOfJourneyTryDuckAIImpressionThenEndOfJourneyTryDuckAIShownFiresWithVariant() {
+    func testWhenMeasureScreenImpressionEndTryDuckAIShownThenSharedPixelFiresWithVariant() {
         // GIVEN
         sharedPixelsStorageMock.onboardingVariant = .downloadReasonSearch
 
         // WHEN
-        sut.measureEndOfJourneyTryDuckAIImpression()
+        sut.measureScreenImpression(.endTryDuckAI(.shown))
 
         // THEN
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.endTryDuckAI(.shown)])
         XCTAssertEqual(sharedPixelHandlerMock.receivedVariant, .downloadReasonSearch)
+    }
+
+    func testWhenMeasureScreenImpressionEndShownThenOnboardingCompletedExperimentMetricFires() {
+        // WHEN
+        sut.measureScreenImpression(.end(.shown))
+
+        // THEN
+        XCTAssertTrue(MockExperimentPixelFiring.firedMetrics.contains("onboarding_completed"))
+    }
+
+    func testWhenMeasureScreenImpressionEndTryDuckAIShownThenOnboardingCompletedExperimentMetricFires() {
+        // WHEN
+        sut.measureScreenImpression(.endTryDuckAI(.shown))
+
+        // THEN
+        XCTAssertTrue(MockExperimentPixelFiring.firedMetrics.contains("onboarding_completed"))
+    }
+
+    func testWhenMeasureScreenImpressionOtherSharedEventThenOnboardingCompletedExperimentMetricDoesNotFire() {
+        // WHEN
+        sut.measureScreenImpression(.welcome(.shown))
+
+        // THEN
+        XCTAssertFalse(MockExperimentPixelFiring.firedMetrics.contains("onboarding_completed"))
     }
 
     func testWhenMeasureEndOfJourneyTryDuckAICTAActionThenEndOfJourneyTryDuckAIEngageFires() {
@@ -1420,6 +1446,26 @@ final class OnboardingPixelReporterTests: XCTestCase {
         }
     }
 
+    func testWhenMeasureDownloadReasonSelectionThenSelectionExperimentMetricFires() {
+        let expectedMetrics: [(OnboardingDownloadReason, String)] = [
+            (.browserPrivately, "download_reason_selected_search"),
+            (.privateAIChat, "download_reason_selected_ai-chat"),
+            (.noAI, "download_reason_selected_no-ai"),
+            (.blockAds, "download_reason_selected_ad-blocking")
+        ]
+
+        for (reason, expectedMetric) in expectedMetrics {
+            // GIVEN
+            MockExperimentPixelFiring.reset()
+
+            // WHEN
+            sut.measureDownloadReasonSelection(reason)
+
+            // THEN
+            XCTAssertTrue(MockExperimentPixelFiring.firedMetrics.contains(expectedMetric), "Failed for reason \(reason)")
+        }
+    }
+
     func testWhenMeasureSearchPrivacySettingsSelectionThenSerpClickedFires() {
         // WHEN
         sut.measureSearchPrivacySettingsSelection(recentlyVisitedSitesEnabled: true, safeSearchEnabled: false)
@@ -1492,5 +1538,20 @@ private final class MockOnboardingSharedPixelHandling: OnboardingSharedPixelHand
         receivedSource = source
         receivedFlow = flow
         receivedVariant = variant
+    }
+}
+
+private enum MockExperimentPixelFiring: ExperimentPixelFiring {
+    private(set) static var firedMetrics: [String] = []
+
+    static func fireExperimentPixel(for subfeatureID: SubfeatureID,
+                                    metric: String,
+                                    conversionWindowDays: ConversionWindow,
+                                    value: String) {
+        firedMetrics.append(metric)
+    }
+
+    static func reset() {
+        firedMetrics = []
     }
 }

@@ -23,6 +23,10 @@ import Core
 import PrivacyConfig
 import Onboarding
 import Persistence
+import PixelKit
+import PixelExperimentKit
+import FeatureFlags_iOS
+
 // MARK: - Pixel Fire Interface
 
 protocol OnboardingPixelFiring {
@@ -107,7 +111,6 @@ protocol OnboardingDaxDialogsReporting {
     func measureEndOfJourneyDialogDismissButtonTapped()
     func measureSubscriptionDialogNewTabDismissButtonTapped()
     func measureEndOfJourneyDialogCTAAction()
-    func measureEndOfJourneyTryDuckAIImpression()
     func measureEndOfJourneyTryDuckAICTAAction()
     func measureEndOfJourneyTryDuckAISkipAction()
 }
@@ -154,6 +157,7 @@ final class OnboardingPixelReporter {
     private let sharedPixelHandler: OnboardingSharedPixelHandling
     private let sharedPixelsStorage: any KeyedStoring<OnboardingSharedPixelsKeys>
     private let siteVisitedUserDefaultsKey = "com.duckduckgo.ios.site-visited"
+    private let downloadReasonExperimentMetric: OnboardingDownloadReasonExperimentMetric
 
     init(
         pixel: OnboardingPixelFiring.Type = Pixel.self,
@@ -163,7 +167,8 @@ final class OnboardingPixelReporter {
         dateProvider: @escaping () -> Date = Date.init,
         userDefaults: UserDefaults = UserDefaults.app,
         sharedPixelHandler: OnboardingSharedPixelHandling? = nil,
-        sharedPixelsStorage: (any KeyedStoring<OnboardingSharedPixelsKeys>)? = nil
+        sharedPixelsStorage: (any KeyedStoring<OnboardingSharedPixelsKeys>)? = nil,
+        downloadReasonExperimentMetric: OnboardingDownloadReasonExperimentMetric = OnboardingDownloadReasonExperimentMetric()
     ) {
         self.pixel = pixel
         self.uniquePixel = uniquePixel
@@ -177,6 +182,7 @@ final class OnboardingPixelReporter {
             installDateProvider: { statisticsStore.installDate }
         )
         self.sharedPixelsStorage = if let sharedPixelsStorage { sharedPixelsStorage } else { UserDefaults.app.keyedStoring() }
+        self.downloadReasonExperimentMetric = downloadReasonExperimentMetric
     }
 
     private func fire(event: Pixel.Event, unique: Bool, additionalParameters: [String: String] = [:], includedParameters: [Pixel.QueryParameters] = [.appVersion]) {
@@ -455,6 +461,10 @@ extension OnboardingPixelReporter: OnboardingDaxDialogsReporting {
     }
 
     func measureScreenImpression(_ event: OnboardingSharedPixelEvent) {
+        if event == .end(.shown) || event == .endTryDuckAI(.shown) {
+            downloadReasonExperimentMetric.measureDownloadReasonExperimentOnboardingCompleted()
+        }
+
         fireSharedPixel(event)
     }
 
@@ -613,10 +623,6 @@ extension OnboardingPixelReporter: OnboardingDaxDialogsReporting {
                                 variant: sharedPixelsStorage.onboardingVariant)
     }
 
-    func measureEndOfJourneyTryDuckAIImpression() {
-        fireSharedPixel(.endTryDuckAI(.shown))
-    }
-
     func measureEndOfJourneyTryDuckAICTAAction() {
         fireSharedPixel(.endTryDuckAI(.clicked(.engage)))
     }
@@ -687,6 +693,7 @@ extension OnboardingPixelReporter: OnboardingDownloadReasonPixelReporting {
                                 flow: sharedPixelsStorage.onboardingFlow)
         // Persist the chosen reason as the variant so every subsequent tailored-step pixel carries it.
         sharedPixelsStorage.onboardingVariant = OnboardingPixelParameter.Variant(reason)
+        downloadReasonExperimentMetric.measureDownloadReasonSelected(reason)
     }
 
     func measureSearchPrivacySettingsImpression() {
@@ -748,6 +755,73 @@ private extension OnboardingSharedPixelEvent.DownloadChoiceEvent.Value {
         case .noAI: self = .noAI
         case .blockAds: self = .adBlocking
         }
+    }
+
+}
+
+// MARK: - OnboardingPixelReporter + OnboardingDownloadReasonExperiment
+
+protocol ExperimentPixelFiring {
+    /// Fires an experiment pixel with the specified parameters.
+    ///
+    /// - Parameters:
+    ///   - subfeatureID: The unique identifier of the subfeature associated with the experiment.
+    ///   - metric: The name of the metric being tracked (e.g., impressions, clicks, conversions).
+    ///   - conversionWindowDays: The time range (in days) to associate the pixel with conversion events.
+    ///   - value: A string representing the value associated with the metric, such as counts or statuses.
+    static func fireExperimentPixel(for subfeatureID: SubfeatureID,
+                                    metric: String,
+                                    conversionWindowDays: ConversionWindow,
+                                    value: String)
+}
+
+/// Conforming `PixelKit` to the `ExperimentPixelFiring` protocol.
+///
+/// `PixelKit` provides the concrete implementation for firing experiment pixels. By extending
+/// `PixelKit` to conform to `ExperimentPixelFiring`, its functionality can be injected and mocked
+/// for testing purposes.
+extension PixelKit: ExperimentPixelFiring {}
+
+struct OnboardingDownloadReasonExperimentMetric {
+    private enum Name: String {
+        case onboardingCompleted = "onboarding_completed"
+        case downloadReasonSelectedSearch = "download_reason_selected_search"
+        case downloadReasonSelectedAIChat = "download_reason_selected_ai-chat"
+        case downloadReasonSelectedNoAI = "download_reason_selected_no-ai"
+        case downloadReasonSelectedAdBlocking = "download_reason_selected_ad-blocking"
+    }
+
+    private static let conversionWindowD0: ConversionWindow = 0...0
+
+    private let experimentPixelFiring: ExperimentPixelFiring.Type
+
+    init(experimentPixelFiring: ExperimentPixelFiring.Type = PixelKit.self) {
+        self.experimentPixelFiring = experimentPixelFiring
+    }
+
+    func measureDownloadReasonExperimentOnboardingCompleted() {
+        fire(metric: .onboardingCompleted)
+    }
+
+    /// Fires the per-reason "selected" metric (one metric per option, empty value, d0) when the user
+    /// picks a download reason.
+    func measureDownloadReasonSelected(_ reason: OnboardingDownloadReason) {
+        let metric: Name = switch reason {
+        case .browserPrivately: .downloadReasonSelectedSearch
+        case .privateAIChat: .downloadReasonSelectedAIChat
+        case .noAI: .downloadReasonSelectedNoAI
+        case .blockAds: .downloadReasonSelectedAdBlocking
+        }
+        fire(metric: metric)
+    }
+
+    private func fire(metric: Name) {
+        experimentPixelFiring.fireExperimentPixel(
+            for: iOSBrowserConfigSubfeature.onboardingFlowByDownloadReasonExperiment.rawValue,
+            metric: metric.rawValue,
+            conversionWindowDays: Self.conversionWindowD0,
+            value: ""
+        )
     }
 
 }

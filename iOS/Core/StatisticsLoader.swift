@@ -57,6 +57,7 @@ public class StatisticsLoader {
             PixelKit.fireSearchExperimentPixels()
             StatisticsLoader.fireLegacySearchRetentionExperimentPixels()
             StatisticsLoader.fireSearchTokenExperimentPixels(metric: "search")
+            StatisticsLoader.fireOnboardingByDownloadReasonSearchExperimentPixels()
          },
          fireNewAIPromptExperimentPixels: @escaping () -> Void = PixelKit.fireNewAIPromptExperimentPixels,
          fireOSDistributionPixel: @escaping (OSDistributionPixel.Metric) -> Void = PixelKit.fireOSDistributionPixel(metric:),
@@ -80,6 +81,21 @@ public class StatisticsLoader {
                 for: iOSBrowserConfigSubfeature.searchTokenExperimentV3.rawValue,
                 metric: metric,
                 conversionWindowDays: 1...4,
+                threshold: threshold
+            )
+        }
+    }
+
+    // Temporary: per-download-reason d5-7 search retention for the onboarding-by-download-reason experiment.
+    // No-op for users who haven't selected a reason or aren't enrolled (fireExperimentPixelIfThresholdReached guards both).
+    static func fireOnboardingByDownloadReasonSearchExperimentPixels() {
+        guard let pixelToken = OnboardingDownloadReasonStore.currentPixelToken() else { return }
+        let metric = "download_reason_search_retention_\(pixelToken)"
+        for threshold in [1, 4, 6, 11, 21, 30] {
+            PixelKit.fireExperimentPixelIfThresholdReached(
+                for: iOSBrowserConfigSubfeature.onboardingFlowByDownloadReasonExperiment.rawValue,
+                metric: metric,
+                conversionWindowDays: 5...7,
                 threshold: threshold
             )
         }

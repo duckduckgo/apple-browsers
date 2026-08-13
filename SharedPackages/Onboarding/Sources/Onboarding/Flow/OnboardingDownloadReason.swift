@@ -43,3 +43,16 @@ public enum OnboardingDownloadReason: String, Equatable, CaseIterable {
     /// The user downloaded the app to block ads and trackers.
     case blockAds
 }
+
+public extension OnboardingDownloadReason {
+    /// The token used to identify the reason in pixel names and parameters
+    /// (e.g. the download-choice value and the per-reason experiment metrics).
+    var pixelToken: String {
+        switch self {
+        case .browserPrivately: "search"
+        case .privateAIChat: "ai-chat"
+        case .noAI: "no-ai"
+        case .blockAds: "ad-blocking"
+        }
+    }
+}

@@ -1531,6 +1531,7 @@
 		9F3668762EAF0A7600AA8670 /* MockContextualOnboardingStatusProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F3668742EAF0A6900AA8670 /* MockContextualOnboardingStatusProvider.swift */; };
 		9F3668772EAF0A7600AA8670 /* MockContextualOnboardingStatusProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F3668742EAF0A6900AA8670 /* MockContextualOnboardingStatusProvider.swift */; };
 		9F3668782EAF0A7600AA8670 /* MockContextualOnboardingStatusProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F3668742EAF0A6900AA8670 /* MockContextualOnboardingStatusProvider.swift */; };
+		9F371806302DB47A0071F761 /* OnboardingDownloadReasonStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F371805302DB47A0071F761 /* OnboardingDownloadReasonStore.swift */; };
 		9F387DD82EA86CE3006861F8 /* PromptCooldownStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F387DD72EA86CE3006861F8 /* PromptCooldownStoreTests.swift */; };
 		9F387DDA2EA87C0F006861F8 /* PromptCooldownManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F387DD92EA87C0F006861F8 /* PromptCooldownManagerTests.swift */; };
 		9F387DDD2EA881D1006861F8 /* PromptCooldownMocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F387DDC2EA881C7006861F8 /* PromptCooldownMocks.swift */; };
@@ -4475,6 +4476,7 @@
 		9F3361BB2F2B394500E0C21A /* ContextualOnboardingDelegateMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextualOnboardingDelegateMock.swift; sourceTree = "<group>"; };
 		9F3361C02F2B3A0500E0C21A /* MockContextualDaxDialogsFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockContextualDaxDialogsFactory.swift; sourceTree = "<group>"; };
 		9F3668742EAF0A6900AA8670 /* MockContextualOnboardingStatusProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockContextualOnboardingStatusProvider.swift; sourceTree = "<group>"; };
+		9F371805302DB47A0071F761 /* OnboardingDownloadReasonStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingDownloadReasonStore.swift; sourceTree = "<group>"; };
 		9F387DD72EA86CE3006861F8 /* PromptCooldownStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptCooldownStoreTests.swift; sourceTree = "<group>"; };
 		9F387DD92EA87C0F006861F8 /* PromptCooldownManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptCooldownManagerTests.swift; sourceTree = "<group>"; };
 		9F387DDC2EA881C7006861F8 /* PromptCooldownMocks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptCooldownMocks.swift; sourceTree = "<group>"; };
@@ -11435,6 +11437,7 @@
 		F1134EA91F3E2BA700B73467 /* Store */ = {
 			isa = PBXGroup;
 			children = (
+				9F371805302DB47A0071F761 /* OnboardingDownloadReasonStore.swift */,
 				F1134EA51F3E2AF400B73467 /* StatisticsStore.swift */,
 				F1134EAA1F3E2C6A00B73467 /* StatisticsUserDefaults.swift */,
 			);
@@ -15903,6 +15906,7 @@
 				CBAA195A27BFE15600A4BD49 /* NSManagedObjectContextExtension.swift in Sources */,
 				F124B95A2F2CC20C00B29447 /* BuildFlags.swift in Sources */,
 				85BDC3192436161C0053DB07 /* LoginFormDetectionUserScript.swift in Sources */,
+				9F371806302DB47A0071F761 /* OnboardingDownloadReasonStore.swift in Sources */,
 				F143C3291E4A9A0E00CFDE3A /* URLExtension.swift in Sources */,
 				C1C1FF4A2D085A4C0017ACCE /* AutofillInterfaceEmailTruncator.swift in Sources */,
 				C1C1FF4B2D085A4C0017ACCE /* TextMasker.swift in Sources */,

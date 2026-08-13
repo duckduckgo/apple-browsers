@@ -178,11 +178,9 @@ extension NewTabDaxDialogFactory {
                         case .completeAndActivateSearch:
                             self?.onboardingPixelReporter.measureEndOfJourneyDialogCTAAction()
                         case .tryDuckAI:
-                            self?.onboardingPixelReporter.measureEndOfJourneyDialogCTAAction()
                             // Try Duck.ai EOJ CTA — surface-scoped pixel for CTR (only the Try-AI variant emits `.tryDuckAI`).
                             self?.onboardingPixelReporter.measureEndOfJourneyTryDuckAICTAAction()
                         case .skip:
-                            self?.onboardingPixelReporter.measureEndOfJourneyDialogNewTabDismissButtonTapped()
                             self?.onboardingPixelReporter.measureEndOfJourneyTryDuckAISkipAction()
                         case .manualDismiss:
                             self?.onboardingPixelReporter.measureEndOfJourneyDialogNewTabDismissButtonTapped()
@@ -196,10 +194,11 @@ extension NewTabDaxDialogFactory {
             .onFirstAppear { [weak self] in
                 self?.daxDialogsFlowCoordinator.setFinalOnboardingDialogSeen()
                 self?.onboardingPixelReporter.measureScreenImpression(event: .daxDialogsEndOfJourneyNewTabUnique)
-                self?.onboardingPixelReporter.measureScreenImpression(.end(.shown))
                 // Try Duck.ai EOJ impression — surface-scoped pixel for CTR, only for the Try-AI variant.
                 if content.primaryAction == .tryDuckAI {
-                    self?.onboardingPixelReporter.measureEndOfJourneyTryDuckAIImpression()
+                    self?.onboardingPixelReporter.measureScreenImpression(.endTryDuckAI(.shown))
+                } else {
+                    self?.onboardingPixelReporter.measureScreenImpression(.end(.shown))
                 }
             }
         )

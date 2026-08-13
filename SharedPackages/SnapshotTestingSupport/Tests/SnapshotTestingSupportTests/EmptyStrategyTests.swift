@@ -27,6 +27,8 @@ struct EmptyStrategyTests {
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func directAssertionWithEmptyCustomStrategyRecordsIssue() {
+        guard !SnapshotSkipMode.isEnabled() else { return }
+
         withKnownIssue("An empty strategy must record an issue instead of silently passing.") {
             assertImageSnapshot(
                 matching: Text("snapshot"),
@@ -39,6 +41,8 @@ struct EmptyStrategyTests {
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func previewBackedAssertionWithEmptyCustomStrategyRecordsIssue() {
+        guard !SnapshotSkipMode.isEnabled() else { return }
+
         let previews = PreviewSnapshots<Int>(
             configurations: [.init(name: "Default", state: 0)],
             configure: { _ in Text("snapshot") }

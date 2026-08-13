@@ -1889,6 +1889,9 @@ extension Pixel {
         case unifiedToggleInputFileValidationFailed
         case unifiedToggleInputVoiceTapped
         case unifiedToggleInputStopGenerationTapped
+        case unifiedToggleInputEditReceived
+        case unifiedToggleInputEditSubmitted
+        case unifiedToggleInputEditCancelled
         case unifiedToggleInputSubscriptionUpsellTriggered
         case unifiedToggleInputChatHeaderUpgradeTapped
         case unifiedToggleInputChatHeaderUpgradeShown
@@ -3804,6 +3807,9 @@ extension Pixel.Event {
         case .unifiedToggleInputFileValidationFailed: return "m_aichat_unified_input_file_validation_failed"
         case .unifiedToggleInputVoiceTapped: return "m_aichat_unified_input_voice_tapped"
         case .unifiedToggleInputStopGenerationTapped: return "m_aichat_unified_input_stop_generation_tapped"
+        case .unifiedToggleInputEditReceived: return "m_aichat_unified_input_edit_received"
+        case .unifiedToggleInputEditSubmitted: return "m_aichat_unified_input_edit_submitted"
+        case .unifiedToggleInputEditCancelled: return "m_aichat_unified_input_edit_cancelled"
         case .unifiedToggleInputSubscriptionUpsellTriggered: return "m_aichat_unified_input_subscription_upsell_triggered"
         case .unifiedToggleInputChatHeaderUpgradeTapped: return "m_aichat_unified_input_chat_header_upgrade_tapped"
         case .unifiedToggleInputChatHeaderUpgradeShown: return "m_aichat_unified_input_chat_header_upgrade_shown"

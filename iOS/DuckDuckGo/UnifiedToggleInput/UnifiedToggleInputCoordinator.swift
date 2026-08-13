@@ -787,6 +787,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     func editPrompt(_ request: EditPromptRequest) async -> EditPromptReply {
         resolveEdit(.cancelled)
+        pixelReporter.reportEditReceived()
         beginEditMode(prompt: request.prompt,
                       attachments: makeAttachments(from: request),
                       hasResponsesToLose: request.hasResponsesToLose)
@@ -811,11 +812,17 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     func endEditMode() {
         guard isEditing else { return }
         isEditing = false
+        // A pending continuation here means the edit is ending without a submit (the submit path
+        // resolves it first), so this is a genuine cancel rather than post-submit teardown.
+        let wasCancelled = editContinuation != nil
         resolveEdit(.cancelled)
         resetToolsSelection()
         clearAttachments()
         setText("")
         showCollapsed()
+        if wasCancelled {
+            pixelReporter.reportEditCancelled()
+        }
     }
 
     private func resolveEdit(_ reply: EditPromptReply) {
@@ -1572,6 +1579,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             let files = selectedModelSupportsFileUpload
                 ? UnifiedToggleInputFileEncoder.encode(viewController.currentAttachments)
                 : nil
+            pixelReporter.reportEditSubmitted()
             resolveEdit(.submit(prompt: text, images: images, files: files))
             endEditMode()
             return

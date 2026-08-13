@@ -165,8 +165,7 @@ final public class OnboardingSharedPixelHandler: OnboardingSharedPixelHandling {
 
         pixelFiring?.fire(event,
                           frequency: .uniqueByNameAndParameters,
-                          withAdditionalParameters: additionalParameters,
-                          withNamePrefix: platform.pixelPrefix)
+                          options: .parameters(additionalParameters, namePrefix: platform.pixelPrefix))
     }
 
 }

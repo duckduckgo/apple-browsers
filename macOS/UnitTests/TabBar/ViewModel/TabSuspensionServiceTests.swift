@@ -366,15 +366,10 @@ private final class MockSuspensionPixelFiring: PixelFiring {
 
     var fireCalls = [FireCall]()
 
-    func fire(_ event: PixelKit.Event) {
-        fire(event, frequency: .standard)
-    }
-
-    func fire(_ event: PixelKit.Event, frequency: PixelKit.Frequency) {
-        fire(event, frequency: frequency, includeAppVersionParameter: true, withAdditionalParameters: nil, withNamePrefix: nil, doNotEnforcePrefix: false, onComplete: { _, _ in })
-    }
-
-    func fire(_ event: PixelKit.Event, frequency: PixelKit.Frequency, includeAppVersionParameter: Bool, withAdditionalParameters: [String: String]?, withNamePrefix: String?, doNotEnforcePrefix: Bool, onComplete: @escaping PixelKit.CompletionBlock) {
+    func fire(event: PixelKit.Event,
+              frequency: PixelKit.Frequency,
+              options: PixelKit.Options,
+              onComplete: @escaping PixelKit.CompletionBlock) {
         fireCalls.append(FireCall(pixel: event, frequency: frequency))
         onComplete(true, nil)
     }

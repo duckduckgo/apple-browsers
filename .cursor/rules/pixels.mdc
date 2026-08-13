@@ -189,6 +189,10 @@ Pixel.fire(pixel: .featureUsed, withAdditionalParameters: [
 
 ## PixelFiring Protocol
 
+There are two unrelated protocols with this name. Pick the one matching the pixel system you are in.
+
+### iOS (`iOS/Core/Pixel`)
+
 For dependency injection and testing, use the `PixelFiring` protocol:
 
 ```swift
@@ -203,6 +207,44 @@ public protocol PixelFiring {
                      withAdditionalParameters params: [String: String])
 }
 ```
+
+### PixelKit (macOS and shared packages)
+
+```swift
+// SharedPackages/BrowserServicesKit/Sources/PixelKit/PixelFiring.swift
+public protocol PixelFiring {
+    func fire(event: PixelKit.Event,
+              frequency: PixelKit.Frequency,
+              options: PixelKit.Options,
+              onComplete: @escaping PixelKit.CompletionBlock)
+}
+```
+
+Conformers implement only that requirement. Callers use one of two entry points, never the
+requirement directly:
+
+```swift
+// Fire and forget. Correct for almost every pixel: telemetry should not make the caller wait.
+pixelKit.fire(SubscriptionPixel.subscriptionActivated, frequency: .uniqueByName)
+
+// Request shaping goes in `options`, not in extra parameters.
+pixelKit.fire(event, options: .parameters(["source": "menu"]))
+pixelKit.fire(event, options: .unenforcedPrefix)     // name already fully qualified
+pixelKit.fire(event, options: .withoutAppVersion)    // e.g. crash reports
+
+// Only when the caller genuinely needs the outcome. This awaits a network round trip.
+if try await pixelKit.fireAsync(event, frequency: .daily) == .suppressed { ... }
+```
+
+`PixelKit.Options` presets cover the common cases (`.default`, `.parameters(_:)`, `.namePrefix(_:)`,
+`.unenforcedPrefix`, `.withoutAppVersion`). It is a value type, so uncommon combinations compose:
+
+```swift
+var options = PixelKit.Options.unenforcedPrefix
+options.additionalParameters = ["source": "menu"]
+```
+
+Do not add convenience overloads of `fire` to hide parameters; that is what `Options` replaced.
 
 ## Best Practices
 

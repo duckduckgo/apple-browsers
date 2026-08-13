@@ -1492,7 +1492,9 @@ enum AIChatModelPickerItem {
     case separator
     /// Muted, uppercase section title (no CTA) — used above the gated models section.
     case sectionHeader(title: String)
-    case gatedModel(AIChatModel, badge: String?)
+    /// `routesToUpsell` is false when the upsell is unavailable (kill switch, or a surface that
+    /// doesn't support it) — the row still shows, but must not open the purchase dialog.
+    case gatedModel(AIChatModel, badge: String?, routesToUpsell: Bool)
 }
 
 /// A fully-resolved reasoning-effort row so the view controller only maps it to an `NSMenuItem`.
@@ -1502,6 +1504,8 @@ struct AIChatReasoningPickerItem {
     /// Plus/Pro tag naming the tier a gated effort needs.
     let trailingText: String?
     let isGated: Bool
+    /// See `AIChatModelPickerItem.gatedModel`'s `routesToUpsell`.
+    let routesToUpsell: Bool
 }
 
 extension AIChatOmnibarController {
@@ -1530,7 +1534,7 @@ extension AIChatOmnibarController {
             recordBadgeImpression()
         }
 
-        items += gated.map { .gatedModel($0.model, badge: trailingBadge(for: $0.model)) }
+        items += gated.map { .gatedModel($0.model, badge: trailingBadge(for: $0.model), routesToUpsell: isSubscriptionUpsellEnabled) }
         return items
     }
 
@@ -1569,7 +1573,8 @@ extension AIChatOmnibarController {
                 effort: effort,
                 isSelected: effort == current && !isGated,
                 trailingText: tierBadge(for: requiredTier),
-                isGated: isGated
+                isGated: isGated,
+                routesToUpsell: isGated && isSubscriptionUpsellEnabled
             ))
         }
         // One impression per open, matching the model picker.

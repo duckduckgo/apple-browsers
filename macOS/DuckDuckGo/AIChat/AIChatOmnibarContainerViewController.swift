@@ -1845,9 +1845,12 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                 menu.addItem(.separator())
             case .sectionHeader(let title):
                 menu.addItem(.createMutedSectionHeader(title: title))
-            case .gatedModel(let model, let badge):
-                menu.addItem(modelRow(for: model, trailingText: badge, isSelected: false,
-                                      action: #selector(gatedModelSelected(_:))))
+            case .gatedModel(let model, let badge, let routesToUpsell):
+                let row = modelRow(for: model, trailingText: badge, isSelected: false,
+                                   action: #selector(gatedModelSelected(_:)))
+                // With no upsell to route to, the row is inert rather than a dead-end tap.
+                row.isEnabled = routesToUpsell
+                menu.addItem(row)
             }
         }
 
@@ -1960,6 +1963,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         menuItem.attributedTitle = Self.menuRowTitle(title: item.effort.title,
                                                      subtitle: item.effort.subtitle,
                                                      trailingText: item.trailingText)
+        menuItem.isEnabled = !item.isGated || item.routesToUpsell
         menuItem.representedObject = item.effort
         return menuItem
     }

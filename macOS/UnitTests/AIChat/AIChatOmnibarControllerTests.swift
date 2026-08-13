@@ -2122,6 +2122,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         XCTAssertEqual(gated.map(\.id), ["gated-plus", "gated-pro"])
         XCTAssertEqual(gated[0].badge, UserText.aiChatModelPickerTierBadgePlus)
         XCTAssertEqual(gated[1].badge, UserText.aiChatModelPickerTierBadgePro)
+        XCTAssertTrue(gated.allSatisfy(\.routesToUpsell), "With the upsell on, a gated row opens the purchase dialog")
     }
 
     /// The gated section is exactly `[separator, header, gated…]`, in that order, at the end.
@@ -2192,7 +2193,9 @@ final class AIChatOmnibarControllerTests: XCTestCase {
 
         XCTAssertTrue(hasSeparator(items), "Separator still divides accessible from gated when the flag is off")
         XCTAssertNil(sectionHeaderTitle(in: items), "No upsell header when the flag is off")
-        XCTAssertEqual(gatedRows(items).map(\.id), ["gated-pro"], "Gated rows still render so they can route to the upsell")
+        XCTAssertEqual(gatedRows(items).map(\.id), ["gated-pro"], "Gated rows still render, so the tier is visible")
+        XCTAssertEqual(gatedRows(items).first?.routesToUpsell, false,
+                       "With the upsell off there is nothing to route to — the row must not open the purchase dialog")
         XCTAssertEqual(mockBadgeImpressionPersistor.viewCount, before, "No badge impression recorded when no header is shown")
     }
 
@@ -2342,8 +2345,10 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         XCTAssertEqual(gated?.isGated, true)
         XCTAssertEqual(gated?.trailingText, UserText.aiChatModelPickerTierBadgePlus)
         XCTAssertEqual(gated?.isSelected, false)
+        XCTAssertEqual(gated?.routesToUpsell, true)
         XCTAssertEqual(open?.isGated, false)
         XCTAssertNil(open?.trailingText, "An effort the user can already use carries no tag")
+        XCTAssertEqual(open?.routesToUpsell, false, "An accessible effort is a plain selection, not an upsell")
     }
 
     /// The tag names the tier that unlocks the effort, so it doesn't change with trial eligibility.
@@ -2368,6 +2373,8 @@ final class AIChatOmnibarControllerTests: XCTestCase {
 
         XCTAssertEqual(gated?.isGated, true)
         XCTAssertEqual(gated?.trailingText, UserText.aiChatModelPickerTierBadgePlus)
+        XCTAssertEqual(gated?.routesToUpsell, false,
+                       "With the upsell off the effort stays visible but must not open the purchase dialog")
     }
 
     func testReasoningPickerItems_recordsOneImpressionWhenUpsellShown() async {
@@ -2538,7 +2545,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
     }
 
     // Accessors that flatten `[AIChatModelPickerItem]` for assertions (the enum isn't Equatable).
-    private struct PickerRow { let id: String; let subtitle: String?; let badge: String?; let isSelected: Bool }
+    private struct PickerRow { let id: String; let subtitle: String?; let badge: String?; let isSelected: Bool; var routesToUpsell = false }
 
     private func accessibleRows(_ items: [AIChatModelPickerItem]) -> [PickerRow] {
         items.compactMap { item -> PickerRow? in
@@ -2549,8 +2556,8 @@ final class AIChatOmnibarControllerTests: XCTestCase {
 
     private func gatedRows(_ items: [AIChatModelPickerItem]) -> [PickerRow] {
         items.compactMap { item -> PickerRow? in
-            guard case let .gatedModel(model, badge) = item else { return nil }
-            return PickerRow(id: model.id, subtitle: nil, badge: badge, isSelected: false)
+            guard case let .gatedModel(model, badge, routesToUpsell) = item else { return nil }
+            return PickerRow(id: model.id, subtitle: nil, badge: badge, isSelected: false, routesToUpsell: routesToUpsell)
         }
     }
 

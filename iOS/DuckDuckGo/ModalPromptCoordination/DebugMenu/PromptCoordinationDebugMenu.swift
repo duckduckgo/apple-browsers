@@ -49,6 +49,7 @@ struct PromptCoordinationDebugView: View {
                 snapshotRow(title: "Suppress Other Promos", value: viewModel.formattedSuppressionState)
                 snapshotRow(title: "Application", value: viewModel.formattedApplicationState)
                 snapshotRow(title: "Interaction Readiness", value: viewModel.formattedInteractionReadiness)
+                snapshotRow(title: "Route Resolution", value: viewModel.formattedRouteResolution)
                 snapshotRow(title: "Route Candidate", value: viewModel.formattedRouteCandidate)
                 snapshotRow(title: "Effective Selection", value: viewModel.formattedEffectiveSelection)
                 snapshotRow(title: "Exposure State", value: viewModel.formattedExposureState)
@@ -131,6 +132,7 @@ final class ModalPromptCoordinationDebugViewModel: ObservableObject {
     @Published private(set) var formattedSuppressionState = "Unavailable"
     @Published private(set) var formattedApplicationState = "Unavailable"
     @Published private(set) var formattedInteractionReadiness = "Unavailable"
+    @Published private(set) var formattedRouteResolution = "Unavailable"
     @Published private(set) var formattedRouteCandidate = "Unavailable"
     @Published private(set) var formattedEffectiveSelection = "Unavailable"
     @Published private(set) var formattedExposureState = "Unavailable"
@@ -249,6 +251,7 @@ final class ModalPromptCoordinationDebugViewModel: ObservableObject {
             return
         }
 
+        formattedRouteResolution = formattedRouteResolution(snapshot.routeResolution)
         formattedRouteCandidate = snapshot.routeCandidateRendererID?.uuidString ?? "None"
         formattedEffectiveSelection = snapshot.effectiveSelectedRendererID?.uuidString ?? "None"
         formattedExposureState = formattedExposureState(snapshot.selectionState)
@@ -268,6 +271,30 @@ final class ModalPromptCoordinationDebugViewModel: ObservableObject {
         case .selected(let rendererID):
             return "Selected \(rendererID.uuidString)"
         }
+    }
+
+    private func formattedRouteResolution(_ resolution: NewTabPagePromoRouteResolution) -> String {
+        switch resolution {
+        case .editingState(let rendererID):
+            return formattedHostResolution(host: "Editing State", rendererID: rendererID)
+        case .unifiedInput(let rendererID):
+            return formattedHostResolution(host: "Unified Input", rendererID: rendererID)
+        case .suggestionTray(let rendererID):
+            return formattedHostResolution(host: "Suggestion Tray", rendererID: rendererID)
+        case .standard(let rendererID):
+            return "Standard NTP — \(rendererID.uuidString)"
+        case .noHost:
+            return "No Host"
+        case .contradictory:
+            return "Contradictory Hosts"
+        }
+    }
+
+    private func formattedHostResolution(host: String, rendererID: UUID?) -> String {
+        guard let rendererID else {
+            return "\(host) — No Exposed Renderer"
+        }
+        return "\(host) — \(rendererID.uuidString)"
     }
 
     private func formattedRemoteMessageRenderers(_ renderers: [PromoQueueRemoteMessageRendererSnapshot]) -> String {

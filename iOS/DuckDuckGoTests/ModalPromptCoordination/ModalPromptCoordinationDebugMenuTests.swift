@@ -85,7 +85,7 @@ final class ModalPromptCoordinationDebugMenuTests {
         ))
         let exposureProvider = MutablePromoExposureSnapshotProvider(snapshot: NewTabPagePromoExposureSnapshot(
             mode: .coordinated,
-            routeCandidateRendererID: rendererID,
+            routeResolution: .unifiedInput(rendererID: rendererID),
             effectiveSelectedRendererID: nil,
             selectionState: .blocked(candidateRendererID: rendererID, blockerIDs: [blockerID]),
             activeBlockers: [
@@ -111,6 +111,7 @@ final class ModalPromptCoordinationDebugMenuTests {
         #expect(viewModel.formattedSuppressionState == "Yes")
         #expect(viewModel.formattedApplicationState == "Active")
         #expect(viewModel.formattedInteractionReadiness == "Ready")
+        #expect(viewModel.formattedRouteResolution == "Unified Input — \(rendererID.uuidString)")
         #expect(viewModel.formattedRouteCandidate == rendererID.uuidString)
         #expect(viewModel.formattedEffectiveSelection == "None")
         #expect(viewModel.formattedExposureState == "Blocked \(rendererID.uuidString) — \(blockerID.uuidString)")
@@ -169,7 +170,7 @@ final class ModalPromptCoordinationDebugMenuTests {
         )
         exposureProvider.snapshot = NewTabPagePromoExposureSnapshot(
             mode: .legacy,
-            routeCandidateRendererID: nil,
+            routeResolution: .noHost,
             effectiveSelectedRendererID: nil,
             selectionState: .noRouteCandidate,
             activeBlockers: []
@@ -186,6 +187,7 @@ final class ModalPromptCoordinationDebugMenuTests {
         #expect(viewModel.formattedSuppressionState == "No")
         #expect(viewModel.formattedApplicationState == "Inactive")
         #expect(viewModel.formattedInteractionReadiness == "Waiting")
+        #expect(viewModel.formattedRouteResolution == "No Host")
         #expect(viewModel.formattedRouteCandidate == "None")
         #expect(viewModel.formattedEffectiveSelection == "None")
         #expect(viewModel.formattedExposureState == "No Route Candidate")
@@ -205,6 +207,39 @@ final class ModalPromptCoordinationDebugMenuTests {
         #expect(viewModel.formattedNextRemoteMessageEligibility == "None")
         #expect(viewModel.formattedNextModalEligibility == "None")
         _ = modalLease
+    }
+
+    @available(iOS 16, *)
+    @Test("Route diagnostics distinguish alternate content from contradictory hosts", .timeLimit(.minutes(1)))
+    func whenRouteResolutionChangesThenViewModelPreservesItsExactFailClosedReason() {
+        let exposureProvider = MutablePromoExposureSnapshotProvider(snapshot: NewTabPagePromoExposureSnapshot(
+            mode: .coordinated,
+            routeResolution: .unifiedInput(rendererID: nil),
+            effectiveSelectedRendererID: nil,
+            selectionState: .noRouteCandidate,
+            activeBlockers: []
+        ))
+        let viewModel = ModalPromptCoordinationDebugViewModel(
+            store: MockPromptCooldownStore(),
+            promoQueueDebugSnapshotProvider: nil,
+            promoExposureSnapshotProvider: exposureProvider
+        )
+
+        #expect(viewModel.formattedRouteResolution == "Unified Input — No Exposed Renderer")
+        #expect(viewModel.formattedRouteCandidate == "None")
+
+        exposureProvider.snapshot = NewTabPagePromoExposureSnapshot(
+            mode: .coordinated,
+            routeResolution: .contradictory,
+            effectiveSelectedRendererID: nil,
+            selectionState: .noRouteCandidate,
+            activeBlockers: []
+        )
+        viewModel.refresh()
+
+        #expect(viewModel.formattedRouteResolution == "Contradictory Hosts")
+        #expect(viewModel.formattedRouteCandidate == "None")
+        #expect(exposureProvider.snapshotReadCount == 2)
     }
 
     @available(iOS 16, *)

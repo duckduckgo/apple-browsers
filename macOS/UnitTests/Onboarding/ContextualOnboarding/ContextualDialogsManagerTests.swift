@@ -59,6 +59,40 @@ class ContextualDialogsManagerTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("Treatment waits for a new tab before showing the upsell", .timeLimit(.minutes(1)))
+    func testWhenHighFiveIsDismissedThenTreatmentWaitsForNewTab() async {
+        subscriptionUpsellExperiment.cohortStub = .treatment
+        manager.state = .ongoing
+        stateStorage.contextualDialogsSeen = combinationDictionary[26]!
+        let highFiveTab = await Tab(content: .newtab)
+        let newTab = await Tab(content: .newtab)
+
+        #expect(manager.dialogTypeForTab(highFiveTab, privacyInfo: nil) == .highFive)
+        highFiveTab.setContent(.url(URL.duckDuckGo, credential: nil, source: .ui))
+        #expect(manager.dialogTypeForTab(highFiveTab, privacyInfo: nil) == nil)
+        #expect(manager.state == .ongoing)
+        #expect(manager.lastDialog == .highFive)
+        #expect(!stateStorage.contextualDialogsSeen.contains("subscriptionUpsell"))
+
+        #expect(manager.dialogTypeForTab(newTab, privacyInfo: nil) == .subscriptionUpsell)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Control still completes onboarding after High Five on website navigation", .timeLimit(.minutes(1)))
+    func testWhenHighFiveIsDismissedThenControlCompletesOnWebsiteNavigation() async {
+        subscriptionUpsellExperiment.cohortStub = .control
+        manager.state = .ongoing
+        stateStorage.contextualDialogsSeen = combinationDictionary[26]!
+        let highFiveTab = await Tab(content: .newtab)
+
+        #expect(manager.dialogTypeForTab(highFiveTab, privacyInfo: nil) == .highFive)
+        highFiveTab.setContent(.url(URL.duckDuckGo, credential: nil, source: .ui))
+        #expect(manager.dialogTypeForTab(highFiveTab, privacyInfo: nil) == nil)
+        #expect(manager.state == .onboardingCompleted)
+        #expect(manager.lastDialog == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("Skipping Fire advances to High Five and enrolls", .timeLimit(.minutes(1)))
     func testWhenFireIsSkippedThenHighFiveBecomesTheNextRootDialog() {
         manager.state = .ongoing

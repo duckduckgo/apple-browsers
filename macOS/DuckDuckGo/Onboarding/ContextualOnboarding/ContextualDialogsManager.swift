@@ -214,8 +214,10 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
             lastDialog = nil
             return nil
         }
-        // Browsing on is the third way out of highFive, so it takes the same transition.
         if hasSeen(.highFive) {
+            if subscriptionUpsellExperiment.cohort == .treatment {
+                guard case .newtab = tab.content else { return nil }
+            }
             advancePastHighFive()
 
             if lastDialog == .subscriptionUpsell {

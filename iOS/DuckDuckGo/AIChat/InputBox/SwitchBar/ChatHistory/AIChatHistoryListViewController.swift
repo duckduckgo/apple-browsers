@@ -82,7 +82,6 @@ final class AIChatHistoryListViewController: UIViewController {
         }
     }
 
-    private let featureFlagger: FeatureFlagger
     private let viewModel: AIChatSuggestionsViewModel
     private let onChatSelected: (AIChatSuggestion) -> Void
     private let onChatDeleted: (AIChatSuggestion) -> Void
@@ -143,15 +142,13 @@ final class AIChatHistoryListViewController: UIViewController {
          isIPadExperience: Bool,
          onChatSelected: @escaping (AIChatSuggestion) -> Void,
          onChatDeleted: @escaping (AIChatSuggestion) -> Void,
-         onViewAllSelected: @escaping () -> Void,
-         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger)
+         onViewAllSelected: @escaping () -> Void)
     {
         self.viewModel = viewModel
         self.isIPadExperience = isIPadExperience
         self.onChatSelected = onChatSelected
         self.onChatDeleted = onChatDeleted
         self.onViewAllSelected = onViewAllSelected
-        self.featureFlagger = featureFlagger
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -419,7 +416,7 @@ private extension AIChatHistoryListViewController {
         }
 
         cell.accessoryButtonImage = DesignSystemImages.Glyphs.Size16.fire
-        cell.displaysAccessoryButton = featureFlagger.isFeatureOn(.removeChatHistory)
+        cell.displaysAccessoryButton = true
         cell.onAccessoryButtonPressed = { [weak self] source in
             self?.presentChatDeletionConfirmation(chat: chat, source: source)
         }

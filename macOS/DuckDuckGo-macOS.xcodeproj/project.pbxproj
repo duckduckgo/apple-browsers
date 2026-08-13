@@ -4047,6 +4047,11 @@
 		C8F1A3D52B6E4C7091D4E8F5 /* ChromeExtensionInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9E7C4B12D8F4A6C93E5F1B2 /* ChromeExtensionInstaller.swift */; };
 		C8F1A3D52B6E4C7091D4E8F6 /* ChromeExtensionInstallerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9E7C4B12D8F4A6C93E5F1B3 /* ChromeExtensionInstallerTests.swift */; };
 		C8F1A3D52B6E4C7091D4E8F7 /* ChromeExtensionInstallerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9E7C4B12D8F4A6C93E5F1B3 /* ChromeExtensionInstallerTests.swift */; };
+		C8F1A3D52B6E4C7091D4E8F8 /* FirefoxExtensionInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9E8C7B16D8F4A6C99E5F2B2 /* FirefoxExtensionInstaller.swift */; };
+		C8F1A3D52B6E4C7091D4E8F9 /* FirefoxExtensionInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9E8C7B16D8F4A6C99E5F2B2 /* FirefoxExtensionInstaller.swift */; };
+		C8F1A3D52B6E4C7091D4E8FA /* FirefoxExtensionInstallerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9E8C7B16D8F4A6C99E5F2B3 /* FirefoxExtensionInstallerTests.swift */; };
+		C8F1A3D52B6E4C7091D4E8FB /* FirefoxExtensionInstallerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9E8C7B16D8F4A6C99E5F2B3 /* FirefoxExtensionInstallerTests.swift */; };
+
 		C9BE9F534296EB9B99954781 /* YouTubeAdBlockingTelemetryConsentRequirementTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4D6E49F5A586E6C68C37BA8 /* YouTubeAdBlockingTelemetryConsentRequirementTests.swift */; };
 		CA57DE500000000000000011 /* CustomizeResponsesMenuRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA57DE500000000000000010 /* CustomizeResponsesMenuRowView.swift */; };
 		CA57DE500000000000000012 /* CustomizeResponsesMenuRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA57DE500000000000000010 /* CustomizeResponsesMenuRowView.swift */; };
@@ -6353,6 +6358,9 @@
 		A9E7C4B12D8F4A6C93E5F1B1 /* ThirdPartyBrowserExtensionInstalling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThirdPartyBrowserExtensionInstalling.swift; sourceTree = "<group>"; };
 		A9E7C4B12D8F4A6C93E5F1B2 /* ChromeExtensionInstaller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChromeExtensionInstaller.swift; sourceTree = "<group>"; };
 		A9E7C4B12D8F4A6C93E5F1B3 /* ChromeExtensionInstallerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChromeExtensionInstallerTests.swift; sourceTree = "<group>"; };
+		B9E8C7B16D8F4A6C99E5F2B2 /* FirefoxExtensionInstaller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirefoxExtensionInstaller.swift; sourceTree = "<group>"; };
+		B9E8C7B16D8F4A6C99E5F2B3 /* FirefoxExtensionInstallerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirefoxExtensionInstallerTests.swift; sourceTree = "<group>"; };
+
 		AA0000012F00000100000001 /* TabRestorationData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabRestorationData.swift; sourceTree = "<group>"; };
 		AA0877B726D5160D00B05660 /* SafariVersionReaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariVersionReaderTests.swift; sourceTree = "<group>"; };
 		AA0877B926D5161D00B05660 /* WebKitVersionProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebKitVersionProviderTests.swift; sourceTree = "<group>"; };
@@ -10685,6 +10693,7 @@
 				567A23D92C8894840010F66C /* ContextualOnboarding */,
 				56A054062C1B4772007D8FAB /* Mocks */,
 				A9E7C4B12D8F4A6C93E5F1B3 /* ChromeExtensionInstallerTests.swift */,
+				B9E8C7B16D8F4A6C99E5F2B3 /* FirefoxExtensionInstallerTests.swift */,
 				56A053FE2C1AEFA1007D8FAB /* OnboardingManagerTests.swift */,
 				53E1C6F6843A455BA63258FB /* OnboardingChromeExtensionExperimentTests.swift */,
 				56A054432C2252CE007D8FAB /* OnboardingUserScriptTests.swift */,
@@ -10954,6 +10963,7 @@
 				A9E7C4B12D8F4A6C93E5F1B0 /* DDGChromeExtension.swift */,
 				A9E7C4B12D8F4A6C93E5F1B1 /* ThirdPartyBrowserExtensionInstalling.swift */,
 				A9E7C4B12D8F4A6C93E5F1B2 /* ChromeExtensionInstaller.swift */,
+				B9E8C7B16D8F4A6C99E5F2B2 /* FirefoxExtensionInstaller.swift */,
 				1D48634AE4C346D2A58138C1 /* OnboardingChromeExtensionExperiment.swift */,
 			);
 			path = ThirdPartyBrowserExtensions;
@@ -16158,6 +16168,7 @@
 				C8F1A3D52B6E4C7091D4E8F1 /* DDGChromeExtension.swift in Sources */,
 				C8F1A3D52B6E4C7091D4E8F3 /* ThirdPartyBrowserExtensionInstalling.swift in Sources */,
 				C8F1A3D52B6E4C7091D4E8F5 /* ChromeExtensionInstaller.swift in Sources */,
+				C8F1A3D52B6E4C7091D4E8F9 /* FirefoxExtensionInstaller.swift in Sources */,
 				B626A76E29928B1600053070 /* TestsClosureNavigationResponder.swift in Sources */,
 				3707C71A294B5D0F00682A9F /* TabExtensions.swift in Sources */,
 				B66260DE29AC5D4300E9E3EE /* NavigationProtectionTabExtension.swift in Sources */,
@@ -17121,6 +17132,7 @@
 				B1F2A3D52B6E4C7091D4E901 /* MockThirdPartyBrowserExtensionInstalling.swift in Sources */,
 				DD64C09B3FB444E5878C0D31 /* MockExperimentActionPixelStore.swift in Sources */,
 				C8F1A3D52B6E4C7091D4E8F7 /* ChromeExtensionInstallerTests.swift in Sources */,
+				C8F1A3D52B6E4C7091D4E8FB /* FirefoxExtensionInstallerTests.swift in Sources */,
 				3706FE3D293F661700E42796 /* DataEncryptionTests.swift in Sources */,
 				1D39F7292DCA2C9200F258F0 /* InitialWindowFrameProviderTests.swift in Sources */,
 				BB72939E2EE709AB00BCC3BB /* ReinstallUserDetectionTests.swift in Sources */,
@@ -19042,6 +19054,7 @@
 				C8F1A3D52B6E4C7091D4E8F0 /* DDGChromeExtension.swift in Sources */,
 				C8F1A3D52B6E4C7091D4E8F2 /* ThirdPartyBrowserExtensionInstalling.swift in Sources */,
 				C8F1A3D52B6E4C7091D4E8F4 /* ChromeExtensionInstaller.swift in Sources */,
+				C8F1A3D52B6E4C7091D4E8F8 /* FirefoxExtensionInstaller.swift in Sources */,
 				EEE50C292C38249C003DD7FF /* OptionalExtension.swift in Sources */,
 				AABEE69C24A902BB0043105B /* SuggestionContainer.swift in Sources */,
 				1D68604F2D36BD28006FC53E /* WebExtensionsDebugMenu.swift in Sources */,
@@ -19484,6 +19497,7 @@
 				1D39F7282DCA2C9200F258F0 /* InitialWindowFrameProviderTests.swift in Sources */,
 				56A053FF2C1AEFA1007D8FAB /* OnboardingManagerTests.swift in Sources */,
 				C8F1A3D52B6E4C7091D4E8F6 /* ChromeExtensionInstallerTests.swift in Sources */,
+				C8F1A3D52B6E4C7091D4E8FA /* FirefoxExtensionInstallerTests.swift in Sources */,
 				BB9BA2212D10BC72009229F3 /* TabBarRemoteMessageViewModelTests.swift in Sources */,
 				CC26B6762F0D269D00D380B6 /* NewTabPageNextStepsCardsActionHandlerTests.swift in Sources */,
 				C172E7332C93759C00521D9A /* SyncPromoManagerTests.swift in Sources */,

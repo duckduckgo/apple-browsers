@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Core
 import Foundation
 import Suggestions
@@ -117,13 +118,24 @@ extension MainViewController {
         recordNewTabPageSessionAction { $0.typeInInput() }
     }
 
-    /// Ends the visit on a navigation the user asked for, splitting search results from a site.
+    /// Ends the visit on a navigation the user asked for, splitting Duck.ai from search results
+    /// from a site.
     ///
     /// Called with the resolved URL rather than the typed text, because whether a query becomes a
     /// search or a direct address is only decided while building it. Unlike the action hooks this
     /// has no visibility guard: it must still land when the New Tab Page has already gone.
     func endNewTabPageSessionWithLoad(of url: URL) {
-        newTabPageSessionInstrumentation.visitEnded(terminalAction: url.isDuckDuckGoSearch ? .loadSerp : .loadWebsite)
+        // Duck.ai is tested first: a chat URL carries a query on the search host, so it satisfies
+        // `isDuckDuckGoSearch` too.
+        let terminalAction: NewTabPageSessionWideEventData.TerminalAction
+        if url.isDuckAIURL {
+            terminalAction = .loadDuckai
+        } else if url.isDuckDuckGoSearch {
+            terminalAction = .loadSerp
+        } else {
+            terminalAction = .loadWebsite
+        }
+        newTabPageSessionInstrumentation.visitEnded(terminalAction: terminalAction)
     }
 
     /// Records the user moving the Search / Duck.ai toggle, in whichever direction.

@@ -6442,6 +6442,14 @@ extension MainViewController: TabDelegate {
         _ = findInPageView?.resignFirstResponder()
         hideNotificationBarIfBrokenSitePromptShown()
         tab.aiChatContextualSheetCoordinator.dismissSheet()
+
+        // The new tab carries a URL, so no New Tab Page attaches to supersede the visit and nothing
+        // else would end it. Reached from the browsing menu's Duck.ai entry on builds where chat
+        // opens in its own tab. Guarded because pages also open tabs, from surfaces of their own.
+        if isNewTabPageVisible {
+            endNewTabPageSessionWithLoad(of: url)
+        }
+
         if openedByPage {
             capturePreviewForTab(tab)
             showBars()

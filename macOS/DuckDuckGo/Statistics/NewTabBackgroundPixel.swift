@@ -26,7 +26,7 @@ import PixelKit
  * [Privacy Triage](https://app.asana.com/0/69071770703008/1208146890364172/f)
  * [Detailed Pixels description](https://app.asana.com/0/1201621708115095/1207983904350396/f)
  */
-enum NewTabBackgroundPixel: PixelKitEvent {
+enum NewTabBackgroundPixel: PixelKit.Event {
 
     /**
      * Event Trigger: User selects gradient as custom NTP background.

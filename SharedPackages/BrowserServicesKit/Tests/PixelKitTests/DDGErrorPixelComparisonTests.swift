@@ -96,14 +96,14 @@ final class DDGErrorPixelComparisonTests: XCTestCase {
 
     // MARK: - Test Events
 
-    private struct TestEventWithDDGError: PixelKitEvent {
+    private struct TestEventWithDDGError: PixelKit.Event {
         let name = "test_ddg_error_event"
         let error: Error?
         var parameters: [String: String]? { nil }
         var standardParameters: [PixelKitStandardParameter]? { [.pixelSource] }
     }
 
-    private struct TestEventWithStandardError: PixelKitEvent {
+    private struct TestEventWithStandardError: PixelKit.Event {
         let name = "test_standard_error_event"
         let error: Error?
         var parameters: [String: String]? { nil }

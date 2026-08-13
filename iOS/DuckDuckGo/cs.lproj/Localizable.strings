@@ -4021,6 +4021,18 @@
 /* Special error page title for pages that can only be opened in Safari */
 "prompt.general-page-problem.title" = "Tato stránka se načítá pouze v Safari";
 
+/* Error page message shown after repeated tab terminations */
+"prompt.tab-termination-error-page.message" = "Tato stránka se několikrát přestala načítat. Zkus stránku načíst znovu nebo nám pošli zpětnou vazbu.";
+
+/* Button that reloads a page after repeated tab terminations */
+"prompt.tab-termination-error-page.reload" = "Načíst znovu";
+
+/* Button that opens site feedback after repeated tab terminations */
+"prompt.tab-termination-error-page.send-feedback" = "Odeslat zpětnou vazbu";
+
+/* Error page title shown after repeated tab terminations */
+"prompt.tab-termination-error-page.title" = "Nepodařilo se nám načíst tuto stránku";
+
 /* Default native error page message */
 "prompt.web-page-load-error.message" = "Tento web má neplatný certifikát zabezpečení a nemusí být bezpečné ho navštívit.";
 

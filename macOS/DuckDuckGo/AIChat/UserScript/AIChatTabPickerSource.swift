@@ -20,57 +20,68 @@ import AIChat
 import AppKit
 import WebKit
 
-/// Single source of truth for which open tabs a Duck.ai "attach tabs" picker may offer, shared by
-/// all three surfaces (address bar omnibar, Duck.ai sidebar, New Tab Page omnibar).
+/// Which open tabs a Duck.ai picker may offer.
 ///
-/// Scope depends on the window where the picker was opened:
-/// - **Regular window** → tabs from every regular (non–Fire) window; Fire Window tabs are excluded.
-/// - **Fire Window** → only that same Fire Window's tabs (each Fire Window is an isolated session).
+/// Scope depends on the window the picker was opened from:
+/// - **Regular window** → every regular window's tabs, that window's first.
+/// - **Fire Window** → only its own tabs; each Fire Window is an isolated session.
 ///
-/// Returned tabs are URL tabs only, run through `AIChatTabMetadata.shouldExcludeFromTabPicker`,
-/// pinned-tab- and uuid-deduplicated, and ordered with the origin window first. Callers map the
-/// `Tab`s to their own output type and apply any surface-specific filtering / current-tab handling.
+/// Pinned tabs come before unpinned ones, URL tabs only, filtered by
+/// `AIChatTabMetadata.shouldExcludeFromTabPicker` and deduplicated by uuid, since a shared pinned
+/// collection appears in every window.
 @MainActor
 enum AIChatTabPickerSource {
 
-    /// The tab collections to source from, given the picker's origin window.
-    static func tabCollections(forOrigin origin: TabCollectionViewModel,
-                               in windowControllersManager: WindowControllersManagerProtocol) -> [TabCollectionViewModel] {
-        guard !origin.isBurner else {
-            // A Fire Window only ever sees its own tabs — never other windows, regular or fire.
-            return [origin]
-        }
-        return windowControllersManager.allTabCollectionViewModels.filter { !$0.isBurner }
-    }
-
-    /// Resolves the tab collection of the window that owns `webView`, falling back to the key main
-    /// window when the webView can't be mapped to a main window (e.g. a floating AI chat window).
+    /// Resolves the tab collection of the window that owns `webView`.
     static func originTabCollectionViewModel(for webView: WKWebView?,
                                              in windowControllersManager: WindowControllersManagerProtocol) -> TabCollectionViewModel? {
-        if let window = webView?.window,
+        guard let webView else {
+            return windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel
+        }
+        if let window = webView.window,
            let controller = windowControllersManager.mainWindowControllers.first(where: { $0.window === window }) {
             return controller.mainViewController.tabCollectionViewModel
         }
-        return windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel
+        // A detached Duck.ai window belongs to the tab it was opened from, which is not necessarily
+        // in the key window — resolving to that one would hand a Fire Window chat regular tabs.
+        guard let tabID = hostingAIChatViewController(of: webView)?.tabID else {
+            return webView.window == nil
+                ? windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel
+                : nil
+        }
+        return windowControllersManager.allTabCollectionViewModels.first { collection in
+            collection.indexInAllTabs(where: { $0.uuid == tabID }) != nil
+        }
     }
 
-    /// All attachable tabs (including suspended/unloaded) across the origin-scoped collections,
-    /// origin window first. Returns `AnyTab` so metadata is available even for unloaded tabs.
+    private static func hostingAIChatViewController(of webView: WKWebView) -> AIChatViewController? {
+        var responder: NSResponder? = webView
+        while let current = responder {
+            if let viewController = current as? AIChatViewController { return viewController }
+            responder = current.nextResponder
+        }
+        return nil
+    }
+
+    /// The collections to source from, the origin's first. A regular window sees every other
+    /// regular window; a Fire Window sees only itself.
+    static func tabCollections(forOrigin origin: TabCollectionViewModel,
+                               in windowControllersManager: WindowControllersManagerProtocol) -> [TabCollectionViewModel] {
+        guard !origin.isBurner else { return [origin] }
+        let others = windowControllersManager.allTabCollectionViewModels.filter { !$0.isBurner && $0 !== origin }
+        return [origin] + others
+    }
+
+    /// `AnyTab` so metadata is available for suspended/unloaded tabs too.
     static func attachableTabs(forOrigin origin: TabCollectionViewModel,
                                in windowControllersManager: WindowControllersManagerProtocol) -> [AnyTab] {
-        let collections = originFirst(tabCollections(forOrigin: origin, in: windowControllersManager), origin: origin)
         var seen = Set<String>()
-        var result: [AnyTab] = []
-        for collection in collections {
-            let pinned = collection.pinnedTabsCollection?.tabs ?? []
-            for tab in pinned + collection.tabCollection.tabs {
-                guard case .url(let url, _, _) = tab.content else { continue }
-                guard !AIChatTabMetadata.shouldExcludeFromTabPicker(url) else { continue }
-                guard seen.insert(tab.uuid).inserted else { continue }
-                result.append(tab)
+        return tabCollections(forOrigin: origin, in: windowControllersManager)
+            .flatMap { collection in (collection.pinnedTabsCollection?.tabs ?? []) + collection.tabCollection.tabs }
+            .filter { tab in
+                guard case .url(let url, _, _) = tab.content, !AIChatTabMetadata.shouldExcludeFromTabPicker(url) else { return false }
+                return seen.insert(tab.uuid).inserted
             }
-        }
-        return result
     }
 
     /// The result of resolving a picked tab id to a live `Tab`.
@@ -86,14 +97,11 @@ enum AIChatTabPickerSource {
         }
     }
 
-    /// Locates the attachable tab with `id` across the origin-scoped collections — **including
-    /// suspended/unloaded tabs** — and materializes it into a live `Tab` without selecting or
-    /// focusing it. Applies the same URL + `shouldExcludeFromTabPicker` filter as `attachableTabs`,
-    /// so a tab the picker never offered can't be resolved here. Returns `nil` if nothing matches.
+    /// Materializes the attached tab without selecting it; `nil` unless the picker could offer it.
     static func materializeAttachableTab(withId id: String,
                                          forOrigin origin: TabCollectionViewModel,
                                          in windowControllersManager: WindowControllersManagerProtocol) -> ResolvedTab? {
-        for collection in originFirst(tabCollections(forOrigin: origin, in: windowControllersManager), origin: origin) {
+        for collection in tabCollections(forOrigin: origin, in: windowControllersManager) {
             guard let index = collection.indexInAllTabs(where: { $0.uuid == id }),
                   let anyTab = anyTab(at: index, in: collection) else { continue }
             guard case .url(let url, _, _) = anyTab.content,
@@ -110,15 +118,5 @@ enum AIChatTabPickerSource {
         case .pinned(let i): return collection.pinnedTabsCollection?.tabs[safe: i]
         case .unpinned(let i): return collection.tabCollection.tabs[safe: i]
         }
-    }
-
-    private static func originFirst(_ collections: [TabCollectionViewModel], origin: TabCollectionViewModel) -> [TabCollectionViewModel] {
-        guard let index = collections.firstIndex(where: { $0 === origin }), index != 0 else {
-            return collections
-        }
-        var reordered = collections
-        let originCollection = reordered.remove(at: index)
-        reordered.insert(originCollection, at: 0)
-        return reordered
     }
 }

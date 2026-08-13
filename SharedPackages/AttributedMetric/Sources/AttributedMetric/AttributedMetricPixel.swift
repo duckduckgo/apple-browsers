@@ -38,7 +38,7 @@ enum AttributedMetricPixelName: String {
 /// - Appending app/OS version in the User-Agent header
 /// - Send default suffixes such as [phone|tablet]  or [store|direct]
 /// See https://app.asana.com/1/137249556945/project/72649045549333/task/1210849966244847?focus=true
-enum AttributedMetricPixel: PixelKitEvent {
+enum AttributedMetricPixel: PixelKit.Event {
 
     // Metrics
     case userRetentionWeek(origin: String?, installDate: String?, defaultBrowser: Bool, count: Int, bucketVersion: Int)

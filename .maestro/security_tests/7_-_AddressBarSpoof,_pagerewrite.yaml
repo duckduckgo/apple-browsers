@@ -19,6 +19,12 @@ tags:
 # Test
 - tapOn: "Start"
 # Now check the address bar hasn't been updated too early resulting in spoofed content
+# Wait for the address bar to settle before reading it; copying too early reads a transient value and flakes (mirrors flows 2 & 6).
+- extendedWaitUntil:
+    visible:
+        id: "searchEntry"
+        text: "privacy-test-pages.site"
+    timeout: 10000
 - copyTextFrom:
     id: "searchEntry"
 - assertTrue: ${maestro.copiedText == "privacy-test-pages.site"}

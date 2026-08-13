@@ -67,6 +67,7 @@ final class MockOnboardingStateUpdater: ContextualOnboardingStateUpdater {
     @Published var isContextualOnboardingCompleted: Bool = true
     var isContextualOnboardingCompletedPublisher: Published<Bool>.Publisher { $isContextualOnboardingCompleted }
     func gotItPressed() {}
+
     func fireButtonUsed() {}
     func turnOffFeature() {}
 }

@@ -25,7 +25,7 @@ import PixelKit
 ///
 /// The `.siteLoadingTiming` case is sourced from `WKPageLoadTiming` via the BSK `Navigation` library and
 /// is therefore only fired on macOS today; iOS only fires`.siteLoadingSuccess` / `.siteLoadingFailure`.
-public enum SiteLoadingPixel: PixelKitEvent, PixelKitEventWithCustomPrefix {
+public enum SiteLoadingPixel: PixelKit.Event, PixelKitEventWithCustomPrefix {
 
     /// Pixels are not sent on each fire for privacy reasons, and to avoid overwhelming the pipeline with too much data
     public static let samplePercentage: Int = 2

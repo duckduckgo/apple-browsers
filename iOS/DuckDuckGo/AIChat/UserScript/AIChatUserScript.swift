@@ -258,7 +258,8 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.focusChatInput
         case .editPrompt:
             return { [weak self] params, message in
-                await self?.handler.editPrompt(params: params, message: message)
+                guard let self else { return EditPromptReply.cancelled }
+                return await self.handler.editPrompt(params: params, message: message)
             }
         case .cancelEdit:
             return handler.cancelEdit

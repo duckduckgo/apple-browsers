@@ -24,7 +24,7 @@ import UIComponents
 
 // MARK: - Shared colors
 
-private struct PrimaryButtonColors {
+struct PrimaryButtonColors {
     let standard: Color
     let pressed: Color
     let disabled: Color
@@ -792,7 +792,7 @@ public struct GhostAltButtonStyle: ButtonStyle {
 
 // MARK: - Constants
 
-private enum Consts {
+enum Consts {
     static let legacyCornerRadius: CGFloat = 12
     static let legacyHeight: CGFloat = 50
     static let rebrandedHeightLarge: CGFloat = 50

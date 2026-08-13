@@ -22,7 +22,6 @@ import BrowserServicesKit
 import Core
 import Bookmarks
 import DesignResourcesKit
-import FeatureFlags_iOS
 
 // MARK: Source agnostic action implementations
 extension TabSwitcherViewController {
@@ -301,7 +300,7 @@ extension TabSwitcherViewController {
     func createMultiSelectionMenu() -> UIMenu {
         let selectedIndexPaths = selectedTabs
         let selectedTabObjects = selectedIndexPaths.map { tabsModel.get(tabAt: $0.row) }.compactMap { $0 }
-        let shouldShowSelectionToggleActions = !featureFlagger.isFeatureOn(.tabSwitcherJuly2026) || UIDevice.current.userInterfaceIdiom != .phone
+        let shouldShowSelectionToggleActions = !floatingUIManager.isFloatingTabSwitcherEnabled
         let state = TabSwitcherMultiSelectMenuState(
             selectedCount: selectedTabObjects.count,
             totalCount: tabsModel.count,

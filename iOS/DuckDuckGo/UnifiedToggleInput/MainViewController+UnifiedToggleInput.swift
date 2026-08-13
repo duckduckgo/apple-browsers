@@ -456,12 +456,18 @@ private extension MainViewController {
     private func setDuckAITranscriptDimmedForEditing(_ isEditing: Bool) {
         if isEditing {
             guard currentTab?.isAITab == true, let webView = currentTab?.webView else { return }
+            if whitenedTranscriptWebView !== webView {
+                whitenedContainerOriginalBackground = webView.superview?.backgroundColor
+            }
             whitenedTranscriptWebView = webView
+            webView.superview?.backgroundColor = UIColor(singleUseColor: .duckAIContextualSheetBackground)
             UIView.animate(withDuration: 0.2) { webView.alpha = 0 }
         } else {
             // Restore the exact web view we whitened, not `currentTab`'s — the tab may have changed.
             let webView = whitenedTranscriptWebView
             whitenedTranscriptWebView = nil
+            webView?.superview?.backgroundColor = whitenedContainerOriginalBackground
+            whitenedContainerOriginalBackground = nil
             UIView.animate(withDuration: 0.2) { webView?.alpha = 1 }
         }
     }
@@ -1168,7 +1174,7 @@ extension MainViewController {
         if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
             ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: tab.openedAfterIdle)
         }
-        postIdleSessionInstrumentation.sessionEnded(reason: .barUsed)
+        postIdleSessionInstrumentation.sessionEnded(reason: postIdleSubmissionReason(for: query))
         loadQuery(query)
     }
 

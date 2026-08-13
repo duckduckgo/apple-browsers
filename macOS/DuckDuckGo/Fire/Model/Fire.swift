@@ -201,7 +201,7 @@ final class Fire: FireProtocol {
     private var dispatchGroup: DispatchGroup?
 
     enum BurningData: Equatable {
-        case specificDomains(_ domains: Set<String>, closesTabs: Bool)
+        case specificDomains(_ domains: Set<String>, closesTabs: Bool, scope: BurningScope)
         case all
 
         /// Whether the burn closes/replaces tabs (all-data, window or tab burns) and therefore
@@ -212,7 +212,7 @@ final class Fire: FireProtocol {
             switch self {
             case .all:
                 return true
-            case .specificDomains(_, closesTabs: let closesTabs):
+            case .specificDomains(_, closesTabs: let closesTabs, scope: _):
                 return closesTabs
             }
         }
@@ -222,6 +222,21 @@ final class Fire: FireProtocol {
             guard closesTabs else { return false }
             return decider.shouldShowFireAnimation
         }
+    }
+
+    /// What a burn covers, so that the burning progress dialog can describe what is being deleted.
+    ///
+    /// It mirrors `BurningEntity` without its payload, except for burns of selected history visits.
+    /// Those use an all-windows entity when the visits are from today, but they only delete
+    /// the selected visits.
+    enum BurningScope: Equatable {
+        /// New Tab Page privacy-feed site burn — no tab or window is burned.
+        case none
+        case tab
+        case window
+        case allWindows
+        /// A burn of history visits selected in the History View or in the Fire Dialog.
+        case visits
     }
 
     /// Represents what should be "burned" (tabs/windows) and for which domains; `close` controls whether UI is closed or only state is cleared.
@@ -278,6 +293,19 @@ final class Fire: FireProtocol {
                 return "window"
             case .allWindows:
                 return "all_windows"
+            }
+        }
+
+        var scope: BurningScope {
+            switch self {
+            case .none:
+                return .none
+            case .tab:
+                return .tab
+            case .window:
+                return .window
+            case .allWindows:
+                return .allWindows
             }
         }
 
@@ -368,6 +396,27 @@ final class Fire: FireProtocol {
                     includeChatHistory: Bool,
                     dataClearingWideEventService: DataClearingWideEventService?,
                     completion: (@MainActor () -> Void)?) {
+        burnEntity(entity,
+                   scope: entity.scope,
+                   includingHistory: includingHistory,
+                   includeCookiesAndSiteData: includeCookiesAndSiteData,
+                   includeChatHistory: includeChatHistory,
+                   dataClearingWideEventService: dataClearingWideEventService,
+                   completion: completion)
+    }
+
+    /// Burns `entity`, reporting the burn as covering `scope`.
+    ///
+    /// - Parameter scope: what the burn covers. It only differs from the entity's own scope
+    ///   for burns of selected history visits.
+    @MainActor
+    private func burnEntity(_ entity: BurningEntity,
+                            scope: BurningScope,
+                            includingHistory: Bool,
+                            includeCookiesAndSiteData: Bool,
+                            includeChatHistory: Bool,
+                            dataClearingWideEventService: DataClearingWideEventService?,
+                            completion: (@MainActor () -> Void)?) {
         // Prevent re-entry if burn is already in progress
         guard dispatchGroup == nil, burningData == nil else {
             assertionFailure("burnEntity called while burn already in progress")
@@ -386,7 +435,7 @@ final class Fire: FireProtocol {
         let domains = domainsToBurn(from: entity)
         assert(domains.areAllETLDPlus1(tld: tld))
 
-        burningData = .specificDomains(domains, closesTabs: entity.closesTabs)
+        burningData = .specificDomains(domains, closesTabs: entity.closesTabs, scope: scope)
 
         dataClearingWideEventService?.start(.clearLastSessionState)
         let lastSessionStateResult = burnLastSessionState()
@@ -675,7 +724,9 @@ final class Fire: FireProtocol {
                 entity = .none(selectedDomains: domains)
             }
 
+            // Only the selected visits are deleted, even though today's visits burn all windows.
             self.burnEntity(entity,
+                            scope: .visits,
                             includingHistory: false,
                             includeCookiesAndSiteData: clearSiteData,
                             includeChatHistory: clearChatHistory,

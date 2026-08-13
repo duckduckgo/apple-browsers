@@ -81,6 +81,9 @@ jobs:
         submodules: recursive
         ref: ${{ inputs.commit-sha || env.branch }}
 
+    - name: Print macOS version
+      run: sw_vers
+
     - name: Set destination output
       id: destination
       run: |

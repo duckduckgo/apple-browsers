@@ -19,6 +19,7 @@
 
 import AIChat
 import Combine
+import UIKit
 import XCTest
 @testable import DuckDuckGo
 
@@ -210,6 +211,106 @@ final class AIChatContextualUTIHostTests: XCTestCase {
         XCTAssertEqual(removeCallCount, 0)
         XCTAssertEqualState(sut.chipViewModel.state, .attached(title: "Page A", favicon: nil))
         XCTAssertEqual(sut.attachedContextURL, pageAURL)
+    }
+
+    func test_unmountThenMountElsewhere_leavesExactlyOneParent() {
+        makeSUT()
+        let first = UIViewController()
+        let second = UIViewController()
+
+        let firstView = sut.mount(in: first)
+        XCTAssertTrue(firstView.isDescendant(of: first.view))
+        XCTAssertEqual(first.children.count, 1)
+
+        sut.unmount(from: first)
+        XCTAssertTrue(first.children.isEmpty)
+        XCTAssertNil(firstView.superview)
+
+        let secondView = sut.mount(in: second)
+        XCTAssertTrue(secondView.isDescendant(of: second.view))
+        XCTAssertEqual(second.children.count, 1)
+        XCTAssertTrue(first.children.isEmpty)
+    }
+
+    func test_mountTwiceInSameParent_doesNotDuplicate() {
+        makeSUT()
+        let parent = UIViewController()
+
+        sut.mount(in: parent)
+        sut.mount(in: parent)
+
+        XCTAssertEqual(parent.children.count, 1)
+    }
+
+    func test_unmountWithoutMount_doesNothing() {
+        makeSUT()
+        sut.unmount(from: UIViewController())
+    }
+
+    /// A dismissal animating out finishes after the next surface may already have mounted the input. Taking
+    /// it away then would leave that surface without its bar.
+    func test_unmountFromAStaleParent_leavesTheCurrentMountAlone() {
+        makeSUT()
+        let stale = UIViewController()
+        let current = UIViewController()
+
+        _ = sut.mount(in: stale)
+        let inputView = sut.mount(in: current)
+
+        sut.unmount(from: stale)
+
+        XCTAssertTrue(inputView.isDescendant(of: current.view))
+        XCTAssertEqual(current.children.count, 1)
+    }
+
+    /// Freezing is what lets a dismissal own the surface's motion, so it has to hand over the position the
+    /// keyboard guide was holding — not shift it as the constraint is swapped.
+    func test_freezeInputPosition_leavesTheInputExactlyWhereItWas() {
+        makeSUT()
+        let parent = UIViewController()
+        parent.view.frame = CGRect(x: 0, y: 0, width: 390, height: 844)
+        let inputView = sut.mount(in: parent)
+        parent.view.layoutIfNeeded()
+        let before = inputView.frame
+
+        sut.freezeInputPosition()
+        parent.view.layoutIfNeeded()
+
+        XCTAssertEqual(inputView.frame, before)
+    }
+
+    func test_freezeInputPositionTwice_stillLeavesItWhereItWas() {
+        makeSUT()
+        let parent = UIViewController()
+        parent.view.frame = CGRect(x: 0, y: 0, width: 390, height: 844)
+        let inputView = sut.mount(in: parent)
+        parent.view.layoutIfNeeded()
+        let before = inputView.frame
+
+        sut.freezeInputPosition()
+        sut.freezeInputPosition()
+        parent.view.layoutIfNeeded()
+
+        XCTAssertEqual(inputView.frame, before)
+    }
+
+    /// A frozen pin belongs to the parent it was measured against. Left behind, the next mount would sit at a
+    /// stale position.
+    func test_freezeThenRemount_pinsToTheNewParent() {
+        makeSUT()
+        let first = UIViewController()
+        first.view.frame = CGRect(x: 0, y: 0, width: 390, height: 844)
+        _ = sut.mount(in: first)
+        first.view.layoutIfNeeded()
+        sut.freezeInputPosition()
+
+        let second = UIViewController()
+        second.view.frame = CGRect(x: 0, y: 0, width: 320, height: 568)
+        let inputView = sut.mount(in: second)
+        second.view.layoutIfNeeded()
+
+        XCTAssertTrue(inputView.isDescendant(of: second.view))
+        XCTAssertEqual(inputView.frame.maxY, second.view.keyboardLayoutGuide.layoutFrame.minY)
     }
 
     private func makeContext(title: String, url: String) -> AIChatPageContext {

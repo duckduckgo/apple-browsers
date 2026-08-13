@@ -544,11 +544,19 @@ extension BookmarksContextMenu: FolderMenuItemSelectors {
     @objc func reorderByName(_ sender: NSMenuItem) {
         switch sender.representedObject {
         case let folder as BookmarkFolder:
-            bookmarkManager.reorderByName(folder.children, withinParentFolder: .parent(uuid: folder.id))
+            bookmarkManager.reorderByName(
+                folder.children,
+                withinParentFolder: .parent(uuid: folder.id),
+                undoManager: bookmarksContextMenuDelegate?.undoManager
+            )
         case let root as BookmarksRootMenuItem:
-            bookmarkManager.reorderByName(root.topLevelEntities, withinParentFolder: .root)
+            bookmarkManager.reorderByName(
+                root.topLevelEntities,
+                withinParentFolder: .root,
+                undoManager: bookmarksContextMenuDelegate?.undoManager
+            )
         default:
-            assertionFailure("Failed to retrieve BookmarkFolder from Reorder by Name context menu item")
+            assertionFailure("Failed to retrieve BookmarkFolder from Sort by name permanently context menu item")
         }
     }
 

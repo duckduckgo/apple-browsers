@@ -24,7 +24,7 @@ final class PixelKitParametersTests: XCTestCase {
 
     /// Test events for convenience
     ///
-    private enum TestEvent: PixelKitEvent {
+    private enum TestEvent: PixelKit.Event {
         case errorEvent(error: Error)
 
         var name: String {

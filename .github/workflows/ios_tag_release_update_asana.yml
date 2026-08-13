@@ -94,6 +94,9 @@ jobs:
       - name: Check out the code
         uses: actions/checkout@v6
 
+      - name: Print macOS version
+        run: sw_vers
+
       - name: Download stop_workflow flag artifact
         id: download-stop-workflow
         continue-on-error: true
@@ -131,6 +134,9 @@ jobs:
           fetch-depth: 0
           submodules: recursive
           ref: main
+
+      - name: Print macOS version
+        run: sw_vers
 
       - name: Download tag artifact
         id: download-tag

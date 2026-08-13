@@ -293,6 +293,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         pixelFiring: UTIPixelFiring = .live,
         contextualStartsPreSubmit: Bool = false,
         attachmentPasteEnabled: Bool = false,
+        placesAttachmentsAboveInput: Bool = false,
         updatedModelPickerFeature: UpdatedModelPickerFeatureProviding = UpdatedModelPickerFeature()
     ) {
         self.host = host
@@ -324,7 +325,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         self.lastUsedReasoningModeProvider = lastUsedReasoningModeProvider
             ?? duckAiNativeStorageHandler.map { DuckAiLastUsedReasoningModeProvider(storage: $0, pixelFiring: duckAiNativeStoragePixelFiring) }
         self.duckAIWideEventFlowScope = duckAIWideEventFlowScope
-        viewController = UnifiedToggleInputViewController(isToggleEnabled: isToggleEnabled, isFireTab: isFireTab)
+        viewController = UnifiedToggleInputViewController(isToggleEnabled: isToggleEnabled,
+                                                         isFireTab: isFireTab,
+                                                         placesAttachmentsAboveInput: placesAttachmentsAboveInput)
         contentViewController = UnifiedInputContentContainerViewController(
             switchBarHandler: viewController.handler,
             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
@@ -815,7 +818,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         }
         for file in request.files ?? [] {
             guard let data = Data(base64Encoded: file.data) else { continue }
-            attachments.append(.file(AIChatFileAttachment(data: data, fileName: file.fileName, mimeType: file.mimeType)))
+            attachments.append(.file(UnifiedToggleInputAttachmentPresenter.makeFileAttachment(data: data,
+                                                                                              fileName: file.fileName,
+                                                                                              mimeType: file.mimeType)))
         }
         return attachments
     }

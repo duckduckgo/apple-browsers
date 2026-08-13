@@ -222,7 +222,7 @@ final class AIChatFileAttachmentCardView: NSView {
     // MARK: - Appearance
 
     private func updateAppearance() {
-        NSAppearance.withAppAppearance {
+        effectiveAppearance.performAsCurrentDrawingAppearance {
             let surfaceColor = NSColor(designSystemColor: .surfaceSecondary)
             let removeButtonBackgroundColor = NSColor(named: Constants.removeButtonBackgroundColorName) ?? .white
             let removeButtonIconColor = NSColor(named: Constants.removeButtonIconColorName) ?? .black
@@ -300,7 +300,7 @@ private final class AIChatFilePagePreviewView: NSView {
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
 
-        NSAppearance.withAppAppearance {
+        effectiveAppearance.performAsCurrentDrawingAppearance {
             NSColor(designSystemColor: .surfaceDecorationSecondary).setFill()
             NSBezierPath(roundedRect: Layout.bar1Rect, xRadius: Layout.barCornerRadius, yRadius: Layout.barCornerRadius).fill()
             NSBezierPath(roundedRect: Layout.bar2Rect, xRadius: Layout.barCornerRadius, yRadius: Layout.barCornerRadius).fill()
@@ -312,7 +312,7 @@ private final class AIChatFilePagePreviewView: NSView {
     }
 
     func refreshAppearance() {
-        NSAppearance.withAppAppearance {
+        effectiveAppearance.performAsCurrentDrawingAppearance {
             layer?.backgroundColor = NSColor(designSystemColor: .surfaceTertiary).cgColor
         }
         needsDisplay = true

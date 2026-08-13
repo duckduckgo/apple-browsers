@@ -1234,7 +1234,7 @@ final class MockSubscriptionEventReporter: SubscriptionEventReporter {
         reportedActivationErrors.append(subscriptionActivationError)
     }
 
-    func report(subscriptionTierOptionEvent: PixelKitEvent) {
+    func report(subscriptionTierOptionEvent: PixelKit.Event) {
         reportedTierOptionEvents.append(TierOptionEventRecord(eventName: subscriptionTierOptionEvent.name))
     }
 }

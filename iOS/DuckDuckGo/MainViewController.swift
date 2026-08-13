@@ -1997,7 +1997,11 @@ class MainViewController: UIViewController {
         return escapeHatchModelBuilder.makeAfterIdleHatch(router: self)
     }
 
-    fileprivate func attachHomeScreen(isNewTab: Bool = false, allowingKeyboard: Bool = false, previousTab: TabViewController? = nil, openedAfterIdle: Bool = false) {
+    fileprivate func attachHomeScreen(isNewTab: Bool = false,
+                                      allowingKeyboard: Bool = false,
+                                      previousTab: TabViewController? = nil,
+                                      openedAfterIdle: Bool = false,
+                                      startsNewTabPageSessionVisit: Bool = true) {
         guard !autoClearInProgress else { return }
 
         if tabManager.currentTabsModel.tabs.isEmpty && tabManager.currentTabsModel.allowsEmpty {
@@ -2126,7 +2130,10 @@ class MainViewController: UIViewController {
 
             fireNewTabPixels()
             fireNTPShownInstrumentation(openedAfterIdle: openedAfterIdle, hatch: hatch, focused: willBeginEditing)
-            startNewTabPageSessionInstrumentation(isNewTab: isNewTab, willBeginEditing: willBeginEditing, isAfterFire: isAfterFire)
+
+            if startsNewTabPageSessionVisit {
+                startNewTabPageSessionInstrumentation(isNewTab: isNewTab, willBeginEditing: willBeginEditing, isAfterFire: isAfterFire)
+            }
         }
 
         if willBeginEditing {
@@ -3462,7 +3469,14 @@ class MainViewController: UIViewController {
         tabsBarController?.backgroundTabAdded()
     }
 
-    func newTab(reuseExisting: Bool = false, allowingKeyboard: Bool = true, openedAfterIdle: Bool = false) {
+    /// `startsNewTabPageSessionVisit` is false when the tab is only a container for something
+    /// that opens immediately over it, such as Duck.ai on iPad. Starting a visit there would
+    /// discard the visit the user is actually on, and would invent one when they came from a web
+    /// page, so the page this tab shows is never a New Tab Page the user sees.
+    func newTab(reuseExisting: Bool = false,
+                allowingKeyboard: Bool = true,
+                openedAfterIdle: Bool = false,
+                startsNewTabPageSessionVisit: Bool = true) {
         if daxDialogsManager.shouldShowFireButtonPulse {
             ViewHighlighter.hideAll()
         }
@@ -6493,7 +6507,7 @@ extension MainViewController: TabDelegate {
     func tabDidRequestAIChat(tab: TabViewController) {
         fireAIChatUsagePixelAndSetFeatureUsed(tab.link == nil ? .browsingMenuAIChatNewTabPage : .browsingMenuAIChatWebPage)
         if DevicePlatform.isIpad {
-            newTab(allowingKeyboard: false)
+            newTab(allowingKeyboard: false, startsNewTabPageSessionVisit: false)
         }
         openAIChat()
     }

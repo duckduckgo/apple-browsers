@@ -1229,6 +1229,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     override func layoutSubviews() {
         super.layoutSubviews()
         applyOmnibarCornerStyle()
+        updateMaskLayer()
     }
 
     private func setUpCallbacks() {

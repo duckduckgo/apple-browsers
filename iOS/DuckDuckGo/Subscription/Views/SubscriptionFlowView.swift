@@ -25,8 +25,14 @@ import DataBrokerProtection_iOS
 import PrivacyConfig
 import VPN
 
+/// Atomic sheet payload to avoid SwiftUI staleness when both flag and content come from one tap.
+private struct OnboardingFlowPayload: Identifiable {
+    let id = UUID()
+    let flow: SubscriptionOnboardingFlowViewModel
+}
+
 struct SubscriptionFlowView: View {
-        
+
     @Environment(\.dismiss) var dismiss
     @StateObject var viewModel: SubscriptionFlowViewModel
     
@@ -42,7 +48,7 @@ struct SubscriptionFlowView: View {
 
     // MARK: - Onboarding state
 
-    @State private var isShowingOnboarding = false
+    @State private var onboardingFlow: OnboardingFlowPayload?
 
     enum Constants {
         static let empty = ""
@@ -176,13 +182,8 @@ struct SubscriptionFlowView: View {
             }
         }
 
-        .sheet(isPresented: $isShowingOnboarding) {
-            if let progress = viewModel.onboardingProgress {
-                SubscriptionOnboardingLauncher.launch(
-                    flow: .postCheckout(progress: progress,
-                                        onFinish: { isShowingOnboarding = false },
-                                        pirScreen: { pirDestination }))
-            }
+        .sheet(item: $onboardingFlow) { payload in
+            SubscriptionOnboardingLauncher.launch(flow: payload.flow)
         }
         
         .onFirstAppear {
@@ -221,8 +222,12 @@ struct SubscriptionFlowView: View {
     // MARK: - Onboarding
 
     private func startOnboarding() {
-        guard viewModel.onboardingProgress != nil else { return }
-        isShowingOnboarding = true
+        guard let progress = viewModel.onboardingProgress else { return }
+        let flow = SubscriptionOnboardingFlowViewModel.postCheckout(
+            progress: progress,
+            onFinish: { onboardingFlow = nil },
+            pirScreen: { pirDestination })
+        onboardingFlow = OnboardingFlowPayload(flow: flow)
     }
 
     /// Same destination the hidden PIR `NavigationLink` above pushes.

@@ -825,7 +825,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         }
         for file in request.files ?? [] {
             guard let data = Data(base64Encoded: file.data) else { continue }
-            attachments.append(.file(AIChatFileAttachment(data: data, fileName: file.fileName, mimeType: file.mimeType)))
+            attachments.append(.file(UnifiedToggleInputAttachmentPresenter.makeFileAttachment(data: data,
+                                                                                              fileName: file.fileName,
+                                                                                              mimeType: file.mimeType)))
         }
         return attachments
     }

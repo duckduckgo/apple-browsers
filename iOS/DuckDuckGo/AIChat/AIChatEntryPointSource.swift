@@ -22,7 +22,7 @@ import Core
 import PixelKit
 
 /// Fires as `m_aichat_entry_point`; the `m_` prefix plus the platform suffix are applied by PixelKit.
-enum AIChatEntryPointPixel: PixelKitEvent, PixelKitEventWithCustomPrefix {
+enum AIChatEntryPointPixel: PixelKit.Event, PixelKitEventWithCustomPrefix {
 
     case entryPoint
 

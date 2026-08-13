@@ -82,7 +82,10 @@ extension MainViewController {
 
     @objc
     private func onForegroundWithNewTabPageOnScreen() {
-        guard isNewTabPageVisible else { return }
+        // A screen the app left presented, such as Bookmarks or Settings, is what the user comes
+        // back to, so the page underneath it is not an arrival. Nor is its dismissal: only the page
+        // being put on screen opens a visit.
+        guard isNewTabPageVisible, presentedViewController == nil else { return }
 
         // Not a burn arrival: a burn reports itself through the attach it causes.
         startNewTabPageSessionInstrumentation(isNewTab: false,

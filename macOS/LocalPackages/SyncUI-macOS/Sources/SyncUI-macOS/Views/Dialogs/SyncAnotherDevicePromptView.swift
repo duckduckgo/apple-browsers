@@ -28,7 +28,7 @@ struct SyncAnotherDevicePromptView: View {
     }
 
     var body: some View {
-        SyncDialog(spacing: 20.0) {
+        SyncDialogV2(spacing: 20.0) {
             VStack(alignment: .center, spacing: 20) {
                 Image(.syncPairFeature128)
                 VStack(alignment: .center, spacing: 8) {
@@ -78,8 +78,6 @@ struct SyncAnotherDevicePromptView: View {
     DesignSystemRebrand.isAppRebranded = { true }
     return SyncAnotherDevicePromptView()
         .environmentObject(ManagementDialogModel())
-        .frame(width: 420)
-        .padding()
 }
 
 #Preview("Connecting") {
@@ -89,7 +87,5 @@ struct SyncAnotherDevicePromptView: View {
             model.isConnectingThisDeviceOnly = true
             return model
         }())
-        .frame(width: 420)
-        .padding()
 }
 #endif

@@ -2100,7 +2100,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
 
     // MARK: - Model Picker Content (modelPickerItems)
 
-    func testModelPickerItems_freeUserUpsellOn_accessibleThenSubscriberExclusiveGatedSection() async {
+    func testModelPickerItems_freeUserUpsellOn_accessibleThenTryFreeGatedSection() async {
         featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarSubscriptionUpsell.rawValue] = true
         await loadModels([
             makeRemoteModel(id: "free-a", accessTier: ["free"]),
@@ -2115,12 +2115,8 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         XCTAssertEqual(accessible.map(\.id), ["free-a", "free-b"])
         XCTAssertNil(accessible[0].badge, "Free-tier models carry no trailing badge")
 
-        XCTAssertTrue(hasSeparator(items))
-
-        let header = gatedHeader(in: items)
-        XCTAssertEqual(header?.title, UserText.aiChatModelPickerSubscriberExclusive)
-        XCTAssertEqual(header?.badge, UserText.aiChatModelPickerTryForFree, "Trial-eligible free user sees Try for free")
-        XCTAssertEqual(header?.representativeId, "gated-plus", "First gated model represents the header's routing tier")
+        XCTAssertEqual(sectionHeaderTitle(in: items), UserText.aiChatModelPickerTryFreeSectionHeader,
+                       "A trial-eligible user is offered the free trial")
 
         let gated = gatedRows(items)
         XCTAssertEqual(gated.map(\.id), ["gated-plus", "gated-pro"])
@@ -2128,7 +2124,27 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         XCTAssertEqual(gated[1].badge, UserText.aiChatModelPickerTierBadgePro)
     }
 
-    func testModelPickerItems_plusUserUpsellOn_proExclusiveHeaderUpgradeBadgeAndPlusModelsBadged() async {
+    /// The gated section is exactly `[separator, header, gated…]`, in that order, at the end.
+    func testModelPickerItems_gatedSectionOrdering() async {
+        featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarSubscriptionUpsell.rawValue] = true
+        await loadModels([
+            makeRemoteModel(id: "free-a", accessTier: ["free"]),
+            makeRemoteModel(id: "gated-pro", accessTier: ["pro"]),
+        ], tier: nil, trialEligible: true)
+
+        let items = controller.modelPickerItems(selectedModelId: nil)
+
+        let separatorIndex = firstIndex(in: items) { if case .separator = $0 { return true }; return false }
+        let headerIndex = firstIndex(in: items) { if case .sectionHeader = $0 { return true }; return false }
+        let gatedIndex = firstIndex(in: items) { if case .gatedModel = $0 { return true }; return false }
+
+        XCTAssertEqual(separatorCount(items), 1, "Only the gated section is divided off")
+        XCTAssertEqual(separatorIndex, 1, "The single accessible row comes first")
+        XCTAssertEqual(headerIndex, 2)
+        XCTAssertEqual(gatedIndex, 3)
+    }
+
+    func testModelPickerItems_plusUser_accessibleModelsAreUnbadgedAndProSectionIsOffered() async {
         featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarSubscriptionUpsell.rawValue] = true
         await loadModels([
             makeRemoteModel(id: "basic", accessTier: ["free", "plus"]),
@@ -2141,20 +2157,18 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         let accessible = accessibleRows(items)
         XCTAssertEqual(accessible.map(\.id), ["basic", "plus-only"])
         XCTAssertNil(accessible[0].badge, "A free+plus model resolves to the free tier — no badge")
-        XCTAssertEqual(accessible[1].badge, UserText.aiChatModelPickerTierBadgePlus,
-                       "An already-accessible plus-only model is still badged PLUS")
+        XCTAssertNil(accessible[1].badge,
+                     "A plus-only model the subscriber already has is not tagged with their own tier")
 
-        let header = gatedHeader(in: items)
-        XCTAssertEqual(header?.title, UserText.aiChatModelPickerProExclusive,
-                       "A Plus user's remaining gated models are all Pro-only")
-        XCTAssertEqual(header?.badge, UserText.aiChatModelPickerUpgrade,
-                       "A subscriber always sees Upgrade, never Try for free, regardless of trial eligibility")
+        XCTAssertEqual(sectionHeaderTitle(in: items), UserText.aiChatModelPickerAvailableWithProSectionHeader,
+                       "A subscriber is never offered the trial, only the upgrade")
 
         XCTAssertEqual(gatedRows(items).map(\.id), ["pro-only"])
-        XCTAssertEqual(gatedRows(items).first?.badge, UserText.aiChatModelPickerTierBadgePro)
+        XCTAssertEqual(gatedRows(items).first?.badge, UserText.aiChatModelPickerTierBadgePro,
+                       "A model still out of reach keeps its tier badge")
     }
 
-    func testModelPickerItems_freeUserTrialIneligible_usesUpgradeBadge() async {
+    func testModelPickerItems_freeUserTrialIneligible_usesAvailableWithProHeader() async {
         featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarSubscriptionUpsell.rawValue] = true
         await loadModels([
             makeRemoteModel(id: "gated-plus", accessTier: ["plus"]),
@@ -2162,8 +2176,8 @@ final class AIChatOmnibarControllerTests: XCTestCase {
 
         let items = controller.modelPickerItems(selectedModelId: nil)
 
-        XCTAssertEqual(gatedHeader(in: items)?.badge, UserText.aiChatModelPickerUpgrade,
-                       "A free user who already used their trial sees Upgrade")
+        XCTAssertEqual(sectionHeaderTitle(in: items), UserText.aiChatModelPickerAvailableWithProSectionHeader,
+                       "A free user who already used their trial isn't offered it again")
     }
 
     func testModelPickerItems_upsellOff_gatedRowsShownWithoutHeaderAndNoImpression() async {
@@ -2177,8 +2191,8 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         let items = controller.modelPickerItems(selectedModelId: nil)
 
         XCTAssertTrue(hasSeparator(items), "Separator still divides accessible from gated when the flag is off")
-        XCTAssertNil(gatedHeader(in: items), "No upsell header when the flag is off")
-        XCTAssertEqual(gatedRows(items).map(\.id), ["gated-pro"], "Gated rows still render (dimmed) so they can't be selected")
+        XCTAssertNil(sectionHeaderTitle(in: items), "No upsell header when the flag is off")
+        XCTAssertEqual(gatedRows(items).map(\.id), ["gated-pro"], "Gated rows still render so they can route to the upsell")
         XCTAssertEqual(mockBadgeImpressionPersistor.viewCount, before, "No badge impression recorded when no header is shown")
     }
 
@@ -2194,9 +2208,68 @@ final class AIChatOmnibarControllerTests: XCTestCase {
 
         XCTAssertEqual(accessibleRows(items).map(\.id), ["free-a", "free-b"])
         XCTAssertFalse(hasSeparator(items))
-        XCTAssertNil(gatedHeader(in: items))
+        XCTAssertNil(sectionHeaderTitle(in: items))
         XCTAssertTrue(gatedRows(items).isEmpty)
         XCTAssertEqual(mockBadgeImpressionPersistor.viewCount, before)
+    }
+
+    // MARK: - Model Picker Recommendations (backend labels)
+
+    func testModelPickerItems_labelledModelsComeFirstWithNoDividerBetweenThem() async {
+        featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarSubscriptionUpsell.rawValue] = true
+        await loadModels([
+            makeRemoteModel(id: "plain-a", accessTier: ["free"]),
+            makeRemoteModel(id: "recommended", accessTier: ["free"], label: .everydayUse),
+            makeRemoteModel(id: "plain-b", accessTier: ["free"]),
+        ], tier: nil)
+
+        let items = controller.modelPickerItems(selectedModelId: nil)
+
+        XCTAssertEqual(accessibleRows(items).map(\.id), ["recommended", "plain-a", "plain-b"],
+                       "Labelled models lead; the rest keep API order")
+        XCTAssertEqual(separatorCount(items), 0, "Recommended and plain models are one uninterrupted list")
+    }
+
+    func testModelPickerItems_labelMapsToSubtitleCopy() async {
+        await loadModels([
+            makeRemoteModel(id: "everyday", accessTier: ["free"], label: .everydayUse),
+            makeRemoteModel(id: "hits-limits", accessTier: ["free"], label: .usesLimitsFaster),
+            makeRemoteModel(id: "plain", accessTier: ["free"]),
+        ], tier: nil)
+
+        let rows = accessibleRows(controller.modelPickerItems(selectedModelId: nil))
+
+        XCTAssertEqual(rows.first { $0.id == "everyday" }?.subtitle, UserText.aiChatModelPickerLabelEverydayUse)
+        XCTAssertEqual(rows.first { $0.id == "hits-limits" }?.subtitle, UserText.aiChatModelPickerLabelUsesLimitsFaster)
+        XCTAssertNil(rows.first { $0.id == "plain" }?.subtitle, "An unlabelled model has no subtitle")
+    }
+
+    /// A label this build doesn't know still marks the model as recommended (it sorts first), but
+    /// there's no copy to show for it — the row must not claim a subtitle it can't render.
+    func testModelPickerItems_unknownLabelSortsFirstWithoutSubtitle() async {
+        await loadModels([
+            makeRemoteModel(id: "plain", accessTier: ["free"]),
+            makeRemoteModel(id: "future", accessTier: ["free"], label: .unknown("FUTURE_LABEL")),
+        ], tier: nil)
+
+        let rows = accessibleRows(controller.modelPickerItems(selectedModelId: nil))
+
+        XCTAssertEqual(rows.map(\.id), ["future", "plain"])
+        XCTAssertNil(rows[0].subtitle)
+    }
+
+    func testModelPickerItems_labelledButGatedModelStaysInTheGatedSection() async {
+        featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarSubscriptionUpsell.rawValue] = true
+        await loadModels([
+            makeRemoteModel(id: "free-a", accessTier: ["free"]),
+            makeRemoteModel(id: "gated-labelled", accessTier: ["pro"], label: .everydayUse),
+        ], tier: nil, trialEligible: true)
+
+        let items = controller.modelPickerItems(selectedModelId: nil)
+
+        XCTAssertEqual(accessibleRows(items).map(\.id), ["free-a"],
+                       "A labelled model the user can't access stays in the gated section")
+        XCTAssertEqual(gatedRows(items).map(\.id), ["gated-labelled"])
     }
 
     func testModelPickerItems_recordsOneBadgeImpressionPerCallWhenHeaderShown() async {
@@ -2212,7 +2285,9 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         XCTAssertEqual(mockBadgeImpressionPersistor.viewCount, 2)
     }
 
-    func testModelPickerItems_headerMutedWhenImpressionCapReached() async {
+    /// The model picker's header is a plain title with no badge, so the impression cap no longer
+    /// changes how it renders — it only mutes the reasoning picker's badge.
+    func testModelPickerItems_headerUnchangedWhenImpressionCapReached() async {
         featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarSubscriptionUpsell.rawValue] = true
         await loadModels([
             makeRemoteModel(id: "gated-pro", accessTier: ["pro"]),
@@ -2223,7 +2298,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
 
         let items = controller.modelPickerItems(selectedModelId: nil)
 
-        XCTAssertEqual(gatedHeader(in: items)?.isMuted, true)
+        XCTAssertEqual(sectionHeaderTitle(in: items), UserText.aiChatModelPickerTryFreeSectionHeader)
     }
 
     func testModelPickerItems_marksSelectedAccessibleRow() async {
@@ -2349,7 +2424,8 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         supportedTools: [String] = [],
         supportedReasoningEffort: [AIChatReasoningEffort] = [],
         accessTier: [String]? = nil,
-        reasoningEffortAccess: [AIChatReasoningEffortAccess]? = nil
+        reasoningEffortAccess: [AIChatReasoningEffortAccess]? = nil,
+        label: AIChatModelLabel? = nil
     ) -> AIChatRemoteModel {
         AIChatRemoteModel(
             id: id,
@@ -2362,7 +2438,8 @@ final class AIChatOmnibarControllerTests: XCTestCase {
             supportedTools: supportedTools,
             accessTier: accessTier ?? (entityHasAccess ? ["free"] : ["plus", "pro"]),
             supportedReasoningEffort: supportedReasoningEffort,
-            reasoningEffortAccess: reasoningEffortAccess
+            reasoningEffortAccess: reasoningEffortAccess,
+            label: label
         )
     }
 
@@ -2463,33 +2540,41 @@ final class AIChatOmnibarControllerTests: XCTestCase {
     }
 
     // Accessors that flatten `[AIChatModelPickerItem]` for assertions (the enum isn't Equatable).
-    private struct PickerRow { let id: String; let badge: String?; let isSelected: Bool }
-    private struct PickerHeader { let title: String; let badge: String; let isMuted: Bool; let representativeId: String? }
+    private struct PickerRow { let id: String; let subtitle: String?; let badge: String?; let isSelected: Bool }
 
     private func accessibleRows(_ items: [AIChatModelPickerItem]) -> [PickerRow] {
         items.compactMap { item -> PickerRow? in
-            guard case let .model(model, badge, isSelected) = item else { return nil }
-            return PickerRow(id: model.id, badge: badge, isSelected: isSelected)
+            guard case let .model(model, subtitle, badge, isSelected) = item else { return nil }
+            return PickerRow(id: model.id, subtitle: subtitle, badge: badge, isSelected: isSelected)
         }
     }
 
     private func gatedRows(_ items: [AIChatModelPickerItem]) -> [PickerRow] {
         items.compactMap { item -> PickerRow? in
             guard case let .gatedModel(model, badge) = item else { return nil }
-            return PickerRow(id: model.id, badge: badge, isSelected: false)
+            return PickerRow(id: model.id, subtitle: nil, badge: badge, isSelected: false)
         }
     }
 
-    private func gatedHeader(in items: [AIChatModelPickerItem]) -> PickerHeader? {
+    private func sectionHeaderTitle(in items: [AIChatModelPickerItem]) -> String? {
         for item in items {
-            guard case let .gatedHeader(title, badge, isMuted, representative) = item else { continue }
-            return PickerHeader(title: title, badge: badge, isMuted: isMuted, representativeId: representative?.id)
+            guard case let .sectionHeader(title) = item else { continue }
+            return title
         }
         return nil
     }
 
+    private func separatorCount(_ items: [AIChatModelPickerItem]) -> Int {
+        items.filter { if case .separator = $0 { return true }; return false }.count
+    }
+
     private func hasSeparator(_ items: [AIChatModelPickerItem]) -> Bool {
-        items.contains { if case .separator = $0 { return true }; return false }
+        separatorCount(items) > 0
+    }
+
+    /// Index of the first item matching `predicate`, for asserting on section ordering.
+    private func firstIndex(in items: [AIChatModelPickerItem], where predicate: (AIChatModelPickerItem) -> Bool) -> Int? {
+        items.firstIndex(where: predicate)
     }
 
     // MARK: - Prompt Bar surface

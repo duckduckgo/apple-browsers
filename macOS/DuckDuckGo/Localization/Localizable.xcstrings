@@ -25539,7 +25539,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Probiere es kostenlos aus!"
+            "value" : "Kostenlos testen!"
           }
         },
         "en" : {
@@ -25563,7 +25563,7 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Provalo gratis!"
+            "value" : "Prova gratuitamente!"
           }
         },
         "nl" : {
@@ -25575,19 +25575,19 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Wypróbuj za darmo!"
+            "value" : "Wypróbuj bezpłatnie!"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Experimenta grátis!"
+            "value" : "Experimenta gratuitamente!"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Попробуй бесплатно!"
+            "value" : "Попробуйте бесплатно!"
           }
         }
       }
@@ -25659,7 +25659,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "DuckDuckGo bietet auch ein *optionales kostenpflichtiges Abonnement* mit einem sicheren *VPN* und *fortschrittlicher, privater KI*."
+            "value" : "DuckDuckGo bietet auch ein *optionales kostenpflichtiges Abonnement* mit einem sicheren *VPN* und *fortschrittlicher, privater KI.*"
           }
         },
         "en" : {
@@ -25671,43 +25671,43 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "DuckDuckGo también tiene una *suscripción opcional de pago*, con una *VPN* segura y una *IA privada avanzada*."
+            "value" : "DuckDuckGo también tiene una *suscripción opcional de pago*, con una *VPN* segura y *una IA privada avanzada.*"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "DuckDuckGo propose également un *abonnement payant en option*, avec un *VPN* sécurisé et une *IA privée et évoluée*."
+            "value" : "DuckDuckGo propose également un *abonnement payant en option*, avec un *VPN* sécurisé et une *IA privée et évoluée.*"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "DuckDuckGo offre anche un *abbonamento a pagamento facoltativo*, con *VPN* sicura e *AI avanzata e privata*."
+            "value" : "DuckDuckGo offre anche un *abbonamento a pagamento facoltativo*, con una *VPN* sicura e *AI avanzata e privata*."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "DuckDuckGo heeft ook een *optioneel betaald abonnement*, met een veilige *VPN* en *geavanceerde, privé-AI*."
+            "value" : "DuckDuckGo heeft ook een *optioneel betaald abonnement*, met een veilige *VPN* en *geavanceerde, privé-AI.*"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "DuckDuckGo oferuje również *opcjonalną płatną subskrypcję*, z bezpieczną *siecią VPN* i *zaawansowaną, prywatną sztuczną inteligencją*."
+            "value" : "DuckDuckGo oferuje również *opcjonalną płatną subskrypcję*, z bezpieczną *siecią VPN* i *zaawansowaną, prywatną sztuczną inteligencją.*"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "O DuckDuckGo também tem uma *subscrição paga opcional*, com uma *VPN* segura e *IA avançada e privada*."
+            "value" : "O DuckDuckGo também tem uma *subscrição paga opcional*, com uma *VPN* segura e *IA avançada e privada.*"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "DuckDuckGo также предлагает *дополнительную платную подписку* с безопасным *VPN* и *приватным ИИ с расширенными возможностями*."
+            "value" : "DuckDuckGo также предлагает *платную подписку* с безопасным *VPN* и *частным ИИ с расширенными возможностями.*"
           }
         }
       }
@@ -25761,7 +25761,7 @@
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ah, antes que me esqueça…"
+            "value" : "Ah, antes que me esqueça..."
           }
         },
         "ru" : {
@@ -77142,55 +77142,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "DuckDuckGo verhindert, dass Videos automatisch abgespielt werden. Hier kannst du die Einstellungen für diese Website ändern und für alle Websites in"
+            "value" : "DuckDuckGo verhindert auf den meisten Websites, dass Videos mit Ton automatisch abgespielt werden. Hier kannst du die Einstellungen für diese Website ändern und für alle Websites in"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "DuckDuckGo stops videos from autoplaying. You can change settings for this site here, and for all sites in"
+            "value" : "DuckDuckGo stops videos with sound from autoplaying on most sites. You can change settings for this site here, and for all sites in"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "DuckDuckGo evita la reproducción automática de vídeos. Puedes cambiar la configuración de este sitio aquí, y la de todos los sitios en"
+            "value" : "DuckDuckGo evita la reproducción automática de vídeos con sonido en la mayoría de los sitios. Puedes cambiar la configuración de este sitio aquí y la de todos los sitios en"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "DuckDuckGo empêche la lecture automatique des vidéos. Vous pouvez modifier les paramètres de ce site ici, et ceux de tous les sites dans"
+            "value" : "DuckDuckGo empêche la lecture automatique des vidéos avec le son sur la plupart des sites. Vous pouvez modifier les paramètres de ce site ici, et ceux de tous les sites dans"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "DuckDuckGo impedisce la riproduzione automatica dei video. Puoi modificare le impostazioni per questo sito qui e per tutti i siti in"
+            "value" : "DuckDuckGo impedisce la riproduzione automatica dei video con audio sulla maggior parte dei siti. Puoi modificare le impostazioni per questo sito qui e per tutti i siti in"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "DuckDuckGo voorkomt dat video's automatisch worden afgespeeld. Je kunt de instellingen voor deze site en voor alle sites wijzigen in"
+            "value" : "DuckDuckGo voorkomt dat video's met geluid automatisch worden afgespeeld op de meeste sites. Je kunt hier de instellingen voor deze site en voor alle sites wijzigen in"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "DuckDuckGo blokuje automatyczne odtwarzanie filmów. W tym miejscu możesz zmienić ustawienia dla tej witryny. Aby wprowadzić zmianę dla wszystkich witryn, przejdź do obszaru"
+            "value" : "DuckDuckGo blokuje automatyczne odtwarzanie filmów z dźwiękiem w większości witryn. W tym miejscu możesz zmienić ustawienia dla tej witryny. Aby wprowadzić zmianę dla wszystkich witryn, przejdź do obszaru"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "O DuckDuckGo impede a reprodução automática de vídeos. Podes alterar as definições para este site aqui, e para todos os sites no"
+            "value" : "O DuckDuckGo impede a reprodução automática de vídeos com som na maioria dos sites. Podes alterar as definições para este site aqui, e para todos os sites em"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "DuckDuckGo блокирует автовоспроизведение видео. Настройки для этого сайта можно изменить здесь; для изменения настроек для всех сайтов перейдите в"
+            "value" : "DuckDuckGo блокирует автовоспроизведение видео со звуком на большинстве сайтов. Настройки для этого сайта можно изменить здесь; для изменения настроек для всех сайтов перейдите в"
           }
         }
       }
@@ -77262,55 +77262,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Automatisches Abspielen von Videos gestoppt"
+            "value" : "Automatisches Abspielen von Videos"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Video autoplay stopped"
+            "value" : "Video autoplay"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Reproducción automática de vídeo detenida"
+            "value" : "Reproducción automática de vídeo"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Lecture automatique des vidéos arrêtée"
+            "value" : "Lecture automatique des vidéos"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Riproduzione automatica video interrotta"
+            "value" : "Riproduzione automatica video"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Automatisch afspelen van video's gestopt"
+            "value" : "Video's automatisch afspelen"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Automatyczne odtwarzanie filmów zatrzymane"
+            "value" : "Automatyczne odtwarzanie filmów"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Reprodução automática de vídeos interrompida"
+            "value" : "Reprodução automática de vídeos"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Автовоспроизведение видео остановлено"
+            "value" : "Автовоспроизведение видео"
           }
         }
       }

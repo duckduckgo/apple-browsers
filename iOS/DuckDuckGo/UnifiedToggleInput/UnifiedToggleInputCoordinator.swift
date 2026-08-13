@@ -1541,6 +1541,15 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
     }
 
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didSubmitText text: String, mode: TextEntryMode) {
+#if DEBUG
+        // Debug affordance: submitting "/edit" drops straight into edit mode (with the replace
+        // disclaimer) so the edit-mode layout can be inspected without the full web edit round-trip.
+        if text.trimmingCharacters(in: .whitespacesAndNewlines) == "/edit" {
+            setText("")
+            beginEditMode(prompt: "Edit mode preview", hasResponsesToLose: true)
+            return
+        }
+#endif
         commitCurrentToggleState()
 
         switch mode {

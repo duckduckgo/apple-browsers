@@ -130,15 +130,19 @@ final class UnifiedToggleInputModelMenuTests: XCTestCase {
 
     // MARK: - Updated Menu
 
-    func testWhenUpdatedMenuModelsHaveMixedAccessThenGroupsThemByCurrentAccess() {
+    func testWhenUpdatedMenuHasThreeAvailableAndTwoGatedModelsThenGroupsThemByCurrentAccess() {
         let menu = makeUpdatedMenu(models: [
-            makeFakeModel(id: "free", accessTier: ["free"], hasAccess: true),
-            makeFakeModel(id: "plus", accessTier: ["plus", "pro"], hasAccess: false),
-            makeFakeModel(id: "pro", accessTier: ["pro"], hasAccess: false),
+            makeFakeModel(id: "available-1", accessTier: ["free"], hasAccess: true),
+            makeFakeModel(id: "gated-1", accessTier: ["plus", "pro"], hasAccess: false),
+            makeFakeModel(id: "available-2", accessTier: ["plus"], hasAccess: true),
+            makeFakeModel(id: "gated-2", accessTier: ["pro"], hasAccess: false),
+            makeFakeModel(id: "available-3", accessTier: ["pro"], hasAccess: true),
         ])
 
-        XCTAssertEqual(availableActions(in: menu).map(\.title), ["free"])
-        XCTAssertEqual(gatedSection(in: menu)?.children.compactMap { $0 as? UIAction }.map(\.title), ["plus…", "pro…"])
+        let gatedSections = menu.children.compactMap { $0 as? UIMenu }
+        XCTAssertEqual(availableActions(in: menu).map(\.title), ["available-1", "available-2", "available-3"])
+        XCTAssertEqual(gatedSections.count, 1)
+        XCTAssertEqual(gatedSections[0].children.compactMap { $0 as? UIAction }.map(\.title), ["gated-1…", "gated-2…"])
     }
 
     func testWhenUpdatedMenuAvailableModelsHaveRecommendationLabelsThenOrdersThemFirstInBackendOrder() {

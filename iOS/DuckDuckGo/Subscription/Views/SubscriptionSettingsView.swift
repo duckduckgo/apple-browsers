@@ -37,6 +37,12 @@ enum SubscriptionSettingsViewConfiguration {
     case trial
 }
 
+/// Atomic sheet payload to avoid SwiftUI staleness when both flag and content come from one tap.
+private struct OnboardingFlowPayload: Identifiable {
+    let id = UUID()
+    let flow: SubscriptionOnboardingFlowViewModel
+}
+
 struct SubscriptionSettingsViewV2: View {
 
     @State var configuration: SubscriptionSettingsViewConfiguration
@@ -66,7 +72,7 @@ struct SubscriptionSettingsViewV2: View {
 
     // MARK: - Onboarding state
 
-    @State private var isShowingOnboarding = false
+    @State private var onboardingFlow: OnboardingFlowPayload?
 
     var body: some View {
         optionsView
@@ -475,11 +481,8 @@ struct SubscriptionSettingsViewV2: View {
         .padding(.top, -20)
         .navigationTitle(UserText.settingsPProManageSubscription)
         .applyInsetGroupedListStyle()
-        .sheet(isPresented: $isShowingOnboarding) {
-            SubscriptionOnboardingLauncher.launch(
-                flow: .subscriptionSettings(progress: onboardingProgress,
-                                            onFinish: { isShowingOnboarding = false },
-                                            pirScreen: { pirDestination }))
+        .sheet(item: $onboardingFlow) { payload in
+            SubscriptionOnboardingLauncher.launch(flow: payload.flow)
         }
         .onChange(of: viewModel.state.shouldDismissView) { value in
             if value {
@@ -676,7 +679,7 @@ extension SubscriptionSettingsViewV2 {
             SubscriptionOnboardingSetupCard(visual: .image(Image(.subscription56)),
                                             progress: onboardingProgress,
                                             session: settingsViewModel.subscriptionOnboardingSession,
-                                            isPresentingFlow: isShowingOnboarding,
+                                            isPresentingFlow: onboardingFlow != nil,
                                             onContinue: { startOnboarding() })
         }
         .listRowBackground(Color.clear)
@@ -684,7 +687,11 @@ extension SubscriptionSettingsViewV2 {
     }
 
     func startOnboarding() {
-        isShowingOnboarding = true
+        let flow = SubscriptionOnboardingFlowViewModel.subscriptionSettings(
+            progress: onboardingProgress,
+            onFinish: { onboardingFlow = nil },
+            pirScreen: { pirDestination })
+        onboardingFlow = OnboardingFlowPayload(flow: flow)
     }
 
     /// Built fresh on each access; the state it reads lives in the key-value store, not in the value.

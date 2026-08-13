@@ -6892,6 +6892,7 @@ extension MainViewController: TabSwitcherDelegate {
             webExtensionEventsCoordinator?.didCloseTab(tab)
         }
 
+        discardNewTabPageSessionIfHostingTabClosed([tab])
         reportDuckAITabClosedIfNeeded(tab)
 
         hideSuggestionTray()

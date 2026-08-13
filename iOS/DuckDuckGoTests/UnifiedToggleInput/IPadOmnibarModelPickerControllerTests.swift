@@ -42,7 +42,8 @@ final class IPadOmnibarModelPickerControllerTests: XCTestCase {
             modelsService: modelsService,
             preferences: preferences,
             subscriptionManager: subscriptionManager,
-            upsellPresenter: upsellPresenter
+            upsellPresenter: upsellPresenter,
+            updatedModelPickerFeature: MockUpdatedModelPickerFeature(isAvailable: false)
         )
     }
 
@@ -97,6 +98,60 @@ final class IPadOmnibarModelPickerControllerTests: XCTestCase {
         await fulfillment(of: [updated], timeout: 1)
         XCTAssertTrue(sut.hasModels)
         XCTAssertNotNil(sut.makeMenu { _ in })
+    }
+
+    func testWhenUpdatedModelPickerIsDisabledThenMakeMenuBuildsLegacyMenu() throws {
+        sut.modelStore.models = [
+            makeModel(id: "free", shortName: "Free", accessTier: ["free"]),
+            makeModel(id: "plus", shortName: "Plus", entityHasAccess: false, accessTier: ["plus"])
+        ]
+
+        let menu = try XCTUnwrap(sut.makeMenu { _ in })
+        let sections = menu.children.compactMap { $0 as? UIMenu }
+
+        XCTAssertEqual(sections.map(\.title), ["", UserText.aiChatPlusModelsSectionHeader])
+        XCTAssertTrue(menu.children.allSatisfy { $0 is UIMenu })
+    }
+
+    func testWhenUpdatedModelPickerIsEnabledForFreeUserThenMakeMenuBuildsUpdatedMenu() throws {
+        sut = makeSUTWithUpdatedModelPickerEnabled(userTier: .free)
+        sut.modelStore.models = [
+            makeModel(id: "free", shortName: "Free", accessTier: ["free"]),
+            makeModel(id: "plus", shortName: "Plus", entityHasAccess: false, accessTier: ["plus"])
+        ]
+
+        let menu = try XCTUnwrap(sut.makeMenu { _ in })
+        let availableActions = menu.children.compactMap { $0 as? UIAction }
+        let gatedSection = menu.children.compactMap { $0 as? UIMenu }.first
+
+        XCTAssertEqual(availableActions.map(\.title), ["free"])
+        XCTAssertEqual(gatedSection?.title, UserText.aiChatModelPickerTryFree)
+    }
+
+    func testWhenUpdatedModelPickerIsEnabledForPlusUserThenGatedSectionUsesProTitle() throws {
+        sut = makeSUTWithUpdatedModelPickerEnabled(userTier: .plus)
+        sut.modelStore.models = [
+            makeModel(id: "pro", shortName: "Pro", entityHasAccess: false, accessTier: ["pro"])
+        ]
+
+        let menu = try XCTUnwrap(sut.makeMenu { _ in })
+        let gatedSection = menu.children.compactMap { $0 as? UIMenu }.first
+
+        XCTAssertEqual(gatedSection?.title, UserText.aiChatModelPickerAvailableWithPro)
+    }
+
+    func testWhenModelActionPerformedThenBothMenuVariantsForwardSameModelId() throws {
+        for isUpdatedModelPickerEnabled in [false, true] {
+            sut = makeSUT(updatedModelPickerEnabled: isUpdatedModelPickerEnabled)
+            sut.modelStore.models = [makeModel(id: "gpt-5", shortName: "GPT-5")]
+            var selectedModelId: String?
+
+            let menu = try XCTUnwrap(sut.makeMenu { selectedModelId = $0 })
+            let action = try XCTUnwrap(actions(in: menu).first)
+            action.performWithSender(nil, target: nil)
+
+            XCTAssertEqual(selectedModelId, "gpt-5")
+        }
     }
 
     func testWhenModelSelectedAfterFetchThenShortNamePersistedAndDisplayed() async {
@@ -224,6 +279,31 @@ final class IPadOmnibarModelPickerControllerTests: XCTestCase {
 
     // MARK: - Helpers
 
+    private func makeSUTWithUpdatedModelPickerEnabled(userTier: AIChatUserTier) -> IPadOmnibarModelPickerController {
+        let sut = makeSUT(updatedModelPickerEnabled: true)
+        sut.modelStore.subscriptionState = SubscriptionState(userTier: userTier, hasActiveSubscription: userTier != .free)
+        return sut
+    }
+
+    private func makeSUT(updatedModelPickerEnabled: Bool) -> IPadOmnibarModelPickerController {
+        IPadOmnibarModelPickerController(
+            modelsService: modelsService,
+            preferences: preferences,
+            subscriptionManager: subscriptionManager,
+            upsellPresenter: upsellPresenter,
+            updatedModelPickerFeature: MockUpdatedModelPickerFeature(isAvailable: updatedModelPickerEnabled)
+        )
+    }
+
+    private func actions(in menu: UIMenu) -> [UIAction] {
+        menu.children.flatMap { element -> [UIAction] in
+            if let action = element as? UIAction {
+                return [action]
+            }
+            return (element as? UIMenu)?.children.compactMap { $0 as? UIAction } ?? []
+        }
+    }
+
     private func makeModel(
         id: String,
         shortName: String,
@@ -266,6 +346,10 @@ private final class MockUpsellPresenter: DuckAISubscriptionUpselling {
     func presentUpgradeFlow(source: SubscriptionFlowSource, isAITabState: Bool) {
         presentedUpgradeFlows.append((source, isAITabState))
     }
+}
+
+private struct MockUpdatedModelPickerFeature: UpdatedModelPickerFeatureProviding {
+    let isAvailable: Bool
 }
 
 private final class StubPreferences: AIChatPreferencesPersisting {

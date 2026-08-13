@@ -1488,9 +1488,10 @@ final class AIChatOmnibarController {
 
 /// A fully-resolved model-picker row so the view controller only maps it to an `NSMenuItem`.
 enum AIChatModelPickerItem {
-    case model(AIChatModel, badge: String?, isSelected: Bool)
+    case model(AIChatModel, subtitle: String? = nil, badge: String?, isSelected: Bool)
     case separator
-    case gatedHeader(title: String, badge: String, isMuted: Bool, representativeModel: AIChatModel?)
+    /// Muted, uppercase section title (no CTA) — used above the gated models section.
+    case sectionHeader(title: String)
     case gatedModel(AIChatModel, badge: String?)
 }
 
@@ -1510,9 +1511,16 @@ extension AIChatOmnibarController {
     /// Resolved picker contents (accessible first, then the gated upsell section); owns the flag, copy, ordering, and badge impression so the VC just renders.
     func modelPickerItems(selectedModelId: String?) -> [AIChatModelPickerItem] {
         let (accessible, gated) = AIChatModelSectionBuilder.groupByAccess(models: models)
-        let ordered = AIChatModelSectionBuilder.orderedAccessibleModels(accessible, userTier: userTier)
+        // Recommended = backend-labelled models, shown first with the label as a subtitle.
+        let (recommended, rest) = AIChatModelSectionBuilder.groupByRecommendationLabel(models: accessible)
 
-        var items: [AIChatModelPickerItem] = ordered.map { model in
+        var items: [AIChatModelPickerItem] = recommended.map { model in
+            .model(model,
+                   subtitle: Self.recommendationSubtitle(for: model.label),
+                   badge: trailingBadge(for: model),
+                   isSelected: model.id == selectedModelId)
+        }
+        items += rest.map { model in
             .model(model, badge: trailingBadge(for: model), isSelected: model.id == selectedModelId)
         }
 
@@ -1520,16 +1528,8 @@ extension AIChatOmnibarController {
         items.append(.separator)
 
         if isSubscriptionUpsellEnabled {
-            // Free user's gated section mixes Plus+Pro ("Subscriber exclusive"); a Plus user's is Pro-only.
-            let title = userTier == .free ? UserText.aiChatModelPickerSubscriberExclusive
-                                          : UserText.aiChatModelPickerProExclusive
-            let badge = shouldOfferFreeTrial ? UserText.aiChatModelPickerTryForFree
-                                             : UserText.aiChatModelPickerUpgrade
-            // Header CTA routes off a representative tier; any gated model suffices.
-            items.append(.gatedHeader(title: title,
-                                      badge: badge,
-                                      isMuted: isBadgeMuted,
-                                      representativeModel: gated.first?.model))
+            items.append(.sectionHeader(title: shouldOfferFreeTrial ? UserText.aiChatModelPickerTryFreeSectionHeader
+                                                                    : UserText.aiChatModelPickerAvailableWithProSectionHeader))
             recordBadgeImpression()
         }
 
@@ -1537,8 +1537,18 @@ extension AIChatOmnibarController {
         return items
     }
 
-    /// PLUS/PRO tag for models whose minimum tier is above free (incl. already-accessible ones), else nil.
+    private static func recommendationSubtitle(for label: AIChatModelLabel?) -> String? {
+        switch label {
+        case .everydayUse: return UserText.aiChatModelPickerLabelEverydayUse
+        case .usesLimitsFaster: return UserText.aiChatModelPickerLabelUsesLimitsFaster
+        case .unknown, .none: return nil
+        }
+    }
+
+    /// PLUS/PRO tag naming the tier a model needs — only for models the user can't use yet, so a
+    /// subscriber doesn't see their own tier tagged on every row they already have.
     private func trailingBadge(for model: AIChatModel) -> String? {
+        guard !model.entityHasAccess else { return nil }
         switch model.lowestPublicAccessTier {
         case .plus: return UserText.aiChatModelPickerTierBadgePlus
         case .pro: return UserText.aiChatModelPickerTierBadgePro

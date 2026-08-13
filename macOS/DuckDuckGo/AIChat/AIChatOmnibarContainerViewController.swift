@@ -1838,49 +1838,69 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         // The controller decides what the menu shows; this only maps each item to an NSMenuItem.
         for item in items {
             switch item {
-            case .model(let model, let badge, let isSelected):
-                menu.addItem(modelRow(for: model, trailingText: badge, isSelected: isSelected,
-                                      isDimmed: false, isInteractive: true, in: menu))
+            case .model(let model, let subtitle, let badge, let isSelected):
+                menu.addItem(modelRow(for: model, subtitle: subtitle, trailingText: badge, isSelected: isSelected,
+                                      action: #selector(modelSelected(_:))))
             case .separator:
                 menu.addItem(.separator())
-            case .gatedHeader(let title, let badge, let isMuted, let representativeModel):
-                let headerItem = NSMenuItem.createSubscriberExclusiveHeader(
-                    title: title,
-                    badgeText: badge,
-                    isBadgeMuted: isMuted,
-                    action: #selector(gatedModelSelected(_:)),
-                    target: self,
-                    menu: menu
-                )
-                headerItem.representedObject = representativeModel
-                menu.addItem(headerItem)
+            case .sectionHeader(let title):
+                menu.addItem(.createMutedSectionHeader(title: title))
             case .gatedModel(let model, let badge):
                 menu.addItem(modelRow(for: model, trailingText: badge, isSelected: false,
-                                      isDimmed: true, isInteractive: false, in: menu))
+                                      action: #selector(gatedModelSelected(_:))))
             }
         }
 
-        menu.minimumWidth = max(menu.minimumWidth, 320)
+        menu.minimumWidth = max(menu.minimumWidth, 250)
         return menu
     }
 
-    private func modelRow(for model: AIChatModel, trailingText: String?, isSelected: Bool, isDimmed: Bool, isInteractive: Bool, in menu: NSMenu) -> NSMenuItem {
+    /// Stock `NSMenuItem`: native checkmark gutter, icon and highlight; the rest is the attributed title.
+    private func modelRow(for model: AIChatModel, subtitle: String? = nil, trailingText: String?, isSelected: Bool, action: Selector) -> NSMenuItem {
         let title = model.titleComponents
-        let item = NSMenuItem.createModelRow(
-            icon: model.menuIcon,
-            boldTitle: title.bold,
-            regularTitle: title.regular,
-            subtitle: nil,
-            trailingText: trailingText,
-            isSelected: isSelected,
-            isDimmed: isDimmed,
-            isInteractive: isInteractive,
-            action: isInteractive ? #selector(modelSelected(_:)) : #selector(gatedModelSelected(_:)),
-            target: self,
-            menu: menu
-        )
+        let item = NSMenuItem(title: model.name, action: action, keyEquivalent: "")
+        item.target = self
+        item.image = model.menuIcon
+        item.state = isSelected ? .on : .off
+        item.attributedTitle = Self.modelRowTitle(boldTitle: title.bold,
+                                                  regularTitle: title.regular,
+                                                  subtitle: subtitle,
+                                                  trailingText: trailingText)
         item.representedObject = model
         return item
+    }
+
+    /// Right tab stop the trailing tier word snaps to.
+    private static let modelRowTrailingTabStop: CGFloat = 210
+
+    private static func modelRowTitle(boldTitle: String, regularTitle: String, subtitle: String?, trailingText: String?) -> NSAttributedString {
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.tabStops = [NSTextTab(textAlignment: .right, location: modelRowTrailingTabStop)]
+        paragraph.lineSpacing = 2
+
+        // System semantic colors, so AppKit inverts them under the menu highlight.
+        let name = regularTitle.isEmpty ? boldTitle : "\(boldTitle) \(regularTitle)"
+        let result = NSMutableAttributedString(string: name, attributes: [
+            .font: NSFont.systemFont(ofSize: 13),
+            .foregroundColor: NSColor.labelColor,
+            .paragraphStyle: paragraph
+        ])
+        if let trailingText {
+            result.append(NSAttributedString(string: "\t\(trailingText)", attributes: [
+                .font: NSFont.systemFont(ofSize: 11, weight: .bold),
+                .kern: -0.2,
+                .foregroundColor: NSColor.tertiaryLabelColor,
+                .paragraphStyle: paragraph
+            ]))
+        }
+        if let subtitle {
+            result.append(NSAttributedString(string: "\n\(subtitle)", attributes: [
+                .font: NSFont.systemFont(ofSize: 12),
+                .foregroundColor: NSColor.secondaryLabelColor,
+                .paragraphStyle: paragraph
+            ]))
+        }
+        return result
     }
 
     @objc private func gatedModelSelected(_ sender: NSMenuItem) {

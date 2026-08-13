@@ -718,8 +718,13 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         freemiumDBPItem.target = self
         freemiumDBPItem.action = #selector(openFreemiumDBP(_:))
 
-        dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.overFlowScanImpressionCount)
-        dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.overFlowScanImpression)
+        if freemiumDBPUserStateManager.didPostFirstProfileSavedNotification {
+            dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.overFlowResultsImpressionCount)
+            dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.overFlowResultsImpression)
+        } else {
+            dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.overFlowScanImpressionCount)
+            dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.overFlowScanImpression)
+        }
 
         addItem(freemiumDBPItem)
     }

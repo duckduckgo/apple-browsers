@@ -19,6 +19,7 @@
 import AppKit
 import Combine
 import Common
+import FeatureFlags_macOS
 import FoundationExtensions
 import PixelKitTestingUtilities
 import PrivacyConfig
@@ -249,25 +250,22 @@ struct FireCoordinatorTests {
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1))) func testHandleDialogResult_ForCurrentTab_ShowsTabScopedDeletingDataMessage() async throws {
-        let result = FireDialogResult(clearingOption: .currentTab,
-                                      includeHistory: true,
-                                      includeTabsAndWindows: true,
-                                      includeCookiesAndSiteData: true,
-                                      includeChatHistory: false)
-
-        let messages = await deletingDataMessages(for: result, isAllHistorySelected: true)
+        let messages = await deletingDataMessages(for: makeDialogResult(clearingOption: .currentTab), isAllHistorySelected: true)
 
         #expect(messages == [UserText.fireDialogDeletingDataFromThisTab])
     }
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1))) func testHandleDialogResult_ForAllData_ShowsAllDataDeletingDataMessage() async throws {
-        let result = FireDialogResult(clearingOption: .allData,
-                                      includeHistory: true,
-                                      includeTabsAndWindows: true,
-                                      includeCookiesAndSiteData: true,
-                                      includeChatHistory: false)
+        let messages = await deletingDataMessages(for: makeDialogResult(clearingOption: .allData), isAllHistorySelected: true)
 
+        #expect(messages == [UserText.fireDialogDeletingAllData])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1))) func testHandleDialogResult_ForAllDataKeepingTabsAndWindows_ShowsAllDataDeletingDataMessage() async throws {
+        // This burns all windows as an entity instead of burning all data.
+        let result = makeDialogResult(clearingOption: .allData, includeTabsAndWindows: false)
         let messages = await deletingDataMessages(for: result, isAllHistorySelected: true)
 
         #expect(messages == [UserText.fireDialogDeletingAllData])
@@ -275,23 +273,37 @@ struct FireCoordinatorTests {
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1))) func testHandleDialogResult_ForCurrentWindow_ShowsGenericDeletingDataMessage() async throws {
-        let result = FireDialogResult(clearingOption: .currentWindow,
-                                      includeHistory: true,
-                                      includeTabsAndWindows: true,
-                                      includeCookiesAndSiteData: true,
-                                      includeChatHistory: false)
-
-        let messages = await deletingDataMessages(for: result, isAllHistorySelected: true)
+        let messages = await deletingDataMessages(for: makeDialogResult(clearingOption: .currentWindow), isAllHistorySelected: true)
 
         #expect(messages == [UserText.fireDialogDeletingData])
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1))) func testHandleDialogResult_WhenFireDialogIsNotSimplified_ShowsGenericDeletingDataMessage() async throws {
+        let messages = await deletingDataMessages(for: makeDialogResult(clearingOption: .currentTab),
+                                                  isAllHistorySelected: true,
+                                                  isFireDialogSimplified: false)
+
+        #expect(messages == [UserText.fireDialogDeletingData])
+    }
+
+    private func makeDialogResult(clearingOption: FireDialogViewModel.ClearingOption, includeTabsAndWindows: Bool = true) -> FireDialogResult {
+        FireDialogResult(clearingOption: clearingOption,
+                         includeHistory: true,
+                         includeTabsAndWindows: includeTabsAndWindows,
+                         includeCookiesAndSiteData: true,
+                         includeChatHistory: false)
+    }
+
     /// Collects the text of the burning progress dialog for all burns started by `result`.
-    private func deletingDataMessages(for result: FireDialogResult, isAllHistorySelected: Bool) async -> [String] {
+    private func deletingDataMessages(for result: FireDialogResult,
+                                      isAllHistorySelected: Bool,
+                                      isFireDialogSimplified: Bool = true) async -> [String] {
         let coordinator = makeCoordinator()
+        let featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.fireDialogSimplified.rawValue: isFireDialogSimplified])
         var messages = [String]()
         let cancellable = coordinator.fireViewModel.fire.burningDataPublisher
-            .compactMap { $0?.deletingDataMessage }
+            .compactMap { $0?.deletingDataMessage(featureFlagger: featureFlagger) }
             .sink { messages.append($0) }
         defer { cancellable.cancel() }
 

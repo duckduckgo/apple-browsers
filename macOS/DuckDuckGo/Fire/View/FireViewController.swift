@@ -332,7 +332,7 @@ final class FireViewController: NSViewController {
                         return
                     }
 
-                deletingDataLabel.stringValue = burningData.deletingDataMessage
+                deletingDataLabel.stringValue = burningData.deletingDataMessage(featureFlagger: featureFlagger)
 
                 // Use the feature flag-aware method to determine if animation should play
                 if burningData.shouldPlayFireAnimation(decider: self.visualizeFireAnimationDecider) {

@@ -108,6 +108,26 @@ final class UnifiedToggleInputModelMenuTests: XCTestCase {
         XCTAssertTrue(actions(in: menu).allSatisfy { !$0.attributes.contains(.disabled) })
     }
 
+    func testWhenFactoryBuildsLegacyMenuThenUpdatedMenuPresentationIsNotApplied() {
+        let menu = UnifiedToggleInputModelMenuFactory().makeMenu(
+            models: [
+                makeFakeModel(id: "free-model", accessTier: ["free"], hasAccess: true, label: .everydayUse),
+                makeFakeModel(id: "plus-model", accessTier: ["plus"], hasAccess: false, label: .everydayUse),
+                makeFakeModel(id: "pro-model", accessTier: ["pro"], hasAccess: false),
+            ],
+            selectedId: nil,
+            plusSectionTitle: "Plus",
+            proSectionTitle: "Pro",
+            onSelect: { _ in }
+        )
+
+        let sections = menu.children.compactMap { $0 as? UIMenu }
+        let menuActions = actions(in: menu)
+        XCTAssertEqual(sections.map(\.title), ["", "Plus", "Pro"])
+        XCTAssertEqual(menuActions.map(\.title), ["free-model", "plus-model", "pro-model"])
+        XCTAssertTrue(menuActions.allSatisfy { $0.subtitle == nil })
+    }
+
     // MARK: - Updated Menu
 
     func testWhenUpdatedMenuModelsHaveMixedAccessThenGroupsThemByCurrentAccess() {

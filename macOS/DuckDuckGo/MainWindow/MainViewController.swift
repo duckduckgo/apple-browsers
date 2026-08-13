@@ -1409,7 +1409,19 @@ extension MainViewController: BrowserTabViewControllerDelegate {
         }()
 
         if noPinnedTabs || (isSharedPinnedTabsMode && areOtherWindowsWithPinnedTabsAvailable) {
-            window.close()
+            // For Fire Windows, invoke windowShouldClose on the delegate directly so
+            // the burn animation is triggered before the window actually closes.
+            // We can't use `window.performClose(_:)` here because it plays the system
+            // alert beep when `windowShouldClose` returns false — and for burner windows
+            // the delegate always returns false (closing is handled asynchronously via
+            // `animateBurningIfNeededAndClose`).
+            // We can't use `window.close()` either: it bypasses the delegate and skips
+            // the animation entirely — that's the original bug we're fixing here.
+            if isBurner, let delegate = window.delegate, delegate.responds(to: #selector(NSWindowDelegate.windowShouldClose(_:))) {
+                _ = delegate.windowShouldClose?(window)
+            } else {
+                window.close()
+            }
             return true
         }
         return false

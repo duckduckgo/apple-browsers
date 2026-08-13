@@ -235,7 +235,15 @@ final class FirePopoverViewController: NSViewController {
             assertionFailure("No TabCollectionViewModel or MainWindowController")
             return
         }
-        windowController.window?.close()
+        // Invoke windowShouldClose on the delegate directly so the burn animation is
+        // triggered before the window actually closes.
+        // We can't use `window.performClose(_:)` here because it plays the system alert
+        // beep when `windowShouldClose` returns false — and for burner windows the
+        // delegate always returns false (closing is handled asynchronously via
+        // `animateBurningIfNeededAndClose`).
+        if let window = windowController.window {
+            _ = windowController.windowShouldClose(window)
+        }
     }
 }
 

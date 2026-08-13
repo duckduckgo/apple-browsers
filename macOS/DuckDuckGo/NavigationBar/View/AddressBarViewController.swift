@@ -872,25 +872,32 @@ final class AddressBarViewController: NSViewController {
     }
 
     private func updateSwitchToTabBoxAppearance() {
-        guard case .editing(.openTabSuggestion) = mode,
-              addressBarTextField.isVisible, let editor = addressBarTextField.editor else {
-            refreshSwitchToTabVisibility(isHidden: true)
-            return
-        }
-
-        let targetMinX = editor.textSize.width + Constants.switchToTabMinXPadding
-        let requiredWidth = targetMinX + switchToTabBox.fittingSize.width + switchToTabBoxTrailingConstraint.constant
-
-        guard requiredWidth <= view.bounds.width else {
+        guard let _ = calculateSwitchToTabBoxMinX() else {
             refreshSwitchToTabVisibility(isHidden: true)
             return
         }
 
         // update box position on the next pass after text editor layout is updated
         DispatchQueue.main.async {
+            guard let minX = self.calculateSwitchToTabBoxMinX() else {
+                self.refreshSwitchToTabVisibility(isHidden: true)
+                return
+            }
+
             self.refreshSwitchToTabVisibility(isHidden: false)
-            self.switchToTabBoxMinXConstraint.constant = targetMinX
+            self.switchToTabBoxMinXConstraint.constant = minX
         }
+    }
+
+    private func calculateSwitchToTabBoxMinX() -> CGFloat? {
+        guard case .editing(.openTabSuggestion) = mode, addressBarTextField.isVisible, let editor = addressBarTextField.editor else {
+            return nil
+        }
+
+        let minX = editor.textSize.width + Constants.switchToTabMinXPadding
+        let requiredWidth = minX + switchToTabBox.fittingSize.width + switchToTabBoxTrailingConstraint.constant
+
+        return requiredWidth <= view.bounds.width ? minX : nil
     }
 
     private func refreshSwitchToTabVisibility(isHidden: Bool) {

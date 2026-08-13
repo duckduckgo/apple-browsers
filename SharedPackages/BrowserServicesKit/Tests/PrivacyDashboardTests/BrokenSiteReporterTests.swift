@@ -171,7 +171,29 @@ final class BrokenSiteReporterTests: XCTestCase {
         waitForExpectations(timeout: 3)
     }
 
-    private func makeReport(cookieConsentInfo: CookieConsentInfo?) -> BrokenSiteReport {
+    func testWhenReportFlowIsErrorPageThenParameterIsErrorPage() {
+        let report = makeReport(cookieConsentInfo: nil, reportFlow: .errorPage)
+
+        XCTAssertEqual(report.requestParameters["reportFlow"], "error_page")
+    }
+
+#if os(iOS)
+    func testWhenReportIsAfterTabTerminationThenParameterIsIncluded() {
+        let report = makeReport(cookieConsentInfo: nil, isAfterTabTermination: true)
+
+        XCTAssertEqual(report.requestParameters["isAfterTabTermination"], "true")
+    }
+
+    func testWhenReportIsNotAfterTabTerminationThenParameterIsNotIncluded() {
+        let report = makeReport(cookieConsentInfo: nil)
+
+        XCTAssertNil(report.requestParameters["isAfterTabTermination"])
+    }
+#endif
+
+    private func makeReport(cookieConsentInfo: CookieConsentInfo?,
+                            reportFlow: BrokenSiteReport.Source = .appMenu,
+                            isAfterTabTermination: Bool = false) -> BrokenSiteReport {
 #if os(iOS)
         BrokenSiteReport(siteUrl: URL(string: "https://duckduckgo.com")!,
                          category: "test",
@@ -187,7 +209,7 @@ final class BrokenSiteReporterTests: XCTestCase {
                          ampURL: "test",
                          urlParametersRemoved: true,
                          protectionsState: true,
-                         reportFlow: .appMenu,
+                         reportFlow: reportFlow,
                          siteType: .desktop,
                          model: "test",
                          errors: nil,
@@ -201,7 +223,8 @@ final class BrokenSiteReporterTests: XCTestCase {
                          debugFlags: "",
                          privacyExperiments: "experiment1:control,experiment2:treatment",
                          isPirEnabled: nil,
-                         isForceDarkModeEnabled: nil)
+                         isForceDarkModeEnabled: nil,
+                         isAfterTabTermination: isAfterTabTermination)
 #else
         BrokenSiteReport(siteUrl: URL(string: "https://duckduckgo.com")!,
                          category: "test",
@@ -217,7 +240,7 @@ final class BrokenSiteReporterTests: XCTestCase {
                          ampURL: "test",
                          urlParametersRemoved: true,
                          protectionsState: true,
-                         reportFlow: .appMenu,
+                         reportFlow: reportFlow,
                          errors: nil,
                          httpStatusCodes: nil,
                          openerContext: nil,

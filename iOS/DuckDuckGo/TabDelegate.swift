@@ -90,7 +90,7 @@ protocol TabDelegate: AnyObject {
     ///   - logoURL: The extracted logo URL, or nil if no logo was found or the page reset to default
     func tab(_ tab: TabViewController, didExtractDaxEasterEggLogoURL logoURL: String?)
 
-    func tabDidRequestReportBrokenSite(tab: TabViewController)
+    func tabDidRequestReportBrokenSite(tab: TabViewController, entryPoint: PrivacyDashboardEntryPoint)
 
     func tab(_ tab: TabViewController, didRequestToggleReportWithCompletionHandler completionHandler: @escaping (Bool) -> Void)
 

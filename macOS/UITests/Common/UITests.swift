@@ -277,6 +277,18 @@ extension UITestCase {
         set {}
     }
 
+    override func setUp() {
+        super.setUp()
+        // The macOS "find devices on local networks?" permission prompt is a TCC alert owned by
+        // another process. It can surface asynchronously mid-test, float above our window and
+        // steal focus, making the next interaction fail at a nondeterministic point. XCTest invokes
+        // this monitor when it detects an interaction being interrupted; the paired proactive
+        // `dismissLocalNetworkPromptIfPresent` calls cover the gaps where the monitor doesn't fire.
+        addUIInterruptionMonitor(withDescription: "Local Network Permission") { _ in
+            XCUIApplication.dismissLocalNetworkPromptIfPresent()
+        }
+    }
+
     override func tearDown() {
         cleanupTrackedFiles()
         cleanupPaths.removeAll()

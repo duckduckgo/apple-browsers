@@ -1804,6 +1804,9 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Duck Player's functionality has been affected by recent changes to YouTube. We’re working to fix these issues and appreciate your understanding.";
 
+/* Address bar Duck.ai menu option that opens a fresh chat with no page context */
+"duckai.address.bar.menu.new.chat" = "New Chat";
+
 /* Fourth paragraph of the Duck.ai widget education screen */
 "duckai.addWidget.settings.fourthParagraph" = "Tap the widget to edit it, then set **Duck.ai** and **Duck.ai Voice** as your shortcuts";
 
@@ -3810,6 +3813,18 @@ https://duckduckgo.com/mac";
 
 /* Special error page title for pages that can only be opened in Safari */
 "prompt.general-page-problem.title" = "This page only loads in Safari";
+
+/* Error page message shown after repeated tab terminations */
+"prompt.tab-termination-error-page.message" = "This page stopped loading multiple times. Try reloading or send us feedback.";
+
+/* Button that reloads a page after repeated tab terminations */
+"prompt.tab-termination-error-page.reload" = "Reload";
+
+/* Button that opens site feedback after repeated tab terminations */
+"prompt.tab-termination-error-page.send-feedback" = "Send Feedback";
+
+/* Error page title shown after repeated tab terminations */
+"prompt.tab-termination-error-page.title" = "We couldn’t load this page";
 
 /* Default native error page message */
 "prompt.web-page-load-error.message" = "This website has an invalid security certificate and might not be safe to visit.";

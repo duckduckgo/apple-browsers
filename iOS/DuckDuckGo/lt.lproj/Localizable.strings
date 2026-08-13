@@ -4021,6 +4021,18 @@
 /* Special error page title for pages that can only be opened in Safari */
 "prompt.general-page-problem.title" = "Šis puslapis įkeliamas tik naršyklėje „Safari“";
 
+/* Error page message shown after repeated tab terminations */
+"prompt.tab-termination-error-page.message" = "Šio puslapio įkėlimas kelis kartus nutrūko. Pabandyk įkelti iš naujo arba atsiųsk atsiliepimą.";
+
+/* Button that reloads a page after repeated tab terminations */
+"prompt.tab-termination-error-page.reload" = "Įkelti iš naujo";
+
+/* Button that opens site feedback after repeated tab terminations */
+"prompt.tab-termination-error-page.send-feedback" = "Siųsti atsiliepimą";
+
+/* Error page title shown after repeated tab terminations */
+"prompt.tab-termination-error-page.title" = "Nepavyko įkelti šio puslapio";
+
 /* Default native error page message */
 "prompt.web-page-load-error.message" = "Ši svetainė turi negaliojantį saugumo sertifikatą ir joje lankytis gali būti nesaugu.";
 

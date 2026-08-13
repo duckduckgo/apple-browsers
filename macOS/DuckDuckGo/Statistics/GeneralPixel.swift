@@ -33,7 +33,7 @@ enum AppStateRestorationTrigger {
     case appUpdate
 }
 
-enum GeneralPixel: PixelKitEvent {
+enum GeneralPixel: PixelKit.Event {
 
     case crash(appIdentifier: CrashPixelAppIdentifier?)
     case crashOnCrashHandlersSetUp

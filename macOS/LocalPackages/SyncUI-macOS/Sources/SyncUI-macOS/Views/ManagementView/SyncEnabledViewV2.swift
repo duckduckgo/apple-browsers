@@ -75,8 +75,7 @@ struct SyncEnabledViewV2<ViewModel>: View where ViewModel: ManagementViewModel {
             SyncedDevicesViewV2<ViewModel>()
                 .environmentObject(model)
 
-            SyncUIViews.TextDetailSecondary(text: UserText.myDevicesFooterV2)
-                .font(.system(size: 13))
+            SyncUIViewsV2.TextDetailSecondary(text: UserText.myDevicesFooterV2)
         }
 
         // Bookmarks
@@ -141,7 +140,7 @@ struct SyncEnabledViewV2<ViewModel>: View where ViewModel: ManagementViewModel {
     }
 
     private func recoveryInstructionsFooter() -> some View {
-        SyncUIViews.TextDetailSecondary(text: UserText.recoveryInstructionsFooterV2)
+        SyncUIViewsV2.TextDetailSecondary(text: UserText.recoveryInstructionsFooterV2)
     }
 
     @ViewBuilder

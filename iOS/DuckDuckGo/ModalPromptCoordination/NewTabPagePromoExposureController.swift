@@ -110,13 +110,59 @@ enum NewTabPagePromoExposureSelectionState: Equatable {
     case selected(rendererID: UUID)
 }
 
+/// Exact result of the UI-owned NTP host resolver.
+///
+/// Retaining the host case when its exposed renderer is `nil` distinguishes ordinary alternate content (for example,
+/// UTI query results) from a missing host and from a contradictory hierarchy. The service still receives only the
+/// derived renderer ID; this richer value is ephemeral diagnostic state owned by the UI layer.
+enum NewTabPagePromoRouteResolution: Equatable {
+    case editingState(rendererID: UUID?)
+    case unifiedInput(rendererID: UUID?)
+    case suggestionTray(rendererID: UUID?)
+    case standard(rendererID: UUID)
+    case noHost
+    case contradictory
+
+    var rendererID: UUID? {
+        switch self {
+        case .editingState(let rendererID),
+             .unifiedInput(let rendererID),
+             .suggestionTray(let rendererID):
+            return rendererID
+        case .standard(let rendererID):
+            return rendererID
+        case .noHost, .contradictory:
+            return nil
+        }
+    }
+
+    fileprivate func removingRendererID(_ rendererID: UUID) -> NewTabPagePromoRouteResolution {
+        switch self {
+        case .editingState(let candidateRendererID) where candidateRendererID == rendererID:
+            return .editingState(rendererID: nil)
+        case .unifiedInput(let candidateRendererID) where candidateRendererID == rendererID:
+            return .unifiedInput(rendererID: nil)
+        case .suggestionTray(let candidateRendererID) where candidateRendererID == rendererID:
+            return .suggestionTray(rendererID: nil)
+        case .standard(let candidateRendererID) where candidateRendererID == rendererID:
+            return .noHost
+        case .editingState, .unifiedInput, .suggestionTray, .standard, .noHost, .contradictory:
+            return self
+        }
+    }
+}
+
 /// Read-only, ephemeral projection used by focused tests and Promo Queue diagnostics.
 struct NewTabPagePromoExposureSnapshot: Equatable {
     let mode: PromoCoordinationMode
-    let routeCandidateRendererID: UUID?
+    let routeResolution: NewTabPagePromoRouteResolution
     let effectiveSelectedRendererID: UUID?
     let selectionState: NewTabPagePromoExposureSelectionState
     let activeBlockers: [PromoSurfaceBlockerRecord]
+
+    var routeCandidateRendererID: UUID? {
+        routeResolution.rendererID
+    }
 }
 
 @MainActor
@@ -186,7 +232,7 @@ final class NewTabPagePromoExposureController {
 
     private let selectionSink: NewTabPagePromoExposureSelectionSinking
     private let mode: PromoCoordinationMode
-    private var routeCandidateRendererID: UUID?
+    private var routeResolution = NewTabPagePromoRouteResolution.noHost
     private var activeBlockers = [ActiveBlocker]()
     private var lastSelectedRendererIDSentToSink: UUID?
 
@@ -199,23 +245,28 @@ final class NewTabPagePromoExposureController {
         let selection = currentSelection
         return NewTabPagePromoExposureSnapshot(
             mode: mode,
-            routeCandidateRendererID: routeCandidateRendererID,
+            routeResolution: routeResolution,
             effectiveSelectedRendererID: selection.rendererID,
             selectionState: selection.state,
             activeBlockers: activeBlockers.map(\.record)
         )
     }
 
-    /// Updates the renderer selected by the current route/content resolver. `nil` is fail-closed and never falls back to
-    /// another registered renderer.
-    func setRouteCandidateRendererID(_ rendererID: UUID?) {
+    /// Updates the exact result of the current route/content resolver. A resolution with no renderer is fail-closed and
+    /// never falls back to another registered renderer.
+    func setRouteResolution(_ resolution: NewTabPagePromoRouteResolution) {
         guard mode == .coordinated,
-              routeCandidateRendererID != rendererID else {
+              routeResolution != resolution else {
             return
         }
 
-        routeCandidateRendererID = rendererID
+        routeResolution = resolution
         reconcileSelection()
+    }
+
+    /// Convenience for renderer-owned focused tests and managed overlay fixtures that do not model MainVC routing.
+    func setRouteCandidateRendererID(_ rendererID: UUID?) {
+        setRouteResolution(rendererID.map { .standard(rendererID: $0) } ?? .noHost)
     }
 
     /// Clears all state scoped to an exact renderer generation's stable renderer ID. Global blockers remain active.
@@ -241,8 +292,8 @@ final class NewTabPagePromoExposureController {
             blocker.record.scope == .renderer(rendererID)
         }
 
-        if routeCandidateRendererID == rendererID {
-            routeCandidateRendererID = nil
+        if routeResolution.rendererID == rendererID {
+            routeResolution = routeResolution.removingRendererID(rendererID)
         }
         reconcileSelection()
     }
@@ -251,7 +302,7 @@ final class NewTabPagePromoExposureController {
         rendererID: UUID?,
         state: NewTabPagePromoExposureSelectionState
     ) {
-        guard let routeCandidateRendererID else {
+        guard let routeCandidateRendererID = routeResolution.rendererID else {
             return (nil, .noRouteCandidate)
         }
 

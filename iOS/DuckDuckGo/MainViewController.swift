@@ -89,28 +89,6 @@ struct StartupOnboardingDecision {
     }
 }
 
-enum NewTabPagePromoHostResolution: Equatable {
-    case editingState(rendererID: UUID?)
-    case unifiedInput(rendererID: UUID?)
-    case suggestionTray(rendererID: UUID?)
-    case standard(rendererID: UUID)
-    case noHost
-    case contradictory
-
-    var rendererID: UUID? {
-        switch self {
-        case .editingState(let rendererID),
-             .unifiedInput(let rendererID),
-             .suggestionTray(let rendererID):
-            return rendererID
-        case .standard(let rendererID):
-            return rendererID
-        case .noHost, .contradictory:
-            return nil
-        }
-    }
-}
-
 struct NewTabPagePromoHostState: Equatable {
     var isEditingStatePresented = false
     var editingStateRendererID: UUID?
@@ -121,7 +99,7 @@ struct NewTabPagePromoHostState: Equatable {
     var isStandardNewTabPageInstalled = false
     var standardNewTabPageRendererID: UUID?
 
-    func resolve() -> NewTabPagePromoHostResolution {
+    func resolve() -> NewTabPagePromoRouteResolution {
         if isEditingStatePresented {
             return .editingState(rendererID: editingStateRendererID)
         }
@@ -414,7 +392,6 @@ class MainViewController: UIViewController {
     lazy var newTabPagePromoExposureController = NewTabPagePromoExposureController(
         selectionSink: newTabPagePromoCoordinator
     )
-    private(set) var newTabPagePromoHostResolution = NewTabPagePromoHostResolution.noHost
     private var legacyEditingStatePromoHostTransitionBlockers = [UUID: PromoSurfaceBlockerToken]()
     let recentModalPromptStatusProvider: RecentModalPromptStatusProviding?
     let systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
@@ -696,7 +673,7 @@ class MainViewController: UIViewController {
             // Clear the authoritative route before physically detaching and deregistering every
             // cached renderer owned by this controller. Registration/token deinit intentionally
             // fails closed, so this terminal owner boundary must be explicit.
-            newTabPagePromoExposureController.setRouteCandidateRendererID(nil)
+            newTabPagePromoExposureController.setRouteResolution(.noHost)
 
             if let newTabPageViewController {
                 newTabPageViewController.willMove(toParent: nil)
@@ -1151,11 +1128,10 @@ class MainViewController: UIViewController {
 
     func reconcileNewTabPagePromoExposure() {
         let resolution = resolveNewTabPagePromoHost()
-        newTabPagePromoHostResolution = resolution
-        newTabPagePromoExposureController.setRouteCandidateRendererID(resolution.rendererID)
+        newTabPagePromoExposureController.setRouteResolution(resolution)
     }
 
-    func resolveNewTabPagePromoHost() -> NewTabPagePromoHostResolution {
+    func resolveNewTabPagePromoHost() -> NewTabPagePromoRouteResolution {
         let editingState = presentedViewController as? OmniBarEditingStateViewController
         let unifiedInputContent = unifiedToggleInputCoordinator?.contentViewController
         let unifiedInputCovers = !viewCoordinator.unifiedInputContentContainer.isHidden
@@ -2306,7 +2282,7 @@ class MainViewController: UIViewController {
     }
 
     fileprivate func removeHomeScreen() {
-        newTabPagePromoExposureController.setRouteCandidateRendererID(nil)
+        newTabPagePromoExposureController.setRouteResolution(.noHost)
         if let newTabPageViewController {
             self.newTabPageViewController = nil
             newTabPageViewController.willMove(toParent: nil)

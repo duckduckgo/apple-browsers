@@ -33,10 +33,32 @@ struct NewTabPagePromoExposureControllerTests {
         let sut = NewTabPagePromoExposureController(selectionSink: sink)
 
         #expect(sut.snapshot.mode == .coordinated)
+        #expect(sut.snapshot.routeResolution == .noHost)
         #expect(sut.snapshot.routeCandidateRendererID == nil)
         #expect(sut.snapshot.effectiveSelectedRendererID == nil)
         #expect(sut.snapshot.selectionState == .noRouteCandidate)
         #expect(sut.snapshot.activeBlockers.isEmpty)
+        #expect(sink.selectedRendererIDs.isEmpty)
+    }
+
+    @available(iOS 16, *)
+    @Test("Snapshot preserves exact fail-closed route reasoning", .timeLimit(.minutes(1)))
+    func snapshotPreservesExactFailClosedRouteReasoning() {
+        let sink = RecordingExposureSelectionSink()
+        let sut = NewTabPagePromoExposureController(selectionSink: sink)
+
+        sut.setRouteResolution(.unifiedInput(rendererID: nil))
+
+        #expect(sut.snapshot.routeResolution == .unifiedInput(rendererID: nil))
+        #expect(sut.snapshot.routeCandidateRendererID == nil)
+        #expect(sut.snapshot.selectionState == .noRouteCandidate)
+        #expect(sink.selectedRendererIDs.isEmpty)
+
+        sut.setRouteResolution(.contradictory)
+
+        #expect(sut.snapshot.routeResolution == .contradictory)
+        #expect(sut.snapshot.routeCandidateRendererID == nil)
+        #expect(sut.snapshot.selectionState == .noRouteCandidate)
         #expect(sink.selectedRendererIDs.isEmpty)
     }
 
@@ -285,6 +307,7 @@ struct NewTabPagePromoExposureControllerTests {
 
         sut.rendererDidDeregister(id: rendererID)
 
+        #expect(sut.snapshot.routeResolution == .noHost)
         #expect(sut.snapshot.routeCandidateRendererID == nil)
         #expect(sut.snapshot.effectiveSelectedRendererID == nil)
         #expect(sut.snapshot.activeBlockers.count == 1)
@@ -296,6 +319,24 @@ struct NewTabPagePromoExposureControllerTests {
 
         #expect(sut.snapshot.activeBlockers.isEmpty)
         #expect(sink.selectedRendererIDs.count == 2)
+    }
+
+    @available(iOS 16, *)
+    @Test("Alternate-host deregistration retains the fail-closed host reason", .timeLimit(.minutes(1)))
+    func alternateHostDeregistrationRetainsHostReason() {
+        let sink = RecordingExposureSelectionSink()
+        let sut = NewTabPagePromoExposureController(selectionSink: sink)
+        let rendererID = UUID()
+        sut.setRouteResolution(.unifiedInput(rendererID: rendererID))
+
+        sut.rendererDidDeregister(id: rendererID)
+
+        #expect(sut.snapshot.routeResolution == .unifiedInput(rendererID: nil))
+        #expect(sut.snapshot.routeCandidateRendererID == nil)
+        #expect(sut.snapshot.selectionState == .noRouteCandidate)
+        #expect(sink.selectedRendererIDs.count == 2)
+        #expect(sink.selectedRendererIDs[0] == rendererID)
+        #expect(sink.selectedRendererIDs[1] == nil)
     }
 
     @available(iOS 16, *)
@@ -354,6 +395,7 @@ struct NewTabPagePromoExposureControllerTests {
         sut.rendererDidDeregister(id: rendererID)
 
         #expect(sut.snapshot.mode == .legacy)
+        #expect(sut.snapshot.routeResolution == .noHost)
         #expect(sut.snapshot.routeCandidateRendererID == nil)
         #expect(sut.snapshot.effectiveSelectedRendererID == nil)
         #expect(sut.snapshot.selectionState == .noRouteCandidate)

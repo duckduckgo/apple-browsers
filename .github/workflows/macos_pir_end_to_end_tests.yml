@@ -50,6 +50,9 @@ jobs:
 
     timeout-minutes: 32
     steps:
+    - name: Print macOS version
+      run: sw_vers
+
     - name: Register SSH keys for private repos
       uses: webfactory/ssh-agent@v0.10.0
       with:

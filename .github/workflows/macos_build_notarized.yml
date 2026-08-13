@@ -110,6 +110,9 @@ jobs:
       branch: ${{ inputs.branch || github.ref_name }}
 
     steps:
+    - name: Print macOS version
+      run: sw_vers
+
     - name: Register SSH keys for private repos
       uses: webfactory/ssh-agent@v0.10.0
       with:
@@ -397,6 +400,9 @@ jobs:
 
     steps:
 
+    - name: Print macOS version
+      run: sw_vers
+
     - name: Check out the code
       uses: actions/checkout@v6
       with:
@@ -588,6 +594,9 @@ jobs:
       failure: ${{ (needs.export-notarized-app.result == 'failure') || (needs.create-dmg.result == 'failure') }}
 
     steps:
+      - name: Print macOS version
+        run: sw_vers
+
       - name: Check out the code
         uses: actions/checkout@v6
         with:

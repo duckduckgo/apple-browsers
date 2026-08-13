@@ -28,6 +28,9 @@ jobs:
       build-number: ${{ steps.update-build-number.outputs.build-number }}
 
     steps:
+    - name: Print macOS version
+      run: sw_vers
+
     - name: Check out the code
       uses: actions/checkout@v6
       with:
@@ -115,6 +118,9 @@ jobs:
         working-directory: .
 
     steps:
+      - name: Print macOS version
+        run: sw_vers
+
       - name: Download DMG URL artifact
         uses: actions/download-artifact@v7
         with:

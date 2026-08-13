@@ -53,6 +53,9 @@ jobs:
       skip-appstore: ${{ steps.prepare-release-bump.outputs.skip_appstore }}
 
     steps:
+      - name: Print macOS version
+        run: sw_vers
+
       - name: Check out the code
         uses: actions/checkout@v6
         with:
@@ -107,6 +110,9 @@ jobs:
       commit_sha: ${{ steps.increment-build-number.outputs.commit_sha }}
 
     steps:
+
+      - name: Print macOS version
+        run: sw_vers
 
       - name: Check out the code
         uses: actions/checkout@v6

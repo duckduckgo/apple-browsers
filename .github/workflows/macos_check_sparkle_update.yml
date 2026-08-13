@@ -16,6 +16,9 @@ jobs:
       # Feature owners (GitHub handles, space-separated). Used for PR reviewers and Asana assignee.
       SPARKLE_OWNERS: "diegoreymendez jotaemepereira"
     steps:
+      - name: Print macOS version
+        run: sw_vers
+
       - name: Checkout repository
         # Pinned to v5: v6 duplicates the git Authorization header and breaks
         # peter-evans/create-pull-request (Duplicate header: "Authorization", HTTP 400).

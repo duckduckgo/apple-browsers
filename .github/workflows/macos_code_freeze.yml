@@ -45,6 +45,9 @@ jobs:
       asana_task_url: ${{ steps.make_release_branch.outputs.asana_task_url }}
 
     steps:
+      - name: Print macOS version
+        run: sw_vers
+
       - name: Check out the code
         uses: actions/checkout@v6
         with:
@@ -108,6 +111,9 @@ jobs:
       commit_sha: ${{ steps.increment-build-number.outputs.commit_sha }}
 
     steps:
+
+      - name: Print macOS version
+        run: sw_vers
 
       - name: Check out the code
         uses: actions/checkout@v6

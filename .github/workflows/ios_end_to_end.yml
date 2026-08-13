@@ -37,6 +37,9 @@ jobs:
       RUNS_ON: macos-26 # keep this in sync with runs-on above
 
     steps:
+    - name: Print macOS version
+      run: sw_vers
+
     - name: Register SSH keys for private repos
       uses: webfactory/ssh-agent@v0.10.0
       with:
@@ -233,6 +236,9 @@ jobs:
       fail-fast: false
 
     steps:
+
+    - name: Print macOS version
+      run: sw_vers
 
     - name: Check out the code
       uses: actions/checkout@v6 # Don't need submodules here as this is only for the tests folder

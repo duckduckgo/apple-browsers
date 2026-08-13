@@ -44,6 +44,9 @@ jobs:
       CDN_PATH: ${{ vars.DMG_URL_ROOT }}
 
     steps:
+      - name: Print macOS version
+        run: sw_vers
+
       - name: Check out the code
         uses: actions/checkout@v6
         with:

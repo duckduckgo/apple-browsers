@@ -37,6 +37,9 @@ jobs:
       should_skip: ${{ steps.check-upload.outputs.should_skip }}
 
     steps:
+    - name: Print macOS version
+      run: sw_vers
+
     - name: Check out the code
       uses: actions/checkout@v6
       with:
@@ -170,6 +173,9 @@ jobs:
       destination: ${{ github.event.inputs.destination || inputs.destination || 'Latest Experimental Group' }}
 
     steps:
+    - name: Print macOS version
+      run: sw_vers
+
     - name: Check out the code
       uses: actions/checkout@v6
       with:

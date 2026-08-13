@@ -42,6 +42,9 @@ jobs:
       build-variants-2: ${{ steps.get-build-variants.outputs.build-variants-2 }}
 
     steps:
+      - name: Print macOS version
+        run: sw_vers
+
       - name: Check out repository
         uses: actions/checkout@v6
 
@@ -61,6 +64,9 @@ jobs:
     timeout-minutes: 15
 
     steps:
+
+      - name: Print macOS version
+        run: sw_vers
 
       - name: Check out the code
         uses: actions/checkout@v6
@@ -124,6 +130,9 @@ jobs:
       failure: ${{ needs.create-variants-1.result == 'failure' || needs.create-variants-2.result == 'failure' }}
 
     steps:
+      - name: Print macOS version
+        run: sw_vers
+
       - name: Check out the code
         if: ${{ env.success || env.failure }} # Don't execute when cancelled
         uses: actions/checkout@v6

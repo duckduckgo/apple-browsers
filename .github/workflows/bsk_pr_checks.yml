@@ -49,6 +49,9 @@ jobs:
 
       steps:
 
+      - name: Print macOS version
+        run: sw_vers
+
       - name: Register SSH keys for private repos
         uses: webfactory/ssh-agent@v0.10.0
         with:
@@ -207,6 +210,9 @@ jobs:
         WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
 
       steps:
+
+      - name: Print macOS version
+        run: sw_vers
 
       - name: Register SSH keys for private repos
         uses: webfactory/ssh-agent@v0.10.0

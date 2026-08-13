@@ -23,6 +23,9 @@ jobs:
       RUNS_ON: macos-26
 
     steps:
+    - name: Print macOS version
+      run: sw_vers
+
     - name: Register SSH keys for private repos
       uses: webfactory/ssh-agent@v0.10.0
       with:
@@ -145,6 +148,9 @@ jobs:
     timeout-minutes: 240
 
     steps:
+    - name: Print macOS version
+      run: sw_vers
+
     - name: Check out the code
       uses: actions/checkout@v6 # Don't need submodules here as this is only for the tests folder
 
@@ -219,6 +225,9 @@ jobs:
     timeout-minutes: 240
 
     steps:
+    - name: Print macOS version
+      run: sw_vers
+
     - name: Check out the code
       uses: actions/checkout@v6 # Don't need submodules here as this is only for the tests folder
 

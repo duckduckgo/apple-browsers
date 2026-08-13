@@ -38,6 +38,9 @@ jobs:
 
     steps:
 
+      - name: Print macOS version
+        run: sw_vers
+
       - name: Check out the code
         uses: actions/checkout@v6
         with:
@@ -80,6 +83,9 @@ jobs:
       commit_sha: ${{ steps.update-asana.outputs.commit_sha }}
 
     steps:
+
+      - name: Print macOS version
+        run: sw_vers
 
       - name: Check out the code
         uses: actions/checkout@v6

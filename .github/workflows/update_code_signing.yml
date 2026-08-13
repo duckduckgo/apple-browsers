@@ -25,6 +25,9 @@ jobs:
 
     steps:
 
+      - name: Print macOS version
+        run: sw_vers
+
       - name: Register SSH keys for access to certificates
         uses: webfactory/ssh-agent@v0.10.0
         with:

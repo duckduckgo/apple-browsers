@@ -2169,6 +2169,10 @@ class MainViewController: UIViewController {
     /// Reported as `appOpen` when the arrival is none of a new tab or a burn: a cold launch, a
     /// return from the background, or switching to an already empty tab.
     func startNewTabPageSessionInstrumentation(isNewTab: Bool, willBeginEditing: Bool, isAfterFire: Bool) {
+        // A sample belongs to the visit the user left, so a fresh visit never inherits one: the
+        // trip to the VPN screen it was taken for ended without coming back here.
+        vpnConnectedWhenLeavingNewTabPage = nil
+
         let trigger: NewTabPageSessionWideEventData.Trigger
         if isAfterFire {
             trigger = .newTabOpenedAfterFire
@@ -8194,7 +8198,8 @@ extension MainViewController {
             onFirePressed()
 
         case .vpn:
-            noteNewTabPageSessionVPNStateBeforeLeaving()
+            // No VPN state is noted here, unlike the toolbar: the button above already ended the
+            // visit, so a toggle made on the VPN screen has nothing left to attach to.
             presentNetworkProtectionStatusSettingsModal(entryPoint: .addressBar)
 
         case .zoom:

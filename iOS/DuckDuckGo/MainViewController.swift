@@ -4181,13 +4181,17 @@ class MainViewController: UIViewController {
         openAIChatInVoiceMode()
     }
 
-    func openAIVoiceChatFromDeepLink() {
-        openAIChatInVoiceMode(fromDeepLink: true)
+    func openAIVoiceChatFromDeepLink(source: AIChatEntryPointSource) {
+        openAIChatInVoiceMode(deepLinkSource: source)
     }
 
-    private func openAIChatInVoiceMode(fromDeepLink: Bool = false) {
+    /// - Parameter deepLinkSource: The resolved deep-link entry, or nil when voice was started
+    ///   in-app. Reported as `source`, so a widget voice entry is attributed to the widget;
+    ///   `m_aichat_voice_entry_point_tapped` is what separates voice from text.
+    private func openAIChatInVoiceMode(deepLinkSource: AIChatEntryPointSource? = nil) {
         // Voice mode bypasses `openAIChat`, so fire the entry pixel directly.
-        let source: AIChatEntryPointSource = fromDeepLink ? .deepLinkOther : .voice
+        let source = deepLinkSource ?? .voice
+        let fromDeepLink = deepLinkSource != nil
         if aichatFullModeFeature.isAvailable || DevicePlatform.isIpad {
             // Fired inside, once the new-tab decision is known.
             openAIChatVoiceModeInTab(source: source, fromDeepLink: fromDeepLink)

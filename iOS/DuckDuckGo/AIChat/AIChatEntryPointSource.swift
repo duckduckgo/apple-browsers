@@ -70,7 +70,39 @@ enum AIChatEntryPointSource: String {
     case onboarding
     case directURL = "direct_url"
     case iconShortcut = "icon_shortcut"
-    case restoredTab = "restored_tab"
     case contextualChat = "contextual_chat"
+    case widgetQuickActions = "widget_quick_actions"
+    case widgetQuickActionsMedium = "widget_quick_actions_medium"
+    case widgetFavorite = "widget_favorite"
+    case widgetLockScreen = "widget_lock_screen"
+    case widgetControlCenter = "widget_control_center"
+    case siri
     case deepLinkOther = "deep_link_other"
+}
+
+extension AIChatEntryPointSource {
+
+    /// Resolves the `source` parameter a Duck.ai deep link carries. Falls back to `.deepLinkOther`
+    /// for links with no recognised source, e.g. the URL scheme invoked from outside the app.
+    static func forDeepLink(_ url: URL) -> AIChatEntryPointSource {
+        guard let rawValue = url.getParameter(named: WidgetSourceType.sourceKey) else { return .deepLinkOther }
+        if let widgetSource = WidgetSourceType(rawValue: rawValue) {
+            return widgetSource.aiChatEntryPointSource
+        }
+        // `AIVoiceChatIntent` writes this one, and it is not a `WidgetSourceType`.
+        return rawValue == VoiceEntryPointSource.siri.rawValue ? .siri : .deepLinkOther
+    }
+}
+
+extension WidgetSourceType {
+
+    var aiChatEntryPointSource: AIChatEntryPointSource {
+        switch self {
+        case .quickActions: return .widgetQuickActions
+        case .quickActionsMedium: return .widgetQuickActionsMedium
+        case .favorite: return .widgetFavorite
+        case .lockscreenComplication: return .widgetLockScreen
+        case .controlCenter: return .widgetControlCenter
+        }
+    }
 }

@@ -9,7 +9,7 @@
             "appVersion",
             {
                 "key": "source",
-                "description": "The entry path: address_bar_prompt, address_bar_icon, address_bar_shortcut_chip, address_bar_editing_state, suggestion_ask_ai, ipad_toggle_prompt, browsing_menu_ntp, browsing_menu_webpage, tab_switcher, tabs_bar_button, chat_history_new_chat, chat_history_open_chat, voice, onboarding, direct_url, icon_shortcut, restored_tab, contextual_chat, deep_link_other",
+                "description": "The entry path: address_bar_prompt, address_bar_icon, address_bar_shortcut_chip, address_bar_editing_state, suggestion_ask_ai, ipad_toggle_prompt, browsing_menu_ntp, browsing_menu_webpage, tab_switcher, tabs_bar_button, chat_history_new_chat, chat_history_open_chat, voice, onboarding, direct_url, icon_shortcut, contextual_chat, widget_quick_actions, widget_quick_actions_medium, widget_favorite, widget_lock_screen, widget_control_center, siri, deep_link_other. The widget_* and siri values also cover a voice deep link started from there, since the entry point is the widget or the Siri shortcut; m_aichat_voice_entry_point_tapped is what separates voice from text. deep_link_other is a Duck.ai deep link carrying no recognised source, e.g. the URL scheme invoked from outside the app. contextual_chat conflates the sheet's openers (address-bar icon, shortcut chip, tabs-bar button, text-selection menu), so it is not a substitute for those values. Resuming an already-open or restored Duck.ai tab is not an entry and does not fire.",
                 "type": "string"
             },
             {

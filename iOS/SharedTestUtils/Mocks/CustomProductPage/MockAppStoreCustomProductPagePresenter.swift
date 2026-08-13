@@ -23,7 +23,7 @@ import AIChat
 
 final class MockAppStoreCustomProductPagePresenter: UIViewController, AppStoreCustomProductPagePresenter {
 
-    func openAIVoiceChatFromDeepLink() {}
+    func openAIVoiceChatFromDeepLink(source: AIChatEntryPointSource) {}
 
     func openAIChat(
         source: AIChatEntryPointSource,

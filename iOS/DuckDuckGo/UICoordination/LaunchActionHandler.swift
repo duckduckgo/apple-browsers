@@ -58,8 +58,10 @@ protocol OnboardingPresenting: AnyObject {
 
 @MainActor
 protocol IdleReturnLaunchDelegate: AnyObject {
-    func showNewTabPageAfterIdleReturn()
-    func markLastUsedTabAsResumedAfterIdle()
+    func showNewTabPageAfterIdleReturn(timeAwayMs: Int?)
+    func markLastUsedTabAsResumedAfterIdle(timeAwayMs: Int?)
+    /// A standard-launch return that did not qualify for an after-idle treatment.
+    func recordOrdinaryReturn(timeAwayMs: Int?)
 }
 
 @MainActor
@@ -112,14 +114,17 @@ final class LaunchActionHandler: LaunchActionHandling {
             userActivityHandler.handleUserActivity(userActivity)
         case .standardLaunch(let lastBackgroundDate, let isFirstForeground):
             launchSourceManager.setSource(.standard)
+            let timeAwayMs = lastBackgroundDate.map { Int(Date().timeIntervalSince($0) * 1000) }
             if idleReturnEvaluator.didReturnAfterIdle(lastBackgroundDate: lastBackgroundDate) {
                 switch idleReturnEvaluator.treatmentForIdleReturn() {
                 case .ntp:
-                    idleReturnDelegate?.showNewTabPageAfterIdleReturn()
+                    idleReturnDelegate?.showNewTabPageAfterIdleReturn(timeAwayMs: timeAwayMs)
                     return
                 case .lut:
-                    idleReturnDelegate?.markLastUsedTabAsResumedAfterIdle()
+                    idleReturnDelegate?.markLastUsedTabAsResumedAfterIdle(timeAwayMs: timeAwayMs)
                 }
+            } else {
+                idleReturnDelegate?.recordOrdinaryReturn(timeAwayMs: timeAwayMs)
             }
             keyboardPresenter.showKeyboardOnLaunch(lastBackgroundDate: isFirstForeground ? nil : lastBackgroundDate)
         }

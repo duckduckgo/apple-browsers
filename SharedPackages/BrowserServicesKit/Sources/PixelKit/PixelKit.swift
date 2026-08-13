@@ -447,6 +447,7 @@ public final class PixelKit {
             }
         } else {
             printDebugInfo(pixelName: pixelName, frequency: .legacyInitial, parameters: newParams, skipped: true)
+            onComplete(false, nil)
         }
     }
 
@@ -472,6 +473,7 @@ public final class PixelKit {
             }
         } else {
             printDebugInfo(pixelName: pixelName, frequency: .uniqueByName, parameters: newParams, skipped: true)
+            onComplete(false, nil)
         }
     }
 
@@ -492,6 +494,7 @@ public final class PixelKit {
             }
         } else {
             printDebugInfo(pixelName: pixelName, frequency: .uniqueByNameAndParameters, parameters: newParams, skipped: true)
+            onComplete(false, nil)
         }
     }
 
@@ -513,6 +516,7 @@ public final class PixelKit {
             }
         } else {
             printDebugInfo(pixelName: pixelName + "_daily", frequency: .daily, parameters: newParams, skipped: true)
+            onComplete(false, nil)
         }
     }
 
@@ -556,6 +560,7 @@ public final class PixelKit {
             }
         } else {
             printDebugInfo(pixelName: pixelName + "_monthly", frequency: .monthly, parameters: newParams, skipped: true)
+            onComplete(false, nil)
         }
     }
 
@@ -577,6 +582,7 @@ public final class PixelKit {
             }
         } else {
             printDebugInfo(pixelName: pixelName, frequency: .legacyDailyNoSuffix, parameters: newParams, skipped: true)
+            onComplete(false, nil)
         }
     }
 
@@ -608,6 +614,7 @@ public final class PixelKit {
             fireRequestWrapper(sampledPixelName, headers, newParams, allowedQueryReservedCharacters, true, .sample(percentage: percentage), onComplete)
         }, onDiscarded: {
             self.printDebugInfo(pixelName: pixelName + suffix, frequency: .sample(percentage: percentage), parameters: newParams, skipped: true)
+            onComplete(false, nil)
         })
     }
 
@@ -629,6 +636,7 @@ public final class PixelKit {
             }
         } else {
             printDebugInfo(pixelName: pixelName + "_d", frequency: .legacyDaily, parameters: newParams, skipped: true)
+            onComplete(false, nil)
         }
     }
 

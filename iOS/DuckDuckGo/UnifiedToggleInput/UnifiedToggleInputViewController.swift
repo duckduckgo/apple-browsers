@@ -58,7 +58,14 @@ final class UnifiedToggleInputViewController: UIViewController {
 
     let isToggleEnabled: Bool
     let handler: UnifiedToggleInputHandler
-    private lazy var inputBarView = UnifiedToggleInputView(handler: handler, isToggleEnabled: isToggleEnabled)
+    private lazy var inputBarView = UnifiedToggleInputView(handler: handler,
+                                                          isToggleEnabled: isToggleEnabled,
+                                                          placesAttachmentsAboveInput: placesAttachmentsAboveInput)
+
+    /// Edges of the visible input card, for aligning content sitting around the bar.
+    var inputCardTopAnchor: NSLayoutYAxisAnchor { inputBarView.cardTopAnchor }
+    var inputCardLeadingAnchor: NSLayoutXAxisAnchor { inputBarView.cardLeadingAnchor }
+    var inputCardTrailingAnchor: NSLayoutXAxisAnchor { inputBarView.cardTrailingAnchor }
     private(set) var attachmentValidationMessage: String?
 
     private var containerView: UnifiedToggleInputContainerView? {
@@ -80,8 +87,12 @@ final class UnifiedToggleInputViewController: UIViewController {
         inputBarView.setMenuAlertVisible(isVisible, animated: animated)
     }
 
-    init(isToggleEnabled: Bool, isFireTab: Bool = false) {
+    /// Decided by the coordinator, which knows whether this is the omnibar or a contextual surface.
+    private let placesAttachmentsAboveInput: Bool
+
+    init(isToggleEnabled: Bool, isFireTab: Bool = false, placesAttachmentsAboveInput: Bool = false) {
         self.isToggleEnabled = isToggleEnabled
+        self.placesAttachmentsAboveInput = placesAttachmentsAboveInput
         self.handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false,
                                                  isToggleEnabled: isToggleEnabled,
                                                  isFireTab: isFireTab)
@@ -178,6 +189,20 @@ final class UnifiedToggleInputViewController: UIViewController {
     var modelPickerMenu: UIMenu? {
         get { inputBarView.modelPickerMenu }
         set { inputBarView.modelPickerMenu = newValue }
+    }
+
+    var usesUpdatedModelPickerPresentation: Bool {
+        get { inputBarView.usesUpdatedModelPickerPresentation }
+        set { inputBarView.usesUpdatedModelPickerPresentation = newValue }
+    }
+
+    var onUpdatedModelPickerTapped: (() -> Void)? {
+        get { inputBarView.onUpdatedModelPickerTapped }
+        set { inputBarView.onUpdatedModelPickerTapped = newValue }
+    }
+
+    var modelPickerSourceView: UIView {
+        inputBarView.modelPickerSourceView
     }
 
     @discardableResult

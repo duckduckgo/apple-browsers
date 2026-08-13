@@ -62,6 +62,87 @@ public final class AIChatPromptHandler: AIChatConsumableDataHandling {
     }
 }
 
+/// The user-facing surface that opened a Duck.ai conversation, attached as `source` to the
+/// conversation pixels. Raw values mirror the `source` enum in `aichat_pixels.json5`.
+public enum AIChatConversationSource: String, CaseIterable {
+    /// Duck.ai tab-bar button — new chat (direct click or the button menu's "New Chat").
+    case tabBarButton = "tab-bar-button"
+    /// Tab-bar / main-menu "Ask About Page" — opens the sidebar and attaches the current page.
+    case askAboutPage = "ask-about-page"
+    /// Tab-bar Duck.ai sidebar toggle (the "chrome" sidebar button).
+    case tabBarSidebar = "tab-bar-sidebar"
+    /// Address-bar Duck.ai button, its context menu, and omnibar text submissions.
+    case addressBar = "address-bar"
+    /// New Tab Page omnibar.
+    case newTabPage = "new-tab-page"
+    /// Duck.ai omnibar panel.
+    case omnibar = "omnibar"
+    /// Floating prompt bar.
+    case promptBar = "prompt-bar"
+    /// File / application main menu.
+    case mainMenu = "main-menu"
+    /// More-options (hamburger) menu.
+    case moreOptionsMenu = "more-options-menu"
+    /// Contextual "Summarize" action.
+    case summarization = "summarization"
+    /// Contextual "Translate" action.
+    case translation = "translation"
+    /// Contextual "Attach selection to Duck.ai" action.
+    case attachSelection = "attach-selection"
+    /// Address-bar button context menu → open in sidebar, and other context-menu entry points.
+    case contextMenu = "context-menu"
+    /// SERP handoff.
+    case serp = "serp"
+    /// Sidebar → "Open in new tab" / handoff to a full tab.
+    case sidebarHandoff = "sidebar-handoff"
+    /// Voice entry points.
+    case voice = "voice"
+    /// Image-generation mode entry points.
+    case imageGeneration = "image"
+    /// Opening a previously saved chat (recent-chat pickers).
+    case recentChat = "recent-chat"
+    /// Settings → AI Features links.
+    case settings = "settings"
+    /// Origin unknown / not instrumented (restored chats, external deep links, etc.).
+    case other = "other"
+
+    /// Whether this surface is a gesture on the title-bar Ask Duck.ai button — its "New Chat"
+    /// (dropdown or middle-click), its "Ask About Page" sidebar entry, or the sidebar toggle.
+    /// This is what the conversation pixels report as `isOpenedFromAskDuckAiButton`.
+    public var isAskDuckAiButton: Bool {
+        switch self {
+        case .tabBarButton, .askAboutPage, .tabBarSidebar:
+            return true
+        default:
+            return false
+        }
+    }
+}
+
+/// One-shot mailbox carrying the opening surface to the chat's handler: written just before the
+/// chat opens, consumed once at load. A single instance is owned by `AppDelegate` and injected
+/// into the user-script handler.
+public final class AIChatConversationSourceHandler: AIChatConsumableDataHandling {
+    public typealias DataType = AIChatConversationSource
+    private var data: DataType?
+
+    public init() {}
+
+    public func setData(_ data: DataType) {
+        self.data = data
+    }
+
+    public func consumeData() -> DataType? {
+        let currentData = data
+        reset()
+        return currentData
+    }
+
+    public func reset() {
+        self.data = nil
+    }
+}
+
 /// Handles payload data for AI chat interactions, typically set by the SERP.
 public final class AIChatPayloadHandler: AIChatConsumableDataHandling {
     public typealias DataType = AIChatPayload

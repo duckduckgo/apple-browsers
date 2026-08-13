@@ -26,7 +26,7 @@ final class FloatingUIManagerTests: XCTestCase {
 
     func testWhenFloatingUIAndUnifiedToggleInputAreEnabledOnIPhoneThenFloatingUIIsEnabled() {
         let manager = FloatingUIManager(
-            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.floatingUI]),
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.floatingUIAugust2026]),
             isPadProvider: { false },
             isSupportedOSProvider: { true },
             unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: true)
@@ -37,7 +37,7 @@ final class FloatingUIManagerTests: XCTestCase {
 
     func testWhenFloatingUIIsEnabledButUnifiedToggleInputIsUnavailableThenFloatingUIIsDisabled() {
         let manager = FloatingUIManager(
-            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.floatingUI]),
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.floatingUIAugust2026]),
             isPadProvider: { false },
             isSupportedOSProvider: { true },
             unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: false)
@@ -59,7 +59,7 @@ final class FloatingUIManagerTests: XCTestCase {
 
     func testWhenFloatingUIAndUnifiedToggleInputAreEnabledOnIPadThenFloatingUIIsDisabled() {
         let manager = FloatingUIManager(
-            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.floatingUI]),
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.floatingUIAugust2026]),
             isPadProvider: { true },
             isSupportedOSProvider: { true },
             unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: true)
@@ -70,13 +70,56 @@ final class FloatingUIManagerTests: XCTestCase {
 
     func testWhenOSIsUnsupportedThenFloatingUIIsDisabled() {
         let manager = FloatingUIManager(
-            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.floatingUI]),
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.floatingUIAugust2026]),
             isPadProvider: { false },
             isSupportedOSProvider: { false },
             unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: true)
         )
 
         XCTAssertFalse(manager.isFloatingUIEnabled)
+    }
+
+    func testWhenAugustFlagIsEnabledOnSupportedIPhoneThenFloatingTabSwitcherIsEnabled() {
+        let manager = FloatingUIManager(
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.floatingUIAugust2026]),
+            isPadProvider: { false },
+            isSupportedOSProvider: { false },
+            isTabSwitcherSupportedOSProvider: { true },
+            unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: false)
+        )
+
+        XCTAssertFalse(manager.isFloatingUIEnabled)
+        XCTAssertTrue(manager.isFloatingTabSwitcherEnabled)
+    }
+
+    func testWhenAugustFlagIsDisabledThenFloatingTabSwitcherIsDisabled() {
+        let manager = FloatingUIManager(
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []),
+            isPadProvider: { false },
+            isTabSwitcherSupportedOSProvider: { true }
+        )
+
+        XCTAssertFalse(manager.isFloatingTabSwitcherEnabled)
+    }
+
+    func testWhenAugustFlagIsEnabledOnIPadThenFloatingTabSwitcherIsDisabled() {
+        let manager = FloatingUIManager(
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.floatingUIAugust2026]),
+            isPadProvider: { true },
+            isTabSwitcherSupportedOSProvider: { true }
+        )
+
+        XCTAssertFalse(manager.isFloatingTabSwitcherEnabled)
+    }
+
+    func testWhenTabSwitcherOSIsUnsupportedThenFloatingTabSwitcherIsDisabled() {
+        let manager = FloatingUIManager(
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.floatingUIAugust2026]),
+            isPadProvider: { false },
+            isTabSwitcherSupportedOSProvider: { false }
+        )
+
+        XCTAssertFalse(manager.isFloatingTabSwitcherEnabled)
     }
 
 }
@@ -126,6 +169,50 @@ final class FloatingUILayoutPolicyTests: XCTestCase {
         )
 
         XCTAssertEqual(height, 70, accuracy: 0.001)
+    }
+
+    func testWhenBarsVisibleThenTopObscuredHeightIsExpandedChrome() {
+        let height = FloatingUILayoutPolicy.webViewTopObscuredHeight(
+            barsVisibilityPercent: 1,
+            expandedChromeHeight: 111,
+            topCapsuleObscuredHeight: 91,
+            safeAreaTop: 59
+        )
+
+        XCTAssertEqual(height, 111, accuracy: 0.001)
+    }
+
+    func testWhenBarsHiddenAndTopCapsuleVisibleThenTopObscuredHeightTracksCapsule() {
+        let height = FloatingUILayoutPolicy.webViewTopObscuredHeight(
+            barsVisibilityPercent: 0,
+            expandedChromeHeight: 111,
+            topCapsuleObscuredHeight: 91,
+            safeAreaTop: 59
+        )
+
+        XCTAssertEqual(height, 91, accuracy: 0.001)
+    }
+
+    func testWhenBarsHiddenAndNoTopCapsuleThenTopObscuredHeightIsSafeArea() {
+        let height = FloatingUILayoutPolicy.webViewTopObscuredHeight(
+            barsVisibilityPercent: 0,
+            expandedChromeHeight: 111,
+            topCapsuleObscuredHeight: 0,
+            safeAreaTop: 59
+        )
+
+        XCTAssertEqual(height, 59, accuracy: 0.001)
+    }
+
+    func testWhenPartiallyHiddenThenTopObscuredHeightIsMaxOfShrinkingChromeAndCapsule() {
+        let height = FloatingUILayoutPolicy.webViewTopObscuredHeight(
+            barsVisibilityPercent: 0.5,
+            expandedChromeHeight: 111,
+            topCapsuleObscuredHeight: 91,
+            safeAreaTop: 59
+        )
+
+        XCTAssertEqual(height, 91, accuracy: 0.001)
     }
 
     func testWhenFloatingBottomAddressBarAndNotMinimalChromeThenOmnibarIsHostedInToolbar() {
@@ -391,6 +478,39 @@ final class WebViewScrollViewInsetUpdaterTests: XCTestCase {
         XCTAssertEqual(scrollView.contentInset, .zero)
         XCTAssertEqual(scrollView.verticalScrollIndicatorInsets, .zero)
         XCTAssertEqual(scrollView.horizontalScrollIndicatorInsets, .zero)
+    }
+
+    func testWhenChromeTransitionIsInProgressThenPreviouslyAppliedInsetsAreKept() {
+        XCTAssertFalse(
+            WebViewScrollViewInsetUpdater.shouldUpdateDuringChromeTransition(
+                barsVisibilityPercent: 0.5,
+                hasAppliedInsets: true
+            )
+        )
+    }
+
+    func testWhenChromeTransitionReachesEndpointsThenInsetsAreUpdated() {
+        XCTAssertTrue(
+            WebViewScrollViewInsetUpdater.shouldUpdateDuringChromeTransition(
+                barsVisibilityPercent: 0,
+                hasAppliedInsets: true
+            )
+        )
+        XCTAssertTrue(
+            WebViewScrollViewInsetUpdater.shouldUpdateDuringChromeTransition(
+                barsVisibilityPercent: 1,
+                hasAppliedInsets: true
+            )
+        )
+    }
+
+    func testWhenInsetsHaveNotBeenAppliedThenTheyAreUpdatedDuringChromeTransition() {
+        XCTAssertTrue(
+            WebViewScrollViewInsetUpdater.shouldUpdateDuringChromeTransition(
+                barsVisibilityPercent: 0.5,
+                hasAppliedInsets: false
+            )
+        )
     }
 }
 

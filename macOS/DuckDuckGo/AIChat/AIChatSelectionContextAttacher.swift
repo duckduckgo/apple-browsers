@@ -17,6 +17,7 @@
 //
 
 import AIChat
+import AppKit
 import Foundation
 import PixelKit
 
@@ -46,17 +47,20 @@ final class AIChatSelectionContextAttacher: AIChatSelectionContextAttaching {
     private let aiChatCoordinator: AIChatCoordinating
     private let pixelFiring: PixelFiring?
     private let currentPageContextProvider: () -> PageContextProtocol?
+    private let aiChatConversationSourceHandler: AIChatConversationSourceHandler
 
     init(
         aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
         aiChatCoordinator: AIChatCoordinating,
         pixelFiring: PixelFiring?,
-        currentPageContextProvider: @escaping () -> PageContextProtocol?
+        currentPageContextProvider: @escaping () -> PageContextProtocol?,
+        aiChatConversationSourceHandler: AIChatConversationSourceHandler = Application.appDelegate.aiChatConversationSourceHandler
     ) {
         self.aiChatMenuConfig = aiChatMenuConfig
         self.aiChatCoordinator = aiChatCoordinator
         self.pixelFiring = pixelFiring
         self.currentPageContextProvider = currentPageContextProvider
+        self.aiChatConversationSourceHandler = aiChatConversationSourceHandler
     }
 
     func attach(text: String, url: URL?) {
@@ -66,7 +70,8 @@ final class AIChatSelectionContextAttacher: AIChatSelectionContextAttaching {
 
         pixelFiring?.fire(AIChatPixel.aiChatAttachSelection, frequency: .dailyAndStandard)
 
-        if !aiChatCoordinator.isChatPresentedForCurrentTab() {
+        let isChatAlreadyPresented = aiChatCoordinator.isChatPresentedForCurrentTab()
+        if !isChatAlreadyPresented {
             pixelFiring?.fire(
                 AIChatPixel.aiChatSidebarOpened(
                     source: .attachSelection,
@@ -93,6 +98,9 @@ final class AIChatSelectionContextAttacher: AIChatSelectionContextAttaching {
 
         // Append the selection, then reveal the sidebar; the tab extension flushes it once the chat VC is up.
         currentPageContextProvider()?.appendSelectionContext(selection)
+        if !isChatAlreadyPresented {
+            aiChatConversationSourceHandler.setData(.attachSelection)
+        }
         aiChatCoordinator.revealChat()
     }
 }

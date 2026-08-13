@@ -1555,6 +1555,48 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertEqual(sessionState.viewState.quickActions, [.askAboutPage])
     }
 
+    // MARK: - Ask about page vs the attachment strip's re-attach button
+
+    /// The strip's re-attach button takes an explicit removal, so only then is the chip a duplicate.
+    func testAskAboutPageIsDroppedOnlyOnceTheUserHasRemovedTheContext() {
+        // Given a floating-input-capable surface with the page attached
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        sessionState = AIChatContextualChatSessionState(
+            aiChatSettings: mockSettings,
+            pixelHandler: mockPixelHandler,
+            featureFlagger: mockFeatureFlagger,
+            floatingInputFeature: MockFloatingInputFeature(isAvailable: true)
+        )
+        sessionState.updateContext(makeTestContext())
+        XCTAssertEqual(sessionState.viewState.quickActions, [.summarizePage])
+
+        // When the user removes it, the strip offers re-attach, so the chip stands down
+        sessionState.downgradeToPlaceholder()
+        XCTAssertEqual(sessionState.viewState.quickActions, [])
+
+        // Then a new chat clears that offer, so the chip has to come back — otherwise neither is left
+        sessionState.resetToNoChat()
+        XCTAssertEqual(sessionState.viewState.quickActions, [.askAboutPage])
+    }
+
+    func testAskAboutPageSurvivesRemovalWhenThereIsNoFloatingInput() {
+        // Given no floating input, nothing else offers re-attach, so the chip must stay
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        sessionState = AIChatContextualChatSessionState(
+            aiChatSettings: mockSettings,
+            pixelHandler: mockPixelHandler,
+            featureFlagger: mockFeatureFlagger,
+            floatingInputFeature: MockFloatingInputFeature(isAvailable: false)
+        )
+        sessionState.updateContext(makeTestContext())
+
+        // When
+        sessionState.downgradeToPlaceholder()
+
+        // Then
+        XCTAssertEqual(sessionState.viewState.quickActions, [.askAboutPage])
+    }
+
     func testQuickActionsIsEmptyWhenSuggestedPromptsOnAndAttached() {
         // Given
         mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
@@ -2163,6 +2205,55 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         AIChatSelectionContextBuilder.makeSelection(text: content, url: URL(string: "https://example.com/article"))
     }
 
+    // MARK: - Signals-only collection
+
+    func testSignalsOnlyCollectionRetainsSignalsWithoutMakingThePageAttachable() {
+        sessionState.markPendingSignalsOnlyCollection()
+
+        sessionState.updateContext(makeTestContext())
+
+        // Must not land in `latestContext`, which feeds the paths that would attach the page.
+        XCTAssertNotNil(sessionState.lastCollectedContext)
+        XCTAssertNil(sessionState.latestContext)
+        XCTAssertNil(sessionState.intendedAttachedContext)
+    }
+
+    func testClearingSelectionsResolvesSuggestionsBackToPageScope() {
+        mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
+        sessionState.attachSelection(makeSelection())
+        XCTAssertEqual(sessionState.viewState.suggestionsLoadState, .loading)
+
+        sessionState.clearAttachedSelections()
+
+        // Clearing is a scope change like removal, so the row must be resolved again.
+        XCTAssertEqual(sessionState.viewState.suggestionsLoadState, .loading)
+        XCTAssertTrue(sessionState.viewState.suggestions.isEmpty)
+    }
+
+    // MARK: - Suggestions hidden beyond one attachment
+
+    func testTwoSelectionsHideTheSuggestions() {
+        sessionState.beginLoadingSuggestions()
+        sessionState.attachSelection(makeSelection("first"))
+        sessionState.attachSelection(makeSelection("second"))
+
+        XCTAssertTrue(sessionState.viewState.suggestions.isEmpty)
+    }
+
+    /// The hide rule counts attachments of *any* kind, so one selection plus one image hides them too.
+    func testASelectionPlusAnInputAttachmentHidesTheSuggestions() {
+        sessionState.inputAttachmentCount = { 1 }
+        sessionState.attachSelection(makeSelection())
+
+        XCTAssertTrue(sessionState.viewState.suggestions.isEmpty)
+    }
+
+    func testAttachedSelectionSuppressesThePageScopedQuickActions() {
+        sessionState.attachSelection(makeSelection())
+
+        XCTAssertTrue(sessionState.viewState.quickActions.isEmpty)
+    }
+
     // MARK: - Attached Text Selections
 
     func testAttachSelectionAppendsAndReportsSuccess() {
@@ -2349,6 +2440,11 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
     func fireViewAllChatsTapped() {}
     func fireFireButtonTapped() { fireButtonTappedFired = true }
     func fireFireButtonConfirmed() { fireButtonConfirmedFired = true }
+    func fireAddressBarMenuShown() {}
+    func fireAddressBarMenuNewChatSelected() {}
+    func fireAddressBarMenuAskAboutPageSelected() {}
+    func fireFloatingInputDismissedWithoutSubmission() {}
+    func fireFloatingInputPromotedToSheet() {}
     func firePageContextAutoAttached() { pageContextAutoAttachedFired = true }
     func firePageContextUpdatedOnNavigation(url: String) { pageContextUpdatedOnNavigationFired = true }
     func firePageContextManuallyAttachedNative() { pageContextManuallyAttachedNativeFired = true }
@@ -2427,4 +2523,10 @@ private final class GatedContextualSuggestedPromptsProvider: ContextualSuggested
     func resume(at index: Int, returning suggestions: [ContextualSuggestedPrompt]) {
         continuations[index].resume(returning: ResolvedPageSuggestions(suggestions: suggestions, isSmart: false, pageType: .none))
     }
+}
+
+// MARK: - Floating Input Feature
+
+private struct MockFloatingInputFeature: AIChatContextualFloatingInputFeatureProviding {
+    let isAvailable: Bool
 }

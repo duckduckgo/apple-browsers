@@ -31,6 +31,8 @@ protocol BookmarkListViewControllerDelegate: AnyObject {
 }
 
 final class BookmarkListViewController: NSViewController {
+    weak var hostWindow: NSWindow?
+    override var undoManager: UndoManager? { hostWindow?.undoManager ?? super.undoManager }
 
     fileprivate enum Constants {
         static let preferredContentSize = CGSize(width: 420, height: 500)
@@ -488,12 +490,7 @@ final class BookmarkListViewController: NSViewController {
                 outlineView.reloadData()
             }
         } else {
-            let selectedNodes = self.selectedNodes
-
-            dataSource.reloadData(with: sortBookmarksViewModel.selectedSortMode)
-            outlineView.reloadData()
-
-            expandAndRestore(selectedNodes: selectedNodes)
+            reloadTreePreservingState(sortMode: sortBookmarksViewModel.selectedSortMode)
         }
 
         let isEmpty = (outlineView.numberOfRows == 0)
@@ -510,10 +507,21 @@ final class BookmarkListViewController: NSViewController {
         }
     }
 
+    /// Reloads the outline view keeping the current selection, folder expansion state and scroll position.
+    private func reloadTreePreservingState(sortMode: BookmarksSortMode) {
+        let selectedNodes = self.selectedNodes
+        let scrollPosition = outlineView.visibleRect.origin
+
+        dataSource.reloadData(with: sortMode)
+        outlineView.reloadData()
+
+        expandAndRestore(selectedNodes: selectedNodes)
+        outlineView.scroll(scrollPosition)
+    }
+
     private func setupSort(mode: BookmarksSortMode) {
         hideSearchBar()
-        dataSource.reloadData(with: mode)
-        outlineView.reloadData()
+        reloadTreePreservingState(sortMode: mode)
         sortBookmarksButton.image = (mode == .nameDescending) ? .bookmarkSortDesc : .bookmarkSortAsc
         sortBookmarksButton.backgroundColor = mode.shouldHighlightButton ? .buttonMouseDown : .clear
         sortBookmarksButton.mouseOverColor = mode.shouldHighlightButton ? .buttonMouseDown : .buttonMouseOver

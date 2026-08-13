@@ -150,6 +150,62 @@ final class UnifiedToggleInputToolbarViewTests: XCTestCase {
         }
     }
 
+    func testWhenUpdatedModelPickerIsDisabledThenModelChipUsesMenuAsPrimaryAction() {
+        let sut = UnifiedToggleInputToolbarView()
+        sut.modelPickerMenu = UIMenu(children: [UIAction(title: "Model") { _ in }])
+
+        let modelChipButton = findButton(accessibilityIdentifier: "AIChat.Toolbar.Button.ModelChip", in: sut)
+
+        XCTAssertTrue(modelChipButton?.showsMenuAsPrimaryAction ?? false)
+    }
+
+    func testWhenUpdatedModelPickerIsEnabledThenModelChipRoutesTouchDownToUpdatedPickerCallback() {
+        let sut = UnifiedToggleInputToolbarView()
+        sut.modelPickerMenu = UIMenu(children: [UIAction(title: "Model") { _ in }])
+        sut.usesUpdatedModelPickerPresentation = true
+        var updatedModelPickerCallbackCount = 0
+        var modelPickerShownCallbackCount = 0
+        sut.onUpdatedModelPickerTapped = { updatedModelPickerCallbackCount += 1 }
+        sut.onModelPickerShown = { modelPickerShownCallbackCount += 1 }
+
+        let modelChipButton = findButton(accessibilityIdentifier: "AIChat.Toolbar.Button.ModelChip", in: sut)
+        modelChipButton?.sendActions(for: .touchDown)
+
+        XCTAssertFalse(modelChipButton?.showsMenuAsPrimaryAction ?? true)
+        XCTAssertNil(modelChipButton?.menu)
+        XCTAssertNotNil(sut.modelPickerMenu)
+        XCTAssertEqual(updatedModelPickerCallbackCount, 1)
+        XCTAssertEqual(modelPickerShownCallbackCount, 0)
+    }
+
+    func testWhenUpdatedModelPickerIsEnabledThenProgrammaticPresentationRoutesToCallback() {
+        let sut = UnifiedToggleInputToolbarView()
+        sut.modelPickerMenu = UIMenu(children: [UIAction(title: "Model") { _ in }])
+        sut.usesUpdatedModelPickerPresentation = true
+        var callbackCount = 0
+        sut.onUpdatedModelPickerTapped = { callbackCount += 1 }
+
+        let didPresent = sut.presentModelPickerMenu()
+
+        XCTAssertTrue(didPresent)
+        XCTAssertEqual(callbackCount, 1)
+    }
+
+    func testWhenUpdatedModelPickerIsDisabledThenModelChipRoutesTouchDownToShownCallback() {
+        let sut = UnifiedToggleInputToolbarView()
+        sut.modelPickerMenu = UIMenu(children: [UIAction(title: "Model") { _ in }])
+        var updatedModelPickerCallbackCount = 0
+        var modelPickerShownCallbackCount = 0
+        sut.onUpdatedModelPickerTapped = { updatedModelPickerCallbackCount += 1 }
+        sut.onModelPickerShown = { modelPickerShownCallbackCount += 1 }
+
+        let modelChipButton = findButton(accessibilityIdentifier: "AIChat.Toolbar.Button.ModelChip", in: sut)
+        modelChipButton?.sendActions(for: .touchDown)
+
+        XCTAssertEqual(updatedModelPickerCallbackCount, 0)
+        XCTAssertEqual(modelPickerShownCallbackCount, 1)
+    }
+
     func test_attachmentButton_usesFixedMenuElementOrder() {
         let sut = UnifiedToggleInputToolbarView()
 

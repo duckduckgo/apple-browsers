@@ -112,8 +112,17 @@ enum WebViewScrollViewInsetUpdater {
             }
         }
 
-        scrollView.verticalScrollIndicatorInsets = insets
-        scrollView.horizontalScrollIndicatorInsets = insets
+        if scrollView.verticalScrollIndicatorInsets != insets {
+            scrollView.verticalScrollIndicatorInsets = insets
+        }
+        if scrollView.horizontalScrollIndicatorInsets != insets {
+            scrollView.horizontalScrollIndicatorInsets = insets
+        }
+    }
+
+    static func shouldUpdateDuringChromeTransition(barsVisibilityPercent: CGFloat,
+                                                   hasAppliedInsets: Bool) -> Bool {
+        !hasAppliedInsets || barsVisibilityPercent <= 0 || barsVisibilityPercent >= 1
     }
 }
 
@@ -138,6 +147,8 @@ class TabViewController: UIViewController {
     var error: UIView!
     
     var errorInfoImage: UIImageView!
+    var errorInfoImageWidthConstraint: NSLayoutConstraint!
+    var errorInfoImageHeightConstraint: NSLayoutConstraint!
     var errorHeader: UILabel!
     var errorMessage: UILabel!
     
@@ -186,13 +197,21 @@ class TabViewController: UIViewController {
 
     var preventUniversalLinksOnce = false
     private var shouldUseSafariOnlyUserAgentForNextMainFrameNavigation = false
-    private var safariRedirectLoopErrorURL: URL?
+    private enum ActionableErrorPage {
+        case safariRedirectLoop(URL)
+        case tabTermination
+    }
+    private var actionableErrorPage: ActionableErrorPage?
+    private var isAfterTabTermination: Bool {
+        guard case .tabTermination = actionableErrorPage else { return false }
+        return true
+    }
     private var defaultErrorHeaderText = ""
     lazy var errorActionButton: UIButton = {
         let button = UIButton(type: .system)
         button.translatesAutoresizingMaskIntoConstraints = false
         button.isHidden = true
-        button.addTarget(self, action: #selector(onOpenInSafariFromErrorPage), for: .touchUpInside)
+        button.addTarget(self, action: #selector(onErrorPagePrimaryAction), for: .touchUpInside)
         return button
     }()
     lazy var errorReportBrokenSiteButton: UIButton = {
@@ -248,6 +267,8 @@ class TabViewController: UIViewController {
     private var scrollViewAdjustmentBehaviorBeforeFloatingUI: WebViewScrollViewInsetUpdater.AdjustmentBehavior?
     private lazy var appRatingPrompt: AppRatingPrompt = AppRatingPrompt(featureFlagger: self.featureFlagger)
     let unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding
+    private lazy var floatingUIManager = FloatingUIManager(featureFlagger: featureFlagger,
+                                                           unifiedToggleInputFeature: unifiedToggleInputFeature)
     lazy var aiChatTextSelectionFeature: AIChatTextSelectionFeatureProviding =
         AIChatTextSelectionFeature(featureFlagger: featureFlagger,
                                    aiChatSettings: aiChatSettings,
@@ -686,6 +707,7 @@ class TabViewController: UIViewController {
     let sharedSecureVault: (any AutofillSecureVault)?
     let privacyStats: PrivacyStatsProviding
     private let pixelFiring: (any PixelKitFiring)?
+    private let tabTerminationErrorPageInstrumentation: any TabTerminationErrorPageInstrumenting
 
     private(set) var aiChatContentHandler: AIChatContentHandling
     private(set) var voiceSearchHelper: VoiceSearchHelperProtocol
@@ -765,7 +787,8 @@ class TabViewController: UIViewController {
          addressBarURLFilter: AddressBarURLFiltering = AddressBarURLFilter(),
          adBlockingAvailability: AdBlockingAvailabilityProviding,
          eventHub: EventHubManaging,
-         pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
+         pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
+         tabTerminationErrorPageInstrumentation: (any TabTerminationErrorPageInstrumenting)? = nil) {
 
         self.tabModel = tabModel
         self.viewModel = TabViewModel(tab: tabModel, historyManager: historyManager)
@@ -797,6 +820,8 @@ class TabViewController: UIViewController {
         self.sharedSecureVault = sharedSecureVault
         self.privacyStats = privacyStats
         self.pixelFiring = pixelFiring
+        self.tabTerminationErrorPageInstrumentation = tabTerminationErrorPageInstrumentation
+            ?? DefaultTabTerminationErrorPageInstrumentation(pixelFiring: pixelFiring)
         self.tabURLInterceptor = TabURLInterceptorDefault(featureFlagger: featureFlagger) {
             return AppDependencyProvider.shared.subscriptionManager.isSubscriptionPurchaseEligible
         }
@@ -961,7 +986,7 @@ class TabViewController: UIViewController {
 
     @objc
     private func onAddressBarPositionChanged() {
-        if FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled {
+        if floatingUIManager.isFloatingUIEnabled {
             borderView.isHidden = true
             borderView.isTopVisible = false
             borderView.isBottomVisible = false
@@ -977,6 +1002,16 @@ class TabViewController: UIViewController {
     }
 
     func updateWebViewBottomAnchor(for barsVisibilityPercent: CGFloat) {
+        updateWebViewBottomConstraint(for: barsVisibilityPercent)
+
+        if floatingUIManager.isFloatingUIEnabled {
+            updateWebViewLayoutForFloatingUI(for: barsVisibilityPercent)
+        } else {
+            updateWebViewLayoutForClassicUI(for: barsVisibilityPercent)
+        }
+    }
+
+    private func updateWebViewBottomConstraint(for barsVisibilityPercent: CGFloat) {
         let isUnifiedToggleInputAffectingBottomLayout = isAITab && unifiedToggleInputFeature.isAvailable
         if appSettings.currentAddressBarPosition == .bottom && !isUnifiedToggleInputAffectingBottomLayout {
             if chromeDelegate?.isInMinimalChromeLayout == true {
@@ -1005,46 +1040,56 @@ class TabViewController: UIViewController {
         } else {
             webViewBottomAnchorConstraint?.constant = 0
         }
-        if FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled {
-            guard #available(iOS 26, *) else {
-                assertionFailure("Floating UI requires iOS 26")
-                return
-            }
-            borderView.bottomAlpha = 0
-            borderView.isHidden = true
-            borderView.isTopVisible = false
-            borderView.isBottomVisible = false
+    }
 
-            // AI tabs with the unified toggle input own their own bottom layout, so keep the web view
-            // full-bleed with no obscured region there.
-            let isUnifiedToggleInputAffectingLayout = isAITab && unifiedToggleInputFeature.isAvailable
-            let obscuredInsets: UIEdgeInsets = isUnifiedToggleInputAffectingLayout
-                ? .zero
-                : (chromeDelegate?.floatingWebViewObscuredInsets(for: barsVisibilityPercent) ?? .zero)
-            if scrollViewAdjustmentBehaviorBeforeFloatingUI == nil {
-                scrollViewAdjustmentBehaviorBeforeFloatingUI = WebViewScrollViewInsetUpdater.beginManaging(webView.scrollView)
-            }
-            webView.obscuredContentInsets = obscuredInsets
-            webViewBottomAnchorConstraint?.constant = 0
-            if additionalSafeAreaInsets != .zero {
-                additionalSafeAreaInsets = .zero
-            }
+    private func updateWebViewLayoutForFloatingUI(for barsVisibilityPercent: CGFloat) {
+        guard #available(iOS 26, *) else {
+            assertionFailure("Floating UI requires iOS 26")
+            return
+        }
+        borderView.bottomAlpha = 0
+        borderView.isHidden = true
+        borderView.isTopVisible = false
+        borderView.isBottomVisible = false
+
+        // AI tabs with the unified toggle input own their own bottom layout, so keep the web view
+        // full-bleed with no obscured region there.
+        let isUnifiedToggleInputAffectingLayout = isAITab && unifiedToggleInputFeature.isAvailable
+        let obscuredInsets: UIEdgeInsets = isUnifiedToggleInputAffectingLayout
+            ? .zero
+            : (chromeDelegate?.floatingWebViewObscuredInsets(for: barsVisibilityPercent) ?? .zero)
+        if scrollViewAdjustmentBehaviorBeforeFloatingUI == nil {
+            scrollViewAdjustmentBehaviorBeforeFloatingUI = WebViewScrollViewInsetUpdater.beginManaging(webView.scrollView)
+        }
+        webViewBottomAnchorConstraint?.constant = 0
+        if additionalSafeAreaInsets != .zero {
+            additionalSafeAreaInsets = .zero
+        }
+        if WebViewScrollViewInsetUpdater.shouldUpdateDuringChromeTransition(
+            barsVisibilityPercent: barsVisibilityPercent,
+            hasAppliedInsets: hasAppliedFloatingUIScrollViewInsets
+        ) {
             WebViewScrollViewInsetUpdater.update(webView.scrollView, insets: obscuredInsets)
             hasAppliedFloatingUIScrollViewInsets = true
-        } else {
-            borderView.isHidden = false
-            borderView.bottomAlpha = AppWidthObserver.shared.isLargeWidth ? 0 : barsVisibilityPercent
-            if #available(iOS 26, *) {
-                webView.obscuredContentInsets = .zero
-            }
-            if hasAppliedFloatingUIScrollViewInsets {
-                WebViewScrollViewInsetUpdater.update(webView.scrollView, insets: .zero)
-                hasAppliedFloatingUIScrollViewInsets = false
-            }
-            restoreScrollViewAdjustmentBehaviorAfterFloatingUI()
-            if additionalSafeAreaInsets != .zero {
-                additionalSafeAreaInsets = .zero
-            }
+        }
+        if webView.obscuredContentInsets != obscuredInsets {
+            webView.obscuredContentInsets = obscuredInsets
+        }
+    }
+
+    private func updateWebViewLayoutForClassicUI(for barsVisibilityPercent: CGFloat) {
+        borderView.isHidden = false
+        borderView.bottomAlpha = AppWidthObserver.shared.isLargeWidth ? 0 : barsVisibilityPercent
+        if #available(iOS 26, *) {
+            webView.obscuredContentInsets = .zero
+        }
+        if hasAppliedFloatingUIScrollViewInsets {
+            WebViewScrollViewInsetUpdater.update(webView.scrollView, insets: .zero)
+            hasAppliedFloatingUIScrollViewInsets = false
+        }
+        restoreScrollViewAdjustmentBehaviorAfterFloatingUI()
+        if additionalSafeAreaInsets != .zero {
+            additionalSafeAreaInsets = .zero
         }
     }
 
@@ -1182,7 +1227,7 @@ class TabViewController: UIViewController {
         } else {
             webView = WebView(frame: view.bounds, configuration: configuration)
         }
-        if FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled {
+        if floatingUIManager.isFloatingUIEnabled {
             webView.scrollView.clipsToBounds = false
             webView.clipsToBounds = false
             outerContainer.clipsToBounds = false
@@ -1278,7 +1323,7 @@ class TabViewController: UIViewController {
     }
 
     private func updateBorderViewForFloatingUIIfNeeded() {
-        if FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled {
+        if floatingUIManager.isFloatingUIEnabled {
             borderView.isHidden = true
             borderView.isTopVisible = false
             borderView.isBottomVisible = false
@@ -1621,6 +1666,10 @@ class TabViewController: UIViewController {
             }
         }
 
+        if handleBackFromTabTerminationErrorPage() {
+            return
+        }
+
         if isError {
             hideErrorMessage()
             if let url = webView.url, safariRedirectHandler.isAfterSuppressedXSafariRedirect(for: url), webView.canGoBack {
@@ -1644,6 +1693,21 @@ class TabViewController: UIViewController {
             delegate?.tabDidRequestClose(self)
         }
 
+    }
+
+    private func handleBackFromTabTerminationErrorPage() -> Bool {
+        guard case .tabTermination = actionableErrorPage else { return false }
+
+        if webView.canGoBack, webView.goBack() != nil {
+            duckPlayerNavigationHandler.handleGoBack(webView: webView)
+            chromeDelegate?.omniBar.endEditing()
+        } else if openingTab != nil {
+            stashReopenableStateOnOpener()
+            delegate?.tabDidRequestClose(self)
+        } else if let url {
+            load(url: url)
+        }
+        return true
     }
 
     /// Records the closed tab's URL on the opener so its forward button can re-open it.
@@ -1678,7 +1742,7 @@ class TabViewController: UIViewController {
         errorMessage.text = formattedErrorMessage(message)
         errorActionButton.isHidden = true
         errorReportBrokenSiteButton.isHidden = true
-        safariRedirectLoopErrorURL = nil
+        actionableErrorPage = nil
         error.layoutIfNeeded()
     }
 
@@ -1698,11 +1762,11 @@ class TabViewController: UIViewController {
         errorHeader.text = defaultErrorHeaderText
         errorActionButton.isHidden = true
         errorReportBrokenSiteButton.isHidden = true
-        safariRedirectLoopErrorURL = nil
+        actionableErrorPage = nil
     }
 
     private func showSafariRedirectLoopError(for url: URL) {
-        safariRedirectLoopErrorURL = url
+        actionableErrorPage = .safariRedirectLoop(url)
         webView.isHidden = true
         error.isHidden = false
         setErrorInfoImage(resource: .shieldAlert96)
@@ -1716,8 +1780,28 @@ class TabViewController: UIViewController {
         webpageDidFailToLoad()
     }
 
-    private func setErrorInfoImage(resource: ImageResource = AppRebrand.isAppRebranded() ? .daxAccident : .daxAccidentLegacy) {
+    func showTabTerminationErrorPage() {
+        actionableErrorPage = .tabTermination
+        webView.isHidden = true
+        error.isHidden = false
+        setErrorInfoImage(resource: .webAlert128, size: CGSize(width: 128, height: 96))
+        errorHeader.text = UserText.tabTerminationErrorPageTitle
+        errorMessage.text = UserText.tabTerminationErrorPageMessage
+        errorActionButton.setTitle(UserText.tabTerminationErrorPageReloadButton, for: .normal)
+        errorActionButton.isHidden = false
+        errorReportBrokenSiteButton.setTitle(UserText.tabTerminationErrorPageSendFeedbackButton, for: .normal)
+        errorReportBrokenSiteButton.isHidden = false
+        error.layoutIfNeeded()
+        hideProgressIndicator()
+        webpageDidFailToLoad(preservePrivacyInfo: true)
+        tabTerminationErrorPageInstrumentation.errorPageShown()
+    }
+
+    private func setErrorInfoImage(resource: ImageResource = AppRebrand.isAppRebranded() ? .daxAccident : .daxAccidentLegacy,
+                                   size: CGSize = CGSize(width: 296, height: 188)) {
         errorInfoImage.image = UIImage(resource: resource)
+        errorInfoImageWidthConstraint.constant = size.width
+        errorInfoImageHeightConstraint.constant = size.height
         errorInfoImage.isHidden = false
     }
 
@@ -1988,6 +2072,7 @@ class TabViewController: UIViewController {
                                                                      isForceDarkModeEnabled: darkReaderFeatureSettings.isForceDarkModeEnabled,
                                                                      autoplayBlockingMode: autoplaySettings.currentAutoplayBlockingMode.rawValue,
                                                                      isAfterSuppressedXSafariRedirect: safariRedirectHandler.isAfterSuppressedXSafariRedirect(for: currentURL),
+                                                                     isAfterTabTermination: isAfterTabTermination,
                                                                      loadedWebExtensions: loadedWebExtensions,
                                                                      adBlockingExtensionScriptletsVersion: adBlockingScriptletsVersion,
                                                                      cpmExtensionLoaded: cpmExtensionLoaded,
@@ -2365,7 +2450,7 @@ extension TabViewController: WKNavigationDelegate {
     /// renders out of process rather than blocking the main thread. Falls back to `preparePreviewSync`
     /// only while a JS alert is on screen, since `takeSnapshot` captures web content but not native overlays.
     func preparePreview(completion: @escaping (UIImage?) -> Void) {
-        let capturesFullBounds = FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled
+        let capturesFullBounds = floatingUIManager.isFloatingUIEnabled
 
         DispatchQueue.main.async { [weak self] in
             guard let self, let webView else {
@@ -2404,7 +2489,7 @@ extension TabViewController: WKNavigationDelegate {
             return
         }
 
-        let capturesFullBounds = FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled
+        let capturesFullBounds = floatingUIManager.isFloatingUIEnabled
         guard let rect = WebViewPreviewSnapshotGeometry.visibleRect(
             webViewBounds: webView.bounds,
             contentInset: webView.scrollView.contentInset,
@@ -2430,7 +2515,7 @@ extension TabViewController: WKNavigationDelegate {
     private func preparePreviewSync(afterScreenUpdates: Bool = false) -> UIImage? {
         guard let webView, webView.bounds.height > 0, webView.bounds.width > 0 else { return nil }
 
-        let capturesFullBounds = FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled
+        let capturesFullBounds = floatingUIManager.isFloatingUIEnabled
         let contentInset = capturesFullBounds ? UIEdgeInsets.zero : webView.scrollView.contentInset
         let size = CGSize(width: webView.frame.size.width,
                           height: webView.frame.size.height - contentInset.top - contentInset.bottom)
@@ -2735,14 +2820,24 @@ extension TabViewController: WKNavigationDelegate {
         notifyDelegateIfDuckAINavigationFailed(error: error)
     }
 
-    private func webpageDidFailToLoad() {
+    private func webpageDidFailToLoad(preservePrivacyInfo: Bool = false) {
         Logger.general.debug("webpageLoading failed")
 
         wasLoadingStoppedExternally = false
 
         if isError {
             showBars(animated: true)
-            privacyInfo = PrivacyInfo(url: .empty, parentEntity: nil, protectionStatus: .init(unprotectedTemporary: false, enabledFeatures: [], allowlisted: false, denylisted: false), isSpecialErrorPageVisible: true)
+            if preservePrivacyInfo {
+                privacyInfo?.isSpecialErrorPageVisible = true
+            } else {
+                privacyInfo = PrivacyInfo(url: .empty,
+                                          parentEntity: nil,
+                                          protectionStatus: .init(unprotectedTemporary: false,
+                                                                  enabledFeatures: [],
+                                                                  allowlisted: false,
+                                                                  denylisted: false),
+                                          isSpecialErrorPageVisible: true)
+            }
             onPrivacyInfoChanged()
         }
 
@@ -3014,6 +3109,11 @@ extension TabViewController: WKNavigationDelegate {
                                                                            token: token) {
                 modifiedRequest = signalled
                 didModifyRequest = true
+                // Fires only when we mutate the request, i.e. the first pass — the cancel+reload re-enters
+                // with signals already present so `signalledRequest` returns nil, avoiding a double count.
+                if cohort == .treatment {
+                    fireSearchTokenAttachPixel(token: token)
+                }
             }
         }
 
@@ -4116,15 +4216,30 @@ extension TabViewController: UserContentControllerDelegate {
     }
 
     @objc
-    func onOpenInSafariFromErrorPage() {
-        guard let safariRedirectLoopErrorURL else { return }
-        openExternally(url: makeXSafariHTTPSURL(from: safariRedirectLoopErrorURL))
+    func onErrorPagePrimaryAction() {
+        switch actionableErrorPage {
+        case .safariRedirectLoop(let url):
+            openExternally(url: makeXSafariHTTPSURL(from: url))
+        case .tabTermination:
+            tabTerminationErrorPageInstrumentation.reloadSelected()
+            refresh()
+        case nil:
+            return
+        }
     }
 
     @objc
     func onReportBrokenSiteFromErrorPage() {
-        DailyPixel.fireDailyAndCount(pixel: .webViewExternalSchemeNavigationSafariRedirectLoopErrorPageReportSiteBreakage, error: nil, withAdditionalParameters: [:])
-        delegate?.tabDidRequestReportBrokenSite(tab: self)
+        switch actionableErrorPage {
+        case .tabTermination:
+            tabTerminationErrorPageInstrumentation.sendFeedbackSelected()
+        case .safariRedirectLoop:
+            SafariRedirectPixel.reportBrokenSiteFromErrorPage.fireDailyAndCount()
+        case nil:
+            return
+        }
+
+        delegate?.tabDidRequestReportBrokenSite(tab: self, entryPoint: .errorPage)
     }
 
 }
@@ -5263,13 +5378,13 @@ extension TabViewController: SERPSettingsUserScriptDelegate {
 extension TabViewController: SafariRedirectHandlerDelegate {
 
     func safariRedirectHandler(_ handler: SafariRedirectHandling, didRequestLoadURL url: URL) {
-        DailyPixel.fireDailyAndCount(pixel: .webViewExternalSchemeNavigationSafariRedirectLoadURLRequested, error: nil, withAdditionalParameters: [:])
+        SafariRedirectPixel.loadURLRequested.fireDailyAndCount()
         shouldUseSafariOnlyUserAgentForNextMainFrameNavigation = true
         load(url: url, didUpgradeURL: false)
     }
 
     func safariRedirectHandler(_ handler: SafariRedirectHandling, didRequestShowSafariRedirectLoopErrorForURL url: URL) {
-        DailyPixel.fireDailyAndCount(pixel: .webViewExternalSchemeNavigationSafariRedirectLoopErrorPageShown, error: nil, withAdditionalParameters: [:])
+        SafariRedirectPixel.loopErrorPageShown.fireDailyAndCount()
         shouldUseSafariOnlyUserAgentForNextMainFrameNavigation = false
         showSafariRedirectLoopError(for: url)
     }
@@ -5284,6 +5399,30 @@ private extension WKProcessTerminationReason {
         case .requestedByClient: return "requested_by_client"
         case .crash: return "crash"
         case .exceededSharedProcessCrashLimit: return "exceeded_shared_process_crash_limit"
+        }
+    }
+}
+
+// MARK: - Search Token (Dindex) experiment diagnostics
+
+private extension TabViewController {
+
+    /// Fires the treatment-only `search-token_serp-attach` diagnostic for a SERP navigation the interceptor
+    /// just decorated: whether a token was attached and its length bucket. Daily+count, low-cardinality, no PII.
+    func fireSearchTokenAttachPixel(token: String?) {
+        PixelKit.fire(SearchTokenPixel.serpAttach(outcome: token != nil ? "attached" : "no_token",
+                                                  tokenLength: Self.tokenLengthBucket(token?.count ?? 0)),
+                      frequency: .dailyAndCount)
+    }
+
+    // A normal token is ~347 chars; buckets bracket that so truncation (1_256) and oversize (513_plus)
+    // stand out from the normal range (257_512).
+    static func tokenLengthBucket(_ length: Int) -> String {
+        switch length {
+        case 0: return "0"
+        case 1...256: return "1_256"
+        case 257...512: return "257_512"
+        default: return "513_plus"
         }
     }
 }

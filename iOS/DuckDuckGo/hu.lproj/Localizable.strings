@@ -4021,6 +4021,18 @@
 /* Special error page title for pages that can only be opened in Safari */
 "prompt.general-page-problem.title" = "Ez az oldal csak Safariban tölthető be";
 
+/* Error page message shown after repeated tab terminations */
+"prompt.tab-termination-error-page.message" = "Az oldal betöltése többször is leállt. Próbálkozz újratöltéssel, vagy küldj nekünk visszajelzést.";
+
+/* Button that reloads a page after repeated tab terminations */
+"prompt.tab-termination-error-page.reload" = "Újratöltés";
+
+/* Button that opens site feedback after repeated tab terminations */
+"prompt.tab-termination-error-page.send-feedback" = "Visszajelzés küldése";
+
+/* Error page title shown after repeated tab terminations */
+"prompt.tab-termination-error-page.title" = "Nem tudtuk betölteni az oldalt";
+
 /* Default native error page message */
 "prompt.web-page-load-error.message" = "A webhely biztonsági tanúsítványa érvénytelen, ezért előfordulhat, hogy a meglátogatása nem biztonságos.";
 

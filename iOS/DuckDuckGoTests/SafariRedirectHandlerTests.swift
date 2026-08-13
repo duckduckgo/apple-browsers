@@ -21,6 +21,7 @@ import XCTest
 import Common
 import FoundationExtensions
 import BrowserServicesKit
+import PixelKit
 @testable import DuckDuckGo
 
 final class SafariRedirectHandlerTests: XCTestCase {
@@ -172,6 +173,46 @@ final class SafariRedirectHandlerTests: XCTestCase {
         _ = handler.handleRedirect(to: xSafariHTTPSURL)
         let differentHostURL = URL(string: "https://other.com/page")!
         XCTAssertFalse(handler.isAfterSuppressedXSafariRedirect(for: differentHostURL))
+    }
+
+    func testWhenSafariRedirectPixelsAreCreatedThenNamesArePreserved() {
+        XCTAssertEqual(
+            SafariRedirectPixel.loadURLRequested.name,
+            "m_webview_external-scheme-navigation_safari-redirect_load-url-requested")
+        XCTAssertEqual(
+            SafariRedirectPixel.loopErrorPageShown.name,
+            "m_webview_external-scheme-navigation_safari-redirect-loop_error-page-shown")
+        XCTAssertEqual(
+            SafariRedirectPixel.reportBrokenSiteFromErrorPage.name,
+            "m_webview_external-scheme-navigation_safari-redirect-loop_error-page_report-broken-site")
+    }
+
+    func testWhenSafariRedirectPixelsAreScheduledThenFrequencySuffixPrecedesPlatformSuffix() throws {
+        let pixel = SafariRedirectPixel.loadURLRequested
+        let suiteName = "SafariRedirectHandlerTests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let pixelsFired = expectation(description: "Pixels fired")
+        pixelsFired.expectedFulfillmentCount = 2
+        var firedPixelNames: [String] = []
+        let pixelKit = PixelKit(dryRun: false,
+                                appVersion: "1.0",
+                                source: PixelKit.Source.iOS.rawValue,
+                                defaultHeaders: [:],
+                                defaults: defaults) { name, _, _, _, _, _ in
+            firedPixelNames.append(name)
+            pixelsFired.fulfill()
+        }
+
+        pixelKit.fire(pixel.dailyPixel, frequency: .legacyDailyNoSuffix)
+        pixelKit.fire(pixel.countPixel)
+
+        wait(for: [pixelsFired], timeout: 1)
+
+        XCTAssertEqual(firedPixelNames, [
+            "m_webview_external-scheme-navigation_safari-redirect_load-url-requested_daily_ios_phone",
+            "m_webview_external-scheme-navigation_safari-redirect_load-url-requested_count_ios_phone",
+        ])
     }
 }
 

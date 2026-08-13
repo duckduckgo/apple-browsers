@@ -25,14 +25,17 @@ final class ContextualDaxDialogsProvider: ContextualDaxDialogsFactory {
 
     convenience init(
         onboardingPixelReporter: OnboardingPixelReporting = OnboardingPixelReporter(),
+        subscriptionUpsellMetrics: OnboardingSubscriptionUpsellMetricsReporting = OnboardingSubscriptionUpsellMetricsReporter(),
         fireCoordinator: FireCoordinator
     ) {
         let legacyFactory = DefaultContextualDaxDialogViewFactory(
             onboardingPixelReporter: onboardingPixelReporter,
+            subscriptionUpsellMetrics: subscriptionUpsellMetrics,
             fireCoordinator: fireCoordinator
         )
         let rebrandedFactory = RebrandedContextualDaxDialogsFactory(
             onboardingPixelReporter: onboardingPixelReporter,
+            subscriptionUpsellMetrics: subscriptionUpsellMetrics,
             fireCoordinator: fireCoordinator
         )
         self.init(

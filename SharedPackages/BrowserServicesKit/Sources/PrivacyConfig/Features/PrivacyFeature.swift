@@ -274,6 +274,7 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case freemiumPIR
     case optOutRetryError96Hours
     case deferredSecureVaultInit
+    case extractedProfileRefresh
 }
 
 public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
@@ -354,6 +355,8 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     case unifiedToggleInput
 
+    case updatedModelPicker
+
     /// Forward-only lever for the unified toggle input rollout. When disabled, *new* (un-granted)
     /// users stop receiving the unified toggle input; users who have already been granted it keep
     /// it. Independent of the master `unifiedToggleInput` flag (which revokes from everyone when
@@ -367,6 +370,10 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables Unified Toggle Input inside the iOS contextual AI chat sheet.
     case contextualUnifiedToggleInput
+
+    /// Enables the address-bar Duck.ai menu and the floating contextual input that replaces the
+    /// pre-submit contextual sheet on iPhone.
+    case contextualFloatingInput
 
     /// Kill switch for routing native image/file paste into the unified input attachment strip.
     case unifiedToggleInputAttachmentPaste
@@ -641,6 +648,7 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case subscriptionExpirationReminderNotification
     case subscriptionPromoForExistingUsers
     case monthlyFreeTrialExperiment
+    case onboardingSubscriptionUpsellExperiment
 }
 
 public enum DuckPlayerSubfeature: String, PrivacySubfeature {

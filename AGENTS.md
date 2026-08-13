@@ -19,3 +19,7 @@ Detailed rules live in `.cursor/rules/`. Read from the list below when the reque
 | `anti-patterns.mdc` | What NOT to do: singletons, async mistakes, SwiftUI pitfalls, testing mistakes |
 | `user-defaults-storage.mdc` | Storing settings or preferences via `KeyValueStore` |
 | `pixels.mdc` | Defining, naming, or firing pixel events |
+
+## Opening a PR with snapshot changes
+
+Before opening a monorepo PR, if the working tree has changes under the `SnapshotReferences` submodule, run `./scripts/open-snapshot-submodule-pr.sh` first, then add the submodule PR link it prints to the monorepo PR description.

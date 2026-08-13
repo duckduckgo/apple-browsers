@@ -18,6 +18,7 @@
 //
 
 import AIChat
+import DesignResourcesKitIcons
 import UIKit
 import XCTest
 @testable import DuckDuckGo
@@ -107,6 +108,106 @@ final class UnifiedToggleInputModelMenuTests: XCTestCase {
         XCTAssertTrue(actions(in: menu).allSatisfy { !$0.attributes.contains(.disabled) })
     }
 
+    // MARK: - Updated Menu
+
+    func testWhenUpdatedMenuModelsHaveMixedAccessThenGroupsThemByCurrentAccess() {
+        let menu = makeUpdatedMenu(models: [
+            makeFakeModel(id: "free", accessTier: ["free"], hasAccess: true),
+            makeFakeModel(id: "plus", accessTier: ["plus", "pro"], hasAccess: false),
+            makeFakeModel(id: "pro", accessTier: ["pro"], hasAccess: false),
+        ])
+
+        XCTAssertEqual(availableActions(in: menu).map(\.title), ["free"])
+        XCTAssertEqual(gatedSection(in: menu)?.children.compactMap { $0 as? UIAction }.map(\.title), ["plus…", "pro…"])
+    }
+
+    func testWhenUpdatedMenuAvailableModelsHaveRecommendationLabelsThenOrdersThemFirstInBackendOrder() {
+        let menu = makeUpdatedMenu(models: [
+            makeFakeModel(id: "without-1", accessTier: ["free"], hasAccess: true),
+            makeFakeModel(id: "with-1", accessTier: ["free"], hasAccess: true, label: .everydayUse),
+            makeFakeModel(id: "unknown", accessTier: ["free"], hasAccess: true, label: .unknown("FUTURE_LABEL")),
+            makeFakeModel(id: "without-2", accessTier: ["free"], hasAccess: true),
+        ])
+
+        let actions = availableActions(in: menu)
+        XCTAssertEqual(actions.map(\.title), ["with-1", "unknown", "without-1", "without-2"])
+        XCTAssertEqual(actions.first?.subtitle, AIChatModelLabel.everydayUse.localizedText)
+        XCTAssertNil(actions[1].subtitle)
+    }
+
+    func testWhenUpdatedMenuGatedModelsHaveLabelsThenKeepsBackendOrderAndOmitsSubtitles() {
+        let menu = makeUpdatedMenu(models: [
+            makeFakeModel(id: "gated-without", accessTier: ["plus"], hasAccess: false),
+            makeFakeModel(id: "gated-with", accessTier: ["plus"], hasAccess: false, label: .everydayUse),
+        ])
+
+        let gatedActions = gatedSection(in: menu)?.children.compactMap { $0 as? UIAction } ?? []
+        XCTAssertTrue(availableActions(in: menu).isEmpty)
+        XCTAssertEqual(gatedActions.map(\.title), ["gated-without…", "gated-with…"])
+        XCTAssertTrue(gatedActions.allSatisfy { $0.subtitle == nil })
+    }
+
+    func testWhenUpdatedMenuModelIsAccessibleThenDoesNotAddTierBadgeToTitle() {
+        let menu = makeUpdatedMenu(
+            models: [makeFakeModel(id: "plus", accessTier: ["plus"], hasAccess: true)],
+            userTier: .plus
+        )
+
+        XCTAssertEqual(availableActions(in: menu).first?.title, "plus")
+    }
+
+    func testWhenUpdatedMenuFreeUserHasGatedModelsThenUsesTryFreeTitle() {
+        let menu = makeUpdatedMenu(
+            models: [makeFakeModel(id: "plus", accessTier: ["plus"], hasAccess: false)],
+            userTier: .free
+        )
+
+        XCTAssertEqual(gatedSection(in: menu)?.title, UserText.aiChatModelPickerTryFree)
+    }
+
+    func testWhenUpdatedMenuPlusUserHasGatedModelsThenUsesAvailableWithProTitle() {
+        let menu = makeUpdatedMenu(
+            models: [makeFakeModel(id: "pro", accessTier: ["pro"], hasAccess: false)],
+            userTier: .plus
+        )
+
+        XCTAssertEqual(gatedSection(in: menu)?.title, UserText.aiChatModelPickerAvailableWithPro)
+    }
+
+    func testWhenUpdatedMenuAvailableModelsHaveMixedRecommendationLabelsThenDoesNotAddSectionSeparator() {
+        let menu = makeUpdatedMenu(models: [
+            makeFakeModel(id: "with", accessTier: ["pro"], hasAccess: true, label: .everydayUse),
+            makeFakeModel(id: "without", accessTier: ["pro"], hasAccess: true),
+        ], userTier: .pro)
+
+        XCTAssertEqual(menu.children.compactMap { $0 as? UIMenu }.count, 0)
+        XCTAssertEqual(availableActions(in: menu).map(\.title), ["with", "without"])
+    }
+
+    func testWhenUpdatedMenuModelIsSelectedThenItsActionIsOn() {
+        let menu = makeUpdatedMenu(
+            models: [
+                makeFakeModel(id: "selected", accessTier: ["free"], hasAccess: true),
+                makeFakeModel(id: "other", accessTier: ["free"], hasAccess: true),
+            ],
+            selectedId: "selected"
+        )
+
+        XCTAssertEqual(availableActions(in: menu).map(\.state), [.on, .off])
+        XCTAssertTrue(menu.options.contains(.singleSelection))
+    }
+
+    func testWhenUpdatedMenuModelProviderIsUnknownThenUsesOSSIcon() {
+        let menu = makeUpdatedMenu(models: [
+            makeFakeModel(id: "unknown", provider: .unknown, accessTier: ["free"], hasAccess: true),
+        ])
+
+        XCTAssertEqual(
+            availableActions(in: menu).first?.image?.pngData(),
+            DesignSystemImages.Glyphs.Size16.aiModelOSS.pngData()
+        )
+    }
+
     // MARK: - Helpers
 
     private func buildMenu(models: [AIChatModel], selectedId: String? = nil) -> UnifiedToggleInputModelMenu {
@@ -124,14 +225,43 @@ final class UnifiedToggleInputModelMenuTests: XCTestCase {
         }
     }
 
-    private func makeFakeModel(id: String, name: String? = nil, accessTier: [String], hasAccess: Bool) -> AIChatModel {
+    private func makeUpdatedMenu(
+        models: [AIChatModel],
+        selectedId: String? = nil,
+        userTier: AIChatUserTier = .free
+    ) -> UIMenu {
+        UnifiedToggleInputModelMenuFactory().makeUpdatedMenu(
+            models: models,
+            selectedId: selectedId,
+            userTier: userTier,
+            onSelect: { _ in }
+        )
+    }
+
+    private func availableActions(in menu: UIMenu) -> [UIAction] {
+        menu.children.compactMap { $0 as? UIAction }
+    }
+
+    private func gatedSection(in menu: UIMenu) -> UIMenu? {
+        menu.children.compactMap { $0 as? UIMenu }.first
+    }
+
+    private func makeFakeModel(
+        id: String,
+        name: String? = nil,
+        provider: AIChatModel.ModelProvider = .openAI,
+        accessTier: [String],
+        hasAccess: Bool,
+        label: AIChatModelLabel? = nil
+    ) -> AIChatModel {
         AIChatModel(
             id: id,
             name: name ?? id,
-            provider: .openAI,
+            provider: provider,
             supportsImageUpload: false,
             entityHasAccess: hasAccess,
-            accessTier: accessTier
+            accessTier: accessTier,
+            label: label
         )
     }
 }

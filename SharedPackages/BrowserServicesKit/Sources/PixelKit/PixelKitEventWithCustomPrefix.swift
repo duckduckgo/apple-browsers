@@ -18,7 +18,7 @@
 
 import Foundation
 
-/// New version of this protocol that allows us to maintain backwards-compatibility with PixelKitEvent
+/// New version of this protocol that allows us to maintain backwards-compatibility with PixelKit.Event
 ///
 /// This allows us to introduce support for new features without having to immediately migrate every other pixel to it.
 ///

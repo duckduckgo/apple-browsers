@@ -18,7 +18,7 @@
 
 import PixelKit
 
-enum AutoconsentPixel: PixelKitEvent {
+enum AutoconsentPixel: PixelKit.Event {
 
     case acInit
     case errorMultiplePopups

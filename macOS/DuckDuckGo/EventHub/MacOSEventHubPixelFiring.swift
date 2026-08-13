@@ -28,11 +28,11 @@ private let macOSSuffix = "_macos"
 /// The PixelKit event shape shared by both EventHub pixel paths on macOS — telemetry and the failure
 /// events below. Deliberately *not* wrapped in `DebugEvent` for the failure path: PixelKit rewrites an
 /// unprefixed `DebugEvent` to `m_mac_debug_<name>`, which would undo the naming these pixels need.
-private struct EventHubPixelKitEvent: PixelKitEvent {
+private struct EventHubPixelKitEvent: PixelKit.Event {
     let name: String
     let parameters: [String: String]?
     let standardParameters: [PixelKitStandardParameter]? = nil
-    /// Declared explicitly rather than left to `PixelKitEvent`'s reflection-based default, which would
+    /// Declared explicitly rather than left to `PixelKit.Event`'s reflection-based default, which would
     /// find nothing on a struct whose error is not an associated value.
     let error: NSError?
 }

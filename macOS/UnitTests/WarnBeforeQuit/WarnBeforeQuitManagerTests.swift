@@ -2967,7 +2967,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
                 self.fireExpectation = fireExpectation
                 self.completionExpectation = completionExpectation
             }
-            public func fire(_ event: PixelKitEvent,
+            public func fire(_ event: PixelKit.Event,
                              frequency: PixelKit.Frequency,
                              includeAppVersionParameter: Bool,
                              withAdditionalParameters: [String: String]?,

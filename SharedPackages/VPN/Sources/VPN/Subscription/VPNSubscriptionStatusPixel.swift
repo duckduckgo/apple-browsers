@@ -19,7 +19,7 @@
 import PixelKit
 import Subscription
 
-public enum VPNSubscriptionStatusPixel: PixelKitEvent, PixelKitEventWithCustomPrefix {
+public enum VPNSubscriptionStatusPixel: PixelKit.Event, PixelKitEventWithCustomPrefix {
     case vpnFeatureEnabled(isSubscriptionActive: Bool?,
                     sourceObject: Any?)
     case vpnFeatureDisabled(isSubscriptionActive: Bool?,

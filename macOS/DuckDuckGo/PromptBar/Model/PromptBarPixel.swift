@@ -25,7 +25,7 @@ import PixelKit
 /// `LIKE 'm_mac_aichat_promptbar%'`. The mirrored cases keep the tail of their `aichat_addressbar_*`
 /// counterpart, so the two surfaces compare token for token — see `PromptBarPixelHandler` for the
 /// mapping and the events the Prompt Bar deliberately can't produce.
-enum PromptBarPixel: PixelKitEvent {
+enum PromptBarPixel: PixelKit.Event {
 
     // MARK: - Mirrored from the address bar
 

@@ -25,7 +25,7 @@ extension PixelFiring {
     /// - Returns: `true` if a request was fired, `false` if it was suppressed by frequency rules.
     /// - Throws: the underlying error if firing the request failed.
     @discardableResult
-    public func fireAsync(_ event: PixelKitEvent,
+    public func fireAsync(_ event: PixelKit.Event,
                           frequency: PixelKit.Frequency = .standard,
                           includeAppVersionParameter: Bool = true,
                           withAdditionalParameters parameters: [String: String]? = nil,

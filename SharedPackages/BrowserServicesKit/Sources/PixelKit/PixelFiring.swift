@@ -18,7 +18,7 @@
 
 /// Protocol to support mocking pixel firing.
 public protocol PixelFiring {
-    func fire(_ event: PixelKitEvent,
+    func fire(_ event: PixelKit.Event,
               frequency: PixelKit.Frequency,
               includeAppVersionParameter: Bool,
               withAdditionalParameters: [String: String]?,
@@ -28,40 +28,40 @@ public protocol PixelFiring {
 }
 
 extension PixelFiring {
-    public func fire(_ event: PixelKitEvent) {
+    public func fire(_ event: PixelKit.Event) {
         fire(event, frequency: .standard, includeAppVersionParameter: true)
     }
 
-    public func fire(_ event: PixelKitEvent,
+    public func fire(_ event: PixelKit.Event,
                      frequency: PixelKit.Frequency) {
         fire(event, frequency: frequency, includeAppVersionParameter: true, withAdditionalParameters: nil, withNamePrefix: nil, doNotEnforcePrefix: false, onComplete: { _, _ in })
     }
 
-    public func fire(_ event: PixelKitEvent,
+    public func fire(_ event: PixelKit.Event,
                      frequency: PixelKit.Frequency,
                      doNotEnforcePrefix: Bool) {
         fire(event, frequency: frequency, includeAppVersionParameter: true, withAdditionalParameters: nil, withNamePrefix: nil, doNotEnforcePrefix: doNotEnforcePrefix, onComplete: { _, _ in })
     }
 
-    public func fire(_ event: PixelKitEvent,
+    public func fire(_ event: PixelKit.Event,
                      frequency: PixelKit.Frequency,
                      includeAppVersionParameter: Bool) {
         fire(event, frequency: frequency, includeAppVersionParameter: includeAppVersionParameter, withAdditionalParameters: nil, withNamePrefix: nil, doNotEnforcePrefix: false, onComplete: { _, _ in })
     }
 
-    public func fire(_ event: PixelKitEvent,
+    public func fire(_ event: PixelKit.Event,
                      frequency: PixelKit.Frequency,
                      onComplete: @escaping PixelKit.CompletionBlock) {
         fire(event, frequency: frequency, includeAppVersionParameter: true, withAdditionalParameters: nil, withNamePrefix: nil, doNotEnforcePrefix: false, onComplete: onComplete)
     }
 
-    public func fire(_ event: PixelKitEvent,
+    public func fire(_ event: PixelKit.Event,
                      frequency: PixelKit.Frequency,
                      withAdditionalParameters parameters: [String: String]?) {
         fire(event, frequency: frequency, includeAppVersionParameter: true, withAdditionalParameters: parameters, withNamePrefix: nil, doNotEnforcePrefix: false, onComplete: { _, _ in })
     }
 
-    public func fire(_ event: PixelKitEvent,
+    public func fire(_ event: PixelKit.Event,
                      frequency: PixelKit.Frequency,
                      withAdditionalParameters parameters: [String: String]?,
                      withNamePrefix namePrefix: String?) {
@@ -70,7 +70,7 @@ extension PixelFiring {
 }
 
 extension PixelKit: PixelFiring {
-    public func fire(_ event: PixelKitEvent,
+    public func fire(_ event: PixelKit.Event,
                      frequency: PixelKit.Frequency,
                      includeAppVersionParameter: Bool,
                      withAdditionalParameters parameters: [String: String]?,

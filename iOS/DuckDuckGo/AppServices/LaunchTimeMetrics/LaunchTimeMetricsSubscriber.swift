@@ -126,7 +126,7 @@ final class LaunchTimeMetricsSubscriber: NSObject, MXMetricManagerSubscriber {
     }
 }
 
-enum LaunchTimeMetricsPixel: PixelKitEvent, PixelKitEventWithCustomPrefix {
+enum LaunchTimeMetricsPixel: PixelKit.Event, PixelKitEventWithCustomPrefix {
     case firstDraw(minMs: Int, maxMs: Int)
     case resume(minMs: Int, maxMs: Int)
     case optimizedFirstDraw(minMs: Int, maxMs: Int)

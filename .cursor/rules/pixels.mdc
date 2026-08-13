@@ -130,15 +130,17 @@ case .syncLocalTimestampResolutionTriggered(let feature):
 
 ### macOS Pixels (PixelKit)
 
-macOS uses `PixelKitEvent` protocol, typically in feature-specific files. The implementation of the protocol looks like this:
+macOS uses the `PixelKit.Event` protocol, typically in feature-specific files. The protocol is declared like this:
 
 ```swift
-// SharedPackages/BrowserServicesKit/Sources/PixelKit/PixelKitEvent.swift
-public protocol PixelKitEvent {
-    var name: String { get }
-    var standardParameters: [PixelKitStandardParameter]? { get }
-    var parameters: [String: String]? { get }
-    var error: NSError? { get }
+// SharedPackages/BrowserServicesKit/Sources/PixelKit/PixelKit+Event.swift
+extension PixelKit {
+    public protocol Event {
+        var name: String { get }
+        var standardParameters: [PixelKitStandardParameter]? { get }
+        var parameters: [String: String]? { get }
+        var error: NSError? { get }
+    }
 }
 ```
 
@@ -146,7 +148,7 @@ An example implementation of this protocol is:
 
 ```swift
 // macOS/DuckDuckGo/Statistics/SubscriptionPixel.swift
-enum SubscriptionPixel: PixelKitEvent {
+enum SubscriptionPixel: PixelKit.Event {
     case subscriptionActive(AuthVersion)
     case subscriptionPurchaseAttempt
     case subscriptionPurchaseSuccess

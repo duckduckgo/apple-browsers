@@ -50,7 +50,7 @@ final class DefaultTabTerminationErrorPageInstrumentation: TabTerminationErrorPa
     }
 }
 
-enum TabTerminationErrorPagePixel: PixelKitEvent, PixelKitEventWithCustomPrefix {
+enum TabTerminationErrorPagePixel: PixelKit.Event, PixelKitEventWithCustomPrefix {
     case shown
     case reload
     case sendFeedback

@@ -33,7 +33,7 @@ final class AddressBarPerformanceCoordinatorTests: XCTestCase {
         private let lock = NSLock()
         private var pixels: [AddressBarPerformancePixel] = []
 
-        func fire(_ event: PixelKitEvent,
+        func fire(_ event: PixelKit.Event,
                   frequency: PixelKit.Frequency,
                   includeAppVersionParameter: Bool,
                   withAdditionalParameters: [String: String]?,

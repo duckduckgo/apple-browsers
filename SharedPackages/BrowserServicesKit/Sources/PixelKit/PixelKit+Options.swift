@@ -27,7 +27,12 @@ extension PixelKit {
     /// call reads `fire(event)` or `fire(event, frequency: .daily)` with no options in sight.
     public struct Options: Equatable, Sendable {
 
-        /// Extra HTTP headers merged over the instance's default headers.
+        /// HTTP headers for the request.
+        ///
+        /// Note this *replaces* the instance's `defaultHeaders` rather than merging with them: see
+        /// `fire(pixelNamed:)`, which does `headers ?? defaultHeaders`. Leave it `nil` (the default)
+        /// to send `defaultHeaders`. Long-standing PixelKit behaviour, preserved here deliberately;
+        /// whether it should merge instead is a separate question from this API reshape.
         public var headers: [String: String]?
 
         /// Extra query parameters merged over the event's own parameters. On key collision the

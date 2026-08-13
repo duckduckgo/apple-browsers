@@ -1012,15 +1012,20 @@ final class PixelKitTests: XCTestCase {
 
     /// Fires `event` through both the legacy wide-parameter entry point and the new `options:` one,
     /// and returns the resulting (pixelName, parameters) pair from each.
+    ///
+    /// Headers are captured too. An earlier version of this helper ignored them, which let a
+    /// headers-only behaviour difference slip through unnoticed.
     private func firedNameAndParameters(
         legacy: (PixelKit) -> Void,
         options: (PixelKit) -> Void
     ) -> (legacy: (String, [String: String]), options: (String, [String: String])) {
         var captured = [(String, [String: String])]()
+        var capturedHeaders = [[String: String]]()
         let lock = NSLock()
-        let pixelKit = makePixelKit { pixelName, _, parameters, _, _, completion in
+        let pixelKit = makePixelKit { pixelName, headers, parameters, _, _, completion in
             lock.lock()
             captured.append((pixelName, parameters))
+            capturedHeaders.append(headers)
             lock.unlock()
             completion(true, nil)
         }
@@ -1031,6 +1036,9 @@ final class PixelKitTests: XCTestCase {
         lock.lock()
         defer { lock.unlock() }
         XCTAssertEqual(captured.count, 2, "Expected exactly one request from each entry point")
+        XCTAssertEqual(capturedHeaders.count, 2)
+        XCTAssertEqual(capturedHeaders[0], capturedHeaders[1],
+                       "Legacy and options paths must send identical headers")
         return (captured[0], captured[1])
     }
 
@@ -1097,6 +1105,100 @@ final class PixelKitTests: XCTestCase {
         )
         XCTAssertEqual(result.legacy.0, result.options.0)
         XCTAssertEqual(result.legacy.1, result.options.1)
+    }
+
+    // MARK: - Header semantics
+
+    /// Captures the headers of a single fired request.
+    private func firedHeaders(defaultHeaders: [String: String],
+                              _ fire: (PixelKit) -> Void) -> [String: String] {
+        var captured = [String: String]()
+        let lock = NSLock()
+        let pixelKit = PixelKit(dryRun: false,
+                                appVersion: "1.0.0",
+                                session: UUID().uuidString,
+                                defaultHeaders: defaultHeaders,
+                                pixelCalendar: nil,
+                                defaults: userDefaults()) { _, headers, _, _, _, completion in
+            lock.lock()
+            captured = headers
+            lock.unlock()
+            completion(true, nil)
+        }
+        fire(pixelKit)
+        lock.lock()
+        defer { lock.unlock() }
+        return captured
+    }
+
+    /// Omitting headers sends the instance's `defaultHeaders`.
+    func testOmittingHeadersSendsDefaultHeaders() {
+        let headers = firedHeaders(defaultHeaders: ["X-Default": "yes"]) {
+            $0.fire(TestEventV2.testEventWithoutParameters)
+        }
+        XCTAssertEqual(headers["X-Default"], "yes")
+    }
+
+    /// Supplying headers *replaces* `defaultHeaders`, it does not merge with them.
+    ///
+    /// This is long-standing PixelKit behaviour (`headers ?? defaultHeaders` in `fire(pixelNamed:)`)
+    /// and is easy to misread as merging. Pinned here so the semantics are explicit, and so that
+    /// changing it later is a deliberate decision with a failing test rather than a silent shift in
+    /// what every custom-header pixel puts on the wire.
+    func testSupplyingHeadersReplacesDefaultHeaders() {
+        let headers = firedHeaders(defaultHeaders: ["X-Default": "yes"]) {
+            $0.fire(TestEventV2.testEventWithoutParameters, options: .init(headers: ["X-Custom": "1"]))
+        }
+        XCTAssertEqual(headers["X-Custom"], "1")
+        XCTAssertNil(headers["X-Default"], "Supplied headers replace defaultHeaders rather than merging")
+    }
+
+    /// The options path must treat headers exactly as the legacy path did.
+    func testOptionsHeadersMatchLegacyHeaders() {
+        let viaLegacy = firedHeaders(defaultHeaders: ["X-Default": "yes"]) {
+            $0.fire(TestEventV2.testEventWithoutParameters, withHeaders: ["X-Custom": "1"])
+        }
+        let viaOptions = firedHeaders(defaultHeaders: ["X-Default": "yes"]) {
+            $0.fire(TestEventV2.testEventWithoutParameters, options: .init(headers: ["X-Custom": "1"]))
+        }
+        XCTAssertEqual(viaLegacy, viaOptions)
+    }
+
+    /// The static entry point must send the same headers as the instance one.
+    ///
+    /// These used to disagree: the legacy static defaulted `withHeaders` to `[:]` while the instance
+    /// defaulted to `nil`, and since `fire(pixelNamed:)` does `headers ?? defaultHeaders`, a
+    /// non-nil `[:]` meant static calls dropped `defaultHeaders` entirely. The options-based static
+    /// passes `nil`, so both now behave the same. Only observable where `defaultHeaders` is
+    /// non-empty, which today is just the macOS VPN packet tunnel.
+    func testStaticFireSendsSameHeadersAsInstanceFire() {
+        defer { PixelKit.tearDown() }
+
+        let viaInstance = firedHeaders(defaultHeaders: ["X-Default": "yes"]) {
+            $0.fire(TestEventV2.testEventWithoutParameters)
+        }
+
+        var viaStatic = [String: String]()
+        let lock = NSLock()
+        PixelKit.setUp(dryRun: false,
+                       appVersion: "1.0.0",
+                       session: UUID().uuidString,
+                       defaultHeaders: ["X-Default": "yes"],
+                       defaults: userDefaults()) { _, headers, _, _, _, completion in
+            lock.lock()
+            viaStatic = headers
+            lock.unlock()
+            completion(true, nil)
+        }
+        PixelKit.fire(TestEventV2.testEventWithoutParameters)
+
+        lock.lock()
+        let staticHeaders = viaStatic
+        lock.unlock()
+
+        XCTAssertEqual(staticHeaders["X-Default"], "yes",
+                       "The static entry point must not drop defaultHeaders")
+        XCTAssertEqual(staticHeaders, viaInstance)
     }
 
     // MARK: - Options presets

@@ -293,8 +293,15 @@ extension TabSwitcherViewController {
                       tabsStyle: tabsStyle,
                       canShowSelectionMenu: canShowSelectionMenu,
                       isEditing: isEditing)
-        chrome.applyCollectionContentInset(to: collectionView)
+        applyCollectionContentInsets()
         chrome.trackScrollEdge(of: collectionView)
+    }
+
+    func applyCollectionContentInsets() {
+        chrome.applyCollectionContentInset(to: normalPageController.collectionView)
+        if let fireCollectionView = firePageController?.collectionView {
+            chrome.applyCollectionContentInset(to: fireCollectionView)
+        }
     }
     
     func createMultiSelectionMenu() -> UIMenu {

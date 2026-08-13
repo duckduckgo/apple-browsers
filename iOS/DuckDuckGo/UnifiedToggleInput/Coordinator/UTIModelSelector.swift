@@ -66,6 +66,7 @@ final class UTIModelSelector {
     private let view: ViewSurface
     private let environment: Environment
     private let callbacks: Callbacks
+    private let isUpdatedModelPickerEnabled: Bool
 
     private let modelMenuFactory = UnifiedToggleInputModelMenuFactory()
     private let reasoningMenuFactory = UnifiedToggleInputReasoningMenuFactory()
@@ -81,6 +82,7 @@ final class UTIModelSelector {
          view: ViewSurface,
          environment: Environment,
          callbacks: Callbacks,
+         isUpdatedModelPickerEnabled: Bool,
          reasoningAccessResolver: ReasoningModeAccessResolving = ReasoningModeAccessResolver(),
          subscriptionUpsellPresenter: DuckAISubscriptionUpselling = DuckAISubscriptionUpsellPresenter()) {
         self.modelStore = modelStore
@@ -89,6 +91,7 @@ final class UTIModelSelector {
         self.view = view
         self.environment = environment
         self.callbacks = callbacks
+        self.isUpdatedModelPickerEnabled = isUpdatedModelPickerEnabled
         self.reasoningAccessResolver = reasoningAccessResolver
         self.subscriptionUpsellPresenter = subscriptionUpsellPresenter
     }
@@ -255,14 +258,32 @@ final class UTIModelSelector {
         if let shortName {
             view.setModelName(shortName)
         }
-        view.setModelPickerMenu(modelStore.models.isEmpty ? nil : modelMenuFactory.makeMenu(
+        view.setModelPickerMenu(makeModelPickerMenu(selectedId: selectedId))
+    }
+
+    private func makeModelPickerMenu(selectedId: String?) -> UIMenu? {
+        guard !modelStore.models.isEmpty else { return nil }
+
+        let onSelect: (String) -> Void = { [weak self] modelId in
+            self?.handleModelSelection(modelId)
+        }
+
+        if isUpdatedModelPickerEnabled {
+            return modelMenuFactory.makeUpdatedMenu(
+                models: modelStore.models,
+                selectedId: selectedId,
+                userTier: modelStore.subscriptionState.userTier,
+                onSelect: onSelect
+            )
+        }
+
+        return modelMenuFactory.makeMenu(
             models: modelStore.models,
             selectedId: selectedId,
             plusSectionTitle: UserText.aiChatPlusModelsSectionHeader,
-            proSectionTitle: UserText.aiChatProModelsSectionHeader
-        ) { [weak self] modelId in
-            self?.handleModelSelection(modelId)
-        })
+            proSectionTitle: UserText.aiChatProModelsSectionHeader,
+            onSelect: onSelect
+        )
     }
 
     func updateReasoningPicker() {

@@ -34,8 +34,7 @@ enum AIChatEntryPointPixel: PixelKitEvent, PixelKitEventWithCustomPrefix {
 
     var namePrefix: String { "m_" }
 
-    /// Shared so entry paths outside `MainViewController` can report too. Prefer
-    /// `MainViewController.fireAIChatEntryPointPixel`, which also records the source for `origin`.
+    /// Shared so entry paths outside `MainViewController` can report too.
     static func fire(source: AIChatEntryPointSource,
                      duckAIEnabled: Bool,
                      toggleEnabled: Bool,

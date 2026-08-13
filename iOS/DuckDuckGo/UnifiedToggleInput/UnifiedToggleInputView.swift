@@ -378,8 +378,6 @@ final class UnifiedToggleInputView: UIView {
         editReplaceDisclaimerCard.isHidden = !visible
         cardBottomConstraint.isActive = !visible
         cardEditBottomConstraint.isActive = visible
-        // Stretch the composite shadow over the whole card+disclaimer complex so it reads as one
-        // shape. The disclaimer casts no shadow of its own (see makeEditReplaceDisclaimerCard).
         expandedShadowBottomConstraint.isActive = !visible
         expandedShadowEditBottomConstraint.isActive = visible
     }
@@ -390,8 +388,6 @@ final class UnifiedToggleInputView: UIView {
         card.backgroundColor = UIColor(designSystemColor: .surfaceSecondary)
         card.layer.cornerRadius = Constants.cardCornerRadiusExpanded
         card.layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
-        // No shadow of its own: the card's composite shadow stretches to cover this disclaimer too,
-        // so the two read as a single shape (see setEditReplaceDisclaimerCardVisible).
         card.isUserInteractionEnabled = false
         card.isHidden = true
 
@@ -632,8 +628,6 @@ final class UnifiedToggleInputView: UIView {
     private var cardTrailingFlankedConstraint: NSLayoutConstraint!
     private var cardBottomConstraint: NSLayoutConstraint!
     private var cardEditBottomConstraint: NSLayoutConstraint!
-    // The composite shadow normally hugs the card; in edit mode it stretches to the disclaimer's
-    // bottom so the card+disclaimer complex casts a single shadow instead of two overlapping ones.
     private var expandedShadowBottomConstraint: NSLayoutConstraint!
     private var expandedShadowEditBottomConstraint: NSLayoutConstraint!
     private var cardPinnedHeightConstraint: NSLayoutConstraint!

@@ -366,7 +366,7 @@ final class AIChatHistoryListViewController: UIViewController {
         cell.contentConfiguration = config
         cell.backgroundColor = UIColor(singleUseColor: .groupedListContentBackground)
 
-        configureDeleteActionIfNeeded(cell: cell, chat: chat)
+        configureDeleteAction(cell: cell, chat: chat)
     }
 
     /// Index of the virtual "View all chats" row, shown after the last suggestion when the view model opts in.
@@ -410,7 +410,7 @@ final class AIChatHistoryListViewController: UIViewController {
 
 private extension AIChatHistoryListViewController {
 
-    func configureDeleteActionIfNeeded(cell: UITableViewCell, chat: AIChatSuggestion) {
+    func configureDeleteAction(cell: UITableViewCell, chat: AIChatSuggestion) {
         guard let cell = cell as? DuckAISuggestionTableViewCell else {
             return
         }

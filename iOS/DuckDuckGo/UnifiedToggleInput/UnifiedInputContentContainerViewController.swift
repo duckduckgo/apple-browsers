@@ -48,7 +48,7 @@ protocol UnifiedInputContentContainerViewControllerDelegate: AnyObject {
     func unifiedInputEditingStateDidRequestSyncSetup()
 }
 
-final class UnifiedInputContentContainerViewController: UIViewController {
+final class UnifiedInputContentContainerViewController: UIViewController, NewTabPagePromoSurfaceProviding {
 
 
     // MARK: - Properties
@@ -57,6 +57,10 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     weak var delegate: UnifiedInputContentContainerViewControllerDelegate?
     var onDismissRequested: (() -> Void)?
     var onSwipeDownRequested: (() -> Void)?
+    var exposedPromoRendererID: UUID? {
+        unifiedSuggestionsHost?.exposedPromoRendererID
+    }
+    var onPromoSurfaceExposureChanged: (() -> Void)?
 
     private let switchBarHandler: SwitchBarHandling
     private var cancellables = Set<AnyCancellable>()
@@ -208,9 +212,12 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-
-        unifiedSuggestionsHost?.setPromoSurfaceHostActive(isContentActive)
         attachDuckAISurfaceIfNeeded()
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        unifiedSuggestionsHost?.setActive(isContentActive)
     }
 
     /// Rebuilds the search suggestions' session-scoped caches (currently the bookmark snapshot) so a
@@ -224,10 +231,20 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         duckAISurface?.refreshCaches()
     }
 
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        unifiedSuggestionsHost?.setActive(false)
+    }
+
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
-        unifiedSuggestionsHost?.setPromoSurfaceHostActive(false)
         detachDuckAISurfaceFromSingleHost()
+    }
+
+    func tearDownPromoSurfaceProvider() {
+        unifiedSuggestionsHost?.tearDown()
+        unifiedSuggestionsHost = nil
+        onPromoSurfaceExposureChanged = nil
     }
 
     // MARK: - Public Methods
@@ -267,12 +284,12 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             // Re-resolve now (synchronously, before the host is shown) so the prior session's stale
             // content isn't flashed. Runs after `prepareForActivation` clears the dismiss freeze.
             activationResolveTrigger.send(())
-            unifiedSuggestionsHost?.setPromoSurfaceHostActive(true)
+            unifiedSuggestionsHost?.setActive(true)
             syncDuckAISurfaceWithSettings()
             duckAISurface?.refreshRecents()
         } else {
             fireSearchSuggestionsDisplayPixels()
-            unifiedSuggestionsHost?.setPromoSurfaceHostActive(false)
+            unifiedSuggestionsHost?.setActive(false)
         }
     }
 
@@ -634,6 +651,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         host.onContentChanged = { [weak self] in
             self?.refreshVisibleContent(animateContentUpdates: true)
         }
+        host.onPromoSurfaceExposureChanged = { [weak self] in
+            self?.onPromoSurfaceExposureChanged?()
+        }
 
         let containerView = UIView()
         containerView.translatesAutoresizingMaskIntoConstraints = false
@@ -770,6 +790,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             remoteMessagingImageLoader: ntpDeps.remoteMessagingImageLoader,
             remoteMessagingPixelReporter: ntpDeps.remoteMessagingPixelReporter,
             promoCoordinator: ntpDeps.promoCoordinator,
+            promoSurfaceExposureController: ntpDeps.promoSurfaceExposureController,
             appSettings: ntpDeps.appSettings,
             faviconsCache: ntpDeps.faviconsCache,
             subscriptionManager: ntpDeps.subscriptionManager,

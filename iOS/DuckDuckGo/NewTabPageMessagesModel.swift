@@ -91,7 +91,7 @@ final class NewTabPageMessagesModel: ObservableObject {
     private var rendererRegistration: NewTabPagePromoRendererRegistration?
     private var isLoaded = false
     private var isTornDown = false
-    private var isSurfaceRenderable = false
+    private var isSurfaceLifecycleReady = false
     private var attachedToWindowProvider: () -> Bool = { false }
     private var messagesSnapshot = [HomeMessage]()
     private var remoteMessageCandidate: HomeMessage?
@@ -172,7 +172,7 @@ final class NewTabPageMessagesModel: ObservableObject {
         }
 
         isTornDown = true
-        isSurfaceRenderable = false
+        isSurfaceLifecycleReady = false
         if let observable {
             notificationCenter.removeObserver(observable)
             self.observable = nil
@@ -209,7 +209,7 @@ final class NewTabPageMessagesModel: ObservableObject {
         pendingRemoteMessageRemoval = nil
     }
 
-    // MARK: - Surface Exposure
+    // MARK: - Renderer Readiness
 
     func setSurfaceAttachmentProvider(_ provider: @escaping () -> Bool) {
         attachedToWindowProvider = provider
@@ -219,16 +219,26 @@ final class NewTabPageMessagesModel: ObservableObject {
         }
     }
 
-    func setSurfaceRenderable(_ isRenderable: Bool) {
-        guard isSurfaceRenderable != isRenderable else {
-            if isRenderable {
+    func setSurfaceLifecycleReady(_ isReady: Bool) {
+        guard isSurfaceLifecycleReady != isReady else {
+            if isReady {
                 reportCandidateAndEligibility()
             }
             return
         }
 
-        isSurfaceRenderable = isRenderable
+        isSurfaceLifecycleReady = isReady
         reportCandidateAndEligibility()
+    }
+
+    /// Re-evaluates the attachment leaf fact after the owning view moves between windows.
+    /// Route/content exposure is selected independently by `NewTabPagePromoExposureController`.
+    func surfaceAttachmentDidChange() {
+        reportCandidateAndEligibility()
+
+        if isTornDown {
+            remoteMessageHostDidDetach()
+        }
     }
 
     // MARK: - Message Actions
@@ -349,11 +359,11 @@ final class NewTabPageMessagesModel: ObservableObject {
         guard promoCoordinator.promoCoordinationMode == .coordinated else {
             return
         }
-        rendererRegistration?.update(candidate: remoteMessageCandidateState, isEligible: isEligibleForRemoteMessageRendering)
+        rendererRegistration?.update(candidate: remoteMessageCandidateState, isLocallyReady: isLocallyReadyForRemoteMessageRendering)
     }
 
-    private var isEligibleForRemoteMessageRendering: Bool {
-        isLoaded && !isTornDown && isSurfaceRenderable && attachedToWindowProvider()
+    private var isLocallyReadyForRemoteMessageRendering: Bool {
+        isLoaded && !isTornDown && isSurfaceLifecycleReady && attachedToWindowProvider()
     }
 
     // MARK: - View Model Construction

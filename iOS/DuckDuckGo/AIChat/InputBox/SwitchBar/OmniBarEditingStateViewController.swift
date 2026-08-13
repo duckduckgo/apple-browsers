@@ -50,7 +50,7 @@ protocol OmniBarEditingStateViewControllerDelegate: AnyObject {
 }
 
 /// Main coordinator for the OmniBar editing state, managing multiple specialized components
-final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingStateTransitioning {
+final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingStateTransitioning, NewTabPagePromoSurfaceProviding {
 
     // MARK: - Properties
 
@@ -61,6 +61,11 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     weak var delegate: OmniBarEditingStateViewControllerDelegate?
     var automaticallySelectsTextOnAppear = false
     var useNewTransitionBehaviour = false
+    var exposedPromoRendererID: UUID? {
+        guard isSearchPagePhysicallyPresentedForPromoSurface else { return nil }
+        return suggestionTrayManager?.suggestionTrayViewController?.exposedPromoRendererID
+    }
+    var onPromoSurfaceExposureChanged: (() -> Void)?
 
     /// Container used for swipe/fade-out content stack (search/chat/history/Dax content).
     var contentStackContainerView: UIView {
@@ -133,6 +138,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     /// auto-cancels the previous subscription on assignment — avoids stale viewModels firing.
     private var chatHistoryHasSuggestionsCancellable: AnyCancellable?
     private var isShowingURLFallback = false
+    private var contentTransitionProgress: CGFloat
 
     private var chatHasResults: Bool {
         aiChatHistoryManager?.hasSuggestions ?? false
@@ -153,6 +159,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     /// editing-state transition. Cleared on the first `setLogoHidden(false)` call, which also
     /// installs the view lazily so later visibility updates work as normal.
     private var isDaxLogoInstallSuppressed = false
+    private var needsPromoSurfaceExposureRestoration = false
 
     private weak var contentAnimator: UIViewPropertyAnimator?
 
@@ -171,6 +178,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
                   initialLogoHidden: Bool = false) {
         self.switchBarHandler = switchBarHandler
         self.switchBarSubmissionMetrics = switchBarSubmissionMetrics
+        self.contentTransitionProgress = switchBarHandler.currentToggleState == .search ? 0 : 1
         self.isDaxLogoInstallSuppressed = initialLogoHidden
         self.daxLogoManager = DaxLogoManager(isFireTab: switchBarHandler.isFireTab)
         if initialLogoHidden {
@@ -231,10 +239,25 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
 
+        if needsPromoSurfaceExposureRestoration {
+            needsPromoSurfaceExposureRestoration = false
+            // A full-screen child modal can temporarily cover this controller without ending the
+            // editing session. Publish the tray's current content only after physical uncover.
+            suggestionTrayManager?.showInitialSuggestions()
+        }
+        onPromoSurfaceExposureChanged?()
+
         DailyPixel.fireDailyAndCount(pixel: .aiChatInternalSwitchBarDisplayed)
         let isToggleVisible = switchBarHandler.isToggleEnabled
         PixelKit.fire(ExperimentalOmnibarPixel.omnibarShownDaily(isToggleVisible: isToggleVisible), frequency: .legacyDailyNoSuffix)
         PixelKit.fire(ExperimentalOmnibarPixel.omnibarShownCount(isToggleVisible: isToggleVisible), frequency: .standard)
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        suggestionTrayManager?.suggestionTrayViewController?.deactivatePromoSurfaceExposure()
+        needsPromoSurfaceExposureRestoration = true
+        onPromoSurfaceExposureChanged?()
     }
 
     override func viewDidDisappear(_ animated: Bool) {
@@ -247,8 +270,21 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
     @objc func dismissAnimated(_ completion: (() -> Void)? = nil) {
         if self.presentingViewController != nil {
-            self.dismiss(animated: true, completion: completion)
+            suggestionTrayManager?.suggestionTrayViewController?.deactivatePromoSurfaceExposure()
+            onPromoSurfaceExposureChanged?()
+            self.dismiss(animated: true) { [weak self] in
+                self?.tearDownPromoSurfaceProvider()
+                completion?()
+            }
         }
+    }
+
+    /// Synchronous terminal boundary for the editing state's cached tray renderer. This is also
+    /// called by MainVC teardown because an animated dismissal completion is not guaranteed then.
+    func tearDownPromoSurfaceProvider() {
+        suggestionTrayManager?.tearDownPromoSurfaceProvider()
+        onPromoSurfaceExposureChanged?()
+        onPromoSurfaceExposureChanged = nil
     }
 
     var isEscapeHatchCardVisible: Bool {
@@ -393,6 +429,9 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         manager.delegate = self
         let suggestionTrayEscapeHatch = switchBarHandler.isFireTab ? nil : escapeHatchModel
         manager.installInContainerView(searchContainer, parentViewController: containerViewController, escapeHatchModel: suggestionTrayEscapeHatch)
+        manager.suggestionTrayViewController?.onPromoSurfaceExposureChanged = { [weak self] in
+            self?.onPromoSurfaceExposureChanged?()
+        }
         suggestionTrayManager = manager
     }
 
@@ -489,6 +528,9 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
                 self.lastKnownToggleState = newState
                 self.delegate?.onToggleModeSwitched(to: newState)
                 self.prepareURLFallbackForModeTransition(to: newState)
+                // Both content-container implementations retain the search page. Re-resolve as
+                // soon as the committed mode changes instead of treating attachment as exposure.
+                self.onPromoSurfaceExposureChanged?()
             }
             .store(in: &cancellables)
 
@@ -698,6 +740,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
                 // (handleQueryUpdate) will immediately show full results, avoiding a flash.
                 suggestionTrayManager?.resetSuggestionFilter()
                 isShowingURLFallback = false
+                onPromoSurfaceExposureChanged?()
             }
             return
         }
@@ -706,17 +749,51 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         if shouldShow {
             // Apply filter first, then reveal the container — prevents flash of old unfiltered content.
             suggestionTrayManager?.showURLOnlySuggestions(for: query, animated: false)
-            if !isShowingURLFallback {
+            let didBeginShowingURLFallback = !isShowingURLFallback
+            if didBeginShowingURLFallback {
                 swipeContainerManager?.setSearchPageVisible(true, animated: false)
             }
             isShowingURLFallback = true
+            if didBeginShowingURLFallback {
+                onPromoSurfaceExposureChanged?()
+            }
         } else if isShowingURLFallback {
             suggestionTrayManager?.hideURLOnlySuggestions(animated: true)
             swipeContainerManager?.setSearchPageVisible(false, animated: true)
             // Restore the chat container — keepSearchVisible prevented it from fading in.
             swipeContainerManager?.restoreChatPageVisibility()
             isShowingURLFallback = false
+            onPromoSurfaceExposureChanged?()
         }
+    }
+
+    private var isSearchPagePhysicallyPresentedForPromoSurface: Bool {
+        let isURLFallbackSearchPagePresented = isShowingURLFallback
+            && suggestionTrayManager?.isShowingSuggestionTray == true
+        return Self.isSearchPagePhysicallyPresentedForPromoSurface(
+            mode: switchBarHandler.currentToggleState,
+            transitionProgress: contentTransitionProgress,
+            isURLFallbackSearchPagePresented: isURLFallbackSearchPagePresented
+        )
+    }
+
+    static func isSearchPagePhysicallyPresentedForPromoSurface(mode: TextEntryMode,
+                                                               transitionProgress: CGFloat,
+                                                               isURLFallbackSearchPagePresented: Bool) -> Bool {
+        if isURLFallbackSearchPagePresented {
+            return true
+        }
+
+        // A value between the two settled endpoints means the favorites page is moving or fading.
+        // Fail closed until Search is both the committed mode and the fully presented page.
+        return mode == .search && transitionProgress <= 0.001
+    }
+
+    private func updatePromoSurfaceTransitionProgress(_ progress: CGFloat) {
+        let wasPhysicallyPresented = isSearchPagePhysicallyPresentedForPromoSurface
+        contentTransitionProgress = progress
+        guard wasPhysicallyPresented != isSearchPagePhysicallyPresentedForPromoSurface else { return }
+        onPromoSurfaceExposureChanged?()
     }
 
     private func updateDaxVisibility() {
@@ -785,6 +862,8 @@ extension OmniBarEditingStateViewController: SwipeContainerViewControllerDelegat
     }
 
     func swipeContainerViewController(_ controller: SwipeContainerViewController, didUpdateScrollProgress progress: CGFloat) {
+        updatePromoSurfaceTransitionProgress(progress)
+
         // Forward the scroll progress to the switch bar to animate the toggle
         switchBarVC.updateScrollProgress(progress)
 
@@ -802,6 +881,8 @@ extension OmniBarEditingStateViewController: FadeOutContainerViewControllerDeleg
     }
 
     func fadeOutContainerViewController(_ controller: FadeOutContainerViewController, didUpdateTransitionProgress progress: CGFloat) {
+        updatePromoSurfaceTransitionProgress(progress)
+
         // Forward the transition progress to the switch bar to animate the toggle
         switchBarVC.updateScrollProgress(progress)
 
@@ -850,6 +931,7 @@ extension OmniBarEditingStateViewController: SuggestionTrayManagerDelegate {
 
     func suggestionTrayManagerDidUpdateVisibility(_ manager: SuggestionTrayManager) {
         updateDaxVisibility()
+        onPromoSurfaceExposureChanged?()
     }
 
 }

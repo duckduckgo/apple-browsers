@@ -27,9 +27,16 @@ final class MockNewTabPagePromoCoordinator: NewTabPagePromoCoordinating {
     private(set) var registeredRendererIDs = [UUID]()
     private(set) var registeredRendererTargets = [UUID: NewTabPagePromoRendering]()
     private(set) var rendererRegistrations = [UUID: NewTabPagePromoRendererRegistration]()
+    private(set) var selectedRendererIDs = [UUID?]()
+    var onSelectedRemoteMessageRendererIDChanged: ((UUID?) -> Void)?
 
     init(promoCoordinationMode: PromoCoordinationMode = .legacy) {
         self.promoCoordinationMode = promoCoordinationMode
+    }
+
+    func setSelectedRemoteMessageRendererID(_ rendererID: UUID?) {
+        selectedRendererIDs.append(rendererID)
+        onSelectedRemoteMessageRendererIDChanged?(rendererID)
     }
 
     func registerRemoteMessageRenderer(

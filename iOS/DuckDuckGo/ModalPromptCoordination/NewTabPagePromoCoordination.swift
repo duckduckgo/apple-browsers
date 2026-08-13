@@ -105,8 +105,8 @@ final class NewTabPagePromoRendererRegistration {
         )
     }
 
-    func update(candidate: PromoQueueRemoteMessageCandidateState, isEligible: Bool) {
-        updateHandler(candidate, isEligible)
+    func update(candidate: PromoQueueRemoteMessageCandidateState, isLocallyReady: Bool) {
+        updateHandler(candidate, isLocallyReady)
     }
 
     func confirmAppearance(
@@ -135,9 +135,7 @@ final class NewTabPagePromoRendererRegistration {
 
 /// Coordinates app-scoped selection and ownership for NTP remote-message renderers.
 @MainActor
-protocol NewTabPagePromoCoordinating: AnyObject {
-    var promoCoordinationMode: PromoCoordinationMode { get }
-
+protocol NewTabPagePromoCoordinating: NewTabPagePromoExposureSelectionSinking {
     func registerRemoteMessageRenderer(
         id: UUID,
         target: NewTabPagePromoRendering

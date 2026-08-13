@@ -436,6 +436,9 @@ final class DefaultOmniBarViewController: OmniBarViewController {
             initialLogoHidden: initialLogoHidden
         )
         editingStateViewController.delegate = self
+        editingStateViewController.onPromoSurfaceExposureChanged = { [weak self] in
+            self?.omniDelegate?.onPromoSurfaceExposureChanged()
+        }
 
         editingStateViewController.modalPresentationStyle = .custom
         editingStateViewController.transitioningDelegate = self
@@ -453,7 +456,10 @@ final class DefaultOmniBarViewController: OmniBarViewController {
 
         self.editingStateViewController = editingStateViewController
 
-        present(editingStateViewController, animated: animated)
+        let promoSurfaceTransitionID = omniDelegate?.onPromoSurfaceHostTransitionWillBegin()
+        present(editingStateViewController, animated: animated) { [weak self] in
+            self?.omniDelegate?.onPromoSurfaceHostTransitionDidFinish(promoSurfaceTransitionID)
+        }
     }
 
     private func createSwitchBarHandler(for textField: UITextField, initialToggleState: TextEntryMode? = nil) -> SwitchBarHandler {

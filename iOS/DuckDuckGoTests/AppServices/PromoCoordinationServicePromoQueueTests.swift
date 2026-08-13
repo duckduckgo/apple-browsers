@@ -55,7 +55,7 @@ final class PromoCoordinationServicePromoQueueTests {
         launchSourceManagerMock.source = .standard
         presenterMock.presentedViewController = nil
         makeSUT()
-        let fixture = registerRenderer(messageID: "owner")
+        let fixture = registerRenderer(messageID: "owner", shouldSelect: true)
         let presentation = fixture.renderer.shownPresentations.first
         managerMock.resetRecordedInteractions()
 
@@ -92,7 +92,7 @@ final class PromoCoordinationServicePromoQueueTests {
         renderer.onShow = { [promoQueueLeaseArbiter] _ in
             ownerObservedDuringShow = promoQueueLeaseArbiter.snapshot.activeOwner
         }
-        let fixture = registerRenderer(renderer: renderer, messageID: "message")
+        let fixture = registerRenderer(renderer: renderer, messageID: "message", shouldSelect: true)
 
         guard let presentation = renderer.shownPresentations.first else {
             Issue.record("Expected the renderer to be authorized")
@@ -104,12 +104,85 @@ final class PromoCoordinationServicePromoQueueTests {
     }
 
     @available(iOS 16, *)
+    @Test("Locally ready renderers remain fail closed until one is explicitly selected", .timeLimit(.minutes(1)))
+    func whenSelectionIsNilThenNoLocallyReadyRendererIsPublished() {
+        makeSUT()
+        let first = registerRenderer(messageID: "first", shouldSelect: false)
+        let second = registerRenderer(messageID: "second", shouldSelect: false)
+
+        #expect(first.renderer.shownPresentations.isEmpty)
+        #expect(second.renderer.shownPresentations.isEmpty)
+        #expect(sut.remoteMessageCoordinationSnapshot.selectedRemoteMessageRendererID == nil)
+        #expect(sut.remoteMessageCoordinationSnapshot.eligibleRendererCount == 0)
+        #expect(sut.remoteMessageCoordinationSnapshot.renderers.map(\.isLocallyReady) == [true, true])
+        #expect(sut.remoteMessageCoordinationSnapshot.renderers.map(\.isEffectivelyEligible) == [false, false])
+        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == nil)
+        _ = (first.registration, second.registration)
+    }
+
+    @available(iOS 16, *)
+    @Test("An unknown selected renderer ID remains fail closed", .timeLimit(.minutes(1)))
+    func whenSelectedRendererIDIsUnknownThenRegisteredRenderersRemainIneligible() {
+        makeSUT()
+        let fixture = registerRenderer(messageID: "message", shouldSelect: false)
+        let unknownRendererID = UUID()
+
+        sut.setSelectedRemoteMessageRendererID(unknownRendererID)
+
+        #expect(fixture.renderer.shownPresentations.isEmpty)
+        #expect(sut.remoteMessageCoordinationSnapshot.selectedRemoteMessageRendererID == unknownRendererID)
+        #expect(sut.remoteMessageCoordinationSnapshot.eligibleRendererCount == 0)
+        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == nil)
+
+        let selectedFixture = registerRenderer(
+            rendererID: unknownRendererID,
+            messageID: "selected-message",
+            shouldSelect: false)
+
+        #expect(selectedFixture.renderer.shownPresentations.count == 1)
+        #expect(sut.remoteMessageCoordinationSnapshot.rendererID == unknownRendererID)
+        _ = (fixture.registration, selectedFixture.registration)
+    }
+
+    @available(iOS 16, *)
+    @Test("Selecting one renderer authorizes only that renderer", .timeLimit(.minutes(1)))
+    func whenRendererIsSelectedThenOnlyThatRendererPublishes() {
+        makeSUT()
+        let first = registerRenderer(messageID: "message", shouldSelect: false)
+        let second = registerRenderer(messageID: "message", shouldSelect: false)
+
+        sut.setSelectedRemoteMessageRendererID(second.rendererID)
+
+        #expect(first.renderer.shownPresentations.isEmpty)
+        #expect(second.renderer.shownPresentations.count == 1)
+        #expect(sut.remoteMessageCoordinationSnapshot.rendererID == second.rendererID)
+        #expect(sut.remoteMessageCoordinationSnapshot.eligibleRendererCount == 1)
+        _ = (first.registration, second.registration)
+    }
+
+    @available(iOS 16, *)
+    @Test("Repeated selected renderer updates are deduplicated", .timeLimit(.minutes(1)))
+    func whenSelectedRendererIDIsRepeatedThenItDoesNotRepublish() {
+        makeSUT()
+        let fixture = registerRenderer(messageID: "message", shouldSelect: false)
+
+        sut.setSelectedRemoteMessageRendererID(fixture.rendererID)
+        let snapshotAfterSelection = sut.remoteMessageCoordinationSnapshot
+        sut.setSelectedRemoteMessageRendererID(fixture.rendererID)
+
+        #expect(fixture.renderer.shownPresentations.count == 1)
+        #expect(fixture.renderer.hideRequests.isEmpty)
+        #expect(sut.remoteMessageCoordinationSnapshot == snapshotAfterSelection)
+        _ = fixture.registration
+    }
+
+    @available(iOS 16, *)
     @Test("A modal owner blocks all renderer publication", .timeLimit(.minutes(1)))
     func whenModalOwnsGlobalSlotThenRendererIsNotShown() throws {
         makeSUT()
         let modalLease = try acquiredModalLease()
 
-        let fixture = registerRenderer(messageID: "message")
+        let fixture = registerRenderer(messageID: "message", shouldSelect: true)
 
         #expect(fixture.renderer.shownPresentations.isEmpty)
         #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .modal(modalLease.attemptIdentity))
@@ -117,12 +190,12 @@ final class PromoCoordinationServicePromoQueueTests {
     }
 
     @available(iOS 16, *)
-    @Test("Stable registration order selects exactly one eligible renderer", .timeLimit(.minutes(1)))
-    func whenSeveralRenderersAreWaitingThenOldestEligibleRendererIsSelected() {
+    @Test("Selection before interaction readiness authorizes exactly one renderer", .timeLimit(.minutes(1)))
+    func whenSeveralRenderersAreWaitingThenOnlySelectedRendererIsAuthorizedAfterReadiness() {
         makeSUT(readyForInteractions: false)
         sut.applicationDidBecomeActive()
-        let first = registerRenderer(messageID: "message")
-        let second = registerRenderer(messageID: "message")
+        let first = registerRenderer(messageID: "message", shouldSelect: true)
+        let second = registerRenderer(messageID: "message", shouldSelect: false)
 
         makeReadyForInteractions()
 
@@ -133,21 +206,20 @@ final class PromoCoordinationServicePromoQueueTests {
     }
 
     @available(iOS 16, *)
-    @Test("A renderer rejection tries the next same-message renderer under the retained lease", .timeLimit(.minutes(1)))
-    func whenFirstRendererRejectsThenNextMatchingRendererIsSelected() {
+    @Test("A selected renderer rejection does not fall through to an unselected renderer", .timeLimit(.minutes(1)))
+    func whenSelectedRendererRejectsThenUnselectedRendererIsNotAuthorized() {
         makeSUT(readyForInteractions: false)
         sut.applicationDidBecomeActive()
         let rejectingRenderer = ControllableRemoteMessageRenderer()
         rejectingRenderer.showResults = [false]
-        let first = registerRenderer(renderer: rejectingRenderer, messageID: "message")
-        let second = registerRenderer(messageID: "message")
+        let first = registerRenderer(renderer: rejectingRenderer, messageID: "message", shouldSelect: true)
+        let second = registerRenderer(messageID: "message", shouldSelect: false)
 
         makeReadyForInteractions()
 
         #expect(first.renderer.shownPresentations.count == 1)
-        #expect(second.renderer.shownPresentations.count == 1)
-        #expect(first.renderer.shownPresentations.first?.session == second.renderer.shownPresentations.first?.session)
-        #expect(promoQueueLeaseArbiter.snapshot.remoteMessageSession == second.renderer.shownPresentations.first?.session)
+        #expect(second.renderer.shownPresentations.isEmpty)
+        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == nil)
         _ = (first.registration, second.registration)
     }
 
@@ -160,10 +232,12 @@ final class PromoCoordinationServicePromoQueueTests {
         firstRenderer.showResults = [false]
         let secondRenderer = ControllableRemoteMessageRenderer()
         secondRenderer.showResults = [false]
-        let first = registerRenderer(renderer: firstRenderer, messageID: "message")
-        let second = registerRenderer(renderer: secondRenderer, messageID: "message")
+        let first = registerRenderer(renderer: firstRenderer, messageID: "message", shouldSelect: false)
+        let second = registerRenderer(renderer: secondRenderer, messageID: "message", shouldSelect: false)
 
         makeReadyForInteractions()
+        sut.setSelectedRemoteMessageRendererID(first.rendererID)
+        sut.setSelectedRemoteMessageRendererID(second.rendererID)
 
         #expect(firstRenderer.shownPresentations.count == 1)
         #expect(secondRenderer.shownPresentations.count == 1)
@@ -180,8 +254,8 @@ final class PromoCoordinationServicePromoQueueTests {
         occupiedRenderer.showResults = [false]
         occupiedRenderer.hasPublishedRemoteMessagePresentation = true
         occupiedRenderer.retainsPublishedContentOnRejection = true
-        let first = registerRenderer(renderer: occupiedRenderer, messageID: "message")
-        let second = registerRenderer(messageID: "message")
+        let first = registerRenderer(renderer: occupiedRenderer, messageID: "message", shouldSelect: true)
+        let second = registerRenderer(messageID: "message", shouldSelect: false)
 
         makeReadyForInteractions()
 
@@ -199,7 +273,7 @@ final class PromoCoordinationServicePromoQueueTests {
     @Test("Appearance is accepted once per physical presentation and never releases ownership", .timeLimit(.minutes(1)))
     func whenCurrentPresentationAppearsThenOnlyItsFirstTruthfulAppearanceIsAccepted() {
         makeSUT()
-        let fixture = registerRenderer(messageID: "message")
+        let fixture = registerRenderer(messageID: "message", shouldSelect: true)
         guard let presentation = fixture.renderer.shownPresentations.first else {
             Issue.record("Expected an authorized presentation")
             return
@@ -226,7 +300,7 @@ final class PromoCoordinationServicePromoQueueTests {
     @Test("Detached, stale, and draining appearances are rejected", .timeLimit(.minutes(1)))
     func whenAppearanceIsNotForTheCurrentVisiblePresentationThenItIsRejected() {
         makeSUT()
-        let fixture = registerRenderer(messageID: "message")
+        let fixture = registerRenderer(messageID: "message", shouldSelect: true)
         guard let presentation = fixture.renderer.shownPresentations.first else {
             Issue.record("Expected an authorized presentation")
             return
@@ -243,8 +317,31 @@ final class PromoCoordinationServicePromoQueueTests {
             isAttachedToWindow: true
         ) == .rejected)
 
-        fixture.registration.update(candidate: .available(messageID: "message"), isEligible: false)
+        fixture.registration.update(candidate: .available(messageID: "message"), isLocallyReady: false)
 
+        #expect(fixture.registration.confirmAppearance(
+            sessionID: presentation.session.id,
+            presentationID: presentation.id,
+            isAttachedToWindow: true
+        ) == .rejected)
+        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .remoteMessage(presentation.session))
+        _ = fixture.registration
+    }
+
+    @available(iOS 16, *)
+    @Test("Appearance after deselection is rejected while the exact owner drains", .timeLimit(.minutes(1)))
+    func whenOwnedRendererIsDeselectedThenItsAppearanceIsRejected() {
+        makeSUT()
+        let fixture = registerRenderer(messageID: "message", shouldSelect: true)
+        guard let presentation = fixture.renderer.shownPresentations.first else {
+            Issue.record("Expected an authorized presentation")
+            return
+        }
+
+        sut.setSelectedRemoteMessageRendererID(nil)
+
+        #expect(sut.remoteMessageCoordinationSnapshot.state == .draining)
+        #expect(fixture.renderer.hideRequests.count == 1)
         #expect(fixture.registration.confirmAppearance(
             sessionID: presentation.session.id,
             presentationID: presentation.id,
@@ -260,14 +357,14 @@ final class PromoCoordinationServicePromoQueueTests {
     @Test("A same-message transfer retains one logical session until exact removal settles", .timeLimit(.minutes(1)))
     func whenSelectedRendererLosesEligibilityThenSuccessorWaitsForTerminal() async {
         makeSUT()
-        let first = registerRenderer(messageID: "message")
-        let second = registerRenderer(messageID: "message")
+        let first = registerRenderer(messageID: "message", shouldSelect: true)
+        let second = registerRenderer(messageID: "message", shouldSelect: false)
         guard let outgoingPresentation = first.renderer.shownPresentations.first else {
             Issue.record("Expected the first renderer to own the session")
             return
         }
 
-        first.registration.update(candidate: .available(messageID: "message"), isEligible: false)
+        sut.setSelectedRemoteMessageRendererID(second.rendererID)
 
         #expect(first.renderer.hideRequests.count == 1)
         #expect(second.renderer.shownPresentations.isEmpty)
@@ -286,20 +383,52 @@ final class PromoCoordinationServicePromoQueueTests {
     }
 
     @available(iOS 16, *)
+    @Test("Rapid selection changes drain the owner and ultimately publish only the latest renderer", .timeLimit(.minutes(1)))
+    func whenSelectionChangesRapidlyThenOnlyTheLatestSuccessorPublishes() async {
+        makeSUT()
+        let first = registerRenderer(messageID: "message", shouldSelect: true)
+        let second = registerRenderer(messageID: "message", shouldSelect: false)
+        let third = registerRenderer(messageID: "message", shouldSelect: false)
+        guard let outgoingPresentation = first.renderer.shownPresentations.first else {
+            Issue.record("Expected the first renderer to own the session")
+            return
+        }
+
+        sut.setSelectedRemoteMessageRendererID(second.rendererID)
+        sut.setSelectedRemoteMessageRendererID(third.rendererID)
+
+        #expect(first.renderer.hideRequests.count == 1)
+        #expect(second.renderer.shownPresentations.isEmpty)
+        #expect(third.renderer.shownPresentations.isEmpty)
+
+        first.renderer.finishLastRemoval(using: first.registration)
+        await waitForMainQueueSettlement()
+
+        #expect(second.renderer.shownPresentations.isEmpty)
+        #expect(third.renderer.shownPresentations.count == 1)
+        #expect(third.renderer.shownPresentations.first?.session == outgoingPresentation.session)
+        #expect(sut.remoteMessageCoordinationSnapshot.rendererID == third.rendererID)
+        _ = (first.registration, second.registration, third.registration)
+    }
+
+    @available(iOS 16, *)
     @Test("A transfer retries a rejecting successor under the same logical lease", .timeLimit(.minutes(1)))
     func whenFirstTransferSuccessorRejectsThenNextSuccessorKeepsTheSession() async {
         makeSUT()
-        let outgoing = registerRenderer(messageID: "message")
+        let outgoing = registerRenderer(messageID: "message", shouldSelect: true)
         let rejectingRenderer = ControllableRemoteMessageRenderer()
         rejectingRenderer.showResults = [false]
-        let rejectingSuccessor = registerRenderer(renderer: rejectingRenderer, messageID: "message")
-        let acceptingSuccessor = registerRenderer(messageID: "message")
+        let rejectingSuccessor = registerRenderer(renderer: rejectingRenderer, messageID: "message", shouldSelect: false)
+        let acceptingSuccessor = registerRenderer(messageID: "message", shouldSelect: false)
         guard let outgoingPresentation = outgoing.renderer.shownPresentations.first else {
             Issue.record("Expected the outgoing renderer to own the session")
             return
         }
 
-        outgoing.registration.update(candidate: .available(messageID: "message"), isEligible: false)
+        rejectingRenderer.onShow = { [weak self] _ in
+            self?.sut.setSelectedRemoteMessageRendererID(acceptingSuccessor.rendererID)
+        }
+        sut.setSelectedRemoteMessageRendererID(rejectingSuccessor.rendererID)
         outgoing.renderer.finishLastRemoval(using: outgoing.registration)
         await waitForMainQueueSettlement()
 
@@ -316,20 +445,20 @@ final class PromoCoordinationServicePromoQueueTests {
     @Test("A successor registered after terminal settlement starts a fresh session", .timeLimit(.minutes(1)))
     func whenMatchingSuccessorRegistersAfterReleaseThenItGetsFreshSession() async {
         makeSUT()
-        let outgoing = registerRenderer(messageID: "message")
+        let outgoing = registerRenderer(messageID: "message", shouldSelect: true)
         guard let outgoingPresentation = outgoing.renderer.shownPresentations.first else {
             Issue.record("Expected the outgoing renderer to own the session")
             return
         }
 
-        outgoing.registration.update(candidate: .available(messageID: "message"), isEligible: false)
+        outgoing.registration.update(candidate: .available(messageID: "message"), isLocallyReady: false)
         outgoing.renderer.finishLastRemoval(using: outgoing.registration)
         await waitForMainQueueSettlement()
 
         #expect(sut.remoteMessageCoordinationSnapshot.state == .idle)
         #expect(promoQueueLeaseArbiter.snapshot.activeOwner == nil)
 
-        let successor = registerRenderer(messageID: "message")
+        let successor = registerRenderer(messageID: "message", shouldSelect: true)
         guard let successorPresentation = successor.renderer.shownPresentations.first else {
             Issue.record("Expected the late successor to acquire a session")
             return
@@ -345,13 +474,13 @@ final class PromoCoordinationServicePromoQueueTests {
     @Test("An exact old terminal callback is inert after a fresh same-message session acquires", .timeLimit(.minutes(1)))
     func whenOldExactTerminalReplaysAfterFreshSessionThenNewOwnerIsUnchanged() async {
         makeSUT()
-        let outgoing = registerRenderer(messageID: "message")
+        let outgoing = registerRenderer(messageID: "message", shouldSelect: true)
         guard let outgoingPresentation = outgoing.renderer.shownPresentations.first else {
             Issue.record("Expected the outgoing renderer to own the session")
             return
         }
 
-        outgoing.registration.update(candidate: .none, isEligible: false)
+        outgoing.registration.update(candidate: .none, isLocallyReady: false)
         guard let oldHideRequest = outgoing.renderer.hideRequests.last else {
             Issue.record("Expected a pending old hide request")
             return
@@ -359,7 +488,7 @@ final class PromoCoordinationServicePromoQueueTests {
         outgoing.renderer.finishLastRemoval(using: outgoing.registration)
         await waitForMainQueueSettlement()
 
-        let successor = registerRenderer(messageID: "message")
+        let successor = registerRenderer(messageID: "message", shouldSelect: true)
         guard let successorPresentation = successor.renderer.shownPresentations.first else {
             Issue.record("Expected a fresh same-message session")
             return
@@ -385,14 +514,14 @@ final class PromoCoordinationServicePromoQueueTests {
     @Test("Different-message replacement starts a fresh logical session", .timeLimit(.minutes(1)))
     func whenWaitingRendererHasDifferentMessageThenItAcquiresAfterOldSessionEnds() async {
         makeSUT()
-        let first = registerRenderer(messageID: "first")
-        let second = registerRenderer(messageID: "second")
+        let first = registerRenderer(messageID: "first", shouldSelect: true)
+        let second = registerRenderer(messageID: "second", shouldSelect: false)
         guard let firstPresentation = first.renderer.shownPresentations.first else {
             Issue.record("Expected the first renderer to own the session")
             return
         }
 
-        first.registration.update(candidate: .available(messageID: "first"), isEligible: false)
+        sut.setSelectedRemoteMessageRendererID(second.rendererID)
         first.renderer.finishLastRemoval(using: first.registration)
         await waitForMainQueueSettlement()
 
@@ -410,14 +539,15 @@ final class PromoCoordinationServicePromoQueueTests {
     @Test("Candidate invalidation ends the old session instead of resurrecting it", .timeLimit(.minutes(1)))
     func whenSelectedCandidateBecomesNilThenSameIDWaiterGetsFreshSession() async {
         makeSUT()
-        let first = registerRenderer(messageID: "message")
-        let second = registerRenderer(messageID: "message")
+        let first = registerRenderer(messageID: "message", shouldSelect: true)
+        let second = registerRenderer(messageID: "message", shouldSelect: false)
         guard let oldPresentation = first.renderer.shownPresentations.first else {
             Issue.record("Expected the first renderer to own the session")
             return
         }
 
-        first.registration.update(candidate: .none, isEligible: false)
+        first.registration.update(candidate: .none, isLocallyReady: false)
+        sut.setSelectedRemoteMessageRendererID(second.rendererID)
         first.renderer.finishLastRemoval(using: first.registration)
         await waitForMainQueueSettlement()
 
@@ -434,14 +564,14 @@ final class PromoCoordinationServicePromoQueueTests {
     @Test("The outgoing renderer may be selected again only after terminal settlement", .timeLimit(.minutes(1)))
     func whenOutgoingRendererBecomesEligibleDuringDrainThenItIsReconsideredAfterTerminal() async {
         makeSUT()
-        let fixture = registerRenderer(messageID: "message")
+        let fixture = registerRenderer(messageID: "message", shouldSelect: true)
         guard let firstPresentation = fixture.renderer.shownPresentations.first else {
             Issue.record("Expected an authorized presentation")
             return
         }
 
-        fixture.registration.update(candidate: .available(messageID: "message"), isEligible: false)
-        fixture.registration.update(candidate: .available(messageID: "message"), isEligible: true)
+        fixture.registration.update(candidate: .available(messageID: "message"), isLocallyReady: false)
+        fixture.registration.update(candidate: .available(messageID: "message"), isLocallyReady: true)
 
         #expect(fixture.renderer.shownPresentations.count == 1)
         fixture.renderer.finishLastRemoval(using: fixture.registration)
@@ -459,14 +589,14 @@ final class PromoCoordinationServicePromoQueueTests {
         launchSourceManagerMock.source = .standard
         presenterMock.presentedViewController = nil
         makeSUT()
-        let first = registerRenderer(messageID: "first")
-        let second = registerRenderer(messageID: "second")
+        let first = registerRenderer(messageID: "first", shouldSelect: true)
+        let second = registerRenderer(messageID: "second", shouldSelect: false)
         guard let presentation = first.renderer.shownPresentations.first else {
             Issue.record("Expected the first renderer to own the session")
             return
         }
 
-        first.registration.update(candidate: .available(messageID: "first"), isEligible: false)
+        first.registration.update(candidate: .available(messageID: "first"), isLocallyReady: false)
         managerMock.resetRecordedInteractions()
         presentModalPromptIfNeeded()
 
@@ -481,12 +611,12 @@ final class PromoCoordinationServicePromoQueueTests {
     @Test("Duplicate and stale removal callbacks are inert", .timeLimit(.minutes(1)))
     func whenRemovalCallbackDoesNotMatchThenItCannotReleaseTheSession() async {
         makeSUT()
-        let fixture = registerRenderer(messageID: "message")
+        let fixture = registerRenderer(messageID: "message", shouldSelect: true)
         guard let presentation = fixture.renderer.shownPresentations.first else {
             Issue.record("Expected an authorized presentation")
             return
         }
-        fixture.registration.update(candidate: .none, isEligible: false)
+        fixture.registration.update(candidate: .none, isLocallyReady: false)
         guard let hideRequest = fixture.renderer.hideRequests.last else {
             Issue.record("Expected a hide request")
             return
@@ -523,14 +653,14 @@ final class PromoCoordinationServicePromoQueueTests {
     @Test("Hiding before accepted appearance never confirms the queue session", .timeLimit(.minutes(1)))
     func whenPresentationDrainsBeforeAppearanceThenQueueConfirmationStaysFalse() async {
         makeSUT()
-        let fixture = registerRenderer(messageID: "message")
+        let fixture = registerRenderer(messageID: "message", shouldSelect: true)
         guard let presentation = fixture.renderer.shownPresentations.first else {
             Issue.record("Expected an authorized presentation")
             return
         }
 
         #expect(!sut.remoteMessageCoordinationSnapshot.isQueueAppearanceConfirmed)
-        fixture.registration.update(candidate: .none, isEligible: false)
+        fixture.registration.update(candidate: .none, isLocallyReady: false)
 
         #expect(sut.remoteMessageCoordinationSnapshot.state == .draining)
         #expect(!sut.remoteMessageCoordinationSnapshot.isQueueAppearanceConfirmed)
@@ -550,12 +680,12 @@ final class PromoCoordinationServicePromoQueueTests {
     @Test("Host detachment is accepted only after exact renderer verification", .timeLimit(.minutes(1)))
     func whenHostDetachedTerminalIsReportedThenAttachmentIsRevalidated() async {
         makeSUT()
-        let fixture = registerRenderer(messageID: "message")
+        let fixture = registerRenderer(messageID: "message", shouldSelect: true)
         guard let presentation = fixture.renderer.shownPresentations.first else {
             Issue.record("Expected an authorized presentation")
             return
         }
-        fixture.registration.update(candidate: .none, isEligible: false)
+        fixture.registration.update(candidate: .none, isLocallyReady: false)
 
         fixture.renderer.finishLastRemoval(using: fixture.registration, terminal: .hostDetached)
         await waitForMainQueueSettlement()
@@ -572,14 +702,15 @@ final class PromoCoordinationServicePromoQueueTests {
     @Test("A late animation completion is inert after verified host detachment", .timeLimit(.minutes(1)))
     func whenHostDetachmentSettlesThenLateAnimationCannotAffectTheNextOwner() async {
         makeSUT()
-        let outgoing = registerRenderer(messageID: "first")
-        let successor = registerRenderer(messageID: "second")
+        let outgoing = registerRenderer(messageID: "first", shouldSelect: true)
+        let successor = registerRenderer(messageID: "second", shouldSelect: false)
         guard let outgoingPresentation = outgoing.renderer.shownPresentations.first else {
             Issue.record("Expected the outgoing renderer to own the session")
             return
         }
 
-        outgoing.registration.update(candidate: .none, isEligible: false)
+        outgoing.registration.update(candidate: .none, isLocallyReady: false)
+        sut.setSelectedRemoteMessageRendererID(successor.rendererID)
         guard let hideRequest = outgoing.renderer.hideRequests.last else {
             Issue.record("Expected a pending hide request")
             return
@@ -612,8 +743,8 @@ final class PromoCoordinationServicePromoQueueTests {
     func whenHideReportsTerminalSynchronouslyThenSuccessorIsNotPublishedReentrantly() async {
         makeSUT()
         let firstRenderer = ControllableRemoteMessageRenderer()
-        let first = registerRenderer(renderer: firstRenderer, messageID: "message")
-        let second = registerRenderer(messageID: "message")
+        let first = registerRenderer(renderer: firstRenderer, messageID: "message", shouldSelect: true)
+        let second = registerRenderer(messageID: "message", shouldSelect: false)
         firstRenderer.onHide = { [weak firstRenderer] presentation, removalID in
             firstRenderer?.registration?.removalDidReachTerminal(
                 sessionID: presentation.session.id,
@@ -623,7 +754,7 @@ final class PromoCoordinationServicePromoQueueTests {
             )
         }
 
-        first.registration.update(candidate: .available(messageID: "message"), isEligible: false)
+        sut.setSelectedRemoteMessageRendererID(second.rendererID)
 
         #expect(second.renderer.shownPresentations.isEmpty)
         await waitForMainQueueSettlement()
@@ -637,11 +768,11 @@ final class PromoCoordinationServicePromoQueueTests {
     @Test("A non-selected renderer cannot affect the selected session", .timeLimit(.minutes(1)))
     func whenNonSelectedRendererUpdatesOrDeregistersThenOwnerIsUnchanged() {
         makeSUT()
-        let selected = registerRenderer(messageID: "message")
-        let waiting = registerRenderer(messageID: "message")
+        let selected = registerRenderer(messageID: "message", shouldSelect: true)
+        let waiting = registerRenderer(messageID: "message", shouldSelect: false)
         let selectedPresentation = selected.renderer.shownPresentations.first
 
-        waiting.registration.update(candidate: .none, isEligible: false)
+        waiting.registration.update(candidate: .none, isLocallyReady: false)
         waiting.registration.deregister()
 
         #expect(selected.renderer.hideRequests.isEmpty)
@@ -655,10 +786,11 @@ final class PromoCoordinationServicePromoQueueTests {
         makeSUT(readyForInteractions: false)
         sut.applicationDidBecomeActive()
         let rendererID = UUID()
-        let stale = registerRenderer(rendererID: rendererID, messageID: "stale")
-        let replacement = registerRenderer(rendererID: rendererID, messageID: "replacement")
+        let stale = registerRenderer(rendererID: rendererID, messageID: "stale", shouldSelect: false)
+        let replacement = registerRenderer(rendererID: rendererID, messageID: "replacement", shouldSelect: false)
 
-        stale.registration.update(candidate: .available(messageID: "stale-again"), isEligible: true)
+        stale.registration.update(candidate: .available(messageID: "stale-again"), isLocallyReady: true)
+        sut.setSelectedRemoteMessageRendererID(rendererID)
         makeReadyForInteractions()
 
         #expect(stale.renderer.shownPresentations.isEmpty)
@@ -671,10 +803,10 @@ final class PromoCoordinationServicePromoQueueTests {
     func whenSelectedRendererIDIsRegisteredAgainThenOldGenerationCanFinishTransfer() async {
         makeSUT()
         let rendererID = UUID()
-        let selected = registerRenderer(rendererID: rendererID, messageID: "message")
+        let selected = registerRenderer(rendererID: rendererID, messageID: "message", shouldSelect: true)
         let originalSession = selected.renderer.shownPresentations.first?.session
 
-        let replacement = registerRenderer(rendererID: rendererID, messageID: "message")
+        let replacement = registerRenderer(rendererID: rendererID, messageID: "message", shouldSelect: false)
 
         #expect(selected.renderer.hideRequests.count == 1)
         #expect(replacement.renderer.shownPresentations.isEmpty)
@@ -692,18 +824,20 @@ final class PromoCoordinationServicePromoQueueTests {
         makeSUT()
         var renderer: ControllableRemoteMessageRenderer? = ControllableRemoteMessageRenderer()
         weak var weakRenderer = renderer
+        let rendererID = UUID()
         guard let registration = renderer.map({ target in
-            sut.registerRemoteMessageRenderer(id: UUID(), target: target)
+            sut.registerRemoteMessageRenderer(id: rendererID, target: target)
         }) else {
             Issue.record("Expected renderer construction to succeed")
             return
         }
         renderer?.registration = registration
-        registration.update(candidate: .available(messageID: "message"), isEligible: true)
+        registration.update(candidate: .available(messageID: "message"), isLocallyReady: true)
+        sut.setSelectedRemoteMessageRendererID(rendererID)
         let session = promoQueueLeaseArbiter.snapshot.remoteMessageSession
 
         renderer = nil
-        registration.update(candidate: .none, isEligible: false)
+        registration.update(candidate: .none, isLocallyReady: false)
 
         #expect(weakRenderer == nil)
         #expect(sut.remoteMessageCoordinationSnapshot.state == .owned)
@@ -721,12 +855,14 @@ final class PromoCoordinationServicePromoQueueTests {
     @Test("Selected renderer deregistration retains ownership until exact terminal", .timeLimit(.minutes(1)))
     func whenSelectedRendererDeregistersThenLeaseRemainsUntilRemovalSettles() async {
         makeSUT()
-        let fixture = registerRenderer(messageID: "message")
+        let fixture = registerRenderer(messageID: "message", shouldSelect: true)
         let presentation = fixture.renderer.shownPresentations.first
 
         fixture.registration.deregister()
 
         #expect(fixture.renderer.hideRequests.count == 1)
+        #expect(sut.remoteMessageCoordinationSnapshot.selectedRemoteMessageRendererID == fixture.rendererID)
+        #expect(sut.remoteMessageCoordinationSnapshot.eligibleRendererCount == 0)
         #expect(promoQueueLeaseArbiter.snapshot.remoteMessageSession == presentation?.session)
         fixture.renderer.finishLastRemoval(using: fixture.registration)
         await waitForMainQueueSettlement()
@@ -737,7 +873,7 @@ final class PromoCoordinationServicePromoQueueTests {
     @Test("Background alone retains an existing logical owner", .timeLimit(.minutes(1)))
     func whenApplicationBackgroundsThenOwnedRendererIsNotDrained() {
         makeSUT()
-        let fixture = registerRenderer(messageID: "message")
+        let fixture = registerRenderer(messageID: "message", shouldSelect: true)
         let presentation = fixture.renderer.shownPresentations.first
 
         sut.applicationWillResignActive()
@@ -756,7 +892,7 @@ final class PromoCoordinationServicePromoQueueTests {
     @Test("Renderer ineligibility still drains an owner while the app is backgrounded", .timeLimit(.minutes(1)))
     func whenRendererBecomesIneligibleInBackgroundThenItsOwnerDrainsNormally() async {
         makeSUT()
-        let fixture = registerRenderer(messageID: "message")
+        let fixture = registerRenderer(messageID: "message", shouldSelect: true)
         let presentation = fixture.renderer.shownPresentations.first
 
         sut.applicationWillResignActive()
@@ -765,7 +901,7 @@ final class PromoCoordinationServicePromoQueueTests {
         #expect(fixture.renderer.hideRequests.isEmpty)
         #expect(promoQueueLeaseArbiter.snapshot.remoteMessageSession == presentation?.session)
 
-        fixture.registration.update(candidate: .available(messageID: "message"), isEligible: false)
+        fixture.registration.update(candidate: .available(messageID: "message"), isLocallyReady: false)
 
         #expect(fixture.renderer.hideRequests.count == 1)
         #expect(sut.remoteMessageCoordinationSnapshot.state == .draining)
@@ -784,7 +920,7 @@ final class PromoCoordinationServicePromoQueueTests {
     func whenColdStartIsOnlyActiveThenRendererWaitsForReadinessCheckpoint() {
         makeSUT(readyForInteractions: false)
         sut.applicationDidBecomeActive()
-        let fixture = registerRenderer(messageID: "message")
+        let fixture = registerRenderer(messageID: "message", shouldSelect: true)
 
         #expect(fixture.renderer.shownPresentations.isEmpty)
         #expect(promoQueueLeaseArbiter.snapshot.activeOwner == nil)
@@ -800,7 +936,7 @@ final class PromoCoordinationServicePromoQueueTests {
     func whenModalOwnerReleasesThenWaitingRendererIsReconciled() throws {
         makeSUT()
         let modalLease = try acquiredModalLease()
-        let fixture = registerRenderer(messageID: "message")
+        let fixture = registerRenderer(messageID: "message", shouldSelect: true)
         #expect(fixture.renderer.shownPresentations.isEmpty)
 
         modalLease.release()
@@ -814,9 +950,12 @@ final class PromoCoordinationServicePromoQueueTests {
     @Test("Legacy service registration is inert", .timeLimit(.minutes(1)))
     func whenLegacyServiceIsAskedToRegisterThenItDoesNotArbitrateOrRender() {
         makeSUT(mode: .legacy)
-        let fixture = registerRenderer(messageID: "message")
+        let fixture = registerRenderer(messageID: "message", shouldSelect: true)
+
+        sut.setSelectedRemoteMessageRendererID(fixture.rendererID)
 
         #expect(fixture.renderer.shownPresentations.isEmpty)
+        #expect(sut.remoteMessageCoordinationSnapshot.selectedRemoteMessageRendererID == nil)
         #expect(promoQueueLeaseArbiter.snapshot.activeOwner == nil)
         _ = fixture.registration
     }
@@ -858,13 +997,17 @@ final class PromoCoordinationServicePromoQueueTests {
         rendererID: UUID = UUID(),
         renderer: ControllableRemoteMessageRenderer? = nil,
         messageID: String,
-        isEligible: Bool = true
+        isLocallyReady: Bool = true,
+        shouldSelect: Bool
     ) -> RendererFixture {
         let renderer = renderer ?? ControllableRemoteMessageRenderer()
         let registration = sut.registerRemoteMessageRenderer(id: rendererID, target: renderer)
         renderer.registration = registration
-        registration.update(candidate: .available(messageID: messageID), isEligible: isEligible)
-        return RendererFixture(renderer: renderer, registration: registration)
+        registration.update(candidate: .available(messageID: messageID), isLocallyReady: isLocallyReady)
+        if shouldSelect {
+            sut.setSelectedRemoteMessageRendererID(rendererID)
+        }
+        return RendererFixture(rendererID: rendererID, renderer: renderer, registration: registration)
     }
 
     private func acquiredModalLease() throws -> PromoQueueModalLease {
@@ -885,6 +1028,7 @@ final class PromoCoordinationServicePromoQueueTests {
 
 @MainActor
 private struct RendererFixture {
+    let rendererID: UUID
     let renderer: ControllableRemoteMessageRenderer
     let registration: NewTabPagePromoRendererRegistration
 }

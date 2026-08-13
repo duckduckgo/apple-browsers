@@ -50,7 +50,7 @@ class MainViewCoordinator {
     var progress: ProgressView!
     var statusBackground: UIView!
     var focusedStateBackground: UIView!
-    var suggestionTrayContainer: UIView!
+    var suggestionTrayContainer: MainViewFactory.SuggestionTrayContainer!
     var windowControlsRowBackground: UIView?
     var tabBarContainer: UIView!
     var aiChatTabChatHeaderContainer: UIView!
@@ -58,7 +58,7 @@ class MainViewCoordinator {
     var unifiedToggleInputContainer: UIView!
     var aiTabCollapsedTopSeparator: UIView!
     private var aiTabCollapsedTopSeparatorLogicallyVisible = false
-    var unifiedInputContentContainer: UIView!
+    var unifiedInputContentContainer: MainViewFactory.UnifiedInputContentContainer!
     /// Owned so a subsequent show can cancel an in-flight dismiss and skip the stale completion.
     private var omnibarDismissAnimator: UIViewPropertyAnimator?
     var toolbar: BrowserToolbarView!

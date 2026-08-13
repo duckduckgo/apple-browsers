@@ -75,6 +75,35 @@ final class OmniBarEditingStateViewControllerDaxVisibilityTests: XCTestCase {
     }
 }
 
+final class OmniBarEditingStateViewControllerPromoSurfaceTests: XCTestCase {
+
+    func testPromoSurfaceIsExposedOnlyAtSettledSearchEndpoint() {
+        XCTAssertTrue(OmniBarEditingStateViewController.isSearchPagePhysicallyPresentedForPromoSurface(
+            mode: .search,
+            transitionProgress: 0,
+            isURLFallbackSearchPagePresented: false
+        ))
+        XCTAssertFalse(OmniBarEditingStateViewController.isSearchPagePhysicallyPresentedForPromoSurface(
+            mode: .search,
+            transitionProgress: 0.01,
+            isURLFallbackSearchPagePresented: false
+        ))
+        XCTAssertFalse(OmniBarEditingStateViewController.isSearchPagePhysicallyPresentedForPromoSurface(
+            mode: .aiChat,
+            transitionProgress: 1,
+            isURLFallbackSearchPagePresented: false
+        ))
+    }
+
+    func testPromoSurfaceCanUseSearchPagePresentedAsAIChatURLFallback() {
+        XCTAssertTrue(OmniBarEditingStateViewController.isSearchPagePhysicallyPresentedForPromoSurface(
+            mode: .aiChat,
+            transitionProgress: 1,
+            isURLFallbackSearchPagePresented: true
+        ))
+    }
+}
+
 private final class RecordingFadeOutContainerDelegate: FadeOutContainerViewControllerDelegate {
     private(set) var progressUpdates: [CGFloat] = []
     private(set) var transitionedModes: [TextEntryMode] = []

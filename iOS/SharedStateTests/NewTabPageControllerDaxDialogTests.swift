@@ -46,6 +46,8 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
     var specProvider: MockDaxDialogsManager!
     var flowProvider: MockOnboardingFlowProvider!
     var tutorialSettings: MockTutorialSettings!
+    var promoCoordinator: MockNewTabPagePromoCoordinator!
+    var promoSurfaceExposureController: NewTabPagePromoExposureController!
     var hvc: NewTabPageViewController!
 
     override func setUpWithError() throws {
@@ -54,6 +56,8 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
         specProvider = MockDaxDialogsManager()
         flowProvider = MockOnboardingFlowProvider()
         tutorialSettings = MockTutorialSettings(hasSeenOnboarding: true)
+        promoCoordinator = MockNewTabPagePromoCoordinator(promoCoordinationMode: .coordinated)
+        promoSurfaceExposureController = NewTabPagePromoExposureController(selectionSink: promoCoordinator)
 
         let homePageConfiguration = HomePageConfiguration(remoteMessagingStore: MockRemoteMessagingStore(), subscriptionDataReporter: MockSubscriptionDataReporter(), isStillOnboarding: { true })
         hvc = NewTabPageViewController(
@@ -68,7 +72,8 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
             faviconLoader: EmptyFaviconLoading(),
             remoteMessagingActionHandler: MockRemoteMessagingActionHandler(),
             remoteMessagingImageLoader: MockRemoteMessagingImageLoader(),
-            promoCoordinator: MockNewTabPagePromoCoordinator(),
+            promoCoordinator: promoCoordinator,
+            promoSurfaceExposureController: promoSurfaceExposureController,
             appSettings: AppSettingsMock(),
             faviconsCache: Favicons(),
             subscriptionManager: SubscriptionManagerMock(),
@@ -92,11 +97,14 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
     }
 
     override func tearDownWithError() throws {
+        hvc?.dismiss()
         variantManager = nil
         dialogFactory = nil
         specProvider = nil
         flowProvider = nil
         tutorialSettings = nil
+        promoCoordinator = nil
+        promoSurfaceExposureController = nil
         hvc = nil
     }
 
@@ -120,7 +128,8 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
             faviconLoader: EmptyFaviconLoading(),
             remoteMessagingActionHandler: MockRemoteMessagingActionHandler(),
             remoteMessagingImageLoader: MockRemoteMessagingImageLoader(),
-            promoCoordinator: MockNewTabPagePromoCoordinator(),
+            promoCoordinator: promoCoordinator,
+            promoSurfaceExposureController: promoSurfaceExposureController,
             appSettings: AppSettingsMock(),
             faviconsCache: Favicons(),
             subscriptionManager: SubscriptionManagerMock(),
@@ -215,6 +224,141 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
         XCTAssertTrue(specProvider.nextHomeScreenMessageNewCalled)
     }
 
+    func testWhenDaxOverlayIsInstalledThenRendererBlockerIsRetainedUntilPhysicalDismissal() throws {
+        try autoreleasepool {
+            specProvider.specToReturn = .initial
+
+            hvc.showNextDaxDialog()
+
+            let blocker = try XCTUnwrap(promoSurfaceExposureController.snapshot.activeBlockers.first)
+            XCTAssertEqual(promoSurfaceExposureController.snapshot.activeBlockers.count, 1)
+            XCTAssertEqual(blocker.scope, .renderer(hvc.promoSurfaceID))
+            XCTAssertEqual(blocker.reason, .daxOverlay)
+            XCTAssertEqual(blocker.source, PromoSurfaceBlockerSource("NewTabPageViewController.daxOverlay"))
+
+            dialogFactory.onDismiss?(false)
+
+            XCTAssertTrue(promoSurfaceExposureController.snapshot.activeBlockers.isEmpty)
+        }
+    }
+
+    func testWhenDaxOverlayIsInstalledAndDismissedThenBlockerChangesBracketItsPhysicalHierarchyLifetime() {
+        autoreleasepool {
+            promoSurfaceExposureController.setRouteCandidateRendererID(hvc.promoSurfaceID)
+            let childrenBeforeInstallation = Set(hvc.children.map(ObjectIdentifier.init))
+            let subviewsBeforeInstallation = Set(hvc.view.subviews.map(ObjectIdentifier.init))
+            var observedSelectionChanges = [(
+                rendererID: UUID?,
+                childIDs: Set<ObjectIdentifier>,
+                subviewIDs: Set<ObjectIdentifier>
+            )]()
+            promoCoordinator.onSelectedRemoteMessageRendererIDChanged = { [weak hvc] rendererID in
+                let childIDs = Set(hvc?.children.map(ObjectIdentifier.init) ?? [])
+                let subviewIDs = Set(hvc?.viewIfLoaded?.subviews.map(ObjectIdentifier.init) ?? [])
+                observedSelectionChanges.append((rendererID, childIDs, subviewIDs))
+            }
+            defer { promoCoordinator.onSelectedRemoteMessageRendererIDChanged = nil }
+            specProvider.specToReturn = .initial
+
+            hvc.showNextDaxDialog()
+
+            let childrenWhileInstalled = Set(hvc.children.map(ObjectIdentifier.init))
+            let subviewsWhileInstalled = Set(hvc.view.subviews.map(ObjectIdentifier.init))
+            XCTAssertNotEqual(childrenWhileInstalled, childrenBeforeInstallation)
+            XCTAssertNotEqual(subviewsWhileInstalled, subviewsBeforeInstallation)
+            XCTAssertEqual(observedSelectionChanges.count, 1)
+            XCTAssertNil(observedSelectionChanges[0].rendererID)
+            XCTAssertEqual(
+                observedSelectionChanges[0].childIDs,
+                childrenBeforeInstallation,
+                "The blocker must deselect the renderer before the overlay child is physically installed"
+            )
+            XCTAssertEqual(
+                observedSelectionChanges[0].subviewIDs,
+                subviewsBeforeInstallation,
+                "The blocker must deselect the renderer before the overlay view is physically installed"
+            )
+
+            dialogFactory.onDismiss?(false)
+
+            XCTAssertEqual(Set(hvc.children.map(ObjectIdentifier.init)), childrenBeforeInstallation)
+            XCTAssertEqual(Set(hvc.view.subviews.map(ObjectIdentifier.init)), subviewsBeforeInstallation)
+            XCTAssertEqual(observedSelectionChanges.count, 2)
+            XCTAssertEqual(observedSelectionChanges[1].rendererID, hvc.promoSurfaceID)
+            XCTAssertEqual(
+                observedSelectionChanges[1].childIDs,
+                childrenBeforeInstallation,
+                "The blocker must reselect the renderer only after the overlay child is physically removed"
+            )
+            XCTAssertEqual(
+                observedSelectionChanges[1].subviewIDs,
+                subviewsBeforeInstallation,
+                "The blocker must reselect the renderer only after the overlay view is physically removed"
+            )
+        }
+    }
+
+    func testWhenManagedOverlayChangesHostScopeThenSuppressionRemainsContinuousUntilTeardown() throws {
+        try autoreleasepool {
+            specProvider.specToReturn = .initial
+            hvc.showNextDaxDialog()
+            let staleDismissal = try XCTUnwrap(dialogFactory.onDismiss)
+            let daxBlocker = try XCTUnwrap(promoSurfaceExposureController.snapshot.activeBlockers.first)
+
+            _ = hvc.beginPromoSurfaceOverlayInstallation(kind: .onboarding)
+
+            let onboardingBlocker = try XCTUnwrap(promoSurfaceExposureController.snapshot.activeBlockers.first)
+            XCTAssertEqual(promoSurfaceExposureController.snapshot.activeBlockers.count, 1)
+            XCTAssertNotEqual(onboardingBlocker.id, daxBlocker.id)
+            XCTAssertEqual(onboardingBlocker.scope, .allRenderers)
+            XCTAssertEqual(onboardingBlocker.reason, .onboardingOverlay)
+
+            _ = hvc.beginPromoSurfaceOverlayInstallation(kind: .dax)
+
+            let replacementDaxBlocker = try XCTUnwrap(promoSurfaceExposureController.snapshot.activeBlockers.first)
+            XCTAssertEqual(promoSurfaceExposureController.snapshot.activeBlockers.count, 1)
+            XCTAssertNotEqual(replacementDaxBlocker.id, onboardingBlocker.id)
+            XCTAssertEqual(replacementDaxBlocker.scope, .allRenderers, "A cross-host session must not downgrade before final removal")
+            XCTAssertEqual(replacementDaxBlocker.reason, .daxOverlay)
+
+            hvc.tearDownPromoSurfaceOverlaySuppression()
+            staleDismissal(false)
+            hvc.tearDownPromoSurfaceOverlaySuppression()
+
+            XCTAssertTrue(promoSurfaceExposureController.snapshot.activeBlockers.isEmpty)
+        }
+    }
+
+    func testWhenChatPathVisibilityTransitionBeginsRepeatedlyThenOneBlockerIsRetainedUntilExplicitTeardown() throws {
+        try autoreleasepool {
+            hvc.beginChatPathVisibilityTransition()
+
+            let firstBlocker = try XCTUnwrap(promoSurfaceExposureController.snapshot.activeBlockers.first)
+            XCTAssertEqual(promoSurfaceExposureController.snapshot.activeBlockers.count, 1)
+            XCTAssertEqual(firstBlocker.scope, .renderer(hvc.promoSurfaceID))
+            XCTAssertEqual(firstBlocker.reason, .standardNTPVisibilityTransition)
+            XCTAssertEqual(firstBlocker.source, PromoSurfaceBlockerSource("MainViewController.chatPathCompletion"))
+
+            hvc.beginChatPathVisibilityTransition()
+
+            XCTAssertEqual(promoSurfaceExposureController.snapshot.activeBlockers.map(\.id), [firstBlocker.id])
+
+            hvc.tearDownPromoSurface()
+
+            XCTAssertTrue(promoSurfaceExposureController.snapshot.activeBlockers.isEmpty)
+
+            hvc.beginChatPathVisibilityTransition()
+
+            let nextBlocker = try XCTUnwrap(promoSurfaceExposureController.snapshot.activeBlockers.first)
+            XCTAssertEqual(promoSurfaceExposureController.snapshot.activeBlockers.count, 1)
+            XCTAssertNotEqual(nextBlocker.id, firstBlocker.id)
+
+            hvc.tearDownPromoSurface()
+
+            XCTAssertTrue(promoSurfaceExposureController.snapshot.activeBlockers.isEmpty)
+        }
+    }
+
     // MARK: - Duck.ai tailored flow router branches
 
     func testWhenDuckAITailoredFlow_AndOnboardingCompleted_AndNotSkipped_ThenDoesNotPeekRegularSpec() {
@@ -306,7 +450,9 @@ class CapturingNewTabDaxDialogProvider: NewTabDaxDialogProviding {
     }
 
     func createEndOfJourneyDialog(content: OnboardingEndOfJourneyContent, onAction: @escaping (OnboardingEndOfJourneyAction) -> Void) -> AnyView {
-        AnyView(EmptyView())
+        homeDialog = .final
+        onDismiss = { _ in onAction(.completeAndActivateSearch) }
+        return AnyView(EmptyView())
     }
 }
 

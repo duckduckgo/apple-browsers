@@ -223,6 +223,11 @@ private extension MainViewController {
         // so it slides in without the container's fade (which otherwise reads as a flash over the slide).
         let isFavoritesToFavorites = newTabPageViewController?.isShowingFavorites == true
         let isBottom = coordinator.cardPosition.isBottom
+        let promoSurfaceTransitionBlocker = newTabPagePromoExposureController.blockPromoSurface(
+            scope: .allRenderers,
+            reason: .hostTransition,
+            source: PromoSurfaceBlockerSource("MainViewController.unifiedInputFocusTransition")
+        )
 
         viewCoordinator.showUnifiedToggleInputOmnibar(expandedHeight: height)
         suggestionTrayController?.deactivatePromoSurfaceExposure()
@@ -275,6 +280,12 @@ private extension MainViewController {
                     self.viewCoordinator.unifiedInputContentContainer.alpha = 1
                 }
                 coordinator.viewController.setTextHorizontalShift(0)
+            },
+            completion: { [weak self] finished in
+                if !finished {
+                    self?.viewCoordinator.unifiedInputContentContainer.alpha = 1
+                }
+                promoSurfaceTransitionBlocker.release()
             }
         )
 

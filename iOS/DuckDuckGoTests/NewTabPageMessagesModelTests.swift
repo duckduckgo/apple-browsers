@@ -105,7 +105,7 @@ final class NewTabPageMessagesModelTests: XCTestCase {
 
         sut.load()
         sut.setSurfaceAttachmentProvider { true }
-        sut.setSurfaceRenderable(true)
+        sut.setSurfaceLifecycleReady(true)
         sut.refresh()
         sut.tearDown()
 
@@ -165,7 +165,7 @@ final class NewTabPageMessagesModelTests: XCTestCase {
 
     // MARK: - Coordinated Renderer Reporting
 
-    func testWhenCoordinatedThenRegistrationUsesStableSurfaceIDAndReportsCandidateAndEligibility() {
+    func testWhenCoordinatedThenRegistrationUsesStableSurfaceIDAndReportsCandidateAndLocalReadiness() {
         let surfaceID = UUID()
         let promoCoordinator = RendererCoordinatorMock(promoCoordinationMode: .coordinated)
         messagesConfiguration.homeMessages = [
@@ -181,31 +181,31 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         XCTAssertTrue(promoCoordinator.rendererTarget === sut)
         XCTAssertEqual(
             promoCoordinator.updates.last,
-            RendererUpdate(candidate: .available(messageID: "message-a"), isEligible: false)
+            RendererUpdate(candidate: .available(messageID: "message-a"), isLocallyReady: false)
         )
         XCTAssertTrue(sut.homeMessageViewModels.isEmpty)
 
         isAttached = true
         sut.setSurfaceAttachmentProvider { isAttached }
-        XCTAssertEqual(promoCoordinator.updates.last?.isEligible, false)
+        XCTAssertEqual(promoCoordinator.updates.last?.isLocallyReady, false)
 
-        sut.setSurfaceRenderable(true)
+        sut.setSurfaceLifecycleReady(true)
         XCTAssertEqual(
             promoCoordinator.updates.last,
-            RendererUpdate(candidate: .available(messageID: "message-a"), isEligible: true)
+            RendererUpdate(candidate: .available(messageID: "message-a"), isLocallyReady: true)
         )
 
-        sut.setSurfaceRenderable(false)
+        sut.setSurfaceLifecycleReady(false)
         XCTAssertEqual(
             promoCoordinator.updates.last,
-            RendererUpdate(candidate: .available(messageID: "message-a"), isEligible: false)
+            RendererUpdate(candidate: .available(messageID: "message-a"), isLocallyReady: false)
         )
 
         messagesConfiguration.homeMessages = []
         sut.refresh()
         XCTAssertEqual(
             promoCoordinator.updates.last,
-            RendererUpdate(candidate: .none, isEligible: false)
+            RendererUpdate(candidate: .none, isLocallyReady: false)
         )
     }
 
@@ -395,7 +395,7 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         XCTAssertEqual(updatedSession.viewModel.title, "Second")
         XCTAssertEqual(
             promoCoordinator.updates.last,
-            RendererUpdate(candidate: .available(messageID: "message-a"), isEligible: true)
+            RendererUpdate(candidate: .available(messageID: "message-a"), isLocallyReady: true)
         )
     }
 
@@ -428,7 +428,7 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         XCTAssertEqual(retainedSession.viewModel.title, "Original")
         XCTAssertEqual(
             promoCoordinator.updates.last,
-            RendererUpdate(candidate: .unrenderable(messageID: "message-a"), isEligible: true)
+            RendererUpdate(candidate: .unrenderable(messageID: "message-a"), isLocallyReady: true)
         )
     }
 
@@ -450,7 +450,7 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         XCTAssertEqual(coordinatedRenderSession(in: sut)?.presentation, presentation)
         XCTAssertEqual(
             promoCoordinator.updates.last,
-            RendererUpdate(candidate: .none, isEligible: true)
+            RendererUpdate(candidate: .none, isLocallyReady: true)
         )
 
         sut.hideRemoteMessage(presentation, removalID: UUID())
@@ -477,7 +477,7 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         XCTAssertEqual(coordinatedRenderSession(in: sut)?.presentation, presentation)
         XCTAssertEqual(
             promoCoordinator.updates.last,
-            RendererUpdate(candidate: .available(messageID: "message-b"), isEligible: true)
+            RendererUpdate(candidate: .available(messageID: "message-b"), isLocallyReady: true)
         )
 
         sut.hideRemoteMessage(presentation, removalID: UUID())
@@ -569,7 +569,8 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         }
 
         sut.load()
-        sut.setSurfaceRenderable(true)
+        promoCoordinator.setSelectedRemoteMessageRendererID(sut.surfaceID)
+        sut.setSurfaceLifecycleReady(true)
         XCTAssertTrue(sut.showRemoteMessage(presentation))
         await fulfillment(of: [didAttach], timeout: 1)
 
@@ -644,7 +645,8 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         }
 
         sut.load()
-        sut.setSurfaceRenderable(true)
+        promoCoordinator.setSelectedRemoteMessageRendererID(sut.surfaceID)
+        sut.setSurfaceLifecycleReady(true)
         XCTAssertTrue(sut.showRemoteMessage(presentation))
         await fulfillment(of: [didAttach], timeout: 1)
 
@@ -692,7 +694,7 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         XCTAssertTrue(promoCoordinator.removalCalls.isEmpty)
     }
 
-    func testTearDownReportsIneligibleBeforeDeregisterAndRetainsAuthorizedPresentation() throws {
+    func testTearDownReportsNotLocallyReadyBeforeDeregisterAndRetainsAuthorizedPresentation() throws {
         let promoCoordinator = RendererCoordinatorMock(promoCoordinationMode: .coordinated)
         messagesConfiguration.homeMessages = [
             .mockRemote(id: "message-a", withType: .small(titleText: "Title", descriptionText: "Body")),
@@ -705,7 +707,7 @@ final class NewTabPageMessagesModelTests: XCTestCase {
 
         XCTAssertEqual(
             promoCoordinator.updates.last,
-            RendererUpdate(candidate: .available(messageID: "message-a"), isEligible: false)
+            RendererUpdate(candidate: .available(messageID: "message-a"), isLocallyReady: false)
         )
         XCTAssertEqual(promoCoordinator.deregistrationCount, 1)
         XCTAssertEqual(coordinatedRenderSession(in: sut)?.presentation, presentation)
@@ -720,7 +722,8 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         let sut = createSUT(promoCoordinator: promoCoordinator)
         sut.setSurfaceAttachmentProvider { isAttached }
         sut.load()
-        sut.setSurfaceRenderable(true)
+        promoCoordinator.setSelectedRemoteMessageRendererID(sut.surfaceID)
+        sut.setSurfaceLifecycleReady(true)
         let presentation = makePresentation(messageID: "message-a")
         let removalID = UUID()
         XCTAssertTrue(sut.showRemoteMessage(presentation))
@@ -1030,7 +1033,9 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         )
         sut.setSurfaceAttachmentProvider { true }
         sut.load()
-        sut.setSurfaceRenderable(true)
+        promoCoordinator.setSelectedRemoteMessageRendererID(sut.surfaceID)
+        sut.setSurfaceLifecycleReady(true)
+        XCTAssertEqual(promoCoordinator.selectedRendererID, sut.surfaceID)
         return sut
     }
 
@@ -1078,7 +1083,7 @@ final class NewTabPageMessagesModelTests: XCTestCase {
 
 private struct RendererUpdate: Equatable {
     let candidate: PromoQueueRemoteMessageCandidateState
-    let isEligible: Bool
+    let isLocallyReady: Bool
 }
 
 private struct AppearanceCall: Equatable {
@@ -1247,6 +1252,7 @@ private final class RendererCoordinatorMock: NewTabPagePromoCoordinating {
     private(set) var registrationCount = 0
     private(set) var deregistrationCount = 0
     private(set) var registeredRendererID: UUID?
+    private(set) var selectedRendererID: UUID?
     private(set) weak var rendererTarget: NewTabPagePromoRendering?
     private(set) var updates = [RendererUpdate]()
     private(set) var appearanceCalls = [AppearanceCall]()
@@ -1259,6 +1265,10 @@ private final class RendererCoordinatorMock: NewTabPagePromoCoordinating {
         self.promoCoordinationMode = promoCoordinationMode
     }
 
+    func setSelectedRemoteMessageRendererID(_ rendererID: UUID?) {
+        selectedRendererID = rendererID
+    }
+
     func registerRemoteMessageRenderer(
         id: UUID,
         target: NewTabPagePromoRendering
@@ -1268,8 +1278,8 @@ private final class RendererCoordinatorMock: NewTabPagePromoCoordinating {
         rendererTarget = target
 
         return NewTabPagePromoRendererRegistration(
-            updateHandler: { [weak self] candidate, isEligible in
-                self?.updates.append(RendererUpdate(candidate: candidate, isEligible: isEligible))
+            updateHandler: { [weak self] candidate, isLocallyReady in
+                self?.updates.append(RendererUpdate(candidate: candidate, isLocallyReady: isLocallyReady))
             },
             appearanceHandler: { [weak self] sessionID, presentationID, isAttachedToWindow in
                 guard let self else {

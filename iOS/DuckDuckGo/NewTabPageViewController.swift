@@ -27,43 +27,37 @@ import Onboarding
 import RemoteMessaging
 import Subscription
 
-/// The independent host signals that must all prove the NTP promo surface is exposed.
-struct NewTabPagePromoSurfaceExposure {
-    var isOwnerActive = false
-    var isRenderLocationReady = false
-    var isExplicitlyVisible = true
-    var isCovered = false
-
-    func isRenderable(isAttachedToWindow: Bool) -> Bool {
-        isOwnerActive
-            && isRenderLocationReady
-            && isExplicitlyVisible
-            && !isCovered
-            && isAttachedToWindow
-    }
-}
-
-/// Keeps promo-surface ownership changes ordered across the standard NTP and its alternate hosts.
-/// Any future host that covers an attached NTP must use this handoff; arbitrary overlays are not detected automatically.
-enum NewTabPagePromoSurfaceHandoff {
-    static func showHostedSurface(
-        deactivateNewTabPage: () -> Void,
-        showHostedSurface: () -> Void
-    ) {
-        deactivateNewTabPage()
-        showHostedSurface()
-    }
-
-    static func showNewTabPage(
-        hideHostedSurface: () -> Void,
-        activateNewTabPage: () -> Void
-    ) {
-        hideHostedSurface()
-        activateNewTabPage()
-    }
-}
-
 final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTabPage {
+
+    enum PromoSurfaceOverlayKind: Equatable {
+        case dax
+        case onboarding
+
+        var blockerReason: PromoSurfaceBlockerReason {
+            switch self {
+            case .dax:
+                return .daxOverlay
+            case .onboarding:
+                return .onboardingOverlay
+            }
+        }
+
+        var blockerSource: PromoSurfaceBlockerSource {
+            switch self {
+            case .dax:
+                return PromoSurfaceBlockerSource("NewTabPageViewController.daxOverlay")
+            case .onboarding:
+                return PromoSurfaceBlockerSource("NewTabPageViewController.onboardingOverlay")
+            }
+        }
+    }
+
+    private enum PromoSurfaceOverlayRemovalDisposition: Equatable {
+        case final
+        case replacing
+    }
+
+    let promoSurfaceID: UUID
 
     var isShowingLogo: Bool {
         guard !newTabPageViewModel.isLogoHidden else { return false }
@@ -107,14 +101,18 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     private let messagesModel: NewTabPageMessagesModel
     private let favoritesModel: FavoritesViewModel
     private let associatedTab: Tab
+    private let promoSurfaceExposureController: NewTabPagePromoExposureControlling
 
     private var hostingController: UIHostingController<AnyView>?
+    private var promoSurfaceOverlayInstallationID: UUID?
+    private var promoSurfaceOverlayReplacementID: UUID?
+    private var promoSurfaceOverlayKind: PromoSurfaceOverlayKind?
+    private var promoSurfaceOverlayBlockerScope: PromoSurfaceBlockerScope?
+    private var promoSurfaceOverlayBlockerToken: PromoSurfaceBlockerToken?
+    private var chatPathVisibilityBlockerToken: PromoSurfaceBlockerToken?
     private(set) var isShowingDuckAICompletionDialog = false
     private var isBorderSuppressedForChromeLayout = false
     private var didHideBarsForChatPathVisitSiteDialog = false
-    private var promoSurfaceExposure = NewTabPagePromoSurfaceExposure()
-    /// Opt-out: callers mute visibility around alpha animations/handoffs, unlike the opt-in owner-activity and render-location signals a host must assert.
-    private var promoSurfaceVisibilityGeneration = 0
     private let appSettings: AppSettings
     private let appWidthObserver: AppWidthObserver
     private let floatingUIManager: FloatingUIManaging
@@ -141,6 +139,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
          remoteMessagingImageLoader: RemoteMessagingImageLoading,
          remoteMessagingPixelReporter: RemoteMessagingPixelReporting? = nil,
          promoCoordinator: NewTabPagePromoCoordinating,
+         promoSurfaceExposureController: NewTabPagePromoExposureControlling,
          appSettings: AppSettings,
          faviconsCache: FavoritesFaviconCaching,
          subscriptionManager: any SubscriptionManager,
@@ -162,6 +161,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         self.internalUserCommands = internalUserCommands
         self.tutorialSettings = tutorialSettings
         self.contextualContentProvider = contextualContentProvider
+        self.promoSurfaceExposureController = promoSurfaceExposureController
 
         newTabPageViewModel = NewTabPageViewModel(fireTab: tab.fireTab)
         newTabPageViewModel.openedAfterIdle = openedAfterIdle
@@ -170,7 +170,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
                                             faviconLoader: faviconLoader,
                                             faviconsCache: faviconsCache)
         let viewModel = newTabPageViewModel
-        let promoSurfaceID = UUID()
+        promoSurfaceID = UUID()
         messagesModel = NewTabPageMessagesModel(homePageMessagesConfiguration: homePageMessagesConfiguration,
                                                 surfaceID: promoSurfaceID,
                                                 subscriptionDataReporter: subscriptionDataReporting,
@@ -222,7 +222,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
             guard let self else {
                 return
             }
-            updatePromoSurfaceExposure()
+            messagesModel.surfaceAttachmentDidChange()
             if viewIfLoaded?.window == nil {
                 messagesModel.remoteMessageHostDidDetach()
             }
@@ -234,8 +234,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        promoSurfaceExposure.isRenderLocationReady = true
-        updatePromoSurfaceExposure()
+        messagesModel.setSurfaceLifecycleReady(true)
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -251,8 +250,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
 
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
-        promoSurfaceExposure.isRenderLocationReady = false
-        updatePromoSurfaceExposure()
+        messagesModel.setSurfaceLifecycleReady(false)
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -279,47 +277,39 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         }
     }
 
-    func setPromoSurfaceActive(_ isActive: Bool) {
-        promoSurfaceExposure.isOwnerActive = isActive
-        updatePromoSurfaceExposure()
+    func blockPromoSurfaceVisibility(source: PromoSurfaceBlockerSource) -> PromoSurfaceBlockerToken {
+        promoSurfaceExposureController.blockPromoSurface(
+            scope: .renderer(promoSurfaceID),
+            reason: .standardNTPVisibilityTransition,
+            source: source
+        )
     }
 
-    func setPromoSurfaceRenderable(_ isRenderable: Bool) {
-        promoSurfaceExposure.isOwnerActive = isRenderable
-        promoSurfaceExposure.isRenderLocationReady = isRenderable
-        updatePromoSurfaceExposure()
+    /// The chat-path pre-arm and async presentation callback describe one physical transition.
+    /// Repeated calls intentionally reuse the same token until the NTP is visible again.
+    func beginChatPathVisibilityTransition() {
+        guard chatPathVisibilityBlockerToken == nil else { return }
+        chatPathVisibilityBlockerToken = blockPromoSurfaceVisibility(
+            source: PromoSurfaceBlockerSource("MainViewController.chatPathCompletion")
+        )
     }
 
-    @discardableResult
-    func setPromoSurfaceVisible(_ isVisible: Bool) -> Int {
-        promoSurfaceVisibilityGeneration += 1
-        promoSurfaceExposure.isExplicitlyVisible = isVisible
-        updatePromoSurfaceExposure()
-        return promoSurfaceVisibilityGeneration
-    }
-
-    func restorePromoSurfaceVisibility(ifCurrent generation: Int) {
-        guard promoSurfaceVisibilityGeneration == generation else {
-            return
-        }
-
-        setPromoSurfaceVisible(true)
+    private func finishChatPathVisibilityTransitionAfterRestoringVisibility() {
+        let blockerToken = chatPathVisibilityBlockerToken
+        chatPathVisibilityBlockerToken = nil
+        blockerToken?.release()
     }
 
     func tearDownPromoSurface() {
+        // Close the service's leaf readiness gate before any covering token can be released. The
+        // owner normally deselects this renderer first, but this ordering keeps teardown fail-closed
+        // even if a future caller reaches this lower-level boundary directly.
+        messagesModel.setSurfaceLifecycleReady(false)
+        tearDownPromoSurfaceOverlaySuppression()
         messagesModel.tearDown()
         messagesModel.remoteMessageHostDidDetach()
-    }
-
-    private func setPromoSurfaceCovered(_ isCovered: Bool) {
-        promoSurfaceExposure.isCovered = isCovered
-        updatePromoSurfaceExposure()
-    }
-
-    private func updatePromoSurfaceExposure() {
-        messagesModel.setSurfaceRenderable(
-            promoSurfaceExposure.isRenderable(isAttachedToWindow: viewIfLoaded?.window != nil)
-        )
+        finishChatPathVisibilityTransitionAfterRestoringVisibility()
+        promoSurfaceExposureController.rendererDidDeregister(id: promoSurfaceID)
     }
 
     func setSectionTitle(_ title: String?) {
@@ -439,9 +429,12 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     }
 
     func dismiss() {
-        messagesModel.setSurfaceRenderable(false)
-        messagesModel.tearDown()
+        // Suppress coordinated publication before removing overlays or restoring alpha. Those
+        // physical cleanup paths release their blockers and must not create a teardown pulse.
+        messagesModel.setSurfaceLifecycleReady(false)
         notifyDuckAICompletionDismissedIfNeeded()
+        tearDownPromoSurfaceOverlaySuppression()
+        messagesModel.tearDown()
         chromeDelegate?.setUnifiedInputContentOverlaySuppressed(false)
         if didHideBarsForChatPathVisitSiteDialog {
             didHideBarsForChatPathVisitSiteDialog = false
@@ -452,6 +445,8 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         removeFromParent()
         view.removeFromSuperview()
         messagesModel.remoteMessageHostDidDetach()
+        finishChatPathVisibilityTransitionAfterRestoringVisibility()
+        promoSurfaceExposureController.rendererDidDeregister(id: promoSurfaceID)
     }
 
     func showNextDaxDialog() {
@@ -558,7 +553,10 @@ private final class WindowAttachmentProbeView: UIView {
 extension NewTabPageViewController {
 
     func showDuckAIOnboardingCompletionDialog(message: String) {
-        dismissHostingController(didFinishNTPOnboarding: false, updatePromoSurfaceCoverage: false)
+        dismissHostingController(
+            didFinishNTPOnboarding: false,
+            promoSurfaceOverlayRemovalDisposition: .replacing
+        )
         // Completion dialog should not hide NTP background state.
         newTabPageViewModel.finishOnboarding()
 
@@ -576,18 +574,20 @@ extension NewTabPageViewController {
             isShowingDuckAICompletionDialog = false
             setLogoHidden(false)
             view.alpha = 1
-            setPromoSurfaceVisible(true)
-            setPromoSurfaceCovered(false)
+            finishChatPathVisibilityTransitionAfterRestoringVisibility()
+            finishPromoSurfaceOverlaySessionAfterPhysicalRemoval()
             return
         }
 
-        setPromoSurfaceCovered(true)
+        let installationID = beginPromoSurfaceOverlayInstallation(kind: .onboarding)
         isShowingDuckAICompletionDialog = true
         editingController.setLogoHidden(true)
 
         let onDismiss = { [weak self, weak editingController] in
-            guard let self else { return }
+            guard let self,
+                  self.isCurrentPromoSurfaceOverlayInstallation(installationID) else { return }
             let finishDismissal = {
+                guard self.isCurrentPromoSurfaceOverlayInstallation(installationID) else { return }
                 // Mark EOJ as seen before peeking the next spec so that
                 // peekNextHomeScreenMessageExperiment() enters the finalDaxDialogSeen
                 // branch and can return .subscriptionPromotion. Without this the
@@ -598,10 +598,17 @@ extension NewTabPageViewController {
                 // the same check in showNextDaxDialogNew's onDismiss.
                 let nextSpec = self.daxDialogsManager.nextHomeScreenMessageNew()
                 if nextSpec == .subscriptionPromotion {
+                    guard let replacementID = self.beginPromoSurfaceOverlayReplacement(
+                        from: installationID
+                    ) else { return }
                     // Editing state is about to be dismissed for the subscription promo —
                     // keep the suppressed Dax non-installed so the dismiss animation can't
                     // slide it in along with the editing state's logo Y-offset animation.
-                    self.dismissHostingController(didFinishNTPOnboarding: true, updatePromoSurfaceCoverage: false)
+                    self.dismissHostingController(
+                        didFinishNTPOnboarding: true,
+                        promoSurfaceOverlayRemovalDisposition: .replacing
+                    )
+                    guard self.isCurrentPromoSurfaceOverlayReplacement(replacementID) else { return }
                     self.chromeDelegate?.omniBar.endEditing()
                     self.showNextDaxDialog()
                 } else {
@@ -614,7 +621,8 @@ extension NewTabPageViewController {
                 }
             }
 
-            guard let hostingView = self.hostingController?.view else {
+            guard self.isCurrentPromoSurfaceOverlayInstallation(installationID),
+                  let hostingView = self.hostingController?.view else {
                 finishDismissal()
                 return
             }
@@ -622,6 +630,7 @@ extension NewTabPageViewController {
             UIView.animate(withDuration: 0.2, animations: {
                 hostingView.alpha = 0
             }, completion: { _ in
+                guard self.isCurrentPromoSurfaceOverlayInstallation(installationID) else { return }
                 finishDismissal()
             })
         }
@@ -666,7 +675,7 @@ extension NewTabPageViewController {
         coordinator: UnifiedToggleInputCoordinator,
         message: String
     ) {
-        setPromoSurfaceCovered(true)
+        let installationID = beginPromoSurfaceOverlayInstallation(kind: .onboarding)
         isShowingDuckAICompletionDialog = true
         // The NTP view is about to become visible (view.alpha = 1 below) but
         // finishOnboarding() has already set isOnboarding = false, so SwiftUI
@@ -675,14 +684,15 @@ extension NewTabPageViewController {
         // below (it lives inside the unifiedInputContentContainer).
         setLogoHidden(true)
         view.alpha = 1
-        setPromoSurfaceVisible(true)
+        finishChatPathVisibilityTransitionAfterRestoringVisibility()
         // Mirror showNextDaxDialogNew: suppress the UTI content overlay so the NTP
         // (contentContainer) remains visible while the address bar is active.
         // dismissHostingController re-enables the overlay when the dialog is torn down.
         chromeDelegate?.setUnifiedInputContentOverlaySuppressed(true)
 
         let onDismiss = { [weak self, weak mainVC, weak coordinator] in
-            guard let self else { return }
+            guard let self,
+                  self.isCurrentPromoSurfaceOverlayInstallation(installationID) else { return }
             // Collapse the UTI bar explicitly rather than going through omniBar.endEditing()
             // (which only resigns the legacy text field and does not drive the UTI state machine).
             // Takes an optional completion so the subscription promo can be deferred until after
@@ -695,12 +705,16 @@ extension NewTabPageViewController {
                 }
             }
             let finishDismissal = {
+                guard self.isCurrentPromoSurfaceOverlayInstallation(installationID) else { return }
                 // Mirror the OmniBar path: mark EOJ seen before peeking so that
                 // peekNextHomeScreenMessageExperiment() enters the finalDaxDialogSeen
                 // branch and can return .subscriptionPromotion (r3257196584).
                 self.daxDialogsManager.setFinalOnboardingDialogSeen()
                 let nextSpec = self.daxDialogsManager.nextHomeScreenMessageNew()
                 if nextSpec == .subscriptionPromotion {
+                    guard let replacementID = self.beginPromoSurfaceOverlayReplacement(
+                        from: installationID
+                    ) else { return }
                     // Zero the UTI content container alpha so the UTI Dax can't flash
                     // during the collapse animation.  Restored to 1 by
                     // dismissUnifiedToggleInputToOmnibar's animation completion block.
@@ -708,11 +722,15 @@ extension NewTabPageViewController {
                         mainVC.viewCoordinator.unifiedInputContentContainer.alpha = 0
                     }
                     collapseUTI { [weak self] in
-                        self?.dismissHostingController(didFinishNTPOnboarding: false,
-                                                       updateUnifiedInputContentOverlaySuppression: false,
-                                                       updatePromoSurfaceCoverage: false)
-                        self?.showNextDaxDialog()
-                        self?.hostingController?.view.backgroundColor = UIColor(singleUseColor: .rebranding(.backdrop))
+                        guard let self,
+                              self.isCurrentPromoSurfaceOverlayReplacement(replacementID) else { return }
+                        self.dismissHostingController(
+                            didFinishNTPOnboarding: false,
+                            updateUnifiedInputContentOverlaySuppression: false,
+                            promoSurfaceOverlayRemovalDisposition: .replacing
+                        )
+                        self.showNextDaxDialog()
+                        self.hostingController?.view.backgroundColor = UIColor(singleUseColor: .rebranding(.backdrop))
                     }
                 } else {
                     self.daxDialogsManager.dismiss()
@@ -722,7 +740,8 @@ extension NewTabPageViewController {
                     ViewHighlighter.hideAll()
                 }
             }
-            guard let hostingView = self.hostingController?.view else {
+            guard self.isCurrentPromoSurfaceOverlayInstallation(installationID),
+                  let hostingView = self.hostingController?.view else {
                 finishDismissal()
                 return
             }
@@ -734,7 +753,10 @@ extension NewTabPageViewController {
                 finishDismissal()
             } else {
                 UIView.animate(withDuration: 0.2, animations: { hostingView.alpha = 0 },
-                               completion: { _ in finishDismissal() })
+                               completion: { _ in
+                                   guard self.isCurrentPromoSurfaceOverlayInstallation(installationID) else { return }
+                                   finishDismissal()
+                               })
             }
         }
 
@@ -761,9 +783,11 @@ extension NewTabPageViewController {
     }
 
     func showNextDaxDialogNew(dialogProvider: NewTabDialogSpecProvider, factory: any NewTabDaxDialogProviding) {
-        dismissHostingController(didFinishNTPOnboarding: false,
-                                 updateUnifiedInputContentOverlaySuppression: false,
-                                 updatePromoSurfaceCoverage: false)
+        dismissHostingController(
+            didFinishNTPOnboarding: false,
+            updateUnifiedInputContentOverlaySuppression: false,
+            promoSurfaceOverlayRemovalDisposition: .replacing
+        )
 
         guard let spec = dialogProvider.nextHomeScreenMessageNew() else {
             // When the chat-path completion dialog (presentChatPathOnboardingCompletionIfNeeded)
@@ -775,10 +799,10 @@ extension NewTabPageViewController {
             if !chatPathCompletionPending {
                 chromeDelegate?.setUnifiedInputContentOverlaySuppressed(false)
             }
-            setPromoSurfaceCovered(false)
+            finishPromoSurfaceOverlaySessionAfterPhysicalRemoval()
             return
         }
-        setPromoSurfaceCovered(true)
+        let installationID = beginPromoSurfaceOverlayInstallation(kind: .dax)
         chromeDelegate?.setUnifiedInputContentOverlaySuppressed(true)
 
         // The EoJ ("High five!") dialog surfaces with an active address bar in UTI mode so the user
@@ -794,21 +818,27 @@ extension NewTabPageViewController {
         }
 
         let onDismiss: (_ activateSearch: Bool) -> Void = { [weak self] activateSearch in
-            guard let self else { return }
+            guard let self,
+                  self.isCurrentPromoSurfaceOverlayInstallation(installationID) else { return }
 
             let nextSpec = dialogProvider.nextHomeScreenMessageNew()
             guard nextSpec != .subscriptionPromotion else {
+                guard let replacementID = self.beginPromoSurfaceOverlayReplacement(
+                    from: installationID
+                ) else { return }
                 // Hide the NTP logo before the promo fades in so it doesn't blink through
                 // the FadeInView's alpha-0→1 animation.  It will be restored once the UTI
                 // deactivates after the user acts on the promo ("No thanks" / proceed).
                 self.setLogoHidden(true)
                 self.dismissAddressBarEditingForSubscriptionPromo(completion: { [weak self] in
-                    self?.showNextDaxDialog()
+                    guard let self,
+                          self.isCurrentPromoSurfaceOverlayReplacement(replacementID) else { return }
+                    self.showNextDaxDialog()
                     // UIHostingController starts with a clear UIKit background; SwiftUI renders
                     // the promo's opaque ContextualBackgroundStyle backdrop asynchronously.
                     // Matching the backing view's colour immediately prevents the one-frame gap
                     // where whatever is behind the promo (NTP background, logo) shows through.
-                    self?.hostingController?.view.backgroundColor = UIColor(singleUseColor: .rebranding(.backdrop))
+                    self.hostingController?.view.backgroundColor = UIColor(singleUseColor: .rebranding(.backdrop))
                 })
                 return
             }
@@ -822,7 +852,11 @@ extension NewTabPageViewController {
         }
 
         let onManualDismiss: () -> Void = { [weak self] in
-            self?.handleManualDaxDialogDismissal(spec: spec, dialogProvider: dialogProvider)
+            self?.handleManualDaxDialogDismissal(
+                spec: spec,
+                dialogProvider: dialogProvider,
+                installationID: installationID
+            )
         }
 
         let daxDialogView: AnyView
@@ -834,8 +868,16 @@ extension NewTabPageViewController {
                 switch action {
                 case .completeAndActivateSearch: onDismiss(true)
                 case .manualDismiss: onManualDismiss()
-                case .tryDuckAI: self?.dismissEndOfJourneyTryAIDialog(shouldOpenDuckAI: true)
-                case .skip: self?.dismissEndOfJourneyTryAIDialog(shouldOpenDuckAI: false)
+                case .tryDuckAI:
+                    self?.dismissEndOfJourneyTryAIDialog(
+                        shouldOpenDuckAI: true,
+                        installationID: installationID
+                    )
+                case .skip:
+                    self?.dismissEndOfJourneyTryAIDialog(
+                        shouldOpenDuckAI: false,
+                        installationID: installationID
+                    )
                 }
             }
         } else {
@@ -854,7 +896,9 @@ extension NewTabPageViewController {
             daxDialogsManager.chatPathPhase == .visitSite {
             didHideBarsForChatPathVisitSiteDialog = true
             DispatchQueue.main.async { [weak self] in
-                self?.chromeDelegate?.setBarsHidden(true, animated: false, customAnimationDuration: nil)
+                guard let self,
+                      self.isCurrentPromoSurfaceOverlayInstallation(installationID) else { return }
+                self.chromeDelegate?.setBarsHidden(true, animated: false, customAnimationDuration: nil)
             }
         }
 
@@ -875,9 +919,20 @@ extension NewTabPageViewController {
         newTabPageViewModel.startOnboarding()
     }
 
-    private func handleManualDaxDialogDismissal(spec: DaxDialogs.HomeScreenSpec, dialogProvider: NewTabDialogSpecProvider) {
-        dismissHostingController(didFinishNTPOnboarding: true,
-                                 updatePromoSurfaceCoverage: spec != .final)
+    private func handleManualDaxDialogDismissal(
+        spec: DaxDialogs.HomeScreenSpec,
+        dialogProvider: NewTabDialogSpecProvider,
+        installationID: UUID
+    ) {
+        guard isCurrentPromoSurfaceOverlayInstallation(installationID) else { return }
+
+        let replacementID = spec == .final
+            ? beginPromoSurfaceOverlayReplacement(from: installationID)
+            : nil
+        dismissHostingController(
+            didFinishNTPOnboarding: true,
+            promoSurfaceOverlayRemovalDisposition: spec == .final ? .replacing : .final
+        )
 
         if spec == .final {
             let nextSpec = dialogProvider.nextHomeScreenMessageNew()
@@ -885,13 +940,15 @@ extension NewTabPageViewController {
                 // Hide the NTP logo before the promo fades in — mirrors the onDismiss path.
                 setLogoHidden(true)
                 dismissAddressBarEditingForSubscriptionPromo(completion: { [weak self] in
-                    self?.showNextDaxDialog()
+                    guard let self, let replacementID,
+                          self.isCurrentPromoSurfaceOverlayReplacement(replacementID) else { return }
+                    self.showNextDaxDialog()
                     // Set the background color to the rebranding backdrop color to prevent the NTP logo from flashing through the completion dialog.
-                    self?.hostingController?.view.backgroundColor = UIColor(singleUseColor: .rebranding(.backdrop))
+                    self.hostingController?.view.backgroundColor = UIColor(singleUseColor: .rebranding(.backdrop))
                 })
                 return
             }
-            setPromoSurfaceCovered(false)
+            finishPromoSurfaceOverlaySessionAfterPhysicalRemoval()
             dialogProvider.dismiss()
         }
 
@@ -914,9 +971,20 @@ extension NewTabPageViewController {
         }
     }
 
-    private func dismissEndOfJourneyTryAIDialog(shouldOpenDuckAI: Bool) {
-        // Complete onboarding. On next NTP show subscription
-        dismissHostingController(didFinishNTPOnboarding: true)
+    private func dismissEndOfJourneyTryAIDialog(shouldOpenDuckAI: Bool, installationID: UUID) {
+        guard isCurrentPromoSurfaceOverlayInstallation(installationID) else { return }
+
+        let nextSpec = shouldOpenDuckAI ? nil : daxDialogsManager.nextHomeScreenMessageNew()
+        let isReplacingWithSubscriptionPromotion = nextSpec == .subscriptionPromotion
+        let replacementID = isReplacingWithSubscriptionPromotion
+            ? beginPromoSurfaceOverlayReplacement(from: installationID)
+            : nil
+
+        // Complete onboarding. On next NTP show subscription.
+        dismissHostingController(
+            didFinishNTPOnboarding: true,
+            promoSurfaceOverlayRemovalDisposition: isReplacingWithSubscriptionPromotion ? .replacing : .final
+        )
 
         // - `shouldOpenDuckAI`: dismiss the dialog and activate Omnibar with .aiChat textEntry mode. ands the user in the Duck.ai-mode address bar. The subscription promo will surface on the next new tab.
         // - `!shouldOpenDuckAI`: dismiss the dialog and shows the subscription promo.
@@ -925,12 +993,13 @@ extension NewTabPageViewController {
             chromeDelegate?.omniBar.beginEditing(animated: true, forTextEntryMode: .aiChat)
         } else {
             // Skip: mirror the standard final dialog's subscription hand-off.
-            let nextSpec = daxDialogsManager.nextHomeScreenMessageNew()
             if nextSpec == .subscriptionPromotion {
                 setLogoHidden(true)
                 dismissAddressBarEditingForSubscriptionPromo(completion: { [weak self] in
-                    self?.showNextDaxDialog()
-                    self?.hostingController?.view.backgroundColor = UIColor(singleUseColor: .rebranding(.backdrop))
+                    guard let self, let replacementID,
+                          self.isCurrentPromoSurfaceOverlayReplacement(replacementID) else { return }
+                    self.showNextDaxDialog()
+                    self.hostingController?.view.backgroundColor = UIColor(singleUseColor: .rebranding(.backdrop))
                 })
             } else {
                 daxDialogsManager.dismiss()
@@ -938,14 +1007,17 @@ extension NewTabPageViewController {
         }
     }
 
-    private func dismissHostingController(didFinishNTPOnboarding: Bool,
-                                          updateUnifiedInputContentOverlaySuppression: Bool = true,
-                                          updatePromoSurfaceCoverage: Bool = true) {
+    private func dismissHostingController(
+        didFinishNTPOnboarding: Bool,
+        updateUnifiedInputContentOverlaySuppression: Bool = true,
+        promoSurfaceOverlayRemovalDisposition: PromoSurfaceOverlayRemovalDisposition = .final
+    ) {
         let didDismissDuckAICompletionDialog = isShowingDuckAICompletionDialog
         hostingController?.willMove(toParent: nil)
         hostingController?.view.removeFromSuperview()
         hostingController?.removeFromParent()
         hostingController = nil
+        promoSurfaceOverlayInstallationID = nil
         if updateUnifiedInputContentOverlaySuppression {
             chromeDelegate?.setUnifiedInputContentOverlaySuppressed(false)
         }
@@ -958,16 +1030,84 @@ extension NewTabPageViewController {
             // Restore NTP visibility that was muted during the chat-path handoff so the
             // empty-state Dax doesn't flash through the editing-state transition.
             view.alpha = 1
-            setPromoSurfaceVisible(true)
+            finishChatPathVisibilityTransitionAfterRestoringVisibility()
             delegate?.newTabPageDidDismissDuckAIFireOnboardingCompletion(self)
         }
         if didFinishNTPOnboarding {
             self.newTabPageViewModel.finishOnboarding()
             self.setLogoHidden(false)
         }
-        if updatePromoSurfaceCoverage {
-            setPromoSurfaceCovered(false)
+        if promoSurfaceOverlayRemovalDisposition == .final {
+            finishPromoSurfaceOverlaySessionAfterPhysicalRemoval()
         }
+    }
+
+    func beginPromoSurfaceOverlayInstallation(kind: PromoSurfaceOverlayKind) -> UUID {
+        let requiredScope: PromoSurfaceBlockerScope = kind == .onboarding
+            ? .allRenderers
+            : .renderer(promoSurfaceID)
+
+        if promoSurfaceOverlayBlockerToken == nil {
+            promoSurfaceOverlayBlockerToken = promoSurfaceExposureController.blockPromoSurface(
+                scope: requiredScope,
+                reason: kind.blockerReason,
+                source: kind.blockerSource
+            )
+            promoSurfaceOverlayBlockerScope = requiredScope
+        } else if promoSurfaceOverlayKind != kind {
+            // Refresh diagnostic provenance acquire-before-release when the managed session changes
+            // content kind. Once onboarding has made this a cross-host session, never downgrade its
+            // scope until final physical removal.
+            let replacementScope: PromoSurfaceBlockerScope = promoSurfaceOverlayBlockerScope == .allRenderers
+                ? .allRenderers
+                : requiredScope
+            let replacementToken = promoSurfaceExposureController.blockPromoSurface(
+                scope: replacementScope,
+                reason: kind.blockerReason,
+                source: kind.blockerSource
+            )
+            let previousToken = promoSurfaceOverlayBlockerToken
+            promoSurfaceOverlayBlockerToken = replacementToken
+            promoSurfaceOverlayBlockerScope = replacementScope
+            previousToken?.release()
+        }
+        promoSurfaceOverlayKind = kind
+        let installationID = UUID()
+        promoSurfaceOverlayReplacementID = nil
+        promoSurfaceOverlayInstallationID = installationID
+        return installationID
+    }
+
+    private func beginPromoSurfaceOverlayReplacement(from installationID: UUID) -> UUID? {
+        guard isCurrentPromoSurfaceOverlayInstallation(installationID) else { return nil }
+
+        let replacementID = UUID()
+        promoSurfaceOverlayInstallationID = nil
+        promoSurfaceOverlayReplacementID = replacementID
+        return replacementID
+    }
+
+    private func isCurrentPromoSurfaceOverlayInstallation(_ installationID: UUID) -> Bool {
+        promoSurfaceOverlayInstallationID == installationID
+    }
+
+    private func isCurrentPromoSurfaceOverlayReplacement(_ replacementID: UUID) -> Bool {
+        promoSurfaceOverlayReplacementID == replacementID
+    }
+
+    private func finishPromoSurfaceOverlaySessionAfterPhysicalRemoval() {
+        promoSurfaceOverlayInstallationID = nil
+        promoSurfaceOverlayReplacementID = nil
+        promoSurfaceOverlayKind = nil
+        promoSurfaceOverlayBlockerScope = nil
+        let blockerToken = promoSurfaceOverlayBlockerToken
+        promoSurfaceOverlayBlockerToken = nil
+        blockerToken?.release()
+    }
+
+    /// Explicit teardown boundary for callers that remove this NTP outside the normal dialog dismissal flow.
+    func tearDownPromoSurfaceOverlaySuppression() {
+        dismissHostingController(didFinishNTPOnboarding: false)
     }
 
     func dismissDuckAICompletionDialogIfNeededOnEditingEnd() {
@@ -996,7 +1136,7 @@ extension NewTabPageViewController {
             daxDialogsManager.dismiss()
         }
         view.alpha = 1
-        setPromoSurfaceVisible(true)
+        finishChatPathVisibilityTransitionAfterRestoringVisibility()
         delegate?.newTabPageDidDismissDuckAIFireOnboardingCompletion(self)
     }
 }

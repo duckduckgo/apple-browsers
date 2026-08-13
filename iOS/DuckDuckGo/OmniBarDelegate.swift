@@ -92,6 +92,11 @@ protocol OmniBarDelegate: AnyObject {
 
     func onDidEndEditing()
 
+    /// Requests a fresh pull of the legacy full-screen editing host's promo exposure.
+    func onPromoSurfaceExposureChanged()
+    func onPromoSurfaceHostTransitionWillBegin() -> UUID?
+    func onPromoSurfaceHostTransitionDidFinish(_ transitionID: UUID?)
+
     /// SwitchBar
     func onPromptSubmitted(_ query: String, tools: [AIChatRAGTool]?)
 
@@ -160,6 +165,9 @@ protocol OmniBarDelegate: AnyObject {
 }
 
 extension OmniBarDelegate {
+    func onPromoSurfaceExposureChanged() {}
+    func onPromoSurfaceHostTransitionWillBegin() -> UUID? { nil }
+    func onPromoSurfaceHostTransitionDidFinish(_ transitionID: UUID?) {}
     
     func onOmniQueryUpdated(_ query: String) {
         

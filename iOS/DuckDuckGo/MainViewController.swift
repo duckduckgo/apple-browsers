@@ -89,6 +89,64 @@ struct StartupOnboardingDecision {
     }
 }
 
+enum NewTabPagePromoHostResolution: Equatable {
+    case editingState(rendererID: UUID?)
+    case unifiedInput(rendererID: UUID?)
+    case suggestionTray(rendererID: UUID?)
+    case standard(rendererID: UUID)
+    case noHost
+    case contradictory
+
+    var rendererID: UUID? {
+        switch self {
+        case .editingState(let rendererID),
+             .unifiedInput(let rendererID),
+             .suggestionTray(let rendererID):
+            return rendererID
+        case .standard(let rendererID):
+            return rendererID
+        case .noHost, .contradictory:
+            return nil
+        }
+    }
+}
+
+struct NewTabPagePromoHostState: Equatable {
+    var isEditingStatePresented = false
+    var editingStateRendererID: UUID?
+    var doesUnifiedInputCover = false
+    var unifiedInputRendererID: UUID?
+    var doesSuggestionTrayCover = false
+    var suggestionTrayRendererID: UUID?
+    var isStandardNewTabPageInstalled = false
+    var standardNewTabPageRendererID: UUID?
+
+    func resolve() -> NewTabPagePromoHostResolution {
+        if isEditingStatePresented {
+            return .editingState(rendererID: editingStateRendererID)
+        }
+
+        guard !(doesUnifiedInputCover && doesSuggestionTrayCover) else {
+            return .contradictory
+        }
+
+        if doesUnifiedInputCover {
+            return .unifiedInput(rendererID: unifiedInputRendererID)
+        }
+
+        if doesSuggestionTrayCover {
+            return .suggestionTray(rendererID: suggestionTrayRendererID)
+        }
+
+        guard isStandardNewTabPageInstalled,
+              let standardNewTabPageRendererID else {
+            return .noHost
+        }
+
+        return .standard(rendererID: standardNewTabPageRendererID)
+    }
+}
+
 class MainViewController: UIViewController {
 
     /// iOS may deliver buffered accelerometer data as a spurious shake when returning from background.
@@ -353,6 +411,11 @@ class MainViewController: UIViewController {
     let themeManager: ThemeManaging
     let keyValueStore: ThrowingKeyValueStoring
     let newTabPagePromoCoordinator: NewTabPagePromoCoordinating
+    lazy var newTabPagePromoExposureController = NewTabPagePromoExposureController(
+        selectionSink: newTabPagePromoCoordinator
+    )
+    private(set) var newTabPagePromoHostResolution = NewTabPagePromoHostResolution.noHost
+    private var legacyEditingStatePromoHostTransitionBlockers = [UUID: PromoSurfaceBlockerToken]()
     let recentModalPromptStatusProvider: RecentModalPromptStatusProviding?
     let systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
     let onboardingResumeStepStore: any KeyedStoring<OnboardingStoringKeys>
@@ -629,6 +692,24 @@ class MainViewController: UIViewController {
     }
 
     deinit {
+        MainActor.assumeIsolated {
+            // Clear the authoritative route before physically detaching and deregistering every
+            // cached renderer owned by this controller. Registration/token deinit intentionally
+            // fails closed, so this terminal owner boundary must be explicit.
+            newTabPagePromoExposureController.setRouteCandidateRendererID(nil)
+
+            if let newTabPageViewController {
+                newTabPageViewController.willMove(toParent: nil)
+                newTabPageViewController.dismiss()
+            }
+            (presentedViewController as? OmniBarEditingStateViewController)?.tearDownPromoSurfaceProvider()
+            suggestionTrayController?.tearDownPromoSurfaceProvider()
+            unifiedToggleInputCoordinator?.contentViewController.tearDownPromoSurfaceProvider()
+
+            let transitionBlockers = Array(legacyEditingStatePromoHostTransitionBlockers.values)
+            legacyEditingStatePromoHostTransitionBlockers.removeAll()
+            transitionBlockers.forEach { $0.release() }
+        }
         chromeMorphAnimator.cancel()
         findInPageDismissalTimer?.invalidate()
     }
@@ -692,6 +773,7 @@ class MainViewController: UIViewController {
             remoteMessagingImageLoader: remoteMessagingImageLoader,
             remoteMessagingPixelReporter: remoteMessagingPixelReporter,
             promoCoordinator: newTabPagePromoCoordinator,
+            promoSurfaceExposureController: newTabPagePromoExposureController,
             appSettings: appSettings,
             subscriptionManager: subscriptionManager,
             internalUserCommands: internalUserCommands)
@@ -733,6 +815,13 @@ class MainViewController: UIViewController {
                                                               appSettings: appSettings,
                                                               mobileCustomization: mobileCustomization,
                                                               duckAiNativeStorageHandler: duckAiNativeStorageHandler)
+
+        viewCoordinator.suggestionTrayContainer.onVisibilityChanged = { [weak self] in
+            self?.reconcileNewTabPagePromoExposure()
+        }
+        viewCoordinator.unifiedInputContentContainer.onVisibilityChanged = { [weak self] in
+            self?.reconcileNewTabPagePromoExposure()
+        }
 
         viewCoordinator.navigationBarContainer.allowsOverflowHitTesting = true
         viewCoordinator.navigationBarCollectionView.allowsOverflowHitTesting = true
@@ -1037,6 +1126,9 @@ class MainViewController: UIViewController {
 
         controller.dismissHandler = dismissSuggestionTray
         controller.autocompleteDelegate = self
+        controller.onPromoSurfaceExposureChanged = { [weak self] in
+            self?.reconcileNewTabPagePromoExposure()
+        }
         suggestionTrayController = controller
 
         if isPad {
@@ -1055,6 +1147,40 @@ class MainViewController: UIViewController {
                 host: self,
                 navigationDelegate: self)
         }
+    }
+
+    func reconcileNewTabPagePromoExposure() {
+        let resolution = resolveNewTabPagePromoHost()
+        newTabPagePromoHostResolution = resolution
+        newTabPagePromoExposureController.setRouteCandidateRendererID(resolution.rendererID)
+    }
+
+    func resolveNewTabPagePromoHost() -> NewTabPagePromoHostResolution {
+        let editingState = presentedViewController as? OmniBarEditingStateViewController
+        let unifiedInputContent = unifiedToggleInputCoordinator?.contentViewController
+        let unifiedInputCovers = !viewCoordinator.unifiedInputContentContainer.isHidden
+        let suggestionTrayCovers = !viewCoordinator.suggestionTrayContainer.isHidden
+        let standardIsInstalled = newTabPageViewController?.parent === self
+            && newTabPageViewController?.viewIfLoaded?.superview === viewCoordinator.contentContainer
+        let state = NewTabPagePromoHostState(
+            isEditingStatePresented: editingState != nil,
+            editingStateRendererID: editingState?.exposedPromoRendererID,
+            doesUnifiedInputCover: unifiedInputCovers,
+            unifiedInputRendererID: unifiedInputContent?.exposedPromoRendererID,
+            doesSuggestionTrayCover: suggestionTrayCovers,
+            suggestionTrayRendererID: suggestionTrayController?.exposedPromoRendererID,
+            isStandardNewTabPageInstalled: standardIsInstalled,
+            standardNewTabPageRendererID: newTabPageViewController?.promoSurfaceID
+        )
+        let resolution = state.resolve()
+
+        if resolution == .contradictory {
+            Logger.modalPrompt.error(
+                "[Promo Queue] - Contradictory alternate NTP hosts are simultaneously visible; exposure fails closed."
+            )
+            assertionFailure("Contradictory alternate NTP promo hosts")
+        }
+        return resolution
     }
 
     func loadTabsBarIfNeeded() {
@@ -2049,6 +2175,7 @@ class MainViewController: UIViewController {
                                                   remoteMessagingImageLoader: remoteMessagingImageLoader,
                                                   remoteMessagingPixelReporter: remoteMessagingPixelReporter,
                                                   promoCoordinator: newTabPagePromoCoordinator,
+                                                  promoSurfaceExposureController: newTabPagePromoExposureController,
                                                   appSettings: appSettings,
                                                   faviconsCache: favicons,
                                                   subscriptionManager: subscriptionManager,
@@ -2077,12 +2204,12 @@ class MainViewController: UIViewController {
         // presentChatPathOnboardingCompletionIfNeeded. Restored by NewTabPageViewController
         // on every dismissal path.
         if daxDialogsManager.chatPathPhase == .trackerToEOJ && aiChatSettings.isAIChatEnabled {
-            controller.setPromoSurfaceVisible(false)
+            controller.beginChatPathVisibilityTransition()
             controller.view.alpha = 0
         }
 
         addToContentContainer(controller: controller)
-        controller.setPromoSurfaceActive(true)
+        reconcileNewTabPagePromoExposure()
         viewCoordinator.logoContainer.isHidden = true
         adjustNewTabPageSafeAreaInsets(for: appSettings.currentAddressBarPosition)
 
@@ -2179,10 +2306,13 @@ class MainViewController: UIViewController {
     }
 
     fileprivate func removeHomeScreen() {
-        newTabPageViewController?.setPromoSurfaceActive(false)
-        newTabPageViewController?.willMove(toParent: nil)
-        newTabPageViewController?.dismiss()
-        newTabPageViewController = nil
+        newTabPagePromoExposureController.setRouteCandidateRendererID(nil)
+        if let newTabPageViewController {
+            self.newTabPageViewController = nil
+            newTabPageViewController.willMove(toParent: nil)
+            newTabPageViewController.dismiss()
+        }
+        reconcileNewTabPagePromoExposure()
         clearEscapeHatch()
     }
 
@@ -3167,40 +3297,25 @@ class MainViewController: UIViewController {
     }
     
     private func showSuggestionTray(_ type: SuggestionTrayViewController.SuggestionType) {
-        NewTabPagePromoSurfaceHandoff.showHostedSurface(
-            deactivateNewTabPage: {
-                newTabPageViewController?.setPromoSurfaceActive(false)
-            },
-            showHostedSurface: {
-                suggestionTrayController?.show(for: type)
-                applyWidthToTrayController()
-                if !isUsingSingleBar {
-                    if !daxDialogsManager.shouldShowFireButtonPulse {
-                        ViewHighlighter.hideAll()
-                    }
-                    if type.hideOmnibarSeparator() && appSettings.currentAddressBarPosition != .bottom {
-                        viewCoordinator.omniBar.hideSeparator()
-                    }
-                }
-                viewCoordinator.suggestionTrayContainer.isHidden = false
-                currentTab?.webView.accessibilityElementsHidden = true
+        suggestionTrayController?.show(for: type)
+        applyWidthToTrayController()
+        if !isUsingSingleBar {
+            if !daxDialogsManager.shouldShowFireButtonPulse {
+                ViewHighlighter.hideAll()
             }
-        )
+            if type.hideOmnibarSeparator() && appSettings.currentAddressBarPosition != .bottom {
+                viewCoordinator.omniBar.hideSeparator()
+            }
+        }
+        viewCoordinator.suggestionTrayContainer.isHidden = false
+        currentTab?.webView.accessibilityElementsHidden = true
     }
     
     func hideSuggestionTray() {
-        NewTabPagePromoSurfaceHandoff.showNewTabPage(
-            hideHostedSurface: {
-                suggestionTrayController?.didHide(animated: false)
-                viewCoordinator.omniBar.showSeparator()
-                viewCoordinator.suggestionTrayContainer.isHidden = true
-                currentTab?.webView.accessibilityElementsHidden = false
-            },
-            activateNewTabPage: {
-                let isCoveredByUnifiedInput = unifiedToggleInputCoordinator?.computeRenderState().isContentVisible == true
-                newTabPageViewController?.setPromoSurfaceActive(!isCoveredByUnifiedInput)
-            }
-        )
+        suggestionTrayController?.didHide(animated: false)
+        viewCoordinator.omniBar.showSeparator()
+        viewCoordinator.suggestionTrayContainer.isHidden = true
+        currentTab?.webView.accessibilityElementsHidden = false
     }
     
     func launchAutofillLogins(with currentTabUrl: URL? = nil, currentTabUid: String? = nil, openSearch: Bool = false, source: AutofillSettingsSource, selectedAccount: SecureVaultModels.WebsiteAccount? = nil, extensionPromotionManager: AutofillExtensionPromotionManaging? = nil) {
@@ -5552,6 +5667,28 @@ extension MainViewController: OmniBarDelegate {
         }
         // Omnibar lost focus. Drop minimal chrome bar back to bottom.
         refreshMinimalChromeBottomAnchor()
+        reconcileNewTabPagePromoExposure()
+    }
+
+    func onPromoSurfaceExposureChanged() {
+        reconcileNewTabPagePromoExposure()
+    }
+
+    func onPromoSurfaceHostTransitionWillBegin() -> UUID? {
+        let blockerToken = newTabPagePromoExposureController.blockPromoSurface(
+            scope: .allRenderers,
+            reason: .hostTransition,
+            source: PromoSurfaceBlockerSource("MainViewController.legacyEditingStatePresentation")
+        )
+        legacyEditingStatePromoHostTransitionBlockers[blockerToken.id] = blockerToken
+        return blockerToken.id
+    }
+
+    func onPromoSurfaceHostTransitionDidFinish(_ transitionID: UUID?) {
+        reconcileNewTabPagePromoExposure()
+        guard let transitionID else { return }
+        let blockerToken = legacyEditingStatePromoHostTransitionBlockers.removeValue(forKey: transitionID)
+        blockerToken?.release()
     }
 
     // MARK: - iPad Expanded Omnibar
@@ -5800,19 +5937,11 @@ extension MainViewController: PopoverSuggestionsHosting {
 
     /// Hides the container but keeps the list surfaces alive, avoiding remove/reinstall flicker on toggle.
     func hidePopover() {
-        NewTabPagePromoSurfaceHandoff.showNewTabPage(
-            hideHostedSurface: {
-                suggestionTrayController?.clearKeyboardSelections()
-                suggestionTrayController?.deactivatePromoSurfaceExposure()
-                viewCoordinator.omniBar.showSeparator()
-                viewCoordinator.suggestionTrayContainer.isHidden = true
-                currentTab?.webView.accessibilityElementsHidden = false
-            },
-            activateNewTabPage: {
-                let isCoveredByUnifiedInput = unifiedToggleInputCoordinator?.computeRenderState().isContentVisible == true
-                newTabPageViewController?.setPromoSurfaceActive(!isCoveredByUnifiedInput)
-            }
-        )
+        suggestionTrayController?.clearKeyboardSelections()
+        suggestionTrayController?.deactivatePromoSurfaceExposure()
+        viewCoordinator.omniBar.showSeparator()
+        viewCoordinator.suggestionTrayContainer.isHidden = true
+        currentTab?.webView.accessibilityElementsHidden = false
     }
 }
 
@@ -6321,7 +6450,7 @@ extension MainViewController: TabDelegate {
         // Hide the NTP synchronously, before any frame is rendered, so its empty-state Dax can't
         // flash before the editing-state transition begins. Restored by NewTabPageViewController
         // on every dismissal path.
-        newTabPageViewController?.setPromoSurfaceVisible(false)
+        newTabPageViewController?.beginChatPathVisibilityTransition()
         newTabPageViewController?.view.alpha = 0
         DispatchQueue.main.async { [weak self] in
             self?.newTabPageViewController?.showDuckAIOnboardingCompletionWithActiveAddressBar(message: message)
@@ -6720,25 +6849,36 @@ extension MainViewController: TabSwitcherDelegate {
 
     private func animateLogoAppearance() {
         guard let newTabPageViewController else { return }
-        let visibilityGeneration = newTabPageViewController.setPromoSurfaceVisible(false)
+        let blockerToken = newTabPageViewController.blockPromoSurfaceVisibility(
+            source: PromoSurfaceBlockerSource("MainViewController.tabSwitcherLogoAppearance")
+        )
         newTabPageViewController.view.transform = CGAffineTransform().scaledBy(x: 0.5, y: 0.5)
         newTabPageViewController.view.alpha = 0.0
         UIView.animate(withDuration: 0.2, delay: 0.1, options: [.curveEaseInOut, .beginFromCurrentState]) {
             newTabPageViewController.view.transform = .identity
             newTabPageViewController.view.alpha = 1.0
-        } completion: { [weak newTabPageViewController] _ in
-            newTabPageViewController?.restorePromoSurfaceVisibility(ifCurrent: visibilityGeneration)
+        } completion: { finished in
+            if !finished {
+                newTabPageViewController.view.transform = .identity
+                newTabPageViewController.view.alpha = 1.0
+            }
+            blockerToken.release()
         }
     }
 
     private func deferNTPAppearance() {
         guard let newTabPageViewController else { return }
-        let visibilityGeneration = newTabPageViewController.setPromoSurfaceVisible(false)
+        let blockerToken = newTabPageViewController.blockPromoSurfaceVisibility(
+            source: PromoSurfaceBlockerSource("MainViewController.tabSwitcherDeferredAppearance")
+        )
         newTabPageViewController.view.alpha = 0.0
         UIView.animate(withDuration: 0.2, delay: 0.2, options: [.curveEaseInOut, .beginFromCurrentState]) {
             newTabPageViewController.view.alpha = 1.0
-        } completion: { [weak newTabPageViewController] _ in
-            newTabPageViewController?.restorePromoSurfaceVisibility(ifCurrent: visibilityGeneration)
+        } completion: { finished in
+            if !finished {
+                newTabPageViewController.view.alpha = 1.0
+            }
+            blockerToken.release()
         }
     }
 

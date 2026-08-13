@@ -442,7 +442,8 @@ final class ModalPromptCoordinationManagerIntegrationTests {
         }
         messagesModel.setSurfaceAttachmentProvider { true }
         messagesModel.load()
-        messagesModel.setSurfaceRenderable(true)
+        service.setSelectedRemoteMessageRendererID(surfaceID)
+        messagesModel.setSurfaceLifecycleReady(true)
 
         #expect(messagesConfiguration.lastRefreshOpenedAfterIdle == true)
         #expect(messagesConfiguration.refreshCallCount == 1)
@@ -498,14 +499,86 @@ final class ModalPromptCoordinationManagerIntegrationTests {
         #expect(renderSession.presentation.session == expectedSession)
         #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .remoteMessage(expectedSession))
 
-        messagesModel.setSurfaceRenderable(false)
+        messagesModel.setSurfaceLifecycleReady(false)
         await waitForMainQueueSettlement()
         #expect(promoQueueLeaseArbiter.snapshot.activeOwner == nil)
     }
 
     @available(iOS 16, *)
+    @Test("Appearance After Renderer Deselection Records No Queue Confirmation Or RMF Accounting", .timeLimit(.minutes(1)))
+    func whenDeselectedRemoteMessagePresentationReportsAppearanceThenAccountingRemainsUnchanged() async {
+        let manager = ModalPromptCoordinationManager(
+            providers: [],
+            cooldownManager: cooldownManager,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            modalPromptScheduling: schedulerMock
+        )
+        let service = PromoCoordinationService(
+            launchSourceManager: MockLaunchSourceManager(),
+            modalPromptCoordinationManager: manager,
+            promoCoordinationMode: .coordinated,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter
+        )
+        service.applicationDidBecomeActive()
+        service.presentModalPromptIfNeeded(
+            from: presenterMock,
+            readinessToken: service.captureForegroundReadinessToken()
+        )
+
+        let surfaceID = UUID()
+        let messageID = "stale-appearance"
+        let fixture = makeRemoteMessageModel(
+            messageID: messageID,
+            surfaceID: surfaceID,
+            coordinator: service
+        )
+        defer {
+            fixture.model.tearDown()
+        }
+        fixture.model.setSurfaceAttachmentProvider { true }
+        fixture.model.load()
+        service.setSelectedRemoteMessageRendererID(surfaceID)
+        fixture.model.setSurfaceLifecycleReady(true)
+
+        guard let renderSession = coordinatedRemoteMessageRenderSession(in: fixture.model) else {
+            Issue.record("Expected the selected renderer to publish a remote-message presentation")
+            return
+        }
+        guard let sessionID = service.remoteMessageCoordinationSnapshot.sessionID else {
+            Issue.record("Expected the selected renderer to own a logical remote-message session")
+            return
+        }
+        let logicalSession = PromoQueueRemoteMessageSession(id: sessionID, messageID: messageID)
+        #expect(fixture.configuration.appearanceCallCount == 0)
+        #expect(!service.remoteMessageCoordinationSnapshot.isQueueAppearanceConfirmed)
+        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .remoteMessage(logicalSession))
+
+        service.setSelectedRemoteMessageRendererID(nil)
+
+        let drainingSnapshot = service.remoteMessageCoordinationSnapshot
+        #expect(drainingSnapshot.state == .draining)
+        #expect(drainingSnapshot.sessionID == sessionID)
+        #expect(!drainingSnapshot.isQueueAppearanceConfirmed)
+        #expect(fixture.model.homeMessageViewModels.isEmpty)
+        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .remoteMessage(logicalSession))
+
+        renderSession.viewModel.onDidAppear()
+
+        #expect(fixture.configuration.appearanceCallCount == 0)
+        #expect(fixture.configuration.lastAppearedHomeMessage == nil)
+        #expect(!service.remoteMessageCoordinationSnapshot.isQueueAppearanceConfirmed)
+        #expect(service.remoteMessageCoordinationSnapshot.isPresentationAppearanceReported == false)
+
+        await waitForMainQueueSettlement()
+
+        #expect(promoQueueLeaseArbiter.snapshot.activeOwner == nil)
+        #expect(fixture.configuration.appearanceCallCount == 0)
+        #expect(fixture.configuration.lastAppearedHomeMessage == nil)
+    }
+
+    @available(iOS 16, *)
     @Test("Two Real NTP Models Handoff The Same Message Only After Exact Removal Settlement", .timeLimit(.minutes(1)))
-    func whenFirstRemoteMessageRendererBecomesIneligibleThenSameMessageSessionTransfersAfterSettlement() async {
+    func whenSelectedRemoteMessageRendererChangesThenSameMessageSessionTransfersAfterSettlement() async {
         let manager = ModalPromptCoordinationManager(
             providers: [],
             cooldownManager: cooldownManager,
@@ -547,8 +620,9 @@ final class ModalPromptCoordinationManagerIntegrationTests {
         secondModel.setSurfaceAttachmentProvider { true }
         firstModel.load()
         secondModel.load()
-        firstModel.setSurfaceRenderable(true)
-        secondModel.setSurfaceRenderable(true)
+        service.setSelectedRemoteMessageRendererID(firstSurfaceID)
+        firstModel.setSurfaceLifecycleReady(true)
+        secondModel.setSurfaceLifecycleReady(true)
 
         let firstOwnedSnapshot = service.remoteMessageCoordinationSnapshot
         guard let firstSessionID = firstOwnedSnapshot.sessionID,
@@ -590,7 +664,7 @@ final class ModalPromptCoordinationManagerIntegrationTests {
         #expect(secondFixture.configuration.appearanceCallCount == 0)
         #expect(service.remoteMessageCoordinationSnapshot.isQueueAppearanceConfirmed)
 
-        firstModel.setSurfaceRenderable(false)
+        service.setSelectedRemoteMessageRendererID(secondSurfaceID)
 
         let drainingSnapshot = service.remoteMessageCoordinationSnapshot
         #expect(drainingSnapshot.state == .draining)
@@ -647,7 +721,7 @@ final class ModalPromptCoordinationManagerIntegrationTests {
 
     @available(iOS 16, *)
     @Test("A Different RMF Message Starts A Fresh Logical Session After Removal Settlement", .timeLimit(.minutes(1)))
-    func whenWaitingRendererHasDifferentMessageThenItReceivesAFreshSessionAfterSettlement() async {
+    func whenSelectedRendererHasDifferentMessageThenItReceivesAFreshSessionAfterSettlement() async {
         let manager = ModalPromptCoordinationManager(
             providers: [],
             cooldownManager: cooldownManager,
@@ -667,14 +741,16 @@ final class ModalPromptCoordinationManagerIntegrationTests {
         )
         let firstMessageID = "first-message"
         let secondMessageID = "second-message"
+        let firstSurfaceID = UUID()
+        let secondSurfaceID = UUID()
         let firstFixture = makeRemoteMessageModel(
             messageID: firstMessageID,
-            surfaceID: UUID(),
+            surfaceID: firstSurfaceID,
             coordinator: service
         )
         let secondFixture = makeRemoteMessageModel(
             messageID: secondMessageID,
-            surfaceID: UUID(),
+            surfaceID: secondSurfaceID,
             coordinator: service
         )
         defer {
@@ -686,8 +762,9 @@ final class ModalPromptCoordinationManagerIntegrationTests {
         secondFixture.model.setSurfaceAttachmentProvider { true }
         firstFixture.model.load()
         secondFixture.model.load()
-        firstFixture.model.setSurfaceRenderable(true)
-        secondFixture.model.setSurfaceRenderable(true)
+        service.setSelectedRemoteMessageRendererID(firstSurfaceID)
+        firstFixture.model.setSurfaceLifecycleReady(true)
+        secondFixture.model.setSurfaceLifecycleReady(true)
 
         guard let firstSessionID = service.remoteMessageCoordinationSnapshot.sessionID else {
             Issue.record("Expected the first message to own a logical session")
@@ -700,7 +777,7 @@ final class ModalPromptCoordinationManagerIntegrationTests {
         #expect(secondFixture.model.homeMessageViewModels.isEmpty)
         #expect(promoQueueLeaseArbiter.snapshot.activeOwner == .remoteMessage(firstLogicalSession))
 
-        firstFixture.model.setSurfaceRenderable(false)
+        service.setSelectedRemoteMessageRendererID(secondSurfaceID)
 
         #expect(service.remoteMessageCoordinationSnapshot.state == .draining)
         #expect(service.remoteMessageCoordinationSnapshot.sessionID == firstSessionID)

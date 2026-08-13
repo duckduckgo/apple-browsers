@@ -25,9 +25,11 @@ import UIKit
 /// by `UnifiedSuggestionsHostConfig` so the host is surface-agnostic. The empty-state logo and fire
 /// screen render inside the view; the host no longer touches `DaxLogoManager`.
 @MainActor
-final class UnifiedSuggestionsHost {
+final class UnifiedSuggestionsHost: NewTabPagePromoSurfaceProviding {
 
     var onContentChanged: (() -> Void)?
+    private(set) var exposedPromoRendererID: UUID?
+    var onPromoSurfaceExposureChanged: (() -> Void)?
 
     private let config: UnifiedSuggestionsHostConfig
     private let listViewModel: SuggestionsListViewModel
@@ -41,8 +43,8 @@ final class UnifiedSuggestionsHost {
     private var cancellables = Set<AnyCancellable>()
     /// Built once on first `.favorites` render; NTP has a heavy init, so don't rebuild per body pass.
     private var cachedFavoritesController: NewTabPageViewController?
-    private var isSurfaceHostActive = false
-    private var isFavoritesContentResolved = false
+    private weak var favoritesAttachmentProbe: UnifiedSuggestionsPromoAttachmentProbeView?
+    private var isHostActive = false
 
     /// Single-host path only: the duck.ai surface's source/VM, attached lazily and detached on
     /// disappear (mirrors the legacy per-host lifecycle). Nil on the old single-surface path.
@@ -51,7 +53,8 @@ final class UnifiedSuggestionsHost {
     private func memoizedFavoritesController() -> NewTabPageViewController? {
         if let cachedFavoritesController { return cachedFavoritesController }
         cachedFavoritesController = config.favoritesProvider()
-        updateFavoritesPromoSurfaceActivity()
+        installFavoritesAttachmentProbeIfNeeded()
+        updateExposedPromoRendererID()
         return cachedFavoritesController
     }
 
@@ -85,14 +88,9 @@ final class UnifiedSuggestionsHost {
         viewModel.$content
             .removeDuplicates()
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] content in
+            .sink { [weak self] _ in
                 guard let self else { return }
-                if case .favorites = content {
-                    isFavoritesContentResolved = true
-                } else {
-                    isFavoritesContentResolved = false
-                }
-                updateFavoritesPromoSurfaceActivity()
+                updateExposedPromoRendererID()
                 onContentChanged?()
             }
             .store(in: &cancellables)
@@ -125,7 +123,7 @@ final class UnifiedSuggestionsHost {
     /// Fire tabs render the fire empty state instead of the Dax logo for the empty (`.logo`) state.
     func setIsFireTab(_ value: Bool) {
         viewModel.setFireTab(value)
-        updateFavoritesPromoSurfaceActivity()
+        updateExposedPromoRendererID()
     }
 
     /// iPhone landscape suppresses the empty state (no room) — matches the unfocused NTP.
@@ -149,9 +147,9 @@ final class UnifiedSuggestionsHost {
         viewModel.prepareForActivation()
     }
 
-    func setPromoSurfaceHostActive(_ isActive: Bool) {
-        isSurfaceHostActive = isActive
-        updateFavoritesPromoSurfaceActivity()
+    func setActive(_ isActive: Bool) {
+        isHostActive = isActive
+        updateExposedPromoRendererID()
     }
 
     func setAdditionalTopInset(_ inset: CGFloat) {
@@ -217,6 +215,8 @@ final class UnifiedSuggestionsHost {
     }
 
     func tearDown() {
+        isHostActive = false
+        setExposedPromoRendererID(nil)
         cancellables.removeAll()
         onContentChanged = nil
         config.source.tearDown()
@@ -226,6 +226,11 @@ final class UnifiedSuggestionsHost {
         hostingController?.view.removeFromSuperview()
         hostingController?.removeFromParent()
         hostingController = nil
+        favoritesAttachmentProbe?.onWindowChanged = nil
+        favoritesAttachmentProbe?.removeFromSuperview()
+        cachedFavoritesController?.tearDownPromoSurface()
+        cachedFavoritesController = nil
+        onPromoSurfaceExposureChanged = nil
     }
 
     // MARK: - Private
@@ -238,11 +243,45 @@ final class UnifiedSuggestionsHost {
             favoritesProvider: { [weak self] in self?.memoizedFavoritesController() })
     }
 
-    private func updateFavoritesPromoSurfaceActivity() {
-        let isActive = isSurfaceHostActive
-            && isFavoritesContentResolved
-            && !viewModel.isFireTab
+    private func installFavoritesAttachmentProbeIfNeeded() {
+        guard favoritesAttachmentProbe == nil,
+              let cachedFavoritesController else { return }
 
-        cachedFavoritesController?.setPromoSurfaceRenderable(isActive)
+        let probe = UnifiedSuggestionsPromoAttachmentProbeView()
+        probe.isHidden = true
+        probe.isUserInteractionEnabled = false
+        probe.onWindowChanged = { [weak self] in
+            self?.updateExposedPromoRendererID()
+        }
+        cachedFavoritesController.view.addSubview(probe)
+        favoritesAttachmentProbe = probe
+    }
+
+    private func updateExposedPromoRendererID() {
+        let rendererID: UUID?
+        if isHostActive,
+           viewModel.isShowingFavorites,
+           !viewModel.isFireTab,
+           cachedFavoritesController?.viewIfLoaded?.window != nil {
+            rendererID = cachedFavoritesController?.promoSurfaceID
+        } else {
+            rendererID = nil
+        }
+        setExposedPromoRendererID(rendererID)
+    }
+
+    private func setExposedPromoRendererID(_ rendererID: UUID?) {
+        guard exposedPromoRendererID != rendererID else { return }
+        exposedPromoRendererID = rendererID
+        onPromoSurfaceExposureChanged?()
+    }
+}
+
+private final class UnifiedSuggestionsPromoAttachmentProbeView: UIView {
+    var onWindowChanged: (() -> Void)?
+
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        onWindowChanged?()
     }
 }

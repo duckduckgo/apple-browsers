@@ -53,7 +53,7 @@ protocol SuggestionTrayDuckAINavigationDelegate: AnyObject {
                                                               onCancel: @escaping () -> Void)
 }
 
-class SuggestionTrayViewController: UIViewController {
+class SuggestionTrayViewController: UIViewController, NewTabPagePromoSurfaceProviding {
 
     weak var backgroundView: CompositeShadowView!
     weak var containerView: UIView!
@@ -89,6 +89,9 @@ class SuggestionTrayViewController: UIViewController {
     /// Fires as the iPad Duck.ai list gains/loses rows, so the owner can show/hide the popover
     /// reactively (the list's content loads asynchronously after the query is set).
     var onPopoverDuckAIContentChanged: ((_ hasContent: Bool) -> Void)?
+
+    private(set) var exposedPromoRendererID: UUID?
+    var onPromoSurfaceExposureChanged: (() -> Void)?
 
     var suggestionFilter: AutocompleteSuggestionFilter = .all {
         didSet { autocompleteController?.suggestionFilter = suggestionFilter }
@@ -205,6 +208,7 @@ class SuggestionTrayViewController: UIViewController {
         let remoteMessagingImageLoader: RemoteMessagingImageLoading
         let remoteMessagingPixelReporter: RemoteMessagingPixelReporting?
         let promoCoordinator: NewTabPagePromoCoordinating
+        let promoSurfaceExposureController: NewTabPagePromoExposureControlling
         let appSettings: AppSettings
         let subscriptionManager: any SubscriptionManager
         let internalUserCommands: URLBasedDebugCommands
@@ -322,10 +326,10 @@ class SuggestionTrayViewController: UIViewController {
 
         switch type {
         case .autocomplete(let query):
-            newTabPage?.setPromoSurfaceRenderable(false)
+            setExposedPromoRendererID(nil)
             displayAutocompleteSuggestions(forQuery: query, animated: animated)
         case .duckAISuggestions:
-            newTabPage?.setPromoSurfaceRenderable(false)
+            setExposedPromoRendererID(nil)
             removeNewTabPage(animated: false)
             setPopoverMode(.duckAI)
         case .favorites:
@@ -343,7 +347,7 @@ class SuggestionTrayViewController: UIViewController {
                     guard let self,
                           contentPresentationGeneration == presentationGeneration,
                           let newTabPage else { return }
-                    newTabPage.setPromoSurfaceRenderable(true)
+                    setExposedPromoRendererID(newTabPage.promoSurfaceID)
                 }
             } else {
                 willRemoveAutocomplete = true
@@ -357,8 +361,8 @@ class SuggestionTrayViewController: UIViewController {
                               contentPresentationGeneration == presentationGeneration,
                               newTabPage === controller else { return }
                         // The cached favorites controller sits below autocomplete during its removal animation.
-                        // Wait for physical removal before allowing it to own the promo slot.
-                        controller.setPromoSurfaceRenderable(true)
+                        // Wait for physical removal before exposing its promo renderer.
+                        setExposedPromoRendererID(controller.promoSurfaceID)
                     }
                     willRemoveAutocomplete = false
                 }
@@ -385,7 +389,13 @@ class SuggestionTrayViewController: UIViewController {
     /// without tearing down its content. Call this before an ancestor hides the tray.
     func deactivatePromoSurfaceExposure() {
         contentPresentationGeneration += 1
-        newTabPage?.setPromoSurfaceRenderable(false)
+        setExposedPromoRendererID(nil)
+    }
+
+    private func setExposedPromoRendererID(_ rendererID: UUID?) {
+        guard exposedPromoRendererID != rendererID else { return }
+        exposedPromoRendererID = rendererID
+        onPromoSurfaceExposureChanged?()
     }
     
     @objc func keyboardMoveSelectionDown() {
@@ -530,6 +540,7 @@ class SuggestionTrayViewController: UIViewController {
             remoteMessagingImageLoader: dependencies.remoteMessagingImageLoader,
             remoteMessagingPixelReporter: dependencies.remoteMessagingPixelReporter,
             promoCoordinator: dependencies.promoCoordinator,
+            promoSurfaceExposureController: dependencies.promoSurfaceExposureController,
             appSettings: dependencies.appSettings,
             faviconsCache: dependencies.faviconsCache,
             subscriptionManager: dependencies.subscriptionManager,
@@ -712,6 +723,13 @@ class SuggestionTrayViewController: UIViewController {
         teardownPopoverDuckAIController()
     }
 
+    /// Explicit owner teardown for a cached favorites renderer. It clears semantic exposure before
+    /// the child is physically removed and deregistered.
+    func tearDownPromoSurfaceProvider() {
+        deactivatePromoSurfaceExposure()
+        removeNewTabPage(animated: false)
+    }
+
     private func teardownPopoverDuckAIController() {
         guard let controller = popoverDuckAIController else { return }
         controller.tearDown()
@@ -809,9 +827,9 @@ class SuggestionTrayViewController: UIViewController {
     }
 
     private func removeNewTabPage(animated: Bool) {
+        setExposedPromoRendererID(nil)
         guard let controller = newTabPage else { return }
         removeController(controller, animated: animated) {
-            controller.setPromoSurfaceRenderable(false)
             controller.tearDownPromoSurface()
         }
         newTabPage = nil

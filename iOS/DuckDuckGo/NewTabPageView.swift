@@ -388,6 +388,9 @@ private func makePreviewMessagesModel(homeMessages: [HomeMessage]) -> NewTabPage
 private final class PreviewNewTabPagePromoCoordinator: NewTabPagePromoCoordinating {
     let promoCoordinationMode = PromoCoordinationMode.legacy
 
+    func setSelectedRemoteMessageRendererID(_ rendererID: UUID?) {
+    }
+
     func registerRemoteMessageRenderer(
         id: UUID,
         target: NewTabPagePromoRendering

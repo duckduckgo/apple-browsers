@@ -137,6 +137,10 @@ final class SuggestionTrayManager: NSObject {
         suggestionTrayViewController?.additionalTopInset = inset
     }
 
+    func tearDownPromoSurfaceProvider() {
+        suggestionTrayViewController?.tearDownPromoSurfaceProvider()
+    }
+
     /// Installs the suggestion tray in the provided container view.
     ///
     /// - Parameter deferAutocompleteReveal: When `true`, the autocomplete surface stays hidden until

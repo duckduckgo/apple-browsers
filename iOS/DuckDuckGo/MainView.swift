@@ -401,7 +401,16 @@ extension MainViewFactory {
         superview.addSubview(coordinator.tabBarContainer)
     }
 
-    final class SuggestionTrayContainer: UIView { }
+    final class SuggestionTrayContainer: UIView {
+        var onVisibilityChanged: (() -> Void)?
+
+        override var isHidden: Bool {
+            didSet {
+                guard isHidden != oldValue else { return }
+                onVisibilityChanged?()
+            }
+        }
+    }
     private func createSuggestionTrayContainer() {
         coordinator.suggestionTrayContainer = SuggestionTrayContainer()
         coordinator.suggestionTrayContainer.isHidden = true
@@ -409,7 +418,16 @@ extension MainViewFactory {
         superview.addSubview(coordinator.suggestionTrayContainer)
     }
 
-    final class UnifiedInputContentContainer: UIView { }
+    final class UnifiedInputContentContainer: UIView {
+        var onVisibilityChanged: (() -> Void)?
+
+        override var isHidden: Bool {
+            didSet {
+                guard isHidden != oldValue else { return }
+                onVisibilityChanged?()
+            }
+        }
+    }
     private func createUnifiedInputContentContainer() {
         coordinator.unifiedInputContentContainer = UnifiedInputContentContainer()
         coordinator.unifiedInputContentContainer.isHidden = true

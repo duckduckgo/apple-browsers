@@ -1903,6 +1903,8 @@
 		B6A7C21A31A1000100F00D01 /* ModalPromptCoordinationManagerPromoQueueTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6A7C21931A1000100F00D01 /* ModalPromptCoordinationManagerPromoQueueTests.swift */; };
 		B6A7C21C31A1000100F00D01 /* ModalPromptRootAttachmentCheckerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6A7C21B31A1000100F00D01 /* ModalPromptRootAttachmentCheckerTests.swift */; };
 		B6A7C21E31A1000100F00D01 /* ModalPromptCoordinationRealUIKitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6A7C21D31A1000100F00D01 /* ModalPromptCoordinationRealUIKitTests.swift */; };
+		B6A7C22031A1000100F00D01 /* NewTabPagePromoExposureController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6A7C22131A1000100F00D01 /* NewTabPagePromoExposureController.swift */; };
+		B6A7C22231A1000100F00D01 /* NewTabPagePromoExposureControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6A7C22331A1000100F00D01 /* NewTabPagePromoExposureControllerTests.swift */; };
 		B6AD9E3728D4510A0019CDE9 /* ContentBlockingUpdatingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6AD9E3528D4510A0019CDE9 /* ContentBlockingUpdatingTests.swift */; };
 		B6AD9E3828D4512E0019CDE9 /* EmbeddedTrackerDataTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9801F08927E4B21100191874 /* EmbeddedTrackerDataTests.swift */; };
 		B6BA95C328891E33004ABA20 /* BrowsingMenuAnimator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6BA95C228891E33004ABA20 /* BrowsingMenuAnimator.swift */; };
@@ -4762,6 +4764,8 @@
 		B6A7C21931A1000100F00D01 /* ModalPromptCoordinationManagerPromoQueueTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModalPromptCoordinationManagerPromoQueueTests.swift; sourceTree = "<group>"; };
 		B6A7C21B31A1000100F00D01 /* ModalPromptRootAttachmentCheckerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModalPromptRootAttachmentCheckerTests.swift; sourceTree = "<group>"; };
 		B6A7C21D31A1000100F00D01 /* ModalPromptCoordinationRealUIKitTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModalPromptCoordinationRealUIKitTests.swift; sourceTree = "<group>"; };
+		B6A7C22131A1000100F00D01 /* NewTabPagePromoExposureController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPagePromoExposureController.swift; sourceTree = "<group>"; };
+		B6A7C22331A1000100F00D01 /* NewTabPagePromoExposureControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPagePromoExposureControllerTests.swift; sourceTree = "<group>"; };
 		B6AD9E3528D4510A0019CDE9 /* ContentBlockingUpdatingTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ContentBlockingUpdatingTests.swift; sourceTree = "<group>"; };
 		B6BA95C228891E33004ABA20 /* BrowsingMenuAnimator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowsingMenuAnimator.swift; sourceTree = "<group>"; };
 		B772933186CDFE9E9DDBD2BF /* FileCorruptErrorViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileCorruptErrorViewController.swift; sourceTree = "<group>"; };
@@ -8883,6 +8887,7 @@
 				9F0B19B62EA5E740001FA867 /* ModalPromptCoordinationManager.swift */,
 				B6A7C21131A1000100F00D01 /* PromoCoordinationMode.swift */,
 				B6A7C21331A1000100F00D01 /* NewTabPagePromoCoordination.swift */,
+				B6A7C22131A1000100F00D01 /* NewTabPagePromoExposureController.swift */,
 			);
 			path = ModalPromptCoordination;
 			sourceTree = "<group>";
@@ -9214,6 +9219,7 @@
 				B6A7C21B31A1000100F00D01 /* ModalPromptRootAttachmentCheckerTests.swift */,
 				B6A7C21D31A1000100F00D01 /* ModalPromptCoordinationRealUIKitTests.swift */,
 				B6A7C20431A1000100F00D01 /* PromoQueueLeaseArbiterTests.swift */,
+				B6A7C22331A1000100F00D01 /* NewTabPagePromoExposureControllerTests.swift */,
 			);
 			path = ModalPromptCoordination;
 			sourceTree = "<group>";
@@ -14273,6 +14279,7 @@
 				9F0B19B72EA5E74F001FA867 /* ModalPromptCoordinationManager.swift in Sources */,
 				B6A7C21231A1000100F00D01 /* PromoCoordinationMode.swift in Sources */,
 				B6A7C21431A1000100F00D01 /* NewTabPagePromoCoordination.swift in Sources */,
+				B6A7C22031A1000100F00D01 /* NewTabPagePromoExposureController.swift in Sources */,
 				B6A7C21631A1000100F00D01 /* ModalPromptRootAttachmentChecker.swift in Sources */,
 				B6A7C20231A1000100F00D01 /* PromoQueueLeaseArbiter.swift in Sources */,
 				CBD4F13C279EBF4A00B20FD7 /* HomeMessage.swift in Sources */,
@@ -14904,6 +14911,7 @@
 				B6A7C21C31A1000100F00D01 /* ModalPromptRootAttachmentCheckerTests.swift in Sources */,
 				B6A7C21E31A1000100F00D01 /* ModalPromptCoordinationRealUIKitTests.swift in Sources */,
 				B6A7C20531A1000100F00D01 /* PromoQueueLeaseArbiterTests.swift in Sources */,
+				B6A7C22231A1000100F00D01 /* NewTabPagePromoExposureControllerTests.swift in Sources */,
 				B6A7C20A31A1000100F00D01 /* PromoPresentationCoordinationFeatureFlagTests.swift in Sources */,
 				98E5631D2DE8AF3100E6E75F /* CoreDataTestUtilities.swift in Sources */,
 				9F3361BC2F2B394700E0C21A /* ContextualOnboardingDelegateMock.swift in Sources */,

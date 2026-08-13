@@ -65,6 +65,16 @@ enum PromoQueueRemoteMessageDrainContinuationSnapshot: Equatable {
     case endSession
 }
 
+struct PromoQueueRemoteMessageRendererSnapshot: Equatable {
+    let rendererID: UUID
+    let registrationGenerationID: UUID
+    let candidate: PromoQueueRemoteMessageCandidateState
+    let isLocallyReady: Bool
+    let isAttachedToWindow: Bool
+    let isEffectivelyEligible: Bool
+    let isDeregistered: Bool
+}
+
 /// Read-only projection of the service-owned RMF state for focused tests and later debug UI integration.
 struct PromoQueueRemoteMessageCoordinationSnapshot: Equatable {
     let state: PromoQueueRemoteMessageLogicalStateSnapshot
@@ -78,6 +88,8 @@ struct PromoQueueRemoteMessageCoordinationSnapshot: Equatable {
     let removalID: UUID?
     let removalTerminal: PromoQueueRemoteMessageRemovalTerminal?
     let drainContinuation: PromoQueueRemoteMessageDrainContinuationSnapshot?
+    let selectedRemoteMessageRendererID: UUID?
+    let renderers: [PromoQueueRemoteMessageRendererSnapshot]
     let registeredRendererCount: Int
     let eligibleRendererCount: Int
 }
@@ -98,7 +110,7 @@ final class PromoCoordinationService {
         let stableOrder: UInt64
         weak var target: NewTabPagePromoRendering?
         var candidate = PromoQueueRemoteMessageCandidateState.none
-        var isEligible = false
+        var isLocallyReady = false
         var isDeregistered = false
 
         init(
@@ -166,6 +178,7 @@ final class PromoCoordinationService {
     private var needsRemoteMessageReconciliation = false
     private var scheduledRemoteMessageSettlementRemovalID: UUID?
     private var remoteMessageRemovalReadyForSettlementID: UUID?
+    private var selectedRemoteMessageRendererID: UUID?
     private var isApplicationActive = false
     private var isWaitingForForegroundInteractionReadiness = true
     private var foregroundReadinessToken = PromoCoordinationForegroundReadinessToken()
@@ -174,11 +187,22 @@ final class PromoCoordinationService {
     let promoCoordinationMode: PromoCoordinationMode
 
     var remoteMessageCoordinationSnapshot: PromoQueueRemoteMessageCoordinationSnapshot {
+        let rendererSnapshots = remoteMessageRendererRegistrations
+            .sorted { $0.stableOrder < $1.stableOrder }
+            .map { registration in
+                PromoQueueRemoteMessageRendererSnapshot(
+                    rendererID: registration.identity.rendererID,
+                    registrationGenerationID: registration.identity.generationID,
+                    candidate: registration.candidate,
+                    isLocallyReady: registration.isLocallyReady,
+                    isAttachedToWindow: registration.target?.isRemoteMessageRendererAttachedToWindow == true,
+                    isEffectivelyEligible: isEffectivelyEligible(registration),
+                    isDeregistered: registration.isDeregistered
+                )
+            }
         let registeredRendererCount = remoteMessageRendererRegistrations.count
         let eligibleRendererCount = remoteMessageRendererRegistrations.filter { registration in
-            guard !registration.isDeregistered,
-                  registration.isEligible,
-                  registration.target != nil,
+            guard isEffectivelyEligible(registration),
                   case .available = registration.candidate else {
                 return false
             }
@@ -199,6 +223,8 @@ final class PromoCoordinationService {
                 removalID: nil,
                 removalTerminal: nil,
                 drainContinuation: nil,
+                selectedRemoteMessageRendererID: selectedRemoteMessageRendererID,
+                renderers: rendererSnapshots,
                 registeredRendererCount: registeredRendererCount,
                 eligibleRendererCount: eligibleRendererCount
             )
@@ -215,6 +241,8 @@ final class PromoCoordinationService {
                 removalID: nil,
                 removalTerminal: nil,
                 drainContinuation: nil,
+                selectedRemoteMessageRendererID: selectedRemoteMessageRendererID,
+                renderers: rendererSnapshots,
                 registeredRendererCount: registeredRendererCount,
                 eligibleRendererCount: eligibleRendererCount
             )
@@ -231,6 +259,8 @@ final class PromoCoordinationService {
                 removalID: drainingState.removalID,
                 removalTerminal: drainingState.acceptedRemovalTerminal,
                 drainContinuation: drainingState.continuation.snapshot,
+                selectedRemoteMessageRendererID: selectedRemoteMessageRendererID,
+                renderers: rendererSnapshots,
                 registeredRendererCount: registeredRendererCount,
                 eligibleRendererCount: eligibleRendererCount
             )
@@ -418,7 +448,7 @@ final class PromoCoordinationService {
     private func updateRemoteMessageRenderer(
         identity: RemoteMessageRegistrationIdentity,
         candidate: PromoQueueRemoteMessageCandidateState,
-        isEligible: Bool
+        isLocallyReady: Bool
     ) {
         guard let registration = remoteMessageRendererRegistration(matching: identity),
               !registration.isDeregistered else {
@@ -426,7 +456,7 @@ final class PromoCoordinationService {
         }
 
         registration.candidate = candidate
-        registration.isEligible = isEligible
+        registration.isLocallyReady = isLocallyReady
         requestRemoteMessageReconciliation()
     }
 
@@ -442,8 +472,7 @@ final class PromoCoordinationService {
               ownedState.registrationIdentity == registrationIdentity,
               !ownedState.isCurrentPresentationAppearanceReported,
               let registration = remoteMessageRendererRegistration(matching: registrationIdentity),
-              !registration.isDeregistered,
-              registration.isEligible,
+              isEffectivelyEligible(registration),
               case .available(let messageID) = registration.candidate,
               messageID == ownedState.logicalSession.identity.messageID,
               isAttachedToWindow,
@@ -524,7 +553,7 @@ final class PromoCoordinationService {
         }
 
         registration.isDeregistered = true
-        registration.isEligible = false
+        registration.isLocallyReady = false
         if !remoteMessageStateReferences(registration.identity) {
             removeRemoteMessageRendererRegistration(matching: identity)
         }
@@ -668,7 +697,7 @@ final class PromoCoordinationService {
         let continuation: RemoteMessageDrainContinuation?
         switch registration.candidate {
         case .available(let messageID) where messageID == ownedState.logicalSession.identity.messageID:
-            continuation = registration.isEligible && !registration.isDeregistered ? nil : .transferSameMessageIfAvailable
+            continuation = isEffectivelyEligible(registration) ? nil : .transferSameMessageIfAvailable
         case .available, .none, .unrenderable:
             continuation = .endSession
         }
@@ -767,9 +796,7 @@ final class PromoCoordinationService {
     private func firstEligibleRemoteMessageRenderer() -> WeakRemoteMessageRendererRegistration? {
         remoteMessageRendererRegistrations
             .filter { registration in
-                guard !registration.isDeregistered,
-                      registration.isEligible,
-                      registration.target != nil else {
+                guard isEffectivelyEligible(registration) else {
                     return false
                 }
                 guard case .available = registration.candidate else {
@@ -786,9 +813,7 @@ final class PromoCoordinationService {
     ) -> WeakRemoteMessageRendererRegistration? {
         remoteMessageRendererRegistrations
             .filter { registration in
-                guard !registration.isDeregistered,
-                      registration.isEligible,
-                      registration.target != nil,
+                guard isEffectivelyEligible(registration),
                       !excludingGenerationIDs.contains(registration.identity.generationID),
                       case .available(let candidateMessageID) = registration.candidate else {
                     return false
@@ -796,6 +821,13 @@ final class PromoCoordinationService {
                 return candidateMessageID == messageID
             }
             .min { $0.stableOrder < $1.stableOrder }
+    }
+
+    private func isEffectivelyEligible(_ registration: WeakRemoteMessageRendererRegistration) -> Bool {
+        !registration.isDeregistered
+            && registration.isLocallyReady
+            && registration.identity.rendererID == selectedRemoteMessageRendererID
+            && registration.target != nil
     }
 
     private func remoteMessageRendererRegistration(
@@ -836,6 +868,16 @@ final class PromoCoordinationService {
 }
 
 extension PromoCoordinationService: NewTabPagePromoCoordinating {
+    func setSelectedRemoteMessageRendererID(_ rendererID: UUID?) {
+        guard promoCoordinationMode == .coordinated,
+              selectedRemoteMessageRendererID != rendererID else {
+            return
+        }
+
+        selectedRemoteMessageRendererID = rendererID
+        requestRemoteMessageReconciliation()
+    }
+
     func registerRemoteMessageRenderer(
         id rendererID: UUID,
         target: NewTabPagePromoRendering
@@ -846,7 +888,7 @@ extension PromoCoordinationService: NewTabPagePromoCoordinating {
 
         for registration in remoteMessageRendererRegistrations where registration.identity.rendererID == rendererID {
             registration.isDeregistered = true
-            registration.isEligible = false
+            registration.isLocallyReady = false
         }
         removeUnusedRemoteMessageRendererRegistrations()
 
@@ -864,11 +906,11 @@ extension PromoCoordinationService: NewTabPagePromoCoordinating {
         requestRemoteMessageReconciliation()
 
         return NewTabPagePromoRendererRegistration(
-            updateHandler: { [weak self] candidate, isEligible in
+            updateHandler: { [weak self] candidate, isLocallyReady in
                 self?.updateRemoteMessageRenderer(
                     identity: identity,
                     candidate: candidate,
-                    isEligible: isEligible
+                    isLocallyReady: isLocallyReady
                 )
             },
             appearanceHandler: { [weak self] sessionID, presentationID, isAttachedToWindow in

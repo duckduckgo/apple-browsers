@@ -914,28 +914,14 @@ extension MainViewController {
         )
 
         if renderState.isContentVisible {
-            NewTabPagePromoSurfaceHandoff.showHostedSurface(
-                deactivateNewTabPage: {
-                    newTabPageViewController?.setPromoSurfaceActive(false)
-                },
-                showHostedSurface: {
-                    coordinator.contentViewController.setActive(true)
-                    coordinator.syncContentInputMode(renderState.contentInputMode, animated: false)
-                    coordinator.pushContentInsets()
-                    viewCoordinator.showUnifiedInputContent()
-                    coordinator.contentViewController.refreshVisibleContentIfNeeded()
-                }
-            )
+            coordinator.contentViewController.setActive(true)
+            coordinator.syncContentInputMode(renderState.contentInputMode, animated: false)
+            coordinator.pushContentInsets()
+            viewCoordinator.showUnifiedInputContent()
+            coordinator.contentViewController.refreshVisibleContentIfNeeded()
         } else {
-            NewTabPagePromoSurfaceHandoff.showNewTabPage(
-                hideHostedSurface: {
-                    coordinator.contentViewController.setActive(false)
-                    viewCoordinator.hideUnifiedInputContent()
-                },
-                activateNewTabPage: {
-                    newTabPageViewController?.setPromoSurfaceActive(viewCoordinator.suggestionTrayContainer.isHidden)
-                }
-            )
+            coordinator.contentViewController.setActive(false)
+            viewCoordinator.hideUnifiedInputContent()
         }
 
         if isOnAITab {
@@ -974,6 +960,9 @@ extension MainViewController {
         contentVC.onSwipeDownRequested = { [weak self] in
             guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
             coordinator.dismissOmnibarKeyboard()
+        }
+        contentVC.onPromoSurfaceExposureChanged = { [weak self] in
+            self?.reconcileNewTabPagePromoExposure()
         }
 
         addChild(contentVC)

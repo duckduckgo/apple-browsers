@@ -55,16 +55,8 @@ protocol ContextualOnboardingStateUpdater: AnyObject {
     var state: ContextualOnboardingState { get set }
     var isContextualOnboardingCompletedPublisher: Published<Bool>.Publisher { get }
     func gotItPressed()
-    func manuallyDismissedDialog()
     func fireButtonUsed()
     func turnOffFeature()
-}
-
-extension ContextualOnboardingStateUpdater {
-
-    func manuallyDismissedDialog() {
-        gotItPressed()
-    }
 }
 
 /// Protocol for storing onboarding state data.
@@ -180,13 +172,6 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
         default:
             break
         }
-    }
-
-    func manuallyDismissedDialog() {
-        if lastDialog == .highFive, subscriptionUpsellExperiment.cohort == .treatment {
-            return
-        }
-        gotItPressed()
     }
 
     // Enrol on entering highFive, not on leaving it, so every exit resolves against the same cohort.

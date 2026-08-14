@@ -132,7 +132,6 @@ struct FireDialogView: ModalView {
         return count > 0 ? UserText.fireDialogChatsCountDetail(count) : UserText.none
     }
 
-
     var body: some View {
         ZStack {
             VStack(spacing: 24) {

@@ -253,7 +253,7 @@ struct FireDialogView: ModalView {
         .frame(width: Constants.viewSize.width, height: viewHeight, alignment: .top)
         .background(Color(designSystemColor: .surfacePrimary, palette: themeManager.designColorPalette))
         .accessibilityElement(children: .contain)
-        .accessibilityLabel(viewModel.mode.dialogTitle)
+        .accessibilityLabel(viewModel.dialogTitle)
     }
 
     private var moreOptionsMenuDotsIcon: some View {
@@ -351,7 +351,7 @@ struct FireDialogView: ModalView {
                 .frame(width: 72, height: 72)
                 .padding(.top, 8)
 
-            Text(viewModel.mode.dialogTitle)
+            Text(viewModel.dialogTitle)
                 .multilineText()
                 .multilineTextAlignment(.center)
                 .font(.system(size: 15).weight(.semibold))

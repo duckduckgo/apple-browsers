@@ -87,7 +87,11 @@ final class FireViewController: NSViewController {
     }()
 
     private lazy var progressIndicatorBackgroundView: ColorView = {
-        let view = ColorView(frame: .zero, backgroundColor: .init(designSystemColor: .surfacePrimary, palette: themeManager.designColorPalette))
+        // The legacy dialog keeps its fixed background color, which its design was made for.
+        let backgroundColor: NSColor = featureFlagger.isFeatureOn(.fireDialogSimplified)
+            ? .init(designSystemColor: .surfacePrimary, palette: themeManager.designColorPalette)
+            : .newTabPageBackground
+        let view = ColorView(frame: .zero, backgroundColor: backgroundColor)
         view.translatesAutoresizingMaskIntoConstraints = false
         view.cornerRadius = featureFlagger.isFeatureOn(.fireDialogSimplified) ? 24 : 8
         return view

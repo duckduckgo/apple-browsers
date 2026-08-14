@@ -226,6 +226,17 @@ final class FireDialogViewModel: ObservableObject {
 
     private(set) var shouldShowPinnedTabsInfo: Bool = false
 
+    /// Title of the dialog.
+    ///
+    /// The history item count title belongs to the new dialog only, so the legacy dialog keeps
+    /// the generic title it was designed with.
+    var dialogTitle: String {
+        if case .historyView(query: .visits) = mode, !featureFlagger.isFeatureOn(.fireDialogSimplified) {
+            return UserText.fireDialogTitle
+        }
+        return mode.dialogTitle
+    }
+
     var shouldShowChatHistoryToggle: Bool {
         let isPresentedOnAIChatTab = tabCollectionViewModel?.selectedTab?.url?.isDuckAIURL ?? false
         // Only hide chats toggle when no chats in the new dialog, so default this to `true` when the flag is off.

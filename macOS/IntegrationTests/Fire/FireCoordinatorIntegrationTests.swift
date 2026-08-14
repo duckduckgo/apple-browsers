@@ -3165,7 +3165,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
                         XCTAssertEqual(config.viewModel.mode.shouldShowSegmentedControl, expected.showSegmentedControl, "showSegmentedControl", file: expected.file, line: expected.line + 3)
                         XCTAssertEqual(config.viewModel.mode.shouldShowCloseTabsToggle, expected.showCloseWindowsAndTabsToggle, "showCloseWindowsAndTabsToggle", file: expected.file, line: expected.line + 4)
                         XCTAssertEqual(config.viewModel.mode.shouldShowFireproofSection, expected.showFireproofSection, "showFireproofSection", file: expected.file, line: expected.line + 5)
-                        XCTAssertEqual(config.viewModel.mode.dialogTitle, expected.customTitle, "customTitle", file: expected.file, line: expected.line + 6)
+                        XCTAssertEqual(config.viewModel.dialogTitle, expected.customTitle, "customTitle", file: expected.file, line: expected.line + 6)
                         XCTAssertEqual(config.showIndividualSitesLink, expected.showIndividualSitesLink, "showIndividualSitesLink", file: expected.file, line: expected.line + 7)
                         XCTAssertEqual(config.viewModel.clearingOption, expected.expectedClearingOption, "clearingOption", file: expected.file, line: expected.line + 8)
                         XCTAssertEqual(config.viewModel.includeTabsAndWindows, expected.expectedIncludeTabsAndWindows, "includeTabsAndWindows", file: expected.file, line: expected.line + 9)

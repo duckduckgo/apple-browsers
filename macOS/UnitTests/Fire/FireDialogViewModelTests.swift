@@ -2372,6 +2372,48 @@ final class FireDialogViewModelTests: XCTestCase {
         XCTAssertEqual(mode.dialogTitle, UserText.fireDialogHistoryItemsTitle(0))
     }
 
+    @MainActor func testWhenSimplifiedDialogIsOff_ThenSelectedVisitsKeepTheGenericDialogTitle() {
+        // Scenario: The user deletes selected history items while the simplified dialog is off.
+        // Expectation: The legacy dialog keeps the generic title. The history item count title
+        // belongs to the new dialog only.
+
+        let mode = FireDialogViewModel.Mode.historyView(query: .visits([
+            makeVisitIdentifier(url: "https://example.com"),
+            makeVisitIdentifier(url: "https://duckduckgo.com")
+        ]))
+
+        let viewModel = makeViewModel(settings: MockFireDialogViewSettings(), mode: mode, isFireDialogSimplified: false)
+
+        XCTAssertEqual(viewModel.dialogTitle, UserText.fireDialogTitle)
+    }
+
+    @MainActor func testWhenSimplifiedDialogIsOn_ThenSelectedVisitsShowTheNumberOfItems() {
+        // Scenario: The user deletes selected history items while the simplified dialog is on.
+        // Expectation: The dialog title shows how many items are deleted.
+
+        let mode = FireDialogViewModel.Mode.historyView(query: .visits([
+            makeVisitIdentifier(url: "https://example.com"),
+            makeVisitIdentifier(url: "https://duckduckgo.com")
+        ]))
+
+        let viewModel = makeViewModel(settings: MockFireDialogViewSettings(), mode: mode, isFireDialogSimplified: true)
+
+        XCTAssertEqual(viewModel.dialogTitle, UserText.fireDialogHistoryItemsTitle(2))
+    }
+
+    @MainActor func testDialogTitleOfOtherModesDoesNotDependOnTheSimplifiedDialogFlag() {
+        // Scenario: Any mode other than a history item selection.
+        // Expectation: Both dialogs show the title of the mode, so the flag changes nothing.
+
+        for mode in Self.modesWithVisitsToggle {
+            let legacy = makeViewModel(settings: MockFireDialogViewSettings(), mode: mode, isFireDialogSimplified: false)
+            XCTAssertEqual(legacy.dialogTitle, mode.dialogTitle, "\(mode)")
+
+            let simplified = makeViewModel(settings: MockFireDialogViewSettings(), mode: mode, isFireDialogSimplified: true)
+            XCTAssertEqual(simplified.dialogTitle, mode.dialogTitle, "\(mode)")
+        }
+    }
+
     @MainActor func testDialogTitlesOfOtherHistoryViewModesAreUnchanged() {
         // Scenario: The other History view entry points.
         // Expectation: Their titles keep using the History view delete dialog titles.
@@ -2546,7 +2588,8 @@ final class FireDialogViewModelTests: XCTestCase {
 
     @MainActor
     private func makeViewModel(settings: any KeyedStoring<FireDialogViewSettings>,
-                               mode: FireDialogViewModel.Mode = .fireButton) -> FireDialogViewModel {
+                               mode: FireDialogViewModel.Mode = .fireButton,
+                               isFireDialogSimplified: Bool = false) -> FireDialogViewModel {
         FireDialogViewModel(
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
@@ -2554,7 +2597,7 @@ final class FireDialogViewModelTests: XCTestCase {
             aiChatHistoryCleaner: MockAIChatHistoryCleaner(showCleanOption: true),
             fireproofDomains: fireproofDomains,
             faviconManagement: fire.faviconManagement,
-            featureFlagger: MockFeatureFlagger(),
+            featureFlagger: MockFeatureFlagger(featuresStub: [FeatureFlag.fireDialogSimplified.rawValue: isFireDialogSimplified]),
             mode: mode,
             settings: settings,
             tld: TLD(),

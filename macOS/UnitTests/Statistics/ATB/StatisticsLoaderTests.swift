@@ -20,6 +20,7 @@ import XCTest
 import OHHTTPStubs
 import OHHTTPStubsSwift
 import PixelExperimentKit
+import PrivacyConfig
 @testable import PixelKit
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -30,6 +31,7 @@ class StatisticsLoaderTests: XCTestCase {
     private var testee: StatisticsLoader!
     private var fireAppRetentionExperimentPixelsCalled = false
     private var fireSearchExperimentPixelsCalled = false
+    private var fireDuckAISearchExperimentPixelsCalled = false
     private var fireNewAIPromptExperimentPixelsCalled = false
     var pixelKit: PixelKit! = PixelKit(dryRun: true,
                                        appVersion: "1.0.0",
@@ -47,6 +49,7 @@ class StatisticsLoaderTests: XCTestCase {
                                   dockCustomization: DockCustomizerMock(),
                                   fireAppRetentionExperimentPixels: { self.fireAppRetentionExperimentPixelsCalled = true },
                                   fireSearchExperimentPixels: { self.fireSearchExperimentPixelsCalled = true },
+                                  fireDuckAISearchExperimentPixels: { self.fireDuckAISearchExperimentPixelsCalled = true },
                                   fireNewAIPromptExperimentPixels: { self.fireNewAIPromptExperimentPixelsCalled = true })
     }
 
@@ -58,6 +61,7 @@ class StatisticsLoaderTests: XCTestCase {
         testee = nil
         fireAppRetentionExperimentPixelsCalled = false
         fireSearchExperimentPixelsCalled = false
+        fireDuckAISearchExperimentPixelsCalled = false
         fireNewAIPromptExperimentPixelsCalled = false
         pixelKit = nil
     }
@@ -618,19 +622,47 @@ class StatisticsLoaderTests: XCTestCase {
         waitForExpectations(timeout: 1, handler: nil)
     }
 
-    func testWhenDuckAIPromptSubmitted_ThenSearchExperimentPixelsFired() {
+    func testWhenDuckAIPromptSubmitted_ThenDuckAIScopedSearchExperimentPixelsFired() {
         mockStatisticsStore.atb = "atb"
         mockStatisticsStore.searchRetentionAtb = "searchRetentionAtb"
         mockStatisticsStore.duckAIRetentionAtb = "duckAIRetentionAtb"
         loadSuccessfulUpdateAtbStub()
 
-        let expect = expectation(description: "DuckAI prompt submission fires search experiment pixels")
+        // A Duck.ai prompt fires the search experiment metric via the Duck.ai-scoped path, which excludes
+        // experiments already running so their search definition doesn't shift mid-flight. It must NOT go
+        // through the generic fireSearchExperimentPixels, which would count Duck.ai for every active experiment.
+        let expect = expectation(description: "DuckAI prompt submission fires the Duck.ai-scoped search experiment pixels")
         testee.refreshRetentionAtbOnDuckAiPromptSubmition {
-            XCTAssertTrue(self.fireSearchExperimentPixelsCalled)
+            XCTAssertTrue(self.fireDuckAISearchExperimentPixelsCalled)
+            XCTAssertFalse(self.fireSearchExperimentPixelsCalled)
             expect.fulfill()
         }
 
         waitForExpectations(timeout: 1, handler: nil)
+    }
+
+    func testFireSearchExperimentPixelsForDuckAIEligibleExperiments_ExcludesGrandfatheredExperiments() {
+        // GIVEN a grandfathered experiment and a newer one, both freshly enrolled (day 0 fires the 0...0 window)
+        var firedEventNames = [String]()
+        let grandfatheredID = StatisticsLoader.experimentsExcludedFromDuckAISearchMetric.first!
+        let newExperimentID = "someNewDuckAIEligibleExperiment"
+        let flagger = MockFeatureFlagger()
+        flagger.allActiveExperiments = [
+            grandfatheredID: ExperimentData(parentID: "parent", cohortID: "control", enrollmentDate: Date()),
+            newExperimentID: ExperimentData(parentID: "parent", cohortID: "control", enrollmentDate: Date())
+        ]
+        PixelKit.configureExperimentKit(
+            featureFlagger: flagger,
+            eventTracker: ExperimentEventTracker(store: MockExperimentActionPixelStore()),
+            fire: { event, _, _ in firedEventNames.append(event.name) }
+        )
+
+        // WHEN
+        StatisticsLoader.fireSearchExperimentPixelsForDuckAIEligibleExperiments(featureFlagger: flagger)
+
+        // THEN the newer experiment counts the Duck.ai prompt as search; the grandfathered one does not
+        XCTAssertTrue(firedEventNames.contains { $0.contains(newExperimentID) })
+        XCTAssertFalse(firedEventNames.contains { $0.contains(grandfatheredID) })
     }
 
     func testWhenDuckAIRefreshCalledWhileAnotherIsInProgressThenSecondCallIsIgnored() {

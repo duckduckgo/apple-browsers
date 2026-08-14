@@ -51,12 +51,8 @@ enum SerpSearchTokenInterceptor {
     /// address bar, bookmarks/favorites, and copied/shared links. The token is experiment plumbing
     /// bound to the live network request only; call this anywhere the current URL is shown to or
     /// persisted for the user.
-    ///
-    /// Gated on `isExperimentActive` (the treatment cohort — the only case where a token can be present)
-    /// so the logic is a no-op for everyone else.
-    static func strippingToken(from url: URL, isExperimentActive: Bool) -> URL {
-        guard isExperimentActive else { return url }
-        return url.getParameter(named: tokenParam) == nil ? url : url.removingParameters(named: [tokenParam])
+    static func strippingToken(from url: URL) -> URL {
+        url.getParameter(named: tokenParam) == nil ? url : url.removingParameters(named: [tokenParam])
     }
 
     /// Returns a copy of `request` with the experiment signals applied, or `nil` when the

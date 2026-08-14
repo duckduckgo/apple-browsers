@@ -98,9 +98,9 @@ final class SerpSearchTokenInterceptorTests: XCTestCase {
     
     // MARK: - strippingToken
 
-    func testStrippingToken_removesTokenParam_whenExperimentActive() {
+    func testStrippingToken_removesTokenParam() {
         let url = URL(string: "https://duckduckgo.com/?q=privacy&dindexexp=b&dindextoken=abc")!
-        let out = SerpSearchTokenInterceptor.strippingToken(from: url, isExperimentActive: true)
+        let out = SerpSearchTokenInterceptor.strippingToken(from: url)
         XCTAssertNil(out.getParameter(named: "dindextoken"))
         XCTAssertEqual(out.getParameter(named: "q"), "privacy")
         XCTAssertEqual(out.getParameter(named: "dindexexp"), "b")
@@ -108,12 +108,7 @@ final class SerpSearchTokenInterceptorTests: XCTestCase {
 
     func testStrippingToken_noOpWhenAbsent() {
         let url = URL(string: "https://duckduckgo.com/?q=privacy&dindexexp=b")!
-        XCTAssertEqual(SerpSearchTokenInterceptor.strippingToken(from: url, isExperimentActive: true), url)
-    }
-
-    func testStrippingToken_noOpWhenExperimentInactive() {
-        let url = URL(string: "https://duckduckgo.com/?q=privacy&dindexexp=b&dindextoken=abc")!
-        XCTAssertEqual(SerpSearchTokenInterceptor.strippingToken(from: url, isExperimentActive: false), url)
+        XCTAssertEqual(SerpSearchTokenInterceptor.strippingToken(from: url), url)
     }
 
     // MARK: - Helpers

@@ -65,11 +65,13 @@ enum SyncSettingsPixelKitEvent: PixelKit.Event {
 
     case anotherDevicePromptShown
     case anotherDevicePromptOptionTapped(option: AnotherDevicePromptOption)
+    case authenticationCancelledPromptShown
 
     var name: String {
         switch self {
         case .anotherDevicePromptShown: return "settings_sync_another_device_prompt_shown"
         case .anotherDevicePromptOptionTapped: return "settings_sync_another_device_prompt_option_tapped"
+        case .authenticationCancelledPromptShown: return "settings_sync_authentication_cancelled_prompt_shown"
         }
     }
 
@@ -79,13 +81,16 @@ enum SyncSettingsPixelKitEvent: PixelKit.Event {
             return nil
         case .anotherDevicePromptOptionTapped(let option):
             return [ParameterKey.syncPromptOption: option.rawValue]
+        case .authenticationCancelledPromptShown:
+            return nil
         }
     }
 
     var standardParameters: [PixelKitStandardParameter]? {
         switch self {
         case .anotherDevicePromptShown,
-                .anotherDevicePromptOptionTapped:
+                .anotherDevicePromptOptionTapped,
+                .authenticationCancelledPromptShown:
             return [.pixelSource]
         }
     }

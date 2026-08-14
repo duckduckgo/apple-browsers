@@ -31,20 +31,19 @@ struct SyncDialogV2<Content, Buttons>: View where Content: View, Buttons: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: spacing) {
             content()
-                .padding(.horizontal, 20.0)
                 .padding(.bottom, spacing)
 
             HStack {
                 buttons()
             }
-            .padding(.vertical, 16)
         }
-        .padding()
-        .frame(minWidth: 420, idealHeight: 314)
+        .padding(20.0)
+        .frame(width: 420)
         .background(
             Color(designSystemColor: .surfaceSecondary)
         )
+        .fixedSize()
     }
 }

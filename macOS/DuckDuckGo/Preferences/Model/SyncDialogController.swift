@@ -28,6 +28,7 @@ import SystemConfiguration
 import SyncUI_macOS
 import SwiftUI
 import Navigation
+import Persistence
 import PixelKit
 import os.log
 import PrivacyConfig
@@ -81,7 +82,13 @@ final class SyncDialogController {
     private let syncPausedStateManager: any SyncPausedStateManaging
     private let featureFlagger: FeatureFlagger
     private let pixelFiring: PixelFiring?
+    private let keyValueStore: KeyValueStoring
     private let diagnosisHelper: SyncDiagnosisHelper
+
+    private enum Constants {
+        static let authenticationCancelledPromptCountKey = "sync.authentication-cancelled-prompt.presented-count"
+        static let authenticationCancelledPromptMaxPresentationCount = 2
+    }
 
     private static let defaultConnectionControllerFactory: (DDGSyncing, SyncConnectionControllerDelegate) -> SyncConnectionControlling = { syncService, delegate in
         syncService.createConnectionController(deviceName: deviceInfo().name, deviceType: deviceInfo().type, delegate: delegate)
@@ -113,7 +120,8 @@ final class SyncDialogController {
         syncPausedStateManager: any SyncPausedStateManaging,
         connectionControllerFactory: ((DDGSyncing, SyncConnectionControllerDelegate) -> SyncConnectionControlling)? = nil,
         featureFlagger: FeatureFlagger? = nil,
-        pixelFiring: PixelFiring? = PixelKit.shared
+        pixelFiring: PixelFiring? = PixelKit.shared,
+        keyValueStore: KeyValueStoring = UserDefaults.standard
     ) {
         self.syncService = syncService
         self.userAuthenticator = userAuthenticator
@@ -121,6 +129,7 @@ final class SyncDialogController {
         self.connectionControllerFactory = connectionControllerFactory ?? SyncDialogController.defaultConnectionControllerFactory
         self.featureFlagger = featureFlagger ?? Application.appDelegate.featureFlagger
         self.pixelFiring = pixelFiring
+        self.keyValueStore = keyValueStore
         self.managementDialogModel = managementDialogModel
         self.managementDialogModel.isAppRebranded = DesignSystemRebrand.isAppRebranded()
 
@@ -340,17 +349,31 @@ final class SyncDialogController {
         }
     }
 
-    private func checkAuthenticated() async -> Bool {
+    private func checkAuthenticated(presentDialogOnCancel: Bool = false) async -> Bool {
         let authenticationResult = await userAuthenticator.authenticateUser(reason: .syncSettings)
         guard authenticationResult.authenticated else {
             if authenticationResult == .noAuthAvailable {
                 presentDialog(for: .empty)
                 managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToAuthenticateOnDevice)
+                coordinationDelegate?.didEndFlow()
+            } else if presentDialogOnCancel, !incrementAuthenticationCancelledPromptCountReturningLimitReached() {
+                presentDialog(for: .syncAuthenticationCancelled)
+                pixelFiring?.fire(SyncSettingsPixelKitEvent.authenticationCancelledPromptShown)
+            } else {
+                coordinationDelegate?.didEndFlow()
             }
-            coordinationDelegate?.didEndFlow()
             return false
         }
         return true
+    }
+
+    private func incrementAuthenticationCancelledPromptCountReturningLimitReached() -> Bool {
+        let count = keyValueStore.object(forKey: Constants.authenticationCancelledPromptCountKey) as? Int ?? 0
+        guard count < Constants.authenticationCancelledPromptMaxPresentationCount else {
+            return true
+        }
+        keyValueStore.set(count + 1, forKey: Constants.authenticationCancelledPromptCountKey)
+        return false
     }
 }
 
@@ -617,7 +640,7 @@ extension SyncDialogController: SyncSettingsViewHandling {
             syncPromoSource = source.rawValue
         }
 
-        guard await checkAuthenticated() else {
+        guard await checkAuthenticated(presentDialogOnCancel: featureFlagger.isFeatureOn(.simplifiedSyncSetupV2)) else {
             return
         }
         if syncService.account != nil {
@@ -629,10 +652,11 @@ extension SyncDialogController: SyncSettingsViewHandling {
 
     @MainActor
     func syncWithServerPressed() async {
-        guard await checkAuthenticated() else {
+        let isSimplifiedSetupV2 = featureFlagger.isFeatureOn(.simplifiedSyncSetupV2)
+        guard await checkAuthenticated(presentDialogOnCancel: isSimplifiedSetupV2) else {
             return
         }
-        if featureFlagger.isFeatureOn(.simplifiedSyncSetupV2) {
+        if isSimplifiedSetupV2 {
             presentDialog(for: .syncAnotherDevicePrompt)
         } else {
             presentDialog(for: .syncWithServer)

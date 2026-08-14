@@ -287,6 +287,11 @@ class DuckPlayerTests: UITestCase {
 
         sleep(2)
 
+        let youTubeAddBlockButton = app.buttons["AddressBarButtonsViewController.youTubeAdBlockButton"].firstMatch
+        if youTubeAddBlockButton.waitForExistence(timeout: UITests.Timeouts.elementExistence) {
+            youTubeAddBlockButton.click()
+        }
+
         // Wait for the Duck Player overlay to appear and click "Watch in Duck Player"
         let watchInDuckPlayerLink = app.links.containing(.staticText, identifier: Self.watchOnDuckPlayerLink).firstMatch
 

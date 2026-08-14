@@ -6,8 +6,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
-        "revision" : "c13193705a8a5ab8a28d457a4849f27ba6d23676",
-        "version" : "16.7.0"
+        "branch" : "pr-releases/mgurgel/duckplayer-autoplay-race",
+        "revision" : "8c1ba1c839d00e17d4121fbba5e0b396774bf570"
       }
     },
     {

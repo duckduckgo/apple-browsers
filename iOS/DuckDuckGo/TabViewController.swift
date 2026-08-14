@@ -133,6 +133,7 @@ class TabViewController: UIViewController {
         static let trackerNetworksAnimationDelay: TimeInterval = 0.7
         static let secGPCHeader = "Sec-GPC"
         static let navigationExpectationInterval = 3.0
+        static let floatingRefreshControlClearance: CGFloat = 12
     }
 
     /// Set by `loadVoiceMode()` so that `refreshUnifiedToggleInput` can suppress
@@ -1058,6 +1059,10 @@ class TabViewController: UIViewController {
         let obscuredInsets: UIEdgeInsets = isUnifiedToggleInputAffectingLayout
             ? .zero
             : (chromeDelegate?.floatingWebViewObscuredInsets(for: barsVisibilityPercent) ?? .zero)
+        let refreshControlTopOffset = appSettings.currentAddressBarPosition == .top
+            ? max(0, obscuredInsets.top - webViewContainer.safeAreaInsets.top) + Constants.floatingRefreshControlClearance
+            : 0
+        pullToRefreshViewAdapter?.setTopOffset(refreshControlTopOffset)
         if scrollViewAdjustmentBehaviorBeforeFloatingUI == nil {
             scrollViewAdjustmentBehaviorBeforeFloatingUI = WebViewScrollViewInsetUpdater.beginManaging(webView.scrollView)
         }
@@ -1080,6 +1085,7 @@ class TabViewController: UIViewController {
     private func updateWebViewLayoutForClassicUI(for barsVisibilityPercent: CGFloat) {
         borderView.isHidden = false
         borderView.bottomAlpha = AppWidthObserver.shared.isLargeWidth ? 0 : barsVisibilityPercent
+        pullToRefreshViewAdapter?.setTopOffset(0)
         if #available(iOS 26, *) {
             webView.obscuredContentInsets = .zero
         }

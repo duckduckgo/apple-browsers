@@ -140,10 +140,11 @@ final class IPadOmnibarModelPickerControllerTests: XCTestCase {
         XCTAssertEqual(gatedSection?.title, UserText.aiChatModelPickerAvailableWithPro)
     }
 
+    @available(iOS 16.0, *)
     func testWhenModelActionPerformedThenBothMenuVariantsForwardSameModelId() throws {
         for isUpdatedModelPickerEnabled in [false, true] {
             sut = makeSUT(updatedModelPickerEnabled: isUpdatedModelPickerEnabled)
-            sut.modelStore.models = [makeModel(id: "gpt-5", shortName: "GPT-5")]
+            sut.modelStore.models = [makeModel(id: "gpt-5", shortName: "GPT-5", accessTier: ["free"])]
             var selectedModelId: String?
 
             let menu = try XCTUnwrap(sut.makeMenu { selectedModelId = $0 })

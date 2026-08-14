@@ -27,11 +27,11 @@ import UserScript
 struct SelectionFrame {
 
     private let frameInfo: WKFrameInfo
-    private let frameToken: String
+    private let eventTimestamp: Double
 
-    init(_ frameInfo: WKFrameInfo, frameToken: String) {
+    init(_ frameInfo: WKFrameInfo, eventTimestamp: Double) {
         self.frameInfo = frameInfo
-        self.frameToken = frameToken
+        self.eventTimestamp = eventTimestamp
     }
 
     func evaluateJavaScript(_ script: String,
@@ -43,7 +43,7 @@ struct SelectionFrame {
 
     func selectedText(from value: Any) -> String? {
         guard let result = value as? [String: Any],
-              result["frameToken"] as? String == frameToken else { return nil }
+              result["eventTimestamp"] as? Double == eventTimestamp else { return nil }
         return result["selectedText"] as? String
     }
 }
@@ -68,7 +68,7 @@ final class SelectionFrameUserScript: NSObject, Subfeature {
     private(set) var frameWithSelection: SelectionFrame?
 
     private let isEnabled: Bool
-    private var trackedFrameToken: String?
+    private var latestEventTimestamp: Double?
 
     init(isEnabled: Bool) {
         self.isEnabled = isEnabled
@@ -94,22 +94,21 @@ final class SelectionFrameUserScript: NSObject, Subfeature {
     func update(with body: Any, from frame: WKFrameInfo) {
         guard let body = body as? [String: Any],
               let hasSelection = body["hasSelection"] as? Bool,
-              let frameToken = body["frameToken"] as? String else { return }
+              let eventTimestamp = body["eventTimestamp"] as? Double,
+              eventTimestamp.isFinite,
+              latestEventTimestamp.map({ eventTimestamp >= $0 }) ?? true else { return }
 
+        latestEventTimestamp = eventTimestamp
         if hasSelection {
-            frameWithSelection = SelectionFrame(frame, frameToken: frameToken)
-            trackedFrameToken = frameToken
-        } else if frameToken == trackedFrameToken {
-            // Only the tracked frame may release the claim: selecting in an iframe collapses the main
-            // frame's selection, and its "empty" report can arrive last.
+            frameWithSelection = SelectionFrame(frame, eventTimestamp: eventTimestamp)
+        } else {
             frameWithSelection = nil
-            trackedFrameToken = nil
         }
     }
 
     func reset() {
         frameWithSelection = nil
-        trackedFrameToken = nil
+        latestEventTimestamp = nil
     }
 }
 

@@ -40,8 +40,8 @@ final class SelectionFrameUserScriptTests: XCTestCase {
         .mock(isMainFrame: isMainFrame, securityOriginHost: host)
     }
 
-    private func body(hasSelection: Bool, token: String) -> [String: Any] {
-        ["hasSelection": hasSelection, "frameToken": token]
+    private func body(hasSelection: Bool, timestamp: Double = 1) -> [String: Any] {
+        ["hasSelection": hasSelection, "eventTimestamp": timestamp]
     }
 
     // MARK: - Messaging
@@ -83,74 +83,100 @@ final class SelectionFrameUserScriptTests: XCTestCase {
     }
 
     func testTracksTheFrameThatReportsASelection() {
-        sut.update(with: body(hasSelection: true, token: "a"), from: frame())
+        sut.update(with: body(hasSelection: true), from: frame())
 
         XCTAssertNotNil(sut.frameWithSelection)
     }
 
     func testTheTrackedFrameCanClearItsOwnClaim() {
-        sut.update(with: body(hasSelection: true, token: "a"), from: frame())
+        sut.update(with: body(hasSelection: true, timestamp: 1), from: frame())
 
-        sut.update(with: body(hasSelection: false, token: "a"), from: frame())
+        sut.update(with: body(hasSelection: false, timestamp: 2), from: frame())
 
         XCTAssertNil(sut.frameWithSelection)
     }
 
-    /// Selecting in an iframe collapses the main frame's selection, whose empty report can arrive last.
-    func testAnotherFrameCannotClearTheTrackedFramesClaim() {
+    func testAnOlderClearFromAnotherFrameCannotClearTheTrackedFrame() {
         let iframe = frame(host: "iframe.example")
-        sut.update(with: body(hasSelection: true, token: "iframe"), from: iframe)
+        sut.update(with: body(hasSelection: true, timestamp: 2), from: iframe)
 
-        sut.update(with: body(hasSelection: false, token: "mainFrame"), from: frame(isMainFrame: true))
+        sut.update(with: body(hasSelection: false, timestamp: 1), from: frame(isMainFrame: true))
 
         XCTAssertNotNil(sut.frameWithSelection)
     }
 
     func testTheMostRecentReportingFrameWins() {
-        sut.update(with: body(hasSelection: true, token: "first"), from: frame(host: "first.example"))
-        sut.update(with: body(hasSelection: true, token: "second"), from: frame(host: "second.example"))
+        sut.update(with: body(hasSelection: true, timestamp: 1), from: frame(host: "first.example"))
+        sut.update(with: body(hasSelection: true, timestamp: 2), from: frame(host: "second.example"))
 
-        // The second frame now owns the claim, so only its token can release it.
-        sut.update(with: body(hasSelection: false, token: "first"), from: frame(host: "first.example"))
-        XCTAssertNotNil(sut.frameWithSelection)
-
-        sut.update(with: body(hasSelection: false, token: "second"), from: frame(host: "second.example"))
+        sut.update(with: body(hasSelection: false, timestamp: 3), from: frame(host: "first.example"))
         XCTAssertNil(sut.frameWithSelection)
     }
 
-    func testReadAcceptsTextFromTheTrackedDocument() {
-        sut.update(with: body(hasSelection: true, token: "expected"), from: frame())
+    func testAnOlderClaimCannotReplaceANewerClaim() {
+        sut.update(with: body(hasSelection: true, timestamp: 2), from: frame(host: "newer.example"))
 
-        let text = sut.frameWithSelection?.selectedText(from: ["frameToken": "expected", "selectedText": "selection"])
+        sut.update(with: body(hasSelection: true, timestamp: 1), from: frame(host: "older.example"))
+
+        let text = sut.frameWithSelection?.selectedText(from: ["eventTimestamp": 2.0, "selectedText": "selection"])
+        XCTAssertEqual(text, "selection")
+    }
+
+    func testAnOlderClearCannotReleaseANewerClaim() {
+        sut.update(with: body(hasSelection: true, timestamp: 2), from: frame())
+
+        sut.update(with: body(hasSelection: false, timestamp: 1), from: frame())
+
+        XCTAssertNotNil(sut.frameWithSelection)
+    }
+
+    func testAnAcceptedClearPreventsAnOlderClaimFromArrivingLate() {
+        sut.update(with: body(hasSelection: true, timestamp: 1), from: frame())
+        sut.update(with: body(hasSelection: false, timestamp: 3), from: frame())
+
+        sut.update(with: body(hasSelection: true, timestamp: 2), from: frame(host: "late.example"))
+
+        XCTAssertNil(sut.frameWithSelection)
+    }
+
+    func testReadAcceptsTextFromTheTrackedSelection() {
+        sut.update(with: body(hasSelection: true, timestamp: 1), from: frame())
+
+        let text = sut.frameWithSelection?.selectedText(from: ["eventTimestamp": 1.0, "selectedText": "selection"])
 
         XCTAssertEqual(text, "selection")
     }
 
-    func testReadRejectsTextFromAReplacementDocument() {
-        sut.update(with: body(hasSelection: true, token: "expected"), from: frame())
+    func testReadRejectsTextFromAReplacementSelection() {
+        sut.update(with: body(hasSelection: true, timestamp: 1), from: frame())
 
-        let text = sut.frameWithSelection?.selectedText(from: ["frameToken": "replacement", "selectedText": "wrong selection"])
+        let text = sut.frameWithSelection?.selectedText(from: ["eventTimestamp": 2.0, "selectedText": "wrong selection"])
 
         XCTAssertNil(text)
     }
 
     func testResetReleasesTheTrackedFrame() {
-        sut.update(with: body(hasSelection: true, token: "a"), from: frame())
+        sut.update(with: body(hasSelection: true, timestamp: 2), from: frame())
 
         sut.reset()
 
         XCTAssertNil(sut.frameWithSelection)
+
+        sut.update(with: body(hasSelection: true, timestamp: 1), from: frame())
+        XCTAssertNotNil(sut.frameWithSelection)
     }
 
     // MARK: - Malformed input
 
     func testAnUnreadableBodyLeavesTheTrackedFrameAlone() {
-        sut.update(with: body(hasSelection: true, token: "a"), from: frame())
+        sut.update(with: body(hasSelection: true), from: frame())
 
         sut.update(with: "not a dictionary", from: frame())
         sut.update(with: ["somethingElse": true], from: frame())
-        sut.update(with: ["hasSelection": "yes", "frameToken": "a"], from: frame())
+        sut.update(with: ["hasSelection": "yes", "eventTimestamp": 2.0], from: frame())
         sut.update(with: ["hasSelection": false], from: frame())
+        sut.update(with: ["hasSelection": true, "eventTimestamp": "newer"], from: frame())
+        sut.update(with: body(hasSelection: true, timestamp: .infinity), from: frame())
 
         XCTAssertNotNil(sut.frameWithSelection)
     }

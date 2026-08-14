@@ -34,34 +34,6 @@
             "channel"
         ]
     },
-    "m_mac_dbp_cpu-time_5m": {
-        "description": "Fires when a PIR queue run consumes at least five minutes of cumulative CPU time.",
-        "owners": ["quanganhdo"],
-        "triggers": ["other"],
-        "suffixes": ["daily_count"],
-        "parameters": ["appVersion", "pixelSource", "channel"]
-    },
-    "m_mac_dbp_cpu-time_15m": {
-        "description": "Fires when a PIR queue run consumes at least fifteen minutes of cumulative CPU time.",
-        "owners": ["quanganhdo"],
-        "triggers": ["other"],
-        "suffixes": ["daily_count"],
-        "parameters": ["appVersion", "pixelSource", "channel"]
-    },
-    "m_mac_dbp_cpu-time_30m": {
-        "description": "Fires when a PIR queue run consumes at least thirty minutes of cumulative CPU time.",
-        "owners": ["quanganhdo"],
-        "triggers": ["other"],
-        "suffixes": ["daily_count"],
-        "parameters": ["appVersion", "pixelSource", "channel"]
-    },
-    "m_mac_dbp_cpu-time_60m": {
-        "description": "Fires when a PIR queue run consumes at least sixty minutes of cumulative CPU time.",
-        "owners": ["quanganhdo"],
-        "triggers": ["other"],
-        "suffixes": ["daily_count"],
-        "parameters": ["appVersion", "pixelSource", "channel"]
-    },
     "m_mac_dbp_memory-pressure_critical": {
         "description": "Fires once per PIR queue run when macOS first reports critical memory pressure during the run.",
         "owners": ["quanganhdo"],

@@ -19,45 +19,47 @@
 import Foundation
 
 /// The CPU and memory measurements collected for one PIR queue run.
-public struct ResourceSnapshot: Equatable, Sendable {
+struct ResourceSnapshot {
 
-    public struct CPUUsage: Equatable, Sendable {
+    struct CPUUsage {
+        /// Time elapsed since monitoring started, in seconds.
+        let elapsedTime: TimeInterval
         /// CPU time used by the background agent during the run, in seconds.
-        public let agentTime: TimeInterval
+        let agentTime: TimeInterval
         /// CPU time used by all observed WebContent processes during the run, in seconds.
-        public let webContentTime: TimeInterval
+        let webContentTime: TimeInterval
         /// Average CPU use during the run. One fully used core is 100%; multiple cores can exceed 100%.
-        public let averagePercent: Double
+        let averagePercent: Double
 
         /// Combined agent and WebContent CPU time, in seconds.
-        public var totalTime: TimeInterval {
+        var totalTime: TimeInterval {
             agentTime + webContentTime
         }
     }
 
-    public struct MemoryUsage: Equatable, Sendable {
-        public struct Agent: Equatable, Sendable {
+    struct MemoryUsage {
+        struct Agent {
             /// Memory attributed to the agent in the latest reading, in bytes. Zero can also mean the read failed.
-            public let footprintBytes: UInt64
+            let footprintBytes: UInt64
             /// Highest agent-memory reading observed during the run, in bytes. Zero can also mean no successful read was made.
-            public let peakFootprintBytes: UInt64
+            let peakFootprintBytes: UInt64
         }
 
-        public struct WebContent: Equatable, Sendable {
+        struct WebContent {
             /// Memory attributed to all WebContent processes in the latest reading, or `nil` if it could not be read completely.
-            public let footprintBytes: UInt64?
+            let footprintBytes: UInt64?
             /// Highest complete WebContent-memory reading observed during the run, or `nil` if none was available.
-            public let peakFootprintBytes: UInt64?
+            let peakFootprintBytes: UInt64?
             /// Number of WebContent processes found in the latest reading, or `nil` if discovery failed.
-            public let processCount: Int?
+            let processCount: Int?
         }
 
-        public let agent: Agent
-        public let webContent: WebContent
+        let agent: Agent
+        let webContent: WebContent
         /// Whether macOS reported critically low available memory during the run.
-        public let hadCriticalPressure: Bool
+        let hadCriticalPressure: Bool
     }
 
-    public let cpu: CPUUsage
-    public let memory: MemoryUsage
+    let cpu: CPUUsage
+    let memory: MemoryUsage
 }

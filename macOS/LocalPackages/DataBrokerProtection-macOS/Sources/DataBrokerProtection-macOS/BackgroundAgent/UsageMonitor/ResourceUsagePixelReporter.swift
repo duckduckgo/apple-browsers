@@ -16,57 +16,16 @@
 //  limitations under the License.
 //
 
-import Common
 import Foundation
 
-protocol ResourceUsagePixelReporting: AnyObject, Sendable {
-    func start()
-    func reportCPUTime(_ seconds: TimeInterval)
-    func reportRun(_ snapshot: ResourceSnapshot)
-    func reportCriticalMemoryPressure()
-}
-
-final class ResourceUsagePixelReporter: ResourceUsagePixelReporting, @unchecked Sendable {
+final class ResourceUsagePixelReporter {
 
     private enum Constants {
         static let secondsPerMinute: TimeInterval = 60
         static let bytesPerMebibyte = Double(1 << 20)
     }
 
-    private enum CPUTimeThreshold: TimeInterval, CaseIterable {
-        case fiveMinutes = 300
-        case fifteenMinutes = 900
-        case thirtyMinutes = 1_800
-        case sixtyMinutes = 3_600
-
-        var pixel: DataBrokerProtectionMacOSPixels {
-            switch self {
-            case .fiveMinutes: return .cpuTime5Minutes
-            case .fifteenMinutes: return .cpuTime15Minutes
-            case .thirtyMinutes: return .cpuTime30Minutes
-            case .sixtyMinutes: return .cpuTime60Minutes
-            }
-        }
-    }
-
-    private let pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels>
-    private var reportedCPUThresholds = Set<CPUTimeThreshold>()
-
-    init(pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels> = DataBrokerProtectionMacOSPixelsHandler()) {
-        self.pixelHandler = pixelHandler
-    }
-
-    func start() {
-        reportedCPUThresholds.removeAll()
-    }
-
-    func reportCPUTime(_ seconds: TimeInterval) {
-        for threshold in CPUTimeThreshold.allCases
-        where seconds >= threshold.rawValue && !reportedCPUThresholds.contains(threshold) {
-            reportedCPUThresholds.insert(threshold)
-            pixelHandler.fire(threshold.pixel)
-        }
-    }
+    private let pixelHandler = DataBrokerProtectionMacOSPixelsHandler()
 
     func reportRun(_ snapshot: ResourceSnapshot) {
         pixelHandler.fire(

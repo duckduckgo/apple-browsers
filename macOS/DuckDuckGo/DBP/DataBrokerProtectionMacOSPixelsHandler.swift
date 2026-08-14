@@ -65,11 +65,7 @@ public class DataBrokerProtectionMacOSPixelsHandler: EventMapping<DataBrokerProt
 
                 PixelKit.fire(event)
 
-            case .cpuTime5Minutes,
-                    .cpuTime15Minutes,
-                    .cpuTime30Minutes,
-                    .cpuTime60Minutes,
-                    .criticalMemoryPressure:
+            case .criticalMemoryPressure:
                 PixelKit.fire(event, frequency: .dailyAndCount)
 
             case .homeViewShowNoPermissionError,

@@ -34,7 +34,7 @@ public protocol ResourceMonitoring: AnyObject {
 ///
 /// Memory is physical footprint, sampled at the run start, after 10 seconds, every 60 seconds thereafter, on critical
 /// memory pressure, and at the run end. The monitor logs these snapshots and emits bucketed pixels for the run summary,
-/// crossed CPU thresholds, and critical memory pressure.
+/// plus a pixel if macOS reports critical memory pressure.
 public final class ResourceMonitor: ResourceMonitoring, @unchecked Sendable {
 
     // MARK: - Run State
@@ -60,18 +60,12 @@ public final class ResourceMonitor: ResourceMonitoring, @unchecked Sendable {
     private let monitorQueue = DispatchQueue(label: "com.duckduckgo.pir.resource-monitor", qos: .utility)
 
     private let webContentProcessIDProvider = WebContentProcessIDProvider()
-    private let pixelReporter: ResourceUsagePixelReporting
+    private let pixelReporter = ResourceUsagePixelReporter()
     private var activeRun: ActiveRun?
 
     // MARK: - Public API
 
-    public init() {
-        pixelReporter = ResourceUsagePixelReporter()
-    }
-
-    init(pixelReporter: ResourceUsagePixelReporting) {
-        self.pixelReporter = pixelReporter
-    }
+    public init() {}
 
     public func start() {
         monitorQueue.async { [weak self] in
@@ -104,7 +98,6 @@ public final class ResourceMonitor: ResourceMonitoring, @unchecked Sendable {
         )
         var memory = MemoryUsageMonitor()
         memory.start(webContentPIDs: webContentPIDs)
-        pixelReporter.start()
 
         let timer = DispatchSource.makeTimerSource(queue: monitorQueue)
         let memoryPressureSource = DispatchSource.makeMemoryPressureSource(
@@ -143,7 +136,6 @@ public final class ResourceMonitor: ResourceMonitoring, @unchecked Sendable {
         guard activeRun != nil else { return }
 
         if let snapshot = recordResourcesAndPublishSnapshot() {
-            pixelReporter.reportCPUTime(snapshot.cpu.totalTime)
             pixelReporter.reportRun(snapshot)
         }
         activeRun?.timer.cancel()
@@ -156,9 +148,6 @@ public final class ResourceMonitor: ResourceMonitoring, @unchecked Sendable {
     private func handleTimerEvent() {
         let webContentPIDs = webContentProcessIDProvider.currentProcessIDs()
         activeRun?.cpu.recordSample(webContentPIDs: Set(webContentPIDs ?? []))
-        if let cpuTime = activeRun?.cpu.makeReport().totalTime {
-            pixelReporter.reportCPUTime(cpuTime)
-        }
         activeRun?.cpuSamplesUntilNextReport -= 1
 
         guard activeRun?.cpuSamplesUntilNextReport == 0 else { return }
@@ -196,28 +185,35 @@ private extension ResourceMonitor {
         let webContentFootprint = snapshot.memory.webContent.footprintBytes.map(Self.formattedMemory) ?? "unavailable"
         let peakWebContentFootprint = snapshot.memory.webContent.peakFootprintBytes
             .map(Self.formattedMemory) ?? "unavailable"
-        let webContentCount = snapshot.memory.webContent.processCount.map(String.init) ?? "unavailable"
-        let fields = [
-            "agentCPUTimeSeconds=\(snapshot.cpu.agentTime)",
-            "webContentCPUTimeSeconds=\(snapshot.cpu.webContentTime)",
-            "totalCPUTimeSeconds=\(snapshot.cpu.totalTime)",
-            "averageCPUPercent=\(snapshot.cpu.averagePercent)",
-            "agentFootprint=\(Self.formattedMemory(snapshot.memory.agent.footprintBytes))",
-            "peakAgentFootprint=\(Self.formattedMemory(snapshot.memory.agent.peakFootprintBytes))",
-            "webContentFootprint=\(webContentFootprint)",
-            "peakWebContentFootprint=\(peakWebContentFootprint)",
-            "webContentProcessCount=\(webContentCount)",
-            "criticalMemoryPressure=\(snapshot.memory.hadCriticalPressure)"
-        ]
-        let message = "PIR resource sample: " + fields.joined(separator: ", ")
+        let webContentProcessCount = snapshot.memory.webContent.processCount.map(String.init) ?? "unavailable"
+        let message = """
+        PIR run resources: elapsed=\(Self.formattedDuration(snapshot.cpu.elapsedTime)) | \
+        CPU during run: agent=\(Self.formattedCPUTime(snapshot.cpu.agentTime)), \
+        WebContent=\(Self.formattedCPUTime(snapshot.cpu.webContentTime)), \
+        total=\(Self.formattedCPUTime(snapshot.cpu.totalTime)), \
+        average=\(String(format: "%.1f", snapshot.cpu.averagePercent))% of one core | \
+        Physical memory: agent current=\(Self.formattedMemory(snapshot.memory.agent.footprintBytes)), \
+        peak=\(Self.formattedMemory(snapshot.memory.agent.peakFootprintBytes)); \
+        WebContent total current=\(webContentFootprint), current processes=\(webContentProcessCount), \
+        peak=\(peakWebContentFootprint) | \
+        Critical memory pressure during run=\(snapshot.memory.hadCriticalPressure)
+        """
         Logger.dataBrokerProtection.info("\(message, privacy: .public)")
+    }
+
+    private static func formattedDuration(_ seconds: TimeInterval) -> String {
+        String(format: "%.1fs", seconds)
+    }
+
+    private static func formattedCPUTime(_ seconds: TimeInterval) -> String {
+        String(format: "%.3fs", seconds)
     }
 
     private static func formattedMemory(_ bytes: UInt64) -> String {
         let value = Double(bytes)
         if value >= Constants.bytesPerGibibyte {
-            return String(format: "%.2f GiB (%llu bytes)", value / Constants.bytesPerGibibyte, bytes)
+            return String(format: "%.2f GiB", value / Constants.bytesPerGibibyte)
         }
-        return String(format: "%.1f MiB (%llu bytes)", value / Constants.bytesPerMebibyte, bytes)
+        return String(format: "%.1f MiB", value / Constants.bytesPerMebibyte)
     }
 }

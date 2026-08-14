@@ -41,10 +41,6 @@ public enum DataBrokerProtectionMacOSPixels {
         agentPeakFootprintMBBucket: String,
         webContentPeakFootprintMBBucket: String
     )
-    case cpuTime5Minutes
-    case cpuTime15Minutes
-    case cpuTime30Minutes
-    case cpuTime60Minutes
     case criticalMemoryPressure
 
     // IPC server events
@@ -107,10 +103,6 @@ extension DataBrokerProtectionMacOSPixels: PixelKit.Event {
         case .backgroundAgentStartedStoppingDueToAnotherInstanceRunning: return "m_mac_dbp_background-agent_started_stopping-due-to-another-instance-running"
 
         case .resourceUsageRun: return "m_mac_dbp_resource-usage_run"
-        case .cpuTime5Minutes: return "m_mac_dbp_cpu-time_5m"
-        case .cpuTime15Minutes: return "m_mac_dbp_cpu-time_15m"
-        case .cpuTime30Minutes: return "m_mac_dbp_cpu-time_30m"
-        case .cpuTime60Minutes: return "m_mac_dbp_cpu-time_60m"
         case .criticalMemoryPressure: return "m_mac_dbp_memory-pressure_critical"
 
             // IPC Server Pixels
@@ -203,10 +195,6 @@ extension DataBrokerProtectionMacOSPixels: PixelKit.Event {
 
                 .backgroundAgentStarted,
                 .backgroundAgentStartedStoppingDueToAnotherInstanceRunning,
-                .cpuTime5Minutes,
-                .cpuTime15Minutes,
-                .cpuTime30Minutes,
-                .cpuTime60Minutes,
                 .criticalMemoryPressure,
                 .dataBrokerProtectionNotificationSentFirstScanComplete,
                 .dataBrokerProtectionNotificationOpenedFirstScanComplete,
@@ -256,10 +244,6 @@ extension DataBrokerProtectionMacOSPixels: PixelKit.Event {
                 .backgroundAgentStarted,
                 .backgroundAgentStartedStoppingDueToAnotherInstanceRunning,
                 .resourceUsageRun,
-                .cpuTime5Minutes,
-                .cpuTime15Minutes,
-                .cpuTime30Minutes,
-                .cpuTime60Minutes,
                 .criticalMemoryPressure,
                 .ipcServerProfileSavedCalledByApp,
                 .ipcServerProfileSavedReceivedByAgent,
@@ -344,11 +328,7 @@ public class DataBrokerProtectionMacOSPixelsHandler: EventMapping<DataBrokerProt
                     .invalidPayload:
                 PixelKit.fire(event)
 
-            case .cpuTime5Minutes,
-                    .cpuTime15Minutes,
-                    .cpuTime30Minutes,
-                    .cpuTime60Minutes,
-                    .criticalMemoryPressure:
+            case .criticalMemoryPressure:
                 PixelKit.fire(event, frequency: .dailyAndCount)
 
             case .homeViewShowNoPermissionError,

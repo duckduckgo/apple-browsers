@@ -111,6 +111,7 @@ struct CPUUsageMonitor {
         let averagePercent = elapsedTime > 0 ? totalTime / elapsedTime * 100 : 0
 
         return ResourceSnapshot.CPUUsage(
+            elapsedTime: elapsedTime,
             agentTime: agentTime,
             webContentTime: webContentTime,
             averagePercent: averagePercent

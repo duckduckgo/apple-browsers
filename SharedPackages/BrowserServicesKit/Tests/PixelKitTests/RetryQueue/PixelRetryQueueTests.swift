@@ -158,25 +158,6 @@ final class PixelRetryQueueTests: XCTestCase {
         ])
     }
 
-    func testWhenReplayingItemQueuedBeforeRetryWasOptIn_ThenItIsDroppedWithoutSending() {
-        // Builds that queued every failure baked `originalPixelTimestamp` into the stored parameters.
-        // Those pixels never opted into retry, so they must not be replayed.
-        let legacy = PixelRetryQueueItem(pixelName: "m_queued",
-                                         headers: [:],
-                                         parameters: ["key": "value", "originalPixelTimestamp": "2026-06-11T00:00:00Z"],
-                                         allowedQueryReservedCharacters: nil,
-                                         timestamp: now)
-        try? store.append([legacy])
-        let queue = makeQueue()
-        let drained = expectation(description: "drained")
-
-        queue.sendQueuedPixels { _ in drained.fulfill() }
-        wait(for: [drained], timeout: 2.0)
-
-        XCTAssertTrue(fireMock.calls.isEmpty)
-        XCTAssertTrue(store.items.isEmpty)
-    }
-
     func testWhenItemIsOlderThan28Days_ThenItIsNotSentButIsRemoved() {
         let item = makeItem(name: "m_stale", ageInDays: 30)
         try? store.append([item])

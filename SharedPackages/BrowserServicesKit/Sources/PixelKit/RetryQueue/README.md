@@ -57,13 +57,6 @@ retried every PixelKit pixel and attached both parameters globally, which is wha
   replay leaves the item queued for the next drain rather than queueing a duplicate.
 - **Dry run.** `PixelKit(dryRun: true)` creates no queue at all.
 
-## Items queued before retry was opt-in
-
-Builds that queued every failed pixel baked `originalPixelTimestamp` into the persisted parameters.
-That key's presence therefore identifies an item queued without its caller having opted in, and those
-items are dropped rather than replayed — they were never triaged for retry. Nothing writes that key
-into stored parameters any more, so the case disappears as those queues age out.
-
 ## Related
 
 - `PixelKit.Options.retryOnFailure` — the caller-facing switch.

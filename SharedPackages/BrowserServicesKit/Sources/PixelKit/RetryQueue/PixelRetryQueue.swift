@@ -213,16 +213,6 @@ final class PixelRetryQueue {
                 continue
             }
 
-            // Builds that queued every failed pixel, before retry became opt-in, baked
-            // `originalPixelTimestamp` into the persisted parameters; nothing does that now, so its
-            // presence identifies an item queued without the caller having opted in. Those pixels were
-            // never triaged for retry, so drop them rather than replay them.
-            // For more info see https://app.asana.com/1/137249556945/task/1215909080171360?focus=true
-            guard item.parameters[Parameters.originalPixelTimestamp] == nil else {
-                idsAccessQueue.sync { _ = idsToRemove.insert(item.id) }
-                continue
-            }
-
             // Mark the replay so the backend can tell it from an organic send and de-duplicate against
             // the original attempt. `item.timestamp` is when that attempt failed.
             var parameters = item.parameters

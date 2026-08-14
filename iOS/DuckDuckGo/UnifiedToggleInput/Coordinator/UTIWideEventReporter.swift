@@ -30,7 +30,6 @@ struct UTIWideEventSubmissionInputs {
     let fireMode: Bool
     let hasSubmittedPrompt: Bool
     let entryPoint: DuckAIPromptWideEventData.EntryPoint
-    /// The A2 entry source that opened the current Duck.ai surface, when known.
     let entrySource: AIChatEntryPointSource?
 
     func origin(for entryPoint: DuckAIPromptWideEventData.EntryPoint) -> AIChatEntryPointSource? {

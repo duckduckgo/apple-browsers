@@ -55,7 +55,6 @@ struct UTIPixelContext {
     let inputMode: TextEntryMode
     let isToggleVisible: Bool
     let pageType: UnifiedToggleInputPromptPageType
-    /// The A2 entry source that opened the current Duck.ai surface, when known.
     let duckAIEntrySource: AIChatEntryPointSource?
 }
 

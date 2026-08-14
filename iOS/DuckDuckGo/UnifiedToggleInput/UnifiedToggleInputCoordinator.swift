@@ -205,9 +205,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     var switchBarHandler: SwitchBarHandling { viewController.handler }
     var onAnimatedDismissToOmnibar: ((_ completion: (() -> Void)?) -> Void)?
 
-    /// Supplied by the host: the page the user is on when a prompt pixel needs `page_type`.
     var pageTypeProvider: (() -> UnifiedToggleInputPromptPageType?)?
-    /// Supplied by the host: the A2 entry source that opened the current Duck.ai surface.
     var duckAIEntrySourceProvider: (() -> AIChatEntryPointSource?)?
 
     private var resolvedPromptPageType: UnifiedToggleInputPromptPageType {

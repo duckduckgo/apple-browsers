@@ -286,7 +286,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         NotificationCenter.default.post(
             name: .urlInterceptAIChat,
             object: payload,
-            userInfo: nil
+            userInfo: [TabURLInterceptorParameter.aiChatRequestHost: message.messageHost]
         )
 
         return nil

@@ -9,7 +9,7 @@
             "appVersion",
             {
                 "key": "source",
-                "description": "The entry path into Duck.ai, one value per case of the AIChatEntryPointSource Swift enum. Resuming an already-open or restored Duck.ai tab is not an entry and does not fire.",
+                "description": "The entry path into Duck.ai, one value per case of the AIChatEntryPointSource Swift enum. serp is any Duck.ai open the search results page asks native for, e.g. Search Assist, and covers every such SERP affordance because the request does not say which one it was. direct_url is a duck.ai navigation TabURLInterceptor saw with no other attribution, so it mixes a typed address with an in-page link. Resuming an already-open or restored Duck.ai tab is not an entry and does not fire.",
                 "type": "string",
                 "enum": [
                     "address_bar_prompt",
@@ -27,6 +27,7 @@
                     "voice",
                     "onboarding",
                     "direct_url",
+                    "serp",
                     "icon_shortcut",
                     "contextual_chat",
                     "widget_quick_actions",

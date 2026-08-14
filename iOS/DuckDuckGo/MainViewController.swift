@@ -3690,8 +3690,12 @@ class MainViewController: UIViewController {
 
                 // The direct-navigation pixels are not fired here: the interceptor sees every
                 // duck.ai navigation, so it cannot tell a typed address from an in-page link.
-                // An entry that already deferred to us reports under its own source, not `direct_url`.
-                let source = self?.consumeInterceptedDuckAIEntrySource() ?? .directURL
+                // An entry that already deferred to us reports under its own source, not `direct_url`;
+                // next the page that asked us to open Duck.ai; `direct_url` is only what the interceptor saw.
+                let requestHost = notification.userInfo?[TabURLInterceptorParameter.aiChatRequestHost] as? String
+                let source = self?.consumeInterceptedDuckAIEntrySource()
+                    ?? AIChatEntryPointSource.forFrontEndOpenRequest(messageHost: requestHost)
+                    ?? .directURL
                 if let query = query {
                     self?.openAIChat(source: source, query, autoSend: shouldAutoSend, payload: payload)
                 } else {

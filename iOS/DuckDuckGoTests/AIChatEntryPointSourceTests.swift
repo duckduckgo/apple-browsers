@@ -69,6 +69,21 @@ struct AIChatEntryPointSourceTests {
         #expect(AIChatEntryPointSource.forDeepLink(deepLink(source: "widget.something.new")) == .deepLinkOther)
     }
 
+    @available(iOS 16, *)
+    @Test("A front-end open request from the search results page resolves to serp", .timeLimit(.minutes(1)))
+    func serpOpenRequestResolves() {
+        #expect(AIChatEntryPointSource.forFrontEndOpenRequest(messageHost: URL.ddg.host) == .serp)
+    }
+
+    /// Returning nil leaves the caller's own fallback in place rather than mislabelling the entry.
+    @available(iOS 16, *)
+    @Test("Other hosts have no front-end open request source", .timeLimit(.minutes(1)))
+    func otherHostsResolveToNil() {
+        #expect(AIChatEntryPointSource.forFrontEndOpenRequest(messageHost: URL.duckAi.host) == nil)
+        #expect(AIChatEntryPointSource.forFrontEndOpenRequest(messageHost: "localhost:8080") == nil)
+        #expect(AIChatEntryPointSource.forFrontEndOpenRequest(messageHost: nil) == nil)
+    }
+
     /// The raw values are a dashboard contract: renaming one silently breaks its series.
     @available(iOS 16, *)
     @Test("Entry point raw values are stable", .timeLimit(.minutes(1)))
@@ -80,5 +95,7 @@ struct AIChatEntryPointSourceTests {
         #expect(AIChatEntryPointSource.widgetControlCenter.rawValue == "widget_control_center")
         #expect(AIChatEntryPointSource.siri.rawValue == "siri")
         #expect(AIChatEntryPointSource.deepLinkOther.rawValue == "deep_link_other")
+        #expect(AIChatEntryPointSource.serp.rawValue == "serp")
+        #expect(AIChatEntryPointSource.directURL.rawValue == "direct_url")
     }
 }

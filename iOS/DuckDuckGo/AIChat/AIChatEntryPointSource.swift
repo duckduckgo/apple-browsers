@@ -66,6 +66,7 @@ enum AIChatEntryPointSource: String {
     case voice
     case onboarding
     case directURL = "direct_url"
+    case serp
     case iconShortcut = "icon_shortcut"
     case contextualChat = "contextual_chat"
     case widgetQuickActions = "widget_quick_actions"
@@ -88,6 +89,13 @@ extension AIChatEntryPointSource {
         }
         // `AIVoiceChatIntent` writes this one, and it is not a `WidgetSourceType`.
         return rawValue == VoiceEntryPointSource.siri.rawValue ? .siri : .deepLinkOther
+    }
+
+    /// Names the page behind an `openAIChat` user-script request so it is not reported as a typed
+    /// address. `nil` for duck.ai and debug hosts, which have no entry of their own.
+    static func forFrontEndOpenRequest(messageHost: String?) -> AIChatEntryPointSource? {
+        guard let messageHost, messageHost == URL.ddg.host else { return nil }
+        return .serp
     }
 }
 

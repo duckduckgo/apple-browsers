@@ -127,31 +127,33 @@ final class ConfigurationManager: DefaultConfigurationManager {
         var didFetchAnyTrackerBlockingDependencies = false
 
         // Start surrogates fetch task
-        let surrogatesTask = Task { _ = try await fetcher.fetch(.surrogates, isDebug: isDebug) }
+        let surrogatesTask = Task { try await fetcher.fetch(.surrogates, isDebug: isDebug) }
 
         // Perform privacyConfiguration fetch and update
         do {
-            try await fetcher.fetch(.privacyConfiguration, isDebug: isDebug)
-            didFetchAnyTrackerBlockingDependencies = true
-            privacyConfigurationManager.reload(etag: store.loadEtag(for: .privacyConfiguration),
-                                               data: store.loadData(for: .privacyConfiguration))
+            let fetchResult = try await fetcher.fetch(.privacyConfiguration, isDebug: isDebug)
+            if fetchResult == .updated {
+                didFetchAnyTrackerBlockingDependencies = true
+                privacyConfigurationManager.reload(etag: store.loadEtag(for: .privacyConfiguration),
+                                                   data: store.loadData(for: .privacyConfiguration))
+            }
         } catch {
             Logger.general.error("Did not apply update to \(Configuration.privacyConfiguration.rawValue, privacy: .public): \(error.localizedDescription, privacy: .public)")
         }
 
         // Start trackerDataSet fetch task after privacyConfiguration completes
-        let trackerDataSetTask = Task { _ = try await fetcher.fetch(.trackerDataSet, isDebug: isDebug) }
+        let trackerDataSetTask = Task { try await fetcher.fetch(.trackerDataSet, isDebug: isDebug) }
 
         // Wait for surrogates and trackerDataSet tasks
-        let tasks: [(Configuration, Task<(), Swift.Error>)] = [
+        let tasks: [(Configuration, Task<ConfigurationFetchResult, Swift.Error>)] = [
             (.surrogates, surrogatesTask),
             (.trackerDataSet, trackerDataSetTask)
         ]
 
         for (configuration, task) in tasks {
             do {
-                try await task.value
-                didFetchAnyTrackerBlockingDependencies = true
+                let fetchResult = try await task.value
+                didFetchAnyTrackerBlockingDependencies = didFetchAnyTrackerBlockingDependencies || fetchResult == .updated
             } catch {
                 Logger.general.error("Did not apply update to \(configuration.rawValue, privacy: .public): \(error.localizedDescription, privacy: .public)")
             }
@@ -171,7 +173,9 @@ final class ConfigurationManager: DefaultConfigurationManager {
     @discardableResult
     func fetchAndUpdateBloomFilterExcludedDomains() async -> Bool {
         do {
-            try await fetcher.fetch(.bloomFilterExcludedDomains, isDebug: false)
+            let fetchResult = try await fetcher.fetch(.bloomFilterExcludedDomains, isDebug: false)
+            guard fetchResult == .updated else { return false }
+
             try await updateBloomFilterExclusions()
             return true
         } catch {
@@ -183,9 +187,11 @@ final class ConfigurationManager: DefaultConfigurationManager {
     @discardableResult
     func fetchAndUpdateBloomFilter() async -> Bool {
         do {
-            try await fetcher.fetch(all: [.bloomFilterBinary, .bloomFilterSpec])
-            try await updateBloomFilter()
-            return true
+            let updatedConfigurations = try await fetcher.fetch(all: [.bloomFilterBinary, .bloomFilterSpec])
+            if !updatedConfigurations.isEmpty {
+                try await updateBloomFilter()
+            }
+            return !updatedConfigurations.isEmpty
         } catch {
             Logger.general.error("Failed to apply update to bloom filter: \(error.localizedDescription, privacy: .public)")
             return false

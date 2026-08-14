@@ -98,6 +98,18 @@ final class ConfigurationManagerTests: XCTestCase {
         XCTAssertEqual(Array(operationLog.steps.dropFirst(2)), expectedRemainingStepsOrder, "Steps do not match the expected order.")
     }
 
+    func test_WhenNoConfigurationHasChanged_ThenUpdateReturnsNoData() async {
+        mockFetcher.fetchResults = Dictionary(uniqueKeysWithValues: Configuration.allCases.map { ($0, .notModified) })
+        mockFetcher.fetchAllResult = []
+
+        let result = await configManager.update()
+
+        guard case .noData = result else {
+            XCTFail("Expected noData when every request returns not modified")
+            return
+        }
+    }
+
 }
 
 // Step enum to track operations

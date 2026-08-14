@@ -18,7 +18,6 @@
 
 import Combine
 import Configuration
-import Networking
 import PrivacyConfigTestsUtils
 import TrackerRadarKit
 import XCTest
@@ -34,6 +33,7 @@ final class ConfigurationManagerTests: XCTestCase {
     private var mockTrackerDataManager: MockTrackerDataManager!
     private var mockPrivacyConfigManager: MockPrivacyConfigurationManager!
     private var mockContentBlockingManager: MockContentBlockerRulesManager!
+    private var mockHTTPSUpgradeStore: ConfigurationHTTPSUpgradeStoreMock!
 
     override func setUpWithError() throws {
         operationLog = OperationLog()
@@ -45,6 +45,7 @@ final class ConfigurationManagerTests: XCTestCase {
         mockPrivacyConfigManager.operationLog = operationLog
         mockTrackerDataManager = MockTrackerDataManager(operationLog: operationLog, etag: nil, data: nil, embeddedDataProvider: MockEmbeddedDataProvider())
         mockContentBlockingManager = MockContentBlockerRulesManager(operationLog: operationLog)
+        mockHTTPSUpgradeStore = ConfigurationHTTPSUpgradeStoreMock()
         configManager = ConfigurationManager(fetcher: mockFetcher,
                                              store: mockStore,
                                              defaults: userDefaults,
@@ -52,7 +53,7 @@ final class ConfigurationManagerTests: XCTestCase {
                                              privacyConfigurationManager: mockPrivacyConfigManager,
                                              contentBlockingManager: mockContentBlockingManager,
                                              httpsUpgrade: HTTPSUpgrade(
-                                                store: HTTPSUpgradeStoreMock(),
+                                                store: mockHTTPSUpgradeStore,
                                                 privacyManager: mockPrivacyConfigManager,
                                                 logger: .init()
                                              )
@@ -67,6 +68,7 @@ final class ConfigurationManagerTests: XCTestCase {
         mockTrackerDataManager = nil
         mockPrivacyConfigManager = nil
         mockContentBlockingManager = nil
+        mockHTTPSUpgradeStore = nil
     }
 
     func test_WhenRefreshNow_AndPrivacyConfigFetchFails_OtherFetchStillHappen() async {
@@ -126,7 +128,7 @@ final class ConfigurationManagerTests: XCTestCase {
 
     func test_WhenFetchPrivacyConfiguration_And304Received_ThenTreatedAsSuccess() async throws {
         // GIVEN
-        mockFetcher.privacyFetchError = APIRequest.Error.invalidStatusCode(304)
+        mockFetcher.privacyFetchResult = .notModified
         operationLog.clear()
 
         // WHEN
@@ -170,6 +172,23 @@ final class ConfigurationManagerTests: XCTestCase {
         XCTAssertTrue(allSteps.contains(.contentBlockingScheduleCompilation), "Content blocking should be scheduled.")
     }
 
+    func test_WhenBloomFilterIsNotModified_ThenBloomFilterIsNotPersisted() async {
+        mockFetcher.fetchAllResult = []
+
+        await configManager.refreshNow()
+
+        XCTAssertEqual(mockHTTPSUpgradeStore.persistBloomFilterCallCount, 0)
+    }
+
+    func test_WhenOneBloomFilterAssetIsModified_ThenBloomFilterIsPersistedOnce() async {
+        mockFetcher.fetchAllResult = [.bloomFilterSpec]
+        mockStore.data = Data(#"{"bitCount":8,"errorRate":0.01,"totalEntries":1,"sha256":"sha"}"#.utf8)
+
+        await configManager.refreshNow()
+
+        XCTAssertEqual(mockHTTPSUpgradeStore.persistBloomFilterCallCount, 1)
+    }
+
 }
 
 // Step enum to track operations
@@ -185,7 +204,8 @@ private enum ConfigurationStep: String, Equatable {
 private class MockConfigurationFetcher: ConfigurationFetching {
     var operationLog: OperationLog
     var shouldFailPrivacyFetch = false
-    var privacyFetchError: Swift.Error?
+    var privacyFetchResult = ConfigurationFetchResult.updated
+    var fetchAllResult: Set<Configuration>?
 
     init(operationLog: OperationLog) {
         self.operationLog = operationLog
@@ -201,9 +221,6 @@ private class MockConfigurationFetcher: ConfigurationFetching {
             break
         case .privacyConfiguration:
             operationLog.append(.fetchPrivacyConfigStarted)
-            if let error = privacyFetchError {
-                throw error
-            }
             if shouldFailPrivacyFetch {
                 throw NSError(domain: "TestError", code: 1, userInfo: nil)
             }
@@ -215,12 +232,30 @@ private class MockConfigurationFetcher: ConfigurationFetching {
         case .remoteMessagingConfig:
             break
         }
-        return .updated
+        return configuration == .privacyConfiguration ? privacyFetchResult : .updated
     }
 
     func fetch(all configurations: [Configuration]) async throws -> Set<Configuration> {
-        return Set(configurations)
+        fetchAllResult ?? Set(configurations)
     }
+}
+
+private final class ConfigurationHTTPSUpgradeStoreMock: HTTPSUpgradeStore {
+    private(set) var persistBloomFilterCallCount = 0
+
+    func loadBloomFilter() -> BloomFilter? {
+        nil
+    }
+
+    func persistBloomFilter(specification: HTTPSBloomFilterSpecification, data: Data) throws {
+        persistBloomFilterCallCount += 1
+    }
+
+    func hasExcludedDomain(_ domain: String) -> Bool {
+        false
+    }
+
+    func persistExcludedDomains(_ domains: [String]) throws {}
 }
 
 private class MockPrivacyConfigurationManager: PrivacyConfigurationManager {

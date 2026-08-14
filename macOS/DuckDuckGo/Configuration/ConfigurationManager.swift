@@ -25,7 +25,6 @@ import PrivacyConfig
 import Configuration
 import Common
 import FoundationExtensions
-import Networking
 import PixelKit
 
 final class ConfigurationManager: DefaultConfigurationManager {
@@ -93,8 +92,10 @@ final class ConfigurationManager: DefaultConfigurationManager {
 
         let updateBloomFilterTask = Task {
             do {
-                try await fetcher.fetch(all: [.bloomFilterBinary, .bloomFilterSpec])
-                try await updateBloomFilter()
+                let updatedConfigurations = try await fetcher.fetch(all: [.bloomFilterBinary, .bloomFilterSpec])
+                if !updatedConfigurations.isEmpty {
+                    try await updateBloomFilter()
+                }
                 tryAgainLater()
             } catch {
                 handleRefreshError(error)
@@ -103,7 +104,12 @@ final class ConfigurationManager: DefaultConfigurationManager {
 
         let updateBloomFilterExclusionsTask = Task {
             do {
-                try await fetcher.fetch(.bloomFilterExcludedDomains, isDebug: isDebug)
+                let fetchResult = try await fetcher.fetch(.bloomFilterExcludedDomains, isDebug: isDebug)
+                guard fetchResult == .updated else {
+                    tryAgainLater()
+                    return
+                }
+
                 try await updateBloomFilterExclusions()
                 tryAgainLater()
             } catch {
@@ -125,66 +131,58 @@ final class ConfigurationManager: DefaultConfigurationManager {
         var didFetchAnyTrackerBlockingDependencies = false
 
         // Start surrogates fetch task
-        let surrogatesTask = Task { _ = try await fetcher.fetch(.surrogates, isDebug: isDebug) }
+        let surrogatesTask = Task { try await fetcher.fetch(.surrogates, isDebug: isDebug) }
 
         // Perform privacyConfiguration fetch and update
         do {
-            try await fetcher.fetch(.privacyConfiguration, isDebug: isDebug)
-            didFetchAnyTrackerBlockingDependencies = true
-            privacyConfigurationManager.reload(etag: store.loadEtag(for: .privacyConfiguration),
-                                               data: store.loadData(for: .privacyConfiguration))
+            let fetchResult = try await fetcher.fetch(.privacyConfiguration, isDebug: isDebug)
+            if fetchResult == .updated {
+                didFetchAnyTrackerBlockingDependencies = true
+                privacyConfigurationManager.reload(etag: store.loadEtag(for: .privacyConfiguration),
+                                                   data: store.loadData(for: .privacyConfiguration))
+            }
         } catch {
-            Logger.config.error(
-                "Failed to complete configuration update to \(Configuration.privacyConfiguration.rawValue, privacy: .public): \(error.localizedDescription, privacy: .public)"
-            )
-            tryAgainSoon()
+            handleTrackerBlockingFetchError(error, for: .privacyConfiguration)
         }
 
         // Start trackerDataSet fetch task after privacyConfiguration completes
-        let trackerDataSetTask = Task { _ = try await fetcher.fetch(.trackerDataSet, isDebug: isDebug) }
+        let trackerDataSetTask = Task { try await fetcher.fetch(.trackerDataSet, isDebug: isDebug) }
 
         // Wait for surrogates and trackerDataSet tasks
-        let tasks: [(Configuration, Task<(), Swift.Error>)] = [
+        let tasks: [(Configuration, Task<ConfigurationFetchResult, Swift.Error>)] = [
             (.surrogates, surrogatesTask),
             (.trackerDataSet, trackerDataSetTask)
         ]
 
         for (configuration, task) in tasks {
             do {
-                try await task.value
-                didFetchAnyTrackerBlockingDependencies = true
+                let fetchResult = try await task.value
+                didFetchAnyTrackerBlockingDependencies = didFetchAnyTrackerBlockingDependencies || fetchResult == .updated
             } catch {
-                Logger.config.error(
-                    "Failed to complete configuration update to \(configuration.rawValue, privacy: .public): \(error.localizedDescription, privacy: .public)"
-                )
-                tryAgainSoon()
+                handleTrackerBlockingFetchError(error, for: configuration)
             }
         }
 
         return didFetchAnyTrackerBlockingDependencies
     }
 
-    /// Fetches and applies just the privacy configuration, throwing on failure.
-    /// Use this for debug/override flows where the caller needs to know if the fetch succeeded.
-    /// A 304 (Not Modified) response is treated as success since the cached data is still valid.
+    /// Fetches and applies the privacy configuration for debug and override flows.
+    /// Throws if the refresh check fails. A not-modified response reapplies the cached configuration.
     func fetchPrivacyConfiguration(isDebug: Bool = false) async throws {
-        do {
-            try await fetcher.fetch(.privacyConfiguration, isDebug: isDebug)
-        } catch APIRequest.Error.invalidStatusCode(304) {
-            // Config unchanged on the server; cached data is still valid
-        }
+        try await fetcher.fetch(.privacyConfiguration, isDebug: isDebug)
         privacyConfigurationManager.reload(etag: store.loadEtag(for: .privacyConfiguration),
                                            data: store.loadData(for: .privacyConfiguration))
         contentBlockingManager.scheduleCompilation()
     }
 
-    private func handleRefreshError(_ error: Swift.Error) {
-        // Avoid firing a configuration fetch error pixel when we received a 304 status code.
-        // A 304 status code is expected when we request the config with an ETag that matches the current remote version.
-        if case APIRequest.Error.invalidStatusCode(304) = error {
-            return
-        }
+    private func handleTrackerBlockingFetchError(_ error: Swift.Error, for configuration: Configuration) {
+        Logger.config.error(
+            "Failed to complete configuration update to \(configuration.rawValue, privacy: .public): \(error.localizedDescription, privacy: .public)"
+        )
+        tryAgainSoon()
+    }
 
+    private func handleRefreshError(_ error: Swift.Error) {
         Logger.config.error("Failed to complete configuration update \(error.localizedDescription, privacy: .public)")
         PixelKit.fire(DebugEvent(GeneralPixel.configurationFetchError(error: error), error: error))
         tryAgainSoon()

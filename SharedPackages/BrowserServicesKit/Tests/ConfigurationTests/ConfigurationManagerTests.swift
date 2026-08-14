@@ -93,6 +93,17 @@ final class ConfigurationManagerTests: XCTestCase {
         configurationManagers = []
     }
 
+    func testWhenTryAgainSoonIsCalledThenRefreshIsDeferredRatherThanTriggeredImmediately() {
+        let manager = makeConfigurationManager()
+
+        manager.tryAgainSoon()
+
+        XCTAssertFalse(manager.isReadyToRefresh,
+                       "tryAgainSoon() must delay the next refresh; dating lastUpdateTime in the past makes every subsequent check refresh immediately")
+        XCTAssertGreaterThan(manager.lastUpdateTime, Date(),
+                             "The retry is scheduled by pushing lastUpdateTime forward, not back")
+    }
+
     func makeConfigurationFetcher(store: ConfigurationStoring,
                                   validator: ConfigurationValidating = MockValidator()) -> ConfigurationFetcher {
         let testConfiguration = URLSessionConfiguration.default

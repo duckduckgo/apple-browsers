@@ -56,7 +56,7 @@ final class FireViewController: NSViewController {
     private let tabCollectionViewModel: TabCollectionViewModel
     private let featureFlagger: FeatureFlagger
 
-    private let themeManager: ThemeManaging
+    private let themeManager: ThemeManager
     private var theme: ThemeStyleProviding {
         themeManager.theme
     }
@@ -87,7 +87,7 @@ final class FireViewController: NSViewController {
     }()
 
     private lazy var progressIndicatorBackgroundView: ColorView = {
-        let view = ColorView(frame: .zero, backgroundColor: .newTabPageBackground)
+        let view = ColorView(frame: .zero, backgroundColor: .init(designSystemColor: .surfacePrimary, palette: themeManager.designColorPalette))
         view.translatesAutoresizingMaskIntoConstraints = false
         view.cornerRadius = featureFlagger.isFeatureOn(.fireDialogSimplified) ? 24 : 8
         return view
@@ -152,7 +152,7 @@ final class FireViewController: NSViewController {
     @MainActor
     init(tabCollectionViewModel: TabCollectionViewModel,
          fireViewModel: FireViewModel,
-         themeManager: ThemeManaging? = nil,
+         themeManager: ThemeManager? = nil,
          visualizeFireAnimationDecider: VisualizeFireSettingsDecider,
          featureFlagger: FeatureFlagger) {
         self.tabCollectionViewModel = tabCollectionViewModel

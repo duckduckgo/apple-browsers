@@ -192,7 +192,7 @@ final class FireDialogViewModel: ObservableObject {
         self.includeHistory = includeHistory ?? self.settings.lastIncludeHistoryState ?? true
         self.includeCookiesAndSiteData = includeCookiesAndSiteData ?? self.settings.lastIncludeCookiesAndSiteDataState ?? true
         self.includeChatHistorySetting = includeChatHistory ?? self.settings.lastIncludeChatHistoryState ?? false
-        self.isSectionsExpanded = sectionsExpanded ?? self.settings.lastSectionsExpandedState ?? false
+        self.isSectionsExpanded = sectionsExpanded ?? self.settings.lastSectionsExpandedState ?? true
 
         updateLastSelectedClearingOptionIfNeeded()
 
@@ -287,10 +287,23 @@ final class FireDialogViewModel: ObservableObject {
     }
 
     /// Whether the "Choose what to delete" sections are expanded.
+    ///
+    /// The sections are expanded until the first data clearing, then collapsed. Setting this property
+    /// stores the user choice, which all later dialogs use instead of the default.
     @Published var isSectionsExpanded: Bool {
         didSet {
             settings.lastSectionsExpandedState = isSectionsExpanded
         }
+    }
+
+    /// Collapses the "Choose what to delete" sections for all later dialogs, if the user did not
+    /// choose the expanded state themselves.
+    ///
+    /// Call this when the user starts data clearing from the dialog. Only the expand/collapse button
+    /// also stores this state, so a missing stored state means that the user made no choice yet.
+    func didConfirmDataClearing() {
+        guard settings.lastSectionsExpandedState == nil else { return }
+        settings.lastSectionsExpandedState = false
     }
 
     @Published private(set) var selectable: [Item] = []

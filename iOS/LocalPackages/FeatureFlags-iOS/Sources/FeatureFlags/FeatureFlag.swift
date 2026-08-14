@@ -310,9 +310,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212980785692847?focus=true
     case aiChatSync
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214965000466711?focus=true
-    case aiChatSyncPromo
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212745919983886?focus=true
     case aiChatSuggestions
 
@@ -541,9 +538,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216629730083154?focus=true
     case systemFindInPage
 
-    /// Experiment for removing monthly free trials
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216851336490252
-    case monthlyFreeTrialExperiment
+    /// Experiment for removing monthly free trials — second run, enrolling only free-trial eligible users.
+    /// https://app.asana.com/1/137249556945/task/1217334233390728
+    case monthlyFreeTrialExperiment2
 
     /// Moves the iPad tabs bar up into the system window controls row (iOS 26+ resizable windows).
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217015452646368?focus=true
@@ -791,8 +788,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AIChatSubfeature.multiplePageContexts))
         case .aiChatSync:
             Config(source: .remoteReleasable(SyncSubfeature.aiChatSync))
-        case .aiChatSyncPromo:
-            Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.aiChatSyncPromo))
         case .aiChatSuggestions:
             Config(defaultValue: .enabled, source: .remoteReleasable(DuckAiChatHistorySubfeature.featureEnabled))
         case .aiChatNativeChatHistory:
@@ -837,8 +832,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.searchTokenExperimentV2), cohortType: SearchTokenExperimentCohort.self)
         case .onboardingFlowByDownloadReasonExperiment:
             Config(source: .disabled, cohortType: OnboardingFlowByDownloadReasonExperimentCohort.self)
-        case .monthlyFreeTrialExperiment:
-            Config(source: .remoteReleasable(PrivacyProSubfeature.monthlyFreeTrialExperiment), cohortType: MonthlyFreeTrialExperimentCohort.self)
+        case .monthlyFreeTrialExperiment2:
+            Config(source: .remoteReleasable(PrivacyProSubfeature.monthlyFreeTrialExperiment2), cohortType: MonthlyFreeTrialExperimentCohort.self)
         case .genericBackgroundTask:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.genericBackgroundTask))
         case .crashCollectionLimitCallStackTreeDepth:

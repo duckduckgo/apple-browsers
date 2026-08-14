@@ -978,9 +978,11 @@ extension MainViewController: TabsBarDelegate {
     func tabsBarDidRequestAIChat(_ controller: TabsBarViewController) {
         // Chrome button always opens Duck.ai in a new tab unless current tab is blank — matches macOS.
         if let currentTab, currentTab.tabModel.link != nil {
+            // Bypasses `openAIChat`, so fire the entry pixel directly.
+            fireAIChatEntryPointPixel(source: .tabsBarButton, opensNewTab: true, hasPrompt: false)
             currentTab.openNewChatInNewTab()
         } else {
-            openAIChat()
+            openAIChat(source: .tabsBarButton)
         }
     }
 
@@ -997,6 +999,8 @@ extension MainViewController: TabsBarDelegate {
         } else {
             // Route through TabViewController so the cold-restore `contextualChatURL`
             // is honored — presenting the coordinator directly would skip it and open a blank chat.
+            // The sheet bypasses `openAIChat`, so fire the entry pixel directly.
+            fireAIChatEntryPointPixel(source: .contextualChat, opensNewTab: false, hasPrompt: false)
             currentTab.presentContextualAIChatSheet(from: self)
         }
     }

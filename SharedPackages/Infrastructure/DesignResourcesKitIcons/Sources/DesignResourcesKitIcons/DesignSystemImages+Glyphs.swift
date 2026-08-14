@@ -287,6 +287,7 @@ public extension DesignSystemImages {
             public static var jumpRecolorable: DesignSystemImage { .init(resource: .jumpRecolorable16) }
             public static var keyboard: DesignSystemImage { .init(resource: .keyboard16) }
             public static var keyLogin: DesignSystemImage { .init(resource: .keyLogin16) }
+            public static var lightning: DesignSystemImage { .init(resource: .lightning16) }
             public static var link: DesignSystemImage { .init(resource: .link16) }
             public static var linkRecolorable: DesignSystemImage { .init(resource: .linkRecolorable16) }
             public static var lock: DesignSystemImage { .init(resource: .lock16) }
@@ -363,7 +364,6 @@ public extension DesignSystemImages {
             public static var thinking: DesignSystemImage { .init(resource: .thinking16) }
             public static var timer: DesignSystemImage { .init(resource: .timer16) }
             public static var thumbsUp: DesignSystemImage { .init(resource: .thumbsUp16) }
-            public static var thunderbolt: DesignSystemImage { .init(resource: .thunderbolt16) }
             public static var translate: DesignSystemImage { .init(resource: .translate16) }
             public static var trash: DesignSystemImage { .init(resource: .trash16) }
             public static var typeSize: DesignSystemImage { .init(resource: .typeSize16) }

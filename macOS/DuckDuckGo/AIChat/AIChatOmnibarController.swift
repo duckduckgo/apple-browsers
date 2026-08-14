@@ -102,6 +102,8 @@ final class AIChatOmnibarController {
     /// Shared 4-view cap across both pickers (reuses `FreeTrialBadgePersistor`, separately keyed).
     /// Past the cap the badge mutes instead of hiding — it's the only entry point to the upsell.
     private let badgeImpressionPersistor: FreeTrialBadgePersisting
+    /// `nil` for surfaces built without a native-storage handler (and in tests).
+    private let usageLimitsStore: DuckAiUsageLimitsStore?
     private lazy var attachedTabsTracker = AIChatAttachedTabsTracker(
         origin: origin,
         windowControllersManager: Application.appDelegate.windowControllersManager
@@ -132,6 +134,11 @@ final class AIChatOmnibarController {
     /// models endpoint, resolved to the user's tier. `nil` until fetched, or when the endpoint
     /// omits the block — callers fall back to the previously shipped defaults in that case.
     private(set) var attachmentLimits: AIChatAttachmentTierLimits?
+
+    /// The Duck.ai usage snapshot as of the last activation. `nil` when the usage-warnings feature isn't
+    /// active for this user, which is not the same as `.noData` (active, but nothing worth warning about).
+    /// Refreshed on every activation and cleared on cleanup, so it never outlives the panel that read it.
+    @Published private(set) var usageLimits: DuckAiUsageLimits?
 
     /// Called after a successful submit so the container VC can cancel any in-flight image
     /// resize tasks (data is cleared via `persistAttachmentsToActiveTab([])`).
@@ -286,7 +293,8 @@ final class AIChatOmnibarController {
         // are both @MainActor-isolated; a default *parameter value* is evaluated in a nonisolated
         // context even though this initializer's body is not, so the real default is resolved below.
         subscriptionUpsellPresenter: AIChatOmnibarSubscriptionUpselling? = nil,
-        badgeImpressionPersistor: FreeTrialBadgePersisting = FreeTrialBadgePersistor(keyValueStore: UserDefaults.standard, keyPrefix: "aichat-omnibar")
+        badgeImpressionPersistor: FreeTrialBadgePersisting = FreeTrialBadgePersistor(keyValueStore: UserDefaults.standard, keyPrefix: "aichat-omnibar"),
+        usageLimitsStore: DuckAiUsageLimitsStore? = nil
     ) {
         self.aiChatTabOpener = aiChatTabOpener
         self.surface = surface
@@ -305,6 +313,7 @@ final class AIChatOmnibarController {
         self.subscriptionUpsellPresenter = subscriptionUpsellPresenter
             ?? AIChatOmnibarSubscriptionUpsellPresenter(coordinator: Application.appDelegate.subscriptionNavigationCoordinator)
         self.badgeImpressionPersistor = badgeImpressionPersistor
+        self.usageLimitsStore = usageLimitsStore
         self.suggestionsViewModel = AIChatSuggestionsViewModel(
             maxSuggestions: suggestionsReader?.maxHistoryCount ?? AIChatSuggestionsViewModel.defaultMaxSuggestions
         )
@@ -387,6 +396,7 @@ final class AIChatOmnibarController {
         }
 
         fetchModels()
+        refreshUsageLimits()
 
         // If feature is disabled, clear any existing suggestions and don't fetch
         if !isSuggestionsEnabled {
@@ -397,6 +407,13 @@ final class AIChatOmnibarController {
         if shouldFetchSuggestions {
             fetchSuggestionsIfNeeded(query: currentText)
         }
+    }
+
+    /// Reads the usage snapshot the Duck.ai web app last wrote. Synchronous and cheap — it's a lookup in the
+    /// already-loaded entries blob, the same read `CustomizeResponsesStore` does on the tools-menu path — so it
+    /// doesn't need the async treatment `fetchModels()` gets for its network call.
+    private func refreshUsageLimits() {
+        usageLimits = usageLimitsStore?.currentLimits()
     }
 
     private func fetchModels() {
@@ -1061,6 +1078,7 @@ final class AIChatOmnibarController {
         activeToolMode = nil
         hasImageAttachments = false
         hasBeenActivated = false
+        usageLimits = nil
         suggestionsViewModel.clearAllChats()
         currentFetchTask?.cancel()
         currentFetchTask = nil

@@ -276,6 +276,19 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         customizeResponsesChangedSubject.eraseToAnyPublisher()
     }
 
+    /// The Duck.ai usage snapshot as of the last time this NTP entered Duck.ai mode. `nil` when the
+    /// usage-warnings feature isn't active for this user — distinct from `.noData`, which means the read
+    /// happened and there's nothing worth warning about.
+    private(set) var usageLimits: DuckAiUsageLimits?
+
+    @MainActor
+    func refreshUsageLimits(requestingWebView: WKWebView?) {
+        guard let windowControllersManager else { return }
+        let burnerMode = AIChatTabPickerSource.originTabCollectionViewModel(for: requestingWebView, in: windowControllersManager)?.burnerMode ?? .regular
+        let handler = NSApp.delegateTyped.burnerDuckAiStorageRegistry?.handler(for: burnerMode) ?? NSApp.delegateTyped.duckAiNativeStorageHandler
+        usageLimits = DuckAiUsageLimitsStore(storageHandler: handler).currentLimits()
+    }
+
     func notifyCustomizeResponsesChanged() {
         customizeResponsesChangedSubject.send(())
     }

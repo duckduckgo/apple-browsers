@@ -55,6 +55,12 @@ public protocol NewTabPageOmnibarConfigProviding: AnyObject {
     /// Fires when the stored response customization changes, so the client re-pushes the config.
     var customizeResponsesStatePublisher: AnyPublisher<Void, Never> { get }
 
+    /// Re-reads the Duck.ai usage-limit snapshot for the window hosting `requestingWebView`; pass `nil` to
+    /// resolve the current key window. Called when the NTP omnibar enters Duck.ai mode — the web omnibar has
+    /// no focus message, so mode entry is the closest available "the user is about to prompt" signal.
+    @MainActor
+    func refreshUsageLimits(requestingWebView: WKWebView?)
+
     /// Whether the attach-tabs (and files) affordance is enabled. Driven by the
     /// `aiChatNtpAttachMoreTabs` feature flag. Published so the client can push an
     /// `omnibar_onConfigUpdate` when the flag flips at runtime, keeping an open NTP in sync.

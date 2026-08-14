@@ -190,6 +190,9 @@ jobs:
     - name: Build and test
       id: run-unit-tests
       env:
+        # Under CI, SPM builds packages in release configuration (the CI configuration maps to .release),
+        # so `.when(configuration: .debug)` doesn't fire and the DEBUG-only snapshot tests wouldn't compile.
+        # This forces DEBUG on for the package build. Read in SyncUI-iOS/Package.swift.
         SPM_FORCE_DEBUG_FOR_SNAPSHOTS: "1"
       run: |
         echo "Using iOS simulator: ${{ steps.select-simulator.outputs.ios-version }}"

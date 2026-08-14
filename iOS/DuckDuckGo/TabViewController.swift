@@ -469,7 +469,7 @@ class TabViewController: UIViewController {
     public var link: Core.Link? {
         if isError {
             if let url = url ?? webView.url ?? URL(string: "") {
-                return Link(title: errorText, url: url)
+                return Link(title: errorText, url: SerpSearchTokenInterceptor.strippingToken(from: url))
             }
         }
         
@@ -1146,6 +1146,10 @@ class TabViewController: UIViewController {
     
     func updateTabModel() {
         if let url = url {
+            // Strip the search-token param before it persists into `tabModel.link`, which is read directly
+            // (bypassing the computed `link`) by the tab switcher, autocomplete, and tab restore. Shadow
+            // `url` so the title-preservation comparison below matches the stored (also stripped) URL.
+            let url = SerpSearchTokenInterceptor.strippingToken(from: url)
             let hasTitle = title != nil && !title!.isEmpty
             let previousTitle = (tabModel.link?.url == url) ? tabModel.link?.title : nil
             let link = Link(title: hasTitle ? title : previousTitle, url: url)

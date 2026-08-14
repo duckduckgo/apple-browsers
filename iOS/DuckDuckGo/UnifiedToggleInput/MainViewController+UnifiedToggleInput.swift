@@ -89,6 +89,8 @@ extension MainViewController {
             attachmentPasteEnabled: unifiedToggleInputFeature.isAttachmentPasteEnabled
         )
         coordinator.delegate = self
+        coordinator.pageTypeProvider = { [weak self] in self?.currentPromptPageType() }
+        coordinator.duckAIEntrySourceProvider = { [weak self] in self?.lastDuckAIEntrySource }
         coordinator.updateVoiceSearchAvailability(voiceSearchHelper.isVoiceSearchEnabled)
         coordinator.updateAIVoiceChatAvailability(voiceShortcutFeature.isAvailable)
         coordinator.updateAIChatShortcutAvailability(aiChatAddressBarExperience.shouldShowDuckAIAddressBarButton)

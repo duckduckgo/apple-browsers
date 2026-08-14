@@ -205,6 +205,14 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     var switchBarHandler: SwitchBarHandling { viewController.handler }
     var onAnimatedDismissToOmnibar: ((_ completion: (() -> Void)?) -> Void)?
 
+    var pageTypeProvider: (() -> UnifiedToggleInputPromptPageType?)?
+    var duckAIEntrySourceProvider: (() -> AIChatEntryPointSource?)?
+
+    private var resolvedPromptPageType: UnifiedToggleInputPromptPageType {
+        if host == .contextualChat { return .contextual }
+        return pageTypeProvider?() ?? .unknown
+    }
+
     var isOmnibarSession: Bool { stateMachine.isOmnibarSession }
     var isAITabState: Bool { stateMachine.isAITabState }
     var isAITabExpanded: Bool { stateMachine.isAITabExpanded }
@@ -362,7 +370,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 surface: self.pixelSurface,
                 isDuckAISurfaceForAttribution: self.isDuckAISurfaceForAttribution,
                 inputMode: self.inputMode,
-                isToggleVisible: self.isToggleVisible
+                isToggleVisible: self.isToggleVisible,
+                pageType: self.resolvedPromptPageType,
+                duckAIEntrySource: self.duckAIEntrySourceProvider?()
             )
         })
         wideEventReporter = UTIWideEventReporter(
@@ -376,7 +386,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                     persistedReasoningEffort: self.persistedReasoningEffort,
                     fireMode: self.viewController.handler.isFireTab,
                     hasSubmittedPrompt: self.hasSubmittedPrompt,
-                    entryPoint: self.duckAIEntryPoint
+                    entryPoint: self.duckAIEntryPoint,
+                    entrySource: self.duckAIEntrySourceProvider?()
                 )
             }
         )
@@ -1529,6 +1540,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
                 switchBarSubmissionMetrics.process(text, for: .search)
             }
             sessionMonitor.recordActivity(mode: .search)
+            pixelReporter.reportQuerySubmitted(defaultOmnibarMode: aiChatSettings.defaultOmnibarMode)
             clearStoreEntryAfterSubmission()
             if isAITabState {
                 hide()
@@ -1572,7 +1584,8 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             selectedTool: toolsController.selectedTool,
             attachments: viewController.currentAttachments,
             reasoningMode: reasoningModeForSubmitPixel,
-            modelId: modelStore.persistedModelId
+            modelId: modelStore.persistedModelId,
+            defaultOmnibarMode: aiChatSettings.defaultOmnibarMode
         )
         pixelReporter.reportToolSubmittedIfNeeded(
             selectedTool: toolsController.selectedTool,

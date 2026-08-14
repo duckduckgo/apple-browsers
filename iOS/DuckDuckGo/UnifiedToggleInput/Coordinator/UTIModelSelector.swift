@@ -304,12 +304,24 @@ final class UTIModelSelector {
     private func buildReasoningPickerMenu() -> UIMenu? {
         guard let selectedModel = modelStore.selectedModel else { return nil }
 
-        return reasoningMenuFactory.makeMenu(
-            model: selectedModel,
-            selectedMode: resolvedSelectedReasoningMode
-        ) { [weak self] mode in
+        let onSelect: (AIChatReasoningMode) -> Void = { [weak self] mode in
             self?.handleReasoningModeSelection(mode)
         }
+
+        if isUpdatedModelPickerEnabled {
+            return reasoningMenuFactory.makeUpdatedMenu(
+                model: selectedModel,
+                selectedMode: resolvedSelectedReasoningMode,
+                userTier: modelStore.subscriptionState.userTier,
+                onSelect: onSelect
+            )
+        }
+
+        return reasoningMenuFactory.makeMenu(
+            model: selectedModel,
+            selectedMode: resolvedSelectedReasoningMode,
+            onSelect: onSelect
+        )
     }
 
     private func refreshModelPickerMenuAfterRejectedSelection() {

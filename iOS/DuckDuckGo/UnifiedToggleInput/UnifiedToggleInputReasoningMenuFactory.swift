@@ -43,4 +43,45 @@ struct UnifiedToggleInputReasoningMenuFactory {
 
         return UIMenu(options: .singleSelection, children: actions)
     }
+
+    func makeUpdatedMenu(
+        model: AIChatModel,
+        selectedMode: AIChatReasoningMode?,
+        userTier: AIChatUserTier,
+        onSelect: @escaping (AIChatReasoningMode) -> Void
+    ) -> UIMenu? {
+        guard model.supportsReasoningPicker else { return nil }
+
+        let accessibleModes = model.availableReasoningModes.filter { model.accessibleReasoningModes.contains($0) }
+        let gatedModes = model.availableReasoningModes.filter { !model.accessibleReasoningModes.contains($0) }
+        var children: [UIMenuElement] = accessibleModes.map { mode in
+            makeUpdatedAction(mode: mode, selectedMode: selectedMode, isGated: false, onSelect: onSelect)
+        }
+
+        if !gatedModes.isEmpty {
+            let gatedActions = gatedModes.map { mode in
+                makeUpdatedAction(mode: mode, selectedMode: selectedMode, isGated: true, onSelect: onSelect)
+            }
+            let gatedSectionTitle = userTier == .plus ? UserText.aiChatModelPickerAvailableWithPro : UserText.aiChatModelPickerTryFree
+            children.append(UIMenu(title: gatedSectionTitle, options: .displayInline, children: gatedActions))
+        }
+
+        return UIMenu(options: .singleSelection, children: children)
+    }
+
+    private func makeUpdatedAction(
+        mode: AIChatReasoningMode,
+        selectedMode: AIChatReasoningMode?,
+        isGated: Bool,
+        onSelect: @escaping (AIChatReasoningMode) -> Void
+    ) -> UIAction {
+        UIAction(
+            title: isGated ? "\(mode.unifiedToggleInputTitle)…" : mode.unifiedToggleInputTitle,
+            subtitle: mode.unifiedToggleInputSubtitle,
+            image: mode.unifiedToggleInputMenuImage,
+            state: !isGated && mode == selectedMode ? .on : .off
+        ) { _ in
+            onSelect(mode)
+        }
+    }
 }

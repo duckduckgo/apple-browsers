@@ -2209,6 +2209,183 @@ final class FireDialogViewModelTests: XCTestCase {
         XCTAssertTrue(viewModel3.isSectionsExpanded, "Third dialog should be expanded")
     }
 
+    // MARK: - History (visits) toggle and details disclosure
+
+    /// Modes where the user can choose whether the browsing history is deleted.
+    private static let modesWithVisitsToggle: [FireDialogViewModel.Mode] = [
+        .fireButton,
+        .mainMenuAll,
+        .historyView(query: .rangeFilter(.all)),
+        .historyView(query: .rangeFilter(.allSites)),
+        .historyView(query: .rangeFilter(.today)),
+        .historyView(query: .rangeFilter(.yesterday)),
+        .historyView(query: .rangeFilter(.monday)),
+        .historyView(query: .rangeFilter(.older)),
+        .historyView(query: .dateFilter(Date())),
+        .historyView(query: .searchTerm("duck")),
+        .historyView(query: .domainFilter(["example.com"])),
+        .historyView(query: .domainFilter(["example.com", "duckduckgo.com"]))
+    ]
+
+    /// Modes scoped to records the user picked, where those records are always deleted.
+    private static let modesWithoutVisitsToggle: [FireDialogViewModel.Mode] = [
+        .historyView(query: .visits([])),
+        .historyView(query: .visits([VisitIdentifier(uuid: UUID().uuidString, url: URL(string: "https://example.com")!, date: Date())]))
+    ]
+
+    @MainActor func testWhenModeIsNotAHistoryItemSelection_ThenVisitsToggleIsShown() {
+        // Scenario: The dialog is opened from the fire button, the main menu, or a History view
+        // section, all of which delete a whole part of the history.
+        // Expectation: The History toggle is visible, so the user can exclude the browsing history
+        // and delete only the site data.
+
+        for mode in Self.modesWithVisitsToggle {
+            XCTAssertTrue(mode.shouldShowVisitsToggle, "\(mode) should show the History toggle")
+        }
+    }
+
+    @MainActor func testWhenModeIsAHistoryItemSelection_ThenVisitsToggleIsHidden() {
+        // Scenario: The user selects history items in the History view and deletes them.
+        // Expectation: The History toggle is hidden, because the selected items are the subject
+        // of the deletion and cannot be excluded from it.
+
+        for mode in Self.modesWithoutVisitsToggle {
+            XCTAssertFalse(mode.shouldShowVisitsToggle, "\(mode) should not show the History toggle")
+        }
+    }
+
+    @MainActor func testWhenVisitsToggleIsHidden_ThenHistoryIsDeletedRegardlessOfThePersistedSetting() {
+        // Scenario: The user turned the History toggle off in an earlier dialog, then deletes
+        // selected items in the History view.
+        // Expectation: The selected items are deleted. The dialog shows no History toggle, so the
+        // earlier choice must not silently reduce the deletion to the site data.
+
+        let mockSettings = MockFireDialogViewSettings(lastIncludeHistoryState: false)
+
+        for mode in Self.modesWithoutVisitsToggle {
+            let viewModel = makeViewModel(settings: mockSettings, mode: mode)
+
+            XCTAssertFalse(viewModel.includeHistory, "\(mode) should keep the persisted setting")
+            XCTAssertTrue(viewModel.shouldDeleteHistory, "\(mode) should delete the selected items anyway")
+        }
+    }
+
+    @MainActor func testWhenVisitsToggleIsShown_ThenHistoryDeletionFollowsTheToggle() {
+        // Scenario: The dialog has a History toggle.
+        // Expectation: The history is deleted only when the toggle is on.
+
+        for mode in Self.modesWithVisitsToggle {
+            let excludingHistory = makeViewModel(settings: MockFireDialogViewSettings(lastIncludeHistoryState: false), mode: mode)
+            XCTAssertFalse(excludingHistory.shouldDeleteHistory, "\(mode) should not delete the history")
+
+            let includingHistory = makeViewModel(settings: MockFireDialogViewSettings(lastIncludeHistoryState: true), mode: mode)
+            XCTAssertTrue(includingHistory.shouldDeleteHistory, "\(mode) should delete the history")
+        }
+    }
+
+    @MainActor func testDetailsDisclosureFollowsVisitsToggle() {
+        // Scenario: Any dialog mode.
+        // Expectation: The "Choose what to delete" disclosure control appears only together with
+        // the History toggle. Without it, too few rows remain to make the sections worth hiding.
+
+        for mode in Self.modesWithVisitsToggle + Self.modesWithoutVisitsToggle {
+            XCTAssertEqual(mode.shouldShowDetailsDisclosure, mode.shouldShowVisitsToggle, "\(mode)")
+        }
+    }
+
+    @MainActor func testWhenModeHidesDetailsDisclosure_ThenSectionsAreShownExpanded() {
+        // Scenario: A collapsed state is persisted, then a scoped history dialog is opened.
+        // Expectation: The sections are shown expanded. The dialog has no disclosure control,
+        // so a collapsed state would leave the user with no way to expand them.
+
+        let mockSettings = MockFireDialogViewSettings(lastSectionsExpandedState: false)
+
+        for mode in Self.modesWithoutVisitsToggle {
+            let viewModel = makeViewModel(settings: mockSettings, mode: mode)
+
+            XCTAssertFalse(viewModel.isSectionsExpanded, "\(mode) should keep the persisted state")
+            XCTAssertTrue(viewModel.shouldShowSectionsExpanded, "\(mode) should still show the sections expanded")
+        }
+    }
+
+    @MainActor func testWhenModeShowsDetailsDisclosure_ThenSectionsFollowPersistedState() {
+        // Scenario: The dialog has a disclosure control.
+        // Expectation: The sections follow the persisted expanded state.
+
+        for mode in Self.modesWithVisitsToggle {
+            let collapsedViewModel = makeViewModel(settings: MockFireDialogViewSettings(lastSectionsExpandedState: false), mode: mode)
+            XCTAssertFalse(collapsedViewModel.shouldShowSectionsExpanded, "\(mode) should stay collapsed")
+
+            let expandedViewModel = makeViewModel(settings: MockFireDialogViewSettings(lastSectionsExpandedState: true), mode: mode)
+            XCTAssertTrue(expandedViewModel.shouldShowSectionsExpanded, "\(mode) should stay expanded")
+        }
+    }
+
+    // MARK: - Dialog title for selected history items
+
+    @MainActor func testWhenModeIsSelectedVisits_ThenDialogTitleShowsTheNumberOfItems() {
+        // Scenario: The user selects history items in the History view and deletes them.
+        // Expectation: The dialog title shows how many items are deleted.
+
+        let mode = FireDialogViewModel.Mode.historyView(query: .visits([
+            makeVisitIdentifier(url: "https://example.com"),
+            makeVisitIdentifier(url: "https://duckduckgo.com"),
+            makeVisitIdentifier(url: "https://spreadprivacy.com")
+        ]))
+
+        XCTAssertEqual(mode.dialogTitle, UserText.fireDialogHistoryItemsTitle(3))
+        XCTAssertEqual(mode.dialogTitle, "Delete 3 History items?")
+    }
+
+    @MainActor func testWhenModeIsSingleSelectedVisit_ThenDialogTitleShowsOneItem() {
+        // Scenario: The user selects a single history item and deletes it.
+        // Expectation: The dialog title shows a count of one.
+
+        let mode = FireDialogViewModel.Mode.historyView(query: .visits([
+            makeVisitIdentifier(url: "https://example.com")
+        ]))
+
+        XCTAssertEqual(mode.dialogTitle, UserText.fireDialogHistoryItemsTitle(1))
+    }
+
+    @MainActor func testWhenSelectedVisitsShareHistoryEntry_ThenDialogTitleCountsTheEntryOnce() {
+        // Scenario: The user selects several visits of the same page, made on different days.
+        // Expectation: The title counts the history entry once, because deleting any of its
+        // visits deletes the same entry.
+
+        let uuid = UUID().uuidString
+        let mode = FireDialogViewModel.Mode.historyView(query: .visits([
+            .init(uuid: uuid, url: URL(string: "https://example.com")!, date: Date()),
+            .init(uuid: uuid, url: URL(string: "https://example.com")!, date: Date().addingTimeInterval(-.days(1))),
+            makeVisitIdentifier(url: "https://duckduckgo.com")
+        ]))
+
+        XCTAssertEqual(mode.dialogTitle, UserText.fireDialogHistoryItemsTitle(2))
+    }
+
+    @MainActor func testWhenNoVisitsAreSelected_ThenDialogTitleShowsZeroItems() {
+        // Scenario: The mode carries an empty selection.
+        // Expectation: The title renders without crashing and shows a count of zero.
+
+        let mode = FireDialogViewModel.Mode.historyView(query: .visits([]))
+
+        XCTAssertEqual(mode.dialogTitle, UserText.fireDialogHistoryItemsTitle(0))
+    }
+
+    @MainActor func testDialogTitlesOfOtherHistoryViewModesAreUnchanged() {
+        // Scenario: The other History view entry points.
+        // Expectation: Their titles keep using the History view delete dialog titles.
+
+        XCTAssertEqual(FireDialogViewModel.Mode.historyView(query: .rangeFilter(.all)).dialogTitle,
+                       HistoryViewDeleteDialogModel.DeleteMode.all.title)
+        XCTAssertEqual(FireDialogViewModel.Mode.historyView(query: .rangeFilter(.today)).dialogTitle,
+                       HistoryViewDeleteDialogModel.DeleteMode.today.title)
+        XCTAssertEqual(FireDialogViewModel.Mode.historyView(query: .rangeFilter(.older)).dialogTitle,
+                       HistoryViewDeleteDialogModel.DeleteMode.older.title)
+        XCTAssertEqual(FireDialogViewModel.Mode.historyView(query: .domainFilter(["example.com"])).dialogTitle,
+                       HistoryViewDeleteDialogModel.DeleteMode.sites(["example.com"]).title)
+    }
+
     // MARK: - Simplified Fire Dialog: currentWindow folding
 
     @MainActor func testClearingOption_WhenSimplifiedEnabledAndPersistedScopeIsCurrentWindow_FoldsToAllData() {
@@ -2368,7 +2545,8 @@ final class FireDialogViewModelTests: XCTestCase {
     }
 
     @MainActor
-    private func makeViewModel(settings: any KeyedStoring<FireDialogViewSettings>) -> FireDialogViewModel {
+    private func makeViewModel(settings: any KeyedStoring<FireDialogViewSettings>,
+                               mode: FireDialogViewModel.Mode = .fireButton) -> FireDialogViewModel {
         FireDialogViewModel(
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
@@ -2377,6 +2555,7 @@ final class FireDialogViewModelTests: XCTestCase {
             fireproofDomains: fireproofDomains,
             faviconManagement: fire.faviconManagement,
             featureFlagger: MockFeatureFlagger(),
+            mode: mode,
             settings: settings,
             tld: TLD(),
             windowControllersManager: windowControllersManager,
@@ -2422,6 +2601,11 @@ final class FireDialogViewModelTests: XCTestCase {
 
     private func makeFireproofDomains(_ domains: [String]) {
         domains.forEach { fireproofDomains.add(domain: $0) }
+    }
+
+    /// Makes an identifier of a single visit of a history entry that no other identifier refers to.
+    private func makeVisitIdentifier(url: String, date: Date = Date()) -> VisitIdentifier {
+        VisitIdentifier(uuid: UUID().uuidString, url: URL(string: url)!, date: date)
     }
 
     private func makeHistoryEntry(url: String) -> HistoryEntry {

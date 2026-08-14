@@ -88,7 +88,6 @@ final class DuckDuckGoDBPBackgroundAgentApplication: NSApplication {
 @main
 final class DuckDuckGoDBPBackgroundAgentAppDelegate: NSObject, NSApplicationDelegate {
     private let settings = DataBrokerProtectionSettings(defaults: .dbp)
-    private let resourceMonitor = ResourceMonitor()
     private var cancellables = Set<AnyCancellable>()
     private var statusBarMenu: StatusBarMenu?
     private let subscriptionManager: any SubscriptionManager
@@ -136,7 +135,7 @@ final class DuckDuckGoDBPBackgroundAgentAppDelegate: NSObject, NSApplicationDele
             featureFlagger: dbpFeatureFlagger,
             wideEvent: wideEvent,
             vpnBypassService: VPNBypassService(),
-            resourceMonitor: dbpFeatureFlagger.isPerformanceMetricsOn ? resourceMonitor : nil,
+            resourceMonitor: dbpFeatureFlagger.isPerformanceMetricsOn ? ResourceMonitor() : nil,
             applicationNameForUserAgentProvider: { WebViewUserAgentProvider.applicationNameForUserAgent }
         )
         manager?.agentFinishedLaunching()

@@ -29,12 +29,6 @@ struct MemoryUsageSample {
     let webContentFootprint: MemoryFootprint?
     /// Number of WebContent processes found, or `nil` if they could not be discovered.
     let webContentCount: Int?
-
-    static let unavailable = MemoryUsageSample(
-        agentFootprint: 0,
-        webContentFootprint: nil,
-        webContentCount: nil
-    )
 }
 
 /// Uses the same physical-memory measurement as AppHealth for the agent. For WebContent, it deliberately uses physical
@@ -42,7 +36,7 @@ struct MemoryUsageSample {
 struct MemoryUsageSampler {
 
     /// A missing process list means WebContent usage is unavailable; an empty list means it is known to be zero.
-    func takeSample(webContentPIDs: [pid_t]?) -> MemoryUsageSample {
+    func takeSample(webContentPIDs: Set<pid_t>?) -> MemoryUsageSample {
         let webContentFootprint = webContentPIDs.flatMap(Self.combinedPhysicalFootprint)
         return MemoryUsageSample(
             agentFootprint: Self.agentPhysicalFootprint(),
@@ -51,7 +45,7 @@ struct MemoryUsageSampler {
         )
     }
 
-    private static func combinedPhysicalFootprint(for pids: [pid_t]) -> MemoryUsageSample.MemoryFootprint? {
+    private static func combinedPhysicalFootprint(for pids: Set<pid_t>) -> MemoryUsageSample.MemoryFootprint? {
         var total: MemoryUsageSample.MemoryFootprint = 0
         for pid in pids {
             guard let footprint = physicalFootprint(for: pid) else { return nil }

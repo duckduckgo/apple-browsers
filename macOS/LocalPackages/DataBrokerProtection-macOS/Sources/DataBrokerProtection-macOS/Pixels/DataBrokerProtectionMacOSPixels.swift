@@ -36,10 +36,19 @@ public enum DataBrokerProtectionMacOSPixels {
 
     // Background Agent resource usage
     case resourceUsageRun(
+        /// Combined agent and WebContent CPU time consumed during the run.
         cpuTimeMinutesBucket: String,
-        averageCPUPercentBucket: String,
+        /// How long the run lasted, counting only time the system was awake.
+        elapsedMinutesBucket: String,
+        /// Highest agent memory footprint seen during the run.
         agentPeakFootprintMBBucket: String,
-        webContentPeakFootprintMBBucket: String
+        /// Highest combined WebContent footprint seen during the run, or unknown if it could not be read.
+        webContentPeakFootprintMBBucket: String,
+        /// Whether macOS reported critical memory pressure during the run. Pressure is machine-wide, so PIR is not
+        /// necessarily its cause.
+        hadCriticalPressure: Bool,
+        /// Whether the Mac was on battery when the run started, or `nil` on Macs that report no power source.
+        isOnBattery: Bool?
     )
     case criticalMemoryPressure
 
@@ -180,15 +189,19 @@ extension DataBrokerProtectionMacOSPixels: PixelKit.Event {
             return [DataBrokerProtectionSharedPixels.Consts.errorCategoryKey: error]
         case .resourceUsageRun(
             let cpuTimeMinutesBucket,
-            let averageCPUPercentBucket,
+            let elapsedMinutesBucket,
             let agentPeakFootprintMBBucket,
-            let webContentPeakFootprintMBBucket
+            let webContentPeakFootprintMBBucket,
+            let hadCriticalPressure,
+            let isOnBattery
         ):
             return [
                 "cpu_time_minutes_bucket": cpuTimeMinutesBucket,
-                "average_cpu_percent_bucket": averageCPUPercentBucket,
+                "elapsed_minutes_bucket": elapsedMinutesBucket,
                 "agent_peak_footprint_mb_bucket": agentPeakFootprintMBBucket,
-                "web_content_peak_footprint_mb_bucket": webContentPeakFootprintMBBucket
+                "web_content_peak_footprint_mb_bucket": webContentPeakFootprintMBBucket,
+                "had_critical_pressure": String(hadCriticalPressure),
+                "on_battery": isOnBattery.map(String.init) ?? "unknown"
             ]
         case .mainAppSetUpFailedSecureVaultInitFailed,
                 .backgroundAgentSetUpFailedSecureVaultInitFailed,
@@ -313,7 +326,6 @@ public class DataBrokerProtectionMacOSPixelsHandler: EventMapping<DataBrokerProt
                 PixelKit.fire(event, frequency: .legacyDailyAndCount, includeAppVersionParameter: true)
             case .backgroundAgentStarted,
                     .backgroundAgentStartedStoppingDueToAnotherInstanceRunning,
-                    .resourceUsageRun,
                     .dataBrokerProtectionNotificationSentFirstScanComplete,
                     .dataBrokerProtectionNotificationOpenedFirstScanComplete,
                     .dataBrokerProtectionNotificationSentFirstRemoval,
@@ -328,7 +340,8 @@ public class DataBrokerProtectionMacOSPixelsHandler: EventMapping<DataBrokerProt
                     .invalidPayload:
                 PixelKit.fire(event)
 
-            case .criticalMemoryPressure:
+            case .resourceUsageRun,
+                    .criticalMemoryPressure:
                 PixelKit.fire(event, frequency: .dailyAndCount)
 
             case .homeViewShowNoPermissionError,

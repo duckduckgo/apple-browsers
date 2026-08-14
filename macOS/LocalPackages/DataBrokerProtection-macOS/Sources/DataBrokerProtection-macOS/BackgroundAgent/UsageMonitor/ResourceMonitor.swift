@@ -45,6 +45,7 @@ public final class ResourceMonitor: ResourceMonitoring, @unchecked Sendable {
         var cpuSamplesUntilNextReport: Int
         let timer: DispatchSourceTimer
         let memoryPressureSource: DispatchSourceMemoryPressure
+        let isOnBattery: Bool?
     }
 
     // MARK: - Dependencies and State
@@ -60,6 +61,7 @@ public final class ResourceMonitor: ResourceMonitoring, @unchecked Sendable {
     private let monitorQueue = DispatchQueue(label: "com.duckduckgo.pir.resource-monitor", qos: .utility)
 
     private let webContentProcessIDProvider = WebContentProcessIDProvider()
+    private let powerSourceProvider = PowerSourceProvider()
     private let pixelReporter = ResourceUsagePixelReporter()
     private var activeRun: ActiveRun?
 
@@ -91,13 +93,11 @@ public final class ResourceMonitor: ResourceMonitoring, @unchecked Sendable {
 
         let runStartAbsoluteTime = mach_absolute_time()
         let webContentPIDs = webContentProcessIDProvider.currentProcessIDs()
-        var cpu = CPUUsageMonitor()
-        cpu.start(
-            webContentPIDs: Set(webContentPIDs ?? []),
+        let cpu = CPUUsageMonitor(
+            webContentPIDs: webContentPIDs ?? [],
             runStartAbsoluteTime: runStartAbsoluteTime
         )
-        var memory = MemoryUsageMonitor()
-        memory.start(webContentPIDs: webContentPIDs)
+        let memory = MemoryUsageMonitor(webContentPIDs: webContentPIDs)
 
         let timer = DispatchSource.makeTimerSource(queue: monitorQueue)
         let memoryPressureSource = DispatchSource.makeMemoryPressureSource(
@@ -126,17 +126,18 @@ public final class ResourceMonitor: ResourceMonitoring, @unchecked Sendable {
             memory: memory,
             cpuSamplesUntilNextReport: 1,
             timer: timer,
-            memoryPressureSource: memoryPressureSource
+            memoryPressureSource: memoryPressureSource,
+            isOnBattery: powerSourceProvider.isOnBattery()
         )
         timer.resume()
         memoryPressureSource.resume()
     }
 
     private func stopMonitoring() {
-        guard activeRun != nil else { return }
+        guard let currentRun = activeRun else { return }
 
         if let snapshot = recordResourcesAndPublishSnapshot() {
-            pixelReporter.reportRun(snapshot)
+            pixelReporter.reportRun(snapshot, isOnBattery: currentRun.isOnBattery)
         }
         activeRun?.timer.cancel()
         activeRun?.memoryPressureSource.cancel()
@@ -147,7 +148,7 @@ public final class ResourceMonitor: ResourceMonitoring, @unchecked Sendable {
 
     private func handleTimerEvent() {
         let webContentPIDs = webContentProcessIDProvider.currentProcessIDs()
-        activeRun?.cpu.recordSample(webContentPIDs: Set(webContentPIDs ?? []))
+        activeRun?.cpu.recordSample(webContentPIDs: webContentPIDs ?? [])
         activeRun?.cpuSamplesUntilNextReport -= 1
 
         guard activeRun?.cpuSamplesUntilNextReport == 0 else { return }
@@ -160,7 +161,7 @@ public final class ResourceMonitor: ResourceMonitoring, @unchecked Sendable {
     @discardableResult
     private func recordResourcesAndPublishSnapshot() -> ResourceSnapshot? {
         let webContentPIDs = webContentProcessIDProvider.currentProcessIDs()
-        activeRun?.cpu.recordSample(webContentPIDs: Set(webContentPIDs ?? []))
+        activeRun?.cpu.recordSample(webContentPIDs: webContentPIDs ?? [])
         activeRun?.memory.recordSample(webContentPIDs: webContentPIDs)
         return makeAndLogSnapshot()
     }

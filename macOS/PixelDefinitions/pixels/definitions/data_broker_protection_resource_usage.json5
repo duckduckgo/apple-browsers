@@ -3,7 +3,7 @@
         "description": "Fires when monitoring stops for a PIR queue run, reporting bucketed CPU and peak memory usage.",
         "owners": ["quanganhdo"],
         "triggers": ["other"],
-        "suffixes": [],
+        "suffixes": ["daily_count"],
         "parameters": [
             "appVersion",
             "pixelSource",
@@ -14,22 +14,34 @@
                 "description": "CPU minutes bucket floor; 60 includes higher values."
             },
             {
-                "key": "average_cpu_percent_bucket",
+                "key": "elapsed_minutes_bucket",
                 "type": "string",
-                "enum": ["0", "10", "20", "30"],
-                "description": "Average core-equivalent CPU percent bucket floor; 30 includes higher values."
+                "enum": ["0", "1", "5", "15", "30", "60", "120", "240", "360", "480"],
+                "description": "Run duration in minutes, bucket floor; 480 includes higher values. Measures time the system was awake, so a run spanning sleep reports less than its calendar duration."
             },
             {
                 "key": "agent_peak_footprint_mb_bucket",
                 "type": "string",
-                "enum": ["0", "512", "1024", "2048", "4096"],
-                "description": "Peak agent physical footprint MiB bucket floor; 4096 includes higher values."
+                "enum": ["0", "512", "1024", "2048", "4096", "8192", "16384"],
+                "description": "Peak agent physical footprint MiB bucket floor; 16384 includes higher values."
             },
             {
                 "key": "web_content_peak_footprint_mb_bucket",
                 "type": "string",
-                "enum": ["0", "512", "1024", "2048", "4096", "unknown"],
-                "description": "Peak summed WebContent footprint MiB bucket floor; 4096+ or unknown when unavailable."
+                "enum": ["0", "512", "1024", "2048", "4096", "8192", "16384", "unknown"],
+                "description": "Peak summed WebContent footprint MiB bucket floor; 16384 includes higher values, unknown when unavailable."
+            },
+            {
+                "key": "had_critical_pressure",
+                "type": "string",
+                "enum": ["true", "false"],
+                "description": "Whether macOS reported critical memory pressure at any point during the run. The pressure is machine-wide and not necessarily caused by PIR."
+            },
+            {
+                "key": "on_battery",
+                "type": "string",
+                "enum": ["true", "false", "unknown"],
+                "description": "Whether the Mac was on battery power when the run started; unknown on Macs that report no power source."
             },
             "channel"
         ]

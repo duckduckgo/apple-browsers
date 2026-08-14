@@ -27,15 +27,17 @@ final class ResourceUsagePixelReporter {
 
     private let pixelHandler = DataBrokerProtectionMacOSPixelsHandler()
 
-    func reportRun(_ snapshot: ResourceSnapshot) {
+    func reportRun(_ snapshot: ResourceSnapshot, isOnBattery: Bool?) {
         pixelHandler.fire(
             .resourceUsageRun(
                 cpuTimeMinutesBucket: Self.cpuTimeBucket(snapshot.cpu.totalTime),
-                averageCPUPercentBucket: Self.averageCPUPercentBucket(snapshot.cpu.averagePercent),
+                elapsedMinutesBucket: Self.elapsedBucket(snapshot.cpu.elapsedTime),
                 agentPeakFootprintMBBucket: Self.memoryBucket(snapshot.memory.agent.peakFootprintBytes),
                 webContentPeakFootprintMBBucket: Self.memoryBucket(
                     snapshot.memory.webContent.peakFootprintBytes
-                )
+                ),
+                hadCriticalPressure: snapshot.memory.hadCriticalPressure,
+                isOnBattery: isOnBattery
             )
         )
     }
@@ -55,12 +57,18 @@ final class ResourceUsagePixelReporter {
         }
     }
 
-    private static func averageCPUPercentBucket(_ percent: Double) -> String {
-        switch percent {
-        case ..<10: return "0"
-        case 10..<20: return "10"
-        case 20..<30: return "20"
-        default: return "30"
+    private static func elapsedBucket(_ seconds: TimeInterval) -> String {
+        switch seconds / Constants.secondsPerMinute {
+        case ..<1: return "0"
+        case 1..<5: return "1"
+        case 5..<15: return "5"
+        case 15..<30: return "15"
+        case 30..<60: return "30"
+        case 60..<120: return "60"
+        case 120..<240: return "120"
+        case 240..<360: return "240"
+        case 360..<480: return "360"
+        default: return "480"
         }
     }
 
@@ -72,7 +80,9 @@ final class ResourceUsagePixelReporter {
         case 512..<1_024: return "512"
         case 1_024..<2_048: return "1024"
         case 2_048..<4_096: return "2048"
-        default: return "4096"
+        case 4_096..<8_192: return "4096"
+        case 8_192..<16_384: return "8192"
+        default: return "16384"
         }
     }
 }

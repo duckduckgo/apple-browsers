@@ -59,19 +59,15 @@ struct CPUUsageMonitor {
         }
     }
 
-    private let sampler = CPUUsageSampler()
-    private var agent = CPUCounter()
+    private var agent: CPUCounter
     // Keep counters for exited processes so their recorded CPU remains in the run total.
-    private var webContent: [Identity: CPUCounter] = [:]
-    private var runStartAbsoluteTime: UInt64?
-    private var startUptime: TimeInterval?
-    private var latestUptime: TimeInterval?
+    private var webContent: [Identity: CPUCounter]
+    private let runStartAbsoluteTime: UInt64
+    private let startUptime: TimeInterval
+    private var latestUptime: TimeInterval
 
-    // MARK: - Run Lifecycle
-
-    mutating func start(webContentPIDs: Set<pid_t>, runStartAbsoluteTime: UInt64) {
-        reset()
-        let sample = sampler.takeSample(webContentPIDs: webContentPIDs)
+    init(webContentPIDs: Set<pid_t>, runStartAbsoluteTime: UInt64) {
+        let sample = CPUUsageSampler().takeSample(webContentPIDs: webContentPIDs)
         agent = CPUCounter(baseline: sample.agent)
         webContent = sample.webContent.mapValues { CPUCounter(baseline: $0) }
         self.runStartAbsoluteTime = runStartAbsoluteTime
@@ -80,29 +76,16 @@ struct CPUUsageMonitor {
     }
 
     mutating func recordSample(webContentPIDs: Set<pid_t>) {
-        let sample = sampler.takeSample(webContentPIDs: webContentPIDs)
+        let sample = CPUUsageSampler().takeSample(webContentPIDs: webContentPIDs)
         updateAgentCPUTime(with: sample.agent)
         updateWebContentCPUTime(with: sample.webContent)
         latestUptime = sample.uptime
     }
 
-    mutating func reset() {
-        agent = CPUCounter()
-        webContent = [:]
-        runStartAbsoluteTime = nil
-        startUptime = nil
-        latestUptime = nil
-    }
-
     // MARK: - Reporting
 
     func makeReport() -> ResourceSnapshot.CPUUsage {
-        let elapsedTime: TimeInterval
-        if let startUptime, let latestUptime {
-            elapsedTime = max(0, latestUptime - startUptime)
-        } else {
-            elapsedTime = 0
-        }
+        let elapsedTime = max(0, latestUptime - startUptime)
         let agentTime = TimeInterval(agent.total) / TimeInterval(NSEC_PER_SEC)
         let webContentCPUTime = webContent.values.reduce(ProcessCPUTime(0)) { $0 + $1.total }
         let webContentTime = TimeInterval(webContentCPUTime) / TimeInterval(NSEC_PER_SEC)
@@ -131,7 +114,7 @@ struct CPUUsageMonitor {
         for (identity, cpuTime) in counters {
             webContent[identity, default: CPUCounter()].record(
                 cpuTime,
-                wasCreatedDuringRun: identity.startAbsoluteTime >= (runStartAbsoluteTime ?? .max)
+                wasCreatedDuringRun: identity.startAbsoluteTime >= runStartAbsoluteTime
             )
         }
     }

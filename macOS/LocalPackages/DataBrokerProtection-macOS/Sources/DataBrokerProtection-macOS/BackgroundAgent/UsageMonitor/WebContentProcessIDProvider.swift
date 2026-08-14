@@ -22,29 +22,27 @@ import WebKit
 /// Finds the WebContent processes whose CPU and memory should be included in PIR measurements.
 struct WebContentProcessIDProvider {
 
-    func currentProcessIDs() -> [pid_t]? {
+    func currentProcessIDs() -> Set<pid_t>? {
         let processInfoSelector = Selector(("_webContentProcessInfo"))
         let pidSelector = Selector(("pid"))
-        let collectPIDs: () -> [pid_t]? = {
+        let collectPIDs: () -> Set<pid_t>? = {
             autoreleasepool {
                 guard WKProcessPool.responds(to: processInfoSelector) else { return nil }
                 guard let processInfoList = WKProcessPool.perform(processInfoSelector)?
                     .takeUnretainedValue() as? [NSObject] else {
                     return nil
                 }
-                return processInfoList.compactMap { processInfo in
+                return Set(processInfoList.compactMap { processInfo in
                     guard processInfo.responds(to: pidSelector),
                           let pid = processInfo.value(forKey: "pid") as? pid_t,
                           pid > 0 else {
                         return nil
                     }
                     return pid
-                }
+                })
             }
         }
 
-        // WebKit owns the returned process-info objects and expects them to be accessed on the main thread. It is safe
-        // to wait for the main queue here because the main queue never waits synchronously for the monitor queue.
         return Thread.isMainThread
             ? collectPIDs()
             : DispatchQueue.main.sync(execute: collectPIDs)

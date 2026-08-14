@@ -35,39 +35,32 @@ struct MemoryUsageMonitor {
         }
     }
 
-    private struct RunState {
-        var current = MemoryUsageSample.unavailable
-        var peak = PeakUsage()
-        var hadCriticalPressure = false
-    }
+    private var current: MemoryUsageSample
+    private var peak: PeakUsage
+    private var hadCriticalPressure = false
 
-    private let sampler = MemoryUsageSampler()
-    private var state = RunState()
-
-    // MARK: - Run Lifecycle
-
-    /// Clears data from the previous run and immediately takes the first memory reading.
-    mutating func start(webContentPIDs: [pid_t]?) {
-        reset()
-        recordSample(webContentPIDs: webContentPIDs)
+    /// Immediately takes the first memory reading for the run.
+    init(webContentPIDs: Set<pid_t>?) {
+        let sample = MemoryUsageSampler().takeSample(webContentPIDs: webContentPIDs)
+        current = sample
+        peak = PeakUsage(
+            agentFootprint: sample.agentFootprint,
+            webContentFootprint: sample.webContentFootprint
+        )
     }
 
     /// Replaces the current reading and updates the highest values seen in this run.
-    mutating func recordSample(webContentPIDs: [pid_t]?) {
-        let sample = sampler.takeSample(webContentPIDs: webContentPIDs)
-        state.current = sample
-        state.peak.record(sample)
+    mutating func recordSample(webContentPIDs: Set<pid_t>?) {
+        let sample = MemoryUsageSampler().takeSample(webContentPIDs: webContentPIDs)
+        current = sample
+        peak.record(sample)
     }
 
     /// Remembers that macOS reported critically low memory and returns whether this is the first such event in the run.
     mutating func recordCriticalPressure() -> Bool {
-        let isFirstEvent = !state.hadCriticalPressure
-        state.hadCriticalPressure = true
+        let isFirstEvent = !hadCriticalPressure
+        hadCriticalPressure = true
         return isFirstEvent
-    }
-
-    mutating func reset() {
-        state = RunState()
     }
 
     // MARK: - Reporting
@@ -75,15 +68,15 @@ struct MemoryUsageMonitor {
     func makeReport() -> ResourceSnapshot.MemoryUsage {
         return ResourceSnapshot.MemoryUsage(
             agent: .init(
-                footprintBytes: state.current.agentFootprint,
-                peakFootprintBytes: state.peak.agentFootprint
+                footprintBytes: current.agentFootprint,
+                peakFootprintBytes: peak.agentFootprint
             ),
             webContent: .init(
-                footprintBytes: state.current.webContentFootprint,
-                peakFootprintBytes: state.peak.webContentFootprint,
-                processCount: state.current.webContentCount
+                footprintBytes: current.webContentFootprint,
+                peakFootprintBytes: peak.webContentFootprint,
+                processCount: current.webContentCount
             ),
-            hadCriticalPressure: state.hadCriticalPressure
+            hadCriticalPressure: hadCriticalPressure
         )
     }
 }

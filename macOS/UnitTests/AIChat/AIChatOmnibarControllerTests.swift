@@ -2332,7 +2332,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         )
     }
 
-    func testReasoningPickerItems_gatedEffortIsTaggedWithItsTier() async {
+    func testReasoningPickerItems_freeUserTrialEligible_gatedEffortHeadsTheTrialSection() async {
         featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarReasoningEffort.rawValue] = true
         featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarSubscriptionUpsell.rawValue] = true
         mockPreferences.selectedModelId = "reasoning-model"
@@ -2343,16 +2343,16 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         let open = items.first { $0.effort == .low }
 
         XCTAssertEqual(gated?.isGated, true)
-        XCTAssertEqual(gated?.trailingText, UserText.aiChatModelPickerTierBadgePlus)
+        XCTAssertEqual(gated?.gatedSectionTitle, UserText.aiChatModelPickerTryFreeSectionHeader)
         XCTAssertEqual(gated?.isSelected, false)
         XCTAssertEqual(gated?.routesToUpsell, true)
         XCTAssertEqual(open?.isGated, false)
-        XCTAssertNil(open?.trailingText, "An effort the user can already use carries no tag")
+        XCTAssertNil(open?.gatedSectionTitle, "An effort the user can already use heads no section")
         XCTAssertEqual(open?.routesToUpsell, false, "An accessible effort is a plain selection, not an upsell")
     }
 
-    /// The tag names the tier that unlocks the effort, so it doesn't change with trial eligibility.
-    func testReasoningPickerItems_tierTagIsIndependentOfTrialEligibility() async {
+    /// Trial spent: the heading names the plan that unlocks the effort instead of the trial.
+    func testReasoningPickerItems_freeUserTrialIneligible_headingNamesTheRequiredPlan() async {
         featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarReasoningEffort.rawValue] = true
         featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarSubscriptionUpsell.rawValue] = true
         mockPreferences.selectedModelId = "reasoning-model"
@@ -2360,10 +2360,10 @@ final class AIChatOmnibarControllerTests: XCTestCase {
 
         let gated = controller.reasoningPickerItems().first { $0.effort == .medium }
 
-        XCTAssertEqual(gated?.trailingText, UserText.aiChatModelPickerTierBadgePlus)
+        XCTAssertEqual(gated?.gatedSectionTitle, UserText.aiChatModelPickerAvailableWithPlusSectionHeader)
     }
 
-    func testReasoningPickerItems_upsellOff_gatedEffortStillShowsTierTag() async {
+    func testReasoningPickerItems_upsellOff_gatedEffortHasNoHeadingAndNoUpsell() async {
         featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarReasoningEffort.rawValue] = true
         // Upsell flag left off.
         mockPreferences.selectedModelId = "reasoning-model"
@@ -2372,7 +2372,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         let gated = controller.reasoningPickerItems().first { $0.effort == .medium }
 
         XCTAssertEqual(gated?.isGated, true)
-        XCTAssertEqual(gated?.trailingText, UserText.aiChatModelPickerTierBadgePlus)
+        XCTAssertNil(gated?.gatedSectionTitle, "No heading to show when there's no upsell behind it")
         XCTAssertEqual(gated?.routesToUpsell, false,
                        "With the upsell off the effort stays visible but must not open the purchase dialog")
     }

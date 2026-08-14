@@ -1501,9 +1501,10 @@ enum AIChatModelPickerItem {
 struct AIChatReasoningPickerItem {
     let effort: AIChatReasoningEffort
     let isSelected: Bool
-    /// Plus/Pro tag naming the tier a gated effort needs.
-    let trailingText: String?
     let isGated: Bool
+    /// Title of the section this effort opens, set on the first gated effort only. `nil` when the
+    /// upsell is unavailable — the divider still separates the section, just without a heading.
+    let gatedSectionTitle: String?
     /// See `AIChatModelPickerItem.gatedModel`'s `routesToUpsell`.
     let routesToUpsell: Bool
 }
@@ -1572,15 +1573,21 @@ extension AIChatOmnibarController {
         let current = displayedReasoningEffort ?? pickerReasoningEfforts.first
         var items: [AIChatReasoningPickerItem] = []
         var showedUpsell = false
+        var titledGatedSection = false
         for effort in pickerReasoningEfforts {
             let requiredTier = requiredTier(for: effort)
             let isGated = requiredTier != nil
             showedUpsell = showedUpsell || (isGated && isSubscriptionUpsellEnabled)
+            // Only the first gated effort heads the section.
+            let sectionTitle = isGated && isSubscriptionUpsellEnabled && !titledGatedSection
+                ? gatedSectionTitle(for: requiredTier)
+                : nil
+            titledGatedSection = titledGatedSection || sectionTitle != nil
             items.append(AIChatReasoningPickerItem(
                 effort: effort,
                 isSelected: effort == current && !isGated,
-                trailingText: tierBadge(for: requiredTier),
                 isGated: isGated,
+                gatedSectionTitle: sectionTitle,
                 routesToUpsell: isGated && isSubscriptionUpsellEnabled
             ))
         }
@@ -1589,11 +1596,13 @@ extension AIChatOmnibarController {
         return items
     }
 
-    /// PLUS/PRO tag for a gated effort's required tier, else nil.
-    private func tierBadge(for requiredTier: AIChatModelPublicAccessTier?) -> String? {
+    /// Heading for a gated row's section: the trial while it's still on offer, otherwise the plan
+    /// that unlocks it.
+    private func gatedSectionTitle(for requiredTier: AIChatModelPublicAccessTier?) -> String? {
+        if shouldOfferFreeTrial { return UserText.aiChatModelPickerTryFreeSectionHeader }
         switch requiredTier {
-        case .plus: return UserText.aiChatModelPickerTierBadgePlus
-        case .pro: return UserText.aiChatModelPickerTierBadgePro
+        case .plus: return UserText.aiChatModelPickerAvailableWithPlusSectionHeader
+        case .pro: return UserText.aiChatModelPickerAvailableWithProSectionHeader
         case .free, .none: return nil
         }
     }

@@ -1942,10 +1942,13 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         }
         var addedSeparator = false
         for item in items {
-            // Gated efforts sit below a divider, mirroring the model picker's gated section.
+            // Gated efforts sit below a divider and their section heading, like the model picker's.
             if item.isGated && !addedSeparator {
                 menu.addItem(.separator())
                 addedSeparator = true
+            }
+            if let title = item.gatedSectionTitle {
+                menu.addItem(.createMutedSectionHeader(title: title))
             }
             menu.addItem(reasoningEffortRow(for: item))
         }
@@ -1962,7 +1965,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         menuItem.state = item.isSelected ? .on : .off
         menuItem.attributedTitle = Self.menuRowTitle(title: item.effort.title,
                                                      subtitle: item.effort.subtitle,
-                                                     trailingText: item.trailingText)
+                                                     trailingText: nil)
         menuItem.isEnabled = !item.isGated || item.routesToUpsell
         menuItem.representedObject = item.effort
         return menuItem

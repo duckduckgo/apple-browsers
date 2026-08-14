@@ -22,6 +22,7 @@ class DuckPlayerTests: UITestCase {
     private var addressBarTextField: XCUIElement!
 
     private static let searchURL = "https://duckduckgo.com/?q=%22DuckDuckGo+vs+Google%3A+5+Reasons+You+Should+Switch%E2%80%9D+site%3Ayoutube.com&atb=v469-1-wb&ia=web"
+    private static let videoSearchURL = "https://duckduckgo.com/?q=%22DuckDuckGo+vs+Google%3A+5+Reasons+You+Should+Switch%E2%80%9D+site%3Ayoutube.com&atb=v469-1-wb&ia=videos&iax=videos"
     private static let youtubeVideoTitle = "DuckDuckGo vs Google: 5 Reasons You Should Switch"
     private static let organicVideoTitle = "DuckDuckGo vs Google: 5 Reasons You Should Switch - YouTube"
     private static let duckPlayerTabPreffix = "Duck Player - "
@@ -276,8 +277,8 @@ class DuckPlayerTests: UITestCase {
         selectAskOpenInDuckPlayer()
         app.closeCurrentTab()
 
-        // Search
-        openURL(url: Self.searchURL)
+        // Search Videos - regular search stopped showing a video thumbnail
+        openURL(url: Self.videoSearchURL)
 
         // Click Link - check both possible title formats
         let organicVideo = findOrganicVideoLink()

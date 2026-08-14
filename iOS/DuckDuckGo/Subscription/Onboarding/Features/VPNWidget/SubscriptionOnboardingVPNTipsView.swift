@@ -61,7 +61,9 @@ private struct VPNTipsCarousel: View {
                     card(for: tip)
                 }
             }
+            .padding(.horizontal, SubscriptionOnboardingPageInsets.horizontal)
         }
+        .padding(.horizontal, -SubscriptionOnboardingPageInsets.horizontal)
     }
 
     private func card(for tip: Tip) -> some View {

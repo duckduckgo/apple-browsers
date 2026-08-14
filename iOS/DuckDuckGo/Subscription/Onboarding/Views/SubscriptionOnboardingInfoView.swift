@@ -53,12 +53,20 @@ struct SubscriptionOnboardingInfoView: View {
 
     /// Renders Markdown; links open in the system URL handler.
     private func disclaimerView(_ disclaimer: String) -> some View {
-        Text(.init("\(disclaimer)"))
+        Text(underlinedLinks(in: disclaimer))
             .daxFootnoteRegular()
             .multilineTextAlignment(.leading)
             .foregroundColor(Color(designSystemColor: .textSecondary))
             .tintIfAvailable(Color(designSystemColor: .textSecondary))
             .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func underlinedLinks(in markdown: String) -> AttributedString {
+        var attributed = (try? AttributedString(markdown: markdown)) ?? AttributedString(markdown)
+        for run in attributed.runs where run.link != nil {
+            attributed[run.range].underlineStyle = .single
+        }
+        return attributed
     }
 }
 

@@ -1706,6 +1706,9 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         removeAttachment(id: id)
         if isUserInitiated {
             pixelReporter.reportAttachmentRemoved(attachment)
+            if isEditing {
+                pixelReporter.reportEditAttachmentRemoved(attachment)
+            }
         }
     }
 

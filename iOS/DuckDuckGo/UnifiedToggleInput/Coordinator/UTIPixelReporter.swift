@@ -119,7 +119,11 @@ final class UTIPixelReporter {
     func reportEditCancelled() {
         withContext { firing.fire(.unifiedToggleInputEditCancelled, ["surface": $0.surface.rawValue]) }
     }
-    
+
+    func reportEditAttachmentRemoved(_ attachment: UnifiedToggleInputAttachment) {
+        withContext { UnifiedToggleInputCoordinatorPixelHelper.fireEditAttachmentRemovedPixel(for: attachment, surface: $0.surface, firing: firing) }
+    }
+
     // MARK: - Voice
 
     func reportVoiceTapped(hasPendingPageContext: Bool) {

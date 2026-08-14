@@ -1892,6 +1892,8 @@ extension Pixel {
         case unifiedToggleInputEditReceived
         case unifiedToggleInputEditSubmitted
         case unifiedToggleInputEditCancelled
+        case unifiedToggleInputEditImageRemoved
+        case unifiedToggleInputEditFileRemoved
         case unifiedToggleInputSubscriptionUpsellTriggered
         case unifiedToggleInputChatHeaderUpgradeTapped
         case unifiedToggleInputChatHeaderUpgradeShown
@@ -3810,6 +3812,8 @@ extension Pixel.Event {
         case .unifiedToggleInputEditReceived: return "aichat_unified_input_edit_received"
         case .unifiedToggleInputEditSubmitted: return "aichat_unified_input_edit_submitted"
         case .unifiedToggleInputEditCancelled: return "aichat_unified_input_edit_cancelled"
+        case .unifiedToggleInputEditImageRemoved: return "aichat_unified_input_edit_image_removed"
+        case .unifiedToggleInputEditFileRemoved: return "aichat_unified_input_edit_file_removed"
         case .unifiedToggleInputSubscriptionUpsellTriggered: return "m_aichat_unified_input_subscription_upsell_triggered"
         case .unifiedToggleInputChatHeaderUpgradeTapped: return "m_aichat_unified_input_chat_header_upgrade_tapped"
         case .unifiedToggleInputChatHeaderUpgradeShown: return "m_aichat_unified_input_chat_header_upgrade_shown"

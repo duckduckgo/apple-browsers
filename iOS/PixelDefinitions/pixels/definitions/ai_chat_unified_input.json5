@@ -244,6 +244,20 @@
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion", "unified_input_surface"]
     },
+    "aichat_unified_input_edit_image_removed": {
+        "description": "Fires when the user removes an image attachment while editing a previously sent message in the Unified Toggle Input. Fired in addition to the generic image removed pixel.",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "unified_input_surface"]
+    },
+    "aichat_unified_input_edit_file_removed": {
+        "description": "Fires when the user removes a file attachment while editing a previously sent message in the Unified Toggle Input. Fired in addition to the generic file removed pixel.",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "unified_input_surface"]
+    },
     "m_aichat_unified_input_subscription_upsell_triggered": {
         "description": "Fires when the user taps a gated model or reasoning level in the Unified Toggle Input and the native subscription/upgrade flow is triggered.",
         "owners": ["pikorddg"],

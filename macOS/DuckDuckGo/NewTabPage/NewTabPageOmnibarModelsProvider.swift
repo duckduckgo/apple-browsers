@@ -46,11 +46,11 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
     }
 
     init(
-        modelsService: AIChatModelsProviding = AIChatModelsService(),
+        modelsService: AIChatModelsProviding? = nil,
         subscriptionManager: any SubscriptionManager = Application.appDelegate.subscriptionManager,
         featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger
     ) {
-        self.modelsService = modelsService
+        self.modelsService = modelsService ?? AIChatModelsService(accessTokenProvider: subscriptionManager)
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
     }

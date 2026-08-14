@@ -99,9 +99,6 @@ final class AIChatOmnibarController {
     private let modelsService: AIChatModelsProviding
     private let subscriptionManager: any SubscriptionManager
     private let subscriptionUpsellPresenter: AIChatOmnibarSubscriptionUpselling
-    /// Shared 4-view cap across both pickers (reuses `FreeTrialBadgePersistor`, separately keyed).
-    /// Past the cap the badge mutes instead of hiding — it's the only entry point to the upsell.
-    private let badgeImpressionPersistor: FreeTrialBadgePersisting
     private var preferences: AIChatPreferencesPersisting
     private var cancellables = Set<AnyCancellable>()
     private var draftStoreCancellable: AnyCancellable?
@@ -209,19 +206,6 @@ final class AIChatOmnibarController {
         return subscriptionManager.isUserEligibleForFreeTrial()
     }
 
-    /// `true` once the shared model-picker/reasoning-picker badge impression cap is reached — the
-    /// badge stays put and stays tappable, but the caller should render it muted rather than yellow.
-    var isBadgeMuted: Bool {
-        badgeImpressionPersistor.hasReachedViewLimit
-    }
-
-    /// Call once per menu-open where a subscription-upsell badge is actually shown (mirroring how
-    /// the app menu counts a "view" of its own free-trial badge) — not once per gated row, since a
-    /// menu can show several gated rows in one open.
-    func recordBadgeImpression() {
-        badgeImpressionPersistor.incrementViewCount()
-    }
-
     /// Whether 1-click voice-chat access in the omnibar is available. When disabled, the submit
     /// button keeps its legacy "arrow / disabled when empty" behavior.
     var isVoiceChatAccessEnabled: Bool {
@@ -276,13 +260,12 @@ final class AIChatOmnibarController {
         suggestionsReader: AIChatSuggestionsReading? = nil,
         isBurner: Bool = false,
         preferences: AIChatPreferencesPersisting = AIChatPreferencesPersistor(),
-        modelsService: AIChatModelsProviding = AIChatModelsService(),
+        modelsService: AIChatModelsProviding? = nil,
         subscriptionManager: any SubscriptionManager = Application.appDelegate.subscriptionManager,
         // `AIChatOmnibarSubscriptionUpsellPresenter.init` and `Application.appDelegate.subscriptionNavigationCoordinator`
         // are both @MainActor-isolated; a default *parameter value* is evaluated in a nonisolated
         // context even though this initializer's body is not, so the real default is resolved below.
-        subscriptionUpsellPresenter: AIChatOmnibarSubscriptionUpselling? = nil,
-        badgeImpressionPersistor: FreeTrialBadgePersisting = FreeTrialBadgePersistor(keyValueStore: UserDefaults.standard, keyPrefix: "aichat-omnibar")
+        subscriptionUpsellPresenter: AIChatOmnibarSubscriptionUpselling? = nil
     ) {
         self.aiChatTabOpener = aiChatTabOpener
         self.surface = surface
@@ -296,11 +279,10 @@ final class AIChatOmnibarController {
         self.suggestionsReader = suggestionsReader
         self.isBurner = isBurner
         self.preferences = preferences
-        self.modelsService = modelsService
+        self.modelsService = modelsService ?? AIChatModelsService(accessTokenProvider: subscriptionManager)
         self.subscriptionManager = subscriptionManager
         self.subscriptionUpsellPresenter = subscriptionUpsellPresenter
             ?? AIChatOmnibarSubscriptionUpsellPresenter(coordinator: Application.appDelegate.subscriptionNavigationCoordinator)
-        self.badgeImpressionPersistor = badgeImpressionPersistor
         self.suggestionsViewModel = AIChatSuggestionsViewModel(
             maxSuggestions: suggestionsReader?.maxHistoryCount ?? AIChatSuggestionsViewModel.defaultMaxSuggestions
         )
@@ -1488,31 +1470,41 @@ final class AIChatOmnibarController {
 
 /// A fully-resolved model-picker row so the view controller only maps it to an `NSMenuItem`.
 enum AIChatModelPickerItem {
-    case model(AIChatModel, badge: String?, isSelected: Bool)
+    case model(AIChatModel, subtitle: String? = nil, badge: String?, isSelected: Bool)
     case separator
-    case gatedHeader(title: String, badge: String, isMuted: Bool, representativeModel: AIChatModel?)
-    case gatedModel(AIChatModel, badge: String?)
+    /// Muted, uppercase section title (no CTA) — used above the gated models section.
+    case sectionHeader(title: String)
+    /// `routesToUpsell` is false when the upsell is unavailable (kill switch, or a surface that
+    /// doesn't support it) — the row still shows, but must not open the purchase dialog.
+    case gatedModel(AIChatModel, badge: String?, routesToUpsell: Bool)
 }
 
 /// A fully-resolved reasoning-effort row so the view controller only maps it to an `NSMenuItem`.
 struct AIChatReasoningPickerItem {
     let effort: AIChatReasoningEffort
     let isSelected: Bool
-    /// PLUS/PRO label, shown for a gated effort when the upsell is off.
-    let trailingText: String?
-    /// "Try for Free"/"Upgrade" badge, shown for a gated effort when the upsell is on.
-    let upsellBadge: String?
-    let isBadgeMuted: Bool
     let isGated: Bool
+    /// Title of the section this effort opens, set on the first gated effort only. `nil` when the
+    /// upsell is unavailable — the divider still separates the section, just without a heading.
+    let gatedSectionTitle: String?
+    /// See `AIChatModelPickerItem.gatedModel`'s `routesToUpsell`.
+    let routesToUpsell: Bool
 }
 
 extension AIChatOmnibarController {
     /// Resolved picker contents (accessible first, then the gated upsell section); owns the flag, copy, ordering, and badge impression so the VC just renders.
     func modelPickerItems(selectedModelId: String?) -> [AIChatModelPickerItem] {
         let (accessible, gated) = AIChatModelSectionBuilder.groupByAccess(models: models)
-        let ordered = AIChatModelSectionBuilder.orderedAccessibleModels(accessible, userTier: userTier)
+        // Recommended = backend-labelled models, shown first with the label as a subtitle.
+        let (recommended, rest) = AIChatModelSectionBuilder.groupByRecommendationLabel(models: accessible)
 
-        var items: [AIChatModelPickerItem] = ordered.map { model in
+        var items: [AIChatModelPickerItem] = recommended.map { model in
+            .model(model,
+                   subtitle: Self.recommendationSubtitle(for: model.label),
+                   badge: trailingBadge(for: model),
+                   isSelected: model.id == selectedModelId)
+        }
+        items += rest.map { model in
             .model(model, badge: trailingBadge(for: model), isSelected: model.id == selectedModelId)
         }
 
@@ -1520,25 +1512,33 @@ extension AIChatOmnibarController {
         items.append(.separator)
 
         if isSubscriptionUpsellEnabled {
-            // Free user's gated section mixes Plus+Pro ("Subscriber exclusive"); a Plus user's is Pro-only.
-            let title = userTier == .free ? UserText.aiChatModelPickerSubscriberExclusive
-                                          : UserText.aiChatModelPickerProExclusive
-            let badge = shouldOfferFreeTrial ? UserText.aiChatModelPickerTryForFree
-                                             : UserText.aiChatModelPickerUpgrade
-            // Header CTA routes off a representative tier; any gated model suffices.
-            items.append(.gatedHeader(title: title,
-                                      badge: badge,
-                                      isMuted: isBadgeMuted,
-                                      representativeModel: gated.first?.model))
-            recordBadgeImpression()
+            items.append(.sectionHeader(title: gatedSectionHeaderTitle))
         }
 
-        items += gated.map { .gatedModel($0.model, badge: trailingBadge(for: $0.model)) }
+        items += gated.map { .gatedModel($0.model, badge: trailingBadge(for: $0.model), routesToUpsell: isSubscriptionUpsellEnabled) }
         return items
     }
 
-    /// PLUS/PRO tag for models whose minimum tier is above free (incl. already-accessible ones), else nil.
+    /// Free trial first; once it's spent, a non-subscriber's gated models span both paid plans,
+    /// while a Plus subscriber's remaining ones are Pro-only.
+    private var gatedSectionHeaderTitle: String {
+        if shouldOfferFreeTrial { return UserText.aiChatModelPickerTryFreeSectionHeader }
+        return userTier == .free ? UserText.aiChatModelPickerAvailableWithPaidPlansSectionHeader
+                                 : UserText.aiChatModelPickerAvailableWithProSectionHeader
+    }
+
+    private static func recommendationSubtitle(for label: AIChatModelLabel?) -> String? {
+        switch label {
+        case .everydayUse: return UserText.aiChatModelPickerLabelEverydayUse
+        case .usesLimitsFaster: return UserText.aiChatModelPickerLabelUsesLimitsFaster
+        case .unknown, .none: return nil
+        }
+    }
+
+    /// PLUS/PRO tag naming the tier a model needs — only for models the user can't use yet, so a
+    /// subscriber doesn't see their own tier tagged on every row they already have.
     private func trailingBadge(for model: AIChatModel) -> String? {
+        guard !model.entityHasAccess else { return nil }
         switch model.lowestPublicAccessTier {
         case .plus: return UserText.aiChatModelPickerTierBadgePlus
         case .pro: return UserText.aiChatModelPickerTierBadgePro
@@ -1553,32 +1553,33 @@ extension AIChatOmnibarController {
         // the chip agree on what's "current".
         let current = displayedReasoningEffort ?? pickerReasoningEfforts.first
         var items: [AIChatReasoningPickerItem] = []
-        var showedUpsellBadge = false
+        var titledGatedSection = false
         for effort in pickerReasoningEfforts {
             let requiredTier = requiredTier(for: effort)
             let isGated = requiredTier != nil
-            let showsUpsell = isGated && isSubscriptionUpsellEnabled
-            showedUpsellBadge = showedUpsellBadge || showsUpsell
+            // Only the first gated effort heads the section.
+            let sectionTitle = isGated && isSubscriptionUpsellEnabled && !titledGatedSection
+                ? gatedSectionTitle(for: requiredTier)
+                : nil
+            titledGatedSection = titledGatedSection || sectionTitle != nil
             items.append(AIChatReasoningPickerItem(
                 effort: effort,
                 isSelected: effort == current && !isGated,
-                trailingText: showsUpsell ? nil : tierBadge(for: requiredTier),
-                upsellBadge: showsUpsell ? (shouldOfferFreeTrial ? UserText.aiChatModelPickerTryForFree
-                                                                 : UserText.aiChatModelPickerUpgrade) : nil,
-                isBadgeMuted: isBadgeMuted,
-                isGated: isGated
+                isGated: isGated,
+                gatedSectionTitle: sectionTitle,
+                routesToUpsell: isGated && isSubscriptionUpsellEnabled
             ))
         }
-        // One impression per open, matching the model picker.
-        if showedUpsellBadge { recordBadgeImpression() }
         return items
     }
 
-    /// PLUS/PRO tag for a gated effort's required tier, else nil.
-    private func tierBadge(for requiredTier: AIChatModelPublicAccessTier?) -> String? {
+    /// Heading for a gated row's section: the trial while it's still on offer, otherwise the plan
+    /// that unlocks it.
+    private func gatedSectionTitle(for requiredTier: AIChatModelPublicAccessTier?) -> String? {
+        if shouldOfferFreeTrial { return UserText.aiChatModelPickerTryFreeSectionHeader }
         switch requiredTier {
-        case .plus: return UserText.aiChatModelPickerTierBadgePlus
-        case .pro: return UserText.aiChatModelPickerTierBadgePro
+        case .plus: return UserText.aiChatModelPickerAvailableWithPlusSectionHeader
+        case .pro: return UserText.aiChatModelPickerAvailableWithProSectionHeader
         case .free, .none: return nil
         }
     }

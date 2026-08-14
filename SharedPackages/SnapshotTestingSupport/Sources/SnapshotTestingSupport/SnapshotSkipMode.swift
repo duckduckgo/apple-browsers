@@ -27,6 +27,12 @@ public enum SnapshotSkipMode {
         isEnabled(environment[environmentVariableName])
     }
 
+    public static func skipIfEnabled(testName: String = #function) -> Bool {
+        guard isEnabled() else { return false }
+        print("⚠️ [SnapshotSkipMode] Skipping snapshot assertion in \(testName) — \(environmentVariableName) is set")
+        return true
+    }
+
     private static func isEnabled(_ value: String?) -> Bool {
         switch value?.lowercased() {
         case "1", "true", "yes":

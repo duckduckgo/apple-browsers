@@ -189,6 +189,8 @@ jobs:
 
     - name: Build and test
       id: run-unit-tests
+      env:
+        SPM_FORCE_DEBUG_FOR_SNAPSHOTS: "1"
       run: |
         echo "Using iOS simulator: ${{ steps.select-simulator.outputs.ios-version }}"
         echo "Destination: ${{ steps.select-simulator.outputs.destination }}"

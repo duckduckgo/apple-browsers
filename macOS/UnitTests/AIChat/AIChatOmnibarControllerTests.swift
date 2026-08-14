@@ -37,7 +37,6 @@ final class AIChatOmnibarControllerTests: XCTestCase {
     private var mockModelsService: MockAIChatModelsProviding!
     private var mockSubscriptionManager: SubscriptionManagerMock!
     private var mockSubscriptionUpsellPresenter: MockAIChatOmnibarSubscriptionUpselling!
-    private var mockBadgeImpressionPersistor: MockFreeTrialBadgePersistor!
     private var tabCollectionViewModel: TabCollectionViewModel!
 
     override func setUp() {
@@ -59,7 +58,6 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         mockSubscriptionUpsellPresenter = MockAIChatOmnibarSubscriptionUpselling()
         // Injected (rather than the real UserDefaults-backed default) so the impression cap is
         // controllable and no test leaks state into the shared standard defaults.
-        mockBadgeImpressionPersistor = MockFreeTrialBadgePersistor(initialCount: 0, cap: 4)
         tabCollectionViewModel = TabCollectionViewModel(isPopup: false)
 
         controller = AIChatOmnibarController(
@@ -73,8 +71,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
             preferences: mockPreferences,
             modelsService: mockModelsService,
             subscriptionManager: mockSubscriptionManager,
-            subscriptionUpsellPresenter: mockSubscriptionUpsellPresenter,
-            badgeImpressionPersistor: mockBadgeImpressionPersistor
+            subscriptionUpsellPresenter: mockSubscriptionUpsellPresenter
         )
         controller.delegate = mockDelegate
     }
@@ -89,7 +86,6 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         mockModelsService = nil
         mockSubscriptionManager = nil
         mockSubscriptionUpsellPresenter = nil
-        mockBadgeImpressionPersistor = nil
         tabCollectionViewModel = nil
         super.tearDown()
     }
@@ -108,8 +104,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
             preferences: mockPreferences,
             modelsService: mockModelsService,
             subscriptionManager: mockSubscriptionManager,
-            subscriptionUpsellPresenter: mockSubscriptionUpsellPresenter,
-            badgeImpressionPersistor: mockBadgeImpressionPersistor
+            subscriptionUpsellPresenter: mockSubscriptionUpsellPresenter
         )
     }
 
@@ -2065,29 +2060,6 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         XCTAssertFalse(controller.shouldOfferFreeTrial, "An existing subscriber always sees Upgrade, never Try for Free")
     }
 
-    // MARK: - Badge Impression Cap Tests
-
-    func testWhenImpressionCapNotReached_ThenBadgeIsNotMuted() {
-        // Given — three views of a four-view cap
-        controller.recordBadgeImpression()
-        controller.recordBadgeImpression()
-        controller.recordBadgeImpression()
-
-        // Then — still shown in full color
-        XCTAssertFalse(controller.isBadgeMuted)
-    }
-
-    func testWhenImpressionCapReached_ThenBadgeIsMuted() {
-        // Given — four views reaches the cap
-        controller.recordBadgeImpression()
-        controller.recordBadgeImpression()
-        controller.recordBadgeImpression()
-        controller.recordBadgeImpression()
-
-        // Then — the badge stays but is muted from here on
-        XCTAssertTrue(controller.isBadgeMuted)
-    }
-
     // MARK: - Subscription Activation Tests
 
     func testWhenPresentSubscriptionActivationFlow_ThenPresenterActivationIsCalled() {
@@ -2188,7 +2160,6 @@ final class AIChatOmnibarControllerTests: XCTestCase {
             makeRemoteModel(id: "gated-pro", accessTier: ["pro"]),
         ], tier: nil)
 
-        let before = mockBadgeImpressionPersistor.viewCount
         let items = controller.modelPickerItems(selectedModelId: nil)
 
         XCTAssertTrue(hasSeparator(items), "Separator still divides accessible from gated when the flag is off")
@@ -2196,7 +2167,6 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         XCTAssertEqual(gatedRows(items).map(\.id), ["gated-pro"], "Gated rows still render, so the tier is visible")
         XCTAssertEqual(gatedRows(items).first?.routesToUpsell, false,
                        "With the upsell off there is nothing to route to — the row must not open the purchase dialog")
-        XCTAssertEqual(mockBadgeImpressionPersistor.viewCount, before, "No badge impression recorded when no header is shown")
     }
 
     func testModelPickerItems_noGatedModels_noSeparatorHeaderOrImpression() async {
@@ -2206,14 +2176,12 @@ final class AIChatOmnibarControllerTests: XCTestCase {
             makeRemoteModel(id: "free-b", accessTier: ["free"]),
         ], tier: nil, trialEligible: true)
 
-        let before = mockBadgeImpressionPersistor.viewCount
         let items = controller.modelPickerItems(selectedModelId: nil)
 
         XCTAssertEqual(accessibleRows(items).map(\.id), ["free-a", "free-b"])
         XCTAssertFalse(hasSeparator(items))
         XCTAssertNil(sectionHeaderTitle(in: items))
         XCTAssertTrue(gatedRows(items).isEmpty)
-        XCTAssertEqual(mockBadgeImpressionPersistor.viewCount, before)
     }
 
     // MARK: - Model Picker Recommendations (backend labels)
@@ -2273,34 +2241,6 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         XCTAssertEqual(accessibleRows(items).map(\.id), ["free-a"],
                        "A labelled model the user can't access stays in the gated section")
         XCTAssertEqual(gatedRows(items).map(\.id), ["gated-labelled"])
-    }
-
-    func testModelPickerItems_recordsOneBadgeImpressionPerCallWhenHeaderShown() async {
-        featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarSubscriptionUpsell.rawValue] = true
-        await loadModels([
-            makeRemoteModel(id: "gated-pro", accessTier: ["pro"]),
-        ], tier: nil, trialEligible: true)
-
-        XCTAssertEqual(mockBadgeImpressionPersistor.viewCount, 0)
-        _ = controller.modelPickerItems(selectedModelId: nil)
-        XCTAssertEqual(mockBadgeImpressionPersistor.viewCount, 1, "One impression per menu open")
-        _ = controller.modelPickerItems(selectedModelId: nil)
-        XCTAssertEqual(mockBadgeImpressionPersistor.viewCount, 2)
-    }
-
-    /// Both pickers render plain text now, so the impression cap no longer changes what is shown.
-    func testModelPickerItems_headerUnchangedWhenImpressionCapReached() async {
-        featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarSubscriptionUpsell.rawValue] = true
-        await loadModels([
-            makeRemoteModel(id: "gated-pro", accessTier: ["pro"]),
-        ], tier: nil, trialEligible: true)
-        // Reach the 4-view cap configured in setUp.
-        for _ in 0..<4 { controller.recordBadgeImpression() }
-        XCTAssertTrue(controller.isBadgeMuted)
-
-        let items = controller.modelPickerItems(selectedModelId: nil)
-
-        XCTAssertEqual(sectionHeaderTitle(in: items), UserText.aiChatModelPickerTryFreeSectionHeader)
     }
 
     func testModelPickerItems_marksSelectedAccessibleRow() async {
@@ -2375,27 +2315,6 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         XCTAssertNil(gated?.gatedSectionTitle, "No heading to show when there's no upsell behind it")
         XCTAssertEqual(gated?.routesToUpsell, false,
                        "With the upsell off the effort stays visible but must not open the purchase dialog")
-    }
-
-    func testReasoningPickerItems_recordsOneImpressionWhenUpsellShown() async {
-        featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarReasoningEffort.rawValue] = true
-        featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarSubscriptionUpsell.rawValue] = true
-        mockPreferences.selectedModelId = "reasoning-model"
-        await loadModels([gatedEffortModel()], tier: nil, trialEligible: true)
-
-        _ = controller.reasoningPickerItems()
-
-        XCTAssertEqual(mockBadgeImpressionPersistor.viewCount, 1, "One impression per open, not one per gated row")
-    }
-
-    func testReasoningPickerItems_upsellOff_recordsNoImpression() async {
-        featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarReasoningEffort.rawValue] = true
-        mockPreferences.selectedModelId = "reasoning-model"
-        await loadModels([gatedEffortModel()], tier: nil, trialEligible: true)
-
-        _ = controller.reasoningPickerItems()
-
-        XCTAssertEqual(mockBadgeImpressionPersistor.viewCount, 0)
     }
 
     func testReasoningPickerItems_marksCurrentAccessibleEffortSelected() async {
@@ -2596,8 +2515,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
             preferences: mockPreferences,
             modelsService: mockModelsService,
             subscriptionManager: mockSubscriptionManager,
-            subscriptionUpsellPresenter: mockSubscriptionUpsellPresenter,
-            badgeImpressionPersistor: mockBadgeImpressionPersistor
+            subscriptionUpsellPresenter: mockSubscriptionUpsellPresenter
         )
     }
 
@@ -2764,21 +2682,5 @@ private class MockAIChatOmnibarSubscriptionUpselling: AIChatOmnibarSubscriptionU
 
     func presentSubscriptionActivation() {
         presentSubscriptionActivationCalled = true
-    }
-}
-
-private final class MockFreeTrialBadgePersistor: FreeTrialBadgePersisting {
-    private(set) var viewCount: Int
-    private let cap: Int
-
-    init(initialCount: Int, cap: Int) {
-        self.viewCount = initialCount
-        self.cap = cap
-    }
-
-    var hasReachedViewLimit: Bool { viewCount >= cap }
-
-    func incrementViewCount() {
-        if viewCount < cap { viewCount += 1 }
     }
 }

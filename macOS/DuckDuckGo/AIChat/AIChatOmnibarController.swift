@@ -99,9 +99,6 @@ final class AIChatOmnibarController {
     private let modelsService: AIChatModelsProviding
     private let subscriptionManager: any SubscriptionManager
     private let subscriptionUpsellPresenter: AIChatOmnibarSubscriptionUpselling
-    /// Shared 4-view cap across both pickers (reuses `FreeTrialBadgePersistor`, separately keyed).
-    /// Past the cap the badge mutes instead of hiding — it's the only entry point to the upsell.
-    private let badgeImpressionPersistor: FreeTrialBadgePersisting
     private var preferences: AIChatPreferencesPersisting
     private var cancellables = Set<AnyCancellable>()
     private var draftStoreCancellable: AnyCancellable?
@@ -209,19 +206,6 @@ final class AIChatOmnibarController {
         return subscriptionManager.isUserEligibleForFreeTrial()
     }
 
-    /// `true` once the shared model-picker/reasoning-picker badge impression cap is reached — the
-    /// badge stays put and stays tappable, but the caller should render it muted rather than yellow.
-    var isBadgeMuted: Bool {
-        badgeImpressionPersistor.hasReachedViewLimit
-    }
-
-    /// Call once per menu-open where a subscription-upsell badge is actually shown (mirroring how
-    /// the app menu counts a "view" of its own free-trial badge) — not once per gated row, since a
-    /// menu can show several gated rows in one open.
-    func recordBadgeImpression() {
-        badgeImpressionPersistor.incrementViewCount()
-    }
-
     /// Whether 1-click voice-chat access in the omnibar is available. When disabled, the submit
     /// button keeps its legacy "arrow / disabled when empty" behavior.
     var isVoiceChatAccessEnabled: Bool {
@@ -281,8 +265,7 @@ final class AIChatOmnibarController {
         // `AIChatOmnibarSubscriptionUpsellPresenter.init` and `Application.appDelegate.subscriptionNavigationCoordinator`
         // are both @MainActor-isolated; a default *parameter value* is evaluated in a nonisolated
         // context even though this initializer's body is not, so the real default is resolved below.
-        subscriptionUpsellPresenter: AIChatOmnibarSubscriptionUpselling? = nil,
-        badgeImpressionPersistor: FreeTrialBadgePersisting = FreeTrialBadgePersistor(keyValueStore: UserDefaults.standard, keyPrefix: "aichat-omnibar")
+        subscriptionUpsellPresenter: AIChatOmnibarSubscriptionUpselling? = nil
     ) {
         self.aiChatTabOpener = aiChatTabOpener
         self.surface = surface
@@ -300,7 +283,6 @@ final class AIChatOmnibarController {
         self.subscriptionManager = subscriptionManager
         self.subscriptionUpsellPresenter = subscriptionUpsellPresenter
             ?? AIChatOmnibarSubscriptionUpsellPresenter(coordinator: Application.appDelegate.subscriptionNavigationCoordinator)
-        self.badgeImpressionPersistor = badgeImpressionPersistor
         self.suggestionsViewModel = AIChatSuggestionsViewModel(
             maxSuggestions: suggestionsReader?.maxHistoryCount ?? AIChatSuggestionsViewModel.defaultMaxSuggestions
         )
@@ -1531,7 +1513,6 @@ extension AIChatOmnibarController {
 
         if isSubscriptionUpsellEnabled {
             items.append(.sectionHeader(title: gatedSectionHeaderTitle))
-            recordBadgeImpression()
         }
 
         items += gated.map { .gatedModel($0.model, badge: trailingBadge(for: $0.model), routesToUpsell: isSubscriptionUpsellEnabled) }
@@ -1572,12 +1553,10 @@ extension AIChatOmnibarController {
         // the chip agree on what's "current".
         let current = displayedReasoningEffort ?? pickerReasoningEfforts.first
         var items: [AIChatReasoningPickerItem] = []
-        var showedUpsell = false
         var titledGatedSection = false
         for effort in pickerReasoningEfforts {
             let requiredTier = requiredTier(for: effort)
             let isGated = requiredTier != nil
-            showedUpsell = showedUpsell || (isGated && isSubscriptionUpsellEnabled)
             // Only the first gated effort heads the section.
             let sectionTitle = isGated && isSubscriptionUpsellEnabled && !titledGatedSection
                 ? gatedSectionTitle(for: requiredTier)
@@ -1591,8 +1570,6 @@ extension AIChatOmnibarController {
                 routesToUpsell: isGated && isSubscriptionUpsellEnabled
             ))
         }
-        // One impression per open, matching the model picker.
-        if showedUpsell { recordBadgeImpression() }
         return items
     }
 

@@ -50,8 +50,6 @@ enum AIChatEntryPointPixel: PixelKit.Event, PixelKitEventWithCustomPrefix {
     }
 }
 
-/// Where a Duck.ai entry began. Reported as `source` on `m_aichat_entry_point`; the raw values are a dashboard
-/// contract mirrored by that pixel's `source` enum in ai_chat_entry_points.json5 — renaming one breaks its series.
 enum AIChatEntryPointSource: String {
     case addressBarPrompt = "address_bar_prompt"
     case addressBarIcon = "address_bar_icon"

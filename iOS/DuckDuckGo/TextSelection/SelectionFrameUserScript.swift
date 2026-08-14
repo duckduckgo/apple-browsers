@@ -48,7 +48,7 @@ struct SelectionFrame {
     }
 }
 
-/// Tracks which frame holds the page's text selection, so a selection made inside an iframe can be read.
+/// Receives frame selection claims so text selected inside an iframe can be read.
 ///
 /// Reports only whether a selection exists, never its text.
 final class SelectionFrameUserScript: NSObject, Subfeature {

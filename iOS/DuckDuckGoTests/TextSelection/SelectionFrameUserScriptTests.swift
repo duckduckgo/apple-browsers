@@ -76,19 +76,19 @@ final class SelectionFrameUserScriptTests: XCTestCase {
         XCTAssertEqual(response as? SelectionFrameEnabledResponse, SelectionFrameEnabledResponse(enabled: false))
     }
 
-    // MARK: - Tracking
+    // MARK: - Frame Claims
 
-    func testNoFrameIsTrackedInitially() {
+    func testNoFrameClaimExistsInitially() {
         XCTAssertNil(sut.frameWithSelection)
     }
 
-    func testTracksTheFrameThatReportsASelection() {
+    func testStoresTheFrameThatReportsASelection() {
         sut.update(with: body(hasSelection: true), from: frame())
 
         XCTAssertNotNil(sut.frameWithSelection)
     }
 
-    func testTheTrackedFrameCanClearItsOwnClaim() {
+    func testTheClaimingFrameCanClearItsOwnClaim() {
         sut.update(with: body(hasSelection: true, timestamp: 1), from: frame())
 
         sut.update(with: body(hasSelection: false, timestamp: 2), from: frame())
@@ -96,7 +96,7 @@ final class SelectionFrameUserScriptTests: XCTestCase {
         XCTAssertNil(sut.frameWithSelection)
     }
 
-    func testAnOlderClearFromAnotherFrameCannotClearTheTrackedFrame() {
+    func testAnOlderClearFromAnotherFrameCannotClearTheCurrentClaim() {
         let iframe = frame(host: "iframe.example")
         sut.update(with: body(hasSelection: true, timestamp: 2), from: iframe)
 
@@ -139,7 +139,7 @@ final class SelectionFrameUserScriptTests: XCTestCase {
         XCTAssertNil(sut.frameWithSelection)
     }
 
-    func testReadAcceptsTextFromTheTrackedSelection() {
+    func testReadAcceptsTextFromTheCurrentSelection() {
         sut.update(with: body(hasSelection: true, timestamp: 1), from: frame())
 
         let text = sut.frameWithSelection?.selectedText(from: ["eventTimestamp": 1.0, "selectedText": "selection"])
@@ -155,7 +155,7 @@ final class SelectionFrameUserScriptTests: XCTestCase {
         XCTAssertNil(text)
     }
 
-    func testResetReleasesTheTrackedFrame() {
+    func testResetReleasesTheFrameClaim() {
         sut.update(with: body(hasSelection: true, timestamp: 2), from: frame())
 
         sut.reset()
@@ -168,7 +168,7 @@ final class SelectionFrameUserScriptTests: XCTestCase {
 
     // MARK: - Malformed input
 
-    func testAnUnreadableBodyLeavesTheTrackedFrameAlone() {
+    func testAnUnreadableBodyLeavesTheCurrentFrameClaimAlone() {
         sut.update(with: body(hasSelection: true), from: frame())
 
         sut.update(with: "not a dictionary", from: frame())

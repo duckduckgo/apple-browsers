@@ -523,12 +523,7 @@ final class AIChatContextualChatSessionState {
         beginLoadingSuggestions()
     }
 
-    /// Suppresses auto-attach for a sheet opened from a text selection, until the user navigates, attaches
-    /// the page themselves, or opens the sheet again without a selection.
-    ///
-    /// `pendingSignalsOnlyCollection` alone is not enough: it is consumed by the first context update to
-    /// arrive, so an emission already in flight when the sheet opened would spend it and let the collection
-    /// we actually triggered fall through to auto-attach, attaching the page a moment after the selection.
+    /// Prevents an in-flight context update from auto-attaching the page when entering from a text selection.
     func suppressAutoAttachForSelectionEntry() {
         suppressesAutoAttachForSelectionEntry = true
     }

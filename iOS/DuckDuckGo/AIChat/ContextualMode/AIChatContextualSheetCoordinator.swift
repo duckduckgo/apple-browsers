@@ -435,8 +435,10 @@ final class AIChatContextualSheetCoordinator {
 
         if floatingInputFeature.isAvailable,
            !sessionState.hasActiveChat,
-           sheetViewController == nil,
+           !isSheetPresented,
            restoreURL == nil {
+            sheetViewController = nil
+            persistentUTIHost = nil
             await presentFloatingInput(from: presentingViewController, skippingAutoAttach: true)
         } else {
             await presentSheet(from: presentingViewController, restoreURL: restoreURL, skippingAutoAttach: true)

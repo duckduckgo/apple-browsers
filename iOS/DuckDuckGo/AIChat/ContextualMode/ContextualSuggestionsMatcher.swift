@@ -65,8 +65,7 @@ struct ContextualSuggestionsMatcher {
 
     private init() {}
 
-    /// Translate carries the `differentLanguage` condition, so a selection from a page in the user's own
-    /// language offers one suggestion rather than two.
+    /// Suggestions that act on attached selection text rather than the current page.
     private static let selectionScopedIDs = AIChatTextSelectionAction.selectionSuggestionIDs
 
     static func resolve(_ input: ResolvePageSuggestionsInput, catalog: SuggestionCatalog) -> ResolvedPageSuggestions {
@@ -219,6 +218,7 @@ struct ContextualSuggestionsMatcher {
         guard let condition else { return true }
         switch condition {
         case "differentLanguage":
+            if case .selection = input.scope { return true }
             let pageLang = pageLanguageSubtag(input.pageTypeSignals?.lang ?? "")
             let uiLang = uiLanguageSubtag(input.uiLocale)
             return !pageLang.isEmpty && !uiLang.isEmpty && pageLang != uiLang

@@ -240,6 +240,20 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     }
 
     @MainActor
+    func testAttachSelectionPresentsFloatingInputAfterInactiveSheetWasDismissed() async throws {
+        await sut.presentSheet(from: mockPresentingVC)
+        let retainedSheet = try XCTUnwrap(sut.sheetViewController)
+        sut.aiChatContextualSheetViewControllerDidDismiss(retainedSheet)
+        mockFloatingInputFeature.isAvailable = true
+        mockUnifiedToggleInputFeature.isAvailable = true
+
+        await sut.handleSelectionAction(.ask, selection: .init(text: "selected text", url: URL(string: "https://example.com"), faviconBase64: nil), from: mockPresentingVC)
+
+        XCTAssertTrue(sut.isFloatingInputPresented)
+        XCTAssertNil(sut.sheetViewController)
+    }
+
+    @MainActor
     func testAttachSelectionPresentsSheetWhenRestoringAChatDespiteFloatingInputAvailability() async {
         mockFloatingInputFeature.isAvailable = true
         mockUnifiedToggleInputFeature.isAvailable = true

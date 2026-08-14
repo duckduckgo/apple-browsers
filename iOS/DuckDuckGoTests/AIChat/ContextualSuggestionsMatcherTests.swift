@@ -379,10 +379,10 @@ final class ContextualSuggestionsMatcherTests: XCTestCase {
         XCTAssertEqual(ids, ["summarize-selection", "translate-selection"])
     }
 
-    func testSelectionScopeDropsTranslateWhenThePageIsAlreadyInTheUILanguage() throws {
+    func testSelectionScopeDoesNotUseTheCurrentPageLanguageToFilterTranslate() throws {
         let ids = resolvedIDs(input(signals(lang: "en"), uiLocale: "en_US", scope: .selection), try standardCatalog())
 
-        XCTAssertEqual(ids, ["summarize-selection"])
+        XCTAssertEqual(ids, ["summarize-selection", "translate-selection"])
     }
 
     func testSelectionScopeIsNeverSmart() throws {

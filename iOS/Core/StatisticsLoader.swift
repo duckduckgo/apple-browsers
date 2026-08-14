@@ -87,7 +87,6 @@ public class StatisticsLoader {
     /// started with. Drop each experiment as it is cleaned up, and delete this once none remain.
     static func fireLegacySearchRetentionExperimentPixels() {
         let inProgressExperiments = [
-            iOSBrowserConfigSubfeature.searchTokenExperimentV3.rawValue,
             iOSBrowserConfigSubfeature.onboardingFlowByDownloadReasonExperiment.rawValue,
             AutoconsentSubfeature.cookiePopupOptInDialogExperiment.rawValue
         ]

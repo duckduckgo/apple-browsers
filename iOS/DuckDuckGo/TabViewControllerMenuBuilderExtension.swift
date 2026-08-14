@@ -414,7 +414,7 @@ extension TabViewController {
             guard let strongSelf = self else { return }
             if !strongSelf.isError, let url = strongSelf.webView.url {
                 // `webView.url` carries the search-token param on SERP navigations; strip it before it hits the pasteboard.
-                strongSelf.onCopyAction(forUrl: SerpSearchTokenInterceptor.strippingToken(from: url))
+                strongSelf.onCopyAction(forUrl: SerpSearchTokenInterceptor.strippingToken(from: url, isExperimentActive: strongSelf.isSearchTokenExperimentActive))
             } else if let text = self?.chromeDelegate?.omniBar.text {
                 strongSelf.onCopyAction(for: text)
             }

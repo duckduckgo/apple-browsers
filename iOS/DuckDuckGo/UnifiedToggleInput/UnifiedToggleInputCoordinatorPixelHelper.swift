@@ -69,6 +69,15 @@ enum UnifiedToggleInputPromptPageType: String {
     case unknown
 }
 
+extension Tab {
+
+    var promptPageType: UnifiedToggleInputPromptPageType {
+        if isAITab { return .duckAI }
+        guard let url = link?.url else { return .ntp }
+        return url.isDuckDuckGoSearch ? .serp : .website
+    }
+}
+
 private enum UnifiedPromptSubmittedSelectedToolPixelValue: String {
     case webSearch = "web_search"
     case imageGeneration = "image_generation"

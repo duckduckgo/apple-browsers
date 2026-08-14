@@ -4207,10 +4207,7 @@ class MainViewController: UIViewController {
     /// Reads the tab model, not `currentTab`: home tabs have no `TabViewController`, so
     /// resolving through the controller reports every NTP prompt as `unknown`.
     func currentPromptPageType() -> UnifiedToggleInputPromptPageType {
-        guard let tab = tabManager.currentTabsModel.currentTab else { return .unknown }
-        guard let url = tab.link?.url else { return .ntp }
-        if url.isDuckAIURL { return .duckAI }
-        return url.isDuckDuckGoSearch ? .serp : .website
+        tabManager.currentTabsModel.currentTab?.promptPageType ?? .unknown
     }
 
     func onDuckAIVoiceModeRequested() {

@@ -1188,18 +1188,37 @@ extension MainViewController {
         loadQuery(query)
     }
 
-    /// Fires when Duck.ai is disabled under AI Features settings yet the user still reaches Duck.ai by
-    /// typing its address into the UTI. Counts those direct navigations to gauge residual Duck.ai
-    /// demand among users who have turned it off. (Disabling Duck.ai also forces the Search↔Duck.ai
-    /// toggle off, so the `isAIChatEnabled` check is sufficient.) Mirrors `loadQuery`'s URL resolution
-    /// so detection matches what actually gets navigated.
+    /// The only place a typed duck.ai address can be told apart from an in-page or deep link.
+    /// Mirrors `loadQuery`'s URL resolution so detection matches what gets navigated.
     private func fireDirectDuckAINavigationPixelIfNeeded(for query: String) {
-        guard !aiChatSettings.isAIChatEnabled,
-              let url = URL.makeSearchURL(query: query,
+        guard let url = URL.makeSearchURL(query: query,
                                           useUnifiedLogic: isUnifiedURLPredictionEnabled,
                                           queryContext: currentTab?.url),
               url.isDuckAIURL else { return }
-        DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputDuckAIDirectNavigation)
+
+        DailyPixel.fireDailyAndCount(pixel: .aiChatDuckAIDirectNavigation, withAdditionalParameters: [
+            "duckai_enabled": String(aiChatSettings.isAIChatEnabled),
+            "toggle_enabled": String(aiChatSettings.isAIChatSearchInputUserSettingsEnabled)
+        ])
+
+        if !aiChatSettings.isAIChatEnabled {
+            DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputDuckAIDirectNavigation)
+        }
+
+        // Skipped when `TabURLInterceptor` cancels the navigation and reports the entry from there,
+        // which would otherwise attribute one submission twice.
+        guard !duckAINavigationIsIntercepted else { return }
+        // `loadQuery` loads duck.ai in-tab without going through `openAIChat`, so this is the
+        // only place the `direct_url` entry can be reported when the interceptor does not run.
+        let decision = AIBoundaryNavigationDecision.forProgrammaticNavigation(
+            currentIsAI: currentTab?.isAITab == true,
+            currentHasContent: currentTab?.tabModel.link != nil,
+            targetIsAI: true,
+            unifiedToggleInputAvailable: unifiedToggleInputFeature.isAvailable
+        )
+        fireAIChatEntryPointPixel(source: .directURL,
+                                  opensNewTab: decision == .openInNewTab,
+                                  hasPrompt: false)
     }
 
 }
@@ -1265,7 +1284,7 @@ extension MainViewController: UnifiedToggleInputDelegate {
             loadUrlRespectingAIBoundary(url)
             return
         }
-        openAIChat(prompt, autoSend: true, tools: tools, modelId: modelId, reasoningEffort: reasoningEffort, images: images, files: files)
+        openAIChat(source: .addressBarPrompt, prompt, autoSend: true, tools: tools, modelId: modelId, reasoningEffort: reasoningEffort, images: images, files: files)
     }
 
     func unifiedToggleInputDidSubmitQuery(_ query: String) {
@@ -1301,13 +1320,13 @@ extension MainViewController: UnifiedToggleInputDelegate {
         // This opens the chip handoff in a fresh chat tab and avoids the contextual-sheet branch in onAIChatPressed.
         if currentTab?.isAITab == true {
             if prompt.isEmpty {
-                openAIChat()
+                openAIChat(source: .addressBarShortcutChip)
             } else {
-                openAIChat(prompt, autoSend: true)
+                openAIChat(source: .addressBarShortcutChip, prompt, autoSend: true)
             }
             return
         }
-        onAIChatPressed(prefilledText: prompt)
+        onAIChatPressed(prefilledText: prompt, source: .addressBarShortcutChip)
     }
 
     func unifiedToggleInputDidChangeHeight() {
@@ -1355,6 +1374,7 @@ extension MainViewController: UnifiedInputContentContainerViewControllerDelegate
         unifiedToggleInputCoordinator?.clearText()
         unifiedToggleInputCoordinator?.handleExternalSubmission(.prompt)
         openAIChat(
+            source: .addressBarEditingState,
             query,
             autoSend: true,
             tools: tools,

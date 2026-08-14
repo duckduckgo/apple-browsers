@@ -39,9 +39,9 @@ enum SubscriptionPixel: PixelKit.Event {
     case subscriptionKeychainManagerFailedToWriteDataFromBacklog(SubscriptionPixelHandler.Source)
     // VPN Subscription Funnel Entry Points
     case subscriptionVPNToolbarImpression(isSubscriptionActive: Bool?)
-    case subscriptionVPNToolbarClick
+    case subscriptionVPNToolbarClick(isSubscriptionActive: Bool?)
     case subscriptionVPNAddressBarImpression(isSubscriptionActive: Bool?)
-    case subscriptionVPNAddressBarClick
+    case subscriptionVPNAddressBarClick(isSubscriptionActive: Bool?)
     case subscriptionVPNWidgetClick
     case subscriptionVPNShortcutClick
     case subscriptionVPNNotificationClick
@@ -100,7 +100,9 @@ enum SubscriptionPixel: PixelKit.Event {
             return [SubscriptionPixelsDefaults.policyCacheKey: policy.description,
                     SubscriptionPixelsDefaults.sourceKey: source.rawValue]
         case .subscriptionVPNToolbarImpression(let isSubscriptionActive),
-                .subscriptionVPNAddressBarImpression(let isSubscriptionActive):
+                .subscriptionVPNToolbarClick(let isSubscriptionActive),
+                .subscriptionVPNAddressBarImpression(let isSubscriptionActive),
+                .subscriptionVPNAddressBarClick(let isSubscriptionActive):
             return [SubscriptionPixelsDefaults.vpnSubscriptionActiveKey: Self.vpnSubscriptionActiveValue(isSubscriptionActive)]
         default:
             return nil

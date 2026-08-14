@@ -36,7 +36,7 @@ public struct FrameInfo {
         self.webView = webView
         self.handle = handle
         self.isMainFrame = isMainFrame
-        self.url = url
+        self.url = url.absoluteString.isEmpty ? .blankPage : url
         self.securityOrigin = securityOrigin
     }
 

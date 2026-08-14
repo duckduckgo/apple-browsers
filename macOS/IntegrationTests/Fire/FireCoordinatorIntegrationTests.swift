@@ -3169,6 +3169,8 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
                         XCTAssertEqual(config.showIndividualSitesLink, expected.showIndividualSitesLink, "showIndividualSitesLink", file: expected.file, line: expected.line + 7)
                         XCTAssertEqual(config.viewModel.clearingOption, expected.expectedClearingOption, "clearingOption", file: expected.file, line: expected.line + 8)
                         XCTAssertEqual(config.viewModel.includeTabsAndWindows, expected.expectedIncludeTabsAndWindows, "includeTabsAndWindows", file: expected.file, line: expected.line + 9)
+                        // Without the toggle, the user cannot ask for the tabs and windows to close.
+                        XCTAssertEqual(config.viewModel.shouldCloseTabsAndWindows, expected.showCloseWindowsAndTabsToggle ? expected.expectedIncludeTabsAndWindows : false, "shouldCloseTabsAndWindows", file: expected.file, line: expected.line + 9)
                         XCTAssertEqual(config.viewModel.includeHistory, expected.expectedIncludeHistory, "includeHistory", file: expected.file, line: expected.line + 10)
                         // Without the toggle, the user cannot exclude the history, so it is always deleted.
                         XCTAssertEqual(config.viewModel.shouldDeleteHistory, expected.showVisitsToggle ? expected.expectedIncludeHistory : true, "shouldDeleteHistory", file: expected.file, line: expected.line + 10)

@@ -2321,6 +2321,69 @@ final class FireDialogViewModelTests: XCTestCase {
         }
     }
 
+    // MARK: - Closing tabs and windows
+
+    /// Modes where the user can choose whether the tabs and windows are closed.
+    private static let modesWithCloseTabsToggle: [FireDialogViewModel.Mode] = [
+        .fireButton,
+        .mainMenuAll,
+        .historyView(query: .rangeFilter(.all)),
+        .historyView(query: .rangeFilter(.allSites)),
+        .historyView(query: .rangeFilter(.today))
+    ]
+
+    /// Modes scoped to history that no open tab shows, so there is nothing to close.
+    private static let modesWithoutCloseTabsToggle: [FireDialogViewModel.Mode] = [
+        .historyView(query: .rangeFilter(.yesterday)),
+        .historyView(query: .rangeFilter(.monday)),
+        .historyView(query: .rangeFilter(.older)),
+        .historyView(query: .dateFilter(Date())),
+        .historyView(query: .searchTerm("duck")),
+        .historyView(query: .domainFilter(["example.com"])),
+        .historyView(query: .visits([]))
+    ]
+
+    @MainActor func testCloseTabsToggleVisibilityPerMode() {
+        // Scenario: Any dialog mode.
+        // Expectation: Only the modes that can delete data shown by an open tab offer the toggle.
+
+        for mode in Self.modesWithCloseTabsToggle {
+            XCTAssertTrue(mode.shouldShowCloseTabsToggle, "\(mode) should show the Close tabs toggle")
+        }
+        for mode in Self.modesWithoutCloseTabsToggle {
+            XCTAssertFalse(mode.shouldShowCloseTabsToggle, "\(mode) should not show the Close tabs toggle")
+        }
+    }
+
+    @MainActor func testWhenCloseTabsToggleIsHidden_ThenTabsAndWindowsStayOpen() {
+        // Scenario: An earlier dialog left the Close tabs toggle on, then a dialog without that
+        // toggle is opened.
+        // Expectation: The tabs and windows stay open. The dialog shows no toggle, so the earlier
+        // choice must not close them behind the user's back.
+
+        let mockSettings = MockFireDialogViewSettings(lastIncludeTabsAndWindowsState: true)
+
+        for mode in Self.modesWithoutCloseTabsToggle {
+            let viewModel = makeViewModel(settings: mockSettings, mode: mode)
+
+            XCTAssertTrue(viewModel.includeTabsAndWindows, "\(mode) should keep the persisted setting")
+            XCTAssertFalse(viewModel.shouldCloseTabsAndWindows, "\(mode) should not close tabs and windows")
+        }
+    }
+
+    @MainActor func testWhenCloseTabsToggleIsShown_ThenClosingFollowsTheToggle() {
+        // Scenario: The dialog has a Close tabs toggle.
+        // Expectation: The tabs and windows are closed only when the toggle is on.
+
+        for mode in Self.modesWithCloseTabsToggle {
+            let keepingTabs = makeViewModel(settings: MockFireDialogViewSettings(lastIncludeTabsAndWindowsState: false), mode: mode)
+            XCTAssertFalse(keepingTabs.shouldCloseTabsAndWindows, "\(mode) should keep tabs and windows open")
+
+            let closingTabs = makeViewModel(settings: MockFireDialogViewSettings(lastIncludeTabsAndWindowsState: true), mode: mode)
+            XCTAssertTrue(closingTabs.shouldCloseTabsAndWindows, "\(mode) should close tabs and windows")
+        }
+    }
+
     // MARK: - Dialog title for selected history items
 
     @MainActor func testWhenModeIsSelectedVisits_ThenDialogTitleShowsTheNumberOfItems() {

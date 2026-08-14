@@ -222,7 +222,7 @@ jobs:
           # The latest macOS is the primary signal, so it gets the parallel fan-out. The older
           # versions are a regression safety net, so they trade speed for far fewer runners.
           os_table='[
-            {"runner": "bitrise:macos26-m4", "os-version": "26", "xcode-version": "26.4", "per-test": true,  "latest": true},
+            {"runner": "bitrise:macos26-m4pro", "os-version": "26", "xcode-version": "26.4", "per-test": true,  "latest": true},
             {"runner": "macos-14", "os-version": "14", "xcode-version": "16.2", "per-test": true, "latest": false},
             {"runner": "bitrise:macos15-m4-xlarge", "os-version": "15", "xcode-version": "26.2", "per-test": false, "latest": false}
           ]'

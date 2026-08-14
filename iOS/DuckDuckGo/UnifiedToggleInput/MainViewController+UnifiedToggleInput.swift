@@ -1201,8 +1201,6 @@ extension MainViewController {
             "toggle_enabled": String(aiChatSettings.isAIChatSearchInputUserSettingsEnabled)
         ])
 
-        // Superseded by the pixel above, kept firing on its original condition so its series stays
-        // comparable. Disabling Duck.ai also forces the toggle off, so this check is sufficient.
         if !aiChatSettings.isAIChatEnabled {
             DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputDuckAIDirectNavigation)
         }

@@ -265,6 +265,10 @@ public class DDGSync: DDGSyncing {
             try dependencies.secureStore.persistAccount(result.account)
             persistRecoveredThirdPartyScopedPasswordIfAvailable(from: result.accessCredentials, account: result.account)
             updateProtectedKeysCache(with: result.keys)
+            if dependencies.syncFeatureFlags.canWriteUnifiedDeviceList() {
+                // The legacy rename leaves device_info stale, so allow migration to write the new name.
+                deviceInfoMigrationCoordinator.reset()
+            }
             scheduleDeviceInfoMigration(for: result.account)
             return result.devices
         } catch {

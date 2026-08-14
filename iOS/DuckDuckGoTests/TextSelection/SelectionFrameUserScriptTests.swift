@@ -22,6 +22,7 @@ import WebKit
 import XCTest
 @testable import DuckDuckGo
 
+@MainActor
 final class SelectionFrameUserScriptTests: XCTestCase {
 
     private var sut: SelectionFrameUserScript!

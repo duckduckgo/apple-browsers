@@ -65,10 +65,10 @@ final class SelectionFrameUserScript: NSObject, Subfeature {
     weak var broker: UserScriptMessageBroker?
 
     /// The frame holding the selection.
-    private(set) var frameWithSelection: SelectionFrame?
+    @MainActor private(set) var frameWithSelection: SelectionFrame?
 
     private let isEnabled: Bool
-    private var latestEventTimestamp: Double?
+    @MainActor private var latestEventTimestamp: Double?
 
     init(isEnabled: Bool) {
         self.isEnabled = isEnabled
@@ -91,6 +91,7 @@ final class SelectionFrameUserScript: NSObject, Subfeature {
     }
 
     /// Split from the handler for testing: `WKScriptMessage` cannot be constructed, `WKFrameInfo` can be mocked.
+    @MainActor
     func update(with body: Any, from frame: WKFrameInfo) {
         guard let body = body as? [String: Any],
               let hasSelection = body["hasSelection"] as? Bool,
@@ -106,6 +107,7 @@ final class SelectionFrameUserScript: NSObject, Subfeature {
         }
     }
 
+    @MainActor
     func reset() {
         frameWithSelection = nil
         latestEventTimestamp = nil

@@ -2169,7 +2169,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
                        "A model still out of reach keeps its tier badge")
     }
 
-    func testModelPickerItems_freeUserTrialIneligible_usesAvailableWithProHeader() async {
+    func testModelPickerItems_freeUserTrialIneligible_usesAvailableWithPaidPlansHeader() async {
         featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarSubscriptionUpsell.rawValue] = true
         await loadModels([
             makeRemoteModel(id: "gated-plus", accessTier: ["plus"]),
@@ -2177,8 +2177,8 @@ final class AIChatOmnibarControllerTests: XCTestCase {
 
         let items = controller.modelPickerItems(selectedModelId: nil)
 
-        XCTAssertEqual(sectionHeaderTitle(in: items), UserText.aiChatModelPickerAvailableWithProSectionHeader,
-                       "A free user who already used their trial isn't offered it again")
+        XCTAssertEqual(sectionHeaderTitle(in: items), UserText.aiChatModelPickerAvailableWithPaidPlansSectionHeader,
+                       "A non-subscriber past their trial is pointed at the paid plans, not at Pro specifically")
     }
 
     func testModelPickerItems_upsellOff_gatedRowsShownWithoutHeaderAndNoImpression() async {

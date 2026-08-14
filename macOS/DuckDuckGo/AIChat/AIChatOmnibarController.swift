@@ -1529,13 +1529,20 @@ extension AIChatOmnibarController {
         items.append(.separator)
 
         if isSubscriptionUpsellEnabled {
-            items.append(.sectionHeader(title: shouldOfferFreeTrial ? UserText.aiChatModelPickerTryFreeSectionHeader
-                                                                    : UserText.aiChatModelPickerAvailableWithProSectionHeader))
+            items.append(.sectionHeader(title: gatedSectionHeaderTitle))
             recordBadgeImpression()
         }
 
         items += gated.map { .gatedModel($0.model, badge: trailingBadge(for: $0.model), routesToUpsell: isSubscriptionUpsellEnabled) }
         return items
+    }
+
+    /// Free trial first; once it's spent, a non-subscriber's gated models span both paid plans,
+    /// while a Plus subscriber's remaining ones are Pro-only.
+    private var gatedSectionHeaderTitle: String {
+        if shouldOfferFreeTrial { return UserText.aiChatModelPickerTryFreeSectionHeader }
+        return userTier == .free ? UserText.aiChatModelPickerAvailableWithPaidPlansSectionHeader
+                                 : UserText.aiChatModelPickerAvailableWithProSectionHeader
     }
 
     private static func recommendationSubtitle(for label: AIChatModelLabel?) -> String? {

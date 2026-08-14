@@ -711,7 +711,8 @@ extension SubscriptionSettingsViewV2 {
 
     private var onboardingProgress: SubscriptionOnboardingProgress? {
         guard let cardEntitlement else { return nil }
-        return SubscriptionOnboardingProgress(persistor: onboardingPersistor, isPIRAvailable: isPIRAvailable, entitlement: cardEntitlement)
+        let progress = SubscriptionOnboardingProgress(persistor: onboardingPersistor, isPIRAvailable: isPIRAvailable, entitlement: cardEntitlement)
+        return progress.checklist.isEmpty ? nil : progress
     }
 
     private var onboardingPersistor: SubscriptionOnboardingProgressPersistor {

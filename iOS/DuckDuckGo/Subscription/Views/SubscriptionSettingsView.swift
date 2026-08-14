@@ -82,6 +82,10 @@ struct SubscriptionSettingsViewV2: View {
             .onFirstAppear {
                 Pixel.fire(pixel: .ddgSubscriptionSettings, debounce: 1)
             }
+            .task {
+                guard isOnboardingEnabled else { return }
+                cardEntitlement = await settingsViewModel.subscriptionManager.getAllEntitlementStatus()
+            }
             .navigationBarTitleDisplayMode(.inline)
             .onChange(of: settingsViewModel.state.subscription.shouldDisplayRestoreSubscriptionError) { value in
                 if value {
@@ -689,9 +693,6 @@ extension SubscriptionSettingsViewV2 {
         }
         .listRowBackground(Color.clear)
         .listRowInsets(EdgeInsets())
-        .task {
-            cardEntitlement = await settingsViewModel.subscriptionManager.getAllEntitlementStatus()
-        }
     }
 
     func startOnboarding() {

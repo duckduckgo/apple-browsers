@@ -218,7 +218,6 @@ struct ContextualSuggestionsMatcher {
         guard let condition else { return true }
         switch condition {
         case "differentLanguage":
-            if case .selection = input.scope { return true }
             let pageLang = pageLanguageSubtag(input.pageTypeSignals?.lang ?? "")
             let uiLang = uiLanguageSubtag(input.uiLocale)
             return !pageLang.isEmpty && !uiLang.isEmpty && pageLang != uiLang

@@ -277,6 +277,9 @@ jobs:
     - name: Build for testing
       id: build-for-testing
       env:
+        # Under CI, SPM builds packages in release configuration (the CI configuration maps to .release),
+        # so `.when(configuration: .debug)` doesn't fire and the DEBUG-only snapshot tests wouldn't compile.
+        # This forces DEBUG on for the package build. Read in SyncUI-macOS/Package.swift.
         SPM_FORCE_DEBUG_FOR_SNAPSHOTS: "1"
       run: |
         echo "Runner ${RUNNER_NAME} (${RUNNER_TRACKING_ID})"

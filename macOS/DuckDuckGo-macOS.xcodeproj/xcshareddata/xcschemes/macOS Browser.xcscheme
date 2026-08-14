@@ -432,9 +432,9 @@
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "SyncUITests"
-               BuildableName = "SyncUITests"
-               BlueprintName = "SyncUITests"
+               BlueprintIdentifier = "SyncUI-macOSTests"
+               BuildableName = "SyncUI-macOSTests"
+               BlueprintName = "SyncUI-macOSTests"
                ReferencedContainer = "container:LocalPackages/SyncUI-macOS">
             </BuildableReference>
          </TestableReference>
@@ -619,6 +619,11 @@
          <EnvironmentVariable
             key = "CI"
             value = "$(CI)"
+            isEnabled = "YES">
+         </EnvironmentVariable>
+         <EnvironmentVariable
+            key = "SKIP_SNAPSHOT_TESTS"
+            value = "1"
             isEnabled = "YES">
          </EnvironmentVariable>
       </EnvironmentVariables>

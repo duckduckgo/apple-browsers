@@ -78,8 +78,6 @@ extension Tab: NavigationResponder {
 
             // ensure Content Blocking Rules are applied before navigation
             .weak(nullable: self.contentBlockingAndSurrogates),
-            // update click-to-load state
-            .weak(nullable: self.fbProtection),
 
             // Special Error Page script handler and Malicious Site detection
             .weak(nullable: self.specialErrorPage),

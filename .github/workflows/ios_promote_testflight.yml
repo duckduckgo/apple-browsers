@@ -28,6 +28,9 @@ jobs:
           iOS/fastlane
           iOS/scripts
 
+    - name: Print macOS version
+      run: sw_vers
+
     - name: Setup Ruby and dependencies
       uses: ./.github/actions/setup-ruby
       with:

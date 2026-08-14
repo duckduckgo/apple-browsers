@@ -69,6 +69,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
     let stripePurchaseFlow: any StripePurchaseFlow
     let subscriptionEventReporter: SubscriptionEventReporter
     let subscriptionSuccessPixelHandler: SubscriptionAttributionPixelHandling
+    private let subscriptionUpsellMetrics: OnboardingSubscriptionUpsellMetricsReporting
     let uiHandler: SubscriptionUIHandling
     let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
     private var freemiumDBPUserStateManager: FreemiumDBPUserStateManager
@@ -91,6 +92,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
 
     public init(subscriptionManager: SubscriptionManager,
                 subscriptionSuccessPixelHandler: SubscriptionAttributionPixelHandling = SubscriptionAttributionPixelHandler(),
+                subscriptionUpsellMetrics: OnboardingSubscriptionUpsellMetricsReporting = OnboardingSubscriptionUpsellMetricsReporter(),
                 stripePurchaseFlow: StripePurchaseFlow,
                 uiHandler: SubscriptionUIHandling,
                 subscriptionFeatureAvailability: SubscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(),
@@ -107,6 +109,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
         self.subscriptionManager = subscriptionManager
         self.stripePurchaseFlow = stripePurchaseFlow
         self.subscriptionSuccessPixelHandler = subscriptionSuccessPixelHandler
+        self.subscriptionUpsellMetrics = subscriptionUpsellMetrics
         self.uiHandler = uiHandler
         self.aiChatURL = aiChatURL
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
@@ -403,6 +406,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
                 saveSubscriptionUpgradeTimestampIfFreemiumActivated()
                 PixelKit.fire(SubscriptionPixel.subscriptionActivated, frequency: .uniqueByName)
                 subscriptionSuccessPixelHandler.fireSuccessfulSubscriptionAttributionPixel(freeTrial: freeTrialEligible)
+                await reportOnboardingUpsellTrialStartedIfNeeded(origin: origin)
                 sendSubscriptionUpgradeFromFreemiumNotificationIfFreemiumActivated()
                 notificationCenter.post(name: .subscriptionDidChange, object: self)
                 await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: purchaseUpdate)
@@ -627,6 +631,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
 
         let completion: StripePaymentCompletion? = CodableHelper.decode(from: params)
         let changeType = completion?.change
+        let origin = purchaseWideEventData?.funnelName
 
         var accountActivationDuration = WideEvent.MeasuredInterval.startingNow()
         purchaseWideEventData?.activateAccountDuration = accountActivationDuration
@@ -642,6 +647,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
         } else {
             PixelKit.fire(SubscriptionPixel.subscriptionPurchaseStripeSuccess, frequency: .legacyDailyAndCount)
             subscriptionSuccessPixelHandler.fireSuccessfulSubscriptionAttributionPixel(freeTrial: false)
+            await reportOnboardingUpsellTrialStartedIfNeeded(origin: origin)
         }
 
         sendFreemiumSubscriptionPixelIfFreemiumActivated()
@@ -891,6 +897,14 @@ private extension SubscriptionPagesUseSubscriptionFeature {
         if freemiumDBPUserStateManager.didActivate {
             notificationCenter.post(name: .subscriptionUpgradeFromFreemium, object: nil)
         }
+    }
+
+    /// Reports the shared conversion metric only when the completed subscription includes an active trial.
+    func reportOnboardingUpsellTrialStartedIfNeeded(origin: String?) async {
+        guard origin == SubscriptionFunnelOrigin.onboardingSubscriptionUpsell.rawValue,
+              let subscription = try? await subscriptionManager.getSubscription(),
+              subscription.hasActiveTrialOffer else { return }
+        subscriptionUpsellMetrics.report(.trialStarted)
     }
 
     /// Sends a freemium subscription pixel event if the freemium feature has been activated.

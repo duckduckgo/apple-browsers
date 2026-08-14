@@ -55,11 +55,11 @@ final class DockPreferencesModel: ObservableObject {
         case .defaultBrowser:
             pixelFiring?.fire(GeneralPixel.userAddedToDockFromDefaultBrowserSection,
                               frequency: .standard,
-                              includeAppVersionParameter: false)
+                              options: .withoutAppVersion)
         case .general:
             pixelFiring?.fire(GeneralPixel.userAddedToDockFromSettings,
                              frequency: .standard,
-                             includeAppVersionParameter: false)
+                             options: .withoutAppVersion)
         default:
             break
         }

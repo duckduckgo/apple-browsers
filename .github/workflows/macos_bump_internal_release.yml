@@ -58,6 +58,9 @@ jobs:
         with:
           fetch-depth: 0 # Fetch all history and tags in order to extract Asana task URLs from git log
 
+      - name: Print macOS version
+        run: sw_vers
+
       - name: Assert release branch
         run: |
           case "${{ github.ref_name }}" in
@@ -114,6 +117,9 @@ jobs:
           fetch-depth: 0 # Fetch all history and tags in order to extract Asana task URLs from git log
           ref: ${{ needs.validate_input_conditions.outputs.release-branch }}
           submodules: recursive
+
+      - name: Print macOS version
+        run: sw_vers
 
       - name: Setup Ruby and dependencies
         uses: ./.github/actions/setup-ruby

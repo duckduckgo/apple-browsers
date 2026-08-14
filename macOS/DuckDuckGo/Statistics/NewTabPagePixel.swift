@@ -22,7 +22,7 @@ import PixelKit
 /**
  * This enum keeps pixels related to HTML New Tab Page.
  */
-enum NewTabPagePixel: PixelKitEvent {
+enum NewTabPagePixel: PixelKit.Event {
 
     /**
      * Event Trigger: New Tab Page is displayed to user.

@@ -69,7 +69,7 @@ enum SubscriptionError: LocalizedError {
 
 protocol SubscriptionEventReporter {
     func report(subscriptionActivationError: SubscriptionError)
-    func report(subscriptionTierOptionEvent: PixelKitEvent)
+    func report(subscriptionTierOptionEvent: PixelKit.Event)
 }
 
 struct DefaultSubscriptionEventReporter: SubscriptionEventReporter {
@@ -105,7 +105,7 @@ struct DefaultSubscriptionEventReporter: SubscriptionEventReporter {
         }
     }
 
-    func report(subscriptionTierOptionEvent: PixelKitEvent) {
+    func report(subscriptionTierOptionEvent: PixelKit.Event) {
         PixelKit.fire(subscriptionTierOptionEvent)
     }
 }

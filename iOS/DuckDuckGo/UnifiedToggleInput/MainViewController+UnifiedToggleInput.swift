@@ -456,12 +456,18 @@ private extension MainViewController {
     private func setDuckAITranscriptDimmedForEditing(_ isEditing: Bool) {
         if isEditing {
             guard currentTab?.isAITab == true, let webView = currentTab?.webView else { return }
+            if whitenedTranscriptWebView !== webView {
+                whitenedContainerOriginalBackground = webView.superview?.backgroundColor
+            }
             whitenedTranscriptWebView = webView
+            webView.superview?.backgroundColor = UIColor(singleUseColor: .duckAIContextualSheetBackground)
             UIView.animate(withDuration: 0.2) { webView.alpha = 0 }
         } else {
             // Restore the exact web view we whitened, not `currentTab`'s — the tab may have changed.
             let webView = whitenedTranscriptWebView
             whitenedTranscriptWebView = nil
+            webView?.superview?.backgroundColor = whitenedContainerOriginalBackground
+            whitenedContainerOriginalBackground = nil
             UIView.animate(withDuration: 0.2) { webView?.alpha = 1 }
         }
     }
@@ -489,6 +495,12 @@ private extension MainViewController {
         coordinator.textChangePublisher
             .sink { [weak self] _ in
                 self?.updateFloatingReturnKeyVisibility()
+            }
+            .store(in: &unifiedToggleInputCancellables)
+
+        coordinator.textChangePublisher
+            .sink { [weak self] text in
+                self?.recordNewTabPageSessionTextEntry(text)
             }
             .store(in: &unifiedToggleInputCancellables)
 
@@ -521,6 +533,7 @@ private extension MainViewController {
             ntpAfterIdleInstrumentation.toggleUsedFromNTP(afterIdle: tab.openedAfterIdle)
         }
         postIdleSessionInstrumentation.toggleUsed()
+        recordNewTabPageSessionToggleSwitch(to: mode)
 
         if coordinator.isOmnibarSession {
             handleOmnibarModeChange(mode, coordinator: coordinator)
@@ -952,6 +965,7 @@ extension MainViewController {
                     self.ntpAfterIdleInstrumentation.backButtonUsedFromNTP(afterIdle: tab.openedAfterIdle)
                 }
                 self.postIdleSessionInstrumentation.backPressed()
+                self.recordNewTabPageSessionAction { $0.utiBackArrow() }
                 self.dismissUnifiedToggleInputOmnibarSession(coordinator: coordinator)
             } else if coordinator.isAITabExpanded {
                 coordinator.showCollapsed()
@@ -959,6 +973,7 @@ extension MainViewController {
         }
         contentVC.onSwipeDownRequested = { [weak self] in
             guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
+            self.recordNewTabPageSessionAction { $0.dismissKeyboard() }
             coordinator.dismissOmnibarKeyboard()
         }
 
@@ -1168,7 +1183,8 @@ extension MainViewController {
         if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
             ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: tab.openedAfterIdle)
         }
-        postIdleSessionInstrumentation.sessionEnded(reason: .barUsed)
+        postIdleSessionInstrumentation.sessionEnded(reason: postIdleSubmissionReason(for: query))
+        recordNewTabPageSessionAction { $0.hitSubmit() }
         loadQuery(query)
     }
 
@@ -1233,6 +1249,9 @@ extension MainViewController: UnifiedToggleInputDelegate {
     }
 
     func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?) {
+        // Recorded before the branches below, which end the visit on their own terminals.
+        recordNewTabPageSessionAction { $0.hitSubmit() }
+
         // Match omnibar toggle: URL-shaped submissions from non-Duck.ai origin load the URL even when toggle is Duck.ai. Attachments suppress (no sensible URL-load with attachments).
         // On a Duck.ai tab, keep prompt semantics so users can ask the model about a URL by name.
         if currentTab?.isAITab != true,
@@ -1240,6 +1259,9 @@ extension MainViewController: UnifiedToggleInputDelegate {
            let url = URL(trimmedAddressBarString: prompt, useUnifiedLogic: isUnifiedURLPredictionEnabled),
            url.isValid(usingUnifiedLogic: isUnifiedURLPredictionEnabled) {
             unifiedToggleInputCoordinator?.recordDuckAIPromptInterpretedAsURL()
+            // `loadUrlRespectingAIBoundary` carries no terminal of its own, so without this the visit
+            // would stay open and later report a timeout despite the user having navigated.
+            endNewTabPageSessionWithLoad(of: url)
             loadUrlRespectingAIBoundary(url)
             return
         }
@@ -1370,6 +1392,7 @@ extension MainViewController: UnifiedInputContentContainerViewControllerDelegate
     }
 
     func unifiedInputEditingStateDidRequestTabSwitcher() {
+        recordNewTabPageSessionAction { $0.tapTabViewerEscapeHatch() }
         requestTabSwitcher()
     }
 

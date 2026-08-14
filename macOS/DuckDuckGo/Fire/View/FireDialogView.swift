@@ -709,9 +709,7 @@ struct FireDialogView: ModalView {
             Spacer(minLength: 8)
 
             HStack(alignment: .center, spacing: 8) {
-                if viewModel.historyVisits.count > Constants.historyOverlayMaxVisibleItems {
-                    seeFullHistoryButton(accessibilityIdentifier: "FireDialogView.seeFullHistoryButton")
-                }
+                seeFullHistoryButton(accessibilityIdentifier: "FireDialogView.seeFullHistoryButton")
 
                 Button(action: { isShowingHistoryOverlay = false }) {
                     Image(nsImage: DesignSystemImages.Glyphs.Size16.close)
@@ -1007,6 +1005,7 @@ struct FireDialogView: ModalView {
                         selectedCookieDomains: viewModel.selectedCookieDomainsForScope,
                         selectedVisits: viewModel.historyVisits
                     )
+                    viewModel.didConfirmDataClearing()
                     onConfirm?(.burn(options: result))
                     dismiss()
                 } label: {

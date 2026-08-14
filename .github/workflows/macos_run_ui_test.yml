@@ -82,6 +82,9 @@ jobs:
       with:
         ref: ${{ inputs.branch }}
 
+    - name: Print macOS version
+      run: sw_vers
+
     - name: Initialize submodules with retry
       run: |
         max_attempts=3

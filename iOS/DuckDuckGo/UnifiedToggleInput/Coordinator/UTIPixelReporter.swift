@@ -41,7 +41,7 @@ struct UTIPixelFiring {
         daily.fireDailyAndCount(event, error: nil, withAdditionalParameters: parameters)
     }
 
-    func fire(_ event: PixelKitEvent, frequency: PixelKit.Frequency) {
+    func fire(_ event: PixelKit.Event, frequency: PixelKit.Frequency) {
         pixelKit()?.fire(event, frequency: frequency)
     }
 }

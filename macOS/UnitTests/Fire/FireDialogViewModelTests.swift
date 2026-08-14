@@ -115,6 +115,8 @@ final class FireDialogViewModelTests: XCTestCase {
         tabCollectionVM = nil
         historyCoordinator = nil
         aiChatHistoryCleaner = nil
+        dataClearingPreferences = nil
+        pixelFiringMock = nil
     }
 
     @MainActor func testOnBurn_OnboardingContextualDialogsManagerFireButtonUsedCalled() {
@@ -2102,6 +2104,109 @@ final class FireDialogViewModelTests: XCTestCase {
         XCTAssertTrue(viewModel.includeHistory, "Default includeHistory should be true")
         XCTAssertTrue(viewModel.includeCookiesAndSiteData, "Default includeCookiesAndSiteData should be true")
         XCTAssertFalse(viewModel.includeChatHistorySetting, "Default includeChatHistorySetting should be false")
+        XCTAssertTrue(viewModel.isSectionsExpanded, "Default isSectionsExpanded should be true")
+    }
+
+    // MARK: - Sections expanded state
+
+    @MainActor func testWhenNoPersistedSectionsExpandedState_ThenSectionsAreExpanded() {
+        // Scenario: The user never used the expand/collapse button and never cleared data.
+        // Action: Create ViewModel with empty mock settings.
+        // Expectation: Sections are expanded, and nothing is stored yet.
+
+        let mockSettings = MockFireDialogViewSettings()
+
+        let viewModel = makeViewModel(settings: mockSettings)
+
+        XCTAssertTrue(viewModel.isSectionsExpanded, "Sections should be expanded by default")
+        XCTAssertNil(mockSettings.lastSectionsExpandedState, "Initialization should not store the default state")
+    }
+
+    @MainActor func testWhenSectionsExpandedChanged_ThenSettingIsPersistedAndUsedByNextDialog() {
+        // Scenario: The user collapses the sections, then expands them again.
+        // Action: Change isSectionsExpanded, creating a new ViewModel after each change.
+        // Expectation: Mock settings hold the last value, and the next ViewModel uses it.
+
+        let mockSettings = MockFireDialogViewSettings()
+
+        let viewModel1 = makeViewModel(settings: mockSettings)
+        viewModel1.isSectionsExpanded = false
+
+        XCTAssertEqual(mockSettings.lastSectionsExpandedState, false, "Mock settings should be updated")
+
+        let viewModel2 = makeViewModel(settings: mockSettings)
+
+        XCTAssertFalse(viewModel2.isSectionsExpanded, "isSectionsExpanded should be loaded from mock settings")
+
+        viewModel2.isSectionsExpanded = true
+
+        XCTAssertEqual(mockSettings.lastSectionsExpandedState, true, "Mock settings should reflect new value")
+
+        let viewModel3 = makeViewModel(settings: mockSettings)
+
+        XCTAssertTrue(viewModel3.isSectionsExpanded, "Updated isSectionsExpanded should persist in mock settings")
+    }
+
+    @MainActor func testWhenDataClearingConfirmedAndUserNeverChangedSectionsState_ThenSectionsCollapseForNextDialog() {
+        // Scenario: The user clears data for the first time without using the expand/collapse button.
+        // Action: Confirm data clearing on a ViewModel with empty mock settings.
+        // Expectation: The collapsed state is stored, and the next ViewModel is collapsed.
+
+        let mockSettings = MockFireDialogViewSettings()
+
+        let viewModel1 = makeViewModel(settings: mockSettings)
+        XCTAssertTrue(viewModel1.isSectionsExpanded, "First dialog should be expanded")
+
+        viewModel1.didConfirmDataClearing()
+
+        XCTAssertEqual(mockSettings.lastSectionsExpandedState, false, "First data clearing should store the collapsed state")
+
+        let viewModel2 = makeViewModel(settings: mockSettings)
+
+        XCTAssertFalse(viewModel2.isSectionsExpanded, "Dialogs after the first data clearing should be collapsed")
+    }
+
+    @MainActor func testWhenDataClearingConfirmedAndUserExpandedSections_ThenExpandedStateIsKept() {
+        // Scenario: The user keeps the sections expanded with the expand/collapse button, then clears data.
+        // Action: Set isSectionsExpanded to true, then confirm data clearing.
+        // Expectation: The user choice remains, and the next ViewModel is expanded.
+
+        let mockSettings = MockFireDialogViewSettings()
+
+        let viewModel1 = makeViewModel(settings: mockSettings)
+        viewModel1.isSectionsExpanded = false
+        viewModel1.isSectionsExpanded = true
+
+        viewModel1.didConfirmDataClearing()
+
+        XCTAssertEqual(mockSettings.lastSectionsExpandedState, true, "Data clearing should not overwrite the user choice")
+
+        let viewModel2 = makeViewModel(settings: mockSettings)
+
+        XCTAssertTrue(viewModel2.isSectionsExpanded, "Dialogs should keep the expanded state chosen by the user")
+    }
+
+    @MainActor func testWhenDataClearingConfirmedRepeatedlyAfterUserExpandedSections_ThenExpandedStateIsKept() {
+        // Scenario: The user expands the sections after the first data clearing, then clears data again.
+        // Action: Confirm data clearing, expand the sections, then confirm data clearing again.
+        // Expectation: Later data clearings never overwrite the user choice.
+
+        let mockSettings = MockFireDialogViewSettings()
+
+        let viewModel1 = makeViewModel(settings: mockSettings)
+        viewModel1.didConfirmDataClearing()
+
+        let viewModel2 = makeViewModel(settings: mockSettings)
+        XCTAssertFalse(viewModel2.isSectionsExpanded, "Second dialog should be collapsed")
+
+        viewModel2.isSectionsExpanded = true
+        viewModel2.didConfirmDataClearing()
+
+        XCTAssertEqual(mockSettings.lastSectionsExpandedState, true, "Data clearing should not overwrite the user choice")
+
+        let viewModel3 = makeViewModel(settings: mockSettings)
+
+        XCTAssertTrue(viewModel3.isSectionsExpanded, "Third dialog should be expanded")
     }
 
     // MARK: - Simplified Fire Dialog: currentWindow folding
@@ -2255,6 +2360,24 @@ final class FireDialogViewModelTests: XCTestCase {
             featureFlagger: MockFeatureFlagger(),
             clearingOption: clearingOption,
             scopeCookieDomains: scopeCookieDomains,
+            tld: TLD(),
+            windowControllersManager: windowControllersManager,
+            dataClearingPreferences: dataClearingPreferences,
+            pixelFiring: pixelFiringMock
+        )
+    }
+
+    @MainActor
+    private func makeViewModel(settings: any KeyedStoring<FireDialogViewSettings>) -> FireDialogViewModel {
+        FireDialogViewModel(
+            fireViewModel: .init(fire: fire),
+            tabCollectionViewModel: tabCollectionVM,
+            historyCoordinating: historyCoordinator,
+            aiChatHistoryCleaner: MockAIChatHistoryCleaner(showCleanOption: true),
+            fireproofDomains: fireproofDomains,
+            faviconManagement: fire.faviconManagement,
+            featureFlagger: MockFeatureFlagger(),
+            settings: settings,
             tld: TLD(),
             windowControllersManager: windowControllersManager,
             dataClearingPreferences: dataClearingPreferences,

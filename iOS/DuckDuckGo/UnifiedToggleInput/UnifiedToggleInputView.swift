@@ -134,7 +134,7 @@ final class UnifiedToggleInputView: UIView {
 
         static let editDisclaimerOverlap: CGFloat = 44
         static let editDisclaimerTopGap: CGFloat = 12
-        static let editDisclaimerIconSize: CGFloat = 24
+        static let editDisclaimerIconSize: CGFloat = 16
         static let editDisclaimerIconTextGap: CGFloat = 12
         static let editDisclaimerContentLeading: CGFloat = 20
         static let editDisclaimerContentBottom: CGFloat = 12
@@ -393,7 +393,8 @@ final class UnifiedToggleInputView: UIView {
         card.isUserInteractionEnabled = false
         card.isHidden = true
 
-        let icon = UIImageView(image: DesignSystemImages.Color.Size24.infoFeedback)
+        let icon = UIImageView(image: DesignSystemImages.Glyphs.Size16.info)
+        icon.tintColor = UIColor(designSystemColor: .textSecondary)
         icon.translatesAutoresizingMaskIntoConstraints = false
         icon.contentMode = .scaleAspectFit
         icon.setContentHuggingPriority(.required, for: .horizontal)
@@ -466,6 +467,7 @@ final class UnifiedToggleInputView: UIView {
     func bindPageContextChip(to viewModel: UnifiedToggleInputPageContextChipViewModel) {
         pageContextChipCancellables.removeAll()
         attachmentsStrip.onPageContextRemove = { [weak viewModel] in viewModel?.tapToRemove() }
+        attachmentsStrip.onPageContextTap = { [weak viewModel] in viewModel?.tapToAttach() }
         viewModel.$state
             .sink { [weak self] state in self?.attachmentsStrip.setPageContextChipState(state) }
             .store(in: &pageContextChipCancellables)
@@ -483,6 +485,12 @@ final class UnifiedToggleInputView: UIView {
     // MARK: - UI
 
     private let cardView = UIView()
+
+    /// Edges of the visible input card, which sits inside this view's own padding. Content placed
+    /// around the bar should align to these rather than to the view's edges.
+    var cardTopAnchor: NSLayoutYAxisAnchor { cardView.topAnchor }
+    var cardLeadingAnchor: NSLayoutXAxisAnchor { cardView.leadingAnchor }
+    var cardTrailingAnchor: NSLayoutXAxisAnchor { cardView.trailingAnchor }
     private let toggleView = UnifiedToggleInputToggleView()
     private lazy var inlineDismissButton: UIButton = Self.makeInlineDismissButton()
     private let attachmentsStrip = UnifiedToggleInputAttachmentsStripView()
@@ -635,12 +643,21 @@ final class UnifiedToggleInputView: UIView {
     private var toolbarBottomConstraint: NSLayoutConstraint!
     private var attachmentsStripHeightConstraint: NSLayoutConstraint!
     private var toolbarHeightConstraint: NSLayoutConstraint!
+    /// The link in the vertical chain that differs between the two attachment-strip orders.
+    private var attachmentsStripChainConstraint: NSLayoutConstraint!
+
+    /// Attachment strip above the text entry, per the contextual Duck.ai design. Decided by the owning
+    /// coordinator: resolving the feature here would restructure every UTI surface, the omnibar included.
+    private let placesAttachmentsAboveInput: Bool
 
     // MARK: - Initialization
 
-    init(handler: UnifiedToggleInputHandler, isToggleEnabled: Bool = true) {
+    init(handler: UnifiedToggleInputHandler,
+         isToggleEnabled: Bool = true,
+         placesAttachmentsAboveInput: Bool = false) {
         self.handler = handler
         self.isToggleEnabled = isToggleEnabled
+        self.placesAttachmentsAboveInput = placesAttachmentsAboveInput
         self.textEntryView = SwitchBarTextEntryView(handler: handler, voiceButtonAppearance: .aiVoicePlain)
         super.init(frame: .zero)
         textEntryView.style = isToggleEnabled ? .multiLine : .singleLine
@@ -1608,8 +1625,17 @@ private extension UnifiedToggleInputView {
         toggleHeightConstraint = toggleView.heightAnchor.constraint(equalToConstant: 0)
         inlineDismissTopConstraint = inlineDismissButton.topAnchor.constraint(equalTo: cardView.topAnchor, constant: Constants.toggleTopPadding)
         inlineDismissCenterYConstraint = inlineDismissButton.centerYAnchor.constraint(equalTo: textEntryView.centerYAnchor)
-        inputTopConstraint = textEntryView.topAnchor.constraint(equalTo: toggleView.bottomAnchor, constant: 0)
-        inputBottomConstraint = attachmentsStrip.topAnchor.constraint(equalTo: textEntryView.bottomAnchor)
+        // `inputTopConstraint` and `inputBottomConstraint` keep their meaning in both orders, so every
+        // caller that mutates their constants stays correct.
+        if placesAttachmentsAboveInput {
+            inputTopConstraint = attachmentsStrip.topAnchor.constraint(equalTo: toggleView.bottomAnchor, constant: 0)
+            attachmentsStripChainConstraint = textEntryView.topAnchor.constraint(equalTo: attachmentsStrip.bottomAnchor)
+            inputBottomConstraint = toolsToolbar.topAnchor.constraint(equalTo: textEntryView.bottomAnchor)
+        } else {
+            inputTopConstraint = textEntryView.topAnchor.constraint(equalTo: toggleView.bottomAnchor, constant: 0)
+            inputBottomConstraint = attachmentsStrip.topAnchor.constraint(equalTo: textEntryView.bottomAnchor)
+            attachmentsStripChainConstraint = toolsToolbar.topAnchor.constraint(equalTo: attachmentsStrip.bottomAnchor)
+        }
         textEntryViewLeadingConstraint = textEntryView.leadingAnchor.constraint(equalTo: cardView.leadingAnchor)
         textEntryViewTrailingConstraint = textEntryView.trailingAnchor.constraint(equalTo: cardView.trailingAnchor)
         toolbarBottomConstraint = toolsToolbar.bottomAnchor.constraint(equalTo: cardView.bottomAnchor)
@@ -1645,7 +1671,7 @@ private extension UnifiedToggleInputView {
             attachmentsStrip.trailingAnchor.constraint(equalTo: cardView.trailingAnchor),
             attachmentsStripHeightConstraint,
 
-            toolsToolbar.topAnchor.constraint(equalTo: attachmentsStrip.bottomAnchor),
+            attachmentsStripChainConstraint,
             toolsToolbar.leadingAnchor.constraint(equalTo: cardView.leadingAnchor),
             toolsToolbar.trailingAnchor.constraint(equalTo: cardView.trailingAnchor),
             toolbarBottomConstraint,

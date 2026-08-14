@@ -22,7 +22,7 @@ import Testing
 @testable import DuckDuckGo
 
 @MainActor
-@Suite("AI Chat Sync Promo View Tests", .disabled("Snapshot testing is opt-in until the sync automations land"))
+@Suite("AI Chat Sync Promo View Tests")
 final class AIChatSyncPromoViewTests {
 
     @available(iOS 16, macOS 13, *)

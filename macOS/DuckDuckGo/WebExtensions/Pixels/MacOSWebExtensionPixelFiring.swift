@@ -19,7 +19,7 @@
 import PixelKit
 import WebExtensions
 
-enum WebExtensionPixel: PixelKitEvent {
+enum WebExtensionPixel: PixelKit.Event {
 
     // MARK: - Installation
 
@@ -87,7 +87,7 @@ enum WebExtensionPixel: PixelKitEvent {
 
     case dailyAdBlockingState(isEnabled: Bool, analyticsEnabled: Bool)
 
-    // MARK: - PixelKitEvent
+    // MARK: - PixelKit.Event
 
     var name: String {
         switch self {

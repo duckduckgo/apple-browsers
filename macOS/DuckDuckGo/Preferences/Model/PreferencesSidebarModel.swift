@@ -63,7 +63,7 @@ final class PreferencesSidebarModel: ObservableObject {
                 pixelFiring?.fire(
                     SettingsPixel.settingsPaneOpened(selectedPane),
                     frequency: .dailyAndStandard,
-                    withAdditionalParameters: ["subscribed": String(subscriptionManager.isUserAuthenticated)]
+                    options: .parameters(["subscribed": String(subscriptionManager.isUserAuthenticated)])
                 )
             default:
                 pixelFiring?.fire(SettingsPixel.settingsPaneOpened(selectedPane), frequency: .daily)

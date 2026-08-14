@@ -146,6 +146,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     private let onboardingPixelReporter: OnboardingPixelReporting
     private let featureFlagger: FeatureFlagger
     private let tabTerminationTelemetry: any TabTerminationTelemetry
+    private let tabTerminationErrorPageDetector: any TabTerminationErrorPageDetecting
     private let tabEvictionSettings: TabEvictionSettings
     private let applicationState: @MainActor () -> UIApplication.State
     private let isPad: Bool
@@ -236,6 +237,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
          adBlockingAvailability: AdBlockingAvailabilityProviding,
          eventHub: EventHubManaging,
          tabTerminationTelemetry: (any TabTerminationTelemetry)? = nil,
+         tabTerminationErrorPageDetector: (any TabTerminationErrorPageDetecting)? = nil,
          applicationState: (@MainActor () -> UIApplication.State)? = nil,
          isPad: Bool? = nil
     ) {
@@ -261,6 +263,9 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             featureFlagger: featureFlagger,
             keyValueStore: UserDefaults.app,
             memoryWarningTelemetryWindow: { tabEvictionSettings.memoryWarningTelemetryWindow })
+        self.tabTerminationErrorPageDetector = tabTerminationErrorPageDetector ?? TabTerminationErrorPageDetector(
+            featureFlagger: featureFlagger,
+            privacyConfigurationManager: privacyConfigurationManager)
         self.applicationState = applicationState ?? { UIApplication.shared.applicationState }
         self.isPad = isPad ?? (UIDevice.current.userInterfaceIdiom == .pad)
         self.contentScopeExperimentManager = contentScopeExperimentManager
@@ -656,6 +661,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         if let index = tabControllerCache.firstIndex(of: controller) {
             tabControllerCache.remove(at: index)
         }
+        tabTerminationErrorPageDetector.removeHistory(forTabID: controller.tabModel.uid)
         controller.dismiss()
     }
 
@@ -710,15 +716,22 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     }
 
     @MainActor
-    func invalidateCache(forController controller: TabViewController) {
+    func invalidateCache(forController controller: TabViewController, reloadCurrent: Bool) {
         if current() === controller {
-            DailyPixel.fireDailyAndCount(pixel: .webKitTerminationDidReloadCurrentTab, pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
-
-            if controller.url?.isDuckAIURL == true {
-                DailyPixel.fireDailyAndCount(pixel: .aiChatTabDidReloadAfterTermination)
+            if reloadCurrent, tabTerminationErrorPageDetector.shouldShowErrorPage(forTabID: controller.tabModel.uid) {
+                controller.showTabTerminationErrorPage()
+                return
             }
 
-            current()?.reload()
+            if reloadCurrent {
+                DailyPixel.fireDailyAndCount(pixel: .webKitTerminationDidReloadCurrentTab, pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
+
+                if controller.url?.isDuckAIURL == true {
+                    DailyPixel.fireDailyAndCount(pixel: .aiChatTabDidReloadAfterTermination)
+                }
+
+                current()?.reload()
+            }
         } else {
             evictFromCache(controller, reason: .webContentProcessTermination)
         }

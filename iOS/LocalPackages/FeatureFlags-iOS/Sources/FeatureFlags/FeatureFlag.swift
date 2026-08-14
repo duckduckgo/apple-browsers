@@ -310,9 +310,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212980785692847?focus=true
     case aiChatSync
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214965000466711?focus=true
-    case aiChatSyncPromo
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212745919983886?focus=true
     case aiChatSuggestions
 
@@ -353,6 +350,10 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216049537026986
     case aiChatContextualUnifiedToggleInput
 
+    /// Address-bar Duck.ai menu plus the floating contextual input. iPhone only.
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1215757651854873
+    case aiChatContextualFloatingInput
+
     /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1216575765851990
     case unifiedToggleInputAttachmentPaste
 
@@ -390,6 +391,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217109908046478?focus=true
     case tabTerminationTelemetry
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217125840097313?focus=true
+    case tabTerminationErrorPage
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217244101759199?focus=true
     case tabEvictionOnMemoryWarning
@@ -493,10 +497,7 @@ public enum FeatureFlag: String {
     case iPadDuckAIBarControls
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215359554019438?focus=true
-    case floatingUI
-
-    /// https://app.asana.com/1/137249556945/project/392891325557410/task/1216807388526023
-    case tabSwitcherJuly2026
+    case floatingUIAugust2026
 
     /// https://app.asana.com/1/137249556945/project/1211150618152277/task/1213745858492635?focus=true
     case removeChatHistory
@@ -537,9 +538,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216629730083154?focus=true
     case systemFindInPage
 
-    /// Experiment for removing monthly free trials
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216851336490252
-    case monthlyFreeTrialExperiment
+    /// Experiment for removing monthly free trials — second run, enrolling only free-trial eligible users.
+    /// https://app.asana.com/1/137249556945/task/1217334233390728
+    case monthlyFreeTrialExperiment2
 
     /// Moves the iPad tabs bar up into the system window controls row (iOS 26+ resizable windows).
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217015452646368?focus=true
@@ -787,8 +788,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AIChatSubfeature.multiplePageContexts))
         case .aiChatSync:
             Config(source: .remoteReleasable(SyncSubfeature.aiChatSync))
-        case .aiChatSyncPromo:
-            Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.aiChatSyncPromo))
         case .aiChatSuggestions:
             Config(defaultValue: .enabled, source: .remoteReleasable(DuckAiChatHistorySubfeature.featureEnabled))
         case .aiChatNativeChatHistory:
@@ -813,6 +812,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.aiChatTabHideToggle))
         case .aiChatContextualUnifiedToggleInput:
             Config(source: .remoteReleasable(AIChatSubfeature.contextualUnifiedToggleInput))
+        case .aiChatContextualFloatingInput:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.contextualFloatingInput))
         case .unifiedToggleInputAttachmentPaste:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.unifiedToggleInputAttachmentPaste))
         case .freeTrialConversionWideEvent:
@@ -831,8 +832,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.searchTokenExperimentV2), cohortType: SearchTokenExperimentCohort.self)
         case .onboardingFlowByDownloadReasonExperiment:
             Config(source: .disabled, cohortType: OnboardingFlowByDownloadReasonExperimentCohort.self)
-        case .monthlyFreeTrialExperiment:
-            Config(source: .remoteReleasable(PrivacyProSubfeature.monthlyFreeTrialExperiment), cohortType: MonthlyFreeTrialExperimentCohort.self)
+        case .monthlyFreeTrialExperiment2:
+            Config(source: .remoteReleasable(PrivacyProSubfeature.monthlyFreeTrialExperiment2), cohortType: MonthlyFreeTrialExperimentCohort.self)
         case .genericBackgroundTask:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.genericBackgroundTask))
         case .crashCollectionLimitCallStackTreeDepth:
@@ -841,11 +842,12 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.launchTimeMetrics), supportsLocalOverriding: true)
         case .tabTerminationTelemetry:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.tabTerminationTelemetry), supportsLocalOverriding: true)
+        case .tabTerminationErrorPage:
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.tabTerminationErrorPage))
         case .tabEvictionOnMemoryWarning:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.tabEvictionOnMemoryWarning), supportsLocalOverriding: true)
         case .tabLRUEviction:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.tabLRUEviction), supportsLocalOverriding: true)
-
         case .appRebranding:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.appRebranding), supportsLocalOverriding: true)
         case .webExtensions:
@@ -904,10 +906,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.walletPassDownload))
         case .aiChatChromeShortcutIPad:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.iPadChromeShortcut))
-        case .floatingUI:
-            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.floatingUI))
-        case .tabSwitcherJuly2026:
-            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.tabSwitcherJuly2026))
+        case .floatingUIAugust2026:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.floatingUIAugust2026))
         case .removeChatHistory:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.removeChatHistory))
         case .aiChatTabSwitcherRichCard:

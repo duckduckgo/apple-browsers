@@ -64,6 +64,9 @@ jobs:
           fetch-depth: 0
           submodules: recursive
 
+      - name: Print macOS version
+        run: sw_vers
+
       - name: Assert main branch
         run: |
           if [ "${{ github.ref_name }}" != "main" ]; then

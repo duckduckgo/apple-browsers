@@ -29,7 +29,6 @@ public enum PrivacyFeature: String {
     case gpc
     case httpsUpgrade = "https"
     case autoconsent
-    case clickToLoad
     case autofill
     case autofillBreakageReporter
     case ampLinks
@@ -371,6 +370,10 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables Unified Toggle Input inside the iOS contextual AI chat sheet.
     case contextualUnifiedToggleInput
 
+    /// Enables the address-bar Duck.ai menu and the floating contextual input that replaces the
+    /// pre-submit contextual sheet on iPhone.
+    case contextualFloatingInput
+
     /// Kill switch for routing native image/file paste into the unified input attachment strip.
     case unifiedToggleInputAttachmentPaste
 
@@ -603,7 +606,6 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case syncCreditCards
     case syncIdentities
     case aiChatSync
-    case aiChatSyncPromo
     case allowSingleDeviceOnConnectScreen
     case scopedAccessCredentials
     case canUseV2ConnectFlow
@@ -643,7 +645,8 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case subscriptionPromoForReinstallers
     case subscriptionExpirationReminderNotification
     case subscriptionPromoForExistingUsers
-    case monthlyFreeTrialExperiment
+    case monthlyFreeTrialExperiment2
+    case onboardingSubscriptionUpsellExperiment
 }
 
 public enum DuckPlayerSubfeature: String, PrivacySubfeature {

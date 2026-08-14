@@ -4021,6 +4021,18 @@
 /* Special error page title for pages that can only be opened in Safari */
 "prompt.general-page-problem.title" = "Questa pagina si carica solo in Safari";
 
+/* Error page message shown after repeated tab terminations */
+"prompt.tab-termination-error-page.message" = "Questa pagina ha smesso di ricaricarsi più volte. Prova a ricaricare o inviaci un feedback.";
+
+/* Button that reloads a page after repeated tab terminations */
+"prompt.tab-termination-error-page.reload" = "Ricarica";
+
+/* Button that opens site feedback after repeated tab terminations */
+"prompt.tab-termination-error-page.send-feedback" = "Invia feedback";
+
+/* Error page title shown after repeated tab terminations */
+"prompt.tab-termination-error-page.title" = "Non siamo riusciti a caricare questa pagina";
+
 /* Default native error page message */
 "prompt.web-page-load-error.message" = "Questo sito web dispone di un certificato di sicurezza non valido e potrebbe non essere sicuro da visitare.";
 

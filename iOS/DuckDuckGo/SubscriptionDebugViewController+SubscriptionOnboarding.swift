@@ -304,11 +304,8 @@ extension SubscriptionDebugViewController {
 
     // MARK: - Mock full/resume flow
 
-    /// Fully in-memory: entitlement and completed items come from the mock toggles, not the real on-device
-    /// store, so any combination can be exercised without a matching real subscription or history. Uses the
-    /// designated `init` directly (not the real `.postCheckout`/`.subscriptionSettings` async factories,
-    /// which always fetch this device's actual entitlement) plus the existing `SubscriptionOnboardingLauncher.
-    /// launch(flow:)` to render it, same as every other debug entry point in this file.
+    /// Uses the designated `init` directly — the real `.postCheckout`/`.subscriptionSettings` factories always
+    /// fetch this device's actual entitlement, which would defeat the mock toggles.
     private func showMockOnboardingFlow(entryPoint: SubscriptionOnboardingEntryPoint) {
         let entitlement = EntitlementStatus(networkProtection: mockNetworkProtection,
                                             dataBrokerProtection: mockDataBrokerProtection,

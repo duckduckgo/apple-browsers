@@ -204,11 +204,8 @@ extension NewTabPageSessionWideEventData {
         return thresholds.last(where: { $0 <= count }) ?? 0
     }
 
-    /// Reports an action only when it happened, so an absent key reads as "not done".
-    ///
-    /// Most visits touch a handful of the actions at most, and this is the highest volume wide
-    /// event on either platform, so carrying the rest as `false` is most of the payload for none
-    /// of the information. `Dictionary(compacting:)` drops the nils.
+    /// Omits an action that did not happen, since thirty `false` flags per visit are payload
+    /// without information.
     private func whenDone(_ actionOccurred: Bool) -> Bool? {
         actionOccurred ? true : nil
     }

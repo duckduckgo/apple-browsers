@@ -54,8 +54,8 @@ public enum EditPromptReply: Encodable {
             try container.encode(true, forKey: .cancelled)
         case let .submit(prompt, images, files):
             try container.encode(prompt, forKey: .prompt)
-            try container.encodeIfPresent(images, forKey: .images)
-            try container.encodeIfPresent(files, forKey: .files)
+            try container.encode(images ?? [], forKey: .images)
+            try container.encode(files ?? [], forKey: .files)
         }
     }
 }

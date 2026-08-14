@@ -48,11 +48,11 @@ final class EditPromptMessagesTests: XCTestCase {
         XCTAssertNil(json["cancelled"], "Submit must not carry a `cancelled` key")
     }
 
-    func testSubmitReplyOmitsNilAttachmentArrays() throws {
+    func testSubmitReplyEncodesNilAttachmentArraysAsEmpty() throws {
         let json = try jsonObject(.submit(prompt: "edited", images: nil, files: nil))
         XCTAssertEqual(json["prompt"] as? String, "edited")
-        XCTAssertNil(json["images"])
-        XCTAssertNil(json["files"])
+        XCTAssertEqual((json["images"] as? [Any])?.count, 0, "Empty must serialize as [] so the frontend can clear attachments")
+        XCTAssertEqual((json["files"] as? [Any])?.count, 0, "Empty must serialize as [] so the frontend can clear attachments")
         XCTAssertNil(json["cancelled"])
     }
 

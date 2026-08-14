@@ -96,9 +96,8 @@ public struct DuckAiUsageLimits: Equatable {
         return DuckAiUsageLimitWindow(percentUsed: percentUsed, resetsAt: resetsAt)
     }
 
-    /// Read through `NSNumber` so both integer- and double-encoded percentages decode. Clamped defensively:
-    /// the web app clamps already, but a value we can't render sensibly is worse than a slightly wrong one.
-    /// The `CFBoolean` check rejects `true`/`false`, which would otherwise bridge to `1`/`0`.
+    /// `NSNumber` so integer- and double-encoded percentages both decode; the `CFBoolean` check rejects
+    /// `true`/`false`, which would otherwise bridge to `1`/`0`.
     private static func percentUsed(from value: Any?) -> Double? {
         guard let number = value as? NSNumber, CFGetTypeID(number) != CFBooleanGetTypeID() else { return nil }
         let percent = number.doubleValue
@@ -106,8 +105,8 @@ public struct DuckAiUsageLimits: Equatable {
         return min(max(percent, 0), 100)
     }
 
-    /// The web app writes `Date.toISOString()`, so fractional seconds are always present. The plain
-    /// internet-date-time fallback costs nothing and keeps a hand-seeded or future timestamp from being dropped.
+    /// `Date.toISOString()` always carries fractional seconds; the plain fallback keeps a hand-seeded
+    /// timestamp from being dropped.
     private static func date(from value: Any?) -> Date? {
         guard let text = value as? String else { return nil }
         let formatter = ISO8601DateFormatter()

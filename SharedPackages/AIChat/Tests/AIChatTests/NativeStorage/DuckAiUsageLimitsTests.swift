@@ -54,8 +54,7 @@ final class DuckAiUsageLimitsTests: XCTestCase {
         XCTAssertNil(limits.daily)
     }
 
-    /// The web app writes a snapshot on every usage-state update, so a field it adds later must not
-    /// take the whole payload down with it.
+    /// A field the web app adds later must not take the whole payload down with it.
     func testWhenPayloadCarriesUnknownFieldsThenTheyAreIgnored() {
         let limits = decode(#"{"schemaVersion":2,"monthly":{"percentUsed":1,"resetsAt":"\#(future)"},"daily":{"percentUsed":5,"resetsAt":"\#(future)","used":12,"limit":240}}"#)
 
@@ -70,8 +69,7 @@ final class DuckAiUsageLimitsTests: XCTestCase {
 
     // MARK: - No-data inputs
 
-    /// The web app writes `"{}"` deliberately rather than deleting the key, so a stale snapshot can't
-    /// outlive a sign-out or a server response that dropped usage.
+    /// The web app writes `"{}"` rather than deleting the key, so a stale snapshot can't outlive a sign-out.
     func testWhenSnapshotIsEmptyObjectThenNoData() {
         XCTAssertEqual(decode("{}"), .noData)
     }
@@ -107,8 +105,7 @@ final class DuckAiUsageLimitsTests: XCTestCase {
 
     // MARK: - Freshness
 
-    /// The snapshot isn't updated while Duck.ai isn't running, so a window past its reset has unknown
-    /// usage — reporting its last-seen percentage would keep warning long after the limit lifted.
+    /// A window past its reset has unknown usage; its last-seen percentage would warn forever.
     func testWhenWindowHasAlreadyResetThenItIsDropped() {
         let limits = decode(#"{"daily":{"percentUsed":100,"resetsAt":"\#(past)"},"weekly":{"percentUsed":80,"resetsAt":"\#(future)"}}"#)
 

@@ -35,7 +35,9 @@ final class DuckAiUsageLimitsStore {
 
     init(storageHandler: DuckAiNativeStorageHandling?,
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
-        self.provider = storageHandler.map { DuckAiUsageLimitsProvider(storage: $0) }
+        self.provider = storageHandler.map {
+            DuckAiUsageLimitsProvider(storage: $0, pixelFiring: DuckAiNativeStoragePixelAdapter())
+        }
         self.featureFlagger = featureFlagger
     }
 

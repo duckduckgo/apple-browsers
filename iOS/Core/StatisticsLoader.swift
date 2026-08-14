@@ -74,7 +74,7 @@ public class StatisticsLoader {
     static func fireSearchTokenExperimentPixels(metric: String) {
         for threshold in [1, 4, 6, 11, 21, 30] {
             PixelKit.fireExperimentPixelIfThresholdReached(
-                for: iOSBrowserConfigSubfeature.searchTokenExperimentV2.rawValue,
+                for: iOSBrowserConfigSubfeature.searchTokenExperimentV3.rawValue,
                 metric: metric,
                 conversionWindowDays: 1...4,
                 threshold: threshold
@@ -87,7 +87,7 @@ public class StatisticsLoader {
     /// started with. Drop each experiment as it is cleaned up, and delete this once none remain.
     static func fireLegacySearchRetentionExperimentPixels() {
         let inProgressExperiments = [
-            iOSBrowserConfigSubfeature.searchTokenExperimentV2.rawValue,
+            iOSBrowserConfigSubfeature.searchTokenExperimentV3.rawValue,
             iOSBrowserConfigSubfeature.onboardingFlowByDownloadReasonExperiment.rawValue,
             AutoconsentSubfeature.cookiePopupOptInDialogExperiment.rawValue
         ]

@@ -273,6 +273,8 @@ final class FireDialogViewModel: ObservableObject {
     }
 
     /// when true, selected tabs/windows are closed; when false, tabs remain open, but their history/session state is cleared if includeHistory is true.
+    ///
+    /// Use `shouldCloseTabsAndWindows` as source of truth that also covers toggle hidden case.
     @Published var includeTabsAndWindows: Bool {
         didSet {
             settings.lastIncludeTabsAndWindowsState = includeTabsAndWindows
@@ -280,9 +282,15 @@ final class FireDialogViewModel: ObservableObject {
             pixelFiring?.fire(FireDialogPixel.fireDialogToggleCloseTabs, frequency: .dailyAndCount, options: .unenforcedPrefix)
         }
     }
+
+    /// Whether tabs and windows should be closed. It's always `false` if the toggle is hidden.
+    var shouldCloseTabsAndWindows: Bool {
+        return mode.shouldShowCloseTabsToggle ? includeTabsAndWindows : false
+    }
+
     /// when true, history is cleared for the selected scope when the toggle was shown.
     ///
-    /// Use `shouldDeleteHistory` as source of truth that also covered toggle hidden case.
+    /// Use `shouldDeleteHistory` as source of truth that also covers toggle hidden case.
     @Published var includeHistory: Bool {
         didSet {
             settings.lastIncludeHistoryState = includeHistory
@@ -291,9 +299,9 @@ final class FireDialogViewModel: ObservableObject {
         }
     }
 
-    /// Whether history should be cleared.
+    /// Whether history should be cleared. It's always `true` if the toggle is hidden.
     var shouldDeleteHistory: Bool {
-        return includeHistory || !mode.shouldShowVisitsToggle
+        return mode.shouldShowVisitsToggle ? includeHistory : true
     }
 
     /// when true, cookies/site data are cleared for the selected (non-fireproof) domains in scope.

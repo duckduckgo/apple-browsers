@@ -1006,7 +1006,7 @@ struct FireDialogView: ModalView {
                     let result = FireDialogResult(
                         clearingOption: viewModel.clearingOption,
                         includeHistory: viewModel.shouldDeleteHistory,
-                        includeTabsAndWindows: viewModel.includeTabsAndWindows,
+                        includeTabsAndWindows: viewModel.shouldCloseTabsAndWindows,
                         includeCookiesAndSiteData: viewModel.includeCookiesAndSiteData,
                         includeChatHistory: viewModel.includeChatHistory,
                         selectedCookieDomains: viewModel.selectedCookieDomainsForScope,

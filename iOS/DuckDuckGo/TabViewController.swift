@@ -477,7 +477,9 @@ class TabViewController: UIViewController {
             return tabModel.link
         }
                         
-        let finalURL = duckPlayerNavigationHandler.getDuckURLFor(url)
+        // Strip the search-token param so it never surfaces to the user via this link (address bar,
+        // bookmarks, favorites, copy/share all read `link`). The live network request keeps the token.
+        let finalURL = SerpSearchTokenInterceptor.strippingToken(from: duckPlayerNavigationHandler.getDuckURLFor(url))
         let activeLink = Link(title: title, url: finalURL)
         guard let storedLink = tabModel.link else {
             return activeLink
@@ -3093,7 +3095,7 @@ extension TabViewController: WKNavigationDelegate {
             didModifyRequest = true
         }
 
-        // Attach Search Token experiment signals (dindexexp param + token header) to SERP navigations.
+        // Attach Search Token experiment signals (dindexexp + dindextoken URL params) to SERP navigations.
         // Enrolled devices only, skipping back/forward so we don't wipe forward history.
         if navigationAction.isTargetingMainFrame(),
            navigationAction.navigationType != .backForward,

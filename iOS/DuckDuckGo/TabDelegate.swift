@@ -34,7 +34,7 @@ protocol TabDelegate: AnyObject {
     func tabWillRequestNewTab(_ tab: TabViewController) -> UIKeyModifierFlags?
 
     /// The current cached search token, or nil if none is live. Used by the SERP interceptor
-    /// to attach `X-DDG-Search-Token` for the treatment cohort of the Search Token experiment.
+    /// to attach the `dindextoken` URL param for the treatment cohort of the Search Token experiment.
     func searchToken(for tab: TabViewController) -> String?
 
     func tabDidRequestNewTab(_ tab: TabViewController)

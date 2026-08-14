@@ -47,6 +47,8 @@ struct FireDialogView: ModalView {
         static var sectionRowWidth: CGFloat { viewSize.width - 2 * horizontalPadding - 2 * boxContentPadding }
         static let historyOverlayMaxVisibleItems = 100
         static let overlayAnimationDuration: TimeInterval = 0.2
+        static let overlayTopSpacing: CGFloat = 167
+        static let overlayTopSpacingShort: CGFloat = 48
     }
 
     @State private var viewHeight: CGFloat = Constants.viewSize.height
@@ -159,19 +161,21 @@ struct FireDialogView: ModalView {
                                 .accessibilityHidden(isShowingAnyOverlay)
                         }
                         VStack(spacing: 0) {
-                            detailsDisclosureView
-                                .accessibilityHidden(isShowingAnyOverlay)
+                            if viewModel.mode.shouldShowDetailsDisclosure {
+                                detailsDisclosureView
+                                    .accessibilityHidden(isShowingAnyOverlay)
+                            }
                             ZStack(alignment: .top) {
-                                if viewModel.isSectionsExpanded {
+                                if viewModel.shouldShowSectionsExpanded {
                                     sectionsView
                                         .transition(.opacity)
                                 }
                             }
                             .frame(width: Constants.sectionRowWidth)
                             .clipped()
-                            .allowsHitTesting(viewModel.isSectionsExpanded)
-                            .accessibilityHidden(!viewModel.isSectionsExpanded)
-                            .padding(.bottom, viewModel.isSectionsExpanded ? -10 : 0)
+                            .allowsHitTesting(viewModel.shouldShowSectionsExpanded)
+                            .accessibilityHidden(!viewModel.shouldShowSectionsExpanded)
+                            .padding(.bottom, viewModel.shouldShowSectionsExpanded ? -10 : 0)
                         }
                     }
                     .padding(Constants.boxContentPadding)
@@ -209,7 +213,7 @@ struct FireDialogView: ModalView {
                     .zIndex(9)
 
                 VStack(spacing: 0) {
-                    Spacer(minLength: 167)
+                    Spacer(minLength: viewModel.mode.shouldShowDetailsDisclosure ? Constants.overlayTopSpacing : Constants.overlayTopSpacingShort)
                     sitesOverlay
                 }
                 .zIndex(11)
@@ -223,7 +227,7 @@ struct FireDialogView: ModalView {
                     .zIndex(9)
 
                 VStack(spacing: 0) {
-                    Spacer(minLength: 167)
+                    Spacer(minLength: viewModel.mode.shouldShowDetailsDisclosure ? Constants.overlayTopSpacing : Constants.overlayTopSpacingShort)
                     chatsOverlay
                 }
                 .zIndex(11)
@@ -237,7 +241,7 @@ struct FireDialogView: ModalView {
                     .zIndex(9)
 
                 VStack(spacing: 0) {
-                    Spacer(minLength: 167)
+                    Spacer(minLength: viewModel.mode.shouldShowDetailsDisclosure ? Constants.overlayTopSpacing : Constants.overlayTopSpacingShort)
                     historyOverlay
                 }
                 .zIndex(11)
@@ -403,30 +407,32 @@ struct FireDialogView: ModalView {
 
     private var sectionsView: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Row 1: History
-            sectionRow(
-                icon: DesignSystemImages.Glyphs.Size16.history,
-                title: UserText.fireDialogHistoryTitle,
-                detail: historyDetail,
-                isOn: Binding {
-                    viewModel.includeHistory && isIncludeHistoryEnabled
-                } set: {
-                    viewModel.includeHistory = $0
-                },
-                // the history items list isn't supported for the (deprecated, pending removal) Window scope
-                detailAction: (isIncludeHistoryEnabled && viewModel.clearingOption != .currentWindow) ? { isShowingHistoryOverlay = true } : nil,
-                detailActionEnabled: viewModel.includeHistory,
-                detailAccessibilityIdentifier: "FireDialogView.historyDetailButton",
-                isEnabled: isIncludeHistoryEnabled,
-                toggleId: "FireDialogView.historyToggle"
-            )
-            .accessibilityHidden(isShowingAnyOverlay)
-            sectionDivider()
+            if viewModel.mode.shouldShowVisitsToggle {
+                // Row 1: History
+                sectionRow(
+                    icon: DesignSystemImages.Glyphs.Size16.history,
+                    title: UserText.fireDialogHistoryTitle,
+                    detail: historyDetail,
+                    isOn: Binding {
+                        viewModel.includeHistory && isIncludeHistoryEnabled
+                    } set: {
+                        viewModel.includeHistory = $0
+                    },
+                    // the history items list isn't supported for the (deprecated, pending removal) Window scope
+                    detailAction: (isIncludeHistoryEnabled && viewModel.clearingOption != .currentWindow) ? { isShowingHistoryOverlay = true } : nil,
+                    detailActionEnabled: viewModel.includeHistory,
+                    detailAccessibilityIdentifier: "FireDialogView.historyDetailButton",
+                    isEnabled: isIncludeHistoryEnabled,
+                    toggleId: "FireDialogView.historyToggle"
+                )
+                .accessibilityHidden(isShowingAnyOverlay)
+                sectionDivider()
+            }
 
             // Row 2: Cookies and Site Data
             sectionRow(
                 icon: DesignSystemImages.Glyphs.Size16.cookie,
-                title: UserText.fireDialogCookiesAndOtherData,
+                title: viewModel.mode.shouldShowVisitsToggle ? UserText.fireDialogCookiesAndOtherData : UserText.fireDialogIncludeCookiesAndOtherData,
                 subtitle: UserText.fireDialogCookiesSignOutWarning,
                 detail: cookiesDetail,
                 isOn: Binding { viewModel.includeCookiesAndSiteData && isIncludeCookiesAndSiteDataEnabled } set: { viewModel.includeCookiesAndSiteData = $0 },
@@ -439,6 +445,7 @@ struct FireDialogView: ModalView {
             )
             .disabled(!isIncludeCookiesAndSiteDataEnabled)
             .accessibilityHidden(isShowingAnyOverlay)
+            .padding(.top, viewModel.mode.shouldShowVisitsToggle ? 0 : -13)
 
             if viewModel.shouldShowChatHistoryToggle {
                 sectionDivider()

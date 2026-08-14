@@ -97,6 +97,21 @@ final class FireDialogViewModel: ObservableObject {
             }
         }
 
+        var shouldShowDetailsDisclosure: Bool {
+            return shouldShowVisitsToggle
+        }
+
+        var shouldShowVisitsToggle: Bool {
+            switch self {
+            case .fireButton,
+                    .mainMenuAll,
+                    .historyView(query: .rangeFilter(.all)):
+                return true
+            case .historyView:
+                return false
+            }
+        }
+
         var shouldShowChatHistoryToggle: Bool {
             switch self {
             case .fireButton,
@@ -130,6 +145,7 @@ final class FireDialogViewModel: ObservableObject {
             case .historyView(query: .dateFilter(let date)): HistoryViewDeleteDialogModel.DeleteMode.date(date).title
             case .historyView(query: .domainFilter(let domains)): HistoryViewDeleteDialogModel.DeleteMode.sites(domains).title
             case .historyView(query: .rangeFilter(.older)): HistoryViewDeleteDialogModel.DeleteMode.older.title
+            case .historyView(query: .visits(let visits)): UserText.fireDialogHistoryItemsTitle(visits.uniqued(on: { $0.uuid }).count)
             case .historyView: UserText.fireDialogTitle
             }
             return title.replacingOccurrences(of: #"\n"#, with: " ")
@@ -294,6 +310,11 @@ final class FireDialogViewModel: ObservableObject {
         didSet {
             settings.lastSectionsExpandedState = isSectionsExpanded
         }
+    }
+
+    /// When current mode doesn't display details disclosure indicator, we should always expand sections
+    var shouldShowSectionsExpanded: Bool {
+        return isSectionsExpanded || !mode.shouldShowDetailsDisclosure
     }
 
     /// Collapses the "Choose what to delete" sections for all later dialogs, if the user did not

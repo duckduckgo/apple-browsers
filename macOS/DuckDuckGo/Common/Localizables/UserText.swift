@@ -39,11 +39,21 @@ struct UserText {
     static let fireDialogHistoryTitle = NSLocalizedString("fire.dialog.history.title", value: "History", comment: "Section title. Toggle that controls whether browsing history entries are deleted.")
     static let cookiesAndSiteDataTitle = NSLocalizedString("fire.dialog.cookies.title", value: "Cookies and site data", comment: "Section title. Toggle that controls whether website cookies and storage (site data) are deleted.")
     static let fireDialogCookiesAndOtherData = NotLocalizedString("fire.dialog.cookies.and.other.data.title", value: "Cookies & other data", comment: "Section title. Toggle that controls whether website cookies and storage (site data) are deleted.")
+    static let fireDialogIncludeCookiesAndOtherData = NotLocalizedString("fire.dialog.include.cookies.and.other.data.title", value: "Include cookies & other data?", comment: "Section title. Toggle that controls whether website cookies and storage (site data) are deleted.")
     static let fireDialogCloseThisTab = NSLocalizedString("fire.dialog.close.this.tab", value: "Close this tab.", comment: "Subtitle shown under the Tabs and windows row when scope is ‘Tab’. Means: the currently active tab will be closed.")
     static let fireDialogCloseThisWindow = NSLocalizedString("fire.dialog.close.this.window", value: "Close this window.", comment: "Subtitle shown under the Tabs and windows row when scope is ‘Window’. Means: the current browser window (all tabs inside it) will be closed.")
     static let fireDialogCloseAllTabsWindows = NSLocalizedString("fire.dialog.close.all.tabs.windows", value: "Close all tabs and windows.", comment: "Subtitle shown under the Tabs and windows row when scope is ‘Everything’. Means: all browser tabs and windows will be closed.")
     static let fireDialogCloseThisTabAfterDeleting = NotLocalizedString("fire.dialog.close.this.tab.after.deleting", value: "Close this tab after deleting, except if it's pinned.", comment: "Checkbox caption for when the data clearing scope is ‘Tab’. Means: the currently active tab will be closed, unless it's pinned.")
     static let fireDialogCloseAllTabsWindowsAfterDeleting = NotLocalizedString("fire.dialog.close.all.windows.after.deleting", value: "Close all windows after deleting, except pinned tabs.", comment: "Checkbox caption for when the data clearing scope is ‘Everything’. Means: all browser tabs and windows will be closed, unless they contain pinned tabs in which case all regular tabs from a window will be closed and pinned tabs reloaeded.")
+
+    static func fireDialogHistoryItemsTitle(_ count: Int) -> String {
+        let template = NSLocalizedString(
+            "fire.dialog.history.items.title",
+            value: "Delete %d History items?",
+            comment: "Dialog title. Shows the exact number of browsing history entries that will be deleted in this operation, using plural substitutions for the count and noun (%d)."
+        )
+        return String.localizedStringWithFormat(template, count)
+    }
 
     static func fireDialogHistoryItemsSubtitle(_ count: Int) -> String {
         let template = NSLocalizedString(

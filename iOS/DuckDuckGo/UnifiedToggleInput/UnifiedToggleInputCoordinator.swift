@@ -1566,12 +1566,14 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         }
 
         if isEditing {
-            let images = selectedModelSupportsImageUpload
-                ? UnifiedToggleInputImageEncoder.encode(viewController.currentAttachments)
-                : nil
-            let files = selectedModelSupportsFileUpload
-                ? UnifiedToggleInputFileEncoder.encode(viewController.currentAttachments)
-                : nil
+           // The kept set is always stated explicitly, empty arrays included: the FE cannot tell an
+            // omitted array from "unchanged", so omitting one resubmits attachments the user removed.
+            let images: [AIChatNativePrompt.NativePromptImage] = selectedModelSupportsImageUpload
+                ? (UnifiedToggleInputImageEncoder.encode(viewController.currentAttachments) ?? [])
+                : []
+            let files: [AIChatNativePrompt.NativePromptFile] = selectedModelSupportsFileUpload
+                ? (UnifiedToggleInputFileEncoder.encode(viewController.currentAttachments) ?? [])
+                : []
             resolveEdit(.submit(prompt: text, images: images, files: files))
             endEditMode()
             return

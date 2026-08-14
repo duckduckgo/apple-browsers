@@ -144,7 +144,7 @@
                                         },
                                         "origin": {
                                             "type": "string",
-                                            "description": "How the user reached the surface the prompt was typed on, as opposed to entry_point, which is the surface itself. Omnibar and contextual prompts are their own entries; an ai_tab prompt inherits the m_aichat_entry_point source that opened the tab. Absent when the opening entry is unknown.",
+                                            "description": "How the user reached the surface the prompt was typed on, as an m_aichat_entry_point source value. Distinct from entry_point, which is the surface itself. Absent when the entry is unknown.",
                                             "enum": [
                                                 "address_bar_prompt",
                                                 "address_bar_icon",

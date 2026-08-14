@@ -73,6 +73,8 @@ struct OnboardingPersonalizationToggleItemView: View {
     private enum Metrics {
         static let iconTextHorizontalSpacing: CGFloat = 10.0
         static let copyVerticalSpacing: CGFloat = 0
+        /// Gap between the copy and the trailing toggle.
+        static let copyToggleSpacing: CGFloat = 20.0
     }
 
     @Environment(\.onboardingTheme) private var onboardingTheme
@@ -95,7 +97,8 @@ struct OnboardingPersonalizationToggleItemView: View {
             ),
             text: subtitle.map { CardItemText($0, font: CardItemFont(onboardingTheme.typography.rowDetails)) },
             titleTextSpacing: Metrics.copyVerticalSpacing,
-            trailing: .toggle(toggleBinding, tint: Color(designSystemColor: .accentPrimary))
+            trailing: .toggle(toggleBinding, tint: Color(designSystemColor: .accentPrimary)),
+            trailingAccessorySpacing: Metrics.copyToggleSpacing
         )
     }
 

@@ -99,13 +99,27 @@ final class DeviceInfoMigrationCoordinatorTests: XCTestCase {
         XCTAssertEqual(scopedAccess.ensureAccountInfoProtectedKeysCalls.count, 1)
     }
 
-    func testWhenMigrationStateIsResetThenCurrentDeviceCanMigrateAgain() async {
+    func testWhenCompletedMigrationIsResetAfterRenameThenCurrentDeviceIsPatchedAgainWithLatestName() async throws {
         await coordinator.migrateCurrentDeviceIfNeeded(for: .mock)
+        let renamedAccount = SyncAccount(
+            deviceId: SyncAccount.mock.deviceId,
+            deviceName: "Renamed Device",
+            deviceType: SyncAccount.mock.deviceType,
+            userId: SyncAccount.mock.userId,
+            primaryKey: SyncAccount.mock.primaryKey,
+            secretKey: SyncAccount.mock.secretKey,
+            token: SyncAccount.mock.token,
+            state: .active)
+        secureStore.theAccount = renamedAccount
         coordinator.reset()
 
-        await coordinator.migrateCurrentDeviceIfNeeded(for: .mock)
+        await coordinator.migrateCurrentDeviceIfNeeded(for: renamedAccount)
 
         XCTAssertEqual(accountManager.updateDeviceCalls.count, 2)
+        let latestUpdate = try XCTUnwrap(accountManager.updateDeviceCalls.last?.update)
+        XCTAssertEqual(latestUpdate.name, "encrypted_\(renamedAccount.deviceName)")
+        XCTAssertEqual(deviceInfoCodec.encryptCalls.last?.deviceInfo.name, renamedAccount.deviceName)
+        XCTAssertTrue(coordinator.hasCompletedMigration(for: renamedAccount))
     }
 
     func testWhenAccountIsRemovedDuringKeyPreparationThenMigrationStops() async throws {

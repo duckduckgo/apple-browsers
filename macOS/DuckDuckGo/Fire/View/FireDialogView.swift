@@ -368,7 +368,10 @@ struct FireDialogView: ModalView {
                 set: { viewModel.clearingOption = FireDialogViewModel.ClearingOption(rawValue: $0) ?? .allData }
             ),
             tabs: [
-                FireDialogTabItem(id: FireDialogViewModel.ClearingOption.currentTab.rawValue, title: UserText.fireDialogModeFromThisTab, image: Image(nsImage: DesignSystemImages.Glyphs.Size16.tabDesktop)),
+                FireDialogTabItem(id: FireDialogViewModel.ClearingOption.currentTab.rawValue,
+                                  title: UserText.fireDialogModeFromThisTab,
+                                  image: Image(nsImage: DesignSystemImages.Glyphs.Size16.tabDesktop),
+                                  isEnabled: viewModel.isCurrentTabOptionEnabled),
                 FireDialogTabItem(id: FireDialogViewModel.ClearingOption.allData.rawValue, title: UserText.fireDialogModeAllData, image: Image(nsImage: DesignSystemImages.Glyphs.Size16.browser))
             ]
         )
@@ -1083,6 +1086,7 @@ private struct FireDialogTabItem: Identifiable {
     let id: Int
     let title: String
     let image: Image
+    var isEnabled: Bool = true
 }
 
 private struct FireDialogTabsContainer: View {
@@ -1136,6 +1140,8 @@ private struct FireDialogTabButton: View {
             )
         }
         .buttonStyle(.plain)
+        .disabled(!tab.isEnabled)
+        .opacity(tab.isEnabled ? 1 : 0.4)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(tab.title)
         .accessibilityValue(isSelected ? UserText.fireDialogAccessibilitySelected : "")

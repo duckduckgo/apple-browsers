@@ -171,6 +171,7 @@ final class FireDialogViewModel: ObservableObject {
          includeCookiesAndSiteData: Bool? = nil,
          includeChatHistory: Bool? = nil,
          sectionsExpanded: Bool? = nil,
+         isCurrentTabOptionEnabled: Bool? = nil,
          mode: Mode = .fireButton,
          settings: (any KeyedStoring<FireDialogViewSettings>)? = nil,
          scopeCookieDomains: Set<String>? = nil,
@@ -201,7 +202,19 @@ final class FireDialogViewModel: ObservableObject {
         self.scopeCookieDomains = scopeCookieDomains
 
         self.settings = if let settings { settings } else { UserDefaults.standard.keyedStoring() }
-        self.clearingOption = clearingOption ?? self.settings.lastSelectedClearingOption ?? .currentTab
+
+        // Disabling the current tab scope belongs to the new dialog only.
+        let currentTabOptionEnabled = if featureFlagger.isFeatureOn(.fireDialogSimplified) {
+            isCurrentTabOptionEnabled ?? Self.isCurrentTabOptionEnabled(for: tabCollectionViewModel.selectedTab)
+        } else {
+            true
+        }
+        self.isCurrentTabOptionEnabled = currentTabOptionEnabled
+
+        // Fall back to All Data when the current tab holds nothing to delete. This is set here,
+        // and not after initialization, to keep the last selected clearing option untouched.
+        let selectedClearingOption = clearingOption ?? self.settings.lastSelectedClearingOption ?? .currentTab
+        self.clearingOption = (selectedClearingOption == .currentTab && !currentTabOptionEnabled) ? .allData : selectedClearingOption
         self.includeTabsAndWindows = includeTabsAndWindows ?? self.settings.lastIncludeTabsAndWindowsState ?? true
         self.includeHistory = includeHistory ?? self.settings.lastIncludeHistoryState ?? true
         self.includeCookiesAndSiteData = includeCookiesAndSiteData ?? self.settings.lastIncludeCookiesAndSiteDataState ?? true
@@ -215,6 +228,17 @@ final class FireDialogViewModel: ObservableObject {
 
         // Duck.ai chats aren't scoped by tab/window, so fetch them once
         self.chats = aiChatHistoryCleaner.allChats()
+    }
+
+    /// Whether the user can choose the "From this tab" scope.
+    ///
+    /// A tab that shows no website, and that has nothing to go back or forward to, holds no data
+    /// to delete. The scope is then disabled, and the dialog uses "All data" instead.
+    let isCurrentTabOptionEnabled: Bool
+
+    private static func isCurrentTabOptionEnabled(for tab: Tab?) -> Bool {
+        guard let tab else { return true }
+        return tab.content.isExternalUrl || tab.canGoBack || tab.canGoForward
     }
 
     private func updateLastSelectedClearingOptionIfNeeded() {

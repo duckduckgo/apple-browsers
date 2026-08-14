@@ -2321,6 +2321,98 @@ final class FireDialogViewModelTests: XCTestCase {
         }
     }
 
+    // MARK: - Current tab scope
+
+    @MainActor func testWhenCurrentTabHasNoDataToDelete_ThenTheScopeIsDisabledAndAllDataIsUsed() {
+        // Scenario: The fire button is used on a new tab page that was never navigated away from.
+        // Expectation: The tab holds nothing to delete, so the scope is disabled and the dialog
+        // uses All data. The stored last selected scope stays untouched, so the next dialog on a
+        // website tab starts from the user's own choice again.
+
+        let mockSettings = MockFireDialogViewSettings(lastSelectedClearingOption: .currentTab)
+        selectNewTabPageTab()
+
+        let viewModel = makeViewModel(tabCollectionViewModel: tabCollectionVM, settings: mockSettings)
+
+        XCTAssertFalse(viewModel.isCurrentTabOptionEnabled, "The current tab scope should be disabled")
+        XCTAssertEqual(viewModel.clearingOption, .allData, "The dialog should use All data")
+        XCTAssertEqual(mockSettings.lastSelectedClearingOption, .currentTab, "The user choice should stay stored")
+    }
+
+    @MainActor func testWhenCurrentTabShowsAWebsite_ThenTheScopeStaysEnabled() {
+        // Scenario: The fire button is used on a tab showing a website.
+        // Expectation: The tab holds data to delete, so the scope stays available and selected.
+
+        let mockSettings = MockFireDialogViewSettings(lastSelectedClearingOption: .currentTab)
+        tabCollectionVM.append(tab: makeTab(url: "https://example.com".url!))
+        tabCollectionVM.select(at: .unpinned(1))
+
+        let viewModel = makeViewModel(tabCollectionViewModel: tabCollectionVM, settings: mockSettings)
+
+        XCTAssertTrue(viewModel.isCurrentTabOptionEnabled, "The current tab scope should be available")
+        XCTAssertEqual(viewModel.clearingOption, .currentTab, "The dialog should keep the user choice")
+    }
+
+    @MainActor func testWhenCurrentTabHasNoDataToDeleteAndAllDataWasSelected_ThenNothingChanges() {
+        // Scenario: The user already chose All data, then uses the fire button on a new tab page.
+        // Expectation: The scope is disabled, and the stored choice stays as it is.
+
+        let mockSettings = MockFireDialogViewSettings(lastSelectedClearingOption: .allData)
+        selectNewTabPageTab()
+
+        let viewModel = makeViewModel(tabCollectionViewModel: tabCollectionVM, settings: mockSettings)
+
+        XCTAssertFalse(viewModel.isCurrentTabOptionEnabled, "The current tab scope should be disabled")
+        XCTAssertEqual(viewModel.clearingOption, .allData)
+        XCTAssertEqual(mockSettings.lastSelectedClearingOption, .allData, "The user choice should stay stored")
+    }
+
+    @MainActor func testWhenTheCurrentTabScopeIsDisabled_ThenTheDialogUsesAllDataWithoutStoringIt() {
+        // Scenario: The tab holds nothing to delete, which also covers a tab that cannot go back
+        // or forward. The state comes from the caller here, because a unit test cannot navigate.
+        // Expectation: The dialog uses All data, and the stored scope stays untouched.
+
+        let mockSettings = MockFireDialogViewSettings(lastSelectedClearingOption: .currentTab)
+
+        let viewModel = makeViewModel(tabCollectionViewModel: tabCollectionVM,
+                                      settings: mockSettings,
+                                      isCurrentTabOptionEnabled: false)
+
+        XCTAssertFalse(viewModel.isCurrentTabOptionEnabled)
+        XCTAssertEqual(viewModel.clearingOption, .allData)
+        XCTAssertEqual(mockSettings.lastSelectedClearingOption, .currentTab, "The user choice should stay stored")
+    }
+
+    @MainActor func testWhenSimplifiedDialogIsOff_ThenTheCurrentTabScopeStaysEnabled() {
+        // Scenario: The legacy dialog is used on a tab that holds nothing to delete.
+        // Expectation: Nothing changes. Disabling the scope belongs to the new dialog only.
+
+        let mockSettings = MockFireDialogViewSettings(lastSelectedClearingOption: .currentTab)
+        selectNewTabPageTab()
+
+        let viewModel = makeViewModel(tabCollectionViewModel: tabCollectionVM,
+                                      settings: mockSettings,
+                                      isFireDialogSimplified: false)
+
+        XCTAssertTrue(viewModel.isCurrentTabOptionEnabled, "The legacy dialog should keep the scope")
+        XCTAssertEqual(viewModel.clearingOption, .currentTab, "The legacy dialog should keep the user choice")
+    }
+
+    @MainActor func testWhenSimplifiedDialogIsOffAndTheCallerDisablesTheScope_ThenTheScopeStaysEnabled() {
+        // Scenario: The legacy dialog, with the caller reporting a tab without data to delete.
+        // Expectation: The flag decides, so the legacy dialog keeps the scope and the user choice.
+
+        let mockSettings = MockFireDialogViewSettings(lastSelectedClearingOption: .currentTab)
+
+        let viewModel = makeViewModel(tabCollectionViewModel: tabCollectionVM,
+                                      settings: mockSettings,
+                                      isCurrentTabOptionEnabled: false,
+                                      isFireDialogSimplified: false)
+
+        XCTAssertTrue(viewModel.isCurrentTabOptionEnabled)
+        XCTAssertEqual(viewModel.clearingOption, .currentTab)
+    }
+
     // MARK: - Closing tabs and windows
 
     /// Modes where the user can choose whether the tabs and windows are closed.
@@ -2575,10 +2667,14 @@ final class FireDialogViewModelTests: XCTestCase {
 
     @MainActor func testClearingOption_WhenSimplifiedEnabledAndScopeIsCurrentTab_RemainsCurrentTab() {
         // Scenario: The simplified Fire dialog is enabled but the selected scope is .currentTab.
-        // Action: Create the ViewModel with clearingOption: .currentTab.
+        // Action: Create the ViewModel with clearingOption: .currentTab, on a tab showing a
+        // website so that the scope holds data to delete.
         // Expectation: Only .currentWindow is folded; .currentTab is preserved.
 
         let featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.fireDialogSimplified.rawValue: true])
+
+        tabCollectionVM.append(tab: makeTab(url: "https://example.com".url!))
+        tabCollectionVM.select(at: .unpinned(1))
 
         let viewModel = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
@@ -2707,6 +2803,36 @@ final class FireDialogViewModelTests: XCTestCase {
 
     private func makeFireproofDomains(_ domains: [String]) {
         domains.forEach { fireproofDomains.add(domain: $0) }
+    }
+
+    @MainActor
+    private func makeViewModel(tabCollectionViewModel: TabCollectionViewModel,
+                               settings: any KeyedStoring<FireDialogViewSettings>,
+                               isCurrentTabOptionEnabled: Bool? = nil,
+                               isFireDialogSimplified: Bool = true) -> FireDialogViewModel {
+        FireDialogViewModel(
+            fireViewModel: fireViewModel,
+            tabCollectionViewModel: tabCollectionViewModel,
+            historyCoordinating: fire.historyCoordinating,
+            aiChatHistoryCleaner: aiChatHistoryCleaner,
+            fireproofDomains: fireproofDomains,
+            faviconManagement: fire.faviconManagement,
+            featureFlagger: MockFeatureFlagger(featuresStub: [FeatureFlag.fireDialogSimplified.rawValue: isFireDialogSimplified]),
+            isCurrentTabOptionEnabled: isCurrentTabOptionEnabled,
+            settings: settings,
+            tld: TLD(),
+            windowControllersManager: windowControllersManager,
+            dataClearingPreferences: dataClearingPreferences,
+            pixelFiring: pixelFiringMock
+        )
+    }
+
+    /// Selects a new tab page that was never navigated away from, so it holds nothing to delete.
+    @MainActor
+    private func selectNewTabPageTab() {
+        let tab = Tab(content: .newtab, webViewConfiguration: schemeHandler.webViewConfiguration())
+        tabCollectionVM.append(tab: tab)
+        tabCollectionVM.select(at: .unpinned(1))
     }
 
     /// Makes an identifier of a single visit of a history entry that no other identifier refers to.

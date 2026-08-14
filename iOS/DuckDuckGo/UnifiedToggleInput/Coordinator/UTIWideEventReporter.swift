@@ -33,8 +33,6 @@ struct UTIWideEventSubmissionInputs {
     /// The A2 entry source that opened the current Duck.ai surface, when known.
     let entrySource: AIChatEntryPointSource?
 
-    /// How the user reached the surface: omnibar and contextual prompts are their own
-    /// entries; an AI-tab prompt inherits the entry that opened the tab.
     func origin(for entryPoint: DuckAIPromptWideEventData.EntryPoint) -> AIChatEntryPointSource? {
         switch entryPoint {
         case .omnibar: return .addressBarPrompt

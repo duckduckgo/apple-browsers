@@ -216,8 +216,6 @@ final class UTIPixelReporter {
         }
     }
 
-    /// The `.search` counterpart of `reportPromptSubmitted`, giving the Search vs Duck.ai mix a
-    /// denominator at the same granularity as the prompt side.
     func reportQuerySubmitted(defaultOmnibarMode: DefaultOmnibarMode) {
         withContext {
             UnifiedToggleInputCoordinatorPixelHelper.fireUnifiedQuerySubmittedPixel(
@@ -230,8 +228,6 @@ final class UTIPixelReporter {
         }
     }
 
-    /// How the user reached the surface the prompt was typed on. Address-bar and contextual
-    /// prompts are their own entries; a Duck.ai-tab prompt inherits the entry that opened the tab.
     static func promptOrigin(for context: UTIPixelContext) -> AIChatEntryPointSource? {
         switch context.surface {
         case .addressBar: return .addressBarPrompt

@@ -167,7 +167,7 @@ final class UTIPixelReporterTests: XCTestCase {
         XCTAssertNil(PixelFiringMock.lastDailyPixelInfo?.params?["origin"])
     }
 
-    // MARK: - Query submission (the Search-side counterpart of prompt submission)
+    // MARK: - Query submission
 
     func testReportQuerySubmittedFiresDailyWithResolvedSurfacePageTypeAndToggleVisibility() {
         let reporter = makeReporter { self.context(surface: .addressBar, isToggleVisible: true, pageType: .serp) }
@@ -183,8 +183,6 @@ final class UTIPixelReporterTests: XCTestCase {
         ])
     }
 
-    /// A search submitted with the toggle off screen was not a Search-vs-Duck.ai choice, so it has
-    /// to be excludable from any choice-rate denominator.
     func testWhenQuerySubmittedWithToggleHiddenThenToggleVisibleIsFalse() {
         let reporter = makeReporter { self.context(isToggleVisible: false) }
 
@@ -193,8 +191,6 @@ final class UTIPixelReporterTests: XCTestCase {
         XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.params?["toggle_visible"], "false")
     }
 
-    /// The query and prompt pixels have to agree on the keys the mix is cut by, or the ratio
-    /// cannot be computed at matching granularity.
     func testQueryAndPromptSubmittedShareTheKeysTheMixIsCutBy() {
         let reporter = makeReporter { self.context(surface: .addressBar, isToggleVisible: true, pageType: .ntp) }
 

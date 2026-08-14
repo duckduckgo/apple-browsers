@@ -60,8 +60,6 @@ enum UnifiedToggleInputPixelSurface: String {
     case contextualChat = "contextual_chat"
 }
 
-/// The page a prompt was submitted from, sent as `page_type`. Distinct from `surface`
-/// (where it was typed): an address-bar prompt can be typed over NTP, SERP, or a website.
 enum UnifiedToggleInputPromptPageType: String {
     case ntp
     case serp
@@ -222,8 +220,6 @@ final class UnifiedToggleInputCoordinatorPixelHelper {
         firing.fireDailyAndCount(.unifiedToggleInputPromptSubmitted, parameters)
     }
 
-    /// The `.search` counterpart of `fireUnifiedPromptSubmittedPixel`. Shares `page_type`,
-    /// `surface` and `default_mode` with it so the Search vs Duck.ai mix is a ratio of the two.
     static func fireUnifiedQuerySubmittedPixel(
         surface: UnifiedToggleInputPixelSurface,
         pageType: UnifiedToggleInputPromptPageType? = nil,

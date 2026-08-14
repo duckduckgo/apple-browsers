@@ -313,11 +313,13 @@ final class OnboardingIntroViewModel: ObservableObject {
         makeNextViewState()
     }
 
-    func toggleInputModeContinueAction() {
+    func toggleInputModeContinueAction(opensWithAIChat: Bool) {
+        personalizationManager.setNewTabOpensWithAIChat(opensWithAIChat)
         makeNextViewState()
     }
 
     func keepDuckAIContinueAction(isEnabled: Bool) {
+        personalizationManager.setDuckAIEnabled(isEnabled)
         onboardingSearchExperienceProvider.storeAIChatSearchInputDuringOnboardingChoice(enable: isEnabled)
 
         makeNextViewState()

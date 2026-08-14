@@ -537,40 +537,32 @@ extension OnboardingView {
         }
 
         private func addressBarToggleModeView(content: OnboardingAddressBarToggleModeContent) -> some View {
-            let personalizationManager = model.personalizationManager
-
-            return AddressBarToggleModeContent(
+            AddressBarToggleModeContent(
                 content: content,
                 isVisible: $showBubbleContent,
                 primaryAction: {
-                    personalizationManager.setNewTabOpensWithAIChat(true)
                     animateContentTransition {
-                        model.toggleInputModeContinueAction()
+                        model.toggleInputModeContinueAction(opensWithAIChat: true)
                     }
                 },
                 secondaryAction: {
-                    personalizationManager.setNewTabOpensWithAIChat(false)
                     animateContentTransition {
-                        model.toggleInputModeContinueAction()
+                        model.toggleInputModeContinueAction(opensWithAIChat: false)
                     }
                 }
             )
         }
 
         private func aiChatEnabledSelectionView(content: OnboardingDuckAIEnabledPersonalizationContent) -> some View {
-            let personalizationManager = model.personalizationManager
-
-            return DuckAIEnabledPersonalizationContent(
+            DuckAIEnabledPersonalizationContent(
                 content: content,
                 isVisible: $showBubbleContent,
                 primaryAction: {
-                    personalizationManager.setDuckAIEnabled(true)
                     animateContentTransition {
                         model.keepDuckAIContinueAction(isEnabled: true)
                     }
                 },
                 secondaryAction: {
-                    personalizationManager.setDuckAIEnabled(false)
                     animateContentTransition {
                         model.keepDuckAIContinueAction(isEnabled: false)
                     }

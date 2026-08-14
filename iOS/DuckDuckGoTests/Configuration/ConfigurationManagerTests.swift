@@ -112,12 +112,14 @@ private enum ConfigurationStep: String, Equatable {
 private class MockConfigurationFetcher: ConfigurationFetching {
     var operationLog: OperationLog
     var shouldFailPrivacyFetch = false
+    var fetchResults = [Configuration: ConfigurationFetchResult]()
+    var fetchAllResult: Set<Configuration>?
 
     init(operationLog: OperationLog) {
         self.operationLog = operationLog
     }
 
-    func fetch(_ configuration: Configuration, isDebug: Bool) async throws {
+    func fetch(_ configuration: Configuration, isDebug: Bool) async throws -> ConfigurationFetchResult {
         switch configuration {
         case .bloomFilterBinary:
             break
@@ -138,9 +140,12 @@ private class MockConfigurationFetcher: ConfigurationFetching {
         case .remoteMessagingConfig:
             break
         }
+        return fetchResults[configuration] ?? .updated
     }
 
-    func fetch(all configurations: [Configuration]) async throws {}
+    func fetch(all configurations: [Configuration]) async throws -> Set<Configuration> {
+        fetchAllResult ?? Set(configurations)
+    }
 }
 
 private class MockPrivacyConfigurationManagerWithLogs: PrivacyConfigurationManager {

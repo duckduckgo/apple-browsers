@@ -191,7 +191,7 @@ private class MockConfigurationFetcher: ConfigurationFetching {
         self.operationLog = operationLog
     }
 
-    func fetch(_ configuration: Configuration, isDebug: Bool) async throws {
+    func fetch(_ configuration: Configuration, isDebug: Bool) async throws -> ConfigurationFetchResult {
         switch configuration {
         case .bloomFilterBinary:
             break
@@ -215,9 +215,12 @@ private class MockConfigurationFetcher: ConfigurationFetching {
         case .remoteMessagingConfig:
             break
         }
+        return .updated
     }
 
-    func fetch(all configurations: [Configuration]) async throws {}
+    func fetch(all configurations: [Configuration]) async throws -> Set<Configuration> {
+        return Set(configurations)
+    }
 }
 
 private class MockPrivacyConfigurationManager: PrivacyConfigurationManager {

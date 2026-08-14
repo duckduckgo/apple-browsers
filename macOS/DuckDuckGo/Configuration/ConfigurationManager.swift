@@ -125,7 +125,7 @@ final class ConfigurationManager: DefaultConfigurationManager {
         var didFetchAnyTrackerBlockingDependencies = false
 
         // Start surrogates fetch task
-        let surrogatesTask = Task { try await fetcher.fetch(.surrogates, isDebug: isDebug) }
+        let surrogatesTask = Task { _ = try await fetcher.fetch(.surrogates, isDebug: isDebug) }
 
         // Perform privacyConfiguration fetch and update
         do {
@@ -141,7 +141,7 @@ final class ConfigurationManager: DefaultConfigurationManager {
         }
 
         // Start trackerDataSet fetch task after privacyConfiguration completes
-        let trackerDataSetTask = Task { try await fetcher.fetch(.trackerDataSet, isDebug: isDebug) }
+        let trackerDataSetTask = Task { _ = try await fetcher.fetch(.trackerDataSet, isDebug: isDebug) }
 
         // Wait for surrogates and trackerDataSet tasks
         let tasks: [(Configuration, Task<(), Swift.Error>)] = [

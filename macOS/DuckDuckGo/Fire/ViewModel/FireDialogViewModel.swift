@@ -103,12 +103,10 @@ final class FireDialogViewModel: ObservableObject {
 
         var shouldShowVisitsToggle: Bool {
             switch self {
-            case .fireButton,
-                    .mainMenuAll,
-                    .historyView(query: .rangeFilter(.all)):
-                return true
-            case .historyView:
+            case .historyView(query: .visits):
                 return false
+            default:
+                return true
             }
         }
 
@@ -271,7 +269,9 @@ final class FireDialogViewModel: ObservableObject {
             pixelFiring?.fire(FireDialogPixel.fireDialogToggleCloseTabs, frequency: .dailyAndCount, options: .unenforcedPrefix)
         }
     }
-    /// when true, history is cleared for the selected scope.
+    /// when true, history is cleared for the selected scope when the toggle was shown.
+    ///
+    /// Use `shouldDeleteHistory` as source of truth that also covered toggle hidden case.
     @Published var includeHistory: Bool {
         didSet {
             settings.lastIncludeHistoryState = includeHistory
@@ -279,6 +279,12 @@ final class FireDialogViewModel: ObservableObject {
             pixelFiring?.fire(FireDialogPixel.fireDialogToggleClearHistory, frequency: .dailyAndCount, options: .unenforcedPrefix)
         }
     }
+
+    /// Whether history should be cleared.
+    var shouldDeleteHistory: Bool {
+        return includeHistory || !mode.shouldShowVisitsToggle
+    }
+
     /// when true, cookies/site data are cleared for the selected (non-fireproof) domains in scope.
     @Published var includeCookiesAndSiteData: Bool {
         didSet {

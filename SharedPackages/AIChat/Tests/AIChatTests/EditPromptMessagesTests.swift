@@ -48,11 +48,19 @@ final class EditPromptMessagesTests: XCTestCase {
         XCTAssertNil(json["cancelled"], "Submit must not carry a `cancelled` key")
     }
 
-    func testSubmitReplyEncodesNilAttachmentArraysAsEmpty() throws {
+    func testSubmitReplyOmitsNilAttachmentArrays() throws {
         let json = try jsonObject(.submit(prompt: "edited", images: nil, files: nil))
         XCTAssertEqual(json["prompt"] as? String, "edited")
-        XCTAssertEqual((json["images"] as? [Any])?.count, 0, "Empty must serialize as [] so the frontend can clear attachments")
-        XCTAssertEqual((json["files"] as? [Any])?.count, 0, "Empty must serialize as [] so the frontend can clear attachments")
+        XCTAssertNil(json["images"], "nil means the model can't carry this type, so the key is omitted and the frontend keeps existing attachments")
+        XCTAssertNil(json["files"], "nil means the model can't carry this type, so the key is omitted and the frontend keeps existing attachments")
+        XCTAssertNil(json["cancelled"])
+    }
+
+    func testSubmitReplyEncodesEmptyAttachmentArraysAsEmpty() throws {
+        let json = try jsonObject(.submit(prompt: "edited", images: [], files: []))
+        XCTAssertEqual(json["prompt"] as? String, "edited")
+        XCTAssertEqual((json["images"] as? [Any])?.count, 0, "[] must be preserved so the frontend can tell the user removed everything")
+        XCTAssertEqual((json["files"] as? [Any])?.count, 0, "[] must be preserved so the frontend can tell the user removed everything")
         XCTAssertNil(json["cancelled"])
     }
 

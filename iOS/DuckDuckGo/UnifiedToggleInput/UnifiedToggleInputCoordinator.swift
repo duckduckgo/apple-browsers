@@ -1576,10 +1576,10 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
 
         if isEditing {
             let images = selectedModelSupportsImageUpload
-                ? UnifiedToggleInputImageEncoder.encode(viewController.currentAttachments)
+                ? (UnifiedToggleInputImageEncoder.encode(viewController.currentAttachments) ?? [])
                 : nil
             let files = selectedModelSupportsFileUpload
-                ? UnifiedToggleInputFileEncoder.encode(viewController.currentAttachments)
+                ? (UnifiedToggleInputFileEncoder.encode(viewController.currentAttachments) ?? [])
                 : nil
             pixelReporter.reportEditSubmitted()
             exitEditMode(reply: .submit(prompt: text, images: images, files: files))

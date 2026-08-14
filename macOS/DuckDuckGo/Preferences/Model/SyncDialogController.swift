@@ -80,6 +80,7 @@ final class SyncDialogController {
     private let userAuthenticator: UserAuthenticating
     private let syncPausedStateManager: any SyncPausedStateManaging
     private let featureFlagger: FeatureFlagger
+    private let pixelFiring: PixelFiring?
     private let diagnosisHelper: SyncDiagnosisHelper
 
     private static let defaultConnectionControllerFactory: (DDGSyncing, SyncConnectionControllerDelegate) -> SyncConnectionControlling = { syncService, delegate in
@@ -111,13 +112,15 @@ final class SyncDialogController {
         userAuthenticator: UserAuthenticating = DeviceAuthenticator.shared,
         syncPausedStateManager: any SyncPausedStateManaging,
         connectionControllerFactory: ((DDGSyncing, SyncConnectionControllerDelegate) -> SyncConnectionControlling)? = nil,
-        featureFlagger: FeatureFlagger? = nil
+        featureFlagger: FeatureFlagger? = nil,
+        pixelFiring: PixelFiring? = PixelKit.shared
     ) {
         self.syncService = syncService
         self.userAuthenticator = userAuthenticator
         self.syncPausedStateManager = syncPausedStateManager
         self.connectionControllerFactory = connectionControllerFactory ?? SyncDialogController.defaultConnectionControllerFactory
         self.featureFlagger = featureFlagger ?? Application.appDelegate.featureFlagger
+        self.pixelFiring = pixelFiring
         self.managementDialogModel = managementDialogModel
         self.managementDialogModel.isAppRebranded = DesignSystemRebrand.isAppRebranded()
 
@@ -220,6 +223,7 @@ final class SyncDialogController {
     private func startPollingForRecoveryKey(isRecovery: Bool) {
         pairingV2PeerKind = nil
         Task { @MainActor in
+            defer { managementDialogModel.isConnectingAnotherDevice = false }
             do {
                 let pairingInfo = try await connectionController.startConnectMode()
                 let codeForDisplayOrPasting = pairingInfo.base64Code
@@ -310,6 +314,7 @@ final class SyncDialogController {
         stringForQR = recoveryCode
         displayedCodeSetupSource = .exchange
         Task {
+            defer { managementDialogModel.isConnectingAnotherDevice = false }
             presentDialog(for: .syncWithAnotherDevice(codeForDisplayOrPasting: recoveryCode, stringForQRCode: recoveryCode))
         }
     }
@@ -317,6 +322,7 @@ final class SyncDialogController {
     private func startPollingForPublicKey() {
         pairingV2PeerKind = nil
         Task { @MainActor in
+            defer { managementDialogModel.isConnectingAnotherDevice = false }
             do {
                 let pairingInfo = try await connectionController.startExchangeMode()
                 let codeForDisplayOrPasting = pairingInfo.base64Code
@@ -490,6 +496,38 @@ extension SyncDialogController: ManagementDialogModelDelegate {
         }
     }
 
+    func syncAnotherDevicePromptDidAppear() {
+        pixelFiring?.fire(SyncSettingsPixelKitEvent.anotherDevicePromptShown)
+    }
+
+    func syncThisDeviceOnlyFromPrompt() async {
+        guard !managementDialogModel.isConnecting else { return }
+        pixelFiring?.fire(SyncSettingsPixelKitEvent.anotherDevicePromptOptionTapped(option: .thisDeviceOnly))
+        managementDialogModel.isConnectingThisDeviceOnly = true
+        defer { managementDialogModel.isConnectingThisDeviceOnly = false }
+        do {
+            let device = Self.deviceInfo()
+            try await syncService.createAccount(deviceName: device.name, deviceType: device.type)
+            let additionalParameters = syncPromoSource.map { ["source": $0] } ?? [:]
+            pixelFiring?.fire(GeneralPixel.syncSignupDirect, options: .parameters(additionalParameters))
+            managementDialogModel.endFlow()
+        } catch {
+            managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToSyncToServer, description: error.localizedDescription)
+            pixelFiring?.fire(DebugEvent(GeneralPixel.syncSignupError(error: error)))
+        }
+    }
+
+    func syncWithAnotherDeviceFromPrompt() {
+        guard !managementDialogModel.isConnecting else { return }
+        pixelFiring?.fire(SyncSettingsPixelKitEvent.anotherDevicePromptOptionTapped(option: .syncAnotherDevice))
+        managementDialogModel.isConnectingAnotherDevice = true
+        if syncService.account != nil {
+            startExchangeOrRecovery()
+        } else {
+            startPollingForRecoveryKey(isRecovery: false)
+        }
+    }
+
     func enterRecoveryCodePressed() {
         startPollingForRecoveryKey(isRecovery: true)
     }
@@ -594,7 +632,11 @@ extension SyncDialogController: SyncSettingsViewHandling {
         guard await checkAuthenticated() else {
             return
         }
-        presentDialog(for: .syncWithServer)
+        if featureFlagger.isFeatureOn(.simplifiedSyncSetupV2) {
+            presentDialog(for: .syncAnotherDevicePrompt)
+        } else {
+            presentDialog(for: .syncWithServer)
+        }
     }
 
     @MainActor

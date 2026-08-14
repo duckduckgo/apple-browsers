@@ -59,6 +59,7 @@ struct ContextualOnboardingContentProviderTests {
         #expect(content.secondaryCTA == "Secondary")
         #expect(content.secondaryAction == .skip)
         #expect(content.isManuallyDismissable == false)
+        #expect(content.daxAnimation == nil)
     }
 
     @Test("privateAIChat reason returns the AI-flavored completion")
@@ -125,6 +126,7 @@ struct ContextualOnboardingContentProviderTests {
         #expect(content.message == UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenMessage)
         #expect(content.primaryAction == .completeAndActivateSearch)
         #expect(content.isManuallyDismissable == true)
+        #expect(content.daxAnimation == nil)
     }
 
 }

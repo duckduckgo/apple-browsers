@@ -110,7 +110,7 @@ extension ContextualOnboardingContentProvider {
             primaryAction: .tryDuckAI,
             secondaryCTA: tryAI.secondaryCTA,
             secondaryAction: .skip,
-            daxAnimation: OnboardingRebranding.contextualThumbsUpDaxAnimation,
+            daxAnimation: nil,
             isManuallyDismissable: false
         )
     }
@@ -125,7 +125,7 @@ extension ContextualOnboardingContentProvider {
             primaryAction: .completeAndActivateSearch,
             secondaryCTA: nil,
             secondaryAction: nil,
-            daxAnimation: OnboardingRebranding.contextualThumbsUpDaxAnimation,
+            daxAnimation: nil,
             isManuallyDismissable: true
         )
     }

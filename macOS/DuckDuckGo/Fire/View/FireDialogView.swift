@@ -113,14 +113,6 @@ struct FireDialogView: ModalView {
         self.onConfirm = onConfirm
     }
 
-    private var isIncludeHistoryEnabled: Bool {
-        viewModel.historyItemsCountForCurrentScope > 0
-    }
-
-    private var isIncludeCookiesAndSiteDataEnabled: Bool {
-        viewModel.cookiesSitesCountForCurrentScope > 0
-    }
-
     private var isIncludeChatHistoryEnabled: Bool {
         viewModel.chatsCountForCurrentScope > 0
     }
@@ -140,12 +132,6 @@ struct FireDialogView: ModalView {
         return count > 0 ? UserText.fireDialogChatsCountDetail(count) : UserText.none
     }
 
-    private var isDeleteEnabled: Bool {
-        (viewModel.mode.shouldShowCloseTabsToggle && viewModel.includeTabsAndWindows)
-        || (viewModel.includeHistory && isIncludeHistoryEnabled)
-        || (viewModel.includeCookiesAndSiteData && isIncludeCookiesAndSiteDataEnabled)
-        || viewModel.includeChatHistory
-    }
 
     var body: some View {
         ZStack {
@@ -417,15 +403,15 @@ struct FireDialogView: ModalView {
                     title: UserText.fireDialogHistoryTitle,
                     detail: historyDetail,
                     isOn: Binding {
-                        viewModel.includeHistory && isIncludeHistoryEnabled
+                        viewModel.includeHistory && viewModel.hasHistoryItemsInScope
                     } set: {
                         viewModel.includeHistory = $0
                     },
                     // the history items list isn't supported for the (deprecated, pending removal) Window scope
-                    detailAction: (isIncludeHistoryEnabled && viewModel.clearingOption != .currentWindow) ? { isShowingHistoryOverlay = true } : nil,
+                    detailAction: (viewModel.hasHistoryItemsInScope && viewModel.clearingOption != .currentWindow) ? { isShowingHistoryOverlay = true } : nil,
                     detailActionEnabled: viewModel.includeHistory,
                     detailAccessibilityIdentifier: "FireDialogView.historyDetailButton",
-                    isEnabled: isIncludeHistoryEnabled,
+                    isEnabled: viewModel.hasHistoryItemsInScope,
                     toggleId: "FireDialogView.historyToggle"
                 )
                 .accessibilityHidden(isShowingAnyOverlay)
@@ -438,15 +424,15 @@ struct FireDialogView: ModalView {
                 title: viewModel.mode.shouldShowVisitsToggle ? UserText.fireDialogCookiesAndOtherData : UserText.fireDialogIncludeCookiesAndOtherData,
                 subtitle: UserText.fireDialogCookiesSignOutWarning,
                 detail: cookiesDetail,
-                isOn: Binding { viewModel.includeCookiesAndSiteData && isIncludeCookiesAndSiteDataEnabled } set: { viewModel.includeCookiesAndSiteData = $0 },
+                isOn: Binding { viewModel.includeCookiesAndSiteData && viewModel.hasCookiesAndSiteDataInScope } set: { viewModel.includeCookiesAndSiteData = $0 },
                 // don‘t make the detail label clickable when there‘s no site data in scope
-                detailAction: isIncludeCookiesAndSiteDataEnabled ? { isShowingSitesOverlay = true } : nil,
+                detailAction: viewModel.hasCookiesAndSiteDataInScope ? { isShowingSitesOverlay = true } : nil,
                 // grey-out the detail label when the toggle is Off
                 detailActionEnabled: viewModel.includeCookiesAndSiteData,
-                isEnabled: isIncludeCookiesAndSiteDataEnabled,
+                isEnabled: viewModel.hasCookiesAndSiteDataInScope,
                 toggleId: "FireDialogView.cookiesToggle"
             )
-            .disabled(!isIncludeCookiesAndSiteDataEnabled)
+            .disabled(!viewModel.hasCookiesAndSiteDataInScope)
             .accessibilityHidden(isShowingAnyOverlay)
             .padding(.top, viewModel.mode.shouldShowVisitsToggle ? 0 : -13)
 
@@ -1026,7 +1012,7 @@ struct FireDialogView: ModalView {
                 }
                 .buttonStyle(
                     DestructiveActionButtonStyle(
-                        enabled: isDeleteEnabled,
+                        enabled: viewModel.isDeleteEnabled,
                         topPadding: 0,
                         bottomPadding: 0,
                         background: deleteButtonBackground,
@@ -1034,7 +1020,7 @@ struct FireDialogView: ModalView {
                         pillShape: true
                     )
                 )
-                .disabled(!isDeleteEnabled)
+                .disabled(!viewModel.isDeleteEnabled)
                 .accessibilityLabel(viewModel.includeTabsAndWindows ? UserText.fireDialogDeleteAndClose : UserText.delete)
                 .keyboardShortcut(.defaultAction)
                 .accessibilityIdentifier("FireDialogView.burnButton")

@@ -2321,6 +2321,60 @@ final class FireDialogViewModelTests: XCTestCase {
         }
     }
 
+    // MARK: - Delete button enablement
+
+    @MainActor func testWhenVisitsToggleIsHiddenAndHistoryWasTurnedOffEarlier_ThenDeleteStaysEnabled() {
+        // Scenario: An earlier dialog left both History and Cookies off. The user then selects
+        // history items in the History view and deletes them.
+        // Expectation: Delete stays enabled. The dialog shows no History toggle, so deleting the
+        // selected items is exactly what the button confirms, and the earlier choice must not
+        // leave the user unable to delete them.
+
+        let mockSettings = MockFireDialogViewSettings(lastIncludeHistoryState: false,
+                                                      lastIncludeCookiesAndSiteDataState: false)
+        let entry = makeHistoryEntry(url: "https://example.com")
+        let visits = [Visit(date: Date(), identifier: entry.url, historyEntry: entry)]
+
+        let viewModel = makeViewModel(settings: mockSettings,
+                                      mode: .historyView(query: .visits([makeVisitIdentifier(url: "https://example.com")])),
+                                      clearingOption: .allData,
+                                      scopeVisits: visits,
+                                      isFireDialogSimplified: true)
+
+        XCTAssertFalse(viewModel.includeHistory, "The persisted setting should stay off")
+        XCTAssertFalse(viewModel.includeCookiesAndSiteData, "The persisted setting should stay off")
+        XCTAssertTrue(viewModel.shouldDeleteHistory, "The selected items are deleted anyway")
+        XCTAssertTrue(viewModel.isDeleteEnabled, "Delete should stay enabled")
+    }
+
+    @MainActor func testWhenNothingIsSelectedForDeletion_ThenDeleteIsDisabled() {
+        // Scenario: The dialog offers all the toggles, and the user turned them all off.
+        // Expectation: Delete is disabled, because confirming would delete nothing.
+
+        let mockSettings = MockFireDialogViewSettings(lastIncludeTabsAndWindowsState: false,
+                                                      lastIncludeHistoryState: false,
+                                                      lastIncludeCookiesAndSiteDataState: false,
+                                                      lastIncludeChatHistoryState: false)
+
+        let viewModel = makeViewModel(settings: mockSettings, mode: .fireButton, isFireDialogSimplified: true)
+
+        XCTAssertFalse(viewModel.isDeleteEnabled, "Delete should be disabled when nothing is deleted")
+    }
+
+    @MainActor func testWhenOnlyClosingTabsIsSelected_ThenDeleteIsEnabled() {
+        // Scenario: The user turned every data toggle off, but keeps closing the tabs.
+        // Expectation: Delete stays enabled, because closing the tabs is still an action.
+
+        let mockSettings = MockFireDialogViewSettings(lastIncludeTabsAndWindowsState: true,
+                                                      lastIncludeHistoryState: false,
+                                                      lastIncludeCookiesAndSiteDataState: false,
+                                                      lastIncludeChatHistoryState: false)
+
+        let viewModel = makeViewModel(settings: mockSettings, mode: .fireButton, isFireDialogSimplified: true)
+
+        XCTAssertTrue(viewModel.isDeleteEnabled, "Delete should stay enabled to close the tabs")
+    }
+
     // MARK: - Current tab scope
 
     @MainActor func testWhenCurrentTabHasNoDataToDelete_ThenTheScopeIsDisabledAndAllDataIsUsed() {
@@ -2748,6 +2802,8 @@ final class FireDialogViewModelTests: XCTestCase {
     @MainActor
     private func makeViewModel(settings: any KeyedStoring<FireDialogViewSettings>,
                                mode: FireDialogViewModel.Mode = .fireButton,
+                               clearingOption: FireDialogViewModel.ClearingOption? = nil,
+                               scopeVisits: [Visit]? = nil,
                                isFireDialogSimplified: Bool = false) -> FireDialogViewModel {
         FireDialogViewModel(
             fireViewModel: .init(fire: fire),
@@ -2757,8 +2813,10 @@ final class FireDialogViewModelTests: XCTestCase {
             fireproofDomains: fireproofDomains,
             faviconManagement: fire.faviconManagement,
             featureFlagger: MockFeatureFlagger(featuresStub: [FeatureFlag.fireDialogSimplified.rawValue: isFireDialogSimplified]),
+            clearingOption: clearingOption,
             mode: mode,
             settings: settings,
+            scopeVisits: scopeVisits,
             tld: TLD(),
             windowControllersManager: windowControllersManager,
             dataClearingPreferences: dataClearingPreferences,

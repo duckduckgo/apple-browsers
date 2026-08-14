@@ -499,8 +499,23 @@ final class FireDialogViewModel: ObservableObject {
 
     var historyItemsCountForCurrentScope: Int { historyVisits.count }
 
+    var hasHistoryItemsInScope: Bool { historyItemsCountForCurrentScope > 0 }
+
     /// Cookies/sites are deleted for non-fireproofed visited eTLD+1 domains
     var cookiesSitesCountForCurrentScope: Int { selectable.count }
+
+    var hasCookiesAndSiteDataInScope: Bool { cookiesSitesCountForCurrentScope > 0 }
+
+    /// Whether the dialog deletes anything, which is what the Delete button needs to be enabled.
+    ///
+    /// This uses the same sources of truth as the confirmed result, so that the button is never
+    /// disabled while confirming would still delete something.
+    var isDeleteEnabled: Bool {
+        shouldCloseTabsAndWindows
+        || (shouldDeleteHistory && hasHistoryItemsInScope)
+        || (includeCookiesAndSiteData && hasCookiesAndSiteDataInScope)
+        || includeChatHistory
+    }
 
     /// Duck.ai chats aren't partitioned by tab/window, so this is a global count.
     var chatsCountForCurrentScope: Int { chats.count }

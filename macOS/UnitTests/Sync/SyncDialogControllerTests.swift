@@ -59,6 +59,7 @@ final class SyncDialogControllerTests: XCTestCase {
     private var connectionController: MockSyncConnectionControlling!
     private var featureFlagger: MockSyncFeatureFlagger!
     private var pixelKitMock: PixelKitMock!
+    private var mockKeyValueStore: MockKeyValueStore!
     private var syncDialogController: SyncDialogController!
     var testRecoveryCode = "eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiMDZGODhFNzEtNDFBRS00RTUxLUE2UkRtRkEwOTcwMDE5QkYwIiwicHJpbWFyeV9rZXkiOiI1QTk3U3dsQVI5RjhZakJaU09FVXBzTktnSnJEYnE3aWxtUmxDZVBWazgwPSJ9fQ=="
     lazy var testRecoveryKey = try! SyncCode.decodeBase64String(testRecoveryCode).recovery!.defaultCredentialRecoveryKey()
@@ -76,6 +77,7 @@ final class SyncDialogControllerTests: XCTestCase {
         connectionController = MockSyncConnectionControlling()
         authenticator = MockUserAuthenticator()
         pixelKitMock = PixelKitMock()
+        mockKeyValueStore = MockKeyValueStore()
 
         syncDialogController = SyncDialogController(
             syncService: ddgSyncing,
@@ -86,7 +88,8 @@ final class SyncDialogControllerTests: XCTestCase {
                 self?.connectionController ?? MockSyncConnectionControlling()
             },
             featureFlagger: featureFlagger,
-            pixelFiring: pixelKitMock
+            pixelFiring: pixelKitMock,
+            keyValueStore: mockKeyValueStore
         )
     }
 
@@ -101,6 +104,7 @@ final class SyncDialogControllerTests: XCTestCase {
         scheduler = nil
         authenticator = nil
         pixelKitMock = nil
+        mockKeyValueStore = nil
         super.tearDown()
     }
 
@@ -158,6 +162,101 @@ final class SyncDialogControllerTests: XCTestCase {
         await syncDialogController.syncWithServerPressed()
 
         XCTAssertEqual(managementDialogModel.currentDialog, .syncWithServer)
+    }
+
+    func testSyncWithServerPressed_whenSimplifiedSyncSetupV2EnabledAndAuthenticationCancelled_showsAuthenticationCancelledDialog() async {
+        featureFlagger.isFeatureOn[FeatureFlag.simplifiedSyncSetupV2.rawValue] = true
+        authenticator.stubAuthenticateUser = .failure
+        let coordinationDelegate = MockDeviceSyncCoordinationDelegate()
+        var didEndFlowCalled = false
+        coordinationDelegate.didEndFlowCalled = { didEndFlowCalled = true }
+        syncDialogController.coordinationDelegate = coordinationDelegate
+
+        await syncDialogController.syncWithServerPressed()
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .syncAuthenticationCancelled)
+        XCTAssertFalse(didEndFlowCalled)
+    }
+
+    func testSyncWithServerPressed_whenSimplifiedSyncSetupV2EnabledAndNoAuthAvailable_stillShowsUnableToAuthenticateError() async {
+        featureFlagger.isFeatureOn[FeatureFlag.simplifiedSyncSetupV2.rawValue] = true
+        authenticator.stubAuthenticateUser = .noAuthAvailable
+
+        await syncDialogController.syncWithServerPressed()
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .empty)
+        XCTAssertEqual(managementDialogModel.syncErrorMessage?.type, .unableToAuthenticateOnDevice)
+    }
+
+    func testSyncWithServerPressed_whenSimplifiedSyncSetupV2DisabledAndAuthenticationCancelled_doesNotShowAuthenticationCancelledDialog() async {
+        featureFlagger.isFeatureOn[FeatureFlag.simplifiedSyncSetupV2.rawValue] = false
+        authenticator.stubAuthenticateUser = .failure
+
+        await syncDialogController.syncWithServerPressed()
+
+        XCTAssertNotEqual(managementDialogModel.currentDialog, .syncAuthenticationCancelled)
+    }
+
+    func testSyncWithServerPressed_whenAuthenticationCancelled_isShownAtMostTwiceThenEndsFlow() async {
+        featureFlagger.isFeatureOn[FeatureFlag.simplifiedSyncSetupV2.rawValue] = true
+        authenticator.stubAuthenticateUser = .failure
+
+        for _ in 0..<2 {
+            managementDialogModel.currentDialog = nil
+            await syncDialogController.syncWithServerPressed()
+            XCTAssertEqual(managementDialogModel.currentDialog, .syncAuthenticationCancelled)
+        }
+
+        let coordinationDelegate = MockDeviceSyncCoordinationDelegate()
+        var didEndFlowCalled = false
+        coordinationDelegate.didEndFlowCalled = { didEndFlowCalled = true }
+        syncDialogController.coordinationDelegate = coordinationDelegate
+        managementDialogModel.currentDialog = nil
+
+        await syncDialogController.syncWithServerPressed()
+
+        XCTAssertNotEqual(managementDialogModel.currentDialog, .syncAuthenticationCancelled)
+        XCTAssertTrue(didEndFlowCalled)
+    }
+
+    func testSyncWithServerPressed_whenAuthenticationCancelled_persistsPresentationCount() async {
+        featureFlagger.isFeatureOn[FeatureFlag.simplifiedSyncSetupV2.rawValue] = true
+        authenticator.stubAuthenticateUser = .failure
+
+        await syncDialogController.syncWithServerPressed()
+
+        XCTAssertEqual(mockKeyValueStore.object(forKey: "sync.authentication-cancelled-prompt.presented-count") as? Int, 1)
+    }
+
+    func testSyncWithServerPressed_whenAuthenticationCancelled_firesShownPixelOncePerPresentationUpToCap() async {
+        featureFlagger.isFeatureOn[FeatureFlag.simplifiedSyncSetupV2.rawValue] = true
+        authenticator.stubAuthenticateUser = .failure
+
+        for _ in 0..<3 {
+            managementDialogModel.currentDialog = nil
+            await syncDialogController.syncWithServerPressed()
+        }
+
+        let fireCount = pixelKitMock.actualFireCalls.filter { $0.pixel.name == "settings_sync_authentication_cancelled_prompt_shown" }.count
+        XCTAssertEqual(fireCount, 2)
+    }
+
+    func testSyncWithAnotherDevicePressed_whenSimplifiedSyncSetupV2EnabledAndAuthenticationCancelled_showsAuthenticationCancelledDialog() async {
+        featureFlagger.isFeatureOn[FeatureFlag.simplifiedSyncSetupV2.rawValue] = true
+        authenticator.stubAuthenticateUser = .failure
+
+        await syncDialogController.syncWithAnotherDevicePressed(source: nil)
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .syncAuthenticationCancelled)
+    }
+
+    func testSyncWithAnotherDevicePressed_whenSimplifiedSyncSetupV2DisabledAndAuthenticationCancelled_doesNotShowAuthenticationCancelledDialog() async {
+        featureFlagger.isFeatureOn[FeatureFlag.simplifiedSyncSetupV2.rawValue] = false
+        authenticator.stubAuthenticateUser = .failure
+
+        await syncDialogController.syncWithAnotherDevicePressed(source: nil)
+
+        XCTAssertNotEqual(managementDialogModel.currentDialog, .syncAuthenticationCancelled)
     }
 
     @MainActor

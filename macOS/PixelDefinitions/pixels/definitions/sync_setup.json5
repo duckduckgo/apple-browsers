@@ -362,5 +362,11 @@
                 "enum": ["this_device_only", "sync_another_device"]
             }
         ]
+    },
+    "m_mac_settings_sync_authentication_cancelled_prompt_shown": {
+        "description": "Fired when the prompt asking the user to authenticate is shown after they cancel the device authentication prompt while setting up Sync in the simplified V2 setup.",
+        "owners": ["pballart"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
     }
 }

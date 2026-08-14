@@ -57,7 +57,7 @@ public struct FrameInfo {
     public init(webView: WKWebView?, isMainFrame: Bool, url: URL, securityOrigin: SecurityOrigin) {
         self.webView = webView
         self.isMainFrame = isMainFrame
-        self.url = url
+        self.url = url.absoluteString.isEmpty ? .blankPage : url
         self.securityOrigin = securityOrigin
     }
 

@@ -17,7 +17,12 @@ The project success criterion is broader: humans must later review and merge the
 
 This revision applies the validated review findings: cold-start RMF deferral, one configuration-owned store observer and source signal, trigger pinning, explicit appearance-to-history wiring, pre-admission renderability, per-acquisition SwiftUI identity, accurate dismissal/unique-shown guarantees, background release, current repository state, and Xcode project membership. The automated matrix is intentionally focused on architectural seams rather than exhaustive lifecycle permutations.
 
-Confirmed scope: “modal sheets” means the launch-promo providers routed through `PromoCoordinationService`, not every UIKit sheet. The local stack deliberately does not intercept arbitrary presentations; any future expansion to all UIKit sheets requires a separately reviewed architecture change.
+## Product decisions confirmed — 2026-08-15
+
+- **Modal scope:** “modal sheets” means launch-promo providers routed through `PromoCoordinationService`, not every UIKit sheet. The stack deliberately does not intercept arbitrary presentations; any future expansion requires a separately reviewed architecture change.
+- **NTP integration seam:** `prepareForNTP(openedAfterIdle:)` is the only new Promo Queue-specific method called by an NTP container, once per content activation before its initial eligibility read. A conditional container may also observe the shared content publisher as normal data-source wiring. It must not acquire/release leases or report visibility, coverage, handoff, or lifecycle state.
+- **Mixed triggers:** keep the first admitted message and trigger lane pinned while that ownership remains valid. Later renderer loads do not replace it.
+- **Persistence semantics:** retain best-effort dismissal and unique-shown behavior. Do not widen the store API, add an in-process/cross-process unique reservation, or add telemetry.
 
 ## Starting point
 
@@ -59,6 +64,8 @@ If PR 2 proves smaller than expected, do not fold it into PR 1 merely to reduce 
 - Existing RMF action/dismissal event definitions and metric checks remain unchanged; no new Promo Queue pixel is added. In coordinated mode, regular shown intentionally fires once per admitted ownership after actual appearance instead of preserving today's eager/repeated calls. Unique-shown retains the existing best-effort first-ever guard; exact-once behavior across rapid reacquisitions is not added.
 - Legacy behavior remains available when `.promoPresentationCoordination` is disabled.
 - No NTP renderer or covering overlay reports active/renderable/visible/covered state.
+- For the shared NTP RMF source, one `prepareForNTP` call per content activation, before the initial eligibility read, is the complete imperative Promo Queue integration. No container calls the gate, `markShown`, or lease release.
+- The first admitted message and trigger lane remain pinned until the ownership becomes invalid or the app backgrounds.
 - App backgrounding unpublishes the coordinated RMF and releases ownership through one app-scoped lifecycle path. Ordinary view disappearance does not release it.
 - No timers, wait queues, renderer registries, retain counts, handoff state, or exact RMF removal state are introduced.
 - Every added or removed Swift source, test, and mock has matching references and correct target membership in `iOS/DuckDuckGo-iOS.xcodeproj/project.pbxproj`. Add shared mocks only to targets that consume them; prefer repurposing an existing file when its responsibility remains accurate.
@@ -336,6 +343,8 @@ Call it only at existing content-loading seams:
 - call it once at unified input's activation/content-loading seam, before `activationResolveTrigger.send(())`; keep the `hasMessages` closure a pure read.
 
 These two conditional-host calls are required to bootstrap RMF-only content before those hosts construct a messages model. They are not visibility, lease, or disappearance callbacks. Do not add them to leaf views.
+
+Treat this as the complete NTP-container integration contract. Containers do not call `tryAcquire`, `markShown`, or `release`; they do not report active/renderable/visible/covered state; and they do not forward background or disappearance to Promo Queue. The shared configuration, service, existing messages model, and one composition-root lifecycle hook own everything else. If implementation requires another container callback, stop and move that responsibility into the shared source.
 
 Route app lifecycle once through the composition root: `Background.onTransition` → `MainCoordinator.onBackground` → `HomePageConfiguration.handleAppBackgrounded`, and `Foreground.onTransition` → `MainCoordinator.onForeground` → `HomePageConfiguration.handleAppForegrounded`. Foreground handling only marks the source active; it neither arms selection nor publishes RMF. Do not create an RMF/model `viewDidDisappear` signal; none exists today and the final design does not need one.
 
@@ -623,7 +632,8 @@ Then run the normal iOS build/test coverage appropriate for a change spanning ap
 
 ## Review checklist
 
-- Does any renderer or overlay need to know coordination exists? If yes, move the decision back to the shared source.
+- Does any renderer or overlay know about leases, ownership, visibility, coverage, or lifecycle coordination? It must not.
+- Does an NTP container have any imperative Promo Queue integration beyond `prepareForNTP` once per content activation? It must not; move any additional coordination responsibility to the shared source.
 - Can provider evaluation occur before modal admission? It must not.
 - Can an RMF enter `homeMessages` before admission? It must not.
 - Can a stale context release, dismiss, or confirm the current owner, including a reacquired owner with the same message ID? It must not.

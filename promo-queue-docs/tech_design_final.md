@@ -25,7 +25,12 @@ The following corrections are incorporated into this revision:
 - dismissal and unique-shown guarantees match the existing best-effort store APIs; and
 - backgrounding unpublishes RMF, signals consumers, releases ownership, and disarms RMF admission until another explicit NTP preparation.
 
-Product scope is confirmed: “modal sheets” means launch-promo providers routed through `PromoCoordinationService`, not every arbitrary UIKit sheet. This matches the original and adjusted designs.
+## Product decisions confirmed — 2026-08-15
+
+- **Modal scope:** “modal sheets” means launch-promo providers routed through `PromoCoordinationService`, not every arbitrary UIKit sheet. This matches the original and adjusted designs.
+- **NTP integration seam:** an NTP container has one Promo Queue-specific integration point: call `prepareForNTP(openedAfterIdle:)` once per content activation, before its initial eligibility read. Lease ownership, cooldowns, refresh, release, background handling, and accounting remain central. No surface reports visibility or lifecycle state.
+- **Mixed triggers:** the first admitted message and trigger lane stay authoritative for that ownership. A later renderer request cannot replace a still-valid owner; dismissal, expiry, replacement, onboarding suppression, backgrounding, or another real invalidation ends the pin.
+- **Persistence semantics:** existing dismissal and unique-shown behaviors remain best effort. This iteration does not widen shared store APIs, add a unique-shown reservation, or add telemetry for stronger guarantees.
 
 ## Decision summary
 
@@ -118,6 +123,7 @@ Message identity and exact modal-root ownership are retained because they are al
 5. **Keep policy with its existing owner.** RMF still selects messages; the modal manager still selects providers; the gate only coordinates admission and cross-promo cooldowns.
 6. **Use stable token identity.** Duplicate or stale callbacks cannot release, dismiss, or confirm a newer ownership, including one that reuses the same message ID.
 7. **Accept checkpoint-driven progress.** Time passing alone does not schedule work.
+8. **Keep renderer integration bounded.** A renderer of the shared NTP RMF source gets one imperative integration point: preparation at content activation. If it needs lease, release, visibility, coverage, or lifecycle calls, move that responsibility back to the shared source.
 
 ## Architecture
 
@@ -364,7 +370,9 @@ Diagnostics add no telemetry and must use side-effect-free reads except for expl
 
 ### A new NTP implementation
 
-Use the existing shared `HomePageConfiguration`/`NewTabPageMessagesModel` path. No lease call, surface ID, visibility callback, or overlay integration is required. A container that conditionally decides whether to construct its NTP consumer must ask the shared source to prepare content before reading eligibility; this is the same data-loading seam used by current conditional containers.
+Use the existing shared `HomePageConfiguration`/`NewTabPageMessagesModel` path. The complete imperative Promo Queue integration contract is one `prepareForNTP(openedAfterIdle:)` call per content activation, immediately before that container's initial eligibility read. A conditional container also observes the ordinary configuration content-change publisher so it can reevaluate eligibility.
+
+The container must not call the gate, acquire or release a lease, call `markShown`, report visibility/coverage/lifecycle, or participate in handoff. Existing card appearance, dismissal, and action callbacks continue through `NewTabPageMessagesModel`; they are not container coordination responsibilities. If a future implementation appears to need more Promo Queue calls, extend the shared source rather than the renderer.
 
 ### A new launch-modal provider
 
@@ -372,7 +380,7 @@ Register it in the existing provider list. It automatically runs behind modal ad
 
 ### A new independent RMF surface
 
-It is not automatically part of the current same-ID ownership contract. Design one source-level admission integration before publishing UI and release from that source's message lifecycle. Do not add calls from every view or overlay. Joining an ownership across independent sources is deliberately deferred until a real use case establishes its identity and lifecycle semantics.
+It is not automatically part of the current same-ID ownership contract. Add one source-level admission adapter before publishing UI and make that source own the entire lease lifecycle. Views consuming that source must not acquire, release, or report visibility individually. Joining ownership across independent sources is deliberately deferred until a real use case establishes its identity and lifecycle semantics.
 
 ### A new modal system outside `PromoCoordinationService`
 

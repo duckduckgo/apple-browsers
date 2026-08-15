@@ -620,8 +620,11 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     private func prepareHomePageMessagesForActivation() {
         guard let dependencies = suggestionTrayDependencies else { return }
 
+        let homePageMessagesConfiguration = dependencies.newTabPageDependencies.homePageMessagesConfiguration
+        guard homePageMessagesConfiguration.mode == .coordinated else { return }
+
         let openedAfterIdle = dependencies.tabsModelProvider().currentTab?.openedAfterIdle ?? false
-        dependencies.newTabPageDependencies.homePageMessagesConfiguration.prepareForNTP(openedAfterIdle: openedAfterIdle)
+        homePageMessagesConfiguration.prepareForNTP(openedAfterIdle: openedAfterIdle)
     }
 
     private func scheduleAnimation(_ animation: @escaping () -> Void, completion: ((UIViewAnimatingPosition) -> Void)? = nil) {

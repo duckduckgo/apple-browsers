@@ -631,7 +631,6 @@ final class DDGSyncTests: XCTestCase {
     func testWhenLoginSucceedsThenCurrentDeviceMigrationIsScheduled() async throws {
         (dependencies.secureStore as? SecureStorageStub)?.theAccount = nil
         (dependencies.account as? AccountManagingMock)?.loginStub = LoginResult(account: .mock, devices: [])
-        let scopedAccess = try XCTUnwrap(dependencies.scopedAccess as? ScopedAccessCredentialManagingMock)
         let migrationScheduled = expectation(description: "Device info migration scheduled")
         let migrationCoordinator = DeviceInfoMigrationCoordinatingMock()
         migrationCoordinator.migrateCurrentDeviceHandler = {
@@ -965,6 +964,7 @@ final class DDGSyncTests: XCTestCase {
 
     func testWhenRenamingDeviceWithUnifiedWritesDisabledThenMigrationStateIsPreserved() async throws {
         dependencies.canWriteUnifiedDeviceList = { false }
+        dependencies.canUsePatchEndpointForLegacyDeviceRename = { false }
         let migrationScheduled = expectation(description: "Device info migration scheduled")
         let migrationCoordinator = DeviceInfoMigrationCoordinatingMock()
         migrationCoordinator.migrateCurrentDeviceHandler = {
@@ -993,9 +993,8 @@ final class DDGSyncTests: XCTestCase {
     func testWhenRenamingDeviceFailsWithUnifiedWritesEnabledThenMigrationStateIsPreserved() async throws {
         dependencies.canWriteUnifiedDeviceList = { true }
         let migrationCoordinator = DeviceInfoMigrationCoordinatingMock()
+        migrationCoordinator.renameCurrentDeviceError = SyncError.noResponseBody
         dependencies.createDeviceInfoMigrationCoordinatorStub = migrationCoordinator
-        let accountManager = try XCTUnwrap(dependencies.account as? AccountManagingMock)
-        accountManager.refreshTokenError = SyncError.noResponseBody
         let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
 
         do {
@@ -1008,6 +1007,8 @@ final class DDGSyncTests: XCTestCase {
 
         XCTAssertEqual(migrationCoordinator.resetCallCount, 0)
         XCTAssertTrue(migrationCoordinator.calls.isEmpty)
+        XCTAssertEqual(migrationCoordinator.renameCalls.count, 1)
+        XCTAssertTrue(migrationCoordinator.renameWithoutUnifiedInfoCalls.isEmpty)
     }
 
     func testWhenRepairingFetchCompletesDuringRenameThenRepairWaitsForNextPoll() async throws {

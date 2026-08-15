@@ -4,36 +4,44 @@
 
 Implement [`tech_design_final.md`](tech_design_final.md) end to end from `bartosz/promo-q-simp-2`, replacing the broad coordination foundation from merged PR #6087 with a source-level gate that prevents launch-modal promos and NTP RMF cards from being admitted together.
 
-The implementation is complete only when:
+The local implementation handoff is complete when:
 
 1. the coordinated behavior is implemented and verified;
 2. internal diagnostics are available;
-3. the stack has landed safely; and
-4. `.promoPresentationCoordination` has been remotely rolled out to 100% of iOS users.
+3. the three local branch diffs are clean, focused, and ready for human review; and
+4. rollout requirements and evidence are recorded for the external owner.
 
-The three PRs deliver items 1–3. Item 4 is the externally owned privacy-configuration phase described at the end; an agent without that repository access and approval must hand it off rather than report the overall project complete.
+The project success criterion is broader: humans must later review and merge the stack, ship it, and remotely roll `.promoPresentationCoordination` out to 100% of supported iOS users. This plan records that follow-through but does not authorize the implementation agent to push, open PRs, merge, or edit the external configuration repository.
+
+## Review validation update — 2026-08-14
+
+This revision applies the validated review findings: cold-start RMF deferral, one configuration-owned store observer and source signal, trigger pinning, explicit appearance-to-history wiring, pre-admission renderability, per-acquisition SwiftUI identity, accurate dismissal/unique-shown guarantees, background release, current repository state, and Xcode project membership. The automated matrix is intentionally focused on architectural seams rather than exhaustive lifecycle permutations.
+
+Confirmed scope: “modal sheets” means the launch-promo providers routed through `PromoCoordinationService`, not every UIKit sheet. The local stack deliberately does not intercept arbitrary presentations; any future expansion to all UIKit sheets requires a separately reviewed architecture change.
 
 ## Starting point
 
 - Starting branch: `bartosz/promo-q-simp-2`.
-- At planning time this branch and local `main` both point to `f5b0e0abd4`.
+- At the 2026-08-14 review checkpoint, HEAD is `7858a17094d8` and local `main` is `375bd10e56c5`; the branch is 2 commits ahead and 7 commits behind local `main`. Before this documentation revision the working tree was clean; the expected current edits are `tech_design_final.md` and `implementation_plan.md`.
 - PR #6087 is already merged as `7fdd4719a1345c8805d3bbb9639c618f7dbb562d`.
-- The working tree contains the untracked `promo-queue-docs/` directory. Preserve it and any other user changes.
+- The five files under `promo-queue-docs/` are tracked. Preserve them and any other user changes.
 - Only PR #6087 is an implementation baseline. Do not merge or wholesale cherry-pick the old `bartosz/promo-q-2` or `bartosz/promo-q-3` implementations. Small, already-reviewed pieces such as cooldown constants or storage semantics may be ported deliberately after comparing them with the final design.
 
-Before editing, re-read the repository's `AGENTS.md` and only the relevant rules it permits. In particular, preserve existing pixels rather than defining new ones, use injected `ThrowingKeyValueStoring` for the RMF cooldown timestamp, and obtain the user's required permission before running tests or performing git write operations.
+Before editing, re-read the repository's `AGENTS.md` and only the relevant rules it permits. Run a read-only status/divergence preflight. Because the starting branch is behind `main`, present the exact divergence and obtain permission before rebasing, merging, creating branches, running tests, or performing any other git write. Preserve the branch's two unique commits whichever synchronization strategy the user chooses.
 
-## Proposed stacked pull requests
+All implementation changes must remain local on the appropriate stack branch. Do **not** push branches, open pull requests, retarget pull requests, or make changes in external repositories. Commits and local branch creation also require the permission mandated by repository instructions. Preserve existing pixels rather than defining new ones and use injected `ThrowingKeyValueStoring` for the RMF cooldown timestamp.
 
-Use three stacked PRs. This keeps the cleanup reviewable, gives the end-to-end behavior its own review, and leaves the internal debug change isolated as requested.
+## Proposed PR-sized local stack
 
-| Stack | Branch | Base while stacked | Purpose |
+Use three stacked, locally reviewable units. They are sized as eventual pull requests, but this plan authorizes no push or PR action. This keeps the cleanup reviewable, gives the end-to-end behavior its own review, and leaves the internal debug change isolated as requested.
+
+| Review unit | Local branch | Local parent | Purpose |
 | --- | --- | --- | --- |
 | PR 1 | `bartosz/promo-q-simp-2` | `main` | Phase zero cleanup plus the minimal app-scoped gate, cooldown policy, and modal foundation |
 | PR 2 | `bartosz/promo-q-simp-3` | `bartosz/promo-q-simp-2` | Shared `HomePageConfiguration` RMF integration and end-to-end behavior |
 | PR 3 | `bartosz/promo-q-simp-4` | `bartosz/promo-q-simp-3` | Existing debug-screen extension, manual-test support, and rollout readiness |
 
-Create `bartosz/promo-q-simp-3` only from the reviewed head of `bartosz/promo-q-simp-2`. Create `bartosz/promo-q-simp-4` only from the reviewed head of `bartosz/promo-q-simp-3`. Open each stacked PR against the preceding branch so each diff contains only its phase. After a lower PR merges, rebase or update the next branch and retarget its PR to the new merged base.
+After permission for git writes, create local `bartosz/promo-q-simp-3` only from the reviewed head of `bartosz/promo-q-simp-2`. Create local `bartosz/promo-q-simp-4` only from the reviewed head of `bartosz/promo-q-simp-3`. Keep each branch diff limited to its unit and hand off the local stack for human review. Do not push or open PRs.
 
 If PR 2 proves smaller than expected, do not fold it into PR 1 merely to reduce the PR count: the distinction between coordination primitives and the behavior-changing RMF integration is useful. Split PR 2 further only if implementation uncovers an independent prerequisite that can be correct and testable on its own; do not split by arbitrary file count.
 
@@ -48,11 +56,12 @@ If PR 2 proves smaller than expected, do not fold it into PR 1 merely to reduce 
 - A stale or duplicate ownership context cannot release, dismiss, or confirm a replacement owner, including when the replacement has the same message ID.
 - Existing launch-source, presented-controller, provider order, onboarding, modal-to-modal cooldown, and provider accounting behavior remains with its current owner.
 - Existing pending/active modal suppression and actual-presentation session history remain observable through `RecentModalPromptStatusProviding`.
-- Existing RMF action/dismissal event definitions and metric checks remain unchanged; no new Promo Queue pixel is added. In coordinated mode, regular shown intentionally fires once per admitted ownership after actual appearance instead of preserving today's eager/repeated calls. Unique-shown is evaluated once per ownership and retains its existing first-ever-message guard.
+- Existing RMF action/dismissal event definitions and metric checks remain unchanged; no new Promo Queue pixel is added. In coordinated mode, regular shown intentionally fires once per admitted ownership after actual appearance instead of preserving today's eager/repeated calls. Unique-shown retains the existing best-effort first-ever guard; exact-once behavior across rapid reacquisitions is not added.
 - Legacy behavior remains available when `.promoPresentationCoordination` is disabled.
 - No NTP renderer or covering overlay reports active/renderable/visible/covered state.
-- No background or view-disappear signal releases RMF ownership.
+- App backgrounding unpublishes the coordinated RMF and releases ownership through one app-scoped lifecycle path. Ordinary view disappearance does not release it.
 - No timers, wait queues, renderer registries, retain counts, handoff state, or exact RMF removal state are introduced.
+- Every added or removed Swift source, test, and mock has matching references and correct target membership in `iOS/DuckDuckGo-iOS.xcodeproj/project.pbxproj`. Add shared mocks only to targets that consume them; prefer repurposing an existing file when its responsibility remains accurate.
 
 ---
 
@@ -182,7 +191,7 @@ Implement typed modal and RMF leases unless one generic token is demonstrably cl
 - reject stale release after a replacement acquisition; and
 - allow the arbiter to recover a record whose weak token deallocated.
 
-The RMF lease additionally exposes a main-actor `markShown()` operation that returns `true` only for the first valid confirmation of its current acquisition. It must return `false` after release, for a stale record, and on subsequent calls.
+The raw RMF arbiter token exposes a main-actor `confirmAppearance()` operation that returns `true` only for the first valid confirmation of its current acquisition. It must return `false` after release, for a stale record, and on subsequent calls. It does not persist history or fire events.
 
 Expose a small read-only snapshot for tests/debugging. Do not include renderer, registration, handoff, drain, presentation, or removal identities.
 
@@ -205,7 +214,7 @@ Use the existing confirmed-modal timestamp source and add one injected `Throwing
 
 Use an injected clock. Define exact-boundary behavior (`now == nextEligibility` is eligible) and future-timestamp behavior. Keep production storage reads/writes failure-tolerant and test their in-process fallback semantics.
 
-Only the first valid RMF `markShown()` records RMF history. Acquisition, denial, and release do not.
+The history component exposes the narrow record/read/reset behavior needed by the service and later diagnostics. The arbiter does not call it. Acquisition, denial, raw confirmation, and release alone do not record RMF history.
 
 Do not add a timer or persist the current owner.
 
@@ -230,6 +239,8 @@ Its source-level RMF protocol must provide only what PR 2 needs:
 - read-only diagnostic state if that is best exposed from the service.
 
 Before RMF acquisition, reconcile a detached exact modal root. Then acquire the slot and evaluate the incoming RMF cooldown. If cooldown evaluation denies the request after acquisition, release that temporary acquisition synchronously before returning no lease. A denial must leave the arbiter idle unless another valid owner already existed.
+
+On admission, return a small service-owned RMF lease wrapper that strongly retains the raw arbiter token and exposes one opaque, hashable acquisition identity. Its no-argument `markShown() -> Bool` calls `confirmAppearance()` and records RMF history exactly when that first confirmation succeeds. It stays nonthrowing and returns `true` for the first valid appearance even when durable persistence fails; the history component keeps the in-process value authoritative and logs/absorbs the storage error. Its release forwards to the raw token. This wrapper is the only connection between appearance confirmation and cooldown persistence; `HomePageConfiguration` later retains only the wrapper.
 
 Do not add waiters, retry arrays, a release publisher, or surface-specific APIs. A caller will retry through natural configuration checkpoints.
 
@@ -268,45 +279,18 @@ Update:
 
 Construct exactly one mode, arbiter, directional cooldown policy, RMF history component, manager, and service for the app graph. Retain the existing modal `PromptCooldownKeyValueFilesStore`/`PromptCooldownManager` graph separately; the directional policy reads its confirmed modal history and the new RMF history. Avoid duplicate policy/history instances in debug code or NTP previews.
 
+Update `iOS/DuckDuckGo-iOS.xcodeproj/project.pbxproj` as part of the same change: remove build-phase/group references for deleted Swift files and add new source/test/mock files only to the targets that compile them.
+
 ### 1.7 Focused PR 1 tests
 
-Add or retain compact tests for:
+Keep this suite compact and table-driven where practical:
 
-#### Arbiter
+- Arbiter: cover cross-kind mutual exclusion, identity-safe/idempotent release, weak-token recovery, and first valid `confirmAppearance()` in one small parameterized group.
+- Cooldown: table-test the three new directional rules at just-before/equality/after boundaries, plus one focused storage-failure fallback test.
+- Service/manager: prove providers are not queried when the slot or RMF-to-modal cooldown blocks them; prove no-selection releases; and preserve one exact-root/nested-child retention test and the legacy route.
+- Service wrapper: with a real arbiter and spying history component, two `markShown()` calls record once, while stale or post-release confirmation records nothing; a durable-write failure still returns `true` once and leaves the in-process timestamp authoritative.
 
-- modal acquisition from idle;
-- RMF acquisition from idle;
-- each kind blocks the other;
-- a second modal attempt is denied;
-- a different RMF ID is denied while one owns the slot;
-- duplicate release is harmless;
-- stale release cannot clear a replacement;
-- dropped tokens are recoverable; and
-- first valid `markShown()` wins once.
-
-#### Cooldown
-
-- all three cross-kind/incoming-RMF boundaries;
-- exact equality;
-- no-history behavior;
-- future timestamps;
-- write failure remains authoritative in process; and
-- read fallback behavior.
-
-#### Service/manager
-
-- RMF ownership prevents provider evaluation;
-- RMF-to-modal cooldown prevents provider evaluation;
-- when no provider is eligible, the manager releases its transferred modal lease and records no presentation history;
-- RMF cooldown denial releases its temporary acquisition and leaves the arbiter unowned;
-- committed presentation retains the lease;
-- nested child presentation does not release it;
-- exact-root detachment does release it;
-- legacy mode uses the unchanged manager route;
-- pending and active attempts continue to suppress dependent session promos; and
-- a no-selection evaluation clears temporary suppression without erasing earlier presentation history.
-
-Prefer one test per observable rule. Delete transition/surface fixtures rather than adapting them into another abstraction layer.
+Delete transition/surface fixtures rather than adapting them into another abstraction layer. Add only a regression case when it protects behavior changed by this unit.
 
 ## PR 1 completion criteria
 
@@ -317,7 +301,7 @@ Prefer one test per observable rule. Delete transition/surface fixtures rather t
 - Directional cooldown policy is independently tested.
 - Modal-first correctness remains behind the disabled-by-default flag.
 - Focused affected tests and an iOS build pass after obtaining permission to run them.
-- The PR description clearly states that end-to-end RMF gating follows in the stacked PR and the production flag remains off.
+- Local handoff notes state that end-to-end RMF gating follows on `bartosz/promo-q-simp-3` and the production flag remains off.
 
 ---
 
@@ -325,7 +309,7 @@ Prefer one test per observable rule. Delete transition/surface fixtures rather t
 
 ## Branch point and goal
 
-Create `bartosz/promo-q-simp-3` from the reviewed head of `bartosz/promo-q-simp-2`. Set its PR base to `bartosz/promo-q-simp-2` until PR 1 merges.
+After permission for git writes, create local `bartosz/promo-q-simp-3` from the reviewed head of `bartosz/promo-q-simp-2`. Keep its diff relative to `bartosz/promo-q-simp-2`; do not push or open a PR.
 
 Goal: integrate RMF once at the shared `HomePageConfiguration` boundary and deliver the actual no-overlap behavior for all existing NTP renderers.
 
@@ -343,41 +327,62 @@ Keep the existing `isStillOnboarding` closure. It is the correct RMF eligibility
 
 Make all lease mutation main-actor isolated. If annotating the whole configuration `@MainActor` creates unnecessary call-site churn, isolate the message refresh/admission methods and prove all access stays serialized. Do not use locks around UI-owned state as a substitute for main-actor isolation.
 
+In coordinated mode, change initialization to build only non-RMF messages. Do not fetch or acquire RMF during `MainCoordinator` construction. Add one source-level operation, named to expose its side effect (for example, `prepareForNTP(openedAfterIdle:)`), that arms RMF admission and performs selection.
+
+Call it only at existing content-loading seams:
+
+- replace the standard NTP's existing `HomePageConfiguration.refresh` call in `MainViewController.attachHomeScreen`;
+- call it immediately before suggestion tray's existing `canShow(.favorites)` / `hasRemoteMessages` eligibility read; and
+- call it once at unified input's activation/content-loading seam, before `activationResolveTrigger.send(())`; keep the `hasMessages` closure a pure read.
+
+These two conditional-host calls are required to bootstrap RMF-only content before those hosts construct a messages model. They are not visibility, lease, or disappearance callbacks. Do not add them to leaf views.
+
+Route app lifecycle once through the composition root: `Background.onTransition` → `MainCoordinator.onBackground` → `HomePageConfiguration.handleAppBackgrounded`, and `Foreground.onTransition` → `MainCoordinator.onForeground` → `HomePageConfiguration.handleAppForegrounded`. Foreground handling only marks the source active; it neither arms selection nor publishes RMF. Do not create an RMF/model `viewDidDisappear` signal; none exists today and the final design does not need one.
+
 ### 2.2 Implement the centralized RMF ownership algorithm
 
-Add one strongly retained current RMF lease and an opaque presentation context derived from its message ID and acquisition identity. Each RMF view-model callback captures that context. A same-ID refresh within one ownership keeps the same context valid; release followed by reacquisition of the same ID produces a new context. The configuration validates the context before appearance confirmation, coordinated dismissal, or lease mutation, so a callback from an outgoing physical view cannot act on a later ownership.
+In coordinated mode, make `HomePageConfiguration` the sole observer of global `remoteMessagesDidChange`. After updating `homeMessages`, emit a distinct, object-scoped configuration publisher. `NewTabPageMessagesModel` observes that publisher and only rebuilds from the shared value; it must not select another candidate. Keep the current global-notification behavior behind the legacy branch.
 
-Implement one `endCurrentRMFOwnership`-style helper and use it for every terminal path. Its invariant is: remove the current RMF from shared `homeMessages`, synchronously signal all models to rebuild from that source, then release and clear the retained lease. A missing message or lease makes the corresponding operation a no-op.
+Update direct consumers to react only after the shared source changes:
 
-During `buildHomeMessages` / `remoteMessageToShow`:
+- merge the configuration publisher into unified input's existing search-state reevaluation; and
+- replace or branch `OmniBarEditingStateViewController`'s direct store-notification observation so its existing initial-suggestions and Dax-visibility updates run from the configuration signal in coordinated mode.
+
+Do not republish `remoteMessagesDidChange` as the configuration signal; that would make update order and recursion ambiguous. Config-signal sinks reevaluate already-published state and must not call `prepareForNTP` from inside `hasMessages` or another publisher mapping closure.
+
+Add one strongly retained service-owned RMF lease wrapper, the trigger lane that selected it, the last explicitly prepared trigger lane, and an opaque presentation context derived from the message ID and acquisition identity. Explicit preparation updates `lastPreparedTriggerLane`; clear it on background. Implement one `endCurrentRMFOwnership` helper whose ordering is always: remove the coordinated RMF from `homeMessages`, emit the configuration signal, then release and clear the lease, owner-pinned trigger, and context. Ordinary ownership teardown does not clear `lastPreparedTriggerLane`, allowing a later armed store refresh to use the most recent explicit request.
+
+During an armed preparation or coordinated store refresh:
 
 1. Build non-RMF home messages as today.
 2. If onboarding suppresses RMF, run the teardown helper and return the non-RMF messages.
-3. Fetch the current RMF candidate using the existing `afterIdle` fallback rules.
-4. If no candidate exists, run the teardown helper and return the non-RMF messages.
-5. If candidate ID equals the retained lease's message ID, reuse the lease, publish the refreshed shared content, and emit the content-change signal if that content changed.
-6. If the ID differs, run the teardown helper for the old ID.
-7. Ask the gate for the new message ID.
-8. On success, retain the returned lease before publishing the candidate into shared `homeMessages`, then emit the content-change signal.
-9. If admission fails, append nothing and do not mutate `RemoteMessagingStore`.
+3. If the current owner remains scheduled and renderable in its pinned trigger lane, reuse it, publish any refreshed same-owner content, and stop fresh selection. Ignore a later renderer's competing trigger for this ownership.
+4. Otherwise tear down the invalid owner, then fetch using the current explicit request or, for a store-driven refresh, `lastPreparedTriggerLane`, with the existing fallback rules.
+5. If no renderable candidate exists, publish only non-RMF content.
+6. Ask the gate for the new message ID.
+7. On success, retain the lease, selected trigger lane, and new ownership context before publishing the candidate and emitting the configuration signal.
+8. If admission fails, append nothing and do not mutate `RemoteMessagingStore`.
 
 Keep the fetch, release/acquire, and `homeMessages` publication ordering synchronous on the main actor so a modal cannot interleave between the decision and publication.
 
-Add one configuration-level change signal for the shared `homeMessages` value. Every `NewTabPageMessagesModel` observes that signal and rebuilds from the shared value without registering a renderer identity or re-running candidate selection. Emit it after publishing an admitted RMF, after a same-ID content update, and during teardown before lease release. This lets all model snapshots converge without reintroducing visibility or handoff coordination.
-
-Do not create a lease for placeholder or non-RMF `HomeMessage` values.
-
 ### 2.3 Define same-ID and replacement semantics explicitly
 
-- A same-ID configuration refresh is one continuous ownership. It bypasses a new cooldown check and retains its `markShown()` state.
+- A same-ID refresh in the pinned trigger lane is one continuous ownership. It bypasses a new cooldown check and retains its appearance state and acquisition identity.
+- A preparation from another renderer with a different trigger cannot replace a valid owner. The first admitted trigger lane remains authoritative until that ownership ends.
 - A different ID ends the old ownership before attempting the new ID.
 - If the old message appeared, the new message must pass RMF-to-RMF cooldown.
 - If the old message never appeared, releasing it writes no history; the new message can acquire if the slot is otherwise free.
 - If the new message is denied, the store remains authoritative and a later natural refresh can retry it.
 
-Add direct tests for `afterIdle` versus no-trigger selection so shared ownership does not accidentally break current fallback behavior.
+Do not define same-ID joining for a future independent RMF source in this iteration. Such a source needs a separately reviewed source-level lifecycle contract.
 
-### 2.4 Move coordinated shown accounting to actual appearance
+### 2.4 Reject unrenderable content and reuse acquisition identity in SwiftUI
+
+Add a pure `HomeMessageViewModelBuilder.canBuild(for:)` (or equivalently named) check that uses the builder's existing content-to-display conversion. Call it before RMF acquisition. Missing content and unsupported `.cardsList` content must acquire no lease, publish no card, and mutate no store state. Do not maintain a second independent support switch.
+
+Use the public wrapper's acquisition identity for both callback validation and SwiftUI diffing; do not mint a second presentation UUID. Carry it opaquely through `HomeMessageViewModel`, keep it stable across same-owner refreshes, and key coordinated RMF content by message plus acquisition identity. A release/reacquisition naturally produces a new identity even for the same message ID. Preserve current identity behavior for legacy and non-RMF messages.
+
+### 2.5 Move coordinated shown accounting to actual appearance
 
 In `NewTabPageMessagesModel`, retain the existing `HomeMessageViewModelBuilder` `onDidAppear` callback and remove coordinated eager map-time appearance accounting. When mapping an RMF, capture the opaque context supplied by the configuration in its appearance and dismissal closures. The model forwards but does not interpret that value.
 
@@ -385,25 +390,34 @@ In `HomePageConfiguration.didAppear`:
 
 1. In legacy mode, preserve the current path deliberately.
 2. In coordinated mode, require a current lease matching both the RMF ID and captured acquisition identity.
-3. Call `markShown()` with that validated context.
-4. Only when it returns `true`, fire the regular `remoteMessageShown` event once, then run the existing first-ever-message guard for `remoteMessageShownUnique` and its store update.
+3. After configuration validation succeeds, call the service-owned lease wrapper's no-argument `markShown()`. That wrapper independently rejects stale raw state, confirms with the arbiter, and records RMF cooldown history only on the first valid confirmation.
+4. Only when it returns `true`, fire the regular `remoteMessageShown` event once, then run the existing best-effort first-ever guard for `remoteMessageShownUnique` and its store update.
 5. Ignore stale, mismatched, repeated, or post-release callbacks.
 
-Do not add a new pixel or parameter. Preserve existing metric-enabled checks and randomized subscription parameters. Document the intentional coordinated-mode frequency change: mapping no longer fires an impression, the first actual appearance fires regular shown once for that ownership, and unique-shown still emits only for the message's first-ever shown transition. The flag-off path retains today's behavior.
+Do not add a new pixel, parameter, or in-process unique-shown reservation. Preserve existing metric-enabled checks and randomized subscription parameters. Mapping no longer fires an impression; the first actual appearance fires regular shown once for that ownership. Because the store's unique check and asynchronous update are not atomic, rapid same-ID reacquisition may still duplicate unique-shown. The flag-off path retains today's behavior.
 
 Because the configuration is shared, appearance callbacks from a second physical mount of the same message reach the same lease and do not start queue history again.
 
-### 2.5 Release from message lifecycle only
+### 2.6 Implement terminal and background teardown
 
 Release when a refresh observes:
 
-- successful dismissal;
+- completion of a dismissal attempt;
 - expiry/removal from scheduled messages;
 - replacement by a different message ID;
 - onboarding suppression; or
-- no eligible candidate.
+- no eligible or renderable candidate.
 
-Before starting coordinated dismissal, validate the callback's message ID and acquisition identity. Keep that ownership authoritative while the asynchronous store dismissal is in flight; a refresh may not release and reacquire the same RMF underneath it. After the store operation finishes, validate the context again, then unpublish the shared RMF, emit its content-change signal, and release ownership in that order. A callback that was already stale when invoked must not mutate the store or current lease. Continue posting/observing `remoteMessagesDidChange` so later candidate state is refreshed; do not use that notification as a substitute for removing the currently owned message before release.
+Before starting coordinated dismissal, validate the callback's message ID and acquisition identity. A callback already stale before the await does nothing and must not call the store. Normally keep a validly started ownership authoritative while asynchronous `dismissRemoteMessage` runs. After the attempt completes, if the context is still current, run the ordered teardown; then preserve the existing single store-refresh notification. If background/reacquisition made the context stale, do not directly mutate the lease, but still trigger that notification once so the configuration-owned observer reconciles authoritative scheduled-message state. The store API returns `Void` and logs persistence failures, so do not claim a successful dismissal.
+
+Background is the explicit exception to in-flight dismissal retention. On background:
+
+1. mark RMF admission inactive/disarmed;
+2. remove the coordinated RMF from `homeMessages`;
+3. synchronously emit the configuration signal; and
+4. release and clear its lease, both trigger values, and presentation context without recording new history.
+
+An outstanding dismissal completion then fails context validation and cannot directly release or confirm a newer lease. The already-started store operation may still change scheduled-message state; its notification is reconciled normally and may make a reacquired same-ID owner ineligible. Do not add cancellation or reservation machinery. Store notifications while inactive may update non-RMF state but must not reacquire RMF. Foreground only re-enables a future explicit `prepareForNTP`; it must not automatically publish RMF.
 
 Do not release from:
 
@@ -411,30 +425,27 @@ Do not release from:
 - SwiftUI `onDisappear`;
 - tab switching;
 - suggestion-tray/unified-input handoff;
-- window detachment;
-- app backgrounding; or
-- Fire-mode/landscape layout changes.
+- window detachment; or
+- Fire-mode or layout changes.
 
 Do not add a retain count. `HomePageConfiguration`, not a physical renderer, owns the lease.
 
-### 2.6 Keep retry checkpoint-driven
+### 2.7 Keep retry checkpoint-driven
 
 Do not register every NTP model for retries. A blocked RMF is reconsidered on:
 
-- initial model load;
-- `HomePageConfiguration.refresh`;
-- `remoteMessagesDidChange`;
+- explicit `prepareForNTP` from an NTP-capable path;
+- a coordinated `remoteMessagesDidChange` while admission is armed;
 - an `afterIdle` refresh;
-- creation of another renderer using the shared configuration; or
 - a later RMF admission attempt that reconciles a detached modal.
 
 Modal work remains a foreground operation and is not immediately retried when RMF ownership ends.
 
 Do not add a service-to-configuration release callback in this stack. If checkpoint-driven retry proves insufficient in production, treat that as evidence for a separately reviewed design amendment; it is not permission to add a release publisher, renderer registration, or retry ordering during implementation.
 
-### 2.7 Update protocols and test doubles
+### 2.8 Update protocols, target membership, and test doubles
 
-Adjust `HomePageMessagesConfiguration` only as much as needed to supply and round-trip the opaque presentation context and express the coordinated/legacy accounting branch. If a mode property is added, provide an explicit legacy default for previews and unrelated mocks. Do not expose the lease itself to `NewTabPageMessagesModel`.
+Adjust `HomePageMessagesConfiguration` only as much as needed to expose the configuration-scoped change publisher, supply and round-trip the opaque presentation context, and express the coordinated/legacy accounting branch. Its coordinated publisher must deliver model updates synchronously on the main actor; do not insert a `receive(on:)` hop before `NewTabPageMessagesModel` rebuilds. Host layout reactions may remain scheduled. Add the publisher to relevant mocks with an explicit inert value. If a mode property is added, provide an explicit legacy default for previews and unrelated mocks. Do not expose the lease itself to `NewTabPageMessagesModel`.
 
 Remove obsolete `MockNewTabPagePromoCoordinator`. Add a small `MockPromoGate` capable of:
 
@@ -445,45 +456,21 @@ Remove obsolete `MockNewTabPagePromoCoordinator`. Add a small `MockPromoGate` ca
 
 Avoid mocks that reproduce the production state machine.
 
-### 2.8 Focused PR 2 tests
+For every added/deleted production file, test, or shared mock, update `iOS/DuckDuckGo-iOS.xcodeproj/project.pbxproj` file references and the exact app/test target memberships. Do not add a shared mock to every test target by default. Prefer keeping an existing file when its final responsibility and name remain honest.
 
-#### `HomePageConfigurationTests`
+### 2.9 Focused PR 2 tests
 
-- free slot publishes the RMF only after acquisition;
-- modal owner suppresses publication;
-- cooldown denial suppresses publication;
-- denial does not dismiss, mark shown, or consume the scheduled message;
-- same ID reuses one lease;
-- different ID releases old ownership and attempts a new acquisition;
-- `nil`, dismissal, expiry, and onboarding suppression release;
-- backgrounding alone does not release;
-- a never-appeared message releases without writing history;
-- first real appearance confirms once and fires regular shown once per ownership;
-- unique-shown retains first-ever-message behavior across later ownerships;
-- stale/mismatched appearance is ignored;
-- release and reacquisition of the same ID gives new callbacks a new context, while old appearance/dismissal callbacks are ignored;
-- ownership remains authoritative across an in-flight asynchronous dismissal;
-- `afterIdle` selection and fallback remain unchanged; and
-- feature-off path remains legacy.
+Prefer a handful of behavior groups over an edge-case matrix:
 
-#### `NewTabPageMessagesModelTests`
+1. Cold start/restored website: coordinated initialization builds no RMF and holds no lease; the first explicit NTP preparation performs admission.
+2. Shared refresh: one store notification causes one configuration selection, two models converge synchronously from its signal, and a direct host consumer reevaluates after the source changes without recursion. After an earlier denial with no owner, retry uses `lastPreparedTriggerLane`.
+3. Trigger pinning: an admitted `afterIdle` owner survives a no-trigger renderer load (and the reverse case can share the same table); replacement occurs only after the pinned owner becomes invalid.
+4. Admission boundary: modal ownership/cooldown and unsupported content prevent publication or store mutation; a free slot publishes only after acquisition.
+5. Appearance identity/wiring: same-ownership refresh keeps acquisition identity, same-ID reacquisition changes it, and the real service wrapper writes history and regular shown once while stale callbacks do nothing. Retain one deterministic existing unique-guard test if that path changes; do not assert exact-once across acquisitions or test the asynchronous race.
+6. Ordered teardown: table-drive dismissal-attempt completion, expiry/replacement, onboarding suppression, and background; assert unpublish/signal precedes release, background writes no new history and preserves confirmed history, and stale dismissal callbacks cannot directly mutate a newer lease while later store state is still reconciled.
+7. Legacy regression: retain one focused action/dismissal/pixel test proving the feature-off path is unchanged.
 
-- coordinated mapping does not eagerly report appearance;
-- `onDidAppear` and dismissal closures forward the context captured at mapping time rather than looking up the current acquisition when invoked;
-- existing close/action/primary/secondary action behavior and pixels are unchanged;
-- remote-message notifications refresh gated state; and
-- configuration-level change signals make multiple models converge on the same gated source without per-renderer registration or recursive candidate refresh.
-
-#### Cross-component tests
-
-- RMF first: foreground modal evaluation never queries providers.
-- Modal evaluating/committed/visible first: RMF never enters `homeMessages`.
-- No modal provider: the manager releases its transferred lease with no history.
-- Detached modal root is lazily reconciled before a later RMF attempt.
-- Same shared configuration used by two or more models does not need separate ownership and confirms one queue appearance.
-- Removing a shared RMF publishes the source change before releasing ownership.
-
-Do not add real-UIKit tests for all three hosts. One integration test can prove the shared instance is passed through the composition root; manual QA covers physical entry points.
+Do not add real-UIKit tests for all three hosts, an exhaustive content-type suite, or landscape lifecycle tests. One composition assertion can prove the shared instance and central lifecycle hook; manual QA covers physical entry points.
 
 ## Phase 2 manual validation
 
@@ -492,17 +479,18 @@ Use the existing feature-flag override and RMF internal tooling. Because mode is
 Validate:
 
 1. Flag off: current modal and RMF behavior is unchanged.
-2. RMF first: open a card, foreground the app, and confirm no launch-modal provider is evaluated/presented.
+2. RMF first: in a cold/restored-NTP setup where RMF wins admission before the pending launch-modal checkpoint, confirm no launch-modal provider is evaluated or presented. Treat the reverse order as the modal-first case; do not background an already shown card for this ownership check because background intentionally releases it.
 3. Modal first: commit a modal, open/refresh NTP beneath it, and confirm no RMF flashes.
 4. No eligible modal: confirm the temporary modal acquisition does not strand the slot.
 5. Dismissed modal: confirm lazy reconciliation at the next checkpoint and observe the incoming RMF cooldown.
 6. RMF dismissal, expiry, and replacement: confirm source-level release/reacquisition.
-7. Standard NTP, suggestion tray favorites, and unified-input/address-bar favorites: confirm all consume the same gated result with no host callbacks.
+7. Standard NTP, suggestion tray favorites, and unified-input/address-bar favorites: confirm all consume the same gated result with only the documented shared-source preparation calls and no per-renderer lease/visibility callbacks.
 8. `afterIdle` message selection.
 9. Onboarding suppression.
-10. Fire tab and constrained landscape: confirm the accepted invisible over-hold and no crash.
-11. Leave the NTP and background/foreground: confirm the accepted RMF over-hold blocks modal admission while the message remains active.
-12. Relaunch: confirm live owner resets while persisted cooldown remains.
+10. Fire tab: confirm current suppression behavior and that source ownership remains safe. Rotate through landscape as behavior discovery; confirm actual rendering and no crash without adding special lease handling.
+11. Leave the NTP: confirm message ownership remains source-driven rather than tied to one renderer.
+12. Background/foreground: confirm the card is unpublished before lease release, a background store update does not reacquire it, and a later explicit NTP preparation can reconsider the card. Confirm the launch modal reaches normal admission/cooldown evaluation; use a never-appeared RMF or reset/wait for the persisted RMF-to-modal cooldown before expecting provider evaluation.
+13. Relaunch: confirm live owner resets while persisted confirmed cooldown history remains.
 
 ## PR 2 completion criteria
 
@@ -511,7 +499,7 @@ Validate:
 - No NTP host, overlay, or physical renderer reports visibility.
 - A blocked card never enters `homeMessages` and never records accounting.
 - Same-ID ownership and first appearance are deterministic at the shared source.
-- Accepted background/offscreen over-hold is covered or documented.
+- Cold launch cannot claim RMF before an NTP request, and background teardown releases it in the documented order.
 - Focused affected tests and an iOS build pass after obtaining permission.
 - No new telemetry exists.
 
@@ -521,7 +509,7 @@ Validate:
 
 ## Branch point and goal
 
-Create `bartosz/promo-q-simp-4` from the reviewed head of `bartosz/promo-q-simp-3`. Set its PR base to `bartosz/promo-q-simp-3` until PR 2 merges.
+After permission for git writes, create local `bartosz/promo-q-simp-4` from the reviewed head of `bartosz/promo-q-simp-3`. Keep its diff relative to `bartosz/promo-q-simp-3`; do not push or open a PR.
 
 Goal: make the simplified machinery easy to inspect and manually verify using the app's existing internal debug area, without changing production admission behavior.
 
@@ -539,6 +527,8 @@ Extend:
 - the two debug construction paths in `MainViewController+Segues.swift` and `SettingsLegacyViewProvider.swift` as needed.
 
 Do not create another production coordinator or cooldown store. Inject a read-only snapshot provider backed by the app-scoped service and the same stores used by production.
+
+Update `iOS/DuckDuckGo-iOS.xcodeproj/project.pbxproj` for any new debug/test files and their exact internal app/test target memberships.
 
 ### 3.2 Add the simplified snapshot
 
@@ -574,12 +564,8 @@ Do not add force-modal, force-RMF, arbitrary owner mutation, or fake-visibility 
 
 Add focused view-model/snapshot tests for:
 
-- formatting each owner kind;
-- startup mode and relaunch text;
-- RMF appearance state;
-- cooldown boundary formatting;
-- Refresh reading new state;
-- unavailable dependency behavior; and
+- owner/mode/appearance formatting as one table-driven group;
+- Refresh reading new state and unavailable-dependency behavior; and
 - RMF cooldown reset changing eligibility immediately while leaving ownership untouched.
 
 Avoid snapshot tests unless layout complexity genuinely warrants them.
@@ -591,7 +577,7 @@ Avoid snapshot tests unless layout complexity genuinely warrants them.
 - Any reset is explicit and internal-only.
 - No telemetry or production retry behavior is added.
 - Focused debug tests and an iOS build pass after obtaining permission.
-- The PR description includes the complete manual validation matrix and rollout caveats.
+- Local handoff notes include the complete manual validation matrix and rollout caveats.
 
 ---
 
@@ -642,50 +628,40 @@ Then run the normal iOS build/test coverage appropriate for a change spanning ap
 - Can an RMF enter `homeMessages` before admission? It must not.
 - Can a stale context release, dismiss, or confirm the current owner, including a reacquired owner with the same message ID? It must not.
 - Is an RMF cooldown written before actual appearance? It must not be.
-- Does leaving the NTP or backgrounding release RMF? It must not.
+- Does ordinary NTP disappearance release RMF? It must not. Does app background unpublish and then release it? It must.
 - Is time passage alone scheduling work? It must not.
 - Does the feature-off path still work after a fresh graph is built? It must.
 - Did the change add telemetry? It must not.
-- Are accepted limitations described consistently in code comments, tests, debug UI, and PR descriptions?
+- Are accepted limitations described consistently in code comments, tests, debug UI, and local handoff notes?
 
-# External phase 4 — privacy-configuration rollout
+# External phase 4 — rollout handoff only
 
-Merging the stack completes the `apple-browsers` repository implementation, but it does not meet the project success criterion because the iOS flag is disabled by default. Rollout is a separate, externally approved change in [duckduckgo/privacy-configuration](https://github.com/duckduckgo/privacy-configuration), targeting parent feature `promoQueue` and subfeature `iOSPromoPresentationCoordination` (the remote source of `.promoPresentationCoordination`). Do not manually edit the generated `iOS/Core/ios-config.json` as the rollout mechanism.
+The local implementation agent must not modify or push `duckduckgo/privacy-configuration`, open a configuration PR, deploy a cohort, or change a project tracker. Instead, record a handoff for the project/feature DRI containing:
 
-The project/feature DRI owns this phase. The privacy-configuration repository's required reviewers approve and deploy its change, and the iOS release owner confirms the first app version containing all three PRs. Set that version as the rollout's minimum supported version so the flag cannot enable code that is absent.
-
-If the implementation agent has access to the privacy-configuration repository and explicit authorization to make that external change, continue there. Otherwise, create or update the project rollout task with:
-
-- links to the three merged PRs and the first containing iOS version;
-- the exact parent/subfeature keys above;
-- the completed automated and manual validation record;
+- the three local branch names and, after human integration, placeholders for merged PR links and the first containing iOS version;
+- parent feature `promoQueue` and subfeature `iOSPromoPresentationCoordination`, the remote source of `.promoPresentationCoordination`;
+- the completed automated and manual validation evidence;
 - the startup-latched relaunch caveat;
-- the proposed cohort stages and hold criteria; and
-- the feature DRI, privacy-config reviewer, and iOS release owner assignments.
+- a suggested 5% → 25% → 50% → 100% cohort sequence, subject to the rollout DRI;
+- existing crash/regression, RMF/provider accounting, manual-reproduction, and support-report hold criteria; and
+- named owners for privacy-config review, deployment, and iOS release confirmation.
 
-Do not claim the product success criterion complete while that handoff is pending.
+The eventual external owner must set the first containing iOS version as the minimum supported version and must not use generated `iOS/Core/ios-config.json` as the rollout source. Rollback is the remote disable of `iOSPromoPresentationCoordination`; because mode is startup-latched, a new process graph is required. No new telemetry is added. Do not claim the product success criterion complete until the deployed flag reaches 100% of supported iOS users and that state is recorded.
 
-## Rollout execution
+# Definitions of done
 
-1. Land the three code PRs in stack order and ship a build containing the full stack with the remote kill switch available.
-2. Complete the Phase 2 manual matrix in internal/ad-hoc builds and verify the Phase 3 diagnostics on a fresh process.
-3. Open the privacy-configuration change that enables `promoQueue.iOSPromoPresentationCoordination` only for the first containing app version and later. Use staged rollout steps of 5%, 25%, 50%, and 100% unless the rollout DRI selects a more conservative sequence.
-4. Obtain privacy-config review/approval and deploy the first stage.
-5. Verify the deployed configuration version, confirm fresh eligible internal devices resolve the startup mode as `Coordinated` without a local override, and repeat the modal-first/RMF-first smoke cases.
-6. At each hold, use existing crash/regression monitoring, RMF and provider accounting sanity checks, manual reproduction, and support reports. Interpret regular RMF shown counts with the documented coordinated-mode deduplication in mind; unique-shown keeps its first-ever semantics. No new telemetry is added for this rollout.
-7. Advance only after the DRI records that the current stage meets the agreed hold criteria. Continue until the final rollout step is 100% for supported iOS versions.
-8. To roll back, disable `iOSPromoPresentationCoordination` in privacy configuration and deploy that change. Because mode is startup-latched, the disable applies when an app next builds its process graph; force-quit/relaunch is the immediate manual mitigation.
-9. Record the final configuration version, app version, deployment date, and 100% verification in the project task. That record closes the stated success criterion.
+## Local implementation handoff
 
-If rollout finds unacceptable modal starvation from active-message over-hold, the first follow-up to consider is a single shared source-level release checkpoint. Do not restore renderer exposure reporting without new product evidence that the simpler model cannot meet the requirement.
+- `bartosz/promo-q-simp-2`, local `bartosz/promo-q-simp-3`, and local `bartosz/promo-q-simp-4` contain the three clean review units; no branch was pushed and no PR was opened.
+- The combined local diff matches `tech_design_final.md` and removes or reduces PR #6087 machinery to final-design behavior.
+- Focused automated and manual validation has passed after obtaining required permission.
+- The existing debug screen explains current owner and cooldown state.
+- No new telemetry exists.
+- A new NTP renderer can consume the shared source without visibility/coverage callbacks; only a conditional container that checks content before construction invokes the shared preparation seam.
+- The rollout handoff is complete and clearly marked as external work.
 
-# Final definition of done
+## Project success criterion after human/external follow-through
 
-- All three stacked PRs are merged.
-- The final implementation matches `tech_design_final.md`.
-- The broad PR #6087 transition/surface machinery has been removed or reduced to final-design behavior.
-- Focused automated and manual validation has passed.
-- The existing debug screen can explain current owner and cooldown state.
-- No new telemetry was added.
-- The coordinated flag has reached 100% of supported iOS users.
-- Maintainers can add a new NTP renderer without adding Promo Queue integration, and can add a new independent promo source through one source-level admission seam rather than host visibility callbacks.
+- The three review units are reviewed, merged, and shipped.
+- The coordinated flag reaches 100% of supported iOS users.
+- The final rollout version and validation record are captured by the project owner.

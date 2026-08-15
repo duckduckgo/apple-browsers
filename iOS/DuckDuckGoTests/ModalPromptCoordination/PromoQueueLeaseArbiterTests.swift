@@ -84,7 +84,7 @@ struct PromoQueueLeaseArbiterTests {
 
         #expect(arbiter.snapshot.owner == nil)
         let modalLease = try acquiredModalLease(from: arbiter.acquireModalLease())
-        #expect(arbiter.snapshot.owner == .modal(attemptIdentity: modalLease.attemptIdentity))
+        #expect(arbiter.snapshot.owner == .modal(ownershipIdentity: modalLease.ownershipIdentity))
     }
 
     @available(iOS 16, *)

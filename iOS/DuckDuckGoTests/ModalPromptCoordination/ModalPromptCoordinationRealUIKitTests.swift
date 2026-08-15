@@ -147,7 +147,7 @@ final class ModalPromptCoordinationRealUIKitTests {
             rootAttachmentChecker: attachmentChecker
         )
         let lease = try acquireModalLease()
-        _ = sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
+        sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
         schedulerMock.executeScheduledBlock()
 
         // Give the selected root a real child presentation. The window exists only so UIKit accepts the nesting:
@@ -205,11 +205,11 @@ final class ModalPromptCoordinationRealUIKitTests {
         // and UIKit detaches the root straight away — leaving nothing mid-animation for this test to observe.
         await withCheckedContinuation { continuation in
             presentationHost.onPresentationCompleted = { continuation.resume() }
-            _ = sut.presentModalPromptIfNeeded(from: presentationHost, with: lease)
+            sut.presentModalPromptIfNeeded(from: presentationHost, with: lease)
             schedulerMock.executeScheduledBlock()
         }
         #expect(exactRoot.presentingViewController === presentationHost)
-        #expect(sut.modalAttemptPhase == .presentationActive(lease.attemptIdentity))
+        #expect(sut.modalAttemptPhase == .presentationActive(lease.ownershipIdentity))
 
         let waitingMessageID = "waiting-promo"
 
@@ -224,7 +224,7 @@ final class ModalPromptCoordinationRealUIKitTests {
             #expect(exactRoot.presentingViewController === presentationHost)
             #expect(exactRoot.viewIfLoaded?.window != nil)
             #expect(!sut.reconcilePresentedModal())
-            #expect(sut.modalAttemptPhase == .presentationActive(lease.attemptIdentity))
+            #expect(sut.modalAttemptPhase == .presentationActive(lease.ownershipIdentity))
             guard case .blockedByModal = promoQueueLeaseArbiter.acquireRemoteMessageLease(for: waitingMessageID) else {
                 Issue.record("Expected the dismissing modal to keep blocking visible promo admission")
                 return

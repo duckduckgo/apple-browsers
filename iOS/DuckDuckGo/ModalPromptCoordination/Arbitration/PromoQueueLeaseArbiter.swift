@@ -31,20 +31,20 @@ struct PromoQueueAcquisitionIdentity: Hashable {
     }
 }
 
-struct PromoQueueModalAttemptIdentity: Hashable {
-    fileprivate let acquisitionIdentity: PromoQueueAcquisitionIdentity
-
-    fileprivate init(acquisitionIdentity: PromoQueueAcquisitionIdentity) {
-        self.acquisitionIdentity = acquisitionIdentity
-    }
+struct PromoQueueModalOwnershipIdentity: Hashable {
+    fileprivate let id: UUID
 
     var diagnosticDescription: String {
-        acquisitionIdentity.diagnosticDescription
+        id.uuidString
+    }
+
+    fileprivate init() {
+        id = UUID()
     }
 }
 
 enum PromoQueueLeaseOwnerSnapshot: Equatable {
-    case modal(attemptIdentity: PromoQueueModalAttemptIdentity)
+    case modal(ownershipIdentity: PromoQueueModalOwnershipIdentity)
     case remoteMessage(
         messageID: String,
         acquisitionIdentity: PromoQueueAcquisitionIdentity,
@@ -60,9 +60,9 @@ struct PromoQueueLeaseSnapshot: Equatable {
         return true
     }
 
-    var modalAttemptIdentity: PromoQueueModalAttemptIdentity? {
-        guard case .modal(let attemptIdentity) = owner else { return nil }
-        return attemptIdentity
+    var modalOwnershipIdentity: PromoQueueModalOwnershipIdentity? {
+        guard case .modal(let ownershipIdentity) = owner else { return nil }
+        return ownershipIdentity
     }
 }
 
@@ -88,15 +88,15 @@ protocol PromoQueueLeaseArbitrating: AnyObject {
 
 @MainActor
 final class PromoQueueModalLease {
-    let attemptIdentity: PromoQueueModalAttemptIdentity
+    let ownershipIdentity: PromoQueueModalOwnershipIdentity
 
     private var releaseHandler: (() -> Void)?
 
     fileprivate init(
-        attemptIdentity: PromoQueueModalAttemptIdentity,
+        ownershipIdentity: PromoQueueModalOwnershipIdentity,
         releaseHandler: @escaping () -> Void
     ) {
-        self.attemptIdentity = attemptIdentity
+        self.ownershipIdentity = ownershipIdentity
         self.releaseHandler = releaseHandler
     }
 
@@ -142,8 +142,7 @@ final class PromoQueueRemoteMessageArbiterLease {
 @MainActor
 final class PromoQueueLeaseArbiter: PromoQueueLeaseArbitrating {
     private struct ModalLeaseRecord {
-        let acquisitionIdentity: PromoQueueAcquisitionIdentity
-        let attemptIdentity: PromoQueueModalAttemptIdentity
+        let ownershipIdentity: PromoQueueModalOwnershipIdentity
         weak var token: PromoQueueModalLease?
     }
 
@@ -166,7 +165,7 @@ final class PromoQueueLeaseArbiter: PromoQueueLeaseArbitrating {
 
         switch owner {
         case .modal(let record):
-            return PromoQueueLeaseSnapshot(owner: .modal(attemptIdentity: record.attemptIdentity))
+            return PromoQueueLeaseSnapshot(owner: .modal(ownershipIdentity: record.ownershipIdentity))
         case .remoteMessage(let record):
             return PromoQueueLeaseSnapshot(
                 owner: .remoteMessage(
@@ -192,18 +191,16 @@ final class PromoQueueLeaseArbiter: PromoQueueLeaseArbitrating {
             break
         }
 
-        let acquisitionIdentity = PromoQueueAcquisitionIdentity()
-        let attemptIdentity = PromoQueueModalAttemptIdentity(acquisitionIdentity: acquisitionIdentity)
+        let ownershipIdentity = PromoQueueModalOwnershipIdentity()
         let lease = PromoQueueModalLease(
-            attemptIdentity: attemptIdentity,
+            ownershipIdentity: ownershipIdentity,
             releaseHandler: { [weak self] in
-                self?.releaseModalLease(acquisitionIdentity: acquisitionIdentity)
+                self?.releaseModalLease(ownershipIdentity: ownershipIdentity)
             }
         )
         owner = .modal(
             ModalLeaseRecord(
-                acquisitionIdentity: acquisitionIdentity,
-                attemptIdentity: attemptIdentity,
+                ownershipIdentity: ownershipIdentity,
                 token: lease
             )
         )
@@ -256,9 +253,9 @@ final class PromoQueueLeaseArbiter: PromoQueueLeaseArbitrating {
         return true
     }
 
-    private func releaseModalLease(acquisitionIdentity: PromoQueueAcquisitionIdentity) {
+    private func releaseModalLease(ownershipIdentity: PromoQueueModalOwnershipIdentity) {
         guard case .modal(let record) = owner,
-              record.acquisitionIdentity == acquisitionIdentity else {
+              record.ownershipIdentity == ownershipIdentity else {
             return
         }
 

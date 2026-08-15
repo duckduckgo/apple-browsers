@@ -65,7 +65,6 @@ final class ModalPromptCoordinationManagerIntegrationTests {
             providers: [provider],
             cooldownManager: cooldownManager,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
         #expect(!cooldownManager.isInCooldownPeriod)
@@ -89,7 +88,6 @@ final class ModalPromptCoordinationManagerIntegrationTests {
             providers: [firstProvider],
             cooldownManager: cooldownManager,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
         #expect(cooldownManager.isInCooldownPeriod)
@@ -117,7 +115,6 @@ final class ModalPromptCoordinationManagerIntegrationTests {
             providers: [firstProvider],
             cooldownManager: cooldownManager,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
         #expect(cooldownManager.isInCooldownPeriod)
@@ -148,7 +145,6 @@ final class ModalPromptCoordinationManagerIntegrationTests {
             providers: [provider1, provider2, provider3],
             cooldownManager: cooldownManager,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
 
@@ -207,7 +203,6 @@ final class ModalPromptCoordinationManagerIntegrationTests {
             providers: [provider1, provider2],
             cooldownManager: cooldownManager,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
 
@@ -248,7 +243,6 @@ final class ModalPromptCoordinationManagerIntegrationTests {
             providers: [provider],
             cooldownManager: cooldownManager,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
         let presentationTime = timeTraveller.getDate()
@@ -271,7 +265,6 @@ final class ModalPromptCoordinationManagerIntegrationTests {
             providers: [provider],
             cooldownManager: cooldownManager,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
         var lastPresentationTime = timeTraveller.getDate()
@@ -321,7 +314,6 @@ final class ModalPromptCoordinationManagerIntegrationTests {
             providers: [provider],
             cooldownManager: cooldownManager,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
         let presentationTime = timeTraveller.getDate()
@@ -358,7 +350,6 @@ final class ModalPromptCoordinationManagerIntegrationTests {
             providers: [provider],
             cooldownManager: cooldownManager,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
         guard case .acquired(let lease) = promoQueueLeaseArbiter.acquireModalLease() else {
@@ -388,7 +379,6 @@ final class ModalPromptCoordinationManagerIntegrationTests {
             providers: [provider],
             cooldownManager: cooldownManager,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
         guard case .acquired(let lease) = promoQueueLeaseArbiter.acquireModalLease() else {

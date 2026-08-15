@@ -259,7 +259,10 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         isContentActive = active
         markNeedsVisibleRefresh()
         if active {
-            suggestionTrayDependencies?.newTabPageDependencies.homePageMessagesConfiguration.prepareForNTP(openedAfterIdle: sessionOpenedAfterIdle)
+            if let homePageMessagesConfiguration = suggestionTrayDependencies?.newTabPageDependencies.homePageMessagesConfiguration,
+               homePageMessagesConfiguration.mode == .coordinated {
+                homePageMessagesConfiguration.prepareForNTP(openedAfterIdle: sessionOpenedAfterIdle)
+            }
             unifiedSuggestionsHost?.setIsFireTab(switchBarHandler.isFireTab)
             unifiedSuggestionsHost?.setLandscape(isLandscapeOrientation)
             unifiedSuggestionsHost?.prepareForActivation()

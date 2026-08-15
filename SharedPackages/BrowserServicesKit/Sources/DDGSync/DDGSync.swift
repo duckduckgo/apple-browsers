@@ -732,6 +732,9 @@ public class DDGSync: DDGSyncing {
 
     private func scheduleCurrentDeviceInfoRepair(for account: SyncAccount) {
         guard dependencies.syncFeatureFlags.canWriteUnifiedDeviceList(),
+              let currentAccount = try? dependencies.secureStore.account(),
+              currentAccount.userId == account.userId,
+              currentAccount.deviceId == account.deviceId,
               deviceInfoMigrationTask == nil,
               currentDeviceInfoRepairTask == nil,
               !hasAttemptedCurrentDeviceInfoRepair else {

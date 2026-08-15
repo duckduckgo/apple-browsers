@@ -752,6 +752,49 @@ final class DDGSyncTests: XCTestCase {
         XCTAssertEqual(migrationCoordinator.repairCalls.map(\.account.deviceId), [SyncAccount.mock.deviceId])
     }
 
+    func testWhenAccountChangesDuringDeviceFetchThenOldResultDoesNotConsumeRepairAttempt() async throws {
+        dependencies.canWriteUnifiedDeviceList = { true }
+        let secureStore = try XCTUnwrap(dependencies.secureStore as? SecureStorageStub)
+        let originalAccount = SyncAccount.mock
+        let replacementAccount = SyncAccount(
+            deviceId: "replacementDeviceId",
+            deviceName: "replacementDeviceName",
+            deviceType: originalAccount.deviceType,
+            userId: "replacementUserId",
+            primaryKey: originalAccount.primaryKey,
+            secretKey: originalAccount.secretKey,
+            token: originalAccount.token,
+            state: .active)
+        let accountManager = try XCTUnwrap(dependencies.account as? AccountManagingMock)
+        let originalFetchStarted = expectation(description: "Original account device fetch started")
+        let (originalFetchGate, originalFetchGateContinuation) = AsyncStream<Void>.makeStream()
+        defer { originalFetchGateContinuation.finish() }
+        accountManager.fetchDevicesForAccountHandler = { account in
+            if account.deviceId == originalAccount.deviceId {
+                originalFetchStarted.fulfill()
+                for await _ in originalFetchGate {}
+            }
+            return RegisteredDeviceMappingResult(devices: [.mock], needsCurrentDeviceInfoRepair: true)
+        }
+        let repairScheduled = expectation(description: "Replacement account device info repair scheduled")
+        let migrationCoordinator = DeviceInfoMigrationCoordinatingMock()
+        migrationCoordinator.repairCurrentDeviceInfoHandler = {
+            repairScheduled.fulfill()
+        }
+        dependencies.createDeviceInfoMigrationCoordinatorStub = migrationCoordinator
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+
+        async let originalDevices = syncService.fetchDevices()
+        await fulfillment(of: [originalFetchStarted], timeout: 1)
+        secureStore.theAccount = replacementAccount
+        originalFetchGateContinuation.finish()
+        _ = try await originalDevices
+        _ = try await syncService.fetchDevices()
+        await fulfillment(of: [repairScheduled], timeout: 1)
+
+        XCTAssertEqual(migrationCoordinator.repairCalls.map(\.account.deviceId), [replacementAccount.deviceId])
+    }
+
     func testWhenFetchedCurrentDeviceNeedsInfoRepairButWriteIsDisabledThenRepairIsNotScheduled() async throws {
         let accountManager = try XCTUnwrap(dependencies.account as? AccountManagingMock)
         accountManager.fetchDevicesForAccountStub = RegisteredDeviceMappingResult(

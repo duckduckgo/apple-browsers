@@ -128,7 +128,7 @@ struct AccountInfoKeyManagerTests {
 
         #expect(refreshedKey.kid == refreshedProtectedKey.kid)
         #expect(loadedKey.kid == refreshedProtectedKey.kid)
-        #expect(secureStore.protectedKeysCalls == 1)
+        #expect(secureStore.protectedKeysCalls == 2)
         #expect(scopedAccess.fetchProtectedKeysCalls.map(\.userId) == [account.userId])
     }
 

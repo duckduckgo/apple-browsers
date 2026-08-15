@@ -121,12 +121,7 @@ final class PromoCoordinationService {
                 return
             }
 
-            switch modalPromptCoordinationManager.presentModalPromptIfNeeded(from: viewController, with: lease) {
-            case .retained:
-                Logger.modalPrompt.debug("[Modal Prompt Coordination] - The coordinated modal attempt holds the slot.")
-            case .released:
-                Logger.modalPrompt.debug("[Modal Prompt Coordination] - The coordinated modal attempt released the slot without presenting.")
-            }
+            modalPromptCoordinationManager.presentModalPromptIfNeeded(from: viewController, with: lease)
         case .blockedByModal:
             Logger.modalPrompt.debug("[Modal Prompt Coordination] - Skipping modal prompt - A coordinated modal attempt already owns the slot.")
         case .blockedByRemoteMessage:

@@ -516,12 +516,16 @@ final class AccountManagerTests: XCTestCase {
         let api = RemoteAPIRequestCreatingMock()
         let endpoints = Endpoints(baseURL: Self.baseURL)
         let mapper = RegisteredDeviceMappingMock()
+        var readFlagCallCount = 0
         let accountManager = AccountManager(endpoints: endpoints,
                                             api: api,
                                             crypter: CryptingMock(),
                                             registeredDeviceMapper: mapper,
                                             isScopedAccessCredentialsEnabled: { true },
-                                            canReadUnifiedDeviceList: { true })
+                                            canReadUnifiedDeviceList: {
+                                                readFlagCallCount += 1
+                                                return true
+                                            })
         api.fakeRequests[endpoints.login] = makeJSONRequest("""
         {
             "devices": [
@@ -550,8 +554,10 @@ final class AccountManagerTests: XCTestCase {
                                                     deviceType: "iOS")
 
         XCTAssertEqual(mapper.registeredDevicesCallEntryIDs, ["unified-device"])
+        XCTAssertEqual(mapper.unifiedReadEnabledValues, [true])
         XCTAssertTrue(mapper.defaultCredentialLoginEntryIDs.isEmpty)
         XCTAssertEqual(result.devices.map(\.id), ["unified-device"])
+        XCTAssertEqual(readFlagCallCount, 1)
     }
 
     func testWhenUnifiedReadIsDisabledThenLoginMapsLegacyDevices() async throws {
@@ -770,12 +776,16 @@ final class AccountManagerTests: XCTestCase {
         let api = RemoteAPIRequestCreatingMock()
         let endpoints = Endpoints(baseURL: Self.baseURL)
         let mapper = RegisteredDeviceMappingMock()
+        var readFlagCallCount = 0
         let accountManager = AccountManager(endpoints: endpoints,
                                             api: api,
                                             crypter: CryptingMock(),
                                             registeredDeviceMapper: mapper,
                                             isScopedAccessCredentialsEnabled: { true },
-                                            canReadUnifiedDeviceList: { true })
+                                            canReadUnifiedDeviceList: {
+                                                readFlagCallCount += 1
+                                                return true
+                                            })
         api.fakeRequests[endpoints.devices] = makeJSONRequest("""
         {
             "devices": [
@@ -813,7 +823,9 @@ final class AccountManagerTests: XCTestCase {
         XCTAssertEqual(updates.first?["type"] as? String, "encrypted-type")
         XCTAssertEqual(updates.first?["info"] as? String, "encrypted-info")
         XCTAssertEqual(mapper.registeredDevicesCallEntryIDs, ["unified-device"])
+        XCTAssertEqual(mapper.unifiedReadEnabledValues, [true])
         XCTAssertEqual(result.map(\.id), ["unified-device"])
+        XCTAssertEqual(readFlagCallCount, 1)
     }
 
     func testWhenUnifiedReadIsDisabledThenUpdatingDeviceMapsLegacyResponse() async throws {
@@ -905,12 +917,16 @@ final class AccountManagerTests: XCTestCase {
         let api = RemoteAPIRequestCreatingMock()
         let endpoints = Endpoints(baseURL: Self.baseURL)
         let mapper = RegisteredDeviceMappingMock()
-        mapper.needsCurrentDeviceInfoRepair = true
+        var readFlagCallCount = 0
         let accountManager = AccountManager(endpoints: endpoints,
                                             api: api,
                                             crypter: CryptingMock(),
                                             registeredDeviceMapper: mapper,
-                                            isScopedAccessCredentialsEnabled: { true })
+                                            isScopedAccessCredentialsEnabled: { true },
+                                            canReadUnifiedDeviceList: {
+                                                readFlagCallCount += 1
+                                                return false
+                                            })
         api.fakeRequests[devicesURL(for: endpoints)] = makeJSONRequest("""
         {
             "devices": {
@@ -937,8 +953,9 @@ final class AccountManagerTests: XCTestCase {
         let devices = result.devices
 
         XCTAssertEqual(mapper.registeredDevicesCallEntryIDs, ["v2-device"])
+        XCTAssertEqual(mapper.unifiedReadEnabledValues, [false])
         XCTAssertEqual(devices.map(\.id), ["v2-device"])
-        XCTAssertTrue(result.needsCurrentDeviceInfoRepair)
+        XCTAssertEqual(readFlagCallCount, 1)
         XCTAssertFalse(api.createRequestCallArgs.contains { $0.url == endpoints.logoutDevice })
     }
 
@@ -1178,12 +1195,14 @@ private final class DeviceInfoCodingMock: DeviceInfoCoding {
 private final class RegisteredDeviceMappingMock: RegisteredDeviceMapping {
 
     private(set) var registeredDevicesCallEntryIDs: [String] = []
+    private(set) var unifiedReadEnabledValues: [Bool] = []
     private(set) var defaultCredentialLoginEntryIDs: [String] = []
-    var needsCurrentDeviceInfoRepair = false
 
     func registeredDevicesWithRepairState(from entries: [RegisteredDeviceEntry],
-                                          account: SyncAccount) async -> RegisteredDeviceMappingResult {
+                                          account: SyncAccount,
+                                          isUnifiedReadEnabled: Bool) async -> RegisteredDeviceMappingResult {
         registeredDevicesCallEntryIDs = entries.map(\.id)
+        unifiedReadEnabledValues.append(isUnifiedReadEnabled)
         let devices = entries.map { entry in
             RegisteredDevice(id: entry.id,
                              name: entry.name ?? "",
@@ -1191,7 +1210,7 @@ private final class RegisteredDeviceMappingMock: RegisteredDeviceMapping {
                              credentialId: entry.credentialId)
         }
         return RegisteredDeviceMappingResult(devices: devices,
-                                             needsCurrentDeviceInfoRepair: needsCurrentDeviceInfoRepair)
+                                             needsCurrentDeviceInfoRepair: false)
     }
 
     func registeredDevice(fromLegacyEntry entry: RegisteredDeviceEntry, account: SyncAccount) -> RegisteredDevice? {

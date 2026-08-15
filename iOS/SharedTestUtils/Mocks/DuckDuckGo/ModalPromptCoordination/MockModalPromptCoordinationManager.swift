@@ -26,7 +26,6 @@ final class MockModalPromptCoordinationManager: ModalPromptCoordinationManaging 
     private(set) var capturedPresenter: ModalPromptPresenter?
     private(set) var callCount = 0
     var didPresentModalPromptThisSession = false
-    var coordinatedPresentationDisposition = ModalPromptLeaseDisposition.retained
     var reconcilePresentedModalResult = false
     private(set) var capturedModalLease: PromoQueueModalLease?
     private(set) var reconcilePresentedModalCallCount = 0
@@ -42,16 +41,12 @@ final class MockModalPromptCoordinationManager: ModalPromptCoordinationManaging 
     func presentModalPromptIfNeeded(
         from presenter: ModalPromptPresenter,
         with lease: PromoQueueModalLease
-    ) -> ModalPromptLeaseDisposition {
+    ) {
         didCallPresentModalPromptIfNeeded = true
         capturedPresenter = presenter
         capturedModalLease = lease
         callCount += 1
         onPresentCoordinated?()
-        if coordinatedPresentationDisposition == .released {
-            lease.release()
-        }
-        return coordinatedPresentationDisposition
     }
 
     func reconcilePresentedModal() -> Bool {

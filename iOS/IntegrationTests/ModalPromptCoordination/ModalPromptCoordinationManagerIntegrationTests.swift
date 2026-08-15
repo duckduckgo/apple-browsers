@@ -357,11 +357,10 @@ final class ModalPromptCoordinationManagerIntegrationTests {
             return
         }
 
-        let disposition = sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
+        sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
 
-        #expect(disposition == .retained)
-        #expect(promoQueueLeaseArbiter.snapshot.modalAttemptIdentity == lease.attemptIdentity)
-        #expect(sut.modalAttemptPhase == .presentationActive(lease.attemptIdentity))
+        #expect(promoQueueLeaseArbiter.snapshot.modalOwnershipIdentity == lease.ownershipIdentity)
+        #expect(sut.modalAttemptPhase == .presentationActive(lease.ownershipIdentity))
         #expect(sut.didActuallyPresentModalPromptThisSession)
         #expect(cooldownManager.isInCooldownPeriod)
         let storedTimestamp = try keyValueStore.object(
@@ -386,9 +385,8 @@ final class ModalPromptCoordinationManagerIntegrationTests {
             return
         }
 
-        let disposition = sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
+        sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
 
-        #expect(disposition == .released)
         #expect(!promoQueueLeaseArbiter.snapshot.hasModalLease)
         #expect(!provider.didCallProvideModalPrompt)
         #expect(!presenterMock.didCallPresent)

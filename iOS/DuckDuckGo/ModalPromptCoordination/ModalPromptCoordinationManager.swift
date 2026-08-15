@@ -27,26 +27,19 @@ protocol ModalPromptCoordinationManaging {
     func presentModalPromptIfNeeded(
         from presenter: ModalPromptPresenter,
         with lease: PromoQueueModalLease
-    ) -> ModalPromptLeaseDisposition
+    )
     func reconcilePresentedModal() -> Bool
-}
-
-enum ModalPromptLeaseDisposition: Equatable {
-    /// The manager kept the lease for a selected or presented modal.
-    case retained
-    /// The manager released the lease because no modal will be presented.
-    case released
 }
 
 enum ModalPromptAttemptPhase: Equatable {
     /// No coordinated modal owns a lease.
     case idle
     /// A modal is being selected; carries this lease acquisition's identity.
-    case evaluating(PromoQueueModalAttemptIdentity)
+    case evaluating(PromoQueueModalOwnershipIdentity)
     /// A modal was selected and scheduled; carries this lease acquisition's identity.
-    case committed(PromoQueueModalAttemptIdentity)
+    case committed(PromoQueueModalOwnershipIdentity)
     /// The modal root was handed to UIKit; carries this lease acquisition's identity.
-    case presentationActive(PromoQueueModalAttemptIdentity)
+    case presentationActive(PromoQueueModalOwnershipIdentity)
 }
 
 /// Manages the coordination and presentation of modal prompts based on priority and cooldown rules.
@@ -117,11 +110,11 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
         case .idle:
             return .idle
         case .evaluating(let lease):
-            return .evaluating(lease.attemptIdentity)
+            return .evaluating(lease.ownershipIdentity)
         case .committed(let committedAttempt):
-            return .committed(committedAttempt.lease.attemptIdentity)
+            return .committed(committedAttempt.lease.ownershipIdentity)
         case .presentationActive(let lease, _):
-            return .presentationActive(lease.attemptIdentity)
+            return .presentationActive(lease.ownershipIdentity)
         }
     }
 
@@ -170,18 +163,18 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
     func presentModalPromptIfNeeded(
         from presenter: ModalPromptPresenter,
         with lease: PromoQueueModalLease
-    ) -> ModalPromptLeaseDisposition {
+    ) {
         guard modalAttemptPhase == .idle else {
             assertionFailure("A coordinated modal lease cannot replace an active modal attempt.")
             lease.release()
-            return .released
+            return
         }
 
         attemptState = .evaluating(lease)
 
         guard let selectedPrompt = selectModalPrompt() else {
             releaseCoordinationAttempt()
-            return .released
+            return
         }
 
         let committedAttempt = CommittedAttempt(
@@ -191,7 +184,6 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
         attemptState = .committed(committedAttempt)
         Logger.modalPrompt.debug("[Modal Prompt Coordination] - Presenting modal from \(type(of: selectedPrompt.provider))")
         presentCoordinatedModal(committedAttempt, from: presenter)
-        return .retained
     }
 
     /// Releases a coordinated modal only after the exact selected root is no longer attached.
@@ -253,7 +245,7 @@ private extension ModalPromptCoordinationManager {
         scheduler.schedule(after: 0.1) { [weak self] in
             guard let self,
                   case .committed(let currentAttempt) = self.attemptState,
-                  currentAttempt.lease.attemptIdentity == committedAttempt.lease.attemptIdentity else {
+                  currentAttempt.lease.ownershipIdentity == committedAttempt.lease.ownershipIdentity else {
                 return
             }
 

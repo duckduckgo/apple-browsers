@@ -53,9 +53,8 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
         )
         let lease = try acquireModalLease()
 
-        let disposition = sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
+        sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
 
-        #expect(disposition == .released)
         #expect(!promoQueueLeaseArbiter.snapshot.hasModalLease)
         #expect(sut.modalAttemptPhase == .idle)
         #expect(!provider.didCallProvideModalPrompt)
@@ -74,9 +73,8 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
         )
         let lease = try acquireModalLease()
 
-        let disposition = sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
+        sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
 
-        #expect(disposition == .released)
         #expect(!promoQueueLeaseArbiter.snapshot.hasModalLease)
         #expect(provider.didCallProvideModalPrompt)
         #expect(!sut.hasActiveOrPendingModalAttempt)
@@ -102,9 +100,8 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
         )
         let lease = try acquireModalLease()
 
-        let disposition = sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
+        sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
 
-        #expect(disposition == .retained)
         #expect(ineligibleProvider.capturedIsOnboardingComplete == false)
         #expect(!ineligibleProvider.didCallProvideModalPrompt)
         #expect(selectedProvider.capturedIsOnboardingComplete == false)
@@ -135,11 +132,10 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
         let lease = try acquireModalLease()
 
         // WHEN
-        let disposition = sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
+        sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
 
         // THEN — incomplete onboarding gates the provider out before it is ever asked for a prompt, and the lease goes
         // straight back so a waiting promo is not blocked by an attempt that can never present.
-        #expect(disposition == .released)
         #expect(provider.capturedIsOnboardingComplete == false)
         #expect(!provider.didCallProvideModalPrompt)
         #expect(!promoQueueLeaseArbiter.snapshot.hasModalLease)
@@ -150,7 +146,7 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
 
     @available(iOS 16, *)
     @Test("Same Lease Attempt Moves From Committed To Presentation Active", .timeLimit(.minutes(1)))
-    func whenCoordinatedPromptIsSelectedThenSameAttemptIdentityMovesThroughPhases() throws {
+    func whenCoordinatedPromptIsSelectedThenSameOwnershipIdentityMovesThroughPhases() throws {
         cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
         let provider = MockModalPromptProvider()
         sut = ModalPromptCoordinationManager(
@@ -161,18 +157,17 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
         )
         let lease = try acquireModalLease()
 
-        let disposition = sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
+        sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
 
-        #expect(disposition == .retained)
-        #expect(sut.modalAttemptPhase == .committed(lease.attemptIdentity))
+        #expect(sut.modalAttemptPhase == .committed(lease.ownershipIdentity))
         #expect(!sut.didActuallyPresentModalPromptThisSession)
         #expect(sut.didPresentModalPromptThisSession)
 
         schedulerMock.executeScheduledBlock()
 
-        #expect(sut.modalAttemptPhase == .presentationActive(lease.attemptIdentity))
+        #expect(sut.modalAttemptPhase == .presentationActive(lease.ownershipIdentity))
         #expect(sut.didActuallyPresentModalPromptThisSession)
-        #expect(promoQueueLeaseArbiter.snapshot.modalAttemptIdentity == lease.attemptIdentity)
+        #expect(promoQueueLeaseArbiter.snapshot.modalOwnershipIdentity == lease.ownershipIdentity)
     }
 
     @available(iOS 16, *)
@@ -199,10 +194,10 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
             provider.modalConfigurationToReturn = ModalPromptConfiguration(viewController: exactRoot)
             attachmentChecker.markAttached(exactRoot)
 
-            _ = sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
+            sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
             scheduler.executeAndReleaseScheduledBlock()
 
-            #expect(sut.modalAttemptPhase == .presentationActive(lease.attemptIdentity))
+            #expect(sut.modalAttemptPhase == .presentationActive(lease.ownershipIdentity))
             #expect(!sut.reconcilePresentedModal())
             #expect(promoQueueLeaseArbiter.snapshot.hasModalLease)
 

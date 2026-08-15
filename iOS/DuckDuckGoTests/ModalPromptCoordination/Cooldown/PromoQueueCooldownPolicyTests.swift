@@ -143,6 +143,16 @@ final class PromoQueueCooldownPolicyTests {
     }
 
     @available(iOS 16, *)
+    @Test("A first RMF history read failure with no cache is no known history", .timeLimit(.minutes(1)))
+    func firstStorageReadFailureWithNoCache() {
+        let keyValueStore = InMemoryThrowingKeyValueStore()
+        keyValueStore.throwOnRead = StoreError.read
+        let history = PromoQueueRemoteMessageHistoryStore(keyValueStore: keyValueStore)
+
+        #expect(history.lastConfirmedAppearance == nil)
+    }
+
+    @available(iOS 16, *)
     @Test("A durable write failure still confirms the service-owned lease once", .timeLimit(.minutes(1)))
     func leaseConfirmationSurvivesDurableWriteFailure() throws {
         let keyValueStore = InMemoryThrowingKeyValueStore()

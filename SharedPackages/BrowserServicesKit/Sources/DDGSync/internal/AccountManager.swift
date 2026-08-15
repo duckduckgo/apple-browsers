@@ -148,6 +148,7 @@ struct AccountManager: AccountManaging {
         guard let token = account.token else {
             throw SyncError.noToken
         }
+        let isUnifiedReadEnabled = canReadUnifiedDeviceList()
 
         let request = api.createAuthenticatedGetRequest(url: endpoints.devices, authToken: token)
         let result = try await request.execute()
@@ -168,8 +169,11 @@ struct AccountManager: AccountManaging {
             } else {
                 entries = result.devices?.entries ?? []
             }
-            let mappingResult = await registeredDeviceMapper.registeredDevicesWithRepairState(from: entries, account: account)
-            guard !canReadUnifiedDeviceList() else {
+            let mappingResult = await registeredDeviceMapper.registeredDevicesWithRepairState(
+                from: entries,
+                account: account,
+                isUnifiedReadEnabled: isUnifiedReadEnabled)
+            guard !isUnifiedReadEnabled else {
                 return mappingResult
             }
             return try await applyingLegacyDecryptFailureBehavior(to: mappingResult,
@@ -213,6 +217,7 @@ struct AccountManager: AccountManaging {
         guard let token = account.token else {
             throw SyncError.noToken
         }
+        let isUnifiedReadEnabled = canReadUnifiedDeviceList()
 
         let parameters = UpdateDevices.Parameters(updates: [update])
         let requestJSON = try JSONEncoder.snakeCaseKeys.encode(parameters)
@@ -232,12 +237,14 @@ struct AccountManager: AccountManaging {
 
         Logger.sync.debug("Sync-UnifiedDevices: device update PATCH succeeded")
         let entries: [RegisteredDeviceEntry]
-        if canReadUnifiedDeviceList(), !result.devicesV2.isEmpty {
+        if isUnifiedReadEnabled, !result.devicesV2.isEmpty {
             entries = result.devicesV2
         } else {
             entries = result.devices
         }
-        return await registeredDeviceMapper.registeredDevices(from: entries, account: account)
+        return await registeredDeviceMapper.registeredDevices(from: entries,
+                                                              account: account,
+                                                              isUnifiedReadEnabled: isUnifiedReadEnabled)
     }
 
     func refreshToken(_ account: SyncAccount, deviceName: String) async throws -> LoginResult {
@@ -298,6 +305,7 @@ struct AccountManager: AccountManaging {
                        deviceName: String,
                        deviceType: String) async throws -> LoginResult {
 
+        let isUnifiedReadEnabled = canReadUnifiedDeviceList()
         let encryptedDeviceName = try crypter.encryptAndBase64Encode(deviceName, using: info.primaryKey)
         let encryptedDeviceType = try crypter.encryptAndBase64Encode(deviceType, using: info.primaryKey)
 
@@ -342,10 +350,12 @@ struct AccountManager: AccountManaging {
                                   token: token,
                                   state: .addingNewDevice)
         let devices: [RegisteredDevice]
-        if canReadUnifiedDeviceList(),
+        if isUnifiedReadEnabled,
            let devicesV2 = result.devicesV2,
            !devicesV2.isEmpty {
-            devices = await registeredDeviceMapper.registeredDevices(from: devicesV2, account: account)
+            devices = await registeredDeviceMapper.registeredDevices(from: devicesV2,
+                                                                      account: account,
+                                                                      isUnifiedReadEnabled: isUnifiedReadEnabled)
         } else {
             devices = result.devices.compactMap { device in
                 registeredDeviceMapper.registeredDevice(fromDefaultCredentialLoginEntryWithID: device.id,

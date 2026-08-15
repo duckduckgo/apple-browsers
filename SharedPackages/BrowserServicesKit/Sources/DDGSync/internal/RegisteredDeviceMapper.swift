@@ -39,7 +39,8 @@ struct RegisteredDeviceMappingResult {
 
 protocol RegisteredDeviceMapping {
     func registeredDevicesWithRepairState(from entries: [RegisteredDeviceEntry],
-                                          account: SyncAccount) async -> RegisteredDeviceMappingResult
+                                          account: SyncAccount,
+                                          isUnifiedReadEnabled: Bool) async -> RegisteredDeviceMappingResult
     func registeredDevice(fromLegacyEntry entry: RegisteredDeviceEntry, account: SyncAccount) -> RegisteredDevice?
     func registeredDevice(fromDefaultCredentialLoginEntryWithID id: String,
                           encryptedName: String,
@@ -48,8 +49,12 @@ protocol RegisteredDeviceMapping {
 }
 
 extension RegisteredDeviceMapping {
-    func registeredDevices(from entries: [RegisteredDeviceEntry], account: SyncAccount) async -> [RegisteredDevice] {
-        await registeredDevicesWithRepairState(from: entries, account: account).devices
+    func registeredDevices(from entries: [RegisteredDeviceEntry],
+                           account: SyncAccount,
+                           isUnifiedReadEnabled: Bool) async -> [RegisteredDevice] {
+        await registeredDevicesWithRepairState(from: entries,
+                                               account: account,
+                                               isUnifiedReadEnabled: isUnifiedReadEnabled).devices
     }
 }
 
@@ -131,7 +136,18 @@ struct RegisteredDeviceMapper: RegisteredDeviceMapping {
 
     func registeredDevicesWithRepairState(from entries: [RegisteredDeviceEntry],
                                           account: SyncAccount) async -> RegisteredDeviceMappingResult {
-        let isUnifiedReadEnabled = canReadUnifiedDeviceList()
+        await registeredDevicesWithRepairState(from: entries,
+                                               account: account,
+                                               isUnifiedReadEnabled: canReadUnifiedDeviceList())
+    }
+
+    func registeredDevices(from entries: [RegisteredDeviceEntry], account: SyncAccount) async -> [RegisteredDevice] {
+        await registeredDevicesWithRepairState(from: entries, account: account).devices
+    }
+
+    func registeredDevicesWithRepairState(from entries: [RegisteredDeviceEntry],
+                                          account: SyncAccount,
+                                          isUnifiedReadEnabled: Bool) async -> RegisteredDeviceMappingResult {
         let accountInfoKey = await accountInfoKeyIfNeeded(for: entries,
                                                           account: account,
                                                           isUnifiedReadEnabled: isUnifiedReadEnabled)

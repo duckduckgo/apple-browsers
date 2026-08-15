@@ -2,13 +2,9 @@
 
 ## Status and source of truth
 
-This document is the proposed final design for the iOS Promo Queue iteration. It supersedes the implementation direction in:
+This is the self-contained source of truth for the final iOS Promo Queue architecture. It contains the complete problem statement, decisions, behavior, limitations, rollout, and verification strategy.
 
-- [`tech_design_oridingal.md`](tech_design_oridingal.md);
-- [`tech_design_adjusted.md`](tech_design_adjusted.md); and
-- [`new_direction_proposal.md`](new_direction_proposal.md), where this document makes the remaining choices explicit.
-
-Only [PR #6087](https://github.com/duckduckgo/apple-browsers/pull/6087) is part of the merged iOS baseline. The larger implementation described by the adjusted design is useful historical context, but it is not the target architecture.
+Only [PR #6087](https://github.com/duckduckgo/apple-browsers/pull/6087) is part of the merged iOS baseline. A larger renderer-coordination implementation was explored but is not the target architecture.
 
 The implementation starts from `bartosz/promo-q-simp-2`. At the 2026-08-14 review checkpoint, its HEAD is `7858a17094d8`; it is 2 commits ahead of and 7 commits behind local `main` (`375bd10e56c5`). Repository synchronization is an implementation preflight decision, not part of this design. The scope is iOS only. Android is a reference implementation, not a delivery target.
 
@@ -21,13 +17,13 @@ The following corrections are incorporated into this revision:
 - the admitted message and its trigger lane stay pinned for one ownership;
 - appearance confirmation and cooldown persistence have an explicit service-owned wiring path;
 - unsupported RMF content is rejected before admission;
-- each public RMF lease exposes one opaque acquisition identity used for callback validation and SwiftUI identity;
+- each returned RMF lease exposes one opaque acquisition identity through its production contract for callback validation and SwiftUI identity;
 - dismissal and unique-shown guarantees match the existing best-effort store APIs; and
 - backgrounding unpublishes RMF, signals consumers, releases ownership, and disarms RMF admission until another explicit NTP preparation.
 
 ## Product decisions confirmed — 2026-08-15
 
-- **Modal scope:** “modal sheets” means launch-promo providers routed through `PromoCoordinationService`, not every arbitrary UIKit sheet. This matches the original and adjusted designs.
+- **Modal scope:** “modal sheets” means launch-promo providers routed through `PromoCoordinationService`, not every arbitrary UIKit sheet.
 - **NTP integration seam:** an NTP container has one Promo Queue-specific integration point: call `prepareForNTP(openedAfterIdle:)` once per content activation, before its initial eligibility read. Lease ownership, cooldowns, refresh, release, background handling, and accounting remain central. No surface reports visibility or lifecycle state.
 - **Mixed triggers:** the first admitted message and trigger lane stay authoritative for that ownership. A later renderer request cannot replace a still-valid owner; dismissal, expiry, replacement, onboarding suppression, backgrounding, or another real invalidation ends the pin.
 - **Persistence semantics:** existing dismissal and unique-shown behaviors remain best effort. This iteration does not widen shared store APIs, add a unique-shown reservation, or add telemetry for stronger guarantees.
@@ -46,7 +42,7 @@ RMF ownership follows the active message, not the physical view:
 - backgrounding first unpublishes the RMF and then releases it; and
 - process termination clears all in-memory ownership.
 
-This is intentionally less precise than the discarded design and follows the useful part of Android's implementation: claim before publishing NTP view state and accept that an active card can over-hold the slot. iOS centralizes that decision one level earlier in its shared message source. It also retains two inexpensive safety improvements: ownership is keyed by message ID, and the RMF cooldown is confirmed on actual appearance rather than when the message disappears.
+This deliberately trades renderer-level precision for a smaller source-owned contract: claim before publishing NTP view state, do not track which physical renderer is visible, and accept that an active card can over-hold the slot until message invalidation or backgrounding. iOS centralizes the decision in its shared message source. Ownership is keyed by message ID, and RMF cooldown history begins only on actual appearance rather than on selection or disappearance.
 
 The result is a coordination seam, not a scheduler or general-purpose queue.
 
@@ -61,7 +57,7 @@ Prevent launch-promo modal sheets managed by `PromoCoordinationService` and NTP 
 - The existing modal provider order, eligibility, presentation, cooldown, and accounting behavior.
 - Existing `RecentModalPromptStatusProviding` behavior used to suppress other session promos while a modal attempt is pending or active.
 - Source-owned RMF ownership in the shared `HomePageConfiguration`, terminated by message lifecycle or the one app-scoped background checkpoint.
-- The directional Promo Queue cooldowns from the adjusted design.
+- Directional Promo Queue cooldowns: launch modal → RMF 10 minutes, RMF → RMF 10 minutes, and RMF → launch modal 24 hours; launch modal → launch modal remains owned by the existing remotely configured policy.
 - Existing RMF event definitions, metric-eligibility checks, dismissal, and action handling. In coordinated mode, regular shown fires once per ownership after actual appearance; unique-shown is evaluated at that point and preserves the existing best-effort first-ever-message semantics. Legacy-mode frequency remains unchanged.
 - A startup-latched feature mode behind `.promoPresentationCoordination`.
 - Focused behavior-level tests and internal diagnostics.
@@ -81,11 +77,51 @@ Prevent launch-promo modal sheets managed by `PromoCoordinationService` and NTP 
 
 ## Background
 
-PR #6087 established a correct but broad foundation: `PromoQueueLeaseArbiter`, modal attempt phases, exact-root reconciliation, live feature transitions, per-surface RMF identities, and retry registration. The discarded follow-up design then added explicit exposure reporting from the standard NTP, suggestion tray, unified input, and overlays; renderer selection; logical sessions; handoff/drain state; and exact removal terminals.
+PR #6087 established a correct but broad foundation: `PromoQueueLeaseArbiter`, modal attempt phases, exact-root reconciliation, live feature transitions, per-surface RMF identities, and retry registration. A later, unmerged renderer-coordination approach added explicit exposure reporting from the standard NTP, suggestion tray, unified input, and overlays; renderer selection; logical sessions; handoff/drain state; and exact removal terminals.
 
-That design solved more than the product problem. It attempted to prove which physical NTP renderer was visible at every moment. It consequently required every current and future host or covering overlay to report the correct state. A missing integration would fail silently.
+That approach solved more than the product problem. It attempted to prove which physical NTP renderer was visible at every moment. It consequently required every current and future host or covering overlay to report the correct state. A missing integration would fail silently.
 
 The product requirement does not need that proof. It needs an atomic decision before either conflicting kind of promo is admitted.
+
+## Evolution from the initial simplified direction
+
+The initial simplified direction can be stated without any external context: use one app-scoped slot; acquire it before publishing a launch modal or NTP RMF; prefer message-lifecycle RMF ownership over physical-view tracking; let actual card appearance confirm the impression; release on message removal and app background; and use weak-token recovery. The final design preserves that center.
+
+The following table is the complete list of material architectural or behavioral differences, factual corrections, and previously unspecified final choices. Naming, file placement, and ordinary implementation detail are not counted.
+
+| Initial simplified direction | Final choice | Why the final design chooses it |
+| --- | --- | --- |
+| Each NTP messages model asks the gate and retains a lease. | The one shared `HomePageConfiguration` asks once and owns the lease before publishing to every model. | iOS already has one app-scoped source feeding all three renderers. Owning at that source removes duplicate acquisition, release, and surface-integration work while preserving pre-publication admission. |
+| Each physical surface can join an owner with the same message ID; view-lifetime mode would use a retain count. | Current renderers share one source-owned lease, with no per-surface join or retain count. Same-ID reuse occurs within that source. | There is only one logical RMF source today. Modeling several owners would recreate the view bookkeeping this design is intended to remove. A future independent RMF source gets a deliberate source adapter rather than implicit joining. |
+| RMF selection starts when an NTP model decides to render. | Coordinated initialization is RMF-inert; `prepareForNTP(openedAfterIdle:)` requests and prepares selection at an actual NTP content-loading seam and can arm admission only while the app is active. | `HomePageConfiguration` is created before launch-modal evaluation, including when a website tab is restored. Eager acquisition could invisibly claim the slot and starve a launch modal. Conditional suggestion-tray and unified-input containers also need content prepared before they decide whether to construct NTP UI. |
+| Existing models react independently to `remoteMessagesDidChange`. | `HomePageConfiguration` is the sole coordinated store observer and emits a separate synchronous, object-scoped content signal. Models and conditional hosts only consume the resulting array. | Several models selecting into one mutable source would be duplicate and order-dependent. A distinct source signal also updates hosts that inspect `homeMessages` before creating a model without notification recursion. |
+| A different selected message replaces the old one and asks afresh; trigger interactions are unspecified. | The first admitted message and trigger lane remain pinned while valid. A competing `afterIdle` or no-trigger request cannot replace it. | iOS entry points can query different trigger lanes. Last-caller-wins replacement could release an appeared card, hit RMF-to-RMF cooldown, and blank every renderer. Pinning is one stored lane and an early validity check, not a renderer state machine. |
+| Store-driven retries have no defined trigger lane. | The source remembers the last explicitly prepared lane while armed and uses it only when no valid owner exists. | A store notification has no request parameters. Retaining the last real NTP request makes retry deterministic without asking renderers to register or report state. |
+| The generic gate checks onboarding along with ownership and cooldown. | Existing RMF selection keeps onboarding policy; the gate owns only mutual exclusion and cross-promo cooldowns. | Onboarding is already an RMF eligibility concern with an established source. Keeping policy with its existing owner makes the gate smaller and avoids duplicating product rules. |
+| No supported-content/buildability precheck is specified before acquisition; physical invisibility in Fire/layout states is accepted. | A pure builder-backed structural renderability predicate runs before acquisition, while Fire/offscreen/layout over-hold remains accepted. | Missing or unsupported content can produce no card and therefore no `onAppear`. Acquiring it would let an unbuildable candidate hold the slot indefinitely. This content check adds no physical visibility reporting. |
+| Message disappearance releases the card; background also frees it. | All endings use unpublish → synchronous source signal → release. Background additionally disarms acquisition and clears trigger state; foreground only enables the next explicit preparation. | Ordered teardown prevents a modal from acquiring while stale RMF content is still published. Disarming prevents a store notification from immediately reacquiring in the background. Background remains one app-scoped exception, not a renderer callback. |
+| Release terminals are dismissal, expiry, or replacement. | Onboarding suppression and loss of eligible/renderable content are also source-lifecycle terminals; ordinary NTP disappearance, tab switching, Fire/layout changes, and window detachment are not. | A source that can no longer publish a valid card must not keep ownership. View-derived terminals would reintroduce the callbacks and ambiguity the simpler approach removes. |
+| Releasing on ordinary view disappearance is presented as a small optional upgrade because the model is assumed to receive that signal. | Ordinary view disappearance is explicitly not a terminal, and no RMF `viewDidDisappear` contract is added. | The current RMF model has no such signal, and several physical renderers may represent one source-owned message. A safe last-view release would require identities or retain counting, reintroducing the machinery being removed. |
+| Message ID is the relevant lease identity. | Every acquisition also has an opaque identity used for stale-callback validation and SwiftUI diffing. | Releasing and rapidly reacquiring the same message ID must make old asynchronous callbacks inert and force a fresh card identity so `onAppear` can confirm the new ownership. |
+| `markShown()` on a lease both confirms and records the first impression. | The raw arbiter token only confirms once; a service-owned wrapper records cooldown history; `HomePageConfiguration` fires existing RMF events. | This explicitly connects appearance to persistence without putting storage or analytics in the mutual-exclusion primitive. It also gives each responsibility one owner. |
+| Shown uniqueness and dismissal-persistence guarantees are unspecified; dismissal is treated as a lifecycle terminal. | Regular shown is once per admitted ownership; unique-shown and dismissal persistence retain their existing best-effort semantics. Dismissal teardown occurs after the attempt completes. | The existing store performs an asynchronous check/update for unique-shown and exposes dismissal as `async Void` while swallowing persistence failures. Stronger guarantees would require wider shared APIs or new reservation state unrelated to overlap prevention. |
+| A modal needs to ask before presentation; the exact admission point is unspecified. | The service acquires and checks cross-promo cooldown before it asks any provider to evaluate. | `provideModalPrompt()` may mutate eligibility or accounting. Evaluation must not consume or side-effect a modal that RMF ownership already prevents from showing. |
+| A modal releases when dismissed. | An admitted modal retains the same lease through evaluation, scheduling, and attachment; existing checkpoints release it only after its exact root detaches. | UIKit may present nested children, and provider-specific dismissal callbacks would broaden integration. Exact-root ownership already exists and cheaply prevents early release; lazy reconciliation accepts bounded over-hold. |
+| “Only the holder can be on screen” can be read as a frame-perfect rendering guarantee. | The contract guarantees admission ordering and source removal before release, not proof that every SwiftUI exit-animation pixel has disappeared. | A frame-perfect guarantee and immediate modal retry would require exact physical-renderer removal coordination. The product issue is prevented without rebuilding that state machine. |
+| Cooldown is one gate condition without directional values or persistence details. | The policy explicitly defines modal→RMF 10 minutes, RMF→RMF 10 minutes, RMF→modal 24 hours, and existing modal→modal behavior, based on confirmed appearances. | Stating the inherited directional policy makes this document complete. Persisting only confirmed source events avoids consuming cooldown for a denied or never-mounted promo. |
+| The interface is a generic `PromoGate` and `PromoLease`. | iOS uses typed, main-actor, synchronous, fail-fast modal and RMF admission contracts with identity-safe weak tokens. | Typed ownership prevents cross-kind misuse, and non-yielding admission preserves atomicity. It keeps the useful weak-token recovery without Android's waiter or a generic public framework. |
+| Option B is presented as matching Android, while iOS separately proposes background release. | Android is used only as evidence for claim-before-publication and source-owned over-hold. iOS preserves its background-release choice but deliberately differs on message identity, cooldown confirmation, and modal-root lifetime. | Inspection showed Android's app-scoped coordinator is type-keyed, its NTP claim is not released on background, and its selection model does not have iOS's three independently requested trigger lanes. Copying those assumptions would be unsafe on iOS. |
+| The exact launch-modal provider boundary is not enumerated. | Coordination covers the seven launch-promo provider categories routed through `PromoCoordinationService`, not arbitrary UIKit presentations. | This states the confirmed product scope and preserves a small blast radius. Intercepting every UIKit sheet would require central presentation interception or widespread integrations. |
+| Retry timing is not specified beyond existing lifecycle/configuration events. | Retries occur only at the natural checkpoints listed in this document. | This makes delayed progress explicit without adding a waiter, timer, release broadcast, or renderer registration. |
+| Feature-mode transition behavior is not specified. | Mode is startup-latched behind the existing feature flag. | Requiring relaunch is a chosen simplification that avoids live-mode migration, re-adoption, and lease-invalidation state for an initially disabled feature. |
+| Fire mode and constrained landscape are both described as possible invisible-card states. | Fire-mode suppression is an accepted over-hold; landscape is manual behavior discovery, not a special ownership rule. | Current iOS source confirms Fire suppression but no explicit landscape suppression. The design should not add lifecycle machinery for an unverified condition. |
+| Operational diagnostics and rollout are not defined. | The existing internal debug screen exposes read-only ownership/cooldown state and an explicit RMF cooldown reset; remote rollout remains a separate externally owned step. | Focused diagnostics make long cooldowns testable without force-acquire hooks or telemetry, and the rollout definition is required to reach all users safely. |
+
+### Fidelity assessment
+
+This is a faithful implementation of the initial simplified direction, not a literal transcription of its sample interfaces. It keeps every defining idea: one app-scoped slot, admission before modal presentation and RMF publication, message/source-lifetime RMF ownership, background release, no renderer visibility or handoff state, actual-appearance confirmation, weak-token recovery, and acceptance of bounded over-hold. iOS strengthens modal timing by admitting before provider side effects.
+
+The largest adaptation—moving lease ownership from each model to the already-shared source—makes the initial simplified direction even simpler in the actual iOS architecture. Most changes close concrete lifecycle or API gaps at that same seam; the remaining choices deliberately simplify live-mode/retry behavior or complete diagnostics and rollout. None requires surface registration, coverage callbacks, retain counting, renderer selection, or a retry scheduler. The design therefore remains true to that direction's intended trade: less physical-view precision in exchange for a much smaller and more maintainable system.
 
 ## Android reference
 
@@ -112,7 +148,7 @@ Android's claim is type-keyed rather than message-keyed: same-type `NTP_CARD` ca
 | RMF cooldown confirmation | Raw active-message flow becomes `null`, regardless of physical appearance | First actual admitted appearance |
 | Renderer visibility | Not tracked | Not tracked |
 
-Message identity and exact modal-root ownership are retained because they are already inexpensive on iOS and make stale callbacks safer. Android's one-second wait, type-only identity, early modal release, and background retention are not copied. The iOS background choice follows the proposal and deliberately favors freeing the ownership slot so modal admission can be reconsidered, while preserving any confirmed cooldown history.
+Message identity and exact modal-root ownership are retained because they are already inexpensive on iOS and make stale callbacks safer. Android's one-second wait, type-only identity, early modal release, and background retention are not copied. The iOS background choice deliberately favors freeing the ownership slot so modal admission can be reconsidered, while preserving any confirmed cooldown history.
 
 ## Design principles
 
@@ -180,7 +216,7 @@ The requesting component retains its token strongly for the complete ownership l
 
 The raw RMF token exposes `confirmAppearance() -> Bool`. It returns `true` only for the first valid confirmation of the current acquisition and owns no persistence or event reporting. This keeps the arbiter a pure mutual-exclusion primitive.
 
-The read-only snapshot needed by tests and the debug screen contains only the current owner, its public debug identity, and whether the current RMF ownership has confirmed an appearance.
+The read-only snapshot consumed by the existing internal debug screen contains only the current owner, its diagnostic identity, and whether the current RMF ownership has confirmed an appearance. Tests may exercise this production diagnostic contract, but fields must not be added merely for test inspection.
 
 ### `PromoCoordinationService`
 
@@ -200,7 +236,7 @@ Acquisition and cooldown denial occur before provider evaluation because `provid
 
 For RMF, a narrow `PromoGating` protocol exposes coordinated mode and synchronous acquisition by message ID. `HomePageConfiguration` is the sole current client. Before RMF acquisition the service lazily reconciles an exact modal root, then checks the slot and modal/RMF-to-RMF cooldowns. If the cooldown denies a request after temporary slot acquisition, the service releases that acquisition synchronously before returning no lease.
 
-The service returns a small public RMF lease wrapper that strongly retains the raw arbiter token and exposes its opaque, hashable acquisition identity. Its no-argument `markShown() -> Bool` calls the raw token's `confirmAppearance()` and, only when that returns `true`, records the RMF cooldown timestamp through the injected history component. It remains nonthrowing and returns `true` for that first valid appearance even if durable persistence fails; the history component keeps its in-process value authoritative and logs/absorbs the storage error. Release forwards to the raw token. `HomePageConfiguration` retains only this wrapper and remains responsible for firing existing RMF shown events after a successful `markShown()`. This assigns persistence explicitly without putting it in the arbiter.
+The service returns a small RMF lease wrapper that strongly retains the raw arbiter token and exposes its opaque, hashable acquisition identity through the production gate contract. Its no-argument `markShown() -> Bool` calls the raw token's `confirmAppearance()` and, only when that returns `true`, records the RMF cooldown timestamp through the injected history component. It remains nonthrowing and returns `true` for that first valid appearance even if durable persistence fails; the history component keeps its in-process value authoritative and logs/absorbs the storage error. Release forwards to the raw token. `HomePageConfiguration` retains only this wrapper and remains responsible for firing existing RMF shown events after a successful `markShown()`. This assigns persistence explicitly without putting it in the arbiter.
 
 There is deliberately no collection of renderer registrations and no owner-release broadcast. Denied work retries at existing checkpoints.
 
@@ -256,7 +292,7 @@ Whenever coordinated `homeMessages` changes, `HomePageConfiguration` emits one c
 
 The same shared configuration supplies all renderers, so same-ID reuse requires neither a surface ID nor a retain count.
 
-For each coordinated RMF view-model mapping, the configuration supplies an opaque presentation context containing the message ID and the public lease's acquisition identity. Appearance and dismissal callbacks capture and return that context. The configuration validates it before confirming appearance, mutating RMF lifecycle state, or releasing ownership. A same-ID content refresh keeps the context and SwiftUI identity stable because it is the same ownership; releasing and later reacquiring the same message ID creates a new lease identity, so callbacks from the old physical view become no-ops and SwiftUI constructs a new card. A valid asynchronous dismissal normally keeps its ownership authoritative until the store operation returns, preventing a refresh from replacing it mid-dismissal. Background teardown is the exception: it ends ownership immediately. Its later callback cannot directly release or confirm a new lease, although the already-started store operation and resulting store notification are still reconciled normally.
+For each coordinated RMF view-model mapping, the configuration supplies an opaque presentation context containing the message ID and the returned lease's acquisition identity. Appearance and dismissal callbacks capture and return that context. The configuration validates it before confirming appearance, mutating RMF lifecycle state, or releasing ownership. A same-ID content refresh keeps the context and SwiftUI identity stable because it is the same ownership; releasing and later reacquiring the same message ID creates a new lease identity, so callbacks from the old physical view become no-ops and SwiftUI constructs a new card. A valid asynchronous dismissal normally keeps its ownership authoritative until the store operation returns, preventing a refresh from replacing it mid-dismissal. Background teardown is the exception: it ends ownership immediately. Its later callback cannot directly release or confirm a new lease, although the already-started store operation and resulting store notification are still reconciled normally.
 
 ### `NewTabPageMessagesModel` and `HomeMessageView`
 
@@ -321,7 +357,7 @@ Cooldowns are evaluated after acquiring the slot but before side-effecting work.
 
 Timestamps represent confirmed source events, not expiry dates. Exact equality is eligible. A future timestamp conservatively remains in cooldown. A failed RMF timestamp write remains authoritative for the current process; a fresh process sees only durable history. A storage-read failure uses the last successful in-process value when one exists and otherwise behaves as no known RMF history.
 
-The first valid public-lease `markShown()` call records the RMF timestamp through the service-owned wrapper. RMF acquisition, denial, mapping, dismissal, background teardown, or lease release does not.
+The first valid returned-lease `markShown()` call records the RMF timestamp through the service-owned wrapper. RMF acquisition, denial, mapping, dismissal, background teardown, or lease release does not.
 
 There is no cooldown timer. Reaching a boundary does not itself cause a retry.
 
@@ -426,6 +462,18 @@ Rejected because the conflict is iOS presentation policy, while the store owns c
 
 ## Verification strategy
 
+### Testability and access control
+
+Test externally observable behavior through contracts used by production code. Here, “public behavior” means behavior observable at a real component or module boundary; it does not mean declarations must use Swift's `public` access level.
+
+- Do not change `private` or `fileprivate` declarations to `internal`/`public`, add state getters or test hooks, expose retained ownership state, or expand a production protocol solely to make a test assertion possible.
+- Prefer assertions on `homeMessages`, the configuration content publisher, lease grant/confirmation/release results, provider invocation or non-invocation, modal attachment, history writes, and existing event-reporting effects.
+- Prefer test-target spies/fakes and injected dependencies that have a production purpose, such as the clock, storage, history, provider, gate, and lifecycle entry point. Do not build a mock that duplicates the production state machine.
+- `@testable import` may exercise a small internal production abstraction through its real contract. It is not permission to access private state or to make that state less private.
+- Do not expose `endCurrentRMFOwnership`, trigger-lane storage, retained leases or callback contexts, observer bookkeeping, arbiter owner records, or identity-generator state. Drive preparation, store changes, appearance, dismissal, and background events, then assert their observable effects.
+- The narrow justified direct-test cases are production abstractions whose invariants are otherwise difficult to cover: the arbiter's token contract, cooldown/history policy boundaries, and service-owned lease wrapper. Verify exact-root retention through the manager's production reconciliation/checker contract, not a private helper. The opaque acquisition identity exists because production callback validation and SwiftUI diffing require it; the diagnostic snapshot exists because the internal debug UI consumes it. None needs `public` visibility.
+- If a case cannot be verified through a production contract, prefer focused manual or static verification. Tests alone never justify an access-level change. If a genuine production caller requires a wider contract, document that caller and rationale in the future-PR description; tests may then use that production contract.
+
 Use focused unit and integration coverage for externally observable behavior:
 
 - atomic modal/RMF exclusion and identity-safe release;
@@ -440,7 +488,7 @@ Use focused unit and integration coverage for externally observable behavior:
 - one configuration-owned store refresh updates all model and direct-array consumers;
 - mixed-trigger refreshes keep the admitted message and trigger pinned;
 - background teardown unpublishes before release and disarms reacquisition until explicit preparation;
-- public lease/acquisition identity is stable within ownership and changes on same-ID reacquisition;
+- returned lease/acquisition identity is stable within ownership and changes on same-ID reacquisition;
 - the four cooldown directions and exact boundaries;
 - no history update for denial or never-appeared content;
 - modal lease retention through scheduling, nested presentation, and exact-root detachment;

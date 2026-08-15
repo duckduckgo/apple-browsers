@@ -2,7 +2,7 @@
 
 ## Objective
 
-Implement [`tech_design_final.md`](tech_design_final.md) end to end from `bartosz/promo-q-simp-2`, replacing the broad coordination foundation from merged PR #6087 with a source-level gate that prevents launch-modal promos and NTP RMF cards from being admitted together.
+Starting from `bartosz/promo-q-simp-2`, implement one app-scoped, main-actor promo slot that prevents launch-promo modal sheets and NTP RMF cards from being admitted together. Admit a modal before provider evaluation. Admit RMF at the shared `HomePageConfiguration` before publication, retain it by source/message lifecycle, and unpublish then release it on app background. Add no renderer visibility, coverage, handoff, or lease callbacks. This plan contains the complete architecture contract, requirements, phases, verification, and handoff instructions needed to execute the stack.
 
 The local implementation handoff is complete when:
 
@@ -24,13 +24,25 @@ This revision applies the validated review findings: cold-start RMF deferral, on
 - **Mixed triggers:** keep the first admitted message and trigger lane pinned while that ownership remains valid. Later renderer loads do not replace it.
 - **Persistence semantics:** retain best-effort dismissal and unique-shown behavior. Do not widen the store API, add an in-process/cross-process unique reservation, or add telemetry.
 
+## End-state architecture contract
+
+The implementation has one startup-latched `.legacy` or `.coordinated` mode and one app-scoped, main-actor owner: none, a modal attempt, or an RMF message acquisition. The seven coordinated launch-promo provider categories are the new address-bar picker, default-browser prompt, win-back offer, subscription promo, existing-user subscription promo, What's New, and cookie-popup-protection opt-in. Arbitrary UIKit sheets are not intercepted.
+
+`PromoCoordinationService` is the thin typed facade around the identity-safe lease arbiter, directional cooldown policy, and existing modal manager. Modal admission occurs before provider evaluation and retains the exact selected root through scheduling and attachment. RMF admission occurs once in the shared `HomePageConfiguration` before the candidate enters `homeMessages`; all current NTP renderers consume that same gated source.
+
+The complete imperative container contract is one `prepareForNTP(openedAfterIdle:)` call per content activation before the first content-eligibility read. Conditional containers also observe the normal configuration-scoped content publisher so they can reevaluate after shared data changes. Containers never acquire, confirm, or release leases and never report visibility, coverage, handoff, or lifecycle. Existing card appearance, dismissal, and action callbacks continue through `NewTabPageMessagesModel` and are handled centrally.
+
+RMF ownership is pinned to the first admitted message and trigger lane. Same-owner refreshes reuse the acquisition identity; invalidation tears down before fresh selection. Appearance confirms queue history once per acquisition. All ownership endings unpublish the RMF, synchronously signal consumers, then release. Background performs that sequence, clears trigger state, and disarms reacquisition until a later explicit preparation; ordinary NTP disappearance does not release.
+
+Cooldowns are based on confirmed appearances: launch modal → RMF 10 minutes, RMF → RMF 10 minutes, RMF → launch modal 24 hours, while launch modal → launch modal remains with the existing remotely configured modal policy. Work blocked by ownership or cooldown remains scheduled and retries only at natural checkpoints. There are no timers, waiters, renderer registries, retain counts, or release broadcasts.
+
 ## Starting point
 
 - Starting branch: `bartosz/promo-q-simp-2`.
-- At the 2026-08-14 review checkpoint, HEAD is `7858a17094d8` and local `main` is `375bd10e56c5`; the branch is 2 commits ahead and 7 commits behind local `main`. Before this documentation revision the working tree was clean; the expected current edits are `tech_design_final.md` and `implementation_plan.md`.
+- At the 2026-08-14 review checkpoint, HEAD is `7858a17094d8` and local `main` is `375bd10e56c5`; the branch is 2 commits ahead and 7 commits behind local `main`. Treat this as a historical snapshot and rerun read-only status/divergence checks before implementation.
 - PR #6087 is already merged as `7fdd4719a1345c8805d3bbb9639c618f7dbb562d`.
-- The five files under `promo-queue-docs/` are tracked. Preserve them and any other user changes.
-- Only PR #6087 is an implementation baseline. Do not merge or wholesale cherry-pick the old `bartosz/promo-q-2` or `bartosz/promo-q-3` implementations. Small, already-reviewed pieces such as cooldown constants or storage semantics may be ported deliberately after comparing them with the final design.
+- Preserve every pre-existing tracked or untracked change; do not delete or rewrite unrelated documentation or code.
+- Only PR #6087 is an implementation baseline. Do not merge or wholesale cherry-pick the old `bartosz/promo-q-2` or `bartosz/promo-q-3` implementations. Small pieces such as cooldown constants or storage semantics may be ported only after confirming that they implement Phase 1.3's exact durations, boundary, key, and failure-fallback requirements without bringing over discarded surface or debug machinery.
 
 Before editing, re-read the repository's `AGENTS.md` and only the relevant rules it permits. Run a read-only status/divergence preflight. Because the starting branch is behind `main`, present the exact divergence and obtain permission before rebasing, merging, creating branches, running tests, or performing any other git write. Preserve the branch's two unique commits whichever synchronization strategy the user chooses.
 
@@ -48,7 +60,19 @@ Use three stacked, locally reviewable units. They are sized as eventual pull req
 
 After permission for git writes, create local `bartosz/promo-q-simp-3` only from the reviewed head of `bartosz/promo-q-simp-2`. Create local `bartosz/promo-q-simp-4` only from the reviewed head of `bartosz/promo-q-simp-3`. Keep each branch diff limited to its unit and hand off the local stack for human review. Do not push or open PRs.
 
-If PR 2 proves smaller than expected, do not fold it into PR 1 merely to reduce the PR count: the distinction between coordination primitives and the behavior-changing RMF integration is useful. Split PR 2 further only if implementation uncovers an independent prerequisite that can be correct and testable on its own; do not split by arbitrary file count.
+At the end of each unit, the implementing agent must suggest a final future-PR title and produce a ready-to-paste draft description based on the actual local diff. Each description must include:
+
+- the problem and user-visible outcome;
+- the main architectural/code changes and deliberate deletions;
+- accepted limitations and explicit non-goals relevant to that unit;
+- focused automated, build, and manual evidence actually completed;
+- feature-flag/rollout risk where applicable;
+- the stack dependency and what follows next, if anything; and
+- any access-level change, with the production caller and rationale that required it. Tests alone are not a rationale, and the expected default is “none.”
+
+These title/description drafts are local handoff metadata only. Producing them does not authorize `git push`, `gh`, PR creation, retargeting, merging, or any external mutation. If the implemented scope differs from the title suggested below, update the suggestion to describe the actual diff.
+
+If PR 2 proves smaller than expected, do not fold it into PR 1 merely to reduce the PR count: the distinction between coordination primitives and the behavior-changing RMF integration is useful. The three-unit topology remains authoritative. Split PR 2 only after explicit approval when measured churn and reviewability justify an independently correct, tested follow-up unit; size alone and arbitrary file count are insufficient. Before creating any follow-up branch, revise this plan's stack table, titles/descriptions, later PR numbering, final-verification wording, rollout handoff, and definitions of done to match the approved topology.
 
 ## Invariants to preserve throughout the stack
 
@@ -70,6 +94,30 @@ If PR 2 proves smaller than expected, do not fold it into PR 1 merely to reduce 
 - No timers, wait queues, renderer registries, retain counts, handoff state, or exact RMF removal state are introduced.
 - Every added or removed Swift source, test, and mock has matching references and correct target membership in `iOS/DuckDuckGo-iOS.xcodeproj/project.pbxproj`. Add shared mocks only to targets that consume them; prefer repurposing an existing file when its responsibility remains accurate.
 
+## Accepted simplifications
+
+- Only the seven launch-promo provider categories routed through `PromoCoordinationService` are coordinated. Arbitrary UIKit presentations may still cover an RMF.
+- An active RMF may hold the slot while the user is off the NTP until message invalidation or background. Background releases live ownership but never clears already-confirmed RMF cooldown history.
+- Two physical copies of the same RMF may be mounted briefly. The guarantee is cross-kind admission, not selection of one physical renderer or proof that every exit-animation pixel is gone.
+- Fire mode can suppress a source-owned card. Landscape is behavior-discovery QA, not a special lease rule.
+- Progress is checkpoint-driven, with no fairness guarantee, boundary timer, waiter, release broadcast, or immediate modal retry after RMF removal.
+- A dismissed modal may retain its lease until a later checkpoint observes its exact root detached.
+- Dismissal persistence and unique-shown accounting keep their existing best-effort semantics.
+- Feature mode is startup-latched and requires relaunch after a flag change.
+- No new overlap, denial, fairness, or retry telemetry is added.
+
+## Testing policy — production behavior first
+
+“Public behavior” in this plan means observable behavior through a contract used by production code; it does not require Swift `public` visibility.
+
+- Do not widen `private`/`fileprivate` access, add state getters or test hooks, expose retained ownership state, or add a production protocol requirement solely for tests.
+- Prefer driving `PromoGating`, the returned RMF lease, `HomePageMessagesConfiguration`, `PromoCoordinationService.presentModalPromptIfNeeded`, store notifications, and app-lifecycle entry points. Assert `homeMessages`, synchronous content signals, provider calls, history writes, lease outcomes, attachment, and existing reporting effects.
+- Prefer test-target spies/fakes and real dependency-injection seams: clock, `ThrowingKeyValueStoring`, RMF history, provider, gate, and app-lifecycle route. Post the real store notification or drive the production refresh entry point; do not introduce a notification protocol merely for tests. A mock must not reimplement the production state machine.
+- `@testable import` may exercise a small internal production primitive through its real contract. It is not permission to expose private state. Direct internal tests are justified for the arbiter token contract, cooldown/history boundary policy, and service-owned lease wrapper. Verify exact-root behavior through the manager's production reconciliation/checker contract, not a private helper.
+- The acquisition identity is part of the production callback/SwiftUI contract. The read-only diagnostic snapshot is part of the internal debug UI contract. Neither exists merely to make tests convenient, and neither needs Swift `public` access.
+- Never expose `endCurrentRMFOwnership`, `lastPreparedTriggerLane`, the pinned lane, retained lease/context, observer bookkeeping, arbiter owner records, or identity-generator state. Drive the corresponding event and assert the observable source/service effect.
+- If a case has no production-observable seam, prefer focused manual or static verification. Tests alone never justify an access-level change. If a genuine production caller requires a wider contract, keep it as narrow as possible and document that caller and rationale in the draft future-PR description; tests may then use the same contract.
+
 ---
 
 # PR 1 — `bartosz/promo-q-simp-2`
@@ -79,6 +127,8 @@ If PR 2 proves smaller than expected, do not fold it into PR 1 merely to reduce 
 Replace the broad, partially merged foundation with the smallest reusable gate and cooldown primitives. Leave the branch compiling and behaviorally safe with the feature disabled. Do not integrate RMF publication yet; that belongs to the next PR.
 
 Suggested PR title: **iOS Promo Queue: Simplify coordination foundation**
+
+Draft-description focus: explain removal of live feature transitions and per-surface/retry machinery from PR #6087; describe the startup-latched arbiter, directional cooldown/history, and retained modal correctness; list focused primitive/service evidence; state that the production flag remains off and end-to-end RMF source integration follows in `bartosz/promo-q-simp-3`.
 
 ## Phase 0 — remove or collapse merged machinery
 
@@ -200,13 +250,13 @@ Implement typed modal and RMF leases unless one generic token is demonstrably cl
 
 The raw RMF arbiter token exposes a main-actor `confirmAppearance()` operation that returns `true` only for the first valid confirmation of its current acquisition. It must return `false` after release, for a stale record, and on subsequent calls. It does not persist history or fire events.
 
-Expose a small read-only snapshot for tests/debugging. Do not include renderer, registration, handoff, drain, presentation, or removal identities.
+Expose a small read-only snapshot because the existing internal debug screen consumes it. Tests may validate that production diagnostic contract, but must not drive its shape. Do not include renderer, registration, handoff, drain, presentation, or removal identities.
 
 Remove `invalidateAllLeases`; startup-latched mode does not need it.
 
 ### 1.3 Add the directional cooldown policy and RMF history store
 
-Create a minimal file under `iOS/DuckDuckGo/ModalPromptCoordination/Cooldown/`, based on the reviewed behavior from the discarded branch rather than copying its debug machinery wholesale.
+Create a minimal file under `iOS/DuckDuckGo/ModalPromptCoordination/Cooldown/` implementing only the durations, storage semantics, exact-boundary behavior, and failure fallback specified below. Do not port unrelated debug or surface machinery.
 
 Implement:
 
@@ -290,6 +340,8 @@ Update `iOS/DuckDuckGo-iOS.xcodeproj/project.pbxproj` as part of the same change
 
 ### 1.7 Focused PR 1 tests
 
+Exercise small internal primitives only through their production token/policy contracts and assert returned behavior or effects, never private arbiter/history fields. Do not widen access for direct state inspection.
+
 Keep this suite compact and table-driven where practical:
 
 - Arbiter: cover cross-kind mutual exclusion, identity-safe/idempotent release, weak-token recovery, and first valid `confirmAppearance()` in one small parameterized group.
@@ -308,7 +360,7 @@ Delete transition/surface fixtures rather than adapting them into another abstra
 - Directional cooldown policy is independently tested.
 - Modal-first correctness remains behind the disabled-by-default flag.
 - Focused affected tests and an iOS build pass after obtaining permission to run them.
-- Local handoff notes state that end-to-end RMF gating follows on `bartosz/promo-q-simp-3` and the production flag remains off.
+- Local handoff notes include the final suggested future-PR title and ready-to-paste description, state that end-to-end RMF gating follows on `bartosz/promo-q-simp-3`, and state that the production flag remains off.
 
 ---
 
@@ -321,6 +373,27 @@ After permission for git writes, create local `bartosz/promo-q-simp-3` from the 
 Goal: integrate RMF once at the shared `HomePageConfiguration` boundary and deliver the actual no-overlap behavior for all existing NTP renderers.
 
 Suggested PR title: **iOS Promo Queue: Gate NTP RMF at the shared message source**
+
+Draft-description focus: explain shared-source admission for all three NTP entry points, cold-start deferral, centralized store refresh, first-owner trigger pinning, appearance/dismissal identity, and ordered background release; call out accepted over-hold, checkpoint retry, best-effort persistence, and no new telemetry; include focused and manual evidence; state the dependency on PR 1 and that debug-only diagnostics follow in PR 3.
+
+### Expected PR 2 size
+
+Plan for approximately **1,700–1,900 changed lines** (`insertions + deletions`) relative to `bartosz/promo-q-simp-2`. The practical likely range is **1,400–2,150**, with a wider risk tail near 2,400; at planning time there is roughly a 40% chance of exceeding 2,000. This is an estimate, not a line-count target, because the exact PR 1 gate/wrapper/mock API does not exist yet.
+
+Expected contributors are:
+
+- production source integration: roughly 540–830 lines of churn;
+- tests, test support, and project wiring: roughly 820–1,300 lines of churn; and
+- a central case near 1,750 total changed lines.
+
+Most risk is in focused `HomePageConfiguration` test scaffolding, not the two conditional-container calls. Keep the unit intact initially, as requested. Do not trim behavior-critical tests merely to meet 2,000 lines, and do not add host-by-host UIKit harnesses or lifecycle permutations to inflate it.
+
+If the measured branch diff materially exceeds 2,000 **and** conditional-host integration is independently reviewable, pause and propose—do not automatically perform—this logical split:
+
+1. shared ownership, standard-NTP path, source publisher, renderability/identity, appearance/dismissal/background handling, and their tests; then
+2. suggestion-tray, unified-input, and OmniBar conditional-host adoption with one focused consumer-convergence test.
+
+Keep production and its tests together; never split by arbitrary file count. The conditional-host follow-up is expected to be only about 200–400 changed lines, so retaining one PR is preferable unless the actual diff and reviewability justify the extra branch. If approved, the tentative sequence is core `bartosz/promo-q-simp-3`, conditional-host adoption `bartosz/promo-q-simp-4`, and debug `bartosz/promo-q-simp-5`. Revise every affected section and add an actual-diff title/description for all four units before creating either follow-up branch. Until then, the three-unit sequence is the only instruction to execute.
 
 ## Phase 2 — shared RMF integration
 
@@ -346,7 +419,7 @@ These two conditional-host calls are required to bootstrap RMF-only content befo
 
 Treat this as the complete NTP-container integration contract. Containers do not call `tryAcquire`, `markShown`, or `release`; they do not report active/renderable/visible/covered state; and they do not forward background or disappearance to Promo Queue. The shared configuration, service, existing messages model, and one composition-root lifecycle hook own everything else. If implementation requires another container callback, stop and move that responsibility into the shared source.
 
-Route app lifecycle once through the composition root: `Background.onTransition` → `MainCoordinator.onBackground` → `HomePageConfiguration.handleAppBackgrounded`, and `Foreground.onTransition` → `MainCoordinator.onForeground` → `HomePageConfiguration.handleAppForegrounded`. Foreground handling only marks the source active; it neither arms selection nor publishes RMF. Do not create an RMF/model `viewDidDisappear` signal; none exists today and the final design does not need one.
+Route app lifecycle once through the composition root: `Background.onTransition` → `MainCoordinator.onBackground` → `HomePageConfiguration.handleAppBackgrounded`, and `Foreground.onTransition` → `MainCoordinator.onForeground` → `HomePageConfiguration.handleAppForegrounded`. Foreground handling only marks the source active; it neither arms selection nor publishes RMF. Do not create an RMF/model `viewDidDisappear` signal; none exists today, and this architecture centralizes background teardown at the composition root.
 
 ### 2.2 Implement the centralized RMF ownership algorithm
 
@@ -389,7 +462,7 @@ Do not define same-ID joining for a future independent RMF source in this iterat
 
 Add a pure `HomeMessageViewModelBuilder.canBuild(for:)` (or equivalently named) check that uses the builder's existing content-to-display conversion. Call it before RMF acquisition. Missing content and unsupported `.cardsList` content must acquire no lease, publish no card, and mutate no store state. Do not maintain a second independent support switch.
 
-Use the public wrapper's acquisition identity for both callback validation and SwiftUI diffing; do not mint a second presentation UUID. Carry it opaquely through `HomeMessageViewModel`, keep it stable across same-owner refreshes, and key coordinated RMF content by message plus acquisition identity. A release/reacquisition naturally produces a new identity even for the same message ID. Preserve current identity behavior for legacy and non-RMF messages.
+Use the returned wrapper's production acquisition identity for both callback validation and SwiftUI diffing; do not mint a second presentation UUID. Carry it opaquely through `HomeMessageViewModel`, keep it stable across same-owner refreshes, and key coordinated RMF content by message plus acquisition identity. A release/reacquisition naturally produces a new identity even for the same message ID. Preserve current identity behavior for legacy and non-RMF messages.
 
 ### 2.5 Move coordinated shown accounting to actual appearance
 
@@ -456,18 +529,20 @@ Do not add a service-to-configuration release callback in this stack. If checkpo
 
 Adjust `HomePageMessagesConfiguration` only as much as needed to expose the configuration-scoped change publisher, supply and round-trip the opaque presentation context, and express the coordinated/legacy accounting branch. Its coordinated publisher must deliver model updates synchronously on the main actor; do not insert a `receive(on:)` hop before `NewTabPageMessagesModel` rebuilds. Host layout reactions may remain scheduled. Add the publisher to relevant mocks with an explicit inert value. If a mode property is added, provide an explicit legacy default for previews and unrelated mocks. Do not expose the lease itself to `NewTabPageMessagesModel`.
 
-Remove obsolete `MockNewTabPagePromoCoordinator`. Add a small `MockPromoGate` capable of:
+Remove obsolete `MockNewTabPagePromoCoordinator`. Add a small test-target `MockPromoGate` capable of:
 
 - selecting mode;
 - granting or denying RMF acquisition;
-- returning controllable identity-safe leases; and
-- exposing acquisition/confirmation/release calls for assertions.
+- returning an identity-safe lease through the existing production gate contract; and
+- recording only gate calls made through that production contract.
 
-Avoid mocks that reproduce the production state machine.
+Use the real production wrapper/token when practical and assert release through observable reacquisition or slot availability. Use a fake lease only if the production gate contract already abstracts the lease for a production reason; do not add a lease protocol or production initializer solely to make it controllable. Any counters remain entirely in the test target. Avoid mocks that reproduce the production state machine.
 
 For every added/deleted production file, test, or shared mock, update `iOS/DuckDuckGo-iOS.xcodeproj/project.pbxproj` file references and the exact app/test target memberships. Do not add a shared mock to every test target by default. Prefer keeping an existing file when its final responsibility and name remain honest.
 
 ### 2.9 Focused PR 2 tests
+
+Drive every case through production-used configuration, gate/lease, notification, lifecycle, and reporting contracts. Do not expose private ownership, trigger, context, or observer state to make these assertions.
 
 Prefer a handful of behavior groups over an edge-case matrix:
 
@@ -479,7 +554,7 @@ Prefer a handful of behavior groups over an edge-case matrix:
 6. Ordered teardown: table-drive dismissal-attempt completion, expiry/replacement, onboarding suppression, and background; assert unpublish/signal precedes release, background writes no new history and preserves confirmed history, and stale dismissal callbacks cannot directly mutate a newer lease while later store state is still reconciled.
 7. Legacy regression: retain one focused action/dismissal/pixel test proving the feature-off path is unchanged.
 
-Do not add real-UIKit tests for all three hosts, an exhaustive content-type suite, or landscape lifecycle tests. One composition assertion can prove the shared instance and central lifecycle hook; manual QA covers physical entry points.
+Do not add real-UIKit tests for all three hosts, an exhaustive content-type suite, or landscape lifecycle tests. One composition assertion may prove the shared instance and central lifecycle hook only through an existing production composition/behavior seam; otherwise use static review and manual QA rather than adding coordinator/configuration getters. Manual QA covers physical entry points.
 
 ## Phase 2 manual validation
 
@@ -511,6 +586,7 @@ Validate:
 - Cold launch cannot claim RMF before an NTP request, and background teardown releases it in the documented order.
 - Focused affected tests and an iOS build pass after obtaining permission.
 - No new telemetry exists.
+- Local handoff notes include the final suggested future-PR title and ready-to-paste description, measured insertion/deletion counts, accepted limitations, evidence, and the dependency on PR 1.
 
 ---
 
@@ -523,6 +599,8 @@ After permission for git writes, create local `bartosz/promo-q-simp-4` from the 
 Goal: make the simplified machinery easy to inspect and manually verify using the app's existing internal debug area, without changing production admission behavior.
 
 Suggested PR title: **iOS Promo Queue: Add simplified coordination diagnostics**
+
+Draft-description focus: state that this is an internal-only extension of the existing debug screen; list the read-only owner/cooldown diagnostics and explicit RMF cooldown reset; emphasize that admission, retry, telemetry, and production presentation behavior do not change; include focused debug/manual evidence and the dependency on PR 2; state that human review/integration and the external rollout handoff follow, while push and configuration deployment remain out of scope.
 
 ## Phase 3 — extend the existing debug screen
 
@@ -571,6 +649,8 @@ Do not add force-modal, force-RMF, arbitrary owner mutation, or fake-visibility 
 
 ### 3.4 Debug tests
 
+Inject the same read-only diagnostic-provider contract used by the internal debug UI. Do not reach through the provider to service, arbiter, or storage internals.
+
 Add focused view-model/snapshot tests for:
 
 - owner/mode/appearance formatting as one table-driven group;
@@ -586,13 +666,13 @@ Avoid snapshot tests unless layout complexity genuinely warrants them.
 - Any reset is explicit and internal-only.
 - No telemetry or production retry behavior is added.
 - Focused debug tests and an iOS build pass after obtaining permission.
-- Local handoff notes include the complete manual validation matrix and rollout caveats.
+- Local handoff notes include the final suggested future-PR title and ready-to-paste description, the complete manual validation matrix, and rollout caveats.
 
 ---
 
 # Final stack verification
 
-After all three branches are combined, perform one final review against the design rather than reviewing each PR in isolation.
+After all three branches are combined, perform one final review against this plan's Objective, Product decisions, End-state architecture contract, Invariants, Accepted simplifications, phase completion criteria, and verification checklist rather than reviewing each unit in isolation.
 
 ## Static checks
 
@@ -609,7 +689,7 @@ Search the final diff and repository for discarded vocabulary and investigate ev
 - `PromoQueueFeatureState`
 - live `.promoPresentationCoordination` subscriptions
 
-Some names may exist only on historical branches or docs; none should remain in the final production path.
+Search hits outside compiled production/test targets do not justify retaining these concepts; none should remain in the final production path.
 
 Verify the final dependency graph contains one production arbiter/service and one shared `HomePageConfiguration` instance for the three NTP renderers.
 
@@ -643,6 +723,7 @@ Then run the normal iOS build/test coverage appropriate for a change spanning ap
 - Does the feature-off path still work after a fresh graph is built? It must.
 - Did the change add telemetry? It must not.
 - Are accepted limitations described consistently in code comments, tests, debug UI, and local handoff notes?
+- Was any private declaration widened, state getter added, or production hook introduced only for tests? Remove it. If a production caller genuinely required an access change, document that caller and rationale and flag it explicitly in the draft future-PR description.
 
 # External phase 4 — rollout handoff only
 
@@ -663,12 +744,13 @@ The eventual external owner must set the first containing iOS version as the min
 ## Local implementation handoff
 
 - `bartosz/promo-q-simp-2`, local `bartosz/promo-q-simp-3`, and local `bartosz/promo-q-simp-4` contain the three clean review units; no branch was pushed and no PR was opened.
-- The combined local diff matches `tech_design_final.md` and removes or reduces PR #6087 machinery to final-design behavior.
+- The combined local diff satisfies this plan's architecture contract, invariants, phase completion criteria, verification matrix, and accepted simplifications, and reduces PR #6087 machinery to the behavior specified here.
 - Focused automated and manual validation has passed after obtaining required permission.
 - The existing debug screen explains current owner and cooldown state.
 - No new telemetry exists.
 - A new NTP renderer can consume the shared source without visibility/coverage callbacks; only a conditional container that checks content before construction invokes the shared preparation seam.
 - The rollout handoff is complete and clearly marked as external work.
+- Each local unit has a suggested future-PR title and ready-to-paste draft description based on its actual diff; no branch was pushed and no PR was opened.
 
 ## Project success criterion after human/external follow-through
 

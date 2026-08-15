@@ -56,6 +56,23 @@ struct ModalPromptProviders {
     }
 }
 
+struct PromoCoordinationDiagnosticSnapshot: Equatable {
+    let mode: PromoCoordinationMode
+    let owner: PromoQueueLeaseOwnerSnapshot?
+    let cooldown: PromoQueueCooldownSnapshot
+}
+
+@MainActor
+protocol PromoCoordinationDiagnosticsProviding: AnyObject {
+    var diagnosticSnapshot: PromoCoordinationDiagnosticSnapshot { get }
+}
+
+@MainActor
+protocol PromoCoordinationCooldownResetting: AnyObject {
+    func resetModalCooldown()
+    func resetRemoteMessageCooldown()
+}
+
 /// Coordinates app-launch modal prompts with the shared new-tab remote-message source.
 @MainActor
 final class PromoCoordinationService {
@@ -154,4 +171,24 @@ extension PromoCoordinationService: PromoGating {
 
 extension PromoCoordinationService: RecentModalPromptStatusProviding {
     var wasModalPromptRecentlyPresented: Bool { modalPromptCoordinationManager.didPresentModalPromptThisSession }
+}
+
+extension PromoCoordinationService: PromoCoordinationDiagnosticsProviding {
+    var diagnosticSnapshot: PromoCoordinationDiagnosticSnapshot {
+        PromoCoordinationDiagnosticSnapshot(
+            mode: mode,
+            owner: promoQueueLeaseArbiter.snapshot.owner,
+            cooldown: promoQueueCooldownPolicy.snapshot
+        )
+    }
+}
+
+extension PromoCoordinationService: PromoCoordinationCooldownResetting {
+    func resetModalCooldown() {
+        promoQueueCooldownPolicy.resetModalCooldown()
+    }
+
+    func resetRemoteMessageCooldown() {
+        promoQueueCooldownPolicy.resetRemoteMessageCooldown()
+    }
 }

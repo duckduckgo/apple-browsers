@@ -161,12 +161,10 @@ final class PromoQueueLeaseArbiter: PromoQueueLeaseArbitrating {
     private var owner: Owner?
 
     var snapshot: PromoQueueLeaseSnapshot {
-        pruneOwnerWithDeallocatedToken()
-
         switch owner {
-        case .modal(let record):
+        case .modal(let record) where record.token != nil:
             return PromoQueueLeaseSnapshot(owner: .modal(ownershipIdentity: record.ownershipIdentity))
-        case .remoteMessage(let record):
+        case .remoteMessage(let record) where record.token != nil:
             return PromoQueueLeaseSnapshot(
                 owner: .remoteMessage(
                     messageID: record.messageID,
@@ -174,7 +172,7 @@ final class PromoQueueLeaseArbiter: PromoQueueLeaseArbitrating {
                     appearanceConfirmed: record.appearanceConfirmed
                 )
             )
-        case nil:
+        case .modal, .remoteMessage, nil:
             return PromoQueueLeaseSnapshot(owner: nil)
         }
     }

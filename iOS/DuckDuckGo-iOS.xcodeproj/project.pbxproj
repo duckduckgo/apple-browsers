@@ -1902,6 +1902,7 @@
 		B6A7C21A31A1000100F00D01 /* ModalPromptCoordinationManagerPromoQueueTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6A7C21931A1000100F00D01 /* ModalPromptCoordinationManagerPromoQueueTests.swift */; };
 		B6A7C21C31A1000100F00D01 /* ModalPromptRootAttachmentCheckerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6A7C21B31A1000100F00D01 /* ModalPromptRootAttachmentCheckerTests.swift */; };
 		B6A7C21E31A1000100F00D01 /* ModalPromptCoordinationRealUIKitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6A7C21D31A1000100F00D01 /* ModalPromptCoordinationRealUIKitTests.swift */; };
+		B6A7C26131A1000100F00D01 /* ModalPromptCoordinationDebugViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6A7C26031A1000100F00D01 /* ModalPromptCoordinationDebugViewModelTests.swift */; };
 		B6AD9E3728D4510A0019CDE9 /* ContentBlockingUpdatingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6AD9E3528D4510A0019CDE9 /* ContentBlockingUpdatingTests.swift */; };
 		B6AD9E3828D4512E0019CDE9 /* EmbeddedTrackerDataTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9801F08927E4B21100191874 /* EmbeddedTrackerDataTests.swift */; };
 		B6BA95C328891E33004ABA20 /* BrowsingMenuAnimator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6BA95C228891E33004ABA20 /* BrowsingMenuAnimator.swift */; };
@@ -4766,6 +4767,7 @@
 		B6A7C21931A1000100F00D01 /* ModalPromptCoordinationManagerPromoQueueTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModalPromptCoordinationManagerPromoQueueTests.swift; sourceTree = "<group>"; };
 		B6A7C21B31A1000100F00D01 /* ModalPromptRootAttachmentCheckerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModalPromptRootAttachmentCheckerTests.swift; sourceTree = "<group>"; };
 		B6A7C21D31A1000100F00D01 /* ModalPromptCoordinationRealUIKitTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModalPromptCoordinationRealUIKitTests.swift; sourceTree = "<group>"; };
+		B6A7C26031A1000100F00D01 /* ModalPromptCoordinationDebugViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModalPromptCoordinationDebugViewModelTests.swift; sourceTree = "<group>"; };
 		B6AD9E3528D4510A0019CDE9 /* ContentBlockingUpdatingTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ContentBlockingUpdatingTests.swift; sourceTree = "<group>"; };
 		B6BA95C228891E33004ABA20 /* BrowsingMenuAnimator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowsingMenuAnimator.swift; sourceTree = "<group>"; };
 		B772933186CDFE9E9DDBD2BF /* FileCorruptErrorViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileCorruptErrorViewController.swift; sourceTree = "<group>"; };
@@ -9220,6 +9222,7 @@
 				B6A7C21931A1000100F00D01 /* ModalPromptCoordinationManagerPromoQueueTests.swift */,
 				B6A7C21B31A1000100F00D01 /* ModalPromptRootAttachmentCheckerTests.swift */,
 				B6A7C21D31A1000100F00D01 /* ModalPromptCoordinationRealUIKitTests.swift */,
+				B6A7C26031A1000100F00D01 /* ModalPromptCoordinationDebugViewModelTests.swift */,
 				B6A7C20431A1000100F00D01 /* PromoQueueLeaseArbiterTests.swift */,
 			);
 			path = ModalPromptCoordination;
@@ -14920,6 +14923,7 @@
 				B6A7C21A31A1000100F00D01 /* ModalPromptCoordinationManagerPromoQueueTests.swift in Sources */,
 				B6A7C21C31A1000100F00D01 /* ModalPromptRootAttachmentCheckerTests.swift in Sources */,
 				B6A7C21E31A1000100F00D01 /* ModalPromptCoordinationRealUIKitTests.swift in Sources */,
+				B6A7C26131A1000100F00D01 /* ModalPromptCoordinationDebugViewModelTests.swift in Sources */,
 				B6A7C20531A1000100F00D01 /* PromoQueueLeaseArbiterTests.swift in Sources */,
 				B6A7C20A31A1000100F00D01 /* PromoPresentationCoordinationFeatureFlagTests.swift in Sources */,
 				98E5631D2DE8AF3100E6E75F /* CoreDataTestUtilities.swift in Sources */,

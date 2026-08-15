@@ -37,7 +37,7 @@ struct SearchTokenDebugView: View {
             Section {
                 NavigationLink {
                     ExperimentCohortView(viewModel: FeatureFlagsSettingViewModel(),
-                                         experiment: FeatureFlag.searchTokenExperimentV2)
+                                         experiment: FeatureFlag.searchTokenExperimentV3)
                 } label: {
                     Text(verbatim: "Experiment cohort override")
                 }

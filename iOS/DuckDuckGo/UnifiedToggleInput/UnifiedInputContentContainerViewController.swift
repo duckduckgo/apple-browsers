@@ -765,7 +765,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             remoteMessagingActionHandler: ntpDeps.remoteMessagingActionHandler,
             remoteMessagingImageLoader: ntpDeps.remoteMessagingImageLoader,
             remoteMessagingPixelReporter: ntpDeps.remoteMessagingPixelReporter,
-            promoCoordinator: ntpDeps.promoCoordinator,
             appSettings: ntpDeps.appSettings,
             faviconsCache: ntpDeps.faviconsCache,
             subscriptionManager: ntpDeps.subscriptionManager,

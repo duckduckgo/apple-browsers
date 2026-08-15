@@ -116,6 +116,8 @@ protocol PromoQueueCooldownPolicying: AnyObject {
     func evaluateRemoteMessageAdmission() -> PromoQueueCooldownDecision
     func evaluateModalAdmission() -> PromoQueueCooldownDecision
     func recordConfirmedRemoteMessageAppearance()
+    func resetModalCooldown()
+    func resetRemoteMessageCooldown()
 }
 
 @MainActor
@@ -161,6 +163,14 @@ final class PromoQueueCooldownPolicy: PromoQueueCooldownPolicying {
 
     func recordConfirmedRemoteMessageAppearance() {
         remoteMessageHistory.recordConfirmedAppearance(at: dateProvider())
+    }
+
+    func resetModalCooldown() {
+        modalPresentationStore.lastPresentationTimestamp = nil
+    }
+
+    func resetRemoteMessageCooldown() {
+        remoteMessageHistory.reset()
     }
 
     private func decision(nextEligibility: Date?) -> PromoQueueCooldownDecision {

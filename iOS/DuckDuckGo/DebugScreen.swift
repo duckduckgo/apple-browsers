@@ -58,6 +58,8 @@ enum DebugScreen: Identifiable {
         let remoteMessagingDebugHandler: RemoteMessagingDebugHandling
         let webExtensionManager: WebExtensionManaging?
         let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
+        let promoCoordinationDiagnosticsProvider: PromoCoordinationDiagnosticsProviding?
+        let promoCoordinationCooldownResetter: PromoCoordinationCooldownResetting?
 
     }
 

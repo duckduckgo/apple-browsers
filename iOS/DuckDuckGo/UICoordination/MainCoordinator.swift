@@ -71,6 +71,7 @@ final class MainCoordinator {
     private let subscriptionManager: any SubscriptionManager
     private let featureFlagger: FeatureFlagger
     private let promoCoordinationService: PromoCoordinationService
+    private let homePageConfiguration: HomePageConfiguration
     private let launchSourceManager: LaunchSourceManaging
     private let keyValueStore: ThrowingKeyValueStoring
     private let onboardingSearchExperienceSelectionHandler: OnboardingSearchExperienceSelectionHandler
@@ -122,6 +123,7 @@ final class MainCoordinator {
          maliciousSiteProtectionService: MaliciousSiteProtectionService,
          customConfigurationURLProvider: CustomConfigurationURLProviding,
          didFinishLaunchingStartTime: CFAbsoluteTime?,
+         isAppLaunchedInBackground: Bool,
          keyValueStore: ThrowingKeyValueStoring,
          systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
          daxDialogsManager: DaxDialogsManaging,
@@ -158,7 +160,10 @@ final class MainCoordinator {
         let homePageConfiguration = HomePageConfiguration(variantManager: AppDependencyProvider.shared.variantManager,
                                                           remoteMessagingStore: remoteMessagingService.remoteMessagingClient.store,
                                                           subscriptionDataReporter: reportingService.subscriptionDataReporter,
-                                                          isStillOnboarding: { daxDialogsManager.isStillOnboarding() })
+                                                          isStillOnboarding: { daxDialogsManager.isStillOnboarding() },
+                                                          promoGate: promoCoordinationService,
+                                                          isRMFAdmissionEnabled: !isAppLaunchedInBackground)
+        self.homePageConfiguration = homePageConfiguration
         let previewsSource = DefaultTabPreviewsSource()
         let tabsPersistence = try TabsModelPersistence()
         let tabsModelProvider = try Self.prepareTabsModel(previewsSource: previewsSource, tabsPersistence: tabsPersistence)
@@ -666,6 +671,8 @@ final class MainCoordinator {
     // MARK: App Lifecycle handling
 
     func onForeground(isFirstForeground: Bool) {
+        homePageConfiguration.handleAppForegrounded()
+
         // Apply tracker animation suppression based on launch source
         // Must be called after launchSourceManager.handleAppAction sets the source
         if isFirstForeground {
@@ -687,6 +694,7 @@ final class MainCoordinator {
     }
 
     func onBackground() {
+        homePageConfiguration.handleAppBackgrounded()
         resetAppStartTime()
         Task {
             await privacyStats.handleAppTermination()

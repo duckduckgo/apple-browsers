@@ -56,6 +56,8 @@ final class MockPromoQueueCooldownPolicy: PromoQueueCooldownPolicying {
     private(set) var remoteMessageAdmissionCallCount = 0
     private(set) var modalAdmissionCallCount = 0
     private(set) var recordConfirmedRemoteMessageAppearanceCallCount = 0
+    private(set) var resetModalCooldownCallCount = 0
+    private(set) var resetRemoteMessageCooldownCallCount = 0
 
     func evaluateRemoteMessageAdmission() -> PromoQueueCooldownDecision {
         remoteMessageAdmissionCallCount += 1
@@ -69,6 +71,14 @@ final class MockPromoQueueCooldownPolicy: PromoQueueCooldownPolicying {
 
     func recordConfirmedRemoteMessageAppearance() {
         recordConfirmedRemoteMessageAppearanceCallCount += 1
+    }
+
+    func resetModalCooldown() {
+        resetModalCooldownCallCount += 1
+    }
+
+    func resetRemoteMessageCooldown() {
+        resetRemoteMessageCooldownCallCount += 1
     }
 }
 

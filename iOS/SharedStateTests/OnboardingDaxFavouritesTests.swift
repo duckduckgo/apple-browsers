@@ -222,7 +222,6 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
             whatsNewRepository: MockWhatsNewMessageRepository(scheduledRemoteMessage: nil),
             darkReaderFeatureSettings: MockDarkReaderFeatureSettings(),
             onboardingManager: OnboardingManagerMock(),
-            newTabPagePromoCoordinator: MockNewTabPagePromoCoordinator()
         )
         let window = UIWindow(frame: UIScreen.main.bounds)
         window.rootViewController = UIViewController()

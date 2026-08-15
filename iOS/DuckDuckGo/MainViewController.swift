@@ -2059,7 +2059,9 @@ class MainViewController: UIViewController {
         removeHomeScreen()
 
         let hatch = buildEscapeHatch(openedAfterIdle: openedAfterIdle)
-        homePageConfiguration.prepareForNTP(openedAfterIdle: hatch != nil)
+        if homePageConfiguration.mode == .coordinated {
+            homePageConfiguration.prepareForNTP(openedAfterIdle: hatch != nil)
+        }
 
         // Access the tab model directly as we don't want to create a new tab controller here
         guard let tabModel = tabManager.currentTabsModel.currentTab else {

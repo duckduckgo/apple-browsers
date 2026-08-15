@@ -305,8 +305,7 @@ private struct Metrics {
                 homeMessages: []
             ),
             messageActionHandler: RemoteMessagingActionHandler(),
-            imageLoader: PreviewImageLoader(),
-            promoCoordinator: PreviewNewTabPagePromoCoordinator()
+            imageLoader: PreviewImageLoader()
         ),
         favoritesViewModel: FavoritesPreviewModel()
     )
@@ -331,8 +330,7 @@ private struct Metrics {
                 ]
             ),
             messageActionHandler: RemoteMessagingActionHandler(),
-            imageLoader: PreviewImageLoader(),
-            promoCoordinator: PreviewNewTabPagePromoCoordinator()
+            imageLoader: PreviewImageLoader()
         ),
         favoritesViewModel: FavoritesPreviewModel()
     )
@@ -346,8 +344,7 @@ private struct Metrics {
                 homeMessages: []
             ),
             messageActionHandler: RemoteMessagingActionHandler(),
-            imageLoader: PreviewImageLoader(),
-            promoCoordinator: PreviewNewTabPagePromoCoordinator()
+            imageLoader: PreviewImageLoader()
         ),
         favoritesViewModel: FavoritesPreviewModel(favorites: [])
     )
@@ -361,32 +358,10 @@ private struct Metrics {
                 homeMessages: []
             ),
             messageActionHandler: RemoteMessagingActionHandler(),
-            imageLoader: PreviewImageLoader(),
-            promoCoordinator: PreviewNewTabPagePromoCoordinator()
+            imageLoader: PreviewImageLoader()
         ),
         favoritesViewModel: FavoritesPreviewModel()
     )
-}
-
-/// An inert, always-disabled promo coordinator for SwiftUI previews.
-@MainActor
-private final class PreviewNewTabPagePromoCoordinator: NewTabPagePromoCoordinating {
-    let promoQueueFeatureState = PromoQueueFeatureState.disabled
-
-    func admitVisiblePromo(_ identity: VisiblePromoIdentity) -> VisiblePromoAdmissionResult {
-        .featureDisabled
-    }
-
-    func releaseVisiblePromoLease(_ lease: PromoQueueVisiblePromoLease) {
-        lease.release()
-    }
-
-    func registerVisiblePromoRetry(
-        for surfaceID: UUID,
-        target: NewTabPagePromoRetrying
-    ) -> NewTabPagePromoRetryRegistration {
-        NewTabPagePromoRetryRegistration()
-    }
 }
 
 private final class PreviewMessagesConfiguration: HomePageMessagesConfiguration {

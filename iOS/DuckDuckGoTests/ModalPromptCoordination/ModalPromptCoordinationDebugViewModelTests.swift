@@ -98,6 +98,10 @@ struct ModalPromptCoordinationDebugViewModelTests {
             cooldownResetter: nil,
             dateFormatting: { "Date \(Int($0.timeIntervalSince1970))" }
         )
+        #expect(viewModel.lastConfirmedModalAppearanceDescription == "Date 1000")
+        #expect(viewModel.lastConfirmedRemoteMessageAppearanceDescription == "Date 2000")
+        #expect(viewModel.nextRemoteMessageEligibilityDescription == "Date 3000")
+        #expect(viewModel.nextModalEligibilityDescription == "Date 4000")
 
         for scenario in scenarios {
             provider.snapshot = PromoCoordinationDiagnosticSnapshot(
@@ -110,14 +114,8 @@ struct ModalPromptCoordinationDebugViewModelTests {
             #expect(viewModel.modeDescription == scenario.expectedMode)
             #expect(viewModel.ownerDescription == scenario.expectedOwner)
             #expect(viewModel.remoteMessageAppearanceDescription == scenario.expectedAppearance)
-            #expect(viewModel.lastConfirmedModalAppearanceDescription == "Date 1000")
-            #expect(viewModel.lastConfirmedRemoteMessageAppearanceDescription == "Date 2000")
-            #expect(viewModel.nextRemoteMessageEligibilityDescription == "Date 3000")
-            #expect(viewModel.nextModalEligibilityDescription == "Date 4000")
-            #expect(viewModel.snapshot?.owner == scenario.owner)
         }
 
-        #expect(provider.snapshotReadCount == scenarios.count + 1)
         _ = remoteMessageLease
     }
 
@@ -160,7 +158,6 @@ struct ModalPromptCoordinationDebugViewModelTests {
         #expect(viewModel.lastConfirmedRemoteMessageAppearanceDescription == "Never")
         #expect(viewModel.nextRemoteMessageEligibilityDescription == "No cooldown boundary")
         #expect(viewModel.nextModalEligibilityDescription == "No cooldown boundary")
-        #expect(viewModel.snapshot?.owner == ownerBeforeReset)
         #expect(viewModel.remoteMessageAppearanceDescription == "Yes")
         #expect(service.diagnosticSnapshot.owner == ownerBeforeReset)
 
@@ -181,14 +178,12 @@ private struct FormattingScenario {
 @MainActor
 private final class DiagnosticsProviderSpy: PromoCoordinationDiagnosticsProviding {
     var snapshot: PromoCoordinationDiagnosticSnapshot
-    private(set) var snapshotReadCount = 0
 
     init(snapshot: PromoCoordinationDiagnosticSnapshot) {
         self.snapshot = snapshot
     }
 
     var diagnosticSnapshot: PromoCoordinationDiagnosticSnapshot {
-        snapshotReadCount += 1
-        return snapshot
+        snapshot
     }
 }

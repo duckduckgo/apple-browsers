@@ -113,7 +113,8 @@ struct HomePageConfigurationTests {
         #expect(storeMock.capturedTriggerFilter == .noTrigger)
     }
 
-    @Test("Coordinated initialization defers RMF selection until explicit preparation")
+    @available(iOS 16, *)
+    @Test("Coordinated initialization defers RMF selection until explicit preparation", .timeLimit(.minutes(1)))
     func coordinatedInitializationDefersSelection() {
         let store = FilteredRemoteMessagingStore(noTriggerMessage: makeRemoteMessage(id: "message"))
         let gate = MockPromoGate()
@@ -131,7 +132,8 @@ struct HomePageConfigurationTests {
         #expect(sut.homeMessages == [.remoteMessage(remoteMessage: makeRemoteMessage(id: "message"))])
     }
 
-    @Test("Disabled preparation neither selects nor arms a later store refresh")
+    @available(iOS 16, *)
+    @Test("Disabled preparation neither selects nor arms a later store refresh", .timeLimit(.minutes(1)))
     func disabledPreparationDoesNotArmRefresh() async {
         let notificationCenter = NotificationCenter()
         let store = FilteredRemoteMessagingStore(noTriggerMessage: makeRemoteMessage(id: "message"))
@@ -157,7 +159,8 @@ struct HomePageConfigurationTests {
         #expect(gate.acquiredMessageIDs == ["message"])
     }
 
-    @Test("After-idle fallback pins the actual no-trigger filter for the ownership")
+    @available(iOS 16, *)
+    @Test("After-idle fallback pins the actual no-trigger filter for the ownership", .timeLimit(.minutes(1)))
     func afterIdleFallbackPinsActualFilter() {
         let original = makeRemoteMessage(id: "original")
         let replacement = makeRemoteMessage(id: "replacement")
@@ -176,7 +179,8 @@ struct HomePageConfigurationTests {
         #expect(sut.homeMessages == [.remoteMessage(remoteMessage: original)])
     }
 
-    @Test("Unsupported content is rejected before gate acquisition")
+    @available(iOS 16, *)
+    @Test("Unsupported content is rejected before gate acquisition", .timeLimit(.minutes(1)))
     func unsupportedContentDoesNotAcquire() {
         let unsupported = makeRemoteMessage(id: "unsupported", content: nil)
         let store = FilteredRemoteMessagingStore(noTriggerMessage: unsupported)
@@ -189,7 +193,8 @@ struct HomePageConfigurationTests {
         #expect(sut.homeMessages.isEmpty)
     }
 
-    @Test("A coordinated store refresh retries a denied candidate with the last preparation policy")
+    @available(iOS 16, *)
+    @Test("A coordinated store refresh retries a denied candidate with the last preparation policy", .timeLimit(.minutes(1)))
     func storeRefreshRetriesDeniedCandidate() async {
         let notificationCenter = NotificationCenter()
         let message = makeRemoteMessage(id: "after-idle")
@@ -211,7 +216,8 @@ struct HomePageConfigurationTests {
         #expect(sut.homeMessages == [.remoteMessage(remoteMessage: message)])
     }
 
-    @Test("One store notification selects once and synchronously converges all source consumers")
+    @available(iOS 16, *)
+    @Test("One store notification selects once and synchronously converges all source consumers", .timeLimit(.minutes(1)))
     func storeNotificationConvergesTwoModelsAndDirectConsumer() async {
         let notificationCenter = NotificationCenter()
         let message = makeRemoteMessage(id: "message")
@@ -246,7 +252,8 @@ struct HomePageConfigurationTests {
         withExtendedLifetime(cancellable) {}
     }
 
-    @Test("A modal-owned slot prevents RMF publication and store mutation")
+    @available(iOS 16, *)
+    @Test("A modal-owned slot prevents RMF publication and store mutation", .timeLimit(.minutes(1)))
     func modalOwnershipBlocksRemoteMessageAdmission() throws {
         let message = makeRemoteMessage(id: "message")
         let store = FilteredRemoteMessagingStore(noTriggerMessage: message)
@@ -266,7 +273,8 @@ struct HomePageConfigurationTests {
         _ = modalLease
     }
 
-    @Test("The complete ownership context is retained before RMF publication")
+    @available(iOS 16, *)
+    @Test("The complete ownership context is retained before RMF publication", .timeLimit(.minutes(1)))
     func ownershipIsRetainedBeforePublication() {
         let message = makeRemoteMessage(id: "message")
         let store = FilteredRemoteMessagingStore(noTriggerMessage: message)
@@ -286,7 +294,8 @@ struct HomePageConfigurationTests {
         withExtendedLifetime(cancellable) {}
     }
 
-    @Test("Same ownership keeps identity while background reacquisition changes it")
+    @available(iOS 16, *)
+    @Test("Same ownership keeps identity while background reacquisition changes it", .timeLimit(.minutes(1)))
     func ownershipIdentityLifecycle() {
         let message = makeRemoteMessage(id: "message")
         let store = FilteredRemoteMessagingStore(noTriggerMessage: message)
@@ -309,7 +318,8 @@ struct HomePageConfigurationTests {
         #expect(gate.acquiredMessageIDs == ["message", "message"])
     }
 
-    @Test("Only the first current appearance confirms history and stale appearance is ignored")
+    @available(iOS 16, *)
+    @Test("Only the first current appearance confirms history and stale appearance is ignored", .timeLimit(.minutes(1)))
     func appearanceIsIdentityCheckedAndConfirmedOnce() {
         let message = makeRemoteMessage(id: "message")
         let store = FilteredRemoteMessagingStore(noTriggerMessage: message)
@@ -327,11 +337,19 @@ struct HomePageConfigurationTests {
         #expect(store.hasShownRemoteMessageCallCount == 1)
     }
 
-    @Test("An appeared RMF records real history once and is cooldown-blocked after background")
+    @available(iOS 16, *)
+    @Test("An appeared RMF records real history once and is cooldown-blocked after background", .timeLimit(.minutes(1)))
     func appearedRemoteMessageIsCooldownBlockedAfterBackground() async {
         let now = Date(timeIntervalSince1970: 1_000_000)
         let message = makeRemoteMessage(id: "message")
         let store = FilteredRemoteMessagingStore(noTriggerMessage: message)
+        let (shownPersistenceEvents, shownPersistenceContinuation) = AsyncStream.makeStream(of: Void.self)
+        defer { shownPersistenceContinuation.finish() }
+        store.onShownPersistence = { persistedMessageID in
+            guard persistedMessageID == message.id else { return }
+            shownPersistenceContinuation.yield()
+            shownPersistenceContinuation.finish()
+        }
         let history = RecordingPromoQueueRemoteMessageHistory()
         let arbiter = PromoQueueLeaseArbiter()
         let policy = PromoQueueCooldownPolicy(
@@ -351,8 +369,10 @@ struct HomePageConfigurationTests {
         let context = sut.presentationContext(for: .remoteMessage(remoteMessage: message))
         sut.didAppear(.remoteMessage(remoteMessage: message), presentationContext: context)
         sut.didAppear(.remoteMessage(remoteMessage: message), presentationContext: context)
-        while store.updatedShownMessageIDs.isEmpty {
-            await Task.yield()
+        var shownPersistenceIterator = shownPersistenceEvents.makeAsyncIterator()
+        guard await shownPersistenceIterator.next() != nil else {
+            Issue.record("Expected shown persistence to be invoked")
+            return
         }
 
         var ownerAtBackgroundSignal: PromoQueueLeaseOwnerSnapshot?
@@ -372,7 +392,8 @@ struct HomePageConfigurationTests {
         withExtendedLifetime(cancellable) {}
     }
 
-    @Test("A never-appeared RMF can reacquire after background without writing history")
+    @available(iOS 16, *)
+    @Test("A never-appeared RMF can reacquire after background without writing history", .timeLimit(.minutes(1)))
     func neverAppearedRemoteMessageCanReacquireAfterBackground() {
         let message = makeRemoteMessage(id: "message")
         let store = FilteredRemoteMessagingStore(noTriggerMessage: message)
@@ -403,7 +424,8 @@ struct HomePageConfigurationTests {
         #expect(arbiter.snapshot.owner != nil)
     }
 
-    @Test("A dismissal made stale while awaiting cannot release a reacquired same-ID owner")
+    @available(iOS 16, *)
+    @Test("A dismissal made stale while awaiting cannot release a reacquired same-ID owner", .timeLimit(.minutes(1)))
     func staleDismissalCompletionCannotReleaseReacquiredOwner() async {
         let notificationCenter = NotificationCenter()
         let message = makeRemoteMessage(id: "message")
@@ -412,7 +434,8 @@ struct HomePageConfigurationTests {
         let sut = makeCoordinatedConfiguration(store: store, gate: gate, notificationCenter: notificationCenter)
         sut.prepareForNTP(openedAfterIdle: false)
         let oldContext = sut.presentationContext(for: .remoteMessage(remoteMessage: message))
-        var dismissalContinuation: CheckedContinuation<Void, Never>?
+        let (dismissalEnteredEvents, dismissalEnteredContinuation) = AsyncStream.makeStream(of: Void.self)
+        let (dismissalResumeEvents, dismissalResumeContinuation) = AsyncStream.makeStream(of: Void.self)
         var reconciliationNotificationCount = 0
         var ownerAtReconciliationNotification: PromoQueueLeaseOwnerSnapshot?
         let notificationObserver = notificationCenter.addObserver(
@@ -425,10 +448,12 @@ struct HomePageConfigurationTests {
                 ownerAtReconciliationNotification = gate.arbiter.snapshot.owner
             }
         }
+        defer { notificationCenter.removeObserver(notificationObserver) }
         store.dismissRemoteMessageHandler = {
-            await withCheckedContinuation { continuation in
-                dismissalContinuation = continuation
-            }
+            dismissalEnteredContinuation.yield()
+            dismissalEnteredContinuation.finish()
+            var dismissalResumeIterator = dismissalResumeEvents.makeAsyncIterator()
+            _ = await dismissalResumeIterator.next()
         }
 
         let dismissalTask = Task {
@@ -437,15 +462,23 @@ struct HomePageConfigurationTests {
                 presentationContext: oldContext
             )
         }
-        while dismissalContinuation == nil {
-            await Task.yield()
+        defer {
+            dismissalEnteredContinuation.finish()
+            dismissalResumeContinuation.finish()
+            dismissalTask.cancel()
+        }
+        var dismissalEnteredIterator = dismissalEnteredEvents.makeAsyncIterator()
+        guard await dismissalEnteredIterator.next() != nil else {
+            Issue.record("Expected dismissal persistence to begin")
+            return
         }
 
         sut.handleAppBackgrounded()
         sut.handleAppForegrounded()
         sut.prepareForNTP(openedAfterIdle: false)
         let newContext = sut.presentationContext(for: .remoteMessage(remoteMessage: message))
-        dismissalContinuation?.resume()
+        dismissalResumeContinuation.yield()
+        dismissalResumeContinuation.finish()
         await dismissalTask.value
 
         #expect(reconciliationNotificationCount == 1)
@@ -457,10 +490,10 @@ struct HomePageConfigurationTests {
         #expect(sut.presentationContext(for: .remoteMessage(remoteMessage: message)) == nil)
         #expect(gate.arbiter.snapshot.owner == nil)
         #expect(store.dismissedMessageIDs == ["message"])
-        notificationCenter.removeObserver(notificationObserver)
     }
 
-    @Test("Ordered teardown signals while the old lease still owns the slot")
+    @available(iOS 16, *)
+    @Test("Ordered teardown signals while the old lease still owns the slot", .timeLimit(.minutes(1)))
     func teardownSignalsBeforeRelease() async {
         let notificationCenter = NotificationCenter()
         let message = makeRemoteMessage(id: "message")
@@ -484,7 +517,8 @@ struct HomePageConfigurationTests {
         withExtendedLifetime(cancellable) {}
     }
 
-    @Test("Replacement unpublishes before releasing the old owner, then publishes a new identity")
+    @available(iOS 16, *)
+    @Test("Replacement unpublishes before releasing the old owner, then publishes a new identity", .timeLimit(.minutes(1)))
     func replacementUsesOrderedTeardownAndFreshIdentity() async {
         let notificationCenter = NotificationCenter()
         let original = makeRemoteMessage(id: "original")
@@ -512,7 +546,8 @@ struct HomePageConfigurationTests {
         withExtendedLifetime(cancellable) {}
     }
 
-    @Test("Onboarding suppression unpublishes before releasing current ownership")
+    @available(iOS 16, *)
+    @Test("Onboarding suppression unpublishes before releasing current ownership", .timeLimit(.minutes(1)))
     func onboardingSuppressionUsesOrderedTeardown() async {
         let notificationCenter = NotificationCenter()
         let message = makeRemoteMessage(id: "message")
@@ -645,6 +680,7 @@ private final class FilteredRemoteMessagingStore: RemoteMessagingStoring {
     private(set) var updatedShownMessageIDs: [String] = []
     private(set) var hasShownRemoteMessageCallCount = 0
     var dismissRemoteMessageHandler: (() async -> Void)?
+    var onShownPersistence: ((String) -> Void)?
 
     init(afterIdleMessage: RemoteMessageModel? = nil, noTriggerMessage: RemoteMessageModel? = nil) {
         self.afterIdleMessage = afterIdleMessage
@@ -693,6 +729,7 @@ private final class FilteredRemoteMessagingStore: RemoteMessagingStoring {
         updatedShownMessageIDs.append(id)
         if shown {
             shownMessageIDs.insert(id)
+            onShownPersistence?(id)
         } else {
             shownMessageIDs.remove(id)
         }

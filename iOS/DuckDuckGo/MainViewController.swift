@@ -5544,7 +5544,9 @@ extension MainViewController: OmniBarDelegate {
 
         guard newTabPageViewController == nil else { return }
 
-        homePageConfiguration.prepareForNTP(openedAfterIdle: currentTab?.tabModel.openedAfterIdle ?? false)
+        if homePageConfiguration.mode == .coordinated {
+            homePageConfiguration.prepareForNTP(openedAfterIdle: currentTab?.tabModel.openedAfterIdle ?? false)
+        }
 
         if isPad {
             // iPad routes all suggestion show/hide through the focus model (favorites vs autocomplete

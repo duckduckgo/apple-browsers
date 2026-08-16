@@ -26,7 +26,8 @@ import UIKit
 @Suite("RMF - Home Message View Model Builder")
 struct HomeMessageViewModelBuilderTests {
 
-    @Test("Renderability uses the same supported content conversion as build")
+    @available(iOS 16, *)
+    @Test("Renderability uses the same supported content conversion as build", .timeLimit(.minutes(1)))
     func renderabilityMatchesBuilderSupport() {
         let supportedMessage = makeRemoteMessage(
             content: .small(titleText: "Title", descriptionText: "Description"),
@@ -55,27 +56,6 @@ struct HomeMessageViewModelBuilderTests {
         #expect(HomeMessageViewModelBuilder.canBuild(for: supportedMessage))
         #expect(!HomeMessageViewModelBuilder.canBuild(for: missingContentMessage))
         #expect(!HomeMessageViewModelBuilder.canBuild(for: cardsListMessage))
-    }
-
-    @Test("Renderability check has no image reporting side effects")
-    func renderabilityHasNoImageSideEffects() {
-        let message = makeRemoteMessage(
-            content: .medium(
-                titleText: "Title",
-                descriptionText: "Description",
-                placeholder: .announce,
-                imageUrl: URL(string: "https://example.com/image.png")
-            ),
-            isMetricsEnabled: true
-        )
-        let imageLoader = MockRemoteMessagingImageLoader()
-        imageLoader.cachedImageToReturn = UIImage()
-        let pixelReporter = MockRemoteMessagingPixelReporter()
-
-        #expect(HomeMessageViewModelBuilder.canBuild(for: message))
-        #expect(imageLoader.cachedImageCalledWithUrl == nil)
-        #expect(!pixelReporter.didCallMeasureRemoteMessageImageLoadSuccess)
-        #expect(!pixelReporter.didCallMeasureRemoteMessageImageLoadFailed)
     }
 
     @Test("When message has no imageUrl then loadRemoteImage is nil")

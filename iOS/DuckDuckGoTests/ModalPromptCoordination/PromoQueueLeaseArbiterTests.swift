@@ -82,8 +82,7 @@ struct PromoQueueLeaseArbiterTests {
             _ = droppedLease
         }
 
-        // Repeated reads remain observational; the subsequent acquisition path performs stale-record recovery.
-        #expect(arbiter.snapshot.owner == nil)
+        // The passive read remains observational; the subsequent acquisition path performs stale-record recovery.
         #expect(arbiter.snapshot.owner == nil)
         let modalLease = try acquiredModalLease(from: arbiter.acquireModalLease())
         #expect(arbiter.snapshot.owner == .modal(ownershipIdentity: modalLease.ownershipIdentity))

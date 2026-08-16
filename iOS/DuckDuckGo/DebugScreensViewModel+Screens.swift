@@ -87,7 +87,7 @@ extension DebugScreensViewModel {
 
                 controller.presentShareSheet(withItems: [DiagnosticReportDataSource(delegate: Delegate(), tabManager: d.tabManager, fireproofing: d.fireproofing)], fromView: controller.view)
             }),
-            .action(title: "Reset Prompts Cooldown Period", resetModalPromptsCooldownPeriod),
+            resetModalPromptsCooldownPeriodScreen,
 
             // MARK: SwiftUI Views
             .view(title: "DuckUI", { _ in
@@ -316,9 +316,11 @@ extension DebugScreensViewModel {
         ].compactMap { $0 }
     }
     
-    private func resetModalPromptsCooldownPeriod(_ dependencies: DebugScreen.Dependencies) {
-        Task { @MainActor in
-            dependencies.promoCoordinationCooldownResetter?.resetModalCooldown()
+    private var resetModalPromptsCooldownPeriodScreen: DebugScreen? {
+        guard let cooldownResetter = dependencies.promoCoordinationCooldownResetter else { return nil }
+
+        return .action(title: "Reset Prompts Cooldown Period") { _ in
+            cooldownResetter.resetModalCooldown()
         }
     }
 

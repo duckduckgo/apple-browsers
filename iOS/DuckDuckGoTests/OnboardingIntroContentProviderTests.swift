@@ -1181,7 +1181,7 @@ struct OnboardingIntroContentProviderTests {
                 message: nil,
                 items: [
                     .init(type: .recentlyVisitedSites, title: "Search History", subtitle: "Show recently visited sites in search suggestions. Private, only on your device."),
-                    .init(type: .safeSearch, title: "Safe search", subtitle: "Omit questionable (mostly adult) material in results.")
+                    .init(type: .safeSearch, title: "Safe Search", subtitle: "Omit questionable (mostly adult) material in results.")
                 ],
                 primaryCTA: "Next",
                 daxAnimation: .wingLeft

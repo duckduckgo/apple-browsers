@@ -1497,6 +1497,7 @@ extension OnboardingIntroViewModelTests {
 
     func testToggleInputModeContinueActionPersistsOpensWithAIChatWhenEnabled() {
         // GIVEN
+        onboardingManagerMock.onboardingSteps = [.toggleInputModeSelection, .setDefaultBrowser]
         let personalizationManager = MockOnboardingPersonalizationManager()
         let sut = makeSUT(currentOnboardingStep: .toggleInputModeSelection, personalizationManager: personalizationManager)
 
@@ -1509,6 +1510,7 @@ extension OnboardingIntroViewModelTests {
 
     func testToggleInputModeContinueActionPersistsOpensWithAIChatWhenDisabled() {
         // GIVEN
+        onboardingManagerMock.onboardingSteps = [.toggleInputModeSelection, .setDefaultBrowser]
         let personalizationManager = MockOnboardingPersonalizationManager()
         personalizationManager.doesNewTabOpenWithAIChat = true
         let sut = makeSUT(currentOnboardingStep: .toggleInputModeSelection, personalizationManager: personalizationManager)
@@ -1522,6 +1524,7 @@ extension OnboardingIntroViewModelTests {
 
     func testKeepDuckAIContinueActionPersistsDuckAIEnabledWhenEnabled() {
         // GIVEN
+        onboardingManagerMock.onboardingSteps = [.keepDuckAISelection, .setDefaultBrowser]
         let personalizationManager = MockOnboardingPersonalizationManager()
         let sut = makeSUT(currentOnboardingStep: .keepDuckAISelection, personalizationManager: personalizationManager)
 
@@ -1534,6 +1537,7 @@ extension OnboardingIntroViewModelTests {
 
     func testKeepDuckAIContinueActionPersistsDuckAIEnabledWhenDisabled() {
         // GIVEN
+        onboardingManagerMock.onboardingSteps = [.keepDuckAISelection, .setDefaultBrowser]
         let personalizationManager = MockOnboardingPersonalizationManager()
         personalizationManager.isDuckAIEnabled = true
         let sut = makeSUT(currentOnboardingStep: .keepDuckAISelection, personalizationManager: personalizationManager)

@@ -37,8 +37,10 @@ extension OnboardingPersonalizationContent.Item.ItemType {
             Image(uiImage: DesignSystemImages.Color.Size24.aiImagesStriketrough)
         case .youTubeAdBlocking:
             Image(uiImage: DesignSystemImages.Color.Size24.adsBlocked)
-        case .duckPlayer:
-            Image(uiImage: DesignSystemImages.Color.Size24.videoPlayer)
+        case .rejectOptionalCookies:
+            Image(uiImage: DesignSystemImages.Color.Size24.cookieBlocked)
+        case .acceptOtherCookies:
+            Image(uiImage: DesignSystemImages.Color.Size24.cookie)
         }
     }
 
@@ -46,28 +48,86 @@ extension OnboardingPersonalizationContent.Item.ItemType {
 
 // MARK: - Toggle Item
 
-struct OnboardingPersonalizationToggleItemsList: View {
-    private enum Metrics {
-        static let contentSpacing: CGFloat = 16.0
-        static let dividerHeight: CGFloat = 1.0
-    }
+private enum OnboardingPersonalizationToggleMetrics {
+    static let contentSpacing: CGFloat = 16.0
+    static let dividerHeight: CGFloat = 1.0
+}
 
+struct OnboardingPersonalizationToggleItemsList: View {
     @Environment(\.onboardingTheme) private var onboardingTheme
 
     let items: [OnboardingPersonalizationToggleItem]
 
     var body: some View {
-        VStack(spacing: Metrics.contentSpacing) {
+        VStack(spacing: OnboardingPersonalizationToggleMetrics.contentSpacing) {
             ForEach(items) { item in
-                OnboardingPersonalizationToggleItemView(icon: item.item.type.icon, title: item.item.title, subtitle: item.item.subtitle, toggleBinding: item.isOn)
-
-                Divider()
-                    .frame(height: Metrics.dividerHeight)
+                if item.dependentItems.isEmpty {
+                    // Standalone row
+                    OnboardingPersonalizationToggleRow(item: item, toggleBinding: item.isOn)
+                } else {
+                    // Parent + its dependent rows, each group owning its own show/hide state.
+                    OnboardingPersonalizationDependentToggleGroup(parent: item)
+                }
             }
         }
     }
 }
 
+/// A single toggle row plus its trailing divider.
+private struct OnboardingPersonalizationToggleRow: View {
+    let item: OnboardingPersonalizationToggleItem
+    let toggleBinding: Binding<Bool>
+
+    var body: some View {
+        OnboardingPersonalizationToggleItemView(
+            icon: item.item.type.icon,
+            title: item.item.title,
+            subtitle: item.item.subtitle,
+            toggleBinding: toggleBinding
+        )
+
+        Divider()
+            .frame(height: OnboardingPersonalizationToggleMetrics.dividerHeight)
+    }
+}
+
+/// A parent toggle plus its dependent rows, which are shown only while the parent is on.
+///
+/// The parent's on/off is held as this view's own `@State` (canonical Toggle→@State) so flipping it reliably re-renders *this* group.
+/// Each group owns its state, so multiple parents on one screen stay independent.
+private struct OnboardingPersonalizationDependentToggleGroup: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    let parent: OnboardingPersonalizationToggleItem
+
+    @State private var isOn: Bool
+
+    init(parent: OnboardingPersonalizationToggleItem) {
+        self.parent = parent
+        _isOn = State(initialValue: parent.isOn.wrappedValue)
+    }
+
+    var body: some View {
+        OnboardingPersonalizationToggleRow(
+            item: parent,
+            toggleBinding: Binding(
+                get: { isOn },
+                set: { newValue in
+                    parent.isOn.wrappedValue = newValue
+                    withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
+                        isOn = newValue
+                    }
+                }
+            )
+        )
+
+        if isOn {
+            ForEach(parent.dependentItems) { dependent in
+                OnboardingPersonalizationToggleRow(item: dependent, toggleBinding: dependent.isOn)
+            }
+        }
+    }
+}
 
 struct OnboardingPersonalizationToggleItemView: View {
     private enum Metrics {

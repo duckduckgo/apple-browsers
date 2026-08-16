@@ -339,11 +339,8 @@ final class OnboardingIntroViewModel: ObservableObject {
         makeNextViewState()
     }
 
-    func duckPlayerContinueAction() {
-        pixelReporter.measureDuckPlayerSelection(
-            youTubeAdBlockingEnabled: personalizationManager.isYouTubeAdBlockingEnabled,
-            duckPlayerEnabled: personalizationManager.isDuckPlayerEnabled
-        )
+    func adBlockingContinueAction() {
+        // TODO: wire the ad-blocking (cookie personalization) selection pixel for this branch.
         makeNextViewState()
     }
 
@@ -491,10 +488,10 @@ private extension OnboardingIntroViewModel {
                         step: stepInfo()
                     )
                 )
-            case .duckPlayerSelection:
+            case .adBlockingPersonalization:
                 return .onboarding(
                     .init(
-                        type: .duckPlayerDialog(content: contentProvider.youTubePersonalizationContent),
+                        type: .adBlockingDialog(content: contentProvider.adBlockingPersonalizationContent),
                         step: stepInfo()
                     )
                 )
@@ -635,8 +632,8 @@ private extension OnboardingIntroViewModel {
             currentIntroStep = .toggleInputModeSelection
         case .keepDuckAISelection where introSteps.contains(.keepDuckAISelection):
             currentIntroStep = .keepDuckAISelection
-        case .duckPlayerSelection where introSteps.contains(.duckPlayerSelection):
-            currentIntroStep = .duckPlayerSelection
+        case .adBlockingPersonalization where introSteps.contains(.adBlockingPersonalization):
+            currentIntroStep = .adBlockingPersonalization
         case .duckAIAnswerStep:
             break // handled separately by restorePendingDuckAIAnswerStepIfNeeded in MainViewController
         case .interludeDuckAI where introSteps.contains(.interlude(.duckAI)):
@@ -687,8 +684,8 @@ private extension OnboardingIntroViewModel {
             pixelReporter.measureToggleInputModeImpression()
         case .keepDuckAIDialog:
             pixelReporter.measureKeepDuckAIImpression()
-        case .duckPlayerDialog:
-            pixelReporter.measureDuckPlayerImpression()
+        case .adBlockingDialog:
+            break // TODO: ad-blocking screen impression pixel (cookie personalization) for this branch.
         }
     }
 

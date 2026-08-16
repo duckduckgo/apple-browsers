@@ -166,15 +166,17 @@ final class ModalPromptCoordinationRealUIKitTests {
         // implementation that consulted the topmost controller would report the attempt finished and drop the lease.
         attachmentChecker.markAttached(exactRoot)
 
-        #expect(!sut.reconcilePresentedModal())
+        sut.reconcilePresentedModal()
         #expect(promoQueueLeaseArbiter.snapshot.hasModalLease)
+        #expect(sut.modalAttemptPhase == .presentationActive(lease.ownershipIdentity))
         #expect(attachmentChecker.didQuery(exactRoot))
         #expect(!attachmentChecker.didQuery(nestedChild))
 
         // The lease is released only once the retained root itself goes away, child presentation or not.
         attachmentChecker.attachedRoots.remove(ObjectIdentifier(exactRoot))
 
-        #expect(sut.reconcilePresentedModal())
+        sut.reconcilePresentedModal()
+        #expect(sut.modalAttemptPhase == .idle)
         #expect(!promoQueueLeaseArbiter.snapshot.hasModalLease)
     }
 
@@ -223,7 +225,7 @@ final class ModalPromptCoordinationRealUIKitTests {
             #expect(exactRoot.isBeingDismissed)
             #expect(exactRoot.presentingViewController === presentationHost)
             #expect(exactRoot.viewIfLoaded?.window != nil)
-            #expect(!sut.reconcilePresentedModal())
+            sut.reconcilePresentedModal()
             #expect(sut.modalAttemptPhase == .presentationActive(lease.ownershipIdentity))
             guard case .blockedByModal = promoQueueLeaseArbiter.acquireRemoteMessageLease(for: waitingMessageID) else {
                 Issue.record("Expected the dismissing modal to keep blocking visible promo admission")
@@ -237,7 +239,7 @@ final class ModalPromptCoordinationRealUIKitTests {
         #expect(exactRoot.viewIfLoaded?.window == nil)
 
         // THEN reconciliation releases the modal lease and the waiting promo can be admitted.
-        #expect(sut.reconcilePresentedModal())
+        sut.reconcilePresentedModal()
         #expect(sut.modalAttemptPhase == .idle)
         #expect(!promoQueueLeaseArbiter.snapshot.hasModalLease)
         guard case .acquired(let remoteMessageLease) = promoQueueLeaseArbiter.acquireRemoteMessageLease(for: waitingMessageID) else {

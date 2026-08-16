@@ -1,5 +1,5 @@
 //
-//  ModalPromptCoordinationDebugViewModelTests.swift
+//  PromptCoordinationDebugViewModelTests.swift
 //  DuckDuckGoTests
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -23,8 +23,8 @@ import Testing
 @testable import DuckDuckGo
 
 @MainActor
-@Suite("Modal Prompt Coordination - Debug View Model")
-struct ModalPromptCoordinationDebugViewModelTests {
+@Suite("Prompt Coordination - Debug View Model")
+struct PromptCoordinationDebugViewModelTests {
 
     @available(iOS 16, *)
     @Test("Refresh passively formats production diagnostics", .timeLimit(.minutes(1)))
@@ -93,7 +93,7 @@ struct ModalPromptCoordinationDebugViewModelTests {
                 cooldown: cooldown
             )
         )
-        let viewModel = ModalPromptCoordinationDebugViewModel(
+        let viewModel = PromptCoordinationDebugViewModel(
             diagnosticsProvider: provider,
             cooldownResetter: nil,
             dateFormatting: { "Date \(Int($0.timeIntervalSince1970))" }
@@ -143,7 +143,7 @@ struct ModalPromptCoordinationDebugViewModelTests {
         let lease = try #require(service.tryAcquireRemoteMessageLease(for: "message"))
         #expect(lease.markShown())
         let ownerBeforeReset = try #require(service.diagnosticSnapshot.owner)
-        let viewModel = ModalPromptCoordinationDebugViewModel(
+        let viewModel = PromptCoordinationDebugViewModel(
             diagnosticsProvider: service,
             cooldownResetter: service,
             dateFormatting: { "Date \(Int($0.timeIntervalSince1970))" }

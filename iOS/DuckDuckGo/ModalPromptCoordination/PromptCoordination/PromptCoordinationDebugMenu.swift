@@ -1,5 +1,5 @@
 //
-//  ModalPromptCoordinationDebugMenu.swift
+//  PromptCoordinationDebugMenu.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -19,15 +19,15 @@
 
 import SwiftUI
 
-struct ModalPromptCoordinationDebugView: View {
-    @StateObject private var viewModel: ModalPromptCoordinationDebugViewModel
+struct PromptCoordinationDebugView: View {
+    @StateObject private var viewModel: PromptCoordinationDebugViewModel
 
     init(
         diagnosticsProvider: PromoCoordinationDiagnosticsProviding?,
         cooldownResetter: PromoCoordinationCooldownResetting?
     ) {
         self._viewModel = StateObject(
-            wrappedValue: ModalPromptCoordinationDebugViewModel(
+            wrappedValue: PromptCoordinationDebugViewModel(
                 diagnosticsProvider: diagnosticsProvider,
                 cooldownResetter: cooldownResetter
             )
@@ -44,7 +44,7 @@ struct ModalPromptCoordinationDebugView: View {
                     viewModel.refresh()
                 }
             } header: {
-                Text(verbatim: "Promo Queue")
+                Text(verbatim: "Prompt Coordination")
             } footer: {
                 Text(verbatim: "Feature flag changes require a relaunch.")
             }
@@ -76,6 +76,7 @@ struct ModalPromptCoordinationDebugView: View {
                 Text(verbatim: "Cooldown resets do not release an active owner or dismiss a message.")
             }
         }
+        .navigationTitle("Prompt Coordination")
     }
 
     private func diagnosticRow(title: String, value: String) -> some View {
@@ -91,7 +92,7 @@ struct ModalPromptCoordinationDebugView: View {
 
 /// Internal debug UI contract; coordination state remains available only through the injected providers.
 @MainActor
-final class ModalPromptCoordinationDebugViewModel: ObservableObject {
+final class PromptCoordinationDebugViewModel: ObservableObject {
     private enum Text {
         static let unavailable = "Unavailable"
         static let never = "Never"

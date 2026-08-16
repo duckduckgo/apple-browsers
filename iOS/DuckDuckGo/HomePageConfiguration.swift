@@ -106,10 +106,7 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
     }
 
     func prepareForNTP(openedAfterIdle: Bool) {
-        guard mode == .coordinated else {
-            homeMessages = buildLegacyHomeMessages(openedAfterIdle: openedAfterIdle)
-            return
-        }
+        guard mode == .coordinated else { return }
         guard isRMFAdmissionEnabled else {
             return
         }

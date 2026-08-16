@@ -1,0 +1,149 @@
+# Promo Queue local PR handoff
+
+## PR 1
+
+Suggested title: **iOS Promo Queue: Simplify coordination foundation**
+
+### Draft description
+
+This change replaces the broad Promo Queue foundation with a startup-latched, app-scoped coordination slot while preserving legacy behavior when `promoPresentationCoordination` is disabled. It prevents launch-promo provider evaluation from racing an admitted NTP remote message and establishes the primitives required for shared-source RMF integration in the next stack unit.
+
+The implementation removes live feature transitions, per-surface occupancy/retry APIs, renderer coordinator plumbing, transition-only tests, and obsolete project references. It reduces the arbiter to one identity-safe modal or RMF owner, uses one opaque modal ownership identity through arbitration and manager phases, and makes transferred modal-lease handling a one-way `Void` call owned entirely by the manager. It preserves exact-root modal lease retention, adds the three directional confirmed-appearance cooldown rules, and introduces a failure-tolerant `ThrowingKeyValueStoring` RMF history plus a service-owned lease that records only the first valid appearance. `PromoCoordinationFactory` constructs one mode, arbiter, modal store/manager, RMF history, cooldown policy, and service.
+
+Accepted limitations and non-goals: feature changes require relaunch; modal dismissal is reconciled lazily; retry remains checkpoint-driven; arbitrary UIKit sheets are out of scope; there are no timers, waiters, renderer registries, release broadcasts, or new telemetry. The production feature flag remains off. End-to-end RMF publication gating follows in `bartosz/promo-q-simp-3`.
+
+Verification completed on iPhone 17 Pro (iOS 26.4) through XcodeBuildMCP:
+
+- Phase 0 validation: 62 focused tests passed with 0 failures.
+- Phase 1 verification: 51 focused tests passed with 0 failures, covering arbiter identity safety, cooldown boundaries/fallback storage, service-owned appearance confirmation, modal/RMF admission order, and modal retention.
+- Phase 1 alignment: 27 focused unit tests and 11 integration tests passed with 0 failures, including the first-read-failure/no-cache history case and the one-identity/one-way-transfer cleanup.
+- `iOS Browser Alpha` Debug simulator build succeeded.
+- `git diff --check` passed and static searches found none of the removed live-transition, per-surface/retry, or NTP renderer-coordinator symbols.
+
+Stack dependency: this is PR 1, based on `main`; PR 2 will integrate the gate at the shared `HomePageConfiguration` source. Access-level changes: none were made solely for testing, and no production access was widened beyond the contracts required by the source gate, callback identity, and diagnostics plan.
+
+## PR 2
+
+Suggested title: **iOS Promo Queue: Gate NTP RMF at the shared message source**
+
+### Draft description
+
+This change integrates Promo Queue at the one app-scoped `HomePageConfiguration` shared by every NTP renderer. When coordination is enabled, RMF selection is deferred until an explicit NTP activation checkpoint, admitted before publication, and retained by source/message lifecycle rather than physical view visibility. Legacy behavior remains selected at launch when the feature flag is disabled.
+
+The shared source is main-actor isolated and owns one aggregate containing the selected message, actual trigger filter, service-owned lease, and opaque presentation identity. It pins after-idle fallback to the filter actually selected, rejects unsupported content before acquisition, publishes only after the aggregate is retained, and emits a synchronous object-scoped change signal consumed by all NTP models and direct suggestion hosts. The standard NTP, legacy/iPad tray, OmniBar editing sheet, and unified-input path each prepare once at their existing activation seam. Central app lifecycle wiring disables admission and unpublishes before releasing on background; foreground only enables a later explicit checkpoint.
+
+Coordinated shown accounting now occurs on the first validated physical appearance. The acquisition identity is reused for callback validation and SwiftUI diffing, so stale appearances and dismissals cannot affect a replacement owner. Async dismissal remains unfrozen: authoritative store changes may progress while awaiting, direct teardown occurs only for the still-current context, and exactly one existing reconciliation notification follows. There are no renderer visibility callbacks, release broadcasts, timers, retry registries, or new telemetry.
+
+Accepted limitations and non-goals: the feature remains startup-latched and off by default; retries remain checkpoint-driven; foreground does not replay a denied or backgrounded request; an attached NTP can remain blank beyond a cooldown boundary until another natural checkpoint; a never-appeared card may reacquire after background, while an appeared same-ID card is cooldown-blocked; rapid cross-acquisition unique-shown accounting retains the pre-existing best-effort behavior. The expected regular `remoteMessageShown` volume is lower because coordinated mode reports only the first real appearance per acquisition instead of eager model mapping. Diagnostic visibility and reset controls follow in PR 3.
+
+Verification completed on iPhone 17 Pro (iOS 26.4) through XcodeBuildMCP:
+
+- 111 focused unit tests passed with 0 failures across the arbiter, directional cooldown, promo service, modal manager/root/UIKit, shared source/model/builder, and feature-flag suites.
+- Phase 2 coverage includes startup/background admission, one-notification/two-model convergence, actual-filter pinning, modal denial, renderability, retained-before-publication ordering, same-ID identity, real appeared/never-appeared cooldown behavior, ordered expiry/replacement/onboarding/background teardown, and suspended dismissal reconciliation.
+- `iOS Browser Alpha` Debug simulator build succeeded with no build warnings or errors.
+- `git diff --check` passed; static searches found no discarded renderer/retry/live-transition vocabulary or live feature-flag subscription, and confirmed exactly four activation-time preparation calls.
+- The feature-state manual matrix remains for human QA because it requires configured Remote Messaging content and launch-modal eligibility states not available in the local automated harness.
+
+Stack dependency: this is PR 2, based on PR 1 (`bartosz/promo-q-simp-2`). PR 3 adds internal diagnostics and reset controls. The measured PR diff is 1,669 insertions and 215 deletions across 23 files (1,884 changed lines), including the reviewed plan/design documentation carried by this branch. No production access was widened solely for tests.
+
+## PR 3
+
+Suggested title: **iOS Promo Queue: Add simplified coordination diagnostics**
+
+### Draft description
+
+This change extends the existing internal Modal Prompt Coordination debug screen with read-only Promo Queue diagnostics and explicit cooldown-reset controls. It reuses the app-scoped `PromoCoordinationService`, arbiter, modal store, and RMF history created by production; it does not create a second coordinator or policy graph.
+
+The screen shows startup-latched mode, the active modal ownership ID or RMF message/acquisition IDs, RMF appearance confirmation, last confirmed modal/RMF appearances, and the next RMF/modal eligibility boundaries. Refresh is passive, flag changes are labeled as requiring relaunch, and the UI states that eligibility dates do not schedule retries. Arbiter snapshots now report a dead weak token as ownerless without pruning; stale-record cleanup remains on the next acquisition path.
+
+The existing modal reset and the new clearly labeled RMF reset route through the production cooldown policy. RMF reset clears persisted history plus the authoritative in-process fallback/cache and refreshes the displayed boundaries immediately. Neither reset releases an owner or dismisses a message. The related What’s New, global prompt-reset, and CPM debug actions now use the same authoritative modal reset route instead of constructing or bypassing production cooldown state.
+
+There are no force-owner controls, modal-phase/last-denial plumbing, retry timers, release broadcasts, production admission changes, or new telemetry. Human review/integration and the external rollout handoff follow; pushing branches, opening PRs, changing remote configuration, or deploying the flag remain out of scope.
+
+Verification completed on iPhone 17 Pro (iOS 26.4) through XcodeBuildMCP:
+
+- 18 focused tests passed with 0 failures across passive refresh/formatting, RMF reset persistence and ownership preservation, passive arbiter snapshots, cooldown policy, and the service gate.
+- `iOS Browser Alpha` Debug simulator build succeeded with no build warnings or errors.
+- `git diff --check`, target-membership review, and static searches passed; the one new test source belongs only to `UnitTests`.
+
+### Complete manual validation matrix
+
+Because mode is startup-latched, force-quit after changing the local feature override.
+
+1. Flag off: confirm current modal and RMF behavior is unchanged.
+2. RMF first: with an eligible restored/cold NTP, confirm an admitted card blocks launch-modal provider evaluation without using background as the ownership transition.
+3. Modal first: commit a launch modal, then open/refresh NTP beneath it and confirm no RMF flashes.
+4. No eligible modal: confirm temporary modal acquisition is released and does not strand the slot.
+5. Dismissed modal: confirm lazy reconciliation at the next checkpoint and observe the modal-to-RMF cooldown.
+6. RMF dismissal, expiry, and replacement: confirm source-level release/reacquisition and identity changes.
+7. Check the standard NTP, legacy/iPad tray, OmniBar editing sheet, and unified-input favorites path; each must consume one shared gated result with one activation-time preparation and no renderer visibility callbacks or recursive preparation.
+8. Verify direct after-idle selection and no-trigger fallback; a later after-idle candidate must not displace a still-valid fallback owner.
+9. Confirm onboarding suppression.
+10. Confirm Fire-tab suppression remains safe, rotate through landscape, and verify rendering/no crash without special lease handling.
+11. Leave the NTP and confirm ownership remains source-driven rather than tied to one renderer.
+12. Background/foreground: confirm unpublish-before-release, no inactive reacquisition, no foreground replay, never-appeared reacquisition at a later explicit checkpoint, appeared same-ID RMF blocked for 10 minutes, and modal admission blocked for 24 hours; use the debug resets only between intentional scenarios.
+13. Relaunch: confirm live ownership resets while confirmed cooldown history persists.
+14. Diagnostics: verify mode/owner/appearance/timestamps/boundaries update on Refresh, flag relaunch and no-timer notes are visible, and modal/RMF resets update only their matching cooldown without releasing the displayed owner.
+
+Stack dependency: this is PR 3, based on PR 2 (`bartosz/promo-q-simp-3`). The measured Phase 3 diff is 529 insertions and 77 deletions across 17 files (606 changed lines), including final project-log and handoff updates. The full manual matrix remains for human execution with configured RMF content and launch-modal eligibility states.
+
+## External Phase 4 rollout handoff
+
+This section is a handoff for external human-owned integration and rollout work. No privacy-configuration change, deployment, project-tracker update, push, or PR creation is part of the local stack.
+
+### Integration record
+
+- Local PR 1 branch: `bartosz/promo-q-simp-2`
+- Local PR 2 branch: `bartosz/promo-q-simp-3`
+- Local PR 3 branch: `bartosz/promo-q-simp-4`
+- Merged PR 1 link: `[PENDING — add merged PR link]`
+- Merged PR 2 link: `[PENDING — add merged PR link]`
+- Merged PR 3 link: `[PENDING — add merged PR link]`
+- First containing iOS version: `[PENDING — add first shipped version]`
+- Minimum supported version for rollout: use the first containing iOS version above; do not enable this subfeature for older iOS app versions.
+
+### Remote configuration source
+
+- Parent privacy-config feature: `promoQueue`
+- iOS subfeature: `iOSPromoPresentationCoordination`
+- App feature flag: `.promoPresentationCoordination`
+- Mapping: `.promoPresentationCoordination` uses `.remoteReleasable(iOSPromoQueueSubfeature.iOSPromoPresentationCoordination)` under the `promoQueue` parent.
+- Rollout source: the human-reviewed configuration in `duckduckgo/privacy-configuration` for the parent/subfeature above.
+- Warning: do not edit or use generated `iOS/Core/ios-config.json` as the rollout source.
+
+### Validation evidence
+
+Automated verification completed on 2026-08-15 on iPhone 17 Pro (iOS 26.4) through XcodeBuildMCP:
+
+- `bartosz/promo-q-simp-2`: the two affected SharedState classes passed 14 tests with 0 failures on the final complete run; `iOS Browser Alpha` Debug built successfully.
+- `bartosz/promo-q-simp-3`: `HomePageConfigurationTests` and `NewTabPageMessagesModelTests` passed 42 tests with 0 failures; the two SharedState classes passed 14 tests with 0 failures on the final complete run; `iOS Browser Alpha` Debug built successfully.
+- `bartosz/promo-q-simp-4`: the focused final-stack Promo Queue suites passed 70 tests with 0 failures across arbiter, directional cooldown, service, modal queue manager, shared source/model, feature-flag mapping, and debug view-model behavior; the two SharedState classes passed 14 tests with 0 failures on the final complete run; `iOS Browser Alpha` Debug built successfully.
+- Branch ancestry and the required branch-range `git diff --check` commands were verified after the stack was restacked.
+
+Manual-validation evidence: **PENDING — user must complete the full manual validation matrix above and attach results before rollout.** No manual validation is claimed by this handoff.
+
+### Rollout and hold criteria
+
+The mode is startup-latched. A local override or remote cohort change does not change an existing process graph; force-quit/relaunch, or otherwise create a new process graph, before evaluating the new state.
+
+Regular `remoteMessageShown` volume is expected to decrease in coordinated cohorts because shown accounting changes from eager model mapping to once per actually appeared ownership. Treat that directional change as expected unless it is inconsistent with cohort size or accompanied by other RMF/provider accounting anomalies.
+
+Suggested cohort sequence, subject to the rollout DRI and completion of manual validation: **5% → 25% → 50% → 100%**. At each step, hold rather than advance when any of these criteria is met:
+
+- Crash/regression: a statistically credible crash or stability regression, or a confirmed promo overlap, flash, blank/stranded NTP state, or launch-modal presentation regression attributable to the cohort.
+- RMF/provider accounting: an unexplained accounting shift beyond the expected regular `remoteMessageShown` reduction, including inconsistent provider shown/seen/dismissed/cooldown/impression behavior.
+- Manual reproduction: any required manual scenario is still pending at the first cohort, or reproduces flag-off behavior change, simultaneous modal/RMF admission, stale ownership, incorrect cooldown, or failed startup-latched enable/disable behavior.
+- Support reports: new or sustained user reports plausibly connected to promo overlap, missing RMF content, unexpected modal suppression, or relaunch-dependent behavior.
+
+### External owners and follow-through
+
+- Privacy-config review owner: `[OWNER REQUIRED — assign privacy-config reviewer]`
+- Cohort deployment/rollout owner: `[OWNER REQUIRED — assign rollout DRI]`
+- iOS release-confirmation owner: `[OWNER REQUIRED — confirm merged PRs and first containing version]`
+- Manual-validation evidence owner: `[OWNER REQUIRED — user/project DRI to attach completed matrix]`
+- Post-100% cleanup owner: `[OWNER REQUIRED — create and own separate cleanup task]`
+- Agreed 100% soak/rollback window: `[PENDING — define duration before rollout]`
+
+Create the separate cleanup task only after the flag has reached 100% of supported iOS users and the agreed soak window has completed without a hold criterion. Its scope may then remove the legacy source/accounting branches, duplicate legacy observer behavior, obsolete mode plumbing, and superseded tests. Any hold criterion during rollout or soak is a rollback trigger and blocks cleanup.
+
+Rollback procedure: remotely disable `iOSPromoPresentationCoordination` in the authoritative privacy configuration, deploy that configuration, and then create a new process graph on affected devices because the mode is startup-latched. Record the rollback cohort/version and evidence; do not rely on a live in-process transition.

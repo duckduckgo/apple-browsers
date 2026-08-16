@@ -223,35 +223,35 @@
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion", "unified_input_surface"]
     },
-    "aichat_unified_input_edit_received": {
+    "aichat_edit_prompt_opened": {
         "description": "Fires when the frontend requests to edit a previously sent message and the Unified Toggle Input enters edit mode.",
         "owners": ["SabrinaTardio"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion", "unified_input_surface"]
     },
-    "aichat_unified_input_edit_submitted": {
+    "aichat_edit_prompt_submitted": {
         "description": "Fires when the user submits an edited message from the Unified Toggle Input.",
         "owners": ["SabrinaTardio"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion", "unified_input_surface"]
     },
-    "aichat_unified_input_edit_cancelled": {
+    "aichat_edit_prompt_cancelled": {
         "description": "Fires when the user leaves edit mode in the Unified Toggle Input without submitting (cancel button or sheet dismissal).",
         "owners": ["SabrinaTardio"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion", "unified_input_surface"]
     },
-    "aichat_unified_input_edit_image_removed": {
+    "aichat_edit_prompt_image_removed": {
         "description": "Fires when the user removes an image attachment while editing a previously sent message in the Unified Toggle Input. Fired in addition to the generic image removed pixel.",
         "owners": ["SabrinaTardio"],
         "triggers": ["other"],
         "suffixes": ["daily_count", "platform", "form_factor"],
         "parameters": ["appVersion", "unified_input_surface"]
     },
-    "aichat_unified_input_edit_file_removed": {
+    "aichat_edit_prompt_file_removed": {
         "description": "Fires when the user removes a file attachment while editing a previously sent message in the Unified Toggle Input. Fired in addition to the generic file removed pixel.",
         "owners": ["SabrinaTardio"],
         "triggers": ["other"],

@@ -1,5 +1,9 @@
 # Promo Queue local PR handoff
 
+## Documentation ownership
+
+This handoff and all other Promo Queue project documentation live only on `bartosz/promo-q-simp-master`. Keep `project_log.md`, `project_lessons/`, `promo-queue-docs/`, review reports, and project-only handoff notes out of the open production branches `bartosz/promo-q-simp-2`, `bartosz/promo-q-simp-3`, and `bartosz/promo-q-simp-4`. Documentation changes may be committed locally on the master branch; do not push them or copy/cherry-pick them into a production branch without explicit user instructions.
+
 ## PR 1
 
 Suggested title: **iOS Promo Queue: Simplify coordination foundation**
@@ -20,7 +24,7 @@ Verification completed on iPhone 17 Pro (iOS 26.4) through XcodeBuildMCP:
 - `iOS Browser Alpha` Debug simulator build succeeded.
 - `git diff --check` passed and static searches found none of the removed live-transition, per-surface/retry, or NTP renderer-coordinator symbols.
 
-Stack dependency: this is PR 1, based on `main`; PR 2 will integrate the gate at the shared `HomePageConfiguration` source. Access-level changes: none were made solely for testing, and no production access was widened beyond the contracts required by the source gate, callback identity, and diagnostics plan.
+Stack dependency: this is PR 1, based on `main`; PR 2 integrates the gate at the shared `HomePageConfiguration` source. The production-only layer currently measures 906 insertions and 2,036 deletions across 31 files (2,942 changed lines, dominated by removal). Access-level changes: none were made solely for testing, and no production access was widened beyond the contracts required by the source gate, callback identity, and diagnostics plan.
 
 ## PR 2
 
@@ -44,7 +48,7 @@ Verification completed on iPhone 17 Pro (iOS 26.4) through XcodeBuildMCP:
 - `git diff --check` passed; static searches found no discarded renderer/retry/live-transition vocabulary or live feature-flag subscription, and confirmed exactly four activation-time preparation calls.
 - The feature-state manual matrix remains for human QA because it requires configured Remote Messaging content and launch-modal eligibility states not available in the local automated harness.
 
-Stack dependency: this is PR 2, based on PR 1 (`bartosz/promo-q-simp-2`). PR 3 adds internal diagnostics and reset controls. The measured PR diff is 1,669 insertions and 215 deletions across 23 files (1,884 changed lines), including the reviewed plan/design documentation carried by this branch. No production access was widened solely for tests.
+Stack dependency: this is PR 2, based on PR 1 (`bartosz/promo-q-simp-2`). PR 3 adds internal diagnostics and reset controls. The production-only layer currently measures 1,276 insertions and 85 deletions across 18 files (1,361 changed lines). Project documentation is not part of this branch. No production access was widened solely for tests.
 
 ## PR 3
 
@@ -58,7 +62,7 @@ The screen shows startup-latched mode, the active modal ownership ID or RMF mess
 
 The existing modal reset and the new clearly labeled RMF reset route through the production cooldown policy. RMF reset clears persisted history plus the authoritative in-process fallback/cache and refreshes the displayed boundaries immediately. Neither reset releases an owner or dismisses a message. The related What’s New, global prompt-reset, and CPM debug actions now use the same authoritative modal reset route instead of constructing or bypassing production cooldown state.
 
-There are no force-owner controls, modal-phase/last-denial plumbing, retry timers, release broadcasts, production admission changes, or new telemetry. Human review/integration and the external rollout handoff follow; pushing branches, opening PRs, changing remote configuration, or deploying the flag remain out of scope.
+There are no force-owner controls, modal-phase/last-denial plumbing, retry timers, release broadcasts, production admission changes, or new telemetry. Human review/integration and execution of the external rollout handoff follow. The three production pull requests are open; documentation and final-review work does not authorize further pushes, PR metadata changes, remote-configuration changes, or flag deployment.
 
 Verification completed on iPhone 17 Pro (iOS 26.4) through XcodeBuildMCP:
 
@@ -85,11 +89,11 @@ Because mode is startup-latched, force-quit after changing the local feature ove
 13. Relaunch: confirm live ownership resets while confirmed cooldown history persists.
 14. Diagnostics: verify mode/owner/appearance/timestamps/boundaries update on Refresh, flag relaunch and no-timer notes are visible, and modal/RMF resets update only their matching cooldown without releasing the displayed owner.
 
-Stack dependency: this is PR 3, based on PR 2 (`bartosz/promo-q-simp-3`). The measured Phase 3 diff is 529 insertions and 77 deletions across 17 files (606 changed lines), including final project-log and handoff updates. The full manual matrix remains for human execution with configured RMF content and launch-modal eligibility states.
+Stack dependency: this is PR 3, based on PR 2 (`bartosz/promo-q-simp-3`). The production-only layer currently measures 477 insertions and 74 deletions across 15 files (551 changed lines). Project-log and handoff updates live only on `bartosz/promo-q-simp-master`. The full manual matrix remains for human execution with configured RMF content and launch-modal eligibility states.
 
 ## External Phase 4 rollout handoff
 
-This section is a handoff for external human-owned integration and rollout work. No privacy-configuration change, deployment, project-tracker update, push, or PR creation is part of the local stack.
+This section is a handoff for external human-owned integration and rollout work. No privacy-configuration change, deployment, project-tracker update, production-branch push, or PR mutation is part of documentation maintenance or final review.
 
 ### Integration record
 

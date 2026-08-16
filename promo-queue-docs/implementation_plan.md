@@ -4,20 +4,26 @@
 
 Implement one app-scoped, main-actor promo slot that prevents launch-promo modal sheets and NTP RMF cards from being admitted together. Admit a modal before provider evaluation. Admit RMF at the shared `HomePageConfiguration` before publication, retain it by source/message lifecycle, and unpublish then release it on app background. Add no renderer visibility, coverage, handoff, or lease callbacks. This plan contains the complete architecture contract, requirements, phases, verification, and handoff instructions needed to execute the stack.
 
-The local implementation handoff is complete when:
+The implementation handoff is complete when:
 
 1. the coordinated behavior is implemented and verified;
 2. internal diagnostics are available;
-3. the three local branch diffs are clean, focused, and ready for human review; and
+3. the three production branch diffs are clean, focused, and ready for human review; and
 4. rollout requirements and evidence are recorded for the external owner.
 
-The project success criterion is broader: humans must later review and merge the stack, ship it, and remotely roll `.promoPresentationCoordination` out to 100% of supported iOS users. This plan records that follow-through but does not authorize the implementation agent to push, open PRs, merge, or edit the external configuration repository.
+The project success criterion is broader: humans must review and merge the open stack, ship it, and remotely roll `.promoPresentationCoordination` out to 100% of supported iOS users. This plan records that follow-through but does not authorize a review or documentation agent to modify the open pull requests, merge them, or edit the external configuration repository.
 
-## Current execution checkpoint — 2026-08-15
+## Current execution checkpoint — 2026-08-16
 
-Phase 0 and Phase 1 have been implemented and verified locally on `bartosz/promo-q-simp-2`; Phase 2 implementation has not started. Before Phase 2 work begins on `bartosz/promo-q-simp-3`, complete the small Phase 1 alignment in section 1.8 and reconcile the local stack so the Phase 2 branch contains it. Phase 0 needs no follow-up change.
+Phases 0 through 3 are implemented across three open stacked production pull requests: `bartosz/promo-q-simp-2`, `bartosz/promo-q-simp-3`, and `bartosz/promo-q-simp-4`. The Phase 1 alignment in section 1.8, the Phase 2 shared-source integration, the legacy conditional-host fix, and the Phase 3 diagnostics are present in the current branch tips. Recorded focused tests and simulator builds are green; an independent final review must verify that evidence rather than trusting this record. The complete manual matrix, human integration, and external rollout remain pending.
 
-This plan remains the full standalone execution contract. Completed sections document the required final state and should be validated, not reimplemented wholesale.
+This plan remains the full standalone architecture and implementation contract. The phase bodies document the required final state and are now review criteria; do not replay their historical branch-creation or stack-reconciliation workflow.
+
+## Documentation ownership
+
+`bartosz/promo-q-simp-master` is the sole source branch for Promo Queue project documentation. Maintain `project_log.md`, `project_lessons/`, `promo-queue-docs/`, review reports, and project-only handoff notes there. Documentation edits may be committed locally on that branch, but must not be pushed unless the user explicitly asks.
+
+The open production branches `bartosz/promo-q-simp-2`, `bartosz/promo-q-simp-3`, and `bartosz/promo-q-simp-4` must contain only production code, tests, and required project wiring. They must not contain the project documentation paths above. Read master-branch documentation with `git show` or from a separate worktree while inspecting another branch; never copy or cherry-pick its documentation commits into a production branch.
 
 ## Review validation update — 2026-08-15
 
@@ -42,34 +48,31 @@ RMF ownership is one optional aggregate containing the admitted message/content,
 
 Cooldowns are based on confirmed appearances: launch modal → RMF 10 minutes, RMF → RMF 10 minutes, RMF → launch modal 24 hours, while launch modal → launch modal remains with the existing remotely configured modal policy. Work blocked by ownership or cooldown remains scheduled and retries only at natural checkpoints. There are no timers, waiters, renderer registries, retain counts, or release broadcasts.
 
-## Starting point
+## Current stack and review boundaries
 
-- Phase 0 and Phase 1 base branch: `bartosz/promo-q-simp-2`.
-- Phase 2 branch: `bartosz/promo-q-simp-3`.
-- At the Phase 2 planning checkpoint on 2026-08-15, the Phase 1 branch ended at `fbd1dd2ef5`; Phase 0/1 production implementation is in `ab23ea75d5`, and `bartosz/promo-q-simp-3` was created from that head before the documentation update. Phase 2 production work had not started. Treat this as a historical snapshot and rerun read-only status/divergence checks before editing because documentation or another agent may have advanced either branch.
-- PR #6087 is already merged as `7fdd4719a1345c8805d3bbb9639c618f7dbb562d`.
-- Preserve every pre-existing tracked or untracked change; do not delete or rewrite unrelated documentation or code.
-- Only PR #6087 is an implementation baseline. Do not merge or wholesale cherry-pick the old `bartosz/promo-q-2` or `bartosz/promo-q-3` implementations. Small pieces such as cooldown constants or storage semantics may be ported only after confirming that they implement Phase 1.3's exact durations, boundary, key, and failure-fallback requirements without bringing over discarded surface or debug machinery.
+At the 2026-08-16 documentation checkpoint, the linear production stack is:
 
-Before editing, re-read the repository's `AGENTS.md` and only the relevant rules it permits. Run a read-only status/divergence preflight and inspect any project memory required by the active agent instructions. Present the exact current branch and divergence and obtain any permission required by repository instructions before rebasing, merging, creating branches, running tests, or performing another git write. Preserve all completed Phase 0/1 commits and concurrent documentation changes whichever stack-reconciliation strategy the user chooses.
+- PR 1: `bartosz/promo-q-simp-2` at `27962e9e52`, based on `main`;
+- PR 2: `bartosz/promo-q-simp-3` at `afa4ace811`, based on `bartosz/promo-q-simp-2`; and
+- PR 3: `bartosz/promo-q-simp-4` at `0978e46ee9`, based on `bartosz/promo-q-simp-3`.
 
-All implementation changes must remain local on the appropriate stack branch. Do **not** push branches, open pull requests, retarget pull requests, or make changes in external repositories. Commits and local branch creation also require the permission mandated by repository instructions. Preserve existing pixels rather than defining new ones and use injected `ThrowingKeyValueStoring` for the RMF cooldown timestamp.
+These hashes are an audit snapshot, not permanent identifiers. Re-run read-only status, ancestry, GitHub base, and divergence checks before review. Preserve every pre-existing tracked or untracked change. Do not reset, rebase, merge, retarget, push, or edit an open pull request unless the user gives a separate explicit instruction.
 
-## Proposed PR-sized local stack
+PR #6087 is the merged implementation baseline. Do not merge or wholesale cherry-pick the old `bartosz/promo-q-2` or `bartosz/promo-q-3` implementations. Preserve existing pixels rather than defining new ones, and use injected `ThrowingKeyValueStoring` for the RMF cooldown timestamp.
 
-Use three stacked, locally reviewable units. They are sized as eventual pull requests, but this plan authorizes no push or PR action. This keeps the cleanup reviewable, gives the end-to-end behavior its own review, and leaves the internal debug change isolated as requested.
+## Implemented PR-sized stack
 
-| Review unit | Local branch | Local parent | Purpose |
+The feature is split into three stacked, independently reviewable units. This keeps the cleanup reviewable, gives the end-to-end behavior its own review, and isolates internal diagnostics.
+
+| Review unit | Production branch | Production parent | Purpose |
 | --- | --- | --- | --- |
 | PR 1 | `bartosz/promo-q-simp-2` | `main` | Phase zero cleanup plus the minimal app-scoped gate, cooldown policy, and modal foundation |
 | PR 2 | `bartosz/promo-q-simp-3` | `bartosz/promo-q-simp-2` | Shared `HomePageConfiguration` RMF integration and end-to-end behavior |
 | PR 3 | `bartosz/promo-q-simp-4` | `bartosz/promo-q-simp-3` | Existing debug-screen extension, manual-test support, and rollout readiness |
 
-`bartosz/promo-q-simp-3` already exists locally. Validate that it descends from the reviewed/aligned head of `bartosz/promo-q-simp-2`; do not create, recreate, reset, or overwrite it. Stop and report if its graph contains unexpected production work. After permission for git writes, create local `bartosz/promo-q-simp-4` only from the reviewed head of `bartosz/promo-q-simp-3`. Keep each branch diff limited to its unit and hand off the local stack for human review. Do not push or open PRs.
+Review each layer using its immediate parent range, then review `main...bartosz/promo-q-simp-4` as one integrated system. Verify with tree-level checks that all three production branches exclude `project_log.md`, `project_lessons/`, and `promo-queue-docs/`. Documentation changes belong only on `bartosz/promo-q-simp-master`.
 
-Because the Phase 1 alignment was identified after `bartosz/promo-q-simp-3` was first created, apply it to local `bartosz/promo-q-simp-2` before Phase 2. Then, with the required git-write permission and a clean worktree, rebase the existing documentation-only `bartosz/promo-q-simp-3` onto that reviewed Phase 1 head while preserving its documentation commit(s). Do not recreate or reset the branch. Do not start Phase 2 on a branch that lacks section 1.8. If Phase 2 work has already appeared by the time of execution, stop and report the exact graph instead of rewriting concurrent commits.
-
-At the end of each unit, the implementing agent must suggest a final future-PR title and produce a ready-to-paste draft description based on the actual local diff. Each description must include:
+Maintain a suggested title and draft description for each open pull request as documentation-only metadata on `bartosz/promo-q-simp-master`. The final reviewer must compare that metadata with the actual production-only layer diffs. Each description should include:
 
 - the problem and user-visible outcome;
 - the main architectural/code changes and deliberate deletions;
@@ -79,9 +82,9 @@ At the end of each unit, the implementing agent must suggest a final future-PR t
 - the stack dependency and what follows next, if anything; and
 - any access-level change, with the production caller and rationale that required it. Tests alone are not a rationale, and the expected default is “none.”
 
-These title/description drafts are local handoff metadata only. Producing them does not authorize `git push`, `gh`, PR creation, retargeting, merging, or any external mutation. If the implemented scope differs from the title suggested below, update the suggestion to describe the actual diff.
+These title/description drafts are project documentation and remain only on `bartosz/promo-q-simp-master`. Updating them does not authorize `git push`, `gh` mutation, retargeting, merging, or any external change. If the implemented scope differs from a draft, update that master-branch metadata rather than adding documentation to a production branch.
 
-If PR 2 proves smaller than expected, do not fold it into PR 1 merely to reduce the PR count: the distinction between coordination primitives and the behavior-changing RMF integration is useful. The three-unit topology remains authoritative. Split PR 2 only after explicit approval when measured churn and reviewability justify an independently correct, tested follow-up unit; size alone and arbitrary file count are insufficient. Before creating any follow-up branch, revise this plan's stack table, titles/descriptions, later PR numbering, final-verification wording, rollout handoff, and definitions of done to match the approved topology.
+The three-unit topology is now implemented and authoritative. Do not combine or split the open pull requests as part of documentation maintenance or final review. Any later restructuring requires explicit approval and a corresponding update on the master documentation branch.
 
 ## Invariants to preserve throughout the stack
 
@@ -128,7 +131,7 @@ If PR 2 proves smaller than expected, do not fold it into PR 1 merely to reduce 
 - `@testable import` may exercise a small internal production primitive through its real contract. It is not permission to expose private state. Direct internal tests are justified for the arbiter token contract, cooldown/history boundary policy, and service-owned lease wrapper. Verify exact-root behavior through the manager's production reconciliation/checker contract, not a private helper.
 - The acquisition identity is part of the production callback/SwiftUI contract. The read-only diagnostic snapshot is part of the internal debug UI contract. Neither exists merely to make tests convenient, and neither needs Swift `public` access.
 - Never expose the private ownership teardown helper, `lastPreparationPolicy`, the actual selected filter, retained ownership aggregate/context, observer bookkeeping, arbiter owner records, or identity-generator state. Drive the corresponding event and assert the observable source/service effect.
-- If a case has no production-observable seam, prefer focused manual or static verification. Tests alone never justify an access-level change. If a genuine production caller requires a wider contract, keep it as narrow as possible and document that caller and rationale in the draft future-PR description; tests may then use the same contract.
+- If a case has no production-observable seam, prefer focused manual or static verification. Tests alone never justify an access-level change. If a genuine production caller requires a wider contract, keep it as narrow as possible and document that caller and rationale in the PR-description metadata kept on the master documentation branch; tests may then use the same contract.
 
 ---
 
@@ -363,9 +366,9 @@ Keep this suite compact and table-driven where practical:
 
 Delete transition/surface fixtures rather than adapting them into another abstraction layer. Add only a regression case when it protects behavior changed by this unit.
 
-### 1.8 Align the completed Phase 1 foundation before Phase 2
+### 1.8 Completed Phase 1 alignment
 
-Phase 0 needs no patch. Apply these three narrow Phase 1 changes to `bartosz/promo-q-simp-2` before Phase 2 begins:
+Phase 0 needed no patch. The completed `bartosz/promo-q-simp-2` layer includes these three narrow Phase 1 changes, which the final reviewer should validate:
 
 1. In `PromoQueueLeaseArbiter.swift`, replace the modal attempt/acquisition identity pair with one opaque typed modal ownership identity. Use it consistently in the modal lease, weak owner record, identity-checked release, manager phases, stale scheduled-callback validation, and diagnostic snapshot. Keep the RMF acquisition identity unchanged. Do not expose the UUID or widen access for tests.
 2. In `ModalPromptCoordinationManager.swift`, make the transferred-lease presentation operation return `Void` and delete `ModalPromptLeaseDisposition`. The manager releases synchronously when another attempt is active, cooldown blocks, or no provider is selected; otherwise it retains the lease. In `PromoCoordinationService`, replace the disposition switch with one direct call and never release after transfer. Convert every call site to a direct call, removing disposition assignments and redundant `_ =` discards. Retain existing manager decision logs without adding replacement logging state. Update mocks and tests to assert observable ownership, provider, phase, and presentation behavior rather than a reporting enum.
@@ -393,7 +396,7 @@ Run the existing arbiter, modal-manager Promo Queue, real-UIKit modal, promo-ser
 - Storage fallback includes the no-cache first-read failure without exposing history internals.
 - Modal-first correctness remains behind the disabled-by-default flag.
 - Focused affected tests and an iOS build pass after obtaining permission to run them.
-- Local handoff notes include the final suggested future-PR title and ready-to-paste description, state that end-to-end RMF gating follows on `bartosz/promo-q-simp-3`, and state that the production flag remains off.
+- Documentation-only metadata on `bartosz/promo-q-simp-master` includes the final suggested PR title and ready-to-paste description, states that end-to-end RMF gating follows on `bartosz/promo-q-simp-3`, and states that the production flag remains off. No handoff documentation is committed to the production branch.
 
 ---
 
@@ -401,7 +404,7 @@ Run the existing arbiter, modal-manager Promo Queue, real-UIKit modal, promo-ser
 
 ## Branch point and goal
 
-Use the already-existing local `bartosz/promo-q-simp-3` only after the Phase 1 alignment has landed on `bartosz/promo-q-simp-2` and the child branch has been safely reconciled onto that reviewed head. Validate ancestry; do not create, recreate, reset, or overwrite the branch. Stop and report unexpected production work. Keep its diff relative to `bartosz/promo-q-simp-2`; do not push or open a PR.
+The completed PR 2 layer is `bartosz/promo-q-simp-2...bartosz/promo-q-simp-3`. Validate its ancestry and review that layer without recreating, resetting, rebasing, or overwriting either open branch. Keep documentation and review artifacts on `bartosz/promo-q-simp-master`.
 
 Goal: integrate RMF once at the shared `HomePageConfiguration` boundary and deliver the actual no-overlap behavior for all existing NTP renderers.
 
@@ -409,24 +412,9 @@ Suggested PR title: **iOS Promo Queue: Gate NTP RMF at the shared message source
 
 Draft-description focus: explain shared-source admission for the standard NTP and all conditional-host families, launch-state initialization, centralized store refresh, actual-filter pinning, appearance/dismissal identity, and ordered background release; call out accepted over-hold, checkpoint retry, appeared-card background cooldown/blank behavior, best-effort persistence, expected lower regular-shown volume, and no new telemetry; include focused and manual evidence; state the dependency on PR 1 and that debug-only diagnostics follow in PR 3.
 
-### Expected PR 2 size
+### Actual PR 2 size
 
-Plan for approximately **1,700–1,900 changed lines** (`insertions + deletions`) relative to `bartosz/promo-q-simp-2`. The practical likely range is **1,400–2,150**, with a wider risk tail near 2,400; at planning time there is roughly a 40% chance of exceeding 2,000. This is an estimate, not a line-count target. The Phase 1 gate/wrapper exists, but the alignment patch and the exact amount of host/test scaffolding still create uncertainty.
-
-Expected contributors are:
-
-- production source integration: roughly 540–830 lines of churn;
-- tests, test support, and project wiring: roughly 820–1,300 lines of churn; and
-- a central case near 1,750 total changed lines.
-
-Most risk is in focused `HomePageConfiguration` test scaffolding, not the three conditional-host-family integrations. Keep the unit intact initially, as requested. Do not trim behavior-critical tests merely to meet 2,000 lines, and do not add host-by-host UIKit harnesses or lifecycle permutations to inflate it.
-
-If the measured branch diff materially exceeds 2,000 **and** conditional-host integration is independently reviewable, pause and propose—do not automatically perform—this logical split:
-
-1. shared ownership, standard-NTP path, source publisher, renderability/identity, appearance/dismissal/background handling, and their tests; then
-2. conditional-host adoption for the legacy/iPad `MainViewController` suggestion tray, `OmniBarEditingStateViewController`/`SuggestionTrayManager`, and unified input, with one focused consumer-convergence test.
-
-Keep production and its tests together; never split by arbitrary file count. The conditional-host follow-up is expected to be only about 200–400 changed lines, so retaining one PR is preferable unless the actual diff and reviewability justify the extra branch. If approved, the tentative sequence is core `bartosz/promo-q-simp-3`, conditional-host adoption `bartosz/promo-q-simp-4`, and debug `bartosz/promo-q-simp-5`. Revise every affected section and add an actual-diff title/description for all four units before creating either follow-up branch. Until then, the three-unit sequence is the only instruction to execute.
+The current production-only PR 2 layer contains 18 changed files, 1,276 insertions, and 85 deletions: **1,361 changed lines** relative to `bartosz/promo-q-simp-2`. It stayed below the requested 2,000-line review target, so no additional split was needed. Production behavior and its focused tests remain together. The final reviewer should assess whether the retained coverage is proportionate, but must not propose deleting behavior-critical tests merely to reduce line count.
 
 ## Phase 2 — shared RMF integration
 
@@ -638,7 +626,7 @@ Validate:
 - Cold launch cannot claim RMF before an NTP request, and background teardown releases it in the documented order.
 - Focused affected tests and an iOS build pass after obtaining permission.
 - No new telemetry exists.
-- Local handoff notes include the final suggested future-PR title and ready-to-paste description, measured insertion/deletion counts, accepted limitations, evidence, and the dependency on PR 1.
+- Documentation-only metadata on `bartosz/promo-q-simp-master` includes the final suggested PR title and ready-to-paste description, measured production-only insertion/deletion counts, accepted limitations, evidence, and the dependency on PR 1. No handoff documentation is committed to the production branch.
 
 ---
 
@@ -646,13 +634,13 @@ Validate:
 
 ## Branch point and goal
 
-After permission for git writes, create local `bartosz/promo-q-simp-4` from the reviewed head of `bartosz/promo-q-simp-3`. Keep its diff relative to `bartosz/promo-q-simp-3`; do not push or open a PR.
+The completed PR 3 layer is `bartosz/promo-q-simp-3...bartosz/promo-q-simp-4`. Validate its ancestry and review that layer without recreating, resetting, rebasing, or overwriting either open branch. Keep documentation and review artifacts on `bartosz/promo-q-simp-master`.
 
 Goal: make the simplified machinery easy to inspect and manually verify using the app's existing internal debug area, without changing production admission behavior.
 
 Suggested PR title: **iOS Promo Queue: Add simplified coordination diagnostics**
 
-Draft-description focus: state that this is an internal-only extension of the existing debug screen; list the read-only owner/cooldown diagnostics and explicit RMF cooldown reset; emphasize that admission, retry, telemetry, and production presentation behavior do not change; include focused debug/manual evidence and the dependency on PR 2; state that human review/integration and the external rollout handoff follow, while push and configuration deployment remain out of scope.
+Draft-description focus: state that this is an internal-only extension of the existing debug screen; list the read-only owner/cooldown diagnostics and explicit RMF cooldown reset; emphasize that admission, retry, telemetry, and production presentation behavior do not change; include focused debug/manual evidence and the dependency on PR 2; state that human review/integration and execution of the external rollout handoff follow, while documentation work does not authorize further pushes, PR mutation, or configuration deployment.
 
 ## Phase 3 — extend the existing debug screen
 
@@ -717,7 +705,7 @@ Avoid snapshot tests unless layout complexity genuinely warrants them.
 - Any reset is explicit and internal-only.
 - No telemetry or production retry behavior is added.
 - Focused debug tests and an iOS build pass after obtaining permission.
-- Local handoff notes include the final suggested future-PR title and ready-to-paste description, the complete manual validation matrix, and rollout caveats.
+- Documentation-only metadata on `bartosz/promo-q-simp-master` includes the final suggested PR title and ready-to-paste description, the complete manual validation matrix, and rollout caveats. No handoff documentation is committed to the production branch.
 
 ---
 
@@ -777,14 +765,14 @@ Then run the normal iOS build/test coverage appropriate for a change spanning ap
 - Does the feature-off path still work after a fresh graph is built? It must.
 - Did the change add telemetry? It must not.
 - Does modal ownership use more than one identity or return a post-transfer disposition? It must not.
-- Are accepted limitations described consistently in code comments, tests, debug UI, and local handoff notes?
-- Was any private declaration widened, state getter added, or production hook introduced only for tests? Remove it. If a production caller genuinely required an access change, document that caller and rationale and flag it explicitly in the draft future-PR description.
+- Are accepted limitations described consistently in code comments, tests, debug UI, and the project documentation kept on the master branch?
+- Was any private declaration widened, state getter added, or production hook introduced only for tests? Remove it. If a production caller genuinely required an access change, document that caller and rationale and flag it explicitly in the PR-description metadata kept on the master branch.
 
 # External phase 4 — rollout handoff only
 
-The local implementation agent must not modify or push `duckduckgo/privacy-configuration`, open a configuration PR, deploy a cohort, or change a project tracker. Instead, record a handoff for the project/feature DRI containing:
+The final reviewer or documentation agent must not modify or push `duckduckgo/privacy-configuration`, open a configuration PR, deploy a cohort, or change a project tracker. The rollout record for the project/feature DRI must contain:
 
-- the three local branch names and, after human integration, placeholders for merged PR links and the first containing iOS version;
+- the three production branches/open pull requests and, after human integration, placeholders for merged PR links and the first containing iOS version;
 - parent feature `promoQueue` and subfeature `iOSPromoPresentationCoordination`, the remote source of `.promoPresentationCoordination`;
 - the completed automated and manual validation evidence;
 - the startup-latched relaunch caveat;
@@ -800,16 +788,17 @@ The deferred cleanup is not part of this local stack. Only after the agreed soak
 
 # Definitions of done
 
-## Local implementation handoff
+## Implemented stack handoff
 
-- `bartosz/promo-q-simp-2`, local `bartosz/promo-q-simp-3`, and local `bartosz/promo-q-simp-4` contain the three clean review units; no branch was pushed and no PR was opened.
+- The three open pull requests use `bartosz/promo-q-simp-2`, `bartosz/promo-q-simp-3`, and `bartosz/promo-q-simp-4` as clean production review units with the documented parent relationships.
+- Tree-level checks confirm that the production branches contain no `project_log.md`, `project_lessons/`, or `promo-queue-docs/`; all project documentation lives on `bartosz/promo-q-simp-master`.
 - The combined local diff satisfies this plan's architecture contract, invariants, phase completion criteria, verification matrix, and accepted simplifications, and reduces PR #6087 machinery to the behavior specified here.
-- Focused automated and manual validation has passed after obtaining required permission.
+- Recorded focused automated tests and simulator builds passed. The final reviewer must independently validate proportionate coverage; the complete manual matrix remains pending human execution.
 - The existing debug screen explains current owner and cooldown state.
 - No new telemetry exists.
 - A leaf renderer consuming an already-prepared shared source needs no Promo Queue call. Each independent content-activation container uses only the single preparation seam; conditional hosts additionally observe the shared content signal.
 - The rollout handoff is complete and clearly marked as external work.
-- Each local unit has a suggested future-PR title and ready-to-paste draft description based on its actual diff; no branch was pushed and no PR was opened.
+- Each production unit has a suggested title and ready-to-paste description based on its production-only diff, stored as metadata only on `bartosz/promo-q-simp-master`. Documentation maintenance does not authorize pushing that branch or mutating the open pull requests.
 
 ## Project success criterion after human/external follow-through
 

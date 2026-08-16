@@ -6,7 +6,15 @@ This is the self-contained source of truth for the final iOS Promo Queue archite
 
 Only [PR #6087](https://github.com/duckduckgo/apple-browsers/pull/6087) is part of the merged iOS baseline. A larger renderer-coordination implementation was explored but is not the target architecture. The scope is iOS only. Android is a reference implementation, not a delivery target.
 
-Local Phase 0 and Phase 1 implementation is complete on `bartosz/promo-q-simp-2`. The small Phase 1 alignment described in this document must be incorporated before Phase 2 begins on `bartosz/promo-q-simp-3`. This implementation status is informational; the architecture below defines the complete intended end state without depending on another document.
+Implementation is complete across the three open stacked production pull-request branches: `bartosz/promo-q-simp-2`, `bartosz/promo-q-simp-3`, and `bartosz/promo-q-simp-4`. The known SharedState compilation issue and coordinated-preparation leak into legacy mode were fixed before the final branch tips. Independent final review, the manual validation matrix, human integration, and external rollout remain pending. This implementation status is informational; the architecture below defines the complete intended end state without depending on another document.
+
+## Documentation ownership — 2026-08-16
+
+`bartosz/promo-q-simp-master` is the sole source branch for Promo Queue project documentation. Maintain `project_log.md`, `project_lessons/`, `promo-queue-docs/`, executive/review reports, and project-only handoff notes there.
+
+The open production branches `bartosz/promo-q-simp-2`, `bartosz/promo-q-simp-3`, and `bartosz/promo-q-simp-4` must remain free of those files so their pull-request diffs contain only production code, tests, and required Xcode project wiring. Read documentation from the master branch with `git show`, or use a separate worktree; do not copy or cherry-pick documentation commits into a production branch.
+
+Documentation edits may be committed locally on `bartosz/promo-q-simp-master`. Do not push that branch or its documentation commits unless the user later gives explicit instructions. If a production fix changes the implemented behavior, update the documentation on the master branch after inspecting the final production diff.
 
 ## Review validation update — 2026-08-15
 
@@ -509,7 +517,7 @@ Test externally observable behavior through contracts used by production code. H
 - `@testable import` may exercise a small internal production abstraction through its real contract. It is not permission to access private state or to make that state less private.
 - Do not expose the ownership teardown helper, preparation policy, actual selected filter, retained ownership aggregate or callback context, observer bookkeeping, arbiter owner records, or identity-generator state. Drive preparation, store changes, appearance, dismissal, and background events, then assert their observable effects.
 - The narrow justified direct-test cases are production abstractions whose invariants are otherwise difficult to cover: the arbiter's token contract, cooldown/history policy boundaries, and service-owned lease wrapper. Verify exact-root retention through the manager's production reconciliation/checker contract, not a private helper. The opaque acquisition identity exists because production callback validation and SwiftUI diffing require it; the diagnostic snapshot exists because the internal debug UI consumes it. None needs `public` visibility.
-- If a case cannot be verified through a production contract, prefer focused manual or static verification. Tests alone never justify an access-level change. If a genuine production caller requires a wider contract, document that caller and rationale in the future-PR description; tests may then use that production contract.
+- If a case cannot be verified through a production contract, prefer focused manual or static verification. Tests alone never justify an access-level change. If a genuine production caller requires a wider contract, document that caller and rationale in PR-description metadata kept on the master documentation branch; tests may then use that production contract.
 
 Use focused unit and integration coverage for externally observable behavior:
 

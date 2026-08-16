@@ -1,13 +1,18 @@
 # Project Log
 
 ## Current handoff
-- Goal: Independently review the completed Promo Queue stack against `promo-queue-docs/implementation_plan.md` and verify relevant tests with XcodeBuildMCP.
-- Status: Independent review complete on committed head `71629d90db` (`bartosz/promo-q-simp-4`); the implementation is not complete end-to-end. The core coordinated production graph is substantially present, but one tracked test target does not compile, the new conditional-host preparation changes legacy behavior, and required manual/rollout handoff work is unfinished.
-- Completed: Static review reconciled the three-branch ancestry and production composition. XcodeBuildMCP passed 101 focused unit tests, 11 focused integration tests, and the `iOS Browser Alpha` Debug simulator build. Targeted `SharedStateTests` compilation reproduced the stale deleted-coordinator errors.
-- Next: Remove the obsolete promo-coordinator test arguments and rerun the affected `SharedStateTests`; keep the three new conditional-host preparation calls coordinated-only and add legacy regression coverage; execute the complete manual matrix; write the External Phase 4 handoff; fix combined-diff whitespace and remove or justify the Phase 3 test-only access widening/hooks.
-- Blockers: `SharedStateTests` cannot compile until stale `MockNewTabPagePromoCoordinator` call sites are removed. Manual validation and the required rollout owners/evidence are also unavailable in the repository, so the plan's local definition of done is not met.
+- Goal: Perform a final independent review of the three open Promo Queue pull requests against the standalone implementation plan, final architecture, and initial simplified proposal; produce an executive HTML review appendix; then hand the stack to human QA and rollout owners.
+- Status: Local implementation is complete on the linear production stack: `bartosz/promo-q-simp-2` (`27962e9e52`) → `bartosz/promo-q-simp-3` (`afa4ace811`) → `bartosz/promo-q-simp-4` (`0978e46ee9`). The previously reported SharedState compilation issue and legacy conditional-host regression were fixed in the current heads. The three pull requests are open. Project documentation now lives only on `bartosz/promo-q-simp-master`.
+- Completed: Production trees are free of `project_log.md`, `project_lessons/`, and `promo-queue-docs/`; branch ancestry and production-only diffs are clean. The handoff records passing focused suites and Debug builds for every layer, including final SharedState and legacy-mode coverage. The External Phase 4 handoff now exists. These results are recorded evidence and must still be independently sampled by the final reviewer.
+- Next: Complete the evidence-backed branch-by-branch and integrated review, re-run proportionate tests with XcodeBuildMCP, assess proposal fidelity and test quality, and save the executive HTML report on `bartosz/promo-q-simp-master`. Then execute the manual matrix, fill PR/version/owner placeholders, merge and ship, and perform the human-owned remote rollout.
+- Blockers: No known local implementation blocker. Manual scenarios requiring configured RMF/modal eligibility, PR integration, release-version confirmation, privacy-config review, cohort deployment, and rollout ownership remain human/external work.
 
 ## Decisions
+### 2026-08-16 — Isolate project documentation from production pull requests
+- Decision: `bartosz/promo-q-simp-master` is the sole branch for `project_log.md`, `project_lessons/`, `promo-queue-docs/`, executive review artifacts, and project-only handoff notes. The three production branches contain only code, tests, and required project wiring.
+- Why: Reviewers should see focused production diffs, while architecture, execution history, and review artifacts remain durable without polluting or repeatedly restacking the open pull requests.
+- Consequences: Documentation may be committed locally on the master branch but is not pushed unless explicitly requested. Agents read it with `git show` or a separate worktree and never copy/cherry-pick documentation commits into a production branch.
+
 ### 2026-08-15 — Keep diagnostics observational and cleanup acquisition-driven
 - Decision: A diagnostic snapshot reports no owner for a deallocated weak token without pruning arbiter state; the next acquisition path performs stale-record cleanup.
 - Why: Refreshing an internal debug screen must be a passive read and must not change production ownership or history.
@@ -21,15 +26,23 @@
 ### 2026-08-15 — Patch only the affected Phase 1 seams
 - Decision: Phase 0 remains untouched. Phase 1 receives one typed modal ownership identity, a `Void` manager lease transfer, and one no-cache storage-read-failure test.
 - Why: These are small maintainability improvements to already implemented foundation APIs; every other accepted review item belongs to Phase 2 or later.
-- Consequences: Apply the patch on `bartosz/promo-q-simp-2` and reconcile `bartosz/promo-q-simp-3` before starting Phase 2.
+- Consequences: The patch was applied on `bartosz/promo-q-simp-2` and carried through its descendants before Phase 2 was finalized.
 
 ### 2026-08-15 — Implement on the existing branch without synchronizing it
 - Decision: Keep working on `bartosz/promo-q-simp-2` without rebasing or merging `main`.
 - Why: Phase 0 is explicitly assigned to this branch, the worktree is clean, and synchronization would be an unnecessary git-state mutation.
-- Consequences: Validate against the current branch and report its divergence for human follow-up.
+- Consequences: Phase 0/1 was validated on that branch; the final open stack was later restacked onto the current `main` relationship recorded above.
 
 ## Recent progress
+### 2026-08-16
+- Moved all Promo Queue project documentation to `bartosz/promo-q-simp-master` and verified with tree-level checks that `bartosz/promo-q-simp-2`, `bartosz/promo-q-simp-3`, and `bartosz/promo-q-simp-4` contain none of the documentation paths.
+- Added a final-review prompt that requires independent layer and integrated-stack review, proposal-fidelity scoring, proportionate XcodeBuildMCP validation, test-quality assessment, and a self-contained executive HTML appendix committed only on the master documentation branch.
+- Restacked and opened the three production pull requests. Current production-only layer sizes are PR 1: 31 files, +906/-2,036; PR 2: 18 files, +1,276/-85; and PR 3: 15 files, +477/-74.
+- Fixed the stale SharedState call sites in `27962e9e52` and preserved legacy conditional-host behavior in `afa4ace811`. The handoff records final affected SharedState runs of 14 tests with 0 failures on every relevant branch, final-stack Promo Queue coverage of 70 tests with 0 failures, and successful Debug builds.
+- `git diff --check` passes for each production layer and the combined stack. Manual feature-state validation and external rollout remain pending and are not claimed complete.
+
 ### 2026-08-15
+- The first three findings below describe an intermediate review state and are superseded by the 2026-08-16 fixes and handoff evidence above; they are retained as project history.
 - Independent completion review superseded the earlier final-verification claim: XcodeBuildMCP passed 101 selected unit tests, 11 modal-coordination integration tests, and the `iOS Browser Alpha` Debug simulator build, but targeted `SharedStateTests` compilation fails because three call sites still reference the deleted `MockNewTabPagePromoCoordinator` API. The combined `git diff --check main...HEAD` also fails on trailing whitespace in two Promo Queue documents.
 - Static review found a flag-off regression risk: the three newly added conditional-host `prepareForNTP` calls also rebuild legacy messages. MainVC and OmniBar can admit a focused suggestion tray using an after-idle-only card before the embedded NTP reloads with its default non-idle trigger and removes that card; the calls need coordinated-mode gating and focused regression coverage.
 - The required manual matrix is explicitly unexecuted, and `local_pr_handoff.md` contains no External Phase 4 handoff despite the plan requiring rollout sequencing, hold criteria, owners, source/version guidance, rollback, and cleanup ownership.

@@ -1,8 +1,10 @@
 # Promo Queue: Phase 1 alignment patch
 
+> **Completed historical record — 2026-08-16.** This patch is already present in `bartosz/promo-q-simp-2` and its descendants. Do not execute the old branch-rewrite workflow or reapply these changes. The requirements below remain as review criteria for the PR 1 layer.
+
 ## Purpose
 
-Apply a small follow-up to the completed Phase 1 foundation before Phase 2 begins. This patch does not change product behavior or add a new architecture. It removes redundant modal state, makes lease ownership transfer unambiguous, and completes one missing storage-fallback assertion.
+This small follow-up to the Phase 1 foundation did not change product behavior or add a new architecture. It removed redundant modal state, made lease ownership transfer unambiguous, and completed one missing storage-fallback assertion.
 
 Phase 0 requires no changes.
 
@@ -12,18 +14,13 @@ The intended end state of this patch is:
 2. a `Void`-returning transfer into `ModalPromptCoordinationManager`, after which only the manager retains or releases the lease; and
 3. compact coverage proving that a first RMF-history read failure with no cache behaves as no known history.
 
-## Local-only workflow and branch placement
+## Documentation and branch placement
 
-All work must remain local. Do not push, open or retarget a pull request, merge, edit an external repository, deploy configuration, or mutate a project tracker.
+The implementation belongs to the PR 1 production layer on `bartosz/promo-q-simp-2`. Its project documentation belongs only on `bartosz/promo-q-simp-master`. The production branches `bartosz/promo-q-simp-2`, `bartosz/promo-q-simp-3`, and `bartosz/promo-q-simp-4` must not contain `project_log.md`, `project_lessons/`, `promo-queue-docs/`, or project-only handoff notes.
 
-1. Read the repository `AGENTS.md`, the permitted relevant rules, `project_log.md`, and the existing local PR handoff.
-2. Run read-only `git status`, branch, log, and divergence checks. Preserve every tracked/untracked and concurrent change.
-3. Inspect both tips. Confirm that `bartosz/promo-q-simp-2` still contains the completed Phase 0/1 foundation, that `bartosz/promo-q-simp-3` contains only documentation beyond that base, and that no Phase 2 production work has begun before rewriting the local stack.
-4. Implement this patch on local `bartosz/promo-q-simp-2`, because it belongs to the PR 1 foundation.
-5. After focused verification and human-authorized git writes, rebase the existing documentation-only `bartosz/promo-q-simp-3` onto the patched Phase 1 head while preserving its documentation commits. Do not recreate or reset it. Act only after inspecting the exact graph and obtaining required permission.
-6. If `bartosz/promo-q-simp-3` already contains Phase 2 production work, or either worktree/branch has concurrent changes, stop and report the exact state instead of rewriting history.
+Read this record from the master branch with `git show`, or use a separate worktree while reviewing production. Documentation edits may be committed locally on `bartosz/promo-q-simp-master`; do not push that branch or copy/cherry-pick its documentation commits into a production branch unless the user explicitly asks.
 
-At the 2026-08-15 documentation checkpoint, the Phase 0/1 implementation commit is `ab23ea75d5` and its handoff commit is `fbd1dd2ef5`. Treat these hashes as historical evidence, not assumptions; verify the current graph.
+The original pre-implementation workflow and hashes are intentionally not executable instructions anymore. Review the current PR 1 layer as `main...bartosz/promo-q-simp-2`, verify the requirements below, and preserve the open stack.
 
 ## Patch A — use one modal ownership identity
 
@@ -130,7 +127,7 @@ No `project.pbxproj` change should be necessary because this patch adds or remov
 - Existing exact-root, weak-token, cooldown, service, and legacy behavior remains green.
 - No private declaration was widened and no production API was introduced solely for testing.
 - The diff contains only the narrow Phase 1 alignment and its focused tests.
-- `project_log.md` and the local PR 1 handoff record the patch and actual verification evidence.
-- No branch was pushed and no pull request was opened.
+- `project_log.md` and the PR 1 handoff on `bartosz/promo-q-simp-master` record the patch and actual verification evidence; neither file is present on a production branch.
+- Review work does not rewrite, push, retarget, or otherwise mutate the open pull request.
 
-At handoff, suggest an updated future PR 1 title only if the original title no longer fits, and update its ready-to-paste description with the one-identity/one-way-transfer cleanup and actual test evidence.
+If review evidence changes the PR 1 summary, update its suggested title/description only in the master-branch handoff. Do not add that handoff to the production branch or mutate the open pull request without separate authorization.

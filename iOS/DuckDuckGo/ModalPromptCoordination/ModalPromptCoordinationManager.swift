@@ -28,7 +28,7 @@ protocol ModalPromptCoordinationManaging {
         from presenter: ModalPromptPresenter,
         with lease: PromoQueueModalLease
     )
-    func reconcilePresentedModal() -> Bool
+    func reconcilePresentedModal()
 }
 
 enum ModalPromptAttemptPhase: Equatable {
@@ -191,16 +191,15 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
     /// A child presented by that root does not affect this check because attachment is evaluated
     /// against the observed root itself rather than the topmost view controller. A root that has already been
     /// deallocated counts as not attached, so a lease can never outlive the modal it was taken for.
-    func reconcilePresentedModal() -> Bool {
-        guard case .presentationActive(let lease, let exactRoot) = attemptState else { return false }
+    func reconcilePresentedModal() {
+        guard case .presentationActive(let lease, let exactRoot) = attemptState else { return }
 
         if let root = exactRoot.viewController, rootAttachmentChecker.isAttached(root) {
-            return false
+            return
         }
 
         attemptState = .idle
         lease.release()
-        return true
     }
 }
 

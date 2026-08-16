@@ -82,7 +82,7 @@ final class PromoCoordinationService {
 
     func presentModalPromptIfNeeded(from viewController: ModalPromptPresenter) {
         if mode == .coordinated {
-            _ = modalPromptCoordinationManager.reconcilePresentedModal()
+            modalPromptCoordinationManager.reconcilePresentedModal()
         }
 
         guard launchSourceManager.source == .standard else {
@@ -134,7 +134,7 @@ extension PromoCoordinationService: PromoGating {
     func tryAcquireRemoteMessageLease(for messageID: String) -> PromoQueueRemoteMessageLease? {
         guard mode == .coordinated else { return nil }
 
-        _ = modalPromptCoordinationManager.reconcilePresentedModal()
+        modalPromptCoordinationManager.reconcilePresentedModal()
         guard case .acquired(let arbiterLease) = promoQueueLeaseArbiter.acquireRemoteMessageLease(for: messageID) else {
             return nil
         }

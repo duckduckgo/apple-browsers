@@ -198,8 +198,10 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
             scheduler.executeAndReleaseScheduledBlock()
 
             #expect(sut.modalAttemptPhase == .presentationActive(lease.ownershipIdentity))
-            #expect(!sut.reconcilePresentedModal())
+            sut.reconcilePresentedModal()
             #expect(promoQueueLeaseArbiter.snapshot.hasModalLease)
+            #expect(sut.modalAttemptPhase == .presentationActive(lease.ownershipIdentity))
+            #expect(attachmentChecker.didQuery(exactRoot))
 
             // WHEN every fixture reference is dropped, the manager is the only thing that could keep the root alive.
             provider.modalConfigurationToReturn = nil
@@ -210,7 +212,7 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
         // THEN — the presented modal is gone, so its lease must be released rather than pinned until the next
         // foreground, and the manager must not be the last owner of the whole view-controller hierarchy.
         #expect(weakExactRoot == nil)
-        #expect(sut.reconcilePresentedModal())
+        sut.reconcilePresentedModal()
         #expect(sut.modalAttemptPhase == .idle)
         #expect(!promoQueueLeaseArbiter.snapshot.hasModalLease)
     }

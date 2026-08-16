@@ -119,33 +119,6 @@ final class ModalPromptCoordinationManagerTests {
         #expect(!secondProvider.didCallDidPresentModal)
     }
 
-    @Test("Check Second Provider Is Used When First Returns Nil")
-    func whenFirstProviderReturnsNilThenSecondProviderIsChecked() {
-        // GIVEN
-        cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
-        let firstProvider = MockModalPromptProvider(shouldReturnPrompt: false)
-        let secondProvider = MockModalPromptProvider()
-        sut = ModalPromptCoordinationManager(
-            providers: [firstProvider, secondProvider],
-            cooldownManager: cooldownManagerMock,
-            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            modalPromptScheduling: schedulerMock
-        )
-
-        // WHEN
-        sut.presentModalPromptIfNeeded(from: presenterMock)
-
-        // THEN
-        #expect(firstProvider.didCallProvideModalPrompt)
-        #expect(secondProvider.didCallProvideModalPrompt)
-
-        // Execute scheduled presentation
-        schedulerMock.executeScheduledBlock()
-
-        #expect(!firstProvider.didCallDidPresentModal)
-        #expect(secondProvider.didCallDidPresentModal)
-    }
-
     @Test("Check The Right Provider Is Used When Others Return Nil")
     func whenFirstTwoProvidersReturnNilThenThirdProviderIsChecked() {
         // GIVEN

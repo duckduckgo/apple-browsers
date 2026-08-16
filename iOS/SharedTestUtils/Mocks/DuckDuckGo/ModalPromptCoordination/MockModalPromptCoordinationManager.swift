@@ -26,7 +26,6 @@ final class MockModalPromptCoordinationManager: ModalPromptCoordinationManaging 
     private(set) var capturedPresenter: ModalPromptPresenter?
     private(set) var callCount = 0
     var didPresentModalPromptThisSession = false
-    var reconcilePresentedModalResult = false
     private(set) var capturedModalLease: PromoQueueModalLease?
     private(set) var reconcilePresentedModalCallCount = 0
     var onPresentCoordinated: (@MainActor () -> Void)?
@@ -49,9 +48,8 @@ final class MockModalPromptCoordinationManager: ModalPromptCoordinationManaging 
         onPresentCoordinated?()
     }
 
-    func reconcilePresentedModal() -> Bool {
+    func reconcilePresentedModal() {
         reconcilePresentedModalCallCount += 1
         onReconcilePresentedModal?()
-        return reconcilePresentedModalResult
     }
 }

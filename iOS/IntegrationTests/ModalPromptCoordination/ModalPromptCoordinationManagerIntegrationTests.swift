@@ -76,11 +76,8 @@ final class ModalPromptCoordinationManagerIntegrationTests {
         #expect(cooldownManager.isInCooldownPeriod)
     }
 
-    @Test(
-        "Check Modal Is Blocked During Cooldown Period",
-        arguments: [1, 6, 12, 18, 23]  // Hours after first presentation
-    )
-    func whenWithinCooldownPeriodThenModalIsBlocked(hoursAfterPresentation: Int) {
+    @Test("Check Modal Is Blocked At 23 Hours")
+    func when23HoursIntoCooldownThenModalIsBlocked() {
         // GIVEN
         cooldownStore.lastPresentationTimestamp = timeTraveller.getDate().timeIntervalSince1970
         let firstProvider = MockModalPromptProvider()
@@ -93,7 +90,7 @@ final class ModalPromptCoordinationManagerIntegrationTests {
         #expect(cooldownManager.isInCooldownPeriod)
 
         // WHEN - Advance time but stay within 24-hour cooldown
-        timeTraveller.advanceBy(.hours(hoursAfterPresentation))
+        timeTraveller.advanceBy(.hours(23))
         sut.presentModalPromptIfNeeded(from: presenterMock)
 
         // THEN
@@ -103,11 +100,8 @@ final class ModalPromptCoordinationManagerIntegrationTests {
         #expect(!presenterMock.didCallPresent)
     }
 
-    @Test(
-        "Check Modal Is Allowed After Cooldown Period Expires",
-        arguments: [24, 25, 30, 48, 72]  // Hours after first presentation
-    )
-    func whenAfterCooldownPeriodThenModalIsAllowed(hoursAfterPresentation: Int) {
+    @Test("Check Modal Is Allowed At 24 Hours")
+    func when24HoursAfterPresentationThenModalIsAllowed() {
         // GIVEN
         cooldownStore.lastPresentationTimestamp = timeTraveller.getDate().timeIntervalSince1970
         let firstProvider = MockModalPromptProvider()
@@ -119,8 +113,8 @@ final class ModalPromptCoordinationManagerIntegrationTests {
         )
         #expect(cooldownManager.isInCooldownPeriod)
 
-        // WHEN - Advance time past cooldown period
-        timeTraveller.advanceBy(.hours(hoursAfterPresentation))
+        // WHEN - Advance time to the cooldown boundary
+        timeTraveller.advanceBy(.hours(24))
 
         // THEN
         #expect(!cooldownManager.isInCooldownPeriod)

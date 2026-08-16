@@ -8403,7 +8403,13 @@ extension MainViewController {
     }
 
     fileprivate func reportDuckAITabClosedIfNeeded(_ tab: Tab) {
-        guard let closingURL = tabManager.controller(for: tab)?.webView.url, closingURL.isDuckAIURL else { return }
+        DefaultDuckAISelectionJourneyInstrumentation.completePersistedFlow(
+            localScopeID: tab.uid,
+            reason: .tabClosed,
+            wideEvent: AppDependencyProvider.shared.wideEvent
+        )
+        let controller = tabManager.controller(for: tab)
+        guard let closingURL = controller?.webView.url, closingURL.isDuckAIURL else { return }
         duckAIWideEventInstrumentation.tabClosedDuringGeneration(tabID: tab.uid)
     }
 
@@ -8411,6 +8417,11 @@ extension MainViewController {
         guard fireRequest.trigger == .manualFire else { return }
 
         for tab in tabsClearedByFireButton(fireRequest.scope) {
+            DefaultDuckAISelectionJourneyInstrumentation.completePersistedFlow(
+                localScopeID: tab.uid,
+                reason: .chatCleared,
+                wideEvent: AppDependencyProvider.shared.wideEvent
+            )
             duckAIWideEventInstrumentation.fireButtonClearedTabDuringGeneration(tabID: tab.uid)
         }
     }

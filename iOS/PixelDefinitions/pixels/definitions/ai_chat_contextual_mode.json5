@@ -21,11 +21,11 @@
         "parameters": ["appVersion"]
     },
     "m_aichat_contextual_sheet_dismissed": {
-        "description": "Fired when the user dismisses the AI Chat contextual sheet",
+        "description": "Fired when the user dismisses the AI Chat contextual sheet. The had_unsubmitted_selections parameter says whether text selections were still attached, and so never asked about",
         "owners": ["aataraxiaa"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion"]
+        "parameters": ["appVersion", "aiChatHadUnsubmittedSelections"]
     },
     "m_aichat_contextual_expand_button_tapped": {
         "description": "Fired when the user taps the expand button to open full AI Chat mode from the contextual sheet",
@@ -175,11 +175,11 @@
         "parameters": ["appVersion"]
     },
     "aichat_contextual_floating_input_dismissed_without_submission": {
-        "description": "Fired when the floating contextual input is closed without the user sending a prompt",
+        "description": "Fired when the floating contextual input is closed without the user sending a prompt. The had_unsubmitted_selections parameter says whether text selections were still attached",
         "owners": ["jaceklyp"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion"]
+        "parameters": ["appVersion", "aiChatHadUnsubmittedSelections"]
     },
     "aichat_contextual_floating_input_promoted_to_sheet": {
         "description": "Fired when a prompt sent from the floating contextual input opens the contextual sheet",
@@ -287,6 +287,12 @@
                     "faq",
                     "none"
                 ]
+            },
+            {
+                "key": "suggestion_scope",
+                "description": "What the shown suggestions act on. page is the current page; selection is one attached text selection.",
+                "type": "string",
+                "enum": ["page", "selection"]
             }
         ]
     },
@@ -306,6 +312,41 @@
     },
     "debug_aichat_contextual_suggestions_context_collection_timed_out": {
         "description": "Fired when page-type signal collection times out and contextual suggested prompts fall back to generic defaults",
+        "owners": ["pikorddg"],
+        "triggers": ["exception"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_aichat_contextual_selection_attached": {
+        "description": "Fired once per text selection attached to Duck.ai. A refusal at the 5-selection cap is reported separately and is not counted here",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_aichat_contextual_selection_limit_reached": {
+        "description": "Fired when the user asks Duck.ai about selected text but the maximum number of selections is already attached, so the new one is refused",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_aichat_contextual_selection_removed": {
+        "description": "Fired when the user removes an attached text selection via its chip's remove button",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_aichat_contextual_prompt_submitted_with_selections": {
+        "description": "Fired when the user submits a Duck.ai prompt with at least one text selection attached. The selection_count parameter is bucketed. Distinct from the with/without-context pixels, which describe page context only",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "aiChatSelectionCount"]
+    },
+    "debug_aichat_contextual_selection_tool_delivery_timed_out": {
+        "description": "Fired when a selection-scoped Summarize or Translate prompt is dropped because the frontend never became ready within the readiness timeout, so the user sees an empty chat with no error",
         "owners": ["pikorddg"],
         "triggers": ["exception"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],

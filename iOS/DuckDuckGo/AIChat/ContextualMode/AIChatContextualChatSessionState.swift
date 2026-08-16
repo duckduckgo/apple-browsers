@@ -76,6 +76,7 @@ struct SheetViewState {
     /// Analytics-only metadata for the resolved suggestions; meaningful when `suggestionsLoadState == .loaded`.
     let suggestionsAreSmart: Bool
     let suggestionsPageType: SuggestionsPageType
+    let suggestionsScope: ResolvePageSuggestionsInput.Scope
 
     enum ContentMode {
         case nativeInput
@@ -131,6 +132,15 @@ final class AIChatContextualChatSessionState {
 
     /// Text selections attached from the page's selection menu, in attach order.
     private(set) var attachedSelections: [AIChatSelectionContextData] = []
+    private var submittedSelectionIDs = Set<String>()
+
+    var unsubmittedSelectionCount: Int {
+        attachedSelections.filter { !submittedSelectionIDs.contains($0.id) }.count
+    }
+
+    var hasUnsubmittedSelections: Bool {
+        unsubmittedSelectionCount > 0
+    }
 
     /// URL included in the last submitted prompt with no navigation since; used to spot a stale auto-attach echo.
     private var deliveredContextURLWithNoNavigationSince: URL?
@@ -144,7 +154,8 @@ final class AIChatContextualChatSessionState {
         suggestions: [],
         suggestionsLoadState: .loaded,
         suggestionsAreSmart: false,
-        suggestionsPageType: .none
+        suggestionsPageType: .none,
+        suggestionsScope: .page
     )
 
     let effects = PassthroughSubject<SheetEffect, Never>()
@@ -170,6 +181,7 @@ final class AIChatContextualChatSessionState {
     private(set) var suggestions: [ContextualSuggestedPrompt] = []
     private var suggestionsAreSmart = false
     private var suggestionsPageType: SuggestionsPageType = .none
+    private var suggestionsScope: ResolvePageSuggestionsInput.Scope = .page
     private var suggestionsResolveTask: Task<Void, Never>?
     private var suggestionsTimeoutTask: Task<Void, Never>?
 
@@ -257,6 +269,8 @@ final class AIChatContextualChatSessionState {
             return
         }
 
+        fireSelectionsSubmittedPixelIfNeeded()
+
         let contextData: AIChatPageContextData?
         switch chipState {
         case .attached(let context):
@@ -288,6 +302,8 @@ final class AIChatContextualChatSessionState {
             return
         }
 
+        fireSelectionsSubmittedPixelIfNeeded()
+
         switch chipState {
         case .attached(let context):
             frontendState = .chatWithInitialContext
@@ -303,6 +319,16 @@ final class AIChatContextualChatSessionState {
         rebuildViewState()
     }
 
+    /// Fired alongside, not instead of, the with/without-context pixels: those switch on page-context
+    /// chip state, which says nothing about attached selections. Must run before the selections are
+    /// consumed, or the count is always zero.
+    private func fireSelectionsSubmittedPixelIfNeeded() {
+        let unsubmittedSelections = attachedSelections.filter { !submittedSelectionIDs.contains($0.id) }
+        guard !unsubmittedSelections.isEmpty else { return }
+        submittedSelectionIDs.formUnion(unsubmittedSelections.map(\.id))
+        pixelHandler.firePromptSubmittedWithSelections(count: unsubmittedSelections.count)
+    }
+
     func attachContextFromSuggestionTap(_ context: AIChatPageContext) {
         chipState = .attached(context)
         userDowngradedToPlaceholder = false
@@ -315,9 +341,7 @@ final class AIChatContextualChatSessionState {
     /// At the cap a further selection is refused rather than displacing one the user already collected.
     /// Returns whether it was attached, so the caller can say why nothing appeared.
     ///
-    /// The same passage from the same page is treated as already attached rather than added twice: two
-    /// taps on the omnibar icon each read the selection asynchronously, so both can arrive here with
-    /// identical text, and the resulting chips would be indistinguishable while costing two cap slots.
+    /// The same passage from the same page is treated as already attached rather than added twice.
     @discardableResult
     func attachSelection(_ selection: AIChatSelectionContextData) -> Bool {
         guard !attachedSelections.contains(where: { $0.content == selection.content && $0.url == selection.url }) else {
@@ -336,6 +360,7 @@ final class AIChatContextualChatSessionState {
     func removeAttachedSelection(id: String) {
         guard attachedSelections.contains(where: { $0.id == id }) else { return }
         attachedSelections.removeAll { $0.id == id }
+        submittedSelectionIDs.remove(id)
         resolveSuggestionsForScopeChange()
         rebuildViewState()
     }
@@ -345,12 +370,14 @@ final class AIChatContextualChatSessionState {
         guard !ids.isEmpty else { return }
         let consumedIDs = Set(ids)
         attachedSelections.removeAll { consumedIDs.contains($0.id) }
+        submittedSelectionIDs.subtract(consumedIDs)
         resolveSuggestionsForScopeChange()
     }
 
     func clearAttachedSelections() {
         guard !attachedSelections.isEmpty else { return }
         attachedSelections = []
+        submittedSelectionIDs = []
         resolveSuggestionsForScopeChange()
         rebuildViewState()
     }
@@ -362,6 +389,7 @@ final class AIChatContextualChatSessionState {
     func resetToNoChat(preservingSelections: Bool = false) {
         if !preservingSelections {
             attachedSelections = []
+            submittedSelectionIDs = []
         }
         suppressesAutoAttachForSelectionEntry = false
         lastCollectedContext = nil
@@ -379,6 +407,7 @@ final class AIChatContextualChatSessionState {
         suggestions = []
         suggestionsAreSmart = false
         suggestionsPageType = .none
+        suggestionsScope = .page
         suggestionsLoadState = .loaded
         pixelHandler.endManualAttach()
         rebuildViewState()
@@ -871,6 +900,7 @@ private extension AIChatContextualChatSessionState {
             self.suggestions = resolved.suggestions
             self.suggestionsAreSmart = resolved.isSmart
             self.suggestionsPageType = resolved.pageType
+            self.suggestionsScope = input.scope
             self.suggestionsLoadState = .loaded
             self.rebuildViewState()
         }
@@ -895,7 +925,8 @@ private extension AIChatContextualChatSessionState {
             suggestions: shouldHideSuggestions ? [] : visibleSuggestions(reserving: quickActions.count),
             suggestionsLoadState: suggestionsLoadState,
             suggestionsAreSmart: suggestionsAreSmart,
-            suggestionsPageType: suggestionsPageType
+            suggestionsPageType: suggestionsPageType,
+            suggestionsScope: suggestionsScope
         )
     }
 

@@ -352,6 +352,9 @@
 		4B359FD82FB52B9A0020D70F /* InfoPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B359FD72FB52B9A0020D70F /* InfoPanelView.swift */; };
 		4B359FDB2FB5321C0020D70F /* DuckAIPromptWideEventData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B359FDA2FB5321C0020D70F /* DuckAIPromptWideEventData.swift */; };
 		4B359FDD2FB5322C0020D70F /* DuckAIWideEventInstrumentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B359FDC2FB5322C0020D70F /* DuckAIWideEventInstrumentation.swift */; };
+		D5A100012FD0000000000001 /* DuckAISelectionJourneyWideEventData.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5A100022FD0000000000002 /* DuckAISelectionJourneyWideEventData.swift */; };
+		D5A100032FD0000000000003 /* DuckAISelectionJourneyInstrumentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5A100042FD0000000000004 /* DuckAISelectionJourneyInstrumentation.swift */; };
+		D5A100052FD0000000000005 /* DuckAISelectionJourneyInstrumentationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5A100062FD0000000000006 /* DuckAISelectionJourneyInstrumentationTests.swift */; };
 		4B412ACC2BBB3D0900A39F5E /* LazyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B412ACB2BBB3D0900A39F5E /* LazyView.swift */; };
 		4B470EE4299C6DFB0086EBDC /* Core.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F143C2E41E4A4CD400CFDE3A /* Core.framework */; };
 		4B52648B25F9613B00CB4C24 /* trackerData.json in Resources */ = {isa = PBXBuildFile; fileRef = 4B52648A25F9613B00CB4C24 /* trackerData.json */; };
@@ -3278,6 +3281,9 @@
 		4B359FD72FB52B9A0020D70F /* InfoPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InfoPanelView.swift; sourceTree = "<group>"; };
 		4B359FDA2FB5321C0020D70F /* DuckAIPromptWideEventData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAIPromptWideEventData.swift; sourceTree = "<group>"; };
 		4B359FDC2FB5322C0020D70F /* DuckAIWideEventInstrumentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAIWideEventInstrumentation.swift; sourceTree = "<group>"; };
+		D5A100022FD0000000000002 /* DuckAISelectionJourneyWideEventData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAISelectionJourneyWideEventData.swift; sourceTree = "<group>"; };
+		D5A100042FD0000000000004 /* DuckAISelectionJourneyInstrumentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAISelectionJourneyInstrumentation.swift; sourceTree = "<group>"; };
+		D5A100062FD0000000000006 /* DuckAISelectionJourneyInstrumentationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAISelectionJourneyInstrumentationTests.swift; sourceTree = "<group>"; };
 		4B412ACB2BBB3D0900A39F5E /* LazyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LazyView.swift; sourceTree = "<group>"; };
 		4B4A6D122F0EC5620074444F /* DuckDuckGoExperimental.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = DuckDuckGoExperimental.entitlements; sourceTree = "<group>"; };
 		4B52648A25F9613B00CB4C24 /* trackerData.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = trackerData.json; sourceTree = "<group>"; };
@@ -6378,6 +6384,7 @@
 		310EEA2D2CFFCDB60043CA1A /* AIChat */ = {
 			isa = PBXGroup;
 			children = (
+				D5A100062FD0000000000006 /* DuckAISelectionJourneyInstrumentationTests.swift */,
 				4BA2C1742FC1232500D7C62E /* DuckAIWideEventInstrumentationTests.swift */,
 				C11F41142F2CCBE900C126C3 /* AIChatContextualChatSessionStateTests.swift */,
 				AD5E1ED02B0000000000F003 /* AIChatTextSelectionFeatureTests.swift */,
@@ -7183,6 +7190,8 @@
 		4B359FD92FB532100020D70F /* WideEvent */ = {
 			isa = PBXGroup;
 			children = (
+				D5A100022FD0000000000002 /* DuckAISelectionJourneyWideEventData.swift */,
+				D5A100042FD0000000000004 /* DuckAISelectionJourneyInstrumentation.swift */,
 				4B359FDA2FB5321C0020D70F /* DuckAIPromptWideEventData.swift */,
 				4B359FDC2FB5322C0020D70F /* DuckAIWideEventInstrumentation.swift */,
 			);
@@ -13547,6 +13556,7 @@
 				985818A02D8C297300993B04 /* AppKeyValueFileStoreService.swift in Sources */,
 				9FE59CE42E31E5F300C4B65D /* VideoPlayerCoordinator+SystemSettingsPiPTutorial.swift in Sources */,
 				4B359FDB2FB5321C0020D70F /* DuckAIPromptWideEventData.swift in Sources */,
+				D5A100012FD0000000000001 /* DuckAISelectionJourneyWideEventData.swift in Sources */,
 				9FAD6C032E41D9A600C19EEA /* DefaultBrowserPromptUIProvider.swift in Sources */,
 				31DE43C42C2C60E800F8C51F /* DuckPlayerModalPresenter.swift in Sources */,
 				C1C18BF82D95925C00FFBA2E /* AutofillDeleteButtonCell.swift in Sources */,
@@ -14014,6 +14024,7 @@
 				CBE77C792FD2F49000CB7C6D /* SuggestionRowMapper.swift in Sources */,
 				EEF0F8CC2ABC832300630031 /* NetworkProtectionDebugFeatures.swift in Sources */,
 				4B359FDD2FB5322C0020D70F /* DuckAIWideEventInstrumentation.swift in Sources */,
+				D5A100032FD0000000000003 /* DuckAISelectionJourneyInstrumentation.swift in Sources */,
 				5644419D2D4D1EDD003C53B8 /* FeatureFlagsMenuView.swift in Sources */,
 				CBECDB7A2CD981CE005B8B87 /* AppPageRefreshMonitor.swift in Sources */,
 				B60DFF072872B64B0061E7C2 /* JSAlertView.swift in Sources */,
@@ -14972,6 +14983,7 @@
 				C1E2C2272D9F1D0F0011C66C /* AutofillCreditCardDetailsViewModelTests.swift in Sources */,
 				C1056A562E253D98003220BA /* AutofillCredentialsImportPresentationManagerTests.swift in Sources */,
 				4BA2C1752FC1232500D7C62E /* DuckAIWideEventInstrumentationTests.swift in Sources */,
+				D5A100052FD0000000000005 /* DuckAISelectionJourneyInstrumentationTests.swift in Sources */,
 				C13C60DC2E6D7B0F00ED2211 /* SwitchBarSubmissionMetricsTests.swift in Sources */,
 				5BF0B1762FC78C74009D088E /* NavigationResponseRouterTests.swift in Sources */,
 				6F7FB8E12C660B3E00867DA7 /* NewTabPageFavoritesModelTests.swift in Sources */,

@@ -1,0 +1,191 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "description": "Sent when a Duck.ai contextual text-selection journey reaches a terminal outcome. The journey starts on the first successful selection attachment, survives sheet dismissal and re-entry, and ends when the selections are submitted or explicitly discarded.",
+    "$comment": "{\"owners\":[\"pikorddg\"]}",
+    "type": "object",
+    "required": ["meta", "global", "feature", "app"],
+    "additionalProperties": false,
+    "properties": {
+        "meta": {
+            "type": "object",
+            "required": ["type", "version"],
+            "additionalProperties": false,
+            "properties": { "type": { "const": "ios-duckai-selection-journey" }, "version": { "const": "1.1.0" } }
+        },
+        "app": {
+            "type": "object",
+            "required": ["name", "version"],
+            "additionalProperties": false,
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "The name of the application",
+                    "enum": ["DuckDuckGo", "DuckDuckGo-Alpha", "DuckDuckGo-Experimental", "PacketTunnelProvider"]
+                },
+                "version": { "type": "string", "description": "The version of the application", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+                "form_factor": { "type": "string", "description": "The form factor of the device", "enum": ["phone", "tablet"] }
+            }
+        },
+        "global": {
+            "type": "object",
+            "required": ["platform", "type", "sample_rate"],
+            "additionalProperties": false,
+            "properties": {
+                "platform": { "type": "string", "description": "The platform the app is running on", "enum": ["iOS"] },
+                "type": { "type": "string", "description": "The type of application", "enum": ["app"] },
+                "sample_rate": { "type": "number", "description": "Sample rate for this event", "minimum": 0, "maximum": 1 },
+                "is_first_daily_occurrence": {
+                    "type": "boolean",
+                    "description": "Whether this is the first occurrence of this event today. Only included when true."
+                }
+            }
+        },
+        "feature": {
+            "type": "object",
+            "required": ["name", "status", "data"],
+            "additionalProperties": false,
+            "properties": {
+                "name": { "type": "string", "description": "The feature name for this event", "enum": ["duckai-selection-journey"] },
+                "status": {
+                    "type": "string",
+                    "description": "The overall status of the operation",
+                    "enum": ["SUCCESS", "FAILURE", "UNKNOWN"]
+                },
+                "data": {
+                    "type": "object",
+                    "required": ["ext"],
+                    "additionalProperties": false,
+                    "properties": {
+                        "ext": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                                "status_reason": {
+                                    "type": "string",
+                                    "description": "Terminal reason accompanying UNKNOWN outcomes when a persisted journey from a previous process is recovered.",
+                                    "enum": ["app_terminated"]
+                                },
+                                "outcome": {
+                                    "type": "object",
+                                    "description": "The action that definitively ended the attachment journey. Dismissing the surface is not terminal because the user can return and submit later.",
+                                    "properties": {
+                                        "terminal_reason": {
+                                            "type": "string",
+                                            "description": "submitted maps to SUCCESS. All explicit ways of discarding the unsubmitted selections map to FAILURE. Absent for UNKNOWN app-termination recovery.",
+                                            "enum": ["submitted", "selections_removed", "new_chat", "chat_cleared", "tab_closed"]
+                                        }
+                                    }
+                                },
+                                "submission": {
+                                    "type": "object",
+                                    "description": "How the user submitted the selection journey. Present only for SUCCESS.",
+                                    "properties": {
+                                        "action": {
+                                            "type": "string",
+                                            "description": "prompt means the composer was submitted without a pending selection suggestion; summarize and translate identify the two selection-scoped suggestion actions.",
+                                            "enum": ["prompt", "summarize", "translate"]
+                                        }
+                                    }
+                                },
+                                "selection": {
+                                    "type": "object",
+                                    "description": "Bounded information about attached selections. No selected text or page metadata is recorded.",
+                                    "properties": {
+                                        "max_count_bucketed": {
+                                            "type": "string",
+                                            "description": "Maximum number of unsubmitted text selections attached at once during the journey.",
+                                            "enum": ["1", "2", "3-5"]
+                                        }
+                                    }
+                                },
+                                "interaction": {
+                                    "type": "object",
+                                    "description": "Bounded interaction summary retained across dismissal and re-entry.",
+                                    "properties": {
+                                        "dismissal_count_bucketed": {
+                                            "type": "string",
+                                            "description": "Number of times the contextual surface was dismissed while selections remained attached.",
+                                            "enum": ["0", "1", "2+"]
+                                        },
+                                        "dismissed_before_submission": {
+                                            "type": "boolean",
+                                            "description": "Whether the surface was dismissed at least once before the journey ended. On SUCCESS this identifies dismissal followed by a later submission."
+                                        },
+                                        "saw_selection_suggestions": {
+                                            "type": "boolean",
+                                            "description": "Whether selection-scoped suggestions were visibly rendered during this attachment journey."
+                                        }
+                                    }
+                                },
+                                "delivery": {
+                                    "type": "object",
+                                    "description": "Delivery signals observed before the terminal outcome.",
+                                    "properties": {
+                                        "had_timeout": {
+                                            "type": "boolean",
+                                            "description": "Whether a Summarize or Translate attempt timed out waiting for frontend readiness. The journey remains open so a later submission can still succeed."
+                                        }
+                                    }
+                                },
+                                "latency": {
+                                    "type": "object",
+                                    "description": "Journey timings bucketed by lower bound in milliseconds: 0, 1000, 5000, 10000, 30000, 60000, 300000, 600000, 1800000, or 3600000.",
+                                    "properties": {
+                                        "journey_duration_ms_bucketed": {
+                                            "type": "string",
+                                            "description": "Time from first attachment to the observed terminal action. Absent for UNKNOWN app-termination recovery.",
+                                            "enum": [
+                                                "0",
+                                                "1000",
+                                                "5000",
+                                                "10000",
+                                                "30000",
+                                                "60000",
+                                                "300000",
+                                                "600000",
+                                                "1800000",
+                                                "3600000"
+                                            ]
+                                        },
+                                        "time_to_first_dismissal_ms_bucketed": {
+                                            "type": "string",
+                                            "description": "Time from first attachment to first dismissal. Absent if the surface was never dismissed.",
+                                            "enum": [
+                                                "0",
+                                                "1000",
+                                                "5000",
+                                                "10000",
+                                                "30000",
+                                                "60000",
+                                                "300000",
+                                                "600000",
+                                                "1800000",
+                                                "3600000"
+                                            ]
+                                        },
+                                        "time_from_first_dismissal_to_submission_ms_bucketed": {
+                                            "type": "string",
+                                            "description": "Time from first dismissal to eventual submission. Present only when a dismissed journey later succeeds.",
+                                            "enum": [
+                                                "0",
+                                                "1000",
+                                                "5000",
+                                                "10000",
+                                                "30000",
+                                                "60000",
+                                                "300000",
+                                                "600000",
+                                                "1800000",
+                                                "3600000"
+                                            ]
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

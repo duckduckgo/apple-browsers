@@ -1870,6 +1870,13 @@ extension Pixel {
         case aiChatContextualRecentChatSelected
         case aiChatContextualViewAllChatsTapped
 
+        // Text selections attached to Duck.ai.
+        case aiChatContextualSelectionAttached
+        case aiChatContextualSelectionLimitReached
+        case aiChatContextualSelectionRemoved
+        case aiChatContextualPromptSubmittedWithSelections
+        case aiChatContextualSelectionToolDeliveryTimedOut
+
         // MARK: Unified Toggle Input (UTI)
         case unifiedToggleInputImageGenerationSelected
         case unifiedToggleInputImageGenerationDeselected
@@ -3789,6 +3796,12 @@ extension Pixel.Event {
         case .aiChatContextualRecentChatsPopupDisplayed: return "m_aichat_contextual_recent_chats_popup_displayed"
         case .aiChatContextualRecentChatSelected: return "m_aichat_contextual_recent_chat_selected"
         case .aiChatContextualViewAllChatsTapped: return "m_aichat_contextual_view_all_chats_tapped"
+        case .aiChatContextualSelectionAttached: return "m_aichat_contextual_selection_attached"
+        case .aiChatContextualSelectionLimitReached: return "m_aichat_contextual_selection_limit_reached"
+        case .aiChatContextualSelectionRemoved: return "m_aichat_contextual_selection_removed"
+        case .aiChatContextualPromptSubmittedWithSelections: return "m_aichat_contextual_prompt_submitted_with_selections"
+        case .aiChatContextualSelectionToolDeliveryTimedOut:
+            return "debug_aichat_contextual_selection_tool_delivery_timed_out"
 
         // MARK: Unified Toggle Input (UTI)
         case .unifiedToggleInputImageGenerationSelected: return "m_aichat_unified_input_image_generation_selected"

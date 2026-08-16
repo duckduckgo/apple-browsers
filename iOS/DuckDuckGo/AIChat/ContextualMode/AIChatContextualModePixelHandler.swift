@@ -24,7 +24,9 @@ import Foundation
 protocol AIChatContextualModePixelFiring {
     // MARK: - Sheet Lifecycle
     func fireSheetOpened()
-    func fireSheetDismissed()
+    /// `hadUnsubmittedSelections` answers how often people collect text and then walk away without
+    /// asking anything — the one dead end in the selection flow that leaves no other trace.
+    func fireSheetDismissed(hadUnsubmittedSelections: Bool)
     func fireSessionRestored()
 
     // MARK: - Sheet Actions
@@ -43,13 +45,13 @@ protocol AIChatContextualModePixelFiring {
     func fireAddressBarMenuAskAboutPageSelected()
 
     // MARK: - Floating Input
-    func fireFloatingInputDismissedWithoutSubmission()
+    func fireFloatingInputDismissedWithoutSubmission(hadUnsubmittedSelections: Bool)
     func fireFloatingInputPromotedToSheet()
 
     // MARK: - Suggested Prompts
     func fireAskAboutPageSuggestionSelected(pageType: SuggestionsPageType)
     func fireSuggestionSelected(suggestionId: String, pageType: SuggestionsPageType)
-    func fireSuggestionsViewed(isSmart: Bool, pageType: SuggestionsPageType)
+    func fireSuggestionsViewed(isSmart: Bool, pageType: SuggestionsPageType, scope: ResolvePageSuggestionsInput.Scope)
     func fireSuggestionsContextCollectionTimedOut()
 
     // MARK: - Recent Chats Popup
@@ -66,6 +68,20 @@ protocol AIChatContextualModePixelFiring {
     // MARK: - Page Context Removal
     func firePageContextRemovedNative()
     func firePageContextRemovedFrontend()
+
+    // MARK: - Text Selections
+    /// Fired once per selection actually attached. A refusal at the cap is reported separately.
+    func fireSelectionAttached()
+    func fireSelectionLimitReached()
+    func fireSelectionRemoved()
+    /// Closes the Ask funnel: how much collected text actually reaches a submitted question, and
+    /// whether multi-selection sessions — the point of the 5-cap and cross-navigation persistence —
+    /// happen at all. Distinct from the with/without-context pixels, which describe page context only
+    /// and are blind to selections.
+    func firePromptSubmittedWithSelections(count: Int)
+    /// The readiness wait dropped a selection-scoped Summarize or Translate prompt, so the user is
+    /// looking at an empty chat with no error. Genuine timeouts only, never cancellation.
+    func fireSelectionToolDeliveryTimedOut()
 
     // MARK: - Page Context Collection
     func firePageContextCollectionEmpty()
@@ -127,8 +143,9 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
         firePixel(.aiChatContextualSheetOpened)
     }
 
-    func fireSheetDismissed() {
-        firePixel(.aiChatContextualSheetDismissed)
+    func fireSheetDismissed(hadUnsubmittedSelections: Bool) {
+        firePixelWithParameters(.aiChatContextualSheetDismissed,
+                                [PixelParameters.aiChatHadUnsubmittedSelections: String(hadUnsubmittedSelections)])
     }
 
     func fireSessionRestored() {
@@ -173,8 +190,9 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
         firePixel(.aiChatContextualAddressBarMenuAskAboutPageSelected)
     }
 
-    func fireFloatingInputDismissedWithoutSubmission() {
-        firePixel(.aiChatContextualFloatingInputDismissedWithoutSubmission)
+    func fireFloatingInputDismissedWithoutSubmission(hadUnsubmittedSelections: Bool) {
+        firePixelWithParameters(.aiChatContextualFloatingInputDismissedWithoutSubmission,
+                                [PixelParameters.aiChatHadUnsubmittedSelections: String(hadUnsubmittedSelections)])
     }
 
     func fireFloatingInputPromotedToSheet() {
@@ -217,6 +235,36 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
         firePixel(.aiChatContextualPageContextRemovedFrontend)
     }
 
+    // MARK: - Text Selections
+
+    func fireSelectionAttached() {
+        firePixel(.aiChatContextualSelectionAttached)
+    }
+
+    func fireSelectionLimitReached() {
+        firePixel(.aiChatContextualSelectionLimitReached)
+    }
+
+    func fireSelectionRemoved() {
+        firePixel(.aiChatContextualSelectionRemoved)
+    }
+
+    func firePromptSubmittedWithSelections(count: Int) {
+        let countBucket: String
+        switch count {
+        case 1: countBucket = "1"
+        case 2: countBucket = "2"
+        case 3...AIChatSelectionContextBuilder.maxAttachedSelections: countBucket = "3-5"
+        default: return
+        }
+        firePixelWithParameters(.aiChatContextualPromptSubmittedWithSelections,
+                                [PixelParameters.aiChatSelectionCount: countBucket])
+    }
+
+    func fireSelectionToolDeliveryTimedOut() {
+        firePixel(.aiChatContextualSelectionToolDeliveryTimedOut)
+    }
+
     // MARK: - Page Context Collection
 
     func firePageContextCollectionEmpty() {
@@ -250,10 +298,11 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
         ])
     }
 
-    func fireSuggestionsViewed(isSmart: Bool, pageType: SuggestionsPageType) {
+    func fireSuggestionsViewed(isSmart: Bool, pageType: SuggestionsPageType, scope: ResolvePageSuggestionsInput.Scope) {
         firePixelWithParameters(.aiChatContextualSuggestionsViewed, [
             PixelParameters.suggestionsAreSmart: String(isSmart),
-            PixelParameters.suggestionsPageType: pageType.rawValue
+            PixelParameters.suggestionsPageType: pageType.rawValue,
+            PixelParameters.aiChatSuggestionScope: scope.rawValue
         ])
     }
 

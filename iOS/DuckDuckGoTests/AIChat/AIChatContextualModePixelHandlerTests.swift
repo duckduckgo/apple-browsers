@@ -44,18 +44,41 @@ final class AIChatContextualModePixelHandlerTests {
         #expect(PixelFiringMock.lastPixelName == Pixel.Event.aiChatContextualSheetOpened.name)
     }
 
-    @Test("Sheet dismissed pixel fires correctly")
-    func testSheetDismissedPixel() {
+    @Test("Sheet dismissed pixel fires correctly", arguments: [true, false])
+    func testSheetDismissedPixel(hadUnsubmittedSelections: Bool) {
         // GIVEN
-        let sut = AIChatContextualModePixelHandler(firePixel: { event in
-            PixelFiringMock.fire(event, withAdditionalParameters: [:])
-        })
+        var firedEventName: String?
+        var firedParameters: [String: String]?
+        let sut = AIChatContextualModePixelHandler(
+            firePixel: { _ in },
+            firePixelWithParameters: { event, parameters in
+                firedEventName = event.name
+                firedParameters = parameters
+            })
 
         // WHEN
-        sut.fireSheetDismissed()
+        sut.fireSheetDismissed(hadUnsubmittedSelections: hadUnsubmittedSelections)
 
         // THEN
-        #expect(PixelFiringMock.lastPixelName == Pixel.Event.aiChatContextualSheetDismissed.name)
+        #expect(firedEventName == Pixel.Event.aiChatContextualSheetDismissed.name)
+        #expect(firedParameters == ["had_unsubmitted_selections": String(hadUnsubmittedSelections)])
+    }
+
+    @Test("Floating input dismissed pixel includes unsubmitted selection state", arguments: [true, false])
+    func floatingInputDismissedPixel(hadUnsubmittedSelections: Bool) {
+        var firedEventName: String?
+        var firedParameters: [String: String]?
+        let sut = AIChatContextualModePixelHandler(
+            firePixel: { _ in },
+            firePixelWithParameters: { event, parameters in
+                firedEventName = event.name
+                firedParameters = parameters
+            })
+
+        sut.fireFloatingInputDismissedWithoutSubmission(hadUnsubmittedSelections: hadUnsubmittedSelections)
+
+        #expect(firedEventName == Pixel.Event.aiChatContextualFloatingInputDismissedWithoutSubmission.name)
+        #expect(firedParameters == ["had_unsubmitted_selections": String(hadUnsubmittedSelections)])
     }
 
     @Test("Session restored pixel fires correctly")
@@ -155,8 +178,8 @@ final class AIChatContextualModePixelHandlerTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Suggestions viewed includes smartness and page type", .timeLimit(.minutes(1)))
-    func suggestions_viewed_includes_smartness_and_page_type() {
+    @Test("Suggestions viewed includes smartness, page type, and scope", .timeLimit(.minutes(1)))
+    func suggestions_viewed_includes_smartness_page_type_and_scope() {
         var firedEventName: String?
         var firedParameters: [String: String]?
         let sut = AIChatContextualModePixelHandler(
@@ -166,10 +189,10 @@ final class AIChatContextualModePixelHandlerTests {
                 firedParameters = parameters
             })
 
-        sut.fireSuggestionsViewed(isSmart: true, pageType: .video)
+        sut.fireSuggestionsViewed(isSmart: true, pageType: .video, scope: .selection)
 
         #expect(firedEventName == Pixel.Event.aiChatContextualSuggestionsViewed.name)
-        #expect(firedParameters == ["isSmart": "true", "pageType": "video"])
+        #expect(firedParameters == ["isSmart": "true", "pageType": "video", "suggestion_scope": "selection"])
     }
 
     // MARK: - Page Context Attachment Pixels
@@ -396,6 +419,60 @@ final class AIChatContextualModePixelHandlerTests {
 
         // THEN
         #expect(sut.isManualAttachInProgress == false)
+    }
+
+    @Test("Prompt submitted with selections carries a bucketed count", arguments: [
+        (1, "1"),
+        (2, "2"),
+        (3, "3-5"),
+        (4, "3-5"),
+        (5, "3-5")
+    ])
+    func prompt_submitted_with_selections_carries_bucketed_count(count: Int, expectedBucket: String) {
+        var firedEventName: String?
+        var firedParameters: [String: String]?
+        let sut = AIChatContextualModePixelHandler(
+            firePixel: { _ in },
+            firePixelWithParameters: { event, parameters in
+                firedEventName = event.name
+                firedParameters = parameters
+            })
+
+        sut.firePromptSubmittedWithSelections(count: count)
+
+        #expect(firedEventName == Pixel.Event.aiChatContextualPromptSubmittedWithSelections.name)
+        #expect(firedParameters == ["selection_count": expectedBucket])
+    }
+
+    @Test("Prompt submitted with selections drops out-of-contract counts", arguments: [0, 6])
+    func prompt_submitted_with_selections_drops_out_of_contract_counts(count: Int) {
+        var didFire = false
+        let sut = AIChatContextualModePixelHandler(
+            firePixel: { _ in },
+            firePixelWithParameters: { _, _ in didFire = true }
+        )
+
+        sut.firePromptSubmittedWithSelections(count: count)
+
+        #expect(!didFire)
+    }
+
+    @Test("Parameterless selection pixels fire under their own names")
+    func parameterless_selection_pixels_fire_under_their_own_names() {
+        var firedEventNames: [String] = []
+        let sut = AIChatContextualModePixelHandler(firePixel: { firedEventNames.append($0.name) })
+
+        sut.fireSelectionAttached()
+        sut.fireSelectionLimitReached()
+        sut.fireSelectionRemoved()
+        sut.fireSelectionToolDeliveryTimedOut()
+
+        #expect(firedEventNames == [
+            Pixel.Event.aiChatContextualSelectionAttached.name,
+            Pixel.Event.aiChatContextualSelectionLimitReached.name,
+            Pixel.Event.aiChatContextualSelectionRemoved.name,
+            Pixel.Event.aiChatContextualSelectionToolDeliveryTimedOut.name
+        ])
     }
 
     @Test("Concurrent reset and navigation calls are thread-safe")

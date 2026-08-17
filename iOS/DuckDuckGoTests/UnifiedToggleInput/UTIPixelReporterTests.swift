@@ -51,11 +51,15 @@ final class UTIPixelReporterTests: XCTestCase {
     private func context(surface: UnifiedToggleInputPixelSurface = .addressBar,
                          isDuckAISurfaceForAttribution: Bool = false,
                          inputMode: TextEntryMode = .search,
-                         isToggleVisible: Bool = false) -> UTIPixelContext {
+                         isToggleVisible: Bool = false,
+                         pageType: UnifiedToggleInputPromptPageType = .unknown,
+                         duckAIEntrySource: AIChatEntryPointSource? = nil) -> UTIPixelContext {
         UTIPixelContext(surface: surface,
                         isDuckAISurfaceForAttribution: isDuckAISurfaceForAttribution,
                         inputMode: inputMode,
-                        isToggleVisible: isToggleVisible)
+                        isToggleVisible: isToggleVisible,
+                        pageType: pageType,
+                        duckAIEntrySource: duckAIEntrySource)
     }
 
     // MARK: - Omnibar surface shown (toggle visibility from live context)
@@ -112,13 +116,14 @@ final class UTIPixelReporterTests: XCTestCase {
     // MARK: - Prompt submission (daily, non-trivial params)
 
     func testReportPromptSubmittedFiresDailyWithResolvedSurface() {
-        let reporter = makeReporter { self.context(surface: .duckAI) }
+        let reporter = makeReporter { self.context(surface: .duckAI, pageType: .duckAI, duckAIEntrySource: .addressBarIcon) }
 
         reporter.reportPromptSubmitted(hasText: true,
                                        selectedTool: nil,
                                        attachments: [],
                                        reasoningMode: nil,
-                                       modelId: "gpt-x")
+                                       modelId: "gpt-x",
+                                       defaultOmnibarMode: .search)
 
         XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.pixelName, Pixel.Event.unifiedToggleInputPromptSubmitted.name)
         XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.params, [
@@ -128,8 +133,81 @@ final class UTIPixelReporterTests: XCTestCase {
             "has_image_attachment": "false",
             "has_file_attachment": "false",
             "has_text": "true",
-            "surface": "duck_ai"
+            "surface": "duck_ai",
+            "page_type": "duck_ai",
+            "origin": "address_bar_icon",
+            "default_mode": "search"
         ])
+    }
+
+    func testWhenPromptSubmittedFromAddressBarThenOriginIsAddressBarPrompt() {
+        let reporter = makeReporter { self.context(surface: .addressBar, pageType: .serp) }
+
+        reporter.reportPromptSubmitted(hasText: true,
+                                       selectedTool: nil,
+                                       attachments: [],
+                                       reasoningMode: nil,
+                                       modelId: nil,
+                                       defaultOmnibarMode: .lastUsed)
+
+        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.params?["origin"], "address_bar_prompt")
+        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.params?["page_type"], "serp")
+    }
+
+    func testWhenPromptSubmittedOnDuckAITabWithUnknownEntryThenOriginIsAbsent() {
+        let reporter = makeReporter { self.context(surface: .duckAI, pageType: .duckAI) }
+
+        reporter.reportPromptSubmitted(hasText: true,
+                                       selectedTool: nil,
+                                       attachments: [],
+                                       reasoningMode: nil,
+                                       modelId: nil,
+                                       defaultOmnibarMode: .lastUsed)
+
+        XCTAssertNil(PixelFiringMock.lastDailyPixelInfo?.params?["origin"])
+    }
+
+    // MARK: - Query submission
+
+    func testReportQuerySubmittedFiresDailyWithResolvedSurfacePageTypeAndToggleVisibility() {
+        let reporter = makeReporter { self.context(surface: .addressBar, isToggleVisible: true, pageType: .serp) }
+
+        reporter.reportQuerySubmitted(defaultOmnibarMode: .duckAI)
+
+        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.pixelName, Pixel.Event.unifiedToggleInputQuerySubmitted.name)
+        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.params, [
+            "surface": "address_bar",
+            "page_type": "serp",
+            "toggle_visible": "true",
+            "default_mode": "duckAI"
+        ])
+    }
+
+    func testWhenQuerySubmittedWithToggleHiddenThenToggleVisibleIsFalse() {
+        let reporter = makeReporter { self.context(isToggleVisible: false) }
+
+        reporter.reportQuerySubmitted(defaultOmnibarMode: .search)
+
+        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.params?["toggle_visible"], "false")
+    }
+
+    func testQueryAndPromptSubmittedShareTheKeysTheMixIsCutBy() {
+        let reporter = makeReporter { self.context(surface: .addressBar, isToggleVisible: true, pageType: .ntp) }
+
+        reporter.reportQuerySubmitted(defaultOmnibarMode: .search)
+        let queryParams = PixelFiringMock.lastDailyPixelInfo?.params ?? [:]
+
+        reporter.reportPromptSubmitted(hasText: true,
+                                       selectedTool: nil,
+                                       attachments: [],
+                                       reasoningMode: nil,
+                                       modelId: nil,
+                                       defaultOmnibarMode: .search)
+        let promptParams = PixelFiringMock.lastDailyPixelInfo?.params ?? [:]
+
+        for key in ["surface", "page_type", "default_mode"] {
+            XCTAssertEqual(queryParams[key], promptParams[key], "\(key) must match across the two submission pixels")
+        }
     }
 
     // MARK: - Regular pixel with surface from context

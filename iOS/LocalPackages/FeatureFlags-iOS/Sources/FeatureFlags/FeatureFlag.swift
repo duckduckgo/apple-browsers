@@ -441,9 +441,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213965646075290
     case fireButtonRefinements
 
-    /// https://app.asana.com/1/137249556945/project/1214749231578703/task/1213613180881406
-    case fireButtonSingleTabDeleteAll
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213728968355833?focus=true
     case aiChatOmnibarDefaultPosition
 
@@ -526,7 +523,7 @@ public enum FeatureFlag: String {
 
     /// NA experiment: attach a search token to speed up SERP by combining Index/Deep responses.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216365830146824
-    case searchTokenExperimentV2
+    case searchTokenExperimentV3
 
     /// NA Experiment: tailor the onboarding flow based on the user's download reason.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216491579842691?focus=true
@@ -828,8 +825,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .disabled)
         case .uiTestExperiment:
             Config(source: .disabled, cohortType: UITestExperimentCohort.self)
-        case .searchTokenExperimentV2:
-            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.searchTokenExperimentV2), cohortType: SearchTokenExperimentCohort.self)
+        case .searchTokenExperimentV3:
+            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.searchTokenExperimentV3), cohortType: SearchTokenExperimentCohort.self)
         case .onboardingFlowByDownloadReasonExperiment:
             Config(source: .disabled, cohortType: OnboardingFlowByDownloadReasonExperimentCohort.self)
         case .monthlyFreeTrialExperiment2:
@@ -872,8 +869,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.fireMode))
         case .fireButtonRefinements:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.fireButtonRefinements))
-        case .fireButtonSingleTabDeleteAll:
-            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.fireButtonSingleTabDeleteAll))
         case .aiChatOmnibarDefaultPosition:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.omnibarDefaultPosition))
         case .duckAIVoiceShortcut:
@@ -931,7 +926,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .iPadTabsBarInWindowControlsRow:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.iPadTabsBarInWindowControlsRow))
         case .nativeAIPromptEditing:
-            Config(defaultValue: .disabled, source: .remoteReleasable(AIChatSubfeature.nativePromptEditing))
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.nativePromptEditing))
         }
     }
 

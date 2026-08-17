@@ -212,6 +212,8 @@ class MainViewController: UIViewController {
     /// The entry whose duck.ai navigation `TabURLInterceptor` is about to cancel, so the
     /// re-entry reports that source instead of a second `direct_url`.
     private var interceptedDuckAIEntrySource: AIChatEntryPointSource?
+    /// The most recent Duck.ai entry, consumed as the `origin` of prompts sent on the opened surface.
+    private(set) var lastDuckAIEntrySource: AIChatEntryPointSource?
     let duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation
     let syncAutoRestoreHandler: SyncAutoRestoreHandling
     private let lastActiveTabStore: LastActiveTabStoring
@@ -238,7 +240,7 @@ class MainViewController: UIViewController {
     private var settingsCancellables = Set<AnyCancellable>()
     private var webViewViewportRefreshCancellable: AnyCancellable?
     private lazy var floatingDomainCapsuleController = FloatingDomainCapsuleController { [weak self] in
-        self?.setBarsHidden(false, animated: true, customAnimationDuration: nil)
+        self?.chromeManager.reset(animated: true)
     }
     /// Drives the floating-UI capsule morph frame-by-frame during animated bar reveal/hide so the
     /// pill physically morphs into/out of the bars, matching the scroll transition.
@@ -4194,11 +4196,18 @@ class MainViewController: UIViewController {
     }
 
     func fireAIChatEntryPointPixel(source: AIChatEntryPointSource, opensNewTab: Bool, hasPrompt: Bool) {
+        lastDuckAIEntrySource = source
         AIChatEntryPointPixel.fire(source: source,
                                    duckAIEnabled: aiChatSettings.isAIChatEnabled,
                                    toggleEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
                                    opensNewTab: opensNewTab,
                                    hasPrompt: hasPrompt)
+    }
+
+    /// Reads the tab model, not `currentTab`: home tabs have no `TabViewController`, so
+    /// resolving through the controller reports every NTP prompt as `unknown`.
+    func currentPromptPageType() -> UnifiedToggleInputPromptPageType {
+        tabManager.currentTabsModel.currentTab?.promptPageType ?? .unknown
     }
 
     func onDuckAIVoiceModeRequested() {

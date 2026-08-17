@@ -507,6 +507,11 @@ class TabSwitcherViewController: UIViewController {
         firePageController?.updateEmptyStateVisibility()
     }
 
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        applyCollectionContentInsets()
+    }
+
     override func viewWillTransition(to size: CGSize, with coordinator: any UIViewControllerTransitionCoordinator) {
         super.viewWillTransition(to: size, with: coordinator)
 

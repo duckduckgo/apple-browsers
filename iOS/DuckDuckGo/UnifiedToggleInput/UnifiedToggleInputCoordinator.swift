@@ -205,6 +205,14 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     var switchBarHandler: SwitchBarHandling { viewController.handler }
     var onAnimatedDismissToOmnibar: ((_ completion: (() -> Void)?) -> Void)?
 
+    var pageTypeProvider: (() -> UnifiedToggleInputPromptPageType?)?
+    var duckAIEntrySourceProvider: (() -> AIChatEntryPointSource?)?
+
+    private var resolvedPromptPageType: UnifiedToggleInputPromptPageType {
+        if host == .contextualChat { return .contextual }
+        return pageTypeProvider?() ?? .unknown
+    }
+
     var isOmnibarSession: Bool { stateMachine.isOmnibarSession }
     var isAITabState: Bool { stateMachine.isAITabState }
     var isAITabExpanded: Bool { stateMachine.isAITabExpanded }
@@ -362,7 +370,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 surface: self.pixelSurface,
                 isDuckAISurfaceForAttribution: self.isDuckAISurfaceForAttribution,
                 inputMode: self.inputMode,
-                isToggleVisible: self.isToggleVisible
+                isToggleVisible: self.isToggleVisible,
+                pageType: self.resolvedPromptPageType,
+                duckAIEntrySource: self.duckAIEntrySourceProvider?()
             )
         })
         wideEventReporter = UTIWideEventReporter(
@@ -376,7 +386,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                     persistedReasoningEffort: self.persistedReasoningEffort,
                     fireMode: self.viewController.handler.isFireTab,
                     hasSubmittedPrompt: self.hasSubmittedPrompt,
-                    entryPoint: self.duckAIEntryPoint
+                    entryPoint: self.duckAIEntryPoint,
+                    entrySource: self.duckAIEntrySourceProvider?()
                 )
             }
         )
@@ -776,6 +787,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     func editPrompt(_ request: EditPromptRequest) async -> EditPromptReply {
         resolveEdit(.cancelled)
+        pixelReporter.reportEditReceived()
         beginEditMode(prompt: request.prompt,
                       attachments: makeAttachments(from: request),
                       hasResponsesToLose: request.hasResponsesToLose)
@@ -799,8 +811,16 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     func endEditMode() {
         guard isEditing else { return }
+        exitEditMode(reply: .cancelled)
+        pixelReporter.reportEditCancelled()
+    }
+
+    /// Shared teardown for leaving edit mode: resolves the pending edit with `reply` and resets the
+    /// input. Callers fire the matching pixel, so submit-driven teardown isn't also counted as a cancel.
+    private func exitEditMode(reply: EditPromptReply) {
+        guard isEditing else { return }
         isEditing = false
-        resolveEdit(.cancelled)
+        resolveEdit(reply)
         resetToolsSelection()
         clearAttachments()
         setText("")
@@ -1529,6 +1549,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
                 switchBarSubmissionMetrics.process(text, for: .search)
             }
             sessionMonitor.recordActivity(mode: .search)
+            pixelReporter.reportQuerySubmitted(defaultOmnibarMode: aiChatSettings.defaultOmnibarMode)
             clearStoreEntryAfterSubmission()
             if isAITabState {
                 hide()
@@ -1555,13 +1576,13 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
 
         if isEditing {
             let images = selectedModelSupportsImageUpload
-                ? UnifiedToggleInputImageEncoder.encode(viewController.currentAttachments)
+                ? (UnifiedToggleInputImageEncoder.encode(viewController.currentAttachments) ?? [])
                 : nil
             let files = selectedModelSupportsFileUpload
-                ? UnifiedToggleInputFileEncoder.encode(viewController.currentAttachments)
+                ? (UnifiedToggleInputFileEncoder.encode(viewController.currentAttachments) ?? [])
                 : nil
-            resolveEdit(.submit(prompt: text, images: images, files: files))
-            endEditMode()
+            pixelReporter.reportEditSubmitted()
+            exitEditMode(reply: .submit(prompt: text, images: images, files: files))
             return
         }
 
@@ -1572,7 +1593,8 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             selectedTool: toolsController.selectedTool,
             attachments: viewController.currentAttachments,
             reasoningMode: reasoningModeForSubmitPixel,
-            modelId: modelStore.persistedModelId
+            modelId: modelStore.persistedModelId,
+            defaultOmnibarMode: aiChatSettings.defaultOmnibarMode
         )
         pixelReporter.reportToolSubmittedIfNeeded(
             selectedTool: toolsController.selectedTool,
@@ -1684,6 +1706,9 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         removeAttachment(id: id)
         if isUserInitiated {
             pixelReporter.reportAttachmentRemoved(attachment)
+            if isEditing {
+                pixelReporter.reportEditAttachmentRemoved(attachment)
+            }
         }
     }
 

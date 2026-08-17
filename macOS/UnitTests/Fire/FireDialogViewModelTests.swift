@@ -2209,6 +2209,434 @@ final class FireDialogViewModelTests: XCTestCase {
         XCTAssertTrue(viewModel3.isSectionsExpanded, "Third dialog should be expanded")
     }
 
+    // MARK: - History (visits) toggle and details disclosure
+
+    /// Modes where the user can choose whether the browsing history is deleted.
+    private static let modesWithVisitsToggle: [FireDialogViewModel.Mode] = [
+        .fireButton,
+        .mainMenuAll,
+        .historyView(query: .rangeFilter(.all)),
+        .historyView(query: .rangeFilter(.allSites)),
+        .historyView(query: .rangeFilter(.today)),
+        .historyView(query: .rangeFilter(.yesterday)),
+        .historyView(query: .rangeFilter(.monday)),
+        .historyView(query: .rangeFilter(.older)),
+        .historyView(query: .dateFilter(Date())),
+        .historyView(query: .searchTerm("duck")),
+        .historyView(query: .domainFilter(["example.com"])),
+        .historyView(query: .domainFilter(["example.com", "duckduckgo.com"]))
+    ]
+
+    /// Modes scoped to records the user picked, where those records are always deleted.
+    private static let modesWithoutVisitsToggle: [FireDialogViewModel.Mode] = [
+        .historyView(query: .visits([])),
+        .historyView(query: .visits([VisitIdentifier(uuid: UUID().uuidString, url: URL(string: "https://example.com")!, date: Date())]))
+    ]
+
+    @MainActor func testWhenModeIsNotAHistoryItemSelection_ThenVisitsToggleIsShown() {
+        // Scenario: The dialog is opened from the fire button, the main menu, or a History view
+        // section, all of which delete a whole part of the history.
+        // Expectation: The History toggle is visible, so the user can exclude the browsing history
+        // and delete only the site data.
+
+        for mode in Self.modesWithVisitsToggle {
+            XCTAssertTrue(mode.shouldShowVisitsToggle, "\(mode) should show the History toggle")
+        }
+    }
+
+    @MainActor func testWhenModeIsAHistoryItemSelection_ThenVisitsToggleIsHidden() {
+        // Scenario: The user selects history items in the History view and deletes them.
+        // Expectation: The History toggle is hidden, because the selected items are the subject
+        // of the deletion and cannot be excluded from it.
+
+        for mode in Self.modesWithoutVisitsToggle {
+            XCTAssertFalse(mode.shouldShowVisitsToggle, "\(mode) should not show the History toggle")
+        }
+    }
+
+    @MainActor func testWhenVisitsToggleIsHidden_ThenHistoryIsDeletedRegardlessOfThePersistedSetting() {
+        // Scenario: The user turned the History toggle off in an earlier dialog, then deletes
+        // selected items in the History view.
+        // Expectation: The selected items are deleted. The dialog shows no History toggle, so the
+        // earlier choice must not silently reduce the deletion to the site data.
+
+        let mockSettings = MockFireDialogViewSettings(lastIncludeHistoryState: false)
+
+        for mode in Self.modesWithoutVisitsToggle {
+            let viewModel = makeViewModel(settings: mockSettings, mode: mode)
+
+            XCTAssertFalse(viewModel.includeHistory, "\(mode) should keep the persisted setting")
+            XCTAssertTrue(viewModel.shouldDeleteHistory, "\(mode) should delete the selected items anyway")
+        }
+    }
+
+    @MainActor func testWhenVisitsToggleIsShown_ThenHistoryDeletionFollowsTheToggle() {
+        // Scenario: The dialog has a History toggle.
+        // Expectation: The history is deleted only when the toggle is on.
+
+        for mode in Self.modesWithVisitsToggle {
+            let excludingHistory = makeViewModel(settings: MockFireDialogViewSettings(lastIncludeHistoryState: false), mode: mode)
+            XCTAssertFalse(excludingHistory.shouldDeleteHistory, "\(mode) should not delete the history")
+
+            let includingHistory = makeViewModel(settings: MockFireDialogViewSettings(lastIncludeHistoryState: true), mode: mode)
+            XCTAssertTrue(includingHistory.shouldDeleteHistory, "\(mode) should delete the history")
+        }
+    }
+
+    @MainActor func testDetailsDisclosureFollowsVisitsToggle() {
+        // Scenario: Any dialog mode.
+        // Expectation: The "Choose what to delete" disclosure control appears only together with
+        // the History toggle. Without it, too few rows remain to make the sections worth hiding.
+
+        for mode in Self.modesWithVisitsToggle + Self.modesWithoutVisitsToggle {
+            XCTAssertEqual(mode.shouldShowDetailsDisclosure, mode.shouldShowVisitsToggle, "\(mode)")
+        }
+    }
+
+    @MainActor func testWhenModeHidesDetailsDisclosure_ThenSectionsAreShownExpanded() {
+        // Scenario: A collapsed state is persisted, then a scoped history dialog is opened.
+        // Expectation: The sections are shown expanded. The dialog has no disclosure control,
+        // so a collapsed state would leave the user with no way to expand them.
+
+        let mockSettings = MockFireDialogViewSettings(lastSectionsExpandedState: false)
+
+        for mode in Self.modesWithoutVisitsToggle {
+            let viewModel = makeViewModel(settings: mockSettings, mode: mode)
+
+            XCTAssertFalse(viewModel.isSectionsExpanded, "\(mode) should keep the persisted state")
+            XCTAssertTrue(viewModel.shouldShowSectionsExpanded, "\(mode) should still show the sections expanded")
+        }
+    }
+
+    @MainActor func testWhenModeShowsDetailsDisclosure_ThenSectionsFollowPersistedState() {
+        // Scenario: The dialog has a disclosure control.
+        // Expectation: The sections follow the persisted expanded state.
+
+        for mode in Self.modesWithVisitsToggle {
+            let collapsedViewModel = makeViewModel(settings: MockFireDialogViewSettings(lastSectionsExpandedState: false), mode: mode)
+            XCTAssertFalse(collapsedViewModel.shouldShowSectionsExpanded, "\(mode) should stay collapsed")
+
+            let expandedViewModel = makeViewModel(settings: MockFireDialogViewSettings(lastSectionsExpandedState: true), mode: mode)
+            XCTAssertTrue(expandedViewModel.shouldShowSectionsExpanded, "\(mode) should stay expanded")
+        }
+    }
+
+    // MARK: - Delete button enablement
+
+    @MainActor func testWhenVisitsToggleIsHiddenAndHistoryWasTurnedOffEarlier_ThenDeleteStaysEnabled() {
+        // Scenario: An earlier dialog left both History and Cookies off. The user then selects
+        // history items in the History view and deletes them.
+        // Expectation: Delete stays enabled. The dialog shows no History toggle, so deleting the
+        // selected items is exactly what the button confirms, and the earlier choice must not
+        // leave the user unable to delete them.
+
+        let mockSettings = MockFireDialogViewSettings(lastIncludeHistoryState: false,
+                                                      lastIncludeCookiesAndSiteDataState: false)
+        let entry = makeHistoryEntry(url: "https://example.com")
+        let visits = [Visit(date: Date(), identifier: entry.url, historyEntry: entry)]
+
+        let viewModel = makeViewModel(settings: mockSettings,
+                                      mode: .historyView(query: .visits([makeVisitIdentifier(url: "https://example.com")])),
+                                      clearingOption: .allData,
+                                      scopeVisits: visits,
+                                      isFireDialogSimplified: true)
+
+        XCTAssertFalse(viewModel.includeHistory, "The persisted setting should stay off")
+        XCTAssertFalse(viewModel.includeCookiesAndSiteData, "The persisted setting should stay off")
+        XCTAssertTrue(viewModel.shouldDeleteHistory, "The selected items are deleted anyway")
+        XCTAssertTrue(viewModel.isDeleteEnabled, "Delete should stay enabled")
+    }
+
+    @MainActor func testWhenNothingIsSelectedForDeletion_ThenDeleteIsDisabled() {
+        // Scenario: The dialog offers all the toggles, and the user turned them all off.
+        // Expectation: Delete is disabled, because confirming would delete nothing.
+
+        let mockSettings = MockFireDialogViewSettings(lastIncludeTabsAndWindowsState: false,
+                                                      lastIncludeHistoryState: false,
+                                                      lastIncludeCookiesAndSiteDataState: false,
+                                                      lastIncludeChatHistoryState: false)
+
+        let viewModel = makeViewModel(settings: mockSettings, mode: .fireButton, isFireDialogSimplified: true)
+
+        XCTAssertFalse(viewModel.isDeleteEnabled, "Delete should be disabled when nothing is deleted")
+    }
+
+    @MainActor func testWhenOnlyClosingTabsIsSelected_ThenDeleteIsEnabled() {
+        // Scenario: The user turned every data toggle off, but keeps closing the tabs.
+        // Expectation: Delete stays enabled, because closing the tabs is still an action.
+
+        let mockSettings = MockFireDialogViewSettings(lastIncludeTabsAndWindowsState: true,
+                                                      lastIncludeHistoryState: false,
+                                                      lastIncludeCookiesAndSiteDataState: false,
+                                                      lastIncludeChatHistoryState: false)
+
+        let viewModel = makeViewModel(settings: mockSettings, mode: .fireButton, isFireDialogSimplified: true)
+
+        XCTAssertTrue(viewModel.isDeleteEnabled, "Delete should stay enabled to close the tabs")
+    }
+
+    // MARK: - Current tab scope
+
+    @MainActor func testWhenCurrentTabHasNoDataToDelete_ThenTheScopeIsDisabledAndAllDataIsUsed() {
+        // Scenario: The fire button is used on a new tab page that was never navigated away from.
+        // Expectation: The tab holds nothing to delete, so the scope is disabled and the dialog
+        // uses All data. The stored last selected scope stays untouched, so the next dialog on a
+        // website tab starts from the user's own choice again.
+
+        let mockSettings = MockFireDialogViewSettings(lastSelectedClearingOption: .currentTab)
+        selectNewTabPageTab()
+
+        let viewModel = makeViewModel(tabCollectionViewModel: tabCollectionVM, settings: mockSettings)
+
+        XCTAssertFalse(viewModel.isCurrentTabOptionEnabled, "The current tab scope should be disabled")
+        XCTAssertEqual(viewModel.clearingOption, .allData, "The dialog should use All data")
+        XCTAssertEqual(mockSettings.lastSelectedClearingOption, .currentTab, "The user choice should stay stored")
+    }
+
+    @MainActor func testWhenCurrentTabShowsAWebsite_ThenTheScopeStaysEnabled() {
+        // Scenario: The fire button is used on a tab showing a website.
+        // Expectation: The tab holds data to delete, so the scope stays available and selected.
+
+        let mockSettings = MockFireDialogViewSettings(lastSelectedClearingOption: .currentTab)
+        tabCollectionVM.append(tab: makeTab(url: "https://example.com".url!))
+        tabCollectionVM.select(at: .unpinned(1))
+
+        let viewModel = makeViewModel(tabCollectionViewModel: tabCollectionVM, settings: mockSettings)
+
+        XCTAssertTrue(viewModel.isCurrentTabOptionEnabled, "The current tab scope should be available")
+        XCTAssertEqual(viewModel.clearingOption, .currentTab, "The dialog should keep the user choice")
+    }
+
+    @MainActor func testWhenCurrentTabHasNoDataToDeleteAndAllDataWasSelected_ThenNothingChanges() {
+        // Scenario: The user already chose All data, then uses the fire button on a new tab page.
+        // Expectation: The scope is disabled, and the stored choice stays as it is.
+
+        let mockSettings = MockFireDialogViewSettings(lastSelectedClearingOption: .allData)
+        selectNewTabPageTab()
+
+        let viewModel = makeViewModel(tabCollectionViewModel: tabCollectionVM, settings: mockSettings)
+
+        XCTAssertFalse(viewModel.isCurrentTabOptionEnabled, "The current tab scope should be disabled")
+        XCTAssertEqual(viewModel.clearingOption, .allData)
+        XCTAssertEqual(mockSettings.lastSelectedClearingOption, .allData, "The user choice should stay stored")
+    }
+
+    @MainActor func testWhenTheCurrentTabScopeIsDisabled_ThenTheDialogUsesAllDataWithoutStoringIt() {
+        // Scenario: The tab holds nothing to delete, which also covers a tab that cannot go back
+        // or forward. The state comes from the caller here, because a unit test cannot navigate.
+        // Expectation: The dialog uses All data, and the stored scope stays untouched.
+
+        let mockSettings = MockFireDialogViewSettings(lastSelectedClearingOption: .currentTab)
+
+        let viewModel = makeViewModel(tabCollectionViewModel: tabCollectionVM,
+                                      settings: mockSettings,
+                                      isCurrentTabOptionEnabled: false)
+
+        XCTAssertFalse(viewModel.isCurrentTabOptionEnabled)
+        XCTAssertEqual(viewModel.clearingOption, .allData)
+        XCTAssertEqual(mockSettings.lastSelectedClearingOption, .currentTab, "The user choice should stay stored")
+    }
+
+    @MainActor func testWhenSimplifiedDialogIsOff_ThenTheCurrentTabScopeStaysEnabled() {
+        // Scenario: The legacy dialog is used on a tab that holds nothing to delete.
+        // Expectation: Nothing changes. Disabling the scope belongs to the new dialog only.
+
+        let mockSettings = MockFireDialogViewSettings(lastSelectedClearingOption: .currentTab)
+        selectNewTabPageTab()
+
+        let viewModel = makeViewModel(tabCollectionViewModel: tabCollectionVM,
+                                      settings: mockSettings,
+                                      isFireDialogSimplified: false)
+
+        XCTAssertTrue(viewModel.isCurrentTabOptionEnabled, "The legacy dialog should keep the scope")
+        XCTAssertEqual(viewModel.clearingOption, .currentTab, "The legacy dialog should keep the user choice")
+    }
+
+    @MainActor func testWhenSimplifiedDialogIsOffAndTheCallerDisablesTheScope_ThenTheScopeStaysEnabled() {
+        // Scenario: The legacy dialog, with the caller reporting a tab without data to delete.
+        // Expectation: The flag decides, so the legacy dialog keeps the scope and the user choice.
+
+        let mockSettings = MockFireDialogViewSettings(lastSelectedClearingOption: .currentTab)
+
+        let viewModel = makeViewModel(tabCollectionViewModel: tabCollectionVM,
+                                      settings: mockSettings,
+                                      isCurrentTabOptionEnabled: false,
+                                      isFireDialogSimplified: false)
+
+        XCTAssertTrue(viewModel.isCurrentTabOptionEnabled)
+        XCTAssertEqual(viewModel.clearingOption, .currentTab)
+    }
+
+    // MARK: - Closing tabs and windows
+
+    /// Modes where the user can choose whether the tabs and windows are closed.
+    private static let modesWithCloseTabsToggle: [FireDialogViewModel.Mode] = [
+        .fireButton,
+        .mainMenuAll,
+        .historyView(query: .rangeFilter(.all)),
+        .historyView(query: .rangeFilter(.allSites)),
+        .historyView(query: .rangeFilter(.today))
+    ]
+
+    /// Modes scoped to history that no open tab shows, so there is nothing to close.
+    private static let modesWithoutCloseTabsToggle: [FireDialogViewModel.Mode] = [
+        .historyView(query: .rangeFilter(.yesterday)),
+        .historyView(query: .rangeFilter(.monday)),
+        .historyView(query: .rangeFilter(.older)),
+        .historyView(query: .dateFilter(Date())),
+        .historyView(query: .searchTerm("duck")),
+        .historyView(query: .domainFilter(["example.com"])),
+        .historyView(query: .visits([]))
+    ]
+
+    @MainActor func testCloseTabsToggleVisibilityPerMode() {
+        // Scenario: Any dialog mode.
+        // Expectation: Only the modes that can delete data shown by an open tab offer the toggle.
+
+        for mode in Self.modesWithCloseTabsToggle {
+            XCTAssertTrue(mode.shouldShowCloseTabsToggle, "\(mode) should show the Close tabs toggle")
+        }
+        for mode in Self.modesWithoutCloseTabsToggle {
+            XCTAssertFalse(mode.shouldShowCloseTabsToggle, "\(mode) should not show the Close tabs toggle")
+        }
+    }
+
+    @MainActor func testWhenCloseTabsToggleIsHidden_ThenTabsAndWindowsStayOpen() {
+        // Scenario: An earlier dialog left the Close tabs toggle on, then a dialog without that
+        // toggle is opened.
+        // Expectation: The tabs and windows stay open. The dialog shows no toggle, so the earlier
+        // choice must not close them behind the user's back.
+
+        let mockSettings = MockFireDialogViewSettings(lastIncludeTabsAndWindowsState: true)
+
+        for mode in Self.modesWithoutCloseTabsToggle {
+            let viewModel = makeViewModel(settings: mockSettings, mode: mode)
+
+            XCTAssertTrue(viewModel.includeTabsAndWindows, "\(mode) should keep the persisted setting")
+            XCTAssertFalse(viewModel.shouldCloseTabsAndWindows, "\(mode) should not close tabs and windows")
+        }
+    }
+
+    @MainActor func testWhenCloseTabsToggleIsShown_ThenClosingFollowsTheToggle() {
+        // Scenario: The dialog has a Close tabs toggle.
+        // Expectation: The tabs and windows are closed only when the toggle is on.
+
+        for mode in Self.modesWithCloseTabsToggle {
+            let keepingTabs = makeViewModel(settings: MockFireDialogViewSettings(lastIncludeTabsAndWindowsState: false), mode: mode)
+            XCTAssertFalse(keepingTabs.shouldCloseTabsAndWindows, "\(mode) should keep tabs and windows open")
+
+            let closingTabs = makeViewModel(settings: MockFireDialogViewSettings(lastIncludeTabsAndWindowsState: true), mode: mode)
+            XCTAssertTrue(closingTabs.shouldCloseTabsAndWindows, "\(mode) should close tabs and windows")
+        }
+    }
+
+    // MARK: - Dialog title for selected history items
+
+    @MainActor func testWhenModeIsSelectedVisits_ThenDialogTitleShowsTheNumberOfItems() {
+        // Scenario: The user selects history items in the History view and deletes them.
+        // Expectation: The dialog title shows how many items are deleted.
+
+        let mode = FireDialogViewModel.Mode.historyView(query: .visits([
+            makeVisitIdentifier(url: "https://example.com"),
+            makeVisitIdentifier(url: "https://duckduckgo.com"),
+            makeVisitIdentifier(url: "https://spreadprivacy.com")
+        ]))
+
+        XCTAssertEqual(mode.dialogTitle, UserText.fireDialogHistoryItemsTitle(3))
+        XCTAssertEqual(mode.dialogTitle, "Delete 3 History items?")
+    }
+
+    @MainActor func testWhenModeIsSingleSelectedVisit_ThenDialogTitleShowsOneItem() {
+        // Scenario: The user selects a single history item and deletes it.
+        // Expectation: The dialog title shows a count of one.
+
+        let mode = FireDialogViewModel.Mode.historyView(query: .visits([
+            makeVisitIdentifier(url: "https://example.com")
+        ]))
+
+        XCTAssertEqual(mode.dialogTitle, UserText.fireDialogHistoryItemsTitle(1))
+    }
+
+    @MainActor func testWhenSelectedVisitsShareHistoryEntry_ThenDialogTitleCountsTheEntryOnce() {
+        // Scenario: The user selects several visits of the same page, made on different days.
+        // Expectation: The title counts the history entry once, because deleting any of its
+        // visits deletes the same entry.
+
+        let uuid = UUID().uuidString
+        let mode = FireDialogViewModel.Mode.historyView(query: .visits([
+            .init(uuid: uuid, url: URL(string: "https://example.com")!, date: Date()),
+            .init(uuid: uuid, url: URL(string: "https://example.com")!, date: Date().addingTimeInterval(-.days(1))),
+            makeVisitIdentifier(url: "https://duckduckgo.com")
+        ]))
+
+        XCTAssertEqual(mode.dialogTitle, UserText.fireDialogHistoryItemsTitle(2))
+    }
+
+    @MainActor func testWhenNoVisitsAreSelected_ThenDialogTitleShowsZeroItems() {
+        // Scenario: The mode carries an empty selection.
+        // Expectation: The title renders without crashing and shows a count of zero.
+
+        let mode = FireDialogViewModel.Mode.historyView(query: .visits([]))
+
+        XCTAssertEqual(mode.dialogTitle, UserText.fireDialogHistoryItemsTitle(0))
+    }
+
+    @MainActor func testWhenSimplifiedDialogIsOff_ThenSelectedVisitsKeepTheGenericDialogTitle() {
+        // Scenario: The user deletes selected history items while the simplified dialog is off.
+        // Expectation: The legacy dialog keeps the generic title. The history item count title
+        // belongs to the new dialog only.
+
+        let mode = FireDialogViewModel.Mode.historyView(query: .visits([
+            makeVisitIdentifier(url: "https://example.com"),
+            makeVisitIdentifier(url: "https://duckduckgo.com")
+        ]))
+
+        let viewModel = makeViewModel(settings: MockFireDialogViewSettings(), mode: mode, isFireDialogSimplified: false)
+
+        XCTAssertEqual(viewModel.dialogTitle, UserText.fireDialogTitle)
+    }
+
+    @MainActor func testWhenSimplifiedDialogIsOn_ThenSelectedVisitsShowTheNumberOfItems() {
+        // Scenario: The user deletes selected history items while the simplified dialog is on.
+        // Expectation: The dialog title shows how many items are deleted.
+
+        let mode = FireDialogViewModel.Mode.historyView(query: .visits([
+            makeVisitIdentifier(url: "https://example.com"),
+            makeVisitIdentifier(url: "https://duckduckgo.com")
+        ]))
+
+        let viewModel = makeViewModel(settings: MockFireDialogViewSettings(), mode: mode, isFireDialogSimplified: true)
+
+        XCTAssertEqual(viewModel.dialogTitle, UserText.fireDialogHistoryItemsTitle(2))
+    }
+
+    @MainActor func testDialogTitleOfOtherModesDoesNotDependOnTheSimplifiedDialogFlag() {
+        // Scenario: Any mode other than a history item selection.
+        // Expectation: Both dialogs show the title of the mode, so the flag changes nothing.
+
+        for mode in Self.modesWithVisitsToggle {
+            let legacy = makeViewModel(settings: MockFireDialogViewSettings(), mode: mode, isFireDialogSimplified: false)
+            XCTAssertEqual(legacy.dialogTitle, mode.dialogTitle, "\(mode)")
+
+            let simplified = makeViewModel(settings: MockFireDialogViewSettings(), mode: mode, isFireDialogSimplified: true)
+            XCTAssertEqual(simplified.dialogTitle, mode.dialogTitle, "\(mode)")
+        }
+    }
+
+    @MainActor func testDialogTitlesOfOtherHistoryViewModesAreUnchanged() {
+        // Scenario: The other History view entry points.
+        // Expectation: Their titles keep using the History view delete dialog titles.
+
+        XCTAssertEqual(FireDialogViewModel.Mode.historyView(query: .rangeFilter(.all)).dialogTitle,
+                       HistoryViewDeleteDialogModel.DeleteMode.all.title)
+        XCTAssertEqual(FireDialogViewModel.Mode.historyView(query: .rangeFilter(.today)).dialogTitle,
+                       HistoryViewDeleteDialogModel.DeleteMode.today.title)
+        XCTAssertEqual(FireDialogViewModel.Mode.historyView(query: .rangeFilter(.older)).dialogTitle,
+                       HistoryViewDeleteDialogModel.DeleteMode.older.title)
+        XCTAssertEqual(FireDialogViewModel.Mode.historyView(query: .domainFilter(["example.com"])).dialogTitle,
+                       HistoryViewDeleteDialogModel.DeleteMode.sites(["example.com"]).title)
+    }
+
     // MARK: - Simplified Fire Dialog: currentWindow folding
 
     @MainActor func testClearingOption_WhenSimplifiedEnabledAndPersistedScopeIsCurrentWindow_FoldsToAllData() {
@@ -2293,10 +2721,14 @@ final class FireDialogViewModelTests: XCTestCase {
 
     @MainActor func testClearingOption_WhenSimplifiedEnabledAndScopeIsCurrentTab_RemainsCurrentTab() {
         // Scenario: The simplified Fire dialog is enabled but the selected scope is .currentTab.
-        // Action: Create the ViewModel with clearingOption: .currentTab.
+        // Action: Create the ViewModel with clearingOption: .currentTab, on a tab showing a
+        // website so that the scope holds data to delete.
         // Expectation: Only .currentWindow is folded; .currentTab is preserved.
 
         let featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.fireDialogSimplified.rawValue: true])
+
+        tabCollectionVM.append(tab: makeTab(url: "https://example.com".url!))
+        tabCollectionVM.select(at: .unpinned(1))
 
         let viewModel = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
@@ -2368,7 +2800,11 @@ final class FireDialogViewModelTests: XCTestCase {
     }
 
     @MainActor
-    private func makeViewModel(settings: any KeyedStoring<FireDialogViewSettings>) -> FireDialogViewModel {
+    private func makeViewModel(settings: any KeyedStoring<FireDialogViewSettings>,
+                               mode: FireDialogViewModel.Mode = .fireButton,
+                               clearingOption: FireDialogViewModel.ClearingOption? = nil,
+                               scopeVisits: [Visit]? = nil,
+                               isFireDialogSimplified: Bool = false) -> FireDialogViewModel {
         FireDialogViewModel(
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
@@ -2376,8 +2812,11 @@ final class FireDialogViewModelTests: XCTestCase {
             aiChatHistoryCleaner: MockAIChatHistoryCleaner(showCleanOption: true),
             fireproofDomains: fireproofDomains,
             faviconManagement: fire.faviconManagement,
-            featureFlagger: MockFeatureFlagger(),
+            featureFlagger: MockFeatureFlagger(featuresStub: [FeatureFlag.fireDialogSimplified.rawValue: isFireDialogSimplified]),
+            clearingOption: clearingOption,
+            mode: mode,
             settings: settings,
+            scopeVisits: scopeVisits,
             tld: TLD(),
             windowControllersManager: windowControllersManager,
             dataClearingPreferences: dataClearingPreferences,
@@ -2422,6 +2861,41 @@ final class FireDialogViewModelTests: XCTestCase {
 
     private func makeFireproofDomains(_ domains: [String]) {
         domains.forEach { fireproofDomains.add(domain: $0) }
+    }
+
+    @MainActor
+    private func makeViewModel(tabCollectionViewModel: TabCollectionViewModel,
+                               settings: any KeyedStoring<FireDialogViewSettings>,
+                               isCurrentTabOptionEnabled: Bool? = nil,
+                               isFireDialogSimplified: Bool = true) -> FireDialogViewModel {
+        FireDialogViewModel(
+            fireViewModel: fireViewModel,
+            tabCollectionViewModel: tabCollectionViewModel,
+            historyCoordinating: fire.historyCoordinating,
+            aiChatHistoryCleaner: aiChatHistoryCleaner,
+            fireproofDomains: fireproofDomains,
+            faviconManagement: fire.faviconManagement,
+            featureFlagger: MockFeatureFlagger(featuresStub: [FeatureFlag.fireDialogSimplified.rawValue: isFireDialogSimplified]),
+            isCurrentTabOptionEnabled: isCurrentTabOptionEnabled,
+            settings: settings,
+            tld: TLD(),
+            windowControllersManager: windowControllersManager,
+            dataClearingPreferences: dataClearingPreferences,
+            pixelFiring: pixelFiringMock
+        )
+    }
+
+    /// Selects a new tab page that was never navigated away from, so it holds nothing to delete.
+    @MainActor
+    private func selectNewTabPageTab() {
+        let tab = Tab(content: .newtab, webViewConfiguration: schemeHandler.webViewConfiguration())
+        tabCollectionVM.append(tab: tab)
+        tabCollectionVM.select(at: .unpinned(1))
+    }
+
+    /// Makes an identifier of a single visit of a history entry that no other identifier refers to.
+    private func makeVisitIdentifier(url: String, date: Date = Date()) -> VisitIdentifier {
+        VisitIdentifier(uuid: UUID().uuidString, url: URL(string: url)!, date: date)
     }
 
     private func makeHistoryEntry(url: String) -> HistoryEntry {

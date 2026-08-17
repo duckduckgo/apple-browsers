@@ -1889,6 +1889,11 @@ extension Pixel {
         case unifiedToggleInputFileValidationFailed
         case unifiedToggleInputVoiceTapped
         case unifiedToggleInputStopGenerationTapped
+        case unifiedToggleInputEditReceived
+        case unifiedToggleInputEditSubmitted
+        case unifiedToggleInputEditCancelled
+        case unifiedToggleInputEditImageRemoved
+        case unifiedToggleInputEditFileRemoved
         case unifiedToggleInputSubscriptionUpsellTriggered
         case unifiedToggleInputChatHeaderUpgradeTapped
         case unifiedToggleInputChatHeaderUpgradeShown
@@ -1898,6 +1903,7 @@ extension Pixel {
         case unifiedToggleInputSubmitChangeModelPromptSent
         case unifiedToggleInputDuckAIDirectNavigation
         case aiChatDuckAIDirectNavigation
+        case unifiedToggleInputQuerySubmitted
 
         // MARK: Unified Toggle Input - Duck.ai autocomplete suggestion clicks
         case autocompleteDuckAIClickWebsite
@@ -3803,6 +3809,11 @@ extension Pixel.Event {
         case .unifiedToggleInputFileValidationFailed: return "m_aichat_unified_input_file_validation_failed"
         case .unifiedToggleInputVoiceTapped: return "m_aichat_unified_input_voice_tapped"
         case .unifiedToggleInputStopGenerationTapped: return "m_aichat_unified_input_stop_generation_tapped"
+        case .unifiedToggleInputEditReceived: return "aichat_edit_prompt_opened"
+        case .unifiedToggleInputEditSubmitted: return "aichat_edit_prompt_submitted"
+        case .unifiedToggleInputEditCancelled: return "aichat_edit_prompt_cancelled"
+        case .unifiedToggleInputEditImageRemoved: return "aichat_edit_prompt_image_removed"
+        case .unifiedToggleInputEditFileRemoved: return "aichat_edit_prompt_file_removed"
         case .unifiedToggleInputSubscriptionUpsellTriggered: return "m_aichat_unified_input_subscription_upsell_triggered"
         case .unifiedToggleInputChatHeaderUpgradeTapped: return "m_aichat_unified_input_chat_header_upgrade_tapped"
         case .unifiedToggleInputChatHeaderUpgradeShown: return "m_aichat_unified_input_chat_header_upgrade_shown"
@@ -3812,6 +3823,7 @@ extension Pixel.Event {
         case .unifiedToggleInputSubmitChangeModelPromptSent: return "aichat_unified_input_submit_change_model_prompt_sent"
         case .unifiedToggleInputDuckAIDirectNavigation: return "m_aichat_unified_input_duck_ai_direct_navigation"
         case .aiChatDuckAIDirectNavigation: return "m_aichat_duck_ai_direct_navigation"
+        case .unifiedToggleInputQuerySubmitted: return "m_aichat_unified_input_query_submitted"
 
         case .autocompleteDuckAIClickWebsite: return "m_autocomplete_duckai_click_website"
         case .autocompleteDuckAIClickBookmark: return "m_autocomplete_duckai_click_bookmark"

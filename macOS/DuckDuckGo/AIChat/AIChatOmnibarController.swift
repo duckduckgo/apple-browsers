@@ -1500,7 +1500,7 @@ extension AIChatOmnibarController {
 
         var items: [AIChatModelPickerItem] = recommended.map { model in
             .model(model,
-                   subtitle: Self.recommendationSubtitle(for: model.label),
+                   subtitle: AIChatPickerSectionCopy.subtitle(for: model.label),
                    badge: trailingBadge(for: model),
                    isSelected: model.id == selectedModelId)
         }
@@ -1512,27 +1512,11 @@ extension AIChatOmnibarController {
         items.append(.separator)
 
         if isSubscriptionUpsellEnabled {
-            items.append(.sectionHeader(title: gatedSectionHeaderTitle))
+            items.append(.sectionHeader(title: AIChatPickerSectionCopy.gatedModelsHeader(userTier: userTier, isEligibleForFreeTrial: shouldOfferFreeTrial)))
         }
 
         items += gated.map { .gatedModel($0.model, badge: trailingBadge(for: $0.model), routesToUpsell: isSubscriptionUpsellEnabled) }
         return items
-    }
-
-    /// Free trial first; once it's spent, a non-subscriber's gated models span both paid plans,
-    /// while a Plus subscriber's remaining ones are Pro-only.
-    private var gatedSectionHeaderTitle: String {
-        if shouldOfferFreeTrial { return UserText.aiChatModelPickerTryFreeSectionHeader }
-        return userTier == .free ? UserText.aiChatModelPickerAvailableWithPaidPlansSectionHeader
-                                 : UserText.aiChatModelPickerAvailableWithProSectionHeader
-    }
-
-    private static func recommendationSubtitle(for label: AIChatModelLabel?) -> String? {
-        switch label {
-        case .everydayUse: return UserText.aiChatModelPickerLabelEverydayUse
-        case .usesLimitsFaster: return UserText.aiChatModelPickerLabelUsesLimitsFaster
-        case .unknown, .none: return nil
-        }
     }
 
     /// PLUS/PRO tag naming the tier a model needs — only for models the user can't use yet, so a
@@ -1559,7 +1543,7 @@ extension AIChatOmnibarController {
             let isGated = requiredTier != nil
             // Only the first gated effort heads the section.
             let sectionTitle = isGated && isSubscriptionUpsellEnabled && !titledGatedSection
-                ? gatedSectionTitle(for: requiredTier)
+                ? AIChatPickerSectionCopy.gatedEffortsHeader(requiredTier: requiredTier, isEligibleForFreeTrial: shouldOfferFreeTrial)
                 : nil
             titledGatedSection = titledGatedSection || sectionTitle != nil
             items.append(AIChatReasoningPickerItem(
@@ -1571,16 +1555,5 @@ extension AIChatOmnibarController {
             ))
         }
         return items
-    }
-
-    /// Heading for a gated row's section: the trial while it's still on offer, otherwise the plan
-    /// that unlocks it.
-    private func gatedSectionTitle(for requiredTier: AIChatModelPublicAccessTier?) -> String? {
-        if shouldOfferFreeTrial { return UserText.aiChatModelPickerTryFreeSectionHeader }
-        switch requiredTier {
-        case .plus: return UserText.aiChatModelPickerAvailableWithPlusSectionHeader
-        case .pro: return UserText.aiChatModelPickerAvailableWithProSectionHeader
-        case .free, .none: return nil
-        }
     }
 }

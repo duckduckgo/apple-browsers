@@ -38,6 +38,12 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
         }
     }
 
+    private enum ReconciliationReason {
+        case preparation(PreparationPolicy)
+        case storeChanged
+        case foregroundValidation
+    }
+
     private struct SelectedRemoteMessage {
         let message: RemoteMessageModel
         let triggerFilter: TriggerFilter
@@ -61,8 +67,6 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
     private var remoteMessagesCancellable: AnyCancellable?
     private var rmfOwnership: RMFOwnership?
     private var isRMFAdmissionEnabled: Bool
-    private var activeNTPHostPolicies: [HomePageMessagesHost: PreparationPolicy] = [:]
-    private var activeNTPHostsByRecency: [HomePageMessagesHost] = []
 
     var homeMessages: [HomeMessage] = []
     let mode: PromoCoordinationMode
@@ -107,27 +111,13 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
     }
 
     func prepareForNTP(openedAfterIdle: Bool) {
-        prepareForNTP(openedAfterIdle: openedAfterIdle, host: .newTabPage)
-    }
-
-    func prepareForNTP(openedAfterIdle: Bool, host: HomePageMessagesHost) {
         guard mode == .coordinated else { return }
         guard isRMFAdmissionEnabled else {
             return
         }
 
         let preparationPolicy = PreparationPolicy(openedAfterIdle: openedAfterIdle)
-        activeNTPHostPolicies[host] = preparationPolicy
-        activeNTPHostsByRecency.removeAll { $0 == host }
-        activeNTPHostsByRecency.append(host)
-        reconcileCoordinatedMessages(using: preparationPolicy)
-    }
-
-    func deactivateNTPHost(_ host: HomePageMessagesHost) {
-        guard mode == .coordinated else { return }
-
-        activeNTPHostPolicies[host] = nil
-        activeNTPHostsByRecency.removeAll { $0 == host }
+        reconcileCoordinatedMessages(reason: .preparation(preparationPolicy))
     }
 
     func handleAppBackgrounded() {
@@ -136,8 +126,6 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
         }
 
         isRMFAdmissionEnabled = false
-        activeNTPHostPolicies.removeAll()
-        activeNTPHostsByRecency.removeAll()
     }
 
     func handleAppForegrounded() {
@@ -146,7 +134,7 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
         }
 
         isRMFAdmissionEnabled = true
-        reconcileCoordinatedMessages(using: nil)
+        reconcileCoordinatedMessages(reason: .foregroundValidation)
     }
 
     func dismissHomeMessage(_ homeMessage: HomeMessage) async {
@@ -216,13 +204,6 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
         homeMessageStorage.messagesToBeShown
     }
 
-    private var currentPreparationPolicy: PreparationPolicy? {
-        guard let activeHost = activeNTPHostsByRecency.last else {
-            return nil
-        }
-        return activeNTPHostPolicies[activeHost]
-    }
-
     private func buildLegacyHomeMessages(openedAfterIdle: Bool) -> [HomeMessage] {
         var messages = nonRemoteHomeMessages
         guard !isStillOnboarding(),
@@ -248,15 +229,10 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
             return
         }
 
-        guard rmfOwnership != nil || currentPreparationPolicy != nil else {
-            publishCoordinatedMessages(nonRemoteHomeMessages)
-            return
-        }
-
-        reconcileCoordinatedMessages(using: currentPreparationPolicy)
+        reconcileCoordinatedMessages(reason: .storeChanged)
     }
 
-    private func reconcileCoordinatedMessages(using preparationPolicy: PreparationPolicy?) {
+    private func reconcileCoordinatedMessages(reason: ReconciliationReason) {
         let nonRemoteMessages = nonRemoteHomeMessages
 
         guard !isStillOnboarding() else {
@@ -280,10 +256,14 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
             }
 
             endCurrentRMFOwnership(replacingWith: nonRemoteMessages)
+
+            guard case .preparation = reason else {
+                return
+            }
         }
 
-        guard isRMFAdmissionEnabled,
-              let preparationPolicy,
+        guard case .preparation(let preparationPolicy) = reason,
+              isRMFAdmissionEnabled,
               let selectedRemoteMessage = selectedRemoteMessage(using: preparationPolicy),
               HomeMessageViewModelBuilder.canBuild(for: selectedRemoteMessage.message),
               let promoGate,

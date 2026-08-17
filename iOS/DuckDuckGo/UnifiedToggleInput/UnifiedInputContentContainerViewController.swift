@@ -247,11 +247,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             return
         }
 
-        if fireMode {
-            homePageMessagesConfiguration.deactivateNTPHost(.unifiedInput)
-        } else {
-            homePageMessagesConfiguration.prepareForNTP(openedAfterIdle: escapeHatchModel != nil, host: .unifiedInput)
-        }
+        guard !fireMode else { return }
+        homePageMessagesConfiguration.prepareForNTP(openedAfterIdle: escapeHatchModel != nil)
     }
 
     func setInputMode(_ mode: TextEntryMode, animated: Bool = true) {
@@ -272,12 +269,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         markNeedsVisibleRefresh()
         if active {
             if let homePageMessagesConfiguration = suggestionTrayDependencies?.newTabPageDependencies.homePageMessagesConfiguration,
-               homePageMessagesConfiguration.mode == .coordinated {
-                if switchBarHandler.isFireTab {
-                    homePageMessagesConfiguration.deactivateNTPHost(.unifiedInput)
-                } else {
-                    homePageMessagesConfiguration.prepareForNTP(openedAfterIdle: escapeHatchModel != nil, host: .unifiedInput)
-                }
+               homePageMessagesConfiguration.mode == .coordinated,
+               !switchBarHandler.isFireTab {
+                homePageMessagesConfiguration.prepareForNTP(openedAfterIdle: escapeHatchModel != nil)
             }
             unifiedSuggestionsHost?.setIsFireTab(switchBarHandler.isFireTab)
             unifiedSuggestionsHost?.setLandscape(isLandscapeOrientation)
@@ -288,7 +282,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             syncDuckAISurfaceWithSettings()
             duckAISurface?.refreshRecents()
         } else {
-            suggestionTrayDependencies?.newTabPageDependencies.homePageMessagesConfiguration.deactivateNTPHost(.unifiedInput)
             fireSearchSuggestionsDisplayPixels()
         }
     }

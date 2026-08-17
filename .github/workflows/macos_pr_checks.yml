@@ -579,6 +579,7 @@ jobs:
           echo "RUNS_ON=bitrise:macos26-m4pro" >> $GITHUB_ENV
         else
           echo "RUNS_ON=bitrise:macos26-m4" >> $GITHUB_ENV
+        fi
 
     - name: Print macOS version
       run: sw_vers

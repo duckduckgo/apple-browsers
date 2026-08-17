@@ -39,6 +39,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     private var keyboardBottomConstraint: NSLayoutConstraint?
     private var frozenBottomConstraint: NSLayoutConstraint?
     private let startsPreSubmit: Bool
+    private var hasKeyboardAppeared = false
     /// Launch-time snapshot: re-reading the feature costs a privacy-config evaluation each time.
     private let usesFloatingInput: Bool
     private var cancellables = Set<AnyCancellable>()
@@ -134,11 +135,20 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
                 self?.collapseForKeyboardDismissal()
             }
             .store(in: &cancellables)
+
+        NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)
+            .sink { [weak self] _ in
+                self?.hasKeyboardAppeared = true
+            }
+            .store(in: &cancellables)
     }
 
-    /// The expanded pose exists to sit above a keyboard, so losing one collapses it — whether or not the
-    /// field kept first responder, which a sheet drag does. See `collapseExpandedUTIOnKeyboardDismiss`.
+    /// The expanded pose sits above a keyboard, so losing one collapses it — even with the field still
+    /// first responder, as a sheet drag leaves it. Only a keyboard that was really shown can be lost:
+    /// a hardware keyboard reports hides with no matching show, on every keystroke.
     private func collapseForKeyboardDismissal() {
+        guard hasKeyboardAppeared else { return }
+        hasKeyboardAppeared = false
         // Backgrounding takes the keyboard too and isn't the user leaving; offscreen hosts outlive
         // their surface, so they ignore a keyboard they were never above.
         guard UIApplication.shared.applicationState == .active,
@@ -359,6 +369,12 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
             return
         }
         coordinator.showCollapsed()
+    }
+
+    /// A finished transcript belongs in the input, focused so the user can edit or send it.
+    func applyDictatedQuery(_ query: String) {
+        setText(query)
+        activateInput()
     }
 
     func setVoiceSearchAvailable(_ available: Bool) {

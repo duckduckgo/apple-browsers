@@ -36,6 +36,14 @@ protocol AIChatContextualFloatingInputHosting: AnyObject {
     func unmount(from parent: UIViewController)
     func deactivateInput()
     func freezeInputPosition()
+    func applyDictatedQuery(_ query: String)
+}
+
+extension AIChatContextualFloatingInputViewController: ContextualDictationPresenting {
+
+    func applyDictatedQuery(_ query: String) {
+        utiHost.applyDictatedQuery(query)
+    }
 }
 
 /// Chip suggestions and the unified toggle input floating over the page, with no sheet chrome.

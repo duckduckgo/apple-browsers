@@ -1010,14 +1010,6 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
         presentVoiceSearch()
     }
 
-    /// Also the entry point for the UTI's microphone, which dictates into whichever input is on screen.
-    func presentVoiceSearch() {
-        let voiceSearchController = VoiceSearchViewController(preferredTarget: .AIChat, hideToggle: true)
-        voiceSearchController.delegate = self
-        voiceSearchController.modalTransitionStyle = .crossDissolve
-        voiceSearchController.modalPresentationStyle = .overFullScreen
-        present(voiceSearchController, animated: true)
-    }
 
     func contextualInputViewControllerDidRemoveContextChip(_ viewController: AIChatContextualInputViewController) {
         handleChipRemoved()
@@ -1026,14 +1018,11 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
 
 // MARK: - VoiceSearchViewControllerDelegate
 
-extension AIChatContextualSheetViewController: VoiceSearchViewControllerDelegate {
+extension AIChatContextualSheetViewController: ContextualDictationPresenting {
 
-    func voiceSearchViewController(_ viewController: VoiceSearchViewController, didFinishQuery query: String?, target: VoiceSearchTarget) {
-        viewController.dismiss(animated: true)
-        guard let query, !query.isEmpty else { return }
+    func applyDictatedQuery(_ query: String) {
         if let persistentUTIHost {
-            persistentUTIHost.setText(query)
-            persistentUTIHost.activateInput()
+            persistentUTIHost.applyDictatedQuery(query)
         } else {
             contextualInputViewController.setText(query)
         }

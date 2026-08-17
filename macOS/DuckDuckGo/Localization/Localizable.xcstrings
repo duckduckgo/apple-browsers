@@ -45027,6 +45027,36 @@
               }
             }
           }
+        },
+        "pl" : {
+          "variations" : {
+            "plural" : {
+              "few" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%d czaty"
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%d czatów"
+                }
+              },
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%d czat"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%d czaty"
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -45054,6 +45084,46 @@
                     "stringUnit" : {
                       "state" : "new",
                       "value" : "%arg Duck.ai chats"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%#@chats@"
+          },
+          "substitutions" : {
+            "chats" : {
+              "argNum" : 1,
+              "formatSpecifier" : "d",
+              "variations" : {
+                "plural" : {
+                  "few" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "**%arg czaty Duck.ai** zostaną usunięte:"
+                    }
+                  },
+                  "many" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "**%arg czatów Duck.ai** zostanie usuniętych:"
+                    }
+                  },
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "**%arg czat Duck.ai** zostanie usunięty:"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "**%arg czatów Duck.ai** zostanie usuniętych:"
                     }
                   }
                 }
@@ -45832,6 +45902,36 @@
               }
             }
           }
+        },
+        "pl" : {
+          "variations" : {
+            "plural" : {
+              "few" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%d witryny"
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%d witryn"
+                }
+              },
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%d witryna"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%d witryny"
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -46549,7 +46649,7 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Usuń 1$#@items@."
+            "value" : "Usuń %#@items@"
           },
           "substitutions" : {
             "items" : {
@@ -46578,7 +46678,7 @@
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "Liczba elementów: %arg"
+                      "value" : "%arg elementów"
                     }
                   }
                 }
@@ -46859,7 +46959,7 @@
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "Liczba elementów: %arg"
+                      "value" : "%arg elementów"
                     }
                   }
                 }
@@ -47140,7 +47240,7 @@
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg elem."
+                      "value" : "%arg elementów"
                     }
                   }
                 }
@@ -47238,6 +47338,36 @@
               }
             }
           }
+        },
+        "pl" : {
+          "variations" : {
+            "plural" : {
+              "few" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%d elementy"
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%d elementów"
+                }
+              },
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%d element"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%d elementów"
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -47265,6 +47395,46 @@
                     "stringUnit" : {
                       "state" : "translated",
                       "value" : "%arg History items"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Delete %#@historyItems@?"
+          },
+          "substitutions" : {
+            "historyItems" : {
+              "argNum" : 1,
+              "formatSpecifier" : "d",
+              "variations" : {
+                "plural" : {
+                  "few" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg elementy historii"
+                    }
+                  },
+                  "many" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg elementów historii"
+                    }
+                  },
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg element historii"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg elementów historii"
                     }
                   }
                 }
@@ -47310,6 +47480,46 @@
                     "stringUnit" : {
                       "state" : "new",
                       "value" : "%arg history items"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%#@items@"
+          },
+          "substitutions" : {
+            "items" : {
+              "argNum" : 1,
+              "formatSpecifier" : "d",
+              "variations" : {
+                "plural" : {
+                  "few" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "**%arg elementy historii** zostaną usunięte:"
+                    }
+                  },
+                  "many" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "**%arg elementów historii** zostanie usuniętych:"
+                    }
+                  },
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "**%arg element historii** zostanie usunięty:"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "**%arg elementów historii** zostanie usuniętych:"
                     }
                   }
                 }
@@ -48184,6 +48394,46 @@
                     "stringUnit" : {
                       "state" : "new",
                       "value" : "%arg sites"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Cookies & other data from %#@sites@** will be deleted:"
+          },
+          "substitutions" : {
+            "sites" : {
+              "argNum" : 1,
+              "formatSpecifier" : "d",
+              "variations" : {
+                "plural" : {
+                  "few" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg witryn"
+                    }
+                  },
+                  "many" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg witryn"
+                    }
+                  },
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg witryny"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg witryn"
                     }
                   }
                 }

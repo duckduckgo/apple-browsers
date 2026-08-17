@@ -167,8 +167,7 @@ final class HistoryViewDeleteDialogModel: ObservableObject {
 
     static let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
-        formatter.dateStyle = .full
-        formatter.timeStyle = .none
+        formatter.setLocalizedDateFormatFromTemplate("EEEEMMMMd")
         formatter.formattingContext = .middleOfSentence
         return formatter
     }()

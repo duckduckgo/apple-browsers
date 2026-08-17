@@ -123,7 +123,6 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
 
         isRMFAdmissionEnabled = false
         lastPreparationPolicy = nil
-        endCurrentRMFOwnership(replacingWith: nonRemoteHomeMessages)
     }
 
     func handleAppForegrounded() {
@@ -132,6 +131,7 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
         }
 
         isRMFAdmissionEnabled = true
+        reconcileCoordinatedMessages(using: nil)
     }
 
     func dismissHomeMessage(_ homeMessage: HomeMessage) async {
@@ -223,11 +223,6 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
 
     private func handleRemoteMessagesChanged() {
         guard mode == .coordinated else {
-            return
-        }
-
-        guard isRMFAdmissionEnabled else {
-            endCurrentRMFOwnership(replacingWith: nonRemoteHomeMessages)
             return
         }
 

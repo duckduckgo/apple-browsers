@@ -559,7 +559,7 @@ struct UserText {
             value: "**Cookies & other data from %#@sites@** will be deleted:",
             comment: "Simplified Fire dialog's sites overlay title, stating the number of sites affected."
         )
-        return String(format: template, count)
+        return String.localizedStringWithFormat(template, count)
     }
 
     // MARK: - Simplified Fire dialog chats list sheet
@@ -569,7 +569,7 @@ struct UserText {
             value: "**%#@chats@** will be deleted:",
             comment: "Simplified Fire dialog's chats overlay title, stating the number of chats affected."
         )
-        return String(format: template, count)
+        return String.localizedStringWithFormat(template, count)
     }
 
     // MARK: - Simplified Fire dialog history list sheet
@@ -579,7 +579,7 @@ struct UserText {
             value: "**%#@items@** will be deleted:",
             comment: "Simplified Fire dialog's history overlay title, stating the number of history items affected."
         )
-        return String(format: template, count)
+        return String.localizedStringWithFormat(template, count)
     }
     static let fireDialogShowAllHistory = NSLocalizedString("fire.dialog.history.overlay.show.all.history",
                                                             value: "Show all history",

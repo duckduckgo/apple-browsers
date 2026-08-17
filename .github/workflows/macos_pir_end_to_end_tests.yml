@@ -41,7 +41,7 @@ jobs:
         runner: [image:osx-tahoe-26, size:large]
         include:
           - xcode-version: "26.4"
-            runner: [image:osx-tahoe-26, size:large]
+            runner: '[image:osx-tahoe-26, size:large]'
             runner-name: bitrise-macos26-m4 # runner label without reserved characters, for use in the artifact name
 
     concurrency:

@@ -161,9 +161,9 @@ jobs:
             flavor: Non-Sandbox
           - cache-key: sandbox-
             flavor: Sandbox
-          - runs-on: bitrise:macos26-m4
+          - runs-on: [image:osx-tahoe-26, size:large]
             flavor: Non-Sandbox
-          - runs-on: bitrise:macos26-m4-xlarge
+          - runs-on: [image:osx-tahoe-26, size:xlarge]
             flavor: Sandbox
 
     runs-on: ${{ matrix.runs-on }}
@@ -436,6 +436,18 @@ jobs:
             | xargs -L 1 ${{ github.workspace }}/scripts/report-failed-unit-test.sh -s ${{ vars.APPLE_CI_FAILING_TESTS_MACOS_FAILED_TESTS_SECTION_ID }}
         done
 
+    - name: Set RUNS_ON
+      run: |
+        if [[ "${{ runner.environment }}" == "self-hosted" ]]; then
+          if [[ "${{ contains(runner.os, 'm4pro') }}" == "true" ]]; then
+            echo "RUNS_ON=bitrise:macos26-m4pro" >> $GITHUB_ENV
+          else
+            echo "RUNS_ON=bitrise:macos26-m4" >> $GITHUB_ENV
+          fi
+        else
+          echo "RUNS_ON=${{ matrix.runs-on }}" >> $GITHUB_ENV
+        fi
+
     - name: Report job duration
       if: success() || (always() && steps.run-integration-tests.outcome == 'failure')
       continue-on-error: true
@@ -445,7 +457,7 @@ jobs:
         start-timestamp: ${{ steps.start-duration-tests.outputs.start-timestamp }}
         pixel-name: m_ci_apple_duration_macos_${{ matrix.flavor }}_unit_tests
         pixel-params: |
-          runner: ${{ matrix.runs-on }}
+          runner: $RUNS_ON
 
     - name: Send Unit Tests Status Pixel
       if: always() && github.ref_name == 'main'
@@ -539,7 +551,7 @@ jobs:
       inputs.skip-release-build != true &&
       needs.should-run-checks.outputs.should_run == 'true'
 
-    runs-on: bitrise:macos26-m4
+    runs-on: [image:osx-tahoe-26, size:large]
     timeout-minutes: 60
     env:
       RUNS_ON: bitrise:macos26-m4 # keep this in sync with runs-on above
@@ -559,6 +571,14 @@ jobs:
       uses: actions/checkout@v6
       with:
         submodules: recursive
+
+    - name: Override RUNS_ON
+      if: runner.environment == 'self-hosted'
+      run: |
+        if [[ "${{ contains(runner.os, 'm4pro') }}" == "true" ]]; then
+          echo "RUNS_ON=bitrise:macos26-m4pro" >> $GITHUB_ENV
+        else
+          echo "RUNS_ON=bitrise:macos26-m4" >> $GITHUB_ENV
 
     - name: Print macOS version
       run: sw_vers

@@ -180,16 +180,21 @@ class AppConfigurationFetch: AppConfigurationFetching {
             self.markFetchStarted(isBackground: isBackground)
             let result = await AppDependencyProvider.shared.configurationManager.update(isDebug: isDebug)
 
+            let shouldRefreshRemoteMessages: Bool
             switch result {
             case .noData:
                 self.markFetchCompleted(isBackground: isBackground, hasNewData: false)
+                shouldRefreshRemoteMessages = isBackground
             case .assetsUpdated:
                 self.markFetchCompleted(isBackground: isBackground, hasNewData: true)
+                shouldRefreshRemoteMessages = true
             }
 
-            // Independent of `result`: RMF re-evaluates messages against user state that changes without
-            // any configuration changing, so it has to run on every completed check, not just on new assets.
-            NotificationCenter.default.post(name: .remoteMessagesShouldRefresh, object: nil)
+            // Foreground transitions already refresh RMF. Background checks must also refresh it because
+            // user state can change without any configuration assets changing.
+            if shouldRefreshRemoteMessages {
+                NotificationCenter.default.post(name: .remoteMessagesShouldRefresh, object: nil)
+            }
 
             onDidComplete(result)
         }

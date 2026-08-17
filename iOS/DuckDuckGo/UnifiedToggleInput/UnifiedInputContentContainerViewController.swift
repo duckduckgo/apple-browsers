@@ -240,6 +240,18 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         // The fire empty state is a SwiftUI host content state now — just flip the flag; no manager rebuild.
         unifiedSuggestionsHost?.setIsFireTab(fireMode)
         rebuildDuckAISuggestionsCoordinator()
+
+        guard isContentActive,
+              let homePageMessagesConfiguration = suggestionTrayDependencies?.newTabPageDependencies.homePageMessagesConfiguration,
+              homePageMessagesConfiguration.mode == .coordinated else {
+            return
+        }
+
+        if fireMode {
+            homePageMessagesConfiguration.deactivateNTPHost(.unifiedInput)
+        } else {
+            homePageMessagesConfiguration.prepareForNTP(openedAfterIdle: escapeHatchModel != nil, host: .unifiedInput)
+        }
     }
 
     func setInputMode(_ mode: TextEntryMode, animated: Bool = true) {
@@ -261,7 +273,11 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         if active {
             if let homePageMessagesConfiguration = suggestionTrayDependencies?.newTabPageDependencies.homePageMessagesConfiguration,
                homePageMessagesConfiguration.mode == .coordinated {
-                homePageMessagesConfiguration.prepareForNTP(openedAfterIdle: sessionOpenedAfterIdle)
+                if switchBarHandler.isFireTab {
+                    homePageMessagesConfiguration.deactivateNTPHost(.unifiedInput)
+                } else {
+                    homePageMessagesConfiguration.prepareForNTP(openedAfterIdle: escapeHatchModel != nil, host: .unifiedInput)
+                }
             }
             unifiedSuggestionsHost?.setIsFireTab(switchBarHandler.isFireTab)
             unifiedSuggestionsHost?.setLandscape(isLandscapeOrientation)
@@ -272,6 +288,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             syncDuckAISurfaceWithSettings()
             duckAISurface?.refreshRecents()
         } else {
+            suggestionTrayDependencies?.newTabPageDependencies.homePageMessagesConfiguration.deactivateNTPHost(.unifiedInput)
             fireSearchSuggestionsDisplayPixels()
         }
     }

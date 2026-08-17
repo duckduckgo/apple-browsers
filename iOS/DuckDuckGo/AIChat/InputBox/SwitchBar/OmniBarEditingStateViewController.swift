@@ -203,7 +203,6 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
             switchBarHandler.updateBarPosition(isTop: isUsingTopBarPosition)
         }
         setupView()
-        prepareHomePageMessagesForActivation()
         installComponents()
         setupSubscriptions()
         observeRemoteMessagesChanges()
@@ -216,6 +215,8 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+
+        prepareHomePageMessagesForActivation()
 
         if aiChatHistoryManager == nil {
             installChatHistoryList()
@@ -240,6 +241,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
+        suggestionTrayDependencies?.newTabPageDependencies.homePageMessagesConfiguration.deactivateNTPHost(.omniBar)
         aiChatHistoryManager?.tearDown()
         aiChatHistoryManager = nil
     }
@@ -623,8 +625,12 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         let homePageMessagesConfiguration = dependencies.newTabPageDependencies.homePageMessagesConfiguration
         guard homePageMessagesConfiguration.mode == .coordinated else { return }
 
-        let openedAfterIdle = dependencies.tabsModelProvider().currentTab?.openedAfterIdle ?? false
-        homePageMessagesConfiguration.prepareForNTP(openedAfterIdle: openedAfterIdle)
+        guard !switchBarHandler.isFireTab else {
+            homePageMessagesConfiguration.deactivateNTPHost(.omniBar)
+            return
+        }
+
+        homePageMessagesConfiguration.prepareForNTP(openedAfterIdle: escapeHatchModel != nil, host: .omniBar)
     }
 
     private func scheduleAnimation(_ animation: @escaping () -> Void, completion: ((UIViewAnimatingPosition) -> Void)? = nil) {

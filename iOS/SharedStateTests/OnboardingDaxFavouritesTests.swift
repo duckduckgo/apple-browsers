@@ -234,6 +234,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
     }
 
     override func tearDownWithError() throws {
+        UserDefaults.app.removeObject(forKey: FireModeCapability.isFireModeEnabledKey)
         sut = nil
         makeHost = nil
         try super.tearDownWithError()
@@ -299,6 +300,160 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
         XCTAssertEqual(coordinatedStore.fetchedTriggerFilters, [.noTrigger])
         XCTAssertEqual(coordinatedConfiguration.homeMessages, expectedMessages)
         XCTAssertEqual(gate.acquiredMessageIDs, [message.id])
+    }
+
+    func testWhenFireNTPAttachesOrReachesForegroundReadyThenItDoesNotAcquireRemoteMessage() {
+        enableFireModeForTest()
+        let message = makeRemoteMessage(id: "message")
+        let store = ActivationRemoteMessagingStore(message: message)
+        let gate = ActivationPromoGate()
+        let configuration = HomePageConfiguration(
+            remoteMessagingStore: store,
+            subscriptionDataReporter: MockSubscriptionDataReporter(),
+            isStillOnboarding: { false },
+            promoGate: gate
+        )
+        let host = makeHost(configuration)
+        host.tabManager.setBrowsingMode(.fire, source: .tabSelection)
+        host.tabManager.addHomeTab()
+
+        _ = host.view
+        host.prepareHomePageMessagesForForegroundIfNeeded()
+
+        XCTAssertTrue(store.fetchedTriggerFilters.isEmpty)
+        XCTAssertTrue(gate.acquiredMessageIDs.isEmpty)
+        XCTAssertNil(gate.owner)
+        XCTAssertTrue(configuration.homeMessages.isEmpty)
+    }
+
+    func testWhenFireConditionalHostActivatesThenItDoesNotAcquireRemoteMessage() throws {
+        enableFireModeForTest()
+        let websiteURL = try XCTUnwrap(URL(string: "https://example.com"))
+        let message = makeRemoteMessage(id: "message")
+        let store = ActivationRemoteMessagingStore(message: message)
+        let gate = ActivationPromoGate()
+        let configuration = HomePageConfiguration(
+            remoteMessagingStore: store,
+            subscriptionDataReporter: MockSubscriptionDataReporter(),
+            isStillOnboarding: { false },
+            promoGate: gate
+        )
+        let host = makeHost(configuration)
+        host.tabManager.setBrowsingMode(.fire, source: .tabSelection)
+        host.tabManager.addHomeTab()
+        host.suggestionTrayController = makeSuggestionTraySpy(for: host, websiteURL: websiteURL)
+
+        host.onTextFieldWillBeginEditing(host.viewCoordinator.omniBar.barView, tapped: false)
+
+        XCTAssertTrue(store.fetchedTriggerFilters.isEmpty)
+        XCTAssertTrue(gate.acquiredMessageIDs.isEmpty)
+        XCTAssertNil(gate.owner)
+        XCTAssertTrue(configuration.homeMessages.isEmpty)
+    }
+
+    func testWhenOwnedRemoteMessageEntersFireNTPThenItKeepsTheExistingOwner() {
+        enableFireModeForTest()
+        let message = makeRemoteMessage(id: "message")
+        let store = ActivationRemoteMessagingStore(message: message)
+        let gate = ActivationPromoGate()
+        let configuration = HomePageConfiguration(
+            remoteMessagingStore: store,
+            subscriptionDataReporter: MockSubscriptionDataReporter(),
+            isStillOnboarding: { false },
+            promoGate: gate
+        )
+        let host = makeHost(configuration)
+
+        _ = host.view
+        let context = configuration.presentationContext(for: .remoteMessage(remoteMessage: message))
+        host.tabManager.setBrowsingMode(.fire, source: .tabSelection)
+        host.newTab(allowingKeyboard: false)
+
+        XCTAssertEqual(gate.acquiredMessageIDs, [message.id])
+        XCTAssertEqual(configuration.presentationContext(for: .remoteMessage(remoteMessage: message)), context)
+        XCTAssertEqual(configuration.homeMessages, [.remoteMessage(remoteMessage: message)])
+    }
+
+    func testWhenNormalRestoredNTPReachesForegroundReadyThenItAcquiresRemoteMessage() {
+        let message = makeRemoteMessage(id: "message")
+        let store = ActivationRemoteMessagingStore(message: message)
+        let gate = ActivationPromoGate()
+        let configuration = HomePageConfiguration(
+            remoteMessagingStore: store,
+            subscriptionDataReporter: MockSubscriptionDataReporter(),
+            isStillOnboarding: { false },
+            promoGate: gate,
+            isRMFAdmissionEnabled: false
+        )
+        let host = makeHost(configuration)
+
+        _ = host.view
+        configuration.handleAppForegrounded()
+        host.prepareHomePageMessagesForForegroundIfNeeded()
+
+        XCTAssertEqual(store.fetchedTriggerFilters, [.noTrigger])
+        XCTAssertEqual(gate.acquiredMessageIDs, [message.id])
+        XCTAssertEqual(configuration.homeMessages, [.remoteMessage(remoteMessage: message)])
+    }
+
+    func testWhenConditionalHostHasRawIdleWithoutHatchThenItUsesNoTriggerPolicy() throws {
+        let websiteURL = try XCTUnwrap(URL(string: "https://example.com"))
+        let afterIdleMessage = makeRemoteMessage(id: "after-idle")
+        let store = ActivationRemoteMessagingStore(afterIdleMessage: afterIdleMessage)
+        let gate = ActivationPromoGate()
+        let configuration = HomePageConfiguration(
+            remoteMessagingStore: store,
+            subscriptionDataReporter: MockSubscriptionDataReporter(),
+            isStillOnboarding: { false },
+            promoGate: gate
+        )
+        let host = makeHost(configuration)
+        host.tabManager.currentTabsModel.currentTab?.openedAfterIdle = true
+        host.suggestionTrayController = makeSuggestionTraySpy(for: host, websiteURL: websiteURL)
+
+        host.onTextFieldWillBeginEditing(host.viewCoordinator.omniBar.barView, tapped: false)
+
+        XCTAssertEqual(store.fetchedTriggerFilters, [.noTrigger])
+        XCTAssertTrue(gate.acquiredMessageIDs.isEmpty)
+        XCTAssertTrue(configuration.homeMessages.isEmpty)
+    }
+
+    func testWhenForegroundNTPHasRawIdleWithoutHatchThenItUsesNoTriggerPolicy() {
+        let afterIdleMessage = makeRemoteMessage(id: "after-idle")
+        let store = ActivationRemoteMessagingStore(afterIdleMessage: afterIdleMessage)
+        let gate = ActivationPromoGate()
+        let configuration = HomePageConfiguration(
+            remoteMessagingStore: store,
+            subscriptionDataReporter: MockSubscriptionDataReporter(),
+            isStillOnboarding: { false },
+            promoGate: gate,
+            isRMFAdmissionEnabled: false
+        )
+        let host = makeHost(configuration)
+
+        _ = host.view
+        configuration.handleAppForegrounded()
+        host.tabManager.currentTabsModel.currentTab?.openedAfterIdle = true
+        host.prepareHomePageMessagesForForegroundIfNeeded()
+
+        XCTAssertEqual(store.fetchedTriggerFilters, [.noTrigger])
+        XCTAssertTrue(gate.acquiredMessageIDs.isEmpty)
+        XCTAssertTrue(configuration.homeMessages.isEmpty)
+    }
+
+    private func makeRemoteMessage(id: String) -> RemoteMessageModel {
+        RemoteMessageModel(
+            id: id,
+            surfaces: .newTabPage,
+            content: .small(titleText: "Title", descriptionText: "Description"),
+            matchingRules: [],
+            exclusionRules: [],
+            isMetricsEnabled: false
+        )
+    }
+
+    private func enableFireModeForTest() {
+        UserDefaults.app.set(true, forKey: FireModeCapability.isFireModeEnabledKey)
     }
 
     private func makeSuggestionTraySpy(for host: MainViewController, websiteURL: URL) -> SuggestionTrayEligibilitySpy {
@@ -389,6 +544,10 @@ private final class ActivationPromoGate: PromoGating {
     private let cooldownPolicy = MockPromoQueueCooldownPolicy()
     private(set) var acquiredMessageIDs: [String] = []
 
+    var owner: PromoQueueLeaseOwnerSnapshot? {
+        arbiter.snapshot.owner
+    }
+
     func tryAcquireRemoteMessageLease(for messageID: String) -> PromoQueueRemoteMessageLease? {
         acquiredMessageIDs.append(messageID)
         guard case .acquired(let lease) = arbiter.acquireRemoteMessageLease(for: messageID) else {
@@ -399,11 +558,18 @@ private final class ActivationPromoGate: PromoGating {
 }
 
 private final class ActivationRemoteMessagingStore: RemoteMessagingStoring {
-    let message: RemoteMessageModel
+    let afterIdleMessage: RemoteMessageModel?
+    let noTriggerMessage: RemoteMessageModel?
     private(set) var fetchedTriggerFilters: [TriggerFilter] = []
 
     init(message: RemoteMessageModel) {
-        self.message = message
+        afterIdleMessage = nil
+        noTriggerMessage = message
+    }
+
+    init(afterIdleMessage: RemoteMessageModel) {
+        self.afterIdleMessage = afterIdleMessage
+        noTriggerMessage = nil
     }
 
     func resetFetches() {
@@ -415,7 +581,14 @@ private final class ActivationRemoteMessagingStore: RemoteMessagingStoring {
 
     func fetchScheduledRemoteMessage(surfaces: RemoteMessageSurfaceType, triggerFilter: TriggerFilter) -> RemoteMessageModel? {
         fetchedTriggerFilters.append(triggerFilter)
-        return triggerFilter == .noTrigger ? message : nil
+        switch triggerFilter {
+        case .specific(.afterIdle):
+            return afterIdleMessage
+        case .noTrigger:
+            return noTriggerMessage
+        case .any:
+            return afterIdleMessage ?? noTriggerMessage
+        }
     }
 
     func hasShownRemoteMessage(withID id: String) -> Bool { false }

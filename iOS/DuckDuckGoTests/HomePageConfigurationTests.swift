@@ -236,6 +236,79 @@ struct HomePageConfigurationTests {
     }
 
     @available(iOS 16, *)
+    @Test("A store notification cannot acquire after the last NTP host deactivates, but reactivation can", .timeLimit(.minutes(1)))
+    func storeNotificationAfterLastHostDeactivationDoesNotAcquireButReactivationDoes() async {
+        let notificationCenter = NotificationCenter()
+        let message = makeRemoteMessage(id: "message")
+        let store = FilteredRemoteMessagingStore()
+        let gate = MockPromoGate()
+        let sut = makeCoordinatedConfiguration(store: store, gate: gate, notificationCenter: notificationCenter)
+
+        sut.prepareForNTP(openedAfterIdle: false, host: .newTabPage)
+        sut.deactivateNTPHost(.newTabPage)
+        store.noTriggerMessage = message
+        store.fetchedTriggerFilters.removeAll()
+
+        notificationCenter.post(name: RemoteMessagingStore.Notifications.remoteMessagesDidChange, object: nil)
+        await Task.yield()
+
+        #expect(store.fetchedTriggerFilters.isEmpty)
+        #expect(gate.acquiredMessageIDs.isEmpty)
+        #expect(gate.arbiter.snapshot.owner == nil)
+        #expect(sut.homeMessages.isEmpty)
+
+        sut.prepareForNTP(openedAfterIdle: false, host: .newTabPage)
+
+        #expect(store.fetchedTriggerFilters == [.noTrigger])
+        #expect(gate.acquiredMessageIDs == ["message"])
+        #expect(sut.homeMessages == [.remoteMessage(remoteMessage: message)])
+    }
+
+    @available(iOS 16, *)
+    @Test("A store notification acquires while an eligible NTP host remains active", .timeLimit(.minutes(1)))
+    func storeNotificationAcquiresWhileEligibleHostRemainsActive() async {
+        let notificationCenter = NotificationCenter()
+        let message = makeRemoteMessage(id: "message")
+        let store = FilteredRemoteMessagingStore()
+        let gate = MockPromoGate()
+        let sut = makeCoordinatedConfiguration(store: store, gate: gate, notificationCenter: notificationCenter)
+
+        sut.prepareForNTP(openedAfterIdle: false, host: .newTabPage)
+        store.noTriggerMessage = message
+        store.fetchedTriggerFilters.removeAll()
+
+        notificationCenter.post(name: RemoteMessagingStore.Notifications.remoteMessagesDidChange, object: nil)
+        await Task.yield()
+
+        #expect(store.fetchedTriggerFilters == [.noTrigger])
+        #expect(gate.acquiredMessageIDs == ["message"])
+        #expect(sut.homeMessages == [.remoteMessage(remoteMessage: message)])
+    }
+
+    @available(iOS 16, *)
+    @Test("Deactivating the most recent NTP host restores the remaining host policy", .timeLimit(.minutes(1)))
+    func deactivatingMostRecentHostFallsBackToRemainingHostPolicy() async {
+        let notificationCenter = NotificationCenter()
+        let message = makeRemoteMessage(id: "message")
+        let store = FilteredRemoteMessagingStore()
+        let gate = MockPromoGate()
+        let sut = makeCoordinatedConfiguration(store: store, gate: gate, notificationCenter: notificationCenter)
+
+        sut.prepareForNTP(openedAfterIdle: false, host: .newTabPage)
+        sut.prepareForNTP(openedAfterIdle: true, host: .unifiedInput)
+        sut.deactivateNTPHost(.unifiedInput)
+        store.noTriggerMessage = message
+        store.fetchedTriggerFilters.removeAll()
+
+        notificationCenter.post(name: RemoteMessagingStore.Notifications.remoteMessagesDidChange, object: nil)
+        await Task.yield()
+
+        #expect(store.fetchedTriggerFilters == [.noTrigger])
+        #expect(gate.acquiredMessageIDs == ["message"])
+        #expect(sut.homeMessages == [.remoteMessage(remoteMessage: message)])
+    }
+
+    @available(iOS 16, *)
     @Test("One store notification selects once and synchronously converges all source consumers", .timeLimit(.minutes(1)))
     func storeNotificationConvergesTwoModelsAndDirectConsumer() async {
         let notificationCenter = NotificationCenter()
@@ -364,6 +437,31 @@ struct HomePageConfigurationTests {
         #expect(gate.cooldownPolicy.recordConfirmedRemoteMessageAppearanceCallCount == 1)
         #expect(store.hasShownRemoteMessageCallCount == 1)
         #expect(sut.presentationContext(for: .remoteMessage(remoteMessage: message)) == context)
+    }
+
+    @available(iOS 16, *)
+    @Test("An owned RMF survives host disappearance and foreground with one appearance", .timeLimit(.minutes(1)))
+    func ownedRemoteMessageSurvivesHostDeactivationAndForegroundWithOneAppearance() {
+        let message = makeRemoteMessage(id: "message")
+        let store = FilteredRemoteMessagingStore(noTriggerMessage: message)
+        let gate = MockPromoGate()
+        let sut = makeCoordinatedConfiguration(store: store, gate: gate)
+
+        sut.prepareForNTP(openedAfterIdle: false, host: .newTabPage)
+        let context = sut.presentationContext(for: .remoteMessage(remoteMessage: message))
+        sut.didAppear(.remoteMessage(remoteMessage: message), presentationContext: context)
+
+        sut.deactivateNTPHost(.newTabPage)
+        sut.handleAppBackgrounded()
+        sut.handleAppForegrounded()
+        sut.didAppear(.remoteMessage(remoteMessage: message), presentationContext: context)
+
+        #expect(sut.homeMessages == [.remoteMessage(remoteMessage: message)])
+        #expect(sut.presentationContext(for: .remoteMessage(remoteMessage: message)) == context)
+        #expect(gate.arbiter.snapshot.owner != nil)
+        #expect(gate.acquiredMessageIDs == ["message"])
+        #expect(gate.cooldownPolicy.recordConfirmedRemoteMessageAppearanceCallCount == 1)
+        #expect(store.hasShownRemoteMessageCallCount == 1)
     }
 
     @available(iOS 16, *)
@@ -574,6 +672,8 @@ struct HomePageConfigurationTests {
         )
         let homeMessages = sut.homeMessages
 
+        sut.prepareForNTP(openedAfterIdle: true, host: .unifiedInput)
+        sut.deactivateNTPHost(.unifiedInput)
         sut.handleAppBackgrounded()
         sut.handleAppForegrounded()
 

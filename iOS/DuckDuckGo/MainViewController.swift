@@ -2058,14 +2058,14 @@ class MainViewController: UIViewController {
         currentTab?.dismiss()
         removeHomeScreen()
 
-        let hatch = buildEscapeHatch(openedAfterIdle: openedAfterIdle)
-        if homePageConfiguration.mode == .coordinated {
-            homePageConfiguration.prepareForNTP(openedAfterIdle: hatch != nil)
-        }
-
         // Access the tab model directly as we don't want to create a new tab controller here
         guard let tabModel = tabManager.currentTabsModel.currentTab else {
             fatalError("No tab model")
+        }
+
+        let hatch = buildEscapeHatch(openedAfterIdle: openedAfterIdle)
+        if homePageConfiguration.mode == .coordinated, !tabModel.fireTab {
+            homePageConfiguration.prepareForNTP(openedAfterIdle: hatch != nil, host: .newTabPage)
         }
         
         let shouldSaveTabs = tabModel.viewed == false || tabModel.openedAfterIdle != openedAfterIdle
@@ -2231,6 +2231,7 @@ class MainViewController: UIViewController {
     }
 
     fileprivate func removeHomeScreen() {
+        homePageConfiguration.deactivateNTPHost(.newTabPage)
         newTabPageViewController?.willMove(toParent: nil)
         newTabPageViewController?.dismiss()
         newTabPageViewController = nil
@@ -5545,7 +5546,11 @@ extension MainViewController: OmniBarDelegate {
         guard newTabPageViewController == nil else { return }
 
         if homePageConfiguration.mode == .coordinated {
-            homePageConfiguration.prepareForNTP(openedAfterIdle: currentTab?.tabModel.openedAfterIdle ?? false)
+            if isCurrentTabFireTab() {
+                homePageConfiguration.deactivateNTPHost(.omniBar)
+            } else {
+                homePageConfiguration.prepareForNTP(openedAfterIdle: escapeHatchForEditingState() != nil, host: .omniBar)
+            }
         }
 
         if isPad {
@@ -5724,6 +5729,8 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onDidEndEditing() {
+        homePageConfiguration.deactivateNTPHost(.omniBar)
+
         // Restore the tab's committed mode — the user may have toggled without submitting.
         // Safe on iPhone: the experimental editing state prevents textFieldDidEndEditing from
         // firing (text field never becomes first responder during that flow).
@@ -5883,6 +5890,19 @@ extension MainViewController: OmniBarDelegate {
             return nil
         }
         return model
+    }
+
+    func prepareHomePageMessagesForForegroundIfNeeded() {
+        guard isNewTabPageVisible,
+              let currentTab = tabManager.currentTabsModel.currentTab,
+              !currentTab.fireTab else {
+            return
+        }
+
+        homePageConfiguration.prepareForNTP(
+            openedAfterIdle: escapeHatchForEditingState() != nil,
+            host: .newTabPage
+        )
     }
 
     private func clearEscapeHatch() {

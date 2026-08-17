@@ -1,0 +1,6 @@
+appId: com.duckduckgo.mobile.ios.alpha
+---
+
+- tapOn: "Debug"
+- tapOn: "Settings"
+- tapOn: "Done"

@@ -1,0 +1,19 @@
+appId: com.duckduckgo.mobile.ios.alpha
+---
+
+- runFlow:
+    file: open_debug_screen.yaml
+    env:
+      DEBUG_SCREEN: "Configuration URLs"
+- tapOn: "Remote Message Framework Config"
+- tapOn: "Enter custom URL"
+- inputText: "${REMOTE_MESSAGING_FIXTURE_URL}"
+- tapOn: "Override"
+- tapOn: "Debug"
+- runFlow:
+    file: open_debug_screen.yaml
+    env:
+      DEBUG_SCREEN: "Remote Messaging"
+- extendedWaitUntil:
+    visible: "${EXPECTED_SCHEDULED_RECORD}"
+    timeout: 20000

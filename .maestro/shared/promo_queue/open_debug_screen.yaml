@@ -1,0 +1,9 @@
+appId: com.duckduckgo.mobile.ios.alpha
+---
+
+- scrollUntilVisible:
+    element: "${DEBUG_SCREEN}"
+    centerElement: true
+    speed: 40
+    timeout: 30000
+- tapOn: "${DEBUG_SCREEN}"

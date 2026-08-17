@@ -1,0 +1,15 @@
+appId: com.duckduckgo.mobile.ios.alpha
+---
+
+# Recreate the Debug controller so its alphabetical list starts at the top.
+# SwiftUI preserves the previous scroll position when merely popping a child.
+- tapOn: "Settings"
+- scrollUntilVisible:
+    element: "All debug options"
+    centerElement: true
+    speed: 40
+    timeout: 20000
+- tapOn: "All debug options"
+- extendedWaitUntil:
+    visible: "Debug"
+    timeout: 10000

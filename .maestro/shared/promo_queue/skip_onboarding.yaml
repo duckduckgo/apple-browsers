@@ -1,0 +1,21 @@
+appId: com.duckduckgo.mobile.ios.alpha
+---
+
+# Scenario 1 permits skipping onboarding. Skipping at the welcome screen avoids
+# instantiating the unified suggestion NTP before the RMF fixture is installed.
+- runFlow:
+    when:
+      visible: "Hi there."
+    commands:
+      - tapOn: "Skip Onboarding"
+
+- runFlow:
+    when:
+      visible: "Start Browsing"
+    commands:
+      - tapOn: "Start Browsing"
+
+- extendedWaitUntil:
+    visible:
+      id: "searchEntry"
+    timeout: 10000

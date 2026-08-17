@@ -1,0 +1,31 @@
+appId: com.duckduckgo.mobile.ios.alpha
+---
+
+# Toggle through ON before switching OFF so the result is an explicit override,
+# not merely reliance on a false rollout default.
+- scrollUntilVisible:
+    element: "${FLAG_NAME}"
+    centerElement: true
+    speed: 40
+    timeout: 120000
+- runFlow:
+    when:
+      visible:
+        text: "0"
+        checked: false
+        childOf:
+          text: "^${FLAG_NAME}, Default: (true|false)(, Relaunch required for changes to take effect\\.)?$"
+    commands:
+      - tapOn:
+          text: "0"
+          checked: false
+          childOf:
+            text: "^${FLAG_NAME}, Default: (true|false)(, Relaunch required for changes to take effect\\.)?$"
+- tapOn:
+    text: "1"
+    checked: true
+    childOf:
+      text: "^${FLAG_NAME}, Default: (true|false)(, Relaunch required for changes to take effect\\.)?$"
+- assertVisible:
+    text: "^${FLAG_NAME}, Default: (true|false)(, Relaunch required for changes to take effect\\.)?$"
+    checked: false

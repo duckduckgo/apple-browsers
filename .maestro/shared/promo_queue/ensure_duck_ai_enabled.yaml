@@ -1,0 +1,32 @@
+appId: com.duckduckgo.mobile.ios.alpha
+---
+
+# Starts and ends on the Settings root. The production AI Features enable
+# switch has a stable accessibility identifier; the Settings row itself does
+# not, so navigation uses its visible product label.
+- scrollUntilVisible:
+    element: "AI Features"
+    direction: DOWN
+    speed: 40
+    centerElement: true
+    timeout: 30000
+- tapOn: "AI Features"
+- extendedWaitUntil:
+    visible:
+      id: "Settings.AIFeatures.EnableToggle"
+    timeout: 10000
+- runFlow:
+    when:
+      visible:
+        id: "Settings.AIFeatures.EnableToggle"
+        checked: false
+    commands:
+      - tapOn:
+          id: "Settings.AIFeatures.EnableToggle"
+- assertVisible:
+    id: "Settings.AIFeatures.EnableToggle"
+    checked: true
+- tapOn: "Settings"
+- extendedWaitUntil:
+    visible: "Settings"
+    timeout: 10000

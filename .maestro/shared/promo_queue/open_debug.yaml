@@ -1,0 +1,11 @@
+appId: com.duckduckgo.mobile.ios.alpha
+---
+
+- scrollUntilVisible:
+    element: "All debug options"
+    centerElement: true
+    timeout: 20000
+- tapOn: "All debug options"
+- extendedWaitUntil:
+    visible: "Debug"
+    timeout: 10000

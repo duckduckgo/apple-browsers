@@ -1,0 +1,10 @@
+appId: com.duckduckgo.mobile.ios.alpha
+---
+
+- tapOn:
+    id: "searchEntry"
+- inputText: "${LOCAL_PAGE_URL}"
+- pressKey: Enter
+- extendedWaitUntil:
+    visible: "${EXPECTED_PAGE_TITLE}"
+    timeout: 15000

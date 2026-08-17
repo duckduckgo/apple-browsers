@@ -1,0 +1,24 @@
+appId: com.duckduckgo.mobile.ios.alpha
+---
+
+- tapOn: "Refresh"
+- assertVisible:
+    text: "Coordinated"
+    childOf:
+      containsChild:
+        text: "Mode"
+- assertVisible:
+    text: "RMF \\(message ID: 1.*"
+    childOf:
+      containsChild:
+        text: "Owner"
+- assertVisible:
+    text: "Yes"
+    childOf:
+      containsChild:
+        text: "RMF Appearance Confirmed"
+- assertVisible:
+    text: "^(?!Never$).+"
+    childOf:
+      containsChild:
+        text: "Last RMF Appearance"

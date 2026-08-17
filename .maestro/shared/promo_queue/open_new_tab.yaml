@@ -1,0 +1,9 @@
+appId: com.duckduckgo.mobile.ios.alpha
+---
+
+- tapOn: "Browsing Menu"
+- tapOn: "New Tab"
+- extendedWaitUntil:
+    visible:
+      id: "searchEntry"
+    timeout: 10000

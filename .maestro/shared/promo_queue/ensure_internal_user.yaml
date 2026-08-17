@@ -1,0 +1,13 @@
+appId: com.duckduckgo.mobile.ios.alpha
+---
+
+- runFlow:
+    when:
+      notVisible:
+        text: "Internal User"
+        checked: true
+    commands:
+      - tapOn: "Internal User"
+- assertVisible:
+    text: "Internal User"
+    checked: true

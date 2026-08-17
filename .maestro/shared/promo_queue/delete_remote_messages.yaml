@@ -1,0 +1,18 @@
+appId: com.duckduckgo.mobile.ios.alpha
+---
+
+- runFlow:
+    file: open_debug_screen.yaml
+    env:
+      DEBUG_SCREEN: "Remote Messaging"
+- runFlow:
+    when:
+      visible: "Delete All"
+    commands:
+      - tapOn: "Delete All"
+- extendedWaitUntil:
+    visible: "No messages"
+    timeout: 10000
+- tapOn: "Debug"
+- runFlow:
+    file: fresh_debug_root.yaml

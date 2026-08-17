@@ -1,0 +1,28 @@
+appId: com.duckduckgo.mobile.ios.alpha
+---
+
+- runFlow:
+    file: open_debug_screen.yaml
+    env:
+      DEBUG_SCREEN: "Prompt Coordination"
+- tapOn: "Refresh"
+- assertVisible:
+    text: "${EXPECTED_MODE}"
+    childOf:
+      containsChild:
+        text: "Mode"
+- assertVisible:
+    text: "None"
+    childOf:
+      containsChild:
+        text: "Owner"
+- assertVisible:
+    text: "Not applicable"
+    childOf:
+      containsChild:
+        text: "RMF Appearance Confirmed"
+- assertVisible:
+    text: "Never"
+    childOf:
+      containsChild:
+        text: "Last RMF Appearance"

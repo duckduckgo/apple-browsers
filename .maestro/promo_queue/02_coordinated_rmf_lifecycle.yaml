@@ -1,0 +1,154 @@
+appId: com.duckduckgo.mobile.ios.alpha
+tags:
+  - iphone
+  - promo_queue
+name: Promo Queue - coordinated RMF lifecycle and modal exclusion
+---
+
+- launchApp:
+    appId: com.duckduckgo.mobile.ios.alpha
+    clearState: false
+- runFlow:
+    file: ../shared/promo_queue/complete_onboarding.yaml
+- runFlow:
+    file: ../shared/promo_queue/open_settings.yaml
+- runFlow:
+    file: ../shared/promo_queue/ensure_duck_ai_enabled.yaml
+- runFlow:
+    file: ../shared/promo_queue/open_debug.yaml
+- runFlow:
+    file: ../shared/promo_queue/ensure_internal_user.yaml
+- runFlow:
+    file: ../shared/promo_queue/close_debug_root_and_relaunch.yaml
+- runFlow:
+    file: ../shared/promo_queue/open_settings.yaml
+- runFlow:
+    file: ../shared/promo_queue/open_debug.yaml
+- runFlow:
+    file: ../shared/promo_queue/ensure_internal_user.yaml
+- runFlow:
+    file: ../shared/promo_queue/open_feature_flags.yaml
+- runFlow:
+    file: ../shared/promo_queue/force_visible_flag_on.yaml
+    env:
+      FLAG_NAME: "promoPresentationCoordination"
+- runFlow:
+    file: ../shared/promo_queue/force_visible_flag_on.yaml
+    env:
+      FLAG_NAME: "showAIChatAddressBarChoiceScreen"
+- runFlow:
+    file: ../shared/promo_queue/close_settings_and_relaunch.yaml
+
+- runFlow:
+    file: ../shared/promo_queue/open_settings.yaml
+- runFlow:
+    file: ../shared/promo_queue/open_debug.yaml
+- runFlow:
+    file: ../shared/promo_queue/assert_prompt_coordination_empty.yaml
+    env:
+      EXPECTED_MODE: "Coordinated"
+- tapOn: "Reset Modal Cooldown (Debug Only)"
+- tapOn: "Reset RMF Cooldown (Debug Only)"
+- runFlow:
+    file: ../shared/promo_queue/close_debug_settings.yaml
+
+- runFlow:
+    file: ../shared/promo_queue/open_local_page.yaml
+    env:
+      LOCAL_PAGE_URL: ${PROMO_QUEUE_PAGE_URL}
+      EXPECTED_PAGE_TITLE: "Normal Promo Queue Test Page"
+- runFlow:
+    file: ../shared/promo_queue/open_settings.yaml
+- runFlow:
+    file: ../shared/promo_queue/open_debug.yaml
+- runFlow:
+    file: ../shared/promo_queue/open_debug_screen.yaml
+    env:
+      DEBUG_SCREEN: "Duck.ai Toggle Prompt"
+- tapOn: "Set Install Cooldown Elapsed"
+- tapOn: "Done"
+- tapOn: "Reset Picker State (Selection + Shown Flag)"
+- tapOn: "Debug"
+- runFlow:
+    file: ../shared/promo_queue/delete_remote_messages.yaml
+- runFlow:
+    file: ../shared/promo_queue/apply_remote_messaging_fixture.yaml
+    env:
+      REMOTE_MESSAGING_FIXTURE_URL: ${PROMO_QUEUE_RMF_URL}
+      EXPECTED_SCHEDULED_RECORD: "ID: 1 | not shown | scheduled"
+- runFlow:
+    file: ../shared/promo_queue/close_debug_settings.yaml
+
+- runFlow:
+    file: ../shared/promo_queue/open_new_tab.yaml
+- extendedWaitUntil:
+    visible: "title"
+    timeout: 15000
+- assertVisible: "description"
+- takeScreenshot: "02-rmf-visible"
+
+- runFlow:
+    file: ../shared/promo_queue/open_settings.yaml
+- runFlow:
+    file: ../shared/promo_queue/open_debug.yaml
+- runFlow:
+    file: ../shared/promo_queue/open_debug_screen.yaml
+    env:
+      DEBUG_SCREEN: "Remote Messaging"
+- assertVisible: "ID: 1 | shown | scheduled"
+- tapOn: "Debug"
+- runFlow:
+    file: ../shared/promo_queue/fresh_debug_root.yaml
+- runFlow:
+    file: ../shared/promo_queue/open_debug_screen.yaml
+    env:
+      DEBUG_SCREEN: "Prompt Coordination"
+- takeScreenshot: "02-pre-refresh-snapshot"
+- runFlow:
+    when:
+      visible:
+        text: "Never"
+        childOf:
+          containsChild:
+            text: "Last RMF Appearance"
+    commands:
+      - assertVisible:
+          text: "Never"
+          childOf:
+            containsChild:
+              text: "Last RMF Appearance"
+- runFlow:
+    file: ../shared/promo_queue/assert_confirmed_rmf_owner.yaml
+- runFlow:
+    file: ../shared/promo_queue/close_debug_settings.yaml
+
+- assertVisible: "title"
+- assertVisible: "description"
+- pressKey: HOME
+- launchApp:
+    appId: com.duckduckgo.mobile.ios.alpha
+    stopApp: false
+    clearState: false
+- extendedWaitUntil:
+    visible: "title"
+    timeout: 15000
+- assertVisible: "description"
+- assertNotVisible: "Want easy access to private AI chat in the address bar?"
+- takeScreenshot: "02-rmf-after-foreground"
+
+- runFlow:
+    file: ../shared/promo_queue/open_settings.yaml
+- runFlow:
+    file: ../shared/promo_queue/open_debug.yaml
+- runFlow:
+    file: ../shared/promo_queue/open_debug_screen.yaml
+    env:
+      DEBUG_SCREEN: "Prompt Coordination"
+- runFlow:
+    file: ../shared/promo_queue/assert_confirmed_rmf_owner.yaml
+- assertVisible:
+    text: "Never"
+    childOf:
+      containsChild:
+        text: "Last Modal Appearance"
+- takeScreenshot: "02-post-foreground-diagnostics"

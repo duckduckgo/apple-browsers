@@ -67,8 +67,12 @@ release/
 
 ## Build generated
 DerivedData/
+.promo-queue-derived-data/
 xcodebuild.log
 tmp
+
+# Local Promo Queue Maestro evidence (fixtures remain tracked).
+.maestro/promo_queue/artifacts/
 
 #VSCode
 buildServer.json

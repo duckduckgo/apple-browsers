@@ -1,0 +1,58 @@
+appId: com.duckduckgo.mobile.ios.alpha
+---
+
+- runFlow:
+    when:
+      visible: "Enable Dictation?"
+    commands:
+      - tapOn: "Not Now"
+      - extendedWaitUntil:
+          notVisible: "Enable Dictation?"
+          timeout: 10000
+      - waitForAnimationToEnd:
+          timeout: 3000
+      - runFlow:
+          when:
+            visible: "Continue"
+          commands:
+            - tapOn: "Continue"
+            - waitForAnimationToEnd:
+                timeout: 3000
+      - runFlow:
+          when:
+            visible: "Continue"
+          commands:
+            - tapOn: "Continue"
+            - waitForAnimationToEnd:
+                timeout: 3000
+      - runFlow:
+          when:
+            visible: "Back"
+          commands:
+            - tapOn: "Back"
+            - waitForAnimationToEnd:
+                timeout: 3000
+
+# Fresh simulators can instead enter a keyboard tutorial without leaving the
+# Dictation prompt visible. Complete at most two tutorials, then leave input.
+- runFlow:
+    when:
+      visible: "Continue"
+    commands:
+      - tapOn: "Continue"
+      - waitForAnimationToEnd:
+          timeout: 3000
+      - runFlow:
+          when:
+            visible: "Continue"
+          commands:
+            - tapOn: "Continue"
+            - waitForAnimationToEnd:
+                timeout: 3000
+      - runFlow:
+          when:
+            visible: "Back"
+          commands:
+            - tapOn: "Back"
+            - waitForAnimationToEnd:
+                timeout: 3000

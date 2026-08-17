@@ -1,0 +1,21 @@
+appId: com.duckduckgo.mobile.ios.alpha
+---
+
+# Start on the Debug root. A real background checkpoint gives shared defaults
+# a lifecycle boundary before the process is terminated and rebuilt.
+- tapOn: "Settings"
+- tapOn: "Done"
+- pressKey: HOME
+- launchApp:
+    appId: com.duckduckgo.mobile.ios.alpha
+    stopApp: false
+    clearState: false
+- stopApp
+- launchApp:
+    appId: com.duckduckgo.mobile.ios.alpha
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "searchEntry"
+    timeout: 15000
+

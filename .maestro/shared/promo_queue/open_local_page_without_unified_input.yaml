@@ -1,0 +1,15 @@
+appId: com.duckduckgo.mobile.ios.alpha
+---
+
+# Use the shipping quick-link route to replace the current home tab with a web
+# tab without focusing or instantiating the unified-input suggestion NTP.
+- openLink: "ddgQuickLink://${LOCAL_PAGE_URL}"
+- runFlow:
+    when:
+      visible: "Open in “DuckDuckGo”?"
+    commands:
+      - tapOn: "Open"
+- extendedWaitUntil:
+    visible: ${EXPECTED_PAGE_TITLE}
+    timeout: 10000
+

@@ -1,0 +1,40 @@
+appId: com.duckduckgo.mobile.ios.alpha
+---
+
+- runFlow:
+    file: settle_keyboard_interruptions.yaml
+- runFlow:
+    when:
+      notVisible: "Settings"
+    commands:
+      - tapOn: "Browsing Menu"
+      - waitForAnimationToEnd:
+          timeout: 3000
+- runFlow:
+    file: settle_keyboard_interruptions.yaml
+- runFlow:
+    when:
+      notVisible: "Settings"
+    commands:
+      - tapOn: "Browsing Menu"
+      - waitForAnimationToEnd:
+          timeout: 3000
+- runFlow:
+    file: settle_keyboard_interruptions.yaml
+- runFlow:
+    when:
+      notVisible: "Settings"
+    commands:
+      - tapOn: "Browsing Menu"
+      - waitForAnimationToEnd:
+          timeout: 3000
+- runFlow:
+    file: settle_keyboard_interruptions.yaml
+- extendedWaitUntil:
+    visible: "Settings"
+    timeout: 10000
+- tapOn: "Settings"
+- extendedWaitUntil:
+    visible: "Done"
+    timeout: 10000
+- assertVisible: "Settings"

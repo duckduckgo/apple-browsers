@@ -1,0 +1,154 @@
+appId: com.duckduckgo.mobile.ios.alpha
+tags:
+  - iphone
+  - promo_queue
+name: Promo Queue - hidden cached NTP appearance accounting
+---
+
+- launchApp:
+    appId: com.duckduckgo.mobile.ios.alpha
+    clearState: false
+- runFlow:
+    file: ../shared/promo_queue/skip_onboarding.yaml
+- runFlow:
+    file: ../shared/promo_queue/open_settings.yaml
+- runFlow:
+    file: ../shared/promo_queue/open_debug.yaml
+- runFlow:
+    file: ../shared/promo_queue/ensure_internal_user.yaml
+- runFlow:
+    file: ../shared/promo_queue/close_debug_root_and_relaunch.yaml
+- runFlow:
+    file: ../shared/promo_queue/open_settings.yaml
+- runFlow:
+    file: ../shared/promo_queue/open_debug.yaml
+- runFlow:
+    file: ../shared/promo_queue/ensure_internal_user.yaml
+- runFlow:
+    file: ../shared/promo_queue/open_feature_flags.yaml
+- runFlow:
+    file: ../shared/promo_queue/force_visible_flag_on.yaml
+    env:
+      FLAG_NAME: "promoPresentationCoordination"
+- runFlow:
+    file: ../shared/promo_queue/close_settings_and_relaunch.yaml
+
+# Replace the initial home tab through the shipping QuickLink route. This gives
+# both the control and primed paths the same visible webpage precondition without
+# ever instantiating the unified-input suggestion NTP.
+- runFlow:
+    file: ../shared/promo_queue/open_local_page_without_unified_input.yaml
+    env:
+      LOCAL_PAGE_URL: ${PROMO_QUEUE_PAGE_URL}
+      EXPECTED_PAGE_TITLE: "Normal Promo Queue Test Page"
+
+# Unprimed control: do the fixture fetch and strict accounting checks while the
+# normal webpage is the only browser content. The control removes the message
+# while Settings is still onscreen and leaves no appearance or ownership history.
+- runFlow:
+    file: ../shared/promo_queue/open_settings.yaml
+- runFlow:
+    file: ../shared/promo_queue/open_debug.yaml
+- runFlow:
+    file: ../shared/promo_queue/control_apply_ntp_fixture.yaml
+- tapOn: "Settings"
+- tapOn: "Done"
+- assertVisible: "Normal Promo Queue Test Page"
+
+# Prime the unified favorites/suggestion NTP, then put it back offscreen.
+- tapOn:
+    id: "searchEntry"
+- assertVisible:
+    id: "Autocomplete.Suggestions.ListItem.SearchPhrase-.*normal-page\\.html"
+- tapOn: "Back"
+- assertVisible: "Normal Promo Queue Test Page"
+- assertNotVisible: "title"
+- assertNotVisible: "description"
+
+- runFlow:
+    file: ../shared/promo_queue/open_settings.yaml
+- runFlow:
+    file: ../shared/promo_queue/open_debug.yaml
+- runFlow:
+    file: ../shared/promo_queue/delete_remote_messages.yaml
+- runFlow:
+    file: ../shared/promo_queue/apply_remote_messaging_fixture.yaml
+    env:
+      REMOTE_MESSAGING_FIXTURE_URL: ${PROMO_QUEUE_RMF_URL}
+      EXPECTED_SCHEDULED_RECORD: "ID: 1 | not shown | scheduled"
+- tapOn: "Debug"
+- runFlow:
+    file: ../shared/promo_queue/fresh_debug_root.yaml
+- runFlow:
+    file: ../shared/promo_queue/open_debug_screen.yaml
+    env:
+      DEBUG_SCREEN: "Prompt Coordination"
+- tapOn: "Refresh"
+- assertVisible:
+    text: "Coordinated"
+    childOf:
+      containsChild:
+        text: "Mode"
+- assertVisible:
+    text: "None"
+    childOf:
+      containsChild:
+        text: "Owner"
+- assertVisible:
+    text: "Not applicable"
+    childOf:
+      containsChild:
+        text: "RMF Appearance Confirmed"
+- assertVisible:
+    text: "Never"
+    childOf:
+      containsChild:
+        text: "Last RMF Appearance"
+- takeScreenshot: "04-hidden-before-closing-settings"
+- runFlow:
+    file: ../shared/promo_queue/close_debug_settings.yaml
+
+- assertVisible: "Normal Promo Queue Test Page"
+- assertNotVisible: "title"
+- assertNotVisible: "description"
+
+# Re-open diagnostics while the webpage remains the only visible browser page.
+- runFlow:
+    file: ../shared/promo_queue/open_settings.yaml
+- runFlow:
+    file: ../shared/promo_queue/open_debug.yaml
+- runFlow:
+    file: ../shared/promo_queue/open_debug_screen.yaml
+    env:
+      DEBUG_SCREEN: "Remote Messaging"
+- assertVisible: "ID: 1 | not shown | scheduled"
+- runFlow:
+    file: ../shared/promo_queue/close_debug_settings.yaml
+- assertVisible: "Normal Promo Queue Test Page"
+
+- runFlow:
+    file: ../shared/promo_queue/open_new_tab.yaml
+- extendedWaitUntil:
+    visible: "title"
+    timeout: 15000
+- assertVisible: "description"
+- takeScreenshot: "04-rmf-only-after-visible-ntp"
+
+- runFlow:
+    file: ../shared/promo_queue/open_settings.yaml
+- runFlow:
+    file: ../shared/promo_queue/open_debug.yaml
+- runFlow:
+    file: ../shared/promo_queue/open_debug_screen.yaml
+    env:
+      DEBUG_SCREEN: "Remote Messaging"
+- assertVisible: "ID: 1 | shown | scheduled"
+- tapOn: "Debug"
+- runFlow:
+    file: ../shared/promo_queue/fresh_debug_root.yaml
+- runFlow:
+    file: ../shared/promo_queue/open_debug_screen.yaml
+    env:
+      DEBUG_SCREEN: "Prompt Coordination"
+- runFlow:
+    file: ../shared/promo_queue/assert_confirmed_rmf_owner.yaml

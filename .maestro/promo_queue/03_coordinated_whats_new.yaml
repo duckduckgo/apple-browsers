@@ -1,0 +1,119 @@
+appId: com.duckduckgo.mobile.ios.alpha
+tags:
+  - iphone
+  - promo_queue
+name: Promo Queue - coordinated What's New
+---
+
+- launchApp:
+    appId: com.duckduckgo.mobile.ios.alpha
+    clearState: false
+- runFlow:
+    file: ../shared/promo_queue/complete_onboarding.yaml
+- runFlow:
+    file: ../shared/promo_queue/open_settings.yaml
+- runFlow:
+    file: ../shared/promo_queue/open_debug.yaml
+- runFlow:
+    file: ../shared/promo_queue/ensure_internal_user.yaml
+- runFlow:
+    file: ../shared/promo_queue/close_debug_root_and_relaunch.yaml
+- runFlow:
+    file: ../shared/promo_queue/open_settings.yaml
+- runFlow:
+    file: ../shared/promo_queue/open_debug.yaml
+- runFlow:
+    file: ../shared/promo_queue/ensure_internal_user.yaml
+- runFlow:
+    file: ../shared/promo_queue/open_feature_flags.yaml
+- runFlow:
+    file: ../shared/promo_queue/force_visible_flag_on.yaml
+    env:
+      FLAG_NAME: "promoPresentationCoordination"
+- runFlow:
+    file: ../shared/promo_queue/close_settings_and_relaunch.yaml
+
+- runFlow:
+    file: ../shared/promo_queue/open_settings.yaml
+- runFlow:
+    file: ../shared/promo_queue/open_debug.yaml
+- runFlow:
+    file: ../shared/promo_queue/assert_prompt_coordination_empty.yaml
+    env:
+      EXPECTED_MODE: "Coordinated"
+- tapOn: "Reset Modal Cooldown (Debug Only)"
+- tapOn: "Reset RMF Cooldown (Debug Only)"
+- tapOn: "Debug"
+- runFlow:
+    file: ../shared/promo_queue/delete_remote_messages.yaml
+- runFlow:
+    file: ../shared/promo_queue/apply_remote_messaging_fixture.yaml
+    env:
+      REMOTE_MESSAGING_FIXTURE_URL: ${PROMO_QUEUE_WHATS_NEW_URL}
+      EXPECTED_SCHEDULED_RECORD: "ID: whats_new_v1 | not shown | scheduled"
+- runFlow:
+    file: ../shared/promo_queue/close_debug_settings.yaml
+- extendedWaitUntil:
+    visible:
+      id: "searchEntry"
+    timeout: 10000
+
+- pressKey: HOME
+- launchApp:
+    appId: com.duckduckgo.mobile.ios.alpha
+    stopApp: false
+    clearState: false
+- extendedWaitUntil:
+    visible: "What's New"
+    timeout: 15000
+- assertVisible: "Hide AI Images in Search"
+- assertVisible: "Enhanced Scam Blocker"
+- assertVisible: "Duck AI Chat"
+- takeScreenshot: "03-whats-new-visible"
+- tapOn: "Got It"
+- extendedWaitUntil:
+    notVisible: "Got It"
+    timeout: 10000
+
+- runFlow:
+    file: ../shared/promo_queue/open_settings.yaml
+- runFlow:
+    file: ../shared/promo_queue/open_debug.yaml
+- runFlow:
+    file: ../shared/promo_queue/open_debug_screen.yaml
+    env:
+      DEBUG_SCREEN: "Prompt Coordination"
+- tapOn: "Refresh"
+- assertVisible:
+    text: "^(?!Never$|Unavailable$).+"
+    childOf:
+      containsChild:
+        text: "Last Modal Appearance"
+- assertVisible:
+    text: "Not applicable"
+    childOf:
+      containsChild:
+        text: "RMF Appearance Confirmed"
+- assertVisible:
+    text: "Never"
+    childOf:
+      containsChild:
+        text: "Last RMF Appearance"
+- takeScreenshot: "03-modal-only-diagnostics"
+- tapOn: "Debug"
+- runFlow:
+    file: ../shared/promo_queue/open_debug_screen.yaml
+    env:
+      DEBUG_SCREEN: "Remote Messaging"
+- extendedWaitUntil:
+    visible: "ID: whats_new_v1 | shown | dismissed"
+    timeout: 10000
+- runFlow:
+    file: ../shared/promo_queue/close_debug_settings.yaml
+- runFlow:
+    file: ../shared/promo_queue/open_new_tab.yaml
+- assertNotVisible: "What's New"
+- assertNotVisible: "Hide AI Images in Search"
+- assertNotVisible: "Enhanced Scam Blocker"
+- assertNotVisible: "Duck AI Chat"
+- stopApp

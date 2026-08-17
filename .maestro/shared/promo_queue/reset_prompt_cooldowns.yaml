@@ -1,0 +1,11 @@
+appId: com.duckduckgo.mobile.ios.alpha
+---
+
+- runFlow:
+    file: open_debug_screen.yaml
+    env:
+      DEBUG_SCREEN: "Prompt Coordination"
+- tapOn: "Refresh"
+- tapOn: "Reset Modal Cooldown (Debug Only)"
+- tapOn: "Reset RMF Cooldown (Debug Only)"
+- tapOn: "Debug"

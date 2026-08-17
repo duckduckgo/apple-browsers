@@ -1,0 +1,72 @@
+appId: com.duckduckgo.mobile.ios.alpha
+---
+
+# Use only the shipping onboarding UI. The Search & Duck.ai choice is compatible
+# with the later address-picker eligibility check; the picker reset subflow clears
+# the current selection while retaining this onboarding choice.
+- runFlow:
+    when:
+      visible: "Hi there."
+    commands:
+      - tapOn: "Let’s get started!"
+
+- runFlow:
+    when:
+      visible: "Protections activated!"
+    commands:
+      - tapOn: "Skip"
+
+- runFlow:
+    when:
+      visible: "Add me to your Dock!"
+    commands:
+      - tapOn: "Skip"
+
+- runFlow:
+    when:
+      visible: "Which color looks best on me?"
+    commands:
+      - tapOn: "Next"
+
+- runFlow:
+    when:
+      visible: "Where should I put your address bar?"
+    commands:
+      - tapOn: "Next"
+
+- runFlow:
+    when:
+      visible: "Want easy access to private AI chat in the address bar?"
+    commands:
+      - tapOn: "Toggle between Search and Duck.ai"
+      - tapOn: "Next"
+
+# Fresh simulators can show up to two one-time keyboard tutorials over the
+# contextual onboarding screen.
+- runFlow:
+    when:
+      visible: "Continue"
+    commands:
+      - tapOn: "Continue"
+- runFlow:
+    when:
+      visible: "Continue"
+    commands:
+      - tapOn: "Continue"
+
+- runFlow:
+    when:
+      visible: "Skip Onboarding"
+    commands:
+      - tapOn: "Skip Onboarding"
+
+- runFlow:
+    when:
+      visible: "Back"
+    commands:
+      - tapOn: "Back"
+
+- extendedWaitUntil:
+    visible:
+      id: "searchEntry"
+    timeout: 10000

@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "messages": [
+    {
+      "id": "1",
+      "content": {
+        "messageType": "small",
+        "titleText": "title",
+        "descriptionText": "description"
+      }
+    },
+    {
+      "id": "2",
+      "content": {
+        "messageType": "small",
+        "titleText": "title",
+        "descriptionText": "description"
+      },
+      "metrics": {
+        "state": "enabled"
+      }
+    },
+    {
+      "id": "3",
+      "content": {
+        "messageType": "small",
+        "titleText": "title",
+        "descriptionText": "description"
+      },
+      "metrics": {
+        "state": "disabled"
+      }
+    },
+    {
+      "id": "4",
+      "content": {
+        "messageType": "small",
+        "titleText": "title",
+        "descriptionText": "description"
+      },
+      "metrics": {
+        "state": "unsupported-value"
+      }
+    }
+  ],
+  "rules": []
+}

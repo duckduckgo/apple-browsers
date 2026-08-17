@@ -1,0 +1,32 @@
+appId: com.duckduckgo.mobile.ios.alpha
+---
+
+# The Feature Flags screen exposes the SwiftUI switch as an unlabeled child to
+# the right of its stable flag label. Toggling an already-on value off and back
+# on records an explicit ON override even when the rollout default is true.
+- scrollUntilVisible:
+    element: "${FLAG_NAME}"
+    centerElement: true
+    speed: 40
+    timeout: 120000
+- runFlow:
+    when:
+      visible:
+        text: "1"
+        checked: true
+        childOf:
+          text: "^${FLAG_NAME}, Default: (true|false)(, Relaunch required for changes to take effect\\.)?$"
+    commands:
+      - tapOn:
+          text: "1"
+          checked: true
+          childOf:
+            text: "^${FLAG_NAME}, Default: (true|false)(, Relaunch required for changes to take effect\\.)?$"
+- tapOn:
+    text: "0"
+    checked: false
+    childOf:
+      text: "^${FLAG_NAME}, Default: (true|false)(, Relaunch required for changes to take effect\\.)?$"
+- assertVisible:
+    text: "^${FLAG_NAME}, Default: (true|false)(, Relaunch required for changes to take effect\\.)?$"
+    checked: true

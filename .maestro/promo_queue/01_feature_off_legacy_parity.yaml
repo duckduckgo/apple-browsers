@@ -1,0 +1,114 @@
+appId: com.duckduckgo.mobile.ios.alpha
+tags:
+  - iphone
+  - promo_queue
+name: Promo Queue - feature-off legacy parity
+---
+
+- launchApp:
+    appId: com.duckduckgo.mobile.ios.alpha
+    clearState: false
+- runFlow:
+    file: ../shared/promo_queue/skip_onboarding.yaml
+
+# Establish a non-NTP tab without constructing the unified-input suggestion NTP.
+# ddgQuickLink is the shipping app URL used by product links to open browser pages.
+- openLink: "ddgQuickLink://${PROMO_QUEUE_PAGE_URL}"
+- runFlow:
+    when:
+      visible: "Open in “DuckDuckGo”?"
+    commands:
+      - tapOn: "Open"
+- extendedWaitUntil:
+    visible: "Normal Promo Queue Test Page"
+    timeout: 10000
+
+- runFlow:
+    file: ../shared/promo_queue/open_settings.yaml
+- runFlow:
+    file: ../shared/promo_queue/open_debug.yaml
+- runFlow:
+    file: ../shared/promo_queue/ensure_internal_user.yaml
+- runFlow:
+    file: ../shared/promo_queue/open_feature_flags.yaml
+- runFlow:
+    file: ../shared/promo_queue/force_visible_flag_off.yaml
+    env:
+      FLAG_NAME: "promoPresentationCoordination"
+- runFlow:
+    file: ../shared/promo_queue/close_settings_and_relaunch.yaml
+
+# The required cold relaunch can restore an initial home tab. Replace it again
+# before fetching the fixture so no legacy NTP observer can account appearance
+# until this flow deliberately opens the visible NTP below.
+- runFlow:
+    file: ../shared/promo_queue/open_local_page_without_unified_input.yaml
+    env:
+      LOCAL_PAGE_URL: ${PROMO_QUEUE_PAGE_URL}
+      EXPECTED_PAGE_TITLE: "Normal Promo Queue Test Page"
+
+- runFlow:
+    file: ../shared/promo_queue/open_settings.yaml
+- runFlow:
+    file: ../shared/promo_queue/open_debug.yaml
+- runFlow:
+    file: ../shared/promo_queue/assert_prompt_coordination_empty.yaml
+    env:
+      EXPECTED_MODE: "Legacy"
+- tapOn: "Debug"
+- runFlow:
+    file: ../shared/promo_queue/delete_remote_messages.yaml
+- runFlow:
+    file: ../shared/promo_queue/apply_remote_messaging_fixture.yaml
+    env:
+      REMOTE_MESSAGING_FIXTURE_URL: ${PROMO_QUEUE_RMF_URL}
+      EXPECTED_SCHEDULED_RECORD: "ID: 1 | not shown | scheduled"
+- runFlow:
+    file: ../shared/promo_queue/close_debug_settings.yaml
+
+- runFlow:
+    file: ../shared/promo_queue/open_new_tab.yaml
+- extendedWaitUntil:
+    visible: "title"
+    timeout: 15000
+- assertVisible: "description"
+
+# The unified address input is the simulator's only suggestion surface. Select a
+# generated local-URL suggestion instead of submitting the text directly. The
+# below-searchEntry relation excludes the input field itself.
+- tapOn:
+    id: "searchEntry"
+- inputText: ${PROMO_QUEUE_SUGGESTION_URL}
+- extendedWaitUntil:
+    visible:
+      text: ${PROMO_QUEUE_SUGGESTION_URL}
+      below:
+        id: "searchEntry"
+    timeout: 10000
+- tapOn:
+    text: ${PROMO_QUEUE_SUGGESTION_URL}
+    below:
+      id: "searchEntry"
+- extendedWaitUntil:
+    visible: "Promo Queue Alternate Suggestion"
+    timeout: 10000
+- assertVisible: "Browsing Menu"
+
+- runFlow:
+    file: ../shared/promo_queue/open_settings.yaml
+- runFlow:
+    file: ../shared/promo_queue/open_debug.yaml
+- runFlow:
+    file: ../shared/promo_queue/open_debug_screen.yaml
+    env:
+      DEBUG_SCREEN: "Remote Messaging"
+- extendedWaitUntil:
+    visible: "ID: 1 | shown | scheduled"
+    timeout: 10000
+- tapOn: "Debug"
+- runFlow:
+    file: ../shared/promo_queue/fresh_debug_root.yaml
+- runFlow:
+    file: ../shared/promo_queue/assert_prompt_coordination_empty.yaml
+    env:
+      EXPECTED_MODE: "Legacy"

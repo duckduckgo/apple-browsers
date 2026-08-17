@@ -1,0 +1,40 @@
+appId: com.duckduckgo.mobile.ios.alpha
+---
+
+# Control path for the hidden cached-NTP regression. The caller must be at the
+# fresh Debug root without ever having focused the address bar. Apply the same
+# fixture while Settings remains onscreen, prove that it created no appearance
+# or ownership history, then remove the record before the primed path begins.
+- runFlow:
+    file: delete_remote_messages.yaml
+- runFlow:
+    file: apply_remote_messaging_fixture.yaml
+    env:
+      REMOTE_MESSAGING_FIXTURE_URL: ${PROMO_QUEUE_RMF_URL}
+      EXPECTED_SCHEDULED_RECORD: "ID: 1 | not shown | scheduled"
+
+- tapOn: "Debug"
+- runFlow:
+    file: fresh_debug_root.yaml
+- runFlow:
+    file: assert_prompt_coordination_empty.yaml
+    env:
+      EXPECTED_MODE: "Coordinated"
+
+# Re-check the record after the refreshed diagnostics, then delete it before
+# Settings is dismissed so this control cannot legitimately publish the RMF.
+- tapOn: "Debug"
+- runFlow:
+    file: fresh_debug_root.yaml
+- runFlow:
+    file: open_debug_screen.yaml
+    env:
+      DEBUG_SCREEN: "Remote Messaging"
+- assertVisible: "ID: 1 | not shown | scheduled"
+- tapOn: "Delete All"
+- extendedWaitUntil:
+    visible: "No messages"
+    timeout: 10000
+- tapOn: "Debug"
+- runFlow:
+    file: fresh_debug_root.yaml

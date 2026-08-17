@@ -1,0 +1,12 @@
+appId: com.duckduckgo.mobile.ios.alpha
+---
+
+- scrollUntilVisible:
+    element: "Feature Flags"
+    centerElement: true
+    speed: 40
+    timeout: 30000
+- tapOn: "Feature Flags"
+- extendedWaitUntil:
+    visible: "Internal User"
+    timeout: 10000

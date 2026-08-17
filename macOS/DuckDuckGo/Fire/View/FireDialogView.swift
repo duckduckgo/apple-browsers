@@ -893,11 +893,17 @@ struct FireDialogView: ModalView {
 
         var body: some View {
             if let action {
-                Button(action: action) {
+                Button {
+                    guard isEnabled else { return }
+                    action()
+                } label: {
                     label
                 }
                 .buttonStyle(.plain)
-                .disabled(!isEnabled)
+                // `disabled(_:)` is deliberately not used here: the button style dims the label
+                // in the disabled state, and the text must keep its normal appearance. The guard
+                // in the action and `allowsHitTesting(_:)` make the button inert instead.
+                .allowsHitTesting(isEnabled)
                 .onHover { isHovered = $0 }
                 .cursor(isEnabled ? .pointingHand : .arrow)
                 .accessibilityIdentifier(accessibilityIdentifier ?? "")
@@ -918,7 +924,6 @@ struct FireDialogView: ModalView {
                     Capsule(style: .continuous)
                         .fill(isHovered && isEnabled ? Color(designSystemColor: .buttonsSecondaryFillDefault) : Color.clear)
                 )
-                .opacity(action != nil && !isEnabled ? 0.4 : 1.0)
         }
     }
 

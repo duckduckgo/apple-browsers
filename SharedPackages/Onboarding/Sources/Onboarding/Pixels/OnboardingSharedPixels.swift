@@ -36,12 +36,6 @@ public extension OnboardingSharedPixelHandling {
         fire(event, source: nil, flow: nil, variant: nil)
     }
     #endif
-
-    func fire(_ event: OnboardingSharedPixelEvent,
-              source: OnboardingPixelParameter.Source?,
-              flow: OnboardingPixelParameter.Flow?) {
-        fire(event, source: source, flow: flow, variant: nil)
-    }
 }
 
 public enum OnboardingPixelParameter {

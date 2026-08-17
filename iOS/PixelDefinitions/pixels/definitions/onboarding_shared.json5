@@ -11,7 +11,8 @@
             "onboardingInstallType",
             "onboardingDaysSinceInstall",
             "onboardingSource",
-            "onboardingFlow"
+            "onboardingFlow",
+            "onboardingFlowVariant"
         ]
     },
     "m_ios_onboarding_skip-onboarding": {
@@ -26,7 +27,8 @@
             "onboardingInstallType",
             "onboardingDaysSinceInstall",
             "onboardingSource",
-            "onboardingFlow"
+            "onboardingFlow",
+            "onboardingFlowVariant"
         ]
     },
     "m_ios_onboarding_set-default": {
@@ -41,7 +43,8 @@
             "onboardingInstallType",
             "onboardingDaysSinceInstall",
             "onboardingSource",
-            "onboardingFlow"
+            "onboardingFlow",
+            "onboardingFlowVariant"
         ]
     },
     "m_ios_onboarding_ai-intro": {
@@ -56,7 +59,8 @@
             "onboardingInstallType",
             "onboardingDaysSinceInstall",
             "onboardingSource",
-            "onboardingFlow"
+            "onboardingFlow",
+            "onboardingFlowVariant"
         ]
     },
     "m_ios_onboarding_add-to-dock": {
@@ -71,7 +75,8 @@
             "onboardingInstallType",
             "onboardingDaysSinceInstall",
             "onboardingSource",
-            "onboardingFlow"
+            "onboardingFlow",
+            "onboardingFlowVariant"
         ]
     },
     "m_ios_onboarding_app-icon-color": {
@@ -91,7 +96,8 @@
             "onboardingInstallType",
             "onboardingDaysSinceInstall",
             "onboardingSource",
-            "onboardingFlow"
+            "onboardingFlow",
+            "onboardingFlowVariant"
         ]
     },
     "m_ios_onboarding_address-bar-position": {
@@ -111,7 +117,8 @@
             "onboardingInstallType",
             "onboardingDaysSinceInstall",
             "onboardingSource",
-            "onboardingFlow"
+            "onboardingFlow",
+            "onboardingFlowVariant"
         ]
     },
     "m_ios_onboarding_search-experience": {
@@ -131,7 +138,8 @@
             "onboardingInstallType",
             "onboardingDaysSinceInstall",
             "onboardingSource",
-            "onboardingFlow"
+            "onboardingFlow",
+            "onboardingFlowVariant"
         ]
     },
     "m_ios_onboarding_search-chat-toggle": {
@@ -151,7 +159,8 @@
             "onboardingInstallType",
             "onboardingDaysSinceInstall",
             "onboardingSource",
-            "onboardingFlow"
+            "onboardingFlow",
+            "onboardingFlowVariant"
         ]
     },
     "m_ios_onboarding_search": {
@@ -293,7 +302,8 @@
             "onboardingInstallType",
             "onboardingDaysSinceInstall",
             "onboardingSource",
-            "onboardingFlow"
+            "onboardingFlow",
+            "onboardingFlowVariant"
         ]
     },
     "m_ios_onboarding_preferences_serp": {

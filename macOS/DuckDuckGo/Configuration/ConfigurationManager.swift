@@ -202,15 +202,19 @@ final class ConfigurationManager: DefaultConfigurationManager {
         return try await Task.detached {
             let spec = try JSONDecoder().decode(HTTPSBloomFilterSpecification.self, from: specData)
             let didPersistBloomFilter: Bool
+
             do {
                 didPersistBloomFilter = try await self.httpsUpgrade.persistBloomFilter(specification: spec, data: bloomFilterData)
             } catch {
                 assertionFailure("persistBloomFilter failed: \(error)")
                 throw Error.bloomFilterPersistenceFailed.withUnderlyingError(error)
             }
-            if didPersistBloomFilter {
+
+            let isBloomFilterLoaded = await self.httpsUpgrade.isBloomFilterLoaded
+            if didPersistBloomFilter || !isBloomFilterLoaded {
                 await self.httpsUpgrade.loadData()
             }
+
             return didPersistBloomFilter
         }.value
     }

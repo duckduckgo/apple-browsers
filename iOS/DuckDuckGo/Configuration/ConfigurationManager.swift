@@ -201,7 +201,9 @@ final class ConfigurationManager: DefaultConfigurationManager {
         }
         let specification = try JSONDecoder().decode(HTTPSBloomFilterSpecification.self, from: specData)
         let didPersistBloomFilter = try await PrivacyFeatures.httpsUpgrade.persistBloomFilter(specification: specification, data: bloomFilterData)
-        if didPersistBloomFilter {
+
+        let isBloomFilterLoaded = await PrivacyFeatures.httpsUpgrade.isBloomFilterLoaded
+        if didPersistBloomFilter || !isBloomFilterLoaded {
             await PrivacyFeatures.httpsUpgrade.loadData()
         }
         return didPersistBloomFilter

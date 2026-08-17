@@ -182,6 +182,16 @@ final class ConfigurationManagerTests: XCTestCase {
         XCTAssertEqual(mockHTTPSUpgradeStore.persistBloomFilterCallCount, 1)
     }
 
+    func test_WhenBloomFilterIsNotModified_AndNoneIsLoaded_ThenBloomFilterIsReloaded() async {
+        mockFetcher.fetchAllResult = []
+        mockStore.data = Data(#"{"bitCount":8,"errorRate":0.01,"totalEntries":1,"sha256":"sha"}"#.utf8)
+        mockHTTPSUpgradeStore.persistBloomFilterResult = false
+
+        await configManager.refreshNow()
+
+        XCTAssertEqual(mockHTTPSUpgradeStore.loadBloomFilterCallCount, 1, "An absent in-memory filter should be reloaded even when nothing was persisted.")
+    }
+
     func test_WhenOneBloomFilterAssetIsModified_ThenBloomFilterIsPersistedOnce() async {
         mockFetcher.fetchAllResult = [.bloomFilterSpec]
         mockStore.data = Data(#"{"bitCount":8,"errorRate":0.01,"totalEntries":1,"sha256":"sha"}"#.utf8)
@@ -269,12 +279,14 @@ private final class ConfigurationHTTPSUpgradeStoreMock: HTTPSUpgradeStore {
 
     private(set) var persistBloomFilterCallCount = 0
     private(set) var persistExcludedDomainsCallCount = 0
+    private(set) var loadBloomFilterCallCount = 0
     var persistBloomFilterResult = true
     var persistExcludedDomainsResult = true
     var persistExcludedDomainsError: Swift.Error?
 
     func loadBloomFilter() -> BloomFilter? {
-        nil
+        loadBloomFilterCallCount += 1
+        return nil
     }
 
     func persistBloomFilter(specification: HTTPSBloomFilterSpecification, data: Data) throws -> Bool {

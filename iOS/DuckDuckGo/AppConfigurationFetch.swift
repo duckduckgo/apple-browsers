@@ -185,8 +185,11 @@ class AppConfigurationFetch: AppConfigurationFetching {
                 self.markFetchCompleted(isBackground: isBackground, hasNewData: false)
             case .assetsUpdated:
                 self.markFetchCompleted(isBackground: isBackground, hasNewData: true)
-                NotificationCenter.default.post(name: .remoteMessagesShouldRefresh, object: nil)
             }
+
+            // Independent of `result`: RMF re-evaluates messages against user state that changes without
+            // any configuration changing, so it has to run on every completed check, not just on new assets.
+            NotificationCenter.default.post(name: .remoteMessagesShouldRefresh, object: nil)
 
             onDidComplete(result)
         }

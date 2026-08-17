@@ -22,12 +22,8 @@ import FeatureFlags_macOS
 import os.log
 import PrivacyConfig
 
-/// Reads the Duck.ai usage-limit snapshot from the native-storage bridge for the Duck.ai input surfaces
-/// (address bar omnibar, Prompt Bar, New Tab Page omnibar), gated on the usage-warnings feature flag.
-///
-/// Mirrors `CustomizeResponsesStore`: the shared reader stays flag-agnostic and this owns the app-side gating,
-/// so call sites don't repeat it. The store is cheap to build — construct it with a burner-aware handler at the
-/// surface's construction site, the same way `CustomizeResponsesStore` is.
+/// Owns the app-side flag gating so the shared reader stays flag-agnostic and call sites don't repeat it.
+/// Mirrors `CustomizeResponsesStore`: cheap to build, constructed with a burner-aware handler per surface.
 final class DuckAiUsageLimitsStore {
 
     private let provider: DuckAiUsageLimitsProviding?
@@ -41,15 +37,12 @@ final class DuckAiUsageLimitsStore {
         self.featureFlagger = featureFlagger
     }
 
-    /// `nil` when there is nothing to read at all: the feature flag is off, or native storage is unavailable
-    /// (flag off, outside the `nativeStorage` rollout, bridge never installed). `.noData` when the read happened
-    /// but produced no usable window. Callers must keep the two apart — the first means "feature inactive",
-    /// the second means "active, but we don't know this user's usage".
+    /// `nil` means the feature is inactive (flag off, or no storage bridge); `.noData` means active but nothing
+    /// worth warning about. Callers must keep the two apart.
     func currentLimits() -> DuckAiUsageLimits? {
         guard featureFlagger.isFeatureOn(.aiChatUsageWarnings), let provider else { return nil }
         let limits = provider.currentUsageLimits()
-        // Which windows we got is public so the read is verifiable from Console; the percentages themselves
-        // are the user's usage and stay redacted.
+        // Window presence is public so the read is verifiable from Console; the percentages stay redacted.
         Logger.aiChat.debug("""
             Duck.ai usage limits read: daily=\(limits.daily == nil ? "none" : "present", privacy: .public) \
             weekly=\(limits.weekly == nil ? "none" : "present", privacy: .public) \

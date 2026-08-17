@@ -18,12 +18,8 @@
 
 import Foundation
 
-/// Reads the Duck.ai usage-limit snapshot the web app writes into native storage.
 public protocol DuckAiUsageLimitsProviding {
-    /// Returns the last snapshot the Duck.ai web app wrote, with already-reset windows dropped.
-    ///
-    /// Returns `.noData` — never an error — when the key is absent, the value doesn't parse, or every window has
-    /// expired. Reads are cheap and intended to be made on demand; there is no subscription or polling to set up.
+    /// `.noData` rather than an error when the key is absent, unparseable, or every window has expired.
     func currentUsageLimits() -> DuckAiUsageLimits
 }
 
@@ -51,8 +47,7 @@ public struct DuckAiUsageLimitsProvider: DuckAiUsageLimitsProviding {
             pixelFiring.fire(.settingsGetError(error))
             return .noData
         }
-        // A value that fails to decode is not reported: per the storage contract it's an ordinary
-        // "nothing to show" state, indistinguishable to the user from an absent key.
+        // No pixel for a value that fails to decode: per the contract that's an ordinary "nothing to show" state.
         return DuckAiUsageLimits.make(entryValue: value, now: dateProvider())
     }
 }

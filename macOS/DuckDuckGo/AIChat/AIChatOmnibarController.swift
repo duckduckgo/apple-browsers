@@ -102,7 +102,6 @@ final class AIChatOmnibarController {
     /// Shared 4-view cap across both pickers (reuses `FreeTrialBadgePersistor`, separately keyed).
     /// Past the cap the badge mutes instead of hiding — it's the only entry point to the upsell.
     private let badgeImpressionPersistor: FreeTrialBadgePersisting
-    /// `nil` for surfaces built without a native-storage handler (and in tests).
     private let usageLimitsStore: DuckAiUsageLimitsStore?
     private lazy var attachedTabsTracker = AIChatAttachedTabsTracker(
         origin: origin,
@@ -135,9 +134,7 @@ final class AIChatOmnibarController {
     /// omits the block — callers fall back to the previously shipped defaults in that case.
     private(set) var attachmentLimits: AIChatAttachmentTierLimits?
 
-    /// The Duck.ai usage snapshot as of the last activation. `nil` when the usage-warnings feature isn't
-    /// active for this user, which is not the same as `.noData` (active, but nothing worth warning about).
-    /// Refreshed on every activation and cleared on cleanup, so it never outlives the panel that read it.
+    /// `nil` when the usage-warnings feature isn't active, which is not the same as `.noData`.
     @Published private(set) var usageLimits: DuckAiUsageLimits?
 
     /// Called after a successful submit so the container VC can cancel any in-flight image
@@ -409,9 +406,8 @@ final class AIChatOmnibarController {
         }
     }
 
-    /// Reads the usage snapshot the Duck.ai web app last wrote. Synchronous and cheap — it's a lookup in the
-    /// already-loaded entries blob, the same read `CustomizeResponsesStore` does on the tools-menu path — so it
-    /// doesn't need the async treatment `fetchModels()` gets for its network call.
+    /// Synchronous: a lookup in the already-loaded entries blob, so it doesn't need the async treatment
+    /// `fetchModels()` gets for its network call.
     private func refreshUsageLimits() {
         usageLimits = usageLimitsStore?.currentLimits()
     }

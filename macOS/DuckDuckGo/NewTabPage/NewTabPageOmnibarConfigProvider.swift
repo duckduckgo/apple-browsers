@@ -276,9 +276,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         customizeResponsesChangedSubject.eraseToAnyPublisher()
     }
 
-    /// The Duck.ai usage snapshot as of the last time this NTP entered Duck.ai mode. `nil` when the
-    /// usage-warnings feature isn't active for this user — distinct from `.noData`, which means the read
-    /// happened and there's nothing worth warning about.
+    /// `nil` when the usage-warnings feature isn't active, which is not the same as `.noData`.
     private(set) var usageLimits: DuckAiUsageLimits?
 
     @MainActor

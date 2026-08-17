@@ -131,7 +131,6 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         XCTAssertEqual(configProvider.mode, .ai)
         XCTAssertEqual(configProvider.isAIChatShortcutEnabled, false)
         XCTAssertEqual(configProvider.isAIChatSettingVisible, true)
-        // Switching into Duck.ai mode is the NTP's "user is about to prompt" signal.
         XCTAssertEqual(configProvider.refreshUsageLimitsCallCount, 1)
     }
 

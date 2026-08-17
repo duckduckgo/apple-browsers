@@ -18,14 +18,11 @@
 
 import Foundation
 
-/// One metering window from the Duck.ai usage snapshot.
 public struct DuckAiUsageLimitWindow: Equatable {
 
-    /// Percentage of the user's limit consumed, 0–100. Already clamped by the web app; fractional values are normal.
-    /// The underlying used/limit counts are deliberately never exposed, so they can't be derived from this.
+    /// 0–100, clamped web-side. The underlying counts are deliberately never exposed.
     public let percentUsed: Double
 
-    /// The UTC instant at which this window resets. Always in the future — expired windows are dropped at decode time.
     public let resetsAt: Date
 
     public init(percentUsed: Double, resetsAt: Date) {
@@ -34,23 +31,15 @@ public struct DuckAiUsageLimitWindow: Equatable {
     }
 }
 
-/// Privacy-safe projection of the user's Duck.ai usage, written by the web app into the reserved
-/// `usageLimits` native-storage entry and read on demand by native.
-///
-/// Both windows are optional and independent: a missing window means "no data for this window", never zero usage.
-/// The snapshot is only refreshed while the Duck.ai web app is running, so a window may well be stale — `resetsAt`
-/// is the only staleness signal there is, and `make(entryValue:now:)` uses it to drop windows that have already reset.
+/// Usage snapshot the Duck.ai web app writes into the reserved `usageLimits` entry.
+/// A missing window means "no data for this window", never zero usage.
 public struct DuckAiUsageLimits: Equatable {
 
-    /// The backend's `day` window.
     public let daily: DuckAiUsageLimitWindow?
 
-    /// The backend's `iso_week` window — a week starting Monday on UTC boundaries, not a rolling 7 days.
+    /// The backend's `iso_week` window: Monday-start, UTC boundaries, not a rolling 7 days.
     public let weekly: DuckAiUsageLimitWindow?
 
-    /// No usable usage information. Produced by an absent key, an empty snapshot (`"{}"`), a value that
-    /// doesn't parse, and by every window having expired. All of those mean the same thing to a caller:
-    /// we don't know the user's usage, so don't warn.
     public static let noData = DuckAiUsageLimits(daily: nil, weekly: nil)
 
     public var hasData: Bool { daily != nil || weekly != nil }
@@ -60,21 +49,16 @@ public struct DuckAiUsageLimits: Equatable {
         self.weekly = weekly
     }
 
-    /// Decodes the raw `usageLimits` entry value. Never throws — anything unexpected degrades to no-data rather
-    /// than to an error, because a malformed snapshot must not be distinguishable from an absent one at the call site.
-    ///
-    /// The entries namespace mirrors the web app's `localStorage`, so the stored value is a JSON-encoded `String`.
-    /// A dictionary is accepted too, defensively, in case a future writer stores the object directly.
-    ///
-    /// Windows are decoded independently: one malformed window doesn't discard the other. A window whose `resetsAt`
-    /// is at or before `now` is dropped — a window that has already reset has unknown current usage, and reporting
-    /// its last-seen percentage would show a stale "you're at your limit" long after the limit lifted.
+    /// Anything unexpected degrades to no-data, so a malformed snapshot can't be told apart from an absent one.
+    /// A window past its reset is dropped: its last-seen percentage would warn long after the limit lifted.
     public static func make(entryValue: Any?, now: Date) -> DuckAiUsageLimits {
         guard let root = rootObject(from: entryValue) else { return .noData }
         return DuckAiUsageLimits(daily: window(from: root["daily"], now: now),
                                  weekly: window(from: root["weekly"], now: now))
     }
 
+    /// The entries namespace mirrors the web app's `localStorage`, so the value is a JSON-encoded string.
+    /// A dictionary is accepted defensively, in case a future writer stores the object directly.
     private static func rootObject(from value: Any?) -> [String: Any]? {
         switch value {
         case let json as String:
@@ -96,8 +80,7 @@ public struct DuckAiUsageLimits: Equatable {
         return DuckAiUsageLimitWindow(percentUsed: percentUsed, resetsAt: resetsAt)
     }
 
-    /// `NSNumber` so integer- and double-encoded percentages both decode; the `CFBoolean` check rejects
-    /// `true`/`false`, which would otherwise bridge to `1`/`0`.
+    /// The `CFBoolean` check rejects `true`/`false`, which would otherwise bridge to `1`/`0`.
     private static func percentUsed(from value: Any?) -> Double? {
         guard let number = value as? NSNumber, CFGetTypeID(number) != CFBooleanGetTypeID() else { return nil }
         let percent = number.doubleValue
@@ -105,8 +88,7 @@ public struct DuckAiUsageLimits: Equatable {
         return min(max(percent, 0), 100)
     }
 
-    /// `Date.toISOString()` always carries fractional seconds; the plain fallback keeps a hand-seeded
-    /// timestamp from being dropped.
+    /// `Date.toISOString()` always carries fractional seconds; the fallback covers hand-seeded timestamps.
     private static func date(from value: Any?) -> Date? {
         guard let text = value as? String else { return nil }
         let formatter = ISO8601DateFormatter()

@@ -55,9 +55,8 @@ public protocol NewTabPageOmnibarConfigProviding: AnyObject {
     /// Fires when the stored response customization changes, so the client re-pushes the config.
     var customizeResponsesStatePublisher: AnyPublisher<Void, Never> { get }
 
-    /// Re-reads the Duck.ai usage-limit snapshot for the window hosting `requestingWebView`; pass `nil` to
-    /// resolve the current key window. Called when the NTP omnibar enters Duck.ai mode — the web omnibar has
-    /// no focus message, so mode entry is the closest available "the user is about to prompt" signal.
+    /// Called on entry into Duck.ai mode: the web omnibar sends no focus message, so that's the closest
+    /// "user is about to prompt" signal. `requestingWebView` resolves burner mode; `nil` uses the key window.
     @MainActor
     func refreshUsageLimits(requestingWebView: WKWebView?)
 

@@ -43,11 +43,6 @@ final class DuckAIAddressBarMenuFactoryTests: XCTestCase {
 
     // MARK: - Structure
 
-    func testMenuIsTitledDuckAi() {
-        let menu = DuckAIAddressBarMenuFactory.makeMenu(onNewChat: {}, onAskAboutPage: {})
-        XCTAssertEqual(menu.title, UserText.duckAiFeatureName)
-    }
-
     func testActionsAreSplitIntoSeparateInlineGroupsSoASeparatorIsDrawn() {
         let elements = makeActions()
         let groups = elements.compactMap { $0 as? UIMenu }

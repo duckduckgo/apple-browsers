@@ -229,6 +229,7 @@ class MainViewController: UIViewController {
     private var feedbackCancellable: AnyCancellable?
     private var aiChatCancellables = Set<AnyCancellable>()
     private var aiChatChromeChipCancellables = Set<AnyCancellable>()
+    private weak var boundAIChatChromeChipCoordinator: AIChatContextualSheetCoordinator?
     private var settingsCancellables = Set<AnyCancellable>()
     private var webViewViewportRefreshCancellable: AnyCancellable?
     private lazy var floatingDomainCapsuleController = FloatingDomainCapsuleController { [weak self] in
@@ -1082,22 +1083,24 @@ class MainViewController: UIViewController {
         ])
         tabsBarController = controller
         controller.didMove(toParent: self)
-        bindAIChatChromeChipToCurrentTab()
+        refreshAIChatChromeChip()
     }
 
-    /// Rebinds the chip's contextual-sheet subscription to the current tab.
-    /// Called whenever the active tab changes (transitionTo) or the tabs bar is created.
+    /// Driven by `refreshOmniBar` so every route that changes the on-screen tab is covered — rebinding
+    /// route by route left cold launch unsubscribed. Idempotent; that refresh is the far more frequent.
     func bindAIChatChromeChipToCurrentTab() {
+        let coordinator = currentTab?.aiChatContextualSheetCoordinator
+        guard coordinator !== boundAIChatChromeChipCoordinator else { return }
+        boundAIChatChromeChipCoordinator = coordinator
         aiChatChromeChipCancellables.removeAll()
 
-        guard let currentTab else {
+        guard let coordinator else {
             refreshAIChatChromeChip()
             return
         }
 
         // Every runtime input to `duckAIAddressBarEntry`, so the button can never disagree with what a tap
         // does. `isHomeTab`, the remaining input, only changes with navigation, which refreshes the omnibar.
-        let coordinator = currentTab.aiChatContextualSheetCoordinator
         let sessionState = coordinator.sessionState
         let hasActiveChat = sessionState.$viewState
             .map { _ in sessionState.hasActiveChat }
@@ -2418,9 +2421,6 @@ class MainViewController: UIViewController {
             refreshControls()
             tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
             swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
-            // Rebind the chip to the newly-current tab — this path (e.g. the Duck.ai chip
-            // opening a chat in a new tab) doesn't go through transitionTo.
-            bindAIChatChromeChipToCurrentTab()
             completion?()
         }
 
@@ -2586,7 +2586,6 @@ class MainViewController: UIViewController {
         }
         themeColorManager.updateThemeColor()
         tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
-        bindAIChatChromeChipToCurrentTab()
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
         if daxDialogsManager.shouldShowFireButtonPulse {
             showFireButtonPulse()
@@ -2657,7 +2656,6 @@ class MainViewController: UIViewController {
         } else {
             showTabSwitcher()
         }
-        bindAIChatChromeChipToCurrentTab()
     }
 
     fileprivate func refreshControls() {
@@ -2724,6 +2722,7 @@ class MainViewController: UIViewController {
 
     func refreshOmniBar() {
         updateOmniBarLoadingState()
+        bindAIChatChromeChipToCurrentTab()
         refreshDuckAIAddressBarMenu()
         viewCoordinator.omniBar.refreshFireMode(fireMode: isCurrentTabFireTab())
         // A fresh NTP has no `TabViewController` yet; drive UTI from the tab model so fire-mode still applies.
@@ -3457,7 +3456,6 @@ class MainViewController: UIViewController {
         }
         attachHomeScreen(isNewTab: true, allowingKeyboard: allowingKeyboard, previousTab: previousTab, openedAfterIdle: openedAfterIdle)
         tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
-        bindAIChatChromeChipToCurrentTab()
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
         themeColorManager.updateThemeColor()
         showBars() // In case the browser chrome bars are hidden when calling this method

@@ -2527,6 +2527,6 @@ private final class GatedContextualSuggestedPromptsProvider: ContextualSuggested
 
 // MARK: - Floating Input Feature
 
-private struct MockFloatingInputFeature: AIChatContextualFloatingInputFeatureProviding {
+struct MockFloatingInputFeature: AIChatContextualFloatingInputFeatureProviding {
     let isAvailable: Bool
 }

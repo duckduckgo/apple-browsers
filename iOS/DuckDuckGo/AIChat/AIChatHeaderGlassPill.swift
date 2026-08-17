@@ -26,18 +26,20 @@ final class AIChatHeaderGlassPill: UIView {
 
     let contentView = UIView()
 
-    /// How much separation the pill needs from what's behind it.
-    enum ShadowStyle {
-        /// Floating over page content, which scrolls and can be any colour.
-        case floating
-        /// Sitting on solid chrome, where the floating shadow has nothing to fall on and just
-        /// darkens the surface. Still needs a little lift, or glass on white reads as nothing.
-        case restingOnChrome
+    /// How much separation the pill needs from what is behind it.
+    struct ShadowStyle {
+        let opacity: Float
+        let dimmedOpacity: Float
+        let offset: CGSize
+        let radius: CGFloat
 
-        var opacity: Float { self == .floating ? 0.16 : 0.10 }
-        var dimmedOpacity: Float { self == .floating ? 0.04 : 0.03 }
-        var offset: CGSize { self == .floating ? CGSize(width: 0, height: 8) : CGSize(width: 0, height: 1) }
-        var radius: CGFloat { self == .floating ? 16 : 3 }
+        /// Floating over page content, which scrolls and can be any colour.
+        static let floating = ShadowStyle(opacity: 0.16, dimmedOpacity: 0.04,
+                                         offset: CGSize(width: 0, height: 8), radius: 16)
+        /// Resting on solid chrome, where the floating shadow has nothing to fall on and just darkens
+        /// the surface. Still needs a little lift, or glass on white reads as nothing.
+        static let restingOnChrome = ShadowStyle(opacity: 0.10, dimmedOpacity: 0.03,
+                                                offset: CGSize(width: 0, height: 1), radius: 3)
     }
 
     private let cornerRadius: CGFloat
@@ -100,6 +102,13 @@ final class AIChatHeaderGlassPill: UIView {
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        // Without an explicit path the shadow is rasterized from the layer's alpha — expensive over
+        // a glass effect, and redone on every pass while the sheet animates.
+        layer.shadowPath = UIBezierPath(roundedRect: bounds, cornerRadius: cornerRadius).cgPath
     }
 
     func refreshGlassForCurrentTraits() {

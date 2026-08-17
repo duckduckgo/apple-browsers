@@ -132,10 +132,6 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         }
     }
 
-    private struct MockFloatingInputFeature: AIChatContextualFloatingInputFeatureProviding {
-        let isAvailable: Bool
-    }
-
     private final class MockPresentingViewController: UIViewController {
         var presentedVC: UIViewController?
         var presentAnimated: Bool?
@@ -1191,10 +1187,10 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         XCTAssertNil(host.chipViewModel.attachedContext?.favicon)
     }
 
-    // MARK: - New Chat Hand-Off Tests
+    // MARK: - Open Duck.ai
 
-    /// The default SUT leaves the floating input unavailable, so these rebuild it to reach the
-    /// hand-off branch. The feature is a value injected at init — flipping it later wouldn't take.
+    /// The default SUT leaves the floating input unavailable, so these rebuild it. The feature is a value
+    /// injected at init — flipping it later wouldn't take.
     @MainActor
     private func makeCoordinatorWithFloatingInput() -> AIChatContextualSheetCoordinator {
         let coordinator = AIChatContextualSheetCoordinator(
@@ -1217,36 +1213,26 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     }
 
     @MainActor
-    func testNewChatOpensAFreshDuckAITabCarryingNoChatID() async {
+    func testOpenDuckAIOpensATabCarryingNoChatID() async {
         sut = makeCoordinatorWithFloatingInput()
         await sut.presentSheet(from: mockPresentingVC)
 
-        sut.aiChatContextualSheetViewControllerDidRequestNewChat(sut.sheetViewController!)
+        sut.aiChatContextualSheetViewControllerDidRequestOpenDuckAI(sut.sheetViewController!)
 
         XCTAssertEqual(mockDelegate.didRequestExpandURLs.count, 1)
-        XCTAssertNil(mockDelegate.didRequestExpandURLs.first?.duckAIChatID, "New Chat must open an empty chat, not the one being left")
+        XCTAssertNil(mockDelegate.didRequestExpandURLs.first?.duckAIChatID, "opens Duck.ai itself, not the chat being left")
     }
 
-    /// The tab must stop offering to reopen a chat that has moved out to its own tab.
+    /// Going to Duck.ai leaves this sheet's chat alone — only New Chat clears it.
     @MainActor
-    func testNewChatDetachesTheChatFromTheTab() async {
+    func testOpenDuckAILeavesTheContextualChatIntact() async {
         sut = makeCoordinatorWithFloatingInput()
         await sut.presentSheet(from: mockPresentingVC)
         mockDelegate.contextualChatURLUpdates = []
 
-        sut.aiChatContextualSheetViewControllerDidRequestNewChat(sut.sheetViewController!)
+        sut.aiChatContextualSheetViewControllerDidRequestOpenDuckAI(sut.sheetViewController!)
 
-        XCTAssertEqual(mockDelegate.contextualChatURLUpdates, [nil])
-    }
-
-    /// Detached, not deleted — the conversation stays in Duck.ai history.
-    @MainActor
-    func testNewChatDoesNotDeleteTheChatItLeaves() async {
-        sut = makeCoordinatorWithFloatingInput()
-        await sut.presentSheet(from: mockPresentingVC)
-
-        sut.aiChatContextualSheetViewControllerDidRequestNewChat(sut.sheetViewController!)
-
+        XCTAssertTrue(mockDelegate.contextualChatURLUpdates.isEmpty, "the tab keeps the chat it can still reopen")
         XCTAssertTrue(mockDelegate.deletedChatIDs.isEmpty)
     }
 

@@ -28,3 +28,20 @@ enum UnifiedToggleInputHost: Equatable {
     /// Hosted by `AIChatContextualWebViewController` — the post-submit contextual chat surface.
     case contextualChat
 }
+
+/// The state a contextual-chat input is born into. Composes two otherwise-independent facts — whether
+/// the session has a prompt in it yet, and whether a keyboard comes up alongside the input — as the
+/// three combinations that actually occur, so the contradictory fourth can't be expressed.
+enum ContextualInputStart: Equatable {
+    /// Nothing submitted yet: the user is about to type, so the input opens expanded and takes focus.
+    case expandedPreSubmit
+    /// Installed into a chat already on screen, taking focus as it appears.
+    case expandedOnExistingChat
+    /// Opening onto a chat that already exists with no keyboard, so the input starts as the plain pill.
+    case collapsedOnExistingChat
+
+    /// Drives the follow-up placeholder and the model chip, which read as a fresh session until a prompt lands.
+    var isPreSubmit: Bool { self == .expandedPreSubmit }
+
+    var startsCollapsed: Bool { self == .collapsedOnExistingChat }
+}

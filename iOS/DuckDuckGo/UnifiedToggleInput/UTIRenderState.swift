@@ -32,7 +32,6 @@ struct UTIRenderState: Equatable {
     var isInlineDismissHidden: Bool
     /// True when the UTI is hosted by a Duck.ai tab.
     var isAITab: Bool
-    var prefersDictationWhenCollapsed: Bool
 
     var isExpanded: Bool { cardLayout.isExpanded }
 
@@ -45,8 +44,7 @@ struct UTIRenderState: Equatable {
             inputMode: inputMode,
             isTopBarPosition: usesOmnibarMargins,
             isInlineDismissHidden: isInlineDismissHidden,
-            isAITab: isAITab,
-            prefersDictationWhenCollapsed: prefersDictationWhenCollapsed
+            isAITab: isAITab
         )
     }
 

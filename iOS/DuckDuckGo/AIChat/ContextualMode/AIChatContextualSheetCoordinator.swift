@@ -49,7 +49,7 @@ protocol AIChatContextualSheetCoordinatorDelegate: AnyObject {
     func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestToLoad url: URL)
 
     /// Called to open duck.ai in a new tab at the given URL — the expand button's chat URL, or a
-    /// chat-ID-free URL when New Chat hands the session off to a fresh tab.
+    /// chat-ID-free URL when the user asks to open Duck.ai itself.
     func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestExpandWithURL url: URL)
 
     /// Called when the user taps "View all chats" to open the native chat history page.
@@ -146,6 +146,14 @@ final class AIChatContextualSheetCoordinator {
 
     private var isImmediateContextualUTIEnabled: Bool {
         isWebUTIEnabled && featureFlagger.isFeatureOn(.aiChatContextualUnifiedToggleInput)
+    }
+
+    /// How an input mounted onto the sheet begins: a chat the user is about to start brings a keyboard
+    /// up with it, while one that already exists does not.
+    private var sheetContextualInputStart: ContextualInputStart {
+        guard sessionState.hasActiveChat else { return .expandedPreSubmit }
+        // Without the collapsed pill there is no such pose to start in.
+        return floatingInputFeature.isAvailable ? .collapsedOnExistingChat : .expandedOnExistingChat
     }
 
     /// Publishes the URL of the page that originated the contextual chat session, with replay of the last value.
@@ -261,7 +269,7 @@ final class AIChatContextualSheetCoordinator {
 
         stopSessionTimer()
 
-        guard let host = makePersistentUTIHostIfNeeded(startsPreSubmit: true) else { return }
+        guard let host = makePersistentUTIHostIfNeeded(start: .expandedPreSubmit) else { return }
 
         let chips = makeChipsViewController()
         chips.delegate = self
@@ -284,6 +292,8 @@ final class AIChatContextualSheetCoordinator {
         let isLoaded: Bool
         let suggestions: [ContextualSuggestedPrompt]
         let quickActions: [AIChatContextualQuickAction]
+
+        var isEmpty: Bool { suggestions.isEmpty && quickActions.isEmpty }
 
         init(viewState: SheetViewState) {
             isLoaded = viewState.suggestionsLoadState == .loaded
@@ -310,6 +320,14 @@ final class AIChatContextualSheetCoordinator {
                     // flash the placeholder "Ask about page" chip beside it, then replace it.
                     chips.updateStartActions(suggestions: [], quickActions: [])
                     chips.updateSuggestionsLoading(true)
+                    return
+                }
+
+                // An attachment beyond the first empties the row — losing it to a layout collapse looks
+                // like a slide, so the surface fades it out and clears once it can't be seen.
+                guard !content.isEmpty else {
+                    chips.updateSuggestionsLoading(false)
+                    floatingInput.clearChipsFadingOut()
                     return
                 }
 
@@ -352,9 +370,13 @@ final class AIChatContextualSheetCoordinator {
         floatingChipsCancellable = nil
         persistentUTIHost?.deactivateInput()
         floatingInputViewController.remove()
-        // Every promotion is a submission, so the sheet opens onto the chat rather than at a pre-submit
-        // detent it would only have to grow out of.
-        presentNewSheet(from: presentingViewController, restoreURL: nil, opensOntoSubmittedChat: true)
+        // A retained sheet owns the web view this prompt goes into, so it is the one that comes back — a
+        // new sheet would show an empty chat while the answer arrived in the discarded one.
+        if let sheetViewController {
+            presentExistingSheet(sheetViewController, from: presentingViewController)
+        } else {
+            presentNewSheet(from: presentingViewController, restoreURL: nil, opensOntoSubmittedChat: true)
+        }
     }
 
     /// Explicit user request to attach the current page, as opposed to a passive auto-collect.
@@ -456,7 +478,7 @@ final class AIChatContextualSheetCoordinator {
         pageContextHandler.clear()
         sessionState.resetToNoChat()
         pixelHandler.reset()
-        // Both callers are deletions, so the tab must not keep a URL that would restore the chat.
+        // The chat is leaving this tab either way, so it must not keep a URL that would restore it.
         delegate?.aiChatContextualSheetCoordinator(self, didUpdateContextualChatURL: nil)
     }
 
@@ -546,7 +568,7 @@ private extension AIChatContextualSheetCoordinator {
         // UIKit silently drops present() if the presenter already has a presentedViewController;
         // bail so isSheetPresented doesn't get stuck true.
         guard presentingVC.presentedViewController == nil else { return }
-        sheetVC.configureSheetPresentation()
+        sheetVC.prepareForPresentation()
         presentingVC.present(sheetVC, animated: true)
         isSheetPresented = true
     }
@@ -560,7 +582,7 @@ private extension AIChatContextualSheetCoordinator {
 
         let suggestionsReader = makeSuggestionsReaderIfEnabled()
         let persistentUTIHost = isImmediateContextualUTIEnabled
-            ? makePersistentUTIHostIfNeeded(startsPreSubmit: !sessionState.hasActiveChat)
+            ? makePersistentUTIHostIfNeeded(start: sheetContextualInputStart)
             : nil
 
         let sheetVC = AIChatContextualSheetViewController(
@@ -575,6 +597,7 @@ private extension AIChatContextualSheetCoordinator {
             featureFlagger: featureFlagger,
             persistentUTIHost: persistentUTIHost,
             suggestionsReader: suggestionsReader,
+            floatingInputFeature: floatingInputFeature,
             opensOntoSubmittedChat: opensOntoSubmittedChat
         )
         sheetVC.delegate = self
@@ -595,7 +618,7 @@ private extension AIChatContextualSheetCoordinator {
         return AIChatSuggestionsReader(suggestionsReader: reader, historySettings: settings)
     }
 
-    func makePersistentUTIHostIfNeeded(startsPreSubmit: Bool) -> AIChatContextualUTIHost? {
+    func makePersistentUTIHostIfNeeded(start: ContextualInputStart) -> AIChatContextualUTIHost? {
         guard isWebUTIEnabled else { return nil }
         if let persistentUTIHost { return persistentUTIHost }
 
@@ -609,7 +632,8 @@ private extension AIChatContextualSheetCoordinator {
             isCurrentPageAttachable: { [weak self] in self?.pageContextHandler.isCurrentPageAttachable() ?? true },
             isFireTab: isFireTab,
             lastUsedModelProvider: duckAiLastUsedModelProvider,
-            startsPreSubmit: startsPreSubmit
+            floatingInputFeature: floatingInputFeature,
+            start: start
         )
         host.onAttachRequested = { [weak self] in
             self?.requestManualPageContextAttach()
@@ -805,7 +829,12 @@ private extension AIChatContextualSheetCoordinator {
             utiHostInstaller: { [weak self] contextualChatViewController in
                 guard let self else { return nil }
                 guard self.isWebUTIEnabled else { return nil }
-                let host = self.makePersistentUTIHostIfNeeded(startsPreSubmit: self.isImmediateContextualUTIEnabled && !self.sessionState.hasActiveChat)
+                // The legacy input lives inside the web view and takes focus as the chat appears;
+                // the immediate one is mounted on the sheet, so it starts the way the sheet says.
+                let start: ContextualInputStart = self.isImmediateContextualUTIEnabled
+                    ? self.sheetContextualInputStart
+                    : .expandedOnExistingChat
+                let host = self.makePersistentUTIHostIfNeeded(start: start)
                 host?.setContextualChatViewController(contextualChatViewController)
                 if !self.isImmediateContextualUTIEnabled {
                     host?.installInWebView(contextualChatViewController)
@@ -984,21 +1013,24 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
     }
 
     func aiChatContextualSheetViewControllerDidRequestNewChat(_ viewController: AIChatContextualSheetViewController) {
-        guard floatingInputFeature.isAvailable else {
-            resetToNativeInputState()
-            return
+        resetToNativeInputState()
+
+        // A fresh chat starts where a fresh chat starts — the floating input over the page, not the
+        // sheet's own start surface, which is the same state one layer of chrome further in.
+        guard floatingInputFeature.isAvailable,
+              let presenter = viewController.presentingViewController else { return }
+        viewController.dismiss(animated: true) { [weak self] in
+            Task { @MainActor in
+                await self?.presentFloatingInput(from: presenter)
+            }
         }
-        handOffNewChatToNewTab()
     }
 
-    /// New Chat moves the conversation out of the sheet rather than restarting it in place: a fresh
-    /// Duck.ai tab opens and this session resets, so the tab stops offering to reopen the old chat.
-    /// The old chat is only detached — it stays in Duck.ai history.
-    private func handOffNewChatToNewTab() {
-        let sheet = sheetViewController
+    /// Hands the conversation off to a Duck.ai tab, leaving this sheet's chat as it is — the user asked
+    /// to go to Duck.ai, not to start over here.
+    func aiChatContextualSheetViewControllerDidRequestOpenDuckAI(_ viewController: AIChatContextualSheetViewController) {
         delegate?.aiChatContextualSheetCoordinator(self, didRequestExpandWithURL: aiChatSettings.aiChatURL)
-        clearActiveChat()
-        sheet?.dismiss(animated: true)
+        viewController.dismiss(animated: true)
     }
 
     func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController, didSubmitPrompt prompt: String) {

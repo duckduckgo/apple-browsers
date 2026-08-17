@@ -72,6 +72,9 @@ protocol AIChatContextualSheetViewControllerDelegate: AnyObject {
     /// Called when the user taps the "New Chat" button to start a fresh conversation
     func aiChatContextualSheetViewControllerDidRequestNewChat(_ viewController: AIChatContextualSheetViewController)
 
+    /// Called when the user asks to open Duck.ai itself, rather than continue in this sheet.
+    func aiChatContextualSheetViewControllerDidRequestOpenDuckAI(_ viewController: AIChatContextualSheetViewController)
+
     /// Called when the user submits a prompt from native input
     func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController, didSubmitPrompt prompt: String)
 
@@ -155,8 +158,8 @@ final class AIChatContextualSheetViewController: UIViewController {
     private let suggestionsReader: AIChatSuggestionsReading?
     private let persistentUTIHost: AIChatContextualUTIHost?
 
-    /// Glass capsules and the Duck.ai bubble icon, matching the Duck.ai tab header.
-    private let usesGlassHeader: Bool
+    /// Glass capsules, the Duck.ai bubble icon, and close/hand-off swapped to opposite pills.
+    private let usesRedesignedHeader: Bool
     private var recentChatsPopup: AIChatRecentChatsPopupViewController?
     private var popupWindow: UIWindow?
     private var isFetchingRecentChats = false
@@ -175,8 +178,9 @@ final class AIChatContextualSheetViewController: UIViewController {
     /// Whether the web view is currently visible (vs native input being visible)
     private var isWebViewVisible = false
 
-    /// Tracks the current sheet detent for syncing with web view
-    private var isCurrentlyMediumDetent = true
+    private var isCurrentlyMediumDetent: Bool {
+        sheetPresentationController?.selectedDetentIdentifier == .medium
+    }
 
     /// Dimming view added to the presenting view controller's view for contrast
     private var dimmingView: UIView?
@@ -195,7 +199,6 @@ final class AIChatContextualSheetViewController: UIViewController {
     /// owns. Until then the session still reports its pre-submit state, and that state is stale here.
     private var isAwaitingSubmittedChat: Bool
 
-    private var hasMountedPersistentUTIHost = false
     private var initialPromptRevealFallbackWorkItem: DispatchWorkItem?
     private var suggestionSubmissionTask: Task<Void, Never>?
     private var suggestionSubmissionID: UUID?
@@ -228,9 +231,11 @@ final class AIChatContextualSheetViewController: UIViewController {
         return stack
     }()
 
+    /// Hands the chat off to a Duck.ai tab, so the redesign labels it "open in" rather than "expand".
     private lazy var expandButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setImage(DesignSystemImages.Glyphs.Size24.expand, for: .normal)
+        let icon = usesRedesignedHeader ? DesignSystemImages.Glyphs.Size24.openIn : DesignSystemImages.Glyphs.Size24.expand
+        button.setImage(icon, for: .normal)
         button.tintColor = UIColor(designSystemColor: .textPrimary)
         button.translatesAutoresizingMaskIntoConstraints = false
         button.addTarget(self, action: #selector(expandButtonTapped), for: .touchUpInside)
@@ -265,7 +270,7 @@ final class AIChatContextualSheetViewController: UIViewController {
     private var titleHostView: UIView { titleTapControl ?? titleContainer }
 
     private lazy var titleIconView: UIImageView = {
-        let icon = usesGlassHeader ? DesignSystemImages.Color.Size24.aiChat : DesignSystemImages.Color.Size24.duckAI
+        let icon = usesRedesignedHeader ? DesignSystemImages.Color.Size24.aiChat : DesignSystemImages.Color.Size24.duckAI
         let imageView = UIImageView(image: icon)
         imageView.contentMode = .scaleAspectFit
         imageView.translatesAutoresizingMaskIntoConstraints = false
@@ -285,7 +290,7 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     /// Glass on the new look — same chrome the Duck.ai tab header uses — flat fill on the original.
     private func makeHeaderPill() -> ContextualHeaderPill {
-        guard usesGlassHeader else {
+        guard usesRedesignedHeader else {
             let pill = PillView()
             pill.backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
             pill.clipsToBounds = true
@@ -363,7 +368,7 @@ final class AIChatContextualSheetViewController: UIViewController {
          suggestionsReader: AIChatSuggestionsReading? = nil,
          floatingInputFeature: AIChatContextualFloatingInputFeatureProviding = AIChatContextualFloatingInputFeature(),
          opensOntoSubmittedChat: Bool = false) {
-        self.usesGlassHeader = floatingInputFeature.isAvailable
+        self.usesRedesignedHeader = floatingInputFeature.isAvailable
         self.sessionState = sessionState
         self.aiChatSettings = aiChatSettings
         self.voiceSearchHelper = voiceSearchHelper
@@ -435,8 +440,12 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+
+        // Reclaims the input if another surface borrowed it while this sheet was away.
+        if !opensOntoSubmittedChat {
+            mountPersistentUTIHostIfNeeded()
+        }
         canProcessSuggestionSubmission = true
-        configureSheetPresentation()
         pixelHandler.fireSheetOpened()
         addKeyboardObserver()
         showDimmingView(animated: animated)
@@ -476,7 +485,7 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
-        guard traitCollection.userInterfaceStyle != previousTraitCollection?.userInterfaceStyle else { return }
+        guard traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) else { return }
         [leftButtonContainer, rightButtonContainer].forEach { $0.refreshGlassForCurrentTraits() }
     }
 
@@ -486,13 +495,19 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     // MARK: - Sheet Configuration
 
-    func configureSheetPresentation() {
+    /// The opening detent, applied per presentation and never re-asserted: UIKit re-runs the appearance
+    /// transition when the sheet is dragged to an undimmed detent, which would overwrite the drag.
+    func prepareForPresentation() {
+        configureSheetPresentation()
+        sheetPresentationController?.selectedDetentIdentifier = opensOntoSubmittedChat ? .large : .medium
+    }
+
+    private func configureSheetPresentation() {
         guard let sheet = sheetPresentationController else { return }
 
         sheet.delegate = self
         presentationController?.delegate = self
         sheet.detents = [.medium(), .large()]
-        sheet.selectedDetentIdentifier = opensOntoSubmittedChat ? .large : .medium
         sheet.largestUndimmedDetentIdentifier = .medium
         sheet.prefersScrollingExpandsWhenScrolledToEdge = false
         sheet.prefersGrabberVisible = true
@@ -1021,6 +1036,11 @@ extension AIChatContextualSheetViewController: AIChatRecentChatsPopupViewModelDe
         delegate?.aiChatContextualSheetViewControllerDidRequestNewChat(self)
     }
 
+    func recentChatsPopupDidSelectOpenDuckAI() {
+        dismissRecentChatsPopup()
+        delegate?.aiChatContextualSheetViewControllerDidRequestOpenDuckAI(self)
+    }
+
     func recentChatsPopupDidSelectChat(_ chat: AIChatSuggestion) {
         dismissRecentChatsPopup()
         pixelHandler.fireRecentChatSelected()
@@ -1311,8 +1331,7 @@ private extension AIChatContextualSheetViewController {
 
         view.addSubview(headerView)
 
-        let leadingButtons = [expandButton] + (suggestionsReader != nil ? [recentChatsButton] : [])
-        let trailingButtons = [fireButton, closeButton]
+        let (leadingButtons, trailingButtons) = resolveHeaderButtons()
 
         headerView.addSubview(leftButtonContainer)
         leftButtonContainer.contentView.addSubview(leftButtonStack)
@@ -1352,6 +1371,16 @@ private extension AIChatContextualSheetViewController {
         view.addSubview(contentContainerView)
 
         setupConstraints()
+    }
+
+    /// The redesign puts close where the hand-off used to be and pairs the hand-off with fire;
+    /// the original keeps the hand-off leading and pairs fire with close.
+    private func resolveHeaderButtons() -> (leading: [UIButton], trailing: [UIButton]) {
+        let chats = suggestionsReader != nil ? [recentChatsButton] : []
+        guard usesRedesignedHeader else {
+            return ([expandButton] + chats, [fireButton, closeButton])
+        }
+        return ([closeButton] + chats, [fireButton, expandButton])
     }
 
     private func makeTitleTapControl() -> HighlightableControl {
@@ -1407,16 +1436,20 @@ private extension AIChatContextualSheetViewController {
         ])
     }
 
+    /// Re-runnable: the input is one view the floating surface also borrows, so a sheet that mounted it
+    /// once can find it gone by the time it is presented again.
     func mountPersistentUTIHostIfNeeded() {
-        guard let persistentUTIHost, !hasMountedPersistentUTIHost else { return }
-        hasMountedPersistentUTIHost = true
+        guard let persistentUTIHost, !persistentUTIHost.isMounted(in: self) else { return }
 
         let utiView = persistentUTIHost.mount(in: self)
+        // The previous constraint died with the old mount — its two views no longer share an ancestor.
         contentContainerBottomConstraint?.isActive = false
         let bottomConstraint = contentContainerView.bottomAnchor.constraint(equalTo: utiView.topAnchor)
         contentContainerBottomConstraint = bottomConstraint
         bottomConstraint.isActive = true
-        contentContainerView.addGestureRecognizer(contentDragKeyboardDismissRecognizer)
+        if contentDragKeyboardDismissRecognizer.view == nil {
+            contentContainerView.addGestureRecognizer(contentDragKeyboardDismissRecognizer)
+        }
     }
 
     @objc private func handleContentDragToDismissKeyboard(_ gesture: UIPanGestureRecognizer) {
@@ -1435,7 +1468,7 @@ private extension AIChatContextualSheetViewController {
 
     func configureModalPresentation() {
         modalPresentationStyle = .pageSheet
-        configureSheetPresentation()
+        prepareForPresentation()
     }
 
     func showDimmingView(animated: Bool) {
@@ -1502,9 +1535,6 @@ extension AIChatContextualSheetViewController: UISheetPresentationControllerDele
         prepareForDismissal()
     }
 
-    func sheetPresentationControllerDidChangeSelectedDetentIdentifier(_ sheetPresentationController: UISheetPresentationController) {
-        isCurrentlyMediumDetent = sheetPresentationController.selectedDetentIdentifier == .medium
-    }
 }
 
 // MARK: - Duck.ai Wide Event

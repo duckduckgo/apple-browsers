@@ -25,6 +25,7 @@ import Foundation
 @MainActor
 protocol AIChatRecentChatsPopupViewModelDelegate: AnyObject {
     func recentChatsPopupDidSelectNewChat()
+    func recentChatsPopupDidSelectOpenDuckAI()
     func recentChatsPopupDidSelectChat(_ chat: AIChatSuggestion)
     func recentChatsPopupDidSelectViewAll()
     func recentChatsPopupDidDismiss()
@@ -63,6 +64,10 @@ final class AIChatRecentChatsPopupViewModel {
 
     func didSelectNewChat() {
         delegate?.recentChatsPopupDidSelectNewChat()
+    }
+
+    func didSelectOpenDuckAI() {
+        delegate?.recentChatsPopupDidSelectOpenDuckAI()
     }
 
     func didSelectChat(at index: Int) {

@@ -55,6 +55,7 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
         static let assumedKeyboardSlideDuration: TimeInterval = 0.25
         /// Longer than this and the finger was resting or scrolling, not tapping.
         static let maximumTapDuration: CFTimeInterval = 0.4
+        static let chipsFadeDuration: TimeInterval = 0.2
     }
 
     /// The keyboard's own animation, taken from its notifications: moving with the keyboard means running
@@ -258,10 +259,35 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
     /// rather than showing at install time. They sit above the input card, which is pinned to the keyboard
     /// guide, so they ride up with it rather than landing once it has stopped.
     func showChipsIfNeeded() {
-        guard !hasShownChips, chipsViewController.startActionCount > 0 else { return }
+        guard chipsViewController.startActionCount > 0 else { return }
+        // Already entered once, so this is content returning after `clearChipsFadingOut` — fade it back
+        // rather than re-running the one-shot entrance.
+        guard !hasShownChips else {
+            fadeChipsContainer(to: 1)
+            return
+        }
         hasShownChips = true
         chipsContainerView.alpha = 1
         chipsViewController.showStartActions()
+    }
+
+    /// Clears the chips only once they are invisible: removing them collapses the stack, and that
+    /// collapse rides whatever layout animation the input is already running — which reads as the row
+    /// sliding down behind the bar rather than leaving.
+    func clearChipsFadingOut() {
+        fadeChipsContainer(to: 0) { [weak self] in
+            self?.chipsViewController.updateStartActions(suggestions: [], quickActions: [])
+        }
+    }
+
+    private func fadeChipsContainer(to alpha: CGFloat, completion: (() -> Void)? = nil) {
+        guard chipsContainerView.alpha != alpha else {
+            completion?()
+            return
+        }
+        UIView.animate(withDuration: Constants.chipsFadeDuration,
+                       animations: { self.chipsContainerView.alpha = alpha },
+                       completion: { _ in completion?() })
     }
 
     /// The entrance in reverse: settles back down to where it rose from, fading out as it goes. One alpha for
@@ -463,6 +489,9 @@ private extension AIChatContextualFloatingInputViewController {
         // Backgrounding and system interruptions take the keyboard too, and neither is the user leaving: the
         // surface and whatever has been typed into it should still be here on the way back.
         guard UIApplication.shared.applicationState == .active else { return }
+        // This surface is the attachment picker's presenter, so its own picker takes the keyboard on the
+        // way up — leaving now would tear down the input the picked attachment is meant to land in.
+        guard presentedViewController == nil else { return }
         requestDismiss()
     }
 

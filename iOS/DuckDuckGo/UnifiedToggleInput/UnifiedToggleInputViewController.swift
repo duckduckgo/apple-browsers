@@ -325,7 +325,6 @@ final class UnifiedToggleInputViewController: UIViewController {
         // Set before `applyCardLayout` reads the flag.
         inputBarView.isInlineDismissHidden = config.isInlineDismissHidden
         inputBarView.isAITab = config.isAITab
-        inputBarView.prefersDictationWhenCollapsed = config.prefersDictationWhenCollapsed
         setInputMode(config.inputMode, animated: animated)
         setInactiveCardAppearance(config.inactiveAppearance)
         applyCardLayout(config.cardLayout, animated: animated)

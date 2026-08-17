@@ -39,7 +39,6 @@ final class AIChatRecentChatsPopupViewController: UIViewController {
         static let sectionHeaderBottomPadding: CGFloat = 10
         static let sectionHeaderLeading: CGFloat = 8
         static let cellIconSize: CGFloat = 16
-        static let viewAllChatsIconSize: CGFloat = 16
         static let cellIconGap: CGFloat = 8
         static let cellVerticalPadding: CGFloat = 10
         static let cellLeadingPadding: CGFloat = 6
@@ -174,13 +173,12 @@ private extension AIChatRecentChatsPopupViewController {
 
     func buildContent() {
         if viewModel.showNewChat {
-            let newChatRow = makeNewChatRow()
-            stackView.addArrangedSubview(newChatRow)
+            stackView.addArrangedSubview(makeNewChatRow())
+        }
+        stackView.addArrangedSubview(makeOpenDuckAIRow())
 
-            if !viewModel.suggestions.isEmpty {
-                let separator = makeSeparator()
-                stackView.addArrangedSubview(separator)
-            }
+        if !viewModel.suggestions.isEmpty {
+            stackView.addArrangedSubview(makeSeparator())
         }
 
         if !viewModel.suggestions.isEmpty {
@@ -287,63 +285,39 @@ private extension AIChatRecentChatsPopupViewController {
         return container
     }
 
-    func makeViewAllChatsRow() -> UIView {
-        let container = UIView()
-        container.translatesAutoresizingMaskIntoConstraints = false
-
-        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(viewAllChatsTapped))
-        container.addGestureRecognizer(tapGesture)
-
-        let iconView = UIImageView()
-        iconView.translatesAutoresizingMaskIntoConstraints = false
-        iconView.contentMode = .scaleAspectFit
-        iconView.tintColor = UIColor(designSystemColor: .icons)
-        // No `chats` glyph at 16px; fall back to `aiChatHistory` (same as the app menu).
-        iconView.image = DesignSystemImages.Glyphs.Size16.aiChatHistory.withRenderingMode(.alwaysTemplate)
-
-        let titleLabel = UILabel()
-        titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        titleLabel.text = UserText.aiChatViewAllChats
-        titleLabel.font = .daxBodyRegular()
-        titleLabel.textColor = UIColor(designSystemColor: .textPrimary)
-
-        container.addSubview(iconView)
-        container.addSubview(titleLabel)
-
-        NSLayoutConstraint.activate([
-            iconView.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: Constants.cellLeadingPadding),
-            iconView.centerYAnchor.constraint(equalTo: container.centerYAnchor),
-            iconView.widthAnchor.constraint(equalToConstant: Constants.viewAllChatsIconSize),
-            iconView.heightAnchor.constraint(equalToConstant: Constants.viewAllChatsIconSize),
-
-            // Keep the title aligned with the other rows despite the wider icon frame.
-            titleLabel.leadingAnchor.constraint(equalTo: container.leadingAnchor,
-                                                constant: Constants.cellLeadingPadding + Constants.cellIconSize + Constants.cellIconGap),
-            titleLabel.trailingAnchor.constraint(equalTo: container.trailingAnchor),
-            titleLabel.centerYAnchor.constraint(equalTo: container.centerYAnchor),
-
-            container.heightAnchor.constraint(equalToConstant: Constants.cellIconSize + Constants.cellVerticalPadding * 2),
-        ])
-
-        return container
+    func makeNewChatRow() -> UIView {
+        makeActionRow(icon: DesignSystemImages.Glyphs.Size16.compose,
+                      title: UserText.actionNewAIChat,
+                      action: #selector(newChatTapped))
     }
 
-    func makeNewChatRow() -> UIView {
+    func makeOpenDuckAIRow() -> UIView {
+        makeActionRow(icon: DesignSystemImages.Glyphs.Size16.aiChat,
+                      title: UserText.duckAiContextualOpenDuckAi,
+                      action: #selector(openDuckAITapped))
+    }
+
+    /// No `chats` glyph at 16px; `aiChatHistory` is what the app menu uses for the same row.
+    func makeViewAllChatsRow() -> UIView {
+        makeActionRow(icon: DesignSystemImages.Glyphs.Size16.aiChatHistory,
+                      title: UserText.aiChatViewAllChats,
+                      action: #selector(viewAllChatsTapped))
+    }
+
+    /// One icon-and-title row; every tappable row in this popup is this shape.
+    func makeActionRow(icon: UIImage, title: String, action: Selector) -> UIView {
         let container = UIView()
         container.translatesAutoresizingMaskIntoConstraints = false
+        container.addGestureRecognizer(UITapGestureRecognizer(target: self, action: action))
 
-        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(newChatTapped))
-        container.addGestureRecognizer(tapGesture)
-
-        let iconView = UIImageView()
+        let iconView = UIImageView(image: icon.withRenderingMode(.alwaysTemplate))
         iconView.translatesAutoresizingMaskIntoConstraints = false
         iconView.contentMode = .scaleAspectFit
         iconView.tintColor = UIColor(designSystemColor: .icons)
-        iconView.image = DesignSystemImages.Glyphs.Size16.compose.withRenderingMode(.alwaysTemplate)
 
         let titleLabel = UILabel()
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        titleLabel.text = UserText.actionNewAIChat
+        titleLabel.text = title
         titleLabel.font = .daxBodyRegular()
         titleLabel.textColor = UIColor(designSystemColor: .textPrimary)
 
@@ -374,6 +348,10 @@ private extension AIChatRecentChatsPopupViewController {
 
     @objc func newChatTapped() {
         viewModel.didSelectNewChat()
+    }
+
+    @objc func openDuckAITapped() {
+        viewModel.didSelectOpenDuckAI()
     }
 
     @objc func chatRowTapped(_ gesture: UITapGestureRecognizer) {

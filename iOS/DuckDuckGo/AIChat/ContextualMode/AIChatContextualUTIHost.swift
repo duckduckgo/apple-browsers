@@ -39,7 +39,8 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     private var keyboardBottomConstraint: NSLayoutConstraint?
     private var frozenBottomConstraint: NSLayoutConstraint?
     private let startsPreSubmit: Bool
-    private let floatingInputFeature: AIChatContextualFloatingInputFeatureProviding
+    /// Launch-time snapshot: re-reading the feature costs a privacy-config evaluation each time.
+    private let usesFloatingInput: Bool
     private var cancellables = Set<AnyCancellable>()
     private let duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation
     private let duckAIWideEventFlowScope = DuckAIWideEventFlowScope.contextual(UUID())
@@ -70,12 +71,13 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding = DuckAIVoiceShortcutFeature(),
         unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
         floatingInputFeature: AIChatContextualFloatingInputFeatureProviding = AIChatContextualFloatingInputFeature(),
-        startsPreSubmit: Bool = false
+        start: ContextualInputStart = .expandedOnExistingChat
     ) {
+        let isFloatingInputAvailable = floatingInputFeature.isAvailable
         self.hasActiveChat = hasActiveChat
-        self.startsPreSubmit = startsPreSubmit
-        self.floatingInputFeature = floatingInputFeature
-        self.hasDeliveredFirstPrompt = !startsPreSubmit
+        self.startsPreSubmit = start.isPreSubmit
+        self.usesFloatingInput = isFloatingInputAvailable
+        self.hasDeliveredFirstPrompt = !start.isPreSubmit
         let wideEventInstrumentation = DefaultDuckAIWideEventInstrumentation(
             wideEvent: AppDependencyProvider.shared.wideEvent
         )
@@ -87,16 +89,18 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
             lastUsedModelProvider: lastUsedModelProvider,
             duckAIWideEventInstrumentation: wideEventInstrumentation,
             duckAIWideEventFlowScope: duckAIWideEventFlowScope,
-            contextualStartsPreSubmit: startsPreSubmit,
+            contextualStart: start,
             attachmentPasteEnabled: unifiedToggleInputFeature.isAttachmentPasteEnabled,
-            placesAttachmentsAboveInput: floatingInputFeature.isAvailable
+            placesAttachmentsAboveInput: isFloatingInputAvailable
         )
         self.chipViewModel = UnifiedToggleInputPageContextChipViewModel(
             originatingURLPublisher: originatingURLPublisher,
             initialAttachedContext: initialAttachedContext,
             initialAttachmentDeliveryState: initialAttachmentDeliveryState,
             isAutoAttachEnabled: isAutoAttachEnabled,
-            showsAttachAffordance: { floatingInputFeature.isAvailable && !hasActiveChat() }
+            showsAttachAffordance: { [isFloatingInputAvailable] in
+                isFloatingInputAvailable && !hasActiveChat()
+            }
         )
         coordinator.delegate = self
         coordinator.updateAIVoiceChatAvailability(voiceShortcutFeature.isAvailable)
@@ -131,12 +135,15 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
             .store(in: &cancellables)
     }
 
-    /// This UTI gets no keyboard visibility of its own — the browser's observer only feeds the
-    /// omnibar's coordinator — so tapping the chat content hides the keyboard while the input keeps
-    /// its expanded toolbar. Still first responder means a hardware keyboard, which isn't a dismissal.
+    /// The expanded pose exists to sit above a keyboard, so losing one collapses it — whether or not the
+    /// field kept first responder, which a sheet drag does. See `collapseExpandedUTIOnKeyboardDismiss`.
     private func collapseForKeyboardDismissal() {
-        guard !coordinator.isContextualChatCollapsed,
-              !coordinator.viewController.isInputFirstResponder else { return }
+        // Backgrounding takes the keyboard too and isn't the user leaving; offscreen hosts outlive
+        // their surface, so they ignore a keyboard they were never above.
+        guard UIApplication.shared.applicationState == .active,
+              !coordinator.isPresentingAttachmentModal,
+              coordinator.isInputOnScreen,
+              !coordinator.isContextualChatCollapsed else { return }
         deactivateInput()
     }
 
@@ -310,10 +317,16 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         frozenBottomConstraint = frozen
     }
 
+    /// Whether `parent` currently holds the input. The input is one view that surfaces borrow from each
+    /// other, so a surface that mounted it once cannot assume it still has it.
+    func isMounted(in parent: UIViewController) -> Bool {
+        coordinator.viewController.parent === parent
+    }
+
     /// Detaches the input so it can be mounted elsewhere, but only if `parent` still holds it: a surface
     /// animating out finishes after the next one may already have mounted it.
     func unmount(from parent: UIViewController) {
-        guard coordinator.viewController.parent === parent else { return }
+        guard isMounted(in: parent) else { return }
         detachInput()
     }
 
@@ -340,7 +353,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     /// Collapses to the plain pill, which drops first responder on the way. Without the collapsed
     /// pill the sheet's input has no collapsed form, so it only gives up first responder.
     func deactivateInput() {
-        guard floatingInputFeature.isAvailable else {
+        guard usesFloatingInput else {
             coordinator.viewController.deactivateInput()
             return
         }
@@ -348,12 +361,12 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     }
 
     func setVoiceSearchAvailable(_ available: Bool) {
-        coordinator.viewController.isVoiceSearchAvailable = available
+        coordinator.updateVoiceSearchAvailability(available)
     }
 
     /// Drops a dictated query into the field for the user to review before sending.
     func setText(_ text: String) {
-        coordinator.viewController.text = text
+        coordinator.setText(text)
     }
 
     func submitQuickActionPrompt(_ prompt: String) {
@@ -361,7 +374,10 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     }
 
     func prepareForNewChat() {
-        hasDeliveredFirstPrompt = !startsPreSubmit
+        // The surface is back on its start state, so the next prompt is a first prompt again — whatever
+        // this host was born as. Left set, the submission that follows never reports itself and the
+        // sheet stays on the start surface while the frontend answers behind it.
+        hasDeliveredFirstPrompt = false
         clearAttachedContext()
         chipViewModel.clearReattachOffer()
         if startsPreSubmit, let currentUserScript {
@@ -395,14 +411,28 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     }
 
     private func handlePromptSubmittedFromUserScript() {
-        if !hasDeliveredFirstPrompt {
-            hasDeliveredFirstPrompt = true
-            // The offer was made on the pre-chat surface; the chat it starts is where it stops applying.
-            chipViewModel.clearReattachOffer()
-            onPromptSubmitted?()
-            commitDeferredBindIfNeeded()
-        }
+        reportFirstPromptSubmission()
         onPromptDelivered?()
+    }
+
+    /// True for the first report only. Both submission reports race — the input reports as it happens,
+    /// the frontend acknowledges the same prompt afterwards — and only one of them may be believed.
+    private func claimFirstPromptSubmission() -> Bool {
+        guard !hasDeliveredFirstPrompt else { return false }
+        hasDeliveredFirstPrompt = true
+        return true
+    }
+
+    private func reportFirstPromptSubmission() {
+        guard claimFirstPromptSubmission() else { return }
+        // The offer was made on the pre-chat surface; the chat it starts is where it stops applying.
+        chipViewModel.clearReattachOffer()
+        onPromptSubmitted?()
+        commitDeferredBindIfNeeded()
+    }
+
+    func unifiedToggleInputDidSubmitPromptToBoundChat() {
+        reportFirstPromptSubmission()
     }
 
     func unifiedToggleInputDidSubmitPrompt(_ prompt: String,
@@ -411,8 +441,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
                                            reasoningEffort: AIChatReasoningEffort?,
                                            images: [AIChatNativePrompt.NativePromptImage]?,
                                            files: [AIChatNativePrompt.NativePromptFile]?) {
-        guard !hasDeliveredFirstPrompt else { return }
-        hasDeliveredFirstPrompt = true
+        guard claimFirstPromptSubmission() else { return }
         onPromptSubmitted?()
         contextualChatViewController?.submitPrompt(prompt,
                                                    images: images,

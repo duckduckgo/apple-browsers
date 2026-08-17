@@ -22,6 +22,9 @@ import AIChat
 @MainActor
 protocol UnifiedToggleInputDelegate: AnyObject {
     func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?)
+    /// A bound chat submits straight to its own user script, so there is nothing to deliver — only the
+    /// moment to react to, reported before the keyboard goes and takes the typing surface with it.
+    func unifiedToggleInputDidSubmitPromptToBoundChat()
     func unifiedToggleInputDidSubmitQuery(_ query: String)
     func unifiedToggleInputDidRequestVoiceSearch()
     func unifiedToggleInputDidRequestAIVoiceChat()
@@ -40,6 +43,7 @@ protocol UnifiedToggleInputDelegate: AnyObject {
 }
 
 extension UnifiedToggleInputDelegate {
+    func unifiedToggleInputDidSubmitPromptToBoundChat() {}
     func unifiedToggleInputDismissSnapshot() -> UTIDismissSnapshot { .empty }
     func unifiedToggleInputDidTapClearText() {}
     func unifiedToggleInputDidTapToActivate() {}

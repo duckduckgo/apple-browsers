@@ -667,8 +667,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
                 inputMode: .aiChat,
                 isTopBarPosition: false,
                 isInlineDismissHidden: true,
-                isAITab: true,
-                prefersDictationWhenCollapsed: false
+                isAITab: true
             ),
             animated: false
         )

@@ -211,6 +211,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     var isAITabCollapsed: Bool { stateMachine.isAITabCollapsed }
     var isContextualChatState: Bool { stateMachine.isContextualChatState }
     var isContextualChatCollapsed: Bool { stateMachine.isContextualChatCollapsed }
+
+    /// A picker this input put up — it takes the keyboard on the way in, which is not the user leaving.
+    var isPresentingAttachmentModal: Bool { attachmentPresentingViewController?.presentedViewController != nil }
+
+    /// The input is in a window, so a keyboard change is about a surface the user can actually see.
+    var isInputOnScreen: Bool { viewController.view.window != nil }
     var isOmnibarEditing: Bool { stateMachine.isOmnibarEditing }
     var omnibarState: UnifiedToggleInputDisplayState.OmnibarState? { stateMachine.omnibarState }
     var isSearchOnAITab: Bool { stateMachine.isSearchOnAITab(inputMode: inputMode) }
@@ -294,7 +300,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation? = nil,
         duckAIWideEventFlowScope: DuckAIWideEventFlowScope? = nil,
         pixelFiring: UTIPixelFiring = .live,
-        contextualStartsPreSubmit: Bool = false,
+        contextualStart: ContextualInputStart = .expandedOnExistingChat,
         attachmentPasteEnabled: Bool = false,
         placesAttachmentsAboveInput: Bool = false,
         updatedModelPickerFeature: UpdatedModelPickerFeatureProviding = UpdatedModelPickerFeature()
@@ -477,12 +483,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
         viewController.handler.prefersDictationOverVoiceChat = stateMachine.prefersDictationOverVoiceChat
 
-        // Contextual chat boots expanded; the collapsed pill is reached later, on deactivation.
-        // The chat is already post-submit by the time the contextual UTI installs, so
-        // `hasSubmittedPrompt` should reflect that — drives follow-up placeholder + model chip hide.
+        // `hasSubmittedPrompt` drives the follow-up placeholder and the model chip, so a chat that
+        // already has a prompt in it must say so here.
         if host == .contextualChat {
-            displayState = .contextualChat(.expanded)
-            hasSubmittedPrompt = !contextualStartsPreSubmit
+            displayState = .contextualChat(contextualStart.startsCollapsed ? .collapsed : .expanded)
+            hasSubmittedPrompt = !contextualStart.isPreSubmit
             syncHasSubmittedPromptToHandler()
             modelSelector.updateModelChipVisibility()
         }
@@ -1628,6 +1633,11 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             return
         }
 
+        if isContextualChatState {
+            // Ahead of the collapse below, which takes the keyboard with it: a surface that reads the
+            // hide as losing its keyboard tears itself down, and then nothing is left to hand over.
+            delegate?.unifiedToggleInputDidSubmitPromptToBoundChat()
+        }
         clearAttachments()
         if isOmnibarNewAIChatPrompt {
             viewController.prepareToolbarSubmitStyleForDismissal()

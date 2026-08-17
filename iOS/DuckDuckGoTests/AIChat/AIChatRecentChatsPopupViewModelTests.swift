@@ -44,12 +44,17 @@ final class AIChatRecentChatsPopupViewModelTests: XCTestCase {
 
     private final class MockDelegate: AIChatRecentChatsPopupViewModelDelegate {
         var newChatCallCount = 0
+        var openDuckAICallCount = 0
         var selectedChats: [AIChatSuggestion] = []
         var viewAllCallCount = 0
         var dismissCallCount = 0
 
         func recentChatsPopupDidSelectNewChat() {
             newChatCallCount += 1
+        }
+
+        func recentChatsPopupDidSelectOpenDuckAI() {
+            openDuckAICallCount += 1
         }
 
         func recentChatsPopupDidSelectChat(_ chat: AIChatSuggestion) {
@@ -108,6 +113,17 @@ final class AIChatRecentChatsPopupViewModelTests: XCTestCase {
         vm.didSelectNewChat()
 
         XCTAssertEqual(mockDelegate.newChatCallCount, 1)
+    }
+
+    func testDidSelectOpenDuckAICallsDelegate() {
+        let vm = AIChatRecentChatsPopupViewModel(suggestions: makeSuggestions(count: 1), showNewChat: true)
+        let mockDelegate = MockDelegate()
+        vm.delegate = mockDelegate
+
+        vm.didSelectOpenDuckAI()
+
+        XCTAssertEqual(mockDelegate.openDuckAICallCount, 1)
+        XCTAssertEqual(mockDelegate.newChatCallCount, 0, "the two rows are distinct actions")
     }
 
     func testDidSelectChatCallsDelegateWithCorrectSuggestion() {

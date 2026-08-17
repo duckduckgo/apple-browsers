@@ -218,8 +218,7 @@ final class UTIStateMachine {
             contentInputMode: inputMode,
             inputMode: inputMode,
             isInlineDismissHidden: isAITabState || isContextualChatState,
-            isAITab: isAITabState,
-            prefersDictationWhenCollapsed: prefersDictationOverVoiceChat
+            isAITab: isAITabState
         )
     }
 

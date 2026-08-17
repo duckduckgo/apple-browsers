@@ -23,12 +23,6 @@ import UIKit
 /// Builds the address-bar Duck.ai menu offering a fresh chat or a chat about the current page.
 enum DuckAIAddressBarMenuFactory {
 
-    static func makeMenu(onNewChat: @escaping () -> Void,
-                         onAskAboutPage: @escaping () -> Void) -> UIMenu {
-        UIMenu(title: UserText.duckAiFeatureName, children: makeActions(onNewChat: onNewChat,
-                                                                       onAskAboutPage: onAskAboutPage))
-    }
-
     /// Each action sits in its own inline group so UIKit draws a separator between them.
     static func makeActions(onNewChat: @escaping () -> Void,
                             onAskAboutPage: @escaping () -> Void) -> [UIMenuElement] {

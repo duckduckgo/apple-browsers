@@ -445,7 +445,7 @@ jobs:
             echo "RUNS_ON=bitrise:macos26-m4" >> $GITHUB_ENV
           fi
         else
-          echo "RUNS_ON=${{ matrix.runs-on }}" >> $GITHUB_ENV
+           echo "RUNS_ON=${{ join(matrix.runs-on, ',') }}" >> $GITHUB_ENV
         fi
 
     - name: Report job duration

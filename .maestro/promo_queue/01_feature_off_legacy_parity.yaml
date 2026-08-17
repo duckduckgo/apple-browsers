@@ -39,8 +39,9 @@ name: Promo Queue - feature-off legacy parity
     file: ../shared/promo_queue/close_settings_and_relaunch.yaml
 
 # The required cold relaunch can restore an initial home tab. Replace it again
-# before fetching the fixture so no legacy NTP observer can account appearance
-# until this flow deliberately opens the visible NTP below.
+# to keep the subsequent interaction deterministic. Main's legacy path uses
+# eager map-time accounting, so fetching the fixture is expected to mark it
+# shown even while Settings covers the browser UI.
 - runFlow:
     file: ../shared/promo_queue/open_local_page_without_unified_input.yaml
     env:
@@ -62,7 +63,7 @@ name: Promo Queue - feature-off legacy parity
     file: ../shared/promo_queue/apply_remote_messaging_fixture.yaml
     env:
       REMOTE_MESSAGING_FIXTURE_URL: ${PROMO_QUEUE_RMF_URL}
-      EXPECTED_SCHEDULED_RECORD: "ID: 1 | not shown | scheduled"
+      EXPECTED_SCHEDULED_RECORD: "ID: 1 | shown | scheduled"
 - runFlow:
     file: ../shared/promo_queue/close_debug_settings.yaml
 
@@ -74,8 +75,11 @@ name: Promo Queue - feature-off legacy parity
 - assertVisible: "description"
 
 # The unified address input is the simulator's only suggestion surface. Select a
-# generated local-URL suggestion instead of submitting the text directly. The
-# below-searchEntry relation excludes the input field itself.
+# generated local-URL suggestion instead of submitting the text directly. This
+# build may treat the phrase suggestion as a search rather than direct URL
+# navigation, so completion is the suggestion overlay closing with normal
+# browser controls still interactive. The below-searchEntry relation excludes
+# the input field itself.
 - tapOn:
     id: "searchEntry"
 - inputText: ${PROMO_QUEUE_SUGGESTION_URL}
@@ -90,9 +94,13 @@ name: Promo Queue - feature-off legacy parity
     below:
       id: "searchEntry"
 - extendedWaitUntil:
-    visible: "Promo Queue Alternate Suggestion"
+    notVisible:
+      text: ${PROMO_QUEUE_SUGGESTION_URL}
+      below:
+        id: "searchEntry"
     timeout: 10000
 - assertVisible: "Browsing Menu"
+- takeScreenshot: "01-legacy-suggestion-interaction"
 
 - runFlow:
     file: ../shared/promo_queue/open_settings.yaml

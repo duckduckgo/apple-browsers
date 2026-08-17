@@ -30,7 +30,7 @@ finish() {
 
 trap finish EXIT
 
-for required_command in xcodebuildmcp maestro python3 curl git rg shasum; do
+for required_command in xcodebuildmcp maestro python3 curl git shasum; do
     if ! command -v "$required_command" >/dev/null 2>&1; then
         print -u2 -- "Required command is not installed: $required_command"
         exit 2
@@ -156,7 +156,7 @@ while (( build_attempt <= 2 )); do
         break
     fi
 
-    if (( build_attempt == 2 )) || ! rg -q 'IXErrorDomain|Failed to (create|locate) promise' "$build_result"; then
+    if (( build_attempt == 2 )) || ! grep -Eq 'IXErrorDomain|Failed to (create|locate) promise' "$build_result"; then
         exit "$build_status"
     fi
 

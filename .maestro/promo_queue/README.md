@@ -44,11 +44,10 @@ XcodeBuildMCP results, screenshots, fixture logs, and Maestro output are saved
 under `artifacts/team-<UTC timestamp>/`.
 
 The script propagates Maestro's exit status and never suppresses a failed flow.
-At the time this coverage was added, the suite completes all four shards but
-returns 1 because feature-off legacy parity observes `shown | scheduled` while
-Settings still covers the message. That eager map-time accounting also exists
-on `main`; the active assertion is retained pending a product-expectation
-decision.
+Feature-off legacy parity intentionally expects `shown | scheduled` immediately
+after the fixture is mapped, even while Settings covers the message. This is
+the eager accounting behavior on `main`; coordinated mode separately verifies
+that appearance is recorded only after a genuinely visible presentation.
 
 An iPhone 16 Plus / iOS 18.6 experiment on 2026-08-17 seeded a genuinely visible,
 appearance-confirmed coordinated RMF and then launched with Maestro

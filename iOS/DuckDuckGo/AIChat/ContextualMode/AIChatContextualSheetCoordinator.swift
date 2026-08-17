@@ -43,30 +43,6 @@ private struct ContextualUnifiedToggleInputFeature: UnifiedToggleInputFeaturePro
     let isAttachmentPasteEnabled: Bool
 }
 
-/// A surface showing the contextual input hosts dictation for it: the modal presents over whatever is on
-/// screen, and the transcript goes back to the input rather than to the surface.
-@MainActor
-protocol ContextualDictationPresenting: UIViewController, VoiceSearchViewControllerDelegate {
-    func applyDictatedQuery(_ query: String)
-}
-
-extension ContextualDictationPresenting {
-
-    func presentVoiceSearch() {
-        let voiceSearchController = VoiceSearchViewController(preferredTarget: .AIChat, hideToggle: true)
-        voiceSearchController.delegate = self
-        voiceSearchController.modalTransitionStyle = .crossDissolve
-        voiceSearchController.modalPresentationStyle = .overFullScreen
-        present(voiceSearchController, animated: true)
-    }
-
-    func voiceSearchViewController(_ viewController: VoiceSearchViewController, didFinishQuery query: String?, target: VoiceSearchTarget) {
-        viewController.dismiss(animated: true)
-        guard let query, !query.isEmpty else { return }
-        applyDictatedQuery(query)
-    }
-}
-
 /// Delegate protocol for coordinating actions that require interaction with the browser.
 protocol AIChatContextualSheetCoordinatorDelegate: AnyObject {
     /// Called when the user requests to load a URL externally.

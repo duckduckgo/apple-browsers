@@ -2354,6 +2354,7 @@
 		CB781CE83019069B008DCD60 /* UTIAttachmentControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB781CE73019069B008DCD60 /* UTIAttachmentControllerTests.swift */; };
 		CB781CEA301A8048008DCD60 /* AIChatContextualFloatingInputFeatureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB781CE9301A8048008DCD60 /* AIChatContextualFloatingInputFeatureTests.swift */; };
 		CB781CEC301A810B008DCD60 /* AIChatContextualFloatingInputFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB781CEB301A810B008DCD60 /* AIChatContextualFloatingInputFeature.swift */; };
+		0A35258C8C764454B17FCEC4 /* ContextualDictationPresenting.swift in Sources */ = {isa = PBXBuildFile; fileRef = D43B9D5DB095468FACD50500 /* ContextualDictationPresenting.swift */; };
 		CB781CEE301A8221008DCD60 /* DuckAIAddressBarMenuFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB781CED301A8221008DCD60 /* DuckAIAddressBarMenuFactory.swift */; };
 		CB781CF0301A822E008DCD60 /* DuckAIAddressBarEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB781CEF301A822E008DCD60 /* DuckAIAddressBarEntry.swift */; };
 		CB781CF2301A824C008DCD60 /* AIChatContextualFloatingInputViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB781CF1301A824C008DCD60 /* AIChatContextualFloatingInputViewController.swift */; };
@@ -5234,6 +5235,7 @@
 		CB781CE73019069B008DCD60 /* UTIAttachmentControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIAttachmentControllerTests.swift; sourceTree = "<group>"; };
 		CB781CE9301A8048008DCD60 /* AIChatContextualFloatingInputFeatureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatContextualFloatingInputFeatureTests.swift; sourceTree = "<group>"; };
 		CB781CEB301A810B008DCD60 /* AIChatContextualFloatingInputFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatContextualFloatingInputFeature.swift; sourceTree = "<group>"; };
+		D43B9D5DB095468FACD50500 /* ContextualDictationPresenting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextualDictationPresenting.swift; sourceTree = "<group>"; };
 		CB781CED301A8221008DCD60 /* DuckAIAddressBarMenuFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAIAddressBarMenuFactory.swift; sourceTree = "<group>"; };
 		CB781CEF301A822E008DCD60 /* DuckAIAddressBarEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAIAddressBarEntry.swift; sourceTree = "<group>"; };
 		CB781CF1301A824C008DCD60 /* AIChatContextualFloatingInputViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatContextualFloatingInputViewController.swift; sourceTree = "<group>"; };
@@ -9967,6 +9969,7 @@
 				CB6D179C2FA38CAF00ECD5AE /* Logger+ContextualUTI.swift */,
 				CB6D17A72FA39FC900ECD5AE /* AIChatContextualUTIHost.swift */,
 				CB781CEB301A810B008DCD60 /* AIChatContextualFloatingInputFeature.swift */,
+				D43B9D5DB095468FACD50500 /* ContextualDictationPresenting.swift */,
 				CB781CED301A8221008DCD60 /* DuckAIAddressBarMenuFactory.swift */,
 				CB781CEF301A822E008DCD60 /* DuckAIAddressBarEntry.swift */,
 				CB781CF1301A824C008DCD60 /* AIChatContextualFloatingInputViewController.swift */,
@@ -13632,6 +13635,7 @@
 				B652DF12287C336E00C12A9C /* ContentBlockingUpdating.swift in Sources */,
 				CBF5D4232EA92031000530AF /* SceneDelegate.swift in Sources */,
 				CB781CEC301A810B008DCD60 /* AIChatContextualFloatingInputFeature.swift in Sources */,
+				0A35258C8C764454B17FCEC4 /* ContextualDictationPresenting.swift in Sources */,
 				C1E42C7B2C5CD8AE00509204 /* AutofillCredentialsDebugViewController.swift in Sources */,
 				CB781CE43013BA7A008DCD60 /* UnifiedToggleInputDisplayState.swift in Sources */,
 				314C92BA27C3E7CB0042EC96 /* QuickLookContainerViewController.swift in Sources */,

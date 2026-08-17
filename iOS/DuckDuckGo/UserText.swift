@@ -2632,7 +2632,7 @@ public struct UserText {
             public static let title = NSLocalizedString("onboarding.highlights.browsers.title", value: "Protections activated!", comment: "The title of the dialog to show the privacy features that DuckDuckGo offers")
             public static let cta = NSLocalizedString("onboarding.browsers.cta", value: "Choose Your Browser", comment: "Button to change the default browser")
 
-            public static let titleGenericDownloadReasonExperiment = NotLocalizedString("onboarding.downloadReason.comparison.title-generic", value: "You’re in the right place! Protections activated.", comment: "Heading shown above the browser comparison chart during onboarding, shared across all download-reason variants.")
+            public static let titleGenericDownloadReasonExperiment = NotLocalizedString("onboarding.downloadReason.comparison.title-generic", value: "You’re in the right place!\nProtections activated.", comment: "Heading shown above the browser comparison chart during onboarding, shared across all download-reason variants.")
             public static let titleNoAIDownloadReasonExperiment = NotLocalizedString("onboarding.downloadReason.comparison.title-no-ai", value: "You’re in the right place!\nAI features disabled.", comment: "Heading shown above the browser comparison chart during onboarding, shared across all download-reason variants.")
             public static let titleNoAdsDownloadReasonExperiment = NotLocalizedString("onboarding.downloadReason.comparison.title-no-ads", value: "You’re in the right place!\nAd Blocking activated.", comment: "Heading shown above the browser comparison chart during onboarding, shared across all download-reason variants.")
         }

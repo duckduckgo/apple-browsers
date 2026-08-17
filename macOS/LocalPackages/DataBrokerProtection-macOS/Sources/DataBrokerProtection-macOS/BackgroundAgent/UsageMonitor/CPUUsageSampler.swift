@@ -35,24 +35,24 @@ struct CPUUsageSample {
 
     /// The agent's total CPU time since it started, or `nil` if macOS could not read it.
     let agent: ProcessCPUTime?
-    /// Each live WebContent process's total CPU time since it started.
-    let webContent: [ProcessIdentity: ProcessCPUTime]
+    /// Each live web process's total CPU time since it started.
+    let webProcesses: [ProcessIdentity: ProcessCPUTime]
     /// The system uptime at this reading, used to calculate how long the monitored run has lasted.
     let uptime: TimeInterval
 }
 
-/// Reads the CPU counters for the agent and the currently running WebContent processes.
+/// Reads the CPU counters for the agent and the currently running web processes.
 struct CPUUsageSampler {
 
-    func takeSample(webContentPIDs: Set<pid_t>) -> CPUUsageSample {
-        let webContent = Dictionary(
-            uniqueKeysWithValues: webContentPIDs.compactMap { pid in
+    func takeSample(webProcessPIDs: Set<pid_t>) -> CPUUsageSample {
+        let webProcesses = Dictionary(
+            uniqueKeysWithValues: webProcessPIDs.compactMap { pid in
                 Self.processCPUTime(for: pid).map { ($0.identity, $0.cpuTime) }
             }
         )
         return CPUUsageSample(
             agent: Self.processCPUTime(for: getpid())?.cpuTime,
-            webContent: webContent,
+            webProcesses: webProcesses,
             uptime: ProcessInfo.processInfo.systemUptime
         )
     }

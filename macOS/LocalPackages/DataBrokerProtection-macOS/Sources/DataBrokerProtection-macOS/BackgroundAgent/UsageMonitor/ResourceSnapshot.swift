@@ -26,14 +26,14 @@ struct ResourceSnapshot {
         let elapsedTime: TimeInterval
         /// CPU time used by the background agent during the run, in seconds.
         let agentTime: TimeInterval
-        /// CPU time used by all observed WebContent processes during the run, in seconds.
-        let webContentTime: TimeInterval
+        /// CPU time used by all observed web processes during the run, in seconds.
+        let webProcessesTime: TimeInterval
         /// Average CPU use during the run. One fully used core is 100%; multiple cores can exceed 100%.
         let averagePercent: Double
 
-        /// Combined agent and WebContent CPU time, in seconds.
+        /// Combined agent and web-process CPU time, in seconds.
         var totalTime: TimeInterval {
-            agentTime + webContentTime
+            agentTime + webProcessesTime
         }
     }
 
@@ -45,17 +45,17 @@ struct ResourceSnapshot {
             let peakFootprintBytes: UInt64
         }
 
-        struct WebContent {
-            /// Memory attributed to all WebContent processes in the latest reading, or `nil` if it could not be read completely.
+        struct WebProcesses {
+            /// Memory attributed to all web processes in the latest reading, or `nil` if it could not be read completely.
             let footprintBytes: UInt64?
-            /// Highest complete WebContent-memory reading observed during the run, or `nil` if none was available.
+            /// Highest complete web-process memory reading observed during the run, or `nil` if none was available.
             let peakFootprintBytes: UInt64?
-            /// Number of WebContent processes found in the latest reading, or `nil` if discovery failed.
+            /// Number of web processes found in the latest reading, or `nil` if discovery failed.
             let processCount: Int?
         }
 
         let agent: Agent
-        let webContent: WebContent
+        let webProcesses: WebProcesses
         /// Whether macOS reported critically low available memory during the run.
         let hadCriticalPressure: Bool
     }

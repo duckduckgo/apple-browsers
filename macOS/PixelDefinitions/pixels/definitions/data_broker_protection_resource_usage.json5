@@ -8,28 +8,51 @@
             "appVersion",
             "pixelSource",
             {
-                "key": "cpu_time_minutes_bucket",
+                "key": "cpu_time_seconds_bucket",
                 "type": "string",
-                "enum": ["0", "1", "5", "15", "30", "60"],
-                "description": "CPU minutes bucket floor; 60 includes higher values."
+                "enum": ["0", "5", "10", "20", "40", "80", "160", "320", "640", "1280", "2560", "5120", "10240", "20480", "40960"],
+                "description": "Combined agent and web-process CPU seconds consumed during the run."
             },
             {
-                "key": "elapsed_minutes_bucket",
+                "key": "elapsed_seconds_bucket",
                 "type": "string",
-                "enum": ["0", "1", "5", "15", "30", "60", "120", "240", "360", "480"],
-                "description": "Run duration in minutes, bucket floor; 480 includes higher values. Measures time the system was awake, so a run spanning sleep reports less than its calendar duration."
+                "enum": ["0", "5", "10", "20", "40", "80", "160", "320", "640", "1280", "2560", "5120", "10240", "20480", "40960"],
+                "description": "Run duration in seconds. Measures time the system was awake, so a run spanning sleep reports less than its calendar duration."
+            },
+            {
+                "key": "core_utilization_percent_bucket",
+                "type": "string",
+                "enum": ["0", "3", "6", "12", "25", "50", "100", "200", "400"],
+                "description": "Run CPU time as a percentage of one core, so 100 means one core was fully occupied for the whole run."
             },
             {
                 "key": "agent_peak_footprint_mb_bucket",
                 "type": "string",
-                "enum": ["0", "512", "1024", "2048", "4096", "8192", "16384"],
-                "description": "Peak agent physical footprint MiB bucket floor; 16384 includes higher values."
+                "enum": ["0", "8", "16", "32", "64", "128", "256", "512", "1024", "2048", "4096", "8192", "16384", "32768", "65536"],
+                "description": "Peak agent physical footprint in MiB."
             },
             {
-                "key": "web_content_peak_footprint_mb_bucket",
+                "key": "web_peak_footprint_mb_bucket",
                 "type": "string",
-                "enum": ["0", "512", "1024", "2048", "4096", "8192", "16384", "unknown"],
-                "description": "Peak summed WebContent footprint MiB bucket floor; 16384 includes higher values, unknown when unavailable."
+                "enum": [
+                    "0",
+                    "8",
+                    "16",
+                    "32",
+                    "64",
+                    "128",
+                    "256",
+                    "512",
+                    "1024",
+                    "2048",
+                    "4096",
+                    "8192",
+                    "16384",
+                    "32768",
+                    "65536",
+                    "unknown"
+                ],
+                "description": "Peak summed footprint in MiB of the agent's web content, graphics, and networking processes; unknown when it could not be read."
             },
             {
                 "key": "had_critical_pressure",
@@ -42,6 +65,18 @@
                 "type": "string",
                 "enum": ["true", "false", "unknown"],
                 "description": "Whether the Mac was on battery power when the run started; unknown on Macs that report no power source."
+            },
+            {
+                "key": "thermal_state",
+                "type": "string",
+                "enum": ["nominal", "fair", "serious", "critical", "unknown"],
+                "description": "Thermal state macOS reported when the run ended. The state is machine-wide and not necessarily caused by PIR."
+            },
+            {
+                "key": "architecture",
+                "type": "string",
+                "enum": ["ARM", "Intel"],
+                "description": "CPU architecture of the build"
             },
             "channel"
         ]

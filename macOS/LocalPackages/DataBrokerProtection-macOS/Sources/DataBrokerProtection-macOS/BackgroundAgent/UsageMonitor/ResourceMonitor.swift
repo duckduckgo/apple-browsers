@@ -26,10 +26,10 @@ public protocol ResourceMonitoring: AnyObject {
 
 /// Monitors resource usage for one accepted PIR queue run.
 ///
-/// This monitors the background agent plus its WebContent processes, not the whole machine.
+/// This monitors the background agent plus its web processes, not the whole machine.
 ///
 /// CPU is read from cumulative process-lifetime counters at the run boundaries and every 10 seconds, then converted to
-/// within-run deltas. Average CPU is total agent + WebContent CPU time divided by elapsed time, so it is core-equivalent
+/// within-run deltas. Average CPU is total agent + web-process CPU time divided by elapsed time, so it is core-equivalent
 /// utilization: one fully occupied core is 100% and concurrent work can exceed 100%.
 ///
 /// Memory is physical footprint, sampled at the run start, after 10 seconds, every 60 seconds thereafter, on critical
@@ -60,7 +60,7 @@ public final class ResourceMonitor: ResourceMonitoring, @unchecked Sendable {
     // Mutable monitoring state is accessed only on this queue.
     private let monitorQueue = DispatchQueue(label: "com.duckduckgo.pir.resource-monitor", qos: .utility)
 
-    private let webContentProcessIDProvider = WebContentProcessIDProvider()
+    private let webProcessIDProvider = WebProcessIDProvider()
     private let powerSourceProvider = PowerSourceProvider()
     private let pixelReporter = ResourceUsagePixelReporter()
     private var activeRun: ActiveRun?
@@ -92,12 +92,12 @@ public final class ResourceMonitor: ResourceMonitoring, @unchecked Sendable {
         guard activeRun == nil else { return }
 
         let runStartAbsoluteTime = mach_absolute_time()
-        let webContentPIDs = webContentProcessIDProvider.currentProcessIDs()
+        let webProcessPIDs = webProcessIDProvider.currentProcessIDs()
         let cpu = CPUUsageMonitor(
-            webContentPIDs: webContentPIDs ?? [],
+            webProcessPIDs: webProcessPIDs ?? [],
             runStartAbsoluteTime: runStartAbsoluteTime
         )
-        let memory = MemoryUsageMonitor(webContentPIDs: webContentPIDs)
+        let memory = MemoryUsageMonitor(webProcessPIDs: webProcessPIDs)
 
         let timer = DispatchSource.makeTimerSource(queue: monitorQueue)
         let memoryPressureSource = DispatchSource.makeMemoryPressureSource(
@@ -137,7 +137,11 @@ public final class ResourceMonitor: ResourceMonitoring, @unchecked Sendable {
         guard let currentRun = activeRun else { return }
 
         if let snapshot = recordResourcesAndPublishSnapshot() {
-            pixelReporter.reportRun(snapshot, isOnBattery: currentRun.isOnBattery)
+            pixelReporter.reportRun(
+                snapshot,
+                isOnBattery: currentRun.isOnBattery,
+                thermalState: ProcessInfo.processInfo.thermalState
+            )
         }
         activeRun?.timer.cancel()
         activeRun?.memoryPressureSource.cancel()
@@ -147,22 +151,22 @@ public final class ResourceMonitor: ResourceMonitoring, @unchecked Sendable {
     // MARK: - Sampling and Publication
 
     private func handleTimerEvent() {
-        let webContentPIDs = webContentProcessIDProvider.currentProcessIDs()
-        activeRun?.cpu.recordSample(webContentPIDs: webContentPIDs ?? [])
+        let webProcessPIDs = webProcessIDProvider.currentProcessIDs()
+        activeRun?.cpu.recordSample(webProcessPIDs: webProcessPIDs ?? [])
         activeRun?.cpuSamplesUntilNextReport -= 1
 
         guard activeRun?.cpuSamplesUntilNextReport == 0 else { return }
 
         activeRun?.cpuSamplesUntilNextReport = Constants.cpuSamplesPerReport
-        activeRun?.memory.recordSample(webContentPIDs: webContentPIDs)
+        activeRun?.memory.recordSample(webProcessPIDs: webProcessPIDs)
         makeAndLogSnapshot()
     }
 
     @discardableResult
     private func recordResourcesAndPublishSnapshot() -> ResourceSnapshot? {
-        let webContentPIDs = webContentProcessIDProvider.currentProcessIDs()
-        activeRun?.cpu.recordSample(webContentPIDs: webContentPIDs ?? [])
-        activeRun?.memory.recordSample(webContentPIDs: webContentPIDs)
+        let webProcessPIDs = webProcessIDProvider.currentProcessIDs()
+        activeRun?.cpu.recordSample(webProcessPIDs: webProcessPIDs ?? [])
+        activeRun?.memory.recordSample(webProcessPIDs: webProcessPIDs)
         return makeAndLogSnapshot()
     }
 }
@@ -183,20 +187,21 @@ private extension ResourceMonitor {
     }
 
     private func log(_ snapshot: ResourceSnapshot) {
-        let webContentFootprint = snapshot.memory.webContent.footprintBytes.map(Self.formattedMemory) ?? "unavailable"
-        let peakWebContentFootprint = snapshot.memory.webContent.peakFootprintBytes
+        let webProcessesFootprint = snapshot.memory.webProcesses.footprintBytes
             .map(Self.formattedMemory) ?? "unavailable"
-        let webContentProcessCount = snapshot.memory.webContent.processCount.map(String.init) ?? "unavailable"
+        let peakWebProcessesFootprint = snapshot.memory.webProcesses.peakFootprintBytes
+            .map(Self.formattedMemory) ?? "unavailable"
+        let webProcessCount = snapshot.memory.webProcesses.processCount.map(String.init) ?? "unavailable"
         let message = """
         PIR run resources: elapsed=\(Self.formattedDuration(snapshot.cpu.elapsedTime)) | \
         CPU during run: agent=\(Self.formattedCPUTime(snapshot.cpu.agentTime)), \
-        WebContent=\(Self.formattedCPUTime(snapshot.cpu.webContentTime)), \
+        web processes=\(Self.formattedCPUTime(snapshot.cpu.webProcessesTime)), \
         total=\(Self.formattedCPUTime(snapshot.cpu.totalTime)), \
         average=\(String(format: "%.1f", snapshot.cpu.averagePercent))% of one core | \
         Physical memory: agent current=\(Self.formattedMemory(snapshot.memory.agent.footprintBytes)), \
         peak=\(Self.formattedMemory(snapshot.memory.agent.peakFootprintBytes)); \
-        WebContent total current=\(webContentFootprint), current processes=\(webContentProcessCount), \
-        peak=\(peakWebContentFootprint) | \
+        web processes current=\(webProcessesFootprint), count=\(webProcessCount), \
+        peak=\(peakWebProcessesFootprint) | \
         Critical memory pressure during run=\(snapshot.memory.hadCriticalPressure)
         """
         Logger.dataBrokerProtection.info("\(message, privacy: .public)")

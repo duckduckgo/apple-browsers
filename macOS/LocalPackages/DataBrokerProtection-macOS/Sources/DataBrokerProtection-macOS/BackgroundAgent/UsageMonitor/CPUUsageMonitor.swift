@@ -18,20 +18,20 @@
 
 import Foundation
 
-/// Measures CPU used by the agent and WebContent processes during one PIR queue run.
+/// Measures CPU used by the agent and its web processes during one PIR queue run.
 ///
 /// macOS gives us a running total for each process, measured from when that process started. It does not give us the
 /// total for an arbitrary period such as a PIR run, so this monitor calculates the run total as follows:
 ///
 /// - **Existing process:** A process already running when PIR starts gets an initial reading. Later readings count only
 ///   the increase. For example, readings of 12 seconds at the start and 15 seconds later add 3 seconds to this PIR run.
-/// - **New process:** A WebContent process created after PIR starts has no CPU from before the run. Its entire first
+/// - **New process:** A web process created after PIR starts has no CPU from before the run. Its entire first
 ///   reading is therefore counted, and later readings again count only the increase.
 /// - **Late discovery:** A process first discovered during the run but created before it uses that first reading as its
 ///   starting point. We cannot separate its earlier CPU into before-run and during-run work, so the first reading is not
 ///   counted; only increases seen in later readings are counted.
 ///
-/// **Frequent sampling:** WebContent processes can exit at any time, and macOS no longer lets us read a process's counter
+/// **Frequent sampling:** Web processes can exit at any time, and macOS no longer lets us read a process's counter
 /// after it exits. Taking a reading every 10 seconds saves work observed so far. We keep that saved amount after the
 /// process exits. Any CPU used after its last reading but before it exits cannot be recovered, so frequent readings
 /// reduce—but do not eliminate—undercounting for short-lived processes.
@@ -68,24 +68,24 @@ struct CPUUsageMonitor {
 
     private var agent: CPUCounter
     // Keep counters for exited processes so their recorded CPU remains in the run total.
-    private var webContent: [Identity: CPUCounter]
+    private var webProcesses: [Identity: CPUCounter]
     private let runStartAbsoluteTime: UInt64
     private let startUptime: TimeInterval
     private var latestUptime: TimeInterval
 
-    init(webContentPIDs: Set<pid_t>, runStartAbsoluteTime: UInt64) {
-        let sample = CPUUsageSampler().takeSample(webContentPIDs: webContentPIDs)
+    init(webProcessPIDs: Set<pid_t>, runStartAbsoluteTime: UInt64) {
+        let sample = CPUUsageSampler().takeSample(webProcessPIDs: webProcessPIDs)
         agent = CPUCounter(baseline: sample.agent)
-        webContent = sample.webContent.mapValues { CPUCounter(baseline: $0) }
+        webProcesses = sample.webProcesses.mapValues { CPUCounter(baseline: $0) }
         self.runStartAbsoluteTime = runStartAbsoluteTime
         startUptime = sample.uptime
         latestUptime = sample.uptime
     }
 
-    mutating func recordSample(webContentPIDs: Set<pid_t>) {
-        let sample = CPUUsageSampler().takeSample(webContentPIDs: webContentPIDs)
+    mutating func recordSample(webProcessPIDs: Set<pid_t>) {
+        let sample = CPUUsageSampler().takeSample(webProcessPIDs: webProcessPIDs)
         updateAgentCPUTime(with: sample.agent)
-        updateWebContentCPUTime(with: sample.webContent)
+        updateWebProcessCPUTime(with: sample.webProcesses)
         latestUptime = sample.uptime
     }
 
@@ -94,16 +94,16 @@ struct CPUUsageMonitor {
     func makeReport() -> ResourceSnapshot.CPUUsage {
         let elapsedTime = max(0, latestUptime - startUptime)
         let agentTime = Self.seconds(fromMachTime: agent.total)
-        let webContentCPUTime = webContent.values.reduce(ProcessCPUTime(0)) { $0 + $1.total }
-        let webContentTime = Self.seconds(fromMachTime: webContentCPUTime)
-        let totalTime = agentTime + webContentTime
+        let webProcessesCPUTime = webProcesses.values.reduce(ProcessCPUTime(0)) { $0 + $1.total }
+        let webProcessesTime = Self.seconds(fromMachTime: webProcessesCPUTime)
+        let totalTime = agentTime + webProcessesTime
         // CPU seconds divided by elapsed run time is average usage of one core. Concurrent work can exceed 100%.
         let averagePercent = elapsedTime > 0 ? totalTime / elapsedTime * 100 : 0
 
         return ResourceSnapshot.CPUUsage(
             elapsedTime: elapsedTime,
             agentTime: agentTime,
-            webContentTime: webContentTime,
+            webProcessesTime: webProcessesTime,
             averagePercent: averagePercent
         )
     }
@@ -120,11 +120,11 @@ struct CPUUsageMonitor {
         agent.record(cpuTime)
     }
 
-    private mutating func updateWebContentCPUTime(
+    private mutating func updateWebProcessCPUTime(
         with counters: [Identity: ProcessCPUTime]
     ) {
         for (identity, cpuTime) in counters {
-            webContent[identity, default: CPUCounter()].record(
+            webProcesses[identity, default: CPUCounter()].record(
                 cpuTime,
                 wasCreatedDuringRun: identity.startAbsoluteTime >= runStartAbsoluteTime
             )

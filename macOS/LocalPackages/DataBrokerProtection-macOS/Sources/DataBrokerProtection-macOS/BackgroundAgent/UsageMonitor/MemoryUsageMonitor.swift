@@ -25,12 +25,12 @@ struct MemoryUsageMonitor {
 
     private struct PeakUsage {
         var agentFootprint: MemoryFootprint = 0
-        var webContentFootprint: MemoryFootprint?
+        var webProcessesFootprint: MemoryFootprint?
 
         mutating func record(_ sample: MemoryUsageSample) {
             agentFootprint = max(agentFootprint, sample.agentFootprint)
-            if let footprint = sample.webContentFootprint {
-                webContentFootprint = max(webContentFootprint ?? 0, footprint)
+            if let footprint = sample.webProcessesFootprint {
+                webProcessesFootprint = max(webProcessesFootprint ?? 0, footprint)
             }
         }
     }
@@ -40,18 +40,18 @@ struct MemoryUsageMonitor {
     private var hadCriticalPressure = false
 
     /// Immediately takes the first memory reading for the run.
-    init(webContentPIDs: Set<pid_t>?) {
-        let sample = MemoryUsageSampler().takeSample(webContentPIDs: webContentPIDs)
+    init(webProcessPIDs: Set<pid_t>?) {
+        let sample = MemoryUsageSampler().takeSample(webProcessPIDs: webProcessPIDs)
         current = sample
         peak = PeakUsage(
             agentFootprint: sample.agentFootprint,
-            webContentFootprint: sample.webContentFootprint
+            webProcessesFootprint: sample.webProcessesFootprint
         )
     }
 
     /// Replaces the current reading and updates the highest values seen in this run.
-    mutating func recordSample(webContentPIDs: Set<pid_t>?) {
-        let sample = MemoryUsageSampler().takeSample(webContentPIDs: webContentPIDs)
+    mutating func recordSample(webProcessPIDs: Set<pid_t>?) {
+        let sample = MemoryUsageSampler().takeSample(webProcessPIDs: webProcessPIDs)
         current = sample
         peak.record(sample)
     }
@@ -71,10 +71,10 @@ struct MemoryUsageMonitor {
                 footprintBytes: current.agentFootprint,
                 peakFootprintBytes: peak.agentFootprint
             ),
-            webContent: .init(
-                footprintBytes: current.webContentFootprint,
-                peakFootprintBytes: peak.webContentFootprint,
-                processCount: current.webContentCount
+            webProcesses: .init(
+                footprintBytes: current.webProcessesFootprint,
+                peakFootprintBytes: peak.webProcessesFootprint,
+                processCount: current.webProcessCount
             ),
             hadCriticalPressure: hadCriticalPressure
         )

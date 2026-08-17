@@ -18,30 +18,30 @@
 
 import Foundation
 
-/// One reading of the physical memory attributed to the agent and its WebContent processes.
+/// One reading of the physical memory attributed to the agent and its web processes.
 struct MemoryUsageSample {
     /// Physical memory attributed to a process, in bytes.
     typealias MemoryFootprint = UInt64
 
     /// Memory attributed to the agent, or zero if macOS could not read it.
     let agentFootprint: MemoryFootprint
-    /// Memory attributed to all discovered WebContent processes, or `nil` if the total could not be read completely.
-    let webContentFootprint: MemoryFootprint?
-    /// Number of WebContent processes found, or `nil` if they could not be discovered.
-    let webContentCount: Int?
+    /// Memory attributed to all discovered web processes, or `nil` if the total could not be read completely.
+    let webProcessesFootprint: MemoryFootprint?
+    /// Number of web processes found, or `nil` if they could not be discovered.
+    let webProcessCount: Int?
 }
 
-/// Uses the same physical-memory measurement as AppHealth for the agent. For WebContent, it deliberately uses physical
+/// Uses the same physical-memory measurement as AppHealth for the agent. For web processes, it deliberately uses physical
 /// footprint instead of AppHealth's resident-size measurement, which can count the same shared memory in several processes.
 struct MemoryUsageSampler {
 
-    /// A missing process list means WebContent usage is unavailable; an empty list means it is known to be zero.
-    func takeSample(webContentPIDs: Set<pid_t>?) -> MemoryUsageSample {
-        let webContentFootprint = webContentPIDs.flatMap(Self.combinedPhysicalFootprint)
+    /// A missing process list means web-process usage is unavailable; an empty list means it is known to be zero.
+    func takeSample(webProcessPIDs: Set<pid_t>?) -> MemoryUsageSample {
+        let webProcessesFootprint = webProcessPIDs.flatMap(Self.combinedPhysicalFootprint)
         return MemoryUsageSample(
             agentFootprint: Self.agentPhysicalFootprint(),
-            webContentFootprint: webContentFootprint,
-            webContentCount: webContentPIDs?.count
+            webProcessesFootprint: webProcessesFootprint,
+            webProcessCount: webProcessPIDs?.count
         )
     }
 
@@ -75,9 +75,9 @@ struct MemoryUsageSampler {
         return result == KERN_SUCCESS ? UInt64(vmInfo.phys_footprint) : 0
     }
 
-    /// Reads memory used by one WebContent process.
+    /// Reads memory used by one web process.
     ///
-    /// WebContent runs in a separate process, so it cannot be queried as the current Mach task. Instead,
+    /// Web processes run separately from the agent, so they cannot be queried as the current Mach task. Instead,
     /// `proc_pid_rusage` asks macOS for statistics about that process by PID. `ri_phys_footprint` is the same kind of
     /// physical-memory measurement used for the agent above. This returns `nil` if the process exits before it can be
     /// read, or if macOS otherwise cannot provide its statistics.

@@ -67,6 +67,7 @@ struct PromoQueueLeaseSnapshot: Equatable {
 }
 
 enum PromoQueueModalLeaseAcquisitionResult {
+    /// The caller now owns the lease and is responsible for releasing it.
     case acquired(PromoQueueModalLease)
     case blockedByModal
     case blockedByRemoteMessage(messageID: String)

@@ -743,12 +743,12 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
 }
 
 struct MockConfigurationFetcher: ConfigurationFetching {
-    func fetch(_ configuration: Configuration, isDebug: Bool) async throws {
-        return
+    func fetch(_ configuration: Configuration, isDebug: Bool) async throws -> ConfigurationFetchResult {
+        return .updated
     }
 
-    func fetch(all configurations: [Configuration]) async throws {
-        return
+    func fetch(all configurations: [Configuration]) async throws -> Set<Configuration> {
+        return Set(configurations)
     }
 }
 

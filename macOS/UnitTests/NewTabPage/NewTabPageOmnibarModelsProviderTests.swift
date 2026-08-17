@@ -298,6 +298,7 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
     // MARK: - Section Structure Tests
 
     func testWhenFreeUserThenTwoSectionsReturned() async {
+        mockFeatureFlagger.enabledFeatureFlags.append(.aiChatOmnibarSubscriptionUpsell)
         mockModelsService.modelsToReturn = [
             makeRemoteModel(id: "free-model", accessTier: ["free"]),
             makeRemoteModel(id: "premium-model", accessTier: ["plus"]),
@@ -311,6 +312,7 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
     }
 
     func testWhenSubscribedUserHasGatedModelThenTwoSectionsReturned() async {
+        mockFeatureFlagger.enabledFeatureFlags.append(.aiChatOmnibarSubscriptionUpsell)
         mockSubscriptionManager.resultSubscription = .success(makeSubscription(tier: .plus))
         mockModelsService.modelsToReturn = [
             makeRemoteModel(id: "plus-model", accessTier: ["plus"]),
@@ -327,6 +329,7 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
     /// A free user whose entire model list is gated must get a single gated section, not a stray
     /// empty headerless section in front of it (Cursor Bugbot, PR #5793).
     func testWhenFreeUserHasNoAccessibleModelsThenOnlyGatedSectionReturned() async {
+        mockFeatureFlagger.enabledFeatureFlags.append(.aiChatOmnibarSubscriptionUpsell)
         mockModelsService.modelsToReturn = [
             makeRemoteModel(id: "premium-model", accessTier: ["plus"]),
         ]
@@ -551,6 +554,7 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
     }
 
     func testWhenFreeUserEligibleForFreeTrialThenGatedSectionHeaderIsTryFree() async {
+        mockFeatureFlagger.enabledFeatureFlags.append(.aiChatOmnibarSubscriptionUpsell)
         mockSubscriptionManager.isEligibleForFreeTrialResult = true
         mockModelsService.modelsToReturn = [makeRemoteModel(id: "premium-model", accessTier: ["plus"])]
 
@@ -560,6 +564,7 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
     }
 
     func testWhenFreeUserNotEligibleForFreeTrialThenGatedSectionHeaderIsAvailableWithPaidPlans() async {
+        mockFeatureFlagger.enabledFeatureFlags.append(.aiChatOmnibarSubscriptionUpsell)
         mockSubscriptionManager.isEligibleForFreeTrialResult = false
         mockModelsService.modelsToReturn = [makeRemoteModel(id: "premium-model", accessTier: ["plus"])]
 
@@ -569,6 +574,7 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
     }
 
     func testWhenPlusSubscriberHasGatedModelThenGatedSectionHeaderIsAvailableWithPro() async {
+        mockFeatureFlagger.enabledFeatureFlags.append(.aiChatOmnibarSubscriptionUpsell)
         mockSubscriptionManager.resultSubscription = .success(makeSubscription(tier: .plus))
         mockModelsService.modelsToReturn = [
             makeRemoteModel(id: "plus-model", accessTier: ["plus"]),
@@ -580,8 +586,21 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
         XCTAssertEqual(sections.last?.header, UserText.aiChatModelPickerAvailableWithProSectionHeader)
     }
 
+    /// Kill switch off: the gated section still ships (with its items/upsells) but with no header —
+    /// this is the promo the switch exists to suppress.
+    func testWhenSubscriptionUpsellFlagOffThenGatedSectionHeaderIsNilButSectionStillShips() async {
+        mockSubscriptionManager.isEligibleForFreeTrialResult = true
+        mockModelsService.modelsToReturn = [makeRemoteModel(id: "premium-model", accessTier: ["plus"])]
+
+        let sections = await provider.fetchAIModelSections()
+
+        XCTAssertNil(sections.first?.header)
+        XCTAssertEqual(sections.first?.items.first?.id, "premium-model")
+    }
+
     /// Two efforts are gated behind higher tiers; only the first of them should head the section.
     func testWhenMultipleReasoningEffortsAreGatedThenOnlyFirstGatedEffortHasSectionHeader() async {
+        mockFeatureFlagger.enabledFeatureFlags.append(.aiChatOmnibarSubscriptionUpsell)
         mockModelsService.modelsToReturn = [
             makeRemoteModel(
                 id: "reasoning-model",
@@ -602,6 +621,28 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
         XCTAssertNil(efforts?.first?.gatedSectionHeader)
         XCTAssertEqual(efforts?[1].gatedSectionHeader, UserText.aiChatModelPickerAvailableWithPlusSectionHeader)
         XCTAssertNil(efforts?[2].gatedSectionHeader)
+    }
+
+    /// Kill switch off: no reasoning effort carries a `gatedSectionHeader`, even the first gated one.
+    func testWhenSubscriptionUpsellFlagOffThenNoReasoningEffortHasGatedSectionHeader() async {
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(
+                id: "reasoning-model",
+                supportedReasoningEffort: [.none, .low, .medium],
+                accessTier: ["free", "plus", "pro"],
+                reasoningEffortAccess: [
+                    AIChatReasoningEffortAccess(effort: .none, accessTier: ["free", "plus", "pro"], entityHasAccess: true),
+                    AIChatReasoningEffortAccess(effort: .low, accessTier: ["plus", "pro"], entityHasAccess: false),
+                    AIChatReasoningEffortAccess(effort: .medium, accessTier: ["pro"], entityHasAccess: false)
+                ]
+            )
+        ]
+
+        let sections = await provider.fetchAIModelSections()
+        let efforts = sections.flatMap(\.items).first(where: { $0.id == "reasoning-model" })?.reasoningEfforts
+
+        XCTAssertEqual(efforts?.map(\.isAvailable), [true, false, false])
+        XCTAssertTrue(efforts?.allSatisfy { $0.gatedSectionHeader == nil } == true)
     }
 
     /// A model whose efforts are all available produces no `gatedSectionHeader` anywhere.

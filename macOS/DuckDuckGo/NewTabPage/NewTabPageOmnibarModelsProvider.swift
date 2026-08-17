@@ -79,8 +79,9 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
             }
 
             if !gated.isEmpty {
-                let header = AIChatPickerSectionCopy.gatedModelsHeader(userTier: userTier,
-                                                                      isEligibleForFreeTrial: isEligibleForFreeTrial)
+                let header = isSubscriptionUpsellEnabled
+                    ? AIChatPickerSectionCopy.gatedModelsHeader(userTier: userTier, isEligibleForFreeTrial: isEligibleForFreeTrial)
+                    : nil
                 result.append(
                     NewTabPageDataModel.AIModelSection(
                         header: header,
@@ -131,7 +132,7 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
             let requiredTier = isAvailable ? nil : model.lowestPublicAccessTier(for: effort)
             let upsell = requiredTier.flatMap { upsellString(for: userTier.upgradeFlow(for: $0)) }
             // Only the first gated effort heads the section.
-            let sectionHeader = isAvailable || titledGatedSection
+            let sectionHeader = isAvailable || titledGatedSection || !isSubscriptionUpsellEnabled
                 ? nil
                 : AIChatPickerSectionCopy.gatedEffortsHeader(requiredTier: requiredTier,
                                                             isEligibleForFreeTrial: isEligibleForFreeTrial)
@@ -145,6 +146,12 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
                 gatedSectionHeader: sectionHeader
             )
         }
+    }
+
+    // NTP has no `DuckAIPromptSurface` (only addressBar/promptBar model that), so unlike
+    // `AIChatOmnibarController` this can't also check `surface.supportsSubscriptionUpsell` — the flag alone gates it here.
+    private var isSubscriptionUpsellEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatOmnibarSubscriptionUpsell)
     }
 
     private func upsellString(for flow: DuckAISubscriptionUpsellingFlow) -> String? {

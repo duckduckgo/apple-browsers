@@ -44911,6 +44911,42 @@
         }
       }
     },
+    "fire.dialog.accessibility.details.collapsed" : {
+      "comment" : "Accessiblity value - The fire dialog details are collapsed",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "collapsed"
+          }
+        }
+      }
+    },
+    "fire.dialog.accessibility.details.expanded" : {
+      "comment" : "Accessiblity value - The fire dialog details are expanded",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "expanded"
+          }
+        }
+      }
+    },
+    "fire.dialog.accessibility.selected" : {
+      "comment" : "Accessiblity value - The selected fire dialog mode",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "selected"
+          }
+        }
+      }
+    },
     "fire.dialog.all-windows-will-close" : {
       "comment" : "Warning label shown in an expanded view of the fire popover",
       "extractionState" : "extracted_with_value",
@@ -44967,6 +45003,62 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Все окна будут закрыты."
+          }
+        }
+      }
+    },
+    "fire.dialog.chats.detail" : {
+      "comment" : "Detail label next to the Duck.ai chats toggle showing the number of chats that will be deleted.",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "new",
+                  "value" : "%d chat"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "new",
+                  "value" : "%d chats"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "fire.dialog.chats.overlay.title2" : {
+      "comment" : "Simplified Fire dialog's chats overlay title, stating the number of chats affected.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "**%#@chats@** will be deleted:"
+          },
+          "substitutions" : {
+            "chats" : {
+              "argNum" : 1,
+              "formatSpecifier" : "d",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "new",
+                      "value" : "%arg Duck.ai chat"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "new",
+                      "value" : "%arg Duck.ai chats"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -45087,6 +45179,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Чаты Duck.ai"
+          }
+        }
+      }
+    },
+    "fire.dialog.choose.what.to.delete" : {
+      "comment" : "Fire dialog disclosure label that expands/collapses the data type toggles",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Choose what to delete"
           }
         }
       }
@@ -45271,6 +45375,18 @@
         }
       }
     },
+    "fire.dialog.close.all.windows.after.deleting" : {
+      "comment" : "Checkbox caption for when the data clearing scope is ‘Everything’. Means: all browser tabs and windows will be closed, unless they contain pinned tabs in which case all regular tabs from a window will be closed and pinned tabs reloaeded.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Close all windows after deleting, except pinned tabs."
+          }
+        }
+      }
+    },
     "fire.dialog.close.this.tab" : {
       "comment" : "Subtitle shown under the Tabs and windows row when scope is ‘Tab’. Means: the currently active tab will be closed.",
       "extractionState" : "extracted_with_value",
@@ -45331,6 +45447,18 @@
         }
       }
     },
+    "fire.dialog.close.this.tab.after.deleting" : {
+      "comment" : "Checkbox caption for when the data clearing scope is ‘Tab’. Means: the currently active tab will be closed, unless it's pinned.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Close this tab after deleting, except if it's pinned."
+          }
+        }
+      }
+    },
     "fire.dialog.close.this.window" : {
       "comment" : "Subtitle shown under the Tabs and windows row when scope is ‘Window’. Means: the current browser window (all tabs inside it) will be closed.",
       "extractionState" : "extracted_with_value",
@@ -45387,6 +45515,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Закрыть это окно"
+          }
+        }
+      }
+    },
+    "fire.dialog.cookies.and.other.data.title" : {
+      "comment" : "Section title. Toggle that controls whether website cookies and storage (site data) are deleted.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Cookies & other data"
           }
         }
       }
@@ -45672,6 +45812,41 @@
         }
       }
     },
+    "fire.dialog.cookies.detail" : {
+      "comment" : "Detail label next to the Cookies toggle showing the number of sites whose cookies/site data will be deleted.",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "new",
+                  "value" : "%d site"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "new",
+                  "value" : "%d sites"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "fire.dialog.cookies.sign.out.warning" : {
+      "comment" : "Subtitle shown under the Cookies row warning that deleting may sign the user out of accounts.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "May sign you out of accounts."
+          }
+        }
+      }
+    },
     "fire.dialog.cookies.title" : {
       "comment" : "Section title. Toggle that controls whether website cookies and storage (site data) are deleted.",
       "extractionState" : "extracted_with_value",
@@ -45728,6 +45903,42 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Куки-файлы и данные сайтов"
+          }
+        }
+      }
+    },
+    "fire.dialog.delete.and.close" : {
+      "comment" : "Caption for the Fire dialog action button for deleting data and closing tabs and windows",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Delete & Close"
+          }
+        }
+      }
+    },
+    "fire.dialog.deleting.all.data" : {
+      "comment" : "Text shown in dialog while removing all browsing data",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Deleting all browsing data…"
+          }
+        }
+      }
+    },
+    "fire.dialog.deleting.data.from.this.tab" : {
+      "comment" : "Text shown in dialog while removing browsing data of the current tab",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Deleting browsing data from this tab…"
           }
         }
       }
@@ -46088,6 +46299,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Открыть новое окно Fire Window"
+          }
+        }
+      }
+    },
+    "fire.dialog.fireproof.explanation" : {
+      "comment" : "Footnote below the Fire dialog data type toggles, explaining that data belonging to Fireproof sites is kept",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Fireproof site data won’t be deleted"
           }
         }
       }
@@ -46995,6 +47218,107 @@
         }
       }
     },
+    "fire.dialog.history.detail" : {
+      "comment" : "Detail label next to the History toggle showing the number of history items that will be deleted.",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "new",
+                  "value" : "%d item"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "new",
+                  "value" : "%d items"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "fire.dialog.history.items.title" : {
+      "comment" : "Dialog title. Shows the exact number of browsing history entries that will be deleted in this operation, using plural substitutions for the count and noun (%#@historyItems@).",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Delete %#@historyItems@?"
+          },
+          "substitutions" : {
+            "historyItems" : {
+              "argNum" : 1,
+              "formatSpecifier" : "d",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg History item"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg History items"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "fire.dialog.history.overlay.show.all.history" : {
+      "comment" : "Link button shown below the (capped) history overlay list, opens the full History View.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show all history"
+          }
+        }
+      }
+    },
+    "fire.dialog.history.overlay.title" : {
+      "comment" : "Simplified Fire dialog's history overlay title, stating the number of history items affected.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "**%#@items@** will be deleted:"
+          },
+          "substitutions" : {
+            "items" : {
+              "argNum" : 1,
+              "formatSpecifier" : "d",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "new",
+                      "value" : "%arg history item"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "new",
+                      "value" : "%arg history items"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "fire.dialog.history.title" : {
       "comment" : "Section title. Toggle that controls whether browsing history entries are deleted.",
       "localizations" : {
@@ -47050,6 +47374,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "История"
+          }
+        }
+      }
+    },
+    "fire.dialog.include.cookies.and.other.data.title" : {
+      "comment" : "Section title. Toggle that controls whether website cookies and storage (site data) are deleted.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Include cookies & other data?"
           }
         }
       }
@@ -47169,6 +47505,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Удалить отдельные сайты и записи"
+          }
+        }
+      }
+    },
+    "fire.dialog.menu.data.deletion.settings" : {
+      "comment" : "More Options menu item in the Fire dialog that opens the Data Clearing settings pane",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Data Deletion Settings…"
+          }
+        }
+      }
+    },
+    "fire.dialog.menu.delete.individual.sites" : {
+      "comment" : "More Options menu item in the Fire dialog that opens the per-site data deletion view",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Delete Individual Sites"
+          }
+        }
+      }
+    },
+    "fire.dialog.mode.all.data" : {
+      "comment" : "Fire dialog mode for clearing all browsing data",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "All data"
+          }
+        }
+      }
+    },
+    "fire.dialog.mode.tab" : {
+      "comment" : "Fire dialog mode for clearing data from current tab",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "From this tab"
+          }
+        }
+      }
+    },
+    "fire.dialog.more.options" : {
+      "comment" : "Accessibility label for the toolbar button that reveals more Fire dialog options",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "More Options"
           }
         }
       }
@@ -47760,6 +48156,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Подробнее о сайте"
+          }
+        }
+      }
+    },
+    "fire.dialog.sites.overlay.title2" : {
+      "comment" : "Simplified Fire dialog's sites overlay title, stating the number of sites affected.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "**Cookies & other data from %#@sites@** will be deleted:"
+          },
+          "substitutions" : {
+            "sites" : {
+              "argNum" : 1,
+              "formatSpecifier" : "d",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "new",
+                      "value" : "%arg site"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "new",
+                      "value" : "%arg sites"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }

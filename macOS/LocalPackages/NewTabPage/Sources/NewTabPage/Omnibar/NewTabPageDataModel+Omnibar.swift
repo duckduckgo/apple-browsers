@@ -38,13 +38,16 @@ public extension NewTabPageDataModel {
         public let isAvailable: Bool
         /// `"subscribe"` or `"upgrade"`. Present only when `isAvailable == false`.
         public let upsell: String?
+        /// Header for the gated section this effort starts; set on the first gated effort only.
+        public let gatedSectionHeader: String?
 
-        public init(id: String, name: String, description: String? = nil, isAvailable: Bool, upsell: String? = nil) {
+        public init(id: String, name: String, description: String? = nil, isAvailable: Bool, upsell: String? = nil, gatedSectionHeader: String? = nil) {
             self.id = id
             self.name = name
             self.description = description
             self.isAvailable = isAvailable
             self.upsell = upsell
+            self.gatedSectionHeader = gatedSectionHeader
         }
     }
 
@@ -52,6 +55,8 @@ public extension NewTabPageDataModel {
         public let id: String
         public let name: String
         public let shortName: String
+        /// Subtitle beneath the model name (the backend recommendation label), `nil` for unlabelled models.
+        public let description: String?
         public let isAvailable: Bool
         public let supportsImageUpload: Bool
         public let supportedTools: [String]
@@ -67,10 +72,11 @@ public extension NewTabPageDataModel {
         /// `"upgrade"`. `nil` for enabled models.
         public let upsell: String?
 
-        public init(id: String, name: String, shortName: String, isAvailable: Bool, supportsImageUpload: Bool, supportedTools: [String] = [], accessTier: String? = nil, reasoningEfforts: [AIModelReasoningEffort] = [], supportedFileTypes: [String] = [], upsell: String? = nil) {
+        public init(id: String, name: String, shortName: String, description: String? = nil, isAvailable: Bool, supportsImageUpload: Bool, supportedTools: [String] = [], accessTier: String? = nil, reasoningEfforts: [AIModelReasoningEffort] = [], supportedFileTypes: [String] = [], upsell: String? = nil) {
             self.id = id
             self.name = name
             self.shortName = shortName
+            self.description = description
             self.isAvailable = isAvailable
             self.supportsImageUpload = supportsImageUpload
             self.supportedTools = supportedTools

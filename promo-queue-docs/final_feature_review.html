@@ -1,624 +1,1643 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="color-scheme" content="light">
-  <title>iOS Promo Queue — Final Independent Review</title>
-  <style>
-    :root {
-      --ink: #14213d;
-      --muted: #475569;
-      --paper: #ffffff;
-      --wash: #f5f7fb;
-      --line: #cbd5e1;
-      --navy: #0b2a4a;
-      --blue: #075985;
-      --blue-soft: #e0f2fe;
-      --green: #166534;
-      --green-soft: #dcfce7;
-      --amber: #92400e;
-      --amber-soft: #fef3c7;
-      --red: #991b1b;
-      --red-soft: #fee2e2;
-      --gray-soft: #e2e8f0;
-      --shadow: 0 10px 30px rgba(15, 23, 42, .08);
-    }
-    * { box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
-    body {
-      margin: 0;
-      background: var(--wash);
-      color: var(--ink);
-      font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
-    }
-    a { color: #075985; text-underline-offset: .16em; }
-    a:focus-visible, button:focus-visible { outline: 3px solid #f59e0b; outline-offset: 3px; }
-    code, .mono {
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size: .92em;
-      overflow-wrap: anywhere;
-      word-break: break-word;
-    }
-    .shell { width: min(1180px, calc(100% - 32px)); margin: 0 auto; }
-    .masthead {
-      color: #fff;
-      background: linear-gradient(135deg, #071d33 0%, #0b3b64 72%, #075985 100%);
-      border-bottom: 6px solid #f59e0b;
-      padding: 44px 0 34px;
-    }
-    .eyebrow { margin: 0 0 8px; color: #bae6fd; font-weight: 750; letter-spacing: .08em; text-transform: uppercase; font-size: .78rem; }
-    h1 { margin: 0; max-width: 900px; font-size: clamp(2rem, 5vw, 4rem); line-height: 1.04; letter-spacing: -.035em; }
-    .dek { max-width: 850px; margin: 18px 0 0; color: #e0f2fe; font-size: clamp(1.05rem, 2vw, 1.3rem); }
-    .meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 24px; }
-    .pill { display: inline-flex; align-items: center; gap: 7px; padding: 6px 10px; border-radius: 999px; border: 1px solid rgba(255,255,255,.34); background: rgba(255,255,255,.09); font-size: .84rem; font-weight: 700; }
-    .pill::before { content: ""; width: .58rem; height: .58rem; border-radius: 50%; background: #fbbf24; }
-    .topnav { position: sticky; top: 0; z-index: 5; background: rgba(255,255,255,.96); border-bottom: 1px solid var(--line); backdrop-filter: blur(8px); }
-    .topnav .shell { display: flex; gap: 4px; overflow-x: auto; padding: 8px 0; scrollbar-width: thin; }
-    .topnav a { flex: 0 0 auto; padding: 7px 10px; border-radius: 6px; color: var(--navy); font-size: .86rem; font-weight: 700; text-decoration: none; }
-    .topnav a:hover { background: var(--blue-soft); }
-    main { padding: 28px 0 64px; }
-    section { scroll-margin-top: 72px; margin: 0 0 30px; }
-    .panel { background: var(--paper); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); padding: clamp(18px, 3vw, 32px); }
-    .panel + .panel { margin-top: 18px; }
-    h2 { margin: 0 0 14px; font-size: clamp(1.45rem, 3vw, 2.2rem); line-height: 1.18; letter-spacing: -.02em; }
-    h3 { margin: 24px 0 8px; font-size: 1.18rem; line-height: 1.3; }
-    h4 { margin: 18px 0 6px; font-size: 1rem; }
-    p { margin: 8px 0 14px; }
-    ul, ol { padding-left: 1.25rem; }
-    li + li { margin-top: 5px; }
-    .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 14px; }
-    .span-4 { grid-column: span 4; }
-    .span-6 { grid-column: span 6; }
-    .span-8 { grid-column: span 8; }
-    .span-12 { grid-column: 1 / -1; }
-    .metric { border: 1px solid var(--line); border-radius: 12px; padding: 16px; background: #fff; }
-    .metric strong { display: block; font-size: clamp(1.4rem, 4vw, 2.25rem); line-height: 1.05; color: var(--navy); }
-    .metric span { color: var(--muted); font-size: .9rem; }
-    .verdict { border: 3px solid var(--red); background: var(--red-soft); }
-    .verdict h2, .verdict strong { color: #7f1d1d; }
-    .callout { border-left: 5px solid var(--blue); padding: 14px 16px; background: var(--blue-soft); border-radius: 0 10px 10px 0; }
-    .callout.finding { border-color: var(--red); background: var(--red-soft); }
-    .callout.pending { border-color: var(--amber); background: var(--amber-soft); }
-    .label { display: inline-block; margin-right: 6px; padding: 2px 7px; border: 1px solid currentColor; border-radius: 4px; font-size: .72rem; font-weight: 800; letter-spacing: .055em; text-transform: uppercase; }
-    .verified { color: var(--green); }
-    .inference { color: var(--blue); }
-    .tradeoff { color: var(--amber); }
-    .finding-label { color: var(--red); }
-    .pending-label { color: #713f12; }
-    .table-wrap { width: 100%; overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; }
-    .table-wrap:focus-visible, .diagram:focus-visible { outline: 3px solid #f59e0b; outline-offset: 3px; }
-    table { width: 100%; border-collapse: collapse; background: #fff; font-size: .9rem; }
-    th, td { padding: 10px 11px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); overflow-wrap: anywhere; }
-    th { color: #fff; background: var(--navy); font-size: .8rem; letter-spacing: .025em; }
-    tr:last-child td { border-bottom: 0; }
-    tbody tr:nth-child(even) { background: #f8fafc; }
-    .status { white-space: nowrap; font-weight: 800; }
-    .status.pass { color: var(--green); }
-    .status.partial { color: var(--amber); }
-    .status.fail { color: var(--red); }
-    .status.pending { color: #713f12; }
-    .diagram { margin: 16px 0 6px; border: 1px solid var(--line); border-radius: 12px; background: #fbfdff; padding: 10px; overflow-x: auto; overflow-y: hidden; }
-    .diagram svg { display: block; width: 100%; height: auto; }
-    .diagram figcaption { padding: 9px 8px 2px; color: var(--muted); font-size: .86rem; }
-    .legend { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 10px 0 0; color: var(--muted); font-size: .82rem; }
-    .legend b { color: var(--ink); }
-    .score { display: grid; grid-template-columns: auto 1fr; gap: 18px; align-items: center; }
-    .score-ring { width: 108px; height: 108px; border-radius: 50%; display: grid; place-items: center; color: #fff; background: conic-gradient(var(--green) 0 90%, #dbe4ea 90% 100%); position: relative; }
-    .score-ring::after { content: ""; position: absolute; inset: 12px; border-radius: 50%; background: var(--navy); }
-    .score-ring b { position: relative; z-index: 1; font-size: 1.7rem; }
-    .stack-card { border-top: 5px solid var(--blue); }
-    .stack-card.blocked { border-color: var(--red); }
-    .stack-card.debug { border-color: var(--amber); }
-    .stack-card .parent { color: var(--muted); font-size: .82rem; }
-    .sources { columns: 2; column-gap: 28px; }
-    .sources li { break-inside: avoid; }
-    .small { color: var(--muted); font-size: .86rem; }
-    footer { border-top: 1px solid var(--line); background: #fff; color: var(--muted); padding: 24px 0 36px; }
-    @media (max-width: 760px) {
-      .shell { width: min(100% - 20px, 1180px); }
-      .masthead { padding: 32px 0 26px; }
-      .panel { border-radius: 10px; padding: 17px; }
-      .span-4, .span-6, .span-8 { grid-column: 1 / -1; }
-      .score { grid-template-columns: 1fr; }
-      .score-ring { width: 92px; height: 92px; }
-      .sources { columns: 1; }
-      th, td { padding: 9px; min-width: 130px; }
-      th:first-child, td:first-child { min-width: 180px; }
-      .diagram { padding: 4px; }
-      .diagram svg[viewBox^="0 0 1080"] { min-width: 700px; }
-    }
-    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
-    @media print {
-      @page { size: A4; margin: 12mm; }
-      body { background: #fff; color: #000; font-size: 10pt; }
-      .shell { width: 100%; }
-      .masthead { background: #fff !important; color: #000; border: 3px solid #000; padding: 16px; }
-      .masthead .eyebrow, .masthead .dek { color: #000; }
-      .pill { border-color: #000; background: #fff; color: #000; }
-      .topnav { display: none; }
-      main { padding: 10px 0; }
-      h2, h3, h4 { break-after: avoid-page; }
-      .metric, .diagram, tr { break-inside: avoid; }
-      .panel { box-shadow: none; border-color: #555; }
-      .table-wrap { overflow: visible; border-color: #555; }
-      table { font-size: 7.7pt; table-layout: fixed; }
-      th { background: #ddd !important; color: #000; }
-      th, td { padding: 5px; min-width: 0 !important; }
-      thead { display: table-header-group; }
-      .diagram svg { min-width: 0 !important; }
-      a { color: #000; text-decoration: underline; }
-      .score-ring { background: #fff; color: #000; border: 4px solid #000; }
-      .score-ring::after { display: none; }
-      .score-ring b { color: #000; }
-    }
-  </style>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light">
+    <title>iOS Promo Queue — Architecture</title>
+    <style>
+        :root {
+            --paper: #f6f8fb;
+            --surface: #ffffff;
+            --surface-soft: #edf3f8;
+            --ink: #172033;
+            --muted: #526075;
+            --line: #c7d2df;
+            --blue: #164e8a;
+            --blue-soft: #e7f0fb;
+            --teal: #176b64;
+            --teal-soft: #e3f3f0;
+            --violet: #65459b;
+            --violet-soft: #f0eafb;
+            --amber: #815d12;
+            --amber-soft: #fff3d4;
+            --shadow: 0 14px 36px rgba(25, 43, 65, 0.09);
+            --radius: 18px;
+            --content: 1180px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            scroll-padding-top: 5.5rem;
+        }
+
+        body {
+            margin: 0;
+            background:
+                radial-gradient(circle at 92% 2%, rgba(22, 78, 138, 0.11), transparent 24rem),
+                var(--paper);
+            color: var(--ink);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            font-size: 16px;
+            line-height: 1.58;
+        }
+
+        a {
+            color: var(--blue);
+            text-underline-offset: 0.17em;
+        }
+
+        a:hover {
+            text-decoration-thickness: 2px;
+        }
+
+        a:focus-visible,
+        summary:focus-visible {
+            outline: 3px solid var(--amber);
+            outline-offset: 3px;
+        }
+
+        .skip-link {
+            position: absolute;
+            top: -5rem;
+            left: 1rem;
+            z-index: 20;
+            padding: 0.65rem 0.9rem;
+            border-radius: 0 0 8px 8px;
+            background: var(--ink);
+            color: #fff;
+        }
+
+        .skip-link:focus {
+            top: 0;
+        }
+
+        .masthead {
+            padding: 4.5rem 1.5rem 3.5rem;
+            color: #fff;
+            background:
+                linear-gradient(120deg, rgba(10, 40, 72, 0.97), rgba(22, 78, 138, 0.94)),
+                var(--blue);
+        }
+
+        .masthead-inner,
+        .page-nav-inner,
+        main,
+        footer {
+            width: min(calc(100% - 2.5rem), var(--content));
+            margin-inline: auto;
+        }
+
+        .eyebrow {
+            margin: 0 0 0.65rem;
+            font-size: 0.78rem;
+            font-weight: 750;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        h1,
+        h2,
+        h3 {
+            margin-top: 0;
+            line-height: 1.16;
+            letter-spacing: -0.025em;
+        }
+
+        h1 {
+            max-width: 850px;
+            margin-bottom: 1rem;
+            font-size: clamp(2.35rem, 6vw, 4.8rem);
+        }
+
+        h2 {
+            margin-bottom: 0.8rem;
+            font-size: clamp(1.75rem, 3.5vw, 2.7rem);
+        }
+
+        h3 {
+            margin-bottom: 0.55rem;
+            font-size: 1.2rem;
+        }
+
+        .lede {
+            max-width: 780px;
+            margin: 0;
+            color: #e8f2ff;
+            font-size: clamp(1.05rem, 2.2vw, 1.35rem);
+        }
+
+        .pill-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.55rem;
+            margin-top: 1.7rem;
+        }
+
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            min-height: 2rem;
+            padding: 0.34rem 0.75rem;
+            border: 1px solid rgba(255, 255, 255, 0.33);
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 0.86rem;
+            font-weight: 680;
+        }
+
+        .page-nav {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            border-bottom: 1px solid var(--line);
+            background: rgba(255, 255, 255, 0.96);
+            backdrop-filter: blur(12px);
+        }
+
+        .page-nav-inner {
+            display: flex;
+            gap: 1.15rem;
+            overflow-x: auto;
+            padding-block: 0.8rem;
+            scrollbar-width: thin;
+        }
+
+        .page-nav a {
+            flex: 0 0 auto;
+            color: var(--ink);
+            font-size: 0.87rem;
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .page-nav a:hover {
+            color: var(--blue);
+        }
+
+        main {
+            padding-block: 3.5rem 5rem;
+        }
+
+        section {
+            margin-top: 5rem;
+        }
+
+        section:first-child {
+            margin-top: 0;
+        }
+
+        .section-intro {
+            max-width: 830px;
+            margin: 0 0 1.6rem;
+            color: var(--muted);
+            font-size: 1.05rem;
+        }
+
+        .surface {
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            background: var(--surface);
+            box-shadow: var(--shadow);
+        }
+
+        .summary-grid,
+        .metric-grid,
+        .stack-grid,
+        .card-grid,
+        .reference-grid {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .summary-grid {
+            grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.75fr);
+        }
+
+        .summary-panel {
+            padding: clamp(1.35rem, 3vw, 2rem);
+        }
+
+        .summary-panel p:last-child {
+            margin-bottom: 0;
+        }
+
+        .success {
+            border-left: 5px solid var(--teal);
+            background: linear-gradient(135deg, var(--teal-soft), #fff);
+        }
+
+        .success strong {
+            color: var(--teal);
+        }
+
+        .metric-grid {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            margin-top: 1rem;
+        }
+
+        .metric {
+            padding: 1.1rem;
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            background: var(--surface);
+        }
+
+        .metric-value {
+            display: block;
+            margin-bottom: 0.2rem;
+            color: var(--blue);
+            font-size: 1.85rem;
+            font-weight: 780;
+            line-height: 1;
+        }
+
+        .metric-label {
+            display: block;
+            color: var(--muted);
+            font-size: 0.88rem;
+        }
+
+        .stack-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .stack-card {
+            position: relative;
+            padding: 1.4rem;
+            overflow: hidden;
+        }
+
+        .stack-card::before {
+            position: absolute;
+            inset: 0 auto 0 0;
+            width: 5px;
+            background: var(--blue);
+            content: "";
+        }
+
+        .stack-card:nth-child(2)::before {
+            background: var(--teal);
+        }
+
+        .stack-card:nth-child(3)::before {
+            background: var(--violet);
+        }
+
+        .stack-label {
+            margin: 0 0 0.4rem;
+            color: var(--muted);
+            font-size: 0.74rem;
+            font-weight: 750;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .stack-card code,
+        .branch-map code {
+            overflow-wrap: anywhere;
+        }
+
+        .branch-map {
+            display: flex;
+            align-items: stretch;
+            gap: 0;
+            margin-top: 1.25rem;
+            overflow-x: auto;
+            padding: 0.2rem 0.1rem 0.7rem;
+        }
+
+        .branch-node {
+            min-width: 195px;
+            padding: 0.85rem;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: var(--surface-soft);
+            text-align: center;
+        }
+
+        .branch-arrow {
+            display: grid;
+            flex: 0 0 46px;
+            place-items: center;
+            color: var(--blue);
+            font-size: 1.3rem;
+            font-weight: 800;
+        }
+
+        .diagram {
+            margin: 1.5rem 0;
+            overflow-x: auto;
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            background: var(--surface);
+            box-shadow: var(--shadow);
+        }
+
+        .diagram svg {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+
+        .diagram figcaption {
+            padding: 0.85rem 1rem 1rem;
+            border-top: 1px solid var(--line);
+            color: var(--muted);
+            font-size: 0.88rem;
+        }
+
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.65rem 1.1rem;
+            margin: 0.8rem 0 0;
+            padding: 0;
+            list-style: none;
+            color: var(--muted);
+            font-size: 0.85rem;
+        }
+
+        .legend li {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .legend-swatch {
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid currentColor;
+            border-radius: 4px;
+            background: #fff;
+        }
+
+        .legend .blue {
+            color: var(--blue);
+        }
+
+        .legend .teal {
+            color: var(--teal);
+        }
+
+        .legend .violet {
+            color: var(--violet);
+        }
+
+        .legend .amber {
+            color: var(--amber);
+        }
+
+        .table-wrap {
+            margin-top: 1.25rem;
+            overflow-x: auto;
+            border: 1px solid var(--line);
+            border-radius: 15px;
+            background: var(--surface);
+        }
+
+        table {
+            width: 100%;
+            min-width: 720px;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 0.85rem 0.95rem;
+            border-bottom: 1px solid var(--line);
+            text-align: left;
+            vertical-align: top;
+        }
+
+        th {
+            background: var(--surface-soft);
+            color: var(--ink);
+            font-size: 0.78rem;
+            letter-spacing: 0.055em;
+            text-transform: uppercase;
+        }
+
+        tr:last-child td {
+            border-bottom: 0;
+        }
+
+        td code,
+        .reference-list code,
+        .path {
+            overflow-wrap: anywhere;
+            word-break: break-word;
+        }
+
+        code {
+            padding: 0.08em 0.28em;
+            border-radius: 4px;
+            background: var(--surface-soft);
+            color: #24334a;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 0.88em;
+        }
+
+        .card-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .info-card {
+            padding: 1.3rem;
+            border-top: 4px solid var(--blue);
+        }
+
+        .info-card:nth-child(3n + 2) {
+            border-top-color: var(--teal);
+        }
+
+        .info-card:nth-child(3n + 3) {
+            border-top-color: var(--violet);
+        }
+
+        .info-card p:last-child,
+        .info-card ul:last-child {
+            margin-bottom: 0;
+        }
+
+        .compact-list {
+            margin: 0.6rem 0 0;
+            padding-left: 1.2rem;
+        }
+
+        .compact-list li + li {
+            margin-top: 0.42rem;
+        }
+
+        .callout {
+            margin-top: 1.25rem;
+            padding: 1.25rem 1.35rem;
+            border: 1px solid #b8d5d0;
+            border-left: 5px solid var(--teal);
+            border-radius: 14px;
+            background: var(--teal-soft);
+        }
+
+        .callout h3 {
+            color: var(--teal);
+        }
+
+        .callout p:last-child,
+        .callout ul:last-child {
+            margin-bottom: 0;
+        }
+
+        .numbered-flow {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: 0.75rem;
+            margin: 1.25rem 0 0;
+            padding: 0;
+            counter-reset: lifecycle;
+            list-style: none;
+        }
+
+        .numbered-flow li {
+            position: relative;
+            min-height: 132px;
+            padding: 2.75rem 1rem 1rem;
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            background: var(--surface);
+            counter-increment: lifecycle;
+        }
+
+        .numbered-flow li::before {
+            position: absolute;
+            top: 0.8rem;
+            left: 1rem;
+            display: grid;
+            width: 1.5rem;
+            height: 1.5rem;
+            place-items: center;
+            border-radius: 50%;
+            background: var(--blue);
+            color: #fff;
+            content: counter(lifecycle);
+            font-size: 0.76rem;
+            font-weight: 800;
+        }
+
+        .numbered-flow strong {
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+
+        .numbered-flow span {
+            color: var(--muted);
+            font-size: 0.88rem;
+        }
+
+        .contract {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .contract-panel {
+            padding: 1.4rem;
+        }
+
+        .contract-panel.required {
+            border-top: 5px solid var(--teal);
+        }
+
+        .contract-panel.absent {
+            border-top: 5px solid var(--violet);
+        }
+
+        .reference-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .reference-group {
+            padding: 1.25rem;
+        }
+
+        .reference-list {
+            margin: 0;
+            padding-left: 1.15rem;
+        }
+
+        .reference-list li + li {
+            margin-top: 0.55rem;
+        }
+
+        .fine-print {
+            color: var(--muted);
+            font-size: 0.85rem;
+        }
+
+        footer {
+            padding: 1.5rem 0 3rem;
+            border-top: 1px solid var(--line);
+            color: var(--muted);
+            font-size: 0.86rem;
+        }
+
+        @media (max-width: 900px) {
+            .summary-grid,
+            .contract {
+                grid-template-columns: 1fr;
+            }
+
+            .metric-grid,
+            .card-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .stack-grid,
+            .reference-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .numbered-flow {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .diagram.sequence svg {
+                min-width: 700px;
+            }
+
+            .diagram.architecture svg {
+                min-width: 820px;
+            }
+        }
+
+        @media (max-width: 560px) {
+            .masthead {
+                padding: 3.25rem 1rem 2.65rem;
+            }
+
+            .masthead-inner,
+            .page-nav-inner,
+            main,
+            footer {
+                width: min(calc(100% - 1.5rem), var(--content));
+            }
+
+            main {
+                padding-top: 2.5rem;
+            }
+
+            section {
+                margin-top: 3.8rem;
+            }
+
+            .metric-grid,
+            .card-grid,
+            .numbered-flow {
+                grid-template-columns: 1fr;
+            }
+
+            .metric {
+                display: grid;
+                grid-template-columns: 3.5rem 1fr;
+                align-items: center;
+                gap: 0.7rem;
+            }
+
+            .metric-value {
+                margin: 0;
+            }
+        }
+
+        @media print {
+            :root {
+                --paper: #fff;
+                --surface-soft: #f3f5f7;
+                --shadow: none;
+            }
+
+            html {
+                scroll-padding-top: 0;
+            }
+
+            body {
+                background: #fff;
+                color: #000;
+                font-size: 10pt;
+            }
+
+            .masthead {
+                padding: 1.25cm 0 0.9cm;
+                background: #fff;
+                color: #000;
+                border-bottom: 3px solid #164e8a;
+            }
+
+            .lede {
+                color: #263548;
+            }
+
+            .pill {
+                border-color: #607086;
+                background: #fff;
+                color: #000;
+            }
+
+            .page-nav,
+            .skip-link {
+                display: none;
+            }
+
+            main {
+                padding-block: 0.7cm;
+            }
+
+            section {
+                margin-top: 1.2cm;
+            }
+
+            .surface,
+            .diagram {
+                box-shadow: none;
+                break-inside: avoid;
+            }
+
+            .summary-grid,
+            .contract {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .metric-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+
+            .stack-grid,
+            .card-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .reference-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .numbered-flow {
+                grid-template-columns: repeat(5, 1fr);
+            }
+
+            .diagram svg,
+            .diagram.sequence svg,
+            .diagram.architecture svg {
+                min-width: 0;
+                max-height: 18cm;
+            }
+
+            .table-wrap {
+                overflow: visible;
+                break-inside: avoid;
+            }
+
+            table {
+                min-width: 0;
+            }
+
+            a {
+                color: #000;
+                text-decoration: none;
+            }
+
+            footer {
+                padding-bottom: 0;
+            }
+        }
+    </style>
 </head>
 <body>
-  <header class="masthead">
-    <div class="shell">
-      <p class="eyebrow">Final independent code review · 16 August 2026</p>
-      <h1>iOS Promo Queue stack</h1>
-      <p class="dek">Executive review and technical appendix for the three stacked production branches. The design is faithful and compact; one default/flag-off integration defect prevents merge readiness.</p>
-      <div class="meta" aria-label="Review metadata">
-        <span class="pill">Verdict: changes required</span>
-        <span class="pill">Fidelity: 9/10</span>
-        <span class="pill">3 independent builds passed</span>
-        <span class="pill">Top stack: 130 focused tests passed</span>
-      </div>
-    </div>
-  </header>
+    <a class="skip-link" href="#main-content">Skip to architecture</a>
 
-  <nav class="topnav" aria-label="Report navigation">
-    <div class="shell">
-      <a href="#summary">Summary</a>
-      <a href="#problem">Problem</a>
-      <a href="#stack">Stack</a>
-      <a href="#architecture">Architecture</a>
-      <a href="#flows">Flows</a>
-      <a href="#flag">Feature flag</a>
-      <a href="#fidelity">Fidelity</a>
-      <a href="#compliance">Plan</a>
-      <a href="#tests">Tests</a>
-      <a href="#rollout">Rollout</a>
-      <a href="#sources">Sources</a>
-    </div>
-  </nav>
-
-  <main class="shell">
-    <section id="summary" class="panel verdict" aria-labelledby="summary-title">
-      <p><span class="label finding-label">Finding</span> Merge readiness</p>
-      <h2 id="summary-title">Changes required</h2>
-      <p><strong>Blocker:</strong> PR 2 leaves the conditional legacy/iPad suggestion-tray activation call unguarded. With `.promoPresentationCoordination` disabled, focusing the address bar can call coordinated preparation and rebuild the shared legacy RMF array with an after-idle policy. That violates rollback parity on the default-off path.</p>
-      <p><strong>Required before merge:</strong> gate `MainViewController.swift:5553` to coordinated mode, preferably make concrete legacy `prepareForNTP` a no-op, add the host regression, and rerun focused/integrated validation.</p>
-      <p class="small">Two low-severity follow-ups remain: a debug reset can report “DONE” before execution, and two source tests use unbounded `Task.yield()` polling. Neither changes production admission.</p>
-    </section>
-
-    <section aria-label="Headline metrics">
-      <div class="grid">
-        <div class="metric span-4"><strong>9/10</strong><span>proposal fidelity</span></div>
-        <div class="metric span-4"><strong>4,832</strong><span>combined changed lines, production + tests + wiring</span></div>
-        <div class="metric span-4"><strong>1</strong><span>merge blocker</span></div>
-        <div class="metric span-4"><strong>112 / 112</strong><span>integrated unit selection</span></div>
-        <div class="metric span-4"><strong>7 / 7</strong><span>focused integrated SharedState selection</span></div>
-        <div class="metric span-4"><strong>11 / 11</strong><span>integrated modal tests</span></div>
-      </div>
-    </section>
-
-    <section id="problem" class="panel" aria-labelledby="problem-title">
-      <h2 id="problem-title">User problem and success criterion</h2>
-      <div class="grid">
-        <div class="span-6">
-          <h3>User problem</h3>
-          <p>Launch-promo sheets and NTP remote messages previously made independent presentation decisions. They could overlap, mutate state before they had permission to show, or require renderers to coordinate view visibility and handoff.</p>
+    <header class="masthead">
+        <div class="masthead-inner">
+            <p class="eyebrow">Architecture and implementation reference · 17 August 2026</p>
+            <h1>iOS Promo Queue</h1>
+            <p class="lede">
+                A single app-scoped admission boundary coordinates launch-promo sheets and
+                Remote Messaging Framework cards while keeping presentation details inside
+                their existing modal and New Tab Page systems.
+            </p>
+            <div class="pill-row" aria-label="Architecture characteristics">
+                <span class="pill">One app-scoped owner</span>
+                <span class="pill">Two presentation families</span>
+                <span class="pill">Four current NTP paths</span>
+                <span class="pill">Main-actor coordination</span>
+            </div>
         </div>
-        <div class="span-6">
-          <h3>Success criterion</h3>
-          <p>One app-scoped slot admits either a launch modal or one shared-source RMF. Admission occurs before stateful provider evaluation/publication; background releases; progress occurs only at natural checkpoints; renderers never report visibility, coverage, handoff, or lifecycle.</p>
+    </header>
+
+    <nav class="page-nav" aria-label="Page sections">
+        <div class="page-nav-inner">
+            <a href="#overview">Overview</a>
+            <a href="#stack">Stack</a>
+            <a href="#components">Components</a>
+            <a href="#admission">Admission</a>
+            <a href="#lifecycle">Lifecycle</a>
+            <a href="#feature-flag">Feature flag</a>
+            <a href="#extension">Extension</a>
+            <a href="#decisions">Decisions</a>
+            <a href="#diagnostics">Diagnostics</a>
+            <a href="#references">References</a>
         </div>
-      </div>
-      <div class="callout"><span class="label verified">Verified</span> The coordinated implementation meets this criterion in code and focused tests. The verdict is blocked because disabling the feature does not fully restore untouched legacy behavior.</div>
-    </section>
+    </nav>
 
-    <section id="stack" class="panel" aria-labelledby="stack-title">
-      <h2 id="stack-title">Stack map and production-only size</h2>
-      <div class="grid">
-        <article class="metric stack-card span-4">
-          <p class="parent">Parent: <code>main</code> <code>48a613b221</code></p>
-          <h3>PR 1 · Foundation</h3>
-          <p><code>bartosz/promo-q-simp-2</code><br><code>27962e9e52</code></p>
-          <p>Deletes live transitions/per-surface retry machinery; adds one owner, directional cooldown, thin service, and retained modal correctness.</p>
-          <p><strong>Production:</strong> 16 files, +457/−616<br><strong>Tests:</strong> 14 files, +441/−1,406<br><strong>Wiring:</strong> 1 file, +8/−14</p>
-        </article>
-        <article class="metric stack-card blocked span-4">
-          <p class="parent">Parent: PR 1</p>
-          <h3>PR 2 · Shared RMF source</h3>
-          <p><code>bartosz/promo-q-simp-3</code><br><code>afa4ace811</code></p>
-          <p>Moves ownership into <code>HomePageConfiguration</code>; adds preparation, source signal, identities, renderability, lifecycle, and all current hosts.</p>
-          <p><strong>Production:</strong> 14 files, +515/−83<br><strong>Tests:</strong> 4 files, +761/−2<br><strong>Status:</strong> blocker in legacy host guard</p>
-        </article>
-        <article class="metric stack-card debug span-4">
-          <p class="parent">Parent: PR 2</p>
-          <h3>PR 3 · Diagnostics</h3>
-          <p><code>bartosz/promo-q-simp-4</code><br><code>0978e46ee9</code></p>
-          <p>Extends the existing internal screen with passive owner/cooldown state and authoritative debug-only reset controls.</p>
-          <p><strong>Production:</strong> 11 files, +266/−73<br><strong>Tests:</strong> 3 files, +207/−1<br><strong>Wiring:</strong> 1 file, +4/−0</p>
-        </article>
-      </div>
-      <p class="small"><span class="label verified">Verified</span> Local and remote heads match; ancestry is linear. GitHub bases: #6367 → <code>main</code>, #6368 → PR 1, #6369 → PR 2. PR #6369 remains draft. All production trees are free of project documentation.</p>
-    </section>
+    <main id="main-content">
+        <section id="overview" aria-labelledby="overview-title">
+            <p class="eyebrow">System intent</p>
+            <h2 id="overview-title">One decision point, existing renderers</h2>
+            <p class="section-intro">
+                Launch promos and RMF cards previously made their presentation decisions in
+                separate subsystems. Promo Queue adds one shared owner and a directional
+                cooldown policy, then lets each subsystem continue to select, build, present,
+                dismiss, and account for its own content.
+            </p>
 
-    <section id="architecture" class="panel" aria-labelledby="architecture-title">
-      <h2 id="architecture-title">Architecture map</h2>
-      <figure class="diagram" tabindex="0" aria-label="Scrollable Promo Queue architecture diagram">
-        <svg viewBox="0 0 1080 570" role="img" aria-labelledby="arch-svg-title arch-svg-desc">
-          <title id="arch-svg-title">Promo Queue architecture</title>
-          <desc id="arch-svg-desc">The app factory composes one service from the arbiter and cooldown policy. Modal providers route through the service and manager. HomePageConfiguration selects and publishes one RMF source consumed by four NTP host families and their models.</desc>
-          <defs>
-            <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#075985"/></marker>
-            <style>
-              .box{fill:#fff;stroke:#0b2a4a;stroke-width:2}.core{fill:#e0f2fe}.source{fill:#dcfce7}.host{fill:#fef3c7}.warn{fill:#fee2e2;stroke:#991b1b}.t{font:700 17px -apple-system,BlinkMacSystemFont,Segoe UI,Arial;fill:#14213d}.s{font:14px -apple-system,BlinkMacSystemFont,Segoe UI,Arial;fill:#475569}.a{stroke:#075985;stroke-width:2.2;fill:none;marker-end:url(#arrow)}.d{stroke-dasharray:7 6}
-            </style>
-          </defs>
-          <rect class="box core" x="410" y="18" width="260" height="58" rx="10"/><text class="t" x="540" y="43" text-anchor="middle">PromoCoordinationFactory</text><text class="s" x="540" y="63" text-anchor="middle">one startup-latched graph</text>
-          <rect class="box core" x="370" y="116" width="340" height="76" rx="10"/><text class="t" x="540" y="145" text-anchor="middle">PromoCoordinationService</text><text class="s" x="540" y="169" text-anchor="middle">typed modal/RMF admission facade</text>
-          <rect class="box" x="80" y="116" width="220" height="76" rx="10"/><text class="t" x="190" y="145" text-anchor="middle">Lease arbiter</text><text class="s" x="190" y="169" text-anchor="middle">none · modal · RMF</text>
-          <rect class="box" x="780" y="116" width="220" height="76" rx="10"/><text class="t" x="890" y="145" text-anchor="middle">Cooldown policy</text><text class="s" x="890" y="169" text-anchor="middle">10m / 10m / 24h</text>
-          <rect class="box" x="60" y="260" width="260" height="74" rx="10"/><text class="t" x="190" y="289" text-anchor="middle">7 modal providers</text><text class="s" x="190" y="313" text-anchor="middle">evaluated only after admission</text>
-          <rect class="box core" x="390" y="260" width="300" height="74" rx="10"/><text class="t" x="540" y="289" text-anchor="middle">Modal manager</text><text class="s" x="540" y="313" text-anchor="middle">exact-root retained ownership</text>
-          <rect class="box source" x="760" y="250" width="260" height="94" rx="10"/><text class="t" x="890" y="279" text-anchor="middle">HomePageConfiguration</text><text class="s" x="890" y="303" text-anchor="middle">select · acquire · retain · publish</text><text class="s" x="890" y="325" text-anchor="middle">one source-owned RMF lease</text>
-          <rect class="box source" x="760" y="396" width="260" height="64" rx="10"/><text class="t" x="890" y="424" text-anchor="middle">NTP messages model</text><text class="s" x="890" y="446" text-anchor="middle">maps content + callbacks</text>
-          <rect class="box host" x="42" y="500" width="220" height="52" rx="9"/><text class="t" x="152" y="532" text-anchor="middle">Standard NTP</text>
-          <rect class="box warn" x="300" y="500" width="220" height="52" rx="9"/><text class="t" x="410" y="523" text-anchor="middle">Legacy / iPad tray</text><text class="s" x="410" y="542" text-anchor="middle">missed flag guard</text>
-          <rect class="box host" x="558" y="500" width="220" height="52" rx="9"/><text class="t" x="668" y="532" text-anchor="middle">OmniBar editing</text>
-          <rect class="box host" x="816" y="500" width="220" height="52" rx="9"/><text class="t" x="926" y="532" text-anchor="middle">Unified input</text>
-          <path class="a" d="M540 76 V116"/><path class="a" d="M370 154 H300"/><path class="a" d="M710 154 H780"/>
-          <path class="a" d="M470 192 L275 260"/><path class="a" d="M520 192 L520 260"/><path class="a" d="M630 192 L790 250"/>
-          <path class="a" d="M320 297 H390"/><path class="a" d="M890 344 V396"/>
-          <path class="a d" d="M850 460 L190 500"/><path class="a d" d="M875 460 L410 500"/><path class="a d" d="M905 460 L668 500"/><path class="a d" d="M930 460 L926 500"/>
-        </svg>
-        <figcaption>Solid arrows show ownership/admission flow; dashed arrows show shared-source consumption. The red host is a feature-boundary defect, not a second coordinator.</figcaption>
-      </figure>
-      <div class="legend"><span><b>Blue:</b> coordination/composition</span><span><b>Green:</b> source-owned RMF data</span><span><b>Amber:</b> consumers</span><span><b>Red:</b> open finding</span></div>
-    </section>
+            <div class="summary-grid">
+                <article class="surface summary-panel">
+                    <h3>User problem</h3>
+                    <p>
+                        A launch-promo sheet can cover an RMF card, or an RMF card can remain
+                        published while a sheet is admitted. That overlap dilutes both prompts
+                        and produces timing-dependent behavior across app activation and NTP
+                        entry paths.
+                    </p>
+                    <p>
+                        The coordination boundary must be app-scoped because both presentation
+                        families can be reached from more than one physical view.
+                    </p>
+                </article>
 
-    <section id="flows" class="panel" aria-labelledby="flows-title">
-      <h2 id="flows-title">Admission and ownership flows</h2>
-      <div class="grid">
-        <figure class="diagram span-6" tabindex="0" aria-label="Scrollable RMF-first sequence diagram">
-          <svg viewBox="0 0 520 520" role="img" aria-labelledby="rmf-title rmf-desc">
-            <title id="rmf-title">RMF-first interaction</title><desc id="rmf-desc">An NTP prepares the shared source. The source checks renderability, acquires the slot and cooldown, retains the ownership context, publishes, and confirms on first appearance. A later modal is denied before provider evaluation.</desc>
-            <defs><marker id="a1" markerWidth="9" markerHeight="9" refX="8" refY="3" orient="auto"><path d="M0 0L0 6L9 3z" fill="#075985"/></marker></defs>
-            <style>.l{stroke:#075985;stroke-width:2;marker-end:url(#a1)}.b{fill:#fff;stroke:#0b2a4a;stroke-width:2}.g{fill:#dcfce7}.r{fill:#fee2e2;stroke:#991b1b}.tt{font:700 15px -apple-system,BlinkMacSystemFont,Segoe UI,Arial;fill:#14213d}.ss{font:13px -apple-system,BlinkMacSystemFont,Segoe UI,Arial;fill:#475569}</style>
-            <text class="tt" x="18" y="24">RMF first</text>
-            <rect class="b" x="20" y="48" width="480" height="55" rx="9"/><text class="tt" x="260" y="71" text-anchor="middle">1 · Container prepares the shared source</text><text class="ss" x="260" y="91" text-anchor="middle">openedAfterIdle policy; explicit checkpoint</text>
-            <line class="l" x1="260" y1="103" x2="260" y2="132"/>
-            <rect class="b" x="20" y="132" width="480" height="63" rx="9"/><text class="tt" x="260" y="157" text-anchor="middle">2 · Select + pure renderability check</text><text class="ss" x="260" y="179" text-anchor="middle">actual trigger/fallback is pinned</text>
-            <line class="l" x1="260" y1="195" x2="260" y2="224"/>
-            <rect class="b g" x="20" y="224" width="480" height="64" rx="9"/><text class="tt" x="260" y="250" text-anchor="middle">3 · Acquire slot + cooldown; retain context</text><text class="ss" x="260" y="272" text-anchor="middle">only then publish into homeMessages</text>
-            <line class="l" x1="260" y1="288" x2="260" y2="317"/>
-            <rect class="b g" x="20" y="317" width="480" height="64" rx="9"/><text class="tt" x="260" y="343" text-anchor="middle">4 · First physical appearance confirms once</text><text class="ss" x="260" y="365" text-anchor="middle">history + existing shown accounting</text>
-            <line class="l" x1="260" y1="381" x2="260" y2="410"/>
-            <rect class="b r" x="20" y="410" width="480" height="72" rx="9"/><text class="tt" x="260" y="438" text-anchor="middle">5 · Later modal acquisition denied</text><text class="ss" x="260" y="460" text-anchor="middle">provider is never evaluated; no stateful side effect</text>
-          </svg>
-          <figcaption>Verified through source/service/unit behavior; the exact visual interaction remains pending manual QA.</figcaption>
-        </figure>
-        <figure class="diagram span-6" tabindex="0" aria-label="Scrollable modal-first sequence diagram">
-          <svg viewBox="0 0 520 520" role="img" aria-labelledby="modal-title modal-desc">
-            <title id="modal-title">Modal-first interaction</title><desc id="modal-desc">The service reconciles the previous root, acquires the slot and cooldown, then evaluates providers and transfers the lease to the modal manager. NTP selection is denied before publication.</desc>
-            <defs><marker id="a2" markerWidth="9" markerHeight="9" refX="8" refY="3" orient="auto"><path d="M0 0L0 6L9 3z" fill="#075985"/></marker></defs>
-            <style>.l{stroke:#075985;stroke-width:2;marker-end:url(#a2)}.b{fill:#fff;stroke:#0b2a4a;stroke-width:2}.g{fill:#dcfce7}.r{fill:#fee2e2;stroke:#991b1b}.tt{font:700 15px -apple-system,BlinkMacSystemFont,Segoe UI,Arial;fill:#14213d}.ss{font:13px -apple-system,BlinkMacSystemFont,Segoe UI,Arial;fill:#475569}</style>
-            <text class="tt" x="18" y="24">Modal first</text>
-            <rect class="b" x="20" y="48" width="480" height="55" rx="9"/><text class="tt" x="260" y="71" text-anchor="middle">1 · Foreground/modal checkpoint</text><text class="ss" x="260" y="91" text-anchor="middle">reconcile prior exact root</text>
-            <line class="l" x1="260" y1="103" x2="260" y2="132"/>
-            <rect class="b g" x="20" y="132" width="480" height="63" rx="9"/><text class="tt" x="260" y="157" text-anchor="middle">2 · Acquire slot + cross-promo cooldown</text><text class="ss" x="260" y="179" text-anchor="middle">happens before provider evaluation</text>
-            <line class="l" x1="260" y1="195" x2="260" y2="224"/>
-            <rect class="b" x="20" y="224" width="480" height="64" rx="9"/><text class="tt" x="260" y="250" text-anchor="middle">3 · Evaluate providers in existing order</text><text class="ss" x="260" y="272" text-anchor="middle">release immediately if none is eligible</text>
-            <line class="l" x1="260" y1="288" x2="260" y2="317"/>
-            <rect class="b g" x="20" y="317" width="480" height="64" rx="9"/><text class="tt" x="260" y="343" text-anchor="middle">4 · Manager retains lease through exact root</text><text class="ss" x="260" y="365" text-anchor="middle">evaluation → schedule → attached presentation</text>
-            <line class="l" x1="260" y1="381" x2="260" y2="410"/>
-            <rect class="b r" x="20" y="410" width="480" height="72" rx="9"/><text class="tt" x="260" y="438" text-anchor="middle">5 · NTP RMF denied before publication</text><text class="ss" x="260" y="460" text-anchor="middle">no flash, shown event, dismissal, or cooldown write</text>
-          </svg>
-          <figcaption>Provider order and exact-root retention are covered by unit/real-UIKit/integration tests.</figcaption>
-        </figure>
-      </div>
+                <article class="surface summary-panel success">
+                    <h3>Success criterion</h3>
+                    <p>
+                        <strong>At most one presentation family owns the promo slot.</strong>
+                        Modal admission happens before stateful provider evaluation; RMF
+                        admission happens before a message is published to any NTP renderer.
+                    </p>
+                </article>
+            </div>
 
-      <h3>Ownership lifecycle, background teardown, and cooldown</h3>
-      <figure class="diagram" tabindex="0" aria-label="Scrollable ownership lifecycle diagram">
-        <svg viewBox="0 0 1080 300" role="img" aria-labelledby="life-title life-desc">
-          <title id="life-title">Ownership lifecycle</title><desc id="life-desc">Ownership proceeds from none to admitted to published and optionally confirmed. Background unpublishes, signals, releases, disarms, and preserves confirmed cooldown history. Progress resumes only on explicit preparation.</desc>
-          <defs><marker id="a3" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0 0L0 6L9 3z" fill="#075985"/></marker></defs>
-          <style>.b{fill:#fff;stroke:#0b2a4a;stroke-width:2}.g{fill:#dcfce7}.a{stroke:#075985;stroke-width:2.2;fill:none;marker-end:url(#a3)}.r{stroke:#991b1b}.tt{font:700 15px -apple-system,BlinkMacSystemFont,Segoe UI,Arial;fill:#14213d}.ss{font:13px -apple-system,BlinkMacSystemFont,Segoe UI,Arial;fill:#475569}</style>
-          <rect class="b" x="25" y="54" width="150" height="72" rx="9"/><text class="tt" x="100" y="83" text-anchor="middle">None</text><text class="ss" x="100" y="106" text-anchor="middle">slot free</text>
-          <rect class="b g" x="230" y="54" width="170" height="72" rx="9"/><text class="tt" x="315" y="83" text-anchor="middle">Admitted</text><text class="ss" x="315" y="106" text-anchor="middle">identity retained</text>
-          <rect class="b g" x="455" y="54" width="170" height="72" rx="9"/><text class="tt" x="540" y="83" text-anchor="middle">Published RMF</text><text class="ss" x="540" y="106" text-anchor="middle">history still empty</text>
-          <rect class="b g" x="680" y="54" width="170" height="72" rx="9"/><text class="tt" x="765" y="83" text-anchor="middle">Confirmed</text><text class="ss" x="765" y="106" text-anchor="middle">history written once</text>
-          <rect class="b" x="905" y="54" width="150" height="72" rx="9"/><text class="tt" x="980" y="83" text-anchor="middle">Cooldown</text><text class="ss" x="980" y="106" text-anchor="middle">10m / 24h</text>
-          <path class="a" d="M175 90H230"/><path class="a" d="M400 90H455"/><path class="a" d="M625 90H680"/><path class="a" d="M850 90H905"/>
-          <path class="a r" d="M765 126 C765 190 560 190 540 126"/><text class="tt" x="650" y="185" text-anchor="middle">background / terminal</text>
-          <path class="a r" d="M540 126 C540 250 150 250 100 126"/><text class="ss" x="310" y="244" text-anchor="middle">unpublish → synchronous signal → release → disarm</text>
-          <text class="ss" x="820" y="236" text-anchor="middle">Confirmed history survives background.</text>
-          <text class="ss" x="820" y="258" text-anchor="middle">No timer: retry requires a later checkpoint.</text>
-        </svg>
-        <figcaption>Never-appeared ownership writes no history and may reacquire after a later explicit preparation. Appeared ownership is a fresh acquisition subject to RMF→RMF and RMF→modal cooldowns.</figcaption>
-      </figure>
-    </section>
+            <div class="metric-grid" aria-label="Architecture scale">
+                <div class="metric">
+                    <span class="metric-value">1</span>
+                    <span class="metric-label">shared promo owner per app process</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-value">7</span>
+                    <span class="metric-label">launch-promo providers behind modal admission</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-value">4</span>
+                    <span class="metric-label">current conditional NTP activation paths</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-value">3</span>
+                    <span class="metric-label">directional cooldown relationships</span>
+                </div>
+            </div>
+        </section>
 
-    <section id="flag" class="panel" aria-labelledby="flag-title">
-      <h2 id="flag-title">Coordinated versus legacy behavior</h2>
-      <div class="table-wrap" tabindex="0" aria-label="Coordinated versus legacy behavior table">
-        <table>
-          <thead><tr><th>Concern</th><th>Coordination enabled</th><th>Coordination disabled</th><th>Review result</th></tr></thead>
-          <tbody>
-            <tr><td>Mode</td><td>Startup-latched coordinated graph</td><td>Startup-latched legacy graph</td><td><span class="status pass">Verified</span></td></tr>
-            <tr><td>Modal route</td><td>Slot/cross-promo cooldown before provider</td><td>Existing unarbitrated manager route</td><td><span class="status pass">Verified</span></td></tr>
-            <tr><td>RMF source</td><td>Inert construction; explicit preparation; source owns lease</td><td>Existing eager/refresh legacy selection and accounting</td><td><span class="status partial">One host leaks preparation</span></td></tr>
-            <tr><td>Observers/signals</td><td>Configuration is sole global observer; object-scoped consumers</td><td>Models retain legacy global observer behavior</td><td><span class="status pass">Verified</span></td></tr>
-            <tr><td>Cooldown/history</td><td>Confirmed appearance drives cross-promo history</td><td>No coordinated lease/cooldown/history mutation</td><td><span class="status fail">Activation can mutate legacy source</span></td></tr>
-            <tr><td>Lifecycle</td><td>Central background unpublish/signal/release</td><td>Legacy source behavior</td><td><span class="status pass">Static path verified</span></td></tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="callout finding"><span class="label finding-label">Open finding</span> `MainViewController.swift:5553` invokes `prepareForNTP` without the `.coordinated` guard used by the other three activation seams. `HomePageConfiguration.swift:108-111` rebuilds legacy messages, so the path is not inert when the flag is off.</div>
-    </section>
+        <section id="stack" aria-labelledby="stack-title">
+            <p class="eyebrow">Delivery structure</p>
+            <h2 id="stack-title">Three production layers</h2>
+            <p class="section-intro">
+                The implementation is arranged as a linear stack. Each layer adds one coherent
+                architectural capability while retaining the behavior established below it.
+            </p>
 
-    <section id="future" class="panel" aria-labelledby="future-title">
-      <h2 id="future-title">Future RMF surface integration</h2>
-      <div class="grid">
-        <div class="span-6">
-          <h3>What a conditional container does</h3>
-          <ol>
-            <li>Before activation-time eligibility, call <code>prepareForNTP(openedAfterIdle:)</code> once.</li>
-            <li>Consume the shared <code>HomePageMessagesConfiguration</code> data.</li>
-            <li>Observe the configuration-scoped content signal if it must reevaluate visibility after source changes.</li>
-          </ol>
-          <p>A leaf renderer that receives an already-prepared source needs no Promo Queue call.</p>
-        </div>
-        <div class="span-6">
-          <h3>What it never reports</h3>
-          <ul>
-            <li>lease acquisition, confirmation, or release;</li>
-            <li>visible/renderable/covered state;</li>
-            <li>mount count or “last renderer” disappearance;</li>
-            <li>handoff, drain, or removal acknowledgement; or</li>
-            <li>foreground/background lifecycle.</li>
-          </ul>
-        </div>
-      </div>
-    </section>
+            <div class="stack-grid">
+                <article class="surface stack-card">
+                    <p class="stack-label">PR 1 · Foundation</p>
+                    <h3><code>bartosz/promo-q-simp-2</code></h3>
+                    <p>
+                        Defines the startup-latched mode, app-scoped service graph, one-slot
+                        arbiter, directional cooldown policy, and modal admission lifecycle.
+                    </p>
+                    <p class="fine-print"><code>6234fda331</code> · parent: <code>main</code></p>
+                </article>
 
-    <section id="fidelity" class="panel" aria-labelledby="fidelity-title">
-      <div class="score">
-        <div class="score-ring" aria-label="Proposal fidelity score 9 out of 10"><b>9/10</b></div>
-        <div><h2 id="fidelity-title">Proposal fidelity</h2><p>The implementation preserves every core simplified principle. The deduction is for one feature-off correctness miss and the modest—but justified—iOS identity/startup/source-signal/modal-retention machinery.</p></div>
-      </div>
-      <h3>Complete material divergence table</h3>
-      <div class="table-wrap" tabindex="0" aria-label="Proposal divergence table">
-        <table>
-          <thead><tr><th>Proposal → final design → implementation</th><th>Concrete iOS problem solved</th><th>Cost</th><th>Assessment</th></tr></thead>
-          <tbody>
-            <tr><td>Per-model leases → one source-owned aggregate in <code>HomePageConfiguration</code></td><td>All NTPs share one mutable source; one acquisition prevents duplicate ownership.</td><td>App-scoped aggregate and gate dependency.</td><td class="status pass">Intentional / justified</td></tr>
-            <tr><td>Same-ID view joins/retain counts → source reuses its current owner; arbiter admits only a free slot</td><td>Avoids physical-view lifetime and handoff bookkeeping.</td><td>A future independent source needs an adapter.</td><td class="status pass">Simpler / justified</td></tr>
-            <tr><td>Selection on render → inert construction plus explicit activation preparation</td><td>Construction cannot invisibly starve launch modals.</td><td>Four host seams to audit.</td><td class="status partial">Justified; one guard defect</td></tr>
-            <tr><td>Launch order unspecified → explicit normal/background initialization</td><td>Initial NTP may attach before foreground; background launch must not claim RMF.</td><td>One launch boolean/admission state.</td><td class="status pass">Intentional / justified</td></tr>
-            <tr><td>Models observe global changes → configuration is sole selector with scoped signal</td><td>Eliminates order-dependent selection and recursive shared-state mutation.</td><td>Conditional-host publisher wiring.</td><td class="status pass">Intentional / justified</td></tr>
-            <tr><td>Trigger semantics implicit → actual filter pinned; request/fallback policy separate</td><td>A no-trigger fallback cannot be replaced by a later competing after-idle request.</td><td>Two related private concepts.</td><td class="status pass">Intentional / justified</td></tr>
-            <tr><td>Gate may own onboarding → onboarding stays in source policy</td><td>Avoids duplicating existing RMF product eligibility.</td><td>None.</td><td class="status pass">Simpler / justified</td></tr>
-            <tr><td>Unsupported content unspecified → pure renderability check before acquisition</td><td>Structurally invisible content cannot wedge the slot.</td><td>Shared conversion predicate.</td><td class="status pass">Intentional / justified</td></tr>
-            <tr><td>Message ID identity → opaque per-acquisition RMF ID plus one modal ownership ID</td><td>Stale same-ID SwiftUI and async callbacks cannot affect a replacement.</td><td>Typed context plumbing.</td><td class="status pass">Intentional / justified</td></tr>
-            <tr><td>Lease confirms+records → arbiter confirms, service wrapper records, source reports events</td><td>Keeps arbitration free of persistence/analytics while preserving once-only effects.</td><td>Small wrapper.</td><td class="status pass">Intentional / justified</td></tr>
-            <tr><td>Modal releases “on dismissal” → lease spans evaluation/schedule/exact-root attachment</td><td>Nested children do not release the selected root; no provider-specific callbacks.</td><td>Four bounded modal phases.</td><td class="status pass">Justified; not broad state</td></tr>
-            <tr><td>Loose teardown → unpublish, signal, release; background disarms</td><td>No modal acquisition while stale RMF remains published; no background reacquisition.</td><td>Admission flag and deliberate blank period.</td><td class="status pass">Intentional / justified</td></tr>
-            <tr><td>Generic cooldown → directional 10m / 10m / 24h after confirmed appearance</td><td>Implements required cross-promo spacing with failure-tolerant process authority.</td><td>Policy/history storage.</td><td class="status pass">Intentional / justified</td></tr>
-            <tr><td>Concurrency unspecified → full source/model/gate path on main actor</td><td>Serializes selection, retention, publication, signals, and callbacks.</td><td>Actor annotation propagation.</td><td class="status pass">Intentional / justified</td></tr>
-            <tr><td>Feature transitions unspecified → startup-latched immutable mode</td><td>Removes live migration, barriers, invalidation, and re-adoption.</td><td>Relaunch required.</td><td class="status pass">Intentional / justified</td></tr>
-            <tr><td>All sheets could be inferred → only seven launch-promo provider categories</td><td>Avoids intercepting arbitrary UIKit presentation.</td><td>New modal systems require adoption.</td><td class="status pass">Accepted scope</td></tr>
-            <tr><td>Retry timing vague → natural checkpoints only</td><td>Keeps coordination an admission gate rather than a scheduler.</td><td>Eligibility can be delayed.</td><td class="status pass">Accepted simplification</td></tr>
-            <tr><td>Optional disappearance precision → ordinary NTP disappearance never releases</td><td>Safe last-view release would require renderer IDs/counting.</td><td>Source can over-hold off-NTP.</td><td class="status pass">Accepted simplification</td></tr>
-            <tr><td>Physical exclusivity → source/admission ordering, not exit-animation proof</td><td>Frame-perfect removal would recreate acknowledgements/handoff.</td><td>Brief duplicate mounts possible.</td><td class="status pass">Accepted simplification</td></tr>
-            <tr><td>Legacy activation must be untouched → three guarded seams, one unguarded Main seam</td><td>The preparation seam is needed only by coordinated conditional content.</td><td>Default-off shared state changes.</td><td class="status fail">Correctness-threatening</td></tr>
-            <tr><td>No diagnostics → passive snapshot plus explicit cooldown resets</td><td>Makes long cooldown manual QA practical without force-owner controls.</td><td>Internal UI/protocols; small test-only hook.</td><td class="status partial">Justified; hook optional cleanup</td></tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="callout"><span class="label verified">Verified</span> The rejected broad state machine was not recreated: no renderer registry, visibility/coverage, retain count, handoff/drain, removal terminal, timer, waiter, fairness, or retry queue exists.</div>
-    </section>
+                <article class="surface stack-card">
+                    <p class="stack-label">PR 2 · RMF integration</p>
+                    <h3><code>bartosz/promo-q-simp-3</code></h3>
+                    <p>
+                        Moves coordinated RMF ownership to the shared NTP message source,
+                        introduces acquisition identities, and connects every current
+                        conditional NTP activation path.
+                    </p>
+                    <p class="fine-print"><code>479ebe6956</code> · parent: PR 1</p>
+                </article>
 
-    <section id="compliance" class="panel" aria-labelledby="compliance-title">
-      <h2 id="compliance-title">Implementation-plan compliance</h2>
-      <div class="table-wrap" tabindex="0" aria-label="Implementation plan compliance table">
-        <table>
-          <thead><tr><th>Phase</th><th>Status</th><th>Evidence / qualification</th></tr></thead>
-          <tbody>
-            <tr><td>0.1–0.4 Remove live/per-surface architecture and its tests</td><td class="status pass">Complete</td><td>Rejected-symbol searches clean; renderer plumbing and broad transition/retry tests removed.</td></tr>
-            <tr><td>1.1 Startup latch</td><td class="status pass">Complete</td><td>One factory read; default disabled; relaunch messaging retained.</td></tr>
-            <tr><td>1.2 Typed one-owner arbiter</td><td class="status pass">Complete</td><td>Identity-safe release/recovery/appearance; PR 3 snapshot passive.</td></tr>
-            <tr><td>1.3 Directional cooldown/history</td><td class="status pass">Complete</td><td>Exact boundaries, future timestamps, injected clock, stable storage and fallback.</td></tr>
-            <tr><td>1.4–1.6 Service, modal retention, composition</td><td class="status pass">Complete</td><td>Pre-provider admission, exact-root ownership, one graph.</td></tr>
-            <tr><td>1.7–1.8 Tests/alignment</td><td class="status pass">Complete with gaps</td><td>70 unit + 11 integration passed; optional test-only reconciliation return remains.</td></tr>
-            <tr><td>2.1 Injection/startup/four host seams</td><td class="status fail">Partial / blocker</td><td>Graph and both startup paths correct; legacy/iPad Main activation lacks flag guard.</td></tr>
-            <tr><td>2.2–2.8 Shared source semantics</td><td class="status pass">Complete</td><td>Central selection, identity, renderability, accounting, ordered teardown, checkpoints, test doubles.</td></tr>
-            <tr><td>2.9 Focused tests</td><td class="status partial">Partial</td><td>54/54 layer and 112/112 integrated pass; blocker regression absent; two waits unbounded.</td></tr>
-            <tr><td>Phase 2 manual validation</td><td class="status pending">Pending</td><td>Requires configured RMF/modal eligibility and all host/lifecycle scenarios.</td></tr>
-            <tr><td>3.1–3.3 Diagnostics/reset controls</td><td class="status partial">Complete with low issue</td><td>Same graph, passive reads, authoritative resets; generic completion message is premature.</td></tr>
-            <tr><td>3.4 Debug tests</td><td class="status partial">Partial to policy</td><td>6/6 pass; formatter/snapshot exposure is test-driven; modal reset lacks symmetric test.</td></tr>
-            <tr><td>Final static/build verification</td><td class="status pass">Complete</td><td>All heads build; one graph/source; clean trees and diff checks.</td></tr>
-            <tr><td>External phase 4</td><td class="status pending">Pending / external</td><td>Human merge, manual QA, version capture, privacy-config rollout and cleanup ownership.</td></tr>
-          </tbody>
-        </table>
-      </div>
-      <h3>Invariant audit</h3>
-      <p><span class="status pass">16 of 17</span> plan invariants are satisfied. Main-actor isolation, synchronous admission, pre-provider/pre-publication gates, single ownership, stale-context safety, source-level pinning, appearance accounting, background teardown, absence of renderer/timer state, and project membership are complete. The only failed invariant is “legacy behavior remains available when the flag is disabled.”</p>
-      <h3>Accepted simplifications</h3>
-      <p>All accepted simplifications are present and justified: seven-provider scope; arbitrary-sheet coverage; off-NTP over-hold; fresh post-background acquisition/cooldown rules; brief duplicate mounts; no Fire/landscape lease rule; checkpoint delay/no fairness; lazy modal release; best-effort dismissal/unique shown; startup latch; no new telemetry; and expected lower regular-shown volume.</p>
-    </section>
+                <article class="surface stack-card">
+                    <p class="stack-label">PR 3 · Operations</p>
+                    <h3><code>bartosz/promo-q-simp-4</code></h3>
+                    <p>
+                        Exposes passive queue state and explicit cooldown controls through the
+                        existing internal screen, now named Prompt Coordination.
+                    </p>
+                    <p class="fine-print"><code>5037f6fbee</code> · parent: PR 2</p>
+                </article>
+            </div>
 
-    <section id="hotspots" class="panel" aria-labelledby="hotspots-title">
-      <h2 id="hotspots-title">Reviewer hotspots and key decisions</h2>
-      <div class="grid">
-        <div class="span-6">
-          <h3>Correctness hotspots</h3>
-          <ul>
-            <li><code>HomePageConfiguration.swift:245-335</code> — selection, pinning, retain-before-publish, teardown ordering.</li>
-            <li><code>PromoCoordinationService.swift:100-169</code> — admission before provider/source work.</li>
-            <li><code>PromoQueueLeaseArbiter.swift:156-251</code> — one owner, weak recovery, identity-safe release and appearance.</li>
-            <li><code>ModalPromptCoordinationManager.swift:163-204,244-264</code> — exact-root retention and lazy reconciliation.</li>
-            <li><code>MainViewController.swift:5553</code> — missing feature-mode guard.</li>
-          </ul>
-        </div>
-        <div class="span-6">
-          <h3>Intentional boundaries</h3>
-          <ul>
-            <li>One modal identity; RMF needs a separate acquisition identity.</li>
-            <li>Source owns RMF; renderers only map and report existing actions/appearance.</li>
-            <li>Onboarding/renderability remain source policy, not arbiter state.</li>
-            <li>Background is a terminal; ordinary disappearance is not.</li>
-            <li>No timer, immediate handoff, fairness, force-owner debug control, or new pixel.</li>
-          </ul>
-        </div>
-      </div>
-    </section>
+            <div class="branch-map" aria-label="Linear branch ancestry">
+                <div class="branch-node"><strong>main</strong><br><code>48a613b221</code></div>
+                <div class="branch-arrow" aria-hidden="true">→</div>
+                <div class="branch-node"><strong>PR 1</strong><br><code>simp-2</code></div>
+                <div class="branch-arrow" aria-hidden="true">→</div>
+                <div class="branch-node"><strong>PR 2</strong><br><code>simp-3</code></div>
+                <div class="branch-arrow" aria-hidden="true">→</div>
+                <div class="branch-node"><strong>PR 3</strong><br><code>simp-4</code></div>
+            </div>
+        </section>
 
-    <section id="tests" class="panel" aria-labelledby="tests-title">
-      <h2 id="tests-title">Independent validation and test strategy</h2>
-      <p>All Apple work used XcodeBuildMCP on the booted <strong>iPhone 17 Pro, iOS 26.4</strong>. No raw Apple build/simulator command was used.</p>
-      <div class="table-wrap" tabindex="0" aria-label="Independent validation results table">
-        <table>
-          <thead><tr><th>Branch</th><th>Scheme / selection</th><th>Result</th></tr></thead>
-          <tbody>
-            <tr><td>PR 1</td><td><code>iOS Browser Alpha</code> · Debug build</td><td class="status pass">Passed</td></tr>
-            <tr><td>PR 1</td><td><code>iOS Unit Tests</code> · 8 changed coordinator/modal/NTP suites</td><td class="status pass">70 passed</td></tr>
-            <tr><td>PR 1</td><td><code>iOS Integration Tests</code> · modal manager</td><td class="status pass">11 passed</td></tr>
-            <tr><td>PR 1</td><td><code>iOS Browser</code> · 2 changed SharedState suites</td><td class="status partial">12 passed / 2 Dax failures</td></tr>
-            <tr><td><code>main</code> baseline</td><td>Same SharedState suites</td><td class="status partial">13 passed / same family failed</td></tr>
-            <tr><td>PR 1 isolated</td><td>Each failed Dax test separately</td><td class="status pass">1/1 + 1/1 passed</td></tr>
-            <tr><td>PR 2</td><td><code>iOS Browser Alpha</code> · Debug build</td><td class="status pass">Passed</td></tr>
-            <tr><td>PR 2</td><td><code>iOS Unit Tests</code> · all 4 changed RMF/source suites</td><td class="status pass">54 passed</td></tr>
-            <tr><td>PR 3</td><td><code>iOS Browser Alpha</code> · Debug build</td><td class="status pass">Passed</td></tr>
-            <tr><td>PR 3</td><td><code>iOS Unit Tests</code> · changed debug/arbiter suites</td><td class="status pass">6 passed</td></tr>
-            <tr><td>Integrated PR 3</td><td><code>iOS Unit Tests</code> · 13 combined queue/RMF/flag/debug suites</td><td class="status pass">112 passed</td></tr>
-            <tr><td>Integrated PR 3</td><td><code>iOS Browser</code> · focused after-idle/onboarding SharedState</td><td class="status pass">7 passed</td></tr>
-            <tr><td>Integrated PR 3</td><td><code>iOS Integration Tests</code> · modal manager</td><td class="status pass">11 passed</td></tr>
-          </tbody>
-        </table>
-      </div>
-      <p class="small">The broad PR 1 SharedState failures reproduce at <code>main</code> and pass individually, so they are classified as pre-existing/order-dependent harness behavior. One initial invalid scheme selection was corrected and is not a product failure.</p>
+        <section id="components" aria-labelledby="components-title">
+            <p class="eyebrow">Runtime topology</p>
+            <h2 id="components-title">One graph assembled at launch</h2>
+            <p class="section-intro">
+                The factory converts the feature flag into an immutable process mode and
+                assembles a single coordination graph. Modal and RMF paths share admission
+                state, but their domain logic remains separate.
+            </p>
 
-      <h3>Exact suite selections</h3>
-      <ul>
-        <li><strong>PR 1 unit:</strong> <code>PromoCoordinationServicePromoQueueTests</code>, <code>PromoCoordinationServiceTests</code>, <code>PromoQueueCooldownPolicyTests</code>, both modal-manager suites, real-UIKit modal tests, arbiter tests, and <code>NewTabPageMessagesModelTests</code>.</li>
-        <li><strong>PR 1 integration:</strong> <code>ModalPromptCoordinationManagerIntegrationTests</code>. <strong>SharedState comparison:</strong> full <code>NewTabPageControllerDaxDialogTests</code> and <code>OnboardingDaxFavouritesTests</code>, with the view-appear/onboarding-complete failures rerun alone.</li>
-        <li><strong>PR 2 unit:</strong> <code>HomePageConfigurationTests</code>, <code>NewTabPageMessagesModelTests</code>, <code>HomeMessageViewModelBuilderTests</code>, and <code>HomeMessageViewModelTests</code>.</li>
-        <li><strong>PR 3 changed unit:</strong> debug-view-model and arbiter suites. <strong>Integrated unit:</strong> all unique PR 1/2/3 suites plus <code>PromoPresentationCoordinationFeatureFlagTests</code> (13 total).</li>
-        <li><strong>Integrated SharedState:</strong> the three after-idle methods in <code>NewTabPageControllerDaxDialogTests</code> plus all <code>OnboardingDaxFavouritesTests</code>. <strong>Integrated integration:</strong> modal-manager integration.</li>
-      </ul>
+            <figure class="diagram architecture">
+                <svg viewBox="0 0 1180 720" role="img" aria-labelledby="architecture-svg-title architecture-svg-desc">
+                    <title id="architecture-svg-title">Promo Queue component architecture</title>
+                    <desc id="architecture-svg-desc">
+                        Launching creates the factory and app-scoped service. The service uses
+                        the lease arbiter and cooldown policy. Modal providers connect through
+                        the modal manager. RMF selection connects through HomePageConfiguration,
+                        NewTabPageMessagesModel, and four NTP hosts. Prompt Coordination reads
+                        the same service graph.
+                    </desc>
+                    <defs>
+                        <marker id="arrow-blue" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+                            <path d="M0,0 L0,6 L9,3 z" fill="#164e8a"/>
+                        </marker>
+                        <marker id="arrow-teal" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+                            <path d="M0,0 L0,6 L9,3 z" fill="#176b64"/>
+                        </marker>
+                        <marker id="arrow-violet" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+                            <path d="M0,0 L0,6 L9,3 z" fill="#65459b"/>
+                        </marker>
+                    </defs>
 
-      <div class="grid">
-        <div class="span-6">
-          <h3>Missing high-value coverage</h3>
-          <ol>
-            <li><strong>Required:</strong> flag-off Main suggestion-tray activation causes no fetch/source mutation.</li>
-            <li>Already-stale callbacks after same-ID reacquisition cannot confirm, dismiss, or release the new owner.</li>
-            <li>Direct weak-token reacquisition for both token kinds.</li>
-            <li>Both histories present: later incoming-RMF cooldown boundary wins.</li>
-            <li>Legacy remote lease denial is side-effect free.</li>
-            <li>Modal reset clears history but preserves active ownership.</li>
-            <li>Startup normal/background composition remains static/manual evidence.</li>
-          </ol>
-        </div>
-        <div class="span-6">
-          <h3>Removal / simplification candidates</h3>
-          <ul>
-            <li>Remove tautological <code>renderabilityHasNoImageSideEffects</code>; its fakes are never passed to <code>canBuild</code>.</li>
-            <li>Delete duplicate passive snapshot nil assertion.</li>
-            <li>Reduce integration cooldown matrices to 23h/24h; policy tests retain other boundaries.</li>
-            <li>Remove second-provider-only priority test; first-success and later-success tests retain ordering coverage.</li>
-            <li>Assert debug cooldown formatting once; avoid direct snapshot/read-count assertions.</li>
-          </ul>
-        </div>
-      </div>
-      <div class="callout pending"><span class="label tradeoff">Testability</span> No Swift <code>public</code> API was added for tests. PR 3’s internal debug view model, snapshot getter, and formatter injection are the only test-driven production exposure identified.</div>
-    </section>
+                    <rect x="30" y="30" width="1120" height="95" rx="18" fill="#e7f0fb" stroke="#164e8a" stroke-width="2"/>
+                    <text x="60" y="65" font-size="15" font-weight="700" fill="#164e8a">PROCESS ASSEMBLY</text>
+                    <rect x="270" y="52" width="240" height="50" rx="11" fill="#fff" stroke="#164e8a" stroke-width="2"/>
+                    <text x="390" y="73" text-anchor="middle" font-size="16" font-weight="700" fill="#172033">Launching</text>
+                    <text x="390" y="91" text-anchor="middle" font-size="12" fill="#526075">one app-services graph</text>
+                    <rect x="670" y="52" width="240" height="50" rx="11" fill="#fff" stroke="#164e8a" stroke-width="2"/>
+                    <text x="790" y="73" text-anchor="middle" font-size="16" font-weight="700" fill="#172033">PromoCoordinationFactory</text>
+                    <text x="790" y="91" text-anchor="middle" font-size="12" fill="#526075">flag → immutable mode</text>
+                    <line x1="510" y1="77" x2="662" y2="77" stroke="#164e8a" stroke-width="2.5" marker-end="url(#arrow-blue)"/>
 
-    <section id="rollout" class="panel" aria-labelledby="rollout-title">
-      <h2 id="rollout-title">Accepted limitations, manual QA, rollout and rollback</h2>
-      <div class="grid">
-        <div class="span-6">
-          <h3>Pending manual validation</h3>
-          <ul>
-            <li>Flag-off legacy parity after the fix.</li>
-            <li>RMF-first and modal-first visual scenarios.</li>
-            <li>All seven providers and all four NTP host families.</li>
-            <li>Dismissal, expiry, replacement, onboarding, Fire, landscape.</li>
-            <li>Background store update, appeared/never-appeared resume, cooldown boundary checkpoint.</li>
-            <li>Relaunch persistence and internal debug-screen interactions.</li>
-          </ul>
-        </div>
-        <div class="span-6">
-          <h3>Rollout handoff</h3>
-          <ul>
-            <li>Do not deploy until the blocker is fixed, reviewed, merged and contained in a known iOS version.</li>
-            <li>Suggested external cohorts: 5% → 25% → 50% → 100%, subject to the rollout DRI.</li>
-            <li>Rollback: remotely disable <code>iOSPromoPresentationCoordination</code>; a new process graph is required.</li>
-            <li>Lower regular <code>remoteMessageShown</code> volume is expected under once-per-ownership accounting.</li>
-            <li>Assign privacy-config, deployment, release, monitoring and cleanup owners.</li>
-            <li>Remove legacy branches only after 100% rollout plus the agreed soak/rollback window.</li>
-          </ul>
-        </div>
-      </div>
-      <div class="callout pending"><span class="label pending-label">Pending</span> No privacy-configuration change, cohort deployment, PR mutation, release-version record, or manual scenario claim was made during this review.</div>
-    </section>
+                    <rect x="350" y="165" width="480" height="250" rx="22" fill="#fff" stroke="#164e8a" stroke-width="3"/>
+                    <text x="590" y="198" text-anchor="middle" font-size="15" font-weight="700" fill="#164e8a">APP-SCOPED COORDINATION</text>
+                    <rect x="450" y="220" width="280" height="62" rx="12" fill="#e7f0fb" stroke="#164e8a" stroke-width="2"/>
+                    <text x="590" y="246" text-anchor="middle" font-size="18" font-weight="700" fill="#172033">PromoCoordinationService</text>
+                    <text x="590" y="268" text-anchor="middle" font-size="12" fill="#526075">main-actor admission facade</text>
+                    <rect x="390" y="322" width="180" height="60" rx="12" fill="#fff3d4" stroke="#815d12" stroke-width="2"/>
+                    <text x="480" y="346" text-anchor="middle" font-size="16" font-weight="700" fill="#172033">Lease arbiter</text>
+                    <text x="480" y="367" text-anchor="middle" font-size="12" fill="#526075">one typed owner</text>
+                    <rect x="610" y="322" width="180" height="60" rx="12" fill="#fff3d4" stroke="#815d12" stroke-width="2"/>
+                    <text x="700" y="346" text-anchor="middle" font-size="16" font-weight="700" fill="#172033">Cooldown policy</text>
+                    <text x="700" y="367" text-anchor="middle" font-size="12" fill="#526075">directional history</text>
+                    <line x1="535" y1="282" x2="490" y2="316" stroke="#815d12" stroke-width="2" marker-end="url(#arrow-blue)"/>
+                    <line x1="645" y1="282" x2="690" y2="316" stroke="#815d12" stroke-width="2" marker-end="url(#arrow-blue)"/>
+                    <line x1="790" y1="102" x2="790" y2="145" stroke="#164e8a" stroke-width="2.5"/>
+                    <line x1="790" y1="145" x2="590" y2="145" stroke="#164e8a" stroke-width="2.5"/>
+                    <line x1="590" y1="145" x2="590" y2="212" stroke="#164e8a" stroke-width="2.5" marker-end="url(#arrow-blue)"/>
 
-    <section id="hygiene" class="panel" aria-labelledby="hygiene-title">
-      <h2 id="hygiene-title">Documentation and repository hygiene</h2>
-      <ul>
-        <li><span class="status pass">Verified:</span> production trees contain none of <code>project_log.md</code>, <code>project_lessons/</code>, or <code>promo-queue-docs/</code>.</li>
-        <li><span class="status pass">Verified:</span> every layer and the combined range pass <code>git diff --check</code>.</li>
-        <li><span class="status pass">Verified:</span> detached review worktrees remained clean; no tracked root/iOS Makefile or build artifact was generated.</li>
-        <li><span class="status pass">Verified statically:</span> HTML5 structure, IDs/anchors/ARIA, offline resources, responsive containment, and print rules pass. The in-app browser security policy rejected local <code>file://</code> rendering, so pixel-level desktop/mobile inspection remains unverified.</li>
-        <li><span class="status pass">Verified:</span> the pre-existing local edit to <code>promo-queue-docs/final_review_prompt.md</code> was preserved and excluded from the review commit.</li>
-        <li>Only this report, the severity-first review, and durable project-memory updates belong to the documentation branch.</li>
-      </ul>
-    </section>
+                    <rect x="30" y="165" width="270" height="250" rx="22" fill="#e3f3f0" stroke="#176b64" stroke-width="2"/>
+                    <text x="165" y="198" text-anchor="middle" font-size="15" font-weight="700" fill="#176b64">MODAL DOMAIN</text>
+                    <rect x="65" y="220" width="200" height="62" rx="12" fill="#fff" stroke="#176b64" stroke-width="2"/>
+                    <text x="165" y="246" text-anchor="middle" font-size="16" font-weight="700" fill="#172033">Modal prompt manager</text>
+                    <text x="165" y="267" text-anchor="middle" font-size="12" fill="#526075">evaluate → commit → present</text>
+                    <rect x="65" y="322" width="200" height="60" rx="12" fill="#fff" stroke="#176b64" stroke-width="2"/>
+                    <text x="165" y="346" text-anchor="middle" font-size="16" font-weight="700" fill="#172033">Ordered providers</text>
+                    <text x="165" y="367" text-anchor="middle" font-size="12" fill="#526075">seven launch-promo sources</text>
+                    <line x1="342" y1="251" x2="273" y2="251" stroke="#176b64" stroke-width="2.5" marker-end="url(#arrow-teal)"/>
+                    <line x1="165" y1="282" x2="165" y2="314" stroke="#176b64" stroke-width="2.5" marker-end="url(#arrow-teal)"/>
 
-    <section id="sources" class="panel" aria-labelledby="sources-title">
-      <h2 id="sources-title">Evidence labels and source references</h2>
-      <p><span class="label verified">Verified</span> directly observed in code, git/GitHub metadata, clean-tree/static checks, or an independent run. <span class="label inference">Inference</span> follows from reviewed call order but was not manually reproduced. <span class="label tradeoff">Trade-off</span> is explicitly accepted by the final design. <span class="label pending-label">Pending</span> requires human/manual/external work.</p>
-      <p><span class="label inference">Inference</span> The blocker’s user-visible tray outcome follows from the unconditional call, legacy source rebuild, and downstream <code>canShow</code> reads. The UI scenario itself was not manually executed.</p>
-      <h3>Reviewed ranges</h3>
-      <ul>
-        <li><code>main...bartosz/promo-q-simp-2</code></li>
-        <li><code>bartosz/promo-q-simp-2...bartosz/promo-q-simp-3</code></li>
-        <li><code>bartosz/promo-q-simp-3...bartosz/promo-q-simp-4</code></li>
-        <li><code>main...bartosz/promo-q-simp-4</code></li>
-      </ul>
-      <h3>Primary repository sources</h3>
-      <ul class="sources">
-        <li><code>promo-queue-docs/new_direction_proposal.md</code></li>
-        <li><code>promo-queue-docs/tech_design_final.md</code></li>
-        <li><code>promo-queue-docs/implementation_plan.md</code></li>
-        <li><code>iOS/DuckDuckGo/AppServices/PromoCoordinationService.swift</code></li>
-        <li><code>iOS/DuckDuckGo/AppServices/PromoCoordinationFactory.swift</code></li>
-        <li><code>iOS/DuckDuckGo/ModalPromptCoordination/Arbitration/PromoQueueLeaseArbiter.swift</code></li>
-        <li><code>iOS/DuckDuckGo/ModalPromptCoordination/Cooldown/PromoQueueCooldownPolicy.swift</code></li>
-        <li><code>iOS/DuckDuckGo/ModalPromptCoordination/ModalPromptCoordinationManager.swift</code></li>
-        <li><code>iOS/DuckDuckGo/HomePageConfiguration.swift</code></li>
-        <li><code>iOS/DuckDuckGo/NewTabPageMessagesModel.swift</code></li>
-        <li><code>iOS/DuckDuckGo/HomeMessageViewModelBuilder.swift</code></li>
-        <li><code>iOS/DuckDuckGo/MainViewController.swift</code></li>
-        <li><code>iOS/DuckDuckGo/OmniBar/OmniBarEditingStateViewController.swift</code></li>
-        <li><code>iOS/DuckDuckGo/UnifiedToggleInput/UnifiedInputContentContainerViewController.swift</code></li>
-        <li><code>iOS/DuckDuckGo/UICoordination/MainCoordinator.swift</code></li>
-        <li><code>iOS/DuckDuckGo/Launch/Launching.swift</code></li>
-        <li><code>iOS/DuckDuckGo/ModalPromptCoordination/DebugMenu/ModalPromptCoordinationDebugMenu.swift</code></li>
-        <li><code>iOS/DuckDuckGoTests/HomePageConfigurationTests.swift</code></li>
-      </ul>
-      <p class="small">The companion severity-first record is <a href="final_code_review.md">final_code_review.md</a>. Historical project-log/handoff entries were context only and were not treated as proof.</p>
-    </section>
-  </main>
+                    <rect x="880" y="165" width="270" height="250" rx="22" fill="#f0eafb" stroke="#65459b" stroke-width="2"/>
+                    <text x="1015" y="198" text-anchor="middle" font-size="15" font-weight="700" fill="#65459b">RMF DOMAIN</text>
+                    <rect x="915" y="220" width="200" height="62" rx="12" fill="#fff" stroke="#65459b" stroke-width="2"/>
+                    <text x="1015" y="246" text-anchor="middle" font-size="16" font-weight="700" fill="#172033">HomePageConfiguration</text>
+                    <text x="1015" y="267" text-anchor="middle" font-size="12" fill="#526075">shared source owns lease</text>
+                    <rect x="915" y="322" width="200" height="60" rx="12" fill="#fff" stroke="#65459b" stroke-width="2"/>
+                    <text x="1015" y="346" text-anchor="middle" font-size="16" font-weight="700" fill="#172033">Message model + builder</text>
+                    <text x="1015" y="367" text-anchor="middle" font-size="12" fill="#526075">selection and renderability</text>
+                    <line x1="907" y1="251" x2="838" y2="251" stroke="#65459b" stroke-width="2.5" marker-end="url(#arrow-violet)"/>
+                    <line x1="1015" y1="282" x2="1015" y2="314" stroke="#65459b" stroke-width="2.5" marker-end="url(#arrow-violet)"/>
 
-  <footer>
-    <div class="shell">Prepared from the reviewed local branch heads and independent XcodeBuildMCP evidence. No production branch, commit, pull request, or remote configuration was mutated.</div>
-  </footer>
+                    <rect x="30" y="460" width="880" height="220" rx="22" fill="#f7f9fc" stroke="#c7d2df" stroke-width="2"/>
+                    <text x="60" y="492" font-size="15" font-weight="700" fill="#526075">CURRENT NTP CONSUMERS</text>
+                    <rect x="60" y="520" width="190" height="115" rx="12" fill="#fff" stroke="#65459b" stroke-width="2"/>
+                    <text x="155" y="551" text-anchor="middle" font-size="15" font-weight="700" fill="#172033">Standard NTP</text>
+                    <text x="155" y="575" text-anchor="middle" font-size="12" fill="#526075">MainViewController</text>
+                    <text x="155" y="596" text-anchor="middle" font-size="12" fill="#526075">HomePageViewController</text>
+                    <rect x="270" y="520" width="190" height="115" rx="12" fill="#fff" stroke="#65459b" stroke-width="2"/>
+                    <text x="365" y="551" text-anchor="middle" font-size="15" font-weight="700" fill="#172033">Suggestion tray</text>
+                    <text x="365" y="575" text-anchor="middle" font-size="12" fill="#526075">legacy / iPad</text>
+                    <text x="365" y="596" text-anchor="middle" font-size="12" fill="#526075">MainViewController</text>
+                    <rect x="480" y="520" width="190" height="115" rx="12" fill="#fff" stroke="#65459b" stroke-width="2"/>
+                    <text x="575" y="551" text-anchor="middle" font-size="15" font-weight="700" fill="#172033">OmniBar editing</text>
+                    <text x="575" y="575" text-anchor="middle" font-size="12" fill="#526075">SuggestionTrayManager</text>
+                    <text x="575" y="596" text-anchor="middle" font-size="12" fill="#526075">editing-state host</text>
+                    <rect x="690" y="520" width="190" height="115" rx="12" fill="#fff" stroke="#65459b" stroke-width="2"/>
+                    <text x="785" y="551" text-anchor="middle" font-size="15" font-weight="700" fill="#172033">Unified input</text>
+                    <text x="785" y="575" text-anchor="middle" font-size="12" fill="#526075">content container</text>
+                    <text x="785" y="596" text-anchor="middle" font-size="12" fill="#526075">activation checkpoint</text>
+                    <line x1="1015" y1="382" x2="1015" y2="440" stroke="#65459b" stroke-width="2.5"/>
+                    <line x1="1015" y1="440" x2="470" y2="440" stroke="#65459b" stroke-width="2.5"/>
+                    <line x1="470" y1="440" x2="470" y2="500" stroke="#65459b" stroke-width="2.5"/>
+                    <line x1="155" y1="500" x2="785" y2="500" stroke="#65459b" stroke-width="2"/>
+                    <line x1="155" y1="500" x2="155" y2="512" stroke="#65459b" stroke-width="2" marker-end="url(#arrow-violet)"/>
+                    <line x1="365" y1="500" x2="365" y2="512" stroke="#65459b" stroke-width="2" marker-end="url(#arrow-violet)"/>
+                    <line x1="575" y1="500" x2="575" y2="512" stroke="#65459b" stroke-width="2" marker-end="url(#arrow-violet)"/>
+                    <line x1="785" y1="500" x2="785" y2="512" stroke="#65459b" stroke-width="2" marker-end="url(#arrow-violet)"/>
+
+                    <rect x="950" y="490" width="200" height="150" rx="18" fill="#fff3d4" stroke="#815d12" stroke-width="2"/>
+                    <text x="1050" y="523" text-anchor="middle" font-size="15" font-weight="700" fill="#815d12">INTERNAL OPERATIONS</text>
+                    <text x="1050" y="558" text-anchor="middle" font-size="17" font-weight="700" fill="#172033">Prompt Coordination</text>
+                    <text x="1050" y="583" text-anchor="middle" font-size="12" fill="#526075">passive snapshot</text>
+                    <text x="1050" y="603" text-anchor="middle" font-size="12" fill="#526075">explicit cooldown resets</text>
+                    <line x1="830" y1="352" x2="930" y2="352" stroke="#815d12" stroke-width="2"/>
+                    <line x1="930" y1="352" x2="930" y2="565" stroke="#815d12" stroke-width="2"/>
+                    <line x1="930" y1="565" x2="942" y2="565" stroke="#815d12" stroke-width="2" marker-end="url(#arrow-blue)"/>
+                </svg>
+                <figcaption>
+                    Solid arrows represent construction, admission calls, or source delivery. Colored regions distinguish
+                    process assembly, modal behavior, RMF behavior, shared coordination, consumers,
+                    and internal operations; labels carry the same meaning without color.
+                </figcaption>
+            </figure>
+
+            <ul class="legend" aria-label="Diagram legend">
+                <li class="blue"><span class="legend-swatch"></span>App assembly and coordination</li>
+                <li class="teal"><span class="legend-swatch"></span>Modal domain</li>
+                <li class="violet"><span class="legend-swatch"></span>RMF domain</li>
+                <li class="amber"><span class="legend-swatch"></span>Shared state and operations</li>
+            </ul>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th scope="col">Component</th>
+                            <th scope="col">Responsibility</th>
+                            <th scope="col">State it owns</th>
+                            <th scope="col">Boundary</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>PromoCoordinationFactory</code></td>
+                            <td>Composes the process graph and maps the startup flag to a mode.</td>
+                            <td>No mutable presentation state.</td>
+                            <td>Composition root for the queue.</td>
+                        </tr>
+                        <tr>
+                            <td><code>PromoCoordinationService</code></td>
+                            <td>Provides modal and RMF admission entry points on the main actor.</td>
+                            <td>Immutable mode and references to shared policy objects.</td>
+                            <td>Central coordinator without renderer state.</td>
+                        </tr>
+                        <tr>
+                            <td><code>PromoQueueLeaseArbiter</code></td>
+                            <td>Grants at most one typed owner and validates identity-safe actions.</td>
+                            <td>Modal or RMF owner, weak token, acquisition identity, appearance state.</td>
+                            <td>Ownership only; no content selection or UI visibility.</td>
+                        </tr>
+                        <tr>
+                            <td><code>PromoQueueCooldownPolicy</code></td>
+                            <td>Combines modal and RMF histories into directional boundaries.</td>
+                            <td>References to history stores.</td>
+                            <td>Eligibility time only; no scheduling.</td>
+                        </tr>
+                        <tr>
+                            <td><code>ModalPromptCoordinationManager</code></td>
+                            <td>Evaluates ordered providers and tracks the exact presented root.</td>
+                            <td>Idle, evaluating, committed, or presentation-active phase.</td>
+                            <td>Modal selection and presentation lifecycle.</td>
+                        </tr>
+                        <tr>
+                            <td><code>HomePageConfiguration</code></td>
+                            <td>Selects renderable RMF content, acquires before publication, and releases it.</td>
+                            <td>Shared message source plus optional RMF ownership context.</td>
+                            <td>RMF source ownership; physical views are consumers.</td>
+                        </tr>
+                        <tr>
+                            <td><code>NewTabPageMessagesModel</code></td>
+                            <td>Bridges the shared source into SwiftUI presentation state.</td>
+                            <td>View-facing message identity and appearance forwarding.</td>
+                            <td>No queue acquisition or release.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="admission" aria-labelledby="admission-title">
+            <p class="eyebrow">Interaction model</p>
+            <h2 id="admission-title">Admission precedes publication or provider work</h2>
+            <p class="section-intro">
+                Both flows use the same owner, but they place the gate at the point that avoids
+                domain side effects: before modal provider evaluation and after RMF selection
+                and renderability checks but before shared-source publication.
+            </p>
+
+            <h3>RMF arrives first</h3>
+            <figure class="diagram sequence">
+                <svg viewBox="0 0 1120 540" role="img" aria-labelledby="rmf-sequence-title rmf-sequence-desc">
+                    <title id="rmf-sequence-title">RMF-first admission sequence</title>
+                    <desc id="rmf-sequence-desc">
+                        An NTP host prepares the shared source. The source selects and builds a
+                        message, obtains the RMF lease, publishes, and confirms first appearance.
+                        A modal request is denied while RMF owns the slot. Background teardown
+                        unpublishes before releasing.
+                    </desc>
+                    <defs>
+                        <marker id="seq-arrow-rmf" markerWidth="9" markerHeight="9" refX="8" refY="3" orient="auto">
+                            <path d="M0,0 L0,6 L9,3 z" fill="#164e8a"/>
+                        </marker>
+                    </defs>
+                    <rect width="1120" height="540" fill="#fff"/>
+                    <g font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif">
+                        <g fill="#e7f0fb" stroke="#164e8a" stroke-width="2">
+                            <rect x="30" y="28" width="160" height="52" rx="10"/>
+                            <rect x="250" y="28" width="190" height="52" rx="10"/>
+                            <rect x="500" y="28" width="160" height="52" rx="10"/>
+                            <rect x="720" y="28" width="170" height="52" rx="10"/>
+                            <rect x="950" y="28" width="140" height="52" rx="10"/>
+                        </g>
+                        <g fill="#172033" font-size="14" font-weight="700" text-anchor="middle">
+                            <text x="110" y="59">NTP host</text>
+                            <text x="345" y="59">HomePageConfiguration</text>
+                            <text x="580" y="59">Builder</text>
+                            <text x="805" y="59">Coordination service</text>
+                            <text x="1020" y="59">Modal path</text>
+                        </g>
+                        <g stroke="#9aabba" stroke-width="1.5" stroke-dasharray="5 5">
+                            <line x1="110" y1="80" x2="110" y2="505"/>
+                            <line x1="345" y1="80" x2="345" y2="505"/>
+                            <line x1="580" y1="80" x2="580" y2="505"/>
+                            <line x1="805" y1="80" x2="805" y2="505"/>
+                            <line x1="1020" y1="80" x2="1020" y2="505"/>
+                        </g>
+                        <g stroke="#164e8a" stroke-width="2" marker-end="url(#seq-arrow-rmf)">
+                            <line x1="110" y1="118" x2="337" y2="118"/>
+                            <line x1="345" y1="168" x2="572" y2="168"/>
+                            <line x1="580" y1="218" x2="353" y2="218"/>
+                            <line x1="345" y1="268" x2="797" y2="268"/>
+                            <line x1="805" y1="318" x2="353" y2="318"/>
+                            <line x1="345" y1="368" x2="118" y2="368"/>
+                            <line x1="110" y1="418" x2="337" y2="418"/>
+                            <line x1="1020" y1="458" x2="813" y2="458"/>
+                        </g>
+                        <g fill="#172033" font-size="13">
+                            <text x="215" y="108" text-anchor="middle">prepare(trigger policy)</text>
+                            <text x="458" y="158" text-anchor="middle">select candidate + canBuild</text>
+                            <text x="466" y="208" text-anchor="middle">renderable view model</text>
+                            <text x="575" y="258" text-anchor="middle">acquire RMF(message ID, token)</text>
+                            <text x="575" y="308" text-anchor="middle">lease + acquisition identity</text>
+                            <text x="228" y="358" text-anchor="middle">publish shared source</text>
+                            <text x="220" y="408" text-anchor="middle">first appearance</text>
+                            <text x="913" y="448" text-anchor="middle">modal admission request</text>
+                        </g>
+                        <rect x="282" y="389" width="270" height="58" rx="10" fill="#e3f3f0" stroke="#176b64" stroke-width="2"/>
+                        <text x="417" y="412" text-anchor="middle" font-size="13" font-weight="700" fill="#172033">Confirm once for this ownership</text>
+                        <text x="417" y="432" text-anchor="middle" font-size="12" fill="#526075">mark shown + record RMF history</text>
+                        <rect x="748" y="475" width="294" height="42" rx="9" fill="#fff3d4" stroke="#815d12" stroke-width="2"/>
+                        <text x="895" y="501" text-anchor="middle" font-size="13" font-weight="700" fill="#172033">Denied: RMF owns the shared slot</text>
+                    </g>
+                </svg>
+                <figcaption>
+                    RMF ownership belongs to the shared message source. Any number of physical
+                    mounts can consume that source without acquiring additional leases.
+                </figcaption>
+            </figure>
+
+            <h3>Modal arrives first</h3>
+            <figure class="diagram sequence">
+                <svg viewBox="0 0 1120 535" role="img" aria-labelledby="modal-sequence-title modal-sequence-desc">
+                    <title id="modal-sequence-title">Modal-first admission sequence</title>
+                    <desc id="modal-sequence-desc">
+                        A launch checkpoint asks the coordination service to evaluate promos.
+                        The service reconciles the exact root, acquires the modal lease, checks
+                        cooldown, and only then evaluates providers. RMF publication is denied
+                        until dismissal reconciliation releases the modal owner.
+                    </desc>
+                    <defs>
+                        <marker id="seq-arrow-modal" markerWidth="9" markerHeight="9" refX="8" refY="3" orient="auto">
+                            <path d="M0,0 L0,6 L9,3 z" fill="#176b64"/>
+                        </marker>
+                    </defs>
+                    <rect width="1120" height="535" fill="#fff"/>
+                    <g font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif">
+                        <g fill="#e3f3f0" stroke="#176b64" stroke-width="2">
+                            <rect x="30" y="28" width="150" height="52" rx="10"/>
+                            <rect x="235" y="28" width="190" height="52" rx="10"/>
+                            <rect x="480" y="28" width="160" height="52" rx="10"/>
+                            <rect x="695" y="28" width="170" height="52" rx="10"/>
+                            <rect x="920" y="28" width="170" height="52" rx="10"/>
+                        </g>
+                        <g fill="#172033" font-size="14" font-weight="700" text-anchor="middle">
+                            <text x="105" y="59">Launch checkpoint</text>
+                            <text x="330" y="59">Coordination service</text>
+                            <text x="560" y="59">Lease arbiter</text>
+                            <text x="780" y="59">Modal manager</text>
+                            <text x="1005" y="59">RMF source</text>
+                        </g>
+                        <g stroke="#9aabba" stroke-width="1.5" stroke-dasharray="5 5">
+                            <line x1="105" y1="80" x2="105" y2="500"/>
+                            <line x1="330" y1="80" x2="330" y2="500"/>
+                            <line x1="560" y1="80" x2="560" y2="500"/>
+                            <line x1="780" y1="80" x2="780" y2="500"/>
+                            <line x1="1005" y1="80" x2="1005" y2="500"/>
+                        </g>
+                        <g stroke="#176b64" stroke-width="2" marker-end="url(#seq-arrow-modal)">
+                            <line x1="105" y1="118" x2="322" y2="118"/>
+                            <line x1="330" y1="168" x2="772" y2="168"/>
+                            <line x1="780" y1="210" x2="338" y2="210"/>
+                            <line x1="330" y1="252" x2="552" y2="252"/>
+                            <line x1="560" y1="294" x2="338" y2="294"/>
+                            <line x1="330" y1="336" x2="772" y2="336"/>
+                            <line x1="1005" y1="386" x2="338" y2="386"/>
+                            <line x1="330" y1="420" x2="997" y2="420"/>
+                            <line x1="330" y1="456" x2="772" y2="456"/>
+                        </g>
+                        <g fill="#172033" font-size="13">
+                            <text x="213" y="108" text-anchor="middle">evaluate launch promos</text>
+                            <text x="550" y="158" text-anchor="middle">reconcile exact presented root</text>
+                            <text x="550" y="200" text-anchor="middle">current presentation phase</text>
+                            <text x="445" y="242" text-anchor="middle">acquire modal identity</text>
+                            <text x="445" y="284" text-anchor="middle">lease granted</text>
+                            <text x="550" y="326" text-anchor="middle">cooldown allowed → evaluate providers</text>
+                            <text x="670" y="376" text-anchor="middle">attempt RMF acquisition</text>
+                            <text x="670" y="410" text-anchor="middle">denied — no publication</text>
+                            <text x="555" y="446" text-anchor="middle">later checkpoint: reconcile dismissal</text>
+                        </g>
+                        <rect x="260" y="473" width="360" height="42" rx="9" fill="#e7f0fb" stroke="#164e8a" stroke-width="2"/>
+                        <text x="440" y="499" text-anchor="middle" font-size="13" font-weight="700" fill="#172033">Detached exact root → release modal identity</text>
+                    </g>
+                </svg>
+                <figcaption>
+                    The modal lease spans provider evaluation, commitment, and presentation.
+                    Stateful providers are untouched unless shared admission and queue cooldown
+                    both allow evaluation.
+                </figcaption>
+            </figure>
+        </section>
+
+        <section id="lifecycle" aria-labelledby="lifecycle-title">
+            <p class="eyebrow">Ownership semantics</p>
+            <h2 id="lifecycle-title">A small, identity-safe lifecycle</h2>
+            <p class="section-intro">
+                The arbiter stores one typed owner. Acquisition identities separate consecutive
+                ownerships of the same message ID, and weak tokens allow abandoned owners to be
+                recovered at the next admission checkpoint.
+            </p>
+
+            <ol class="numbered-flow">
+                <li>
+                    <strong>Select</strong>
+                    <span>The domain identifies content and verifies that it can render.</span>
+                </li>
+                <li>
+                    <strong>Acquire</strong>
+                    <span>The service applies cooldown and grants a typed identity.</span>
+                </li>
+                <li>
+                    <strong>Publish or present</strong>
+                    <span>The owning domain exposes content only after admission.</span>
+                </li>
+                <li>
+                    <strong>Confirm</strong>
+                    <span>First RMF appearance records accounting once per ownership.</span>
+                </li>
+                <li>
+                    <strong>Release</strong>
+                    <span>Background, replacement, dismissal, or teardown frees the slot.</span>
+                </li>
+            </ol>
+
+            <div class="card-grid" style="margin-top: 1.25rem">
+                <article class="surface info-card">
+                    <h3>Identity, not message ID alone</h3>
+                    <p>
+                        An RMF acquisition carries a unique identity. Appearance and release
+                        callbacks must match it, so callbacks from an earlier ownership cannot
+                        affect a later acquisition of the same message.
+                    </p>
+                </article>
+                <article class="surface info-card">
+                    <h3>Weak-token recovery</h3>
+                    <p>
+                        The owner token is weak. If its domain object disappears without an
+                        explicit release, the next acquisition prunes the dead owner and can
+                        make progress.
+                    </p>
+                </article>
+                <article class="surface info-card">
+                    <h3>Exact-root modal ownership</h3>
+                    <p>
+                        Modal ownership follows the exact controller committed by the manager.
+                        A later checkpoint reconciles its attachment state and releases only
+                        that presentation identity.
+                    </p>
+                </article>
+            </div>
+
+            <div class="callout">
+                <h3>Background teardown ordering</h3>
+                <p>
+                    The shared RMF source first disables admission, clears its checkpoint policy,
+                    unpublishes the message and emits the source update, then releases the lease.
+                    Foregrounding re-enables admission; a normal checkpoint performs fresh
+                    selection and acquisition. No timer or background retry queue is involved.
+                </p>
+            </div>
+
+            <h3 style="margin-top: 2rem">Directional cooldowns</h3>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th scope="col">Incoming family</th>
+                            <th scope="col">Prior history</th>
+                            <th scope="col">Boundary</th>
+                            <th scope="col">Meaning</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>RMF</td>
+                            <td>Last modal appearance</td>
+                            <td>10 minutes</td>
+                            <td>An NTP card does not immediately follow a launch-promo sheet.</td>
+                        </tr>
+                        <tr>
+                            <td>RMF</td>
+                            <td>Last confirmed RMF appearance</td>
+                            <td>10 minutes</td>
+                            <td>Repeated NTP activation does not repeatedly surface RMF content.</td>
+                        </tr>
+                        <tr>
+                            <td>Modal</td>
+                            <td>Last confirmed RMF appearance</td>
+                            <td>24 hours</td>
+                            <td>A launch-promo sheet does not follow a recently seen RMF card.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p class="fine-print">
+                The modal manager’s established per-provider cooldown rules remain in force
+                after queue admission. RMF history advances only on a confirmed first appearance,
+                not merely on selection or publication.
+            </p>
+        </section>
+
+        <section id="feature-flag" aria-labelledby="flag-title">
+            <p class="eyebrow">Controlled adoption</p>
+            <h2 id="flag-title">Legacy and coordinated behavior is selected once at startup</h2>
+            <p class="section-intro">
+                <code>promoPresentationCoordination</code> is sampled when the app-services graph
+                is constructed. The service stores the resulting immutable mode, so changing the
+                local flag takes effect after relaunch rather than migrating live ownership.
+            </p>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th scope="col">Concern</th>
+                            <th scope="col">Legacy mode</th>
+                            <th scope="col">Coordinated mode</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Mode composition</td>
+                            <td>The existing modal and RMF paths retain their independent behavior.</td>
+                            <td>Both families receive the same app-scoped service and policy graph.</td>
+                        </tr>
+                        <tr>
+                            <td>Modal entry</td>
+                            <td>The service delegates to the established modal manager behavior.</td>
+                            <td>The shared slot and directional cooldown are checked before provider evaluation.</td>
+                        </tr>
+                        <tr>
+                            <td>RMF preparation</td>
+                            <td>The existing legacy message construction and data-source behavior remains active.</td>
+                            <td>Activation checkpoints call the shared source, which acquires before publication.</td>
+                        </tr>
+                        <tr>
+                            <td>View identity</td>
+                            <td>Message identity follows the previous message-ID contract.</td>
+                            <td>Message ID plus acquisition identity represents one queue ownership.</td>
+                        </tr>
+                        <tr>
+                            <td>Cooldown and accounting</td>
+                            <td>No Promo Queue history or ownership is applied to RMF.</td>
+                            <td>First appearance records RMF history and message accounting once.</td>
+                        </tr>
+                        <tr>
+                            <td>Background behavior</td>
+                            <td>Continues through the established legacy lifecycle.</td>
+                            <td>The shared RMF source unpublishes and releases its queue ownership.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="callout">
+                <h3>Current coordinated activation checkpoints</h3>
+                <p>
+                    Standard NTP, the legacy/iPad suggestion tray, OmniBar editing through
+                    <code>SuggestionTrayManager</code>, and unified input each prepare the same
+                    shared source when coordinated mode is active. The selected trigger policy
+                    is pinned for the ownership: an after-idle attempt may fall back to no-trigger
+                    selection, and later mounts do not replace that decision.
+                </p>
+            </div>
+        </section>
+
+        <section id="extension" aria-labelledby="extension-title">
+            <p class="eyebrow">Surface integration</p>
+            <h2 id="extension-title">A future NTP surface joins at the shared-source seam</h2>
+            <p class="section-intro">
+                Coordination is deliberately independent of renderer visibility and coverage.
+                A new RMF-capable surface consumes the existing source and adds one activation
+                checkpoint; it does not become another queue owner.
+            </p>
+
+            <div class="contract">
+                <article class="surface contract-panel required">
+                    <h3>What the surface supplies</h3>
+                    <ul class="compact-list">
+                        <li>Reuse the app-scoped <code>HomePageConfiguration</code> graph.</li>
+                        <li>Call <code>prepareForNTP</code> at its real activation checkpoint.</li>
+                        <li>Consume the shared message through <code>NewTabPageMessagesModel</code>.</li>
+                        <li>Forward first appearance with the coordinated view identity.</li>
+                    </ul>
+                </article>
+
+                <article class="surface contract-panel absent">
+                    <h3>What the surface does not report</h3>
+                    <ul class="compact-list">
+                        <li>Renderer visibility, percentage coverage, or scrolling state.</li>
+                        <li>Mount and unmount retain counts.</li>
+                        <li>Cross-renderer ownership handoff.</li>
+                        <li>Lifecycle callbacks to the central coordinator.</li>
+                        <li>Retry timing, fairness, or scheduling state.</li>
+                    </ul>
+                </article>
+            </div>
+
+            <div class="callout">
+                <h3>Source ownership is the scaling mechanism</h3>
+                <p>
+                    Multiple physical views may mount the same RMF message. Because the shared
+                    source owns one lease and one acquisition identity, duplicate mounts do not
+                    multiply queue state, and appearance accounting remains once per ownership.
+                </p>
+            </div>
+        </section>
+
+        <section id="decisions" aria-labelledby="decisions-title">
+            <p class="eyebrow">Design boundaries</p>
+            <h2 id="decisions-title">Deliberately small coordination state</h2>
+            <p class="section-intro">
+                Promo Queue centralizes only the cross-family decision. Selection, rendering,
+                presentation, and product-specific cooldown rules stay with their established
+                owners.
+            </p>
+
+            <div class="card-grid">
+                <article class="surface info-card">
+                    <h3>One typed slot</h3>
+                    <p>
+                        The arbiter stores <em>modal</em> or <em>RMF</em>, never renderer-level
+                        substate. Ownership identities make release and appearance idempotent.
+                    </p>
+                </article>
+                <article class="surface info-card">
+                    <h3>Startup-latched mode</h3>
+                    <p>
+                        A relaunch switches graphs cleanly, avoiding live migration,
+                        re-adoption, and lease invalidation machinery.
+                    </p>
+                </article>
+                <article class="surface info-card">
+                    <h3>Checkpoint-driven progress</h3>
+                    <p>
+                        Launch, NTP activation, dismissal reconciliation, foregrounding, and
+                        background teardown are sufficient progression points.
+                    </p>
+                </article>
+                <article class="surface info-card">
+                    <h3>First owner wins</h3>
+                    <p>
+                        A successful acquisition pins its trigger context until release. A
+                        competing family waits for a later natural checkpoint.
+                    </p>
+                </article>
+                <article class="surface info-card">
+                    <h3>Explicit modal precedence</h3>
+                    <p>
+                        The modal manager preserves a single explicit provider order, so shared
+                        admission happens once before the established launch-promo selection
+                        sequence.
+                    </p>
+                </article>
+                <article class="surface info-card">
+                    <h3>No renderer state machine</h3>
+                    <p>
+                        The service does not model screen coverage, physical mounts, handoff,
+                        visibility, timers, fairness, or a retry scheduler.
+                    </p>
+                </article>
+            </div>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th scope="col">Invariant</th>
+                            <th scope="col">Implementation mechanism</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>One app-scoped promo owner</td>
+                            <td>One arbiter instance is composed into the launch-time app-services graph.</td>
+                        </tr>
+                        <tr>
+                            <td>Modal admission before provider evaluation</td>
+                            <td>The service acquires and applies queue cooldown before invoking the manager’s ordered providers.</td>
+                        </tr>
+                        <tr>
+                            <td>RMF admission before publication</td>
+                            <td>The source selects and verifies renderability, acquires, retains ownership, then updates consumers.</td>
+                        </tr>
+                        <tr>
+                            <td>Source-owned RMF lease</td>
+                            <td><code>HomePageConfiguration</code> stores message, lease, trigger policy, and appearance context together.</td>
+                        </tr>
+                        <tr>
+                            <td>Once-per-ownership appearance</td>
+                            <td>The arbiter confirms only the current acquisition identity; stale contexts are no-ops.</td>
+                        </tr>
+                        <tr>
+                            <td>Background release</td>
+                            <td>The source unpublishes before releasing, preventing consumers from observing content without ownership.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="diagnostics" aria-labelledby="diagnostics-title">
+            <p class="eyebrow">Internal observability</p>
+            <h2 id="diagnostics-title">Prompt Coordination uses the production graph</h2>
+            <p class="section-intro">
+                The internal debug destination reads passive snapshots from the same service,
+                arbiter, and history stores used by the app. It does not create a parallel
+                coordinator.
+            </p>
+
+            <div class="card-grid">
+                <article class="surface info-card">
+                    <h3>Queue state</h3>
+                    <p>Startup mode, current modal or RMF owner, ownership identity, and RMF appearance state.</p>
+                </article>
+                <article class="surface info-card">
+                    <h3>Cooldown history</h3>
+                    <p>Modal and RMF timestamps plus the directional boundaries derived from them.</p>
+                </article>
+                <article class="surface info-card">
+                    <h3>Explicit controls</h3>
+                    <p>Separate modal and RMF cooldown resets routed through the production stores.</p>
+                </article>
+            </div>
+            <p class="fine-print">
+                Feature-flag changes are process-latched, so the screen states that a relaunch
+                is required before the displayed mode changes.
+            </p>
+        </section>
+
+        <section id="references" aria-labelledby="references-title">
+            <p class="eyebrow">Implementation anchors</p>
+            <h2 id="references-title">Source map</h2>
+            <p class="section-intro">
+                Paths below are relative to the repository root and correspond to the stacked
+                head <code>bartosz/promo-q-simp-4</code> at <code>5037f6fbee</code>.
+            </p>
+
+            <div class="reference-grid">
+                <article class="surface reference-group">
+                    <h3>Composition and coordination</h3>
+                    <ul class="reference-list">
+                        <li><code>iOS/DuckDuckGo/ModalPromptCoordination/Factory/PromoCoordinationFactory.swift</code></li>
+                        <li><code>iOS/DuckDuckGo/AppLifecycle/AppStates/Launching.swift</code></li>
+                        <li><code>iOS/DuckDuckGo/UICoordination/MainCoordinator.swift</code></li>
+                        <li><code>iOS/DuckDuckGo/AppServices/PromoCoordinationService.swift</code></li>
+                        <li><code>iOS/DuckDuckGo/ModalPromptCoordination/Arbitration/PromoQueueLeaseArbiter.swift</code></li>
+                        <li><code>iOS/DuckDuckGo/ModalPromptCoordination/Cooldown/PromoQueueCooldownPolicy.swift</code></li>
+                        <li><code>iOS/DuckDuckGo/ModalPromptCoordination/Cooldown/PromptCooldownManager.swift</code></li>
+                    </ul>
+                </article>
+
+                <article class="surface reference-group">
+                    <h3>Modal domain</h3>
+                    <ul class="reference-list">
+                        <li><code>iOS/DuckDuckGo/ModalPromptCoordination/ModalPromptCoordinationManager.swift</code></li>
+                        <li><code>iOS/DuckDuckGo/ModalPromptCoordination/Providers/ModalPromptProvider.swift</code></li>
+                        <li><code>iOS/DuckDuckGo/ModalPromptCoordination/Providers/</code></li>
+                    </ul>
+                </article>
+
+                <article class="surface reference-group">
+                    <h3>RMF source and presentation</h3>
+                    <ul class="reference-list">
+                        <li><code>iOS/DuckDuckGo/HomePageConfiguration.swift</code></li>
+                        <li><code>iOS/DuckDuckGo/HomePageMessagesConfiguration.swift</code></li>
+                        <li><code>iOS/DuckDuckGo/NewTabPageMessagesModel.swift</code></li>
+                        <li><code>iOS/DuckDuckGo/HomeMessageViewModel.swift</code></li>
+                        <li><code>iOS/DuckDuckGo/HomeMessageViewModelBuilder.swift</code></li>
+                    </ul>
+                </article>
+
+                <article class="surface reference-group">
+                    <h3>Activation paths and operations</h3>
+                    <ul class="reference-list">
+                        <li><code>iOS/DuckDuckGo/MainViewController.swift</code></li>
+                        <li><code>iOS/DuckDuckGo/AIChat/InputBox/SwitchBar/OmniBarEditingStateViewController.swift</code></li>
+                        <li><code>iOS/DuckDuckGo/UnifiedToggleInput/UnifiedInputContentContainerViewController.swift</code></li>
+                        <li><code>iOS/DuckDuckGo/ModalPromptCoordination/PromptCoordination/PromptCoordinationDebugMenu.swift</code></li>
+                        <li><code>iOS/DuckDuckGo/DebugScreensViewModel+Screens.swift</code></li>
+                    </ul>
+                </article>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>
+            iOS Promo Queue architecture reference · Source stack:
+            <code>main</code> → <code>bartosz/promo-q-simp-2</code> →
+            <code>bartosz/promo-q-simp-3</code> → <code>bartosz/promo-q-simp-4</code>.
+        </p>
+    </footer>
 </body>
 </html>

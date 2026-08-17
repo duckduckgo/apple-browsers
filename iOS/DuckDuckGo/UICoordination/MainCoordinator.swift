@@ -322,9 +322,7 @@ final class MainCoordinator {
                                         darkReaderFeatureSettings: darkReaderFeatureSettings,
                                         toggleModeStorage: toggleModeStorage,
                                         onboardingManager: onboardingManager,
-                                        recentModalPromptStatusProvider: promoCoordinationService,
-                                        promoCoordinationDiagnosticsProvider: promoCoordinationService,
-                                        promoCoordinationCooldownResetter: promoCoordinationService)
+                                        promoCoordinationService: promoCoordinationService)
 
         setupWebExtensions(privacyConfigurationManager: privacyConfigurationManager)
 

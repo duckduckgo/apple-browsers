@@ -502,8 +502,8 @@ extension MainViewController {
                                                             freemiumPIRDebugSettings: freemiumPIRDebugSettings,
                                                             freemiumDBPUserStateManager: freemiumDBPUserStateManager,
                                                             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
-                                                            promoCoordinationDiagnosticsProvider: promoCoordinationDiagnosticsProvider,
-                                                            promoCoordinationCooldownResetter: promoCoordinationCooldownResetter)
+                                                            promoCoordinationDiagnosticsProvider: promoCoordinationService,
+                                                            promoCoordinationCooldownResetter: promoCoordinationService)
 
         let aiChatSettings = AIChatSettings(privacyConfigurationManager: privacyConfigurationManager)
         let serpSettingsProvider = SERPSettingsProvider(aiChatProvider: aiChatSettings)
@@ -628,8 +628,8 @@ extension MainViewController {
             remoteMessagingDebugHandler: self.remoteMessagingDebugHandler,
             webExtensionManager: self.webExtensionManager,
             duckAiNativeStorageHandler: self.duckAiNativeStorageHandler,
-            promoCoordinationDiagnosticsProvider: self.promoCoordinationDiagnosticsProvider,
-            promoCoordinationCooldownResetter: self.promoCoordinationCooldownResetter))
+            promoCoordinationDiagnosticsProvider: self.promoCoordinationService,
+            promoCoordinationCooldownResetter: self.promoCoordinationService))
 
         debug.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .close, target: debug, action: #selector(DebugScreensViewController.dismissSelf))
 

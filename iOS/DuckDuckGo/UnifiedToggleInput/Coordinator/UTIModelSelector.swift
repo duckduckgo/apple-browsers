@@ -66,10 +66,8 @@ final class UTIModelSelector {
     private let view: ViewSurface
     private let environment: Environment
     private let callbacks: Callbacks
-    private let isUpdatedModelPickerEnabled: Bool
-
-    private let modelMenuFactory = UnifiedToggleInputModelMenuFactory()
-    private let reasoningMenuFactory = UnifiedToggleInputReasoningMenuFactory()
+    private let modelMenuFactory: UnifiedToggleInputModelMenuFactory
+    private let reasoningMenuFactory: UnifiedToggleInputReasoningMenuFactory
     private let reasoningAccessResolver: ReasoningModeAccessResolving
     private let subscriptionUpsellPresenter: DuckAISubscriptionUpselling
 
@@ -91,7 +89,8 @@ final class UTIModelSelector {
         self.view = view
         self.environment = environment
         self.callbacks = callbacks
-        self.isUpdatedModelPickerEnabled = isUpdatedModelPickerEnabled
+        self.modelMenuFactory = UnifiedToggleInputModelMenuFactory(isUpdatedModelPickerEnabled: isUpdatedModelPickerEnabled)
+        self.reasoningMenuFactory = UnifiedToggleInputReasoningMenuFactory(isUpdatedModelPickerEnabled: isUpdatedModelPickerEnabled)
         self.reasoningAccessResolver = reasoningAccessResolver
         self.subscriptionUpsellPresenter = subscriptionUpsellPresenter
     }
@@ -268,20 +267,10 @@ final class UTIModelSelector {
             self?.handleModelSelection(modelId)
         }
 
-        if isUpdatedModelPickerEnabled {
-            return modelMenuFactory.makeUpdatedMenu(
-                models: modelStore.models,
-                selectedId: selectedId,
-                userTier: modelStore.subscriptionState.userTier,
-                onSelect: onSelect
-            )
-        }
-
         return modelMenuFactory.makeMenu(
             models: modelStore.models,
             selectedId: selectedId,
-            plusSectionTitle: UserText.aiChatPlusModelsSectionHeader,
-            proSectionTitle: UserText.aiChatProModelsSectionHeader,
+            userTier: modelStore.subscriptionState.userTier,
             onSelect: onSelect
         )
     }
@@ -308,18 +297,10 @@ final class UTIModelSelector {
             self?.handleReasoningModeSelection(mode)
         }
 
-        if isUpdatedModelPickerEnabled {
-            return reasoningMenuFactory.makeUpdatedMenu(
-                model: selectedModel,
-                selectedMode: resolvedSelectedReasoningMode,
-                userTier: modelStore.subscriptionState.userTier,
-                onSelect: onSelect
-            )
-        }
-
         return reasoningMenuFactory.makeMenu(
             model: selectedModel,
             selectedMode: resolvedSelectedReasoningMode,
+            userTier: modelStore.subscriptionState.userTier,
             onSelect: onSelect
         )
     }

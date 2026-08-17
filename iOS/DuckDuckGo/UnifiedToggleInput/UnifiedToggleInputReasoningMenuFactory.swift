@@ -23,7 +23,26 @@ import UIKit
 /// Builds the reasoning-mode pull-down menu
 struct UnifiedToggleInputReasoningMenuFactory {
 
+    private let isUpdatedModelPickerEnabled: Bool
+
+    init(isUpdatedModelPickerEnabled: Bool) {
+        self.isUpdatedModelPickerEnabled = isUpdatedModelPickerEnabled
+    }
+
     func makeMenu(
+        model: AIChatModel,
+        selectedMode: AIChatReasoningMode?,
+        userTier: AIChatUserTier,
+        onSelect: @escaping (AIChatReasoningMode) -> Void
+    ) -> UIMenu? {
+        if isUpdatedModelPickerEnabled {
+            return makeUpdatedMenu(model: model, selectedMode: selectedMode, userTier: userTier, onSelect: onSelect)
+        }
+
+        return makeLegacyMenu(model: model, selectedMode: selectedMode, onSelect: onSelect)
+    }
+
+    private func makeLegacyMenu(
         model: AIChatModel,
         selectedMode: AIChatReasoningMode?,
         onSelect: @escaping (AIChatReasoningMode) -> Void
@@ -44,7 +63,7 @@ struct UnifiedToggleInputReasoningMenuFactory {
         return UIMenu(options: .singleSelection, children: actions)
     }
 
-    func makeUpdatedMenu(
+    private func makeUpdatedMenu(
         model: AIChatModel,
         selectedMode: AIChatReasoningMode?,
         userTier: AIChatUserTier,

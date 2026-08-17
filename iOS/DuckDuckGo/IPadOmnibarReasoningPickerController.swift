@@ -29,7 +29,6 @@ final class IPadOmnibarReasoningPickerController {
     private let menuFactory: UnifiedToggleInputReasoningMenuFactory
     private let accessResolver: ReasoningModeAccessResolving
     private let upsellPresenter: DuckAISubscriptionUpselling
-    private let isUpdatedModelPickerEnabled: Bool
 
     /// A reasoning mode whose selection was blocked behind an upsell; re-applied once a
     /// subscription refresh grants the user access
@@ -41,16 +40,14 @@ final class IPadOmnibarReasoningPickerController {
 
     init(
         store: UTIModelStore,
-        menuFactory: UnifiedToggleInputReasoningMenuFactory = UnifiedToggleInputReasoningMenuFactory(),
         accessResolver: ReasoningModeAccessResolving = ReasoningModeAccessResolver(),
         upsellPresenter: DuckAISubscriptionUpselling = DuckAISubscriptionUpsellPresenter(),
         updatedModelPickerFeature: UpdatedModelPickerFeatureProviding = UpdatedModelPickerFeature()
     ) {
         self.store = store
-        self.menuFactory = menuFactory
+        self.menuFactory = UnifiedToggleInputReasoningMenuFactory(isUpdatedModelPickerEnabled: updatedModelPickerFeature.isAvailable)
         self.accessResolver = accessResolver
         self.upsellPresenter = upsellPresenter
-        self.isUpdatedModelPickerEnabled = updatedModelPickerFeature.isAvailable
     }
 
     var isReasoningPickerAvailable: Bool {
@@ -73,16 +70,12 @@ final class IPadOmnibarReasoningPickerController {
             self?.handleReasoningModeSelection(mode)
         }
 
-        if isUpdatedModelPickerEnabled {
-            return menuFactory.makeUpdatedMenu(
-                model: model,
-                selectedMode: currentReasoningMode,
-                userTier: store.subscriptionState.userTier,
-                onSelect: onSelect
-            )
-        }
-
-        return menuFactory.makeMenu(model: model, selectedMode: currentReasoningMode, onSelect: onSelect)
+        return menuFactory.makeMenu(
+            model: model,
+            selectedMode: currentReasoningMode,
+            userTier: store.subscriptionState.userTier,
+            onSelect: onSelect
+        )
     }
 
     func handleReasoningModeSelection(_ mode: AIChatReasoningMode) {

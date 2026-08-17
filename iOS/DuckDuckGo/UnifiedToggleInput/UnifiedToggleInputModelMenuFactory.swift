@@ -23,18 +23,41 @@ import UIKit
 
 struct UnifiedToggleInputModelMenuFactory {
 
+    private let isUpdatedModelPickerEnabled: Bool
+
+    init(isUpdatedModelPickerEnabled: Bool) {
+        self.isUpdatedModelPickerEnabled = isUpdatedModelPickerEnabled
+    }
+
     func makeMenu(
         models: [AIChatModel],
         selectedId: String?,
-        plusSectionTitle: String,
-        proSectionTitle: String,
+        userTier: AIChatUserTier,
+        onSelect: @escaping (String) -> Void
+    ) -> UIMenu {
+        if isUpdatedModelPickerEnabled {
+            return makeUpdatedMenu(models: models, selectedId: selectedId, userTier: userTier, onSelect: onSelect)
+        }
+
+        return makeLegacyMenu(models: models, selectedId: selectedId, onSelect: onSelect)
+    }
+
+    func selectedShortName(models: [AIChatModel], selectedId: String?) -> String? {
+        models.first(where: { $0.id == selectedId })?.shortName
+    }
+
+    // MARK: - Private
+
+    private func makeLegacyMenu(
+        models: [AIChatModel],
+        selectedId: String?,
         onSelect: @escaping (String) -> Void
     ) -> UIMenu {
         let description = UnifiedToggleInputModelMenu.build(
             models: models,
             selectedId: selectedId,
-            plusSectionTitle: plusSectionTitle,
-            proSectionTitle: proSectionTitle
+            plusSectionTitle: UserText.aiChatPlusModelsSectionHeader,
+            proSectionTitle: UserText.aiChatProModelsSectionHeader
         )
 
         let modelLookup = Dictionary(uniqueKeysWithValues: models.map { ($0.id, $0) })
@@ -57,7 +80,7 @@ struct UnifiedToggleInputModelMenuFactory {
         return UIMenu(children: sections)
     }
 
-    func makeUpdatedMenu(
+    private func makeUpdatedMenu(
         models: [AIChatModel],
         selectedId: String?,
         userTier: AIChatUserTier,
@@ -89,10 +112,6 @@ struct UnifiedToggleInputModelMenuFactory {
         }
 
         return UIMenu(options: .singleSelection, children: children)
-    }
-
-    func selectedShortName(models: [AIChatModel], selectedId: String?) -> String? {
-        models.first(where: { $0.id == selectedId })?.shortName
     }
 
     private func makeUpdatedAction(

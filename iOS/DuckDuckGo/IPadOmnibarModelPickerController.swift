@@ -32,9 +32,8 @@ import UIKit
 final class IPadOmnibarModelPickerController {
 
     private let store: UTIModelStore
-    private let menuFactory = UnifiedToggleInputModelMenuFactory()
+    private let menuFactory: UnifiedToggleInputModelMenuFactory
     private let upsellPresenter: DuckAISubscriptionUpselling
-    private let isUpdatedModelPickerEnabled: Bool
     var onModelsUpdated: (() -> Void)?
 
     /// A model whose selection was blocked behind an upsell; re-applied once a
@@ -54,7 +53,7 @@ final class IPadOmnibarModelPickerController {
         updatedModelPickerFeature: UpdatedModelPickerFeatureProviding = UpdatedModelPickerFeature()
     ) {
         self.upsellPresenter = upsellPresenter
-        self.isUpdatedModelPickerEnabled = updatedModelPickerFeature.isAvailable
+        self.menuFactory = UnifiedToggleInputModelMenuFactory(isUpdatedModelPickerEnabled: updatedModelPickerFeature.isAvailable)
         store = UTIModelStore(
             modelsService: modelsService ?? AIChatModelsService(
                 baseURL: aiChatModelsBaseURL(forChatURL: aiChatSettings.aiChatURL),
@@ -88,20 +87,10 @@ final class IPadOmnibarModelPickerController {
     func makeMenu(onSelect: @escaping (String) -> Void) -> UIMenu? {
         guard hasModels else { return nil }
 
-        if isUpdatedModelPickerEnabled {
-            return menuFactory.makeUpdatedMenu(
-                models: store.models,
-                selectedId: store.persistedModelId,
-                userTier: store.subscriptionState.userTier,
-                onSelect: onSelect
-            )
-        }
-
         return menuFactory.makeMenu(
             models: store.models,
             selectedId: store.persistedModelId,
-            plusSectionTitle: UserText.aiChatPlusModelsSectionHeader,
-            proSectionTitle: UserText.aiChatProModelsSectionHeader,
+            userTier: store.subscriptionState.userTier,
             onSelect: onSelect
         )
     }

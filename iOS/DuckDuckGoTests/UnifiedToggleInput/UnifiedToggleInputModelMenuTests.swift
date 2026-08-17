@@ -93,15 +93,14 @@ final class UnifiedToggleInputModelMenuTests: XCTestCase {
     }
 
     func testWhenFactoryBuildsMenuThenTierActionsAreNotDisabled() {
-        let menu = UnifiedToggleInputModelMenuFactory().makeMenu(
+        let menu = UnifiedToggleInputModelMenuFactory(isUpdatedModelPickerEnabled: false).makeMenu(
             models: [
                 makeFakeModel(id: "free-model", accessTier: ["free"], hasAccess: true),
                 makeFakeModel(id: "plus-model", accessTier: ["plus"], hasAccess: false),
                 makeFakeModel(id: "pro-model", accessTier: ["pro"], hasAccess: false),
             ],
             selectedId: nil,
-            plusSectionTitle: "Plus",
-            proSectionTitle: "Pro",
+            userTier: .free,
             onSelect: { _ in }
         )
 
@@ -109,15 +108,14 @@ final class UnifiedToggleInputModelMenuTests: XCTestCase {
     }
 
     func testWhenFactoryBuildsLegacyMenuThenUpdatedMenuPresentationIsNotApplied() {
-        let menu = UnifiedToggleInputModelMenuFactory().makeMenu(
+        let menu = UnifiedToggleInputModelMenuFactory(isUpdatedModelPickerEnabled: false).makeMenu(
             models: [
                 makeFakeModel(id: "free-model", accessTier: ["free"], hasAccess: true, label: .everydayUse),
                 makeFakeModel(id: "plus-model", accessTier: ["plus"], hasAccess: false, label: .everydayUse),
                 makeFakeModel(id: "pro-model", accessTier: ["pro"], hasAccess: false),
             ],
             selectedId: nil,
-            plusSectionTitle: "Plus",
-            proSectionTitle: "Pro",
+            userTier: .free,
             onSelect: { _ in }
         )
 
@@ -254,7 +252,7 @@ final class UnifiedToggleInputModelMenuTests: XCTestCase {
         selectedId: String? = nil,
         userTier: AIChatUserTier = .free
     ) -> UIMenu {
-        UnifiedToggleInputModelMenuFactory().makeUpdatedMenu(
+        UnifiedToggleInputModelMenuFactory(isUpdatedModelPickerEnabled: true).makeMenu(
             models: models,
             selectedId: selectedId,
             userTier: userTier,

@@ -29,7 +29,7 @@ final class SelectionFrameUserScriptTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        sut = SelectionFrameUserScript(isEnabled: true)
+        sut = SelectionFrameUserScript()
     }
 
     override func tearDown() {
@@ -52,29 +52,11 @@ final class SelectionFrameUserScriptTests: XCTestCase {
     }
 
     func testWhenRequestingKnownMethodsThenHandlersAreReturned() {
-        XCTAssertNotNil(sut.handler(forMethodNamed: "isEnabled"))
         XCTAssertNotNil(sut.handler(forMethodNamed: "selectionFrameChanged"))
     }
 
     func testWhenRequestingUnknownMethodThenHandlerIsNil() {
         XCTAssertNil(sut.handler(forMethodNamed: "unknown"))
-    }
-
-    func testWhenFeatureIsEnabledThenEnableRequestReturnsTrue() async throws {
-        let handler = try XCTUnwrap(sut.handler(forMethodNamed: "isEnabled"))
-
-        let response = try await handler([:], WKScriptMessage())
-
-        XCTAssertEqual(response as? SelectionFrameEnabledResponse, SelectionFrameEnabledResponse(enabled: true))
-    }
-
-    func testWhenFeatureIsDisabledThenEnableRequestReturnsFalse() async throws {
-        sut = SelectionFrameUserScript(isEnabled: false)
-        let handler = try XCTUnwrap(sut.handler(forMethodNamed: "isEnabled"))
-
-        let response = try await handler([:], WKScriptMessage())
-
-        XCTAssertEqual(response as? SelectionFrameEnabledResponse, SelectionFrameEnabledResponse(enabled: false))
     }
 
     // MARK: - Frame Claims

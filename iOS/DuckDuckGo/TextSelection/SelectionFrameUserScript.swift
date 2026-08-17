@@ -54,7 +54,6 @@ struct SelectionFrame {
 final class SelectionFrameUserScript: NSObject, Subfeature {
 
     private enum MessageName: String {
-        case isEnabled
         case selectionChanged = "selectionFrameChanged"
     }
 
@@ -67,17 +66,10 @@ final class SelectionFrameUserScript: NSObject, Subfeature {
     /// The frame holding the selection.
     @MainActor private(set) var frameWithSelection: SelectionFrame?
 
-    private let isEnabled: Bool
     @MainActor private var latestEventTimestamp: Double?
-
-    init(isEnabled: Bool) {
-        self.isEnabled = isEnabled
-    }
 
     func handler(forMethodNamed methodName: String) -> Subfeature.Handler? {
         switch MessageName(rawValue: methodName) {
-        case .isEnabled:
-            return { [isEnabled] _, _ in SelectionFrameEnabledResponse(enabled: isEnabled) }
         case .selectionChanged:
             return { [weak self] params, original in
                 await MainActor.run {
@@ -112,8 +104,4 @@ final class SelectionFrameUserScript: NSObject, Subfeature {
         frameWithSelection = nil
         latestEventTimestamp = nil
     }
-}
-
-struct SelectionFrameEnabledResponse: Encodable, Equatable {
-    let enabled: Bool
 }

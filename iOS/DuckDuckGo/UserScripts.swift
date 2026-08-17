@@ -71,13 +71,11 @@ final class UserScripts: UserScriptsProvider {
          appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
-         aiChatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
-         textSelectionFeature: AIChatTextSelectionFeatureProviding? = nil) {
+         aiChatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings()) {
 
         isAutoconsentExtensionAvailable = sourceProvider.webExtensionAvailability?.isAutoconsentExtensionAvailable ?? false
 
-        let textSelectionFeature = textSelectionFeature ?? AIChatTextSelectionFeature(featureFlagger: featureFlagger)
-        selectionFrameScript = SelectionFrameUserScript(isEnabled: textSelectionFeature.isEnabled)
+        selectionFrameScript = SelectionFrameUserScript()
 
         autofillUserScript = AutofillUserScript(scriptSourceProvider: sourceProvider.autofillSourceProvider)
         autofillUserScript.sessionKey = sourceProvider.contentScopeProperties.sessionKey

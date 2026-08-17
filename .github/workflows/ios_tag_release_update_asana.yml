@@ -88,11 +88,14 @@ jobs:
     outputs:
       stop_workflow: ${{ steps.download-stop-workflow.outcome == 'success' }}
 
-    runs-on: macos-26
+    runs-on: bitrise:macos26-m4
 
     steps:
       - name: Check out the code
         uses: actions/checkout@v6
+
+      - name: Print macOS version
+        run: sw_vers
 
       - name: Download stop_workflow flag artifact
         id: download-stop-workflow
@@ -119,7 +122,7 @@ jobs:
     # by the stop_workflow flag.
     if: needs.stop-workflow-if-needed.outputs.stop_workflow != 'true'
 
-    runs-on: macos-26-xlarge
+    runs-on: bitrise:macos26-m4
     timeout-minutes: 10
 
     steps:
@@ -131,6 +134,9 @@ jobs:
           fetch-depth: 0
           submodules: recursive
           ref: main
+
+      - name: Print macOS version
+        run: sw_vers
 
       - name: Download tag artifact
         id: download-tag

@@ -439,11 +439,14 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                 self?.refreshErrorHTMLIfNeeded(themeName: theme.name)
             }
 
-        videoPlaybackCancellable = extensions.autoplayPolicy?.videoPlaybackDetectedPublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] isVideoPlaying in
-                self?.refreshDisplaysAutoplayPolicy(isVideoPlaying: isVideoPlaying)
-            }
+        if let autoplayPolicy = extensions.autoplayPolicy {
+            autoplayCancellable = Publishers.CombineLatest(autoplayPolicy.videoPlaybackDetectedPublisher, autoplayPolicy.videoAutoplayDetectedPublisher)
+                .removeDuplicates { $0 == $1 }
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] videoPlaybackDetected, videoAutoplayDetected in
+                    self?.refreshAutoplayState(videoPlaybackDetected: videoPlaybackDetected, videoAutoplayDetected: videoAutoplayDetected)
+                }
+        }
     }
 
 #if DEBUG
@@ -584,6 +587,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
 
     @Published private(set) var audioStateTest: WebView.AudioState = .unmuted(isPlayingAudio: false)
     @Published private(set) var mustDisplayAutoplayPolicy: Bool = false
+    @Published private(set) var detectedVideoAutoplay: Bool = false
 
     // MARK: - Tab Suspension
 
@@ -1189,7 +1193,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     private var emailDidSignOutCancellable: AnyCancellable?
     private var faviconCancellable: AnyCancellable?
     private var tabCrashRecoveryCancellable: AnyCancellable?
-    private var videoPlaybackCancellable: AnyCancellable?
+    private var autoplayCancellable: AnyCancellable?
 
     private func setupWebView(shouldLoadInBackground: Bool) {
         webView.navigationDelegate = navigationDelegate
@@ -1302,16 +1306,14 @@ extension Tab {
 
 private extension Tab {
 
-    func refreshDisplaysAutoplayPolicy(isVideoPlaying: Bool) {
-        let isFeatureEnabled = featureFlagger.isFeatureOn(.autoplayPolicy)
-        let isHttpOrHttps = content.urlForWebView?.isHttpOrHttps == true
-        let displaysAutoplayPolicy = isFeatureEnabled && isHttpOrHttps && isVideoPlaying
+    func refreshAutoplayState(videoPlaybackDetected: Bool, videoAutoplayDetected: Bool) {
+        let isEligible = featureFlagger.isFeatureOn(.autoplayPolicy) && content.urlForWebView?.isHttpOrHttps == true
 
-        guard displaysAutoplayPolicy != mustDisplayAutoplayPolicy else {
-            return
-        }
-
-        mustDisplayAutoplayPolicy = displaysAutoplayPolicy
+        // Please do note that both conditions (`PlaybackDetected` + `AutoplayDetected`) may not necessarily be both true simultaneously
+        // Our Autoplay Policy may prevent Playback, but we might detect Videos with Autoplay.
+        //
+        mustDisplayAutoplayPolicy = isEligible && (videoPlaybackDetected || videoAutoplayDetected)
+        detectedVideoAutoplay = isEligible && videoAutoplayDetected
     }
 }
 

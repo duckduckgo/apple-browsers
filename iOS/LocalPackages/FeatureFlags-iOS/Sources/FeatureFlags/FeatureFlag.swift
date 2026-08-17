@@ -310,9 +310,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212980785692847?focus=true
     case aiChatSync
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214965000466711?focus=true
-    case aiChatSyncPromo
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212745919983886?focus=true
     case aiChatSuggestions
 
@@ -444,9 +441,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213965646075290
     case fireButtonRefinements
 
-    /// https://app.asana.com/1/137249556945/project/1214749231578703/task/1213613180881406
-    case fireButtonSingleTabDeleteAll
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213728968355833?focus=true
     case aiChatOmnibarDefaultPosition
 
@@ -500,10 +494,7 @@ public enum FeatureFlag: String {
     case iPadDuckAIBarControls
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215359554019438?focus=true
-    case floatingUI
-
-    /// https://app.asana.com/1/137249556945/project/392891325557410/task/1216807388526023
-    case tabSwitcherJuly2026
+    case floatingUIAugust2026
 
     /// https://app.asana.com/1/137249556945/project/1211150618152277/task/1213745858492635?focus=true
     case removeChatHistory
@@ -532,7 +523,7 @@ public enum FeatureFlag: String {
 
     /// NA experiment: attach a search token to speed up SERP by combining Index/Deep responses.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216365830146824
-    case searchTokenExperimentV2
+    case searchTokenExperimentV3
 
     /// NA Experiment: tailor the onboarding flow based on the user's download reason.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216491579842691?focus=true
@@ -544,9 +535,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216629730083154?focus=true
     case systemFindInPage
 
-    /// Experiment for removing monthly free trials
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216851336490252
-    case monthlyFreeTrialExperiment
+    /// Experiment for removing monthly free trials — second run, enrolling only free-trial eligible users.
+    /// https://app.asana.com/1/137249556945/task/1217334233390728
+    case monthlyFreeTrialExperiment2
 
     /// Moves the iPad tabs bar up into the system window controls row (iOS 26+ resizable windows).
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217015452646368?focus=true
@@ -794,8 +785,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AIChatSubfeature.multiplePageContexts))
         case .aiChatSync:
             Config(source: .remoteReleasable(SyncSubfeature.aiChatSync))
-        case .aiChatSyncPromo:
-            Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.aiChatSyncPromo))
         case .aiChatSuggestions:
             Config(defaultValue: .enabled, source: .remoteReleasable(DuckAiChatHistorySubfeature.featureEnabled))
         case .aiChatNativeChatHistory:
@@ -836,12 +825,12 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .disabled)
         case .uiTestExperiment:
             Config(source: .disabled, cohortType: UITestExperimentCohort.self)
-        case .searchTokenExperimentV2:
-            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.searchTokenExperimentV2), cohortType: SearchTokenExperimentCohort.self)
+        case .searchTokenExperimentV3:
+            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.searchTokenExperimentV3), cohortType: SearchTokenExperimentCohort.self)
         case .onboardingFlowByDownloadReasonExperiment:
             Config(source: .disabled, cohortType: OnboardingFlowByDownloadReasonExperimentCohort.self)
-        case .monthlyFreeTrialExperiment:
-            Config(source: .remoteReleasable(PrivacyProSubfeature.monthlyFreeTrialExperiment), cohortType: MonthlyFreeTrialExperimentCohort.self)
+        case .monthlyFreeTrialExperiment2:
+            Config(source: .remoteReleasable(PrivacyProSubfeature.monthlyFreeTrialExperiment2), cohortType: MonthlyFreeTrialExperimentCohort.self)
         case .genericBackgroundTask:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.genericBackgroundTask))
         case .crashCollectionLimitCallStackTreeDepth:
@@ -880,8 +869,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.fireMode))
         case .fireButtonRefinements:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.fireButtonRefinements))
-        case .fireButtonSingleTabDeleteAll:
-            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.fireButtonSingleTabDeleteAll))
         case .aiChatOmnibarDefaultPosition:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.omnibarDefaultPosition))
         case .duckAIVoiceShortcut:
@@ -914,10 +901,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.walletPassDownload))
         case .aiChatChromeShortcutIPad:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.iPadChromeShortcut))
-        case .floatingUI:
-            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.floatingUI))
-        case .tabSwitcherJuly2026:
-            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.tabSwitcherJuly2026))
+        case .floatingUIAugust2026:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.floatingUIAugust2026))
         case .removeChatHistory:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.removeChatHistory))
         case .aiChatTabSwitcherRichCard:
@@ -941,7 +926,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .iPadTabsBarInWindowControlsRow:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.iPadTabsBarInWindowControlsRow))
         case .nativeAIPromptEditing:
-            Config(defaultValue: .disabled, source: .remoteReleasable(AIChatSubfeature.nativePromptEditing))
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.nativePromptEditing))
         }
     }
 

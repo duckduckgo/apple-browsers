@@ -34,7 +34,7 @@ protocol TabDelegate: AnyObject {
     func tabWillRequestNewTab(_ tab: TabViewController) -> UIKeyModifierFlags?
 
     /// The current cached search token, or nil if none is live. Used by the SERP interceptor
-    /// to attach `X-DDG-Search-Token` for the treatment cohort of the Search Token experiment.
+    /// to attach the `dindextoken` URL param for the treatment cohort of the Search Token experiment.
     func searchToken(for tab: TabViewController) -> String?
 
     func tabDidRequestNewTab(_ tab: TabViewController)
@@ -101,6 +101,10 @@ protocol TabDelegate: AnyObject {
     func tabDidRequestDownloads(tab: TabViewController)
 
     func tabDidRequestAIChat(tab: TabViewController)
+
+    /// Called for the browsing menu's new-chat entries, which load a duck.ai URL in a new tab.
+    /// Routed through the delegate so the entry pixel is reported alongside the interceptor state.
+    func tabDidRequestNewAIChatTab(tab: TabViewController)
 
     /// Called when the user picks Ask Duck.ai from the web view's text-selection edit menu.
     func tab(_ tab: TabViewController, didRequestAIChatForSelectedText text: String)

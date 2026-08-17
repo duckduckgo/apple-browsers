@@ -73,7 +73,7 @@ final class TabCrashRecoveryExtensionTests: XCTestCase {
     var cancellables: Set<AnyCancellable> = []
 
     var firePixelCallCount: Int = 0
-    var firePixelHandler: (PixelKitEvent, [String: String]) -> Void = { _, _ in }
+    var firePixelHandler: (PixelKit.Event, [String: String]) -> Void = { _, _ in }
 
     @MainActor
     override func setUp() async throws {

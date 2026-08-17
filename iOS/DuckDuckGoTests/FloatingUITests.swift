@@ -26,7 +26,7 @@ final class FloatingUIManagerTests: XCTestCase {
 
     func testWhenFloatingUIAndUnifiedToggleInputAreEnabledOnIPhoneThenFloatingUIIsEnabled() {
         let manager = FloatingUIManager(
-            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.floatingUI]),
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.floatingUIAugust2026]),
             isPadProvider: { false },
             isSupportedOSProvider: { true },
             unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: true)
@@ -37,7 +37,7 @@ final class FloatingUIManagerTests: XCTestCase {
 
     func testWhenFloatingUIIsEnabledButUnifiedToggleInputIsUnavailableThenFloatingUIIsDisabled() {
         let manager = FloatingUIManager(
-            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.floatingUI]),
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.floatingUIAugust2026]),
             isPadProvider: { false },
             isSupportedOSProvider: { true },
             unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: false)
@@ -59,7 +59,7 @@ final class FloatingUIManagerTests: XCTestCase {
 
     func testWhenFloatingUIAndUnifiedToggleInputAreEnabledOnIPadThenFloatingUIIsDisabled() {
         let manager = FloatingUIManager(
-            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.floatingUI]),
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.floatingUIAugust2026]),
             isPadProvider: { true },
             isSupportedOSProvider: { true },
             unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: true)
@@ -70,13 +70,56 @@ final class FloatingUIManagerTests: XCTestCase {
 
     func testWhenOSIsUnsupportedThenFloatingUIIsDisabled() {
         let manager = FloatingUIManager(
-            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.floatingUI]),
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.floatingUIAugust2026]),
             isPadProvider: { false },
             isSupportedOSProvider: { false },
             unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: true)
         )
 
         XCTAssertFalse(manager.isFloatingUIEnabled)
+    }
+
+    func testWhenAugustFlagIsEnabledOnSupportedIPhoneThenFloatingTabSwitcherIsEnabled() {
+        let manager = FloatingUIManager(
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.floatingUIAugust2026]),
+            isPadProvider: { false },
+            isSupportedOSProvider: { false },
+            isTabSwitcherSupportedOSProvider: { true },
+            unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: false)
+        )
+
+        XCTAssertFalse(manager.isFloatingUIEnabled)
+        XCTAssertTrue(manager.isFloatingTabSwitcherEnabled)
+    }
+
+    func testWhenAugustFlagIsDisabledThenFloatingTabSwitcherIsDisabled() {
+        let manager = FloatingUIManager(
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []),
+            isPadProvider: { false },
+            isTabSwitcherSupportedOSProvider: { true }
+        )
+
+        XCTAssertFalse(manager.isFloatingTabSwitcherEnabled)
+    }
+
+    func testWhenAugustFlagIsEnabledOnIPadThenFloatingTabSwitcherIsDisabled() {
+        let manager = FloatingUIManager(
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.floatingUIAugust2026]),
+            isPadProvider: { true },
+            isTabSwitcherSupportedOSProvider: { true }
+        )
+
+        XCTAssertFalse(manager.isFloatingTabSwitcherEnabled)
+    }
+
+    func testWhenTabSwitcherOSIsUnsupportedThenFloatingTabSwitcherIsDisabled() {
+        let manager = FloatingUIManager(
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.floatingUIAugust2026]),
+            isPadProvider: { false },
+            isTabSwitcherSupportedOSProvider: { false }
+        )
+
+        XCTAssertFalse(manager.isFloatingTabSwitcherEnabled)
     }
 
 }
@@ -205,6 +248,13 @@ final class FloatingUILayoutPolicyTests: XCTestCase {
 
 final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
 
+    private func firstGlassView(in view: UIView) -> UIVisualEffectView? {
+        if let glassView = view as? UIVisualEffectView {
+            return glassView
+        }
+        return view.subviews.lazy.compactMap(firstGlassView(in:)).first
+    }
+
     private func glassViewCount(in view: UIView) -> Int {
         view.subviews.filter { $0 is UIVisualEffectView }.count
             + view.subviews.reduce(0) { $0 + glassViewCount(in: $1) }
@@ -232,6 +282,58 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
         barView.setFloatingMinimalChromeBar(true)
 
         XCTAssertEqual(glassViewCount(in: barView), baseline)
+    }
+
+    func testWhenFloatingBarResizesThenFieldGlassMatchesItsContainerBounds() {
+        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        barView.frame = CGRect(x: 0, y: 0, width: 390, height: 60)
+        barView.layoutIfNeeded()
+
+        guard let searchContainer = barView.searchContainer,
+              let glassView = firstGlassView(in: searchContainer) else {
+            XCTFail("Missing field glass")
+            return
+        }
+
+        XCTAssertEqual(glassView.frame, searchContainer.bounds)
+
+        barView.frame.size.width = 700
+        barView.setNeedsLayout()
+        barView.layoutIfNeeded()
+
+        XCTAssertEqual(glassView.frame, searchContainer.bounds)
+    }
+
+    func testWhenGlassAppearanceIsUnchangedThenMakingGlassPreservesGlassView() throws {
+        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        barView.frame = CGRect(x: 0, y: 0, width: 390, height: DefaultOmniBarView.expectedHeight)
+        barView.layoutIfNeeded()
+        let glassView = try XCTUnwrap(firstGlassView(in: barView.searchContainer))
+
+        barView.makeGlass()
+
+        XCTAssertTrue(firstGlassView(in: barView.searchContainer) === glassView)
+    }
+
+    func testWhenFireModeChangesThenGlassViewIsRebuilt() throws {
+        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        barView.frame = CGRect(x: 0, y: 0, width: 390, height: DefaultOmniBarView.expectedHeight)
+        barView.layoutIfNeeded()
+        let glassView = try XCTUnwrap(firstGlassView(in: barView.searchContainer))
+
+        barView.refreshFireMode(fireMode: true)
+
+        XCTAssertFalse(firstGlassView(in: barView.searchContainer) === glassView)
+    }
+
+    func testWhenBottomFloatingBarTemporarilyHasZeroHeightThenCornerRadiusRemainsRounded() {
+        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        barView.frame = CGRect(x: 0, y: 0, width: 390, height: 0)
+        barView.isUsingSmallTopSpacing = true
+
+        barView.layoutIfNeeded()
+
+        XCTAssertGreaterThan(barView.searchContainer.layer.cornerRadius, 0)
     }
 }
 

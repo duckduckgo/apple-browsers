@@ -148,6 +148,19 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
                                             favoritesViewModel: self.favoritesModel))
 
         assignFavoriteModelActions()
+        assignSessionInstrumentationActions()
+    }
+
+    private func assignSessionInstrumentationActions() {
+        newTabPageViewModel.onDidScroll = { [weak self] in
+            guard let self else { return }
+            delegate?.newTabPageDidScroll(self)
+        }
+
+        messagesModel.onMessageInteraction = { [weak self] interaction in
+            guard let self else { return }
+            delegate?.newTabPage(self, didInteractWithMessage: interaction)
+        }
     }
 
     func setEscapeHatch(_ model: EscapeHatchModel?) {

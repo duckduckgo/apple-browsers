@@ -823,7 +823,7 @@ extension MainCoordinator: URLHandling {
           controller.clearNavigationStack()
           // Give the `clearNavigationStack` call time to complete.
           DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 0.5) {
-              self.controller.openAIChat()
+              self.controller.openAIChat(source: .iconShortcut)
           }
           Pixel.fire(pixel: .openAIChatFromIconShortcut)
       }
@@ -898,8 +898,9 @@ extension MainCoordinator: UserActivityHandling {
 
 extension MainCoordinator: IdleReturnLaunchDelegate {
 
-    func showNewTabPageAfterIdleReturn() {
+    func showNewTabPageAfterIdleReturn(timeAwayMs: Int?) {
         if voiceShortcutFeature.isAvailable, voiceSessionStateManager.isVoiceSessionActive {
+            startUntreatedReturnSession(timeAwayMs: timeAwayMs)
             return
         }
 
@@ -911,17 +912,39 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
         // We require a non-nil current tab here: if there is no current tab,
         // we still want to fall through to `newTab(...)` to create one.
         if let currentTab = tabManager.currentTabsModel.currentTab, currentTab.link == nil {
+            startUntreatedReturnSession(timeAwayMs: timeAwayMs)
             return
         }
 
+        // The NTP session starts when the NTP actually renders; stash the time away so it carries it.
+        controller.postIdleSessionInstrumentation.noteReturn(timeAwayMs: timeAwayMs)
         controller.prepareForIdleReturnNTP { [weak self] in
             guard let self else { return }
             self.controller.newTab(reuseExisting: true, allowingKeyboard: true, openedAfterIdle: true)
         }
     }
 
-    func markLastUsedTabAsResumedAfterIdle() {
-        controller.postIdleSessionInstrumentation.sessionStarted(surface: .lut)
+    func markLastUsedTabAsResumedAfterIdle(timeAwayMs: Int?) {
+        controller.postIdleSessionInstrumentation.noteReturn(timeAwayMs: timeAwayMs)
+        controller.postIdleSessionInstrumentation.sessionStarted(landedOn: landedOnForCurrentTab(), afterIdleSurface: .lut, focused: false)
+    }
+
+    func recordOrdinaryReturn(timeAwayMs: Int?) {
+        startUntreatedReturnSession(timeAwayMs: timeAwayMs)
+    }
+
+    /// A return where no after-idle treatment was applied, so `after_idle` stays false and
+    /// the post-idle event — which only reports on treated returns — is not started.
+    private func startUntreatedReturnSession(timeAwayMs: Int?) {
+        controller.postIdleSessionInstrumentation.noteReturn(timeAwayMs: timeAwayMs)
+        controller.postIdleSessionInstrumentation.sessionStarted(landedOn: landedOnForCurrentTab(), afterIdleSurface: nil, focused: false)
+    }
+
+    private func landedOnForCurrentTab() -> ReturnSessionWideEventData.LandedOn {
+        guard let url = tabManager.currentTabsModel.currentTab?.link?.url else { return .ntpUserInitiated }
+        if url.isDuckAIURL { return .duckAI }
+        if url.isDuckDuckGoSearch { return .serp }
+        return .web
     }
 
 }

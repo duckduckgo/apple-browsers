@@ -70,6 +70,19 @@ enum SyncUIViewsV2 {
         }
     }
 
+    struct TextDetailSecondaryLeftAligned: View {
+        let text: String
+
+        var body: some View {
+            Text(.init(text))
+                .font(.system(size: 13))
+                .foregroundColor(Color(designSystemColor: .textSecondary))
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .multilineTextAlignment(.leading)
+        }
+    }
+
     struct TextLink: View {
         let text: String
 
@@ -77,6 +90,17 @@ enum SyncUIViewsV2 {
             Text(text)
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(Color(designSystemColor: .textLink))
+        }
+    }
+
+    struct TextCaption: View {
+        let text: String
+
+        var body: some View {
+            Text(.init(text))
+                .font(.system(size: 11))
+                .foregroundColor(Color(designSystemColor: .textSecondary))
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 }

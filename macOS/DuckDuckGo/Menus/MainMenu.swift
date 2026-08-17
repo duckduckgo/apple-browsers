@@ -1038,6 +1038,7 @@ final class MainMenu: NSMenu {
             FreemiumDebugMenu()
             SubscriptionPromoDebugMenu()
             AdBlockingDebugMenu()
+            FireDialogDebugMenu()
 
             if case .normal = AppVersion.runType {
                 NSMenuItem(title: "VPN")

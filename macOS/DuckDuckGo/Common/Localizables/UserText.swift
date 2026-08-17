@@ -39,11 +39,21 @@ struct UserText {
     static let fireDialogHistoryTitle = NSLocalizedString("fire.dialog.history.title", value: "History", comment: "Section title. Toggle that controls whether browsing history entries are deleted.")
     static let cookiesAndSiteDataTitle = NSLocalizedString("fire.dialog.cookies.title", value: "Cookies and site data", comment: "Section title. Toggle that controls whether website cookies and storage (site data) are deleted.")
     static let fireDialogCookiesAndOtherData = NotLocalizedString("fire.dialog.cookies.and.other.data.title", value: "Cookies & other data", comment: "Section title. Toggle that controls whether website cookies and storage (site data) are deleted.")
+    static let fireDialogIncludeCookiesAndOtherData = NotLocalizedString("fire.dialog.include.cookies.and.other.data.title", value: "Include cookies & other data?", comment: "Section title. Toggle that controls whether website cookies and storage (site data) are deleted.")
     static let fireDialogCloseThisTab = NSLocalizedString("fire.dialog.close.this.tab", value: "Close this tab.", comment: "Subtitle shown under the Tabs and windows row when scope is ‘Tab’. Means: the currently active tab will be closed.")
     static let fireDialogCloseThisWindow = NSLocalizedString("fire.dialog.close.this.window", value: "Close this window.", comment: "Subtitle shown under the Tabs and windows row when scope is ‘Window’. Means: the current browser window (all tabs inside it) will be closed.")
     static let fireDialogCloseAllTabsWindows = NSLocalizedString("fire.dialog.close.all.tabs.windows", value: "Close all tabs and windows.", comment: "Subtitle shown under the Tabs and windows row when scope is ‘Everything’. Means: all browser tabs and windows will be closed.")
     static let fireDialogCloseThisTabAfterDeleting = NotLocalizedString("fire.dialog.close.this.tab.after.deleting", value: "Close this tab after deleting, except if it's pinned.", comment: "Checkbox caption for when the data clearing scope is ‘Tab’. Means: the currently active tab will be closed, unless it's pinned.")
     static let fireDialogCloseAllTabsWindowsAfterDeleting = NotLocalizedString("fire.dialog.close.all.windows.after.deleting", value: "Close all windows after deleting, except pinned tabs.", comment: "Checkbox caption for when the data clearing scope is ‘Everything’. Means: all browser tabs and windows will be closed, unless they contain pinned tabs in which case all regular tabs from a window will be closed and pinned tabs reloaeded.")
+
+    static func fireDialogHistoryItemsTitle(_ count: Int) -> String {
+        let template = NotLocalizedString(
+            "fire.dialog.history.items.title",
+            value: "Delete %d History items?",
+            comment: "Dialog title. Shows the exact number of browsing history entries that will be deleted in this operation, using plural substitutions for the count and noun (%d)."
+        )
+        return String.localizedStringWithFormat(template, count)
+    }
 
     static func fireDialogHistoryItemsSubtitle(_ count: Int) -> String {
         let template = NSLocalizedString(
@@ -453,6 +463,8 @@ struct UserText {
     static let fireDialogFireproofSites = NSLocalizedString("fire.dialog.fireproof.sites", value: "Fireproof sites won't be cleared", comment: "Category of domains in fire button dialog")
     static let fireDialogClearSites = NSLocalizedString("fire.dialog.clear.sites", value: "Selected sites will be cleared", comment: "Category of domains in fire button dialog")
     static let fireDialogDeletingData = NSLocalizedString("fire.dialog.deliting.data", value: "Deleting browsing data…", comment: "Text shown in dialog while removing browsing data")
+    static let fireDialogDeletingDataFromThisTab = NotLocalizedString("fire.dialog.deleting.data.from.this.tab", value: "Deleting browsing data from this tab…", comment: "Text shown in dialog while removing browsing data of the current tab")
+    static let fireDialogDeletingAllData = NotLocalizedString("fire.dialog.deleting.all.data", value: "Deleting all browsing data…", comment: "Text shown in dialog while removing all browsing data")
     static let fireInfoDialogTitle = NSLocalizedString("fire.info.dialog.title", value: "Leave No Trace", comment: "Title of the dialog that explains the Fire feature.")
     static let fireInfoDialogDescription = NSLocalizedString("fire.info.dialog.description", value: "Data, browsing history, and cookies can build up in your browser over time. Use the Fire Button to clear it all away.", comment: "Description in the dialog that explains the Fire feature.")
     static let fireDialogFireWindowTitle = NSLocalizedString("fire.dialog.fire-window.title", value: "Open New Fire Window", comment: "Title of the part of the dialog where the user can open a fire window.")
@@ -765,12 +777,18 @@ struct UserText {
     static let aiChatSearchToggleButtonTooltip = NSLocalizedString("aichat.search-toggle-button.tooltip", value: "Search the web", comment: "Tooltip for the search toggle button in AI chat omnibar")
     static let aiChatImageUploadButtonTooltip = NSLocalizedString("aichat.image-upload-button.tooltip", value: "Add image", comment: "Tooltip for the image upload button in AI chat omnibar")
     static let aiChatAttachMenuImageOrFile = NSLocalizedString("aichat.attach-menu.image-or-file", value: "Add Images or PDFs", comment: "Top-level item in the AI chat omnibar add-attachment menu that opens the image and file picker. PDF is the only file format the menu currently accepts on the file side, so the copy names it explicitly rather than the more abstract 'file'.")
-    static let aiChatAttachMenuTabsHeader = NotLocalizedString("aichat.attach-menu.tabs-header", value: "Tabs", comment: "Section header inside the AI chat omnibar add-attachment menu listing the user's currently open browser tabs")
+    static let aiChatAttachMenuTabsHeader = NSLocalizedString("aichat.attach-menu.tabs-header", value: "Tabs", comment: "Section header inside the AI chat omnibar add-attachment menu listing the user's currently open browser tabs")
     static let aiChatAttachMenuRecentTabsHeader = NSLocalizedString("aichat.attach-menu.recent-tabs-header", value: "Recent Tabs", comment: "Section header inside the AI chat omnibar add-attachment menu listing the user's currently open browser tabs")
-    static let aiChatAttachMenuNoOpenTabs = NSLocalizedString("aichat.attach-menu.no-open-tabs", value: "No page content available", comment: "Placeholder shown inside the AI chat omnibar add-attachment menu when none of the user's open tabs can be attached (e.g. all are filtered out as NTP / duck.ai / DDG homepage). Phrased as 'no page content' rather than 'no open tabs' because tabs may be open but their content isn't attachable.")
-    static let aiChatAttachMenuAttachTabs = NotLocalizedString("aichat.attach-menu.attach-tabs", value: "Attach Tabs", comment: "Item in the AI chat omnibar add-attachment menu that opens a modal for selecting multiple open tabs to attach")
-    static let aiChatAttachTabsModalSearchPlaceholder = NotLocalizedString("aichat.attach-tabs-modal.search-placeholder", value: "Search tabs", comment: "Placeholder in the search field of the AI chat attach-tabs modal, filters the list of open tabs")
-    static let aiChatAttachTabsModalAttachButton = NotLocalizedString("aichat.attach-tabs-modal.attach", value: "Attach", comment: "Confirm button in the AI chat attach-tabs modal, attaches the selected tabs")
+    static let aiChatAttachMenuNoOpenTabs = NSLocalizedString("aichat.attach-menu.no-open-tabs", value: "No page content available", comment: "Placeholder shown inside the AI chat add-tabs modal when none of the user's open tabs can be attached (e.g. all are filtered out as NTP / duck.ai / DDG homepage). Phrased as 'no page content' rather than 'no open tabs' because tabs may be open but their content isn't attachable.")
+    static let aiChatAttachMenuAttachTabs = NSLocalizedString("aichat.attach-menu.attach-tabs", value: "Add Tabs", comment: "Item in the AI chat omnibar add-attachment menu that opens a modal for selecting multiple open tabs to attach")
+    static let aiChatAttachTabsModalSearchPlaceholder = NSLocalizedString("aichat.attach-tabs-modal.search-placeholder", value: "Search", comment: "Placeholder in the search field of the AI chat add-tabs modal, filters the list of open tabs")
+    static let aiChatAttachTabsModalAttachButton = NSLocalizedString("aichat.attach-tabs-modal.attach", value: "Add", comment: "Confirm button in the AI chat add-tabs modal, adds the selected tabs")
+    static let aiChatAttachTabsModalUpdateButton = NSLocalizedString("aichat.attach-tabs-modal.update", value: "Update", comment: "Confirm button in the AI chat add-tabs modal when it opened with tabs already attached, since confirming can remove them as well as add")
+    static let aiChatAttachTabsStaleSelection = NSLocalizedString("aichat.attach-tabs.stale-selection", value: "That tab changed since the list was shown.", comment: "Error shown when a tab picked from the attach menu, the add-tabs modal or the @-mention picker can't be attached because it has closed or moved to another page since the list was built")
+    static func aiChatAttachTabsModalCount(selected: Int, maximum: Int) -> String {
+        let message = NSLocalizedString("aichat.attach-tabs-modal.count", value: "%1$d of %2$d", comment: "Counter in the header of the AI chat add-tabs modal, reading e.g. '2 of 3'. First parameter is how many tabs are selected, second is the maximum allowed.")
+        return String(format: message, selected, maximum)
+    }
     static let aiChatTabPickerCurrentTabSuffix = NSLocalizedString("aichat.tab-picker.current-tab-suffix", value: "(Current Tab)", comment: "Trailing badge in AI chat tab pickers (omnibar attach menu and the @-mention picker) next to the user's currently active browser tab")
     static let aiChatMentionPickerNoMatches = NSLocalizedString("aichat.mention-picker.no-matches", value: "No matching tabs", comment: "Placeholder shown inside the @-mention tab picker when the typed filter doesn't match any open browser tab")
     static let aiChatToolsButtonLabel = NSLocalizedString("aichat.tools-button.label", value: "Tools", comment: "Label for the tools dropdown button in AI chat omnibar")
@@ -888,7 +906,7 @@ struct UserText {
         return String(format: message, maxFilesPerConversation)
     }
     static func aiChatAttachmentTabCountLimit(maxTabs: Int) -> String {
-        let message = NotLocalizedString("aichat.attachment.tab.count.limit", value: "You can only attach %d tabs at a time.", comment: "Error message displayed when the user has attached more open tabs than are allowed. Parameter is the maximum number of tabs.")
+        let message = NSLocalizedString("aichat.attachment.tab.count.limit", value: "You can only add %d tabs at a time.", comment: "Error message displayed when the user has added more open tabs than are allowed. Parameter is the maximum number of tabs.")
         return String(format: message, maxTabs)
     }
     static let aiChatAttachmentPromptTooLong = NSLocalizedString("aichat.attachment.prompt.too.long", value: "That message is too long to send with attachments.", comment: "Error message shown when an AI chat message exceeds the allowed length while attachments are included")
@@ -1391,8 +1409,8 @@ struct UserText {
     static let permissionCenterResetTooltip = NSLocalizedString("permission.center.reset.tooltip", value: "Remove permission", comment: "Tooltip for the remove permission button in permission center")
     static let permissionCenterReloadMessage = NSLocalizedString("permission.center.reload.message", value: "Reload for changes to take effect", comment: "Message shown in permission center when permissions have been changed and reload is needed")
     static let permissionCenterReloadButton = NSLocalizedString("permission.center.reload.button", value: "Reload", comment: "Button to reload the page to apply permission changes")
-    static let permissionCenterAutoplayDisclaimerTitle = NSLocalizedString("permission.center.autoplay.disclaimer.title", value: "Video autoplay stopped", comment: "Title of the informational card explaining autoplay blocking in the Permission Center")
-    static let permissionCenterAutoplayDisclaimerMessage = NSLocalizedString("permission.center.autoplay.disclaimer.message", value: "DuckDuckGo stops videos from autoplaying. You can change settings for this site here, and for all sites in", comment: "Explains the Autoplay behavior the Permission Center")
+    static let permissionCenterAutoplayDisclaimerTitle = NSLocalizedString("permission.center.autoplay.disclaimer.title", value: "Video autoplay", comment: "Title of the informational card explaining autoplay blocking in the Permission Center")
+    static let permissionCenterAutoplayDisclaimerMessage = NSLocalizedString("permission.center.autoplay.disclaimer.message", value: "DuckDuckGo stops videos with sound from autoplaying on most sites. You can change settings for this site here, and for all sites in", comment: "Explains the Autoplay behavior the Permission Center")
     static let permissionCenterAutoplayDisclaimerSettingsLink = NSLocalizedString("permission.center.autoplay.disclaimer.settings.link", value: "Settings → General → Permissions.", comment: "Clickable label in the autoplay disclaimer UI that opens the General settings pane")
 
     static let permissionsSection = NSLocalizedString("preferences.permissions.section", value: "Permissions", comment: "Section header for the Permissions section in General preferences")
@@ -1995,8 +2013,8 @@ struct UserText {
     static let showBookmarksBarNewTabOnly = NSLocalizedString("bookmarks.bar.show.new-tab-only", value: "Only show on New Tab", comment: "Preference for only showing the bookmarks bar on new tab")
     static let bookmarksBarFolderEmpty = NSLocalizedString("bookmarks.bar.folder.empty", value: "Empty", comment: "Empty state for a bookmarks bar folder")
     static let bookmarksBarContextMenuDelete = NSLocalizedString("bookmarks.bar.context-menu.delete", value: "Delete", comment: "Delete menu item for the bookmarks bar context menu")
-    static let bookmarksBarContextMenuReorderByName = NotLocalizedString("bookmarks.bar.context-menu.reorder-by-name", value: "Reorder by Name", comment: "Reorder by Name menu item for bookmark folder context menus")
-    static let bookmarksUndoActionReorderByName = NotLocalizedString("bookmarks.undo-action.reorder-by-name", value: "Reorder by Name", comment: "Undo and redo action name for permanently reordering bookmarks by name")
+    static let bookmarksBarContextMenuReorderByName = NotLocalizedString("bookmarks.bar.context-menu.reorder-by-name", value: "Sort by name permanently", comment: "Sort by name permanently menu item for bookmark folder context menus")
+    static let bookmarksUndoActionReorderByName = NotLocalizedString("bookmarks.undo-action.reorder-by-name", value: "Sort by name permanently", comment: "Undo and redo action name for permanently sorting bookmarks by name")
     static let bookmarksBarContextMenuMoveToEnd = NSLocalizedString("bookmarks.bar.context-menu.move-to-end", value: "Move to End", comment: "Move to End menu item for the bookmarks bar context menu")
 
     static let inviteDialogGetStartedButton = NSLocalizedString("invite.dialog.get.started.button", value: "Get Started", comment: "Get Started button on an invite dialog")
@@ -2420,6 +2438,10 @@ struct UserText {
         static let onboardingFinalScreenTitle = NSLocalizedString("contextual.onboarding.final-screen.title", value: "You’ve got this!", comment: "Title of the last screen of the onboarding to the browser app")
         static let onboardingFinalScreenMessage = NSLocalizedString("contextual.onboarding.final-screen.message", value: "Remember: every time you browse with me a creepy ad loses its wings.", comment: "Message of the last screen of the onboarding to the browser app.")
         static let onboardingFinalScreenButton = NSLocalizedString("contextual.onboarding.final-screen.button", value: "High five!", comment: "Button on the last screen of the onboarding, it will dismiss the onboarding screen.")
+        static let onboardingSubscriptionUpsellTitle = NSLocalizedString("contextual.onboarding.subscription-upsell.title", value: "Oh, before I forget...", comment: "Title of the onboarding screen promoting the optional paid subscription.")
+        static let onboardingSubscriptionUpsellMessage = NSLocalizedString("contextual.onboarding.subscription-upsell.message", value: "DuckDuckGo also has an *optional paid subscription*, with a secure *VPN* and *advanced, private AI.*", comment: "Message of the onboarding screen promoting the optional paid subscription. Text between single asterisks is rendered in bold; keep the asterisks in the translation.")
+        static let onboardingSubscriptionUpsellAcceptButton = NSLocalizedString("contextual.onboarding.subscription-upsell.accept-button", value: "Try for free!", comment: "Primary button on the subscription upsell onboarding screen, it opens the subscription purchase page.")
+        static let onboardingSubscriptionUpsellDeclineButton = NSLocalizedString("contextual.onboarding.subscription-upsell.decline-button", value: "No thanks", comment: "Secondary button on the subscription upsell onboarding screen, it dismisses the screen and completes onboarding.")
         static let tryASearchOption1English = NSLocalizedString("contextual.onboarding.try-search.option1-English", value: "how to say “duck” in spanish", comment: "Browser Search query for how to say duck in english")
         static let tryASearchOption1International = NSLocalizedString("contextual.onboarding.try-search.option1international", value: "how to say “duck” in english", comment: "Browser Search query for how to say duck in english")
         static let tryASearchOption2English = NSLocalizedString("contextual.onboarding.try-search.option2-english", value: "mighty ducks cast", comment: "Search query for the cast of Mighty Ducks")

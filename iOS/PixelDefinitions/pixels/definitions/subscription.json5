@@ -89,7 +89,7 @@
         "owners": ["hanyutang-sandra"],
         "triggers": ["user_submitted"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "vpnSubscriptionActive"]
     },
     "subscription_vpn_address-bar_impression": {
         "description": "Fired when the customizable address-bar VPN button is presented to the user (customization enabled and VPN selected as the address-bar button).",
@@ -103,7 +103,7 @@
         "owners": ["hanyutang-sandra"],
         "triggers": ["user_submitted"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "vpnSubscriptionActive"]
     },
     "subscription_vpn_widget_click": {
         "description": "Fired when a non-subscriber taps the VPN widget entry point and is redirected into the subscription funnel.",

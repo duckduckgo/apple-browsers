@@ -34,18 +34,16 @@ public final class PixelKitMock: PixelFiring {
         self.expectedFireCalls = expectedFireCalls
     }
 
-    public func fire(_ event: PixelKitEvent,
+    public func fire(event: PixelKit.Event,
                      frequency: PixelKit.Frequency,
-                     includeAppVersionParameter: Bool,
-                     withAdditionalParameters parameters: [String: String]?,
-                     withNamePrefix namePrefix: String?,
-                     doNotEnforcePrefix: Bool,
+                     options: PixelKit.Options,
                      onComplete: @escaping PixelKit.CompletionBlock) {
         let fireCall = ExpectedFireCall(pixel: event,
                                         frequency: frequency,
-                                        additionalParameters: parameters,
-                                        namePrefix: namePrefix,
-                                        includeAppVersionParameter: includeAppVersionParameter)
+                                        additionalParameters: options.additionalParameters,
+                                        namePrefix: options.namePrefix,
+                                        doNotEnforcePrefix: !options.enforcePrefix,
+                                        includeAppVersionParameter: options.includeAppVersionParameter)
         actualFireCalls.append(fireCall)
         onComplete(true, nil)
     }
@@ -56,14 +54,14 @@ public final class PixelKitMock: PixelFiring {
 }
 
 public struct ExpectedFireCall: Equatable {
-    public let pixel: PixelKitEvent
+    public let pixel: PixelKit.Event
     public let frequency: PixelKit.Frequency
     public let additionalParameters: [String: String]?
     public let namePrefix: String?
     public let doNotEnforcePrefix: Bool
     public let includeAppVersionParameter: Bool
 
-    public init(pixel: PixelKitEvent,
+    public init(pixel: PixelKit.Event,
                 frequency: PixelKit.Frequency,
                 additionalParameters: [String: String]? = nil,
                 namePrefix: String? = nil,
@@ -84,6 +82,7 @@ public struct ExpectedFireCall: Equatable {
         && lhs.frequency == rhs.frequency
         && lhs.additionalParameters == rhs.additionalParameters
         && lhs.namePrefix == rhs.namePrefix
+        && lhs.doNotEnforcePrefix == rhs.doNotEnforcePrefix
         && lhs.includeAppVersionParameter == rhs.includeAppVersionParameter
     }
 }

@@ -187,7 +187,7 @@ final class TabTerminationTelemetryOccurrenceStore {
     }
 }
 
-enum TabTerminationTelemetryPixel: PixelKitEvent, PixelKitEventWithCustomPrefix {
+enum TabTerminationTelemetryPixel: PixelKit.Event, PixelKitEventWithCustomPrefix {
     case interactionStateFailedToRestore
     case interactionStateFailedToRestoreDaily
     case foreground

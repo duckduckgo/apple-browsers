@@ -79,6 +79,14 @@ final class AppURLsTests: XCTestCase {
         XCTAssertNil(result.getParameter(named: "ko"))
     }
 
+    func testWhenRemoveInternalSearchParametersThenSearchTokenParamIsRemoved() {
+        let url = URL(string: "https://duckduckgo.com/?q=example&dindexexp=b&dindextoken=abc")!
+        let result = url.removingInternalSearchParameters()
+        XCTAssertNil(result.getParameter(named: "dindextoken"))
+        XCTAssertEqual(result.getParameter(named: "q"), "example")
+        XCTAssertEqual(result.getParameter(named: "dindexexp"), "b")
+    }
+
     func testWhenRemoveInternalSearchParametersFromNonSearchUrlThenUrlIsUnchanged() {
         let example = URL(string: "https://duckduckgo.com?atb=x&t=y&ko=z")!
         let result = example.removingInternalSearchParameters()

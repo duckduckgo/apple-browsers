@@ -48,7 +48,7 @@ enum SafariRedirectPixel {
     var countPixel: SafariRedirectScheduledPixel { SafariRedirectScheduledPixel(name: name + "_count") }
 }
 
-struct SafariRedirectScheduledPixel: PixelKitEvent, PixelKitEventWithCustomPrefix {
+struct SafariRedirectScheduledPixel: PixelKit.Event, PixelKitEventWithCustomPrefix {
     let name: String
 
     var parameters: [String: String]? { nil }

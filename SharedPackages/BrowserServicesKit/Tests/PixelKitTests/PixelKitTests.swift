@@ -28,7 +28,7 @@ final class PixelKitTests: XCTestCase {
 
     /// Test events for convenience
 
-    private enum TestEvent: String, PixelKitEvent {
+    private enum TestEvent: String, PixelKit.Event {
 
         case testEventPrefixed = "m_mac_testEventPrefixed"
         case testEvent
@@ -51,7 +51,7 @@ final class PixelKitTests: XCTestCase {
 
     }
 
-    private enum TestEventV2: String, PixelKitEvent {
+    private enum TestEventV2: String, PixelKit.Event {
 
         case testEvent
         case testEventWithoutParameters
@@ -899,12 +899,9 @@ final class PixelKitTests: XCTestCase {
             self.completions = completions
         }
 
-        func fire(_ event: PixelKitEvent,
+        func fire(event: PixelKit.Event,
                   frequency: PixelKit.Frequency,
-                  includeAppVersionParameter: Bool,
-                  withAdditionalParameters parameters: [String: String]?,
-                  withNamePrefix namePrefix: String?,
-                  doNotEnforcePrefix: Bool,
+                  options: PixelKit.Options,
                   onComplete: @escaping PixelKit.CompletionBlock) {
             for completion in completions {
                 onComplete(completion.fired, completion.error)
@@ -924,36 +921,36 @@ final class PixelKitTests: XCTestCase {
                  fireRequest: fireRequest)
     }
 
-    /// `await fire` returns `true` and resolves once the underlying request reports success.
-    func testAsyncFireReturnsTrueWhenRequestSucceeds() async throws {
+    /// `fireAsync` returns `.sent` and resolves once the underlying request reports success.
+    func testAsyncFireReturnsSentWhenRequestSucceeds() async throws {
         let pixelKit = makePixelKit()
 
-        let fired = try await pixelKit.fireAsync(TestEventV2.testEvent)
+        let result = try await pixelKit.fireAsync(TestEventV2.testEvent)
 
-        XCTAssertTrue(fired)
+        XCTAssertEqual(result, .sent)
     }
 
-    /// `await fire` returns `false` (without throwing) when a daily pixel is suppressed by frequency rules.
-    func testAsyncFireReturnsFalseWhenSuppressedByDailyFrequency() async throws {
+    /// `fireAsync` returns `.suppressed` (without throwing) when a daily pixel is suppressed by frequency rules.
+    func testAsyncFireReturnsSuppressedWhenSuppressedByDailyFrequency() async throws {
         let pixelKit = makePixelKit()
 
         let firstFire = try await pixelKit.fireAsync(TestEventV2.dailyEvent, frequency: .daily)
         let secondFire = try await pixelKit.fireAsync(TestEventV2.dailyEvent, frequency: .daily)
 
-        XCTAssertTrue(firstFire)
-        XCTAssertFalse(secondFire)
+        XCTAssertEqual(firstFire, .sent)
+        XCTAssertEqual(secondFire, .suppressed)
     }
 
     /// Legacy frequencies are suppressed inside their handlers (not the early frequency pre-checks);
     /// before those handlers reported suppression to the completion, this second `await` hung forever.
-    func testAsyncFireReturnsFalseWhenSuppressedByLegacyDailyFrequency() async throws {
+    func testAsyncFireReturnsSuppressedWhenSuppressedByLegacyDailyFrequency() async throws {
         let pixelKit = makePixelKit()
 
         let firstFire = try await pixelKit.fireAsync(TestEventV2.dailyEvent, frequency: .legacyDaily)
         let secondFire = try await pixelKit.fireAsync(TestEventV2.dailyEvent, frequency: .legacyDaily)
 
-        XCTAssertTrue(firstFire)
-        XCTAssertFalse(secondFire)
+        XCTAssertEqual(firstFire, .sent)
+        XCTAssertEqual(secondFire, .suppressed)
     }
 
     /// `.dailyAndCount` fires two requests (`_daily` and `_count`), completing once per request:
@@ -974,10 +971,10 @@ final class PixelKitTests: XCTestCase {
             bothRequestsFired.fulfill()
         }
 
-        let fired = try await pixelKit.fireAsync(TestEventV2.dailyEvent, frequency: .dailyAndCount)
+        let result = try await pixelKit.fireAsync(TestEventV2.dailyEvent, frequency: .dailyAndCount)
         await fulfillment(of: [bothRequestsFired], timeout: 1)
 
-        XCTAssertTrue(fired)
+        XCTAssertEqual(result, .sent)
         namesLock.lock()
         let names = firedPixelNames
         namesLock.unlock()
@@ -991,9 +988,9 @@ final class PixelKitTests: XCTestCase {
         let pixelFiring = StubPixelFiring(completions: [(fired: true, error: nil),
                                                         (fired: false, error: AsyncFireSampleError())])
 
-        let fired = try await pixelFiring.fireAsync(TestEventV2.testEvent)
+        let result = try await pixelFiring.fireAsync(TestEventV2.testEvent)
 
-        XCTAssertTrue(fired)
+        XCTAssertEqual(result, .sent)
     }
 
     /// `fireAsync` rethrows the error reported by the underlying completion handler.
@@ -1009,6 +1006,287 @@ final class PixelKitTests: XCTestCase {
         } catch {
             XCTFail("Unexpected error: \(error)")
         }
+    }
+
+    // MARK: - Options parity
+
+    /// Fires `event` through both the legacy wide-parameter entry point and the new `options:` one,
+    /// and returns the resulting (pixelName, parameters) pair from each.
+    ///
+    /// Headers are captured too. An earlier version of this helper ignored them, which let a
+    /// headers-only behaviour difference slip through unnoticed.
+    private func firedNameAndParameters(
+        legacy: (PixelKit) -> Void,
+        options: (PixelKit) -> Void
+    ) -> (legacy: (String, [String: String]), options: (String, [String: String])) {
+        var captured = [(String, [String: String])]()
+        var capturedHeaders = [[String: String]]()
+        let lock = NSLock()
+        let pixelKit = makePixelKit { pixelName, headers, parameters, _, _, completion in
+            lock.lock()
+            captured.append((pixelName, parameters))
+            capturedHeaders.append(headers)
+            lock.unlock()
+            completion(true, nil)
+        }
+
+        legacy(pixelKit)
+        options(pixelKit)
+
+        lock.lock()
+        defer { lock.unlock() }
+        XCTAssertEqual(captured.count, 2, "Expected exactly one request from each entry point")
+        XCTAssertEqual(capturedHeaders.count, 2)
+        XCTAssertEqual(capturedHeaders[0], capturedHeaders[1],
+                       "Legacy and options paths must send identical headers")
+        return (captured[0], captured[1])
+    }
+
+    /// The `options:` entry point must produce byte-identical pixel names and parameters to the
+    /// legacy wide-parameter one. This is what makes the `doNotEnforcePrefix` -> `enforcePrefix`
+    /// polarity inversion safe: pixel names are contractual, so a botched translation would
+    /// silently rename production pixels.
+    func testOptionsPathMatchesLegacyPathForDefaults() {
+        let result = firedNameAndParameters(
+            legacy: { $0.fire(TestEventV2.testEventWithoutParameters) },
+            options: { $0.fire(TestEventV2.testEventWithoutParameters, options: .default) }
+        )
+        XCTAssertEqual(result.legacy.0, result.options.0)
+        XCTAssertEqual(result.legacy.1, result.options.1)
+    }
+
+    func testOptionsPathMatchesLegacyPathForUnenforcedPrefix() {
+        let result = firedNameAndParameters(
+            legacy: { $0.fire(TestEventV2.testEventWithoutParameters, doNotEnforcePrefix: true) },
+            options: { $0.fire(TestEventV2.testEventWithoutParameters, options: .unenforcedPrefix) }
+        )
+        XCTAssertEqual(result.legacy.0, result.options.0,
+                       "enforcePrefix: false must produce the same pixel name as doNotEnforcePrefix: true")
+        XCTAssertEqual(result.legacy.1, result.options.1)
+    }
+
+    func testOptionsPathMatchesLegacyPathForNamePrefix() {
+        let result = firedNameAndParameters(
+            legacy: { $0.fire(TestEventV2.testEventWithoutParameters, withNamePrefix: "custom_") },
+            options: { $0.fire(TestEventV2.testEventWithoutParameters, options: .namePrefix("custom_")) }
+        )
+        XCTAssertEqual(result.legacy.0, result.options.0)
+        XCTAssertEqual(result.legacy.1, result.options.1)
+    }
+
+    func testOptionsPathMatchesLegacyPathWithoutAppVersion() {
+        let result = firedNameAndParameters(
+            legacy: { $0.fire(TestEventV2.testEventWithoutParameters, includeAppVersionParameter: false) },
+            options: { $0.fire(TestEventV2.testEventWithoutParameters, options: .withoutAppVersion) }
+        )
+        XCTAssertEqual(result.legacy.0, result.options.0)
+        XCTAssertEqual(result.legacy.1, result.options.1)
+        XCTAssertNil(result.options.1["appVersion"], "withoutAppVersion must drop the appVersion parameter")
+    }
+
+    func testOptionsPathMatchesLegacyPathForAdditionalParameters() {
+        let extra = ["source": "menu", "eventParam1": "overridden"]
+        let result = firedNameAndParameters(
+            legacy: { $0.fire(TestEventV2.testEvent, withAdditionalParameters: extra) },
+            options: { $0.fire(TestEventV2.testEvent, options: .parameters(extra)) }
+        )
+        XCTAssertEqual(result.legacy.0, result.options.0)
+        XCTAssertEqual(result.legacy.1, result.options.1)
+        XCTAssertEqual(result.options.1["eventParam1"], "overridden",
+                       "additionalParameters must win over the event's own parameters")
+    }
+
+    /// namePrefix and enforcePrefix interact, so cover them together rather than only in isolation.
+    func testOptionsPathMatchesLegacyPathForNamePrefixWithUnenforcedPrefix() {
+        let result = firedNameAndParameters(
+            legacy: { $0.fire(TestEventV2.testEventWithoutParameters, withNamePrefix: "custom_", doNotEnforcePrefix: true) },
+            options: { $0.fire(TestEventV2.testEventWithoutParameters,
+                               options: PixelKit.Options(namePrefix: "custom_", enforcePrefix: false)) }
+        )
+        XCTAssertEqual(result.legacy.0, result.options.0)
+        XCTAssertEqual(result.legacy.1, result.options.1)
+    }
+
+    // MARK: - Header semantics
+
+    /// Captures the headers of a single fired request.
+    private func firedHeaders(defaultHeaders: [String: String],
+                              _ fire: (PixelKit) -> Void) -> [String: String] {
+        var captured = [String: String]()
+        let lock = NSLock()
+        let pixelKit = PixelKit(dryRun: false,
+                                appVersion: "1.0.0",
+                                session: UUID().uuidString,
+                                defaultHeaders: defaultHeaders,
+                                pixelCalendar: nil,
+                                defaults: userDefaults()) { _, headers, _, _, _, completion in
+            lock.lock()
+            captured = headers
+            lock.unlock()
+            completion(true, nil)
+        }
+        fire(pixelKit)
+        lock.lock()
+        defer { lock.unlock() }
+        return captured
+    }
+
+    /// Omitting headers sends the instance's `defaultHeaders`.
+    func testOmittingHeadersSendsDefaultHeaders() {
+        let headers = firedHeaders(defaultHeaders: ["X-Default": "yes"]) {
+            $0.fire(TestEventV2.testEventWithoutParameters)
+        }
+        XCTAssertEqual(headers["X-Default"], "yes")
+    }
+
+    /// Supplying headers *replaces* `defaultHeaders`, it does not merge with them.
+    ///
+    /// This is long-standing PixelKit behaviour (`headers ?? defaultHeaders` in `fire(pixelNamed:)`)
+    /// and is easy to misread as merging. Pinned here so the semantics are explicit, and so that
+    /// changing it later is a deliberate decision with a failing test rather than a silent shift in
+    /// what every custom-header pixel puts on the wire.
+    func testSupplyingHeadersReplacesDefaultHeaders() {
+        let headers = firedHeaders(defaultHeaders: ["X-Default": "yes"]) {
+            $0.fire(TestEventV2.testEventWithoutParameters, options: .init(headers: ["X-Custom": "1"]))
+        }
+        XCTAssertEqual(headers["X-Custom"], "1")
+        XCTAssertNil(headers["X-Default"], "Supplied headers replace defaultHeaders rather than merging")
+    }
+
+    /// The options path must treat headers exactly as the legacy path did.
+    func testOptionsHeadersMatchLegacyHeaders() {
+        let viaLegacy = firedHeaders(defaultHeaders: ["X-Default": "yes"]) {
+            $0.fire(TestEventV2.testEventWithoutParameters, withHeaders: ["X-Custom": "1"])
+        }
+        let viaOptions = firedHeaders(defaultHeaders: ["X-Default": "yes"]) {
+            $0.fire(TestEventV2.testEventWithoutParameters, options: .init(headers: ["X-Custom": "1"]))
+        }
+        XCTAssertEqual(viaLegacy, viaOptions)
+    }
+
+    /// The static entry point must send the same headers as the instance one.
+    ///
+    /// These used to disagree: the legacy static defaulted `withHeaders` to `[:]` while the instance
+    /// defaulted to `nil`, and since `fire(pixelNamed:)` does `headers ?? defaultHeaders`, a
+    /// non-nil `[:]` meant static calls dropped `defaultHeaders` entirely. The options-based static
+    /// passes `nil`, so both now behave the same. Only observable where `defaultHeaders` is
+    /// non-empty, which today is just the macOS VPN packet tunnel.
+    func testStaticFireSendsSameHeadersAsInstanceFire() {
+        defer { PixelKit.tearDown() }
+
+        let viaInstance = firedHeaders(defaultHeaders: ["X-Default": "yes"]) {
+            $0.fire(TestEventV2.testEventWithoutParameters)
+        }
+
+        var viaStatic = [String: String]()
+        let lock = NSLock()
+        PixelKit.setUp(dryRun: false,
+                       appVersion: "1.0.0",
+                       session: UUID().uuidString,
+                       defaultHeaders: ["X-Default": "yes"],
+                       defaults: userDefaults()) { _, headers, _, _, _, completion in
+            lock.lock()
+            viaStatic = headers
+            lock.unlock()
+            completion(true, nil)
+        }
+        PixelKit.fire(TestEventV2.testEventWithoutParameters)
+
+        lock.lock()
+        let staticHeaders = viaStatic
+        lock.unlock()
+
+        XCTAssertEqual(staticHeaders["X-Default"], "yes",
+                       "The static entry point must not drop defaultHeaders")
+        XCTAssertEqual(staticHeaders, viaInstance)
+    }
+
+    // MARK: - Options presets
+
+    func testOptionsPresetsMatchTheirMemberwiseEquivalents() {
+        XCTAssertEqual(PixelKit.Options.default, PixelKit.Options())
+        XCTAssertEqual(PixelKit.Options.unenforcedPrefix, PixelKit.Options(enforcePrefix: false))
+        XCTAssertEqual(PixelKit.Options.withoutAppVersion, PixelKit.Options(includeAppVersionParameter: false))
+        XCTAssertEqual(PixelKit.Options.parameters(["a": "b"]),
+                       PixelKit.Options(additionalParameters: ["a": "b"]))
+        XCTAssertEqual(PixelKit.Options.namePrefix("p_"), PixelKit.Options(namePrefix: "p_"))
+        XCTAssertEqual(PixelKit.Options.parameters(["a": "b"], namePrefix: "p_"),
+                       PixelKit.Options(additionalParameters: ["a": "b"], namePrefix: "p_"))
+    }
+
+    /// Defaults must be the non-intrusive ones: prefix enforced, app version included.
+    func testOptionsDefaultsAreConservative() {
+        let options = PixelKit.Options()
+        XCTAssertTrue(options.enforcePrefix)
+        XCTAssertTrue(options.includeAppVersionParameter)
+        XCTAssertNil(options.headers)
+        XCTAssertNil(options.additionalParameters)
+        XCTAssertNil(options.namePrefix)
+        XCTAssertNil(options.allowedQueryReservedCharacters)
+    }
+
+    // MARK: - Sugar forwarding
+
+    /// The defaulted `fire(_:frequency:options:)` sugar must reach the conformer's witness with the
+    /// documented defaults applied. This guards the argument-label indirection between the protocol
+    /// requirement and the entry point.
+    func testSugarForwardsDefaultsToWitness() {
+        let recorder = RecordingPixelFiring()
+
+        recorder.fire(TestEventV2.testEvent)
+
+        XCTAssertEqual(recorder.calls.count, 1)
+        XCTAssertEqual(recorder.calls.first?.frequency, .standard)
+        XCTAssertEqual(recorder.calls.first?.options, .default)
+    }
+
+    func testSugarForwardsExplicitArgumentsToWitness() {
+        let recorder = RecordingPixelFiring()
+
+        recorder.fire(TestEventV2.testEvent, options: .unenforcedPrefix)
+        recorder.fire(TestEventV2.testEvent, frequency: .daily)
+
+        XCTAssertEqual(recorder.calls.count, 2)
+        // Skipping the middle parameter must still default frequency.
+        XCTAssertEqual(recorder.calls[0].frequency, .standard)
+        XCTAssertEqual(recorder.calls[0].options, .unenforcedPrefix)
+        // Omitting options must still default it.
+        XCTAssertEqual(recorder.calls[1].frequency, .daily)
+        XCTAssertEqual(recorder.calls[1].options, .default)
+    }
+
+    // MARK: - Static async entry point
+
+    func testStaticFireAsyncThrowsWhenPixelKitNotConfigured() async {
+        PixelKit.tearDown()
+
+        do {
+            _ = try await PixelKit.fireAsync(TestEventV2.testEvent)
+            XCTFail("Expected fireAsync to throw when PixelKit is not set up")
+        } catch let error as PixelKitError {
+            XCTAssertEqual(error, .notConfigured)
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+    }
+}
+
+/// Records what the `PixelFiring` sugar forwards to the single protocol requirement.
+private final class RecordingPixelFiring: PixelFiring {
+    struct Call {
+        let event: PixelKit.Event
+        let frequency: PixelKit.Frequency
+        let options: PixelKit.Options
+    }
+
+    private(set) var calls = [Call]()
+
+    func fire(event: PixelKit.Event,
+              frequency: PixelKit.Frequency,
+              options: PixelKit.Options,
+              onComplete: @escaping PixelKit.CompletionBlock) {
+        calls.append(Call(event: event, frequency: frequency, options: options))
+        onComplete(true, nil)
     }
 }
 

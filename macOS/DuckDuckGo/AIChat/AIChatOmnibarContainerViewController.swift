@@ -1838,15 +1838,15 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         // The controller decides what the menu shows; this only maps each item to an NSMenuItem.
         for item in items {
             switch item {
-            case .model(let model, let subtitle, let badge, let isSelected):
-                menu.addItem(modelRow(for: model, subtitle: subtitle, trailingText: badge, isSelected: isSelected,
+            case .model(let model, let subtitle, let isSelected):
+                menu.addItem(modelRow(for: model, subtitle: subtitle, isSelected: isSelected,
                                       action: #selector(modelSelected(_:))))
             case .separator:
                 menu.addItem(.separator())
             case .sectionHeader(let title):
                 menu.addItem(.createMutedSectionHeader(title: title))
-            case .gatedModel(let model, let badge, let routesToUpsell):
-                let row = modelRow(for: model, trailingText: badge, isSelected: false,
+            case .gatedModel(let model, let routesToUpsell):
+                let row = modelRow(for: model, isSelected: false, isGated: true,
                                    action: #selector(gatedModelSelected(_:)))
                 // With no upsell to route to, the row is inert rather than a dead-end tap.
                 row.isEnabled = routesToUpsell
@@ -1859,27 +1859,23 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     }
 
     /// Stock `NSMenuItem`: native checkmark gutter, icon and highlight; the rest is the attributed title.
-    private func modelRow(for model: AIChatModel, subtitle: String? = nil, trailingText: String?, isSelected: Bool, action: Selector) -> NSMenuItem {
+    /// A gated row's name trails off, marking it as a locked preview rather than a choice.
+    private func modelRow(for model: AIChatModel, subtitle: String? = nil, isSelected: Bool, isGated: Bool = false, action: Selector) -> NSMenuItem {
         let title = model.titleComponents
+        let name = title.regular.isEmpty ? title.bold : "\(title.bold) \(title.regular)"
         let item = NSMenuItem(title: model.name, action: action, keyEquivalent: "")
         item.target = self
         item.image = model.menuIcon
         item.state = isSelected ? .on : .off
-        item.attributedTitle = Self.menuRowTitle(title: title.regular.isEmpty ? title.bold : "\(title.bold) \(title.regular)",
-                                                 subtitle: subtitle,
-                                                 trailingText: trailingText)
+        item.attributedTitle = Self.menuRowTitle(title: isGated ? name + "…" : name, subtitle: subtitle)
         item.representedObject = model
         return item
     }
 
-    /// Right tab stop the trailing tier word snaps to.
-    private static let modelRowTrailingTabStop: CGFloat = 210
-
-    /// Two-line row title: name, optional grey subtitle, optional trailing tier word. Shared by
-    /// the model and reasoning-effort pickers so their rows match.
-    private static func menuRowTitle(title: String, subtitle: String?, trailingText: String?) -> NSAttributedString {
+    /// Two-line row title: name plus an optional grey subtitle. Shared by the model and
+    /// reasoning-effort pickers so their rows match.
+    private static func menuRowTitle(title: String, subtitle: String?) -> NSAttributedString {
         let paragraph = NSMutableParagraphStyle()
-        paragraph.tabStops = [NSTextTab(textAlignment: .right, location: modelRowTrailingTabStop)]
         paragraph.lineSpacing = 2
 
         // System semantic colors, so AppKit inverts them under the menu highlight.
@@ -1888,14 +1884,6 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             .foregroundColor: NSColor.labelColor,
             .paragraphStyle: paragraph
         ])
-        if let trailingText {
-            result.append(NSAttributedString(string: "\t\(trailingText)", attributes: [
-                .font: NSFont.systemFont(ofSize: 11, weight: .bold),
-                .kern: -0.2,
-                .foregroundColor: NSColor.tertiaryLabelColor,
-                .paragraphStyle: paragraph
-            ]))
-        }
         if let subtitle {
             result.append(NSAttributedString(string: "\n\(subtitle)", attributes: [
                 .font: NSFont.systemFont(ofSize: 12),
@@ -1964,8 +1952,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         menuItem.image = item.effort.icon
         menuItem.state = item.isSelected ? .on : .off
         menuItem.attributedTitle = Self.menuRowTitle(title: item.effort.title,
-                                                     subtitle: item.effort.subtitle,
-                                                     trailingText: nil)
+                                                     subtitle: item.effort.subtitle)
         menuItem.isEnabled = !item.isGated || item.routesToUpsell
         menuItem.representedObject = item.effort
         return menuItem

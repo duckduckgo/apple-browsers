@@ -2085,15 +2085,12 @@ final class AIChatOmnibarControllerTests: XCTestCase {
 
         let accessible = accessibleRows(items)
         XCTAssertEqual(accessible.map(\.id), ["free-a", "free-b"])
-        XCTAssertNil(accessible[0].badge, "Free-tier models carry no trailing badge")
 
         XCTAssertEqual(sectionHeaderTitle(in: items), UserText.aiChatModelPickerTryFreeSectionHeader,
                        "A trial-eligible user is offered the free trial")
 
         let gated = gatedRows(items)
         XCTAssertEqual(gated.map(\.id), ["gated-plus", "gated-pro"])
-        XCTAssertEqual(gated[0].badge, UserText.aiChatModelPickerTierBadgePlus)
-        XCTAssertEqual(gated[1].badge, UserText.aiChatModelPickerTierBadgePro)
         XCTAssertTrue(gated.allSatisfy(\.routesToUpsell), "With the upsell on, a gated row opens the purchase dialog")
     }
 
@@ -2117,7 +2114,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         XCTAssertEqual(gatedIndex, 3)
     }
 
-    func testModelPickerItems_plusUser_accessibleModelsAreUnbadgedAndProSectionIsOffered() async {
+    func testModelPickerItems_plusUser_accessibleModelsFirstAndProSectionIsOffered() async {
         featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarSubscriptionUpsell.rawValue] = true
         await loadModels([
             makeRemoteModel(id: "basic", accessTier: ["free", "plus"]),
@@ -2129,16 +2126,11 @@ final class AIChatOmnibarControllerTests: XCTestCase {
 
         let accessible = accessibleRows(items)
         XCTAssertEqual(accessible.map(\.id), ["basic", "plus-only"])
-        XCTAssertNil(accessible[0].badge, "A free+plus model resolves to the free tier — no badge")
-        XCTAssertNil(accessible[1].badge,
-                     "A plus-only model the subscriber already has is not tagged with their own tier")
 
         XCTAssertEqual(sectionHeaderTitle(in: items), UserText.aiChatModelPickerAvailableWithProSectionHeader,
                        "A subscriber is never offered the trial, only the upgrade")
 
         XCTAssertEqual(gatedRows(items).map(\.id), ["pro-only"])
-        XCTAssertEqual(gatedRows(items).first?.badge, UserText.aiChatModelPickerTierBadgePro,
-                       "A model still out of reach keeps its tier badge")
     }
 
     func testModelPickerItems_freeUserTrialIneligible_usesAvailableWithPaidPlansHeader() async {
@@ -2464,19 +2456,19 @@ final class AIChatOmnibarControllerTests: XCTestCase {
     }
 
     // Accessors that flatten `[AIChatModelPickerItem]` for assertions (the enum isn't Equatable).
-    private struct PickerRow { let id: String; let subtitle: String?; let badge: String?; let isSelected: Bool; var routesToUpsell = false }
+    private struct PickerRow { let id: String; let subtitle: String?; let isSelected: Bool; var routesToUpsell = false }
 
     private func accessibleRows(_ items: [AIChatModelPickerItem]) -> [PickerRow] {
         items.compactMap { item -> PickerRow? in
-            guard case let .model(model, subtitle, badge, isSelected) = item else { return nil }
-            return PickerRow(id: model.id, subtitle: subtitle, badge: badge, isSelected: isSelected)
+            guard case let .model(model, subtitle, isSelected) = item else { return nil }
+            return PickerRow(id: model.id, subtitle: subtitle, isSelected: isSelected)
         }
     }
 
     private func gatedRows(_ items: [AIChatModelPickerItem]) -> [PickerRow] {
         items.compactMap { item -> PickerRow? in
-            guard case let .gatedModel(model, badge, routesToUpsell) = item else { return nil }
-            return PickerRow(id: model.id, subtitle: nil, badge: badge, isSelected: false, routesToUpsell: routesToUpsell)
+            guard case let .gatedModel(model, routesToUpsell) = item else { return nil }
+            return PickerRow(id: model.id, subtitle: nil, isSelected: false, routesToUpsell: routesToUpsell)
         }
     }
 

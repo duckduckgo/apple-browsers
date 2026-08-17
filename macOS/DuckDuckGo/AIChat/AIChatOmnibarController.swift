@@ -1470,13 +1470,13 @@ final class AIChatOmnibarController {
 
 /// A fully-resolved model-picker row so the view controller only maps it to an `NSMenuItem`.
 enum AIChatModelPickerItem {
-    case model(AIChatModel, subtitle: String? = nil, badge: String?, isSelected: Bool)
+    case model(AIChatModel, subtitle: String? = nil, isSelected: Bool)
     case separator
     /// Muted, uppercase section title (no CTA) — used above the gated models section.
     case sectionHeader(title: String)
     /// `routesToUpsell` is false when the upsell is unavailable (kill switch, or a surface that
     /// doesn't support it) — the row still shows, but must not open the purchase dialog.
-    case gatedModel(AIChatModel, badge: String?, routesToUpsell: Bool)
+    case gatedModel(AIChatModel, routesToUpsell: Bool)
 }
 
 /// A fully-resolved reasoning-effort row so the view controller only maps it to an `NSMenuItem`.
@@ -1501,11 +1501,10 @@ extension AIChatOmnibarController {
         var items: [AIChatModelPickerItem] = recommended.map { model in
             .model(model,
                    subtitle: AIChatPickerSectionCopy.subtitle(for: model.label),
-                   badge: trailingBadge(for: model),
                    isSelected: model.id == selectedModelId)
         }
         items += rest.map { model in
-            .model(model, badge: trailingBadge(for: model), isSelected: model.id == selectedModelId)
+            .model(model, isSelected: model.id == selectedModelId)
         }
 
         guard !gated.isEmpty else { return items }
@@ -1515,19 +1514,8 @@ extension AIChatOmnibarController {
             items.append(.sectionHeader(title: AIChatPickerSectionCopy.gatedModelsHeader(userTier: userTier, isEligibleForFreeTrial: shouldOfferFreeTrial)))
         }
 
-        items += gated.map { .gatedModel($0.model, badge: trailingBadge(for: $0.model), routesToUpsell: isSubscriptionUpsellEnabled) }
+        items += gated.map { .gatedModel($0.model, routesToUpsell: isSubscriptionUpsellEnabled) }
         return items
-    }
-
-    /// PLUS/PRO tag naming the tier a model needs — only for models the user can't use yet, so a
-    /// subscriber doesn't see their own tier tagged on every row they already have.
-    private func trailingBadge(for model: AIChatModel) -> String? {
-        guard !model.entityHasAccess else { return nil }
-        switch model.lowestPublicAccessTier {
-        case .plus: return UserText.aiChatModelPickerTierBadgePlus
-        case .pro: return UserText.aiChatModelPickerTierBadgePro
-        case .free, .none: return nil
-        }
     }
 
     /// Resolved reasoning-effort rows; owns the current-effort fallback, the flag/eligibility/tier

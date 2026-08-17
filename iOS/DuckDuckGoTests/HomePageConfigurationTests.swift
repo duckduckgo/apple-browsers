@@ -133,8 +133,32 @@ struct HomePageConfigurationTests {
     }
 
     @available(iOS 16, *)
-    @Test("True background launch and ownerless foreground remain inert until NTP preparation", .timeLimit(.minutes(1)))
-    func disabledPreparationDoesNotArmRefresh() async {
+    @Test("Background launch with an attached NTP acquires at the foreground-ready checkpoint", .timeLimit(.minutes(1)))
+    func backgroundLaunchWithAttachedNTPPreparesWhenForegroundReady() {
+        let store = FilteredRemoteMessagingStore(noTriggerMessage: makeRemoteMessage(id: "message"))
+        let gate = MockPromoGate()
+        let sut = makeCoordinatedConfiguration(
+            store: store,
+            gate: gate,
+            isRMFAdmissionEnabled: false
+        )
+
+        sut.prepareForNTP(openedAfterIdle: true)
+
+        #expect(store.fetchedTriggerFilters.isEmpty)
+        #expect(gate.acquiredMessageIDs.isEmpty)
+
+        sut.handleAppForegrounded()
+        sut.prepareForNTP(openedAfterIdle: false)
+
+        #expect(store.fetchedTriggerFilters == [.noTrigger])
+        #expect(gate.acquiredMessageIDs == ["message"])
+        #expect(sut.homeMessages == [.remoteMessage(remoteMessage: makeRemoteMessage(id: "message"))])
+    }
+
+    @available(iOS 16, *)
+    @Test("Ownerless foreground without an attached NTP remains inert", .timeLimit(.minutes(1)))
+    func ownerlessForegroundWithoutAttachedNTPRemainsInert() async {
         let notificationCenter = NotificationCenter()
         let store = FilteredRemoteMessagingStore(noTriggerMessage: makeRemoteMessage(id: "message"))
         let gate = MockPromoGate()
@@ -145,7 +169,6 @@ struct HomePageConfigurationTests {
             notificationCenter: notificationCenter
         )
 
-        sut.prepareForNTP(openedAfterIdle: true)
         sut.handleAppForegrounded()
         notificationCenter.post(name: RemoteMessagingStore.Notifications.remoteMessagesDidChange, object: nil)
         await Task.yield()
@@ -153,11 +176,6 @@ struct HomePageConfigurationTests {
         #expect(store.fetchedTriggerFilters.isEmpty)
         #expect(gate.acquiredMessageIDs.isEmpty)
         #expect(sut.homeMessages.isEmpty)
-
-        sut.prepareForNTP(openedAfterIdle: false)
-
-        #expect(store.fetchedTriggerFilters == [.noTrigger])
-        #expect(gate.acquiredMessageIDs == ["message"])
     }
 
     @available(iOS 16, *)

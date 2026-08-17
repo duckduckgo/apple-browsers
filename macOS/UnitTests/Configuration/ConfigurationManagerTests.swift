@@ -172,12 +172,14 @@ final class ConfigurationManagerTests: XCTestCase {
         XCTAssertTrue(allSteps.contains(.contentBlockingScheduleCompilation), "Content blocking should be scheduled.")
     }
 
-    func test_WhenBloomFilterIsNotModified_ThenBloomFilterIsNotPersisted() async {
+    func test_WhenBloomFilterIsNotModified_ThenCachedBloomFilterIsReconciled() async {
         mockFetcher.fetchAllResult = []
+        mockStore.data = Data(#"{"bitCount":8,"errorRate":0.01,"totalEntries":1,"sha256":"sha"}"#.utf8)
+        mockHTTPSUpgradeStore.persistBloomFilterResult = false
 
         await configManager.refreshNow()
 
-        XCTAssertEqual(mockHTTPSUpgradeStore.persistBloomFilterCallCount, 0)
+        XCTAssertEqual(mockHTTPSUpgradeStore.persistBloomFilterCallCount, 1)
     }
 
     func test_WhenOneBloomFilterAssetIsModified_ThenBloomFilterIsPersistedOnce() async {
@@ -187,6 +189,25 @@ final class ConfigurationManagerTests: XCTestCase {
         await configManager.refreshNow()
 
         XCTAssertEqual(mockHTTPSUpgradeStore.persistBloomFilterCallCount, 1)
+    }
+
+    func test_WhenBloomFilterExclusionsPersistenceFails_ThenNotModifiedRefreshRetriesCachedData() async {
+        mockFetcher.fetchAllResult = []
+        mockFetcher.fetchResults[.bloomFilterExcludedDomains] = .updated
+        mockStore.data = Data(#"{"data":["example.com"]}"#.utf8)
+        mockStore.etag = "etag"
+        mockHTTPSUpgradeStore.persistExcludedDomainsError = ConfigurationHTTPSUpgradeStoreMock.Error.persistenceFailed
+
+        await configManager.refreshNow()
+
+        XCTAssertEqual(mockHTTPSUpgradeStore.persistExcludedDomainsCallCount, 1)
+
+        mockFetcher.fetchResults[.bloomFilterExcludedDomains] = .notModified
+        mockHTTPSUpgradeStore.persistExcludedDomainsError = nil
+
+        await configManager.refreshNow()
+
+        XCTAssertEqual(mockHTTPSUpgradeStore.persistExcludedDomainsCallCount, 2)
     }
 
 }
@@ -205,6 +226,7 @@ private class MockConfigurationFetcher: ConfigurationFetching {
     var operationLog: OperationLog
     var shouldFailPrivacyFetch = false
     var privacyFetchResult = ConfigurationFetchResult.updated
+    var fetchResults = [Configuration: ConfigurationFetchResult]()
     var fetchAllResult: Set<Configuration>?
 
     init(operationLog: OperationLog) {
@@ -232,7 +254,7 @@ private class MockConfigurationFetcher: ConfigurationFetching {
         case .remoteMessagingConfig:
             break
         }
-        return configuration == .privacyConfiguration ? privacyFetchResult : .updated
+        return fetchResults[configuration] ?? (configuration == .privacyConfiguration ? privacyFetchResult : .updated)
     }
 
     func fetch(all configurations: [Configuration]) async throws -> Set<Configuration> {
@@ -241,21 +263,36 @@ private class MockConfigurationFetcher: ConfigurationFetching {
 }
 
 private final class ConfigurationHTTPSUpgradeStoreMock: HTTPSUpgradeStore {
+    enum Error: Swift.Error {
+        case persistenceFailed
+    }
+
     private(set) var persistBloomFilterCallCount = 0
+    private(set) var persistExcludedDomainsCallCount = 0
+    var persistBloomFilterResult = true
+    var persistExcludedDomainsResult = true
+    var persistExcludedDomainsError: Swift.Error?
 
     func loadBloomFilter() -> BloomFilter? {
         nil
     }
 
-    func persistBloomFilter(specification: HTTPSBloomFilterSpecification, data: Data) throws {
+    func persistBloomFilter(specification: HTTPSBloomFilterSpecification, data: Data) throws -> Bool {
         persistBloomFilterCallCount += 1
+        return persistBloomFilterResult
     }
 
     func hasExcludedDomain(_ domain: String) -> Bool {
         false
     }
 
-    func persistExcludedDomains(_ domains: [String]) throws {}
+    func persistExcludedDomains(_ domains: [String]) throws -> Bool {
+        persistExcludedDomainsCallCount += 1
+        if let persistExcludedDomainsError {
+            throw persistExcludedDomainsError
+        }
+        return persistExcludedDomainsResult
+    }
 }
 
 private class MockPrivacyConfigurationManager: PrivacyConfigurationManager {

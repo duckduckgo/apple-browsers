@@ -115,11 +115,13 @@ public actor HTTPSUpgrade {
         return bloomFilter
     }
 
-    public func persistBloomFilter(specification: HTTPSBloomFilterSpecification, data: Data) throws {
+    @discardableResult
+    public func persistBloomFilter(specification: HTTPSBloomFilterSpecification, data: Data) throws -> Bool {
         try store.persistBloomFilter(specification: specification, data: data)
     }
 
-    public func persistExcludedDomains(_ domains: [String]) throws {
+    @discardableResult
+    public func persistExcludedDomains(_ domains: [String]) throws -> Bool {
         try store.persistExcludedDomains(domains)
     }
 

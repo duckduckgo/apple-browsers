@@ -92,10 +92,8 @@ final class ConfigurationManager: DefaultConfigurationManager {
 
         let updateBloomFilterTask = Task {
             do {
-                let updatedConfigurations = try await fetcher.fetch(all: [.bloomFilterBinary, .bloomFilterSpec])
-                if !updatedConfigurations.isEmpty {
-                    try await updateBloomFilter()
-                }
+                try await fetcher.fetch(all: [.bloomFilterBinary, .bloomFilterSpec])
+                try await updateBloomFilter()
                 tryAgainLater()
             } catch {
                 handleRefreshError(error)
@@ -104,12 +102,7 @@ final class ConfigurationManager: DefaultConfigurationManager {
 
         let updateBloomFilterExclusionsTask = Task {
             do {
-                let fetchResult = try await fetcher.fetch(.bloomFilterExcludedDomains, isDebug: isDebug)
-                guard fetchResult == .updated else {
-                    tryAgainLater()
-                    return
-                }
-
+                try await fetcher.fetch(.bloomFilterExcludedDomains, isDebug: isDebug)
                 try await updateBloomFilterExclusions()
                 tryAgainLater()
             } catch {
@@ -198,37 +191,47 @@ final class ConfigurationManager: DefaultConfigurationManager {
         contentBlockingManager.scheduleCompilation()
     }
 
-    private func updateBloomFilter() async throws {
+    @discardableResult
+    private func updateBloomFilter() async throws -> Bool {
         guard let specData = store.loadData(for: .bloomFilterSpec) else {
             throw Error.bloomFilterSpecNotFound
         }
         guard let bloomFilterData = store.loadData(for: .bloomFilterBinary) else {
             throw Error.bloomFilterBinaryNotFound
         }
-        try await Task.detached {
+        return try await Task.detached {
             let spec = try JSONDecoder().decode(HTTPSBloomFilterSpecification.self, from: specData)
+            let didPersistBloomFilter: Bool
             do {
-                try await self.httpsUpgrade.persistBloomFilter(specification: spec, data: bloomFilterData)
+                didPersistBloomFilter = try await self.httpsUpgrade.persistBloomFilter(specification: spec, data: bloomFilterData)
             } catch {
                 assertionFailure("persistBloomFilter failed: \(error)")
                 throw Error.bloomFilterPersistenceFailed.withUnderlyingError(error)
             }
-            await self.httpsUpgrade.loadData()
+            if didPersistBloomFilter {
+                await self.httpsUpgrade.loadData()
+            }
+            return didPersistBloomFilter
         }.value
     }
 
-    private func updateBloomFilterExclusions() async throws {
+    @discardableResult
+    private func updateBloomFilterExclusions() async throws -> Bool {
         guard let bloomFilterExclusions = store.loadData(for: .bloomFilterExcludedDomains) else {
             throw Error.bloomFilterExclusionsNotFound
         }
-        try await Task.detached {
+        return try await Task.detached {
             let excludedDomains = try JSONDecoder().decode(HTTPSExcludedDomains.self, from: bloomFilterExclusions).data
+            let didPersistExcludedDomains: Bool
             do {
-                try await self.httpsUpgrade.persistExcludedDomains(excludedDomains)
+                didPersistExcludedDomains = try await self.httpsUpgrade.persistExcludedDomains(excludedDomains)
             } catch {
                 throw Error.bloomFilterExclusionsPersistenceFailed.withUnderlyingError(error)
             }
-            await self.httpsUpgrade.loadData()
+            if didPersistExcludedDomains {
+                await self.httpsUpgrade.loadData()
+            }
+            return didPersistExcludedDomains
         }.value
     }
 

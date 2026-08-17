@@ -28,24 +28,19 @@ struct OnboardingAIModelsFallbackTests {
 
     // The baked last-resort list, restated independently so a change to it is caught here.
     private enum BakedDefault {
-        static let ids = ["claude-haiku-4-5", "gpt-5.4-nano", "mistral-small-2603"]
-        static let providers: [OnboardingAIProvider] = [.anthropic, .openai, .mistral]
+        static let ids = ["gpt-5.4-nano", "claude-haiku-4-5", "mistral-small-2603"]
+        static let providers: [OnboardingAIProvider] = [.openai, .anthropic, .mistral]
         static let defaultModelId = "gpt-5.4-nano"
     }
 
-    // Distinct from the baked default so we can tell the config was actually used/
+    // Distinct from the baked default so we can tell the config was actually used.
+    // `models` is a JSON-encoded string (the privacy-config subfeature `settings` schema only permits string values).
     static let supportedAIModelsJSON = """
-        { "defaultModelId": "config-openai", "models": [
-            { "id": "config-openai", "provider": "openai", "modelShortName": "Config GPT" },
-            { "id": "config-claude", "provider": "anthropic", "modelShortName": "Config Claude" }
-        ] }
+        { "defaultModelId": "config-openai", "models": "[{\\"id\\": \\"config-openai\\", \\"provider\\": \\"openai\\", \\"modelShortName\\": \\"Config GPT\\"}, {\\"id\\": \\"config-claude\\", \\"provider\\": \\"anthropic\\", \\"modelShortName\\": \\"Config Claude\\"}]" }
         """
 
     static let modelsWithUnsupportedProviderJSON = """
-    { "defaultModelId": "o", "models": [
-        { "id": "o", "provider": "openai", "modelShortName": "O" },
-        { "id": "t", "provider": "tinfoil", "modelShortName": "T" }
-    ] }
+    { "defaultModelId": "o", "models": "[{\\"id\\": \\"o\\", \\"provider\\": \\"openai\\", \\"modelShortName\\": \\"O\\"}, {\\"id\\": \\"t\\", \\"provider\\": \\"tinfoil\\", \\"modelShortName\\": \\"T\\"}]" }
     """
 
     private func makeSUT(subfeatureSettings: String?) -> OnboardingAIModelsFallback {
@@ -89,6 +84,20 @@ struct OnboardingAIModelsFallbackTests {
     func malformedConfigFallsBackToBaked() {
         // GIVEN
         let sut = makeSUT(subfeatureSettings: "{ not valid json")
+
+        // WHEN
+        let result = sut.aiModels
+
+        // THEN
+        #expect(result.models.map(\.id) == BakedDefault.ids)
+        #expect(result.models.map(\.provider) == BakedDefault.providers)
+        #expect(result.defaultModelId == BakedDefault.defaultModelId)
+    }
+
+    @Test("Valid settings whose encoded models string is malformed fall back to the baked default")
+    func malformedEncodedModelsFallsBackToBaked() {
+        // GIVEN valid outer settings but the `models` string isn't valid JSON
+        let sut = makeSUT(subfeatureSettings: #"{ "defaultModelId": "x", "models": "not-json" }"#)
 
         // WHEN
         let result = sut.aiModels

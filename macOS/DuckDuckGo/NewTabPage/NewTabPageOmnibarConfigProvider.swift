@@ -98,8 +98,6 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     private var aiChatPreferencesPersistor: AIChatPreferencesPersisting
     private let searchPreferences: SearchPreferences
     private let windowControllersManager: WindowControllersManagerProtocol?
-    /// Resolves the Duck.ai storage handler for a burner mode. Defaults to no storage, which reads as
-    /// "usage warnings inactive"; the app passes the burner-aware resolver at composition.
     private let duckAiStorageHandlerProvider: (BurnerMode) -> DuckAiNativeStorageHandling?
     private let showCustomizePopoverSubject = PassthroughSubject<Bool, Never>()
     private let modeSubject = PassthroughSubject<NewTabPageDataModel.OmnibarMode, Never>()

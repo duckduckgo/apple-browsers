@@ -668,6 +668,15 @@ final class MainCoordinator {
         promoCoordinationService.presentModalPromptIfNeeded(from: controller)
     }
 
+    func prepareHomePageMessagesForForegroundIfNeeded() {
+        guard controller.isNewTabPageVisible,
+              let currentTab = tabManager.currentTabsModel.currentTab else {
+            return
+        }
+
+        homePageConfiguration.prepareForNTP(openedAfterIdle: currentTab.openedAfterIdle)
+    }
+
     // MARK: App Lifecycle handling
 
     func onForeground(isFirstForeground: Bool) {

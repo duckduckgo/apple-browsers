@@ -146,6 +146,9 @@ struct Foreground: ForegroundHandling {
                 // This helps distinguish database corruption from fresh installs/restores
                 BoolFileMarker(name: .hasSuccessfullyLaunchedBefore)?.mark()
 
+                // A launch action may replace a restored NTP, so prepare only after that action has settled.
+                appDependencies.mainCoordinator.prepareHomePageMessagesForForegroundIfNeeded()
+
                 // Present any eligible modal prompt
                 appDependencies.mainCoordinator.presentModalPromptIfNeeded()
             }

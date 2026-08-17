@@ -191,9 +191,3 @@ struct SettingsState {
     }
 }
 
-extension SettingsState {
-    var autoconsentEnabled: Bool {
-        get { cookiePopupPreference.isBlockingEnabled }
-        mutating set { cookiePopupPreference = newValue ? .default : .off }
-    }
-}

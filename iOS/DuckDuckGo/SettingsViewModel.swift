@@ -553,25 +553,6 @@ final class SettingsViewModel: ObservableObject {
         )
     }
 
-    var isCookiePopupPreferenceSettingEnabled: Bool {
-        featureFlagger.isFeatureOn(.cookiePopupPreferenceSetting)
-    }
-
-    var autoconsentBinding: Binding<Bool> {
-        Binding<Bool>(
-            get: { self.state.autoconsentEnabled },
-            set: {
-                self.appSettings.autoconsentEnabled = $0
-                self.state.autoconsentEnabled = $0
-                if $0 {
-                    Pixel.fire(pixel: .settingsAutoconsentOn)
-                } else {
-                    Pixel.fire(pixel: .settingsAutoconsentOff)
-                }
-            }
-        )
-    }
-
     var autoManageCookiePopupsBinding: Binding<Bool> {
         Binding<Bool>(
             get: { self.state.cookiePopupPreference.isAutoManageCookiePopupsEnabled },

@@ -38,10 +38,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: [bitrise:macos26-m4]
+        runner: [image:osx-tahoe-26, size:large]
         include:
           - xcode-version: "26.4"
-            runner: bitrise:macos26-m4
+            runner: [image:osx-tahoe-26, size:large]
             runner-name: bitrise-macos26-m4 # runner label without reserved characters, for use in the artifact name
 
     concurrency:
@@ -231,6 +231,18 @@ jobs:
         path: macOS/DerivedData/CompilationCache.noindex
         key: xcode-compilation-cache-pir-e2e-${{ steps.compilation-cache-hash.outputs.hash }}
 
+    - name: Set RUNS_ON
+      run: |
+        if [[ "${{ runner.environment }}" == "self-hosted" ]]; then
+          if [[ "${{ contains(runner.os, 'm4pro') }}" == "true" ]]; then
+            echo "RUNS_ON=bitrise:macos26-m4pro" >> $GITHUB_ENV
+          else
+            echo "RUNS_ON=bitrise:macos26-m4" >> $GITHUB_ENV
+          fi
+        else
+          echo "RUNS_ON=${{ matrix.runner }}" >> $GITHUB_ENV
+        fi
+
     - name: Report job duration
       if: success() || (always() && steps.run-tests.outcome == 'failure')
       continue-on-error: true
@@ -240,7 +252,7 @@ jobs:
         start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
         pixel-name: m_ci_apple_duration_macos_pir_e2e_tests
         pixel-params: |
-          runner: ${{ matrix.runner }}
+          runner: ${{ env.RUNS_ON }}
 
     - name: Send Status Pixel
       if: always() && github.ref_name == 'main'

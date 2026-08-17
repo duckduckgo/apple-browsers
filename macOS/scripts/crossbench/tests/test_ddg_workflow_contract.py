@@ -31,10 +31,16 @@ HARNESS = (
 
 
 class DDGWorkflowContractTests(unittest.TestCase):
-    def test_real_measurement_is_manual_only(self) -> None:
+    def test_real_measurement_runs_daily_and_on_demand(self) -> None:
         self.assertIn("workflow_dispatch:", WORKFLOW)
-        self.assertNotIn("schedule:", WORKFLOW)
+        self.assertIn('- cron: "41 4 * * *"', WORKFLOW)
         self.assertNotIn("push:", WORKFLOW)
+        # A scheduled run carries no workflow_dispatch inputs, so the upload has
+        # to be gated on the event rather than on the input alone.
+        self.assertIn(
+            "(github.event_name == 'schedule' || inputs.upload-to-clickhouse)",
+            WORKFLOW,
+        )
 
     def test_measurement_uses_the_same_runner_as_the_other_browsers(self) -> None:
         measurement = WORKFLOW[

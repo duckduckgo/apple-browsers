@@ -226,13 +226,13 @@ safari_pids() {
 # Returns non-zero if a Safari survives, since later repetitions would then be
 # measuring a warmer browser than the ones already recorded.
 quit_safari() {
-  local pid attempt
+  local pid
   [ -n "$(safari_pids)" ] || return 0
   # shellcheck disable=SC2046  # The PID list is deliberately word-split.
   for pid in $(safari_pids); do
     kill "$pid" 2>/dev/null || true
   done
-  for attempt in 1 2 3 4 5 6 7 8 9 10; do
+  for _ in 1 2 3 4 5 6 7 8 9 10; do
     [ -n "$(safari_pids)" ] || return 0
     sleep 0.5
   done
@@ -240,7 +240,7 @@ quit_safari() {
   for pid in $(safari_pids); do
     kill -9 "$pid" 2>/dev/null || true
   done
-  for attempt in 1 2 3 4; do
+  for _ in 1 2 3 4; do
     [ -n "$(safari_pids)" ] || return 0
     sleep 0.25
   done

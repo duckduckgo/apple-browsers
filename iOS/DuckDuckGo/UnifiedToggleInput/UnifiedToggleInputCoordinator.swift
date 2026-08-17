@@ -787,6 +787,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     func editPrompt(_ request: EditPromptRequest) async -> EditPromptReply {
         resolveEdit(.cancelled)
+        pixelReporter.reportEditReceived()
         beginEditMode(prompt: request.prompt,
                       attachments: makeAttachments(from: request),
                       hasResponsesToLose: request.hasResponsesToLose)
@@ -810,8 +811,16 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     func endEditMode() {
         guard isEditing else { return }
+        exitEditMode(reply: .cancelled)
+        pixelReporter.reportEditCancelled()
+    }
+
+    /// Shared teardown for leaving edit mode: resolves the pending edit with `reply` and resets the
+    /// input. Callers fire the matching pixel, so submit-driven teardown isn't also counted as a cancel.
+    private func exitEditMode(reply: EditPromptReply) {
+        guard isEditing else { return }
         isEditing = false
-        resolveEdit(.cancelled)
+        resolveEdit(reply)
         resetToolsSelection()
         clearAttachments()
         setText("")
@@ -1567,13 +1576,13 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
 
         if isEditing {
             let images = selectedModelSupportsImageUpload
-                ? UnifiedToggleInputImageEncoder.encode(viewController.currentAttachments)
+                ? (UnifiedToggleInputImageEncoder.encode(viewController.currentAttachments) ?? [])
                 : nil
             let files = selectedModelSupportsFileUpload
-                ? UnifiedToggleInputFileEncoder.encode(viewController.currentAttachments)
+                ? (UnifiedToggleInputFileEncoder.encode(viewController.currentAttachments) ?? [])
                 : nil
-            resolveEdit(.submit(prompt: text, images: images, files: files))
-            endEditMode()
+            pixelReporter.reportEditSubmitted()
+            exitEditMode(reply: .submit(prompt: text, images: images, files: files))
             return
         }
 
@@ -1697,6 +1706,9 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         removeAttachment(id: id)
         if isUserInitiated {
             pixelReporter.reportAttachmentRemoved(attachment)
+            if isEditing {
+                pixelReporter.reportEditAttachmentRemoved(attachment)
+            }
         }
     }
 

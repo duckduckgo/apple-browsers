@@ -40,6 +40,13 @@ struct CPUUsageMonitor {
     private typealias Identity = CPUUsageSample.ProcessIdentity
     private typealias ProcessCPUTime = CPUUsageSample.ProcessCPUTime
 
+    /// Mach timers count ticks rather than nanoseconds. `numer / denom` converts one tick to nanoseconds.
+    private static let timebaseInfo: mach_timebase_info_data_t = {
+        var timebaseInfo = mach_timebase_info_data_t()
+        mach_timebase_info(&timebaseInfo)
+        return timebaseInfo
+    }()
+
     /// Turns a process's running lifetime total into the amount counted for this PIR run.
     private struct CPUCounter {
         private var previous: ProcessCPUTime?
@@ -86,11 +93,11 @@ struct CPUUsageMonitor {
 
     func makeReport() -> ResourceSnapshot.CPUUsage {
         let elapsedTime = max(0, latestUptime - startUptime)
-        let agentTime = TimeInterval(agent.total) / TimeInterval(NSEC_PER_SEC)
+        let agentTime = Self.seconds(fromMachTime: agent.total)
         let webContentCPUTime = webContent.values.reduce(ProcessCPUTime(0)) { $0 + $1.total }
-        let webContentTime = TimeInterval(webContentCPUTime) / TimeInterval(NSEC_PER_SEC)
+        let webContentTime = Self.seconds(fromMachTime: webContentCPUTime)
         let totalTime = agentTime + webContentTime
-        // One core running for the entire period is 100%. Using several cores at once can produce more than 100%.
+        // CPU seconds divided by elapsed run time is average usage of one core. Concurrent work can exceed 100%.
         let averagePercent = elapsedTime > 0 ? totalTime / elapsedTime * 100 : 0
 
         return ResourceSnapshot.CPUUsage(
@@ -99,6 +106,11 @@ struct CPUUsageMonitor {
             webContentTime: webContentTime,
             averagePercent: averagePercent
         )
+    }
+
+    /// Converts Mach timer ticks to seconds using the machine-specific tick-to-nanosecond ratio.
+    private static func seconds(fromMachTime value: ProcessCPUTime) -> TimeInterval {
+        TimeInterval(value) * TimeInterval(timebaseInfo.numer) / TimeInterval(timebaseInfo.denom) / TimeInterval(NSEC_PER_SEC)
     }
 
     // MARK: - CPU Accumulation

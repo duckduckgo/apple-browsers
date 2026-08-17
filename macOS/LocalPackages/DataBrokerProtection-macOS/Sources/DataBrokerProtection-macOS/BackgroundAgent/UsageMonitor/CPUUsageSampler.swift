@@ -23,7 +23,7 @@ import Foundation
 /// Each value is a running total from when the process started, not CPU used since our previous reading.
 /// `CPUUsageMonitor` compares these readings to determine how much belongs to the current PIR run.
 struct CPUUsageSample {
-    /// Total time spent running process code and macOS system code on its behalf, in nanoseconds.
+    /// Total time spent running process code and macOS system code on its behalf, in Mach timebase ticks.
     typealias ProcessCPUTime = UInt64
 
     struct ProcessIdentity: Hashable {

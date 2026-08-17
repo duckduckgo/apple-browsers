@@ -16,7 +16,7 @@
 //  limitations under the License.
 //
 
-import FeatureFlags
+import FeatureFlags_macOS
 import Foundation
 import Navigation
 import PixelKit
@@ -185,6 +185,6 @@ extension NavigationPixelNavigationResponder: NavigationResponder {
             firstMeaningfulPaintMs: firstMeaningfulPaintMs,
             documentCompleteMs: documentCompleteMs,
             allResourcesCompleteMs: allResourcesCompleteMs
-        ), frequency: .standard, withAdditionalParameters: additionalParams)
+        ), frequency: .standard, options: .parameters(additionalParams))
     }
 }

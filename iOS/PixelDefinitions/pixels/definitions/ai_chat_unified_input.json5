@@ -118,7 +118,13 @@
                 "key": "origin",
                 "description": "Origin value for the reasoning effort picker impression.",
                 "type": "string",
-                "enum": ["funnel_addressbar_ios__reasoningpicker", "funnel_duckai_ios__reasoningpicker"]
+                "enum": [
+                    "funnel_addressbar_ios__reasoningdropdown",
+                    "funnel_duckai_ios__reasoningdropdown",
+                    // Shipped from 7.228.0 until the rename to ...__reasoningdropdown; kept so historic data validates.
+                    "funnel_addressbar_ios__reasoningpicker",
+                    "funnel_duckai_ios__reasoningpicker"
+                ]
             }
         ]
     },
@@ -217,6 +223,41 @@
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion", "unified_input_surface"]
     },
+    "aichat_edit_prompt_opened": {
+        "description": "Fires when the frontend requests to edit a previously sent message and the Unified Toggle Input enters edit mode.",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "unified_input_surface"]
+    },
+    "aichat_edit_prompt_submitted": {
+        "description": "Fires when the user submits an edited message from the Unified Toggle Input.",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "unified_input_surface"]
+    },
+    "aichat_edit_prompt_cancelled": {
+        "description": "Fires when the user leaves edit mode in the Unified Toggle Input without submitting (cancel button or sheet dismissal).",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "unified_input_surface"]
+    },
+    "aichat_edit_prompt_image_removed": {
+        "description": "Fires when the user removes an image attachment while editing a previously sent message in the Unified Toggle Input. Fired in addition to the generic image removed pixel.",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "unified_input_surface"]
+    },
+    "aichat_edit_prompt_file_removed": {
+        "description": "Fires when the user removes a file attachment while editing a previously sent message in the Unified Toggle Input. Fired in addition to the generic file removed pixel.",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "unified_input_surface"]
+    },
     "m_aichat_unified_input_subscription_upsell_triggered": {
         "description": "Fires when the user taps a gated model or reasoning level in the Unified Toggle Input and the native subscription/upgrade flow is triggered.",
         "owners": ["pikorddg"],
@@ -254,8 +295,11 @@
                 "type": "string",
                 "enum": [
                     "funnel_addressbar_ios__modelpicker",
-                    "funnel_addressbar_ios__reasoningpicker",
+                    "funnel_addressbar_ios__reasoningdropdown",
                     "funnel_duckai_ios__modelpicker",
+                    "funnel_duckai_ios__reasoningdropdown",
+                    // Shipped from 7.228.0 until the rename to ...__reasoningdropdown; kept so historic data validates.
+                    "funnel_addressbar_ios__reasoningpicker",
                     "funnel_duckai_ios__reasoningpicker"
                 ]
             }
@@ -266,7 +310,30 @@
         "owners": ["pikorddg"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion"]
+        "parameters": [
+            "appVersion",
+            {
+                "key": "origin",
+                "description": "Origin value for the Duck.ai tab-header upgrade label tap.",
+                "type": "string",
+                "enum": ["funnel_duckai_ios__freelabel"]
+            }
+        ]
+    },
+    "m_aichat_unified_input_chat_header_upgrade_shown": {
+        "description": "Fires each time the 'Free Plan / Upgrade' label in the Duck.ai tab header becomes visible.",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "origin",
+                "description": "Origin value for the Duck.ai tab-header upgrade label impression.",
+                "type": "string",
+                "enum": ["funnel_duckai_ios__freelabel"]
+            }
+        ]
     },
     "m_autocomplete_duckai_click_website": {
         "description": "Fires when user clicks on a website suggestion in the Duck.ai autocomplete suggestion list.",
@@ -325,12 +392,28 @@
         "parameters": ["appVersion"]
     },
     "m_aichat_unified_input_prompt_submitted": {
-        "description": "Fires on every UTI submission in the .aiChat branch, regardless of selected tool. Captures the full submit-time state of the input (tool, model, reasoning effort, attachments, text presence).",
-        "owners": ["pikorddg", "aataraxiaa"],
+        "description": "Fires on every Duck.ai submission in the unified toggle input, with the submit-time state of the composer. Divide against m_aichat_unified_input_query_submitted for the Search vs Duck.ai mix.",
+        "owners": ["pikorddg", "aataraxiaa", "Bunn"],
         "triggers": ["other"],
         "suffixes": ["daily_count", "platform", "form_factor"],
         "parameters": [
             "appVersion",
+            {
+                "key": "page_type",
+                "description": "The page the user was on when submitting: ntp, serp, website, duck_ai, contextual, or unknown",
+                "type": "string"
+            },
+            {
+                "key": "default_mode",
+                "description": "The user's Opening-mode setting, for telling an accepted default apart from a switch. Absent on iPad's address-bar toggle path, which has no Search-side counterpart — filter on it being present for any Search-vs-Duck.ai ratio.",
+                "type": "string",
+                "enum": ["search", "duckAI", "lastUsed"]
+            },
+            {
+                "key": "origin",
+                "description": "How the user reached the surface the prompt was typed on, as an m_aichat_entry_point source value. Absent when the entry is unknown.",
+                "type": "string"
+            },
             "unified_input_surface",
             {
                 "key": "selected_tool",
@@ -364,6 +447,32 @@
                 "description": "Whether the input contained non-whitespace text at submission time. Combined with attachment flags allows deriving attachment-only submits.",
                 "type": "boolean"
             }
+        ]
+    },
+    "m_aichat_unified_input_query_submitted": {
+        "description": "Fires on every Search submission in the unified toggle input — the Search-side denominator for m_aichat_unified_input_prompt_submitted. Not fired on iPad's address-bar toggle path, so filter on default_mode being present for any Search-vs-Duck.ai ratio.",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "page_type",
+                "description": "The page the user was on when submitting: ntp, serp, website, duck_ai, contextual, or unknown",
+                "type": "string"
+            },
+            {
+                "key": "default_mode",
+                "description": "The user's Opening-mode setting, for telling an accepted default apart from a switch.",
+                "type": "string",
+                "enum": ["search", "duckAI", "lastUsed"]
+            },
+            {
+                "key": "toggle_visible",
+                "description": "Whether the Search/Duck.ai toggle was on screen. false means no choice was available, so exclude those from a choice-rate denominator.",
+                "type": "boolean"
+            },
+            "unified_input_surface"
         ]
     },
     "aichat_unified_input_show_model_picker": {

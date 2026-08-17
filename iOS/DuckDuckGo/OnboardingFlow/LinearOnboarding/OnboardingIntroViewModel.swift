@@ -114,6 +114,12 @@ final class OnboardingIntroViewModel: ObservableObject {
     private let tutorialSettings: TutorialSettings
     private let onboardingResumeStepStore: any KeyedStoring<OnboardingStoringKeys>
     private let contentProvider: OnboardingIntroContentProviding
+    /// The facade for the personalization flow.  Exposed so the reason-tailored step views can be injected with the
+    /// slice they need.
+    let personalizationManager: OnboardingPersonalizationManaging
+    /// Fetches the AI models ahead of the model-picker step. Kicked off when the `.privateAIChat`
+    /// reason is chosen so the options are ready by the time that step appears.
+    private let aiModelsPrefetcher: OnboardingAIModelsPrefetching
 
     private var pendingOnboardingIntroActions: (() -> Void)?
 
@@ -122,6 +128,7 @@ final class OnboardingIntroViewModel: ObservableObject {
                      daxDialogsManager: ContextualDaxDialogDisabling,
                      restorePromptHandler: OnboardingRestorePromptHandling,
                      onboardingManager: OnboardingManaging,
+                     personalizationManager: OnboardingPersonalizationManaging,
                      onboardingResumeStepStore: (any KeyedStoring<OnboardingStoringKeys>)? = nil) {
         let defaultBrowserInfoStore = DefaultBrowserInfoStore()
         let defaultBrowserEventMapper = DefaultBrowserPromptManagerDebugPixelHandler()
@@ -147,6 +154,8 @@ final class OnboardingIntroViewModel: ObservableObject {
                 featureFlagger: featureFlagger,
                 downloadReasonProvider: { onboardingManager.currentDownloadReason }
             ),
+            personalizationManager: personalizationManager,
+            aiModelsPrefetcher: OnboardingAIModelsPrefetcher(),
             onboardingResumeStepStore: onboardingResumeStepStore
         )
     }
@@ -165,6 +174,8 @@ final class OnboardingIntroViewModel: ObservableObject {
         restorePromptHandler: OnboardingRestorePromptHandling,
         tutorialSettings: TutorialSettings,
         contentProvider: OnboardingIntroContentProviding,
+        personalizationManager: OnboardingPersonalizationManaging,
+        aiModelsPrefetcher: OnboardingAIModelsPrefetching,
         onboardingResumeStepStore: (any KeyedStoring<OnboardingStoringKeys>)? = nil
     ) {
         self.defaultBrowserManager = defaultBrowserManager
@@ -179,6 +190,8 @@ final class OnboardingIntroViewModel: ObservableObject {
         self.restorePromptHandler = restorePromptHandler
         self.tutorialSettings = tutorialSettings
         self.contentProvider = contentProvider
+        self.personalizationManager = personalizationManager
+        self.aiModelsPrefetcher = aiModelsPrefetcher
         self.onboardingResumeStepStore = if let onboardingResumeStepStore { onboardingResumeStepStore } else { UserDefaults.app.keyedStoring() }
 
         introSteps = onboardingManager.onboardingSteps
@@ -275,11 +288,14 @@ final class OnboardingIntroViewModel: ObservableObject {
         // action — otherwise we'd advance a second time and skip a step.
         guard currentIntroStep == .downloadReasonSelection else { return }
 
+        postDownloadSelectionPersonalizationSetup(for: reason)
+
         // TODO: pixel for the selected download reason. https://app.asana.com/1/137249556945/task/1216200647629938
         let remainingSteps = onboardingManager.selectDownloadReason(reason)
         if let currentStepIndex = introSteps.firstIndex(of: currentIntroStep) {
             introSteps.insert(contentsOf: remainingSteps, at: currentStepIndex + 1)
         }
+
         makeNextViewState()
     }
 
@@ -301,7 +317,9 @@ final class OnboardingIntroViewModel: ObservableObject {
         makeNextViewState()
     }
 
-    func keepDuckAIContinueAction() {
+    func keepDuckAIContinueAction(isEnabled: Bool) {
+        onboardingSearchExperienceProvider.storeAIChatSearchInputDuringOnboardingChoice(enable: isEnabled)
+
         makeNextViewState()
     }
 
@@ -324,6 +342,9 @@ final class OnboardingIntroViewModel: ObservableObject {
     }
 
     func openAIChatFromOnboarding(prompt: String?, autoSend: Bool) {
+        // Record that the user took the AI route at the Search/Duck.ai junction, so the end-of-journey step
+        // shows the standard completion instead of the "Try Duck.ai" nudge (they already tried AI).
+        onboardingSearchExperienceProvider.storeDidStartAIChatDuringOnboarding(true)
         onOpenAIChatFromOnboarding?(prompt, autoSend)
     }
 
@@ -410,17 +431,53 @@ private extension OnboardingIntroViewModel {
                 )
             // NA Experiment: reason-tailored steps. View bodies/content are built in the UI task.
             case .searchPrivacySettingsSelection:
-                return .onboarding(.init(type: .searchPrivacySettingsDialog, step: stepInfo()))
+                return .onboarding(
+                    .init(
+                        type: .searchPrivacySettingsDialog(content: contentProvider.serpPersonalizationContent),
+                        step: stepInfo())
+                )
             case .aiSearchSettingsSelection:
-                return .onboarding(.init(type: .aiSearchSettingsDialog, step: stepInfo()))
+                return .onboarding(
+                    .init(
+                        type: .aiSearchSettingsDialog(content: contentProvider.aiSearchPersonalizationContent),
+                        step: stepInfo()
+                    )
+                )
             case .aiModelSelection:
-                return .onboarding(.init(type: .aiModelDialog, step: stepInfo()))
+                let resolved = aiModelsPrefetcher.resolvedModel
+                let persistedId = personalizationManager.selectedAIChatModelID
+                let selectedId = resolved.models.contains(where: { $0.id == persistedId }) ? persistedId : resolved.defaultModelId
+                return .onboarding(
+                    .init(
+                        type: .aiModelDialog(
+                            content: contentProvider.aiModelPersonalizationContent,
+                            options: resolved.models,
+                            selectedID: selectedId
+                        ),
+                        step: stepInfo()
+                    )
+                )
             case .toggleInputModeSelection:
-                return .onboarding(.init(type: .toggleInputModeDialog, step: stepInfo()))
+                return .onboarding(
+                    .init(
+                        type: .toggleInputModeDialog(content: contentProvider.addressBarToggleModePersonalizationContent),
+                        step: stepInfo()
+                    )
+                )
             case .keepDuckAISelection:
-                return .onboarding(.init(type: .keepDuckAIDialog, step: stepInfo()))
+                return .onboarding(
+                    .init(
+                        type: .keepDuckAIDialog(content: contentProvider.aiChatEnabledPersonalizationContent),
+                        step: stepInfo()
+                    )
+                )
             case .duckPlayerSelection:
-                return .onboarding(.init(type: .duckPlayerDialog, step: stepInfo()))
+                return .onboarding(
+                    .init(
+                        type: .duckPlayerDialog(content: contentProvider.youTubePersonalizationContent),
+                        step: stepInfo()
+                    )
+                )
             case .setDefaultBrowser:
                 return .onboarding(
                     .init(
@@ -464,14 +521,11 @@ private extension OnboardingIntroViewModel {
                     )
                 )
             case .duckAIQuerySelection:
-                let isDuckAiTailoredFlow = onboardingManager.currentOnboardingFlow == .duckAI
-                // Duck.ai Tailored flow pre-selects Duck.ai; the default flow always pre-selects Search.
-                let duckAIQueryMode: DuckAIQueryMode = isDuckAiTailoredFlow ? .duckAI : .search
-                // Duck.ai Tailored flow shows step counter; the default flow hides it.
-                let progressStep: OnboardingIntroViewState.Intro.StepInfo = isDuckAiTailoredFlow ? stepInfo() : .hidden
+                // Duck.ai Tailored flow shows the step counter; the default flow hides it.
+                let progressStep: OnboardingIntroViewState.Intro.StepInfo = onboardingManager.currentOnboardingFlow == .duckAI ? stepInfo() : .hidden
                 return .onboarding(
                     .init(
-                        type: .duckAIQueryDialog(content: contentProvider.duckAIQueryContent, defaultMode: duckAIQueryMode),
+                        type: .duckAIQueryDialog(content: contentProvider.duckAIQueryContent),
                         step: progressStep
                     )
                 )
@@ -639,6 +693,19 @@ private extension OnboardingIntroViewModel {
             return
         }
         pixelReporter.measureAutoRestoreOnboardingPromptShown()
+    }
+
+    func postDownloadSelectionPersonalizationSetup(for reason: OnboardingDownloadReason) {
+        personalizationManager.applyDefaults(for: reason)
+
+        switch reason {
+        case .privateAIChat:
+            // Users who selected AI Chat reason will have the Toggle Search/AI enabled by default.
+            onboardingSearchExperienceProvider.storeAIChatSearchInputDuringOnboardingChoice(enable: true)
+            aiModelsPrefetcher.prefetch()
+        default:
+            break
+        }
     }
 
 }

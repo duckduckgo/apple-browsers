@@ -47,6 +47,8 @@ public protocol ScanOrPasteCodeViewModelDelegate: AnyObject {
     func shareCode(_ code: String, source: CodeCollectionSource)
 
     func codeEntryScreenShown()
+    func barcodeScreenShown()
+    func scanQRCodeScreenShown()
     func codeCopied(_ code: String, source: CodeCollectionSource)
 }
 
@@ -74,8 +76,6 @@ public class ScanOrPasteCodeViewModel: ObservableObject {
     @Published var invalidCode = false
 
     @Published public var isShowingSyncCodeSheet = false
-
-    public var onSyncCodeSheetDismissed: (() -> Void)?
 
     var canSubmitManualCode: Bool {
         manuallyEnteredCode?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false

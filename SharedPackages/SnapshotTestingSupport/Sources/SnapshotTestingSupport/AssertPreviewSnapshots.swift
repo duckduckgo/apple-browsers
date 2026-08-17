@@ -75,6 +75,7 @@ public func assertImageSnapshots<State>(
             strategy: namedStrategy(
                 strategy(configuration.state),
                 previewName: configuration.name,
+                interfaceOrientation: configuration.interfaceOrientation,
                 size: size
             ),
             size: size,
@@ -92,18 +93,19 @@ public func assertImageSnapshots<State>(
 private func namedStrategy(
     _ strategy: SnapshotImageStrategy,
     previewName: String,
+    interfaceOrientation: InterfaceOrientation,
     size: SnapshotImageSize
 ) -> SnapshotImageStrategy {
     .custom(
         strategy.configurationsForCurrentPlatform(size: size).map {
             SnapshotImageConfiguration(
                 appearance: $0.appearance,
-                device: $0.device,
+                device: $0.device?.oriented(for: interfaceOrientation),
                 name: SnapshotNameGenerator.name(
                     forPreview: previewName,
                     snapshotName: $0.name
                 ),
-                size: $0.size
+                size: $0.size?.oriented(for: interfaceOrientation)
             )
         }
     )

@@ -16,7 +16,7 @@
 //  limitations under the License.
 //
 
-import FeatureFlags
+import FeatureFlags_macOS
 import PixelExperimentKit
 import PixelKit
 import PrivacyConfig
@@ -26,7 +26,7 @@ import XCTest
 
 final class OnboardingChromeExtensionExperimentTests: XCTestCase {
 
-    private var firedEvents: [PixelKitEvent]!
+    private var firedEvents: [PixelKit.Event]!
 
     override func setUp() {
         firedEvents = []

@@ -25,7 +25,7 @@ import FoundationExtensions
 import Configuration
 import Networking
 import Crashes
-import FeatureFlags
+import FeatureFlags_macOS
 import History
 import HistoryView
 import os.log
@@ -86,6 +86,7 @@ extension AppDelegate {
 
     @objc func newAIChat(_ sender: Any?) {
         DispatchQueue.main.async {
+            NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.mainMenu)
             NSApp.delegateTyped.aiChatTabOpener.openNewAIChat(in: .newTab(selected: true))
             PixelKit.fire(AIChatPixel.aichatApplicationMenuFileClicked, frequency: .dailyAndCount, includeAppVersionParameter: true)
         }
@@ -1359,7 +1360,26 @@ extension MainViewController {
     @objc func toggleDuckAISidebar(_ sender: Any?) {
         guard featureFlagger.isFeatureOn(.aiChatChromeSidebar),
               aiChatMenuConfig.shouldDisplayAnyAIChatFeature else { return }
+        // Always a plain open/close, no page attach — even in menu-button layout. Only the tab-bar
+        // "Ask About Page" item attaches the current page.
+        if !tabBarViewController.isDuckAIChatPresented {
+            NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.mainMenu)
+        }
         aiChatCoordinator.toggleSidebar()
+    }
+
+    /// Duck.ai → Ask About Page / Close Sidebar (⌥⌘L in menu-button layout): toggles the Duck.ai chat —
+    /// closes it if presented (sidebar or floating), otherwise opens the sidebar with the current page
+    /// attached. Routed through the responder chain so it targets the key window reliably.
+    @objc func askAboutPage(_ sender: Any?) {
+        guard featureFlagger.isFeatureOn(.aiChatChromeSidebar),
+              featureFlagger.isFeatureOn(.aiChatChromeMenuButton),
+              aiChatMenuConfig.shouldDisplayAnyAIChatFeature else { return }
+        if tabBarViewController.isDuckAIChatPresented {
+            tabBarViewController.closeDuckAIChat()
+        } else {
+            tabBarViewController.openDuckAISidebarWithPageAttachment()
+        }
     }
 
     @objc func toggleAutofillShortcut(_ sender: Any) {

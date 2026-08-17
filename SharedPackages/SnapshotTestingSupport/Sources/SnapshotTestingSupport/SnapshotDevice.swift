@@ -17,6 +17,7 @@
 //
 
 import CoreGraphics
+import SwiftUI
 
 #if os(iOS)
 import UIKit
@@ -90,4 +91,36 @@ public struct SnapshotDevice: Equatable {
     ]
 
     public static let macOSDefaultSize = CGSize(width: 800, height: 600)
+
+    func oriented(for interfaceOrientation: InterfaceOrientation) -> SnapshotDevice {
+        guard interfaceOrientation.isLandscape else { return self }
+
+        #if os(iOS)
+        return SnapshotDevice(
+            name: name,
+            size: size.oriented(for: interfaceOrientation),
+            userInterfaceIdiom: userInterfaceIdiom,
+            horizontalSizeClass: horizontalSizeClass,
+            verticalSizeClass: userInterfaceIdiom == .phone ? .compact : verticalSizeClass
+        )
+        #else
+        return SnapshotDevice(
+            name: name,
+            size: size.oriented(for: interfaceOrientation)
+        )
+        #endif
+    }
+}
+
+extension CGSize {
+    func oriented(for interfaceOrientation: InterfaceOrientation) -> CGSize {
+        guard interfaceOrientation.isLandscape else { return self }
+        return CGSize(width: max(width, height), height: min(width, height))
+    }
+}
+
+private extension InterfaceOrientation {
+    var isLandscape: Bool {
+        self == .landscapeLeft || self == .landscapeRight
+    }
 }

@@ -50,16 +50,26 @@ final class PrivacyDashboardControllerTests: XCTestCase {
         let entryPoints: [PrivacyDashboardEntryPoint] = [
             .dashboard,
             .report,
+            .errorPage,
             .toggleReport(completionHandler: { _ in })
         ]
         for entryPoint in entryPoints {
             makePrivacyDashboardController(entryPoint: entryPoint)
             let currentURL = privacyDashboardController.webView!.url
             XCTAssertEqual(currentURL?.getParameter(named: "screen"), entryPoint.screen.rawValue)
-            if case .toggleReport = entryPoint {
+            switch entryPoint {
+            case .toggleReport, .report, .errorPage:
                 XCTAssertEqual(currentURL?.getParameter(named: "opener"), "menu")
+            case .dashboard, .prompt:
+                break
             }
         }
+    }
+
+    func testWhenEntryPointIsErrorPageThenReportSourceIsErrorPage() {
+        makePrivacyDashboardController(entryPoint: .errorPage)
+
+        XCTAssertEqual(privacyDashboardController.source.rawValue, "error_page")
     }
 
     // MARK: - didChangeProtectionState

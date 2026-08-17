@@ -34,31 +34,39 @@ import VPN
 struct VPNEntryPoint {
     let screenSource: VPNConnectionWideEventData.ScreenSource
     let subscriptionFunnelOrigin: SubscriptionFunnelOrigin
+    let subscriptionFunnelClickPixel: (_ isSubscriptionActive: Bool?) -> SubscriptionPixel
 
     static let toolbar = VPNEntryPoint(
         screenSource: .toolbar,
-        subscriptionFunnelOrigin: .toolbarVPN)
+        subscriptionFunnelOrigin: .toolbarVPN,
+        subscriptionFunnelClickPixel: { .subscriptionVPNToolbarClick(isSubscriptionActive: $0) })
 
     static let addressBar = VPNEntryPoint(
         screenSource: .addressBar,
-        subscriptionFunnelOrigin: .addressBarVPN)
+        subscriptionFunnelOrigin: .addressBarVPN,
+        subscriptionFunnelClickPixel: { .subscriptionVPNAddressBarClick(isSubscriptionActive: $0) })
 
     static let widget = VPNEntryPoint(
         screenSource: .widget,
-        subscriptionFunnelOrigin: .widgetVPN)
+        subscriptionFunnelOrigin: .widgetVPN,
+        subscriptionFunnelClickPixel: { _ in .subscriptionVPNWidgetClick })
 
     static let shortcut = VPNEntryPoint(
         screenSource: .shortcut,
-        subscriptionFunnelOrigin: .shortcutVPN)
+        subscriptionFunnelOrigin: .shortcutVPN,
+        subscriptionFunnelClickPixel: { _ in .subscriptionVPNShortcutClick })
 
     static let notification = VPNEntryPoint(
         screenSource: .notification,
-        subscriptionFunnelOrigin: .notificationVPN)
+        subscriptionFunnelOrigin: .notificationVPN,
+        subscriptionFunnelClickPixel: { _ in .subscriptionVPNNotificationClick })
 
     private init(screenSource: VPNConnectionWideEventData.ScreenSource,
-                 subscriptionFunnelOrigin: SubscriptionFunnelOrigin) {
+                 subscriptionFunnelOrigin: SubscriptionFunnelOrigin,
+                 subscriptionFunnelClickPixel: @escaping (_ isSubscriptionActive: Bool?) -> SubscriptionPixel) {
         self.screenSource = screenSource
         self.subscriptionFunnelOrigin = subscriptionFunnelOrigin
+        self.subscriptionFunnelClickPixel = subscriptionFunnelClickPixel
     }
 }
 
@@ -97,7 +105,9 @@ extension MainViewController {
             systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
             daxDialogsManager: daxDialogsManager,
             syncAutoRestoreHandler: syncAutoRestoreHandler,
-            onboardingManager: onboardingManager
+            onboardingManager: onboardingManager,
+            keyValueStore: keyValueStore,
+            adBlockingAvailability: adBlockingAvailability
         )
         let controller = OnboardingIntroFactory.makeController(
             viewModel: viewModel,

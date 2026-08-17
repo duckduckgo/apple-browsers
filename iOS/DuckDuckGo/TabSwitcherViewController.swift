@@ -35,6 +35,7 @@ import PrivacyConfig
 import AIChat
 import TipKit
 import UIComponents
+import FeatureFlags_iOS
 
 class TabSwitcherViewController: UIViewController {
 
@@ -144,6 +145,7 @@ class TabSwitcherViewController: UIViewController {
     var canShowSelectionMenu = false
     var menuBuilder: TabSwitcherMenuBuilding = DefaultTabSwitcherMenuBuilder()
 
+    let floatingUIManager: FloatingUIManaging
     let featureFlagger: FeatureFlagger
     let tabManager: TabManager
     let historyManager: HistoryManaging
@@ -196,10 +198,12 @@ class TabSwitcherViewController: UIViewController {
          daxDialogsManager: DaxDialogsManaging,
          initialTrackerCountState: TabSwitcherTrackerCountViewModel.State,
          duckAIGridContentProvider: DuckAIGridContentProviding?,
-         duckAIVoiceSessionTracker: DuckAIVoiceSessionTracking?) {
+         duckAIVoiceSessionTracker: DuckAIVoiceSessionTracking?,
+         floatingUIManager: FloatingUIManaging? = nil) {
         self.bookmarksDatabase = bookmarksDatabase
         self.syncService = syncService
         self.featureFlagger = featureFlagger
+        self.floatingUIManager = floatingUIManager ?? FloatingUIManager(featureFlagger: featureFlagger)
         self.keyValueStore = keyValueStore
         self.favicons = favicons
         self.tabManager = tabManager
@@ -295,13 +299,13 @@ class TabSwitcherViewController: UIViewController {
 
     private func makeChrome() -> TabSwitcherChrome {
         TabSwitcherChromeFactory.makeChrome(
-            isTabSwitcherJuly2026Enabled: featureFlagger.isFeatureOn(.tabSwitcherJuly2026),
+            isFloatingTabSwitcherEnabled: floatingUIManager.isFloatingTabSwitcherEnabled,
             appSettings: appSettings)
     }
 
     private func setupPagingScrollView() {
         let isFireModeEnabled = fireModeCapability.isFireModeEnabled
-        let isTabSwitcherJuly2026Enabled = featureFlagger.isFeatureOn(.tabSwitcherJuly2026)
+        let isFloatingTabSwitcherEnabled = floatingUIManager.isFloatingTabSwitcherEnabled
 
         pagingScrollView = UIScrollView()
         pagingScrollView.isPagingEnabled = isFireModeEnabled
@@ -363,7 +367,7 @@ class TabSwitcherViewController: UIViewController {
                 tabSwitcherSettings: tabSwitcherSettings,
                 trackerCountViewModel: nil,
                 isFireModeEnabled: isFireModeEnabled,
-                isTabSwitcherJuly2026Enabled: isTabSwitcherJuly2026Enabled,
+                isFloatingTabSwitcherEnabled: isFloatingTabSwitcherEnabled,
                 duckAIGridContentProvider: duckAIGridContentProvider,
                 duckAIVoiceSessionTracker: duckAIVoiceSessionTracker)
             firePageController?.pageDelegate = self
@@ -501,6 +505,11 @@ class TabSwitcherViewController: UIViewController {
         updateUIForSelectionMode()
         chrome.layout(addressBarPosition: appSettings.currentAddressBarPosition, interfaceMode: interfaceMode)
         firePageController?.updateEmptyStateVisibility()
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        applyCollectionContentInsets()
     }
 
     override func viewWillTransition(to size: CGSize, with coordinator: any UIViewControllerTransitionCoordinator) {

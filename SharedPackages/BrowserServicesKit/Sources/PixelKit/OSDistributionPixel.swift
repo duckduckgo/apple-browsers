@@ -26,7 +26,7 @@ import Common
 /// "low monthly search traffic" metric counts total search + AI-query *traffic*, not active users.
 ///
 /// Tech design: https://app.asana.com/1/137249556945/project/1208546505108826/task/1214950124367783?focus=true
-public struct OSDistributionPixel: PixelKitEvent {
+public struct OSDistributionPixel: PixelKit.Event {
 
     public enum Metric: String {
         case client

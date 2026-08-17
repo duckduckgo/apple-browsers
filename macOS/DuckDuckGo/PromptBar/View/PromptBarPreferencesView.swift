@@ -16,34 +16,40 @@
 //  limitations under the License.
 //
 
+import PixelKit
 import PreferencesUI_macOS
 import SwiftUI
 
-/// The Prompt Bar rows on the AI Features preferences screen: the system-wide
-/// keyboard shortcut (with its recorder) and the menu bar icon visibility.
 struct PromptBarPreferencesView: View {
 
     @ObservedObject var preferences: PromptBarPreferences
 
     var body: some View {
-        ToggleMenuItemWithDescription(UserText.promptBarKeyboardShortcutToggle,
-                                      UserText.promptBarKeyboardShortcutCaption,
-                                      isOn: $preferences.isKeyboardShortcutEnabled,
-                                      spacing: 4)
+        ToggleMenuItem(UserText.promptBarMenuBarIconToggle,
+                       isOn: $preferences.isMenuBarIconVisible)
+        .accessibilityIdentifier("Preferences.AIChat.promptBarMenuBarIconToggle")
+        .onChange(of: preferences.isMenuBarIconVisible) { isVisible in
+            fire(isVisible ? .settingsMenuBarIconTurnedOn : .settingsMenuBarIconTurnedOff)
+        }
+
+        ToggleMenuItem(UserText.promptBarKeyboardShortcutToggle,
+                       isOn: $preferences.isKeyboardShortcutEnabled)
         .accessibilityIdentifier("Preferences.AIChat.promptBarKeyboardShortcutToggle")
-        .padding(.top, Const.Spacing.groupedCheckboxesSeparation)
+        .onChange(of: preferences.isKeyboardShortcutEnabled) { isEnabled in
+            fire(isEnabled ? .settingsShortcutTurnedOn : .settingsShortcutTurnedOff)
+        }
 
         PromptBarShortcutRecorderView(shortcut: $preferences.keyboardShortcut)
             .disabled(!preferences.isKeyboardShortcutEnabled)
             .padding(.leading, 19)
             .padding(.bottom, 4)
+            // Covers both recording a new combo and resetting to the default; the combo itself is never sent.
+            .onChange(of: preferences.keyboardShortcut) { _ in
+                fire(.settingsShortcutChanged)
+            }
+    }
 
-        ToggleMenuItemWithDescription(UserText.promptBarMenuBarIconToggle,
-                                      UserText.promptBarMenuBarIconCaption,
-                                      isOn: $preferences.isMenuBarIconVisible,
-                                      spacing: 4)
-        .accessibilityIdentifier("Preferences.AIChat.promptBarMenuBarIconToggle")
-        .disabled(!preferences.isKeyboardShortcutEnabled)
-        .padding(.leading, 19)
+    private func fire(_ pixel: PromptBarPixel) {
+        PixelKit.fire(pixel, frequency: .dailyAndCount, includeAppVersionParameter: true)
     }
 }

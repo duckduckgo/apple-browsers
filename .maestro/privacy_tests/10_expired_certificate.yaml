@@ -5,16 +5,25 @@ tags:
 
 ---
 
-# Set up 
-- runFlow: 
+# Set up
+- runFlow:
     file: ../shared/setup.yaml
 
 - assertVisible:
     id: "searchEntry"
 
-# Test 1 - Leave the dangerous site
-- tapOn: 
+# Load a normal site first so the SSL error page has back history to return to.
+- tapOn:
     id: "searchEntry"
+- eraseText
+- inputText: "https://www.search-company.site/#ad-id-5"
+- pressKey: Enter
+- assertVisible: "[Ad 5] SERP Ad (heuristic)"
+
+# Test 1 - Leave the dangerous site and verify back/forward navigation
+- tapOn:
+    id: "searchEntry"
+- eraseText
 - inputText: "https://expired.badssl.com"
 - pressKey: Enter
 - assertVisible: "Warning: This site may be insecure"
@@ -22,19 +31,42 @@ tags:
     id: "Globe-24"
 - tapOn: "Leave This Site"
 - assertNotVisible: "Warning: This site may be insecure"
+- assertVisible: "[Ad 5] SERP Ad (heuristic)"
+# Forward returns to the SSL error page, back returns to the safe site
+- tapOn: "Browse Forward"
+- assertVisible: "Warning: This site may be insecure"
+- tapOn: "Browse Back"
+- assertVisible: "[Ad 5] SERP Ad (heuristic)"
+- assertNotVisible: "Warning: This site may be insecure"
 
-# Test 2 - Visit the dangerous site
-- tapOn: 
-    id: "searchEntry"
-- inputText: "https://expired.badssl.com"
-- pressKey: Enter
+# Test 2 - Visit the dangerous site and verify back/forward navigation.
+# Reuse the SSL error page still held in forward history instead of reloading it.
+- tapOn: "Browse Forward"
+- assertVisible: "Warning: This site may be insecure"
 - assertVisible:
     id: "Globe-24"
 - tapOn: "Advanced"
-- scroll
+- scrollUntilVisible:
+    element:
+      text: ".*is expired.*"
+    direction: DOWN
+- scrollUntilVisible:
+    element:
+      text: "Accept Risk and Visit Site"
+    direction: DOWN
 - tapOn: "Accept Risk and Visit Site"
-- assertVisible: 
-    id: "privacy-icon-shield.button"
+# Wait for the real site to load over the network before checking the shield
+- extendedWaitUntil:
+    visible:
+      id: "privacy-icon-shield.button"
+    timeout: 20000
 - assertVisible: "expired.badssl.com"
-
-
+# Back returns to the safe site, forward returns to the accepted SSL site
+- tapOn: "Browse Back"
+- assertVisible: "[Ad 5] SERP Ad (heuristic)"
+- tapOn: "Browse Forward"
+- extendedWaitUntil:
+    visible:
+      id: "privacy-icon-shield.button"
+    timeout: 20000
+- assertVisible: "expired.badssl.com"

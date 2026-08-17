@@ -1,0 +1,31 @@
+appId: com.duckduckgo.mobile.ios
+tags:
+    - iphone
+    - sync_v2
+name: 01_create_account_v2
+
+---
+
+# Set up
+- runFlow:
+    file: ../shared/sync_setup_v2.yaml
+
+# Set Internal User
+- tapOn: Browsing menu
+- tapOn: Settings
+- runFlow:
+    file: ../shared/set_internal_user_from_settings.yaml
+
+# Set Dev environment
+- runFlow:
+    file: ../shared/set_sync_dev_environment.yaml
+
+# Create account
+- runFlow:
+    file: ../shared/sync_create_v2.yaml
+
+
+# Clean up
+- assertVisible: Sync & Backup
+- runFlow:
+    file: ../shared/sync_delete_v2.yaml

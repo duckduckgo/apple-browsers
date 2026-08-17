@@ -22,7 +22,8 @@ import Combine
 import CombineExtensions
 import Common
 import ConcurrencyExtensions
-import FeatureFlags
+import EventHub
+import FeatureFlags_macOS
 import Foundation
 import FoundationExtensions
 import History
@@ -72,6 +73,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         var autoplayPreferences: AutoplayPreferences
         var permissionManager: PermissionManagerProtocol
         var webTrackingProtectionPreferences: WebTrackingProtectionPreferences
+        let eventHub: EventHubManaging
     }
 
     fileprivate weak var delegate: TabDelegate?
@@ -160,7 +162,8 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                      aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable? = nil,
                      aiChatSessionStore: AIChatSessionStoring? = nil,
                      tabCrashAggregator: TabCrashAggregator? = nil,
-                     themeManager: ThemeManaging? = nil
+                     themeManager: ThemeManaging? = nil,
+                     eventHub: EventHubManaging? = nil
     ) {
 
         let duckPlayer = duckPlayer
@@ -227,7 +230,8 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                   aiChatMenuConfiguration: aiChatMenuConfiguration ?? NSApp.delegateTyped.aiChatMenuConfiguration,
                   aiChatSessionStore: aiChatSessionStore ?? NSApp.delegateTyped.aiChatSessionStore,
                   tabCrashAggregator: tabCrashAggregator ?? NSApp.delegateTyped.tabCrashAggregator,
-                  themeManager: themeManager ?? NSApp.delegateTyped.themeManager
+                  themeManager: themeManager ?? NSApp.delegateTyped.themeManager,
+                  eventHub: eventHub ?? NSApp.delegateTyped.eventHubIntegration.eventHub
         )
     }
 
@@ -278,7 +282,8 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
          aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable,
          aiChatSessionStore: AIChatSessionStoring,
          tabCrashAggregator: TabCrashAggregator,
-         themeManager: ThemeManaging
+         themeManager: ThemeManaging,
+         eventHub: EventHubManaging
     ) {
         self._id = id
         self.uuid = uuid ?? UUID().uuidString
@@ -362,7 +367,8 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                                                           tabsPreferences: tabsPreferences,
                                                           autoplayPreferences: autoplayPreferences,
                                                           permissionManager: permissionManager,
-                                                          webTrackingProtectionPreferences: webTrackingProtectionPreferences)
+                                                          webTrackingProtectionPreferences: webTrackingProtectionPreferences,
+                                                          eventHub: eventHub)
         let tabExtensionsBuilderArguments: TabExtensionsBuilderArguments = (tabIdentifier: instrumentation.currentTabIdentifier,
                                                                             tabID: self.uuid,
                                                                             isTabPinned: { tabGetter().map { tab in pinnedTabsManagerProvider.pinnedTabsManager(for: tab)?.isTabPinned(tab) ?? false } ?? false },
@@ -433,11 +439,14 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                 self?.refreshErrorHTMLIfNeeded(themeName: theme.name)
             }
 
-        videoPlaybackCancellable = extensions.autoplayPolicy?.videoPlaybackDetectedPublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] isVideoPlaying in
-                self?.refreshDisplaysAutoplayPolicy(isVideoPlaying: isVideoPlaying)
-            }
+        if let autoplayPolicy = extensions.autoplayPolicy {
+            autoplayCancellable = Publishers.CombineLatest(autoplayPolicy.videoPlaybackDetectedPublisher, autoplayPolicy.videoAutoplayDetectedPublisher)
+                .removeDuplicates { $0 == $1 }
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] videoPlaybackDetected, videoAutoplayDetected in
+                    self?.refreshAutoplayState(videoPlaybackDetected: videoPlaybackDetected, videoAutoplayDetected: videoAutoplayDetected)
+                }
+        }
     }
 
 #if DEBUG
@@ -578,6 +587,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
 
     @Published private(set) var audioStateTest: WebView.AudioState = .unmuted(isPlayingAudio: false)
     @Published private(set) var mustDisplayAutoplayPolicy: Bool = false
+    @Published private(set) var detectedVideoAutoplay: Bool = false
 
     // MARK: - Tab Suspension
 
@@ -1183,7 +1193,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     private var emailDidSignOutCancellable: AnyCancellable?
     private var faviconCancellable: AnyCancellable?
     private var tabCrashRecoveryCancellable: AnyCancellable?
-    private var videoPlaybackCancellable: AnyCancellable?
+    private var autoplayCancellable: AnyCancellable?
 
     private func setupWebView(shouldLoadInBackground: Bool) {
         webView.navigationDelegate = navigationDelegate
@@ -1296,16 +1306,14 @@ extension Tab {
 
 private extension Tab {
 
-    func refreshDisplaysAutoplayPolicy(isVideoPlaying: Bool) {
-        let isFeatureEnabled = featureFlagger.isFeatureOn(.autoplayPolicy)
-        let isHttpOrHttps = content.urlForWebView?.isHttpOrHttps == true
-        let displaysAutoplayPolicy = isFeatureEnabled && isHttpOrHttps && isVideoPlaying
+    func refreshAutoplayState(videoPlaybackDetected: Bool, videoAutoplayDetected: Bool) {
+        let isEligible = featureFlagger.isFeatureOn(.autoplayPolicy) && content.urlForWebView?.isHttpOrHttps == true
 
-        guard displaysAutoplayPolicy != mustDisplayAutoplayPolicy else {
-            return
-        }
-
-        mustDisplayAutoplayPolicy = displaysAutoplayPolicy
+        // Please do note that both conditions (`PlaybackDetected` + `AutoplayDetected`) may not necessarily be both true simultaneously
+        // Our Autoplay Policy may prevent Playback, but we might detect Videos with Autoplay.
+        //
+        mustDisplayAutoplayPolicy = isEligible && (videoPlaybackDetected || videoAutoplayDetected)
+        detectedVideoAutoplay = isEligible && videoAutoplayDetected
     }
 }
 

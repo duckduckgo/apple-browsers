@@ -1,0 +1,42 @@
+appId: com.duckduckgo.mobile.ios
+# Logs into an existing Sync account in the V2 UI by tapping "Sync With Another Device",
+# switching to the "Enter Code" tab on the V2 scan screen and pasting the code from the
+# clipboard. Starts on the logged-out Sync settings screen. On success the device-added
+# success screen is shown, which this flow dismisses with Done.
+---
+
+- assertVisible: Sync With Another Device
+- tapOn: Sync With Another Device
+# The passcode screen auto-focuses its field, so wait for the screen and type directly
+# (the field's label differs across iOS versions, so don't match it by name).
+- extendedWaitUntil:
+    visible: Unlock device to set up Sync & Backup
+    timeout: 30000
+- inputText: "0000"
+- pressKey: Enter
+- runFlow:
+    when:
+      visible: Allows you to upload photographs and videos
+    commands:
+        - tapOn: "Allow"
+# V2 scan screen: switch to the Enter Code tab and paste the code.
+- extendedWaitUntil:
+    visible: Enter Code
+    timeout: 30000
+- tapOn: Enter Code
+# The scan tab requests camera permission when its intro animation ends; dismiss the
+# prompt if it raced in before we switched tabs.
+- runFlow:
+    when:
+      visible: Allows you to upload photographs and videos
+    commands:
+        - tapOn: "Allow"
+- tapOn: Paste Sync Code
+# Device-added success screen confirms the connection (title carries the device name, so
+# match by id).
+- extendedWaitUntil:
+    visible:
+      id: "SyncSuccessTitle"
+    timeout: 60000
+- tapOn:
+    id: "SyncSuccessDoneButton"

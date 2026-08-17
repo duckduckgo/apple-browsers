@@ -1172,6 +1172,20 @@
         "suffixes": [],
         "parameters": ["appVersion", "pixelSource"]
     },
+    "dbp-free_overflow_scan_impression_u": {
+        "description": "Fires once per user when the Personal Information Removal entry is presented in the More Options menu, before any scan has been completed (pre-scan state).",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "dbp-free_overflow_scan_impression_c": {
+        "description": "Fires every time the Personal Information Removal entry is presented in the More Options menu, before any scan has been completed (pre-scan state). Counted variant of dbp-free_overflow_scan_impression_u.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
     "dbp-free_overflow_scan_u": {
         "description": "Fires once per user when they click the Personal Information Removal entry in the More Options menu, before any scan has been completed (pre-scan state).",
         "owners": ["hanyutang-sandra"],
@@ -1183,6 +1197,20 @@
         "description": "Fires every time the user clicks the Personal Information Removal entry in the More Options menu, before any scan has been completed (pre-scan state). Counted variant of dbp-free_overflow_scan_u.",
         "owners": ["hanyutang-sandra"],
         "triggers": ["user_submitted"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "dbp-free_overflow_results_impression_u": {
+        "description": "Fires once per user when the Personal Information Removal entry is presented in the More Options menu, after the first profile has been saved (post-scan state).",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "dbp-free_overflow_results_impression_c": {
+        "description": "Fires every time the Personal Information Removal entry is presented in the More Options menu, after the first profile has been saved (post-scan state). Counted variant of dbp-free_overflow_results_impression_u.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
         "suffixes": [],
         "parameters": ["appVersion", "pixelSource"]
     },

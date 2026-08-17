@@ -24,7 +24,7 @@ import FoundationExtensions
 import PixelKit
 import SERPSettings
 
-enum SERPSettingsPixel: PixelKitEvent {
+enum SERPSettingsPixel: PixelKit.Event {
     case serpSettingsSerializationFailed
     case serpSettingsKeyValueStoreReadError
     case serpSettingsKeyValueStoreWriteError

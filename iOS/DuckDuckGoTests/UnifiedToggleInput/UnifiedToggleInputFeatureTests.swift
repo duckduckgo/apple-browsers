@@ -21,6 +21,7 @@ import XCTest
 @testable import DuckDuckGo
 @testable import Core
 import PrivacyConfig
+import FeatureFlags_iOS
 
 final class UnifiedToggleInputFeatureTests: XCTestCase {
 

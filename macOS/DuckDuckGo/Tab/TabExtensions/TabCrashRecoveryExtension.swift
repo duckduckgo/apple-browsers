@@ -83,7 +83,7 @@ final class TabCrashRecoveryExtension {
 
     private let featureFlagger: FeatureFlagger
     private let crashLoopDetector: TabCrashLoopDetecting
-    private let firePixel: (PixelKitEvent, [String: String]) -> Void
+    private let firePixel: (PixelKit.Event, [String: String]) -> Void
     private let tabCrashAggregator: TabCrashAggregator
 
     private var cancellables = Set<AnyCancellable>()
@@ -95,7 +95,7 @@ final class TabCrashRecoveryExtension {
         webViewPublisher: some Publisher<WKWebView, Never>,
         webViewErrorPublisher: some Publisher<WKError?, Never>,
         crashLoopDetector: TabCrashLoopDetecting = TabCrashLoopDetector(),
-        firePixel: @escaping (PixelKitEvent, [String: String]) -> Void = { event, parameters in
+        firePixel: @escaping (PixelKit.Event, [String: String]) -> Void = { event, parameters in
             PixelKit.fire(event, frequency: .dailyAndStandard, withAdditionalParameters: parameters)
         },
         tabCrashAggregator: TabCrashAggregator

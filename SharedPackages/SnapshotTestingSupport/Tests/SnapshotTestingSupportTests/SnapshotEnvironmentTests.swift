@@ -25,10 +25,10 @@ struct SnapshotEnvironmentTests {
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
-    func macOS2652IsAccepted() {
+    func macOS2660IsAccepted() {
         let message = SnapshotEnvironment.validationMessage(
             platform: .macOS,
-            operatingSystemVersion: OperatingSystemVersion(majorVersion: 26, minorVersion: 5, patchVersion: 2)
+            operatingSystemVersion: OperatingSystemVersion(majorVersion: 26, minorVersion: 6, patchVersion: 0)
         )
 
         #expect(message == nil)
@@ -42,29 +42,29 @@ struct SnapshotEnvironmentTests {
             operatingSystemVersion: OperatingSystemVersion(majorVersion: 25, minorVersion: 6, patchVersion: 0)
         )
 
-        #expect(message == "UI snapshots must run on macOS 26.5.2. Current OS is 25.6.0.")
+        #expect(message == "UI snapshots must run on macOS 26. Current OS is 25.6.0.")
     }
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
-    func macOSDifferentMinorVersionIsRejected() {
+    func macOSDifferentMinorVersionIsAccepted() {
         let message = SnapshotEnvironment.validationMessage(
             platform: .macOS,
             operatingSystemVersion: OperatingSystemVersion(majorVersion: 26, minorVersion: 1, patchVersion: 0)
         )
 
-        #expect(message == "UI snapshots must run on macOS 26.5.2. Current OS is 26.1.0.")
+        #expect(message == nil)
     }
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
-    func macOSDifferentPatchVersionIsRejected() {
+    func macOSDifferentPatchVersionIsAccepted() {
         let message = SnapshotEnvironment.validationMessage(
             platform: .macOS,
-            operatingSystemVersion: OperatingSystemVersion(majorVersion: 26, minorVersion: 5, patchVersion: 1)
+            operatingSystemVersion: OperatingSystemVersion(majorVersion: 26, minorVersion: 6, patchVersion: 1)
         )
 
-        #expect(message == "UI snapshots must run on macOS 26.5.2. Current OS is 26.5.1.")
+        #expect(message == nil)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -109,15 +109,15 @@ struct SnapshotEnvironmentTests {
         #expect(
             SnapshotEnvironment.referenceEnvironmentSuffix(
                 platform: .iOS,
-                operatingSystemVersion: OperatingSystemVersion(majorVersion: 26, minorVersion: 4, patchVersion: 1)
+                operatingSystemVersion: OperatingSystemVersion(majorVersion: 26, minorVersion: 4, patchVersion: 0)
             ) == "iOS-26-4"
         )
 
         #expect(
             SnapshotEnvironment.referenceEnvironmentSuffix(
                 platform: .macOS,
-                operatingSystemVersion: OperatingSystemVersion(majorVersion: 26, minorVersion: 5, patchVersion: 2)
-            ) == "macOS-26-5-2"
+                operatingSystemVersion: OperatingSystemVersion(majorVersion: 26, minorVersion: 6, patchVersion: 1)
+            ) == "macOS-26"
         )
     }
 }

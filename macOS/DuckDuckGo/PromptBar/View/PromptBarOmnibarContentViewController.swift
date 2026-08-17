@@ -25,15 +25,11 @@ import AppKit
 final class PromptBarOmnibarContentViewController: NSViewController {
 
     private enum Constants {
-        static let cornerRadius: CGFloat = 16
         static let promptTopInset: CGFloat = 8
         /// Mirrors `MainView`'s text container insets.
         static let promptLeadingInset: CGFloat = 10
         static let promptTrailingInset: CGFloat = 78
         static let promptToControlsSpacing: CGFloat = 8
-        /// The controls row's buttons hang off the suggestions view's top edge, which sits 4pt above
-        /// the container's bottom: 28pt button + 8pt tool inset + that 4pt.
-        static let controlsRowHeight: CGFloat = 40
         /// Placeholder for the initial frame, replaced by the first real measurement.
         static let nominalCollapsedHeight: CGFloat = 80
         static let backdropMaterial: NSVisualEffectView.Material = .hudWindow
@@ -44,6 +40,7 @@ final class PromptBarOmnibarContentViewController: NSViewController {
     private let textViewController: AIChatOmnibarTextContainerViewController
     private let draftStore: EphemeralPromptDraftStore
     private let promptSubmitter: PromptBarPromptSubmitting
+    private let themeManager: ThemeManaging
 
     /// The text controller's own view is a `MouseOverView` and swallows clicks, so wrap it to let the
     /// bottom strip through to the tool buttons behind. `MainView` does the same.
@@ -59,12 +56,14 @@ final class PromptBarOmnibarContentViewController: NSViewController {
          containerViewController: AIChatOmnibarContainerViewController,
          textViewController: AIChatOmnibarTextContainerViewController,
          draftStore: EphemeralPromptDraftStore,
-         promptSubmitter: PromptBarPromptSubmitting) {
+         promptSubmitter: PromptBarPromptSubmitting,
+         themeManager: ThemeManaging) {
         self.omnibarController = omnibarController
         self.containerViewController = containerViewController
         self.textViewController = textViewController
         self.draftStore = draftStore
         self.promptSubmitter = promptSubmitter
+        self.themeManager = themeManager
 
         super.init(nibName: nil, bundle: nil)
 
@@ -84,8 +83,8 @@ final class PromptBarOmnibarContentViewController: NSViewController {
                                     width: PromptBarPlacement.preferredWidth,
                                     height: Constants.nominalCollapsedHeight))
         view.wantsLayer = true
-        view.layer?.cornerRadius = Constants.cornerRadius
         view.layer?.masksToBounds = true
+        applyCornerRadius()
 
         setUpUI()
     }
@@ -139,6 +138,13 @@ final class PromptBarOmnibarContentViewController: NSViewController {
             promptPassthroughView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.promptTrailingInset),
             promptPassthroughView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
+    }
+
+    // MARK: - Appearance
+
+    /// The same radius the address bar's Duck.ai container draws, so both surfaces match the design.
+    private func applyCornerRadius() {
+        view.layer?.cornerRadius = themeManager.theme.addressBarStyleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions
     }
 
     // MARK: - Height
@@ -215,6 +221,11 @@ extension PromptBarOmnibarContentViewController: PromptBarContentHosting {
         isMenuTracking || view.window?.attachedSheet != nil || NSApp.modalWindow != nil
     }
 
+    /// Attachments don't count: this reports the text field alone.
+    var hasPromptText: Bool {
+        !draftStore.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
     var preferredWindowContentSize: NSSize {
         // Wrapping depends on the final width, so resolve pending layout before measuring.
         if isViewLoaded {
@@ -226,7 +237,7 @@ extension PromptBarOmnibarContentViewController: PromptBarContentHosting {
         let height = Constants.promptTopInset
             + textViewController.promptContentHeight
             + Constants.promptToControlsSpacing
-            + Constants.controlsRowHeight
+            + containerViewController.controlsRowHeight
             + containerViewController.suggestionsHeight
             + containerViewController.additionalContentHeight
 
@@ -236,6 +247,7 @@ extension PromptBarOmnibarContentViewController: PromptBarContentHosting {
     func prepareForPresentation() {
         // So the presenter's own read of `preferredWindowContentSize` measures a laid-out prompt.
         _ = view
+        applyCornerRadius()
         omnibarController.onOmnibarActivated()
         textViewController.startEventMonitoring()
         applyPassthroughHeight()

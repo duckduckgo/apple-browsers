@@ -54,6 +54,7 @@ struct SyncSuccessViewV2: View {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     doneButton
                         .accessibilityLabel(UserText.doneButton)
+                        .accessibility(identifier: "SyncSuccessDoneButton")
                 }
             }
         }
@@ -102,6 +103,7 @@ struct SyncSuccessViewV2: View {
                     .daxTitle1()
                     .multilineTextAlignment(.center)
                     .foregroundColor(Color(designSystemColor: .textPrimary))
+                    .accessibility(identifier: "SyncSuccessTitle")
 
                 Text(description)
                     .daxBodyRegular()
@@ -138,6 +140,7 @@ struct SyncSuccessViewV2: View {
                 }
                 .buttonStyle(.borderless)
                 .accessibilityLabel(UserText.simplifiedCopyRecoveryCodeButton)
+                .accessibility(identifier: "SyncSuccessCopyRecoveryCodeButton")
             }
 
             Button {
@@ -149,7 +152,7 @@ struct SyncSuccessViewV2: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
-        .listRowBackground(Color(designSystemColor: .surface))
+        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
     }
 
     private var autoRestoreSection: some View {
@@ -160,7 +163,7 @@ struct SyncSuccessViewV2: View {
                 .foregroundColor(Color(designSystemColor: .textPrimary))
                 .disabled(model.isAutoRestoreUpdating)
         }
-        .listRowBackground(Color(designSystemColor: .surface))
+        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
     }
 }
 

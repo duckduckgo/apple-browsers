@@ -131,10 +131,9 @@ class SettingsLegacyViewProvider: ObservableObject {
     }
 
     private func instantiateAppIconController(onChange: @escaping (AppIcon) -> Void) -> UIViewController {
-        let storyboard = UIStoryboard(name: StoryboardName.settings, bundle: nil)
-        return storyboard.instantiateViewController(identifier: "AppIcon") { coder in
-            return AppIconSettingsViewController(onChange: onChange, coder: coder)
-        }
+        let hostingController = UIHostingController(rootView: SettingsAppIconPicker(onChange: onChange))
+        hostingController.title = UserText.settingsIcon
+        return hostingController
     }
 
     private func instantiateFireproofingController() -> UIViewController {

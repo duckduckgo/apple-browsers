@@ -67,6 +67,13 @@ extension DuckAIPromptSurface {
         }
     }
 
+    var showsDuckAILogo: Bool {
+        switch self {
+        case .addressBar: false
+        case .promptBar: true
+        }
+    }
+
     /// Set for surfaces with no window of their own, whose host has to resolve one first. Covers the
     /// voice button too.
     var routesSubmissionThroughHost: Bool {

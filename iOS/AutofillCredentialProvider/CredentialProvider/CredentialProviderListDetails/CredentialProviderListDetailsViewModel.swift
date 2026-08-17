@@ -19,6 +19,7 @@
 
 import UIKit
 import SwiftUI
+import DesignResourcesKitIcons
 import BrowserServicesKit
 import Common
 import FoundationExtensions
@@ -174,7 +175,7 @@ final class CredentialProviderListDetailsHeaderViewModel: ObservableObject {
     @Published var title: String = ""
     @Published var subtitle: String = ""
     @Published var domain: String = ""
-    @Published var favicon: UIImage = UIImage(resource: .logo)
+    @Published var favicon: UIImage = UIImage(rebrandable: "duckduckgo-favicon-128x128") ?? UIImage(resource: .logo)
 
     func updateData(with account: SecureVaultModels.WebsiteAccount, tld: TLD, autofillDomainNameUrlMatcher: AutofillDomainNameUrlMatcher, autofillDomainNameUrlSort: AutofillDomainNameUrlSort) {
         self.title = account.name(tld: tld, autofillDomainNameUrlMatcher: autofillDomainNameUrlMatcher)

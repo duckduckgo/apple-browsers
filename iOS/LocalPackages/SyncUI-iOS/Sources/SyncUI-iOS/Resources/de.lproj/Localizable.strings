@@ -190,6 +190,12 @@
 /* Prompt title after enabling sync */
 "sync.simplified.another.device.title" = "Möchtest du deine Daten mit einem anderen Gerät synchronisieren?";
 
+/* Body on the sync-setup prompt explaining the sync-another-device option */
+"sync.simplified.another.device.v2.body" = "Wir helfen dir dabei, deine Geräte zu synchronisieren.";
+
+/* Title on the sync-setup prompt asking whether to sync with another device or just this device */
+"sync.simplified.another.device.v2.title" = "Synchronisiere dieses Gerät mit einem nahegelegenen Computer.";
+
 /* Caption displayed on 'auto-download bookmarks icons' toggle. */
 "sync.simplified.bookmarks.section.fetch-favicons.caption" = "Lädt Symbole von Webseiten, die du als Lesezeichen gespeichert hast. Symbol-Downloads werden in deinem Netzwerk offengelegt.";
 
@@ -202,14 +208,56 @@
 /* Text shown next to toggle while sync is being set up */
 "sync.simplified.connecting" = "Verbinden ...";
 
+/* Title shown on the connecting screen while Sync & Backup is being set up on this device */
+"sync.simplified.connecting.v2.title" = "Sync & Backup ist auf all deinen Geräten Ende-zu-Ende-verschlüsselt.";
+
 /* Sync settings 'Copy Recovery Code' button */
 "sync.simplified.copy.recovery.code.button" = "Wiederherstellungscode kopieren";
 
 /* Sync settings action button title to turn off sync and delete server data */
 "sync.simplified.delete.sync.data.button" = "Synchronisierung deaktivieren und Serverdaten löschen";
 
+/* Description on the device-added success screen explaining what the recovery code is for */
+"sync.simplified.device.added.v2.description" = "Verwende diesen Code, um deine Daten wiederherzustellen, wenn du den Zugriff auf deine Geräte verlierst. Bewahre ihn sicher auf.";
+
+/* Fallback subject used in the device-added success title when the current device's name is unavailable. Substituted as %@ in simplifiedDeviceAddedV2Title. */
+"sync.simplified.device.added.v2.fallback.device.name" = "Dieses Gerät";
+
+/* Title on the success screen shown after a device joins Sync & Backup. %@ is the name of the current device that was just added. */
+"sync.simplified.device.added.v2.title" = "%@ wurde zu Sync & Backup hinzugefügt.";
+
 /* Sync settings 'Download Recovery Code' button */
 "sync.simplified.download.recovery.code.button" = "Wiederherstellungscode herunterladen";
+
+/* Section header above the get-desktop-browser option in sync setup */
+"sync.simplified.download.section.header" = "Download";
+
+/* Button to download the recovery code on the recover-your-data screen */
+"sync.simplified.download.your.recovery.code.button" = "Lade deinen Wiederherstellungscode herunter";
+
+/* Description shown when Sync & Backup is enabled (when AI chat sync is available) */
+"sync.simplified.enabled.header.message" = "Deine Lesezeichen, Autofill-Daten und Duck.ai-Chats werden synchronisiert und mit Ende-zu-Ende-Verschlüsselung gesichert.";
+
+/* Description shown when Sync & Backup is enabled */
+"sync.simplified.enabled.header.message.basic" = "Deine Lesezeichen und Autofill-Daten werden mit Ende-zu-Ende-Verschlüsselung synchronisiert.";
+
+/* Sync & Backup screen title shown when Sync is enabled */
+"sync.simplified.enabled.header.title" = "DuckDuckGo ist synchron";
+
+/* Label above the example sync code placeholder on the enter-code tab */
+"sync.simplified.enter.code.example.label" = "Beispielcode:";
+
+/* First part of the enter-code instructions, followed by a DuckDuckGo app chip */
+"sync.simplified.enter.code.open" = "Öffne dein anderes";
+
+/* Button to paste the sync code on the enter-code tab */
+"sync.simplified.enter.code.paste.button" = "Sync-Code einfügen";
+
+/* Second part of the enter-code instructions. **...** marks the parts shown in the primary text color. */
+"sync.simplified.enter.code.steps" = "Gehe zu **Sync & Backup** › **Mit einem anderen Gerät synchronisieren** › **Text-Code kopieren**.";
+
+/* Title on the enter-code tab of the V2 scan screen */
+"sync.simplified.enter.code.title" = "Gib den Sync-Code ein.";
 
 /* Button subtitle to get the DuckDuckGo desktop browser */
 "sync.simplified.get.desktop.browser.subtitle" = "DuckDuckGo für Mac und Windows";
@@ -217,11 +265,53 @@
 /* Button title to get the DuckDuckGo desktop browser. */
 "sync.simplified.get.desktop.browser.title" = "Desktop-Browser herunterladen";
 
+/* Row label to get the DuckDuckGo desktop browser */
+"sync.simplified.get.our.desktop.browser.title" = "Hol dir unseren Desktop-Browser";
+
+/* Sync setup row label to recover synced data using an existing recovery code */
+"sync.simplified.have.recovery.code.button" = "Ich habe einen Wiederherstellungscode";
+
 /* Description of the Sync & Backup feature (when AI chat sync is available) */
 "sync.simplified.header.message" = "Speichere deine Lesezeichen, Autofill-Daten und Duck.ai-Chats und synchronisiere diese mit Ende-zu-Ende-Verschlüsselung zwischen deinen Geräten.";
 
 /* Description of the Sync & Backup feature */
 "sync.simplified.header.message.basic" = "Speichere deine Lesezeichen und Autofill-Daten und synchronisiere diese mit Ende-zu-Ende-Verschlüsselung zwischen deinen Geräten.";
+
+/* Description of the Sync & Backup feature */
+"sync.simplified.header.message.basic.v2" = "Synchronisiere deine Autofill-Daten und Lesezeichen, Ende-zu-Ende-verschlüsselt über deine DuckDuckGo-Apps.";
+
+/* Description of the Sync & Backup feature (when AI chat sync is available) */
+"sync.simplified.header.message.v2" = "Synchronisiere und sichere deine Daten zur automatischen Eingabe, deine Lesezeichen und deine Duck.ai-Chats – durchgehend verschlüsselt über alle deine DuckDuckGo-Apps hinweg.";
+
+/* Sync & Backup screen title */
+"sync.simplified.header.title" = "DuckDuckGo synchronisiert halten";
+
+/* Footer caption shown under the Remove Device button on the manage device screen */
+"sync.simplified.manage.device.remove.footer" = "Wenn du dieses Gerät entfernst, kann es nicht mehr auf deine synchronisierten Daten zugreifen.";
+
+/* Status label shown under a device name on the manage device screen when the device is synced */
+"sync.simplified.manage.device.status.synced" = "Synchronisiert";
+
+/* Footer caption shown under the Sync & Backup This Device toggle on the manage this device screen */
+"sync.simplified.manage.device.turn.off.footer" = "Dieses Gerät kann nicht mehr auf deine synchronisierten Daten zugreifen, wenn diese Funktion deaktiviert ist.";
+
+/* My Devices section header shown when Sync & Backup is enabled */
+"sync.simplified.my.devices.section.header" = "Meine Geräte";
+
+/* Section header above the recovery-code option in sync setup */
+"sync.simplified.recover.synced.data.section.header" = "Synchronisierte Daten wiederherstellen";
+
+/* Title shown on the connecting screen while a device's synced data is being recovered */
+"sync.simplified.recovering.data.v2.title" = "Datenwiederherstellung";
+
+/* Label above the recovery code on the recover-your-data screen */
+"sync.simplified.recovery.code.label" = "Wiederherstellungscode";
+
+/* Description on the success screen shown after synced data has been recovered on this device */
+"sync.simplified.recovery.complete.v2.description" = "Ende-zu-Ende-Verschlüsselung auf all deinen Geräten.";
+
+/* Title on the success screen shown after synced data has been recovered on this device */
+"sync.simplified.recovery.complete.v2.title" = "Sync & Backup aktiviert";
 
 /* Sync settings data recovery section footer. %@ is replaced with the URL. */
 "sync.simplified.recovery.section.footer" = "Verwende diesen Code, um deine Daten wiederherzustellen, wenn du den Zugriff auf dieses Gerät verlierst. Sync & Backup-Daten können nach 18 Monaten Inaktivität nicht wiederhergestellt werden. [Mehr erfahren](%@)";
@@ -274,8 +364,56 @@
 /* Instructions on sync QR code display screen (will be shown above the DuckDuckGo app icon and name) */
 "sync.simplified.scan-or-view-code.view.instructions" = "Scanne oder füge diesen Code auf deinem anderen Gerät ein";
 
+/* Close button in the V2 scan screen navigation bar */
+"sync.simplified.scan.v2.close.button" = "Schließen";
+
+/* Chip label on the scan-QR tab referring to the DuckDuckGo desktop app */
+"sync.simplified.scan.v2.qr.app.name" = "DuckDuckGo für Desktop";
+
+/* Heading overlaid on the camera on the scan-QR tab of the V2 scan screen */
+"sync.simplified.scan.v2.qr.heading" = "QR-Code zum Synchronisieren scannen.";
+
+/* First part of the scan-QR instructions, followed by a DuckDuckGo app chip */
+"sync.simplified.scan.v2.qr.open" = "Öffnen";
+
+/* Button on the scan-QR intro animation that dismisses the animation and reveals the camera */
+"sync.simplified.scan.v2.qr.ready.button" = "Ich bin bereit zum Scannen";
+
+/* Second part of the scan-QR instructions. **...** marks the parts shown in the primary text color. */
+"sync.simplified.scan.v2.qr.steps" = "und gehe zu **Sync & Backup** › **Mit einem anderen Gerät synchronisieren**";
+
+/* V2 segmented control tab title for entering a code */
+"sync.simplified.scan.v2.tab.enter.code" = "Code eingeben";
+
+/* V2 segmented control tab title for scanning a QR code */
+"sync.simplified.scan.v2.tab.scan.qr" = "QR-Code scannen";
+
+/* Status label shown next to the title when Sync & Backup is disabled */
+"sync.simplified.status.off" = "Aus";
+
+/* Status label shown next to the title when Sync & Backup is enabled */
+"sync.simplified.status.on" = "An";
+
+/* Button to copy the text sync code on the sync-code sheet */
+"sync.simplified.sync.code.copy.button" = "Textcode kopieren";
+
+/* First part of the sync-code sheet instructions, followed by a DuckDuckGo app chip */
+"sync.simplified.sync.code.sheet.open" = "Öffne auf einem anderen Gerät";
+
+/* Second part of the sync-code sheet instructions. **...** marks the parts shown in the primary text color. */
+"sync.simplified.sync.code.sheet.scan" = "Gehe zu **Sync & Backup** › **Mit einem anderen Gerät synchronisieren** und scanne diesen Code:";
+
+/* Navigation title of the sheet that shows this device's sync QR code */
+"sync.simplified.sync.code.sheet.title" = "Code scannen oder kopieren";
+
+/* Button on the sync-setup prompt to enable Sync & Backup on the current device only, without pairing another device */
+"sync.simplified.this.device.only" = "Nur dieses Gerät synchronisieren";
+
 /* Sync & Backup enabled / disabled toggle title */
 "sync.simplified.toggle.title" = "Synchronisieren und sichern";
+
+/* Sync & Backup enabled / disabled toggle title, referring to the current device */
+"sync.simplified.toggle.title.this.device" = "Dieses Gerät synchronisieren";
 
 /* Use Recovery Code sync setup button label */
 "sync.simplified.use.recovery.code.button" = "Wiederherstellungscode verwenden";

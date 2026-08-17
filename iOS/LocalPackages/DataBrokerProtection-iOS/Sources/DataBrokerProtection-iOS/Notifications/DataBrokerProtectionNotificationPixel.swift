@@ -31,7 +31,7 @@ public enum DataBrokerProtectionNotificationPixel {
     case notificationSentGoToMarketFirstScan
 }
 
-extension DataBrokerProtectionNotificationPixel: PixelKitEvent {
+extension DataBrokerProtectionNotificationPixel: PixelKit.Event {
     public var name: String {
         switch self {
         case .notificationSentFirstScanComplete:

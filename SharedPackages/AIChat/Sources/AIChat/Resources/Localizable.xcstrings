@@ -506,6 +506,66 @@
       },
       "shouldTranslate" : false
     },
+    "duckai.contextual.ask.about.page" : {
+      "comment" : "Title for the button that re-attaches the current page's content after the user removed it",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Frage zur Seite"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Ask About Page"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preguntar sobre la página"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Posez des questions sur la page"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chiedi informazioni sulla pagina"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stel een vraag over de pagina"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zapytaj o stronę"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Perguntar sobre a página"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Задать вопрос о странице"
+          }
+        }
+      }
+    },
     "duckai.contextual.attach.content" : {
       "comment" : "Title for the attach placeholder chip in Duck.ai contextual sheet",
       "extractionState" : "extracted_with_value",

@@ -8,3 +8,5 @@
 self-hosted-runner:
   labels:
     - apple
+    - xcode-27
+    - bitrise:*

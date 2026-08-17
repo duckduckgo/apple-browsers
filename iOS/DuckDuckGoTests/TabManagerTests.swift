@@ -24,6 +24,7 @@ import Combine
 import ConcurrencyExtensions
 import Core
 import PersistenceTestingUtils
+import PrivacyConfig
 import SubscriptionTestingUtilities
 import XCTest
 @testable import DuckDuckGo
@@ -374,13 +375,284 @@ final class TabManagerTests: XCTestCase {
                                     "flushPendingSave should write synchronously without waiting for debounce")
     }
 
+    func testWhenMemoryWarningIsReceivedThenTabTerminationTelemetryIsNotified() throws {
+        let telemetry = MockTabTerminationTelemetry()
+        let manager = try makeManager(TabsModel(desktop: false), tabTerminationTelemetry: telemetry)
+
+        NotificationCenter.default.post(name: UIApplication.didReceiveMemoryWarningNotification, object: nil)
+
+        XCTAssertEqual(telemetry.memoryWarningCallCount, 1)
+        XCTAssertEqual(telemetry.memoryWarningActiveTabCounts, [0])
+        withExtendedLifetime(manager) {}
+    }
+
+    func testWhenMemoryWarningIsReceivedInBackgroundThenNonCurrentControllersAreEvicted() throws {
+        let tabs = (0..<3).map {
+            Tab(link: Link(title: "tab-\($0)", url: URL(string: "https://example.com/\($0)")!))
+        }
+        let model = TabsModel(tabs: tabs, desktop: false)
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.tabEvictionOnMemoryWarning])
+        let telemetry = MockTabTerminationTelemetry()
+        let cacheDelegate = MockTabControllerCacheDelegate()
+        let manager = try makeManager(model,
+                                      featureFlagger: featureFlagger,
+                                      tabTerminationTelemetry: telemetry,
+                                      applicationState: { .background })
+        manager.cacheDelegate = cacheDelegate
+
+        _ = manager.current(createIfNeeded: true)
+        _ = manager.select(tabs[1])
+        _ = manager.select(tabs[2])
+        _ = manager.select(tabs[0])
+
+        NotificationCenter.default.post(name: UIApplication.didReceiveMemoryWarningNotification, object: nil)
+
+        XCTAssertEqual(telemetry.memoryWarningActiveTabCounts, [3])
+        XCTAssertNotNil(manager.controller(for: tabs[0]))
+        XCTAssertNil(manager.controller(for: tabs[1]))
+        XCTAssertNil(manager.controller(for: tabs[2]))
+        XCTAssertEqual(cacheDelegate.evictionReasons, [.memoryWarning, .memoryWarning])
+        XCTAssertEqual(model.tabs.count, 3)
+        XCTAssertTrue(model.currentTab === tabs[0])
+    }
+
+    func testWhenMemoryWarningEvictionFlagIsDisabledThenControllersRemainCached() throws {
+        let tabs = (0..<2).map {
+            Tab(link: Link(title: "tab-\($0)", url: URL(string: "https://example.com/\($0)")!))
+        }
+        let model = TabsModel(tabs: tabs, desktop: false)
+        let manager = try makeManager(model, applicationState: { .background })
+
+        _ = manager.current(createIfNeeded: true)
+        _ = manager.select(tabs[1])
+        NotificationCenter.default.post(name: UIApplication.didReceiveMemoryWarningNotification, object: nil)
+
+        XCTAssertNotNil(manager.controller(for: tabs[0]))
+        XCTAssertNotNil(manager.controller(for: tabs[1]))
+    }
+
+    func testWhenMemoryWarningIsReceivedInForegroundThenControllersRemainCached() throws {
+        let tabs = (0..<2).map {
+            Tab(link: Link(title: "tab-\($0)", url: URL(string: "https://example.com/\($0)")!))
+        }
+        let model = TabsModel(tabs: tabs, desktop: false)
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.tabEvictionOnMemoryWarning])
+        let manager = try makeManager(model,
+                                      featureFlagger: featureFlagger,
+                                      applicationState: { .active })
+
+        _ = manager.current(createIfNeeded: true)
+        _ = manager.select(tabs[1])
+        NotificationCenter.default.post(name: UIApplication.didReceiveMemoryWarningNotification, object: nil)
+
+        XCTAssertNotNil(manager.controller(for: tabs[0]))
+        XCTAssertNotNil(manager.controller(for: tabs[1]))
+    }
+
+    func testWhenLRUCapacityIsExceededThenLeastRecentlyViewedControllerIsEvicted() throws {
+        let tabs = (0..<3).map {
+            Tab(link: Link(title: "tab-\($0)", url: URL(string: "https://example.com/\($0)")!))
+        }
+        let model = TabsModel(tabs: tabs, desktop: false)
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.tabLRUEviction])
+        let privacyConfigurationManager = makePrivacyConfigurationManager(settings: "{\"maxCapacityPhone\": 2}")
+        let cacheDelegate = MockTabControllerCacheDelegate()
+        let manager = try makeManager(model,
+                                      featureFlagger: featureFlagger,
+                                      privacyConfigurationManager: privacyConfigurationManager,
+                                      isPad: false)
+        manager.cacheDelegate = cacheDelegate
+
+        _ = manager.current(createIfNeeded: true)
+        _ = manager.select(tabs[1])
+        _ = manager.select(tabs[0])
+        _ = manager.select(tabs[2])
+
+        XCTAssertNotNil(manager.controller(for: tabs[0]))
+        XCTAssertNil(manager.controller(for: tabs[1]))
+        XCTAssertNotNil(manager.controller(for: tabs[2]))
+        XCTAssertEqual(cacheDelegate.evictionReasons, [.lruCapacity])
+        XCTAssertEqual(model.tabs.count, 3)
+        XCTAssertTrue(model.currentTab === tabs[2])
+    }
+
+    func testWhenIPadLRUCapacityIsExceededThenConfiguredPadCapacityIsUsed() throws {
+        let tabs = (0..<3).map {
+            Tab(link: Link(title: "tab-\($0)", url: URL(string: "https://example.com/\($0)")!))
+        }
+        let model = TabsModel(tabs: tabs, desktop: true)
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.tabLRUEviction])
+        let privacyConfigurationManager = makePrivacyConfigurationManager(settings: "{\"maxCapacityPhone\": 3, \"maxCapacityPad\": 2}")
+        let manager = try makeManager(model,
+                                      featureFlagger: featureFlagger,
+                                      privacyConfigurationManager: privacyConfigurationManager,
+                                      isPad: true)
+
+        _ = manager.current(createIfNeeded: true)
+        _ = manager.select(tabs[1])
+        _ = manager.select(tabs[2])
+
+        XCTAssertNil(manager.controller(for: tabs[0]))
+        XCTAssertNotNil(manager.controller(for: tabs[1]))
+        XCTAssertNotNil(manager.controller(for: tabs[2]))
+    }
+
+    func testWhenNewTabPagesExceedLRUCapacityThenLoadedTabsArePreserved() throws {
+        let loadedTabs = (0..<2).map {
+            Tab(link: Link(title: "tab-\($0)", url: URL(string: "https://example.com/\($0)")!))
+        }
+        let newTabPages = [Tab(), Tab()]
+        let model = TabsModel(tabs: loadedTabs + newTabPages, desktop: false)
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.tabLRUEviction])
+        let privacyConfigurationManager = makePrivacyConfigurationManager(settings: "{\"maxCapacityPhone\": 2}")
+        let cacheDelegate = MockTabControllerCacheDelegate()
+        let manager = try makeManager(model,
+                                      featureFlagger: featureFlagger,
+                                      privacyConfigurationManager: privacyConfigurationManager,
+                                      isPad: false)
+        manager.cacheDelegate = cacheDelegate
+
+        _ = manager.current(createIfNeeded: true)
+        _ = manager.select(loadedTabs[1])
+        _ = manager.select(newTabPages[0])
+        _ = manager.select(newTabPages[1])
+
+        XCTAssertNotNil(manager.controller(for: loadedTabs[0]))
+        XCTAssertNotNil(manager.controller(for: loadedTabs[1]))
+        XCTAssertNil(manager.controller(for: newTabPages[0]))
+        XCTAssertNotNil(manager.controller(for: newTabPages[1]))
+
+        _ = manager.select(loadedTabs[0])
+
+        XCTAssertNotNil(manager.controller(for: loadedTabs[0]))
+        XCTAssertNotNil(manager.controller(for: loadedTabs[1]))
+        XCTAssertNil(manager.controller(for: newTabPages[1]))
+        XCTAssertEqual(cacheDelegate.evictionReasons, [.lruCapacity, .lruCapacity])
+    }
+
+    func testWhenCurrentControllerIsMissingThenLRUCapacityIsNotIncreased() throws {
+        let model = TabsModel(desktop: false)
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.tabLRUEviction])
+        let privacyConfigurationManager = makePrivacyConfigurationManager(settings: "{\"maxCapacityPhone\": 2}")
+        let manager = try makeManager(model,
+                                      featureFlagger: featureFlagger,
+                                      privacyConfigurationManager: privacyConfigurationManager,
+                                      isPad: false)
+
+        let controllers = (0..<3).map {
+            manager.add(url: URL(string: "https://example.com/\($0)")!, inBackground: true, inheritedAttribution: nil)
+        }
+
+        XCTAssertNil(manager.controller(for: controllers[0].tabModel))
+        XCTAssertNotNil(manager.controller(for: controllers[1].tabModel))
+        XCTAssertNotNil(manager.controller(for: controllers[2].tabModel))
+    }
+
+    func testLRUCapacityIsSharedAcrossNormalAndFireTabs() throws {
+        let normalTabs = (0..<2).map {
+            Tab(link: Link(title: "normal-\($0)", url: URL(string: "https://example.com/normal-\($0)")!))
+        }
+        let fireTab = Tab(link: Link(title: "fire", url: URL(string: "https://example.com/fire")!), fireTab: true)
+        let normalModel = TabsModel(tabs: normalTabs, desktop: false)
+        let fireModel = TabsModel(tabs: [fireTab], desktop: false, mode: .fire)
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.fireMode, .tabLRUEviction])
+        let privacyConfigurationManager = makePrivacyConfigurationManager(settings: "{\"maxCapacityPhone\": 2}")
+        let manager = try makeManager(normalModel,
+                                      fireModel: fireModel,
+                                      featureFlagger: featureFlagger,
+                                      privacyConfigurationManager: privacyConfigurationManager)
+
+        _ = manager.current(createIfNeeded: true)
+        _ = manager.select(normalTabs[1])
+        _ = manager.select(fireTab)
+
+        XCTAssertNil(manager.controller(for: normalTabs[0]))
+        XCTAssertNotNil(manager.controller(for: normalTabs[1]))
+        XCTAssertNotNil(manager.controller(for: fireTab))
+    }
+
+    func testWebContentTerminationUsesDedicatedCacheEvictionReason() throws {
+        let tabs = (0..<2).map {
+            Tab(link: Link(title: "tab-\($0)", url: URL(string: "https://example.com/\($0)")!))
+        }
+        let model = TabsModel(tabs: tabs, desktop: false)
+        let cacheDelegate = MockTabControllerCacheDelegate()
+        let manager = try makeManager(model)
+        manager.cacheDelegate = cacheDelegate
+
+        let firstController = try XCTUnwrap(manager.current(createIfNeeded: true))
+        _ = manager.select(tabs[1])
+        manager.invalidateCache(forController: firstController, reloadCurrent: false)
+
+        XCTAssertEqual(cacheDelegate.evictionReasons, [.webContentProcessTermination])
+        XCTAssertNil(manager.controller(for: tabs[0]))
+        XCTAssertEqual(model.tabs.count, 2)
+    }
+
+    func testWhenWebContentProcessTerminatesThenTabTerminationTelemetryIsNotified() throws {
+        let telemetry = MockTabTerminationTelemetry()
+        let manager = try makeManager(TabsModel(desktop: false), tabTerminationTelemetry: telemetry)
+
+        manager.webContentProcessDidTerminate()
+
+        XCTAssertEqual(telemetry.webContentProcessTerminationActiveTabCounts, [0])
+    }
+
+    func testWhenTerminationThresholdIsReachedThenCurrentTabShowsErrorPage() throws {
+        let detector = MockTabTerminationErrorPageDetector(shouldShowErrorPage: true)
+        let tabsModel = TabsModel(desktop: false)
+        tabsModel.insert(
+            tab: Tab(link: Link(title: "example", url: URL(string: "https://example.com")!)),
+            placement: .atEnd,
+            selectNewTab: true)
+        let manager = try makeManager(
+            tabsModel,
+            tabTerminationErrorPageDetector: detector)
+        let controller = try XCTUnwrap(manager.current(createIfNeeded: true))
+        controller.url = URL(string: "https://example.com")!
+
+        XCTAssertFalse(try XCTUnwrap(controller.makeBreakageAdditionalInfo()).isAfterTabTermination)
+
+        manager.invalidateCache(forController: controller, reloadCurrent: true)
+
+        XCTAssertEqual(detector.checkedTabIDs, [controller.tabModel.uid])
+        XCTAssertFalse(controller.error.isHidden)
+        XCTAssertEqual(controller.errorHeader.text, UserText.tabTerminationErrorPageTitle)
+        XCTAssertTrue(try XCTUnwrap(controller.makeBreakageAdditionalInfo()).isAfterTabTermination)
+    }
+
+    func testWhenCurrentTabTerminatesWithoutReloadThenTerminationIsNotRecorded() throws {
+        let detector = MockTabTerminationErrorPageDetector(shouldShowErrorPage: true)
+        let tabsModel = TabsModel(desktop: false)
+        tabsModel.insert(
+            tab: Tab(link: Link(title: "example", url: URL(string: "https://example.com")!)),
+            placement: .atEnd,
+            selectNewTab: true)
+        let manager = try makeManager(
+            tabsModel,
+            tabTerminationErrorPageDetector: detector)
+        let controller = try XCTUnwrap(manager.current(createIfNeeded: true))
+        controller.url = URL(string: "https://example.com")!
+
+        manager.invalidateCache(forController: controller, reloadCurrent: false)
+
+        XCTAssertTrue(detector.checkedTabIDs.isEmpty)
+        XCTAssertTrue(controller.error.isHidden)
+        XCTAssertFalse(try XCTUnwrap(controller.makeBreakageAdditionalInfo()).isAfterTabTermination)
+    }
+
     func makeManager(_ model: TabsModel,
                      fireModel: TabsModel? = nil,
                      previewsSource: TabPreviewsSource = MockTabPreviewsSource(),
                      historyManager: MockHistoryManager = MockHistoryManager(),
                      featureFlagger: MockFeatureFlagger = MockFeatureFlagger(),
                      launchSourceManager: LaunchSourceManaging = MockLaunchSourceManager(),
-                     normalStore: ThrowingKeyValueStoring? = nil) throws -> TabManager {
+                     normalStore: ThrowingKeyValueStoring? = nil,
+                     tabTerminationTelemetry: (any TabTerminationTelemetry)? = nil,
+                     tabTerminationErrorPageDetector: (any TabTerminationErrorPageDetecting)? = nil,
+                     privacyConfigurationManager: PrivacyConfigurationManaging = MockPrivacyConfigurationManager(),
+                     applicationState: (@MainActor () -> UIApplication.State)? = nil,
+                     isPad: Bool = false) throws -> TabManager {
         FireModeCapability.resolve(using: featureFlagger)
         let normalStore = try normalStore ?? MockKeyValueFileStore(throwOnInit: nil)
         let tabsPersistence = TabsModelPersistence(normalStore: normalStore,
@@ -391,7 +663,7 @@ final class TabManagerTests: XCTestCase {
         return TabManager(tabsModelProvider: modelProvider,
                           previewsSource: previewsSource,
                           interactionStateSource: TabInteractionStateDiskSource(),
-                          privacyConfigurationManager: MockPrivacyConfigurationManager(),
+                          privacyConfigurationManager: privacyConfigurationManager,
                           bookmarksDatabase: MockBookmarksDatabase.make(prepareFolderStructure: false),
                           historyManager: historyManager,
                           syncService: MockDDGSyncing(),
@@ -420,7 +692,20 @@ final class TabManagerTests: XCTestCase {
                           voiceSearchHelper: MockVoiceSearchHelper(),
                           launchSourceManager: launchSourceManager,
                           darkReaderFeatureSettings: MockDarkReaderFeatureSettings(),
-                          adBlockingAvailability: StubAdBlockingAvailability())
+                          adBlockingAvailability: StubAdBlockingAvailability(),
+                          eventHub: StubEventHub(),
+                          tabTerminationTelemetry: tabTerminationTelemetry,
+                          tabTerminationErrorPageDetector: tabTerminationErrorPageDetector,
+                          applicationState: applicationState,
+                          isPad: isPad)
+    }
+
+    private func makePrivacyConfigurationManager(settings: String) -> MockPrivacyConfigurationManager {
+        let config = MockPrivacyConfiguration()
+        config.subfeatureSettings = settings
+        let manager = MockPrivacyConfigurationManager()
+        manager.privacyConfig = config
+        return manager
     }
 
 }
@@ -448,5 +733,55 @@ private final class CountingThrowingKeyValueStore: ThrowingKeyValueStoring, @unc
         lock.lock()
         storedValue = nil
         lock.unlock()
+    }
+}
+
+@MainActor
+private final class MockTabTerminationTelemetry: TabTerminationTelemetry {
+    private(set) var memoryWarningCallCount = 0
+    private(set) var memoryWarningActiveTabCounts: [Int] = []
+    private(set) var webContentProcessTerminationActiveTabCounts: [Int] = []
+
+    func webContentProcessDidTerminate(activeTabCount: Int) {
+        webContentProcessTerminationActiveTabCounts.append(activeTabCount)
+    }
+
+    func didReceiveMemoryWarning(activeTabCount: Int) {
+        memoryWarningCallCount += 1
+        memoryWarningActiveTabCounts.append(activeTabCount)
+    }
+}
+
+@MainActor
+private final class MockTabControllerCacheDelegate: TabControllerCacheDelegate {
+    private(set) var evictionReasons = [TabControllerCacheEvictionReason]()
+
+    func tabManager(_ tabManager: TabManager, didCreateController controller: TabViewController) {}
+
+    func tabManager(_ tabManager: TabManager,
+                    didEvictController controller: TabViewController,
+                    reason: TabControllerCacheEvictionReason) {
+        evictionReasons.append(reason)
+    }
+}
+
+@MainActor
+private final class MockTabTerminationErrorPageDetector: TabTerminationErrorPageDetecting {
+
+    private let shouldShowErrorPage: Bool
+    private(set) var checkedTabIDs: [String] = []
+    private(set) var removedTabIDs: [String] = []
+
+    init(shouldShowErrorPage: Bool) {
+        self.shouldShowErrorPage = shouldShowErrorPage
+    }
+
+    func shouldShowErrorPage(forTabID tabID: String) -> Bool {
+        checkedTabIDs.append(tabID)
+        return shouldShowErrorPage
+    }
+
+    func removeHistory(forTabID tabID: String) {
+        removedTabIDs.append(tabID)
     }
 }

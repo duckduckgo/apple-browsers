@@ -24,6 +24,7 @@ import SyncUI_iOS
 import DDGSync
 import AVFoundation
 import os.log
+import FeatureFlags_iOS
 
 extension SyncSettingsViewController: SyncManagementViewModelDelegate {
 
@@ -588,6 +589,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                     pairingInfo = try await connectionController.startExchangeMode()
                     source = .exchange
                 } catch {
+                    sendPairingV2PresenterStartFailurePixelIfNeeded(error, setupSource: .exchange)
                     await handleError(SyncErrorMessage.unableToSyncWithDevice, error: error, event: .syncLoginError)
                     return
                 }
@@ -596,6 +598,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                     pairingInfo = try await connectionController.startConnectMode()
                     source = .connect
                 } catch {
+                    sendPairingV2PresenterStartFailurePixelIfNeeded(error, setupSource: .connect)
                     await handleError(SyncErrorMessage.unableToSyncToServer, error: error, event: .syncLoginError)
                     return
                 }
@@ -632,6 +635,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                     source = intent == .syncAnotherDevice ? .connect : .recovery
                     onPresentPixelInfo = .init(pixel: .syncSetupBarcodeScreenShown, source: source, flowVersion: syncSetupPixelFlowVersion)
                 } catch {
+                    sendPairingV2PresenterStartFailurePixelIfNeeded(error, setupSource: .connect)
                     await handleError(SyncErrorMessage.unableToSyncToServer, error: error, event: .syncLoginError)
                     return
                 }
@@ -648,6 +652,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                                             stringForQRCode: String,
                                             source: SyncSetupSource,
                                             onPresentPixelInfo: SyncSetupPixelInfo?) {
+        scanSetupSource = source
         let model = ScanOrPasteCodeViewModel(
             codeForDisplayOrPasting: codeForDisplayOrPasting,
             qrCodeString: stringForQRCode,
@@ -677,19 +682,18 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             navController.modalPresentationStyle = .fullScreen
         }
         navigationController?.present(navController, animated: true) {
-            if !self.useSimplifiedLayoutV2 {
-                self.checkCameraPermission(model: model)
-            }
-            if let onPresentPixelInfo {
-                let pixelSource = self.source ?? onPresentPixelInfo.source.rawValue
-                var parameters = [
-                    PixelParameters.source: pixelSource,
-                    SyncSetupPixelInfo.Parameter.myKind: SyncSetupPixelInfo.Value.ddg,
-                    PixelParameters.uiVersion: self.syncUIVersion
-                ]
-                parameters[SyncSetupPixelInfo.Parameter.flowVersion] = onPresentPixelInfo.flowVersion
-                Pixel.fire(pixel: onPresentPixelInfo.pixel, withAdditionalParameters: parameters, includedParameters: [.appVersion])
-            }
+            guard !self.useSimplifiedLayoutV2 else { return }
+            self.checkCameraPermission(model: model)
+
+            guard let onPresentPixelInfo else { return }
+            let pixelSource = self.source ?? onPresentPixelInfo.source.rawValue
+            var parameters = [
+                PixelParameters.source: pixelSource,
+                SyncSetupPixelInfo.Parameter.myKind: SyncSetupPixelInfo.Value.ddg,
+                PixelParameters.uiVersion: self.syncUIVersion
+            ]
+            parameters[SyncSetupPixelInfo.Parameter.flowVersion] = onPresentPixelInfo.flowVersion
+            Pixel.fire(pixel: onPresentPixelInfo.pixel, withAdditionalParameters: parameters, includedParameters: [.appVersion])
         }
     }
 
@@ -743,8 +747,6 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     }
 
     private func presentPairingV2ConfirmationAlert(message: String) async -> Bool {
-        await dismissSyncCodeSheetIfPresented()
-
         return await withCheckedContinuation { continuation in
             let alert = UIAlertController(title: UserText.syncPairingV2ConfirmationTitle, message: message, preferredStyle: .alert)
             alert.addAction(UIAlertAction(title: UserText.actionCancel, style: .cancel) { _ in
@@ -766,16 +768,6 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             topController = presented
         }
         return topController
-    }
-
-    private func dismissSyncCodeSheetIfPresented() async {
-        guard let scanCodeViewModel, scanCodeViewModel.isShowingSyncCodeSheet else { return }
-        await withCheckedContinuation { continuation in
-            scanCodeViewModel.onSyncCodeSheetDismissed = {
-                continuation.resume()
-            }
-            scanCodeViewModel.isShowingSyncCodeSheet = false
-        }
     }
 
     private func pairingV2DisplayName(for peerName: String?) -> String {
@@ -888,6 +880,24 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                     PixelParameters.uiVersion: syncUIVersion
                    ],
                    includedParameters: [.appVersion])
+    }
+
+    func barcodeScreenShown() {
+        fireScanFlowScreenShownPixel(.syncSetupBarcodeScreenShown)
+    }
+
+    func scanQRCodeScreenShown() {
+        fireScanFlowScreenShownPixel(.syncSetupScanQRScreenShown)
+    }
+
+    private func fireScanFlowScreenShownPixel(_ pixel: Pixel.Event) {
+        var parameters = [
+            SyncSetupPixelInfo.Parameter.myKind: SyncSetupPixelInfo.Value.ddg,
+            SyncSetupPixelInfo.Parameter.flowVersion: syncSetupPixelFlowVersion,
+            PixelParameters.uiVersion: syncUIVersion
+        ]
+        parameters[PixelParameters.source] = source ?? scanSetupSource?.rawValue
+        pixelFiring.fire(pixel, withAdditionalParameters: parameters, includedParameters: [.appVersion], onComplete: { _ in })
     }
 
     func codeCopied(_ code: String, source: CodeCollectionSource) {

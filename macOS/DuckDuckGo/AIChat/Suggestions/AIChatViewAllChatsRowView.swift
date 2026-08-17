@@ -120,10 +120,11 @@ final class AIChatViewAllChatsRowView: NSView {
 
     init(
         themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
-        themeProvider: SuggestionRowThemeProviding? = nil)
+        themeProvider: SuggestionRowThemeProviding? = nil,
+        isBurner: Bool = false)
     {
         self.themeManager = themeManager
-        self.themeProvider = themeProvider ?? DefaultSuggestionRowThemeProvider(themeManager: themeManager)
+        self.themeProvider = themeProvider ?? DefaultSuggestionRowThemeProvider(themeManager: themeManager, isBurner: isBurner)
         super.init(frame: .zero)
         setupView()
     }

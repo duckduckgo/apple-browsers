@@ -167,12 +167,12 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
         public var errorDescription: String? {
             switch self {
-            case .startingTunnelWithoutAuthToken(let internalError):
-                return "Missing auth token at startup: \(internalError.debugDescription)"
+            case .startingTunnelWithoutAuthToken:
+                return "Missing auth token at startup"
             case .vpnAccessRevoked, .vpnAccessRevokedDetectedByMonitorCheck:
                 return "VPN disconnected due to expired subscription"
-            case .couldNotGenerateTunnelConfiguration(let internalError):
-                return "Failed to generate a tunnel configuration: \(internalError.localizedDescription)"
+            case .couldNotGenerateTunnelConfiguration:
+                return "Failed to generate a tunnel configuration"
             case .simulateTunnelFailureError:
                 return "Simulated a tunnel error as requested"
             case .settingsMissing:

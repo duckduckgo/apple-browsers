@@ -18,7 +18,7 @@
 
 import Combine
 import Foundation
-import FeatureFlags
+import FeatureFlags_macOS
 import Navigation
 import PrivacyConfig
 import UserScript
@@ -38,6 +38,7 @@ final class AutoplayPolicyTabExtension {
 
     private weak var telemetryUserScript: WebTelemetryUserScript?
     @Published private(set) var videoPlaybackDetected: Bool = false
+    @Published private(set) var videoAutoplayDetected: Bool = false
     private var cancellables = Set<AnyCancellable>()
 
     init(
@@ -74,6 +75,7 @@ extension AutoplayPolicyTabExtension: NavigationResponder {
     func decidePolicy(for navigationAction: NavigationAction, preferences: inout NavigationPreferences) async -> NavigationActionPolicy? {
         if navigationAction.isForMainFrame {
             videoPlaybackDetected = false
+            videoAutoplayDetected = false
         }
 
         let mustApplyAutoplayPolicy = mustApplyAutoplayPolicy(url: navigationAction.url)
@@ -138,20 +140,27 @@ private extension AutoplayPolicyTabExtension {
 
 extension AutoplayPolicyTabExtension: WebTelemetryUserScriptDelegate {
     @MainActor
-    func webTelemetryUserScript(_ webTelemetryUserScript: WebTelemetryUserScript,
-                                didDetectVideoPlayback payload: WebTelemetryUserScript.VideoPlaybackPayload,
-                                in webView: WKWebView?) {
-
+    func webTelemetryUserScript(_ webTelemetryUserScript: WebTelemetryUserScript, didDetectVideoPlaybackIn webView: WKWebView?) {
         guard featureFlagger.isFeatureOn(.autoplayPolicy) else {
             return
         }
 
         videoPlaybackDetected = true
     }
+
+    @MainActor
+    func webTelemetryUserScript(_ webTelemetryUserScript: WebTelemetryUserScript, didDetectVideoAutoplayIn webView: WKWebView?) {
+        guard featureFlagger.isFeatureOn(.autoplayPolicy) else {
+            return
+        }
+
+        videoAutoplayDetected = true
+    }
 }
 
 protocol AutoplayPolicyTabExtensionProtocol: AnyObject, NavigationResponder {
     var videoPlaybackDetectedPublisher: AnyPublisher<Bool, Never> { get }
+    var videoAutoplayDetectedPublisher: AnyPublisher<Bool, Never> { get }
 }
 
 extension AutoplayPolicyTabExtension: TabExtension, AutoplayPolicyTabExtensionProtocol {
@@ -159,6 +168,10 @@ extension AutoplayPolicyTabExtension: TabExtension, AutoplayPolicyTabExtensionPr
 
     var videoPlaybackDetectedPublisher: AnyPublisher<Bool, Never> {
         $videoPlaybackDetected.eraseToAnyPublisher()
+    }
+
+    var videoAutoplayDetectedPublisher: AnyPublisher<Bool, Never> {
+        $videoAutoplayDetected.eraseToAnyPublisher()
     }
 
     func getPublicProtocol() -> PublicProtocol { self }

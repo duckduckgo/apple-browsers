@@ -33,6 +33,11 @@ import Bookmarks
 
 protocol AutofillLoginListViewControllerDelegate: AnyObject {
     func autofillLoginListViewControllerDidFinish(_ controller: AutofillLoginListViewController)
+    func autofillLoginListViewControllerDidSelectAccount(_ controller: AutofillLoginListViewController)
+}
+
+extension AutofillLoginListViewControllerDelegate {
+    func autofillLoginListViewControllerDidSelectAccount(_ controller: AutofillLoginListViewController) { }
 }
 
 final class AutofillLoginListViewController: UIViewController {
@@ -888,7 +893,7 @@ final class AutofillLoginListViewController: UIViewController {
         let cell = tableView.dequeueCell(ofType: AutofillListItemTableViewCell.self, for: indexPath)
         cell.item = item
         cell.accessoryType = .disclosureIndicator
-        cell.backgroundColor = UIColor(designSystemColor: .surface)
+        cell.backgroundColor = UIColor(singleUseColor: .groupedListContentBackground)
         return cell
     }
 
@@ -905,7 +910,7 @@ final class AutofillLoginListViewController: UIViewController {
             Pixel.fire(pixel: .autofillLoginsReportConfirmationPromptDisplayed)
         })
         cell.embed(in: self, withView: contentView)
-        cell.backgroundColor = UIColor(designSystemColor: .surface)
+        cell.backgroundColor = UIColor(singleUseColor: .groupedListContentBackground)
         cell.selectionStyle = .none
         return cell
     }
@@ -924,6 +929,7 @@ extension AutofillLoginListViewController: UITableViewDelegate {
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
+        delegate?.autofillLoginListViewControllerDidSelectAccount(self)
 
         switch viewModel.sections[indexPath.section] {
         case .suggestions(_, let items):

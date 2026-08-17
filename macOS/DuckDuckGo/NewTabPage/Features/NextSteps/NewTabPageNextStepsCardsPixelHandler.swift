@@ -42,6 +42,9 @@ protocol NewTabPageNextStepsCardsPixelHandling {
     /// Fires the `GeneralPixel.defaultRequestedFromHomepageSetupView` pixel.
     func fireDefaultBrowserRequestedPixel()
 
+    /// Fires the `SubscriptionPixel.subscriptionNewTabPageNextStepsCardShown` pixel.
+    func fireSubscriptionCardShownPixel()
+
     /// Fires the `SubscriptionPixel.subscriptionNewTabPageNextStepsCardClicked` pixel.
     func fireSubscriptionCardClickedPixel()
 
@@ -50,7 +53,7 @@ protocol NewTabPageNextStepsCardsPixelHandling {
 }
 
 final class NewTabPageNextStepsCardsPixelHandler: NewTabPageNextStepsCardsPixelHandling {
-    private let pixelHandler: (PixelKitEvent, PixelKit.Frequency, Bool) -> Void
+    private let pixelHandler: (PixelKit.Event, PixelKit.Frequency, Bool) -> Void
     private let persistor: NewTabPageNextStepsCardsPersisting
     private let appearancePreferences: AppearancePreferences
     private let daysSinceInstallProvider: () -> Int?
@@ -58,7 +61,7 @@ final class NewTabPageNextStepsCardsPixelHandler: NewTabPageNextStepsCardsPixelH
     init(persistor: NewTabPageNextStepsCardsPersisting,
          appearancePreferences: AppearancePreferences,
          installDateProvider: @escaping () -> Date?,
-         pixelHandler: @escaping (PixelKitEvent, PixelKit.Frequency, Bool) -> Void = { PixelKit.fire($0, frequency: $1, includeAppVersionParameter: $2) }) {
+         pixelHandler: @escaping (PixelKit.Event, PixelKit.Frequency, Bool) -> Void = { PixelKit.fire($0, frequency: $1, includeAppVersionParameter: $2) }) {
         self.pixelHandler = pixelHandler
         self.persistor = persistor
         self.appearancePreferences = appearancePreferences
@@ -106,6 +109,10 @@ final class NewTabPageNextStepsCardsPixelHandler: NewTabPageNextStepsCardsPixelH
 
     func fireDefaultBrowserRequestedPixel() {
         pixelHandler(GeneralPixel.defaultRequestedFromHomepageSetupView, .standard, true)
+    }
+
+    func fireSubscriptionCardShownPixel() {
+        pixelHandler(SubscriptionPixel.subscriptionNewTabPageNextStepsCardShown, .dailyAndCount, true)
     }
 
     func fireSubscriptionCardClickedPixel() {

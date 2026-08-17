@@ -27,53 +27,20 @@ import Testing
 struct NavigationContextActionTests {
 
     /// Helper that mirrors the logic in PageContextTabExtension.navigationAction
-    private func navigationAction(autoCollectEnabled: Bool, contextConsumed: Bool, fromAttachablePage: Bool = true) -> String {
-        if autoCollectEnabled {
-            return "collectNewContext"
-        } else if contextConsumed || !fromAttachablePage {
-            return "sendNavigationSignal"
-        } else {
-            return "keepExistingContext"
-        }
+    private func navigationAction(autoCollectEnabled: Bool) -> String {
+        autoCollectEnabled ? "collectNewContext" : "sendNavigationSignal"
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Auto-collect ON returns collectNewContext regardless of consumed state", .timeLimit(.minutes(1)))
-    func autoCollectOnCollectsNewContext() {
-        #expect(navigationAction(autoCollectEnabled: true, contextConsumed: false) == "collectNewContext")
-        #expect(navigationAction(autoCollectEnabled: true, contextConsumed: true) == "collectNewContext")
+    @Test("Auto-send ON collects the new page's context on navigation", .timeLimit(.minutes(1)))
+    func autoSendOnCollectsNewContext() {
+        #expect(navigationAction(autoCollectEnabled: true) == "collectNewContext")
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Auto-collect OFF with consumed context returns sendNavigationSignal", .timeLimit(.minutes(1)))
-    func autoCollectOffConsumedSendsSignal() {
-        #expect(navigationAction(autoCollectEnabled: false, contextConsumed: true) == "sendNavigationSignal")
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("Auto-collect OFF without consumed context returns keepExistingContext", .timeLimit(.minutes(1)))
-    func autoCollectOffNotConsumedKeeps() {
-        #expect(navigationAction(autoCollectEnabled: false, contextConsumed: false) == "keepExistingContext")
-    }
-
-    // fromAttachablePage = false (navigating FROM NTP/settings/etc. to a URL)
-
-    @available(iOS 16, macOS 13, *)
-    @Test("NTP to URL with auto-collect OFF and no prior chat sends navigation signal", .timeLimit(.minutes(1)))
-    func ntpToURLAutoCollectOffNoChat() {
-        #expect(navigationAction(autoCollectEnabled: false, contextConsumed: false, fromAttachablePage: false) == "sendNavigationSignal")
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("NTP to URL with auto-collect ON collects new context", .timeLimit(.minutes(1)))
-    func ntpToURLAutoCollectOn() {
-        #expect(navigationAction(autoCollectEnabled: true, contextConsumed: false, fromAttachablePage: false) == "collectNewContext")
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("NTP to URL with consumed context sends navigation signal", .timeLimit(.minutes(1)))
-    func ntpToURLContextConsumed() {
-        #expect(navigationAction(autoCollectEnabled: false, contextConsumed: true, fromAttachablePage: false) == "sendNavigationSignal")
+    @Test("Auto-send OFF drops the attachment on navigation", .timeLimit(.minutes(1)))
+    func autoSendOffSendsNavigationSignal() {
+        #expect(navigationAction(autoCollectEnabled: false) == "sendNavigationSignal")
     }
 }
 

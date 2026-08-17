@@ -20,7 +20,7 @@ import AIChat
 import AppKit
 import WebKit
 import Combine
-import FeatureFlags
+import FeatureFlags_macOS
 import NewTabPage
 import PrivacyConfig
 import os.log
@@ -94,7 +94,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     private let keyValueStore: ThrowingKeyValueStoring
     private let aiChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding
     private let featureFlagger: FeatureFlagger
-    private let firePixel: (PixelKitEvent) -> Void
+    private let firePixel: (PixelKit.Event) -> Void
     private var aiChatPreferencesPersistor: AIChatPreferencesPersisting
     private let searchPreferences: SearchPreferences
     private let windowControllersManager: WindowControllersManagerProtocol?
@@ -111,7 +111,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
          aiChatPreferencesPersistor: AIChatPreferencesPersisting = AIChatPreferencesPersistor(),
          searchPreferences: SearchPreferences,
          windowControllersManager: WindowControllersManagerProtocol? = nil,
-         firePixel: @escaping (PixelKitEvent) -> Void = { PixelKit.fire($0, frequency: .dailyAndStandard) }) {
+         firePixel: @escaping (PixelKit.Event) -> Void = { PixelKit.fire($0, frequency: .dailyAndStandard) }) {
         self.keyValueStore = keyValueStore
         self.aiChatShortcutSettingProvider = aiChatShortcutSettingProvider
         self.featureFlagger = featureFlagger

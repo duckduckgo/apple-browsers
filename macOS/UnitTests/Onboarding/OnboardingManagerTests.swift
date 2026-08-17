@@ -18,7 +18,7 @@
 
 import AIChat
 import Combine
-import FeatureFlags
+import FeatureFlags_macOS
 import Onboarding
 import Persistence
 import PersistenceTestingUtils
@@ -99,7 +99,7 @@ class OnboardingManagerTests: XCTestCase {
         chromeExtensionInstaller = nil
     }
 
-    func testReturnsExpectedOnboardingConfig_WhenBothFlagsAreOff_ExcludesAddressBarMode() {
+    func testReturnsExpectedOnboardingConfig_WhenNoFlagsAreOn_ExcludesAddressBarMode() {
         // Given
         let systemSettings = SystemSettings(rows: ["dock", "import"])
         let stepDefinitions = StepDefinitions(
@@ -109,7 +109,7 @@ class OnboardingManagerTests: XCTestCase {
         let expectedConfig = OnboardingConfiguration(
             stepDefinitions: stepDefinitions,
             exclude: [OnboardingExcludedStep.duckPlayerSingle.rawValue, OnboardingExcludedStep.addressBarMode.rawValue],
-            order: "v3",
+            order: "v4",
             env: "development",
             locale: "en",
             platform: .init(name: "macos")
@@ -166,7 +166,7 @@ class OnboardingManagerTests: XCTestCase {
         let expectedConfig = OnboardingConfiguration(
             stepDefinitions: stepDefinitions,
             exclude: [OnboardingExcludedStep.duckPlayerSingle.rawValue, OnboardingExcludedStep.addressBarMode.rawValue],
-            order: "v3",
+            order: "v4",
             env: "development",
             locale: "en",
             platform: .init(name: "macos")
@@ -174,40 +174,6 @@ class OnboardingManagerTests: XCTestCase {
 
         // Then
         XCTAssertEqual(appStoreManager.configuration, expectedConfig)
-    }
-
-    func testReturnsExpectedOnboardingConfig_WhenOmnibarOnboardingIsOff_ExcludesAddressBarMode() {
-        // Given
-        let featureFlagger = MockFeatureFlagger()
-        featureFlagger.enabledFeatureFlags = []
-        let managerWithFlagOn = OnboardingActionsManager(
-            navigationDelegate: navigationDelegate,
-            dockCustomization: dockCustomization,
-            defaultBrowserProvider: defaultBrowserProvider,
-            appearancePreferences: appearancePreferences,
-            startupPreferences: startupPreferences,
-            dataImportProvider: importProvider,
-            featureFlagger: featureFlagger,
-            onboardingSharedPixelHandler: onboardingSharedPixelHandler,
-            chromeExtensionInstaller: chromeExtensionInstaller
-        )
-
-        let systemSettings = SystemSettings(rows: ["dock", "import"])
-        let stepDefinitions = StepDefinitions(
-            systemSettings: systemSettings,
-            getStarted: GetStarted(options: [])
-        )
-        let expectedConfig = OnboardingConfiguration(
-            stepDefinitions: stepDefinitions,
-            exclude: [OnboardingExcludedStep.duckPlayerSingle.rawValue, OnboardingExcludedStep.addressBarMode.rawValue],
-            order: "v3",
-            env: "development",
-            locale: "en",
-            platform: .init(name: "macos")
-        )
-
-        // Then
-        XCTAssertEqual(managerWithFlagOn.configuration, expectedConfig)
     }
 
     func testReturnsExpectedOnboardingConfig_WhenOmnibarOnboardingIsOn_DoesNotExcludeAddressBarMode() {
@@ -234,7 +200,7 @@ class OnboardingManagerTests: XCTestCase {
         let expectedConfig = OnboardingConfiguration(
             stepDefinitions: stepDefinitions,
             exclude: [OnboardingExcludedStep.duckPlayerSingle.rawValue],
-            order: "v3",
+            order: "v4",
             env: "development",
             locale: "en",
             platform: .init(name: "macos")
@@ -488,20 +454,6 @@ class OnboardingManagerTests: XCTestCase {
         XCTAssertTrue(featureFlagger.didCallResolveCohort)
     }
 
-    func testWhenNotV4ThenDoesNotResolveCohortOrIncludeChromeExtensionInstallOption() {
-        // Given
-        let featureFlagger = makeFeatureFlagger(cohort: .treatment, isOnboardingRebrandingEnabled: false)
-        chromeExtensionInstaller.canInstallDDGExtension = true
-        let managerWithTreatment = makeExperimentManager(featureFlagger: featureFlagger)
-
-        // When
-        managerWithTreatment.onboardingStarted()
-
-        // Then
-        XCTAssertTrue(managerWithTreatment.configuration.stepDefinitions.getStarted.options.isEmpty)
-        XCTAssertFalse(featureFlagger.didCallResolveCohort)
-    }
-
     func testWhenChromeCannotBeInstalledThenDoesNotResolveCohortOrIncludeOption() {
         // Given
         let featureFlagger = makeFeatureFlagger(cohort: .treatment)
@@ -551,7 +503,7 @@ class OnboardingManagerTests: XCTestCase {
 
     func testSetDefaultCompletedExperimentMetricFiredWhenEnrolled() {
         // Given
-        var firedEvents: [PixelKitEvent] = []
+        var firedEvents: [PixelKit.Event] = []
         let featureFlagger = makeFeatureFlagger(cohort: .control)
         let subfeatureID = MacOSBrowserConfigSubfeature.onboardingChromeExtension.rawValue
         featureFlagger.allActiveExperiments = [
@@ -578,7 +530,7 @@ class OnboardingManagerTests: XCTestCase {
 
     func testSetDefaultCompletedExperimentMetricNotFiredWhenNotEnrolled() {
         // Given
-        var firedEvents: [PixelKitEvent] = []
+        var firedEvents: [PixelKit.Event] = []
         PixelKit.configureExperimentKit(
             featureFlagger: MockFeatureFlagger(),
             eventTracker: ExperimentEventTracker(store: MockExperimentActionPixelStore()),
@@ -851,14 +803,7 @@ private extension OnboardingManagerTests {
         )
     }
 
-    func makeFeatureFlagger(
-        cohort: FeatureFlag.OnboardingChromeExtensionCohort?,
-        isOnboardingRebrandingEnabled: Bool = true
-    ) -> MockFeatureFlagger {
-        let featureFlagger = MockFeatureFlagger(resolveCohortStub: cohort)
-        if isOnboardingRebrandingEnabled {
-            featureFlagger.enabledFeatureFlags = [.onboardingRebranding]
-        }
-        return featureFlagger
+    func makeFeatureFlagger(cohort: FeatureFlag.OnboardingChromeExtensionCohort?) -> MockFeatureFlagger {
+        MockFeatureFlagger(resolveCohortStub: cohort)
     }
 }

@@ -190,6 +190,12 @@
 /* Prompt title after enabling sync */
 "sync.simplified.another.device.title" = "Verileriniz başka bir cihazla senkronize edilsin mi?";
 
+/* Body on the sync-setup prompt explaining the sync-another-device option */
+"sync.simplified.another.device.v2.body" = "Cihazlarınızı senkronize etmenize yardımcı olacağız.";
+
+/* Title on the sync-setup prompt asking whether to sync with another device or just this device */
+"sync.simplified.another.device.v2.title" = "Bu cihazı yakındaki bir bilgisayarla senkronize edin.";
+
 /* Caption displayed on 'auto-download bookmarks icons' toggle. */
 "sync.simplified.bookmarks.section.fetch-favicons.caption" = "Yer imlerine eklediğiniz web sitelerinden simgeler yükler. İndirilen simgeler ağınıza açık olur.";
 
@@ -202,14 +208,56 @@
 /* Text shown next to toggle while sync is being set up */
 "sync.simplified.connecting" = "Bağlanıyor...";
 
+/* Title shown on the connecting screen while Sync & Backup is being set up on this device */
+"sync.simplified.connecting.v2.title" = "Sync & Backup tüm cihazlarınızda uçtan uca şifrelenmiştir.";
+
 /* Sync settings 'Copy Recovery Code' button */
 "sync.simplified.copy.recovery.code.button" = "Kurtarma Kodunu Kopyala";
 
 /* Sync settings action button title to turn off sync and delete server data */
 "sync.simplified.delete.sync.data.button" = "Senkronizasyonu Kapatın ve Sunucu Verilerini Silin";
 
+/* Description on the device-added success screen explaining what the recovery code is for */
+"sync.simplified.device.added.v2.description" = "Cihazlarınıza erişiminizi kaybederseniz verilerinizi kurtarmak için bu kodu kullanın. Güvenli bir yerde saklayın.";
+
+/* Fallback subject used in the device-added success title when the current device's name is unavailable. Substituted as %@ in simplifiedDeviceAddedV2Title. */
+"sync.simplified.device.added.v2.fallback.device.name" = "Bu Cihaz";
+
+/* Title on the success screen shown after a device joins Sync & Backup. %@ is the name of the current device that was just added. */
+"sync.simplified.device.added.v2.title" = "%@, Sync & Backup'a eklendi.";
+
 /* Sync settings 'Download Recovery Code' button */
 "sync.simplified.download.recovery.code.button" = "Kurtarma Kodunu İndir";
+
+/* Section header above the get-desktop-browser option in sync setup */
+"sync.simplified.download.section.header" = "İndir";
+
+/* Button to download the recovery code on the recover-your-data screen */
+"sync.simplified.download.your.recovery.code.button" = "Kurtarma Kodunuzu İndirin";
+
+/* Description shown when Sync & Backup is enabled (when AI chat sync is available) */
+"sync.simplified.enabled.header.message" = "Yer işaretleriniz, otomatik doldurma verileriniz ve Duck.ai sohbetleriniz uçtan uca şifreleme ile senkronize ediliyor ve yedekleniyor.";
+
+/* Description shown when Sync & Backup is enabled */
+"sync.simplified.enabled.header.message.basic" = "Yer işaretleriniz ve otomatik doldurma verileriniz uçtan uca şifreleme ile senkronize ediliyor.";
+
+/* Sync & Backup screen title shown when Sync is enabled */
+"sync.simplified.enabled.header.title" = "DuckDuckGo senkronize durumda";
+
+/* Label above the example sync code placeholder on the enter-code tab */
+"sync.simplified.enter.code.example.label" = "Örnek Kod:";
+
+/* First part of the enter-code instructions, followed by a DuckDuckGo app chip */
+"sync.simplified.enter.code.open" = "Diğer cihazınızdaki";
+
+/* Button to paste the sync code on the enter-code tab */
+"sync.simplified.enter.code.paste.button" = "Senkronizasyon Kodunu Yapıştır";
+
+/* Second part of the enter-code instructions. **...** marks the parts shown in the primary text color. */
+"sync.simplified.enter.code.steps" = "Şu sırayı takip edin: **Sync & Backup** › **Başka Bir Cihazla Senkronize Et** › **Metin Kodunu Kopyala**.";
+
+/* Title on the enter-code tab of the V2 scan screen */
+"sync.simplified.enter.code.title" = "Senkronizasyon kodunu girin.";
 
 /* Button subtitle to get the DuckDuckGo desktop browser */
 "sync.simplified.get.desktop.browser.subtitle" = "Mac ve Windows için DuckDuckGo";
@@ -217,11 +265,53 @@
 /* Button title to get the DuckDuckGo desktop browser. */
 "sync.simplified.get.desktop.browser.title" = "Masaüstü Tarayıcısını Edinin";
 
+/* Row label to get the DuckDuckGo desktop browser */
+"sync.simplified.get.our.desktop.browser.title" = "Masaüstü Tarayıcımızı Edinin";
+
+/* Sync setup row label to recover synced data using an existing recovery code */
+"sync.simplified.have.recovery.code.button" = "Kurtarma Kodum Var";
+
 /* Description of the Sync & Backup feature (when AI chat sync is available) */
 "sync.simplified.header.message" = "Yer işaretlerinizi, otomatik doldurma verilerinizi ve Duck.ai sohbetlerinizi kaydedin ve uçtan uca şifreleme ile cihazlarınız arasında senkronize edin.";
 
 /* Description of the Sync & Backup feature */
 "sync.simplified.header.message.basic" = "Yer işaretlerinizi ve otomatik doldurma verilerinizi kaydedin ve cihazlarınız arasında uçtan uca şifreleme ile senkronize edin.";
+
+/* Description of the Sync & Backup feature */
+"sync.simplified.header.message.basic.v2" = "Otomatik doldurma verilerinizi ve yer işaretlerinizi DuckDuckGo uygulamalarınız arasında uçtan uca şifreli olarak senkronize edin.";
+
+/* Description of the Sync & Backup feature (when AI chat sync is available) */
+"sync.simplified.header.message.v2" = "Otomatik doldurma verilerinizi, yer işaretlerinizi ve Duck.ai sohbetlerinizi DuckDuckGo uygulamalarınız arasında uçtan uca şifreli olarak senkronize edin ve yedekleyin.";
+
+/* Sync & Backup screen title */
+"sync.simplified.header.title" = "DuckDuckGo'yu senkronize tutun";
+
+/* Footer caption shown under the Remove Device button on the manage device screen */
+"sync.simplified.manage.device.remove.footer" = "Bu cihazı kaldırırsanız, artık senkronize edilen verilerinize erişemeyecektir.";
+
+/* Status label shown under a device name on the manage device screen when the device is synced */
+"sync.simplified.manage.device.status.synced" = "Senkronize edildi";
+
+/* Footer caption shown under the Sync & Backup This Device toggle on the manage this device screen */
+"sync.simplified.manage.device.turn.off.footer" = "Bu özellik kapatılırsa, bu cihaz artık senkronize edilen verilerinize erişemeyecektir.";
+
+/* My Devices section header shown when Sync & Backup is enabled */
+"sync.simplified.my.devices.section.header" = "Cihazlarım";
+
+/* Section header above the recovery-code option in sync setup */
+"sync.simplified.recover.synced.data.section.header" = "Senkronize Edilen Verileri Kurtar";
+
+/* Title shown on the connecting screen while a device's synced data is being recovered */
+"sync.simplified.recovering.data.v2.title" = "Veriler kurtarılıyor";
+
+/* Label above the recovery code on the recover-your-data screen */
+"sync.simplified.recovery.code.label" = "Kurtarma Kodu";
+
+/* Description on the success screen shown after synced data has been recovered on this device */
+"sync.simplified.recovery.complete.v2.description" = "Tüm cihazlarda uçtan uca şifreleme.";
+
+/* Title on the success screen shown after synced data has been recovered on this device */
+"sync.simplified.recovery.complete.v2.title" = "Sync & Backup etkin";
 
 /* Sync settings data recovery section footer. %@ is replaced with the URL. */
 "sync.simplified.recovery.section.footer" = "Bu cihaza erişiminizi kaybettiğinizde verilerinizi kurtarmak için bu kodu kullanın. Sync & Backup verileri 18 ay kullanılmadıktan sonra kurtarılamaz. [Daha Fazla Bilgi](%@)";
@@ -274,8 +364,56 @@
 /* Instructions on sync QR code display screen (will be shown above the DuckDuckGo app icon and name) */
 "sync.simplified.scan-or-view-code.view.instructions" = "Bu kodu tarayın veya diğer cihazınıza yapıştırın";
 
+/* Close button in the V2 scan screen navigation bar */
+"sync.simplified.scan.v2.close.button" = "Kapat";
+
+/* Chip label on the scan-QR tab referring to the DuckDuckGo desktop app */
+"sync.simplified.scan.v2.qr.app.name" = "Masaüstü için DuckDuckGo";
+
+/* Heading overlaid on the camera on the scan-QR tab of the V2 scan screen */
+"sync.simplified.scan.v2.qr.heading" = "Senkronize etmek için QR kodunu tara.";
+
+/* First part of the scan-QR instructions, followed by a DuckDuckGo app chip */
+"sync.simplified.scan.v2.qr.open" = "Aç";
+
+/* Button on the scan-QR intro animation that dismisses the animation and reveals the camera */
+"sync.simplified.scan.v2.qr.ready.button" = "Taramaya Hazırım";
+
+/* Second part of the scan-QR instructions. **...** marks the parts shown in the primary text color. */
+"sync.simplified.scan.v2.qr.steps" = "ve **Sync & Backup** › **Başka Bir Cihazla Senkronize Et** bölümüne gidin";
+
+/* V2 segmented control tab title for entering a code */
+"sync.simplified.scan.v2.tab.enter.code" = "Kodu gir";
+
+/* V2 segmented control tab title for scanning a QR code */
+"sync.simplified.scan.v2.tab.scan.qr" = "QR tara";
+
+/* Status label shown next to the title when Sync & Backup is disabled */
+"sync.simplified.status.off" = "Kapalı";
+
+/* Status label shown next to the title when Sync & Backup is enabled */
+"sync.simplified.status.on" = "Açık";
+
+/* Button to copy the text sync code on the sync-code sheet */
+"sync.simplified.sync.code.copy.button" = "Metin Kodunu Kopyala";
+
+/* First part of the sync-code sheet instructions, followed by a DuckDuckGo app chip */
+"sync.simplified.sync.code.sheet.open" = "Başka bir cihazda açın";
+
+/* Second part of the sync-code sheet instructions. **...** marks the parts shown in the primary text color. */
+"sync.simplified.sync.code.sheet.scan" = "Şu sırayı takip edin: **Sync & Backup** › **Başka Bir Cihazla Senkronize Et** ve bu kodu tarayın:";
+
+/* Navigation title of the sheet that shows this device's sync QR code */
+"sync.simplified.sync.code.sheet.title" = "Kodu Tara veya Kopyala";
+
+/* Button on the sync-setup prompt to enable Sync & Backup on the current device only, without pairing another device */
+"sync.simplified.this.device.only" = "Sadece Bu Cihazı Senkronize Et";
+
 /* Sync & Backup enabled / disabled toggle title */
 "sync.simplified.toggle.title" = "Senkronizasyon ve Yedekleme";
+
+/* Sync & Backup enabled / disabled toggle title, referring to the current device */
+"sync.simplified.toggle.title.this.device" = "Bu Cihazı Senkronize Et";
 
 /* Use Recovery Code sync setup button label */
 "sync.simplified.use.recovery.code.button" = "Kurtarma Kodu Kullanın";

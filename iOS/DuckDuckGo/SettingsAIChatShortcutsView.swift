@@ -22,6 +22,7 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import Core
 import PrivacyConfig
+import FeatureFlags_iOS
 
 /// Visibility logic for the Duck.ai chrome shortcut surfaces.
 ///
@@ -155,7 +156,7 @@ struct SettingsAIChatShortcutsView: View {
                 } header: {
                     Text(UserText.duckAIShortcutsSectionHeader)
                 }
-                .listRowBackground(Color(designSystemColor: .surface))
+                .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
             }
         }
     }

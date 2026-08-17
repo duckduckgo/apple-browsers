@@ -19,7 +19,7 @@
 import XCTest
 import Combine
 import AIChat
-import FeatureFlags
+import FeatureFlags_macOS
 import PrivacyConfig
 import SubscriptionTestingUtilities
 @testable import DuckDuckGo_Privacy_Browser
@@ -92,6 +92,25 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         mockBadgeImpressionPersistor = nil
         tabCollectionViewModel = nil
         super.tearDown()
+    }
+
+    // Builds a controller with the shared mocks and a chosen burner mode.
+    private func makeController(isBurner: Bool) -> AIChatOmnibarController {
+        AIChatOmnibarController(
+            aiChatTabOpener: mockTabOpener,
+            surface: .addressBar,
+            draftSource: TabPromptDraftSource(tabCollectionViewModel: tabCollectionViewModel),
+            origin: WindowPromptOrigin(tabCollectionViewModel: tabCollectionViewModel),
+            pixelHandler: AddressBarPromptPixelHandler(),
+            featureFlagger: featureFlagger,
+            searchPreferencesPersistor: searchPreferencesPersistor,
+            isBurner: isBurner,
+            preferences: mockPreferences,
+            modelsService: mockModelsService,
+            subscriptionManager: mockSubscriptionManager,
+            subscriptionUpsellPresenter: mockSubscriptionUpsellPresenter,
+            badgeImpressionPersistor: mockBadgeImpressionPersistor
+        )
     }
 
     // MARK: - URL Navigation Tests
@@ -313,6 +332,26 @@ final class AIChatOmnibarControllerTests: XCTestCase {
 
         // Then
         XCTAssertFalse(controller.isSuggestionsEnabled)
+    }
+
+    func testWhenBurnerWindow_ThenSuggestionsDisabled_EvenWithFeatureFlagAndAutocompleteEnabled() {
+        // Given
+        featureFlagger.featuresStub[FeatureFlag.aiChatSuggestions.rawValue] = true
+        searchPreferencesPersistor.showAutocompleteSuggestions = true
+        let burnerController = makeController(isBurner: true)
+
+        // Then
+        XCTAssertFalse(burnerController.isSuggestionsEnabled)
+    }
+
+    func testWhenNonBurnerWindow_ThenSuggestionsEnabled_WithFeatureFlagAndAutocompleteEnabled() {
+        // Given
+        featureFlagger.featuresStub[FeatureFlag.aiChatSuggestions.rawValue] = true
+        searchPreferencesPersistor.showAutocompleteSuggestions = true
+        let regularController = makeController(isBurner: false)
+
+        // Then
+        XCTAssertTrue(regularController.isSuggestionsEnabled)
     }
 
     // MARK: - Model Selection Tests
@@ -631,6 +670,89 @@ final class AIChatOmnibarControllerTests: XCTestCase {
                        "Attaching beyond the display cap is a no-op")
     }
 
+    // MARK: - Attached tabs navigating
+
+    /// Selected tab A holds the prompt; tab B is attached to it and then navigates.
+    /// Pruning closed tabs is deferred one main-queue turn, so a move between the pinned and
+    /// unpinned collections isn't read mid-transaction.
+    private func waitForPendingMainQueueWork() {
+        let pending = expectation(description: "pending main queue work")
+        DispatchQueue.main.async { pending.fulfill() }
+        wait(for: [pending], timeout: 1)
+    }
+
+    /// Selected tab A holds the prompt; tab B is attached to it and then navigates.
+    private func makeControllerWithAttachedOtherTab() -> (AIChatOmnibarController, Tab) {
+        let promptTab = Tab(content: .url(URL(string: "https://prompt.example")!, credential: nil, source: .ui))
+        let attachedTab = Tab(content: .url(URL(string: "https://example.com")!, credential: nil, source: .ui))
+        _ = tabCollectionViewModel.append(tab: attachedTab, selected: false)
+        _ = tabCollectionViewModel.append(tab: promptTab, selected: true)
+
+        let controller = AIChatOmnibarController(
+            aiChatTabOpener: mockTabOpener,
+            surface: .addressBar,
+            draftSource: TabPromptDraftSource(tabCollectionViewModel: tabCollectionViewModel),
+            origin: WindowPromptOrigin(tabCollectionViewModel: tabCollectionViewModel),
+            pixelHandler: AddressBarPromptPixelHandler(),
+            featureFlagger: featureFlagger,
+            searchPreferencesPersistor: searchPreferencesPersistor,
+            preferences: mockPreferences,
+            modelsService: mockModelsService,
+            subscriptionManager: mockSubscriptionManager,
+            subscriptionUpsellPresenter: mockSubscriptionUpsellPresenter,
+            badgeImpressionPersistor: mockBadgeImpressionPersistor
+        )
+        controller.toggleTabAttachment(AIChatTabAttachment(id: attachedTab.uuid,
+                                                           title: "Example",
+                                                           url: URL(string: "https://example.com")!,
+                                                           favicon: nil))
+        XCTAssertEqual(controller.activeTabAttachments.map(\.id), [attachedTab.uuid])
+        return (controller, attachedTab)
+    }
+
+    func testWhenAttachedTabNavigates_ThenTheAttachmentFollowsIt() {
+        let (controller, attachedTab) = makeControllerWithAttachedOtherTab()
+
+        _ = attachedTab.setContent(.url(URL(string: "https://apple.com")!, credential: nil, source: .ui))
+
+        XCTAssertEqual(controller.activeTabAttachments.map(\.url.absoluteString), ["https://apple.com"],
+                       "An omnibar prompt is about a new chat, so the card follows the tab it names")
+    }
+
+    /// Switching to the attached tab used to cancel its observer, losing that tab's navigation.
+    func testWhenAttachedTabNavigatesWhileItIsSelected_ThenThePromptTabsAttachmentUpdatesImmediately() {
+        let (controller, attachedTab) = makeControllerWithAttachedOtherTab()
+        let promptTabState = tabCollectionViewModel.selectedTabViewModel?.addressBarSharedTextState
+
+        // User switches to the attached tab and navigates it there.
+        tabCollectionViewModel.select(tab: attachedTab)
+        _ = attachedTab.setContent(.url(URL(string: "https://apple.com")!, credential: nil, source: .ui))
+
+        XCTAssertEqual(promptTabState?.aiChatTabAttachments.map(\.url.absoluteString), ["https://apple.com"],
+                       "The prompt tab's attachment must refresh as the navigation happens, not on the next visit")
+        _ = controller
+    }
+
+    func testWhenAttachedTabIsClosed_ThenTheAttachmentIsDropped() throws {
+        let (controller, attachedTab) = makeControllerWithAttachedOtherTab()
+        let attachedIndex = tabCollectionViewModel.indexInAllTabs(where: { $0.uuid == attachedTab.uuid })
+
+        tabCollectionViewModel.remove(at: try XCTUnwrap(attachedIndex))
+        waitForPendingMainQueueWork()
+
+        XCTAssertTrue(controller.activeTabAttachments.isEmpty, "A closed tab has no page content left to send")
+    }
+
+    func testWhenAttachedTabIsDetached_ThenItsNavigationNoLongerTouchesTheAttachments() {
+        let (controller, attachedTab) = makeControllerWithAttachedOtherTab()
+        controller.removeTabAttachmentFromActiveTab(id: attachedTab.uuid)
+        controller.toggleTabAttachment(makeTabAttachment(id: "other-tab"))
+
+        _ = attachedTab.setContent(.url(URL(string: "https://apple.com")!, credential: nil, source: .ui))
+
+        XCTAssertEqual(controller.activeTabAttachments.map(\.id), ["other-tab"])
+    }
+
     func testTabAttachmentFullAndExcessPredicates() {
         XCTAssertFalse(controller.isActiveTabAttachmentsFull)
         XCTAssertFalse(controller.hasExcessTabAttachments)
@@ -817,6 +939,94 @@ final class AIChatOmnibarControllerTests: XCTestCase {
                       "File attachments are cleared from shared state after a successful submit")
     }
 
+    // MARK: - Submit-time file re-validation
+
+    func testWhenSubmitWithOversizedFile_ThenSubmitIsBlockedAndErrorSurfaces() async {
+        await loadPDFModel(limits: makeAttachmentLimits(maxFileSizeMB: 1))
+        var reportedError: String?
+        controller.onAttachmentValidationFailed = { reportedError = $0 }
+
+        controller.addFileAttachmentToActiveTab(makePDFAttachment(byteCount: 1_048_577, pageCount: 1))
+        controller.updateText("summarise this PDF")
+
+        controller.submit()
+        await Task.yield()
+
+        XCTAssertFalse(mockTabOpener.openAIChatTabCalled, "An over-size file must not reach the backend")
+        XCTAssertNil(AIChatPromptHandler.shared.consumeData(), "No prompt is posted when submit is blocked")
+        XCTAssertEqual(reportedError, UserText.aiChatAttachmentFileTooLarge(maxFileSizeMB: 1))
+        XCTAssertEqual(controller.activeFileAttachments.count, 1, "A blocked submit leaves the attachment in place")
+    }
+
+    func testWhenSubmitWithFilesOverTotalSizeLimit_ThenSubmitIsBlocked() async {
+        // Each file is inside the per-file limit; only the cumulative pass catches the total.
+        await loadPDFModel(limits: makeAttachmentLimits(maxFileSizeMB: 1, maxTotalFileSizeBytes: 1_500_000))
+        var reportedError: String?
+        controller.onAttachmentValidationFailed = { reportedError = $0 }
+
+        controller.addFileAttachmentToActiveTab(makePDFAttachment(byteCount: 800_000, pageCount: 1))
+        controller.addFileAttachmentToActiveTab(makePDFAttachment(byteCount: 800_000, pageCount: 1))
+        controller.updateText("compare these")
+
+        controller.submit()
+        await Task.yield()
+
+        XCTAssertFalse(mockTabOpener.openAIChatTabCalled)
+        // The copy rounds the byte budget up to whole MB (1_500_000 bytes -> "2 MB").
+        XCTAssertEqual(reportedError, UserText.aiChatAttachmentFilesExceedTotalSizeLimit(maxTotalFileSizeMB: 2))
+    }
+
+    func testWhenSubmitWithFileOverPageLimit_ThenSubmitIsBlocked() async {
+        await loadPDFModel(limits: makeAttachmentLimits(maxPagesPerFile: 15))
+        var reportedError: String?
+        controller.onAttachmentValidationFailed = { reportedError = $0 }
+
+        controller.addFileAttachmentToActiveTab(makePDFAttachment(byteCount: 1_000, pageCount: 16))
+        controller.updateText("summarise")
+
+        controller.submit()
+        await Task.yield()
+
+        XCTAssertFalse(mockTabOpener.openAIChatTabCalled)
+        XCTAssertEqual(reportedError, UserText.aiChatAttachmentFileTooManyPages(maxPagesPerFile: 15))
+    }
+
+    func testWhenSubmitWithFileWithinLimits_ThenSubmitProceeds() async {
+        await loadPDFModel(limits: makeAttachmentLimits())
+        var reportedError: String?
+        controller.onAttachmentValidationFailed = { reportedError = $0 }
+
+        controller.addFileAttachmentToActiveTab(makePDFAttachment(byteCount: 100_000, pageCount: 5))
+        controller.updateText("summarise")
+
+        controller.submit()
+        await Task.yield()
+
+        XCTAssertTrue(mockTabOpener.openAIChatTabCalled, "A valid file still submits")
+        XCTAssertNil(reportedError)
+        guard case let .query(query)? = AIChatPromptHandler.shared.consumeData()?.tool else {
+            XCTFail("Expected a `.query` tool in the submitted prompt")
+            return
+        }
+        XCTAssertEqual(query.files?.count, 1)
+    }
+
+    func testWhenLimitsAreUnavailable_ThenOversizedFileStillSubmits() async {
+        // Deliberate: blocking here would make PDFs unsendable whenever the models endpoint is unreachable.
+        await loadPDFModel(limits: nil)
+        var reportedError: String?
+        controller.onAttachmentValidationFailed = { reportedError = $0 }
+
+        controller.addFileAttachmentToActiveTab(makePDFAttachment(byteCount: 30_000_000, pageCount: nil))
+        controller.updateText("summarise")
+
+        controller.submit()
+        await Task.yield()
+
+        XCTAssertTrue(mockTabOpener.openAIChatTabCalled)
+        XCTAssertNil(reportedError)
+    }
+
     func testWhenSubmitWithoutTabAttachments_ThenPromptOmitsPageContext() async {
         // Given — only text, no attachments
         controller.updateText("just text")
@@ -834,8 +1044,11 @@ final class AIChatOmnibarControllerTests: XCTestCase {
     }
 
     func testWhenTabSwitchesToTabWithSavedTabAttachments_ThenPanelAttachmentsCallbackFires() {
-        // Given — tab 1 has a saved tab attachment; register the unified-panel callback.
-        let attachment = makeTabAttachment(id: "tab-A")
+        // Given — tab 1 has a saved attachment. It has to name an open tab sitting on the page the
+        // attachment records: a closed tab is pruned, and one on another page is a navigation.
+        let attachedTab = Tab(content: .url(URL(string: "https://example.com")!, credential: nil, source: .ui))
+        _ = tabCollectionViewModel.append(tab: attachedTab, selected: false)
+        let attachment = makeTabAttachment(id: attachedTab.uuid)
         tabCollectionViewModel.selectedTabViewModel?.addressBarSharedTextState.setAIChatTabAttachments([attachment])
 
         var receivedLists: [[AIChatPanelAttachment]] = []
@@ -1858,12 +2071,12 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         setUserTier(.plus)
 
         // When
-        controller.presentSubscriptionUpsell(requiredTier: .pro, origin: .addressBarReasoningPicker)
+        controller.presentSubscriptionUpsell(requiredTier: .pro, origin: .addressBarReasoningDropdown)
 
         // Then
         XCTAssertTrue(mockSubscriptionUpsellPresenter.routeGatedSelectionCalled)
         XCTAssertEqual(mockSubscriptionUpsellPresenter.lastRequiredTier, .pro)
-        XCTAssertEqual(mockSubscriptionUpsellPresenter.lastOrigin, .addressBarReasoningPicker)
+        XCTAssertEqual(mockSubscriptionUpsellPresenter.lastOrigin, .addressBarReasoningDropdown)
     }
 
     func testWhenRequiredTierForGatedModel_ThenReturnsModelsLowestPublicAccessTier() async {
@@ -2286,6 +2499,46 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         )
     }
 
+    /// Size is declared, not allocated, so a "30MB file" is free. `pageCount: nil` = unreadable PDF.
+    private func makePDFAttachment(byteCount: Int, pageCount: Int?) -> AIChatFileAttachment {
+        AIChatFileAttachment(
+            data: Data("%PDF-1.4 mock".utf8),
+            fileName: "spec.pdf",
+            mimeType: "application/pdf",
+            fileSizeBytes: byteCount,
+            pageCount: pageCount
+        )
+    }
+
+    /// Same limits on every tier, so a test doesn't have to pin the resolved tier to assert on them.
+    private func makeAttachmentLimits(
+        maxPerConversation: Int = 5,
+        maxFileSizeMB: Int = 5,
+        maxTotalFileSizeBytes: Int = 20_000_000,
+        maxPagesPerFile: Int = 15
+    ) -> AIChatAttachmentLimits {
+        let tier = AIChatAttachmentTierLimits(
+            files: AIChatAttachmentFileLimits(
+                maxPerConversation: maxPerConversation,
+                maxFileSizeMB: maxFileSizeMB,
+                maxTotalFileSizeBytes: maxTotalFileSizeBytes,
+                maxPagesPerFile: maxPagesPerFile
+            ),
+            images: AIChatAttachmentImageLimits(maxPerTurn: 3, maxPerConversation: 3, maxInputCharsWithAttachments: 10_000)
+        )
+        return AIChatAttachmentLimits(free: tier, plus: tier, pro: tier)
+    }
+
+    /// Loads a single PDF-capable model plus `limits`, as a real models fetch would.
+    private func loadPDFModel(limits: AIChatAttachmentLimits?) async {
+        mockModelsService.attachmentLimitsToReturn = limits
+        mockPreferences.selectedModelId = "pdf-model"
+        await loadModels(
+            [makeRemoteModel(id: "pdf-model", supportedFileTypes: ["application/pdf"], entityHasAccess: true)],
+            tier: nil
+        )
+    }
+
     /// Loads `models` and resolves the user's tier + trial eligibility, mirroring a real fetch.
     private func loadModels(_ models: [AIChatRemoteModel], tier: TierName?, trialEligible: Bool = false) async {
         setUserTier(tier)
@@ -2475,13 +2728,14 @@ private class MockAIChatPreferencesPersisting: AIChatPreferencesPersisting {
 @MainActor
 private class MockAIChatModelsProviding: AIChatModelsProviding {
     var modelsToReturn: [AIChatRemoteModel] = []
+    var attachmentLimitsToReturn: AIChatAttachmentLimits?
     var errorToThrow: Error?
 
     func fetchModels() async throws -> AIChatModelsResponse {
         if let error = errorToThrow {
             throw error
         }
-        return AIChatModelsResponse(models: modelsToReturn)
+        return AIChatModelsResponse(models: modelsToReturn, attachmentLimits: attachmentLimitsToReturn)
     }
 }
 

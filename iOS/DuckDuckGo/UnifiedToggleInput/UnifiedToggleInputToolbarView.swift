@@ -50,6 +50,7 @@ final class UnifiedToggleInputToolbarView: UIView {
     var onStopGeneratingTapped: (() -> Void)?
     var onReturnKeyTapped: (() -> Void)?
     var onModelPickerShown: (() -> Void)?
+    var onUpdatedModelPickerTapped: (() -> Void)?
     var onReasoningPickerShown: (() -> Void)?
 
     // MARK: - State
@@ -106,6 +107,10 @@ final class UnifiedToggleInputToolbarView: UIView {
         didSet { updateModelChipConfiguration() }
     }
 
+    var usesUpdatedModelPickerPresentation = false {
+        didSet { updateModelPickerPrimaryAction() }
+    }
+
     var selectedTool: AIChatRAGTool? {
         didSet { updateChipVisibility() }
     }
@@ -114,12 +119,18 @@ final class UnifiedToggleInputToolbarView: UIView {
         didSet { updateReasoningButtonAppearance() }
     }
 
+    private var storedModelPickerMenu: UIMenu?
+
     var modelPickerMenu: UIMenu? {
-        get { modelChipButton.menu }
+        get { storedModelPickerMenu }
         set {
-            modelChipButton.menu = newValue
-            modelChipButton.showsMenuAsPrimaryAction = (newValue != nil)
+            storedModelPickerMenu = newValue
+            updateModelPickerPrimaryAction()
         }
+    }
+
+    var modelPickerSourceView: UIView {
+        modelChipButton
     }
 
     /// Programmatically opens the model chip's pull-down menu. Returns `true` when the OS
@@ -128,6 +139,12 @@ final class UnifiedToggleInputToolbarView: UIView {
     @discardableResult
     func presentModelPickerMenu() -> Bool {
         guard modelPickerMenu != nil else { return false }
+
+        if usesUpdatedModelPickerPresentation {
+            guard let onUpdatedModelPickerTapped else { return false }
+            onUpdatedModelPickerTapped()
+            return true
+        }
 
         if #available(iOS 17.4, *) {
             modelChipButton.performPrimaryAction()
@@ -194,6 +211,15 @@ final class UnifiedToggleInputToolbarView: UIView {
     var isReturnKeyHidden: Bool {
         get { returnKeyButton.isHidden }
         set { returnKeyButton.isHidden = newValue }
+    }
+
+    var isEditing: Bool = false {
+        didSet {
+            guard oldValue != isEditing else { return }
+            leftControlsGroup.isHidden = isEditing
+            secondaryTrailingGroup.isHidden = isEditing
+            updateSubmitButtonAppearance()
+        }
     }
 
     private var modelChipExplicitlyHidden = false
@@ -386,6 +412,24 @@ final class UnifiedToggleInputToolbarView: UIView {
         return button
     }()
 
+    private lazy var leftControlsGroup: UIStackView = {
+        let stack = UIStackView(arrangedSubviews: [imageButton, toolsButton, selectedToolChipView])
+        stack.axis = .horizontal
+        stack.spacing = Constants.leftGroupSpacing
+        stack.alignment = .center
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        return stack
+    }()
+
+    private lazy var secondaryTrailingGroup: UIStackView = {
+        let stack = UIStackView(arrangedSubviews: [reasoningButton, modelChipButton])
+        stack.axis = .horizontal
+        stack.spacing = Constants.rightGroupSpacing
+        stack.alignment = .center
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        return stack
+    }()
+
     // MARK: - Initialization
 
     override init(frame: CGRect) {
@@ -401,18 +445,12 @@ final class UnifiedToggleInputToolbarView: UIView {
 private extension UnifiedToggleInputToolbarView {
 
     private func setupUI() {
-        let leftGroup = UIStackView(arrangedSubviews: [imageButton, toolsButton, selectedToolChipView])
-        leftGroup.axis = .horizontal
-        leftGroup.spacing = Constants.leftGroupSpacing
-        leftGroup.alignment = .center
-        leftGroup.translatesAutoresizingMaskIntoConstraints = false
-
         let spacer = UIView()
         spacer.translatesAutoresizingMaskIntoConstraints = false
         spacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
         spacer.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
-        let rightGroup = UIStackView(arrangedSubviews: [reasoningButton, modelChipButton, returnKeyButton, submitButton, stopButton])
+        let rightGroup = UIStackView(arrangedSubviews: [secondaryTrailingGroup, returnKeyButton, submitButton, stopButton])
         rightGroup.axis = .horizontal
         rightGroup.spacing = Constants.rightGroupSpacing
         rightGroup.alignment = .center
@@ -420,7 +458,7 @@ private extension UnifiedToggleInputToolbarView {
         rightGroup.setContentHuggingPriority(.required, for: .horizontal)
         rightGroup.setContentCompressionResistancePriority(.required, for: .horizontal)
 
-        let outerStack = UIStackView(arrangedSubviews: [leftGroup, spacer, rightGroup])
+        let outerStack = UIStackView(arrangedSubviews: [leftControlsGroup, spacer, rightGroup])
         outerStack.axis = .horizontal
         outerStack.alignment = .center
         outerStack.translatesAutoresizingMaskIntoConstraints = false
@@ -470,6 +508,11 @@ private extension UnifiedToggleInputToolbarView {
         modelChipButton.configuration?.title = modelName
     }
 
+    private func updateModelPickerPrimaryAction() {
+        modelChipButton.menu = usesUpdatedModelPickerPresentation ? nil : storedModelPickerMenu
+        modelChipButton.showsMenuAsPrimaryAction = modelChipButton.menu != nil
+    }
+
     private func updateReasoningButtonAppearance() {
         guard let mode = selectedReasoningMode else {
             reasoningButton.setImage(nil, for: .normal)
@@ -492,7 +535,7 @@ private extension UnifiedToggleInputToolbarView {
     }
 
     func updateSubmitButtonAppearance() {
-        let showVoice = isAIVoiceChatActive && !isSubmitEnabled
+        let showVoice = isAIVoiceChatActive && !isSubmitEnabled && !isEditing
         let usesReturnKeyStyle = usesNewPromptSubmitStyle || preservesSubmitStyleDuringDismissal
         let icon: UIImage? = {
             if showVoice {
@@ -539,7 +582,11 @@ private extension UnifiedToggleInputToolbarView {
     @objc private func returnKeyTapped() { onReturnKeyTapped?() }
     @objc private func modelPickerShown() {
         guard modelPickerMenu != nil else { return }
-        onModelPickerShown?()
+        if usesUpdatedModelPickerPresentation {
+            onUpdatedModelPickerTapped?()
+        } else {
+            onModelPickerShown?()
+        }
     }
     @objc private func reasoningPickerShown() {
         guard reasoningPickerMenu != nil else { return }

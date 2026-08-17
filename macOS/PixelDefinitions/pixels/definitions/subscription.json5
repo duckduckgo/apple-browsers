@@ -493,6 +493,18 @@
                 "type": "string",
                 "description": "The funnel that led to the subscription flow"
             },
+            {
+                "key": "context.name",
+                "type": "string",
+                "description": "Legacy location of the funnel name, replaced by feature.data.ext.funnel_name in 1.181.0.",
+                "examples": [
+                    "funnel_app_macos",
+                    "funnel_appsettings_macos",
+                    "funnel_appmenu_macos",
+                    "funnel_freescan_macos",
+                    "funnel_toolbar_macos"
+                ]
+            },
             "channel"
         ]
     },
@@ -823,6 +835,13 @@
         "description": "Fired when user dismisses the subscription Next Steps card on the New Tab Page (direct distribution)",
         "owners": ["jozsef-vesza"],
         "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "privacy-pro_new_tab_page_next_steps_card_shown": {
+        "description": "Fired when the subscription Next Steps card is shown on the New Tab Page. Uses feature-grouped naming (no m_/mac/distribution prefix); platform is derived from the request client header and App-Store-vs-direct distribution from the pixelSource parameter.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
 

@@ -1,2 +1,1 @@
-• The new “Copy Clean Link” option lets you copy a version of the page URL without unnecessary parameters added by the site. Find “Copy Clean Link” in the browser menu.
-• This update includes various other improvements and bug fixes, including a few address bar usability improvements.
+• Bug fixes and other improvements.

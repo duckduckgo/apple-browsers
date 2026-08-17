@@ -39,7 +39,7 @@ public enum IOSPixels {
     }
 }
 
-extension IOSPixels: PixelKitEvent {
+extension IOSPixels: PixelKit.Event {
     public var name: String {
         switch self {
         case .backgroundTaskStarted: return "m_ios_dbp_background-task_started"

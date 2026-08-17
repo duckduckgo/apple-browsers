@@ -59,6 +59,7 @@ final class MainViewController: NSViewController {
     let aiChatOmnibarTextContainerViewController: AIChatOmnibarTextContainerViewController
     let featureFlagger: FeatureFlagger
     let fireCoordinator: FireCoordinator
+    private let aiChatConversationSourceHandler: AIChatConversationSourceHandler
     private let bookmarksBarVisibilityManager: BookmarksBarVisibilityManager
     private let defaultBrowserAndDockPromptPresenting: DefaultBrowserAndDockPromptPresenting
     private let vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter
@@ -89,7 +90,9 @@ final class MainViewController: NSViewController {
 
     private let startupProfiler: StartupProfiler
 
-    private let themeManager: ThemeManaging
+    let themeManager: ThemeManaging
+    var themeUpdateCancellable: AnyCancellable?
+
     private var theme: ThemeStyleProviding {
         themeManager.theme
     }
@@ -124,6 +127,7 @@ final class MainViewController: NSViewController {
          aiChatMenuConfig: AIChatMenuVisibilityConfigurable = NSApp.delegateTyped.aiChatMenuConfiguration,
          aiChatSessionStore: AIChatSessionStoring,
          aiChatTabOpener: AIChatTabOpening = NSApp.delegateTyped.aiChatTabOpener,
+         aiChatConversationSourceHandler: AIChatConversationSourceHandler = NSApp.delegateTyped.aiChatConversationSourceHandler,
          brokenSitePromptLimiter: BrokenSitePromptLimiter = NSApp.delegateTyped.brokenSitePromptLimiter,
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
          searchPreferences: SearchPreferences = NSApp.delegateTyped.searchPreferences,
@@ -162,6 +166,7 @@ final class MainViewController: NSViewController {
         self.fireproofDomains = fireproofDomains
         self.isBurner = tabCollectionViewModel.isBurner
         self.featureFlagger = featureFlagger
+        self.aiChatConversationSourceHandler = aiChatConversationSourceHandler
         self.defaultBrowserAndDockPromptPresenting = defaultBrowserAndDockPromptPresenting
         self.downloadManager = downloadManager
         self.themeManager = themeManager
@@ -309,7 +314,8 @@ final class MainViewController: NSViewController {
             tabCollectionViewModel: tabCollectionViewModel,
             bookmarkManager: bookmarkManager,
             dragDropManager: bookmarkDragDropManager,
-            pinningManager: pinningManager
+            pinningManager: pinningManager,
+            featureFlagger: featureFlagger
         )
 
         // Create the shared AI Chat omnibar controller
@@ -329,6 +335,9 @@ final class MainViewController: NSViewController {
             origin: WindowPromptOrigin(tabCollectionViewModel: tabCollectionViewModel),
             pixelHandler: AddressBarPromptPixelHandler(),
             suggestionsReader: suggestionsReader,
+            // Fire Windows run an isolated Duck.ai session; persisted chat-history suggestions
+            // from the regular session can't be opened here, so suppress them.
+            isBurner: tabCollectionViewModel.isBurner,
             preferences: NSApp.delegateTyped.aiChatPreferencesPersistor
         )
 
@@ -373,6 +382,7 @@ final class MainViewController: NSViewController {
         subscribeToSelectedTabViewModel()
         subscribeToBookmarkBarVisibility()
         subscribeToSetAsDefaultAndAddToDockPromptsNotifications()
+        subscribeToThemeChanges()
         mainView.findInPageContainerView.applyDropShadow()
 
         view.registerForDraggedTypes([.URL, .fileURL])
@@ -404,7 +414,7 @@ final class MainViewController: NSViewController {
             }
         }
 
-        updateDividerColor(isShowingHomePage: tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab)
+        refreshDividerColor()
     }
 
     override func viewDidAppear() {
@@ -608,10 +618,18 @@ final class MainViewController: NSViewController {
         updateAIChatOmnibarContainerVisibility(visible: true, shouldKeepSelection: false, shouldFetchSuggestions: false)
     }
 
+    /// Insertion only shows the pane synchronously for a *new* tab.
+    /// Reusing an existing Settings tab swaps panes asynchronously, so the destination is applied here instead of waiting on that.
+    func openSettings(at destination: PreferencesDestination) {
+        tabCollectionViewModel.insertOrAppendNewTab(.settings(pane: destination.pane))
+        browserTabViewController.navigateSettings(to: destination)
+    }
+
     func openNewDuckAIChatTab() {
         let behavior: LinkOpenBehavior = tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab
             ? .currentTab
             : .newTab(selected: true)
+        aiChatConversationSourceHandler.setData(.tabBarButton)
         NSApp.delegateTyped.aiChatTabOpener.openNewAIChat(in: behavior)
     }
 
@@ -760,16 +778,21 @@ final class MainViewController: NSViewController {
         mainView.layoutSubtreeIfNeeded()
         mainView.updateTrackingAreas()
 
-        updateDividerColor(isShowingHomePage: tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab)
+        refreshDividerColor()
     }
 
-    private func updateDividerColor(isShowingHomePage isHomePage: Bool) {
+    private func refreshDividerColor() {
+        let isShowingHomepage = tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab
+        refreshDividerColor(isShowingHomePage: isShowingHomepage)
+    }
+
+    private func refreshDividerColor(isShowingHomePage isHomePage: Bool) {
         NSAppearance.withAppAppearance {
             if theme.addToolbarShadow {
                 if mainView.isBannerViewShown {
                     mainView.divider.backgroundColor = .bannerViewDivider
                 } else {
-                    mainView.divider.backgroundColor = theme.palette.surfaceDecorationPrimary
+                    mainView.divider.backgroundColor = theme.palette.unifiedInputFieldFillSecondary
                 }
             } else {
                 let backgroundColor: NSColor = {
@@ -844,7 +867,7 @@ final class MainViewController: NSViewController {
     }
 
     private func resizeNavigationBar(isHomePage homePage: Bool, animated: Bool) {
-        updateDividerColor(isShowingHomePage: homePage)
+        refreshDividerColor(isShowingHomePage: homePage)
         navigationBarViewController.resizeAddressBar(for: homePage ? .homePage : (isInPopUpWindow ? .popUpWindow : .default), animated: animated)
     }
 
@@ -1039,7 +1062,7 @@ final class MainViewController: NSViewController {
         mainView.isBannerViewShown = true
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-            self?.updateDividerColor(isShowingHomePage: self?.tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab)
+            self?.refreshDividerColor()
         }
     }
 
@@ -1048,7 +1071,7 @@ final class MainViewController: NSViewController {
         mainView.isBannerViewShown = false
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in
-            self?.updateDividerColor(isShowingHomePage: self?.tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab)
+            self?.refreshDividerColor()
         }
     }
 
@@ -1386,7 +1409,14 @@ extension MainViewController: BrowserTabViewControllerDelegate {
         }()
 
         if noPinnedTabs || (isSharedPinnedTabsMode && areOtherWindowsWithPinnedTabsAvailable) {
-            window.close()
+            // A Fire Window vanishing because its last tab closed still owes the user the fire animation,
+            // and `NSWindow.close()` would skip it.
+            if tabCollectionViewModel.isBurner,
+               let windowController = window.windowController as? MainWindowController {
+                windowController.burnAndClose(window)
+            } else {
+                window.close()
+            }
             return true
         }
         return false
@@ -1413,6 +1443,7 @@ extension MainViewController: AIChatOmnibarControllerDelegate {
         /// Explicit exit: user selected a saved chat suggestion. Clear the current tab's duck.ai flag.
         tabCollectionViewModel.selectedTabViewModel?.addressBarSharedTextState.setDuckAIMode(false)
         updateAIChatOmnibarContainerVisibility(visible: false, shouldKeepSelection: false)
+        aiChatConversationSourceHandler.setData(.recentChat)
         NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(with: .existingChat(chatId: suggestion.chatId), behavior: .currentTab)
     }
 }
@@ -1430,6 +1461,13 @@ extension MainViewController: DefaultBrowserAndDockPromptUIHosting {
 
     func provideModalAnchor() -> NSWindow? {
         getSourceWindowToShowInactiveUserModal()
+    }
+}
+
+extension MainViewController: ThemeUpdateListening {
+
+    func applyThemeStyle(theme: ThemeStyleProviding) {
+        refreshDividerColor()
     }
 }
 

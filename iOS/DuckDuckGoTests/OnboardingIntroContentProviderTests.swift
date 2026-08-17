@@ -1277,16 +1277,16 @@ struct OnboardingIntroContentProviderTests {
                 title: "Internet, without the noise.",
                 message: nil,
                 items: [
-                    .init(type: .youTubeAdBlocking, title: "YouTube ad blocking", subtitle: nil),
+                    .init(type: .youTubeAdBlocking, title: "Block video ads on YouTube", subtitle: nil),
                     .init(
                         type: .rejectOptionalCookies,
-                        title: "Reject optional cookies",
-                        subtitle: "Maximizes privacy and hides cookie pop-ups.",
+                        title: "Manage cookie pop-ups",
+                        subtitle: "Maximizes privacy and closes cookie pop-ups",
                         dependentItems: [
                             .init(
                                 type: .acceptOtherCookies,
-                                title: "Accept other cookies",
-                                subtitle: "Hides more pop-ups, by accepting cookies that can’t be rejected"
+                                title: "Accept cookies that can’t be rejected",
+                                subtitle: "Hides even more pop-ups"
                             )
                         ]
                     )

@@ -3,8 +3,6 @@
 // from the Duck.ai tab and the address bar. `voice_tapped` carries the same values under its pre-existing
 // `source` key. The subscription-funnel `origin` on the picker/upsell pixels intentionally folds the
 // contextual sheet into the Duck.ai bucket (keeps the funnel origin / subscription redirect URL stable).
-// `origin` on prompt_submitted is unrelated to those: it is an m_aichat_entry_point source value, not a
-// subscription-funnel origin.
 {
     "m_aichat_unified_input_image_generation_selected": {
         "description": "Fires when the user activates Create Image from the tools menu in the Unified Toggle Input. Does not fire when the toggle is rejected by an unsupporting model.",

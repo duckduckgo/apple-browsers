@@ -1,0 +1,83 @@
+// Duck.ai entry-point attribution: one pixel with a source param covering every path into Duck.ai.
+{
+    "m_aichat_entry_point": {
+        "description": "Fires when the user enters Duck.ai, with the entry path as a source param. Threaded through openAIChat(source:) with no default so the compiler enumerates every call site; the per-surface legacy pixels remain as a rollout cross-check.",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor", "first_daily_count"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "source",
+                "description": "The entry path into Duck.ai, one value per case of the AIChatEntryPointSource Swift enum. serp is any Duck.ai open the search results page asks native for, e.g. Search Assist, and covers every such SERP affordance because the request does not say which one it was. direct_url is a duck.ai navigation TabURLInterceptor saw with no other attribution, so it mixes a typed address with an in-page link. Resuming an already-open or restored Duck.ai tab is not an entry and does not fire.",
+                "type": "string",
+                "enum": [
+                    "address_bar_prompt",
+                    "address_bar_icon",
+                    "address_bar_shortcut_chip",
+                    "address_bar_editing_state",
+                    "suggestion_ask_ai",
+                    "ipad_toggle_prompt",
+                    "browsing_menu_ntp",
+                    "browsing_menu_webpage",
+                    "tab_switcher",
+                    "tabs_bar_button",
+                    "chat_history_new_chat",
+                    "chat_history_open_chat",
+                    "voice",
+                    "onboarding",
+                    "direct_url",
+                    "serp",
+                    "icon_shortcut",
+                    "contextual_chat",
+                    "widget_quick_actions",
+                    "widget_quick_actions_medium",
+                    "widget_favorite",
+                    "widget_lock_screen",
+                    "widget_control_center",
+                    "siri",
+                    "deep_link_other"
+                ]
+            },
+            {
+                "key": "duckai_enabled",
+                "description": "Whether Duck.ai is enabled under AI Features settings: true or false",
+                "type": "boolean"
+            },
+            {
+                "key": "toggle_enabled",
+                "description": "Whether the Search/Duck.ai toggle user setting is enabled: true or false",
+                "type": "boolean"
+            },
+            {
+                "key": "opens_new_tab",
+                "description": "Whether this entry opened Duck.ai in a new tab (vs in place or as a sheet): true or false",
+                "type": "boolean"
+            },
+            {
+                "key": "has_prompt",
+                "description": "Whether the entry carried a prompt: true or false",
+                "type": "boolean"
+            }
+        ]
+    },
+    "m_aichat_duck_ai_direct_navigation": {
+        "description": "Fires when the user reaches Duck.ai by typing its address into the address bar and submitting, for all users rather than only those who turned Duck.ai off. duckai_enabled=false isolates residual demand among users who disabled it, which is the population the superseded m_aichat_unified_input_duck_ai_direct_navigation reports on; that pixel keeps firing unchanged so its series stays comparable. Does not fire for the in-input Duck.ai shortcut button or other Duck.ai entry points, and not for in-page links or deep links to Duck.ai — only a typed address counts.",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "duckai_enabled",
+                "description": "Whether Duck.ai is enabled under AI Features settings: true or false",
+                "type": "boolean"
+            },
+            {
+                "key": "toggle_enabled",
+                "description": "Whether the Search/Duck.ai toggle user setting is enabled: true or false",
+                "type": "boolean"
+            }
+        ]
+    }
+}

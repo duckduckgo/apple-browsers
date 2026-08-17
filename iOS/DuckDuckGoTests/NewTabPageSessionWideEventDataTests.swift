@@ -51,6 +51,12 @@ struct NewTabPageSessionWideEventDataTests {
         "feature.data.ext.actions.dismiss_keyboard",
         "feature.data.ext.actions.scroll_view",
         "feature.data.ext.actions.uti_back_arrow",
+        "feature.data.ext.actions.select_bookmark",
+        "feature.data.ext.actions.select_password",
+        "feature.data.ext.actions.select_download",
+        "feature.data.ext.actions.email_copied",
+        "feature.data.ext.actions.vpn_on",
+        "feature.data.ext.actions.vpn_off",
     ]
 
     private func makeData(trigger: NewTabPageSessionWideEventData.Trigger = .appOpen,
@@ -89,6 +95,12 @@ struct NewTabPageSessionWideEventDataTests {
         data.dismissKeyboard = true
         data.scrollView = true
         data.utiBackArrow = true
+        data.selectBookmark = true
+        data.selectPassword = true
+        data.selectDownload = true
+        data.emailCopied = true
+        data.vpnOn = true
+        data.vpnOff = true
     }
 
     // MARK: - Metadata
@@ -165,12 +177,25 @@ struct NewTabPageSessionWideEventDataTests {
     // MARK: - Action flags
 
     @available(iOS 16, *)
-    @Test("Action flags are emitted as false by default", .timeLimit(.minutes(1)))
-    func actionFlagsAreEmittedAsFalseByDefault() {
+    @Test("Actions that did not happen are left out entirely", .timeLimit(.minutes(1)))
+    func actionFlagsAreOmittedWhenNotPerformed() {
         let params = makeData().jsonParameters()
 
         for key in Self.actionKeys {
-            #expect(params[key] as? Bool == false, "Expected \(key) to be emitted as false")
+            #expect(params[key] == nil, "Expected \(key) to be absent")
+        }
+    }
+
+    @available(iOS 16, *)
+    @Test("Only the actions performed are emitted", .timeLimit(.minutes(1)))
+    func onlyPerformedActionsAreEmitted() {
+        let data = makeData()
+        data.tapFavorite = true
+        let params = data.jsonParameters()
+
+        #expect(params[WideEventParameter.NewTabPageSessionFeature.tapFavorite] as? Bool == true)
+        for key in Self.actionKeys where key != WideEventParameter.NewTabPageSessionFeature.tapFavorite {
+            #expect(params[key] == nil, "Expected \(key) to be absent")
         }
     }
 

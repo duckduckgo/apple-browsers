@@ -54,6 +54,8 @@ struct UTIPixelContext {
     let isDuckAISurfaceForAttribution: Bool
     let inputMode: TextEntryMode
     let isToggleVisible: Bool
+    let pageType: UnifiedToggleInputPromptPageType
+    let duckAIEntrySource: AIChatEntryPointSource?
 }
 
 /// Owns the omnibar UTI's pixel firing. Resolves the surface (and the other live inputs) through a
@@ -195,7 +197,8 @@ final class UTIPixelReporter {
                                selectedTool: AIChatRAGTool?,
                                attachments: [UnifiedToggleInputAttachment],
                                reasoningMode: AIChatReasoningMode?,
-                               modelId: String?) {
+                               modelId: String?,
+                               defaultOmnibarMode: DefaultOmnibarMode) {
         withContext {
             UnifiedToggleInputCoordinatorPixelHelper.fireUnifiedPromptSubmittedPixel(
                 hasText: hasText,
@@ -204,8 +207,31 @@ final class UTIPixelReporter {
                 reasoningMode: reasoningMode,
                 modelId: modelId,
                 surface: $0.surface,
+                pageType: $0.pageType,
+                origin: Self.promptOrigin(for: $0),
+                defaultMode: defaultOmnibarMode,
                 firing: firing
             )
+        }
+    }
+
+    func reportQuerySubmitted(defaultOmnibarMode: DefaultOmnibarMode) {
+        withContext {
+            UnifiedToggleInputCoordinatorPixelHelper.fireUnifiedQuerySubmittedPixel(
+                surface: $0.surface,
+                pageType: $0.pageType,
+                isToggleVisible: $0.isToggleVisible,
+                defaultMode: defaultOmnibarMode,
+                firing: firing
+            )
+        }
+    }
+
+    static func promptOrigin(for context: UTIPixelContext) -> AIChatEntryPointSource? {
+        switch context.surface {
+        case .addressBar: return .addressBarPrompt
+        case .contextualChat: return .contextualChat
+        case .duckAI: return context.duckAIEntrySource
         }
     }
 

@@ -52,6 +52,50 @@ enum SyncFeatureUsagePixels: PixelKit.Event {
     }
 }
 
+enum SyncSettingsPixelKitEvent: PixelKit.Event {
+
+    enum ParameterKey {
+        static let syncPromptOption = "sync_prompt_option"
+    }
+
+    enum AnotherDevicePromptOption: String {
+        case thisDeviceOnly = "this_device_only"
+        case syncAnotherDevice = "sync_another_device"
+    }
+
+    case anotherDevicePromptShown
+    case anotherDevicePromptOptionTapped(option: AnotherDevicePromptOption)
+    case authenticationCancelledPromptShown
+
+    var name: String {
+        switch self {
+        case .anotherDevicePromptShown: return "settings_sync_another_device_prompt_shown"
+        case .anotherDevicePromptOptionTapped: return "settings_sync_another_device_prompt_option_tapped"
+        case .authenticationCancelledPromptShown: return "settings_sync_authentication_cancelled_prompt_shown"
+        }
+    }
+
+    var parameters: [String: String]? {
+        switch self {
+        case .anotherDevicePromptShown:
+            return nil
+        case .anotherDevicePromptOptionTapped(let option):
+            return [ParameterKey.syncPromptOption: option.rawValue]
+        case .authenticationCancelledPromptShown:
+            return nil
+        }
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .anotherDevicePromptShown,
+                .anotherDevicePromptOptionTapped,
+                .authenticationCancelledPromptShown:
+            return [.pixelSource]
+        }
+    }
+}
+
 enum SyncSwitchAccountPixelKitEvent: PixelKit.Event {
     case syncAskUserToSwitchAccount
     case syncUserAcceptedSwitchingAccount

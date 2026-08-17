@@ -56,6 +56,9 @@ extension MainViewController {
     func askAboutCurrentPageFromAddressBar() {
         guard let currentTab else { return }
         omniBar.endEditing()
+        // The floating input is a contextual surface that bypasses `openAIChat` and the sheet, so
+        // report the entry here; promoting it to the sheet later must not report a second one.
+        fireAIChatEntryPointPixel(source: .contextualChat, opensNewTab: false, hasPrompt: false)
         currentTab.presentContextualFloatingInput(from: self)
     }
 
@@ -101,6 +104,6 @@ extension MainViewController {
     /// a prompt whenever the field is being edited, and New Chat must always open empty.
     private func openFreshDuckAIChatFromAddressBarMenu() {
         omniBar.endEditing()
-        openAIChat()
+        openAIChat(source: .addressBarIcon)
     }
 }

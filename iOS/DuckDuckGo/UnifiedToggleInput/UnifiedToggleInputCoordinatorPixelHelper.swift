@@ -60,6 +60,24 @@ enum UnifiedToggleInputPixelSurface: String {
     case contextualChat = "contextual_chat"
 }
 
+enum UnifiedToggleInputPromptPageType: String {
+    case ntp
+    case serp
+    case website
+    case duckAI = "duck_ai"
+    case contextual
+    case unknown
+}
+
+extension Tab {
+
+    var promptPageType: UnifiedToggleInputPromptPageType {
+        if isAITab { return .duckAI }
+        guard let url = link?.url else { return .ntp }
+        return url.isDuckDuckGoSearch ? .serp : .website
+    }
+}
+
 private enum UnifiedPromptSubmittedSelectedToolPixelValue: String {
     case webSearch = "web_search"
     case imageGeneration = "image_generation"
@@ -186,13 +204,16 @@ final class UnifiedToggleInputCoordinatorPixelHelper {
         reasoningMode: AIChatReasoningMode?,
         modelId: String?,
         surface: UnifiedToggleInputPixelSurface,
+        pageType: UnifiedToggleInputPromptPageType? = nil,
+        origin: AIChatEntryPointSource? = nil,
+        defaultMode: DefaultOmnibarMode? = nil,
         firing: UTIPixelFiring = .live
     ) {
         let selectedToolValue = UnifiedPromptSubmittedSelectedToolPixelValue(selectedTool: selectedTool).rawValue
         let reasoningEffort = reasoningMode?.rawValue ?? "none"
         let modelId = modelId ?? ""
 
-        firing.fireDailyAndCount(.unifiedToggleInputPromptSubmitted, [
+        var parameters = [
             "selected_tool": selectedToolValue,
             "model_id": modelId,
             "reasoning_effort": reasoningEffort,
@@ -200,7 +221,29 @@ final class UnifiedToggleInputCoordinatorPixelHelper {
             "has_file_attachment": hasFileAttachment(in: attachments) ? "true" : "false",
             "has_text": hasText ? "true" : "false",
             "surface": surface.rawValue
-        ])
+        ]
+        parameters["page_type"] = pageType?.rawValue
+        parameters["origin"] = origin?.rawValue
+        parameters["default_mode"] = defaultMode?.rawValue
+
+        firing.fireDailyAndCount(.unifiedToggleInputPromptSubmitted, parameters)
+    }
+
+    static func fireUnifiedQuerySubmittedPixel(
+        surface: UnifiedToggleInputPixelSurface,
+        pageType: UnifiedToggleInputPromptPageType? = nil,
+        isToggleVisible: Bool,
+        defaultMode: DefaultOmnibarMode? = nil,
+        firing: UTIPixelFiring = .live
+    ) {
+        var parameters = [
+            "surface": surface.rawValue,
+            "toggle_visible": isToggleVisible ? "true" : "false"
+        ]
+        parameters["page_type"] = pageType?.rawValue
+        parameters["default_mode"] = defaultMode?.rawValue
+
+        firing.fireDailyAndCount(.unifiedToggleInputQuerySubmitted, parameters)
     }
 
     static func fireModelSelectedPixel(modelId: String, surface: UnifiedToggleInputPixelSurface, firing: UTIPixelFiring = .live) {

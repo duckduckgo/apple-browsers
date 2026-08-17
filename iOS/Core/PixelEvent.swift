@@ -1897,6 +1897,8 @@ extension Pixel {
         case unifiedToggleInputSubmitChangeModel
         case unifiedToggleInputSubmitChangeModelPromptSent
         case unifiedToggleInputDuckAIDirectNavigation
+        case aiChatDuckAIDirectNavigation
+        case unifiedToggleInputQuerySubmitted
 
         // MARK: Unified Toggle Input - Duck.ai autocomplete suggestion clicks
         case autocompleteDuckAIClickWebsite
@@ -3810,6 +3812,8 @@ extension Pixel.Event {
         case .unifiedToggleInputSubmitChangeModel: return "aichat_unified_input_submit_change_model"
         case .unifiedToggleInputSubmitChangeModelPromptSent: return "aichat_unified_input_submit_change_model_prompt_sent"
         case .unifiedToggleInputDuckAIDirectNavigation: return "m_aichat_unified_input_duck_ai_direct_navigation"
+        case .aiChatDuckAIDirectNavigation: return "m_aichat_duck_ai_direct_navigation"
+        case .unifiedToggleInputQuerySubmitted: return "m_aichat_unified_input_query_submitted"
 
         case .autocompleteDuckAIClickWebsite: return "m_autocomplete_duckai_click_website"
         case .autocompleteDuckAIClickBookmark: return "m_autocomplete_duckai_click_bookmark"

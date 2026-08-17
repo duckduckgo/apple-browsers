@@ -16,3 +16,4 @@ appId: com.duckduckgo.mobile.ios
         currentAppVariant: ${APP_VARIANT} # Renaming `currentAppVariant` requires to update LaunchOptionsHandler `currentAppVariant` key
         isRunningUITests: true
         isInternalUser: ${INTERNAL_USER_MODE}
+        ff.floatingUIAugust2026: false

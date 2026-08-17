@@ -2065,7 +2065,7 @@ class MainViewController: UIViewController {
 
         let hatch = buildEscapeHatch(openedAfterIdle: openedAfterIdle)
         if homePageConfiguration.mode == .coordinated, !tabModel.fireTab {
-            homePageConfiguration.prepareForNTP(openedAfterIdle: hatch != nil, host: .newTabPage)
+            homePageConfiguration.prepareForNTP(openedAfterIdle: hatch != nil)
         }
         
         let shouldSaveTabs = tabModel.viewed == false || tabModel.openedAfterIdle != openedAfterIdle
@@ -2231,7 +2231,6 @@ class MainViewController: UIViewController {
     }
 
     fileprivate func removeHomeScreen() {
-        homePageConfiguration.deactivateNTPHost(.newTabPage)
         newTabPageViewController?.willMove(toParent: nil)
         newTabPageViewController?.dismiss()
         newTabPageViewController = nil
@@ -5564,12 +5563,9 @@ extension MainViewController: OmniBarDelegate {
 
     private func prepareHomePageMessagesForOmniBar() {
         guard homePageConfiguration.mode == .coordinated else { return }
+        guard !isCurrentTabFireTab() else { return }
 
-        if isCurrentTabFireTab() {
-            homePageConfiguration.deactivateNTPHost(.omniBar)
-        } else {
-            homePageConfiguration.prepareForNTP(openedAfterIdle: escapeHatchForEditingState() != nil, host: .omniBar)
-        }
+        homePageConfiguration.prepareForNTP(openedAfterIdle: escapeHatchForEditingState() != nil)
     }
 
     private func installContextualSheetDismissGesture() {
@@ -5733,8 +5729,6 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onDidEndEditing() {
-        homePageConfiguration.deactivateNTPHost(.omniBar)
-
         // Restore the tab's committed mode — the user may have toggled without submitting.
         // Safe on iPhone: the experimental editing state prevents textFieldDidEndEditing from
         // firing (text field never becomes first responder during that flow).
@@ -5903,10 +5897,7 @@ extension MainViewController: OmniBarDelegate {
             return
         }
 
-        homePageConfiguration.prepareForNTP(
-            openedAfterIdle: escapeHatchForEditingState() != nil,
-            host: .newTabPage
-        )
+        homePageConfiguration.prepareForNTP(openedAfterIdle: escapeHatchForEditingState() != nil)
     }
 
     private func clearEscapeHatch() {

@@ -241,7 +241,6 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
-        suggestionTrayDependencies?.newTabPageDependencies.homePageMessagesConfiguration.deactivateNTPHost(.omniBar)
         aiChatHistoryManager?.tearDown()
         aiChatHistoryManager = nil
     }
@@ -625,12 +624,9 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         let homePageMessagesConfiguration = dependencies.newTabPageDependencies.homePageMessagesConfiguration
         guard homePageMessagesConfiguration.mode == .coordinated else { return }
 
-        guard !switchBarHandler.isFireTab else {
-            homePageMessagesConfiguration.deactivateNTPHost(.omniBar)
-            return
-        }
+        guard !switchBarHandler.isFireTab else { return }
 
-        homePageMessagesConfiguration.prepareForNTP(openedAfterIdle: escapeHatchModel != nil, host: .omniBar)
+        homePageMessagesConfiguration.prepareForNTP(openedAfterIdle: escapeHatchModel != nil)
     }
 
     private func scheduleAnimation(_ animation: @escaping () -> Void, completion: ((UIViewAnimatingPosition) -> Void)? = nil) {

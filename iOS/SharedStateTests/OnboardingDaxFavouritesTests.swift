@@ -396,6 +396,56 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
         XCTAssertEqual(configuration.homeMessages, [.remoteMessage(remoteMessage: message)])
     }
 
+    func testWhenRestoredWebsiteReachesForegroundReadyThenItDoesNotAcquireRemoteMessage() throws {
+        let websiteURL = try XCTUnwrap(URL(string: "https://example.com"))
+        let message = makeRemoteMessage(id: "message")
+        let store = ActivationRemoteMessagingStore(message: message)
+        let gate = ActivationPromoGate()
+        let configuration = HomePageConfiguration(
+            remoteMessagingStore: store,
+            subscriptionDataReporter: MockSubscriptionDataReporter(),
+            isStillOnboarding: { false },
+            promoGate: gate,
+            isRMFAdmissionEnabled: false
+        )
+        let host = makeHost(configuration)
+
+        host.tabManager.currentTabsModel.currentTab?.link = Link(title: nil, url: websiteURL)
+        _ = host.view
+        host.newTabPageViewController = nil
+        configuration.handleAppForegrounded()
+        host.prepareHomePageMessagesForForegroundIfNeeded()
+
+        XCTAssertTrue(store.fetchedTriggerFilters.isEmpty)
+        XCTAssertTrue(gate.acquiredMessageIDs.isEmpty)
+        XCTAssertNil(gate.owner)
+        XCTAssertTrue(configuration.homeMessages.isEmpty)
+    }
+
+    func testWhenUnifiedInputConditionalHostIsInactiveThenFireModeRefreshDoesNotAcquireRemoteMessage() {
+        let message = makeRemoteMessage(id: "message")
+        let store = ActivationRemoteMessagingStore(message: message)
+        let gate = ActivationPromoGate()
+        let configuration = HomePageConfiguration(
+            remoteMessagingStore: store,
+            subscriptionDataReporter: MockSubscriptionDataReporter(),
+            isStillOnboarding: { false },
+            promoGate: gate
+        )
+        let mainHost = makeHost(configuration)
+        let conditionalHost = UnifiedInputContentContainerViewController(
+            switchBarHandler: InactiveConditionalHostSwitchBarHandler()
+        )
+        conditionalHost.suggestionTrayDependencies = mainHost.suggestionTrayDependencies
+
+        conditionalHost.refreshFireMode(fireMode: false)
+
+        XCTAssertTrue(store.fetchedTriggerFilters.isEmpty)
+        XCTAssertTrue(gate.acquiredMessageIDs.isEmpty)
+        XCTAssertNil(gate.owner)
+        XCTAssertTrue(configuration.homeMessages.isEmpty)
+    }
+
     func testWhenConditionalHostHasRawIdleWithoutHatchThenItUsesNoTriggerPolicy() throws {
         let websiteURL = try XCTUnwrap(URL(string: "https://example.com"))
         let afterIdleMessage = makeRemoteMessage(id: "after-idle")
@@ -597,4 +647,42 @@ private final class ActivationRemoteMessagingStore: RemoteMessagingStoring {
     func fetchDismissedRemoteMessageIDs() -> [String] { [] }
     func updateRemoteMessage(withID id: String, asShown shown: Bool) async {}
     func resetRemoteMessages() async {}
+}
+
+private final class InactiveConditionalHostSwitchBarHandler: SwitchBarHandling {
+    var currentText = ""
+    var currentToggleState = TextEntryMode.search
+    var isVoiceSearchEnabled = false
+    var isAIVoiceChatEnabled = false
+    var hasUserInteractedWithText = false
+    var isCurrentTextValidURL = false
+    var buttonState = SwitchBarButtonState.noButtons
+    var isTopBarPosition = true
+    var isToggleEnabled = true
+    var isFireTab = false
+    var isUsingExpandedBottomBarHeight = false
+    var isUsingFadeOutAnimation = false
+    var shouldDisableAutocorrectOnEmpty = false
+    var hidesVoiceButton = false
+    var hasSubmittedPrompt = false
+    var modeParameters: [String: String] = [:]
+
+    var hasSubmittedPromptPublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }
+    var currentTextPublisher: AnyPublisher<String, Never> { Empty().eraseToAnyPublisher() }
+    var toggleStatePublisher: AnyPublisher<TextEntryMode, Never> { Empty().eraseToAnyPublisher() }
+    var textSubmissionPublisher: AnyPublisher<(text: String, mode: TextEntryMode), Never> { Empty().eraseToAnyPublisher() }
+    var microphoneButtonTappedPublisher: AnyPublisher<Void, Never> { Empty().eraseToAnyPublisher() }
+    var clearButtonTappedPublisher: AnyPublisher<Void, Never> { Empty().eraseToAnyPublisher() }
+    var hasUserInteractedWithTextPublisher: AnyPublisher<Bool, Never> { Empty().eraseToAnyPublisher() }
+    var isCurrentTextValidURLPublisher: AnyPublisher<Bool, Never> { Empty().eraseToAnyPublisher() }
+    var currentButtonStatePublisher: AnyPublisher<SwitchBarButtonState, Never> { Empty().eraseToAnyPublisher() }
+
+    func updateCurrentText(_ text: String) {}
+    func submitText(_ text: String) {}
+    func setToggleState(_ state: TextEntryMode) {}
+    func clearText() {}
+    func microphoneButtonTapped() {}
+    func markUserInteraction() {}
+    func clearButtonTapped() {}
+    func updateBarPosition(isTop: Bool) {}
 }

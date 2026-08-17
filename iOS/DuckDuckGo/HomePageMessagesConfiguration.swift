@@ -25,12 +25,6 @@ struct HomeMessagePresentationContext: Hashable {
     let acquisitionIdentity: PromoQueueAcquisitionIdentity
 }
 
-enum HomePageMessagesHost: Hashable {
-    case newTabPage
-    case unifiedInput
-    case omniBar
-}
-
 @MainActor
 protocol HomePageMessagesConfiguration {
     var homeMessages: [HomeMessage] { get }
@@ -39,8 +33,6 @@ protocol HomePageMessagesConfiguration {
 
     func refresh(openedAfterIdle: Bool)
     func prepareForNTP(openedAfterIdle: Bool)
-    func prepareForNTP(openedAfterIdle: Bool, host: HomePageMessagesHost)
-    func deactivateNTPHost(_ host: HomePageMessagesHost)
     func handleAppBackgrounded()
     func handleAppForegrounded()
     func presentationContext(for homeMessage: HomeMessage) -> HomeMessagePresentationContext?
@@ -67,12 +59,6 @@ extension HomePageMessagesConfiguration {
     func prepareForNTP(openedAfterIdle: Bool) {
         refresh(openedAfterIdle: openedAfterIdle)
     }
-
-    func prepareForNTP(openedAfterIdle: Bool, host: HomePageMessagesHost) {
-        prepareForNTP(openedAfterIdle: openedAfterIdle)
-    }
-
-    func deactivateNTPHost(_ host: HomePageMessagesHost) {}
 
     func handleAppBackgrounded() {}
 

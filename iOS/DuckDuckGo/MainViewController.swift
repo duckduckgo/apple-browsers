@@ -360,9 +360,10 @@ class MainViewController: UIViewController {
 
     let themeManager: ThemeManaging
     let keyValueStore: ThrowingKeyValueStoring
-    let recentModalPromptStatusProvider: RecentModalPromptStatusProviding?
-    let promoCoordinationDiagnosticsProvider: PromoCoordinationDiagnosticsProviding?
-    let promoCoordinationCooldownResetter: PromoCoordinationCooldownResetting?
+    let promoCoordinationService:
+        (any RecentModalPromptStatusProviding
+            & PromoCoordinationDiagnosticsProviding
+            & PromoCoordinationCooldownResetting)?
     let systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
     let onboardingResumeStepStore: any KeyedStoring<OnboardingStoringKeys>
     var adBlockingAvailability: AdBlockingAvailabilityProviding { tabManager.adBlockingAvailability }
@@ -536,9 +537,9 @@ class MainViewController: UIViewController {
         toggleModeStorage: ToggleModeStoring = ToggleModeStorage(),
         onboardingResumeStepStore: (any KeyedStoring<OnboardingStoringKeys>)? = nil,
         onboardingManager: OnboardingManaging,
-        recentModalPromptStatusProvider: RecentModalPromptStatusProviding? = nil,
-        promoCoordinationDiagnosticsProvider: PromoCoordinationDiagnosticsProviding? = nil,
-        promoCoordinationCooldownResetter: PromoCoordinationCooldownResetting? = nil
+        promoCoordinationService: (any RecentModalPromptStatusProviding
+            & PromoCoordinationDiagnosticsProviding
+            & PromoCoordinationCooldownResetting)? = nil
     ) {
         self.remoteMessagingActionHandler = remoteMessagingActionHandler
         self.remoteMessagingImageLoader = remoteMessagingImageLoader
@@ -602,9 +603,7 @@ class MainViewController: UIViewController {
         self.maliciousSiteProtectionPreferencesManager = maliciousSiteProtectionPreferencesManager
         self.contentScopeExperimentsManager = contentScopeExperimentsManager
         self.keyValueStore = keyValueStore
-        self.recentModalPromptStatusProvider = recentModalPromptStatusProvider
-        self.promoCoordinationDiagnosticsProvider = promoCoordinationDiagnosticsProvider
-        self.promoCoordinationCooldownResetter = promoCoordinationCooldownResetter
+        self.promoCoordinationService = promoCoordinationService
         self.onboardingResumeStepStore = if let onboardingResumeStepStore { onboardingResumeStepStore } else { UserDefaults.app.keyedStoring() }
         self.customConfigurationURLProvider = customConfigurationURLProvider
         self.systemSettingsPiPTutorialManager = systemSettingsPiPTutorialManager

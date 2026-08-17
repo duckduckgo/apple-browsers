@@ -669,12 +669,7 @@ final class MainCoordinator {
     }
 
     func prepareHomePageMessagesForForegroundIfNeeded() {
-        guard controller.isNewTabPageVisible,
-              let currentTab = tabManager.currentTabsModel.currentTab else {
-            return
-        }
-
-        homePageConfiguration.prepareForNTP(openedAfterIdle: currentTab.openedAfterIdle)
+        controller.prepareHomePageMessagesForForegroundIfNeeded()
     }
 
     // MARK: App Lifecycle handling

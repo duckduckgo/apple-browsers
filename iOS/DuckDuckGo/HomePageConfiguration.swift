@@ -61,7 +61,8 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
     private var remoteMessagesCancellable: AnyCancellable?
     private var rmfOwnership: RMFOwnership?
     private var isRMFAdmissionEnabled: Bool
-    private var lastPreparationPolicy: PreparationPolicy?
+    private var activeNTPHostPolicies: [HomePageMessagesHost: PreparationPolicy] = [:]
+    private var activeNTPHostsByRecency: [HomePageMessagesHost] = []
 
     var homeMessages: [HomeMessage] = []
     let mode: PromoCoordinationMode
@@ -106,14 +107,27 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
     }
 
     func prepareForNTP(openedAfterIdle: Bool) {
+        prepareForNTP(openedAfterIdle: openedAfterIdle, host: .newTabPage)
+    }
+
+    func prepareForNTP(openedAfterIdle: Bool, host: HomePageMessagesHost) {
         guard mode == .coordinated else { return }
         guard isRMFAdmissionEnabled else {
             return
         }
 
         let preparationPolicy = PreparationPolicy(openedAfterIdle: openedAfterIdle)
-        lastPreparationPolicy = preparationPolicy
+        activeNTPHostPolicies[host] = preparationPolicy
+        activeNTPHostsByRecency.removeAll { $0 == host }
+        activeNTPHostsByRecency.append(host)
         reconcileCoordinatedMessages(using: preparationPolicy)
+    }
+
+    func deactivateNTPHost(_ host: HomePageMessagesHost) {
+        guard mode == .coordinated else { return }
+
+        activeNTPHostPolicies[host] = nil
+        activeNTPHostsByRecency.removeAll { $0 == host }
     }
 
     func handleAppBackgrounded() {
@@ -122,7 +136,8 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
         }
 
         isRMFAdmissionEnabled = false
-        lastPreparationPolicy = nil
+        activeNTPHostPolicies.removeAll()
+        activeNTPHostsByRecency.removeAll()
     }
 
     func handleAppForegrounded() {
@@ -201,6 +216,13 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
         homeMessageStorage.messagesToBeShown
     }
 
+    private var currentPreparationPolicy: PreparationPolicy? {
+        guard let activeHost = activeNTPHostsByRecency.last else {
+            return nil
+        }
+        return activeNTPHostPolicies[activeHost]
+    }
+
     private func buildLegacyHomeMessages(openedAfterIdle: Bool) -> [HomeMessage] {
         var messages = nonRemoteHomeMessages
         guard !isStillOnboarding(),
@@ -226,12 +248,12 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
             return
         }
 
-        guard rmfOwnership != nil || lastPreparationPolicy != nil else {
+        guard rmfOwnership != nil || currentPreparationPolicy != nil else {
             publishCoordinatedMessages(nonRemoteHomeMessages)
             return
         }
 
-        reconcileCoordinatedMessages(using: lastPreparationPolicy)
+        reconcileCoordinatedMessages(using: currentPreparationPolicy)
     }
 
     private func reconcileCoordinatedMessages(using preparationPolicy: PreparationPolicy?) {

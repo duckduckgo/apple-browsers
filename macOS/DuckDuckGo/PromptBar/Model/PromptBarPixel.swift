@@ -25,7 +25,7 @@ import PixelKit
 /// `LIKE 'm_mac_aichat_promptbar%'`. The mirrored cases keep the tail of their `aichat_addressbar_*`
 /// counterpart, so the two surfaces compare token for token — see `PromptBarPixelHandler` for the
 /// mapping and the events the Prompt Bar deliberately can't produce.
-enum PromptBarPixel: PixelKitEvent {
+enum PromptBarPixel: PixelKit.Event {
 
     // MARK: - Mirrored from the address bar
 
@@ -79,6 +79,12 @@ enum PromptBarPixel: PixelKitEvent {
 
     /// Event Trigger: User selects a reasoning effort from the picker
     case reasoningEffortSelected
+
+    /// Event Trigger: The model picker opened showing at least one gated model
+    case modelPickerShown(origin: String)
+
+    /// Event Trigger: The reasoning picker opened showing at least one gated effort
+    case reasoningPickerShown(origin: String)
 
     /// Event Trigger: User opens a new voice Duck.ai chat from the Prompt Bar
     case newVoiceChat
@@ -153,6 +159,10 @@ enum PromptBarPixel: PixelKitEvent {
             return "aichat_promptbar_model_selected"
         case .reasoningEffortSelected:
             return "aichat_promptbar_reasoning_effort_selected"
+        case .modelPickerShown:
+            return "aichat_promptbar_model_picker_shown"
+        case .reasoningPickerShown:
+            return "aichat_promptbar_reasoning_picker_shown"
         case .newVoiceChat:
             return "aichat_promptbar_new_voice_chat"
         case .shownFromShortcut:
@@ -212,6 +222,8 @@ enum PromptBarPixel: PixelKitEvent {
         case .state(let shortcutEnabled, let menuBarIconEnabled):
             return ["shortcut_enabled": String(shortcutEnabled),
                     "menu_bar_icon_enabled": String(menuBarIconEnabled)]
+        case .modelPickerShown(let origin), .reasoningPickerShown(let origin):
+            return ["origin": origin]
         }
     }
 

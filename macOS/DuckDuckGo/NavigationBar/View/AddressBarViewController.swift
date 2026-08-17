@@ -38,6 +38,7 @@ protocol AddressBarViewControllerDelegate: AnyObject {
     /// Called when the user refocuses the address bar while duck.ai mode is the persistent mode for the current tab.
     /// The suggestions row should re-expand and the prompt editor should become first responder.
     func addressBarViewControllerDidRefocusInAIChatMode(_ addressBarViewController: AddressBarViewController)
+    func addressBarViewController(_ addressBarViewController: AddressBarViewController, openSettings destination: PreferencesDestination)
 }
 
 final class AddressBarViewController: NSViewController {
@@ -123,6 +124,7 @@ final class AddressBarViewController: NSViewController {
     @IBOutlet var buttonsContainerViewLeadingConstraint: NSLayoutConstraint!
     @IBOutlet var buttonsContainerViewTrailingConstraint: NSLayoutConstraint!
     @IBOutlet var switchToTabBoxMinXConstraint: NSLayoutConstraint!
+    @IBOutlet var switchToTabBoxTrailingConstraint: NSLayoutConstraint!
     @IBOutlet var passiveTextFieldMinXConstraint: NSLayoutConstraint!
     @IBOutlet var activeTextFieldMinXConstraint: NSLayoutConstraint!
     @IBOutlet var addressBarTextTrailingConstraint: NSLayoutConstraint!
@@ -713,7 +715,7 @@ final class AddressBarViewController: NSViewController {
             /// text / suffix doesn't peek out past the panel edges.
             addressBarTextField.isHidden = true
             passiveTextField.isHidden = true
-        case .inactiveWithAIChat:
+        case .inactiveWithAIChat where !themeManager.isAppRebranded:
             /// Unfocused Duck.ai: always render via `addressBarTextField` showing the preserved prompt (or empty
             /// for the "Ask anything privately" placeholder). The value is pushed onto the field by the transitions
             /// that enter this state (`resignFocusKeepingAIChatMode`, `applyIncomingTabAIChatMode`, and
@@ -721,12 +723,16 @@ final class AddressBarViewController: NSViewController {
             /// inside `updateView` would recurse through the `$value` sink.
             addressBarTextField.isHidden = false
             passiveTextField.isHidden = true
-        case .active, .inactive:
-            let isPassiveTextFieldHidden = selectionState.isSelected || mode.isEditing
-            addressBarTextField.isHidden = isPassiveTextFieldHidden ? false : true
-            passiveTextField.isHidden = isPassiveTextFieldHidden ? true : false
+        case .active, .inactive, .inactiveWithAIChat:
+            let isPassiveTextFieldHidden = themeManager.isAppRebranded
+                ? (selectionState.isSelected || (mode.isEditing && !addressBarTextField.stringValue.isEmpty))
+                : (selectionState.isSelected || mode.isEditing)
+
+            addressBarTextField.isHidden = !isPassiveTextFieldHidden
+            passiveTextField.isHidden = isPassiveTextFieldHidden
         }
-        passiveTextField.textColor = colorsProvider.textPrimaryColor
+
+        refreshPlaceholderAppearance()
 
         // Workaround for macOS 26.0 NSTextFieldSimpleLabel rendering bug.
         // The internal labels get `alpha = 0` when the text field is hidden; un-hiding the field (e.g. transitioning
@@ -866,23 +872,44 @@ final class AddressBarViewController: NSViewController {
     }
 
     private func updateSwitchToTabBoxAppearance() {
-        guard case .editing(.openTabSuggestion) = mode,
-              addressBarTextField.isVisible, let editor = addressBarTextField.editor,
-              view.frame.size.width > 280 else {
-            switchToTabBox.isHidden = true
-            switchToTabBox.alphaValue = 0
+        guard calculateSwitchToTabBoxMinX() != nil else {
+            refreshSwitchToTabVisibility(isHidden: true)
             return
         }
 
-        if !switchToTabBox.isVisible {
-            switchToTabBox.isShown = true
-            switchToTabBox.alphaValue = 0
-        }
         // update box position on the next pass after text editor layout is updated
         DispatchQueue.main.async {
-            self.switchToTabBox.alphaValue = 1
-            self.switchToTabBoxMinXConstraint.constant = editor.textSize.width + Constants.switchToTabMinXPadding
+            guard let minX = self.calculateSwitchToTabBoxMinX() else {
+                self.refreshSwitchToTabVisibility(isHidden: true)
+                return
+            }
+
+            self.refreshSwitchToTabVisibility(isHidden: false)
+            self.switchToTabBoxMinXConstraint.constant = minX
         }
+    }
+
+    private func calculateSwitchToTabBoxMinX() -> CGFloat? {
+        guard case .editing(.openTabSuggestion) = mode, addressBarTextField.isVisible, let editor = addressBarTextField.editor else {
+            return nil
+        }
+
+        let trailingInset = switchToTabBoxTrailingConstraint.constant
+        let switchToWidth = switchToTabBox.fittingSize.width
+
+        /// We're placing the `SwitchToTabBox` component at the tail of the Address Bar text.
+        /// But such location is also limited by the actually visible width.
+        let textWidth = min(editor.textSize.width, max(0, addressBarTextField.bounds.width - switchToWidth))
+
+        let switchToMinX = Constants.switchToTabMinXPadding + textWidth
+        let requiredWidth = switchToMinX + switchToWidth + trailingInset
+
+        return requiredWidth <= view.bounds.width ? switchToMinX : nil
+    }
+
+    private func refreshSwitchToTabVisibility(isHidden: Bool) {
+        switchToTabBox.isHidden = isHidden
+        switchToTabBox.alphaValue = isHidden ? 0 : 1
     }
 
     private func updateShadowViewPresence(_ isFirstResponder: Bool) {
@@ -1049,6 +1076,18 @@ final class AddressBarViewController: NSViewController {
 
     private func refreshSuggestionsAppearance() {
         activeBackgroundViewWithSuggestions.backgroundColor = theme.colorsProvider.suggestionsBackgroundColor(isBurner: isBurner)
+    }
+
+    private func refreshPlaceholderAppearance() {
+        let colorsProvider = theme.colorsProvider
+
+        guard themeManager.isAppRebranded else {
+            passiveTextField.textColor = colorsProvider.textPrimaryColor
+            return
+        }
+
+        let displaysPlaceholder = tabViewModel?.passiveAddressBarDisplaysPlaceholder == true
+        passiveTextField.textColor = displaysPlaceholder ? colorsProvider.textSecondaryColor : colorsProvider.textPrimaryColor
     }
 
     private func layoutTextFields(withMinX minX: CGFloat) {
@@ -1386,6 +1425,7 @@ private extension AddressBarViewController {
 }
 
 extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
+
     func addressBarButtonsViewControllerHideAIChatButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController) {
         aiChatSettings.showShortcutInAddressBar = false
     }
@@ -1402,8 +1442,8 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
         _ = escapeKeyDown()
     }
 
-    func addressBarButtonsViewController(_ addressBarButtonsViewController: AddressBarButtonsViewController, openSettingsPane pane: PreferencePaneIdentifier) {
-        tabCollectionViewModel.insertOrAppendNewTab(.settings(pane: pane))
+    func addressBarButtonsViewController(_ addressBarButtonsViewController: AddressBarButtonsViewController, openSettings destination: PreferencesDestination) {
+        delegate?.addressBarViewController(self, openSettings: destination)
     }
 
     func addressBarButtonsViewControllerAIChatButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController) {

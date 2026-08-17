@@ -33,7 +33,7 @@ enum AppStateRestorationTrigger {
     case appUpdate
 }
 
-enum GeneralPixel: PixelKitEvent {
+enum GeneralPixel: PixelKit.Event {
 
     case crash(appIdentifier: CrashPixelAppIdentifier?)
     case crashOnCrashHandlersSetUp
@@ -1964,7 +1964,6 @@ enum GeneralPixel: PixelKitEvent {
         public var description: String { rawValue }
 
         case tds = "tracker_data"
-        case clickToLoad = "click_to_load"
         case blockingAttribution = "blocking_attribution"
         case attributed = "attributed"
         case unknown = "unknown"

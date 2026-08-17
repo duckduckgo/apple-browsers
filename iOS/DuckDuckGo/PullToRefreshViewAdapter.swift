@@ -57,6 +57,7 @@ final class PullToRefreshViewAdapter: NSObject {
 
     private let fakeScrollView = UIScrollView()
     private let refreshControl = UIRefreshControl()
+    private var topConstraint: NSLayoutConstraint?
     private var panGestureRecognizer: UIPanGestureRecognizer?
 
     private var isPulling = false
@@ -121,8 +122,10 @@ final class PullToRefreshViewAdapter: NSObject {
         view.superview?.addSubview(fakeScrollView)
         view.superview?.sendSubviewToBack(fakeScrollView)
 
+        let topConstraint = fakeScrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor)
+        self.topConstraint = topConstraint
         NSLayoutConstraint.activate([
-            fakeScrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            topConstraint,
             fakeScrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             fakeScrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             fakeScrollView.bottomAnchor.constraint(equalTo: view.centerYAnchor)
@@ -272,6 +275,10 @@ final class PullToRefreshViewAdapter: NSObject {
         if !isPulling {
             fakeScrollView.refreshControl = isEnabled ? refreshControl : nil
         }
+    }
+
+    func setTopOffset(_ offset: CGFloat) {
+        topConstraint?.constant = offset
     }
 
 }

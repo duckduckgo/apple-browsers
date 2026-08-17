@@ -310,6 +310,12 @@
 /* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
 "aichat.attachment.unsupported.file.type.single" = "Filtypen stöds inte – bifoga en %@.";
 
+/* Caption shown below the input while editing a message, warning that submitting the edit replaces the existing response */
+"aichat.edit.replaceResponseDisclaimer" = "Vid redigering ersätts svaret med ett nytt.";
+
+/* Title shown in the Duck.ai tab header while editing a previously sent message */
+"aichat.header.editMessage" = "Redigera meddelande";
+
 /* Accessibility label for the Plus (+) button in the Duck.ai tab header that opens a menu of new-chat and new-tab actions */
 "aichat.header.plusMenu.a11y" = "Ny";
 
@@ -948,6 +954,12 @@
 
 /* Login name label for login details on autofill */
 "autofill.logins.details.login-name" = "Rubrik";
+
+/* Message for alert when attempting to save a password that has neither a website nor a username */
+"autofill.logins.details.missing-website-or-username-alert.message" = "Ange en webbplats eller ett användarnamn för att spara lösenordet.";
+
+/* Title for alert when attempting to save a password that has neither a website nor a username */
+"autofill.logins.details.missing-website-or-username-alert.title" = "Webbplats eller användarnamn krävs";
 
 /* Title when adding new autofill login */
 "autofill.logins.details.new-title" = "Lägg till lösenord";
@@ -2950,6 +2962,12 @@
 /* Title for the Import Passwords Promotion banner */
 "import.passwords.promo.title" = "Importera dina lösenord till DuckDuckGo";
 
+/* Body for the notification sent after a period of inactivity. */
+"inactivity.notification.body" = "Använd DuckDuckGo för att undvika annonser som spårar dig på webben och minska ditt digitala fotavtryck.";
+
+/* Title for the notification sent after a period of inactivity. */
+"inactivity.notification.title" = "Ta kontroll över din onlineupplevelse";
+
 /* Placeholder text for the duck.ai input field */
 "input.field.placeholder.duckai" = "Fråga vad som helst privat";
 
@@ -4008,6 +4026,18 @@
 
 /* Special error page title for pages that can only be opened in Safari */
 "prompt.general-page-problem.title" = "Den här sidan laddas bara i Safari";
+
+/* Error page message shown after repeated tab terminations */
+"prompt.tab-termination-error-page.message" = "Inläsningen av sidan avbröts flera gånger. Uppdatera sidan igen eller skicka feedback till oss.";
+
+/* Button that reloads a page after repeated tab terminations */
+"prompt.tab-termination-error-page.reload" = "Uppdatera";
+
+/* Button that opens site feedback after repeated tab terminations */
+"prompt.tab-termination-error-page.send-feedback" = "Skicka feedback";
+
+/* Error page title shown after repeated tab terminations */
+"prompt.tab-termination-error-page.title" = "Vi kunde inte läsa in den här sidan";
 
 /* Default native error page message */
 "prompt.web-page-load-error.message" = "Webbplatsen har ett ogiltigt säkerhetscertifikat och kan vara riskabel att besöka.";

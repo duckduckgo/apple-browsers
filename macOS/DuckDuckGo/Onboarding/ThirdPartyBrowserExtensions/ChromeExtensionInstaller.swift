@@ -21,7 +21,7 @@ import PixelKit
 import PrivacyConfig
 import os.log
 
-enum ChromeExtensionInstallerPixelEvent: PixelKitEvent {
+enum ChromeExtensionInstallerPixelEvent: PixelKit.Event {
     case detectionFailed
     case installFailed
 

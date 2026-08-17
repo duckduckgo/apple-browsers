@@ -51,7 +51,7 @@ final class OnboardingSharedPixelTests: XCTestCase {
 
         let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
         XCTAssertEqual(event.pixel.name, "onboarding_welcome")
-        XCTAssertEqual(event.pixel.parameters?["e"], "shown")
+        XCTAssertEqual(event.pixel.parameters?["event"], "shown")
         XCTAssertEqual(event.pixel.standardParameters, [.pixelSource])
         XCTAssertNil(event.additionalParameters?["source"])
         XCTAssertNil(event.additionalParameters?["flow"])
@@ -111,7 +111,7 @@ final class OnboardingSharedPixelTests: XCTestCase {
 
         let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
         XCTAssertEqual(event.pixel.name, "onboarding_chrome-extension-install")
-        XCTAssertEqual(event.pixel.parameters?["e"], "clicked")
+        XCTAssertEqual(event.pixel.parameters?["event"], "clicked")
         XCTAssertEqual(event.pixel.parameters?["value"], "engage")
     }
 
@@ -165,72 +165,131 @@ final class OnboardingSharedPixelTests: XCTestCase {
         XCTAssertEqual(event.pixel.parameters?["value"], "dismiss")
     }
 
-    func testWhenInstallTypeIsProvidedThenItParameterIsIncluded() throws {
+    func testWhenInstallTypeIsProvidedThenInstallTypeParameterIsIncluded() throws {
         let pixelFiring = PixelKitMock()
         let pixelHandler = makeHandler(installTypeProvider: { .newInstall }, pixelFiring: pixelFiring)
 
         pixelHandler.fire(.welcome(.shown))
 
         let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
-        XCTAssertEqual(event.additionalParameters?["it"], "new")
+        XCTAssertEqual(event.additionalParameters?["installType"], "new")
     }
 
-    func testWhenInstallTypeIsNotProvidedThenItParameterIsOmitted() throws {
+    func testWhenInstallTypeIsNotProvidedThenInstallTypeParameterIsOmitted() throws {
         let pixelFiring = PixelKitMock()
         let pixelHandler = makeHandler(installTypeProvider: { nil }, pixelFiring: pixelFiring)
 
         pixelHandler.fire(.welcome(.shown))
 
         let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
-        XCTAssertNil(event.additionalParameters?["it"])
+        XCTAssertNil(event.additionalParameters?["installType"])
     }
 
-    func testWhenInstallTypeProviderResultChangesThenSubsequentFiresUseUpdatedItParameter() throws {
+    func testWhenInstallTypeProviderResultChangesThenSubsequentFiresUseUpdatedInstallTypeParameter() throws {
         let pixelFiring = PixelKitMock()
         var isReinstall = false
         let pixelHandler = makeHandler(installTypeProvider: { isReinstall ? .reinstall : .newInstall }, pixelFiring: pixelFiring)
 
         pixelHandler.fire(.welcome(.shown))
         let first = try XCTUnwrap(pixelFiring.actualFireCalls.first)
-        XCTAssertEqual(first.additionalParameters?["it"], "new")
+        XCTAssertEqual(first.additionalParameters?["installType"], "new")
 
         isReinstall = true
         pixelHandler.fire(.welcome(.shown))
         let second = try XCTUnwrap(pixelFiring.actualFireCalls.last)
-        XCTAssertEqual(second.additionalParameters?["it"], "reinstall")
+        XCTAssertEqual(second.additionalParameters?["installType"], "reinstall")
     }
 
-    func testWhenDaysSinceInstallIsInRangeThenDParameterIsIncluded() throws {
+    func testWhenDaysSinceInstallIsZeroThenDaysSinceInstallBucketIsZero() throws {
         let pixelFiring = PixelKitMock()
         let currentDate = Date()
-        let pixelHandler = makeHandler(installDateProvider: { currentDate.daysAgo(28) }, currentDateProvider: { currentDate }, pixelFiring: pixelFiring)
+        let pixelHandler = makeHandler(
+            installDateProvider: { currentDate.daysAgo(0) },
+            currentDateProvider: { currentDate },
+            pixelFiring: pixelFiring)
 
         pixelHandler.fire(.welcome(.shown))
 
         let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
-        XCTAssertEqual(event.additionalParameters?["d"], "28")
+        XCTAssertEqual(event.additionalParameters?["daysSinceInstall"], "0")
     }
 
-    func testWhenDaysSinceInstallIsOutOfRangeThenDParameterIsOmitted() throws {
+    func testWhenDaysSinceInstallIsOneToThreeThenDaysSinceInstallBucketIsOneToThree() throws {
+        let currentDate = Date()
+        for daysAgo in [1, 3] {
+            let pixelFiring = PixelKitMock()
+            let pixelHandler = makeHandler(
+                installDateProvider: { currentDate.daysAgo(daysAgo) },
+                currentDateProvider: { currentDate },
+                pixelFiring: pixelFiring)
+
+            pixelHandler.fire(.welcome(.shown))
+
+            let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
+            XCTAssertEqual(event.additionalParameters?["daysSinceInstall"], "1-3", "Failed for day \(daysAgo)")
+        }
+    }
+
+    func testWhenDaysSinceInstallIsFourToTenThenDaysSinceInstallBucketIsFourToTen() throws {
+        let currentDate = Date()
+        for daysAgo in [4, 10] {
+            let pixelFiring = PixelKitMock()
+            let pixelHandler = makeHandler(
+                installDateProvider: { currentDate.daysAgo(daysAgo) },
+                currentDateProvider: { currentDate },
+                pixelFiring: pixelFiring)
+
+            pixelHandler.fire(.welcome(.shown))
+
+            let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
+            XCTAssertEqual(event.additionalParameters?["daysSinceInstall"], "4-10", "Failed for day \(daysAgo)")
+        }
+    }
+
+    func testWhenDaysSinceInstallIsElevenToTwentyEightThenDaysSinceInstallBucketIsElevenToTwentyEight() throws {
+        let currentDate = Date()
+        for daysAgo in [11, 28] {
+            let pixelFiring = PixelKitMock()
+            let pixelHandler = makeHandler(
+                installDateProvider: { currentDate.daysAgo(daysAgo) },
+                currentDateProvider: { currentDate },
+                pixelFiring: pixelFiring)
+
+            pixelHandler.fire(.welcome(.shown))
+
+            let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
+            XCTAssertEqual(event.additionalParameters?["daysSinceInstall"], "11-28", "Failed for day \(daysAgo)")
+        }
+    }
+
+    func testWhenDaysSinceInstallIsTwentyNineOrMoreThenDaysSinceInstallBucketIsTwentyEightPlus() throws {
+        let currentDate = Date()
+        for daysAgo in [29, 100] {
+            let pixelFiring = PixelKitMock()
+            let pixelHandler = makeHandler(
+                installDateProvider: { currentDate.daysAgo(daysAgo) },
+                currentDateProvider: { currentDate },
+                pixelFiring: pixelFiring)
+
+            pixelHandler.fire(.welcome(.shown))
+
+            let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
+            XCTAssertEqual(event.additionalParameters?["daysSinceInstall"], "28+", "Failed for day \(daysAgo)")
+        }
+    }
+
+    func testWhenDaysSinceInstallIsNegativeThenDaysSinceInstallParameterIsOmitted() throws {
         let pixelFiring = PixelKitMock()
         let currentDate = Date()
-        let pixelHandler = makeHandler(installDateProvider: { currentDate.daysAgo(29) }, currentDateProvider: { currentDate }, pixelFiring: pixelFiring)
+        let pixelHandler = makeHandler(
+            installDateProvider: { currentDate.daysAgo(-1) },
+            currentDateProvider: { currentDate },
+            pixelFiring: pixelFiring)
 
         pixelHandler.fire(.welcome(.shown))
 
         let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
-        XCTAssertNil(event.additionalParameters?["d"])
-    }
-
-    func testWhenDaysSinceInstallIsNegativeThenDParameterIsOmitted() throws {
-        let pixelFiring = PixelKitMock()
-        let currentDate = Date()
-        let pixelHandler = makeHandler(installDateProvider: { currentDate.daysAgo(-1) }, currentDateProvider: { currentDate }, pixelFiring: pixelFiring)
-
-        pixelHandler.fire(.welcome(.shown))
-
-        let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
-        XCTAssertNil(event.additionalParameters?["d"])
+        XCTAssertNil(event.additionalParameters?["daysSinceInstall"])
     }
 
     func testWhenAppIconColorClickedThenUsesColorValue() throws {

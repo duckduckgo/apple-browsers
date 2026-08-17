@@ -125,6 +125,7 @@ final class BrowserTabViewController: NSViewController {
 
     private var lastURL: URL?
     private weak var lastTab: Tab?
+    private let subscriptionUpsellMetrics: OnboardingSubscriptionUpsellMetricsReporting
     private var wasContextualOnboardingDialogDismissed = false
     private var presentedContextualOnboardingDialogType: ContextualDialogType?
     private let onboardingPixelReporter: OnboardingPixelReporting
@@ -165,6 +166,7 @@ final class BrowserTabViewController: NSViewController {
          onboardingPixelReporter: OnboardingPixelReporting = OnboardingPixelReporter(),
          onboardingDialogTypeProvider: ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater = Application.appDelegate.onboardingContextualDialogsManager,
          onboardingDialogFactory: ContextualDaxDialogsFactory = ContextualDaxDialogsProvider(fireCoordinator: NSApp.delegateTyped.fireCoordinator),
+         subscriptionUpsellMetrics: OnboardingSubscriptionUpsellMetricsReporting = OnboardingSubscriptionUpsellMetricsReporter(),
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
          newTabPageActionsManager: @autoclosure @escaping @MainActor () -> NewTabPageActionsManager = NSApp.delegateTyped.newTabPageCoordinator.actionsManager,
          activeRemoteMessageModel: ActiveRemoteMessageModel = NSApp.delegateTyped.activeRemoteMessageModel,
@@ -194,6 +196,7 @@ final class BrowserTabViewController: NSViewController {
         self.onboardingPixelReporter = onboardingPixelReporter
         self.onboardingDialogTypeProvider = onboardingDialogTypeProvider
         self.onboardingDialogFactory = onboardingDialogFactory
+        self.subscriptionUpsellMetrics = subscriptionUpsellMetrics
         self.featureFlagger = featureFlagger
         self.newTabPageActionsManager = newTabPageActionsManager
         self.activeRemoteMessageModel = activeRemoteMessageModel
@@ -363,6 +366,7 @@ final class BrowserTabViewController: NSViewController {
     @objc
     private func windowWillClose(_ notification: NSNotification) {
         closeContentOverlayPopover()
+        abandonContextualOnboardingDialog()
         self.removeWebViewFromHierarchy()
         _newTabPageWebViewModel?.removeUserScripts()
     }
@@ -484,7 +488,7 @@ final class BrowserTabViewController: NSViewController {
                 }
 
                 tabViewModelCancellables.removeAll(keepingCapacity: true)
-                removeExistingDialog()
+                abandonContextualOnboardingDialog()
 
                 generateNativePreviewIfNeeded()
                 tabViewModel = selectedTabViewModel
@@ -671,6 +675,15 @@ final class BrowserTabViewController: NSViewController {
         ])
     }
 
+    private func abandonContextualOnboardingDialog() {
+        if presentedContextualOnboardingDialogType == .subscriptionUpsell,
+           onboardingDialogTypeProvider.lastDialog == .subscriptionUpsell {
+            subscriptionUpsellMetrics.report(.upsellDismissed)
+            onboardingDialogTypeProvider.gotItPressed()
+        }
+        removeExistingDialog()
+    }
+
     private func removeExistingDialog() {
         containerStackView.arrangedSubviews.filter({ $0 != webViewContainer }).forEach {
             containerStackView.removeArrangedSubview($0)
@@ -813,10 +826,11 @@ final class BrowserTabViewController: NSViewController {
             for: dialogType,
             delegate: tab,
             onDismiss: { [weak self] in
-                self?.handleContextualOnboardingOnDismiss()
+                guard let self else { return }
+                self.handleContextualOnboardingOnDismiss(dialogType: self.displayedDialogType(forRoot: dialogType))
             },
             onManualDismiss: { [weak self] in
-                self?.handleContextualOnboardingOnManualDismiss()
+                self?.handleContextualOnboardingOnManualDismiss(dialogType: dialogType)
             },
             onGotItPressed: { [weak self] in
                 self?.handleContextualOnboardingOnGotItPressed(dialogType: dialogType)
@@ -846,29 +860,62 @@ final class BrowserTabViewController: NSViewController {
         }
     }
 
-    private func handleContextualOnboardingOnDismiss() {
+    /// `dialogType` is captured at presentation time rather than read back off the provider, which
+    /// `gotItPressed()` may already have advanced.
+    private func handleContextualOnboardingOnDismiss(dialogType: ContextualDialogType) {
         wasContextualOnboardingDialogDismissed = true
         delegate?.dismissViewHighlight()
         removeChild(in: containerStackView, webViewContainer: webViewContainer)
-        if let lastDialog = onboardingDialogTypeProvider.lastDialog {
-            onboardingPixelReporter.measureDialogDismissed(dialogType: lastDialog)
+        // Kept in step with the teardown so the got-it handler can tell whether dismiss already ran.
+        presentedContextualOnboardingDialogType = nil
+        onboardingPixelReporter.measureDialogDismissed(dialogType: dialogType)
+        // Both facts matter, or dismissing the upsell would re-present it.
+        if dialogType == .highFive, onboardingDialogTypeProvider.lastDialog == .subscriptionUpsell {
+            presentContextualOnboarding(showLastDialog: true)
         }
     }
 
-    private func handleContextualOnboardingOnManualDismiss() {
-        if let lastDialog = onboardingDialogTypeProvider.lastDialog {
-            onboardingPixelReporter.measureDialogManuallyDismissed(dialogType: lastDialog)
+    private func handleContextualOnboardingOnManualDismiss(dialogType: ContextualDialogType) {
+        let displayedDialogType = displayedDialogType(forRoot: dialogType)
+        onboardingPixelReporter.measureDialogManuallyDismissed(dialogType: displayedDialogType)
+        if displayedDialogType == .subscriptionUpsell,
+           onboardingDialogTypeProvider.lastDialog == displayedDialogType {
+            onboardingDialogTypeProvider.gotItPressed()
         }
-        handleContextualOnboardingOnDismiss()
+        handleContextualOnboardingOnDismiss(dialogType: displayedDialogType)
     }
 
     private func handleContextualOnboardingOnGotItPressed(dialogType: ContextualDialogType) {
+        let displayedDialogType = displayedDialogType(forRoot: dialogType)
         onboardingDialogTypeProvider.gotItPressed()
-        onboardingPixelReporter.measureGotItPressed(dialogType: dialogType)
+        onboardingPixelReporter.measureGotItPressed(dialogType: displayedDialogType)
         let currentState = onboardingDialogTypeProvider.lastDialog
         delegate?.dismissViewHighlight()
         if case .tryFireButton = currentState {
             delegate?.highlightFireButton()
+        }
+        // The rebranded Fire dialog transitions to High Five in place. Remember the visible content
+        // so its later callbacks remain High Five even after the manager advances to the upsell.
+        if case .highFive = currentState {
+            presentedContextualOnboardingDialogType = .highFive
+        }
+        // Legacy dismisses before this runs, rebranded after its fade. A nil presented type means the
+        // teardown already happened; otherwise the dismiss handler presents instead.
+        if case .subscriptionUpsell = currentState, presentedContextualOnboardingDialogType == nil {
+            presentContextualOnboarding(showLastDialog: true)
+        }
+    }
+
+    private func displayedDialogType(forRoot rootDialogType: ContextualDialogType) -> ContextualDialogType {
+        if let presentedContextualOnboardingDialogType,
+           presentedContextualOnboardingDialogType == .highFive || presentedContextualOnboardingDialogType == .subscriptionUpsell {
+            return presentedContextualOnboardingDialogType
+        }
+        switch rootDialogType {
+        case .highFive, .subscriptionUpsell:
+            return rootDialogType
+        default:
+            return onboardingDialogTypeProvider.lastDialog ?? rootDialogType
         }
     }
 
@@ -1019,10 +1066,11 @@ final class BrowserTabViewController: NSViewController {
             self.reconcileWebContentLayoutForSidebarIfNeeded()
             // remove dialog on reload
             if tabViewModel?.tab == lastTab && self.lastURL == tabViewModel?.tab.url && self.lastURL != nil {
-                self.removeExistingDialog()
+                self.abandonContextualOnboardingDialog()
                 return
             }
             // present contextual onboarding dialog if needed
+            self.abandonContextualOnboardingDialog()
             self.presentContextualOnboarding()
             self.lastURL = self.tabViewModel?.tab.url
             self.lastTab = self.tabViewModel?.tab
@@ -1324,6 +1372,10 @@ final class BrowserTabViewController: NSViewController {
         if preferencesViewController.parent !== self {
             addAndLayoutChildBesideSidebar(preferencesViewController)
         }
+    }
+
+    func navigateSettings(to destination: PreferencesDestination) {
+        preferencesViewController?.model.navigate(to: destination)
     }
 
     private func shouldReplaceWebView(for tabViewModel: TabViewModel?) -> Bool {

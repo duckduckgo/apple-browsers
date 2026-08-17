@@ -30,9 +30,6 @@ final class PromptBarOmnibarContentViewController: NSViewController {
         static let promptLeadingInset: CGFloat = 10
         static let promptTrailingInset: CGFloat = 78
         static let promptToControlsSpacing: CGFloat = 8
-        /// The controls row's buttons hang off the suggestions view's top edge, which sits 4pt above
-        /// the container's bottom: 28pt button + 8pt tool inset + that 4pt.
-        static let controlsRowHeight: CGFloat = 40
         /// Placeholder for the initial frame, replaced by the first real measurement.
         static let nominalCollapsedHeight: CGFloat = 80
         static let backdropMaterial: NSVisualEffectView.Material = .hudWindow
@@ -240,7 +237,7 @@ extension PromptBarOmnibarContentViewController: PromptBarContentHosting {
         let height = Constants.promptTopInset
             + textViewController.promptContentHeight
             + Constants.promptToControlsSpacing
-            + Constants.controlsRowHeight
+            + containerViewController.controlsRowHeight
             + containerViewController.suggestionsHeight
             + containerViewController.additionalContentHeight
 

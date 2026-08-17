@@ -889,6 +889,8 @@ final class MockAIChatUserScriptHandling: AIChatUserScriptHandling {
     func disableChatInput(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
     func enableChatInput(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
     func focusChatInput(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
+    func editPrompt(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
+    func cancelEdit(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
 }
 // swiftlint:enable inclusive_language
 

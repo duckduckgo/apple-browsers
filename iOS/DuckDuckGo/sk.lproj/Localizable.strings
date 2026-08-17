@@ -310,6 +310,12 @@
 /* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
 "aichat.attachment.unsupported.file.type.single" = "Tento typ súboru nie je podporovaný. Prilož %@.";
 
+/* Caption shown below the input while editing a message, warning that submitting the edit replaces the existing response */
+"aichat.edit.replaceResponseDisclaimer" = "Upravením sa odpoveď nahradí novou.";
+
+/* Title shown in the Duck.ai tab header while editing a previously sent message */
+"aichat.header.editMessage" = "Upraviť správu";
+
 /* Accessibility label for the Plus (+) button in the Duck.ai tab header that opens a menu of new-chat and new-tab actions */
 "aichat.header.plusMenu.a11y" = "Nové";
 
@@ -948,6 +954,12 @@
 
 /* Login name label for login details on autofill */
 "autofill.logins.details.login-name" = "Názov";
+
+/* Message for alert when attempting to save a password that has neither a website nor a username */
+"autofill.logins.details.missing-website-or-username-alert.message" = "Ak chceš uložiť toto heslo, zadaj webovú stránku alebo používateľské meno.";
+
+/* Title for alert when attempting to save a password that has neither a website nor a username */
+"autofill.logins.details.missing-website-or-username-alert.title" = "Vyžaduje sa webová stránka alebo používateľské meno";
 
 /* Title when adding new autofill login */
 "autofill.logins.details.new-title" = "Pridať heslo";
@@ -2950,6 +2962,12 @@
 /* Title for the Import Passwords Promotion banner */
 "import.passwords.promo.title" = "Importuj si svoje heslá do DuckDuckGo";
 
+/* Body for the notification sent after a period of inactivity. */
+"inactivity.notification.body" = "Používaj DuckDuckGo a vyhni sa reklamám, ktoré ťa sledujú na webe, a zmenši tak svoju online stopu.";
+
+/* Title for the notification sent after a period of inactivity. */
+"inactivity.notification.title" = "Ovládni svoj online zážitok";
+
 /* Placeholder text for the duck.ai input field */
 "input.field.placeholder.duckai" = "Spýtaj sa na čokoľvek súkromne";
 
@@ -4008,6 +4026,18 @@
 
 /* Special error page title for pages that can only be opened in Safari */
 "prompt.general-page-problem.title" = "Táto stránka sa načíta iba v prehliadači Safari";
+
+/* Error page message shown after repeated tab terminations */
+"prompt.tab-termination-error-page.message" = "Táto stránka sa niekoľkokrát prestala načítavať. Skús znova načítať stránku alebo nám pošli spätnú väzbu.";
+
+/* Button that reloads a page after repeated tab terminations */
+"prompt.tab-termination-error-page.reload" = "Načítať znovu";
+
+/* Button that opens site feedback after repeated tab terminations */
+"prompt.tab-termination-error-page.send-feedback" = "Odoslať spätnú väzbu";
+
+/* Error page title shown after repeated tab terminations */
+"prompt.tab-termination-error-page.title" = "Nepodarilo sa nám načítať túto stránku";
 
 /* Default native error page message */
 "prompt.web-page-load-error.message" = "Táto webová stránka má neplatný certifikát zabezpečenia a jej návšteva nemusí byť bezpečná.";

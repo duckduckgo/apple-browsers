@@ -146,7 +146,7 @@ public extension URL {
 
     func removingInternalSearchParameters() -> URL {
         guard isDuckDuckGoSearch else { return self }
-        return removingParameters(named: [Param.atb, Param.source, Param.searchHeader, Param.kbg])
+        return removingParameters(named: [Param.atb, Param.source, Param.searchHeader, Param.kbg, Param.searchToken])
     }
 
     fileprivate enum Param {
@@ -159,6 +159,8 @@ public extension URL {
         static let partialHost = "pv1"
         static let searchHeader = "ko"
         static let kbg = "kbg"
+        // Search Token (Dindex) experiment param. Keep in sync with SerpSearchTokenInterceptor.tokenParam.
+        static let searchToken = "dindextoken"
         static let email = "email"
         static let isTablet = "is_tablet"
     }

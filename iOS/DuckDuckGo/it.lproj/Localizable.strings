@@ -310,6 +310,12 @@
 /* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
 "aichat.attachment.unsupported.file.type.single" = "Questo tipo di file non è supportato, allega un %@.";
 
+/* Caption shown below the input while editing a message, warning that submitting the edit replaces the existing response */
+"aichat.edit.replaceResponseDisclaimer" = "Con la modifica la risposta verrà sostituita da una nuova risposta.";
+
+/* Title shown in the Duck.ai tab header while editing a previously sent message */
+"aichat.header.editMessage" = "Modifica messaggio";
+
 /* Accessibility label for the Plus (+) button in the Duck.ai tab header that opens a menu of new-chat and new-tab actions */
 "aichat.header.plusMenu.a11y" = "Nuova";
 
@@ -948,6 +954,12 @@
 
 /* Login name label for login details on autofill */
 "autofill.logins.details.login-name" = "Titolo";
+
+/* Message for alert when attempting to save a password that has neither a website nor a username */
+"autofill.logins.details.missing-website-or-username-alert.message" = "Per salvare questa password, inserisci un sito web o un nome utente.";
+
+/* Title for alert when attempting to save a password that has neither a website nor a username */
+"autofill.logins.details.missing-website-or-username-alert.title" = "Sito web o nome utente richiesto";
 
 /* Title when adding new autofill login */
 "autofill.logins.details.new-title" = "Aggiungi password";
@@ -2950,6 +2962,12 @@
 /* Title for the Import Passwords Promotion banner */
 "import.passwords.promo.title" = "Importa le tue password in DuckDuckGo";
 
+/* Body for the notification sent after a period of inactivity. */
+"inactivity.notification.body" = "Usa DuckDuckGo per evitare gli annunci che ti tracciano sul web e ridurre la tua impronta digitale.";
+
+/* Title for the notification sent after a period of inactivity. */
+"inactivity.notification.title" = "Controlla la tua esperienza online";
+
 /* Placeholder text for the duck.ai input field */
 "input.field.placeholder.duckai" = "Chiedi qualsiasi cosa in privato";
 
@@ -4008,6 +4026,18 @@
 
 /* Special error page title for pages that can only be opened in Safari */
 "prompt.general-page-problem.title" = "Questa pagina si carica solo in Safari";
+
+/* Error page message shown after repeated tab terminations */
+"prompt.tab-termination-error-page.message" = "Questa pagina ha smesso di ricaricarsi più volte. Prova a ricaricare o inviaci un feedback.";
+
+/* Button that reloads a page after repeated tab terminations */
+"prompt.tab-termination-error-page.reload" = "Ricarica";
+
+/* Button that opens site feedback after repeated tab terminations */
+"prompt.tab-termination-error-page.send-feedback" = "Invia feedback";
+
+/* Error page title shown after repeated tab terminations */
+"prompt.tab-termination-error-page.title" = "Non siamo riusciti a caricare questa pagina";
 
 /* Default native error page message */
 "prompt.web-page-load-error.message" = "Questo sito web dispone di un certificato di sicurezza non valido e potrebbe non essere sicuro da visitare.";

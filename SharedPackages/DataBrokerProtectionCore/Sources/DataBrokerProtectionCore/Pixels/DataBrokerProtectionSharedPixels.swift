@@ -220,7 +220,7 @@ public enum DataBrokerProtectionSharedPixels {
     case updateDataBrokersFailure(dataBrokerFileName: String, removedAt: Int64?, isFreeScan: Bool?, error: Error)
 }
 
-extension DataBrokerProtectionSharedPixels: PixelKitEvent {
+extension DataBrokerProtectionSharedPixels: PixelKit.Event {
     public var name: String {
         switch self {
         case .parentChildMatches: return "dbp_parent-child-broker-matches"

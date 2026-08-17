@@ -40,7 +40,6 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
     let hoverUserScript = HoverUserScript()
     let subscriptionPagesUserScript = SubscriptionPagesUserScript()
     let identityTheftRestorationPagesUserScript = IdentityTheftRestorationPagesUserScript()
-    let clickToLoadScript: ClickToLoadUserScript
 
     let contentScopeUserScript: ContentScopeUserScript
     let contentScopeUserScriptIsolated: ContentScopeUserScript
@@ -63,7 +62,6 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
     let faviconScript = FaviconUserScript()
     let webTelemetryScript = WebTelemetryUserScript()
     let tabSuspensionScript = TabSuspensionUserScript()
-    let webEventsSubfeature: WebEventsSubfeature
 
     private let contentScopePreferences: ContentScopePreferences
 
@@ -74,7 +72,6 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
          aiChatDebugURLSettings: (any KeyedStoring<AIChatDebugURLSettings>)? = nil) {
 
         self.contentScopePreferences = contentScopePreferences
-        clickToLoadScript = ClickToLoadUserScript()
         // `setupSucceeded == nil` (setup still in flight) is treated as "available"
         // so the launch path is not blocked. Only force the JS fallback when a
         // permanent setup failure has been observed.
@@ -156,18 +153,6 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
             fatalError("Failed to initialize ContentScopeUserScript: \(error.localizedDescription)")
         }
 
-        let youTubeAdBlockingStorage: any KeyedStoring<YouTubeAdBlockingSettings> = UserDefaults.standard.keyedStoring()
-        webEventsSubfeature = WebEventsSubfeature(
-            isUserOptedIn: {
-                (youTubeAdBlockingStorage.youTubeAdBlockingEnabled ?? false)
-                    && (youTubeAdBlockingStorage.youTubeAnalyticsEnabled ?? false)
-            },
-            onEvent: { type, loginState in
-                guard let pixel = WebExtensionPixel.adBlockingDetectedEvent(type: type, loginState: loginState.rawValue) else { return }
-                PixelKit.fire(pixel, frequency: .daily)
-            }
-        )
-
         autofillScript = WebsiteAutofillUserScript(scriptSourceProvider: sourceProvider.autofillSourceProvider!)
 
         autoconsentUserScript = AutoconsentUserScript(
@@ -222,13 +207,11 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         }
 
         contentScopeUserScriptIsolated.registerSubfeature(delegate: webTelemetryScript)
-        contentScopeUserScriptIsolated.registerSubfeature(delegate: webEventsSubfeature)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: faviconScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: tabSuspensionScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: contextMenuSubfeature)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: pageObserverScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: hoverUserScript)
-        contentScopeUserScriptIsolated.registerSubfeature(delegate: clickToLoadScript)
 
         if let aiChatUserScript {
             contentScopeUserScriptIsolated.registerSubfeature(delegate: aiChatUserScript)

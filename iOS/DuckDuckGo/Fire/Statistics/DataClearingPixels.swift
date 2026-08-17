@@ -29,9 +29,9 @@ enum DataClearingPixels {
     case userActionBeforeCompletion
 }
 
-// MARK: - PixelKitEvent Protocol
+// MARK: - PixelKit.Event Protocol
 
-extension DataClearingPixels: PixelKitEvent {
+extension DataClearingPixels: PixelKit.Event {
 
     var name: String {
         switch self {

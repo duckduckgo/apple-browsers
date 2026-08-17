@@ -22,7 +22,7 @@ import PixelKit
 /**
  * This enum keeps pixels related to Settings Page.
  */
-enum SettingsPixel: PixelKitEvent {
+enum SettingsPixel: PixelKit.Event {
 
     /**
      * Event Trigger: Settings pane with a specified identifier is opened.

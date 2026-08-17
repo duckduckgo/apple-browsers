@@ -503,7 +503,7 @@ class OnboardingManagerTests: XCTestCase {
 
     func testSetDefaultCompletedExperimentMetricFiredWhenEnrolled() {
         // Given
-        var firedEvents: [PixelKitEvent] = []
+        var firedEvents: [PixelKit.Event] = []
         let featureFlagger = makeFeatureFlagger(cohort: .control)
         let subfeatureID = MacOSBrowserConfigSubfeature.onboardingChromeExtension.rawValue
         featureFlagger.allActiveExperiments = [
@@ -530,7 +530,7 @@ class OnboardingManagerTests: XCTestCase {
 
     func testSetDefaultCompletedExperimentMetricNotFiredWhenNotEnrolled() {
         // Given
-        var firedEvents: [PixelKitEvent] = []
+        var firedEvents: [PixelKit.Event] = []
         PixelKit.configureExperimentKit(
             featureFlagger: MockFeatureFlagger(),
             eventTracker: ExperimentEventTracker(store: MockExperimentActionPixelStore()),

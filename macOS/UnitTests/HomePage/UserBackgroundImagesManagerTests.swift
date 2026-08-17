@@ -26,7 +26,7 @@ final class UserBackgroundImagesManagerTests: XCTestCase {
     var manager: UserBackgroundImagesManager!
     var storageLocation: URL!
     var imageProcessor: ImageProcessorMock!
-    var sendPixelEvents: [PixelKitEvent] = []
+    var sendPixelEvents: [PixelKit.Event] = []
 
     override func setUp() async throws {
         storageLocation = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)

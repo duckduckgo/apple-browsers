@@ -109,6 +109,7 @@ final class AIChatCoordinator: AIChatCoordinating {
     private let pixelFiring: PixelFiring?
     private let featureFlagger: FeatureFlagger
     private var preferencesStorage: AIChatPreferencesStorage
+    private let aiChatConversationSourceHandler: AIChatConversationSourceHandler
     private let sidebarPresenceDidChangeSubject = PassthroughSubject<AIChatPresenceChange, Never>()
     private let chatFloatingStateDidChangeSubject = PassthroughSubject<TabIdentifier, Never>()
 
@@ -144,7 +145,8 @@ final class AIChatCoordinator: AIChatCoordinating {
         windowControllersManager: WindowControllersManagerProtocol,
         pixelFiring: PixelFiring?,
         featureFlagger: FeatureFlagger,
-        preferencesStorage: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage()
+        preferencesStorage: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage(),
+        aiChatConversationSourceHandler: AIChatConversationSourceHandler = Application.appDelegate.aiChatConversationSourceHandler
     ) {
         self.sidebarHost = sidebarHost
         self.sessionStore = sessionStore
@@ -154,6 +156,7 @@ final class AIChatCoordinator: AIChatCoordinating {
         self.pixelFiring = pixelFiring
         self.featureFlagger = featureFlagger
         self.preferencesStorage = preferencesStorage
+        self.aiChatConversationSourceHandler = aiChatConversationSourceHandler
 
         if let stored = preferencesStorage.lastUsedSidebarWidth, stored > 0 {
             self.windowDefaultWidth = Swift.min(Constants.maxSidebarWidth, Swift.max(Constants.minSidebarWidth, CGFloat(stored)))
@@ -382,6 +385,7 @@ final class AIChatCoordinator: AIChatCoordinating {
     private func handleAIChatHandoff(with payload: AIChatPayload) {
         guard let currentTabID = sidebarHost.currentTabID else { return }
 
+        aiChatConversationSourceHandler.setData(.serp)
         if isChatPresented(for: currentTabID) {
             aiChatTabOpener.openAIChatTab(with: .payload(payload), behavior: .newTab(selected: true))
         } else {
@@ -629,6 +633,7 @@ extension AIChatCoordinator: AIChatViewControllerDelegate {
 
         Task { @MainActor in
             let behavior: LinkOpenBehavior = isCurrentTabNewTab ? .currentTab : .newTab(selected: true)
+            aiChatConversationSourceHandler.setData(.sidebarHandoff)
             if let data = restorationData {
                 aiChatTabOpener.openAIChatTab(with: .restoration(data), behavior: behavior)
             } else {

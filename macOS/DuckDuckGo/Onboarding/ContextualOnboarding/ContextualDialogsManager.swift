@@ -35,6 +35,7 @@ enum ContextualDialogType: Equatable {
     case trackers(message: NSAttributedString, shouldFollowUp: Bool)
     case tryFireButton
     case highFive
+    case subscriptionUpsell
 }
 
 /// Protocol for providing the appropriate dialog type based on a Tab.
@@ -92,6 +93,7 @@ public class ContextualOnboardingStateStorage: ContextualOnboardingStateStoring 
 public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDialogTypeProviding, ContextualOnboardingStateUpdater {
 
     private let trackerMessageProvider: TrackerMessageProviding
+    private let subscriptionUpsellExperiment: OnboardingSubscriptionUpsellEnrolling
     private var stateStorage: ContextualOnboardingStateStoring
 
     // The last dialog that was presented.
@@ -128,8 +130,11 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
         }
     }
 
-    init(trackerMessageProvider: TrackerMessageProviding, stateStorage: ContextualOnboardingStateStoring = ContextualOnboardingStateStorage()) {
+    init(trackerMessageProvider: TrackerMessageProviding,
+         subscriptionUpsellExperiment: OnboardingSubscriptionUpsellEnrolling,
+         stateStorage: ContextualOnboardingStateStoring = ContextualOnboardingStateStorage()) {
         self.trackerMessageProvider = trackerMessageProvider
+        self.subscriptionUpsellExperiment = subscriptionUpsellExperiment
         self.stateStorage = stateStorage
         self.isContextualOnboardingCompleted = stateStorage.stateString == ContextualOnboardingState.onboardingCompleted.rawValue
     }
@@ -155,13 +160,36 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
             // When user press got it "trackers" dialog it will automatically show "tryFireButton" therefore we mark it as seen and as lastDialog
             markSeen(.tryFireButton)
             lastDialog = .tryFireButton
+        case .tryFireButton?:
+            // When user skips the "tryFireButton" dialog it will automatically show "highFive" therefore we mark it as seen and as lastDialog
+            lastDialog = .highFive
+            enteredHighFive()
         case .highFive?:
-            // If highFive dialog, complete onboarding.
+            advancePastHighFive()
+        case .subscriptionUpsell?:
             state = .onboardingCompleted
             lastDialog = nil
         default:
             break
         }
+    }
+
+    // Enrol on entering highFive, not on leaving it, so every exit resolves against the same cohort.
+    private func enteredHighFive() {
+        if !hasSeen(.highFive) {
+            markSeen(.highFive)
+        }
+        subscriptionUpsellExperiment.enroll()
+    }
+
+    private func advancePastHighFive() {
+        guard subscriptionUpsellExperiment.cohort == .treatment else {
+            state = .onboardingCompleted
+            lastDialog = nil
+            return
+        }
+        markSeen(.subscriptionUpsell)
+        lastDialog = .subscriptionUpsell
     }
 
     // Called when the user uses the fire button
@@ -180,9 +208,21 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
         guard state != .onboardingCompleted else { return nil }
         // If onboarding hasn't started, mark it as ongoing.
         if state == .notStarted { state = .ongoing }
-        // If a highFive has already been seen, conclude onboarding.
-        if hasSeen(.highFive) {
+        // The upsell shows once. The persisted marker also prevents it returning after relaunch.
+        if hasSeen(.subscriptionUpsell) {
             state = .onboardingCompleted
+            lastDialog = nil
+            return nil
+        }
+        // Browsing on is the third way out of highFive, so it takes the same transition.
+        if hasSeen(.highFive) {
+            advancePastHighFive()
+
+            if lastDialog == .subscriptionUpsell {
+                lastTab = tab
+                return .subscriptionUpsell
+            }
+
             return nil
         }
 
@@ -210,6 +250,8 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
         // Store the last dialog and last tab for future reference.
         lastDialog = selectedDialog
         lastTab = tab
+
+        if selectedDialog == .highFive { enteredHighFive() }
 
         return selectedDialog
     }
@@ -323,6 +365,8 @@ extension ContextualDialogType {
             return "tryFireButton"
         case .highFive:
             return "highFive"
+        case .subscriptionUpsell:
+            return "subscriptionUpsell"
         }
     }
 

@@ -413,7 +413,8 @@ extension TabViewController {
         return BrowsingMenuEntry.regular(name: UserText.actionCopy, image: image, action: { [weak self] in
             guard let strongSelf = self else { return }
             if !strongSelf.isError, let url = strongSelf.webView.url {
-                strongSelf.onCopyAction(forUrl: url)
+                // `webView.url` carries the search-token param on SERP navigations; strip it before it hits the pasteboard.
+                strongSelf.onCopyAction(forUrl: SerpSearchTokenInterceptor.strippingToken(from: url))
             } else if let text = self?.chromeDelegate?.omniBar.text {
                 strongSelf.onCopyAction(for: text)
             }
@@ -555,7 +556,7 @@ extension TabViewController {
                  action: { [weak self] in
             DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuNewChatTabTapped)
             Pixel.fire(pixel: .browsingMenuAIChat)
-            self?.openNewChatInNewTab()
+            self?.requestNewAIChatTabFromMenu()
         })
     }
 
@@ -568,8 +569,14 @@ extension TabViewController {
                  action: { [weak self] in
             DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuNewChatTabTapped)
             Pixel.fire(pixel: .browsingMenuAIChat)
-            self?.openNewChatInNewTab()
+            self?.requestNewAIChatTabFromMenu()
         })
+    }
+
+    /// The delegate reports the entry, because `TabURLInterceptor` may cancel this navigation
+    /// and re-enter `openAIChat`, which would otherwise report the same entry a second time.
+    private func requestNewAIChatTabFromMenu() {
+        delegate?.tabDidRequestNewAIChatTab(tab: self)
     }
 
     private func buildDuckAiChatsEntry(withSmallIcon smallIcon: Bool = true) -> BrowsingMenuEntry {
@@ -834,7 +841,7 @@ extension TabViewController {
     
     private func onReportBrokenSiteAction() {
         Pixel.fire(pixel: .browsingMenuReportBrokenSite)
-        delegate?.tabDidRequestReportBrokenSite(tab: self)
+        delegate?.tabDidRequestReportBrokenSite(tab: self, entryPoint: .report)
     }
     
     private func onOpenDownloadsAction() {

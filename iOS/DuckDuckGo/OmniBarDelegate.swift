@@ -30,6 +30,10 @@ enum OmniBarEditingEndResult {
 
 protocol OmniBarDelegate: AnyObject {
 
+    /// The user edited the text, on whichever input surface is in use. Separate from
+    /// `onOmniQueryUpdated`, which also decides what the suggestion tray shows.
+    func onOmniBarTextEdited(_ text: String)
+
     func onOmniQueryUpdated(_ query: String)
     
     func onOmniQuerySubmitted(_ query: String)
@@ -157,10 +161,21 @@ protocol OmniBarDelegate: AnyObject {
     func onAIChatSuggestionsActivateHighlight() -> Bool
     /// Clears the highlight, e.g. when the user taps back into the text view.
     func onAIChatSuggestionsClearHighlight()
+
+    /// The page behind the address bar, for the `page_type` param on prompt pixels.
+    func currentPromptPageType() -> UnifiedToggleInputPromptPageType
 }
 
 extension OmniBarDelegate {
-    
+
+    func onOmniBarTextEdited(_ text: String) {
+
+    }
+
+    func currentPromptPageType() -> UnifiedToggleInputPromptPageType {
+        .unknown
+    }
+
     func onOmniQueryUpdated(_ query: String) {
         
     }

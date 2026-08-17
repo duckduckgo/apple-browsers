@@ -310,6 +310,12 @@
 /* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
 "aichat.attachment.unsupported.file.type.single" = "Ova vrsta datoteke nije podržana, priloži %@.";
 
+/* Caption shown below the input while editing a message, warning that submitting the edit replaces the existing response */
+"aichat.edit.replaceResponseDisclaimer" = "Uređivanjem će se odgovor zamijeniti novim.";
+
+/* Title shown in the Duck.ai tab header while editing a previously sent message */
+"aichat.header.editMessage" = "Uredi poruku";
+
 /* Accessibility label for the Plus (+) button in the Duck.ai tab header that opens a menu of new-chat and new-tab actions */
 "aichat.header.plusMenu.a11y" = "Novo";
 
@@ -948,6 +954,12 @@
 
 /* Login name label for login details on autofill */
 "autofill.logins.details.login-name" = "Naslov";
+
+/* Message for alert when attempting to save a password that has neither a website nor a username */
+"autofill.logins.details.missing-website-or-username-alert.message" = "Za spremanje ove lozinke unesi web-mjesto ili korisničko ime.";
+
+/* Title for alert when attempting to save a password that has neither a website nor a username */
+"autofill.logins.details.missing-website-or-username-alert.title" = "Potrebno je web-mjesto ili korisničko ime";
 
 /* Title when adding new autofill login */
 "autofill.logins.details.new-title" = "Dodaj lozinku";
@@ -2950,6 +2962,12 @@
 /* Title for the Import Passwords Promotion banner */
 "import.passwords.promo.title" = "Uvezi svoje lozinke u DuckDuckGo";
 
+/* Body for the notification sent after a period of inactivity. */
+"inactivity.notification.body" = "Koristi DuckDuckGo da izbjegneš oglase koji te prate po cijelom webu i smanjiš svoj digitalni trag.";
+
+/* Title for the notification sent after a period of inactivity. */
+"inactivity.notification.title" = "Kontroliraj svoje online iskustvo";
+
 /* Placeholder text for the duck.ai input field */
 "input.field.placeholder.duckai" = "Privatno pitaj bilo što";
 
@@ -4008,6 +4026,18 @@
 
 /* Special error page title for pages that can only be opened in Safari */
 "prompt.general-page-problem.title" = "Ova se stranica učitava samo u Safariju";
+
+/* Error page message shown after repeated tab terminations */
+"prompt.tab-termination-error-page.message" = "Ova se stranica prestala učitavati više puta. Pokušaj je ponovo učitati ili nam pošalji povratne informacije.";
+
+/* Button that reloads a page after repeated tab terminations */
+"prompt.tab-termination-error-page.reload" = "Ponovno učitaj";
+
+/* Button that opens site feedback after repeated tab terminations */
+"prompt.tab-termination-error-page.send-feedback" = "Pošalji povratne informacije";
+
+/* Error page title shown after repeated tab terminations */
+"prompt.tab-termination-error-page.title" = "Učitavanje ove stranice nije uspjelo";
 
 /* Default native error page message */
 "prompt.web-page-load-error.message" = "Ovo web-mjesto ima nevažeći sigurnosni certifikat i možda ga nije sigurno posjetiti.";

@@ -13,6 +13,7 @@ runs:
   using: 'composite'
   steps:
     - name: Install selected Ruby version
+      if: runner.environment != 'self-hosted'
       uses: ruby/setup-ruby@v1
 
     - name: Cache Ruby dependencies

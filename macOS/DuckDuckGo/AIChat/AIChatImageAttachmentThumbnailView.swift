@@ -237,7 +237,7 @@ final class AIChatImageAttachmentThumbnailView: NSView {
     // MARK: - Appearance
 
     private func updateAppearance() {
-        NSAppearance.withAppAppearance {
+        effectiveAppearance.performAsCurrentDrawingAppearance {
             // Match the tab-card style: surface secondary background, no border, shadow.
             let surfaceColor = NSColor(designSystemColor: .surfaceSecondary)
             let removeButtonBackgroundColor = NSColor(named: Constants.removeButtonBackgroundColorName) ?? .white

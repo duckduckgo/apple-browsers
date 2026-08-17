@@ -100,6 +100,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .historyView(query: .rangeFilter(.all)),
+            showVisitsToggle: true,
             showSegmentedControl: false,
             showCloseWindowsAndTabsToggle: true,
             showFireproofSection: true,
@@ -148,6 +149,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .historyView(query: .rangeFilter(.all)),
+            showVisitsToggle: true,
             showSegmentedControl: false,
             showCloseWindowsAndTabsToggle: true,
             showFireproofSection: true,
@@ -196,6 +198,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .historyView(query: .rangeFilter(.all)),
+            showVisitsToggle: true,
             showSegmentedControl: false,
             showCloseWindowsAndTabsToggle: true,
             showFireproofSection: true,
@@ -251,6 +254,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .historyView(query: .rangeFilter(.all)),
+            showVisitsToggle: true,
             showSegmentedControl: false,
             showCloseWindowsAndTabsToggle: true,
             showFireproofSection: true,
@@ -321,6 +325,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .historyView(query: .rangeFilter(.all)),
+            showVisitsToggle: true,
             showSegmentedControl: false,
             showCloseWindowsAndTabsToggle: true,
             showFireproofSection: true,
@@ -391,6 +396,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .historyView(query: .rangeFilter(.all)),
+            showVisitsToggle: true,
             showSegmentedControl: false,
             showCloseWindowsAndTabsToggle: true,
             showFireproofSection: true,
@@ -451,6 +457,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .historyView(query: .domainFilter(["cook.ie"])),
+            showVisitsToggle: true,
             showSegmentedControl: false,
             showCloseWindowsAndTabsToggle: false,
             showFireproofSection: false,
@@ -505,6 +512,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .historyView(query: .domainFilter(["test.com"])),
+            showVisitsToggle: true,
             showSegmentedControl: false,
             showCloseWindowsAndTabsToggle: false,
             showFireproofSection: false,
@@ -574,6 +582,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .historyView(query: .rangeFilter(.today)),
+            showVisitsToggle: true,
             showSegmentedControl: false,
             showCloseWindowsAndTabsToggle: true,
             showFireproofSection: true,
@@ -628,6 +637,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .historyView(query: .rangeFilter(.today)),
+            showVisitsToggle: true,
             showSegmentedControl: false,
             showCloseWindowsAndTabsToggle: true,
             showFireproofSection: true,
@@ -698,6 +708,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .historyView(query: .rangeFilter(.today)),
+            showVisitsToggle: true,
             showSegmentedControl: false,
             showCloseWindowsAndTabsToggle: true,
             showFireproofSection: true,
@@ -768,6 +779,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .historyView(query: .rangeFilter(.today)),
+            showVisitsToggle: true,
             showSegmentedControl: false,
             showCloseWindowsAndTabsToggle: true,
             showFireproofSection: true,
@@ -849,6 +861,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .historyView(query: .rangeFilter(.yesterday)),
+            showVisitsToggle: true,
             showSegmentedControl: false,
             showCloseWindowsAndTabsToggle: false,
             showFireproofSection: true,
@@ -927,6 +940,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .historyView(query: .dateFilter(date)),
+            showVisitsToggle: true,
             showSegmentedControl: false,
             showCloseWindowsAndTabsToggle: false,
             showFireproofSection: true,
@@ -996,6 +1010,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .historyView(query: .dateFilter(date)),
+            showVisitsToggle: true,
             showSegmentedControl: false,
             showCloseWindowsAndTabsToggle: false,
             showFireproofSection: true,
@@ -1067,6 +1082,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .historyView(query: .domainFilter(["figma.com"])),
+            showVisitsToggle: true,
             showSegmentedControl: false,
             showCloseWindowsAndTabsToggle: false,
             showFireproofSection: false,
@@ -1134,6 +1150,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .historyView(query: .domainFilter(["example.com"])),
+            showVisitsToggle: true,
             showSegmentedControl: false,
             showCloseWindowsAndTabsToggle: false,
             showFireproofSection: false,
@@ -1202,6 +1219,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .historyView(query: .domainFilter(["a.com"])),
+            showVisitsToggle: true,
             showSegmentedControl: false,
             showCloseWindowsAndTabsToggle: false,
             showFireproofSection: false,
@@ -1269,6 +1287,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .historyView(query: .domainFilter(["a.com", "b.com"])),
+            showVisitsToggle: true,
             showSegmentedControl: false,
             showCloseWindowsAndTabsToggle: false,
             showFireproofSection: false,
@@ -1339,6 +1358,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .historyView(query: .domainFilter(["a.com", "b.com"])),
+            showVisitsToggle: true,
             showSegmentedControl: false,
             showCloseWindowsAndTabsToggle: false,
             showFireproofSection: false,
@@ -1408,6 +1428,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .fireButton,
+            showVisitsToggle: true,
             showSegmentedControl: true,
             showCloseWindowsAndTabsToggle: true,
             showFireproofSection: true,
@@ -1475,6 +1496,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .fireButton,
+            showVisitsToggle: true,
             showSegmentedControl: true,
             showCloseWindowsAndTabsToggle: true,
             showFireproofSection: true,
@@ -1539,6 +1561,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .fireButton,
+            showVisitsToggle: true,
             showSegmentedControl: true,
             showCloseWindowsAndTabsToggle: true,
             showFireproofSection: true,
@@ -1603,6 +1626,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .fireButton,
+            showVisitsToggle: true,
             showSegmentedControl: true,
             showCloseWindowsAndTabsToggle: true,
             showFireproofSection: true,
@@ -1670,6 +1694,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .fireButton,
+            showVisitsToggle: true,
             showSegmentedControl: true,
             showCloseWindowsAndTabsToggle: true,
             showFireproofSection: true,
@@ -1787,6 +1812,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .fireButton,
+            showVisitsToggle: true,
             showSegmentedControl: true,
             showCloseWindowsAndTabsToggle: true,
             showFireproofSection: true,
@@ -1852,6 +1878,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .fireButton,
+            showVisitsToggle: true,
             showSegmentedControl: true,
             showCloseWindowsAndTabsToggle: true,
             showFireproofSection: true,
@@ -1918,6 +1945,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .fireButton,
+            showVisitsToggle: true,
             showSegmentedControl: true,
             showCloseWindowsAndTabsToggle: true,
             showFireproofSection: true,
@@ -1982,6 +2010,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .fireButton,
+            showVisitsToggle: true,
             showSegmentedControl: true,
             showCloseWindowsAndTabsToggle: true,
             showFireproofSection: true,
@@ -2041,6 +2070,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .fireButton,
+            showVisitsToggle: true,
             showSegmentedControl: true,
             showCloseWindowsAndTabsToggle: true,
             showFireproofSection: true,
@@ -2100,6 +2130,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .fireButton,
+            showVisitsToggle: true,
             showSegmentedControl: true,
             showCloseWindowsAndTabsToggle: true,
             showFireproofSection: true,
@@ -2166,6 +2197,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .fireButton,
+            showVisitsToggle: true,
             showSegmentedControl: true,
             showCloseWindowsAndTabsToggle: true,
             showFireproofSection: true,
@@ -2232,6 +2264,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .fireButton,
+            showVisitsToggle: true,
             showSegmentedControl: true,
             showCloseWindowsAndTabsToggle: true,
             showFireproofSection: true,
@@ -2296,6 +2329,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .fireButton,
+            showVisitsToggle: true,
             showSegmentedControl: true,
             showCloseWindowsAndTabsToggle: true,
             showFireproofSection: true,
@@ -2355,6 +2389,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .fireButton,
+            showVisitsToggle: true,
             showSegmentedControl: true,
             showCloseWindowsAndTabsToggle: true,
             showFireproofSection: true,
@@ -2414,6 +2449,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .fireButton,
+            showVisitsToggle: true,
             showSegmentedControl: true,
             showCloseWindowsAndTabsToggle: true,
             showFireproofSection: true,
@@ -2481,6 +2517,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .fireButton,
+            showVisitsToggle: true,
             showSegmentedControl: true,
             showCloseWindowsAndTabsToggle: true,
             showFireproofSection: true,
@@ -2544,6 +2581,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .fireButton,
+            showVisitsToggle: true,
             showSegmentedControl: true,
             showCloseWindowsAndTabsToggle: true,
             showFireproofSection: true,
@@ -2607,6 +2645,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .fireButton,
+            showVisitsToggle: true,
             showSegmentedControl: true,
             showCloseWindowsAndTabsToggle: true,
             showFireproofSection: true,
@@ -2672,6 +2711,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .fireButton,
+            showVisitsToggle: true,
             showSegmentedControl: true,
             showCloseWindowsAndTabsToggle: true,
             showFireproofSection: true,
@@ -2746,6 +2786,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .mainMenuAll,
+            showVisitsToggle: true,
             showSegmentedControl: true,
             showCloseWindowsAndTabsToggle: true,
             showFireproofSection: true,
@@ -2810,6 +2851,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .mainMenuAll,
+            showVisitsToggle: true,
             showSegmentedControl: true,
             showCloseWindowsAndTabsToggle: true,
             showFireproofSection: true,
@@ -2872,6 +2914,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .mainMenuAll,
+            showVisitsToggle: true,
             showSegmentedControl: true,
             showCloseWindowsAndTabsToggle: true,
             showFireproofSection: true,
@@ -2926,6 +2969,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .mainMenuAll,
+            showVisitsToggle: true,
             showSegmentedControl: true,
             showCloseWindowsAndTabsToggle: true,
             showFireproofSection: true,
@@ -2978,6 +3022,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .mainMenuAll,
+            showVisitsToggle: true,
             showSegmentedControl: true,
             showCloseWindowsAndTabsToggle: true,
             showFireproofSection: true,
@@ -3032,6 +3077,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .mainMenuAll,
+            showVisitsToggle: true,
             showSegmentedControl: true,
             showCloseWindowsAndTabsToggle: true,
             showFireproofSection: true,
@@ -3111,22 +3157,31 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
                     if let expected = self.dialogExpectedInput {
                         XCTAssertEqual(config.viewModel.mode, expected.mode, "mode", file: expected.file, line: expected.line + 1)
-                        XCTAssertEqual(config.viewModel.mode.shouldShowSegmentedControl, expected.showSegmentedControl, "showSegmentedControl", file: expected.file, line: expected.line + 2)
-                        XCTAssertEqual(config.viewModel.mode.shouldShowCloseTabsToggle, expected.showCloseWindowsAndTabsToggle, "showCloseWindowsAndTabsToggle", file: expected.file, line: expected.line + 3)
-                        XCTAssertEqual(config.viewModel.mode.shouldShowFireproofSection, expected.showFireproofSection, "showFireproofSection", file: expected.file, line: expected.line + 4)
-                        XCTAssertEqual(config.viewModel.mode.dialogTitle, expected.customTitle, "customTitle", file: expected.file, line: expected.line + 5)
-                        XCTAssertEqual(config.showIndividualSitesLink, expected.showIndividualSitesLink, "showIndividualSitesLink", file: expected.file, line: expected.line + 6)
-                        XCTAssertEqual(config.viewModel.clearingOption, expected.expectedClearingOption, "clearingOption", file: expected.file, line: expected.line + 7)
-                        XCTAssertEqual(config.viewModel.includeTabsAndWindows, expected.expectedIncludeTabsAndWindows, "includeTabsAndWindows", file: expected.file, line: expected.line + 8)
-                        XCTAssertEqual(config.viewModel.includeHistory, expected.expectedIncludeHistory, "includeHistory", file: expected.file, line: expected.line + 9)
-                        XCTAssertEqual(config.viewModel.includeCookiesAndSiteData, expected.expectedIncludeCookiesAndSiteData, "includeCookiesAndSiteData", file: expected.file, line: expected.line + 10)
+                        XCTAssertEqual(config.viewModel.mode.shouldShowVisitsToggle, expected.showVisitsToggle, "showVisitsToggle", file: expected.file, line: expected.line + 2)
+                        // The disclosure control only makes sense when there is more than one toggle to disclose.
+                        XCTAssertEqual(config.viewModel.mode.shouldShowDetailsDisclosure, expected.showVisitsToggle, "showDetailsDisclosure", file: expected.file, line: expected.line + 2)
+                        // Sections can only stay collapsed while the disclosure control is there to expand them.
+                        XCTAssertEqual(config.viewModel.shouldShowSectionsExpanded, expected.showVisitsToggle ? config.viewModel.isSectionsExpanded : true, "shouldShowSectionsExpanded", file: expected.file, line: expected.line + 2)
+                        XCTAssertEqual(config.viewModel.mode.shouldShowSegmentedControl, expected.showSegmentedControl, "showSegmentedControl", file: expected.file, line: expected.line + 3)
+                        XCTAssertEqual(config.viewModel.mode.shouldShowCloseTabsToggle, expected.showCloseWindowsAndTabsToggle, "showCloseWindowsAndTabsToggle", file: expected.file, line: expected.line + 4)
+                        XCTAssertEqual(config.viewModel.mode.shouldShowFireproofSection, expected.showFireproofSection, "showFireproofSection", file: expected.file, line: expected.line + 5)
+                        XCTAssertEqual(config.viewModel.dialogTitle, expected.customTitle, "customTitle", file: expected.file, line: expected.line + 6)
+                        XCTAssertEqual(config.showIndividualSitesLink, expected.showIndividualSitesLink, "showIndividualSitesLink", file: expected.file, line: expected.line + 7)
+                        XCTAssertEqual(config.viewModel.clearingOption, expected.expectedClearingOption, "clearingOption", file: expected.file, line: expected.line + 8)
+                        XCTAssertEqual(config.viewModel.includeTabsAndWindows, expected.expectedIncludeTabsAndWindows, "includeTabsAndWindows", file: expected.file, line: expected.line + 9)
+                        // Without the toggle, the user cannot ask for the tabs and windows to close.
+                        XCTAssertEqual(config.viewModel.shouldCloseTabsAndWindows, expected.showCloseWindowsAndTabsToggle ? expected.expectedIncludeTabsAndWindows : false, "shouldCloseTabsAndWindows", file: expected.file, line: expected.line + 9)
+                        XCTAssertEqual(config.viewModel.includeHistory, expected.expectedIncludeHistory, "includeHistory", file: expected.file, line: expected.line + 10)
+                        // Without the toggle, the user cannot exclude the history, so it is always deleted.
+                        XCTAssertEqual(config.viewModel.shouldDeleteHistory, expected.showVisitsToggle ? expected.expectedIncludeHistory : true, "shouldDeleteHistory", file: expected.file, line: expected.line + 10)
+                        XCTAssertEqual(config.viewModel.includeCookiesAndSiteData, expected.expectedIncludeCookiesAndSiteData, "includeCookiesAndSiteData", file: expected.file, line: expected.line + 11)
                         // Validate ViewModel data from provider
                         let actualSelectable = config.viewModel.selectable.map { $0.domain }.sorted()
-                        XCTAssertEqual(actualSelectable, expected.expectedSelectable?.sorted() ?? [], "selectable domains", file: expected.file, line: expected.line + 11)
+                        XCTAssertEqual(actualSelectable, expected.expectedSelectable?.sorted() ?? [], "selectable domains", file: expected.file, line: expected.line + 12)
                         let actualFireproofed = config.viewModel.fireproofed.map { $0.domain }.sorted()
-                        XCTAssertEqual(actualFireproofed, expected.expectedFireproofed?.sorted() ?? [], "fireproofed domains", file: expected.file, line: expected.line + 12)
-                        XCTAssertEqual(config.viewModel.selected, expected.expectedSelected ?? [], "selected indices", file: expected.file, line: expected.line + 13)
-                        XCTAssertEqual(config.viewModel.historyVisits ?? [], expected.expectedHistoryVisits ?? [], "historyVisits", file: expected.file, line: expected.line + 14)
+                        XCTAssertEqual(actualFireproofed, expected.expectedFireproofed?.sorted() ?? [], "fireproofed domains", file: expected.file, line: expected.line + 13)
+                        XCTAssertEqual(config.viewModel.selected, expected.expectedSelected ?? [], "selected indices", file: expected.file, line: expected.line + 14)
+                        XCTAssertEqual(config.viewModel.historyVisits ?? [], expected.expectedHistoryVisits ?? [], "historyVisits", file: expected.file, line: expected.line + 15)
                     }
 
                     var dialogConfirmedOptions = self.dialogConfirmedOptions
@@ -3175,6 +3230,9 @@ private struct DialogExpectedInput {
     let line: UInt
 
     var mode: FireDialogViewModel.Mode
+    /// Show the History (visits) toggle and, with it, the "Choose what to delete" disclosure control.
+    /// When hidden, the history of the selected records is always deleted.
+    var showVisitsToggle: Bool
     var showSegmentedControl: Bool
     var showCloseWindowsAndTabsToggle: Bool
     var showFireproofSection: Bool
@@ -3191,8 +3249,9 @@ private struct DialogExpectedInput {
     var expectedFireproofed: [String]?
     var expectedSelected: Set<Int>?
     var expectedHistoryVisits: [Visit]?
-    init(mode: FireDialogViewModel.Mode, showSegmentedControl: Bool, showCloseWindowsAndTabsToggle: Bool, showFireproofSection: Bool, customTitle: String?, showIndividualSitesLink: Bool, expectedClearingOption: FireDialogViewModel.ClearingOption, expectedIncludeTabsAndWindows: Bool, expectedIncludeHistory: Bool, expectedIncludeCookiesAndSiteData: Bool, expectedIncludeChatHistory: Bool, expectedSelectable: [String]?, expectedFireproofed: [String]?, expectedSelected: (any Sequence<Int>)?, expectedHistoryVisits: [Visit]? = nil, file: StaticString = #file, line: UInt = #line) {
+    init(mode: FireDialogViewModel.Mode, showVisitsToggle: Bool, showSegmentedControl: Bool, showCloseWindowsAndTabsToggle: Bool, showFireproofSection: Bool, customTitle: String?, showIndividualSitesLink: Bool, expectedClearingOption: FireDialogViewModel.ClearingOption, expectedIncludeTabsAndWindows: Bool, expectedIncludeHistory: Bool, expectedIncludeCookiesAndSiteData: Bool, expectedIncludeChatHistory: Bool, expectedSelectable: [String]?, expectedFireproofed: [String]?, expectedSelected: (any Sequence<Int>)?, expectedHistoryVisits: [Visit]? = nil, file: StaticString = #file, line: UInt = #line) {
         self.mode = mode
+        self.showVisitsToggle = showVisitsToggle
         self.showSegmentedControl = showSegmentedControl
         self.showCloseWindowsAndTabsToggle = showCloseWindowsAndTabsToggle
         self.showFireproofSection = showFireproofSection

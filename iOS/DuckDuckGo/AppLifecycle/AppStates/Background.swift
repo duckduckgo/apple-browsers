@@ -66,6 +66,7 @@ struct Background: BackgroundHandling {
         services.autofillService.suspend()
         services.syncService.suspend()
         services.reportingService.suspend()
+        services.eventHubService.suspend()
 
         appDependencies.mainCoordinator.onBackground()
 
@@ -76,7 +77,8 @@ struct Background: BackgroundHandling {
     private func cleanScreenTimeDataOniOS26() {
         guard appDependencies.featureFlagger.isFeatureOn(.screenTimeCleaning) else { return }
         guard #available(iOS 26, *) else { return }
-        Task {
+
+        ScreenTimeDataCleaningBackgroundTask().start {
             await ScreenTimeDataCleaner().removeScreenTimeData()
         }
     }
@@ -149,6 +151,44 @@ extension Background {
                   actionToHandle: actionToHandle,
                   window: window,
                   lastBackgroundDateStorage: lastBackgroundDateStorage)
+    }
+
+}
+
+// MARK: - Background tasks
+
+@available(iOS 26, *)
+@MainActor
+private final class ScreenTimeDataCleaningBackgroundTask {
+
+    private static let name = "Screen Time Data Cleaning"
+
+    private var identifier: UIBackgroundTaskIdentifier = .invalid
+    private var cleanupTask: Task<Void, Never>?
+
+    func start(cleanup: @escaping @MainActor @Sendable () async -> Void) {
+        identifier = UIApplication.shared.beginBackgroundTask(withName: Self.name) { [weak self] in
+            self?.cancel()
+        }
+        guard identifier != .invalid else { return }
+
+        cleanupTask = Task { @MainActor [self] in
+            await cleanup()
+            end()
+        }
+    }
+
+    private func cancel() {
+        cleanupTask?.cancel()
+        end()
+    }
+
+    private func end() {
+        cleanupTask = nil
+        guard identifier != .invalid else { return }
+
+        UIApplication.shared.endBackgroundTask(identifier)
+        identifier = .invalid
     }
 
 }

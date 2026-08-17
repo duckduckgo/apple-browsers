@@ -32,6 +32,7 @@ final class MockDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentation {
                            userTier: AIChatUserTier,
                            reasoningEffort: AIChatReasoningEffort?,
                            entryPoint: DuckAIPromptWideEventData.EntryPoint,
+                           origin: AIChatEntryPointSource? = nil,
                            inputMode: DuckAIPromptWideEventData.InputMode,
                            fireMode: Bool,
                            isFirstPrompt: Bool,

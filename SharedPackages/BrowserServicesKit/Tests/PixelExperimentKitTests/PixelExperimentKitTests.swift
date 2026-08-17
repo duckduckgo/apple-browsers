@@ -28,7 +28,7 @@ final class PixelExperimentKitTests: XCTestCase {
     var mockPixelStore: MockExperimentActionPixelStore!
     var mockFeatureFlagger: MockFeatureFlagger!
     var firedEventSet = Set<String>()
-    var firedEvent = [PixelKitEvent]()
+    var firedEvent = [PixelKit.Event]()
     var firedFrequency = [PixelKit.Frequency]()
     var firedIncludeAppVersion = [Bool]()
 

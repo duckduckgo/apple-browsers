@@ -310,6 +310,12 @@
 /* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
 "aichat.attachment.unsupported.file.type.single" = "Šis faila tips netiek atbalstīts, lūdzu, pievieno %@.";
 
+/* Caption shown below the input while editing a message, warning that submitting the edit replaces the existing response */
+"aichat.edit.replaceResponseDisclaimer" = "Rediģējot atbilde tiks aizstāta ar jaunu.";
+
+/* Title shown in the Duck.ai tab header while editing a previously sent message */
+"aichat.header.editMessage" = "Rediģēt ziņu";
+
 /* Accessibility label for the Plus (+) button in the Duck.ai tab header that opens a menu of new-chat and new-tab actions */
 "aichat.header.plusMenu.a11y" = "Jauns";
 
@@ -948,6 +954,12 @@
 
 /* Login name label for login details on autofill */
 "autofill.logins.details.login-name" = "Nosaukums";
+
+/* Message for alert when attempting to save a password that has neither a website nor a username */
+"autofill.logins.details.missing-website-or-username-alert.message" = "Lai saglabātu šo paroli, ievadi vietni vai lietotājvārdu.";
+
+/* Title for alert when attempting to save a password that has neither a website nor a username */
+"autofill.logins.details.missing-website-or-username-alert.title" = "Jāievada vietne vai lietotājvārds";
 
 /* Title when adding new autofill login */
 "autofill.logins.details.new-title" = "Pievienot paroli";
@@ -2950,6 +2962,12 @@
 /* Title for the Import Passwords Promotion banner */
 "import.passwords.promo.title" = "Importēt savas paroles DuckDuckGo";
 
+/* Body for the notification sent after a period of inactivity. */
+"inactivity.notification.body" = "Izmanto DuckDuckGo, lai izvairītos no reklāmām, kas tevi izseko tīmeklī, un samazinātu savus tiešsaistes pēdu nospiedumus.";
+
+/* Title for the notification sent after a period of inactivity. */
+"inactivity.notification.title" = "Pārvaldi savu tiešsaistes pieredzi";
+
 /* Placeholder text for the duck.ai input field */
 "input.field.placeholder.duckai" = "Jautā jebko privāti";
 
@@ -4008,6 +4026,18 @@
 
 /* Special error page title for pages that can only be opened in Safari */
 "prompt.general-page-problem.title" = "Šī lapa ielādējas tikai pārlūkprogrammā Safari";
+
+/* Error page message shown after repeated tab terminations */
+"prompt.tab-termination-error-page.message" = "Šī lapa vairākas reizes pārtrauca ielādi. Mēģini pārlādēt vai nosūti mums atsauksmi.";
+
+/* Button that reloads a page after repeated tab terminations */
+"prompt.tab-termination-error-page.reload" = "Pārlādēt";
+
+/* Button that opens site feedback after repeated tab terminations */
+"prompt.tab-termination-error-page.send-feedback" = "Sūtīt atsauksmi";
+
+/* Error page title shown after repeated tab terminations */
+"prompt.tab-termination-error-page.title" = "Mēs nevarējām ielādēt šo lapu";
 
 /* Default native error page message */
 "prompt.web-page-load-error.message" = "Šai vietnei ir nederīgs drošības sertifikāts, un tās apmeklēšana var nebūt droša.";

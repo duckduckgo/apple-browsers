@@ -20,11 +20,11 @@ import Common
 import FoundationExtensions
 import Foundation
 
-/// Implementation of ``PixelKitEvent`` with specific logic for debug events.
-public final class DebugEvent: PixelKitEvent {
+/// Implementation of ``PixelKit.Event`` with specific logic for debug events.
+public final class DebugEvent: PixelKit.Event {
     public enum EventType {
         case assertionFailure(message: String, file: StaticString, line: UInt)
-        case custom(_ event: PixelKitEvent)
+        case custom(_ event: PixelKit.Event)
     }
 
     public let eventType: EventType
@@ -37,7 +37,7 @@ public final class DebugEvent: PixelKitEvent {
         self.standardParameters = standardParameters
     }
 
-    public init(_ event: PixelKitEvent, error: Error? = nil) {
+    public init(_ event: PixelKit.Event, error: Error? = nil) {
         self.eventType = .custom(event)
         self.error = error
         self.standardParameters = event.standardParameters

@@ -21,7 +21,7 @@ import Testing
 @testable import DuckDuckGo_Privacy_Browser
 
 @MainActor
-@Suite("Info View Tests", .disabled("Snapshot testing is opt-in until the sync automations land"))
+@Suite("Info View Tests")
 final class InfoViewTests {
 
     @available(macOS 13, *)

@@ -310,6 +310,12 @@
 /* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
 "aichat.attachment.unsupported.file.type.single" = "Bu dosya türü desteklenmiyor, lütfen bir %@ ekleyin.";
 
+/* Caption shown below the input while editing a message, warning that submitting the edit replaces the existing response */
+"aichat.edit.replaceResponseDisclaimer" = "Düzenleme işlemi, önceki yanıtı yeni bir yanıtla değiştirecektir.";
+
+/* Title shown in the Duck.ai tab header while editing a previously sent message */
+"aichat.header.editMessage" = "Mesajı Düzenle";
+
 /* Accessibility label for the Plus (+) button in the Duck.ai tab header that opens a menu of new-chat and new-tab actions */
 "aichat.header.plusMenu.a11y" = "Yeni";
 
@@ -948,6 +954,12 @@
 
 /* Login name label for login details on autofill */
 "autofill.logins.details.login-name" = "Title";
+
+/* Message for alert when attempting to save a password that has neither a website nor a username */
+"autofill.logins.details.missing-website-or-username-alert.message" = "Bu şifreyi kaydetmek için bir web sitesi veya kullanıcı adı girin.";
+
+/* Title for alert when attempting to save a password that has neither a website nor a username */
+"autofill.logins.details.missing-website-or-username-alert.title" = "Web Sitesi veya Kullanıcı Adı Gerekli";
 
 /* Title when adding new autofill login */
 "autofill.logins.details.new-title" = "Şifre Ekle";
@@ -2950,6 +2962,12 @@
 /* Title for the Import Passwords Promotion banner */
 "import.passwords.promo.title" = "Şifrelerinizi DuckDuckGo'ya aktarın";
 
+/* Body for the notification sent after a period of inactivity. */
+"inactivity.notification.body" = "Sizi internette takip eden reklamlardan kaçınmak ve çevrimiçi ayak izinizi azaltmak için DuckDuckGo kullanın.";
+
+/* Title for the notification sent after a period of inactivity. */
+"inactivity.notification.title" = "Çevrimiçi deneyiminizin kontrolünü elinize alın";
+
 /* Placeholder text for the duck.ai input field */
 "input.field.placeholder.duckai" = "Gizli bir şekilde her şeyi sorabilirsiniz";
 
@@ -4008,6 +4026,18 @@
 
 /* Special error page title for pages that can only be opened in Safari */
 "prompt.general-page-problem.title" = "Bu sayfa yalnızca Safari'de yüklenir";
+
+/* Error page message shown after repeated tab terminations */
+"prompt.tab-termination-error-page.message" = "Bu sayfa birden fazla kez yüklenmeyi durdurdu. Yeniden yüklemeyi deneyin veya bize geri bildirim gönderin.";
+
+/* Button that reloads a page after repeated tab terminations */
+"prompt.tab-termination-error-page.reload" = "Tekrar Yükle";
+
+/* Button that opens site feedback after repeated tab terminations */
+"prompt.tab-termination-error-page.send-feedback" = "Geri Bildirim Gönder";
+
+/* Error page title shown after repeated tab terminations */
+"prompt.tab-termination-error-page.title" = "Bu sayfayı yükleyemedik";
 
 /* Default native error page message */
 "prompt.web-page-load-error.message" = "Bu web sitesinin güvenlik sertifikası geçersiz olduğundan siteyi ziyaret etmek güvenli olmayabilir.";

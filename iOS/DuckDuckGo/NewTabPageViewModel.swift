@@ -37,6 +37,10 @@ final class NewTabPageViewModel: ObservableObject {
 
     private(set) var isDragging: Bool = false
 
+    /// Called while the user drags the New Tab Page. The gesture driving it is also what a
+    /// favourite reorder uses, so this is a coarse "the surface was moved" signal.
+    var onDidScroll: (() -> Void)?
+
     private let pixelFiring: PixelFiring.Type
 
     init(fireTab: Bool,
@@ -57,6 +61,7 @@ final class NewTabPageViewModel: ObservableObject {
 
     func beginDragging() {
         isDragging = true
+        onDidScroll?()
     }
 
     func endDragging() {

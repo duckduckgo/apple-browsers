@@ -898,7 +898,7 @@ struct FireDialogView: ModalView {
                 .buttonStyle(.plain)
                 .disabled(!isEnabled)
                 .onHover { isHovered = $0 }
-                .cursor(.pointingHand)
+                .cursor(isEnabled ? .pointingHand : .arrow)
                 .accessibilityIdentifier(accessibilityIdentifier ?? "")
             } else {
                 label

@@ -71,6 +71,9 @@ protocol AIChatContextualSheetViewControllerDelegate: AnyObject {
 
     /// Called when the user taps the "New Chat" button to start a fresh conversation
     func aiChatContextualSheetViewControllerDidRequestNewChat(_ viewController: AIChatContextualSheetViewController)
+    /// The active chat is gone server-side, so the sheet resets in place. Housekeeping, not a user
+    /// request — it must not move the user to another surface.
+    func aiChatContextualSheetViewControllerDidDetectActiveChatRemoved(_ viewController: AIChatContextualSheetViewController)
 
     /// Called when the user asks to open Duck.ai itself, rather than continue in this sheet.
     func aiChatContextualSheetViewControllerDidRequestOpenDuckAI(_ viewController: AIChatContextualSheetViewController)
@@ -677,7 +680,7 @@ private extension AIChatContextualSheetViewController {
                let suggestions = viewModel?.suggestions,
                !suggestions.contains(where: { $0.chatId == activeChatID }) {
                 Logger.aiChat.debug("[SheetVC] Active chat no longer exists, resetting to new chat")
-                delegate?.aiChatContextualSheetViewControllerDidRequestNewChat(self)
+                delegate?.aiChatContextualSheetViewControllerDidDetectActiveChatRemoved(self)
             }
         }
     }

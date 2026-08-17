@@ -230,6 +230,8 @@ class MainViewController: UIViewController {
     private var aiChatCancellables = Set<AnyCancellable>()
     private var aiChatChromeChipCancellables = Set<AnyCancellable>()
     private weak var boundAIChatChromeChipCoordinator: AIChatContextualSheetCoordinator?
+    /// Separates "bound to no tab" from "never bound", so a launch onto a tab-less NTP still refreshes.
+    private var hasBoundAIChatChromeChip = false
     private var settingsCancellables = Set<AnyCancellable>()
     private var webViewViewportRefreshCancellable: AnyCancellable?
     private lazy var floatingDomainCapsuleController = FloatingDomainCapsuleController { [weak self] in
@@ -1090,7 +1092,8 @@ class MainViewController: UIViewController {
     /// route by route left cold launch unsubscribed. Idempotent; that refresh is the far more frequent.
     func bindAIChatChromeChipToCurrentTab() {
         let coordinator = currentTab?.aiChatContextualSheetCoordinator
-        guard coordinator !== boundAIChatChromeChipCoordinator else { return }
+        guard coordinator !== boundAIChatChromeChipCoordinator || !hasBoundAIChatChromeChip else { return }
+        hasBoundAIChatChromeChip = true
         boundAIChatChromeChipCoordinator = coordinator
         aiChatChromeChipCancellables.removeAll()
 

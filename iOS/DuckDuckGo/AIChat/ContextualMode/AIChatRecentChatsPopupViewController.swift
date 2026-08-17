@@ -179,9 +179,7 @@ private extension AIChatRecentChatsPopupViewController {
 
         if !viewModel.suggestions.isEmpty {
             stackView.addArrangedSubview(makeSeparator())
-        }
 
-        if !viewModel.suggestions.isEmpty {
             let headerLabel = makeSectionHeader(UserText.aiChatRecentChatsSectionTitle)
             stackView.addArrangedSubview(headerLabel)
 

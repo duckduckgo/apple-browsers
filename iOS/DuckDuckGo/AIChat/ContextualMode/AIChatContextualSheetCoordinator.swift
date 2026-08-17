@@ -1012,6 +1012,10 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
         handleSheetDismissed()
     }
 
+    func aiChatContextualSheetViewControllerDidDetectActiveChatRemoved(_ viewController: AIChatContextualSheetViewController) {
+        resetToNativeInputState()
+    }
+
     func aiChatContextualSheetViewControllerDidRequestNewChat(_ viewController: AIChatContextualSheetViewController) {
         resetToNativeInputState()
 

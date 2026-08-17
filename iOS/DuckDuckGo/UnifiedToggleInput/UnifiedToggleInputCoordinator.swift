@@ -1646,12 +1646,10 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         if isOmnibarSession {
             deactivateToOmnibar()
         } else {
-            // showCollapsed has no dismiss hook; clear synchronously.
+            // showCollapsed has no dismiss hook; clear synchronously. It resigns the input on the way,
+            // which is what takes the keyboard — `dismissOmnibarKeyboard` would bail on its own guard.
             setText("")
             showCollapsed()
-            if isContextualChatState {
-                dismissOmnibarKeyboard()
-            }
         }
         if let userScript {
             let didSendBridgeMessage = userScript.canDispatchBridgeMessages

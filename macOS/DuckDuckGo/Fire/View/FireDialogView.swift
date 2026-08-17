@@ -364,18 +364,18 @@ struct FireDialogView: ModalView {
     }
 
     private var detailsDisclosureView: some View {
-        HStack {
-            Text(UserText.fireDialogChooseWhatToDelete)
-                .font(.system(size: 11))
-                .foregroundColor(Color(designSystemColor: .textSecondary))
+        Button {
+            withAnimation(.easeOut(duration: 0.2)) {
+                viewModel.isSectionsExpanded.toggle()
+            }
+        } label: {
+            HStack {
+                Text(UserText.fireDialogChooseWhatToDelete)
+                    .font(.system(size: 11))
+                    .foregroundColor(Color(designSystemColor: .textSecondary))
 
-            Spacer()
+                Spacer()
 
-            Button {
-                withAnimation(.easeOut(duration: 0.2)) {
-                    viewModel.isSectionsExpanded.toggle()
-                }
-            } label: {
                 Image(nsImage: (viewModel.isSectionsExpanded ? DesignSystemImages.Glyphs.Size24.chevronUpSmall : DesignSystemImages.Glyphs.Size24.chevronDownSmall))
                     .resizable()
                     .renderingMode(.template)
@@ -384,13 +384,14 @@ struct FireDialogView: ModalView {
                     .padding(6)
                     .background(Circle().fill(Color(designSystemColor: .controlsFillPrimary)))
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel(UserText.fireDialogChooseWhatToDelete)
-            .accessibilityValue(viewModel.isSectionsExpanded ? UserText.fireDialogAccessibilityDetailsExpanded : UserText.fireDialogAccessibilityDetailsCollapsed)
-            .accessibilityAddTraits(.isButton)
-            .accessibilityIdentifier("FireDialogView.detailsDisclosureButton")
+            .contentShape(Rectangle())
+            .padding(.horizontal, 4)
         }
-        .padding(.horizontal, 4)
+        .buttonStyle(.plain)
+        .accessibilityLabel(UserText.fireDialogChooseWhatToDelete)
+        .accessibilityValue(viewModel.isSectionsExpanded ? UserText.fireDialogAccessibilityDetailsExpanded : UserText.fireDialogAccessibilityDetailsCollapsed)
+        .accessibilityAddTraits(.isButton)
+        .accessibilityIdentifier("FireDialogView.detailsDisclosureButton")
     }
 
     private var sectionsView: some View {

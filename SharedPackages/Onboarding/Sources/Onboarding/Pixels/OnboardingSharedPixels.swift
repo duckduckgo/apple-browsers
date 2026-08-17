@@ -215,7 +215,7 @@ public enum OnboardingSharedPixelEvent: PixelKit.Event, Equatable {
     case preferencesAIToggleMode(AIToggleModeEvent)
     case preferencesAISearch(AISearchEngagementEvent)
     case preferencesDuckAI(DuckAIEvent)
-    case preferencesYoutube(YoutubeEngagementEvent)
+    case preferencesAdBlocking(AdBlockingEngagementEvent)
 
     public enum EngagementEvent: Equatable {
         public enum Value: String {
@@ -324,10 +324,10 @@ public enum OnboardingSharedPixelEvent: PixelKit.Event, Equatable {
         case clicked(searchAssistEnabled: Bool, aiGeneratedImagesEnabled: Bool)
     }
 
-    /// The YouTube (Duck Player) preferences screen.
-    public enum YoutubeEngagementEvent: Equatable {
+    /// The ad-blocking & cookie preferences screen ("Internet, without the noise").
+    public enum AdBlockingEngagementEvent: Equatable {
         case shown
-        case clicked(youTubeAdBlockingEnabled: Bool, duckPlayerEnabled: Bool)
+        case clicked(youTubeAdBlockingEnabled: Bool, cookiePopUpProtectionEnabled: Bool, popUpsWithoutOptOutsEnabled: Bool)
     }
 
     /// The AI model picker. The selected model as a coarse label (e.g. "claude", "chatgpt")
@@ -412,7 +412,7 @@ private extension OnboardingSharedPixelEvent {
         case .preferencesAIToggleMode: return "preferences_ai-toggle-mode"
         case .preferencesAISearch: return "preferences_ai-search"
         case .preferencesDuckAI: return "preferences_duck-ai"
-        case .preferencesYoutube: return "preferences_youtube"
+        case .preferencesAdBlocking: return "preferences_ad-blocking"
         }
     }
 
@@ -511,7 +511,7 @@ private extension OnboardingSharedPixelEvent {
             case .clicked:
                 return ParameterValues.clicked
             }
-        case .preferencesYoutube(let event):
+        case .preferencesAdBlocking(let event):
             switch event {
             case .shown:
                 return ParameterValues.shown
@@ -629,7 +629,7 @@ private extension OnboardingSharedPixelEvent {
             case .shown, .clicked:
                 return nil
             }
-        case .preferencesYoutube(let event):
+        case .preferencesAdBlocking(let event):
             switch event {
             case .shown, .clicked:
                 return nil
@@ -671,10 +671,11 @@ private extension OnboardingSharedPixelEvent {
                 "search_assist_enabled": String(searchAssistEnabled),
                 "ai_generated_images_enabled": String(aiGeneratedImagesEnabled)
             ]
-        case .preferencesYoutube(.clicked(let youTubeAdBlockingEnabled, let duckPlayerEnabled)):
+        case .preferencesAdBlocking(.clicked(let youTubeAdBlockingEnabled, let cookiePopUpProtectionEnabled, let popUpsWithoutOptOutsEnabled)):
             return [
                 "youtube_ad_blocking_enabled": String(youTubeAdBlockingEnabled),
-                "duck_player_enabled": String(duckPlayerEnabled)
+                "cookie_popup_protection_enabled": String(cookiePopUpProtectionEnabled),
+                "popups_without_optouts_enabled": String(popUpsWithoutOptOutsEnabled)
             ]
         default:
             return [:]

@@ -1905,6 +1905,9 @@ extension OnboardingIntroViewModelTests {
 
         makeSUT(currentOnboardingStep: .keepDuckAISelection).onAppear()
         XCTAssertTrue(pixelReporterMock.didCallMeasureKeepDuckAIImpression)
+
+        makeSUT(currentOnboardingStep: .adBlockingPersonalization).onAppear()
+        XCTAssertTrue(pixelReporterMock.didCallMeasureAdBlockingImpression)
     }
 
     func testWhenSelectDownloadReasonThenSelectionPixelFiresWithChosenReason() {
@@ -2020,6 +2023,25 @@ extension OnboardingIntroViewModelTests {
         // THEN
         XCTAssertTrue(pixelReporterMock.didCallMeasureKeepDuckAISelection)
         XCTAssertEqual(pixelReporterMock.didCaptureKeepDuckAISelection, false)
+    }
+
+    func testWhenAdBlockingContinueThenFirePixelWithCorrectParameters() {
+        // GIVEN
+        onboardingManagerMock.onboardingSteps = [.adBlockingPersonalization]
+        let personalizationManager = MockOnboardingPersonalizationManager()
+        personalizationManager.isYouTubeAdBlockingEnabled = true
+        personalizationManager.isCookiePopUpProtectionEnabled = true
+        personalizationManager.isPopUpsWithoutOptOutsEnabled = false
+        let sut = makeSUT(currentOnboardingStep: .adBlockingPersonalization, personalizationManager: personalizationManager)
+
+        // WHEN
+        sut.adBlockingContinueAction()
+
+        // THEN
+        XCTAssertTrue(pixelReporterMock.didCallMeasureAdBlockingSelection)
+        XCTAssertEqual(pixelReporterMock.didCaptureAdBlockingSelection?.youTubeAdBlockingEnabled, true)
+        XCTAssertEqual(pixelReporterMock.didCaptureAdBlockingSelection?.cookiePopUpProtectionEnabled, true)
+        XCTAssertEqual(pixelReporterMock.didCaptureAdBlockingSelection?.popUpsWithoutOptOutsEnabled, false)
     }
 
 }

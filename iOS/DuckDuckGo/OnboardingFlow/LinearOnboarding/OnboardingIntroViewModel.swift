@@ -340,7 +340,11 @@ final class OnboardingIntroViewModel: ObservableObject {
     }
 
     func adBlockingContinueAction() {
-        // TODO: wire the ad-blocking (cookie personalization) selection pixel for this branch.
+        pixelReporter.measureAdBlockingSelection(
+            youTubeAdBlockingEnabled: personalizationManager.isYouTubeAdBlockingEnabled,
+            cookiePopUpProtectionEnabled: personalizationManager.isCookiePopUpProtectionEnabled,
+            popUpsWithoutOptOutsEnabled: personalizationManager.isPopUpsWithoutOptOutsEnabled
+        )
         makeNextViewState()
     }
 
@@ -685,7 +689,7 @@ private extension OnboardingIntroViewModel {
         case .keepDuckAIDialog:
             pixelReporter.measureKeepDuckAIImpression()
         case .adBlockingDialog:
-            break // TODO: ad-blocking screen impression pixel (cookie personalization) for this branch.
+            pixelReporter.measureAdBlockingImpression()
         }
     }
 

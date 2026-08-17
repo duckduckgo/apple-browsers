@@ -1328,7 +1328,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         sut.measureToggleInputModeImpression()
         sut.measureAISearchSettingsImpression()
         sut.measureKeepDuckAIImpression()
-        sut.measureDuckPlayerImpression()
+        sut.measureAdBlockingImpression()
 
         // THEN
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [
@@ -1338,7 +1338,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
             .preferencesAIToggleMode(.shown),
             .preferencesAISearch(.shown),
             .preferencesDuckAI(.shown),
-            .preferencesYoutube(.shown)
+            .preferencesAdBlocking(.shown)
         ])
     }
 
@@ -1536,12 +1536,12 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.preferencesDuckAI(.clicked(.off))])
     }
 
-    func testWhenMeasureDuckPlayerSelectionThenYoutubeClickedFires() {
+    func testWhenMeasureAdBlockingSelectionThenAdBlockingClickedFires() {
         // WHEN
-        sut.measureDuckPlayerSelection(youTubeAdBlockingEnabled: true, duckPlayerEnabled: false)
+        sut.measureAdBlockingSelection(youTubeAdBlockingEnabled: true, cookiePopUpProtectionEnabled: true, popUpsWithoutOptOutsEnabled: false)
 
         // THEN
-        XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.preferencesYoutube(.clicked(youTubeAdBlockingEnabled: true, duckPlayerEnabled: false))])
+        XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.preferencesAdBlocking(.clicked(youTubeAdBlockingEnabled: true, cookiePopUpProtectionEnabled: true, popUpsWithoutOptOutsEnabled: false))])
     }
 
 }

@@ -516,6 +516,95 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
                        ["free-model", "premium-model"])
     }
 
+    // MARK: - Recommendation Label / Gated Section Copy Tests
+
+    /// Labelled models sort before unlabelled ones regardless of input order, and only the
+    /// labelled one carries the label copy as its `description`.
+    func testWhenModelsHaveRecommendationLabelsThenLabelledModelsComeFirstWithDescription() async {
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "plain-model", accessTier: ["free"]),
+            makeRemoteModel(id: "labelled-model", accessTier: ["free"], label: .everydayUse),
+        ]
+
+        let sections = await provider.fetchAIModelSections()
+        let items = sections.first?.items ?? []
+
+        XCTAssertEqual(items.map(\.id), ["labelled-model", "plain-model"])
+        XCTAssertEqual(items.first?.description, UserText.aiChatModelPickerLabelEverydayUse)
+        XCTAssertNil(items.last?.description)
+    }
+
+    func testWhenFreeUserEligibleForFreeTrialThenGatedSectionHeaderIsTryFree() async {
+        mockSubscriptionManager.isEligibleForFreeTrialResult = true
+        mockModelsService.modelsToReturn = [makeRemoteModel(id: "premium-model", accessTier: ["plus"])]
+
+        let sections = await provider.fetchAIModelSections()
+
+        XCTAssertEqual(sections.first?.header, UserText.aiChatModelPickerTryFreeSectionHeader)
+    }
+
+    func testWhenFreeUserNotEligibleForFreeTrialThenGatedSectionHeaderIsAvailableWithPaidPlans() async {
+        mockSubscriptionManager.isEligibleForFreeTrialResult = false
+        mockModelsService.modelsToReturn = [makeRemoteModel(id: "premium-model", accessTier: ["plus"])]
+
+        let sections = await provider.fetchAIModelSections()
+
+        XCTAssertEqual(sections.first?.header, UserText.aiChatModelPickerAvailableWithPaidPlansSectionHeader)
+    }
+
+    func testWhenPlusSubscriberHasGatedModelThenGatedSectionHeaderIsAvailableWithPro() async {
+        mockSubscriptionManager.resultSubscription = .success(makeSubscription(tier: .plus))
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "plus-model", accessTier: ["plus"]),
+            makeRemoteModel(id: "pro-only", accessTier: ["pro"]),
+        ]
+
+        let sections = await provider.fetchAIModelSections()
+
+        XCTAssertEqual(sections.last?.header, UserText.aiChatModelPickerAvailableWithProSectionHeader)
+    }
+
+    /// Two efforts are gated behind higher tiers; only the first of them should head the section.
+    func testWhenMultipleReasoningEffortsAreGatedThenOnlyFirstGatedEffortHasSectionHeader() async {
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(
+                id: "reasoning-model",
+                supportedReasoningEffort: [.none, .low, .medium],
+                accessTier: ["free", "plus", "pro"],
+                reasoningEffortAccess: [
+                    AIChatReasoningEffortAccess(effort: .none, accessTier: ["free", "plus", "pro"], entityHasAccess: true),
+                    AIChatReasoningEffortAccess(effort: .low, accessTier: ["plus", "pro"], entityHasAccess: false),
+                    AIChatReasoningEffortAccess(effort: .medium, accessTier: ["pro"], entityHasAccess: false)
+                ]
+            )
+        ]
+
+        let sections = await provider.fetchAIModelSections()
+        let efforts = sections.flatMap(\.items).first(where: { $0.id == "reasoning-model" })?.reasoningEfforts
+
+        XCTAssertEqual(efforts?.map(\.isAvailable), [true, false, false])
+        XCTAssertEqual(efforts?.first?.gatedSectionHeader, nil)
+        XCTAssertEqual(efforts?[1].gatedSectionHeader, UserText.aiChatModelPickerAvailableWithPlusSectionHeader)
+        XCTAssertNil(efforts?[2].gatedSectionHeader)
+    }
+
+    /// A model whose efforts are all available produces no `gatedSectionHeader` anywhere.
+    func testWhenAllReasoningEffortsAreAvailableThenNoGatedSectionHeaderProduced() async {
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(
+                id: "reasoning-model",
+                supportedReasoningEffort: [.none, .low, .medium],
+                accessTier: ["free"]
+            )
+        ]
+
+        let sections = await provider.fetchAIModelSections()
+        let efforts = sections.flatMap(\.items).first(where: { $0.id == "reasoning-model" })?.reasoningEfforts
+
+        XCTAssertEqual(efforts?.map(\.isAvailable), [true, true, true])
+        XCTAssertTrue(efforts?.allSatisfy { $0.gatedSectionHeader == nil } == true)
+    }
+
     // MARK: - Helpers
 
     private func makeRemoteModel(
@@ -526,7 +615,8 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
         supportedTools: [String] = [],
         supportedReasoningEffort: [AIChatReasoningEffort] = [],
         accessTier: [String],
-        reasoningEffortAccess: [AIChatReasoningEffortAccess]? = nil
+        reasoningEffortAccess: [AIChatReasoningEffortAccess]? = nil,
+        label: AIChatModelLabel? = nil
     ) -> AIChatRemoteModel {
         AIChatRemoteModel(
             id: id,
@@ -538,7 +628,8 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
             supportedTools: supportedTools,
             accessTier: accessTier,
             supportedReasoningEffort: supportedReasoningEffort,
-            reasoningEffortAccess: reasoningEffortAccess
+            reasoningEffortAccess: reasoningEffortAccess,
+            label: label
         )
     }
 

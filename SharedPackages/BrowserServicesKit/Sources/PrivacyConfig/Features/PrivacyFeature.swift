@@ -213,7 +213,7 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// trampoline if the SPI ever misbehaves.
     case newErrorPageReload
 
-    /// "Reorder by name" — permanently reorders a bookmark folder's direct children alphabetically.
+    /// "Sort by name permanently" — permanently reorders a bookmark folder's direct children alphabetically.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217076881156357?focus=true
     case bookmarksReorderByName
 }

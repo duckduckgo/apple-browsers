@@ -63,10 +63,10 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
             isEligibleForFreeTrial = userTier == .free && subscriptionManager.isUserEligibleForFreeTrial()
             let models = response.models.map { AIChatModel(remoteModel: $0, userTier: userTier) }
 
-            // Flat, ordered accessible list mirrors the address bar's `modelPickerItems` — the old
-            // Basic/Advanced split left a stray empty section for tiers with both kinds (e.g. Pro).
+            // Recommended = backend-labelled models, shown first with the label as a subtitle.
             let (accessible, gated) = AIChatModelSectionBuilder.groupByAccess(models: models)
-            let ordered = AIChatModelSectionBuilder.orderedAccessibleModels(accessible, userTier: userTier)
+            let (recommended, rest) = AIChatModelSectionBuilder.groupByRecommendationLabel(models: accessible)
+            let ordered = recommended + rest
 
             var result: [NewTabPageDataModel.AIModelSection] = []
             if !ordered.isEmpty {
@@ -79,10 +79,8 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
             }
 
             if !gated.isEmpty {
-                // Mirrors the address bar: a free user's gated section mixes Plus+Pro models
-                // ("Subscriber Exclusive"), while a Plus user's is Pro-only ("Pro Exclusive").
-                let header = userTier == .free ? UserText.aiChatModelPickerSubscriberExclusive
-                                                : UserText.aiChatModelPickerProExclusive
+                let header = AIChatPickerSectionCopy.gatedModelsHeader(userTier: userTier,
+                                                                      isEligibleForFreeTrial: isEligibleForFreeTrial)
                 result.append(
                     NewTabPageDataModel.AIModelSection(
                         header: header,
@@ -106,6 +104,7 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
             id: model.id,
             name: model.name,
             shortName: model.shortName,
+            description: AIChatPickerSectionCopy.subtitle(for: model.label),
             isAvailable: model.entityHasAccess,
             supportsImageUpload: model.supportsImageUpload,
             supportedTools: model.supportedTools.map(\.rawValue),
@@ -124,16 +123,25 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
     }
 
     private func reasoningEfforts(for model: AIChatModel, userTier: AIChatUserTier) -> [NewTabPageDataModel.AIModelReasoningEffort] {
-        model.availableReasoningModes.compactMap { mode in
+        var titledGatedSection = false
+        return model.availableReasoningModes.compactMap { mode in
             guard let effort = model.reasoningEffort(for: mode) else { return nil }
             let isAvailable = model.isAccessible(effort)
-            let upsell = isAvailable ? nil : model.lowestPublicAccessTier(for: effort).flatMap { upsellString(for: userTier.upgradeFlow(for: $0)) }
+            let requiredTier = isAvailable ? nil : model.lowestPublicAccessTier(for: effort)
+            let upsell = requiredTier.flatMap { upsellString(for: userTier.upgradeFlow(for: $0)) }
+            // Only the first gated effort heads the section.
+            let sectionHeader = isAvailable || titledGatedSection
+                ? nil
+                : AIChatPickerSectionCopy.gatedEffortsHeader(requiredTier: requiredTier,
+                                                            isEligibleForFreeTrial: isEligibleForFreeTrial)
+            titledGatedSection = titledGatedSection || sectionHeader != nil
             return NewTabPageDataModel.AIModelReasoningEffort(
                 id: effort.rawValue,
                 name: effort.title,
                 description: effort.subtitle,
                 isAvailable: isAvailable,
-                upsell: upsell
+                upsell: upsell,
+                gatedSectionHeader: sectionHeader
             )
         }
     }

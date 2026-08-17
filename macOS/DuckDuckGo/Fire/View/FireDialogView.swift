@@ -364,18 +364,18 @@ struct FireDialogView: ModalView {
     }
 
     private var detailsDisclosureView: some View {
-        HStack {
-            Text(UserText.fireDialogChooseWhatToDelete)
-                .font(.system(size: 11))
-                .foregroundColor(Color(designSystemColor: .textSecondary))
+        Button {
+            withAnimation(.easeOut(duration: 0.2)) {
+                viewModel.isSectionsExpanded.toggle()
+            }
+        } label: {
+            HStack {
+                Text(UserText.fireDialogChooseWhatToDelete)
+                    .font(.system(size: 11))
+                    .foregroundColor(Color(designSystemColor: .textSecondary))
 
-            Spacer()
+                Spacer()
 
-            Button {
-                withAnimation(.easeOut(duration: 0.2)) {
-                    viewModel.isSectionsExpanded.toggle()
-                }
-            } label: {
                 Image(nsImage: (viewModel.isSectionsExpanded ? DesignSystemImages.Glyphs.Size24.chevronUpSmall : DesignSystemImages.Glyphs.Size24.chevronDownSmall))
                     .resizable()
                     .renderingMode(.template)
@@ -384,13 +384,14 @@ struct FireDialogView: ModalView {
                     .padding(6)
                     .background(Circle().fill(Color(designSystemColor: .controlsFillPrimary)))
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel(UserText.fireDialogChooseWhatToDelete)
-            .accessibilityValue(viewModel.isSectionsExpanded ? UserText.fireDialogAccessibilityDetailsExpanded : UserText.fireDialogAccessibilityDetailsCollapsed)
-            .accessibilityAddTraits(.isButton)
-            .accessibilityIdentifier("FireDialogView.detailsDisclosureButton")
+            .contentShape(Rectangle())
+            .padding(.horizontal, 4)
         }
-        .padding(.horizontal, 4)
+        .buttonStyle(.plain)
+        .accessibilityLabel(UserText.fireDialogChooseWhatToDelete)
+        .accessibilityValue(viewModel.isSectionsExpanded ? UserText.fireDialogAccessibilityDetailsExpanded : UserText.fireDialogAccessibilityDetailsCollapsed)
+        .accessibilityAddTraits(.isButton)
+        .accessibilityIdentifier("FireDialogView.detailsDisclosureButton")
     }
 
     private var sectionsView: some View {
@@ -892,13 +893,19 @@ struct FireDialogView: ModalView {
 
         var body: some View {
             if let action {
-                Button(action: action) {
+                Button {
+                    guard isEnabled else { return }
+                    action()
+                } label: {
                     label
                 }
                 .buttonStyle(.plain)
-                .disabled(!isEnabled)
+                // `disabled(_:)` is deliberately not used here: the button style dims the label
+                // in the disabled state, and the text must keep its normal appearance. The guard
+                // in the action and `allowsHitTesting(_:)` make the button inert instead.
+                .allowsHitTesting(isEnabled)
                 .onHover { isHovered = $0 }
-                .cursor(.pointingHand)
+                .cursor(isEnabled ? .pointingHand : .arrow)
                 .accessibilityIdentifier(accessibilityIdentifier ?? "")
             } else {
                 label
@@ -917,7 +924,6 @@ struct FireDialogView: ModalView {
                     Capsule(style: .continuous)
                         .fill(isHovered && isEnabled ? Color(designSystemColor: .buttonsSecondaryFillDefault) : Color.clear)
                 )
-                .opacity(action != nil && !isEnabled ? 0.4 : 1.0)
         }
     }
 

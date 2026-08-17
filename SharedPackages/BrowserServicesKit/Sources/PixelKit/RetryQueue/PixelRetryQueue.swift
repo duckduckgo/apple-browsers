@@ -213,6 +213,15 @@ final class PixelRetryQueue {
                 continue
             }
 
+            // Builds that queued every failed pixel, before retry became opt-in, wrote no `optedIn` key,
+            // so those items decode as not opted in. They were never triaged for the retry parameters
+            // below, so drop them rather than replay them.
+            // For more info see https://app.asana.com/1/137249556945/task/1215909080171360?focus=true
+            guard item.optedIn else {
+                idsAccessQueue.sync { _ = idsToRemove.insert(item.id) }
+                continue
+            }
+
             // Mark the replay so the backend can tell it from an organic send and de-duplicate against
             // the original attempt. `item.timestamp` is when that attempt failed.
             var parameters = item.parameters

@@ -96,8 +96,8 @@ final class AIChatRecentChatsPopupViewModel {
 extension AIChatRecentChatsPopupViewModel {
 
     /// Fetches recent chats from the reader and creates a view model.
-    /// Returns nil only if the reader is nil.
-    /// When there are no recent suggestions, the popup shows just the "View all chats" link.
+    /// Returns nil only if the reader is nil. With no recent suggestions the popup still opens: its
+    /// actions do not depend on having history.
     static func fetch(using reader: AIChatSuggestionsReading?, showNewChat: Bool = false) async -> AIChatRecentChatsPopupViewModel? {
         guard let reader else { return nil }
         let result = await reader.fetchSuggestions(query: nil, maxChats: maxVisibleChats + 1)

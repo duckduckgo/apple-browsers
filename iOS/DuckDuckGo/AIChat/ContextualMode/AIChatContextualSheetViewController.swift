@@ -568,11 +568,7 @@ final class AIChatContextualSheetViewController: UIViewController {
                 showNewChat: sessionState.hasActiveChat
             ), view.window != nil, !isBeingDismissed else { return }
 
-            if viewModel.suggestions.isEmpty {
-                recentChatsPopupDidSelectViewAll()
-            } else {
-                showRecentChatsPopup(with: viewModel)
-            }
+            showRecentChatsPopup(with: viewModel)
         }
     }
 

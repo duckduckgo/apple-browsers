@@ -5545,13 +5545,7 @@ extension MainViewController: OmniBarDelegate {
 
         guard newTabPageViewController == nil else { return }
 
-        if homePageConfiguration.mode == .coordinated {
-            if isCurrentTabFireTab() {
-                homePageConfiguration.deactivateNTPHost(.omniBar)
-            } else {
-                homePageConfiguration.prepareForNTP(openedAfterIdle: escapeHatchForEditingState() != nil, host: .omniBar)
-            }
-        }
+        prepareHomePageMessagesForOmniBar()
 
         if isPad {
             // iPad routes all suggestion show/hide through the focus model (favorites vs autocomplete
@@ -5566,6 +5560,16 @@ extension MainViewController: OmniBarDelegate {
             }
         }
         themeColorManager.updateThemeColor()
+    }
+
+    private func prepareHomePageMessagesForOmniBar() {
+        guard homePageConfiguration.mode == .coordinated else { return }
+
+        if isCurrentTabFireTab() {
+            homePageConfiguration.deactivateNTPHost(.omniBar)
+        } else {
+            homePageConfiguration.prepareForNTP(openedAfterIdle: escapeHatchForEditingState() != nil, host: .omniBar)
+        }
     }
 
     private func installContextualSheetDismissGesture() {

@@ -1074,6 +1074,7 @@
 		97C00D062F97ACD100593A53 /* DaxLogoManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97C00D052F97ACD100593A53 /* DaxLogoManagerTests.swift */; };
 		97C00D0C2F98EEE300593A53 /* UnifiedInputContentContainerViewControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97C00D0B2F98EEE300593A53 /* UnifiedInputContentContainerViewControllerTests.swift */; };
 		97D45F48302B5F59002388C8 /* UpdatedModelPickerFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97D45F47302B5F59002388C8 /* UpdatedModelPickerFeature.swift */; };
+		97D45F52302B6000002388C8 /* UnknownModelLabelReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97D45F51302B6000002388C8 /* UnknownModelLabelReporter.swift */; };
 		97D45F4C302B5FC2002388C8 /* UpdatedModelPickerFeatureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97D45F4B302B5FC2002388C8 /* UpdatedModelPickerFeatureTests.swift */; };
 		97D99E622F741FE900EE34E7 /* AIVoiceChatIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97D99E612F741FE900EE34E7 /* AIVoiceChatIntent.swift */; };
 		97D99E642F7420A900EE34E7 /* AIVoiceChatIntentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97D99E632F7420A900EE34E7 /* AIVoiceChatIntentTests.swift */; };
@@ -3927,6 +3928,7 @@
 		97C00D052F97ACD100593A53 /* DaxLogoManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxLogoManagerTests.swift; sourceTree = "<group>"; };
 		97C00D0B2F98EEE300593A53 /* UnifiedInputContentContainerViewControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedInputContentContainerViewControllerTests.swift; sourceTree = "<group>"; };
 		97D45F47302B5F59002388C8 /* UpdatedModelPickerFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdatedModelPickerFeature.swift; sourceTree = "<group>"; };
+		97D45F51302B6000002388C8 /* UnknownModelLabelReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnknownModelLabelReporter.swift; sourceTree = "<group>"; };
 		97D45F4B302B5FC2002388C8 /* UpdatedModelPickerFeatureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdatedModelPickerFeatureTests.swift; sourceTree = "<group>"; };
 		97D99E612F741FE900EE34E7 /* AIVoiceChatIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIVoiceChatIntent.swift; sourceTree = "<group>"; };
 		97D99E632F7420A900EE34E7 /* AIVoiceChatIntentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIVoiceChatIntentTests.swift; sourceTree = "<group>"; };
@@ -10184,6 +10186,7 @@
 				C18390C32F4F73AE001939B9 /* UnifiedToggleInputHandler.swift */,
 				C18390BA2F4F6F54001939B9 /* UnifiedToggleInputCoordinator.swift */,
 				97D45F47302B5F59002388C8 /* UpdatedModelPickerFeature.swift */,
+				97D45F51302B6000002388C8 /* UnknownModelLabelReporter.swift */,
 				977C2D422FC06B6100C39A04 /* UnifiedToggleInputCoordinatorPixelHelper.swift */,
 				BBA0000000000000000A0001 /* TabInputState.swift */,
 				BBA0000000000000000B0001 /* UnifiedInputStateStoring.swift */,
@@ -14286,6 +14289,7 @@
 				CBD4F13C279EBF4A00B20FD7 /* HomeMessage.swift in Sources */,
 				6FB2A67E2C2DAFB4004D20C8 /* NewTabPageGridView.swift in Sources */,
 				97D45F48302B5F59002388C8 /* UpdatedModelPickerFeature.swift in Sources */,
+				97D45F52302B6000002388C8 /* UnknownModelLabelReporter.swift in Sources */,
 				80A09D4E2F6B80B900AACDEE /* WebsiteDataFireWorker.swift in Sources */,
 				31D4CD4B2D4D1C2D00BC27C6 /* ToolbarStateHandling.swift in Sources */,
 				1DEAADEC2BA45B4500E25A97 /* SettingsAccessibilityView.swift in Sources */,

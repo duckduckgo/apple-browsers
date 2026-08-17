@@ -475,5 +475,19 @@
         "triggers": ["other"],
         "suffixes": ["daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
+    },
+    "debug_aichat_unified_input_unknown_model_label": {
+        "description": "Fires when the /v1/models response carries a recommendation label the client doesn't recognise, so it renders as a model row with no subline.",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "label",
+                "description": "The unrecognised label exactly as returned by the API, so it can be added to the client's known labels verbatim. Values come from a server-side enum, not from user input.",
+                "type": "string"
+            }
+        ]
     }
 }

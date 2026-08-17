@@ -31,6 +31,7 @@ final class UTIModelStore {
     private let modelsService: AIChatModelsProviding
     private(set) var preferences: AIChatPreferencesPersisting
     private let subscriptionManager: any SubscriptionManager
+    private let unknownLabelReporter: UnknownModelLabelReporting
     private var modelsFetchTask: Task<Void, Never>?
 
     private var liveModelId: String?
@@ -40,11 +41,13 @@ final class UTIModelStore {
     init(
         modelsService: AIChatModelsProviding,
         preferences: AIChatPreferencesPersisting,
-        subscriptionManager: any SubscriptionManager
+        subscriptionManager: any SubscriptionManager,
+        unknownLabelReporter: UnknownModelLabelReporting? = nil
     ) {
         self.modelsService = modelsService
         self.preferences = preferences
         self.subscriptionManager = subscriptionManager
+        self.unknownLabelReporter = unknownLabelReporter ?? UnknownModelLabelReporter()
     }
 
     var persistedModelId: String? {
@@ -119,6 +122,7 @@ final class UTIModelStore {
                 let response = try await modelsService.fetchModels()
                 guard !Task.isCancelled else { return }
                 self.models = Self.resolveModels(from: response.models, userTier: state.userTier)
+                self.unknownLabelReporter.reportUnknownLabels(in: self.models)
                 self.attachmentLimits = response.attachmentLimits?.limits(for: state.userTier)
                 self.clearStaleModelSelectionIfNeeded()
                 self.clearStaleReasoningModeIfNeeded()

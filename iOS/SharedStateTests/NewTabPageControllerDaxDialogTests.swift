@@ -324,7 +324,7 @@ class CapturingNewTabDaxDialogProvider: NewTabDaxDialogProviding {
     func createEndOfJourneyDialog(content: OnboardingEndOfJourneyContent, onAction: @escaping (OnboardingEndOfJourneyAction) -> Void) -> AnyView {
         endOfJourneyContent = content
         onEndOfJourneyAction = onAction
-        AnyView(EmptyView())
+        return AnyView(EmptyView())
     }
 }
 

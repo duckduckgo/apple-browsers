@@ -104,7 +104,8 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
             id: model.id,
             name: model.name,
             shortName: model.shortName,
-            description: AIChatPickerSectionCopy.subtitle(for: model.label),
+            // Gated rows never show a subtitle, matching the address bar's `gatedModel` (no subtitle param).
+            description: requiredTier == nil ? AIChatPickerSectionCopy.subtitle(for: model.label) : nil,
             isAvailable: model.entityHasAccess,
             supportsImageUpload: model.supportsImageUpload,
             supportedTools: model.supportedTools.map(\.rawValue),

@@ -230,6 +230,25 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenReasoningEffortDisabledThenDescriptionPreservedInGetConfig() async throws {
+        // Stripping reasoning effort must not also drop the recommendation label subtitle.
+        configProvider.isReasoningEffortEnabled = false
+        modelsProvider.lastFetchedSections = [
+            NewTabPageDataModel.AIModelSection(header: nil, items: [
+                NewTabPageDataModel.AIModelItem(id: "model", name: "Model", shortName: "M",
+                                                 description: "Recommended",
+                                                 isAvailable: true, supportsImageUpload: false,
+                                                 reasoningEfforts: availableEfforts(["none", "low"]))
+            ])
+        ]
+
+        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+
+        XCTAssertEqual(config.aiModelSections?.flatMap(\.items).first?.description, "Recommended")
+        XCTAssertEqual(config.aiModelSections?.flatMap(\.items).first?.reasoningEfforts, [])
+    }
+
+    @MainActor
     func testWhenReasoningEffortEnabledThenReasoningEffortsPreservedInGetConfig() async throws {
         configProvider.isReasoningEffortEnabled = true
         modelsProvider.lastFetchedSections = [

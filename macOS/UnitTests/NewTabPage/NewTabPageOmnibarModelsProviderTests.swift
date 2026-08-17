@@ -534,6 +534,22 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
         XCTAssertNil(items.last?.description)
     }
 
+    /// Gated rows never show a subtitle, matching the address bar's `gatedModel` picker item (no
+    /// subtitle param); only the accessible section carries the label copy as `description`.
+    func testWhenGatedModelHasRecommendationLabelThenDescriptionIsNilButAccessibleLabelledModelKeepsIt() async {
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "accessible-labelled", accessTier: ["free"], label: .everydayUse),
+            makeRemoteModel(id: "gated-labelled", accessTier: ["plus"], label: .everydayUse),
+        ]
+
+        let sections = await provider.fetchAIModelSections()
+        let accessibleItem = sections.first?.items.first(where: { $0.id == "accessible-labelled" })
+        let gatedItem = sections.last?.items.first(where: { $0.id == "gated-labelled" })
+
+        XCTAssertEqual(accessibleItem?.description, UserText.aiChatModelPickerLabelEverydayUse)
+        XCTAssertNil(gatedItem?.description)
+    }
+
     func testWhenFreeUserEligibleForFreeTrialThenGatedSectionHeaderIsTryFree() async {
         mockSubscriptionManager.isEligibleForFreeTrialResult = true
         mockModelsService.modelsToReturn = [makeRemoteModel(id: "premium-model", accessTier: ["plus"])]
@@ -583,7 +599,7 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
         let efforts = sections.flatMap(\.items).first(where: { $0.id == "reasoning-model" })?.reasoningEfforts
 
         XCTAssertEqual(efforts?.map(\.isAvailable), [true, false, false])
-        XCTAssertEqual(efforts?.first?.gatedSectionHeader, nil)
+        XCTAssertNil(efforts?.first?.gatedSectionHeader)
         XCTAssertEqual(efforts?[1].gatedSectionHeader, UserText.aiChatModelPickerAvailableWithPlusSectionHeader)
         XCTAssertNil(efforts?[2].gatedSectionHeader)
     }

@@ -63,7 +63,7 @@ public extension NewTabPageDataModel {
         /// `nil` for a model with no tier requirement; set on every item, not just gated ones.
         public let accessTier: String?
         /// Empty when reasoning isn't supported, or when disabled natively (picker stays hidden).
-        public let reasoningEfforts: [AIModelReasoningEffort]
+        public var reasoningEfforts: [AIModelReasoningEffort]
         /// MIME types the model accepts as file attachments (e.g. `["application/pdf"]`). Empty
         /// when the model accepts no files; the web uses this to drive the file picker's `accept`
         /// and to clear attached files whose MIME isn't supported when the user switches models.

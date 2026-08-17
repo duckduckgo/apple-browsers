@@ -133,7 +133,7 @@ struct HomePageConfigurationTests {
     }
 
     @available(iOS 16, *)
-    @Test("Disabled preparation neither selects nor arms a later store refresh", .timeLimit(.minutes(1)))
+    @Test("True background launch and ownerless foreground remain inert until NTP preparation", .timeLimit(.minutes(1)))
     func disabledPreparationDoesNotArmRefresh() async {
         let notificationCenter = NotificationCenter()
         let store = FilteredRemoteMessagingStore(noTriggerMessage: makeRemoteMessage(id: "message"))
@@ -152,6 +152,7 @@ struct HomePageConfigurationTests {
 
         #expect(store.fetchedTriggerFilters.isEmpty)
         #expect(gate.acquiredMessageIDs.isEmpty)
+        #expect(sut.homeMessages.isEmpty)
 
         sut.prepareForNTP(openedAfterIdle: false)
 
@@ -295,31 +296,39 @@ struct HomePageConfigurationTests {
     }
 
     @available(iOS 16, *)
-    @Test("Same ownership keeps identity while background reacquisition changes it", .timeLimit(.minutes(1)))
-    func ownershipIdentityLifecycle() {
+    @Test("A published RMF keeps publication, identity, and lease through background and foreground", .timeLimit(.minutes(1)))
+    func ownershipSurvivesBackgroundAndForeground() {
         let message = makeRemoteMessage(id: "message")
         let store = FilteredRemoteMessagingStore(noTriggerMessage: message)
         let gate = MockPromoGate()
         let sut = makeCoordinatedConfiguration(store: store, gate: gate)
 
         sut.prepareForNTP(openedAfterIdle: false)
-        let firstContext = sut.presentationContext(for: .remoteMessage(remoteMessage: message))
-
-        sut.prepareForNTP(openedAfterIdle: true)
-        let refreshedContext = sut.presentationContext(for: .remoteMessage(remoteMessage: message))
+        let context = sut.presentationContext(for: .remoteMessage(remoteMessage: message))
+        let owner = gate.arbiter.snapshot.owner
+        var contentDidChangeCount = 0
+        let cancellable = sut.contentDidChangePublisher.sink {
+            contentDidChangeCount += 1
+        }
 
         sut.handleAppBackgrounded()
+        #expect(sut.homeMessages == [.remoteMessage(remoteMessage: message)])
+        #expect(sut.presentationContext(for: .remoteMessage(remoteMessage: message)) == context)
+        #expect(gate.arbiter.snapshot.owner == owner)
+
         sut.handleAppForegrounded()
         sut.prepareForNTP(openedAfterIdle: false)
-        let reacquiredContext = sut.presentationContext(for: .remoteMessage(remoteMessage: message))
 
-        #expect(firstContext == refreshedContext)
-        #expect(firstContext != reacquiredContext)
-        #expect(gate.acquiredMessageIDs == ["message", "message"])
+        #expect(sut.homeMessages == [.remoteMessage(remoteMessage: message)])
+        #expect(sut.presentationContext(for: .remoteMessage(remoteMessage: message)) == context)
+        #expect(gate.arbiter.snapshot.owner == owner)
+        #expect(gate.acquiredMessageIDs == ["message"])
+        #expect(contentDidChangeCount == 0)
+        withExtendedLifetime(cancellable) {}
     }
 
     @available(iOS 16, *)
-    @Test("Only the first current appearance confirms history and stale appearance is ignored", .timeLimit(.minutes(1)))
+    @Test("Only the first appearance is confirmed across background and foreground", .timeLimit(.minutes(1)))
     func appearanceIsIdentityCheckedAndConfirmedOnce() {
         let message = makeRemoteMessage(id: "message")
         let store = FilteredRemoteMessagingStore(noTriggerMessage: message)
@@ -331,15 +340,17 @@ struct HomePageConfigurationTests {
         sut.didAppear(.remoteMessage(remoteMessage: message), presentationContext: context)
         sut.didAppear(.remoteMessage(remoteMessage: message), presentationContext: context)
         sut.handleAppBackgrounded()
+        sut.handleAppForegrounded()
         sut.didAppear(.remoteMessage(remoteMessage: message), presentationContext: context)
 
         #expect(gate.cooldownPolicy.recordConfirmedRemoteMessageAppearanceCallCount == 1)
         #expect(store.hasShownRemoteMessageCallCount == 1)
+        #expect(sut.presentationContext(for: .remoteMessage(remoteMessage: message)) == context)
     }
 
     @available(iOS 16, *)
-    @Test("An appeared RMF records real history once and is cooldown-blocked after background", .timeLimit(.minutes(1)))
-    func appearedRemoteMessageIsCooldownBlockedAfterBackground() async {
+    @Test("An appeared RMF keeps history and blocks modal evaluation after foreground", .timeLimit(.minutes(1)))
+    func appearedRemoteMessageRetainsOwnershipAndBlocksModalAfterForeground() async {
         let now = Date(timeIntervalSince1970: 1_000_000)
         let message = makeRemoteMessage(id: "message")
         let store = FilteredRemoteMessagingStore(noTriggerMessage: message)
@@ -357,7 +368,16 @@ struct HomePageConfigurationTests {
             remoteMessageHistory: history,
             dateProvider: { now }
         )
-        let service = makePromoCoordinationService(arbiter: arbiter, cooldownPolicy: policy)
+        let launchSourceManager = MockLaunchSourceManager()
+        launchSourceManager.source = .standard
+        let modalManager = MockModalPromptCoordinationManager()
+        let service = PromoCoordinationService(
+            launchSourceManager: launchSourceManager,
+            modalPromptCoordinationManager: modalManager,
+            mode: .coordinated,
+            promoQueueLeaseArbiter: arbiter,
+            promoQueueCooldownPolicy: policy
+        )
         let sut = HomePageConfiguration(
             remoteMessagingStore: store,
             subscriptionDataReporter: MockSubscriptionDataReporter(),
@@ -369,32 +389,29 @@ struct HomePageConfigurationTests {
         let context = sut.presentationContext(for: .remoteMessage(remoteMessage: message))
         sut.didAppear(.remoteMessage(remoteMessage: message), presentationContext: context)
         sut.didAppear(.remoteMessage(remoteMessage: message), presentationContext: context)
+        let owner = arbiter.snapshot.owner
         var shownPersistenceIterator = shownPersistenceEvents.makeAsyncIterator()
         guard await shownPersistenceIterator.next() != nil else {
             Issue.record("Expected shown persistence to be invoked")
             return
         }
 
-        var ownerAtBackgroundSignal: PromoQueueLeaseOwnerSnapshot?
-        let cancellable = sut.contentDidChangePublisher.sink {
-            ownerAtBackgroundSignal = arbiter.snapshot.owner
-        }
         sut.handleAppBackgrounded()
         sut.handleAppForegrounded()
-        sut.prepareForNTP(openedAfterIdle: false)
+        service.presentModalPromptIfNeeded(from: MockModalPromptPresenter())
 
         #expect(history.recordedDates == [now])
         #expect(store.hasShownRemoteMessageCallCount == 1)
         #expect(store.updatedShownMessageIDs == ["message"])
-        #expect(ownerAtBackgroundSignal != nil)
-        #expect(sut.homeMessages.isEmpty)
-        #expect(arbiter.snapshot.owner == nil)
-        withExtendedLifetime(cancellable) {}
+        #expect(sut.homeMessages == [.remoteMessage(remoteMessage: message)])
+        #expect(sut.presentationContext(for: .remoteMessage(remoteMessage: message)) == context)
+        #expect(arbiter.snapshot.owner == owner)
+        #expect(!modalManager.didCallPresentModalPromptIfNeeded)
     }
 
     @available(iOS 16, *)
-    @Test("A never-appeared RMF can reacquire after background without writing history", .timeLimit(.minutes(1)))
-    func neverAppearedRemoteMessageCanReacquireAfterBackground() {
+    @Test("A never-appeared RMF keeps ownership through background without writing history", .timeLimit(.minutes(1)))
+    func neverAppearedRemoteMessageRetainsOwnershipAcrossBackground() {
         let message = makeRemoteMessage(id: "message")
         let store = FilteredRemoteMessagingStore(noTriggerMessage: message)
         let history = RecordingPromoQueueRemoteMessageHistory()
@@ -412,16 +429,139 @@ struct HomePageConfigurationTests {
         )
 
         sut.prepareForNTP(openedAfterIdle: false)
-        let firstContext = sut.presentationContext(for: .remoteMessage(remoteMessage: message))
+        let context = sut.presentationContext(for: .remoteMessage(remoteMessage: message))
+        let owner = arbiter.snapshot.owner
         sut.handleAppBackgrounded()
         sut.handleAppForegrounded()
-        sut.prepareForNTP(openedAfterIdle: false)
-        let secondContext = sut.presentationContext(for: .remoteMessage(remoteMessage: message))
 
         #expect(history.recordedDates.isEmpty)
-        #expect(firstContext != secondContext)
-        #expect(secondContext != nil)
-        #expect(arbiter.snapshot.owner != nil)
+        #expect(sut.presentationContext(for: .remoteMessage(remoteMessage: message)) == context)
+        #expect(arbiter.snapshot.owner == owner)
+        #expect(sut.homeMessages == [.remoteMessage(remoteMessage: message)])
+    }
+
+    @available(iOS 16, *)
+    @Test("Backgrounding without an owner cannot acquire and foregrounding remains inert", .timeLimit(.minutes(1)))
+    func backgroundWithoutOwnerDoesNotAcquire() async {
+        let notificationCenter = NotificationCenter()
+        let store = FilteredRemoteMessagingStore(noTriggerMessage: makeRemoteMessage(id: "message"))
+        let gate = MockPromoGate()
+        let sut = makeCoordinatedConfiguration(store: store, gate: gate, notificationCenter: notificationCenter)
+
+        sut.handleAppBackgrounded()
+        sut.prepareForNTP(openedAfterIdle: false)
+        notificationCenter.post(name: RemoteMessagingStore.Notifications.remoteMessagesDidChange, object: nil)
+        await Task.yield()
+        sut.handleAppForegrounded()
+
+        #expect(store.fetchedTriggerFilters.isEmpty)
+        #expect(gate.acquiredMessageIDs.isEmpty)
+        #expect(sut.homeMessages.isEmpty)
+    }
+
+    @available(iOS 16, *)
+    @Test("An inactive store refresh retains the same valid owner", .timeLimit(.minutes(1)))
+    func inactiveStoreRefreshRetainsValidOwner() async {
+        let notificationCenter = NotificationCenter()
+        let message = makeRemoteMessage(id: "message")
+        let store = FilteredRemoteMessagingStore(noTriggerMessage: message)
+        let gate = MockPromoGate()
+        let sut = makeCoordinatedConfiguration(store: store, gate: gate, notificationCenter: notificationCenter)
+        sut.prepareForNTP(openedAfterIdle: false)
+        let context = sut.presentationContext(for: .remoteMessage(remoteMessage: message))
+        let owner = gate.arbiter.snapshot.owner
+        store.fetchedTriggerFilters.removeAll()
+
+        sut.handleAppBackgrounded()
+        notificationCenter.post(name: RemoteMessagingStore.Notifications.remoteMessagesDidChange, object: nil)
+        await Task.yield()
+
+        #expect(store.fetchedTriggerFilters == [.noTrigger])
+        #expect(gate.acquiredMessageIDs == ["message"])
+        #expect(sut.presentationContext(for: .remoteMessage(remoteMessage: message)) == context)
+        #expect(gate.arbiter.snapshot.owner == owner)
+        #expect(sut.homeMessages == [.remoteMessage(remoteMessage: message)])
+    }
+
+    @available(iOS 16, *)
+    @Test("An inactive replacement releases the old owner without acquiring the replacement", .timeLimit(.minutes(1)))
+    func inactiveReplacementDoesNotAcquire() async {
+        let notificationCenter = NotificationCenter()
+        let original = makeRemoteMessage(id: "original")
+        let replacement = makeRemoteMessage(id: "replacement")
+        let store = FilteredRemoteMessagingStore(noTriggerMessage: original)
+        let gate = MockPromoGate()
+        let sut = makeCoordinatedConfiguration(store: store, gate: gate, notificationCenter: notificationCenter)
+        sut.prepareForNTP(openedAfterIdle: false)
+
+        sut.handleAppBackgrounded()
+        store.noTriggerMessage = replacement
+        notificationCenter.post(name: RemoteMessagingStore.Notifications.remoteMessagesDidChange, object: nil)
+        await Task.yield()
+
+        #expect(gate.acquiredMessageIDs == ["original"])
+        #expect(gate.arbiter.snapshot.owner == nil)
+        #expect(sut.homeMessages.isEmpty)
+
+        sut.handleAppForegrounded()
+
+        #expect(gate.acquiredMessageIDs == ["original"])
+        #expect(sut.homeMessages.isEmpty)
+    }
+
+    @available(iOS 16, *)
+    @Test("Foreground revalidation releases an invalid owner before modal evaluation", .timeLimit(.minutes(1)))
+    func foregroundReleasesInvalidOwnerBeforeModalEvaluation() {
+        let message = makeRemoteMessage(id: "message")
+        let store = FilteredRemoteMessagingStore(noTriggerMessage: message)
+        let arbiter = PromoQueueLeaseArbiter()
+        let cooldownPolicy = MockPromoQueueCooldownPolicy()
+        let launchSourceManager = MockLaunchSourceManager()
+        launchSourceManager.source = .standard
+        let modalManager = MockModalPromptCoordinationManager()
+        let service = PromoCoordinationService(
+            launchSourceManager: launchSourceManager,
+            modalPromptCoordinationManager: modalManager,
+            mode: .coordinated,
+            promoQueueLeaseArbiter: arbiter,
+            promoQueueCooldownPolicy: cooldownPolicy
+        )
+        let sut = HomePageConfiguration(
+            remoteMessagingStore: store,
+            subscriptionDataReporter: MockSubscriptionDataReporter(),
+            isStillOnboarding: { false },
+            promoGate: service
+        )
+        sut.prepareForNTP(openedAfterIdle: false)
+
+        sut.handleAppBackgrounded()
+        store.noTriggerMessage = nil
+        sut.handleAppForegrounded()
+        service.presentModalPromptIfNeeded(from: MockModalPromptPresenter())
+
+        #expect(sut.homeMessages.isEmpty)
+        #expect(modalManager.didCallPresentModalPromptIfNeeded)
+        #expect(arbiter.snapshot.hasModalLease)
+    }
+
+    @available(iOS 16, *)
+    @Test("Legacy lifecycle hooks leave RMF behavior unchanged", .timeLimit(.minutes(1)))
+    func legacyLifecycleHooksAreNoOp() {
+        let message = makeRemoteMessage(id: "message")
+        let store = FilteredRemoteMessagingStore(noTriggerMessage: message)
+        let sut = HomePageConfiguration(
+            remoteMessagingStore: store,
+            subscriptionDataReporter: MockSubscriptionDataReporter(),
+            isStillOnboarding: { false }
+        )
+        let homeMessages = sut.homeMessages
+
+        sut.handleAppBackgrounded()
+        sut.handleAppForegrounded()
+
+        #expect(sut.homeMessages == homeMessages)
+        #expect(sut.homeMessages == [.remoteMessage(remoteMessage: message)])
+        #expect(store.fetchedTriggerFilters == [.noTrigger])
     }
 
     @available(iOS 16, *)
@@ -436,19 +576,6 @@ struct HomePageConfigurationTests {
         let oldContext = sut.presentationContext(for: .remoteMessage(remoteMessage: message))
         let (dismissalEnteredEvents, dismissalEnteredContinuation) = AsyncStream.makeStream(of: Void.self)
         let (dismissalResumeEvents, dismissalResumeContinuation) = AsyncStream.makeStream(of: Void.self)
-        var reconciliationNotificationCount = 0
-        var ownerAtReconciliationNotification: PromoQueueLeaseOwnerSnapshot?
-        let notificationObserver = notificationCenter.addObserver(
-            forName: RemoteMessagingStore.Notifications.remoteMessagesDidChange,
-            object: nil,
-            queue: nil
-        ) { _ in
-            MainActor.assumeIsolated {
-                reconciliationNotificationCount += 1
-                ownerAtReconciliationNotification = gate.arbiter.snapshot.owner
-            }
-        }
-        defer { notificationCenter.removeObserver(notificationObserver) }
         store.dismissRemoteMessageHandler = {
             dismissalEnteredContinuation.yield()
             dismissalEnteredContinuation.finish()
@@ -473,10 +600,25 @@ struct HomePageConfigurationTests {
             return
         }
 
-        sut.handleAppBackgrounded()
-        sut.handleAppForegrounded()
+        store.noTriggerMessage = nil
+        notificationCenter.post(name: RemoteMessagingStore.Notifications.remoteMessagesDidChange, object: nil)
+        await Task.yield()
+        store.noTriggerMessage = message
         sut.prepareForNTP(openedAfterIdle: false)
         let newContext = sut.presentationContext(for: .remoteMessage(remoteMessage: message))
+        var reconciliationNotificationCount = 0
+        var ownerAtReconciliationNotification: PromoQueueLeaseOwnerSnapshot?
+        let notificationObserver = notificationCenter.addObserver(
+            forName: RemoteMessagingStore.Notifications.remoteMessagesDidChange,
+            object: nil,
+            queue: nil
+        ) { _ in
+            MainActor.assumeIsolated {
+                reconciliationNotificationCount += 1
+                ownerAtReconciliationNotification = gate.arbiter.snapshot.owner
+            }
+        }
+        defer { notificationCenter.removeObserver(notificationObserver) }
         dismissalResumeContinuation.yield()
         dismissalResumeContinuation.finish()
         await dismissalTask.value

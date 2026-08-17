@@ -931,7 +931,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .iPadTabsBarInWindowControlsRow:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.iPadTabsBarInWindowControlsRow))
         case .nativeAIPromptEditing:
-            Config(defaultValue: .disabled, source: .remoteReleasable(AIChatSubfeature.nativePromptEditing))
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.nativePromptEditing))
         }
     }
 

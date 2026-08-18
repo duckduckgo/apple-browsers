@@ -252,7 +252,7 @@ extension FireCoordinator {
             featureFlagger: self.featureFlagger,
             clearingOption: mode.shouldShowSegmentedControl ? nil /* last selected */ : .allData,
             includeTabsAndWindows: mode.shouldShowCloseTabsToggle ? nil /* last selected */ : false,
-            includeChatHistory: mode.shouldShowChatHistoryToggle ? nil /* last selected */ : false,
+            includeChatHistory: mode.shouldShowChatHistoryToggle(featureFlagger) ? nil /* last selected */ : false,
             mode: mode,
             settings: settings,
             scopeCookieDomains: scopeCookieDomains,

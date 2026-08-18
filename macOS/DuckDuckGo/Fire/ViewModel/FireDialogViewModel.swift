@@ -101,21 +101,28 @@ final class FireDialogViewModel: ObservableObject {
             return shouldShowVisitsToggle
         }
 
+        /// Show the History (visits) toggle?
+        ///
+        /// The compact dialog always deletes the records the History view scoped it to, so it offers
+        /// no way to exclude them.
+        ///
+        /// Only the compact dialog reads this. The legacy dialog always shows its History row and
+        /// reads the user's choice from `includeHistory`, so this needs no feature flag.
         var shouldShowVisitsToggle: Bool {
             switch self {
-            case .historyView(query: .visits):
+            case .historyView:
                 return false
             default:
                 return true
             }
         }
 
-        var shouldShowChatHistoryToggle: Bool {
+        func shouldShowChatHistoryToggle(_ featureFlagger: FeatureFlagger) -> Bool {
             switch self {
-            case .fireButton,
-                    .mainMenuAll,
-                    .historyView(query: .rangeFilter(.all)):
+            case .fireButton, .mainMenuAll:
                 return true
+            case .historyView(query: .rangeFilter(.all)):
+                return !featureFlagger.isFeatureOn(.fireDialogSimplified)
             case .historyView:
                 return false
             }
@@ -132,21 +139,78 @@ final class FireDialogViewModel: ObservableObject {
         }
 
         /// Compute custom title for dialog based on mode (when applicable)
-        var dialogTitle: String {
-            let title = switch self {
-            case .fireButton: UserText.fireDialogTitle
-            case .mainMenuAll,
-                 .historyView(query: .rangeFilter(.all)),
-                 .historyView(query: .rangeFilter(.allSites)): HistoryViewDeleteDialogModel.DeleteMode.all.title
-            case .historyView(query: .rangeFilter(.today)): HistoryViewDeleteDialogModel.DeleteMode.today.title
-            case .historyView(query: .rangeFilter(.yesterday)): HistoryViewDeleteDialogModel.DeleteMode.yesterday.title
-            case .historyView(query: .dateFilter(let date)): HistoryViewDeleteDialogModel.DeleteMode.date(date).title
-            case .historyView(query: .domainFilter(let domains)): HistoryViewDeleteDialogModel.DeleteMode.sites(domains).title
-            case .historyView(query: .rangeFilter(.older)): HistoryViewDeleteDialogModel.DeleteMode.older.title
-            case .historyView(query: .visits(let visits)): UserText.fireDialogHistoryItemsTitle(visits.uniqued(on: { $0.uuid }).count)
-            case .historyView: UserText.fireDialogTitle
+        func dialogTitle(_ featureFlagger: FeatureFlagger) -> String {
+            guard featureFlagger.isFeatureOn(.fireDialogSimplified) else {
+                return legacyDialogTitle
             }
-            return title.replacingOccurrences(of: #"\n"#, with: " ")
+            return compactDialogTitle
+        }
+
+        /// Title of the compact dialog.
+        ///
+        /// The compact dialog is shorter than the legacy one and shows the title on a single line, so
+        /// it replaces the line break of the longer titles with a space. It also titles the weekday
+        /// sections of the History view, which each stand for a single date.
+        private var compactDialogTitle: String {
+            let title = {
+                switch self {
+                case .fireButton:
+                    return UserText.fireDialogTitle
+                case .mainMenuAll,
+                        .historyView(query: .rangeFilter(.all)),
+                        .historyView(query: .rangeFilter(.allSites)):
+                    return HistoryViewDeleteDialogModel.DeleteMode.all.compactTitle
+                case .historyView(query: .rangeFilter(.today)):
+                    return HistoryViewDeleteDialogModel.DeleteMode.today.compactTitle
+                case .historyView(query: .rangeFilter(.yesterday)):
+                    return HistoryViewDeleteDialogModel.DeleteMode.yesterday.compactTitle
+                case .historyView(query: .rangeFilter(.older)):
+                    return HistoryViewDeleteDialogModel.DeleteMode.older.compactTitle
+                case .historyView(query: .rangeFilter(let range)):
+                    guard let date = range.date(for: Date()) else {
+                        return UserText.fireDialogTitle
+                    }
+                    return HistoryViewDeleteDialogModel.DeleteMode.date(date).compactTitle
+                case .historyView(query: .dateFilter(let date)):
+                    return HistoryViewDeleteDialogModel.DeleteMode.date(date).compactTitle
+                case .historyView(query: .domainFilter(let domains)):
+                    return HistoryViewDeleteDialogModel.DeleteMode.sites(domains).compactTitle
+                case .historyView(query: .visits(let visits)):
+                    return UserText.fireDialogHistoryItemsTitle(visits.uniqued(on: { $0.uuid }).count)
+                case .historyView:
+                    return UserText.fireDialogTitle
+                }
+            }()
+            return title.replacingOccurrences(of: "\n", with: " ")
+        }
+
+        /// Title of the legacy dialog.
+        ///
+        /// The legacy dialog spells dates out in full, keeps the line break of the longer titles, and
+        /// has no title for the weekday sections of the History view.
+        private var legacyDialogTitle: String {
+            switch self {
+            case .fireButton:
+                return UserText.fireDialogTitle
+            case .mainMenuAll,
+                    .historyView(query: .rangeFilter(.all)),
+                    .historyView(query: .rangeFilter(.allSites)):
+                return HistoryViewDeleteDialogModel.DeleteMode.all.title
+            case .historyView(query: .rangeFilter(.today)):
+                return HistoryViewDeleteDialogModel.DeleteMode.today.title
+            case .historyView(query: .rangeFilter(.yesterday)):
+                return HistoryViewDeleteDialogModel.DeleteMode.yesterday.title
+            case .historyView(query: .rangeFilter(.older)):
+                return HistoryViewDeleteDialogModel.DeleteMode.older.title
+            case .historyView(query: .dateFilter(let date)):
+                return HistoryViewDeleteDialogModel.DeleteMode.date(date).title
+            case .historyView(query: .domainFilter(let domains)):
+                return HistoryViewDeleteDialogModel.DeleteMode.sites(domains).title
+            case .historyView(query: .visits(let visits)):
+                return UserText.fireDialogHistoryItemsTitle(visits.uniqued(on: { $0.uuid }).count)
+            case .historyView:
+                return UserText.fireDialogTitle
+            }
         }
     }
 
@@ -258,7 +322,7 @@ final class FireDialogViewModel: ObservableObject {
         if case .historyView(query: .visits) = mode, !featureFlagger.isFeatureOn(.fireDialogSimplified) {
             return UserText.fireDialogTitle
         }
-        return mode.dialogTitle
+        return mode.dialogTitle(featureFlagger)
     }
 
     var shouldShowChatHistoryToggle: Bool {
@@ -266,7 +330,7 @@ final class FireDialogViewModel: ObservableObject {
         // Only hide chats toggle when no chats in the new dialog, so default this to `true` when the flag is off.
         let hasChats = featureFlagger.isFeatureOn(.fireDialogSimplified) ? chats.count > 0 : true
         return aiChatHistoryCleaner.shouldDisplayCleanAIChatHistoryOption
-            && mode.shouldShowChatHistoryToggle
+            && mode.shouldShowChatHistoryToggle(featureFlagger)
             && (clearingOption.shouldShowChatHistoryToggle || isPresentedOnAIChatTab)
             && hasChats
     }

@@ -53,7 +53,7 @@ class NewPermissionViewTests: UITestCase {
         app.resetAuthorizationStatus(for: .microphone)
 
         // Now set up and launch the app
-        app = XCUIApplication.setUp()
+        app = XCUIApplication.setUp(featureFlags: ["fireDialogSimplified": false])
         addressBarTextField = app.addressBar
         app.enforceSingleWindow()
 
@@ -740,6 +740,7 @@ final class NewPermissionViewPopupTests: UITestCase {
             ],
             featureFlags: [
                 "popupBlocking": true,
+                "fireDialogSimplified": false,
             ]
         )
 

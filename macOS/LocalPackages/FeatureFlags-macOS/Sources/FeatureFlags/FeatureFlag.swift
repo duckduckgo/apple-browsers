@@ -564,7 +564,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                    cohortType: OnboardingSubscriptionUpsellCohort.self,
                    category: .subscription)
         case .fireDialogSimplified:
-            Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.fireDialogSimplified))
+            Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.fireDialogSimplified))
         case .unknownUsernameCategorization:
             Config(source: .remoteReleasable(AutofillSubfeature.unknownUsernameCategorization), supportsLocalOverriding: false)
         case .credentialsImportPromotionForExistingUsers:

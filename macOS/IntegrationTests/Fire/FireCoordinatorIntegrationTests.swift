@@ -17,10 +17,12 @@
 //
 
 import AppKit
+import FeatureFlags_macOS
 import History
 import HistoryView
 import Persistence
 import PersistenceTestingUtils
+import PrivacyConfig
 import SharedTestUtilities
 import PixelKitTestingUtilities
 import XCTest
@@ -85,7 +87,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
      Entry: History (All)
      Dialog config:
      - scopeSelector: hidden, selected: All
-     - tabs: visible, default=true; hist: visible, default=true; data: visible, default=true; chats: visible, default=false
+     - tabs: visible, default=true; hist: hidden (history is always deleted); data: visible, default=true; chats: visible, default=false
      - fireproof: visible; history link: hidden
      - title: "Delete all history?"
      - selectedDomains: [a.com, b.com, cook.ie, figma.com, date.com, c.com]
@@ -100,7 +102,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .historyView(query: .rangeFilter(.all)),
-            showVisitsToggle: true,
+            showVisitsToggle: false,
             showSegmentedControl: false,
             showCloseWindowsAndTabsToggle: true,
             showFireproofSection: true,
@@ -134,7 +136,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
      Entry: History (All)
      Dialog config:
      - scopeSelector: hidden, selected: All
-     - tabs: visible, default=true; hist: visible, default=true; data: visible, default=true; chats: visible, default=false
+     - tabs: visible, default=true; hist: hidden (history is always deleted); data: visible, default=true; chats: visible, default=false
      - fireproof: visible; history link: hidden
      - title: "Delete all history?"
      - selectedDomains: [a.com, b.com, cook.ie, figma.com, date.com, c.com]
@@ -149,7 +151,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .historyView(query: .rangeFilter(.all)),
-            showVisitsToggle: true,
+            showVisitsToggle: false,
             showSegmentedControl: false,
             showCloseWindowsAndTabsToggle: true,
             showFireproofSection: true,
@@ -183,7 +185,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
      Entry: History (All)
      Dialog config:
      - scopeSelector: hidden, selected: All
-     - tabs: visible, default=true; hist: visible, default=true; data: visible, default=true; chats: visible, default=false
+     - tabs: visible, default=true; hist: hidden (history is always deleted); data: visible, default=true; chats: visible, default=false
      - fireproof: visible; history link: hidden
      - title: "Delete all history?"
      - selectedDomains: [a.com, b.com]
@@ -198,7 +200,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .historyView(query: .rangeFilter(.all)),
-            showVisitsToggle: true,
+            showVisitsToggle: false,
             showSegmentedControl: false,
             showCloseWindowsAndTabsToggle: true,
             showFireproofSection: true,
@@ -239,7 +241,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
      Entry: History (All)
      Dialog config:
      - scopeSelector: hidden, selected: All
-     - tabs: visible, default=true; hist: visible, default=true; data: visible, default=true; chats: visible, default=false
+     - tabs: visible, default=true; hist: hidden (history is always deleted); data: visible, default=true; chats: visible, default=false
      - fireproof: visible; history link: hidden
      - title: "Delete all history?"
      - selectedDomains: [a.com, b.com, cook.ie, figma.com, x.com, example.com, test.com, date.com, close.me, c.com, z.com]
@@ -254,7 +256,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .historyView(query: .rangeFilter(.all)),
-            showVisitsToggle: true,
+            showVisitsToggle: false,
             showSegmentedControl: false,
             showCloseWindowsAndTabsToggle: true,
             showFireproofSection: true,
@@ -300,7 +302,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
      Dialog config:
      - scopeSelector: hidden, selected: All
      - tabs: visible, default=true
-     - hist: visible, default=true
+     - hist: hidden (history is always deleted)
      - data: visible, default=true
      - chats: not visible, default=false
      - fireproof: visible
@@ -325,7 +327,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .historyView(query: .rangeFilter(.all)),
-            showVisitsToggle: true,
+            showVisitsToggle: false,
             showSegmentedControl: false,
             showCloseWindowsAndTabsToggle: true,
             showFireproofSection: true,
@@ -371,7 +373,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
      Dialog config:
      - scopeSelector: hidden, selected: All
      - tabs: visible, default=true
-     - hist: visible, default=true
+     - hist: hidden (history is always deleted)
      - data: visible, default=true
      - chats: not visible, default=false
      - fireproof: visible
@@ -396,7 +398,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .historyView(query: .rangeFilter(.all)),
-            showVisitsToggle: true,
+            showVisitsToggle: false,
             showSegmentedControl: false,
             showCloseWindowsAndTabsToggle: true,
             showFireproofSection: true,
@@ -441,7 +443,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
      Entry: History (All)
      Dialog config:
      - scopeSelector: hidden, selected: All
-     - tabs: visible, default=true; hist: visible, default=true; data: visible, default=true; chats: not visible, default=false
+     - tabs: visible, default=true; hist: hidden (history is always deleted); data: visible, default=true; chats: not visible, default=false
      - fireproof: visible; history link: hidden
      - title: "Delete all history?"
      - selectedDomains: [a.com, b.com, cook.ie, figma.com, date.com, c.com]
@@ -457,7 +459,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .historyView(query: .domainFilter(["cook.ie"])),
-            showVisitsToggle: true,
+            showVisitsToggle: false,
             showSegmentedControl: false,
             showCloseWindowsAndTabsToggle: false,
             showFireproofSection: false,
@@ -496,7 +498,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
      Entry: History (All)
      Dialog config:
      - scopeSelector: hidden, selected: All
-     - tabs: visible, default=false; hist: visible, default=true; data: visible, default=false; chats: not visible, default=false
+     - tabs: visible, default=false; hist: hidden (history is always deleted); data: visible, default=false; chats: not visible, default=false
      - fireproof: visible; history link: hidden
      - title: "Delete all history?"
      - selectedDomains: [onlyhistory.com]
@@ -512,7 +514,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .historyView(query: .domainFilter(["test.com"])),
-            showVisitsToggle: true,
+            showVisitsToggle: false,
             showSegmentedControl: false,
             showCloseWindowsAndTabsToggle: false,
             showFireproofSection: false,
@@ -559,7 +561,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
      Dialog config:
      - scopeSelector: hidden, selected: All
      - tabs: visible, default=true
-     - hist: visible, default=true
+     - hist: hidden (history is always deleted)
      - data: visible, default=true
      - chats: not visible, default=false
      - fireproof: visible
@@ -582,7 +584,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .historyView(query: .rangeFilter(.today)),
-            showVisitsToggle: true,
+            showVisitsToggle: false,
             showSegmentedControl: false,
             showCloseWindowsAndTabsToggle: true,
             showFireproofSection: true,
@@ -627,7 +629,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
      - Window 1: Tab a.com (active) history: today[a×2], yesterday[a×1]; Tab b.com history: today[b×1]
      - Window 2: Tab figma.com (active) history: yesterday[figma×2]; Tab cook.ie history: today[cook.ie×1]
      Entry: History (Today)
-     Dialog config: scopeSelector hidden (All), tabs visible default=true, hist visible default=true, data visible default=true; chats: not visible, default=false
+     Dialog config: scopeSelector hidden (All), tabs visible default=true, hist hidden (history is always deleted), data visible default=true; chats: not visible, default=false
      User input: all selected, tabs=true, hist=false, data=true
      Expectation: burnEntity(allWindows, selectedDomains=all, close=true), includingHistory=false
      */
@@ -637,7 +639,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .historyView(query: .rangeFilter(.today)),
-            showVisitsToggle: true,
+            showVisitsToggle: false,
             showSegmentedControl: false,
             showCloseWindowsAndTabsToggle: true,
             showFireproofSection: true,
@@ -684,7 +686,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
      Dialog config:
      - scopeSelector: hidden, selected: All
      - tabs: visible, default=true
-     - hist: visible, default=true
+     - hist: hidden (history is always deleted)
      - data: visible, default=true
      - chats: not visible, default=false
      - fireproof: visible
@@ -708,7 +710,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .historyView(query: .rangeFilter(.today)),
-            showVisitsToggle: true,
+            showVisitsToggle: false,
             showSegmentedControl: false,
             showCloseWindowsAndTabsToggle: true,
             showFireproofSection: true,
@@ -755,7 +757,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
      Dialog config:
      - scopeSelector: hidden, selected: All
      - tabs: hidden, default=nil
-     - hist: visible, default=true
+     - hist: hidden (history is always deleted)
      - data: visible, default=false
      - fireproof: visible
      - history link: hidden
@@ -779,7 +781,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .historyView(query: .rangeFilter(.today)),
-            showVisitsToggle: true,
+            showVisitsToggle: false,
             showSegmentedControl: false,
             showCloseWindowsAndTabsToggle: true,
             showFireproofSection: true,
@@ -823,7 +825,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
      Dialog config:
      - scopeSelector: hidden, selected: All
      - tabs: hidden, default=nil
-     - hist: visible, default=true
+     - hist: hidden (history is always deleted)
      - data: visible, default=false
      - chats: not visible, default=false
      - fireproof: visible
@@ -861,7 +863,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .historyView(query: .rangeFilter(.yesterday)),
-            showVisitsToggle: true,
+            showVisitsToggle: false,
             showSegmentedControl: false,
             showCloseWindowsAndTabsToggle: false,
             showFireproofSection: true,
@@ -916,7 +918,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
      Dialog config:
      - scopeSelector: hidden, selected: All
      - tabs: hidden, default=nil
-     - hist: visible, default=true
+     - hist: hidden (history is always deleted)
      - data: visible, default=true
      - chats: not visible, default=false
      - fireproof: visible
@@ -940,7 +942,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .historyView(query: .dateFilter(date)),
-            showVisitsToggle: true,
+            showVisitsToggle: false,
             showSegmentedControl: false,
             showCloseWindowsAndTabsToggle: false,
             showFireproofSection: true,
@@ -986,7 +988,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
      Dialog config:
      - scopeSelector: hidden, selected: All
      - tabs: hidden, default=nil
-     - hist: visible, default=true
+     - hist: hidden (history is always deleted)
      - data: visible, default=true
      - chats: not visible, default=false
      - fireproof: visible
@@ -1010,7 +1012,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .historyView(query: .dateFilter(date)),
-            showVisitsToggle: true,
+            showVisitsToggle: false,
             showSegmentedControl: false,
             showCloseWindowsAndTabsToggle: false,
             showFireproofSection: true,
@@ -1058,7 +1060,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
      Dialog config:
      - scopeSelector: hidden, selected: All
      - tabs: hidden, default=nil
-     - hist: visible, default=true
+     - hist: hidden (history is always deleted)
      - data: visible, default=true
      - chats: not visible, default=false
      - fireproof: hidden
@@ -1082,7 +1084,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .historyView(query: .domainFilter(["figma.com"])),
-            showVisitsToggle: true,
+            showVisitsToggle: false,
             showSegmentedControl: false,
             showCloseWindowsAndTabsToggle: false,
             showFireproofSection: false,
@@ -1126,7 +1128,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
      Dialog config:
      - scopeSelector: hidden, selected: All
      - tabs: hidden, default=nil
-     - hist: visible, default=true
+     - hist: hidden (history is always deleted)
      - data: visible, default=true
      - chats: not visible, default=false
      - fireproof: hidden
@@ -1150,7 +1152,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .historyView(query: .domainFilter(["example.com"])),
-            showVisitsToggle: true,
+            showVisitsToggle: false,
             showSegmentedControl: false,
             showCloseWindowsAndTabsToggle: false,
             showFireproofSection: false,
@@ -1195,7 +1197,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
      Dialog config:
      - scopeSelector: hidden, selected: All
      - tabs: hidden, default=nil
-     - hist: visible, default=true
+     - hist: hidden (history is always deleted)
      - data: visible, default=true
      - chats: not visible, default=false
      - fireproof: hidden
@@ -1219,7 +1221,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .historyView(query: .domainFilter(["a.com"])),
-            showVisitsToggle: true,
+            showVisitsToggle: false,
             showSegmentedControl: false,
             showCloseWindowsAndTabsToggle: false,
             showFireproofSection: false,
@@ -1264,7 +1266,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
      Dialog config:
      - scopeSelector: hidden, selected: All
      - tabs: hidden, default=nil
-     - hist: visible, default=false
+     - hist: hidden (history is always deleted)
      - data: visible, default=true
      - chats: not visible, default=false
      - fireproof: hidden
@@ -1287,7 +1289,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .historyView(query: .domainFilter(["a.com", "b.com"])),
-            showVisitsToggle: true,
+            showVisitsToggle: false,
             showSegmentedControl: false,
             showCloseWindowsAndTabsToggle: false,
             showFireproofSection: false,
@@ -1333,7 +1335,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
      Dialog config:
      - scopeSelector: hidden, selected: All
      - tabs: hidden, default=nil
-     - hist: visible, default=false
+     - hist: hidden (history is always deleted)
      - data: visible, default=true
      - chats: not visible, default=false
      - fireproof: hidden
@@ -1358,7 +1360,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
         dialogExpectedInput = DialogExpectedInput(
             mode: .historyView(query: .domainFilter(["a.com", "b.com"])),
-            showVisitsToggle: true,
+            showVisitsToggle: false,
             showSegmentedControl: false,
             showCloseWindowsAndTabsToggle: false,
             showFireproofSection: false,
@@ -3112,6 +3114,149 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
         XCTAssertFalse(call.includingHistory)
     }
 
+    // MARK: - Compact dialog (Fire Dialog Simplified on)
+
+    /// The tests above run with the flag the app ships with, which currently selects the legacy
+    /// dialog. These use their own coordinator with the flag on, so the compact dialog rules for the
+    /// History view are covered end to end as well.
+    private func makeCompactDialogCoordinator() -> FireCoordinator {
+        let featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.fireDialogSimplified.rawValue: true])
+        return makeCoordinator(with: fire, featureFlagger: featureFlagger)
+    }
+
+    /**
+     Entry: History (All), compact dialog
+     Dialog config:
+     - scopeSelector: hidden, selected: All
+     - tabs: visible, default=true
+     - hist: hidden (history is always deleted)
+     - data: visible, default=true
+     - chats: hidden (the compact dialog deletes browsing data only)
+     - fireproof: visible; history link: hidden
+     - title: "Delete all history?"
+     Expectation:
+     - burnAll
+     */
+    func testCompactDialog_HistoryAll_HidesTheHistoryAndChatToggles() async throws {
+        let coordinator = makeCompactDialogCoordinator()
+        let expectedVisits = await mockHistoryProvider.visits(matching: .rangeFilter(.all))
+
+        dialogExpectedInput = DialogExpectedInput(
+            mode: .historyView(query: .rangeFilter(.all)),
+            showVisitsToggle: false,
+            showSegmentedControl: false,
+            showCloseWindowsAndTabsToggle: true,
+            showFireproofSection: true,
+            customTitle: "Delete all history?",
+            showIndividualSitesLink: false,
+            expectedClearingOption: .allData,
+            expectedIncludeTabsAndWindows: true,
+            expectedIncludeHistory: true,
+            expectedIncludeCookiesAndSiteData: true,
+            expectedIncludeChatHistory: false,
+            expectedSelectable: allCookieDomains(except: fireproofDomains),
+            expectedFireproofed: visitedFireproofDomains,
+            expectedSelected: allCookieDomains(except: fireproofDomains).indices,
+            expectedHistoryVisits: expectedVisits
+        )
+        dialogConfirmedOptions = .init(clearingOption: .allData,
+                                       includeHistory: true,
+                                       includeTabsAndWindows: true,
+                                       includeCookiesAndSiteData: true,
+                                       includeChatHistory: false)
+
+        let response = await coordinator.presentFireDialog(mode: .historyView(query: .rangeFilter(.all)), in: window, settings: mockSettings.keyedStoring())
+        if case .burn(let opts?) = response { XCTAssertTrue(opts.includeTabsAndWindows) } else { XCTFail("Expected burn response, got \(String(describing: response))") }
+        _ = try XCTUnwrap(fire.burnAllCalls.onlyValue)
+    }
+
+    /**
+     Entry: History (Date), compact dialog
+     Dialog config:
+     - hist: hidden (history is always deleted)
+     - title: "Delete all history from Wednesday, May 15?" — one line, and no year
+     */
+    func testCompactDialog_HistoryDate_ShortensTheDateAndKeepsTheTitleOnOneLine() async throws {
+        let coordinator = makeCompactDialogCoordinator()
+        let date = ISO8601DateFormatter().date(from: "2024-05-15T12:00:00Z") ?? Date(timeIntervalSince1970: 1715774400)
+        let expectedVisits = await mockHistoryProvider.visits(matching: .dateFilter(date))
+        let expectedDomains = await mockHistoryProvider.cookieDomains(matching: .dateFilter(date))
+
+        dialogExpectedInput = DialogExpectedInput(
+            mode: .historyView(query: .dateFilter(date)),
+            showVisitsToggle: false,
+            showSegmentedControl: false,
+            showCloseWindowsAndTabsToggle: false,
+            showFireproofSection: true,
+            customTitle: "Delete all history from Wednesday, May 15?",
+            showIndividualSitesLink: false,
+            expectedClearingOption: .allData,
+            expectedIncludeTabsAndWindows: false,
+            expectedIncludeHistory: true,
+            expectedIncludeCookiesAndSiteData: true,
+            expectedIncludeChatHistory: false,
+            expectedSelectable: expectedDomains.sorted(),
+            expectedFireproofed: [],
+            expectedSelected: Set(expectedDomains.sorted().indices),
+            expectedHistoryVisits: expectedVisits
+        )
+        dialogConfirmedOptions = .init(clearingOption: .allData,
+                                       includeHistory: true,
+                                       includeTabsAndWindows: false,
+                                       includeCookiesAndSiteData: true,
+                                       includeChatHistory: false,
+                                       selectedCookieDomains: nil,
+                                       selectedVisits: [],
+                                       isToday: false)
+
+        _ = await coordinator.presentFireDialog(mode: .historyView(query: .dateFilter(date)), in: window, settings: mockSettings.keyedStoring())
+        let call = try XCTUnwrap(fire.burnEntityCalls.onlyValue)
+        XCTAssertTrue(call.includingHistory)
+    }
+
+    /**
+     Entry: History (Site), compact dialog
+     Dialog config:
+     - hist: hidden (history is always deleted); fireproof: hidden
+     - title: "Delete all history from figma.com?" — one line
+     */
+    func testCompactDialog_HistorySite_KeepsTheTitleOnOneLine() async throws {
+        let coordinator = makeCompactDialogCoordinator()
+        let expectedVisits = await mockHistoryProvider.visits(matching: .domainFilter(["figma.com"]))
+        let expectedDomains = await mockHistoryProvider.cookieDomains(matching: .domainFilter(["figma.com"]))
+
+        dialogExpectedInput = DialogExpectedInput(
+            mode: .historyView(query: .domainFilter(["figma.com"])),
+            showVisitsToggle: false,
+            showSegmentedControl: false,
+            showCloseWindowsAndTabsToggle: false,
+            showFireproofSection: false,
+            customTitle: "Delete all history from figma.com?",
+            showIndividualSitesLink: false,
+            expectedClearingOption: .allData,
+            expectedIncludeTabsAndWindows: false,
+            expectedIncludeHistory: true,
+            expectedIncludeCookiesAndSiteData: true,
+            expectedIncludeChatHistory: false,
+            expectedSelectable: expectedDomains.sorted(),
+            expectedFireproofed: [],
+            expectedSelected: Set(expectedDomains.sorted().indices),
+            expectedHistoryVisits: expectedVisits
+        )
+        dialogConfirmedOptions = .init(clearingOption: .allData,
+                                       includeHistory: true,
+                                       includeTabsAndWindows: false,
+                                       includeCookiesAndSiteData: true,
+                                       includeChatHistory: false,
+                                       selectedCookieDomains: nil,
+                                       selectedVisits: [],
+                                       isToday: false)
+
+        _ = await coordinator.presentFireDialog(mode: .historyView(query: .domainFilter(["figma.com"])), in: window, settings: mockSettings.keyedStoring())
+        let call = try XCTUnwrap(fire.burnEntityCalls.onlyValue)
+        XCTAssertTrue(call.includingHistory)
+    }
+
     // MARK: - Helpers
 
     private func makeEntry(_ urlString: String) -> HistoryEntry {
@@ -3130,12 +3275,13 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
     private func makeCoordinator(
         with fire: FireProtocol,
+        featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger,
         customPresenterAction: ((NSWindow?, @escaping () -> Void) -> Void)? = nil
     ) -> FireCoordinator {
         let vm = FireViewModel(fire: fire)
         return FireCoordinator(
             tld: Application.appDelegate.tld,
-            featureFlagger: Application.appDelegate.featureFlagger,
+            featureFlagger: featureFlagger,
             historyCoordinating: Application.appDelegate.historyCoordinator,
             visualizeFireAnimationDecider: nil,
             onboardingContextualDialogsManager: nil,

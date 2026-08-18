@@ -310,6 +310,12 @@
 /* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
 "aichat.attachment.unsupported.file.type.single" = "Acest tip de fișier nu este acceptat, atașează un %@.";
 
+/* Caption shown below the input while editing a message, warning that submitting the edit replaces the existing response */
+"aichat.edit.replaceResponseDisclaimer" = "Editarea va înlocui răspunsul cu unul nou.";
+
+/* Title shown in the Duck.ai tab header while editing a previously sent message */
+"aichat.header.editMessage" = "Editează mesajul";
+
 /* Accessibility label for the Plus (+) button in the Duck.ai tab header that opens a menu of new-chat and new-tab actions */
 "aichat.header.plusMenu.a11y" = "Nou";
 
@@ -2956,6 +2962,12 @@
 /* Title for the Import Passwords Promotion banner */
 "import.passwords.promo.title" = "Importă-ți parolele în DuckDuckGo";
 
+/* Body for the notification sent after a period of inactivity. */
+"inactivity.notification.body" = "Folosește DuckDuckGo ca să eviți reclamele care te urmăresc pe web și să-ți reduci amprenta online.";
+
+/* Title for the notification sent after a period of inactivity. */
+"inactivity.notification.title" = "Controlează-ți experiența online";
+
 /* Placeholder text for the duck.ai input field */
 "input.field.placeholder.duckai" = "Întreabă orice în mod privat";
 
@@ -4014,6 +4026,18 @@
 
 /* Special error page title for pages that can only be opened in Safari */
 "prompt.general-page-problem.title" = "Această pagină se încarcă doar în Safari";
+
+/* Error page message shown after repeated tab terminations */
+"prompt.tab-termination-error-page.message" = "Încărcarea acestei pagini s-a oprit de mai multe ori. Încearcă să reîncarci sau trimite-ne feedback.";
+
+/* Button that reloads a page after repeated tab terminations */
+"prompt.tab-termination-error-page.reload" = "Reîncarcă";
+
+/* Button that opens site feedback after repeated tab terminations */
+"prompt.tab-termination-error-page.send-feedback" = "Trimite feedback";
+
+/* Error page title shown after repeated tab terminations */
+"prompt.tab-termination-error-page.title" = "Nu am putut încărca această pagină";
 
 /* Default native error page message */
 "prompt.web-page-load-error.message" = "Acest site are un certificat de securitate incorect și vizitarea sa este posibil să nu prezinte siguranță.";

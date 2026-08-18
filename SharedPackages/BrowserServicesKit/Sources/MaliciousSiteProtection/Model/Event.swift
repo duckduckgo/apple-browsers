@@ -36,7 +36,7 @@ public extension PixelKit {
     }
 }
 
-public enum Event: PixelKitEvent {
+public enum Event: PixelKit.Event {
     case errorPageShown(category: ThreatKind, clientSideHit: Bool?)
     case visitSite(category: ThreatKind)
     case leaveSite(category: ThreatKind)

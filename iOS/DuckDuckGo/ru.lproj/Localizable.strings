@@ -310,6 +310,12 @@
 /* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
 "aichat.attachment.unsupported.file.type.single" = "Формат не поддерживается. Прикрепите файл в %@.";
 
+/* Caption shown below the input while editing a message, warning that submitting the edit replaces the existing response */
+"aichat.edit.replaceResponseDisclaimer" = "После редактирования текущий ответ будет заменен новым.";
+
+/* Title shown in the Duck.ai tab header while editing a previously sent message */
+"aichat.header.editMessage" = "Редактирование сообщения";
+
 /* Accessibility label for the Plus (+) button in the Duck.ai tab header that opens a menu of new-chat and new-tab actions */
 "aichat.header.plusMenu.a11y" = "Создать";
 
@@ -2956,6 +2962,12 @@
 /* Title for the Import Passwords Promotion banner */
 "import.passwords.promo.title" = "Импорт паролей в DuckDuckGo";
 
+/* Body for the notification sent after a period of inactivity. */
+"inactivity.notification.body" = "Используйте DuckDuckGo, чтобы избежать рекламы, которая отслеживает вас в Интернете, и уменьшить ваш цифровой след.";
+
+/* Title for the notification sent after a period of inactivity. */
+"inactivity.notification.title" = "Управляйте своим опытом в сети";
+
 /* Placeholder text for the duck.ai input field */
 "input.field.placeholder.duckai" = "Задавайте любые вопросы, сохраняя конфиденциальность";
 
@@ -4014,6 +4026,18 @@
 
 /* Special error page title for pages that can only be opened in Safari */
 "prompt.general-page-problem.title" = "Эта страница открывается только в Safari";
+
+/* Error page message shown after repeated tab terminations */
+"prompt.tab-termination-error-page.message" = "Загрузка этой страницы прерывалась несколько раз. Попробуй обновить страницу или отправь нам отзыв.";
+
+/* Button that reloads a page after repeated tab terminations */
+"prompt.tab-termination-error-page.reload" = "Перезагрузить";
+
+/* Button that opens site feedback after repeated tab terminations */
+"prompt.tab-termination-error-page.send-feedback" = "Отправить отзыв";
+
+/* Error page title shown after repeated tab terminations */
+"prompt.tab-termination-error-page.title" = "Не удалось загрузить эту страницу";
 
 /* Default native error page message */
 "prompt.web-page-load-error.message" = "Сертификат безопасности этого сайта недействителен. Посещение сайта может быть небезопасным.";

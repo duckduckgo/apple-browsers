@@ -17,67 +17,37 @@
 //
 
 /// Protocol to support mocking pixel firing.
+///
+/// This has a single requirement, which is the underlying primitive: fire a pixel and report the
+/// outcome through a completion block. Conformers implement only this. The two public entry points,
+/// `fire` and `fireAsync`, are extension sugar over it, and neither exposes the completion block to
+/// callers.
+///
+/// The requirement carries an `event:` argument label that the sugar deliberately does not. Keeping
+/// the two signatures distinct matters: default argument values are illegal in a protocol
+/// requirement, and an extension method whose signature *matches* the requirement silently becomes
+/// that requirement's default implementation and calls itself, so a conformer that forgot to
+/// implement it would compile cleanly and then recurse forever.
 public protocol PixelFiring {
-    func fire(_ event: PixelKitEvent,
+    func fire(event: PixelKit.Event,
               frequency: PixelKit.Frequency,
-              includeAppVersionParameter: Bool,
-              withAdditionalParameters: [String: String]?,
-              withNamePrefix: String?,
-              doNotEnforcePrefix: Bool,
+              options: PixelKit.Options,
               onComplete: @escaping PixelKit.CompletionBlock)
 }
 
 extension PixelFiring {
-    public func fire(_ event: PixelKitEvent) {
-        fire(event, frequency: .standard, includeAppVersionParameter: true)
-    }
 
-    public func fire(_ event: PixelKitEvent,
-                     frequency: PixelKit.Frequency) {
-        fire(event, frequency: frequency, includeAppVersionParameter: true, withAdditionalParameters: nil, withNamePrefix: nil, doNotEnforcePrefix: false, onComplete: { _, _ in })
-    }
-
-    public func fire(_ event: PixelKitEvent,
-                     frequency: PixelKit.Frequency,
-                     doNotEnforcePrefix: Bool) {
-        fire(event, frequency: frequency, includeAppVersionParameter: true, withAdditionalParameters: nil, withNamePrefix: nil, doNotEnforcePrefix: doNotEnforcePrefix, onComplete: { _, _ in })
-    }
-
-    public func fire(_ event: PixelKitEvent,
-                     frequency: PixelKit.Frequency,
-                     includeAppVersionParameter: Bool) {
-        fire(event, frequency: frequency, includeAppVersionParameter: includeAppVersionParameter, withAdditionalParameters: nil, withNamePrefix: nil, doNotEnforcePrefix: false, onComplete: { _, _ in })
-    }
-
-    public func fire(_ event: PixelKitEvent,
-                     frequency: PixelKit.Frequency,
-                     onComplete: @escaping PixelKit.CompletionBlock) {
-        fire(event, frequency: frequency, includeAppVersionParameter: true, withAdditionalParameters: nil, withNamePrefix: nil, doNotEnforcePrefix: false, onComplete: onComplete)
-    }
-
-    public func fire(_ event: PixelKitEvent,
-                     frequency: PixelKit.Frequency,
-                     withAdditionalParameters parameters: [String: String]?) {
-        fire(event, frequency: frequency, includeAppVersionParameter: true, withAdditionalParameters: parameters, withNamePrefix: nil, doNotEnforcePrefix: false, onComplete: { _, _ in })
-    }
-
-    public func fire(_ event: PixelKitEvent,
-                     frequency: PixelKit.Frequency,
-                     withAdditionalParameters parameters: [String: String]?,
-                     withNamePrefix namePrefix: String?) {
-        fire(event, frequency: frequency, includeAppVersionParameter: true, withAdditionalParameters: parameters, withNamePrefix: namePrefix, doNotEnforcePrefix: false, onComplete: { _, _ in })
+    /// Fires a pixel and returns immediately, without waiting for the request to complete.
+    ///
+    /// This is the right call for almost every pixel: telemetry should not make the caller wait.
+    /// Use `fireAsync` only when the outcome actually matters to the caller.
+    public func fire(_ event: PixelKit.Event,
+                     frequency: PixelKit.Frequency = .standard,
+                     options: PixelKit.Options = .default) {
+        fire(event: event, frequency: frequency, options: options, onComplete: { _, _ in })
     }
 }
 
-extension PixelKit: PixelFiring {
-    public func fire(_ event: PixelKitEvent,
-                     frequency: PixelKit.Frequency,
-                     includeAppVersionParameter: Bool,
-                     withAdditionalParameters parameters: [String: String]?,
-                     withNamePrefix namePrefix: String?,
-                     doNotEnforcePrefix: Bool,
-                     onComplete: @escaping PixelKit.CompletionBlock) {
-        fire(event, frequency: frequency, withHeaders: nil, withAdditionalParameters: parameters,
-             withNamePrefix: namePrefix, includeAppVersionParameter: includeAppVersionParameter, doNotEnforcePrefix: doNotEnforcePrefix, onComplete: onComplete)
-    }
-}
+/// `PixelKit` satisfies the requirement with its own `fire(event:frequency:options:onComplete:)`,
+/// so no forwarding shim is needed here.
+extension PixelKit: PixelFiring {}

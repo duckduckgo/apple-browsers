@@ -78,8 +78,6 @@ extension Tab: NavigationResponder {
 
             // ensure Content Blocking Rules are applied before navigation
             .weak(nullable: self.contentBlockingAndSurrogates),
-            // update click-to-load state
-            .weak(nullable: self.fbProtection),
 
             // Special Error Page script handler and Malicious Site detection
             .weak(nullable: self.specialErrorPage),
@@ -102,6 +100,9 @@ extension Tab: NavigationResponder {
 
             // Tab Suspension
             .weak(nullable: self.tabSuspension),
+
+            // EventHub — observe navigation starts to reset per-tab web-event dedup on URL change
+            .weak(nullable: self.eventHub),
 
             // should be the last, for Unit Tests navigation events tracking
             .struct(nullable: testsClosureNavigationResponder)

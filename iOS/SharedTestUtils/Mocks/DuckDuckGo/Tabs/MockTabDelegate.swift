@@ -23,6 +23,7 @@ import WebExtensions
 import WebKit
 import BrowserServicesKit
 import BrowserServicesKitTestsUtils
+import EventHub
 import PrivacyDashboard
 import Persistence
 import Subscription
@@ -73,7 +74,7 @@ final class MockTabDelegate: TabDelegate {
 
     func tab(_ tab: DuckDuckGo.TabViewController, didChangePrivacyInfo privacyInfo: PrivacyDashboard.PrivacyInfo?) {}
 
-    func tabDidRequestReportBrokenSite(tab: DuckDuckGo.TabViewController) {}
+    func tabDidRequestReportBrokenSite(tab: DuckDuckGo.TabViewController, entryPoint: PrivacyDashboardEntryPoint) {}
 
     func tab(_ tab: DuckDuckGo.TabViewController, didRequestToggleReportWithCompletionHandler completionHandler: @escaping (Bool) -> Void) {}
 
@@ -88,6 +89,12 @@ final class MockTabDelegate: TabDelegate {
     func tab(_ tab: DuckDuckGo.TabViewController, didRequestDataImport source: DuckDuckGo.DataImportViewModel.ImportScreen, onFinished: @escaping () -> Void, onCancelled: @escaping () -> Void) {}
 
     func tabDidRequestAIChat(tab: TabViewController) {}
+
+    func tabDidRequestNewAIChatTab(tab: TabViewController) {}
+
+    func tab(_ tab: TabViewController, didRequestAIChatForSelectedText text: String) {}
+
+    func tab(_ tab: TabViewController, didRequestSearchForSelectedText text: String) {}
 
     func tabDidRequestAIChatHistory(tab: TabViewController, source: AIChatHistorySource) {}
 
@@ -172,10 +179,11 @@ extension TabViewController {
         contextualOnboardingPresenter: ContextualOnboardingPresenting = ContextualOnboardingPresenterMock(),
         contextualOnboardingLogic: ContextualOnboardingLogic = ContextualOnboardingLogicMock(),
         contextualOnboardingPixelReporter: OnboardingCustomInteractionPixelReporting = OnboardingPixelReporterMock(),
-        featureFlagger: MockFeatureFlagger = MockFeatureFlagger()
+        featureFlagger: MockFeatureFlagger = MockFeatureFlagger(),
+        link: Link = Link(title: nil, url: .ddg)
     ) -> TabViewController {
         let tab = TabViewController.loadFromStoryboard(
-            model: .init(link: Link(title: nil, url: .ddg)),
+            model: .init(link: link),
             privacyConfigurationManager: PrivacyConfigurationManagerMock(),
             appSettings: AppSettingsMock(),
             bookmarksDatabase: CoreDataDatabase.bookmarksMock,
@@ -205,7 +213,8 @@ extension TabViewController {
             voiceSearchHelper: MockVoiceSearchHelper(),
             darkReaderFeatureSettings: MockDarkReaderFeatureSettings(),
             autoplaySettings: MockAutoplaySettings(),
-            adBlockingAvailability: StubAdBlockingAvailability()
+            adBlockingAvailability: StubAdBlockingAvailability(),
+            eventHub: StubEventHub()
         )
         tab.attachWebView(configuration: WKWebViewConfiguration.nonPersistent(), andLoadRequest: nil as URLRequest?, consumeCookies: false, customWebView: customWebView)
         return tab
@@ -294,4 +303,27 @@ final class StubAdBlockingAvailability: AdBlockingAvailabilityProviding {
     var isFeatureSupported: Bool = false
     var isEnabledByUser: Bool = false
     func shouldShowAnimation(for url: URL) -> Bool { false }
+}
+
+/// Records the per-tab signals `TabViewController` reports, so tests can assert on them without
+/// standing up a real `EventHub` (and its store, scheduler and remote-config plumbing).
+final class StubEventHub: EventHubManaging {
+    private(set) var navigationStarts: [(tabID: EventHubTabID, url: String)] = []
+    private(set) var closedTabIDs: [EventHubTabID] = []
+
+    func handleWebEvent(_ webEventData: [String: Any], tabID: EventHubTabID) {}
+    func handleImmediateEvent(_ type: String, data: Encodable?) {}
+    func handleAggregatedEvent(_ type: String, data: Encodable?) {}
+
+    func onNavigationStarted(tabID: EventHubTabID, url: String) {
+        navigationStarts.append((tabID, url))
+    }
+
+    func onTabClosed(tabID: EventHubTabID) {
+        closedTabIDs.append(tabID)
+    }
+
+    func onConfigChanged() {}
+    func onAppForegrounded() {}
+    func onAppBackgrounded() {}
 }

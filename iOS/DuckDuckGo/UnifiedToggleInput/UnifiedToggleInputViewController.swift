@@ -58,7 +58,14 @@ final class UnifiedToggleInputViewController: UIViewController {
 
     let isToggleEnabled: Bool
     let handler: UnifiedToggleInputHandler
-    private lazy var inputBarView = UnifiedToggleInputView(handler: handler, isToggleEnabled: isToggleEnabled)
+    private lazy var inputBarView = UnifiedToggleInputView(handler: handler,
+                                                          isToggleEnabled: isToggleEnabled,
+                                                          placesAttachmentsAboveInput: placesAttachmentsAboveInput)
+
+    /// Edges of the visible input card, for aligning content sitting around the bar.
+    var inputCardTopAnchor: NSLayoutYAxisAnchor { inputBarView.cardTopAnchor }
+    var inputCardLeadingAnchor: NSLayoutXAxisAnchor { inputBarView.cardLeadingAnchor }
+    var inputCardTrailingAnchor: NSLayoutXAxisAnchor { inputBarView.cardTrailingAnchor }
     private(set) var attachmentValidationMessage: String?
 
     private var containerView: UnifiedToggleInputContainerView? {
@@ -80,8 +87,12 @@ final class UnifiedToggleInputViewController: UIViewController {
         inputBarView.setMenuAlertVisible(isVisible, animated: animated)
     }
 
-    init(isToggleEnabled: Bool, isFireTab: Bool = false) {
+    /// Decided by the coordinator, which knows whether this is the omnibar or a contextual surface.
+    private let placesAttachmentsAboveInput: Bool
+
+    init(isToggleEnabled: Bool, isFireTab: Bool = false, placesAttachmentsAboveInput: Bool = false) {
         self.isToggleEnabled = isToggleEnabled
+        self.placesAttachmentsAboveInput = placesAttachmentsAboveInput
         self.handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false,
                                                  isToggleEnabled: isToggleEnabled,
                                                  isFireTab: isFireTab)
@@ -180,6 +191,20 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.modelPickerMenu = newValue }
     }
 
+    var usesUpdatedModelPickerPresentation: Bool {
+        get { inputBarView.usesUpdatedModelPickerPresentation }
+        set { inputBarView.usesUpdatedModelPickerPresentation = newValue }
+    }
+
+    var onUpdatedModelPickerTapped: (() -> Void)? {
+        get { inputBarView.onUpdatedModelPickerTapped }
+        set { inputBarView.onUpdatedModelPickerTapped = newValue }
+    }
+
+    var modelPickerSourceView: UIView {
+        inputBarView.modelPickerSourceView
+    }
+
     @discardableResult
     func presentModelPickerMenu() -> Bool {
         inputBarView.presentModelPickerMenu()
@@ -245,8 +270,8 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.isImageButtonHidden = newValue }
     }
 
-    func setEditMode(_ editing: Bool) {
-        inputBarView.setEditMode(editing)
+    func setEditMode(_ editing: Bool, showsReplaceDisclaimer: Bool) {
+        inputBarView.setEditMode(editing, showsReplaceDisclaimer: showsReplaceDisclaimer)
     }
 
     var isImageButtonEnabled: Bool {
@@ -407,6 +432,10 @@ final class UnifiedToggleInputViewController: UIViewController {
 
     func bindPageContextChip(to viewModel: UnifiedToggleInputPageContextChipViewModel) {
         inputBarView.bindPageContextChip(to: viewModel)
+    }
+
+    func setSelectionContextChips(_ items: [(id: String, title: String, favicon: UIImage?)], onRemove: @escaping (String) -> Void) {
+        inputBarView.setSelectionContextChips(items, onRemove: onRemove)
     }
 
     // MARK: - Lifecycle

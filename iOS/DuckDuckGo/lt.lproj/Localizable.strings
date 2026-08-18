@@ -310,6 +310,12 @@
 /* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
 "aichat.attachment.unsupported.file.type.single" = "Šis failo tipas nepalaikomas. Pridėkite %@.";
 
+/* Caption shown below the input while editing a message, warning that submitting the edit replaces the existing response */
+"aichat.edit.replaceResponseDisclaimer" = "Redaguojant atsakymas bus pakeistas nauju.";
+
+/* Title shown in the Duck.ai tab header while editing a previously sent message */
+"aichat.header.editMessage" = "Redaguoti žinutę";
+
 /* Accessibility label for the Plus (+) button in the Duck.ai tab header that opens a menu of new-chat and new-tab actions */
 "aichat.header.plusMenu.a11y" = "Naujas";
 
@@ -2956,6 +2962,12 @@
 /* Title for the Import Passwords Promotion banner */
 "import.passwords.promo.title" = "Importuok slaptažodžius į „DuckDuckGo“";
 
+/* Body for the notification sent after a period of inactivity. */
+"inactivity.notification.body" = "Naudok „DuckDuckGo“, kad išvengtum internete tave sekančių reklamų ir sumažintum savo skaitmeninį pėdsaką.";
+
+/* Title for the notification sent after a period of inactivity. */
+"inactivity.notification.title" = "Valdyk savo patirtį internete";
+
 /* Placeholder text for the duck.ai input field */
 "input.field.placeholder.duckai" = "Klausk bet ko privačiai";
 
@@ -4014,6 +4026,18 @@
 
 /* Special error page title for pages that can only be opened in Safari */
 "prompt.general-page-problem.title" = "Šis puslapis įkeliamas tik naršyklėje „Safari“";
+
+/* Error page message shown after repeated tab terminations */
+"prompt.tab-termination-error-page.message" = "Šio puslapio įkėlimas kelis kartus nutrūko. Pabandyk įkelti iš naujo arba atsiųsk atsiliepimą.";
+
+/* Button that reloads a page after repeated tab terminations */
+"prompt.tab-termination-error-page.reload" = "Įkelti iš naujo";
+
+/* Button that opens site feedback after repeated tab terminations */
+"prompt.tab-termination-error-page.send-feedback" = "Siųsti atsiliepimą";
+
+/* Error page title shown after repeated tab terminations */
+"prompt.tab-termination-error-page.title" = "Nepavyko įkelti šio puslapio";
 
 /* Default native error page message */
 "prompt.web-page-load-error.message" = "Ši svetainė turi negaliojantį saugumo sertifikatą ir joje lankytis gali būti nesaugu.";

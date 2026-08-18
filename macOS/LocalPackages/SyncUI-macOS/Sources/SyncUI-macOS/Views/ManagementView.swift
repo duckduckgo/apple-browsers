@@ -17,8 +17,13 @@
 //
 
 import PreferencesUI_macOS
+import DesignResourcesKit
 import SwiftUI
 import SwiftUIExtensions
+
+#if DEBUG
+import PreviewSnapshots
+#endif
 
 enum Const {
     enum Fonts {
@@ -32,6 +37,10 @@ enum Const {
 public struct ManagementView<ViewModel>: View where ViewModel: ManagementViewModel {
     @ObservedObject public var model: ViewModel
 
+    private var syncStatus: StatusIndicator {
+        model.isSyncEnabled ? .on : .off
+    }
+
     public init(model: ViewModel) {
         self.model = model
     }
@@ -41,13 +50,61 @@ public struct ManagementView<ViewModel>: View where ViewModel: ManagementViewMod
             TextMenuItemHeader(UserText.sync)
                 .padding(.bottom, -22)
 
-            if model.isSyncEnabled {
-                SyncEnabledView<ViewModel>()
-                    .environmentObject(model)
+            if model.isSimplifiedSyncSetupV2Enabled {
+                simplifiedSyncSetupV2Content
             } else {
-                SyncSetupView<ViewModel>()
-                    .environmentObject(model)
+                legacyContent
             }
         }
     }
+
+    @ViewBuilder
+    private var simplifiedSyncSetupV2Content: some View {
+        StatusIndicatorView(status: syncStatus, isLarge: true)
+
+        if model.isSyncEnabled {
+            SyncEnabledViewV2<ViewModel>()
+                .environmentObject(model)
+        } else {
+            SyncSetupViewV2<ViewModel>()
+                .environmentObject(model)
+        }
+    }
+
+    @ViewBuilder
+    private var legacyContent: some View {
+        if model.isSyncEnabled {
+            SyncEnabledView<ViewModel>()
+                .environmentObject(model)
+        } else {
+            SyncSetupView<ViewModel>()
+                .environmentObject(model)
+        }
+    }
 }
+
+#if DEBUG
+struct ManagementView_Previews: PreviewProvider {
+    typealias State = PreviewManagementViewModel
+
+    static var previews: some View {
+        snapshots.previews
+    }
+
+    static let snapshots = PreviewSnapshots<State>(
+        configurations: [
+            .init(name: "Disabled", state: .disabled),
+            .init(name: "Enabled", state: .enabled)
+        ],
+        configure: { model in
+            DesignSystemRebrand.isAppRebranded = { true }
+            return ScrollView {
+                ManagementView(model: model)
+                    .padding()
+            }
+            .frame(width: 600, height: 900)
+            .background(Color(nsColor: .windowBackgroundColor))
+        }
+    )
+}
+#endif

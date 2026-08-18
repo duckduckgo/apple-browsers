@@ -137,4 +137,7 @@ extension NSNotification.Name {
 public enum TabURLInterceptorParameter {
     public static let interceptedURLComponents = "interceptedURLComponents"
     public static let interceptedURL = "interceptedURL"
+    /// Set only by the front-end `openAIChat` message, never by the interceptor: the page that asked
+    /// native to open Duck.ai, so its entry is attributed to that page rather than to a typed address.
+    public static let aiChatRequestHost = "aiChatRequestHost"
 }

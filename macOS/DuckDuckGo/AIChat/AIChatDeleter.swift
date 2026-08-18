@@ -40,12 +40,12 @@ final class AIChatDeleter: AIChatDeleting {
     private let historyCleaner: PhasedAIChatHistoryCleaning
     private let syncCleaner: () -> AIChatSyncCleaning?
     private let recordsSyncDeletion: Bool
-    private let firePixel: (PixelKitEvent) -> Void
+    private let firePixel: (PixelKit.Event) -> Void
 
     init(historyCleaner: PhasedAIChatHistoryCleaning,
          syncCleaner: @escaping () -> AIChatSyncCleaning? = { Application.appDelegate.aiChatSyncCleaner },
          recordsSyncDeletion: Bool = true,
-         firePixel: @escaping (PixelKitEvent) -> Void = { PixelKit.fire($0, frequency: .dailyAndCount) }) {
+         firePixel: @escaping (PixelKit.Event) -> Void = { PixelKit.fire($0, frequency: .dailyAndCount) }) {
         self.historyCleaner = historyCleaner
         self.syncCleaner = syncCleaner
         self.recordsSyncDeletion = recordsSyncDeletion

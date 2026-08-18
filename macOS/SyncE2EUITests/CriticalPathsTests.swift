@@ -313,7 +313,7 @@ final class CriticalPathsTests: XCTestCase {
         settingsSheetsQuery.buttons["Paste"].click()
         settingsSheetsQuery.buttons["Next"].click()
         settingsSheetsQuery.buttons["Done"].click()
-        let secondDevice = settingsWindow.images["SyncedDeviceMobile"]
+        let secondDevice = settingsWindow.images["SyncSettings.syncedDevice.mobile"]
         XCTAssertTrue(secondDevice.exists, "Original Device not visible")
     }
 

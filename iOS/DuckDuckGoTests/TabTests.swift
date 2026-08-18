@@ -504,6 +504,44 @@ class TabTests: XCTestCase {
         XCTAssertNil(tab?.unifiedInputState.selectedTool)
     }
 
+    // MARK: - promptPageType
+
+    func testWhenTabHasNoLinkThenPromptPageTypeIsNTP() {
+        XCTAssertEqual(Tab(link: nil).promptPageType, .ntp)
+    }
+
+    func testWhenTabLinkIsWebsiteThenPromptPageTypeIsWebsite() {
+        XCTAssertEqual(Tab(link: link()).promptPageType, .website)
+    }
+
+    func testWhenTabLinkIsSearchThenPromptPageTypeIsSERP() {
+        let tab = Tab(link: Link(title: nil, url: URL(string: "https://duckduckgo.com/?q=cats")!))
+
+        XCTAssertEqual(tab.promptPageType, .serp)
+    }
+
+    func testWhenTabLinkIsChatQueryThenPromptPageTypeIsDuckAI() {
+        let tab = Tab(link: Link(title: nil, url: URL(string: "https://duckduckgo.com/?q=cats&ia=chat")!))
+
+        XCTAssertEqual(tab.promptPageType, .duckAI)
+    }
+
+    func testWhenTabLinkIsDuckAIHostThenPromptPageTypeIsDuckAI() {
+        let tab = Tab(link: Link(title: nil, url: URL(string: "https://duck.ai/chat")!))
+
+        XCTAssertEqual(tab.promptPageType, .duckAI)
+    }
+
+    func testWhenTabLinkMatchesDebugCustomURLHostThenPromptPageTypeIsDuckAI() {
+        let debugSettings = MockAIChatDebugSettings()
+        debugSettings.customURL = "https://duckai.example.com/"
+        let tab = Tab(link: Link(title: nil, url: URL(string: "https://duckai.example.com/?chat=1")!),
+                      aichatDebugSettings: debugSettings)
+
+        XCTAssertTrue(tab.isAITab)
+        XCTAssertEqual(tab.promptPageType, .duckAI)
+    }
+
     private func link() -> Link {
         return Link(title: "title", url: URL(string: "http://example.com")!)
     }

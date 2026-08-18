@@ -279,6 +279,7 @@ final class AddressBarButtonsViewController: NSViewController {
     private var tabRemovalCancellables = Set<AnyCancellable>()
     private var aiChatChromeSidebarFeatureFlagCancellable: AnyCancellable?
     private var videoPlaybackCancellable: AnyCancellable?
+    private var videoAutoplayCancellable: AnyCancellable?
 
     private struct TrackerAnimationDomainState {
         var lastVisitedDomain: String?
@@ -771,17 +772,22 @@ final class AddressBarButtonsViewController: NSViewController {
     private func subscribeToVideoPlayback() {
         videoPlaybackCancellable = tabViewModel?.tab.$mustDisplayAutoplayPolicy
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] mustDisplayAutoplayPolicy in
+            .sink { [weak self] _ in
                 self?.updatePermissionCenterButton()
-                self?.postAutoplayPromoTriggerIfNeeded(mustDisplayAutoplayPolicy)
+            }
+
+        videoAutoplayCancellable = tabViewModel?.tab.$detectedVideoAutoplay
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] detectedVideoAutoplay in
+                self?.postAutoplayPromoTriggerIfNeeded(detectedVideoAutoplay)
             }
     }
 
-    /// Notifies the promo queue that this tab is displaying the autoplay policy, so the Autoplay
+    /// Notifies the promo queue that this tab detected video autoplay, so the Autoplay
     /// Discoverability promo can open the Permission Center. Posting more than once per tab is
     /// harmless: the promo shows at most once, and it re-checks that it can present.
-    private func postAutoplayPromoTriggerIfNeeded(_ mustDisplayAutoplayPolicy: Bool) {
-        guard mustDisplayAutoplayPolicy else { return }
+    private func postAutoplayPromoTriggerIfNeeded(_ detectedVideoAutoplay: Bool) {
+        guard detectedVideoAutoplay else { return }
         NotificationCenter.default.post(name: .autoplayPolicyDisplayed, object: nil)
     }
 
@@ -1251,6 +1257,7 @@ final class AddressBarButtonsViewController: NSViewController {
         PixelKit.fire(pixel, frequency: .dailyAndStandard)
         if !isSidebarCurrentlyOpen {
             PixelKit.fire(AIChatPixel.aiChatAddressBarButtonClicked(action: .sidebar), frequency: .dailyAndStandard)
+            NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.addressBar)
         }
 
         aiChatCoordinator.toggleSidebar()
@@ -1263,6 +1270,7 @@ final class AddressBarButtonsViewController: NSViewController {
             aiChatCoordinator.collapseSidebar(withAnimation: false)
         }
 
+        NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.addressBar)
         if let value = textFieldValue, !value.isEmpty {
             PixelKit.fire(AIChatPixel.aiChatAddressBarButtonClicked(action: .tabWithPrompt), frequency: .dailyAndStandard)
             let query = aiChatAddressBarPromptExtractor.extractAIChatQuery(for: value)
@@ -1592,6 +1600,7 @@ final class AddressBarButtonsViewController: NSViewController {
                 shouldSelectNewTab: true
             )
 
+            NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.contextMenu)
             if let value = textFieldValue {
                 let query = aiChatAddressBarPromptExtractor.extractAIChatQuery(for: value)
                 aiChatTabOpener.openAIChatTab(with: query, behavior: behavior)
@@ -1607,6 +1616,9 @@ final class AddressBarButtonsViewController: NSViewController {
                                          shouldAutomaticallySendPageContext: aiChatMenuConfig.shouldAutomaticallySendPageContextTelemetryValue,
                                          minutesSinceSidebarHidden: aiChatCoordinator.sidebarHiddenAt(for: tab.uuid)?.minutesSinceNow())
                 PixelKit.fire(pixel, frequency: .dailyAndStandard)
+                if !isSidebarCurrentlyOpen {
+                    NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.contextMenu)
+                }
             }
 
             // Default is new tab, menu action forces sidebar

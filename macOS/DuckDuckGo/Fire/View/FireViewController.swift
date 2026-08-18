@@ -56,7 +56,7 @@ final class FireViewController: NSViewController {
     private let tabCollectionViewModel: TabCollectionViewModel
     private let featureFlagger: FeatureFlagger
 
-    private let themeManager: ThemeManaging
+    private let themeManager: ThemeManager
     private var theme: ThemeStyleProviding {
         themeManager.theme
     }
@@ -87,7 +87,11 @@ final class FireViewController: NSViewController {
     }()
 
     private lazy var progressIndicatorBackgroundView: ColorView = {
-        let view = ColorView(frame: .zero, backgroundColor: .newTabPageBackground)
+        // The legacy dialog keeps its fixed background color, which its design was made for.
+        let backgroundColor: NSColor = featureFlagger.isFeatureOn(.fireDialogSimplified)
+            ? .init(designSystemColor: .surfacePrimary, palette: themeManager.designColorPalette)
+            : .newTabPageBackground
+        let view = ColorView(frame: .zero, backgroundColor: backgroundColor)
         view.translatesAutoresizingMaskIntoConstraints = false
         view.cornerRadius = featureFlagger.isFeatureOn(.fireDialogSimplified) ? 24 : 8
         return view
@@ -152,7 +156,7 @@ final class FireViewController: NSViewController {
     @MainActor
     init(tabCollectionViewModel: TabCollectionViewModel,
          fireViewModel: FireViewModel,
-         themeManager: ThemeManaging? = nil,
+         themeManager: ThemeManager? = nil,
          visualizeFireAnimationDecider: VisualizeFireSettingsDecider,
          featureFlagger: FeatureFlagger) {
         self.tabCollectionViewModel = tabCollectionViewModel
@@ -332,6 +336,8 @@ final class FireViewController: NSViewController {
                         return
                     }
 
+                deletingDataLabel.stringValue = burningData.deletingDataMessage(featureFlagger: featureFlagger)
+
                 // Use the feature flag-aware method to determine if animation should play
                 if burningData.shouldPlayFireAnimation(decider: self.visualizeFireAnimationDecider) {
                     Task {
@@ -380,6 +386,9 @@ final class FireViewController: NSViewController {
         closeAllChildWindows()
 
         guard visualizeFireAnimationDecider.shouldShowFireAnimation else { return }
+
+        // This burn isn't scoped to a tab or to all data, so drop any text left by a previous burn.
+        deletingDataLabel.stringValue = UserText.fireDialogDeletingData
 
         await waitForFireAnimationViewIfNeeded()
         await withUnsafeContinuation { (continuation: UnsafeContinuation<Void, Never>) in

@@ -360,21 +360,16 @@ final class TabSuspensionServiceTests: XCTestCase {
 
 private final class MockSuspensionPixelFiring: PixelFiring {
     struct FireCall {
-        let pixel: PixelKitEvent
+        let pixel: PixelKit.Event
         let frequency: PixelKit.Frequency
     }
 
     var fireCalls = [FireCall]()
 
-    func fire(_ event: PixelKitEvent) {
-        fire(event, frequency: .standard)
-    }
-
-    func fire(_ event: PixelKitEvent, frequency: PixelKit.Frequency) {
-        fire(event, frequency: frequency, includeAppVersionParameter: true, withAdditionalParameters: nil, withNamePrefix: nil, doNotEnforcePrefix: false, onComplete: { _, _ in })
-    }
-
-    func fire(_ event: PixelKitEvent, frequency: PixelKit.Frequency, includeAppVersionParameter: Bool, withAdditionalParameters: [String: String]?, withNamePrefix: String?, doNotEnforcePrefix: Bool, onComplete: @escaping PixelKit.CompletionBlock) {
+    func fire(event: PixelKit.Event,
+              frequency: PixelKit.Frequency,
+              options: PixelKit.Options,
+              onComplete: @escaping PixelKit.CompletionBlock) {
         fireCalls.append(FireCall(pixel: event, frequency: frequency))
         onComplete(true, nil)
     }

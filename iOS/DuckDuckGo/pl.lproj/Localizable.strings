@@ -310,6 +310,12 @@
 /* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
 "aichat.attachment.unsupported.file.type.single" = "Ten typ pliku nie jest obsługiwany, załącz %@.";
 
+/* Caption shown below the input while editing a message, warning that submitting the edit replaces the existing response */
+"aichat.edit.replaceResponseDisclaimer" = "Edycja spowoduje zastąpienie odpowiedzi nową.";
+
+/* Title shown in the Duck.ai tab header while editing a previously sent message */
+"aichat.header.editMessage" = "Edytuj wiadomość";
+
 /* Accessibility label for the Plus (+) button in the Duck.ai tab header that opens a menu of new-chat and new-tab actions */
 "aichat.header.plusMenu.a11y" = "Nowa";
 
@@ -2956,6 +2962,12 @@
 /* Title for the Import Passwords Promotion banner */
 "import.passwords.promo.title" = "Importuj hasła do DuckDuckGo";
 
+/* Body for the notification sent after a period of inactivity. */
+"inactivity.notification.body" = "Używaj DuckDuckGo, aby unikać reklam śledzących Cię w Internecie i zmniejszyć swój ślad cyfrowy.";
+
+/* Title for the notification sent after a period of inactivity. */
+"inactivity.notification.title" = "Przejmij kontrolę nad swoim środowiskiem online";
+
 /* Placeholder text for the duck.ai input field */
 "input.field.placeholder.duckai" = "Zapytaj o cokolwiek prywatnie";
 
@@ -4014,6 +4026,18 @@
 
 /* Special error page title for pages that can only be opened in Safari */
 "prompt.general-page-problem.title" = "Ta strona ładuje się tylko w Safari";
+
+/* Error page message shown after repeated tab terminations */
+"prompt.tab-termination-error-page.message" = "Ta strona kilkakrotnie przestała się ładować. Spróbuj załadować ponownie lub wyślij nam opinię.";
+
+/* Button that reloads a page after repeated tab terminations */
+"prompt.tab-termination-error-page.reload" = "Załaduj ponownie";
+
+/* Button that opens site feedback after repeated tab terminations */
+"prompt.tab-termination-error-page.send-feedback" = "Wyślij opinię";
+
+/* Error page title shown after repeated tab terminations */
+"prompt.tab-termination-error-page.title" = "Nie udało nam się załadować tej strony";
 
 /* Default native error page message */
 "prompt.web-page-load-error.message" = "Ta witryna ma nieprawidłowy certyfikat bezpieczeństwa i jej odwiedzanie może nie być bezpieczne.";

@@ -33,6 +33,11 @@ import Bookmarks
 
 protocol AutofillLoginListViewControllerDelegate: AnyObject {
     func autofillLoginListViewControllerDidFinish(_ controller: AutofillLoginListViewController)
+    func autofillLoginListViewControllerDidSelectAccount(_ controller: AutofillLoginListViewController)
+}
+
+extension AutofillLoginListViewControllerDelegate {
+    func autofillLoginListViewControllerDidSelectAccount(_ controller: AutofillLoginListViewController) { }
 }
 
 final class AutofillLoginListViewController: UIViewController {
@@ -924,6 +929,7 @@ extension AutofillLoginListViewController: UITableViewDelegate {
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
+        delegate?.autofillLoginListViewControllerDidSelectAccount(self)
 
         switch viewModel.sections[indexPath.section] {
         case .suggestions(_, let items):

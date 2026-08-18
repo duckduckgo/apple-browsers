@@ -48,9 +48,9 @@ public protocol SubJobWebRunning: CCFCommunicationDelegate {
 
     var webViewHandler: WebViewHandler? { get set }
     var actionsHandler: ActionsHandler? { get }
-    var continuation: CheckedContinuation<ReturnValue, Error>? { get set }
+    var runnerContinuation: SubJobRunnerContinuationState<ReturnValue> { get }
     var extractedProfile: ExtractedProfile? { get set }
-    var shouldRunNextStep: () -> Bool { get }
+    var runnerCancellation: SubJobRunnerCancellationState { get }
     var retriesCountOnError: Int { get set }
     var clickAwaitTime: TimeInterval { get }
     var postLoadingSiteStartTime: Date? { get set }
@@ -84,6 +84,23 @@ public protocol SubJobWebRunning: CCFCommunicationDelegate {
 }
 
 public extension SubJobWebRunning {
+
+    // MARK: - Cancellation
+
+    var isCancelled: Bool {
+        runnerCancellation.isCancelled
+    }
+
+    /// Returns `false` when invoked after the runner is released.
+    var shouldRunNextStep: () -> Bool {
+        { [weak self] in self?.runnerCancellation.shouldRunNextStep ?? false }
+    }
+
+    /// Claims the terminal result before teardown can trigger more callbacks.
+    func failAsCancelledAndTearDown() async {
+        failed(with: DataBrokerProtectionError.cancelled)
+        await webViewHandler?.finish()
+    }
 
     // MARK: - Shared functions
 
@@ -351,20 +368,18 @@ public extension SubJobWebRunning {
     }
 
     func complete(_ value: ReturnValue) {
+        guard let continuation = runnerContinuation.take() else { return }
+
+        // Claim terminal ownership before telemetry to prevent duplicate pixels.
         self.firePostLoadingDurationPixel(hasError: false)
-
-        guard let continuation else { return }
-
-        self.continuation = nil
         continuation.resume(returning: value)
     }
 
     func failed(with error: Error) {
+        guard let continuation = runnerContinuation.take() else { return }
+
+        // Claim terminal ownership before telemetry to prevent duplicate pixels.
         self.firePostLoadingDurationPixel(hasError: true)
-
-        guard let continuation else { return }
-
-        self.continuation = nil
         continuation.resume(throwing: error)
     }
 
@@ -536,6 +551,13 @@ public extension SubJobWebRunning {
         recordDebugEvent(kind: .actionResponse,
                          actionType: actionsHandler?.currentAction()?.actionType,
                          details: errorDetails(error))
+
+        // If cancellation and an action error race, finish as cancelled; the action error is already recorded above.
+        guard shouldRunNextStep() else {
+            await failAsCancelledAndTearDown()
+            return
+        }
+
         if let currentAction = actionsHandler?.currentAction(), currentAction is ConditionAction {
             Logger.action.log(loggerContext(for: currentAction),
                               message: "Condition action did NOT meet its expectation, continuing with regular action execution")

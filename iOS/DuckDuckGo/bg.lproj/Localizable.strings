@@ -310,6 +310,12 @@
 /* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
 "aichat.attachment.unsupported.file.type.single" = "Този тип файл не се поддържа, прикачете %@.";
 
+/* Caption shown below the input while editing a message, warning that submitting the edit replaces the existing response */
+"aichat.edit.replaceResponseDisclaimer" = "Редактирането ще замени отговора с нов.";
+
+/* Title shown in the Duck.ai tab header while editing a previously sent message */
+"aichat.header.editMessage" = "Редактиране на съобщение";
+
 /* Accessibility label for the Plus (+) button in the Duck.ai tab header that opens a menu of new-chat and new-tab actions */
 "aichat.header.plusMenu.a11y" = "Нов";
 
@@ -2956,6 +2962,12 @@
 /* Title for the Import Passwords Promotion banner */
 "import.passwords.promo.title" = "Импортиране на пароли в DuckDuckGo";
 
+/* Body for the notification sent after a period of inactivity. */
+"inactivity.notification.body" = "Използвайте DuckDuckGo, за да избегнете рекламите, които Ви следят в мрежата, и да намалите своя онлайн отпечатък.";
+
+/* Title for the notification sent after a period of inactivity. */
+"inactivity.notification.title" = "Контролирайте онлайн изживяването";
+
 /* Placeholder text for the duck.ai input field */
 "input.field.placeholder.duckai" = "Задайте въпрос поверително";
 
@@ -4014,6 +4026,18 @@
 
 /* Special error page title for pages that can only be opened in Safari */
 "prompt.general-page-problem.title" = "Тази страница се зарежда само в Safari";
+
+/* Error page message shown after repeated tab terminations */
+"prompt.tab-termination-error-page.message" = "Тази страница спря да се зарежда няколко пъти. Опитайте да презаредите или ни изпратете обратна връзка.";
+
+/* Button that reloads a page after repeated tab terminations */
+"prompt.tab-termination-error-page.reload" = "Презареждане";
+
+/* Button that opens site feedback after repeated tab terminations */
+"prompt.tab-termination-error-page.send-feedback" = "Изпращане на обратна връзка";
+
+/* Error page title shown after repeated tab terminations */
+"prompt.tab-termination-error-page.title" = "Не успяхме да заредим тази страница";
 
 /* Default native error page message */
 "prompt.web-page-load-error.message" = "Този уебсайт има невалиден сертификат за сигурност и отварянето му може да не е безопасно.";

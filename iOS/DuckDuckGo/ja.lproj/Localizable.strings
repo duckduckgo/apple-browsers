@@ -310,6 +310,12 @@
 /* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
 "aichat.attachment.unsupported.file.type.single" = "このファイル形式はサポートされていません。%@を添付してください。";
 
+/* Caption shown below the input while editing a message, warning that submitting the edit replaces the existing response */
+"aichat.edit.replaceResponseDisclaimer" = "編集すると、既存の回答が新しい回答に置き換えられます。";
+
+/* Title shown in the Duck.ai tab header while editing a previously sent message */
+"aichat.header.editMessage" = "メッセージを編集";
+
 /* Accessibility label for the Plus (+) button in the Duck.ai tab header that opens a menu of new-chat and new-tab actions */
 "aichat.header.plusMenu.a11y" = "新規";
 
@@ -2956,6 +2962,12 @@
 /* Title for the Import Passwords Promotion banner */
 "import.passwords.promo.title" = "パスワードをDuckDuckGoにインポート";
 
+/* Body for the notification sent after a period of inactivity. */
+"inactivity.notification.body" = "DuckDuckGoを使用すると、広告によってウェブでの活動を追跡されることがなくなり、オンラインでの痕跡を減らすことができます。";
+
+/* Title for the notification sent after a period of inactivity. */
+"inactivity.notification.title" = "オンライン体験を管理する";
+
 /* Placeholder text for the duck.ai input field */
 "input.field.placeholder.duckai" = "非公開でなんでも聞いてください";
 
@@ -4014,6 +4026,18 @@
 
 /* Special error page title for pages that can only be opened in Safari */
 "prompt.general-page-problem.title" = "このページはSafariでのみ読み込めます";
+
+/* Error page message shown after repeated tab terminations */
+"prompt.tab-termination-error-page.message" = "このページの読み込みが何度か停止しました。再読み込みするか、フィードバックを送信してください。";
+
+/* Button that reloads a page after repeated tab terminations */
+"prompt.tab-termination-error-page.reload" = "再読み込み";
+
+/* Button that opens site feedback after repeated tab terminations */
+"prompt.tab-termination-error-page.send-feedback" = "フィードバックを送信";
+
+/* Error page title shown after repeated tab terminations */
+"prompt.tab-termination-error-page.title" = "このページを読み込めませんでした";
 
 /* Default native error page message */
 "prompt.web-page-load-error.message" = "このウェブサイトには無効なセキュリティ証明書があり、安全に訪問できない可能性があります。";

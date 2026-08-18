@@ -310,6 +310,12 @@
 /* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
 "aichat.attachment.unsupported.file.type.single" = "Seda failitüüpi ei toetata, palun lisa %@.";
 
+/* Caption shown below the input while editing a message, warning that submitting the edit replaces the existing response */
+"aichat.edit.replaceResponseDisclaimer" = "Muutmine asendab vastuse uuega.";
+
+/* Title shown in the Duck.ai tab header while editing a previously sent message */
+"aichat.header.editMessage" = "Muuda sõnumit";
+
 /* Accessibility label for the Plus (+) button in the Duck.ai tab header that opens a menu of new-chat and new-tab actions */
 "aichat.header.plusMenu.a11y" = "Uus";
 
@@ -2956,6 +2962,12 @@
 /* Title for the Import Passwords Promotion banner */
 "import.passwords.promo.title" = "Impordi paroolid DuckDuckGosse";
 
+/* Body for the notification sent after a period of inactivity. */
+"inactivity.notification.body" = "Kasuta DuckDuckGo-d, et vältida reklaame, mis sind veebis jälgivad, ja vähendada oma digitaalset jalajälge.";
+
+/* Title for the notification sent after a period of inactivity. */
+"inactivity.notification.title" = "Kontrolli oma veebikogemust";
+
 /* Placeholder text for the duck.ai input field */
 "input.field.placeholder.duckai" = "Küsi ükskõik mida privaatselt";
 
@@ -4014,6 +4026,18 @@
 
 /* Special error page title for pages that can only be opened in Safari */
 "prompt.general-page-problem.title" = "See leht laaditakse ainult Safaris";
+
+/* Error page message shown after repeated tab terminations */
+"prompt.tab-termination-error-page.message" = "See leht lakkas mitu korda laadimast. Proovi uuesti laadida või saada meile tagasisidet.";
+
+/* Button that reloads a page after repeated tab terminations */
+"prompt.tab-termination-error-page.reload" = "Laadi uuesti";
+
+/* Button that opens site feedback after repeated tab terminations */
+"prompt.tab-termination-error-page.send-feedback" = "Saada tagasisidet";
+
+/* Error page title shown after repeated tab terminations */
+"prompt.tab-termination-error-page.title" = "Me ei saanud seda lehte laadida";
 
 /* Default native error page message */
 "prompt.web-page-load-error.message" = "Sellel veebisaidil on vale turvasertifikaat ja selle külastamine ei pruugi olla turvaline.";

@@ -58,6 +58,9 @@ jobs:
       with:
         submodules: recursive
 
+    - name: Print macOS version
+      run: sw_vers
+
     - name: Start measuring duration
       id: start-duration
       uses: ./.github/actions/measure-duration

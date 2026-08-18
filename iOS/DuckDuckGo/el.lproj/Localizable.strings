@@ -310,6 +310,12 @@
 /* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
 "aichat.attachment.unsupported.file.type.single" = "Αυτός ο τύπος αρχείου δεν υποστηρίζεται, επισυνάψτε %@.";
 
+/* Caption shown below the input while editing a message, warning that submitting the edit replaces the existing response */
+"aichat.edit.replaceResponseDisclaimer" = "Η επεξεργασία θα αντικαταστήσει την απάντηση με μια νέα.";
+
+/* Title shown in the Duck.ai tab header while editing a previously sent message */
+"aichat.header.editMessage" = "Επεξεργασία μηνύματος";
+
 /* Accessibility label for the Plus (+) button in the Duck.ai tab header that opens a menu of new-chat and new-tab actions */
 "aichat.header.plusMenu.a11y" = "Νέα";
 
@@ -2956,6 +2962,12 @@
 /* Title for the Import Passwords Promotion banner */
 "import.passwords.promo.title" = "Εισαγάγετε τους κωδικούς πρόσβασής σας στο DuckDuckGo";
 
+/* Body for the notification sent after a period of inactivity. */
+"inactivity.notification.body" = "Χρησιμοποίησε το DuckDuckGo για να αποφύγεις τις διαφημίσεις που σε ακολουθούν στο διαδίκτυο και να μειώσεις το διαδικτυακό σου αποτύπωμα.";
+
+/* Title for the notification sent after a period of inactivity. */
+"inactivity.notification.title" = "Πάρε τον έλεγχο της διαδικτυακής σου εμπειρίας";
+
 /* Placeholder text for the duck.ai input field */
 "input.field.placeholder.duckai" = "Ρώτα οτιδήποτε ιδιωτικά";
 
@@ -4014,6 +4026,18 @@
 
 /* Special error page title for pages that can only be opened in Safari */
 "prompt.general-page-problem.title" = "Αυτή η σελίδα φορτώνει μόνο στο Safari";
+
+/* Error page message shown after repeated tab terminations */
+"prompt.tab-termination-error-page.message" = "Αυτή η σελίδα σταμάτησε να φορτώνει πολλές φορές. Δοκίμασε να κάνεις επαναφόρτωση ή στείλε μας σχόλια.";
+
+/* Button that reloads a page after repeated tab terminations */
+"prompt.tab-termination-error-page.reload" = "Επαναφόρτωση";
+
+/* Button that opens site feedback after repeated tab terminations */
+"prompt.tab-termination-error-page.send-feedback" = "Αποστολή σχολίου";
+
+/* Error page title shown after repeated tab terminations */
+"prompt.tab-termination-error-page.title" = "Δεν μπορέσαμε να φορτώσουμε τη σελίδα αυτή";
 
 /* Default native error page message */
 "prompt.web-page-load-error.message" = "Ο ιστότοπος αυτός διαθέτει μη έγκυρο πιστοποιητικό ασφαλείας και ενδέχεται να μην είναι ασφαλές να το επισκεφτείτε.";

@@ -32,7 +32,7 @@ public enum WideEventFailureEvent {
     case discardFailed(pixelName: String, error: Error)
 }
 
-extension WideEventFailureEvent: PixelKitEvent, PixelKitEventWithCustomPrefix {
+extension WideEventFailureEvent: PixelKit.Event, PixelKitEventWithCustomPrefix {
     public var namePrefix: String {
 #if os(macOS)
         return "m_mac_"

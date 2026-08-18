@@ -7341,6 +7341,30 @@
         }
       }
     },
+    "aichat.model-picker.label.everyday-use" : {
+      "comment" : "Subtitle beneath a recommended model in the model picker",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Best for everyday use"
+          }
+        }
+      }
+    },
+    "aichat.model-picker.label.uses-limits-faster" : {
+      "comment" : "Subtitle beneath a recommended model in the model picker that consumes usage limits faster",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Solid but hits limits sooner"
+          }
+        }
+      }
+    },
     "aichat.model-picker.pro-exclusive" : {
       "comment" : "Label above the gated models in the model picker menu, shown to Plus subscribers — they're already a subscriber, so the gated models (all Pro-only) are called out specifically rather than reusing the generic 'Subscriber Exclusive' label",
       "extractionState" : "stale",
@@ -7397,6 +7421,54 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Эксклюзивно для Pro"
+          }
+        }
+      }
+    },
+    "aichat.model-picker.section.available-with-paid-plans" : {
+      "comment" : "Section header above gated models in the model picker, shown to a non-subscriber who is no longer eligible for the free trial — the models below span both paid plans",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Available with Paid Plans"
+          }
+        }
+      }
+    },
+    "aichat.model-picker.section.available-with-plus" : {
+      "comment" : "Section header above Plus-gated rows in the model and reasoning-effort pickers",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Available with Plus"
+          }
+        }
+      }
+    },
+    "aichat.model-picker.section.available-with-pro" : {
+      "comment" : "Section header above Pro-only models in the model picker, shown to a Plus subscriber",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Available with Pro"
+          }
+        }
+      }
+    },
+    "aichat.model-picker.section.try-free" : {
+      "comment" : "Section header above gated models in the model picker, shown when a free trial is available",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Try Free for 7 Days"
           }
         }
       }

@@ -17,8 +17,11 @@
 //  limitations under the License.
 //
 
-/// Steps the completion checklist tracks. `vpnWidget` is a checklist step but not a subscription feature.
-/// `vpnTips` is excluded from `checklist(isPIRAvailable:)` — it piggybacks on `vpnWidget` instead of being tracked.
+import Subscription
+
+/// Steps the completion checklist tracks. `vpnWidget` has no subscription entitlement of its own — it
+/// shares VPN's. `vpnTips` is excluded from the checklist entirely; it piggybacks on `vpnWidget`'s
+/// gating and step number instead of being tracked.
 enum SubscriptionOnboardingChecklistItem: String, CaseIterable, Identifiable {
     case vpn
     case vpnWidget
@@ -27,10 +30,20 @@ enum SubscriptionOnboardingChecklistItem: String, CaseIterable, Identifiable {
     case duckAI
     case pir
 
-    static let features: [SubscriptionOnboardingChecklistItem] = [.vpn, .idtr, .duckAI, .pir]
+    /// Every case gated by its own entitlement, `.pir` further gated by `isPIRAvailable`. Can come back
+    /// empty if every case is excluded.
+    static func checklist(isPIRAvailable: Bool, entitlement: EntitlementStatus) -> [SubscriptionOnboardingChecklistItem] {
+        let gated = allCases.filter { $0.isEntitled(entitlement) && $0 != .vpnTips }
+        return isPIRAvailable ? gated : gated.filter { $0 != .pir }
+    }
 
-    static func checklist(isPIRAvailable: Bool) -> [SubscriptionOnboardingChecklistItem] {
-        isPIRAvailable ? allCases.filter { $0 != .vpnTips } : allCases.filter { $0 != .pir && $0 != .vpnTips }
+    private func isEntitled(_ entitlement: EntitlementStatus) -> Bool {
+        switch self {
+        case .vpn, .vpnWidget, .vpnTips: return entitlement.isEnabled(.networkProtection)
+        case .idtr: return entitlement.isEnabled(.identityTheftRestoration) || entitlement.isEnabled(.identityTheftRestorationGlobal)
+        case .duckAI: return entitlement.isEnabled(.paidAIChat)
+        case .pir: return entitlement.isEnabled(.dataBrokerProtection)
+        }
     }
 
     static func completionPercentage(completed: Set<SubscriptionOnboardingChecklistItem>,

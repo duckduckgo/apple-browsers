@@ -58,6 +58,15 @@ public struct EntitlementStatus: Equatable, CustomDebugStringConvertible {
                           paidAIChat: false)
     }
 
+    /// Returns a status with all entitlements enabled
+    public static var allEnabled: EntitlementStatus {
+        EntitlementStatus(networkProtection: true,
+                          dataBrokerProtection: true,
+                          identityTheftRestoration: true,
+                          identityTheftRestorationGlobal: true,
+                          paidAIChat: true)
+    }
+
     /// Checks if a specific entitlement is enabled
     public func isEnabled(_ entitlement: SubscriptionEntitlement) -> Bool {
         switch entitlement {

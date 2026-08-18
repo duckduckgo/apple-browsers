@@ -19,6 +19,7 @@
 
 import XCTest
 import Persistence
+import Subscription
 @testable import DuckDuckGo
 
 final class SubscriptionOnboardingProgressTests: XCTestCase {
@@ -105,6 +106,78 @@ final class SubscriptionOnboardingProgressTests: XCTestCase {
     func testWhenPIRIsUnavailableThenTheChecklistDropsIt() {
         XCTAssertEqual(makeProgress(isPIRAvailable: false).checklist,
                        [.vpn, .vpnWidget, .idtr, .duckAI])
+    }
+
+    // MARK: - Entitlement gating
+
+    func testWhenEntitlementExcludesVPNThenTheChecklistDropsItAndItsWidget() {
+        let entitlement = EntitlementStatus(networkProtection: false, dataBrokerProtection: true,
+                                            identityTheftRestoration: true, identityTheftRestorationGlobal: true,
+                                            paidAIChat: true)
+
+        XCTAssertEqual(makeProgress(isPIRAvailable: true, entitlement: entitlement).checklist,
+                       [.idtr, .duckAI, .pir])
+    }
+
+    func testWhenEntitlementExcludesIDTRThenTheChecklistDropsIt() {
+        let entitlement = EntitlementStatus(networkProtection: true, dataBrokerProtection: true,
+                                            identityTheftRestoration: false, identityTheftRestorationGlobal: false,
+                                            paidAIChat: true)
+
+        XCTAssertEqual(makeProgress(isPIRAvailable: true, entitlement: entitlement).checklist,
+                       [.vpn, .vpnWidget, .duckAI, .pir])
+    }
+
+    /// Either the regional or the global entitlement is enough to keep the step.
+    func testWhenOnlyGlobalIDTREntitlementIsPresentThenTheStepIsKept() {
+        let entitlement = EntitlementStatus(networkProtection: true, dataBrokerProtection: true,
+                                            identityTheftRestoration: false, identityTheftRestorationGlobal: true,
+                                            paidAIChat: true)
+
+        XCTAssertTrue(makeProgress(isPIRAvailable: true, entitlement: entitlement).checklist.contains(.idtr))
+    }
+
+    func testWhenEntitlementExcludesDuckAIThenTheChecklistDropsIt() {
+        let entitlement = EntitlementStatus(networkProtection: true, dataBrokerProtection: true,
+                                            identityTheftRestoration: true, identityTheftRestorationGlobal: true,
+                                            paidAIChat: false)
+
+        XCTAssertEqual(makeProgress(isPIRAvailable: true, entitlement: entitlement).checklist,
+                       [.vpn, .vpnWidget, .idtr, .pir])
+    }
+
+    /// No fallback: every case is gated independently, so excluding all four core items just leaves whatever
+    /// else survives (here, `.pir` alone).
+    func testWhenEntitlementExcludesEveryCoreItemThenOnlyWhatSurvivesRemains() {
+        let entitlement = EntitlementStatus(networkProtection: false, dataBrokerProtection: true,
+                                            identityTheftRestoration: false, identityTheftRestorationGlobal: false,
+                                            paidAIChat: false)
+
+        XCTAssertEqual(makeProgress(isPIRAvailable: true, entitlement: entitlement).checklist, [.pir])
+    }
+
+    /// PIR has its own entitlement gate, independent of the other four: excluding only PIR's entitlement
+    /// drops PIR without affecting the other four items.
+    func testWhenEntitlementExcludesPIRThenTheChecklistDropsItEvenWhenAvailable() {
+        let entitlement = EntitlementStatus(networkProtection: true, dataBrokerProtection: false,
+                                            identityTheftRestoration: true, identityTheftRestorationGlobal: true,
+                                            paidAIChat: true)
+
+        XCTAssertEqual(makeProgress(isPIRAvailable: true, entitlement: entitlement).checklist,
+                       [.vpn, .vpnWidget, .idtr, .duckAI])
+    }
+
+    /// `isPIRAvailable` and PIR's own entitlement are ANDed: either alone excludes it.
+    func testWhenPIRIsUnavailableButEverythingElseIsEntitledThenPIRStillDrops() {
+        XCTAssertEqual(makeProgress(isPIRAvailable: false, entitlement: .allEnabled).checklist,
+                       [.vpn, .vpnWidget, .idtr, .duckAI])
+    }
+
+    /// Nothing entitled and PIR unavailable: the checklist comes back genuinely empty. `Progress` doesn't
+    /// recover from this itself — the launcher treats an empty checklist as an error and refuses to present
+    /// the flow (see `SubscriptionOnboardingLauncherTests`).
+    func testWhenNothingIsEntitledAndPIRIsUnavailableThenTheChecklistIsEmpty() {
+        XCTAssertTrue(makeProgress(isPIRAvailable: false, entitlement: .empty).checklist.isEmpty)
     }
 
     func testWhenNothingIsCompleteThenPercentageIsZero() {
@@ -303,9 +376,10 @@ final class SubscriptionOnboardingProgressTests: XCTestCase {
     private let day: TimeInterval = 24 * 60 * 60
 
     private func makeProgress(isPIRAvailable: Bool,
-                              completed: Set<SubscriptionOnboardingChecklistItem> = []) -> SubscriptionOnboardingProgress {
+                              completed: Set<SubscriptionOnboardingChecklistItem> = [],
+                              entitlement: EntitlementStatus = .allEnabled) -> SubscriptionOnboardingProgress {
         sut.completedItems = completed
-        return SubscriptionOnboardingProgress(persistor: sut, isPIRAvailable: isPIRAvailable)
+        return SubscriptionOnboardingProgress(persistor: sut, isPIRAvailable: isPIRAvailable, entitlement: entitlement)
     }
 
     // MARK: - Card first shown

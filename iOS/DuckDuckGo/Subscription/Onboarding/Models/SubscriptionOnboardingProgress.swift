@@ -20,6 +20,7 @@
 import Foundation
 import FoundationExtensions
 import Persistence
+import Subscription
 import os.log
 
 /// Serializes the read-decide-write sequences below across every `SubscriptionOnboardingProgressPersisting` conformer.
@@ -110,7 +111,7 @@ struct SubscriptionOnboardingProgressPersistor: SubscriptionOnboardingProgressPe
 
 // MARK: - Progress
 
-/// This customer's checklist and how much of it they have completed; every reader (flow, progress screen, settings card) goes through this so none of them can disagree.
+/// This customer's checklist and how much of it they have completed; every reader (flow, progress screen, settings card) goes through this
 struct SubscriptionOnboardingProgress {
 
     /// How long the Subscription Settings card lives, measured from its first display.
@@ -124,9 +125,17 @@ struct SubscriptionOnboardingProgress {
 
     private var persistor: SubscriptionOnboardingProgressPersisting
 
-    init(persistor: SubscriptionOnboardingProgressPersisting, isPIRAvailable: Bool) {
+    init(persistor: SubscriptionOnboardingProgressPersisting, isPIRAvailable: Bool, entitlement: EntitlementStatus) {
         self.persistor = persistor
-        self.checklist = SubscriptionOnboardingChecklistItem.checklist(isPIRAvailable: isPIRAvailable)
+        self.checklist = SubscriptionOnboardingChecklistItem.checklist(isPIRAvailable: isPIRAvailable, entitlement: entitlement)
+    }
+
+    /// Awaits the customer's real subscription entitlement, then builds `Progress` from it
+    static func make(persistor: SubscriptionOnboardingProgressPersisting,
+                     isPIRAvailable: Bool,
+                     subscriptionManager: any SubscriptionManager) async -> SubscriptionOnboardingProgress {
+        let entitlement = await subscriptionManager.getAllEntitlementStatus()
+        return SubscriptionOnboardingProgress(persistor: persistor, isPIRAvailable: isPIRAvailable, entitlement: entitlement)
     }
 
     /// Read on demand, since items complete outside whatever screen is asking.
@@ -185,8 +194,8 @@ struct SubscriptionOnboardingProgress {
 extension SubscriptionOnboardingProgress {
 
     /// Fixed progress with no storage behind it, for previews and debug rows.
-    init(completedItems: Set<SubscriptionOnboardingChecklistItem>, isPIRAvailable: Bool = true) {
-        self.init(persistor: FixedPersistor(completedItems: completedItems), isPIRAvailable: isPIRAvailable)
+    init(completedItems: Set<SubscriptionOnboardingChecklistItem>, isPIRAvailable: Bool = true, entitlement: EntitlementStatus = .allEnabled) {
+        self.init(persistor: FixedPersistor(completedItems: completedItems), isPIRAvailable: isPIRAvailable, entitlement: entitlement)
     }
 
     private struct FixedPersistor: SubscriptionOnboardingProgressPersisting {

@@ -72,6 +72,10 @@ struct SubscriptionSettingsViewV2: View {
     // MARK: - Onboarding state
 
     @State private var onboardingFlow: OnboardingFlowPayload?
+    /// Guards against a double-tap starting a second entitlement fetch before the first resolves.
+    @State private var isStartingOnboarding = false
+    /// Refetched each time `onboardingSetupSection` appears
+    @State private var cardEntitlement: EntitlementStatus?
 
     var body: some View {
         optionsView
@@ -675,29 +679,43 @@ extension SubscriptionSettingsViewV2 {
     /// The "Continue Setup" re-entry card.
     var onboardingSetupSection: some View {
         Section {
-            SubscriptionOnboardingSetupCard(visual: .image(Image(.subscription56)),
-                                            progress: onboardingProgress,
-                                            session: settingsViewModel.subscriptionOnboardingSession,
-                                            isPresentingFlow: onboardingFlow != nil,
-                                            onContinue: { startOnboarding() })
+            if let onboardingProgress {
+                SubscriptionOnboardingSetupCard(visual: .image(Image(.subscription56)),
+                                                progress: onboardingProgress,
+                                                session: settingsViewModel.subscriptionOnboardingSession,
+                                                isPresentingFlow: onboardingFlow != nil,
+                                                onContinue: { startOnboarding() })
+            }
         }
         .listRowBackground(Color.clear)
         .listRowInsets(EdgeInsets())
+        .task {
+            cardEntitlement = await settingsViewModel.subscriptionManager.getAllEntitlementStatus()
+        }
     }
 
     func startOnboarding() {
-        let flow = SubscriptionOnboardingFlowViewModel.subscriptionSettings(
-            progress: onboardingProgress,
-            onFinish: { onboardingFlow = nil },
-            pirScreen: { pirDestination })
-        onboardingFlow = OnboardingFlowPayload(flow: flow)
+        guard !isStartingOnboarding else { return }
+        isStartingOnboarding = true
+        Task { @MainActor in
+            defer { isStartingOnboarding = false }
+            guard let flow = await SubscriptionOnboardingFlowViewModel.subscriptionSettings(
+                persistor: onboardingPersistor,
+                isPIRAvailable: isPIRAvailable,
+                subscriptionManager: settingsViewModel.subscriptionManager,
+                onFinish: { onboardingFlow = nil },
+                pirScreen: { pirDestination }) else { return }
+            onboardingFlow = OnboardingFlowPayload(flow: flow)
+        }
     }
 
-    /// Built fresh on each access; the state it reads lives in the key-value store, not in the value.
-    private var onboardingProgress: SubscriptionOnboardingProgress {
-        SubscriptionOnboardingProgress(
-            persistor: SubscriptionOnboardingProgressPersistor(keyValueStore: settingsViewModel.keyValueStore),
-            isPIRAvailable: isPIRAvailable)
+    private var onboardingProgress: SubscriptionOnboardingProgress? {
+        guard let cardEntitlement else { return nil }
+        return SubscriptionOnboardingProgress(persistor: onboardingPersistor, isPIRAvailable: isPIRAvailable, entitlement: cardEntitlement)
+    }
+
+    private var onboardingPersistor: SubscriptionOnboardingProgressPersistor {
+        SubscriptionOnboardingProgressPersistor(keyValueStore: settingsViewModel.keyValueStore)
     }
 
     /// Checked here rather than inside the card so the flag (and subscription state) also covers `startOnboarding()`.

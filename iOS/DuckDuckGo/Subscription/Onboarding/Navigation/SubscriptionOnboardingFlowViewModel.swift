@@ -109,8 +109,14 @@ final class SubscriptionOnboardingFlowViewModel: ObservableObject {
             self.onRequestDuckAIChat = { chatLauncher.launch(modelID: $0) }
         }
 
-        self.sequence = Self.makeSequence(entryPoint: entryPoint,
-                                          completedItems: self.progress.completedItems)
+        switch entryPoint {
+        case .postCheckout:
+            self.sequence = Self.makePostCheckoutSequence(checklist: self.progress.checklist,
+                                                          completedItems: self.progress.completedItems)
+        case .subscriptionSettings:
+            self.sequence = Self.makeSubscriptionSettingsSequence(checklist: self.progress.checklist,
+                                                                  completedItems: self.progress.completedItems)
+        }
     }
 
     /// Kicked off when the flow appears.
@@ -177,10 +183,10 @@ final class SubscriptionOnboardingFlowViewModel: ObservableObject {
     /// The "Step X of N" indicator counted over this customer's checklist
     func title(for section: SubscriptionOnboardingSection) -> String? {
         guard case .activation(let item) = section.kind,
-              let step = progress.checklistItems.firstIndex(of: item) else { return nil }
+              let step = progress.checklist.firstIndex(of: item) else { return nil }
         return String(format: UserText.subscriptionOnboardingStepIndicatorFormat,
                       step + 1,
-                      progress.checklistItems.count)
+                      progress.checklist.count)
     }
 
     /// Reached from the back chevron only.
@@ -188,22 +194,37 @@ final class SubscriptionOnboardingFlowViewModel: ObservableObject {
         guard let position = path.firstIndex(of: section) else { return }
         path.removeSubrange(position...)
     }
+}
 
-    // MARK: - Sequence construction
+// MARK: - Sequence construction
 
-    private static func makeSequence(entryPoint: SubscriptionOnboardingEntryPoint,
-                                     completedItems: Set<SubscriptionOnboardingChecklistItem>) -> [SubscriptionOnboardingSection] {
-        switch entryPoint {
-        case .postCheckout:
-            return [.orderConfirmation, .welcome] + SubscriptionOnboardingSection.activationSections + [.progress]
+private extension SubscriptionOnboardingFlowViewModel {
 
-        case .subscriptionSettings:
-            let unfinished = SubscriptionOnboardingSection.activationSections.filter { section in
-                guard case .activation(let item) = section.kind else { return false }
-                return !completedItems.contains(item)
-            }
-            return unfinished + [.progress]
+    /// Entitled sections not yet completed. Shared by both entry points: an item can already be complete
+    /// before this run starts via an out-of-flow signal
+    static func unfinishedEntitledSections(checklist: [SubscriptionOnboardingChecklistItem],
+                                           completedItems: Set<SubscriptionOnboardingChecklistItem>)
+    -> [SubscriptionOnboardingSection] {
+        SubscriptionOnboardingSection.activationSections.compactMap { section in
+            guard case .activation(let item) = section.kind,
+                  checklist.contains(item),
+                  !completedItems.contains(item) else { return nil }
+            return section
         }
+    }
+
+    static func makePostCheckoutSequence(checklist: [SubscriptionOnboardingChecklistItem],
+                                         completedItems: Set<SubscriptionOnboardingChecklistItem>)
+    -> [SubscriptionOnboardingSection] {
+        let unfinished = unfinishedEntitledSections(checklist: checklist, completedItems: completedItems)
+        return [.orderConfirmation, .welcome] + unfinished + [.progress]
+    }
+
+    /// Resumes at the first unfinished entitled section.
+    static func makeSubscriptionSettingsSequence(checklist: [SubscriptionOnboardingChecklistItem],
+                                                 completedItems: Set<SubscriptionOnboardingChecklistItem>)
+    -> [SubscriptionOnboardingSection] {
+        unfinishedEntitledSections(checklist: checklist, completedItems: completedItems) + [.progress]
     }
 }
 

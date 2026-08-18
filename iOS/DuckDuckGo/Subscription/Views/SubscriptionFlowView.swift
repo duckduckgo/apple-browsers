@@ -222,12 +222,16 @@ struct SubscriptionFlowView: View {
     // MARK: - Onboarding
 
     private func startOnboarding() {
-        guard let progress = viewModel.onboardingProgress else { return }
-        let flow = SubscriptionOnboardingFlowViewModel.postCheckout(
-            progress: progress,
-            onFinish: { onboardingFlow = nil },
-            pirScreen: { pirDestination })
-        onboardingFlow = OnboardingFlowPayload(flow: flow)
+        guard let persistor = viewModel.onboardingPersistor else { return }
+        Task { @MainActor in
+            guard let flow = await SubscriptionOnboardingFlowViewModel.postCheckout(
+                persistor: persistor,
+                isPIRAvailable: viewModel.isPIRAvailable,
+                subscriptionManager: viewModel.subscriptionManager,
+                onFinish: { onboardingFlow = nil },
+                pirScreen: { pirDestination }) else { return }
+            onboardingFlow = OnboardingFlowPayload(flow: flow)
+        }
     }
 
     /// Same destination the hidden PIR `NavigationLink` above pushes.

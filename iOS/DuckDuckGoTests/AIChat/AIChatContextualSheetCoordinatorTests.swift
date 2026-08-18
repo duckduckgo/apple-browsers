@@ -337,7 +337,6 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         XCTAssertNotNil(sut.sessionState.intendedAttachedContext)
     }
 
-    /// Repeated actions for the same passage should not burn multiple cap slots.
     @MainActor
     func testAttachingTheSameSelectionTwiceAttachesItOnce() async {
         let url = URL(string: "https://example.com")

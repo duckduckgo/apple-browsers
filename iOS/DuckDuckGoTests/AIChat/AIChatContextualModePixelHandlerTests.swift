@@ -44,7 +44,7 @@ final class AIChatContextualModePixelHandlerTests {
         #expect(PixelFiringMock.lastPixelName == Pixel.Event.aiChatContextualSheetOpened.name)
     }
 
-    @Test("Sheet dismissed pixel fires correctly", arguments: [true, false])
+    @Test("Sheet dismissed pixel fires correctly", .timeLimit(.minutes(1)), arguments: [true, false])
     func testSheetDismissedPixel(hadUnsubmittedSelections: Bool) {
         // GIVEN
         var firedEventName: String?
@@ -64,7 +64,7 @@ final class AIChatContextualModePixelHandlerTests {
         #expect(firedParameters == ["had_unsubmitted_selections": String(hadUnsubmittedSelections)])
     }
 
-    @Test("Floating input dismissed pixel includes unsubmitted selection state", arguments: [true, false])
+    @Test("Floating input dismissed pixel includes unsubmitted selection state", .timeLimit(.minutes(1)), arguments: [true, false])
     func floatingInputDismissedPixel(hadUnsubmittedSelections: Bool) {
         var firedEventName: String?
         var firedParameters: [String: String]?
@@ -421,7 +421,7 @@ final class AIChatContextualModePixelHandlerTests {
         #expect(sut.isManualAttachInProgress == false)
     }
 
-    @Test("Prompt submitted with selections carries a bucketed count", arguments: [
+    @Test("Prompt submitted with selections carries a bucketed count", .timeLimit(.minutes(1)), arguments: [
         (1, "1"),
         (2, "2"),
         (3, "3-5"),
@@ -444,7 +444,7 @@ final class AIChatContextualModePixelHandlerTests {
         #expect(firedParameters == ["selection_count": expectedBucket])
     }
 
-    @Test("Prompt submitted with selections drops out-of-contract counts", arguments: [0, 6])
+    @Test("Prompt submitted with selections drops out-of-contract counts", .timeLimit(.minutes(1)), arguments: [0, 6])
     func prompt_submitted_with_selections_drops_out_of_contract_counts(count: Int) {
         var didFire = false
         let sut = AIChatContextualModePixelHandler(
@@ -457,7 +457,7 @@ final class AIChatContextualModePixelHandlerTests {
         #expect(!didFire)
     }
 
-    @Test("Parameterless selection pixels fire under their own names")
+    @Test("Parameterless selection pixels fire under their own names", .timeLimit(.minutes(1)))
     func parameterless_selection_pixels_fire_under_their_own_names() {
         var firedEventNames: [String] = []
         let sut = AIChatContextualModePixelHandler(firePixel: { firedEventNames.append($0.name) })

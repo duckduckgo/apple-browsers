@@ -319,9 +319,6 @@ final class AIChatContextualChatSessionState {
         rebuildViewState()
     }
 
-    /// Fired alongside, not instead of, the with/without-context pixels: those switch on page-context
-    /// chip state, which says nothing about attached selections. Must run before the selections are
-    /// consumed, or the count is always zero.
     private func fireSelectionsSubmittedPixelIfNeeded() {
         let unsubmittedSelections = attachedSelections.filter { !submittedSelectionIDs.contains($0.id) }
         guard !unsubmittedSelections.isEmpty else { return }
@@ -341,7 +338,6 @@ final class AIChatContextualChatSessionState {
     /// At the cap a further selection is refused rather than displacing one the user already collected.
     /// Returns whether it was attached, so the caller can say why nothing appeared.
     ///
-    /// The same passage from the same page is treated as already attached rather than added twice.
     @discardableResult
     func attachSelection(_ selection: AIChatSelectionContextData) -> Bool {
         guard !attachedSelections.contains(where: { $0.content == selection.content && $0.url == selection.url }) else {

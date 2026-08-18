@@ -59,7 +59,7 @@ struct DuckAISelectionJourneyInstrumentationTests {
         return (data, completion.1)
     }
 
-    @Test("First attachment starts one journey and later attachments update its bounded maximum")
+    @Test("First attachment starts one journey and later attachments update its bounded maximum", .timeLimit(.minutes(1)))
     func attachmentsStartAndUpdateJourney() {
         let context = makeSUT()
         let (sut, wideEvent) = (context.sut, context.wideEvent)
@@ -74,7 +74,7 @@ struct DuckAISelectionJourneyInstrumentationTests {
         #expect(data?.maxSelectionCount == 5)
     }
 
-    @Test("Dismissal keeps the journey open and a later prompt succeeds")
+    @Test("Dismissal keeps the journey open and a later prompt succeeds", .timeLimit(.minutes(1)))
     func dismissalThenPromptSubmission() throws {
         let context = makeSUT()
         let sut = context.sut
@@ -96,7 +96,7 @@ struct DuckAISelectionJourneyInstrumentationTests {
         #expect(completion.0.postDismissalSubmissionInterval.end != nil)
     }
 
-    @Test("Selection suggestion identifies the successful submission action")
+    @Test("Selection suggestion identifies the successful submission action", .timeLimit(.minutes(1)))
     func selectionSuggestionSubmission() throws {
         let context = makeSUT()
         let (sut, wideEvent) = (context.sut, context.wideEvent)
@@ -109,7 +109,7 @@ struct DuckAISelectionJourneyInstrumentationTests {
         #expect(completion.0.submissionAction == .translate)
     }
 
-    @Test("A non-selection suggestion clears a previously pending selection action")
+    @Test("A non-selection suggestion clears a previously pending selection action", .timeLimit(.minutes(1)))
     func nonSelectionSuggestionClearsPendingAction() throws {
         let context = makeSUT()
         let (sut, wideEvent) = (context.sut, context.wideEvent)
@@ -123,7 +123,7 @@ struct DuckAISelectionJourneyInstrumentationTests {
         #expect(completion.0.submissionAction == .prompt)
     }
 
-    @Test("Delivery timeout is retained while a later submission can still succeed")
+    @Test("Delivery timeout is retained while a later submission can still succeed", .timeLimit(.minutes(1)))
     func deliveryTimeoutThenSubmission() throws {
         let context = makeSUT()
         let (sut, wideEvent) = (context.sut, context.wideEvent)
@@ -139,7 +139,7 @@ struct DuckAISelectionJourneyInstrumentationTests {
         #expect(completion.0.submissionAction == .prompt)
     }
 
-    @Test("Removing the final unsubmitted selection explicitly abandons the journey")
+    @Test("Removing the final unsubmitted selection explicitly abandons the journey", .timeLimit(.minutes(1)))
     func removingLastSelectionFailsJourney() throws {
         let context = makeSUT()
         let (sut, wideEvent) = (context.sut, context.wideEvent)
@@ -153,7 +153,7 @@ struct DuckAISelectionJourneyInstrumentationTests {
         #expect(completion.0.terminalReason == .selectionsRemoved)
     }
 
-    @Test("Explicit clearing actions complete as conversion failures", arguments: [
+    @Test("Explicit clearing actions complete as conversion failures", .timeLimit(.minutes(1)), arguments: [
         DuckAISelectionJourneyWideEventData.TerminalReason.newChat,
         .chatCleared,
         .tabClosed,
@@ -170,7 +170,7 @@ struct DuckAISelectionJourneyInstrumentationTests {
         #expect(completion.0.terminalReason == reason)
     }
 
-    @Test("Persisted journeys from a previous process complete as unknown on initialization")
+    @Test("Persisted journeys from a previous process complete as unknown on initialization", .timeLimit(.minutes(1)))
     func orphanedJourneyCompletesUnknown() throws {
         let orphan = DuckAISelectionJourneyWideEventData(
             selectionCount: 1,
@@ -184,7 +184,7 @@ struct DuckAISelectionJourneyInstrumentationTests {
         #expect(completion.0.terminalReason == nil)
     }
 
-    @Test("Creating another tab instrumentation does not terminate a journey from this process")
+    @Test("Creating another tab instrumentation does not terminate a journey from this process", .timeLimit(.minutes(1)))
     func currentProcessJourneyIsResumed() throws {
         let active = DuckAISelectionJourneyWideEventData(selectionCount: 1, localScopeID: "test-scope")
         let context = makeSUT(seededFlows: [active])
@@ -197,7 +197,7 @@ struct DuckAISelectionJourneyInstrumentationTests {
         #expect(completion.0.globalData.id == active.globalData.id)
     }
 
-    @Test("Tab closure completes a persisted journey even when its controller was evicted")
+    @Test("Tab closure completes a persisted journey even when its controller was evicted", .timeLimit(.minutes(1)))
     func persistedJourneyCompletesOnTabClose() throws {
         let active = DuckAISelectionJourneyWideEventData(selectionCount: 1, localScopeID: "evicted-tab")
         let wideEvent = WideEventMock()
@@ -214,7 +214,7 @@ struct DuckAISelectionJourneyInstrumentationTests {
         #expect(completion.0.terminalReason == .tabClosed)
     }
 
-    @Test("Payload contains only closed and bucketed journey data")
+    @Test("Payload contains only closed and bucketed journey data", .timeLimit(.minutes(1)))
     func payloadIsBounded() throws {
         let context = makeSUT()
         let sut = context.sut
@@ -239,7 +239,7 @@ struct DuckAISelectionJourneyInstrumentationTests {
         #expect(parameters[WideEventParameter.DuckAISelectionJourneyFeature.sawSelectionSuggestions] as? Bool == true)
     }
 
-    @Test("Wide event metadata matches the registered schema")
+    @Test("Wide event metadata matches the registered schema", .timeLimit(.minutes(1)))
     func metadataMatchesSchema() {
         #expect(DuckAISelectionJourneyWideEventData.metadata.pixelName == "duckai_selection_journey")
         #expect(DuckAISelectionJourneyWideEventData.metadata.featureName == "duckai-selection-journey")
@@ -247,7 +247,7 @@ struct DuckAISelectionJourneyInstrumentationTests {
         #expect(DuckAISelectionJourneyWideEventData.metadata.version == "1.1.0")
     }
 
-    @Test("Only a flow from a previous process is eligible for launch cleanup")
+    @Test("Only a flow from a previous process is eligible for launch cleanup", .timeLimit(.minutes(1)))
     func launchCleanupDecision() async {
         let current = DuckAISelectionJourneyWideEventData(selectionCount: 1, localScopeID: "current")
         let previous = DuckAISelectionJourneyWideEventData(

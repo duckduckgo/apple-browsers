@@ -462,8 +462,6 @@ final class AIChatContextualSheetCoordinator {
         if action.attachesSelection {
             let selectionCountBeforeAttach = sessionState.attachedSelections.count
             didHitCap = !sessionState.attachSelection(selection)
-            // Reported per *attach*, matching macOS's `aichat_attach_selection`, so a refusal at the cap
-            // isn't counted as one.
             if didHitCap {
                 pixelHandler.fireSelectionLimitReached()
             } else if sessionState.attachedSelections.count > selectionCountBeforeAttach {

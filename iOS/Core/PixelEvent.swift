@@ -1870,7 +1870,6 @@ extension Pixel {
         case aiChatContextualRecentChatSelected
         case aiChatContextualViewAllChatsTapped
 
-        // Text selections attached to Duck.ai.
         case aiChatContextualSelectionAttached
         case aiChatContextualSelectionLimitReached
         case aiChatContextualSelectionRemoved

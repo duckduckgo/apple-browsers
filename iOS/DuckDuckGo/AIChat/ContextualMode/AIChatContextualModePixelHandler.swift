@@ -24,8 +24,6 @@ import Foundation
 protocol AIChatContextualModePixelFiring {
     // MARK: - Sheet Lifecycle
     func fireSheetOpened()
-    /// `hadUnsubmittedSelections` answers how often people collect text and then walk away without
-    /// asking anything — the one dead end in the selection flow that leaves no other trace.
     func fireSheetDismissed(hadUnsubmittedSelections: Bool)
     func fireSessionRestored()
 
@@ -70,17 +68,10 @@ protocol AIChatContextualModePixelFiring {
     func firePageContextRemovedFrontend()
 
     // MARK: - Text Selections
-    /// Fired once per selection actually attached. A refusal at the cap is reported separately.
     func fireSelectionAttached()
     func fireSelectionLimitReached()
     func fireSelectionRemoved()
-    /// Closes the Ask funnel: how much collected text actually reaches a submitted question, and
-    /// whether multi-selection sessions — the point of the 5-cap and cross-navigation persistence —
-    /// happen at all. Distinct from the with/without-context pixels, which describe page context only
-    /// and are blind to selections.
     func firePromptSubmittedWithSelections(count: Int)
-    /// The readiness wait dropped a selection-scoped Summarize or Translate prompt, so the user is
-    /// looking at an empty chat with no error. Genuine timeouts only, never cancellation.
     func fireSelectionToolDeliveryTimedOut()
 
     // MARK: - Page Context Collection

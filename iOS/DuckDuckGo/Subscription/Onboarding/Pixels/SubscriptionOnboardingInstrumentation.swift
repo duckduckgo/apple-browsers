@@ -41,7 +41,7 @@ extension SubscriptionOnboardingSection {
         case .orderConfirmation: "intro"
         case .welcome: "features_summary"
         case .vpnActivation: "vpn"
-        case .vpnWidget: "vpn_widget"
+        case .vpnWidget, .vpnTips: "vpn_widget"
         case .idtr: "idtr"
         case .duckAI: "duck_ai"
         case .progress: "completion"

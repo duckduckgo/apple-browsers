@@ -182,7 +182,7 @@ final class SubscriptionOnboardingFlowViewModel: ObservableObject {
 
     /// The "Step X of N" indicator counted over this customer's checklist
     func title(for section: SubscriptionOnboardingSection) -> String? {
-        guard case .activation(let item) = section.kind,
+        guard let item = Self.activationItem(for: section),
               let step = progress.checklist.firstIndex(of: item) else { return nil }
         return String(format: UserText.subscriptionOnboardingStepIndicatorFormat,
                       step + 1,
@@ -200,13 +200,21 @@ final class SubscriptionOnboardingFlowViewModel: ObservableObject {
 
 private extension SubscriptionOnboardingFlowViewModel {
 
+    /// The checklist item that gates a section. `.vpnTips` piggybacks on `.vpnWidget`'s
+    /// since it's a required companion screen to the widget step.
+    static func activationItem(for section: SubscriptionOnboardingSection) -> SubscriptionOnboardingChecklistItem? {
+        if section == .vpnTips { return .vpnWidget }
+        guard case .activation(let item) = section.kind else { return nil }
+        return item
+    }
+
     /// Entitled sections not yet completed. Shared by both entry points: an item can already be complete
     /// before this run starts via an out-of-flow signal
     static func unfinishedEntitledSections(checklist: [SubscriptionOnboardingChecklistItem],
                                            completedItems: Set<SubscriptionOnboardingChecklistItem>)
     -> [SubscriptionOnboardingSection] {
         SubscriptionOnboardingSection.activationSections.compactMap { section in
-            guard case .activation(let item) = section.kind,
+            guard let item = activationItem(for: section),
                   checklist.contains(item),
                   !completedItems.contains(item) else { return nil }
             return section
@@ -238,6 +246,8 @@ extension SubscriptionOnboardingFlowViewModel: SubscriptionOnboardingSectionDele
             guard !progress.completedItems.contains(item) else { return }
             progress.markComplete(item)
         }
+        // `.vpnTips` completes nothing of its own
+        guard section != .vpnTips else { return }
         instrumentation.stepCompleted(section)
     }
 

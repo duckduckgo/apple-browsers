@@ -74,6 +74,7 @@ final class IPadOmnibarReasoningPickerController {
             model: model,
             selectedMode: currentReasoningMode,
             userTier: store.subscriptionState.userTier,
+            freeTrialEligibility: store.freeTrialEligibility,
             onSelect: onSelect
         )
     }

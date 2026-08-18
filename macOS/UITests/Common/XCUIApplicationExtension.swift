@@ -110,6 +110,9 @@ extension XCUIApplication {
         static let fireButton = "TabBarViewController.fireButton"
         static let fakeFireButton = "FireViewController.fakeFireButton"
         static let homeButton = "NavigationBarViewController.HomeButton"
+
+        static let fireDialogMoreOptionsMenuButton = "FireDialogView.toolbarMoreButton"
+        static let fireDialogManageFireproofSites = "FireDialogView.moreOptions.manageFireproofSites"
     }
 
     static func setUp(environment: [String: String]? = nil,
@@ -863,6 +866,14 @@ extension XCUIApplication {
 
     var fireDialogBurnButton: XCUIElement {
         buttons[AccessibilityIdentifiers.fireDialogBurnButton]
+    }
+
+    var fireDialogMoreOptionsMenuButton: XCUIElement {
+        menuButtons[AccessibilityIdentifiers.fireDialogMoreOptionsMenuButton]
+    }
+
+    var fireDialogManageFireproofSitesMenuItem: XCUIElement {
+        menuItems[AccessibilityIdentifiers.fireDialogManageFireproofSites]
     }
 
     var fireproofDomainsAddButton: XCUIElement {

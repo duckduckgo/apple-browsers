@@ -23,7 +23,7 @@ final class FireDialogGeneralUITests: UITestCase, FireDialogUITests {
 
     override func setUp() {
         super.setUp()
-        setUpFireDialogUITests(featureFlags: ["fireDialogSimplified": false])
+        setUpFireDialogUITests()
     }
 
     func test_fireDialog_clearsHistoryWhenBurnButtonPressed() throws {
@@ -54,8 +54,13 @@ final class FireDialogGeneralUITests: UITestCase, FireDialogUITests {
         app.clearAllHistoryMenuItem.click()
         XCTAssertTrue(fireDialogTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Fire dialog should open")
 
-        // Select "Everything" scope (All data)
-        app.fireDialogSegmentedControl.buttons["Everything"].click()
+        // Select "All data" scope
+        app.fireDialogSegmentedControl.buttons["All data"].click()
+
+        // Expand Dialog details
+        if (fireDialogDetailsDisclosureButton.value as? String) != "expanded" {
+            fireDialogDetailsDisclosureButton.click()
+        }
 
         // Disable tabs toggle (to not close windows), enable history and cookies
         fireDialogTabsToggle.toggleCheckboxIfNeeded(to: false, validate: true, ensureHittable: { _ in })
@@ -93,8 +98,13 @@ final class FireDialogGeneralUITests: UITestCase, FireDialogUITests {
         app.typeKey(.delete, modifierFlags: [.command, .shift])
         XCTAssertTrue(fireDialogTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Fire dialog should open")
 
-        // Select "Everything" scope (All data)
-        app.fireDialogSegmentedControl.buttons["Everything"].click()
+        // Select "All data" scope
+        app.fireDialogSegmentedControl.buttons["All data"].click()
+
+        // Expand Dialog details
+        if (fireDialogDetailsDisclosureButton.value as? String) != "expanded" {
+            fireDialogDetailsDisclosureButton.click()
+        }
 
         // Burn with all toggles enabled
         fireDialogTabsToggle.toggleCheckboxIfNeeded(to: true, validate: true, ensureHittable: { _ in })
@@ -119,8 +129,13 @@ final class FireDialogGeneralUITests: UITestCase, FireDialogUITests {
         app.typeKey(.delete, modifierFlags: [.command, .shift])
         XCTAssertTrue(fireDialogTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Fire dialog should open")
 
-        // Select "Everything" scope (All data)
-        app.fireDialogSegmentedControl.buttons["Everything"].click()
+        // Select "All data" scope
+        app.fireDialogSegmentedControl.buttons["All data"].click()
+
+        // Expand Dialog details
+        if (fireDialogDetailsDisclosureButton.value as? String) != "expanded" {
+            fireDialogDetailsDisclosureButton.click()
+        }
 
         // Burn with all toggles enabled
         fireDialogTabsToggle.toggleCheckboxIfNeeded(to: true, validate: true, ensureHittable: { _ in })
@@ -148,8 +163,13 @@ final class FireDialogGeneralUITests: UITestCase, FireDialogUITests {
         app.fireButton.click()
         XCTAssertTrue(fireDialogTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Fire dialog should open")
 
-        // Select "Everything" scope (All data)
-        app.fireDialogSegmentedControl.buttons["Everything"].click()
+        // Select "All data" scope
+        app.fireDialogSegmentedControl.buttons["All data"].click()
+
+        // Expand Dialog details
+        if (fireDialogDetailsDisclosureButton.value as? String) != "expanded" {
+            fireDialogDetailsDisclosureButton.click()
+        }
 
         fireDialogTabsToggle.toggleCheckboxIfNeeded(to: true, validate: true, ensureHittable: { _ in })
         fireDialogHistoryToggle.toggleCheckboxIfNeeded(to: true, validate: true, ensureHittable: { _ in })
@@ -179,8 +199,13 @@ final class FireDialogGeneralUITests: UITestCase, FireDialogUITests {
         app.fireButton.click()
         XCTAssertTrue(fireDialogTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Fire dialog should open")
 
-        // Select "Everything" scope (All data)
-        app.fireDialogSegmentedControl.buttons["Everything"].click()
+        // Select "All data" scope
+        app.fireDialogSegmentedControl.buttons["All data"].click()
+
+        // Expand Dialog details
+        if (fireDialogDetailsDisclosureButton.value as? String) != "expanded" {
+            fireDialogDetailsDisclosureButton.click()
+        }
 
         // Enable all toggles
         fireDialogTabsToggle.toggleCheckboxIfNeeded(to: true, validate: true, ensureHittable: { _ in })
@@ -241,8 +266,13 @@ final class FireDialogGeneralUITests: UITestCase, FireDialogUITests {
         app.clearAllHistoryMenuItem.click()
         XCTAssertTrue(fireDialogTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Fire dialog should open")
 
-        // Select "Everything" scope (All data)
-        app.fireDialogSegmentedControl.buttons["Everything"].click()
+        // Select "All data" scope
+        app.fireDialogSegmentedControl.buttons["All data"].click()
+
+        // Expand Dialog details
+        if (fireDialogDetailsDisclosureButton.value as? String) != "expanded" {
+            fireDialogDetailsDisclosureButton.click()
+        }
 
         // Enable tabs/cookies, disable history toggle
         fireDialogTabsToggle.toggleCheckboxIfNeeded(to: true, validate: true, ensureHittable: { _ in })
@@ -313,8 +343,13 @@ final class FireDialogGeneralUITests: UITestCase, FireDialogUITests {
         app.clearAllHistoryMenuItem.click()
         XCTAssertTrue(fireDialogTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Fire dialog should open")
 
-        // Select "Everything" scope (All data)
-        app.fireDialogSegmentedControl.buttons["Everything"].click()
+        // Select "All data" scope
+        app.fireDialogSegmentedControl.buttons["All data"].click()
+
+        // Expand Dialog details
+        if (fireDialogDetailsDisclosureButton.value as? String) != "expanded" {
+            fireDialogDetailsDisclosureButton.click()
+        }
 
         // Disable tabs and cookies, enable history only
         fireDialogTabsToggle.toggleCheckboxIfNeeded(to: false, validate: true, ensureHittable: { _ in })
@@ -368,8 +403,13 @@ final class FireDialogGeneralUITests: UITestCase, FireDialogUITests {
         app.typeKey(.delete, modifierFlags: [.command, .shift])
         XCTAssertTrue(fireDialogTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Fire dialog should open")
 
-        // Select "Everything" scope (All data)
-        app.fireDialogSegmentedControl.buttons["Everything"].click()
+        // Select "All data" scope
+        app.fireDialogSegmentedControl.buttons["All data"].click()
+
+        // Expand Dialog details
+        if (fireDialogDetailsDisclosureButton.value as? String) != "expanded" {
+            fireDialogDetailsDisclosureButton.click()
+        }
 
         // Disable tabs and history, enable cookies only
         fireDialogTabsToggle.toggleCheckboxIfNeeded(to: false, validate: true, ensureHittable: { _ in })
@@ -427,8 +467,13 @@ final class FireDialogGeneralUITests: UITestCase, FireDialogUITests {
         app.fireButton.click()
         XCTAssertTrue(fireDialogTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Fire dialog should open")
 
-        // Select "Everything" scope (All data)
-        app.fireDialogSegmentedControl.buttons["Everything"].click()
+        // Select "All data" scope
+        app.fireDialogSegmentedControl.buttons["All data"].click()
+
+        // Expand Dialog details
+        if (fireDialogDetailsDisclosureButton.value as? String) != "expanded" {
+            fireDialogDetailsDisclosureButton.click()
+        }
 
         // Enable tabs only, disable history and cookies
         fireDialogTabsToggle.toggleCheckboxIfNeeded(to: true, validate: true, ensureHittable: { _ in })
@@ -475,7 +520,12 @@ final class FireDialogGeneralUITests: UITestCase, FireDialogUITests {
         XCTAssertTrue(fireDialogTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Fire dialog should open")
 
         // Test "Tab" scope with tabs toggle
-        app.fireDialogSegmentedControl.buttons["Tab"].click()
+        app.fireDialogSegmentedControl.buttons["From this tab"].click()
+
+        // Expand Dialog details
+        if (fireDialogDetailsDisclosureButton.value as? String) != "expanded" {
+            fireDialogDetailsDisclosureButton.click()
+        }
 
         // Disable all toggles
         fireDialogTabsToggle.toggleCheckboxIfNeeded(to: false, validate: true, ensureHittable: { _ in })
@@ -491,25 +541,13 @@ final class FireDialogGeneralUITests: UITestCase, FireDialogUITests {
         fireDialogTabsToggle.toggleCheckboxIfNeeded(to: false, validate: true, ensureHittable: { _ in })
         XCTAssertFalse(fireDialogBurnButton.isEnabled, "Burn button should be disabled when tabs toggle is off in Tab scope")
 
-        // Test "Window" scope with history toggle
-        app.fireDialogSegmentedControl.buttons["Window"].click()
+        // Test "All data" scope with cookies toggle
+        app.fireDialogSegmentedControl.buttons["All data"].click()
 
-        // Disable all toggles
-        fireDialogTabsToggle.toggleCheckboxIfNeeded(to: false, validate: true, ensureHittable: { _ in })
-        fireDialogHistoryToggle.toggleCheckboxIfNeeded(to: false, validate: true, ensureHittable: { _ in })
-        fireDialogCookiesToggle.toggleCheckboxIfNeeded(to: false, validate: true, ensureHittable: { _ in })
-
-        // Verify burn button is still disabled (all toggles off)
-        XCTAssertFalse(fireDialogBurnButton.isEnabled, "Burn button should be disabled when all toggles are off in Window scope")
-
-        // Test history toggle (2nd toggle)
-        fireDialogHistoryToggle.toggleCheckboxIfNeeded(to: true, validate: true, ensureHittable: { _ in })
-        XCTAssertTrue(fireDialogBurnButton.isEnabled, "Burn button should be enabled when history toggle is on in Window scope")
-        fireDialogHistoryToggle.toggleCheckboxIfNeeded(to: false, validate: true, ensureHittable: { _ in })
-        XCTAssertFalse(fireDialogBurnButton.isEnabled, "Burn button should be disabled when history toggle is off in Window scope")
-
-        // Test "Everything" scope with cookies toggle
-        app.fireDialogSegmentedControl.buttons["Everything"].click()
+        // Expand Dialog details
+        if (fireDialogDetailsDisclosureButton.value as? String) != "expanded" {
+            fireDialogDetailsDisclosureButton.click()
+        }
 
         // Disable all toggles
         fireDialogTabsToggle.toggleCheckboxIfNeeded(to: false, validate: true, ensureHittable: { _ in })

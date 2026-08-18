@@ -30,6 +30,13 @@ on:
         type: boolean
         required: false
         default: true
+  # TEMPORARY: this workflow is not on the default branch yet, so it cannot be
+  # dispatched. Scoped to this branch and this file. Remove after the run.
+  push:
+    branches:
+      - diego/crossbench-ddg-ci
+    paths:
+      - .github/workflows/macos_ddg_lcp.yml
   schedule:
     - cron: "41 4 * * *"
 
@@ -72,7 +79,7 @@ jobs:
   validate-wpr:
     uses: ./.github/workflows/wpr_archive_validation.yml
     with:
-      sites: ${{ inputs.sites }}
+      sites: ${{ inputs.sites || 'wikipedia.org' }}  # TEMPORARY default
       alert-asana: ${{ github.event_name != 'workflow_dispatch' || inputs.alert-asana }}
     secrets:
       ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
@@ -188,8 +195,8 @@ jobs:
 
       - name: Run DuckDuckGo LCP suite
         env:
-          SITES: ${{ inputs.sites }}
-          REPS: ${{ inputs.reps || '10' }}
+          SITES: ${{ inputs.sites || 'wikipedia.org' }}  # TEMPORARY default
+          REPS: ${{ inputs.reps || '2' }}  # TEMPORARY, normally 10
           WPR_DIR: ${{ runner.temp }}/wpr-archives
           WPR_ARCHIVES_PREPARED: "1"
           DIAGNOSTICS_DIR: ${{ github.workspace }}/macOS/scripts/crossbench/ddg-diagnostics

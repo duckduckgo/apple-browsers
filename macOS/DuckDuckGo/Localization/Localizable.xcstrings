@@ -45315,14 +45315,14 @@
             "plural" : {
               "few" : {
                 "stringUnit" : {
-                  "state" : "new",
-                  "value" : "%d chats"
+                  "state" : "translated",
+                  "value" : "%d чата"
                 }
               },
               "many" : {
                 "stringUnit" : {
-                  "state" : "new",
-                  "value" : "%d chats"
+                  "state" : "translated",
+                  "value" : "%d чатов"
                 }
               },
               "one" : {
@@ -46536,7 +46536,7 @@
                   "few" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg сайтов"
+                      "value" : "%arg сайта"
                     }
                   },
                   "many" : {
@@ -46728,14 +46728,14 @@
             "plural" : {
               "few" : {
                 "stringUnit" : {
-                  "state" : "new",
-                  "value" : "%d sites"
+                  "state" : "translated",
+                  "value" : "%d сайтов"
                 }
               },
               "many" : {
                 "stringUnit" : {
-                  "state" : "new",
-                  "value" : "%d sites"
+                  "state" : "translated",
+                  "value" : "%d сайтов"
                 }
               },
               "one" : {
@@ -74144,8 +74144,8 @@
                 "plural" : {
                   "few" : {
                     "stringUnit" : {
-                      "state" : "new",
-                      "value" : "%arg Trackers Blocked"
+                      "state" : "translated",
+                      "value" : "%arg zablokowane mechanizmy śledzące"
                     }
                   },
                   "many" : {
@@ -74218,8 +74218,8 @@
                 "plural" : {
                   "few" : {
                     "stringUnit" : {
-                      "state" : "new",
-                      "value" : "%arg Trackers Blocked"
+                      "state" : "translated",
+                      "value" : "Заблокировано трекеров: %arg"
                     }
                   },
                   "many" : {

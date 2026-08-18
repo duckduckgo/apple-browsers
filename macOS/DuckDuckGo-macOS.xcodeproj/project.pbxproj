@@ -3490,7 +3490,9 @@
 		B6B5F57F2B024105008DB58A /* DataImportSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6B5F57E2B024105008DB58A /* DataImportSummaryView.swift */; };
 		B6B5F5802B024105008DB58A /* DataImportSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6B5F57E2B024105008DB58A /* DataImportSummaryView.swift */; };
 		B6B5F5842B03580A008DB58A /* RequestFilePermissionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6B5F5832B03580A008DB58A /* RequestFilePermissionView.swift */; };
+		DD27DA7D0000000000000001 /* RequestDirectoryReadPermissionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD27DA7D0000000000000002 /* RequestDirectoryReadPermissionView.swift */; };
 		B6B5F5852B03580A008DB58A /* RequestFilePermissionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6B5F5832B03580A008DB58A /* RequestFilePermissionView.swift */; };
+		DD27DA7D0000000000000003 /* RequestDirectoryReadPermissionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD27DA7D0000000000000002 /* RequestDirectoryReadPermissionView.swift */; };
 		B6B5F5892B03673B008DB58A /* BrowserImportMoreInfoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6B5F5882B03673B008DB58A /* BrowserImportMoreInfoView.swift */; };
 		B6B5F58A2B03673B008DB58A /* BrowserImportMoreInfoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6B5F5882B03673B008DB58A /* BrowserImportMoreInfoView.swift */; };
 		B6B71C582B23379600487131 /* NSLayoutConstraintExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6B71C572B23379600487131 /* NSLayoutConstraintExtension.swift */; };
@@ -6725,6 +6727,7 @@
 		B6B4D1CE2B0E0DD000C26286 /* DataImportNoDataView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataImportNoDataView.swift; sourceTree = "<group>"; };
 		B6B5F57E2B024105008DB58A /* DataImportSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataImportSummaryView.swift; sourceTree = "<group>"; };
 		B6B5F5832B03580A008DB58A /* RequestFilePermissionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestFilePermissionView.swift; sourceTree = "<group>"; };
+		DD27DA7D0000000000000002 /* RequestDirectoryReadPermissionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestDirectoryReadPermissionView.swift; sourceTree = "<group>"; };
 		B6B5F5882B03673B008DB58A /* BrowserImportMoreInfoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserImportMoreInfoView.swift; sourceTree = "<group>"; };
 		B6B71C572B23379600487131 /* NSLayoutConstraintExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSLayoutConstraintExtension.swift; sourceTree = "<group>"; };
 		B6BBF16F2744CDE1004F850E /* CoreDataStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreDataStoreTests.swift; sourceTree = "<group>"; };
@@ -9437,6 +9440,7 @@
 				B6B4D1CE2B0E0DD000C26286 /* DataImportNoDataView.swift */,
 				4B8AC93426B3B2FD00879451 /* NSAlert+DataImport.swift */,
 				B6B5F5832B03580A008DB58A /* RequestFilePermissionView.swift */,
+				DD27DA7D0000000000000002 /* RequestDirectoryReadPermissionView.swift */,
 				B677FC4E2B06376B0099EB04 /* ReportFeedbackView.swift */,
 				C16127ED2BDFB46400966BB9 /* DataImportShortcutsView.swift */,
 			);
@@ -16655,6 +16659,7 @@
 				EE3ED86E2E561B770026B962 /* DismissableSyncDeviceButtonModel.swift in Sources */,
 				BBDA795D2EE0BB69003B1C70 /* ReinstallUserDetectionDebugMenu.swift in Sources */,
 				B6B5F5852B03580A008DB58A /* RequestFilePermissionView.swift in Sources */,
+				DD27DA7D0000000000000003 /* RequestDirectoryReadPermissionView.swift in Sources */,
 				8400DC4F2C6E2770006509D2 /* SteppedScrollView.swift in Sources */,
 				3706FC60293F65D500E42796 /* TabBarCollectionView.swift in Sources */,
 				3706FC61293F65D500E42796 /* NSAlertExtension.swift in Sources */,
@@ -18501,6 +18506,7 @@
 				B6BCC53B2AFD15DF002C5499 /* DataImportProfilePicker.swift in Sources */,
 				3158B1562B0BF75D00AF130C /* DataBrokerProtectionFeatureGatekeeper.swift in Sources */,
 				B6B5F5842B03580A008DB58A /* RequestFilePermissionView.swift in Sources */,
+				DD27DA7D0000000000000001 /* RequestDirectoryReadPermissionView.swift in Sources */,
 				B5CCC0702F649BB9003EB0A2 /* TabBackgroundShapeView.swift in Sources */,
 				B55D8E5E2EE77688009083D9 /* BundleExtension.swift in Sources */,
 				37E307AB2D0745DB00599500 /* PrivacyStatsErrorHandler.swift in Sources */,

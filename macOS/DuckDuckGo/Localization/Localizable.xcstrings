@@ -57215,6 +57215,42 @@
         }
       }
     },
+    "import.access-required.button" : {
+      "comment" : "Button opening the folder picker used to grant DuckDuckGo access to another browser's data folder (%1$@ is the browser name)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Select %1$@ Data"
+          }
+        }
+      }
+    },
+    "import.access-required.description" : {
+      "comment" : "Instructions on the screen asking the user to grant DuckDuckGo access to another browser's data folder (%1$@ is the browser name). Markdown bold marks the two buttons to click.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Click **Select %1$@ Data** and then select **Grant Access** when the file picker appears."
+          }
+        }
+      }
+    },
+    "import.access-required.title" : {
+      "comment" : "Title of the screen asking the user to grant DuckDuckGo access to another browser's data folder (%1$@ is the browser name)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "DuckDuckGo needs access to your %1$@ data to finish importing."
+          }
+        }
+      }
+    },
     "import.bookmarks.bookmarks" : {
       "comment" : "Title text for the Bookmarks import option",
       "extractionState" : "extracted_with_value",

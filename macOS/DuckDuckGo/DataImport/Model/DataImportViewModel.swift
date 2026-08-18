@@ -968,7 +968,11 @@ extension DataImportViewModel {
             goBack()
 
         case .initiateImport, .continue:
-            importButtonPressed()
+            if selectedProfile?.requiresDirectoryAccessPermission == true {
+                showDirectoryReadPermissionScreen()
+            } else {
+                importButtonPressed()
+            }
 
         case .selectFile:
             selectFile()
@@ -993,6 +997,12 @@ extension DataImportViewModel {
         case .sync:
             launchSync(using: dismiss)
         }
+    }
+
+    @MainActor mutating func showDirectoryReadPermissionScreen() {
+        guard let selectedProfile else { return }
+
+        screen = .getDirectoryReadPermission(selectedProfile.profileURL)
     }
 
     @MainActor

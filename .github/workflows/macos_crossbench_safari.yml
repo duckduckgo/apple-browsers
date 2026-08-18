@@ -33,13 +33,6 @@ on:
         type: boolean
         required: false
         default: true
-  # TEMPORARY: triggers the diagnostic below on this branch only, and only
-  # when this file changes. Remove with the diagnostic step.
-  push:
-    branches:
-      - diego/crossbench-ddg-ci
-    paths:
-      - .github/workflows/macos_crossbench_safari.yml
   schedule:
     # Scheduled workflows run only from the default branch. Blank sites use the
     # full list, and the upload job below sends scheduled results to ClickHouse.
@@ -64,36 +57,6 @@ defaults:
     working-directory: macOS/scripts/crossbench
 
 jobs:
-  # TEMPORARY: the hosted-runner baseline for the same probe, so the SIP and
-  # TCC state can be read next to the write result on both runners. Remove with
-  # the self-hosted diagnostic step and the push trigger.
-  diagnose-hosted:
-    name: Diagnose Safari prefs write (hosted)
-    runs-on: macos-latest
-    timeout-minutes: 10
-    # No checkout here, so the workflow-level working-directory does not exist.
-    defaults:
-      run:
-        working-directory: .
-    steps:
-      - name: Print macOS version
-        run: sw_vers
-
-      - name: Diagnose Safari prefs write
-        continue-on-error: true
-        run: |
-          id
-          echo "managername: $(launchctl managername 2>&1)"
-          echo "csrutil: $(csrutil status 2>&1)"
-          ls -lad ~/Library/Containers/com.apple.Safari 2>&1 || echo "NO CONTAINER"
-          ls -la ~/Library/Containers/com.apple.Safari/Data/Library/Preferences/ 2>&1 | head -20
-          defaults write com.apple.Safari ProxyProbe -string probe 2>&1 || echo "WRITE FAILED"
-          defaults read com.apple.Safari ProxyProbe 2>&1 || echo "READ FAILED"
-          sudo defaults write com.apple.Safari SudoProbe -string probe 2>&1 || echo "SUDO WRITE FAILED"
-          sudo defaults read com.apple.Safari SudoProbe 2>&1 || echo "SUDO READ FAILED"
-          defaults delete com.apple.Safari ProxyProbe 2>&1 || true
-          sudo defaults delete com.apple.Safari SudoProbe 2>&1 || true
-
   validate-wpr:
     uses: ./.github/workflows/wpr_archive_validation.yml
     with:
@@ -120,48 +83,6 @@ jobs:
 
       - name: Print macOS version
         run: sw_vers
-
-      - name: Diagnose Safari prefs write (self-hosted)
-        # TEMPORARY: compare against the diagnose-hosted job below. Remove both.
-        continue-on-error: true
-        run: |
-          id
-          echo "managername: $(launchctl managername 2>&1)"
-          echo "csrutil: $(csrutil status 2>&1)"
-          ls -lad ~/Library/Containers/com.apple.Safari 2>&1 || echo "NO CONTAINER"
-          ls -la ~/Library/Containers/com.apple.Safari/Data/Library/Preferences/ 2>&1 | head -20
-          defaults write com.apple.Safari ProxyProbe -string probe 2>&1 || echo "WRITE FAILED"
-          defaults read com.apple.Safari ProxyProbe 2>&1 || echo "READ FAILED"
-          sudo defaults write com.apple.Safari SudoProbe -string probe 2>&1 || echo "SUDO WRITE FAILED"
-          sudo defaults read com.apple.Safari SudoProbe 2>&1 || echo "SUDO READ FAILED"
-          defaults delete com.apple.Safari ProxyProbe 2>&1 || true
-          sudo defaults delete com.apple.Safari SudoProbe 2>&1 || true
-
-      - name: Probe a root write by absolute plist path (self-hosted)
-        # TEMPORARY: a bare domain name resolves against the calling user's
-        # preferences, so the earlier sudo write may have landed in root's own
-        # domain rather than this container. Addressing the plist by path
-        # removes that ambiguity. Restores the prior owner, and removes the file
-        # again if the write created it. Remove with the other diagnostics.
-        continue-on-error: true
-        run: |
-          P="$HOME/Library/Containers/com.apple.Safari/Data/Library/Preferences/com.apple.Safari"
-          D="$(dirname "$P")"
-          before="$(sudo stat -f '%Su:%Sg' "$P.plist" 2>/dev/null || echo NONE)"
-          echo "owner before: $before"
-          sudo ls -la "$D" 2>&1 | head -10
-          sudo defaults write "$P" ProxyProbe -string probe 2>&1 || echo "ROOT PATH WRITE FAILED"
-          sudo defaults read "$P" ProxyProbe 2>&1 || echo "ROOT PATH READ FAILED"
-          echo "owner after: $(sudo stat -f '%Su:%Sg' "$P.plist" 2>/dev/null || echo NONE)"
-          sudo defaults delete "$P" ProxyProbe 2>&1 || true
-          if [ "$before" = "NONE" ]; then
-            sudo rm -f "$P.plist"
-            echo "removed the plist this probe created"
-          else
-            sudo chown "$before" "$P.plist" 2>&1 || true
-          fi
-          echo "--- restored ---"
-          sudo ls -la "$D" 2>&1 | head -10
 
       - name: Download validated WPR archives
         uses: actions/download-artifact@v7

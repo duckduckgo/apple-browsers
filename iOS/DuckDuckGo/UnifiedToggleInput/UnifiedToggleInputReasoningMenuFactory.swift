@@ -33,10 +33,16 @@ struct UnifiedToggleInputReasoningMenuFactory {
         model: AIChatModel,
         selectedMode: AIChatReasoningMode?,
         userTier: AIChatUserTier,
+        freeTrialEligibility: FreeTrialEligibility = .unknown,
         onSelect: @escaping (AIChatReasoningMode) -> Void
     ) -> UIMenu? {
         if isUpdatedModelPickerEnabled {
-            return makeUpdatedMenu(model: model, selectedMode: selectedMode, userTier: userTier, onSelect: onSelect)
+            return makeUpdatedMenu(
+                model: model,
+                selectedMode: selectedMode,
+                userTier: userTier,
+                freeTrialEligibility: freeTrialEligibility,
+                onSelect: onSelect)
         }
 
         return makeLegacyMenu(model: model, selectedMode: selectedMode, onSelect: onSelect)
@@ -67,6 +73,7 @@ struct UnifiedToggleInputReasoningMenuFactory {
         model: AIChatModel,
         selectedMode: AIChatReasoningMode?,
         userTier: AIChatUserTier,
+        freeTrialEligibility: FreeTrialEligibility,
         onSelect: @escaping (AIChatReasoningMode) -> Void
     ) -> UIMenu? {
         guard model.supportsReasoningPicker else { return nil }
@@ -81,7 +88,9 @@ struct UnifiedToggleInputReasoningMenuFactory {
             let gatedActions = gatedModes.map { mode in
                 makeUpdatedAction(mode: mode, selectedMode: selectedMode, isGated: true, onSelect: onSelect)
             }
-            let gatedSectionTitle = userTier == .plus ? UserText.aiChatModelPickerProPlanExclusive : UserText.aiChatModelPickerTryFree
+            let gatedSectionTitle = UnifiedToggleInputGatedSectionTitleResolver.title(
+                for: userTier,
+                freeTrialEligibility: freeTrialEligibility)
             children.append(UIMenu(title: gatedSectionTitle, options: .displayInline, children: gatedActions))
         }
 

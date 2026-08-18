@@ -91,6 +91,7 @@ final class IPadOmnibarModelPickerController {
             models: store.models,
             selectedId: store.persistedModelId,
             userTier: store.subscriptionState.userTier,
+            freeTrialEligibility: store.freeTrialEligibility,
             onSelect: onSelect
         )
     }

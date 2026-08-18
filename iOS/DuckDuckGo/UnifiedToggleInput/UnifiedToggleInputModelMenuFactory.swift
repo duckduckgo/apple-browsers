@@ -21,6 +21,18 @@ import AIChat
 import DesignResourcesKitIcons
 import UIKit
 
+enum UnifiedToggleInputGatedSectionTitleResolver {
+    static func title(for userTier: AIChatUserTier, freeTrialEligibility: FreeTrialEligibility) -> String {
+        if userTier == .plus {
+            return UserText.aiChatModelPickerProPlanExclusive
+        }
+        if freeTrialEligibility == .ineligible {
+            return UserText.aiChatModelPickerSubscriberExclusive
+        }
+        return UserText.aiChatModelPickerTryFree
+    }
+}
+
 struct UnifiedToggleInputModelMenuFactory {
 
     private let isUpdatedModelPickerEnabled: Bool
@@ -33,10 +45,16 @@ struct UnifiedToggleInputModelMenuFactory {
         models: [AIChatModel],
         selectedId: String?,
         userTier: AIChatUserTier,
+        freeTrialEligibility: FreeTrialEligibility = .unknown,
         onSelect: @escaping (String) -> Void
     ) -> UIMenu {
         if isUpdatedModelPickerEnabled {
-            return makeUpdatedMenu(models: models, selectedId: selectedId, userTier: userTier, onSelect: onSelect)
+            return makeUpdatedMenu(
+                models: models,
+                selectedId: selectedId,
+                userTier: userTier,
+                freeTrialEligibility: freeTrialEligibility,
+                onSelect: onSelect)
         }
 
         return makeLegacyMenu(models: models, selectedId: selectedId, onSelect: onSelect)
@@ -84,6 +102,7 @@ struct UnifiedToggleInputModelMenuFactory {
         models: [AIChatModel],
         selectedId: String?,
         userTier: AIChatUserTier,
+        freeTrialEligibility: FreeTrialEligibility,
         onSelect: @escaping (String) -> Void
     ) -> UIMenu {
         let groupedModels = AIChatModelSectionBuilder.groupByAccess(models: models)
@@ -107,7 +126,9 @@ struct UnifiedToggleInputModelMenuFactory {
                     onSelect: onSelect
                 )
             }
-            let gatedSectionTitle = userTier == .plus ? UserText.aiChatModelPickerProPlanExclusive : UserText.aiChatModelPickerTryFree
+            let gatedSectionTitle = UnifiedToggleInputGatedSectionTitleResolver.title(
+                for: userTier,
+                freeTrialEligibility: freeTrialEligibility)
             children.append(UIMenu(title: gatedSectionTitle, options: .displayInline, children: gatedActions))
         }
 

@@ -71,11 +71,9 @@ struct NetworkProtectionVPNSettingsView: View {
                               footerText: UserText.netPExcludeLocalNetworksSettingFooter,
                               isOn: $viewModel.excludeLocalNetworks)
 
-                if viewModel.isExcludeCGNATAvailable {
-                    toggleSection(text: UserText.netPExcludeCGNATSettingTitle,
-                                  footerText: UserText.netPExcludeCGNATSettingFooter,
-                                  isOn: $viewModel.excludeCGNAT)
-                }
+                toggleSection(text: UserText.netPExcludeCGNATSettingTitle,
+                              footerText: UserText.netPExcludeCGNATSettingFooter,
+                              isOn: $viewModel.excludeCGNAT)
 
                 if viewModel.isStrictRoutingAvailable {
                     toggleSection(text: UserText.netPStrictRoutingSettingTitle,

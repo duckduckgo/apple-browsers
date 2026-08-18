@@ -78,10 +78,6 @@ final class VPNPreferencesModel: ObservableObject {
         }
     }
 
-    var isExcludeCGNATAvailable: Bool {
-        featureFlagger.isFeatureOn(.vpnExcludeCGNATToggle)
-    }
-
     @Published var showInMenuBar: Bool {
         didSet {
             settings.showInMenuBar = showInMenuBar
@@ -332,11 +328,6 @@ final class VPNPreferencesModel: ObservableObject {
                 }
             }
             .store(in: &cancellables)
-    }
-
-    @MainActor
-    func onViewAppeared() {
-        settings.updateExcludeCGNAT(isFeatureEnabled: featureFlagger.isFeatureOn(.vpnExcludeCGNATToggle))
     }
 
     func reloadVPN() {

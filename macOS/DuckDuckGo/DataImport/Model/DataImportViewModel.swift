@@ -39,7 +39,6 @@ struct DataImportViewModel {
 
     let availableImportSources: [DataImport.Source]
 
-    private let isDirectoryAccessFeatureEnabled: Bool
     private let featureFlagger: FeatureFlagger
 
     let selectableImportTypes: Set<DataType>
@@ -248,7 +247,6 @@ struct DataImportViewModel {
         }
 
         self.availableImportSources = filteredAvailableSources
-        self.isDirectoryAccessFeatureEnabled = directoryAccessFeature.isEnabled
         let importSource = importSource ?? preferredImportSources.first(where: { filteredAvailableSources.contains($0) }) ?? filteredAvailableSources.first ?? .csv
 
         self.importSource = importSource

@@ -232,14 +232,20 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
         reconcileCoordinatedMessages(reason: .storeChanged)
     }
 
+    /// Reconciles every coordinated RMF input into the single shared NTP message source.
+    /// Existing ownership remains authoritative while its pinned candidate is valid. Store changes and foreground validation may
+    /// retain or end that ownership, but only an explicit NTP preparation may acquire and publish a new RMF.
     private func reconcileCoordinatedMessages(reason: ReconciliationReason) {
         let nonRemoteMessages = nonRemoteHomeMessages
 
+        // Onboarding makes RMF ineligible regardless of the reconciliation trigger, so remove any publication before releasing its lease.
         guard !isStillOnboarding() else {
             endCurrentRMFOwnership(replacingWith: nonRemoteMessages)
             return
         }
 
+        // Revalidate the current message using the trigger filter that originally selected it. Keeping the same lease and presentation
+        // context preserves ownership and SwiftUI identity across content refreshes and foreground transitions.
         if let rmfOwnership {
             let currentCandidate = remoteMessage(triggerFilter: rmfOwnership.selectedTriggerFilter)
             if let currentCandidate,
@@ -257,11 +263,15 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
 
             endCurrentRMFOwnership(replacingWith: nonRemoteMessages)
 
+            // Store and foreground events only reconcile authoritative state. They must not replace an invalid owner with an RMF that
+            // no active NTP requested, so fresh selection continues only from an explicit preparation checkpoint.
             guard case .preparation = reason else {
                 return
             }
         }
 
+        // Select a renderable candidate and acquire the queue lease before publishing it. This ordering prevents an RMF from flashing
+        // while another promo owns the queue and keeps background or otherwise inactive NTPs from acquiring.
         guard case .preparation(let preparationPolicy) = reason,
               isRMFAdmissionEnabled,
               let selectedRemoteMessage = selectedRemoteMessage(using: preparationPolicy),

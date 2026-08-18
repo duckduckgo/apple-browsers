@@ -72,8 +72,9 @@ jobs:
   chrome-lcp:
     name: Chrome LCP
     needs: validate-wpr
-    # Standard hosted Apple Silicon runner, matching the Safari architecture.
-    runs-on: macos-latest
+    # Dedicated self-hosted Apple Silicon runner, matching the Safari
+    # architecture. A fixed machine keeps timings comparable between runs.
+    runs-on: [self-hosted, macOS, ARM64]
     # 10 measured loads/site, with no discarded live-network warm-up. The cap
     # retains headroom for provisioning and trace-processor variance.
     timeout-minutes: 200

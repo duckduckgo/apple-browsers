@@ -83,9 +83,9 @@ jobs:
     if: >-
       always() &&
       needs.validate-wpr.result == 'success'
-    # Same hosted Apple Silicon runner as the Chrome and Safari measurements,
-    # so the three browsers' numbers stay comparable.
-    runs-on: macos-latest
+    # Same self-hosted Apple Silicon runner as the Chrome and Safari
+    # measurements, so the three browsers' numbers stay comparable.
+    runs-on: [self-hosted, macOS, ARM64]
     environment: macos-performance
     timeout-minutes: 220
 

@@ -48,10 +48,11 @@ class DDGWorkflowContractTests(unittest.TestCase):
             WORKFLOW.index("\n  upload-to-clickhouse:\n")
         ]
         # Comparability with Chrome and Safari depends on all three measuring on
-        # the same hosted Apple Silicon runner.
-        self.assertIn("runs-on: macos-latest", measurement)
-        self.assertIn("runs-on: macos-latest", CHROME_WORKFLOW)
-        self.assertIn("runs-on: macos-latest", SAFARI_WORKFLOW)
+        # the same self-hosted Apple Silicon runner.
+        runner = "runs-on: [self-hosted, macOS, ARM64]"
+        self.assertIn(runner, measurement)
+        self.assertIn(runner, CHROME_WORKFLOW)
+        self.assertIn(runner, SAFARI_WORKFLOW)
         self.assertIn("environment: macos-performance", measurement)
         self.assertNotIn("sudo ", measurement)
         self.assertIn(

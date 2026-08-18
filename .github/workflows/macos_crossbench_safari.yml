@@ -68,8 +68,9 @@ jobs:
   safari-lcp:
     name: Safari LCP
     needs: validate-wpr
-    # Match the Chrome workflow's Apple Silicon runner for comparability.
-    runs-on: macos-latest
+    # Match the Chrome workflow's self-hosted Apple Silicon runner for
+    # comparability.
+    runs-on: [self-hosted, macOS, ARM64]
     # Ten measured loads per site with no replay warm-up. The cap leaves room
     # for provisioning and slow/failing navigations.
     timeout-minutes: 200

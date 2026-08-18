@@ -56,8 +56,7 @@
             },
             {
                 "key": "had_critical_pressure",
-                "type": "string",
-                "enum": ["true", "false"],
+                "type": "boolean",
                 "description": "Whether macOS reported critical memory pressure at any point during the run. The pressure is machine-wide and not necessarily caused by PIR."
             },
             {

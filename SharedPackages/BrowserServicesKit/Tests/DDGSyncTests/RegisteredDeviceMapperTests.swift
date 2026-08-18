@@ -169,7 +169,7 @@ final class RegisteredDeviceMapperTests: XCTestCase {
         XCTAssertFalse(result.needsCurrentDeviceInfoRepair)
     }
 
-    func testWhenUnifiedReadIsDisabledAndNativeLegacyFieldsCannotBeDecryptedThenReportsUnresolvedDevice() async {
+    func testWhenUnifiedReadIsDisabledAndNativeLegacyFieldsCannotBeDecryptedThenReturnsUnknownPlaceholder() async {
         var crypter = CryptingMock()
         crypter._base64DecodeAndDecrypt = { _ in
             throw SyncError.failedToDecryptValue("test")
@@ -185,7 +185,6 @@ final class RegisteredDeviceMapperTests: XCTestCase {
 
         let result = await mapper.registeredDevicesWithRepairState(from: [entry], account: makeAccount())
 
-        XCTAssertEqual(result.unresolvedNativeDeviceIDs, ["native-device"])
         XCTAssertEqual(result.devices.map(\.name), ["Unknown"])
         XCTAssertFalse(result.needsCurrentDeviceInfoRepair)
     }

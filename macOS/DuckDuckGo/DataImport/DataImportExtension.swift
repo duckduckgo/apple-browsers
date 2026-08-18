@@ -53,7 +53,7 @@ extension DataImport {
         }
 
         /// Indicates if the browser has at least one profile the app can't access yet, and no importable profiles.
-        var requiresDataDirectoryPermission: Bool {
+        var requiresDirectoryAccessPermission: Bool {
             validImportableProfiles.isEmpty && !permissionDeniedProfiles.isEmpty
         }
 
@@ -118,7 +118,7 @@ extension DataImport {
         private let fallbackProfileName: String
 
         let accessState: AccessState
-        var requiresDataDirectoryPermission: Bool {
+        var requiresDirectoryAccessPermission: Bool {
             accessState == .permissionDenied
         }
 

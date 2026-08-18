@@ -228,7 +228,7 @@ private extension NewTabPageView {
     }
 
     private var messagesSectionView: some View {
-        ForEach(messagesModel.homeMessageViewModels, id: \.messageId) { messageModel in
+        ForEach(messagesModel.homeMessageViewModels, id: \.viewIdentity) { messageModel in
             HomeMessageView(viewModel: messageModel)
                 .frame(maxWidth: horizontalSizeClass == .regular ? Metrics.messageMaximumWidthPad : Metrics.messageMaximumWidth)
                 .transition(.scale.combined(with: .opacity))

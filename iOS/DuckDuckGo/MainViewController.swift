@@ -413,6 +413,7 @@ class MainViewController: UIViewController {
     private var iPadAIChatQuery = ""
     /// Owns the iPad popover's suggestion decision + Duck.ai surface lifecycle (built in `loadSuggestionTray`).
     private var popoverSuggestionsCoordinator: PopoverSuggestionsCoordinator?
+    private var homePageMessagesCancellable: AnyCancellable?
 
     private(set) var webExtensionEventsCoordinator: WebExtensionEventsCoordinator?
     func setWebExtensionEventsCoordinator(_ coordinator: WebExtensionEventsCoordinator?) {
@@ -1065,6 +1066,32 @@ class MainViewController: UIViewController {
                 tray: controller,
                 host: self,
                 navigationDelegate: self)
+        }
+
+        observeHomePageMessageChanges()
+    }
+
+    private func observeHomePageMessageChanges() {
+        guard homePageConfiguration.mode == .coordinated else { return }
+
+        homePageMessagesCancellable = homePageConfiguration.contentDidChangePublisher
+            .sink { [weak self] _ in
+                self?.reevaluateSuggestionTrayAfterHomeMessagesChanged()
+            }
+    }
+
+    private func reevaluateSuggestionTrayAfterHomeMessagesChanged() {
+        guard newTabPageViewController == nil,
+              omniBar.isTextFieldEditing,
+              !(presentedViewController is OmniBarEditingStateViewController),
+              unifiedToggleInputCoordinator?.isOmnibarSession != true else { return }
+
+        if isPad {
+            refreshPopoverSuggestions()
+        } else if !isModeToggleInAIChatMode, omniBar.text?.isEmpty != false {
+            if !tryToShowSuggestionTray(.favorites) {
+                hideSuggestionTray()
+            }
         }
     }
 
@@ -2031,12 +2058,14 @@ class MainViewController: UIViewController {
         currentTab?.dismiss()
         removeHomeScreen()
 
-        let hatch = buildEscapeHatch(openedAfterIdle: openedAfterIdle)
-        homePageConfiguration.refresh(openedAfterIdle: hatch != nil)
-
         // Access the tab model directly as we don't want to create a new tab controller here
         guard let tabModel = tabManager.currentTabsModel.currentTab else {
             fatalError("No tab model")
+        }
+
+        let hatch = buildEscapeHatch(openedAfterIdle: openedAfterIdle)
+        if homePageConfiguration.mode == .coordinated, !tabModel.fireTab {
+            homePageConfiguration.prepareForNTP(openedAfterIdle: hatch != nil)
         }
         
         let shouldSaveTabs = tabModel.viewed == false || tabModel.openedAfterIdle != openedAfterIdle
@@ -5515,6 +5544,8 @@ extension MainViewController: OmniBarDelegate {
 
         guard newTabPageViewController == nil else { return }
 
+        prepareHomePageMessagesForOmniBar()
+
         if isPad {
             // iPad routes all suggestion show/hide through the focus model (favorites vs autocomplete
             // vs recents is decided there from the live state).
@@ -5528,6 +5559,13 @@ extension MainViewController: OmniBarDelegate {
             }
         }
         themeColorManager.updateThemeColor()
+    }
+
+    private func prepareHomePageMessagesForOmniBar() {
+        guard homePageConfiguration.mode == .coordinated else { return }
+        guard !isCurrentTabFireTab() else { return }
+
+        homePageConfiguration.prepareForNTP(openedAfterIdle: escapeHatchForEditingState() != nil)
     }
 
     private func installContextualSheetDismissGesture() {
@@ -5850,6 +5888,16 @@ extension MainViewController: OmniBarDelegate {
             return nil
         }
         return model
+    }
+
+    func prepareHomePageMessagesForForegroundIfNeeded() {
+        guard isNewTabPageVisible,
+              let currentTab = tabManager.currentTabsModel.currentTab,
+              !currentTab.fireTab else {
+            return
+        }
+
+        homePageConfiguration.prepareForNTP(openedAfterIdle: escapeHatchForEditingState() != nil)
     }
 
     private func clearEscapeHatch() {

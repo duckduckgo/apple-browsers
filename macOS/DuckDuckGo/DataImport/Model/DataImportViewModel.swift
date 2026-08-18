@@ -231,7 +231,7 @@ struct DataImportViewModel {
          wideEvent: WideEventManaging = Application.appDelegate.wideEvent,
          onFinished: @escaping () -> Void = {},
          onCancelled: @escaping () -> Void = {}) {
-        let directoryAccessFeature = DataDirectoryAccessAvailability(featureFlagger: featureFlagger, debugSettings: UserDefaults.standard.keyedStoring())
+        let directoryAccessFeature = DirectoryAccessAvailability(featureFlagger: featureFlagger, debugSettings: UserDefaults.standard.keyedStoring())
         let loadProfiles = loadProfiles ?? { $0.browserProfiles(detectsInaccessibleProfiles: directoryAccessFeature.isEnabled) }
 
         let filteredAvailableSources = availableImportSources.filter {

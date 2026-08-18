@@ -65,6 +65,12 @@ final class AIChatContextualFloatingInputViewControllerTests: XCTestCase {
 
         func deactivateInput() { deactivateInputCount += 1 }
         func freezeInputPosition() { freezeInputPositionCount += 1 }
+
+        /// The surface asks before leaving on a keyboard hide: focus it still holds means the keyboard is
+        /// only churning, so tests set this to exercise both answers.
+        var isInputFirstResponder = false
+        var dictatedQueries: [String] = []
+        func applyDictatedQuery(_ query: String) { dictatedQueries.append(query) }
     }
 
     private var originatingURL: CurrentValueSubject<URL?, Never>!

@@ -137,9 +137,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private var needsVisibleRefresh = true
     private var requestedContentInset: (top: CGFloat, bottom: CGFloat) = (0, 0)
     private var escapeHatchModel: EscapeHatchModel?
-    /// The non-typing chrome (escape hatch + Duck.ai sync-promo) is pinned to the bar (not rendered
-    /// inside the SwiftUI host) so it rides the bar's animation in the same layout pass — constant gap,
-    /// no cross-framework sync. Its measured height is reserved in the content inset.
+    /// The Duck.ai sync-promo and the hatch for non-favorites states are pinned to the bar so they ride
+    /// its animation in the same layout pass. Favorites render the hatch inside the embedded NTP so it
+    /// scrolls with them; only active pinned chrome reserves height in the content inset.
     private var chromeHostingController: UIHostingController<FocusedChromeView>?
     private var chromeTopConstraint: NSLayoutConstraint?
     private var chromeHeightConstraint: NSLayoutConstraint?
@@ -347,8 +347,11 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     func setEscapeHatch(_ model: EscapeHatchModel?) {
         let hatchPresenceChanged = (escapeHatchModel != nil) != (model != nil)
         escapeHatchModel = model
+        unifiedSuggestionsHost?.setEscapeHatch(model)
+        // `setEscapeHatch` infers this value from hatch presence, so apply the authoritative session
+        // value afterwards.
         unifiedSuggestionsHost?.updateOpenedAfterIdle(sessionOpenedAfterIdle)
-        // The chrome (hatch + sync-promo) is pinned to the bar (see below), not rendered in the host.
+        // Favorites render the hatch in the embedded NTP; other non-typing states keep it pinned.
         updatePinnedChrome()
         updateSingleHostTopOffset()
         // The sync-promo sits below the hatch, so its layout changes when the hatch is added/removed.
@@ -360,8 +363,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         }
     }
 
-    /// Creates / updates / removes the bar-pinned chrome hosting controller and rebinds its content
-    /// (hatch + sync-promo) to the current state.
+    /// Creates / updates / removes the bar-pinned chrome hosting controller and rebinds the
+    /// non-favorites hatch and sync-promo to the current state.
     private func updatePinnedChrome() {
         let hatchModel = shouldShowPinnedHatch ? escapeHatchModel : nil
         let promo: AnyView? = isSyncPromoCardVisible ? syncPromoView : nil
@@ -375,7 +378,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
                 guard let self, self.chromeMeasuredHeight != height else { return }
                 self.chromeMeasuredHeight = height
                 // Only the sync-promo case relies on the measured height; the hatch-only case uses a
-                // synchronous known height (so favorites slide without a late jump).
+                // synchronous known height so empty-state content does not jump.
                 guard self.isSyncPromoCardVisible else { return }
                 self.chromeHeightConstraint?.constant = self.currentChromeReservedHeight
                 self.applyHostContentInsets()
@@ -421,18 +424,19 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         topBarContentGap + requestedContentInset.top
     }
 
-    /// The hatch shows in the non-typing empty/branding states — using the same not-typing rule as the
-    /// resolver so it never diverges from the host's content (e.g. a pre-filled, unedited URL).
+    /// The hatch stays pinned for non-typing states that do not show favorites. The embedded NTP owns
+    /// it while favorites are visible so both elements scroll together.
     private var shouldShowPinnedHatch: Bool {
         escapeHatchModel != nil
             && !switchBarHandler.isFireTab
+            && !isShowingFavoritesContent
             && !UnifiedSuggestionsInputsMerger.isTyping(text: switchBarHandler.currentText,
                                                         hasUserInteractedWithText: switchBarHandler.hasUserInteractedWithText)
     }
 
-    /// Height to reserve below the bar for the pinned chrome. The hatch is a fixed height (reserved
-    /// synchronously so favorites slide without a late jump); the variable sync-promo uses the
-    /// async-measured height (Duck.ai only, where favorites never show).
+    /// Height to reserve below the bar for active pinned chrome. The favorites NTP reserves its own
+    /// in-scroll hatch space; the fixed-height pinned hatch covers other states, while the variable
+    /// sync-promo uses its async-measured height.
     private var currentChromeReservedHeight: CGFloat {
         if isSyncPromoCardVisible {
             return chromeMeasuredHeight
@@ -443,7 +447,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         }
     }
 
-    /// Sets the host's content inset so the list/favorites start below the bar + pinned chrome.
+    /// Sets the host's content inset so content starts below the bar and any active pinned chrome.
     private func applyHostContentInsets() {
         unifiedSuggestionsHost?.setContentInsets(UIEdgeInsets(top: requestedContentInset.top + currentChromeReservedHeight,
                                                               left: 0,
@@ -794,8 +798,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         // Route favorite taps / edits / tab actions to the host's delegate so they open like the
         // standalone NTP (the embedded controller has no owner to set this otherwise).
         controller.delegate = self
-        // The escape hatch and the empty-state logo are UTI chrome (bar-pinned hatch + the host's
-        // `FocusedDaxLogoView`), not the NTP's — leave the NTP's own hatch unset so we never get two.
+        // The embedded NTP owns the hatch in `.favorites`, while pinned chrome owns it in `.logo`
+        // and promo states. The host still owns the focused empty-state logo.
         controller.setLogoHidden(true)
         return controller
     }
@@ -897,7 +901,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
         // Pinned chrome: track the bar (the constant updates inside the bar's animation here, so it
         // glides in the same pass), rebind its content for the current state, and reserve its measured
-        // height in the content inset so the list/favorites start below it.
+        // height only while the hatch or sync-promo belongs outside the scrolling content.
         chromeTopConstraint?.constant = pinnedChromeTopConstant
         updatePinnedChrome()
         chromeHeightConstraint?.constant = currentChromeReservedHeight

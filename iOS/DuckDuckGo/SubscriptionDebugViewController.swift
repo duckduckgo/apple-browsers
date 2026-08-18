@@ -145,6 +145,7 @@ final class SubscriptionDebugViewController: UITableViewController {
         case orderConfirmation
         case welcome
         case vpn
+        case vpnWidget
         case idtr
         case duckAI
         case pir
@@ -373,6 +374,9 @@ final class SubscriptionDebugViewController: UITableViewController {
             case .vpn:
                 cell.textLabel?.text = "VPN"
                 cell.accessoryType = .disclosureIndicator
+            case .vpnWidget:
+                cell.textLabel?.text = "VPN Widget (+ VPN Tips)"
+                cell.accessoryType = .disclosureIndicator
             case .idtr:
                 cell.textLabel?.text = "Identity Theft Restoration"
                 cell.accessoryType = .disclosureIndicator
@@ -474,6 +478,7 @@ final class SubscriptionDebugViewController: UITableViewController {
             case .orderConfirmation: showOrderConfirmationOnboarding()
             case .welcome: showWelcomeOnboarding()
             case .vpn: showVPNOnboarding()
+            case .vpnWidget: showVPNWidgetOnboarding()
             case .idtr: showIDTROnboarding()
             case .duckAI: showDuckAIOnboarding()
             case .pir: showPIROnboarding()
@@ -993,6 +998,13 @@ final class SubscriptionDebugViewController: UITableViewController {
         present(hostingController, animated: true)
     }
 
+    private func showVPNWidgetOnboarding() {
+        let hostingController = UIHostingController(
+            rootView: VPNWidgetAndTipsDebugFlow(onFinish: { [weak self] in self?.dismiss(animated: true) })
+                .subscriptionOnboardingNavigationContainer())
+        present(hostingController, animated: true)
+    }
+
     private func showDuckAIOnboarding() {
         let hostingController = UIHostingController(
             rootView: SubscriptionOnboardingDuckAIView(
@@ -1041,6 +1053,24 @@ final class SubscriptionDebugViewController: UITableViewController {
         present(hostingController, animated: true)
     }
 
+}
+
+/// Chains widget-education into tips for the debug menu, since there's no flow view model to push through.
+private struct VPNWidgetAndTipsDebugFlow: View {
+    let onFinish: () -> Void
+
+    @State private var isShowingTips = false
+
+    var body: some View {
+        SubscriptionOnboardingVPNWidgetEducationView(
+            navigationButton: .close(onFinish),
+            onNext: { isShowingTips = true })
+            .background(
+                NavigationLink(isActive: $isShowingTips) {
+                    SubscriptionOnboardingVPNTipsView(onNext: onFinish)
+                } label: { EmptyView() }
+            )
+    }
 }
 
 extension Bool {

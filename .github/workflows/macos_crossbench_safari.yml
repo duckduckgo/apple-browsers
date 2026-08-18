@@ -33,6 +33,13 @@ on:
         type: boolean
         required: false
         default: true
+  # TEMPORARY: triggers the diagnostic below on this branch only, and only
+  # when this file changes. Remove with the diagnostic step.
+  push:
+    branches:
+      - diego/crossbench-ddg-ci
+    paths:
+      - .github/workflows/macos_crossbench_safari.yml
   schedule:
     # Scheduled workflows run only from the default branch. Blank sites use the
     # full list, and the upload job below sends scheduled results to ClickHouse.
@@ -83,6 +90,20 @@ jobs:
 
       - name: Print macOS version
         run: sw_vers
+
+      - name: Diagnose Safari prefs write
+        # TEMPORARY: tells apart a missing Aqua session from a TCC denial as the
+        # cause of the com.apple.Safari container-prefs write failure.
+        # managername != Aqua means no GUI session; Aqua plus a failed write
+        # means the runner lacks Full Disk Access. Remove once known.
+        continue-on-error: true
+        run: |
+          id
+          echo "managername: $(launchctl managername 2>&1)"
+          ls -lad ~/Library/Containers/com.apple.Safari 2>&1 || echo "no container"
+          defaults write com.apple.Safari ProxyProbe -string probe 2>&1 || echo "WRITE FAILED"
+          defaults read com.apple.Safari ProxyProbe 2>&1 || echo "READ FAILED"
+          defaults delete com.apple.Safari ProxyProbe 2>&1 || true
 
       - name: Download validated WPR archives
         uses: actions/download-artifact@v7

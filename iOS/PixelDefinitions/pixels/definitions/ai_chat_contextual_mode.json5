@@ -254,7 +254,7 @@
         ]
     },
     "aichat_contextual_suggestions_viewed": {
-        "description": "Fired when the contextual sheet start surface renders suggested-prompt chips to the user; every render (sheet presentation or navigation re-resolve) counts as an impression",
+        "description": "Fired when a contextual start surface renders suggested-prompt chips to the user; every render or navigation re-resolve counts as an impression",
         "owners": ["pikorddg"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
@@ -293,6 +293,12 @@
                 "description": "What the shown suggestions act on. page is the current page; selection is one attached text selection.",
                 "type": "string",
                 "enum": ["page", "selection"]
+            },
+            {
+                "key": "surface",
+                "description": "The contextual surface where the suggestions were shown.",
+                "type": "string",
+                "enum": ["floating_input", "sheet"]
             }
         ]
     },
@@ -321,35 +327,35 @@
         "description": "Fired once per text selection attached to Duck.ai. A refusal at the 5-selection cap is reported separately and is not counted here",
         "owners": ["pikorddg"],
         "triggers": ["other"],
-        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "suffixes": ["platform", "form_factor", "daily_count"],
         "parameters": ["appVersion"]
     },
     "aichat_contextual_selection_limit_reached": {
         "description": "Fired when the user asks Duck.ai about selected text but the maximum number of selections is already attached, so the new one is refused",
         "owners": ["pikorddg"],
         "triggers": ["other"],
-        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "suffixes": ["platform", "form_factor", "daily_count"],
         "parameters": ["appVersion"]
     },
     "aichat_contextual_selection_removed": {
         "description": "Fired when the user removes an attached text selection via its chip's remove button",
         "owners": ["pikorddg"],
         "triggers": ["other"],
-        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "suffixes": ["platform", "form_factor", "daily_count"],
         "parameters": ["appVersion"]
     },
     "aichat_contextual_prompt_submitted_with_selections": {
         "description": "Fired when the user submits a Duck.ai prompt with at least one text selection attached. The selection_count parameter is bucketed. Distinct from the with/without-context pixels, which describe page context only",
         "owners": ["pikorddg"],
         "triggers": ["other"],
-        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "suffixes": ["platform", "form_factor", "daily_count"],
         "parameters": ["appVersion", "aiChatSelectionCount"]
     },
     "debug_aichat_contextual_selection_tool_delivery_timed_out": {
         "description": "Fired when a selection-scoped Summarize or Translate prompt is dropped because the frontend never became ready within the readiness timeout, so the user sees an empty chat with no error",
         "owners": ["pikorddg"],
         "triggers": ["exception"],
-        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "suffixes": ["platform", "form_factor", "daily_count"],
         "parameters": ["appVersion"]
     }
 }

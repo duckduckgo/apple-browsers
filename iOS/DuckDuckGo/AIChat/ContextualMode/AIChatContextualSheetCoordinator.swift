@@ -347,7 +347,8 @@ final class AIChatContextualSheetCoordinator {
                     self?.pixelHandler.fireSuggestionsViewed(
                         isSmart: content.suggestionsAreSmart,
                         pageType: content.suggestionsPageType,
-                        scope: content.suggestionsScope
+                        scope: content.suggestionsScope,
+                        surface: .floatingInput
                     )
                     if content.suggestionsScope == .selection {
                         self?.selectionJourneyInstrumentation.selectionSuggestionsViewed()

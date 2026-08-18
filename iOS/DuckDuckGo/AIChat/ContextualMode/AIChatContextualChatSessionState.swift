@@ -297,12 +297,12 @@ final class AIChatContextualChatSessionState {
     /// Call when the first prompt is submitted through contextual UTI. The UTI coordinator
     /// delivers the prompt, so this only performs the contextual session transition and pixels.
     func beginChatForUTISubmission() {
+        fireSelectionsSubmittedPixelIfNeeded()
+
         guard frontendState != .restoredChat else {
             Logger.aiChat.debug("[SessionState] UTI chat start request ignored - preserving .restoredChat state")
             return
         }
-
-        fireSelectionsSubmittedPixelIfNeeded()
 
         switch chipState {
         case .attached(let context):

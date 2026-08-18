@@ -2216,17 +2216,16 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertEqual(mockPixelHandler.promptSubmittedWithSelectionsCounts, [1, 1])
     }
 
-    func testBeginChatForUTISubmissionIgnoredInRestoredState() {
-        // Given
+    func testBeginChatForUTISubmissionPreservesRestoredStateAndReportsSelections() {
+        sessionState.attachSelection(makeSelection())
         sessionState.restoreChat(with: URL(string: "https://duck.ai/?chat=abc")!)
 
-        // When
         sessionState.beginChatForUTISubmission()
 
-        // Then - restored state is preserved and no submission pixels fire
         XCTAssertEqual(sessionState.frontendState, .restoredChat)
         XCTAssertFalse(mockPixelHandler.promptSubmittedWithContextFired)
         XCTAssertFalse(mockPixelHandler.promptSubmittedWithoutContextFired)
+        XCTAssertEqual(mockPixelHandler.promptSubmittedWithSelectionsCounts, [1])
     }
 
     // MARK: - Helpers
@@ -2526,7 +2525,10 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
     func fireQuickActionAskAboutPageSelected() {}
     func fireAskAboutPageSuggestionSelected(pageType: SuggestionsPageType) {}
     func fireSuggestionSelected(suggestionId: String, pageType: SuggestionsPageType) {}
-    func fireSuggestionsViewed(isSmart: Bool, pageType: SuggestionsPageType, scope: ResolvePageSuggestionsInput.Scope) {}
+    func fireSuggestionsViewed(isSmart: Bool,
+                               pageType: SuggestionsPageType,
+                               scope: ResolvePageSuggestionsInput.Scope,
+                               surface: AIChatContextualSuggestionsSurface) {}
     func fireSuggestionsContextCollectionTimedOut() {}
     func fireRecentChatsPopupDisplayed() {}
     func fireRecentChatSelected() {}

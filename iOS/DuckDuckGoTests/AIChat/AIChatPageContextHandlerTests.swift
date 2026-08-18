@@ -702,7 +702,10 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
     func fireQuickActionAskAboutPageSelected() {}
     func fireAskAboutPageSuggestionSelected(pageType: SuggestionsPageType) {}
     func fireSuggestionSelected(suggestionId: String, pageType: SuggestionsPageType) {}
-    func fireSuggestionsViewed(isSmart: Bool, pageType: SuggestionsPageType, scope: ResolvePageSuggestionsInput.Scope) {}
+    func fireSuggestionsViewed(isSmart: Bool,
+                               pageType: SuggestionsPageType,
+                               scope: ResolvePageSuggestionsInput.Scope,
+                               surface: AIChatContextualSuggestionsSurface) {}
     func fireSuggestionsContextCollectionTimedOut() {}
     func fireRecentChatsPopupDisplayed() {}
     func fireRecentChatSelected() {}

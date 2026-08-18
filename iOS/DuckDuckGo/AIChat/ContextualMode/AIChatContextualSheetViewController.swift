@@ -1211,7 +1211,8 @@ private extension AIChatContextualSheetViewController {
         pixelHandler.fireSuggestionsViewed(
             isSmart: viewState.suggestionsAreSmart,
             pageType: viewState.suggestionsPageType,
-            scope: viewState.suggestionsScope
+            scope: viewState.suggestionsScope,
+            surface: .sheet
         )
         if viewState.suggestionsScope == .selection {
             delegate?.aiChatContextualSheetViewControllerDidViewSelectionSuggestions(self)

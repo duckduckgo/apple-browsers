@@ -179,8 +179,8 @@ final class AIChatContextualModePixelHandlerTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Suggestions viewed includes smartness, page type, and scope", .timeLimit(.minutes(1)))
-    func suggestions_viewed_includes_smartness_page_type_and_scope() {
+    @Test("Suggestions viewed includes smartness, page type, scope, and surface", .timeLimit(.minutes(1)))
+    func suggestions_viewed_includes_smartness_page_type_scope_and_surface() {
         var firedEventName: String?
         var firedParameters: [String: String]?
         let sut = AIChatContextualModePixelHandler(
@@ -190,10 +190,15 @@ final class AIChatContextualModePixelHandlerTests {
                 firedParameters = parameters
             })
 
-        sut.fireSuggestionsViewed(isSmart: true, pageType: .video, scope: .selection)
+        sut.fireSuggestionsViewed(isSmart: true, pageType: .video, scope: .selection, surface: .floatingInput)
 
         #expect(firedEventName == Pixel.Event.aiChatContextualSuggestionsViewed.name)
-        #expect(firedParameters == ["isSmart": "true", "pageType": "video", "suggestion_scope": "selection"])
+        #expect(firedParameters == [
+            "isSmart": "true",
+            "pageType": "video",
+            "suggestion_scope": "selection",
+            "surface": "floating_input"
+        ])
     }
 
     // MARK: - Page Context Attachment Pixels
@@ -485,6 +490,7 @@ final class AIChatContextualModePixelHandlerTests {
             AIChatContextualSelectionPixel.removed.name,
             AIChatContextualSelectionPixel.toolDeliveryTimedOut.name
         ])
+        #expect(AIChatContextualSelectionPixel.attached.namePrefix.isEmpty)
     }
 
     @Test("Concurrent reset and navigation calls are thread-safe")

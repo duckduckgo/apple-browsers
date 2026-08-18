@@ -50,7 +50,10 @@ protocol AIChatContextualModePixelFiring {
     // MARK: - Suggested Prompts
     func fireAskAboutPageSuggestionSelected(pageType: SuggestionsPageType)
     func fireSuggestionSelected(suggestionId: String, pageType: SuggestionsPageType)
-    func fireSuggestionsViewed(isSmart: Bool, pageType: SuggestionsPageType, scope: ResolvePageSuggestionsInput.Scope)
+    func fireSuggestionsViewed(isSmart: Bool,
+                               pageType: SuggestionsPageType,
+                               scope: ResolvePageSuggestionsInput.Scope,
+                               surface: AIChatContextualSuggestionsSurface)
     func fireSuggestionsContextCollectionTimedOut()
 
     // MARK: - Recent Chats Popup
@@ -294,11 +297,15 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
         ])
     }
 
-    func fireSuggestionsViewed(isSmart: Bool, pageType: SuggestionsPageType, scope: ResolvePageSuggestionsInput.Scope) {
+    func fireSuggestionsViewed(isSmart: Bool,
+                               pageType: SuggestionsPageType,
+                               scope: ResolvePageSuggestionsInput.Scope,
+                               surface: AIChatContextualSuggestionsSurface) {
         firePixelWithParameters(.aiChatContextualSuggestionsViewed, [
             PixelParameters.suggestionsAreSmart: String(isSmart),
             PixelParameters.suggestionsPageType: pageType.rawValue,
-            PixelParameters.aiChatSuggestionScope: scope.rawValue
+            PixelParameters.aiChatSuggestionScope: scope.rawValue,
+            PixelParameters.aiChatSuggestionsSurface: surface.rawValue
         ])
     }
 
@@ -344,12 +351,19 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
     }
 }
 
-enum AIChatContextualSelectionPixel: PixelKit.Event {
+enum AIChatContextualSuggestionsSurface: String {
+    case floatingInput = "floating_input"
+    case sheet
+}
+
+enum AIChatContextualSelectionPixel: PixelKit.Event, PixelKitEventWithCustomPrefix {
     case attached
     case limitReached
     case removed
     case promptSubmitted(selectionCount: String)
     case toolDeliveryTimedOut
+
+    var namePrefix: String { "" }
 
     var name: String {
         switch self {

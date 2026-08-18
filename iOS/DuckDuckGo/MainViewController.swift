@@ -8414,7 +8414,7 @@ extension MainViewController {
     }
 
     fileprivate func reportDuckAIFireButtonClearedTabsIfNeeded(_ fireRequest: FireRequest) {
-        guard fireRequest.trigger == .manualFire else { return }
+        guard fireRequest.trigger == .manualFire, fireRequest.options.contains(.tabs) else { return }
 
         for tab in tabsClearedByFireButton(fireRequest.scope) {
             DefaultDuckAISelectionJourneyInstrumentation.completePersistedFlow(

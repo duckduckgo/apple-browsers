@@ -161,7 +161,8 @@ struct AccountManager: AccountManaging {
             throw SyncError.unableToDecodeResponse("Failed to decode devices")
         }
 
-        // Scoped access enabled: prefer entries_v2 so both native and 3party devices are represented.
+        // Scoped access enabled: never auto-logout. Prefer entries_v2; otherwise map legacy entries with
+        // decrypt-or-generic-fallback (undecryptable native -> "Unknown", undecryptable 3party -> "Browser").
         if isScopedAccessCredentialsEnabled() {
             let entries: [RegisteredDeviceEntry]
             if let entriesV2 = result.devices?.entriesV2, !entriesV2.isEmpty {
@@ -169,15 +170,10 @@ struct AccountManager: AccountManaging {
             } else {
                 entries = result.devices?.entries ?? []
             }
-            let mappingResult = await registeredDeviceMapper.registeredDevicesWithRepairState(
+            return await registeredDeviceMapper.registeredDevicesWithRepairState(
                 from: entries,
                 account: account,
                 isUnifiedReadEnabled: isUnifiedReadEnabled)
-            guard !isUnifiedReadEnabled else {
-                return mappingResult
-            }
-            return try await applyingLegacyDecryptFailureBehavior(to: mappingResult,
-                                                                  token: token)
         }
 
         // Legacy behaviour (scoped access disabled): invalid native devices are automatically logged out.
@@ -195,22 +191,6 @@ struct AccountManager: AccountManaging {
             devices: devices,
             needsCurrentDeviceInfoRepair: false,
             debugDevices: devices.map { RegisteredDeviceDebugInfo(device: $0, source: .legacy, deviceInfoIssue: nil) })
-    }
-
-    private func applyingLegacyDecryptFailureBehavior(to mappingResult: RegisteredDeviceMappingResult,
-                                                      token: String) async throws -> RegisteredDeviceMappingResult {
-        for deviceID in mappingResult.unresolvedNativeDeviceIDs {
-            try await logout(deviceId: deviceID, token: token)
-        }
-
-        let loggedOutDeviceIDs = Set(mappingResult.unresolvedNativeDeviceIDs)
-        guard !loggedOutDeviceIDs.isEmpty else {
-            return mappingResult
-        }
-        return RegisteredDeviceMappingResult(
-            devices: mappingResult.devices.filter { !loggedOutDeviceIDs.contains($0.id) },
-            needsCurrentDeviceInfoRepair: false,
-            debugDevices: mappingResult.debugDevices.filter { !loggedOutDeviceIDs.contains($0.device.id) })
     }
 
     func updateDevice(_ update: UpdateDevices.Update, for account: SyncAccount) async throws -> [RegisteredDevice] {

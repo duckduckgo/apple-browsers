@@ -66,9 +66,8 @@ final class UTIModelSelector {
     private let view: ViewSurface
     private let environment: Environment
     private let callbacks: Callbacks
-
-    private let modelMenuFactory = UnifiedToggleInputModelMenuFactory()
-    private let reasoningMenuFactory = UnifiedToggleInputReasoningMenuFactory()
+    private let modelMenuFactory: UnifiedToggleInputModelMenuFactory
+    private let reasoningMenuFactory: UnifiedToggleInputReasoningMenuFactory
     private let reasoningAccessResolver: ReasoningModeAccessResolving
     private let subscriptionUpsellPresenter: DuckAISubscriptionUpselling
 
@@ -81,6 +80,7 @@ final class UTIModelSelector {
          view: ViewSurface,
          environment: Environment,
          callbacks: Callbacks,
+         isUpdatedModelPickerEnabled: Bool,
          reasoningAccessResolver: ReasoningModeAccessResolving = ReasoningModeAccessResolver(),
          subscriptionUpsellPresenter: DuckAISubscriptionUpselling = DuckAISubscriptionUpsellPresenter()) {
         self.modelStore = modelStore
@@ -89,6 +89,8 @@ final class UTIModelSelector {
         self.view = view
         self.environment = environment
         self.callbacks = callbacks
+        self.modelMenuFactory = UnifiedToggleInputModelMenuFactory(isUpdatedModelPickerEnabled: isUpdatedModelPickerEnabled)
+        self.reasoningMenuFactory = UnifiedToggleInputReasoningMenuFactory(isUpdatedModelPickerEnabled: isUpdatedModelPickerEnabled)
         self.reasoningAccessResolver = reasoningAccessResolver
         self.subscriptionUpsellPresenter = subscriptionUpsellPresenter
     }
@@ -123,15 +125,6 @@ final class UTIModelSelector {
         modelStore.updateSelectedModel(modelId, isNewChatContext: !environment.hasSubmittedPrompt())
         callbacks.onModelsUpdated()
         callbacks.onUserChoiceRecorded()
-    }
-
-    func handleModelPickerSubscriptionCallToAction(requiredTier: AIChatModelPublicAccessTier) {
-        subscriptionUpsellPresenter.routeGatedSelection(
-            requiredTier: requiredTier,
-            userTier: modelStore.subscriptionState.userTier,
-            source: .modelPicker,
-            isAITabState: environment.isDuckAISurfaceForAttribution()
-        )
     }
 
     @discardableResult
@@ -264,14 +257,22 @@ final class UTIModelSelector {
         if let shortName {
             view.setModelName(shortName)
         }
-        view.setModelPickerMenu(modelStore.models.isEmpty ? nil : modelMenuFactory.makeMenu(
+        view.setModelPickerMenu(makeModelPickerMenu(selectedId: selectedId))
+    }
+
+    private func makeModelPickerMenu(selectedId: String?) -> UIMenu? {
+        guard !modelStore.models.isEmpty else { return nil }
+
+        let onSelect: (String) -> Void = { [weak self] modelId in
+            self?.handleModelSelection(modelId)
+        }
+
+        return modelMenuFactory.makeMenu(
             models: modelStore.models,
             selectedId: selectedId,
-            plusSectionTitle: UserText.aiChatPlusModelsSectionHeader,
-            proSectionTitle: UserText.aiChatProModelsSectionHeader
-        ) { [weak self] modelId in
-            self?.handleModelSelection(modelId)
-        })
+            userTier: modelStore.subscriptionState.userTier,
+            onSelect: onSelect
+        )
     }
 
     func updateReasoningPicker() {
@@ -292,12 +293,16 @@ final class UTIModelSelector {
     private func buildReasoningPickerMenu() -> UIMenu? {
         guard let selectedModel = modelStore.selectedModel else { return nil }
 
-        return reasoningMenuFactory.makeMenu(
-            model: selectedModel,
-            selectedMode: resolvedSelectedReasoningMode
-        ) { [weak self] mode in
+        let onSelect: (AIChatReasoningMode) -> Void = { [weak self] mode in
             self?.handleReasoningModeSelection(mode)
         }
+
+        return reasoningMenuFactory.makeMenu(
+            model: selectedModel,
+            selectedMode: resolvedSelectedReasoningMode,
+            userTier: modelStore.subscriptionState.userTier,
+            onSelect: onSelect
+        )
     }
 
     private func refreshModelPickerMenuAfterRejectedSelection() {

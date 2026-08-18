@@ -18,22 +18,46 @@
 //
 
 import AIChat
+import DesignResourcesKitIcons
 import UIKit
 
 struct UnifiedToggleInputModelMenuFactory {
 
+    private let isUpdatedModelPickerEnabled: Bool
+
+    init(isUpdatedModelPickerEnabled: Bool) {
+        self.isUpdatedModelPickerEnabled = isUpdatedModelPickerEnabled
+    }
+
     func makeMenu(
         models: [AIChatModel],
         selectedId: String?,
-        plusSectionTitle: String,
-        proSectionTitle: String,
+        userTier: AIChatUserTier,
+        onSelect: @escaping (String) -> Void
+    ) -> UIMenu {
+        if isUpdatedModelPickerEnabled {
+            return makeUpdatedMenu(models: models, selectedId: selectedId, userTier: userTier, onSelect: onSelect)
+        }
+
+        return makeLegacyMenu(models: models, selectedId: selectedId, onSelect: onSelect)
+    }
+
+    func selectedShortName(models: [AIChatModel], selectedId: String?) -> String? {
+        models.first(where: { $0.id == selectedId })?.shortName
+    }
+
+    // MARK: - Private
+
+    private func makeLegacyMenu(
+        models: [AIChatModel],
+        selectedId: String?,
         onSelect: @escaping (String) -> Void
     ) -> UIMenu {
         let description = UnifiedToggleInputModelMenu.build(
             models: models,
             selectedId: selectedId,
-            plusSectionTitle: plusSectionTitle,
-            proSectionTitle: proSectionTitle
+            plusSectionTitle: UserText.aiChatPlusModelsSectionHeader,
+            proSectionTitle: UserText.aiChatProModelsSectionHeader
         )
 
         let modelLookup = Dictionary(uniqueKeysWithValues: models.map { ($0.id, $0) })
@@ -56,7 +80,64 @@ struct UnifiedToggleInputModelMenuFactory {
         return UIMenu(children: sections)
     }
 
-    func selectedShortName(models: [AIChatModel], selectedId: String?) -> String? {
-        models.first(where: { $0.id == selectedId })?.shortName
+    private func makeUpdatedMenu(
+        models: [AIChatModel],
+        selectedId: String?,
+        userTier: AIChatUserTier,
+        onSelect: @escaping (String) -> Void
+    ) -> UIMenu {
+        let groupedModels = AIChatModelSectionBuilder.groupByAccess(models: models)
+        let groupedAvailableModels = AIChatModelSectionBuilder.groupByRecommendationLabel(models: groupedModels.accessible)
+        let availableModels = groupedAvailableModels.withLabel + groupedAvailableModels.withoutLabel
+        var children: [UIMenuElement] = availableModels.map { model in
+            makeUpdatedAction(
+                model: model,
+                selectedId: selectedId,
+                isGated: false,
+                onSelect: onSelect
+            )
+        }
+
+        if !groupedModels.gated.isEmpty {
+            let gatedActions = groupedModels.gated.map { gatedModel in
+                makeUpdatedAction(
+                    model: gatedModel.model,
+                    selectedId: selectedId,
+                    isGated: true,
+                    onSelect: onSelect
+                )
+            }
+            let gatedSectionTitle = userTier == .plus ? UserText.aiChatModelPickerAvailableWithPro : UserText.aiChatModelPickerTryFree
+            children.append(UIMenu(title: gatedSectionTitle, options: .displayInline, children: gatedActions))
+        }
+
+        return UIMenu(options: .singleSelection, children: children)
+    }
+
+    private func makeUpdatedAction(
+        model: AIChatModel,
+        selectedId: String?,
+        isGated: Bool,
+        onSelect: @escaping (String) -> Void
+    ) -> UIAction {
+        UIAction(
+            title: isGated ? "\(model.name)…" : model.name,
+            subtitle: isGated ? nil : model.label?.localizedText,
+            image: model.updatedModelPickerMenuIcon,
+            state: !isGated && model.id == selectedId ? .on : .off
+        ) { _ in
+            onSelect(model.id)
+        }
+    }
+}
+
+private extension AIChatModel {
+    var updatedModelPickerMenuIcon: UIImage? {
+        switch provider {
+        case .unknown:
+            return DesignSystemImages.Glyphs.Size16.aiModelOSS
+        default:
+            return menuIcon
+        }
     }
 }

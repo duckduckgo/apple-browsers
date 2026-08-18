@@ -2340,16 +2340,11 @@ public struct UserText {
     public static let aiChatAppMenuHeaderChatSettings = NSLocalizedString("aichat.appMenu.header.chatSettings", value: "Chat Settings", comment: "Header tile label in the app menu on a Duck.ai tab — opens the Duck.ai-specific settings screen")
     public static let aiChatAppMenuChats = NSLocalizedString("aichat.appMenu.chats", value: "Chats", comment: "List row label in the app menu on a Duck.ai tab — opens the recent Duck.ai chats sidebar")
     public static let aiChatAdvancedModelsMenuTitle = NotLocalizedString("aichat.model-picker.advanced-section-header", value: "Advanced Models - DuckDuckGo subscription", comment: "Section header in the model picker menu for premium models that require a subscription")
-    public static let aiChatAdvancedModelsSectionHeader = NotLocalizedString("aichat.model-picker.subscribed-advanced-section-header", value: "Advanced Models", comment: "Section header in the model picker menu for advanced models when the user has an active subscription")
     public static let aiChatBasicModelsSectionHeader = NotLocalizedString("aichat.model-picker.subscribed-basic-section-header", value: "Basic Models", comment: "Section header in the model picker menu for basic/free models when the user has an active subscription")
     public static let aiChatPlusModelsSectionHeader = NotLocalizedString("aichat.model-picker.plus-section-header", value: "Plus", comment: "Section header in the model picker menu for models available from the DuckDuckGo Plus tier")
     public static let aiChatProModelsSectionHeader = NotLocalizedString("aichat.model-picker.pro-section-header", value: "Pro", comment: "Section header in the model picker menu for models available from the DuckDuckGo Pro tier")
-    public static let aiChatModelPickerProExclusive = NotLocalizedString(
-        "aichat.model-picker.pro-exclusive",
-        value: "Pro Exclusive",
-        comment: "Section header for Pro-only models shown to DuckDuckGo Plus subscribers")
-    public static let aiChatModelPickerTryForFree = NotLocalizedString("aichat.model-picker.try-for-free", value: "TRY FOR FREE", comment: "Button in the model picker that opens the DuckDuckGo subscription purchase flow")
-    public static let aiChatModelPickerUpgrade = NotLocalizedString("aichat.model-picker.upgrade", value: "UPGRADE", comment: "Button in the model picker that opens the DuckDuckGo subscription upgrade flow")
+    public static let aiChatModelPickerTryFree = NotLocalizedString("aichat.model-picker.try-free", value: "Try Free for 7 Days", comment: "Section header for subscription models shown to free users")
+    public static let aiChatModelPickerAvailableWithPro = NotLocalizedString("aichat.model-picker.available-with-pro", value: "Available with Pro", comment: "Section header for Pro-only models shown to DuckDuckGo Plus subscribers")
     public static let aiChatModelPickerEffortTitle = NotLocalizedString(
         "aichat.model-picker.effort-title",
         value: "Effort",

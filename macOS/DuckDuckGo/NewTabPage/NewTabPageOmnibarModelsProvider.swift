@@ -38,10 +38,21 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
     private let featureFlagger: FeatureFlagger
 
     /// NTP reuses one webview per window rather than creating a fresh one per "new tab", so an
-    /// already-open tab has no other way to notice a purchase completing mid-session.
+    /// already-open tab has no other way to notice its tier changing mid-session. The address bar
+    /// gets this for free by rebuilding its menu on every open.
+    ///
+    /// All four signals matter: a purchase or renewal posts `subscriptionDidChange`, losing or
+    /// gaining a plan posts `entitlementsDidChange`, and signing out or in posts the account
+    /// notifications without either of the other two.
+    private static let modelsDidChangeNotifications: [Notification.Name] = [
+        .subscriptionDidChange, .entitlementsDidChange, .accountDidSignIn, .accountDidSignOut
+    ]
+
     var modelsDidChangePublisher: AnyPublisher<Void, Never> {
-        NotificationCenter.default.publisher(for: .subscriptionDidChange)
+        Publishers.MergeMany(Self.modelsDidChangeNotifications.map { NotificationCenter.default.publisher(for: $0) })
             .map { _ in () }
+            // Sign-out posts two of these back to back; one refetch is enough.
+            .debounce(for: .milliseconds(300), scheduler: DispatchQueue.main)
             .eraseToAnyPublisher()
     }
 

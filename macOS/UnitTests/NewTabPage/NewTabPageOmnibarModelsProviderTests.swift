@@ -478,6 +478,20 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
         cancellable.cancel()
     }
 
+    /// Losing a plan or signing out never posts `subscriptionDidChange`, so an open NTP tab kept
+    /// serving the old tier's models until these were observed too.
+    func testWhenEntitlementsOrAccountNotificationsFireThenModelsDidChangePublisherEmits() async {
+        for name in [Notification.Name.entitlementsDidChange, .accountDidSignOut, .accountDidSignIn] {
+            let expectation = expectation(description: "modelsDidChangeEmitted for \(name.rawValue)")
+            let cancellable = provider.modelsDidChangePublisher.sink { expectation.fulfill() }
+
+            NotificationCenter.default.post(name: name, object: nil)
+
+            await fulfillment(of: [expectation], timeout: 1)
+            cancellable.cancel()
+        }
+    }
+
     // MARK: - Concurrency
 
     /// Overlapping callers (`NewTabPageOmnibarClient.getConfig` and `refreshModelsAndNotify`) must

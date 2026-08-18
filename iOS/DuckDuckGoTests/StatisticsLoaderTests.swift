@@ -32,6 +32,7 @@ class StatisticsLoaderTests: XCTestCase {
     var testee: StatisticsLoader!
     private var fireAppRetentionExperimentPixelsCalled = false
     private var fireSearchExperimentPixelsCalled = false
+    private var fireNewAIPromptExperimentPixelsCalled = false
     private var firedOSDistributionMetrics: [OSDistributionPixel.Metric] = []
 
     override func setUpWithError() throws {
@@ -46,6 +47,7 @@ class StatisticsLoaderTests: XCTestCase {
                                   usageSegmentation: mockUsageSegmentation,
                                   fireAppRetentionExperimentPixels: { self.fireAppRetentionExperimentPixelsCalled = true },
                                   fireSearchExperimentPixels: { self.fireSearchExperimentPixelsCalled = true },
+                                  fireNewAIPromptExperimentPixels: { self.fireNewAIPromptExperimentPixelsCalled = true },
                                   fireOSDistributionPixel: { self.firedOSDistributionMetrics.append($0) },
                                   pixelFiring: mockPixelFiring)
     }
@@ -508,6 +510,23 @@ class StatisticsLoaderTests: XCTestCase {
         }
         wait(for: [testExpectation], timeout: 1)
         XCTAssertTrue(mockUsageSegmentation.atbs[0].installAtb.isReturningUser)
+    }
+
+    func testWhenDuckAIRefreshHappens_ThenAIChatExperimentPixelsFired() {
+        // Given
+        mockStatisticsStore.atb = "atb"
+        mockStatisticsStore.duckAIRetentionAtb = "retentionatb"
+
+        // When
+        loadSuccessfulAtbStub()
+
+        let testExpectation = expectation(description: "refresh complete")
+        testee.refreshRetentionAtbOnDuckAIPromptSubmission {
+            // Then
+            testExpectation.fulfill()
+        }
+        wait(for: [testExpectation], timeout: 1)
+        XCTAssertTrue(fireNewAIPromptExperimentPixelsCalled)
     }
 
 }

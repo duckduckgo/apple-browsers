@@ -328,6 +328,10 @@ final class MainViewController: NSViewController {
             ),
             historySettings: AIChatHistorySettings(privacyConfig: contentBlocking.privacyConfigurationManager)
         )
+        // Fire Windows resolve to their own isolated handler, so a burner omnibar reads none of the
+        // regular session's Duck.ai storage.
+        let duckAiNativeStorageHandler = NSApp.delegateTyped.burnerDuckAiStorageRegistry?.handler(for: tabCollectionViewModel.burnerMode)
+            ?? NSApp.delegateTyped.duckAiNativeStorageHandler
         let aiChatOmnibarController = AIChatOmnibarController(
             aiChatTabOpener: aiChatTabOpener,
             surface: .addressBar,
@@ -338,14 +342,14 @@ final class MainViewController: NSViewController {
             // Fire Windows run an isolated Duck.ai session; persisted chat-history suggestions
             // from the regular session can't be opened here, so suppress them.
             isBurner: tabCollectionViewModel.isBurner,
-            preferences: NSApp.delegateTyped.aiChatPreferencesPersistor
+            preferences: NSApp.delegateTyped.aiChatPreferencesPersistor,
+            usageLimitsStore: DuckAiUsageLimitsStore(storageHandler: duckAiNativeStorageHandler)
         )
 
         aiChatOmnibarContainerViewController = AIChatOmnibarContainerViewController(
             themeManager: themeManager,
             omnibarController: aiChatOmnibarController,
-            duckAiNativeStorageHandler: NSApp.delegateTyped.burnerDuckAiStorageRegistry?.handler(for: tabCollectionViewModel.burnerMode)
-                ?? NSApp.delegateTyped.duckAiNativeStorageHandler,
+            duckAiNativeStorageHandler: duckAiNativeStorageHandler,
             burnerMode: tabCollectionViewModel.burnerMode
         )
         aiChatOmnibarTextContainerViewController = AIChatOmnibarTextContainerViewController(

@@ -21,6 +21,12 @@
         "description": "The Unified Toggle Input surface the pixel was fired from, distinguishing the contextual chat sheet from the Duck.ai tab and the address bar.",
         "enum": ["address_bar", "duck_ai", "contextual_chat"]
     },
+    "unified_input_page_type": {
+        "key": "page_type",
+        "type": "string",
+        "description": "The page the user was on when submitting through the Unified Toggle Input, one value per case of the UnifiedToggleInputPromptPageType Swift enum. `contextual` is the contextual chat sheet; `unknown` is a submission whose page could not be resolved, e.g. no current tab.",
+        "enum": ["ntp", "serp", "website", "duck_ai", "contextual", "unknown"]
+    },
     "cookie_popup_preference": {
         "key": "cookie_popup_preference",
         "type": "string",

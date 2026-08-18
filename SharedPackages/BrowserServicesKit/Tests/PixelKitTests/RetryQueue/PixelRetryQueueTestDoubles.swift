@@ -57,7 +57,7 @@ final class MockPixelRetryQueueStore: PixelRetryQueueStoring {
     }
 }
 
-/// Controllable `PixelKit.FireRequest`, modelling the network sender that `PixelRetryQueue` decorates.
+/// Controllable `PixelKit.FireRequest`, modelling the network sender that `PixelRetryQueue` wraps.
 /// Like the real sender it is retry-agnostic: it records every fire and returns `defaultResult`, with no
 /// notion of organic-vs-replay. Tests drive scenarios through the pixel identities they control — naming
 /// the pixels they enqueue and asserting on calls by name. Named fires can be held (deferred) via

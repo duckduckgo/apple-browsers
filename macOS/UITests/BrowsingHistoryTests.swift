@@ -33,7 +33,7 @@ class BrowsingHistoryTests: UITestCase {
     override func setUpWithError() throws {
         try super.setUpWithError()
         continueAfterFailure = false
-        app = XCUIApplication.setUp()
+        app = XCUIApplication.setUp(featureFlags: ["fireDialogSimplified": false])
         app.enforceSingleWindow()
 
         // Clear history using Fire Dialog

@@ -219,28 +219,40 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     // MARK: - Model Picker (showModelPicker)
 
-    func testWhenUpdatedModelPickerIsAvailableThenCoordinatorEnablesUpdatedPresentation() {
+    func testWhenUpdatedModelPickerIsAvailableThenCoordinatorBuildsUpdatedMenu() {
         let coordinator = UnifiedToggleInputCoordinator(
             host: .omnibar,
             isToggleEnabled: true,
             preferences: mockPreferences,
             updatedModelPickerFeature: MockUpdatedModelPickerFeature(isAvailable: true)
         )
+        coordinator.modelStore.models = [
+            makeModel(id: "free", access: true, accessTier: ["free"]),
+            makeModel(id: "plus", access: false, accessTier: ["plus"]),
+        ]
+        coordinator.modelStore.onModelsUpdated?()
 
-        XCTAssertTrue(coordinator.viewController.usesUpdatedModelPickerPresentation)
-        XCTAssertNotNil(coordinator.viewController.onUpdatedModelPickerTapped)
+        let menu = coordinator.viewController.modelPickerMenu
+        XCTAssertTrue(menu?.children.first is UIAction)
+        XCTAssertEqual(menu?.children.compactMap { $0 as? UIMenu }.first?.title, UserText.aiChatModelPickerTryFree)
     }
 
-    func testWhenUpdatedModelPickerIsUnavailableThenCoordinatorKeepsNativePresentation() {
+    func testWhenUpdatedModelPickerIsUnavailableThenCoordinatorBuildsLegacyMenu() {
         let coordinator = UnifiedToggleInputCoordinator(
             host: .omnibar,
             isToggleEnabled: true,
             preferences: mockPreferences,
             updatedModelPickerFeature: MockUpdatedModelPickerFeature(isAvailable: false)
         )
+        coordinator.modelStore.models = [
+            makeModel(id: "free", access: true, accessTier: ["free"]),
+            makeModel(id: "plus", access: false, accessTier: ["plus"]),
+        ]
+        coordinator.modelStore.onModelsUpdated?()
 
-        XCTAssertFalse(coordinator.viewController.usesUpdatedModelPickerPresentation)
-        XCTAssertNil(coordinator.viewController.onUpdatedModelPickerTapped)
+        let sections = coordinator.viewController.modelPickerMenu?.children.compactMap { $0 as? UIMenu }
+        XCTAssertEqual(sections?.count, 2)
+        XCTAssertEqual(sections?.last?.title, UserText.aiChatPlusModelsSectionHeader)
     }
 
     func test_modelChip_isHidden_duringActiveChat_byDefault() {

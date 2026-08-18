@@ -2344,9 +2344,20 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
     func testConsumeAttachedSelectionsClearsTheList() {
         sessionState.attachSelection(makeSelection())
 
-        sessionState.consumeAttachedSelections()
+        sessionState.consumeAttachedSelections(ids: sessionState.attachedSelections.map(\.id))
 
         XCTAssertTrue(sessionState.attachedSelections.isEmpty)
+    }
+
+    func testConsumeAttachedSelectionsPreservesSelectionsAddedAfterSubmission() {
+        let submitted = makeSelection("submitted")
+        let addedLater = makeSelection("added later")
+        sessionState.attachSelection(submitted)
+        sessionState.attachSelection(addedLater)
+
+        sessionState.consumeAttachedSelections(ids: [submitted.id])
+
+        XCTAssertEqual(sessionState.attachedSelections.map(\.id), [addedLater.id])
     }
 
     func testClearAttachedSelectionsClearsTheList() {
@@ -2527,6 +2538,6 @@ private final class GatedContextualSuggestedPromptsProvider: ContextualSuggested
 
 // MARK: - Floating Input Feature
 
-struct MockFloatingInputFeature: AIChatContextualFloatingInputFeatureProviding {
+private struct MockFloatingInputFeature: AIChatContextualFloatingInputFeatureProviding {
     let isAvailable: Bool
 }

@@ -32,6 +32,21 @@ extension NSOpenPanel {
         return panel
     }
 
+    /// Panel asking the user to pick a directory so the app is granted access to it.
+    static func directoryAccessPanel(directoryURL: URL, message: String, prompt: String) -> NSOpenPanel {
+        let panel = NSOpenPanel()
+
+        panel.directoryURL = directoryURL
+        panel.message = message
+        panel.prompt = prompt
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.canCreateDirectories = false
+
+        return panel
+    }
+
     convenience init(allowedFileTypes: [UTType], directoryURL: URL? = nil) {
         self.init()
 

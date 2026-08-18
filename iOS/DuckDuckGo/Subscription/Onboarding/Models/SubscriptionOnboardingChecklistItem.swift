@@ -17,10 +17,12 @@
 //  limitations under the License.
 //
 
-/// Steps the completion checklist tracks. `widget` is a checklist step but not a subscription feature
+/// Steps the completion checklist tracks. `vpnWidget` is a checklist step but not a subscription feature.
+/// `vpnTips` is excluded from `checklist(isPIRAvailable:)` — it piggybacks on `vpnWidget` instead of being tracked.
 enum SubscriptionOnboardingChecklistItem: String, CaseIterable, Identifiable {
     case vpn
-    case widget
+    case vpnWidget
+    case vpnTips
     case idtr
     case duckAI
     case pir
@@ -28,7 +30,7 @@ enum SubscriptionOnboardingChecklistItem: String, CaseIterable, Identifiable {
     static let features: [SubscriptionOnboardingChecklistItem] = [.vpn, .idtr, .duckAI, .pir]
 
     static func checklist(isPIRAvailable: Bool) -> [SubscriptionOnboardingChecklistItem] {
-        isPIRAvailable ? allCases : allCases.filter { $0 != .pir }
+        isPIRAvailable ? allCases.filter { $0 != .vpnTips } : allCases.filter { $0 != .pir && $0 != .vpnTips }
     }
 
     static func completionPercentage(completed: Set<SubscriptionOnboardingChecklistItem>,
@@ -42,7 +44,7 @@ enum SubscriptionOnboardingChecklistItem: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .vpn: return UserText.subscriptionOnboardingChecklistVPNTitle
-        case .widget: return UserText.subscriptionOnboardingChecklistWidgetTitle
+        case .vpnWidget, .vpnTips: return UserText.subscriptionOnboardingChecklistWidgetTitle
         case .idtr: return UserText.subscriptionOnboardingChecklistIDTRTitle
         case .duckAI: return UserText.subscriptionOnboardingChecklistDuckAITitle
         case .pir: return UserText.subscriptionOnboardingChecklistPIRTitle

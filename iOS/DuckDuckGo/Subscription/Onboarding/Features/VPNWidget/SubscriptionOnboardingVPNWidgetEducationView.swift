@@ -29,29 +29,14 @@ struct SubscriptionOnboardingVPNWidgetEducationView: View {
 
     @Environment(\.dismiss) private var dismiss
 
-    @State private var isShowingTips = false
-
-    // (TODO|Post-iOS15-Drop): drop the fork and keep the `navigationDestination` branch.
-    @ViewBuilder
     var body: some View {
-        if #available(iOS 16.0, *) {
-            page.navigationDestination(isPresented: $isShowingTips) { tipsScreen }
-        } else {
-            ZStack {
-                NavigationLink(isActive: $isShowingTips) { tipsScreen } label: { EmptyView() }
-                page
-            }
-        }
-    }
-
-    private var page: some View {
         SubscriptionOnboardingBaseView(
             title: title,
             navigationButton: navigationButton ?? .back({ dismiss() }),
             header: SubscriptionOnboardingHeaderView(title: UserText.subscriptionOnboardingVPNWidgetEducationTitle),
             footer: .single(.init(UserText.subscriptionOnboardingVPNWidgetEducationGotItButton, action: {
                 onComplete()
-                isShowingTips = true
+                onNext()
             }))) {
             WidgetEducationContentView(
                 thirdParagraphText: UserText.addVPNWidgetSettingsThirdParagraph,
@@ -61,18 +46,6 @@ struct SubscriptionOnboardingVPNWidgetEducationView: View {
                     horizontalOffset: -7,
                     dropsShadow: true))
         }
-    }
-
-    private var tipsScreen: some View {
-        SubscriptionOnboardingVPNTipsView(title: title, onNext: advanceFromTips)
-    }
-
-    // (TODO|Post-iOS15-Drop): drop the reset — `NavigationStack` tolerates the overlap.
-    /// Deactivates the local tips link *before* the flow pushes its own sibling link: two simultaneously
-    /// active `NavigationLink`s in one iOS 15 `NavigationView` break the push.
-    private func advanceFromTips() {
-        isShowingTips = false
-        onNext()
     }
 }
 

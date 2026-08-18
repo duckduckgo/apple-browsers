@@ -32,7 +32,8 @@ final class SubscriptionOnboardingSectionTests: XCTestCase {
 
     func testWhenSectionIsAnActivationThenKindCarriesItsChecklistItem() {
         XCTAssertEqual(SubscriptionOnboardingSection.vpnActivation.kind, .activation(.vpn))
-        XCTAssertEqual(SubscriptionOnboardingSection.vpnWidget.kind, .activation(.widget))
+        XCTAssertEqual(SubscriptionOnboardingSection.vpnWidget.kind, .activation(.vpnWidget))
+        XCTAssertEqual(SubscriptionOnboardingSection.vpnTips.kind, .activation(.vpnTips))
         XCTAssertEqual(SubscriptionOnboardingSection.idtr.kind, .activation(.idtr))
         XCTAssertEqual(SubscriptionOnboardingSection.duckAI.kind, .activation(.duckAI))
         XCTAssertEqual(SubscriptionOnboardingSection.pir.kind, .activation(.pir))
@@ -44,7 +45,7 @@ final class SubscriptionOnboardingSectionTests: XCTestCase {
 
     func testWhenEnumeratingActivationSectionsThenPIRIsExcluded() {
         XCTAssertEqual(SubscriptionOnboardingSection.activationSections,
-                       [.vpnActivation, .vpnWidget, .idtr, .duckAI])
+                       [.vpnActivation, .vpnWidget, .vpnTips, .idtr, .duckAI])
     }
 
     // MARK: - Navigation button accessibility

@@ -77,7 +77,7 @@ struct SubscriptionOnboardingProgressView: View {
             footer: footer,
             declaresNavigationChrome: variant != .duckAIInterstitial) {
             SubscriptionOnboardingProgressCardView(percentage: percentage,
-                                                   items: progress.checklistItems,
+                                                   items: progress.checklist,
                                                    completedItems: completedItems,
                                                    onSelect: onSelectItem)
         }
@@ -97,7 +97,7 @@ struct SubscriptionOnboardingProgressView: View {
 
     private var percentage: Int {
         SubscriptionOnboardingChecklistItem.completionPercentage(completed: completedItems,
-                                                                checklist: progress.checklistItems)
+                                                                checklist: progress.checklist)
     }
 
     private func refresh() {
@@ -186,14 +186,14 @@ private struct SubscriptionOnboardingProgressViewPreview: View {
 #Preview("Summary — 80%") {
     RebrandedPreview {
         SubscriptionOnboardingProgressViewPreview(variant: .summary,
-                                                  completedItems: [.vpn, .widget, .idtr, .duckAI])
+                                                  completedItems: [.vpn, .vpnWidget, .vpnTips, .idtr, .duckAI])
     }
 }
 
 #Preview("Duck.ai interstitial") {
     RebrandedPreview {
         SubscriptionOnboardingProgressViewPreview(variant: .duckAIInterstitial,
-                                                  completedItems: [.vpn, .widget, .idtr, .duckAI])
+                                                  completedItems: [.vpn, .vpnWidget, .vpnTips, .idtr, .duckAI])
     }
 }
 

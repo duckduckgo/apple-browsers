@@ -22,10 +22,11 @@ import DesignResourcesKit
 import UIComponents
 
 /// The post-activation "What to know about using your VPN" screen: the tips carousel with a single
-/// button that finishes the VPN section and moves the flow to the next one.
+/// button that advances the flow. Piggybacks on `.vpnWidget`'s checklist item — completes nothing of its own.
 struct SubscriptionOnboardingVPNTipsView: View {
 
     var title: String?
+    var navigationButton: SubscriptionOnboardingNavigationButton?
     var onNext: () -> Void = {}
 
     @Environment(\.dismiss) private var dismiss
@@ -33,7 +34,7 @@ struct SubscriptionOnboardingVPNTipsView: View {
     var body: some View {
         SubscriptionOnboardingBaseView(
             title: title,
-            navigationButton: .back({ dismiss() }),
+            navigationButton: navigationButton ?? .back({ dismiss() }),
             header: SubscriptionOnboardingHeaderView(title: UserText.subscriptionOnboardingVPNTipsTitle),
             footer: .single(.init(UserText.subscriptionOnboardingVPNTipsDoneButton) { onNext() })) {
             VPNTipsCarousel()

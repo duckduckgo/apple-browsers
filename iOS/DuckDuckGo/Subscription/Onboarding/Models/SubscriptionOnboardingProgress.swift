@@ -94,14 +94,14 @@ struct SubscriptionOnboardingProgress {
     /// How long the Subscription Settings card lives, measured from its first display.
     private static let cardLifetime: TimeInterval = .days(14)
 
-    /// Four items when PIR is unreachable, so that customer's ceiling is still 100%.
-    let checklistItems: [SubscriptionOnboardingChecklistItem]
+    /// This run's checklist
+    let checklist: [SubscriptionOnboardingChecklistItem]
 
     private var persistor: SubscriptionOnboardingProgressPersisting
 
     init(persistor: SubscriptionOnboardingProgressPersisting, isPIRAvailable: Bool) {
         self.persistor = persistor
-        self.checklistItems = SubscriptionOnboardingChecklistItem.checklist(isPIRAvailable: isPIRAvailable)
+        self.checklist = SubscriptionOnboardingChecklistItem.checklist(isPIRAvailable: isPIRAvailable)
     }
 
     /// Read on demand, since items complete outside whatever screen is asking.
@@ -111,7 +111,7 @@ struct SubscriptionOnboardingProgress {
 
     var percentage: Int {
         SubscriptionOnboardingChecklistItem.completionPercentage(completed: completedItems,
-                                                                checklist: checklistItems)
+                                                                checklist: checklist)
     }
 
     mutating func markComplete(_ item: SubscriptionOnboardingChecklistItem) {

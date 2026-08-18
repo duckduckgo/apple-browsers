@@ -23,6 +23,7 @@ enum SubscriptionOnboardingSection: CaseIterable {
     case welcome
     case vpnActivation
     case vpnWidget
+    case vpnTips
     case idtr
     case duckAI
     case progress
@@ -38,7 +39,8 @@ enum SubscriptionOnboardingSection: CaseIterable {
         switch self {
         case .orderConfirmation, .welcome: .overview
         case .vpnActivation: .activation(.vpn)
-        case .vpnWidget: .activation(.widget)
+        case .vpnWidget: .activation(.vpnWidget)
+        case .vpnTips: .activation(.vpnTips)
         case .idtr: .activation(.idtr)
         case .duckAI: .activation(.duckAI)
         case .progress: .progressTracker
@@ -47,5 +49,5 @@ enum SubscriptionOnboardingSection: CaseIterable {
     }
 
     /// In-flow sections (excludes .pir, overview, and progress).
-    static let activationSections: [SubscriptionOnboardingSection] = [.vpnActivation, .vpnWidget, .idtr, .duckAI]
+    static let activationSections: [SubscriptionOnboardingSection] = [.vpnActivation, .vpnWidget, .vpnTips, .idtr, .duckAI]
 }

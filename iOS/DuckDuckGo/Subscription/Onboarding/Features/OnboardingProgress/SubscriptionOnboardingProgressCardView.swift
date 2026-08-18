@@ -177,8 +177,8 @@ private struct SubscriptionOnboardingProgressCardViewPreview: View {
     }
 
     private static let items = SubscriptionOnboardingChecklistItem.allCases
-    private static let completedExceptPIR: Set<SubscriptionOnboardingChecklistItem> = [.vpn, .widget, .idtr, .duckAI]
-    private static let completedExceptVPN: Set<SubscriptionOnboardingChecklistItem> = [.widget, .idtr, .duckAI, .pir]
+    private static let completedExceptPIR: Set<SubscriptionOnboardingChecklistItem> = [.vpn, .vpnWidget, .vpnTips, .idtr, .duckAI]
+    private static let completedExceptVPN: Set<SubscriptionOnboardingChecklistItem> = [.vpnWidget, .vpnTips, .idtr, .duckAI, .pir]
 }
 
 #Preview("Light") {

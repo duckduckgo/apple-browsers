@@ -84,13 +84,28 @@ final class SubscriptionOnboardingProgressTests: XCTestCase {
     // MARK: - Progress
 
     func testWhenPIRIsAvailableThenTheChecklistHasAllFiveItems() {
-        XCTAssertEqual(makeProgress(isPIRAvailable: true).checklistItems,
-                       SubscriptionOnboardingChecklistItem.allCases)
+        XCTAssertEqual(makeProgress(isPIRAvailable: true).checklist,
+                       [.vpn, .vpnWidget, .idtr, .duckAI, .pir])
+    }
+
+    /// `.vpnTips` is a real checklist item (so its section can carry a `.kind`), but it must never be
+    /// counted: it exists purely so the tips screen piggybacks on `.vpnWidget`'s gating/step number.
+    func testVpnTipsIsExcludedFromTheChecklistRegardlessOfPIRAvailability() {
+        XCTAssertFalse(makeProgress(isPIRAvailable: true).checklist.contains(.vpnTips))
+        XCTAssertFalse(makeProgress(isPIRAvailable: false).checklist.contains(.vpnTips))
+        XCTAssertEqual(makeProgress(isPIRAvailable: true).checklist.count, 5)
+        XCTAssertEqual(makeProgress(isPIRAvailable: false).checklist.count, 4)
+    }
+
+    func testWhenVpnTipsAloneIsCompleteThenPercentageIsUnaffected() {
+        let progress = makeProgress(isPIRAvailable: false, completed: [.vpnTips])
+
+        XCTAssertEqual(progress.percentage, 0)
     }
 
     func testWhenPIRIsUnavailableThenTheChecklistDropsIt() {
-        XCTAssertEqual(makeProgress(isPIRAvailable: false).checklistItems,
-                       [.vpn, .widget, .idtr, .duckAI])
+        XCTAssertEqual(makeProgress(isPIRAvailable: false).checklist,
+                       [.vpn, .vpnWidget, .idtr, .duckAI])
     }
 
     func testWhenNothingIsCompleteThenPercentageIsZero() {
@@ -102,14 +117,14 @@ final class SubscriptionOnboardingProgressTests: XCTestCase {
     }
 
     func testWhenEverythingButPIRIsCompleteThenPercentageIsEighty() {
-        let progress = makeProgress(isPIRAvailable: true, completed: [.vpn, .widget, .idtr, .duckAI])
+        let progress = makeProgress(isPIRAvailable: true, completed: [.vpn, .vpnWidget, .idtr, .duckAI])
 
         XCTAssertEqual(progress.percentage, 80)
     }
 
     /// The denominator is this customer's checklist, so a PIR-ineligible customer can still reach 100%.
     func testWhenPIRIsUnavailableThenTheSameFourItemsReachOneHundred() {
-        let progress = makeProgress(isPIRAvailable: false, completed: [.vpn, .widget, .idtr, .duckAI])
+        let progress = makeProgress(isPIRAvailable: false, completed: [.vpn, .vpnWidget, .idtr, .duckAI])
 
         XCTAssertEqual(progress.percentage, 100)
     }
@@ -140,7 +155,7 @@ final class SubscriptionOnboardingProgressTests: XCTestCase {
     }
 
     func testWhenReachingOneHundredThenTheCardStillShowsForTheRestOfTheSession() {
-        var progress = makeProgress(isPIRAvailable: false, completed: [.vpn, .widget, .idtr, .duckAI])
+        var progress = makeProgress(isPIRAvailable: false, completed: [.vpn, .vpnWidget, .idtr, .duckAI])
         let session = SubscriptionOnboardingSessionState()
 
         XCTAssertTrue(progress.shouldShowSetupCard(now: Date(), session: session))
@@ -150,7 +165,7 @@ final class SubscriptionOnboardingProgressTests: XCTestCase {
     }
 
     func testWhenCompletionHappenedInAnEarlierSessionThenTheCardIsHidden() {
-        var progress = makeProgress(isPIRAvailable: false, completed: [.vpn, .widget, .idtr, .duckAI])
+        var progress = makeProgress(isPIRAvailable: false, completed: [.vpn, .vpnWidget, .idtr, .duckAI])
         _ = progress.shouldShowSetupCard(now: Date(), session: SubscriptionOnboardingSessionState())
 
         // A fresh session object is what the next app launch supplies.
@@ -158,7 +173,7 @@ final class SubscriptionOnboardingProgressTests: XCTestCase {
     }
 
     func testWhenReachingOneHundredThenTheCompletionDateIsRecordedOnce() {
-        var progress = makeProgress(isPIRAvailable: false, completed: [.vpn, .widget, .idtr, .duckAI])
+        var progress = makeProgress(isPIRAvailable: false, completed: [.vpn, .vpnWidget, .idtr, .duckAI])
         let first = Date(timeIntervalSince1970: 1_000)
 
         _ = progress.shouldShowSetupCard(now: first, session: SubscriptionOnboardingSessionState())
@@ -172,7 +187,7 @@ final class SubscriptionOnboardingProgressTests: XCTestCase {
 
     /// Seeded from a View `init`, which SwiftUI can re-run many times per session, so this must never write.
     func testPreviewNeverWritesEvenAtOneHundredPercent() {
-        let progress = makeProgress(isPIRAvailable: false, completed: [.vpn, .widget, .idtr, .duckAI])
+        let progress = makeProgress(isPIRAvailable: false, completed: [.vpn, .vpnWidget, .idtr, .duckAI])
         let session = SubscriptionOnboardingSessionState()
 
         _ = progress.previewShouldShowSetupCard(now: Date(), session: session)
@@ -190,13 +205,13 @@ final class SubscriptionOnboardingProgressTests: XCTestCase {
 
     /// Nothing has recorded completion yet, and the preview cannot record it itself, so it must assume "not shown".
     func testPreviewIsPessimisticAtOneHundredPercentUntilTheRealDecisionHasRun() {
-        let progress = makeProgress(isPIRAvailable: false, completed: [.vpn, .widget, .idtr, .duckAI])
+        let progress = makeProgress(isPIRAvailable: false, completed: [.vpn, .vpnWidget, .idtr, .duckAI])
 
         XCTAssertFalse(progress.previewShouldShowSetupCard(now: Date(), session: SubscriptionOnboardingSessionState()))
     }
 
     func testPreviewAgreesWithTheRealAnswerAfterCompletionInAnEarlierSession() {
-        var progress = makeProgress(isPIRAvailable: false, completed: [.vpn, .widget, .idtr, .duckAI])
+        var progress = makeProgress(isPIRAvailable: false, completed: [.vpn, .vpnWidget, .idtr, .duckAI])
         _ = progress.shouldShowSetupCard(now: Date(), session: SubscriptionOnboardingSessionState())
 
         // A fresh session, as the next launch would supply. The preview must hide here too, or the

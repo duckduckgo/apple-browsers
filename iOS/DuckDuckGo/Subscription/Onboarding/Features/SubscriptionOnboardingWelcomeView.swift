@@ -81,10 +81,10 @@ private extension WelcomeCard {
             trailing: .chevron(Color(designSystemColor: .iconsTertiary)))
     }
 
-    /// The widget shares VPN's presentation. Not rendered here (features only), but grouped with VPN to keep the switch exhaustive.
+    /// The widget and tips steps share VPN's presentation. Not rendered here (features only), but grouped with VPN to keep the switch exhaustive.
     static func visual(for feature: SubscriptionOnboardingChecklistItem) -> Graphic {
         switch feature {
-        case .vpn, .widget: colorIcon(DesignSystemImages.Color.Size24.vpn)
+        case .vpn, .vpnWidget, .vpnTips: colorIcon(DesignSystemImages.Color.Size24.vpn)
         case .idtr: colorIcon(DesignSystemImages.Color.Size24.identityTheftRestoration)
         case .duckAI: colorIcon(DesignSystemImages.Color.Size24.aiGeneral)
         case .pir: .image(Image(.onboardingPIRBlocked24))
@@ -97,7 +97,7 @@ private extension WelcomeCard {
 
     static func title(for feature: SubscriptionOnboardingChecklistItem) -> String {
         switch feature {
-        case .vpn, .widget: UserText.subscriptionOnboardingWelcomeVPNTitle
+        case .vpn, .vpnWidget, .vpnTips: UserText.subscriptionOnboardingWelcomeVPNTitle
         case .idtr: UserText.subscriptionOnboardingWelcomeIDTRTitle
         case .duckAI: UserText.subscriptionOnboardingWelcomeDuckAITitle
         case .pir: UserText.subscriptionOnboardingWelcomePIRTitle
@@ -106,7 +106,7 @@ private extension WelcomeCard {
 
     static func bodyText(for feature: SubscriptionOnboardingChecklistItem) -> String {
         switch feature {
-        case .vpn, .widget: UserText.subscriptionOnboardingWelcomeVPNBody
+        case .vpn, .vpnWidget, .vpnTips: UserText.subscriptionOnboardingWelcomeVPNBody
         case .idtr: UserText.subscriptionOnboardingWelcomeIDTRBody
         case .duckAI: UserText.subscriptionOnboardingWelcomeDuckAIBody
         case .pir: UserText.subscriptionOnboardingWelcomePIRBody

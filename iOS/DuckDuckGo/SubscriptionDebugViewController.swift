@@ -477,7 +477,7 @@ final class SubscriptionDebugViewController: UITableViewController {
             case .idtr: showIDTROnboarding()
             case .duckAI: showDuckAIOnboarding()
             case .pir: showPIROnboarding()
-            case .progress: showProgressOnboarding(completedItems: [.vpn, .widget, .idtr, .duckAI])
+            case .progress: showProgressOnboarding(completedItems: [.vpn, .vpnWidget, .vpnTips, .idtr, .duckAI])
             case .progressComplete: showProgressOnboarding(completedItems: Set(SubscriptionOnboardingChecklistItem.allCases))
             case .tapAllowHint: showTapAllowHintPlayground()
             default: break
@@ -1003,7 +1003,7 @@ final class SubscriptionDebugViewController: UITableViewController {
                         SubscriptionOnboardingDuckAIChatLauncher().launch(modelID: modelID)
                     }),
                 navigationButton: .close({ [weak self] in self?.dismiss(animated: true) }),
-                progress: SubscriptionOnboardingProgress(completedItems: [.vpn, .widget, .idtr]))
+                progress: SubscriptionOnboardingProgress(completedItems: [.vpn, .vpnWidget, .vpnTips, .idtr]))
                 .subscriptionOnboardingNavigationContainer()
                 .graphicLottieRenderer(.app))
         present(hostingController, animated: true)

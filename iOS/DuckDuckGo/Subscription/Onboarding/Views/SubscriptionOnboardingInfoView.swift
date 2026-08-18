@@ -138,10 +138,10 @@ struct SubscriptionOnboardingInfoContent {
 }
 
 extension SubscriptionOnboardingInfoContent {
-    /// Info-sheet content for a checklist item. The widget resolves to VPN's content.
+    /// Info-sheet content for a checklist item. The widget and tips steps resolve to VPN's content.
     static func content(for item: SubscriptionOnboardingChecklistItem) -> SubscriptionOnboardingInfoContent {
         switch item {
-        case .vpn, .widget: return .vpn
+        case .vpn, .vpnWidget, .vpnTips: return .vpn
         case .idtr: return .idtr
         case .duckAI: return .duckAI
         case .pir: return .pir

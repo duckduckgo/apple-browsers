@@ -102,7 +102,7 @@ private struct SubscriptionOnboardingSetupCardPreview: View {
         ScrollView {
             // PIR unavailable, so the checklist is four items and these read 3/4 and 1/4.
             VStack(spacing: 24) {
-                card(completed: [.vpn, .widget, .idtr])
+                card(completed: [.vpn, .vpnWidget, .vpnTips, .idtr])
                 card(completed: [.vpn])
             }
             .padding()

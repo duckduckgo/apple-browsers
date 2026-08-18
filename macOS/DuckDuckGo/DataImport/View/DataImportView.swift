@@ -138,7 +138,13 @@ struct DataImportView: ModalView {
                 .padding(.vertical, 12)
             case .getDirectoryReadPermission:
                 RequestDirectoryReadPermissionView(source: model.importSource) {
+                    model.grantAccessButtonPressed()
                 }
+            case .directoryReadPermissionDenied:
+                // TODO: design the "access not granted" screen
+                Text(verbatim: "TODO: directory access was not granted")
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 12)
             case .passwordEntryHelp:
                 PasswordEntryRetryPromptView(
                     onRetry: {

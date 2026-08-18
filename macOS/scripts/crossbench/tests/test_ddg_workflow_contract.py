@@ -34,8 +34,7 @@ class DDGWorkflowContractTests(unittest.TestCase):
     def test_real_measurement_runs_daily_and_on_demand(self) -> None:
         self.assertIn("workflow_dispatch:", WORKFLOW)
         self.assertIn('- cron: "41 4 * * *"', WORKFLOW)
-        # TEMPORARY: a branch-scoped push trigger is in place so this
-        # workflow can run before it reaches the default branch.
+        self.assertNotIn("push:", WORKFLOW)
         # A scheduled run carries no workflow_dispatch inputs, so the upload has
         # to be gated on the event rather than on the input alone.
         self.assertIn(

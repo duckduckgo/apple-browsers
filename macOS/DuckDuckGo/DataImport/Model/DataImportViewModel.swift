@@ -79,6 +79,8 @@ struct DataImportViewModel {
         case getFileReadPermission(URL)
         /// Shown before importing when the browser data directory isn't readable (macOS 27+)
         case getDirectoryReadPermission(URL)
+        /// Shown when the user didn't grant access to the browser data directory (macOS 27+)
+        case directoryReadPermissionDenied(URL)
         case fileImport(dataType: DataType, summary: DataImportSummary = [:])
         case archiveImport(dataTypes: Set<DataType>, summary: DataImportSummary? = nil)
         case summary(DataImportSummary)
@@ -863,7 +865,7 @@ extension DataImportViewModel {
             return .continue
         case .moreInfo:
             return initiateImport()
-        case .getFileReadPermission, .getDirectoryReadPermission:
+        case .getFileReadPermission, .getDirectoryReadPermission, .directoryReadPermissionDenied:
             return nil
         case .passwordEntryHelp:
             return nil
@@ -892,7 +894,7 @@ extension DataImportViewModel {
             switch screen {
             case .sourceAndDataTypesPicker:
                 return .cancel
-            case .archiveImport, .profilePicker, .moreInfo, .getFileReadPermission, .getDirectoryReadPermission:
+            case .archiveImport, .profilePicker, .moreInfo, .getFileReadPermission, .getDirectoryReadPermission, .directoryReadPermissionDenied:
                 return .back
             case .passwordEntryHelp:
                 return .cancel
@@ -962,6 +964,29 @@ extension DataImportViewModel {
     }
 
     @MainActor
+    private mutating func reloadProfilesAfterGrantingAccess() {
+        if let dataImportWideEventData {
+            wideEvent.discardFlow(dataImportWideEventData)
+            self.dataImportWideEventData = nil
+        }
+        self = .init(importSource: importSource,
+                     selectedDataTypes: hasUserModifiedDataTypeSelection ? selectedDataTypes : nil,
+                     hasUserModifiedDataTypeSelection: hasUserModifiedDataTypeSelection,
+                     isPickerExpanded: isPickerExpanded,
+                     isPasswordManagerAutolockEnabled: isPasswordManagerAutolockEnabled,
+                     syncFeatureVisibility: syncFeatureVisibility,
+                     loadProfiles: loadProfiles,
+                     dataImporterFactory: dataImporterFactory,
+                     requestPrimaryPasswordCallback: requestPrimaryPasswordCallback,
+                     openPanelCallback: openPanelCallback,
+                     featureFlagger: featureFlagger,
+                     reportSenderFactory: reportSenderFactory,
+                     wideEvent: wideEvent,
+                     onFinished: onFinished,
+                     onCancelled: onCancelled)
+    }
+
+    @MainActor
     mutating func performAction(for buttonType: ButtonType, dismiss: @escaping () -> Void) {
         switch buttonType {
         case .back, .close:
@@ -999,10 +1024,38 @@ extension DataImportViewModel {
         }
     }
 
-    @MainActor mutating func showDirectoryReadPermissionScreen() {
+    /// Returns `true` when we successfully acquired Read Permissions
+    @MainActor
+    private func requestDirectoryAccess(for directoryURL: URL) -> Bool {
+        let openPanel = NSOpenPanel.directoryAccessPanel(directoryURL: directoryURL,
+                                                         message: UserText.importBrowserDataAccessPanelMessage(for: importSource),
+                                                         prompt: UserText.importBrowserDataAccessPanelPrompt)
+
+        guard case .OK = openPanel.runModal() else {
+            return false
+        }
+
+        return FileManager.default.requiresReadPermission(atPath: directoryURL.path) == false
+    }
+
+    @MainActor
+    mutating func showDirectoryReadPermissionScreen() {
         guard let selectedProfile else { return }
 
         screen = .getDirectoryReadPermission(selectedProfile.profileURL)
+    }
+
+    @MainActor
+    mutating func grantAccessButtonPressed() {
+        guard let selectedProfile else { return }
+
+        guard requestDirectoryAccess(for: selectedProfile.profileURL) else {
+            screen = .directoryReadPermissionDenied(selectedProfile.profileURL)
+            return
+        }
+
+        reloadProfilesAfterGrantingAccess()
+        importButtonPressed()
     }
 
     @MainActor

@@ -64,6 +64,36 @@ defaults:
     working-directory: macOS/scripts/crossbench
 
 jobs:
+  # TEMPORARY: the hosted-runner baseline for the same probe, so the SIP and
+  # TCC state can be read next to the write result on both runners. Remove with
+  # the self-hosted diagnostic step and the push trigger.
+  diagnose-hosted:
+    name: Diagnose Safari prefs write (hosted)
+    runs-on: macos-latest
+    timeout-minutes: 10
+    # No checkout here, so the workflow-level working-directory does not exist.
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - name: Print macOS version
+        run: sw_vers
+
+      - name: Diagnose Safari prefs write
+        continue-on-error: true
+        run: |
+          id
+          echo "managername: $(launchctl managername 2>&1)"
+          echo "csrutil: $(csrutil status 2>&1)"
+          ls -lad ~/Library/Containers/com.apple.Safari 2>&1 || echo "NO CONTAINER"
+          ls -la ~/Library/Containers/com.apple.Safari/Data/Library/Preferences/ 2>&1 | head -20
+          defaults write com.apple.Safari ProxyProbe -string probe 2>&1 || echo "WRITE FAILED"
+          defaults read com.apple.Safari ProxyProbe 2>&1 || echo "READ FAILED"
+          sudo defaults write com.apple.Safari SudoProbe -string probe 2>&1 || echo "SUDO WRITE FAILED"
+          sudo defaults read com.apple.Safari SudoProbe 2>&1 || echo "SUDO READ FAILED"
+          defaults delete com.apple.Safari ProxyProbe 2>&1 || true
+          sudo defaults delete com.apple.Safari SudoProbe 2>&1 || true
+
   validate-wpr:
     uses: ./.github/workflows/wpr_archive_validation.yml
     with:
@@ -91,19 +121,21 @@ jobs:
       - name: Print macOS version
         run: sw_vers
 
-      - name: Diagnose Safari prefs write
-        # TEMPORARY: tells apart a missing Aqua session from a TCC denial as the
-        # cause of the com.apple.Safari container-prefs write failure.
-        # managername != Aqua means no GUI session; Aqua plus a failed write
-        # means the runner lacks Full Disk Access. Remove once known.
+      - name: Diagnose Safari prefs write (self-hosted)
+        # TEMPORARY: compare against the diagnose-hosted job below. Remove both.
         continue-on-error: true
         run: |
           id
           echo "managername: $(launchctl managername 2>&1)"
-          ls -lad ~/Library/Containers/com.apple.Safari 2>&1 || echo "no container"
+          echo "csrutil: $(csrutil status 2>&1)"
+          ls -lad ~/Library/Containers/com.apple.Safari 2>&1 || echo "NO CONTAINER"
+          ls -la ~/Library/Containers/com.apple.Safari/Data/Library/Preferences/ 2>&1 | head -20
           defaults write com.apple.Safari ProxyProbe -string probe 2>&1 || echo "WRITE FAILED"
           defaults read com.apple.Safari ProxyProbe 2>&1 || echo "READ FAILED"
+          sudo defaults write com.apple.Safari SudoProbe -string probe 2>&1 || echo "SUDO WRITE FAILED"
+          sudo defaults read com.apple.Safari SudoProbe 2>&1 || echo "SUDO READ FAILED"
           defaults delete com.apple.Safari ProxyProbe 2>&1 || true
+          sudo defaults delete com.apple.Safari SudoProbe 2>&1 || true
 
       - name: Download validated WPR archives
         uses: actions/download-artifact@v7

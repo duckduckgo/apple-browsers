@@ -137,6 +137,32 @@ jobs:
           defaults delete com.apple.Safari ProxyProbe 2>&1 || true
           sudo defaults delete com.apple.Safari SudoProbe 2>&1 || true
 
+      - name: Probe a root write by absolute plist path (self-hosted)
+        # TEMPORARY: a bare domain name resolves against the calling user's
+        # preferences, so the earlier sudo write may have landed in root's own
+        # domain rather than this container. Addressing the plist by path
+        # removes that ambiguity. Restores the prior owner, and removes the file
+        # again if the write created it. Remove with the other diagnostics.
+        continue-on-error: true
+        run: |
+          P="$HOME/Library/Containers/com.apple.Safari/Data/Library/Preferences/com.apple.Safari"
+          D="$(dirname "$P")"
+          before="$(sudo stat -f '%Su:%Sg' "$P.plist" 2>/dev/null || echo NONE)"
+          echo "owner before: $before"
+          sudo ls -la "$D" 2>&1 | head -10
+          sudo defaults write "$P" ProxyProbe -string probe 2>&1 || echo "ROOT PATH WRITE FAILED"
+          sudo defaults read "$P" ProxyProbe 2>&1 || echo "ROOT PATH READ FAILED"
+          echo "owner after: $(sudo stat -f '%Su:%Sg' "$P.plist" 2>/dev/null || echo NONE)"
+          sudo defaults delete "$P" ProxyProbe 2>&1 || true
+          if [ "$before" = "NONE" ]; then
+            sudo rm -f "$P.plist"
+            echo "removed the plist this probe created"
+          else
+            sudo chown "$before" "$P.plist" 2>&1 || true
+          fi
+          echo "--- restored ---"
+          sudo ls -la "$D" 2>&1 | head -10
+
       - name: Download validated WPR archives
         uses: actions/download-artifact@v7
         with:

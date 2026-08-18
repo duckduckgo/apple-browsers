@@ -42,7 +42,7 @@ struct AppConfigurationURLProvider: ConfigurationURLProviding {
         case .bloomFilterSpec: return URL.bloomFilterSpec
         case .bloomFilterBinary: return URL.bloomFilter
         case .bloomFilterExcludedDomains: return URL.bloomFilterExcludedDomains
-        case .privacyConfiguration: return URL(string: "https://duckduckgo.github.io/privacy-configuration/pr-5782/v4/ios-config.json")!
+        case .privacyConfiguration: return URL.privacyConfig
         case .trackerDataSet: return trackerDataUrlProvider.trackerDataURL ?? URL.trackerDataSet
         case .surrogates: return URL.surrogates
         case .remoteMessagingConfig: return RemoteMessagingClient.Constants.endpoint

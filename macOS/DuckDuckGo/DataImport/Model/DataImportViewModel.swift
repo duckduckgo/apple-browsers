@@ -75,7 +75,10 @@ struct DataImportViewModel {
         case profilePicker
         case moreInfo
         case passwordEntryHelp
-        case getReadPermission(URL)
+        /// Shown after an import fails with no read permission (macOS < 15.2, Safari bookmarks file)
+        case getFileReadPermission(URL)
+        /// Shown before importing when the browser data directory isn't readable (macOS 27+)
+        case getDirectoryReadPermission(URL)
         case fileImport(dataType: DataType, summary: DataImportSummary = [:])
         case archiveImport(dataTypes: Set<DataType>, summary: DataImportSummary? = nil)
         case summary(DataImportSummary)
@@ -474,7 +477,7 @@ struct DataImportViewModel {
 
                 // On macOS < 15.2, show permission request screen to let user grant access
                 if #unavailable(macOS 15.2) {
-                    screen = .getReadPermission(url)
+                    screen = .getFileReadPermission(url)
                     return true
                 }
 
@@ -860,7 +863,7 @@ extension DataImportViewModel {
             return .continue
         case .moreInfo:
             return initiateImport()
-        case .getReadPermission:
+        case .getFileReadPermission, .getDirectoryReadPermission:
             return nil
         case .passwordEntryHelp:
             return nil
@@ -889,7 +892,7 @@ extension DataImportViewModel {
             switch screen {
             case .sourceAndDataTypesPicker:
                 return .cancel
-            case .archiveImport, .profilePicker, .moreInfo, .getReadPermission:
+            case .archiveImport, .profilePicker, .moreInfo, .getFileReadPermission, .getDirectoryReadPermission:
                 return .back
             case .passwordEntryHelp:
                 return .cancel

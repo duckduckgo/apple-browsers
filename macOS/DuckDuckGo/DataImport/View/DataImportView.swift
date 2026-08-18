@@ -130,12 +130,15 @@ struct DataImportView: ModalView {
                 )
             case .moreInfo:
                 NewImportMoreInfoView()
-            case .getReadPermission(let url):
+            case .getFileReadPermission(let url):
                 RequestFilePermissionView(source: model.importSource, url: url, requestDataDirectoryPermission: SafariDataImporter.requestDataDirectoryPermission) { _ in
                     model.initiateImport()
                 }
                 .padding(.horizontal, 20)
                 .padding(.vertical, 12)
+            case .getDirectoryReadPermission:
+                RequestDirectoryReadPermissionView(source: model.importSource) {
+                }
             case .passwordEntryHelp:
                 PasswordEntryRetryPromptView(
                     onRetry: {

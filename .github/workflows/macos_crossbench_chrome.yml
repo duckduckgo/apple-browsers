@@ -88,6 +88,16 @@ jobs:
       - name: Print macOS version
         run: sw_vers
 
+      - name: Ensure gh is available
+        # The self-hosted runner does not ship the GitHub CLI, and the
+        # aggregation steps below read this run's metadata with `gh api`.
+        # GITHUB_PATH carries the install to later steps, which each get a
+        # fresh shell.
+        run: |
+          if command -v gh >/dev/null; then exit 0; fi
+          echo /opt/homebrew/bin >> "$GITHUB_PATH"
+          /opt/homebrew/bin/brew install gh
+
       - name: Download validated WPR archives
         uses: actions/download-artifact@v7
         with:

@@ -22,10 +22,13 @@ import Persistence
 
 /// Retry queue for failed PixelKit fires.
 ///
-/// `PixelRetryQueue` decorates the `PixelKit.FireRequest` network closure. When a fire fails it persists
-/// the fully-resolved request; when a fire succeeds it triggers a throttled drain that replays queued
-/// items through the *underlying* closure (so replays never re-enter this decorator). Items older than
-/// 28 days are dropped without sending.
+/// `PixelRetryQueue` wraps the `PixelKit.FireRequest` network closure. Retry is opt-in per fire
+/// (`PixelKit.Options.retryOnFailure`): a fire that opted in and failed has its fully-resolved request
+/// persisted, while a fire that did not is passed straight through and dropped on failure as if the
+/// queue were not there. Any successful fire — opted in or not — triggers a throttled drain that
+/// replays queued items through the *underlying* closure, so replays never re-enter the queue and an
+/// opted-in pixel is retried as soon as the next pixel of any kind gets through. Items older than 28
+/// days are dropped without sending.
 ///
 /// `PixelKit` creates and owns this internally: it wraps the `FireRequest` passed to `PixelKit.setUp`,
 /// reuses the same `defaults` for throttling state, and drains the queue after each successful send.
@@ -44,6 +47,13 @@ final class PixelRetryQueue {
 #endif
     }
 
+    /// Wire parameter keys added to a replayed pixel, matching iOS `PersistentPixel` so the backend sees
+    /// identical data from both systems. Only ever attached to pixels that opted into retry.
+    enum Parameters {
+        static let originalPixelTimestamp = "originalPixelTimestamp"
+        static let retriedPixel = "retriedPixel"
+    }
+
     private let underlyingFireRequest: PixelKit.FireRequest
     private let store: PixelRetryQueueStoring
     private let lastProcessingDateStorage: ThrowingKeyValueStoring
@@ -60,6 +70,12 @@ final class PixelRetryQueue {
     private let workQueue = DispatchQueue(label: "PixelKit Retry Queue")
     private let logger = Logger(subsystem: "PixelKit", category: "PixelRetryQueue")
 
+    private let dateFormatter: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime]
+        return formatter
+    }()
+
     init(fireRequest: @escaping PixelKit.FireRequest,
          store: PixelRetryQueueStoring = PixelRetryQueueFileStore(),
          lastProcessingDateStorage: ThrowingKeyValueStoring = UserDefaults.standard,
@@ -75,23 +91,30 @@ final class PixelRetryQueue {
         self.lastProcessingDate = ((try? lastProcessingDateStorage.object(forKey: lastProcessingDateKey)) ?? nil) as? Date
     }
 
-    /// The decorated closure PixelKit routes its fires through.
-    var fireRequest: PixelKit.FireRequest {
-        { [weak self] pixelName, headers, parameters, allowedChars, callBackOnMainThread, onComplete in
-            guard let self else {
-                onComplete(false, nil)
-                return
-            }
-            self.underlyingFireRequest(pixelName, headers, parameters, allowedChars, callBackOnMainThread) { success, error in
-                onComplete(success, error)
-                if success {
-                    self.sendQueuedPixels()
-                } else {
-                    self.enqueueFailedPixel(pixelName: pixelName,
-                                            headers: headers,
-                                            parameters: parameters,
-                                            allowedQueryReservedCharacters: allowedChars)
-                }
+    /// Sends a pixel through the underlying network closure, queueing it for retry if it fails and the
+    /// caller opted in.
+    ///
+    /// - Parameter retryOnFailure: whether a failed send is persisted for later replay. When `false`
+    ///   (the default for every pixel) the send is a plain pass-through and a failure is dropped, which
+    ///   is the behaviour a caller gets with no retry queue at all. Draining is deliberately *not*
+    ///   gated on this: a success here replays whatever is queued regardless, so an opted-in pixel does
+    ///   not have to wait for another opted-in pixel to succeed before it is retried.
+    func fire(pixelName: String,
+              headers: [String: String],
+              parameters: [String: String],
+              allowedQueryReservedCharacters: CharacterSet?,
+              callBackOnMainThread: Bool,
+              retryOnFailure: Bool,
+              onComplete: @escaping PixelKit.CompletionBlock) {
+        underlyingFireRequest(pixelName, headers, parameters, allowedQueryReservedCharacters, callBackOnMainThread) { [self] success, error in
+            onComplete(success, error)
+            if success {
+                sendQueuedPixels()
+            } else if retryOnFailure {
+                enqueueFailedPixel(pixelName: pixelName,
+                                   headers: headers,
+                                   parameters: parameters,
+                                   allowedQueryReservedCharacters: allowedQueryReservedCharacters)
             }
         }
     }
@@ -190,10 +213,20 @@ final class PixelRetryQueue {
                 continue
             }
 
-            // Strip the legacy retry timestamp that older builds baked into the persisted parameters, so
-            // items queued before this key was dropped don't keep sending it on replay.
+            // Builds that queued every failed pixel, before retry became opt-in, wrote no `optedIn` key,
+            // so those items decode as not opted in. They were never triaged for the retry parameters
+            // below, so drop them rather than replay them.
             // For more info see https://app.asana.com/1/137249556945/task/1215909080171360?focus=true
-            let parameters = item.parameters.filter { $0.key != "originalPixelTimestamp" }
+            guard item.optedIn else {
+                idsAccessQueue.sync { _ = idsToRemove.insert(item.id) }
+                continue
+            }
+
+            // Mark the replay so the backend can tell it from an organic send and de-duplicate against
+            // the original attempt. `item.timestamp` is when that attempt failed.
+            var parameters = item.parameters
+            parameters[Parameters.originalPixelTimestamp] = dateFormatter.string(from: item.timestamp)
+            parameters[Parameters.retriedPixel] = "1"
 
             dispatchGroup.enter()
             underlyingFireRequest(item.pixelName, item.headers, parameters, item.allowedQueryReservedCharacters, false) { success, _ in

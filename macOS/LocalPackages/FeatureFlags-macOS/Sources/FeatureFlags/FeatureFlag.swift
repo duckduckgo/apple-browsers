@@ -484,10 +484,14 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216850216210288?focus=true
     case promptBar
 
-    /// Gates the bookmarks "Reorder by name" action, which permanently reorders the target
+    /// Gates the bookmarks "Sort by name permanently" action, which permanently reorders the target
     /// folder's direct children alphabetically and persists the new order.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217076881156357?focus=true
     case bookmarksReorderByName
+
+    /// Gates reading the Duck.ai usage-limit snapshot from native storage on Duck.ai input activation,
+    /// and the warnings that will be built on top of it. Internal-only while the UI is in development.
+    case aiChatUsageWarnings
 
 }
 
@@ -820,6 +824,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.promptBar), category: .duckAI)
         case .bookmarksReorderByName:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.bookmarksReorderByName))
+        case .aiChatUsageWarnings:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.usageWarnings), category: .duckAI)
         }
     }
 

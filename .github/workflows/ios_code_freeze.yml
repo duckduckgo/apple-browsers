@@ -47,7 +47,7 @@ jobs:
 
     name: Create Release Branch
 
-    runs-on: macos-26-xlarge
+    runs-on: bitrise:macos26-m4
     timeout-minutes: 10
 
     outputs:

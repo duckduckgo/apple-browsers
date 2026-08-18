@@ -20,10 +20,10 @@ on:
 
 jobs:
   build-alpha:
-    runs-on: macos-26
+    runs-on: bitrise:macos26-m4
     name: Build Alpha
     timeout-minutes: 30
-    
+
     concurrency:
       group: ios-alpha-build-${{ github.ref }}
       cancel-in-progress: true
@@ -151,7 +151,7 @@ jobs:
         bundle exec fastlane increment_build_number_for_version version:$app_version app_identifier:"com.duckduckgo.mobile.ios.alpha"
         build_version="$(cut -d ' ' -f 3 < Configuration/BuildNumber.xcconfig)"
         bundle exec fastlane build_alpha
-        
+
         # Export build metadata
         echo "app_version=${app_version}" >> $GITHUB_OUTPUT
         echo "build_version=${build_version}" >> $GITHUB_OUTPUT
@@ -172,7 +172,7 @@ jobs:
   upload:
     needs: build-alpha
     if: needs.build-alpha.outputs.should_skip != 'true'
-    runs-on: macos-26
+    runs-on: bitrise:macos26-m4
     name: Upload to TestFlight
     timeout-minutes: 15
 

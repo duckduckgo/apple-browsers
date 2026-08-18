@@ -39,11 +39,21 @@ struct UserText {
     static let fireDialogHistoryTitle = NSLocalizedString("fire.dialog.history.title", value: "History", comment: "Section title. Toggle that controls whether browsing history entries are deleted.")
     static let cookiesAndSiteDataTitle = NSLocalizedString("fire.dialog.cookies.title", value: "Cookies and site data", comment: "Section title. Toggle that controls whether website cookies and storage (site data) are deleted.")
     static let fireDialogCookiesAndOtherData = NotLocalizedString("fire.dialog.cookies.and.other.data.title", value: "Cookies & other data", comment: "Section title. Toggle that controls whether website cookies and storage (site data) are deleted.")
+    static let fireDialogIncludeCookiesAndOtherData = NotLocalizedString("fire.dialog.include.cookies.and.other.data.title", value: "Include cookies & other data?", comment: "Section title. Toggle that controls whether website cookies and storage (site data) are deleted.")
     static let fireDialogCloseThisTab = NSLocalizedString("fire.dialog.close.this.tab", value: "Close this tab.", comment: "Subtitle shown under the Tabs and windows row when scope is ‘Tab’. Means: the currently active tab will be closed.")
     static let fireDialogCloseThisWindow = NSLocalizedString("fire.dialog.close.this.window", value: "Close this window.", comment: "Subtitle shown under the Tabs and windows row when scope is ‘Window’. Means: the current browser window (all tabs inside it) will be closed.")
     static let fireDialogCloseAllTabsWindows = NSLocalizedString("fire.dialog.close.all.tabs.windows", value: "Close all tabs and windows.", comment: "Subtitle shown under the Tabs and windows row when scope is ‘Everything’. Means: all browser tabs and windows will be closed.")
     static let fireDialogCloseThisTabAfterDeleting = NotLocalizedString("fire.dialog.close.this.tab.after.deleting", value: "Close this tab after deleting, except if it's pinned.", comment: "Checkbox caption for when the data clearing scope is ‘Tab’. Means: the currently active tab will be closed, unless it's pinned.")
     static let fireDialogCloseAllTabsWindowsAfterDeleting = NotLocalizedString("fire.dialog.close.all.windows.after.deleting", value: "Close all windows after deleting, except pinned tabs.", comment: "Checkbox caption for when the data clearing scope is ‘Everything’. Means: all browser tabs and windows will be closed, unless they contain pinned tabs in which case all regular tabs from a window will be closed and pinned tabs reloaeded.")
+
+    static func fireDialogHistoryItemsTitle(_ count: Int) -> String {
+        let template = NotLocalizedString(
+            "fire.dialog.history.items.title",
+            value: "Delete %d History items?",
+            comment: "Dialog title. Shows the exact number of browsing history entries that will be deleted in this operation, using plural substitutions for the count and noun (%d)."
+        )
+        return String.localizedStringWithFormat(template, count)
+    }
 
     static func fireDialogHistoryItemsSubtitle(_ count: Int) -> String {
         let template = NSLocalizedString(
@@ -2003,8 +2013,8 @@ struct UserText {
     static let showBookmarksBarNewTabOnly = NSLocalizedString("bookmarks.bar.show.new-tab-only", value: "Only show on New Tab", comment: "Preference for only showing the bookmarks bar on new tab")
     static let bookmarksBarFolderEmpty = NSLocalizedString("bookmarks.bar.folder.empty", value: "Empty", comment: "Empty state for a bookmarks bar folder")
     static let bookmarksBarContextMenuDelete = NSLocalizedString("bookmarks.bar.context-menu.delete", value: "Delete", comment: "Delete menu item for the bookmarks bar context menu")
-    static let bookmarksBarContextMenuReorderByName = NotLocalizedString("bookmarks.bar.context-menu.reorder-by-name", value: "Sort by name permanently", comment: "Sort by name permanently menu item for bookmark folder context menus")
-    static let bookmarksUndoActionReorderByName = NotLocalizedString("bookmarks.undo-action.reorder-by-name", value: "Sort by name permanently", comment: "Undo and redo action name for permanently sorting bookmarks by name")
+    static let bookmarksBarContextMenuReorderByName = NSLocalizedString("bookmarks.bar.context-menu.reorder-by-name", value: "Sort by Name Permanently", comment: "Sort by Name Permanently menu item for bookmark folder context menus")
+    static let bookmarksUndoActionReorderByName = NSLocalizedString("bookmarks.undo-action.reorder-by-name", value: "Sort by Name Permanently", comment: "Undo and redo action name for permanently sorting bookmarks by name")
     static let bookmarksBarContextMenuMoveToEnd = NSLocalizedString("bookmarks.bar.context-menu.move-to-end", value: "Move to End", comment: "Move to End menu item for the bookmarks bar context menu")
 
     static let inviteDialogGetStartedButton = NSLocalizedString("invite.dialog.get.started.button", value: "Get Started", comment: "Get Started button on an invite dialog")
@@ -2097,9 +2107,9 @@ struct UserText {
     static let bookmarksSearch = NSLocalizedString("tooltip.bookmarks.search", value: "Search bookmarks", comment: "Tooltip to activate the bookmark search")
     static let bookmarksSort = NSLocalizedString("tooltip.bookmarks.sort", value: "Sort", comment: "Tooltip to activate the bookmark sort")
     static let bookmarksSortByNameTitle = NSLocalizedString("tooltip.bookmarks.sort.name.title", value: "Sort by Name", comment: "Title when bookmark sort by name is enabled")
-    static let bookmarksSortViewTitle = NotLocalizedString("tooltip.bookmarks.sort.view.title", value: "Sort View", comment: "Title for the bookmark sort view button")
-    static let bookmarksSortViewByNameTitle = NotLocalizedString("tooltip.bookmarks.sort.view.name.title", value: "Sort View by Name", comment: "Title when bookmark sort by name is enabled")
-    static let bookmarksSortViewTooltip = NotLocalizedString("tooltip.bookmarks.sort.view", value: "Sort bookmarks view", comment: "Tooltip to activate the bookmark sort view")
+    static let bookmarksSortViewTitle = NSLocalizedString("tooltip.bookmarks.sort.view.title", value: "Sort View", comment: "Title for the bookmark sort view button")
+    static let bookmarksSortViewByNameTitle = NSLocalizedString("tooltip.bookmarks.sort.view.name.title", value: "Sort View by Name", comment: "Title when bookmark sort by name is enabled")
+    static let bookmarksSortViewTooltip = NSLocalizedString("tooltip.bookmarks.sort.view", value: "Sort bookmarks view", comment: "Tooltip to activate the bookmark sort view")
     static let bookmarksSortManual = NSLocalizedString("bookmarks.sort.manual", value: "Manual", comment: "Button to sort bookmarks by manual")
     static let bookmarksSortByName = NSLocalizedString("bookmarks.sort.name", value: "Name", comment: "Button to sort bookmarks by name ascending")
     static let bookmarksSortByNameAscending = NSLocalizedString("bookmarks.sort.name.asc", value: "Ascending", comment: "Button to sort bookmarks by name ascending")

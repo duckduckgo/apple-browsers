@@ -627,6 +627,9 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
         // Menu-button layout: a single "Ask Duck.ai" pill; the sidebar sub-button and divider never render.
         if isMenuButtonLayout {
+            // Runs at most once, here rather than at launch because the layout can flip on a config
+            // fetch. Reading the flag straight after picks up the migrated value, so there's no flicker.
+            duckAIChromeButtonsVisibilityManager.migrateVisibilityForMenuButtonLayoutIfNeeded()
             let duckAIHidden = duckAIChromeButtonsVisibilityManager.isHidden(.duckAI)
             titleButton.isHidden = duckAIHidden
             sidebarButton.isHidden = true
@@ -1000,9 +1003,10 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     @objc private func duckAITitlebarButtonAction(_ sender: NSButton) {
-        // Menu-button layout: left-click opens the dropdown; middle-click opens a new Duck.ai tab directly.
+        // Menu-button layout: left-click opens the dropdown; middle-click and ⌘-click skip it and start a
+        // new chat right away, preserving the one-click access the split button used to offer.
         if isMenuButtonLayout {
-            if NSApp.currentEvent?.type == .otherMouseUp {
+            if NSApp.currentEvent?.type == .otherMouseUp || NSApp.isCommandPressed {
                 duckAIMenuNewChatAction()
             } else {
                 presentDuckAIMenuButtonMenu(from: sender)

@@ -23,6 +23,10 @@ import DuckUI
 import SwiftUI
 import UIComponents
 
+#if DEBUG
+import PreviewSnapshots
+#endif
+
 public struct ScanQRCodeViewV2: View {
 
     enum Tab {
@@ -96,28 +100,30 @@ public struct ScanQRCodeViewV2: View {
 }
 
 #if DEBUG
-#Preview {
-    let sampleCode = "https://duckduckgo.com/sync/pairing/#&code2=eyJ2ZXJzaW9uIjoiMiIsImNoYW5uZWxJZCI6IjY4MEQ0NUI1LTVFNkUtNDM0Ny05QzQ0LUI2RkJFODBGQzRBNyIsInB1YmxpY0tleSI6IkFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaIn0"
+struct ScanQRCodeViewV2_Previews: PreviewProvider {
 
-    return NavigationView {
-        RebrandedPreview(isRebranded: true) {
-            ScanQRCodeViewV2(
-                model: ScanOrPasteCodeViewModel(codeForDisplayOrPasting: sampleCode, qrCodeString: sampleCode, source: .connect)
-            )
-        }
+    static let sampleCode = "https://duckduckgo.com/sync/pairing/#&code2=eyJ2ZXJzaW9uIjoiMiIsImNoYW5uZWxJZCI6IjY4MEQ0NUI1LTVFNkUtNDM0Ny05QzQ0LUI2RkJFODBGQzRBNyIsInB1YmxpY0tleSI6IkFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaIn0"
+
+    static var previews: some View {
+        snapshots.previews
     }
-}
 
-#Preview("Enter Code") {
-    let sampleCode = "https://duckduckgo.com/sync/pairing/#&code2=eyJ2ZXJzaW9uIjoiMiIsImNoYW5uZWxJZCI6IjY4MEQ0NUI1LTVFNkUtNDM0Ny05QzQ0LUI2RkJFODBGQzRBNyIsInB1YmxpY0tleSI6IkFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaIn0"
-
-    return NavigationView {
-        RebrandedPreview(isRebranded: true) {
-            ScanQRCodeViewV2(
-                model: ScanOrPasteCodeViewModel(codeForDisplayOrPasting: sampleCode, qrCodeString: sampleCode, source: .connect),
-                selectedTab: .enterCode
-            )
+    static let snapshots = PreviewSnapshots<ScanQRCodeViewV2.Tab>(
+        configurations: [
+            .init(name: "Scan QR Code", state: .scanQRCode),
+            .init(name: "Enter Code", state: .enterCode)
+        ],
+        configure: { tab in
+            NavigationView {
+                RebrandedPreview(isRebranded: true) {
+                    ScanQRCodeViewV2(
+                        model: ScanOrPasteCodeViewModel(codeForDisplayOrPasting: sampleCode, qrCodeString: sampleCode, source: .connect),
+                        selectedTab: tab
+                    )
+                }
+            }
+            .navigationViewStyle(.stack)
         }
-    }
+    )
 }
 #endif

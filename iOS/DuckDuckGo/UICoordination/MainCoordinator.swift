@@ -823,7 +823,7 @@ extension MainCoordinator: URLHandling {
           controller.clearNavigationStack()
           // Give the `clearNavigationStack` call time to complete.
           DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 0.5) {
-              self.controller.openAIChat()
+              self.controller.openAIChat(source: .iconShortcut)
           }
           Pixel.fire(pixel: .openAIChatFromIconShortcut)
       }

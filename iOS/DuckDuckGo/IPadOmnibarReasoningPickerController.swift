@@ -40,12 +40,12 @@ final class IPadOmnibarReasoningPickerController {
 
     init(
         store: UTIModelStore,
-        menuFactory: UnifiedToggleInputReasoningMenuFactory = UnifiedToggleInputReasoningMenuFactory(),
         accessResolver: ReasoningModeAccessResolving = ReasoningModeAccessResolver(),
-        upsellPresenter: DuckAISubscriptionUpselling = DuckAISubscriptionUpsellPresenter()
+        upsellPresenter: DuckAISubscriptionUpselling = DuckAISubscriptionUpsellPresenter(),
+        updatedModelPickerFeature: UpdatedModelPickerFeatureProviding = UpdatedModelPickerFeature()
     ) {
         self.store = store
-        self.menuFactory = menuFactory
+        self.menuFactory = UnifiedToggleInputReasoningMenuFactory(isUpdatedModelPickerEnabled: updatedModelPickerFeature.isAvailable)
         self.accessResolver = accessResolver
         self.upsellPresenter = upsellPresenter
     }
@@ -65,9 +65,17 @@ final class IPadOmnibarReasoningPickerController {
 
     func makeMenu() -> UIMenu? {
         guard let model = store.selectedModel else { return nil }
-        return menuFactory.makeMenu(model: model, selectedMode: currentReasoningMode) { [weak self] mode in
+
+        let onSelect: (AIChatReasoningMode) -> Void = { [weak self] mode in
             self?.handleReasoningModeSelection(mode)
         }
+
+        return menuFactory.makeMenu(
+            model: model,
+            selectedMode: currentReasoningMode,
+            userTier: store.subscriptionState.userTier,
+            onSelect: onSelect
+        )
     }
 
     func handleReasoningModeSelection(_ mode: AIChatReasoningMode) {

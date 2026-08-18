@@ -32,7 +32,7 @@ import UIKit
 final class IPadOmnibarModelPickerController {
 
     private let store: UTIModelStore
-    private let menuFactory = UnifiedToggleInputModelMenuFactory()
+    private let menuFactory: UnifiedToggleInputModelMenuFactory
     private let upsellPresenter: DuckAISubscriptionUpselling
     var onModelsUpdated: (() -> Void)?
 
@@ -49,9 +49,11 @@ final class IPadOmnibarModelPickerController {
         preferences: AIChatPreferencesPersisting = AIChatPreferencesPersistor(),
         subscriptionManager: any SubscriptionManager = AppDependencyProvider.shared.subscriptionManager,
         aiChatSettings: AIChatSettingsProvider = AIChatSettings(),
-        upsellPresenter: DuckAISubscriptionUpselling = DuckAISubscriptionUpsellPresenter()
+        upsellPresenter: DuckAISubscriptionUpselling = DuckAISubscriptionUpsellPresenter(),
+        updatedModelPickerFeature: UpdatedModelPickerFeatureProviding = UpdatedModelPickerFeature()
     ) {
         self.upsellPresenter = upsellPresenter
+        self.menuFactory = UnifiedToggleInputModelMenuFactory(isUpdatedModelPickerEnabled: updatedModelPickerFeature.isAvailable)
         store = UTIModelStore(
             modelsService: modelsService ?? AIChatModelsService(
                 baseURL: aiChatModelsBaseURL(forChatURL: aiChatSettings.aiChatURL),
@@ -84,11 +86,11 @@ final class IPadOmnibarModelPickerController {
 
     func makeMenu(onSelect: @escaping (String) -> Void) -> UIMenu? {
         guard hasModels else { return nil }
+
         return menuFactory.makeMenu(
             models: store.models,
             selectedId: store.persistedModelId,
-            plusSectionTitle: UserText.aiChatPlusModelsSectionHeader,
-            proSectionTitle: UserText.aiChatProModelsSectionHeader,
+            userTier: store.subscriptionState.userTier,
             onSelect: onSelect
         )
     }

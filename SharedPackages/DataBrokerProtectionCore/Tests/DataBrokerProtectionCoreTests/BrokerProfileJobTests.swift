@@ -294,6 +294,73 @@ final class BrokerProfileJobTests: XCTestCase {
         XCTAssertEqual(delegate.errorIdentifiers.first?.stepType, .scan)
     }
 
+    func testWhenScanExceedsConfiguredTimeout_thenReportsJobTimeout() async {
+        let delegate = MockBrokerProfileJobStatusReportingDelegate()
+        let database = MockDatabase()
+        let mockDependencies = MockBrokerProfileJobDependencies()
+        mockDependencies.database = database
+        mockDependencies.executionConfig = BrokerJobExecutionConfig(intervalBetweenSameBrokerJobs: 0,
+                                                                     scanJobTimeout: 0.01)
+        mockDependencies.mockScanRunner.scanHandler = {
+            try await Task.sleep(nanoseconds: 60_000_000_000)
+            return []
+        }
+
+        let brokerId: Int64 = 31
+        database.brokerProfileQueryDataToReturn = [
+            .init(dataBroker: .mock(withId: brokerId),
+                  profileQuery: .mock,
+                  scanJobData: .mock(withBrokerId: brokerId))
+        ]
+        let job = BrokerProfileJob(dataBrokerID: brokerId,
+                                   jobType: .scheduledScan,
+                                   showWebView: false,
+                                   statusReportingDelegate: delegate,
+                                   jobDependencies: mockDependencies)
+
+        await run(job)
+
+        XCTAssertEqual(delegate.operationErrors.first as? DataBrokerProtectionError, .jobTimeout)
+    }
+
+    func testWhenOptOutExceedsConfiguredTimeout_thenReportsJobTimeout() async {
+        let delegate = MockBrokerProfileJobStatusReportingDelegate()
+        let database = MockDatabase()
+        let mockDependencies = MockBrokerProfileJobDependencies()
+        mockDependencies.database = database
+        mockDependencies.executionConfig = BrokerJobExecutionConfig(intervalBetweenSameBrokerJobs: 0,
+                                                                     optOutJobTimeout: 0.01)
+        mockDependencies.mockOptOutRunner.optOutHandler = {
+            try await Task.sleep(nanoseconds: 60_000_000_000)
+        }
+
+        let brokerId: Int64 = 37
+        let profileQueryId: Int64 = 43
+        let extractedProfile = ExtractedProfile(id: 41,
+                                                name: "Some name",
+                                                profileUrl: "abc",
+                                                identifier: "abc")
+        database.brokerProfileQueryDataToReturn = [
+            .init(dataBroker: .mock(withId: brokerId),
+                  profileQuery: makeProfileQuery(id: profileQueryId),
+                  scanJobData: .init(brokerId: brokerId,
+                                     profileQueryId: profileQueryId,
+                                     historyEvents: []),
+                  optOutJobData: [.mock(with: extractedProfile,
+                                        brokerId: brokerId,
+                                        profileQueryId: profileQueryId)])
+        ]
+        let job = BrokerProfileJob(dataBrokerID: brokerId,
+                                   jobType: .optOut,
+                                   showWebView: false,
+                                   statusReportingDelegate: delegate,
+                                   jobDependencies: mockDependencies)
+
+        await run(job)
+
+        XCTAssertEqual(delegate.operationErrors.first as? DataBrokerProtectionError, .jobTimeout)
+    }
+
     func testWhenOptOutJobCompletes_thenSuccessContextIncludesOptOutIdentifiers() async {
         let delegate = CompletedJobIdentifierCapturingDelegate()
         let database = MockDatabase()

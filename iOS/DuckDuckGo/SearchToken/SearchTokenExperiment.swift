@@ -68,11 +68,11 @@ struct SearchTokenExperiment {
     /// Resolves — and thereby enrols — the cohort for an eligible new user. No-op for returning users.
     func enrollIfEligible() {
         guard statisticsStore.variant != VariantIOS.returningUser.name else { return }
-        _ = featureFlagger.resolveCohort(for: FeatureFlag.searchTokenExperimentV2)
+        _ = featureFlagger.resolveCohort(for: FeatureFlag.searchTokenExperimentV3)
     }
 
     /// The assigned cohort, or `nil` when not enrolled.
     var cohort: FeatureFlag.SearchTokenExperimentCohort? {
-        featureFlagger.assignedCohort(for: FeatureFlag.searchTokenExperimentV2) as? FeatureFlag.SearchTokenExperimentCohort
+        featureFlagger.assignedCohort(for: FeatureFlag.searchTokenExperimentV3) as? FeatureFlag.SearchTokenExperimentCohort
     }
 }

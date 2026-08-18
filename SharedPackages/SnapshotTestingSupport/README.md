@@ -101,6 +101,24 @@ On macOS, device variants don't apply — `.screen`/`.sheet`/`.fixed` all resolv
 
 Default appearance strategy is `.allAppearances` (light + dark). Use `.single(.light)` or `.single(.dark)` to scope, or `.custom([...])` for full control.
 
+## Limitations: `List`, effects, and the host-application requirement
+
+These helpers render through Point-Free's `drawHierarchyInKeyWindow: false` path (`CALayer.render(in:)`), because they are designed to run from **SPM package test targets, which have no host application**. That rasterization path cannot capture UIKit-backed content that needs a live key-window render pass:
+
+- **`List` / `UICollectionView`-backed content renders blank.**
+- **`UIVisualEffect` (blur / "liquid glass") and `UIAppearance` are not applied.**
+- **`NavigationView` on iPad's regular size class renders as a split view** — use `NavigationStack`, or scope the snapshot to iPhone. (Plain `NavigationView` on iPhone, and `VStack` / `ScrollView` content, render fine.)
+
+Point-Free's fix for the first two is `drawHierarchyInKeyWindow: true` (`UIView.drawHierarchy(in:afterScreenUpdates:)` against the real key window). That option **requires a host application and will `fatalError` in a package test target** — see the parameter docs in [`swift-snapshot-testing`](https://github.com/pointfreeco/swift-snapshot-testing) and discussions [#781](https://github.com/pointfreeco/swift-snapshot-testing/discussions/781), [#725](https://github.com/pointfreeco/swift-snapshot-testing/discussions/725), and [#1031](https://github.com/pointfreeco/swift-snapshot-testing/discussions/1031).
+
+**Rule of thumb:** prefer `VStack` / `ScrollView`-based content, which snapshots cleanly from a package test target. A `List`-based settings screen (e.g. `SyncSuccessViewV2`) comes out blank here.
+
+### If you must snapshot a `List` / effect-heavy screen
+
+1. **Run the test from an app-hosted target** (e.g. `iOS/DuckDuckGoTests`), not a package test target — only an Xcode app test target sets `TEST_HOST` / `BUNDLE_LOADER`; SwiftPM package test targets cannot have a host app.
+2. **Keep the `PreviewProvider` / `PreviewSnapshots` in the view's module** and reach it from the test with `@testable import <Module>` (already the pattern for `SyncUI_iOS`).
+3. **Render through the key-window path** (`drawHierarchyInKeyWindow: true`). These helpers currently hardcode `false`; threading it through as an opt-in is not done yet, so until that lands such a screen cannot be image-snapshotted through this wrapper.
+
 ## Environment requirements
 
 Snapshots are pixel-strict, so the test environment is validated before each assertion:

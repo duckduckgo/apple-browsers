@@ -160,8 +160,6 @@ extension URL {
     }
 #endif
 
-    static let blankPage = URL(string: "about:blank")!
-
     static let newtab = URL(string: "duck://newtab")!
     static let welcome = URL(string: "duck://welcome")!
     static let settings = URL(string: "duck://settings")!

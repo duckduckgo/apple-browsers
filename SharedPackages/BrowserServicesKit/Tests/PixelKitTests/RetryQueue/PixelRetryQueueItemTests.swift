@@ -48,4 +48,15 @@ final class PixelRetryQueueItemTests: XCTestCase {
         XCTAssertEqual(item, decoded)
         XCTAssertEqual(decoded.allowedQueryReservedCharacters, CharacterSet(charactersIn: ",;+"))
     }
+
+    func testWhenItemWasPersistedBeforeRetryWasOptIn_ThenItDecodesAsNotOptedIn() throws {
+        // Shape written by builds that queued every failed pixel: no `optedIn` key.
+        let json = """
+        {"id":"\(UUID().uuidString)","pixelName":"m_test","headers":{},"parameters":{},"timestamp":700000000}
+        """
+
+        let decoded = try JSONDecoder().decode(PixelRetryQueueItem.self, from: Data(json.utf8))
+
+        XCTAssertFalse(decoded.optedIn)
+    }
 }

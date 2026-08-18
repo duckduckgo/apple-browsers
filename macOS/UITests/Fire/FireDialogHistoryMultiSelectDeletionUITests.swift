@@ -23,7 +23,7 @@ final class FireDialogHistoryMultiSelectDeletionUITests: UITestCase, FireDialogU
 
     override func setUp() {
         super.setUp()
-        setUpFireDialogUITests()
+        setUpFireDialogUITests(featureFlags: ["fireDialogSimplified": false])
     }
 
     func test_historyView_deleteMultipleRecords_viaRightClick_onlyHistory() throws {

@@ -23,7 +23,7 @@ final class FireDialogTabScopeUITests: UITestCase, FireDialogUITests {
 
     override func setUp() {
         super.setUp()
-        setUpFireDialogUITests()
+        setUpFireDialogUITests(featureFlags: ["fireDialogSimplified": false])
     }
 
     func test_fireDialog_tabScope_closesOnlyCurrentTab() throws {

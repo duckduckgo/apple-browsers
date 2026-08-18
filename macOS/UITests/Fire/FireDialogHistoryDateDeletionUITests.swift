@@ -23,7 +23,7 @@ final class FireDialogHistoryDateDeletionUITests: UITestCase, FireDialogUITests 
 
     override func setUp() {
         super.setUp()
-        setUpFireDialogUITests()
+        setUpFireDialogUITests(featureFlags: ["fireDialogSimplified": false])
     }
 
     func test_historyView_deleteToday_historyAndCookies() throws {

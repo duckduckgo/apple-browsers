@@ -24,7 +24,7 @@ final class FireDialogHistorySitesDeletionUITests: UITestCase, FireDialogUITests
 
     override func setUp() {
         super.setUp()
-        setUpFireDialogUITests()
+        setUpFireDialogUITests(featureFlags: ["fireDialogSimplified": false])
     }
 
     func test_historyView_deleteSingleSite_fromSitesSection() throws {

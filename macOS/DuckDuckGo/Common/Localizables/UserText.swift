@@ -1689,6 +1689,15 @@ struct UserText {
 
     // MARK: - Login Import & Export
 
+    static func importBrowserDataAccessPanelMessage(for source: DataImport.Source) -> String {
+        let localized = NSLocalizedString("import.access-panel.message",
+                                          value: "Grant access to the %1$@ data folder to allow DuckDuckGo to import your data",
+                                          comment: "Access Panel that grants permissions to import data from another browser")
+        return String(format: localized, source.importSourceName)
+    }
+
+    static let importBrowserDataAccessPanelPrompt = NSLocalizedString("import.browser.data.access.panel.prompt", value: "Grant Access", comment: "Confirmation button in the folder picker used to grant DuckDuckGo access to another browser's data folder")
+
     static let importChooseSourceTitle = NSLocalizedString("import.choose-source.title", value: "Choose where to import from", comment: "Title text for the import dialog, before the user selects a source")
     static let importChooseSourceShowMoreButtonTitle = NSLocalizedString("import.choose-source.more-button.title", value: "More", comment: "Button text for showing more import options in the data import view")
     static let importChooseSourceSyncButtonTitle = NSLocalizedString("import.choose-source.sync-button.title", value: "Using DuckDuckGo on another device?", comment: "Button text for syncing from the data import view")

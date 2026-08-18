@@ -39,7 +39,7 @@ class AutocompleteTests: UITestCase {
     override func setUpWithError() throws {
         try super.setUpWithError()
         continueAfterFailure = false
-        app = XCUIApplication.setUp()
+        app = XCUIApplication.setUp(featureFlags: ["fireDialogSimplified": false])
         addBookmarkButton = app.buttons["BookmarkDialogButtonsView.defaultButton"]
         resetBookMarksMenuItem = app.menuItems["MainMenu.resetBookmarks"]
         historyMenuBarItem = app.menuBarItems["History"]

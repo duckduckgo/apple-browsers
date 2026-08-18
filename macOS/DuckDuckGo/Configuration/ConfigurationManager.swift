@@ -25,7 +25,6 @@ import PrivacyConfig
 import Configuration
 import Common
 import FoundationExtensions
-import Networking
 import PixelKit
 
 final class ConfigurationManager: DefaultConfigurationManager {
@@ -129,62 +128,54 @@ final class ConfigurationManager: DefaultConfigurationManager {
 
         // Perform privacyConfiguration fetch and update
         do {
-            try await fetcher.fetch(.privacyConfiguration, isDebug: isDebug)
-            didFetchAnyTrackerBlockingDependencies = true
-            privacyConfigurationManager.reload(etag: store.loadEtag(for: .privacyConfiguration),
-                                               data: store.loadData(for: .privacyConfiguration))
+            let fetchResult = try await fetcher.fetch(.privacyConfiguration, isDebug: isDebug)
+            if fetchResult == .updated {
+                didFetchAnyTrackerBlockingDependencies = true
+                privacyConfigurationManager.reload(etag: store.loadEtag(for: .privacyConfiguration),
+                                                   data: store.loadData(for: .privacyConfiguration))
+            }
         } catch {
-            Logger.config.error(
-                "Failed to complete configuration update to \(Configuration.privacyConfiguration.rawValue, privacy: .public): \(error.localizedDescription, privacy: .public)"
-            )
-            tryAgainSoon()
+            handleTrackerBlockingFetchError(error, for: .privacyConfiguration)
         }
 
         // Start trackerDataSet fetch task after privacyConfiguration completes
         let trackerDataSetTask = Task { try await fetcher.fetch(.trackerDataSet, isDebug: isDebug) }
 
         // Wait for surrogates and trackerDataSet tasks
-        let tasks: [(Configuration, Task<(), Swift.Error>)] = [
+        let tasks: [(Configuration, Task<ConfigurationFetchResult, Swift.Error>)] = [
             (.surrogates, surrogatesTask),
             (.trackerDataSet, trackerDataSetTask)
         ]
 
         for (configuration, task) in tasks {
             do {
-                try await task.value
-                didFetchAnyTrackerBlockingDependencies = true
+                let fetchResult = try await task.value
+                didFetchAnyTrackerBlockingDependencies = didFetchAnyTrackerBlockingDependencies || fetchResult == .updated
             } catch {
-                Logger.config.error(
-                    "Failed to complete configuration update to \(configuration.rawValue, privacy: .public): \(error.localizedDescription, privacy: .public)"
-                )
-                tryAgainSoon()
+                handleTrackerBlockingFetchError(error, for: configuration)
             }
         }
 
         return didFetchAnyTrackerBlockingDependencies
     }
 
-    /// Fetches and applies just the privacy configuration, throwing on failure.
-    /// Use this for debug/override flows where the caller needs to know if the fetch succeeded.
-    /// A 304 (Not Modified) response is treated as success since the cached data is still valid.
+    /// Fetches and applies the privacy configuration for debug and override flows.
+    /// Throws if the refresh check fails. A not-modified response reapplies the cached configuration.
     func fetchPrivacyConfiguration(isDebug: Bool = false) async throws {
-        do {
-            try await fetcher.fetch(.privacyConfiguration, isDebug: isDebug)
-        } catch APIRequest.Error.invalidStatusCode(304) {
-            // Config unchanged on the server; cached data is still valid
-        }
+        try await fetcher.fetch(.privacyConfiguration, isDebug: isDebug)
         privacyConfigurationManager.reload(etag: store.loadEtag(for: .privacyConfiguration),
                                            data: store.loadData(for: .privacyConfiguration))
         contentBlockingManager.scheduleCompilation()
     }
 
-    private func handleRefreshError(_ error: Swift.Error) {
-        // Avoid firing a configuration fetch error pixel when we received a 304 status code.
-        // A 304 status code is expected when we request the config with an ETag that matches the current remote version.
-        if case APIRequest.Error.invalidStatusCode(304) = error {
-            return
-        }
+    private func handleTrackerBlockingFetchError(_ error: Swift.Error, for configuration: Configuration) {
+        Logger.config.error(
+            "Failed to complete configuration update to \(configuration.rawValue, privacy: .public): \(error.localizedDescription, privacy: .public)"
+        )
+        tryAgainSoon()
+    }
 
+    private func handleRefreshError(_ error: Swift.Error) {
         Logger.config.error("Failed to complete configuration update \(error.localizedDescription, privacy: .public)")
         PixelKit.fire(DebugEvent(GeneralPixel.configurationFetchError(error: error), error: error))
         tryAgainSoon()
@@ -200,37 +191,51 @@ final class ConfigurationManager: DefaultConfigurationManager {
         contentBlockingManager.scheduleCompilation()
     }
 
-    private func updateBloomFilter() async throws {
+    @discardableResult
+    private func updateBloomFilter() async throws -> Bool {
         guard let specData = store.loadData(for: .bloomFilterSpec) else {
             throw Error.bloomFilterSpecNotFound
         }
         guard let bloomFilterData = store.loadData(for: .bloomFilterBinary) else {
             throw Error.bloomFilterBinaryNotFound
         }
-        try await Task.detached {
+        return try await Task.detached {
             let spec = try JSONDecoder().decode(HTTPSBloomFilterSpecification.self, from: specData)
+            let didPersistBloomFilter: Bool
+
             do {
-                try await self.httpsUpgrade.persistBloomFilter(specification: spec, data: bloomFilterData)
+                didPersistBloomFilter = try await self.httpsUpgrade.persistBloomFilter(specification: spec, data: bloomFilterData)
             } catch {
                 assertionFailure("persistBloomFilter failed: \(error)")
                 throw Error.bloomFilterPersistenceFailed.withUnderlyingError(error)
             }
-            await self.httpsUpgrade.loadData()
+
+            let isBloomFilterLoaded = await self.httpsUpgrade.isBloomFilterLoaded
+            if didPersistBloomFilter || !isBloomFilterLoaded {
+                await self.httpsUpgrade.loadData()
+            }
+
+            return didPersistBloomFilter
         }.value
     }
 
-    private func updateBloomFilterExclusions() async throws {
+    @discardableResult
+    private func updateBloomFilterExclusions() async throws -> Bool {
         guard let bloomFilterExclusions = store.loadData(for: .bloomFilterExcludedDomains) else {
             throw Error.bloomFilterExclusionsNotFound
         }
-        try await Task.detached {
+        return try await Task.detached {
             let excludedDomains = try JSONDecoder().decode(HTTPSExcludedDomains.self, from: bloomFilterExclusions).data
+            let didPersistExcludedDomains: Bool
             do {
-                try await self.httpsUpgrade.persistExcludedDomains(excludedDomains)
+                didPersistExcludedDomains = try await self.httpsUpgrade.persistExcludedDomains(excludedDomains)
             } catch {
                 throw Error.bloomFilterExclusionsPersistenceFailed.withUnderlyingError(error)
             }
-            await self.httpsUpgrade.loadData()
+            if didPersistExcludedDomains {
+                await self.httpsUpgrade.loadData()
+            }
+            return didPersistExcludedDomains
         }.value
     }
 

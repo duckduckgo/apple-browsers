@@ -627,6 +627,9 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
         // Menu-button layout: a single "Ask Duck.ai" pill; the sidebar sub-button and divider never render.
         if isMenuButtonLayout {
+            // Runs at most once, here rather than at launch because the layout can flip on a config
+            // fetch. Reading the flag straight after picks up the migrated value, so there's no flicker.
+            duckAIChromeButtonsVisibilityManager.migrateVisibilityForMenuButtonLayoutIfNeeded()
             let duckAIHidden = duckAIChromeButtonsVisibilityManager.isHidden(.duckAI)
             titleButton.isHidden = duckAIHidden
             sidebarButton.isHidden = true

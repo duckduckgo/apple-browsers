@@ -27,6 +27,9 @@ protocol DuckAIChromeButtonsVisibilityManaging {
     func isHidden(_ button: DuckAIChromeButtonType) -> Bool
     func toggleVisibility(for button: DuckAIChromeButtonType)
     func setHidden(_ hidden: Bool, for button: DuckAIChromeButtonType)
+
+    /// Call when the menu-button layout is applied. See the implementation for what it migrates.
+    func migrateVisibilityForMenuButtonLayoutIfNeeded()
 }
 
 final class LocalDuckAIChromeButtonsVisibilityManager: DuckAIChromeButtonsVisibilityManaging {
@@ -48,6 +51,21 @@ final class LocalDuckAIChromeButtonsVisibilityManager: DuckAIChromeButtonsVisibi
 
     func toggleVisibility(for button: DuckAIChromeButtonType) {
         setHidden(!isHidden(button), for: button)
+    }
+
+    /// The split control had two independently hidable halves; the menu pill has one. Hiding only the
+    /// Duck.ai half used to leave the sidebar button — and so the whole control — visible, meaning that
+    /// stored state was never a request to empty the tab bar. The pill reads the same flag as "hide
+    /// everything", so those users silently lose the control on update. Clear it once for that one
+    /// combination; the flag is stamped either way so a later deliberate hide is never undone.
+    ///
+    /// Only meaningful in the menu-button layout — in the split layout that state is still coherent.
+    func migrateVisibilityForMenuButtonLayoutIfNeeded() {
+        guard !persistor.didMigrateMenuButtonLayoutVisibility else { return }
+        persistor.didMigrateMenuButtonLayoutVisibility = true
+
+        guard isHidden(.duckAI), !isHidden(.sidebar) else { return }
+        setHidden(false, for: .duckAI)
     }
 
     func setHidden(_ hidden: Bool, for button: DuckAIChromeButtonType) {

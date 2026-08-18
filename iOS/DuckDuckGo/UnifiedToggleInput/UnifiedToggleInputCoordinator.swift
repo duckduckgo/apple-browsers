@@ -181,9 +181,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private var pixelReporter: UTIPixelReporter!
     private var wideEventReporter: UTIWideEventReporter!
     private var modelSelector: UTIModelSelector!
-    private let isUpdatedModelPickerAvailable: Bool
-    private let modelPickerPresenter = UnifiedToggleInputModelPickerPresenter()
-    private let subscriptionUpsellPresenter = UnifiedToggleInputSubscriptionUpsellPresenter()
     private var attachmentController: UTIAttachmentController!
     private var isContentOverlaySuppressed = false
     /// Forces the model chip visible mid-chat for the FE's `showModelPicker` flow; cleared on prompt
@@ -309,7 +306,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         self.host = host
         self.isToggleEnabled = isToggleEnabled
         self.hidesToggleOnDuckAITab = hidesToggleOnDuckAITab
-        self.isUpdatedModelPickerAvailable = updatedModelPickerFeature.isAvailable
         self.switchBarSubmissionMetrics = switchBarSubmissionMetrics
         self.aiChatSettings = aiChatSettings
         self.sessionMonitor = UTISessionMonitor(
@@ -414,14 +410,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 onUserChoiceRecorded: { [weak self] in self?.recordUserChoiceToStore() },
                 clearSubmitRecoveryBlock: { [weak self] in self?.isSubmitBlockedByRecoveryCard = false },
                 onModelApplied: { [weak self] in self?.notifyFrontendOfActiveChatModelChange($0) }
-            )
+            ),
+            isUpdatedModelPickerEnabled: updatedModelPickerFeature.isAvailable
         )
-        if isUpdatedModelPickerAvailable {
-            viewController.usesUpdatedModelPickerPresentation = true
-            viewController.onUpdatedModelPickerTapped = { [weak self] in
-                self?.presentUpdatedModelPicker()
-            }
-        }
         attachmentController = UTIAttachmentController(
             pixelReporter: pixelReporter,
             view: .init(
@@ -1808,78 +1799,6 @@ private extension UnifiedToggleInputCoordinator {
         }
         guard let scene = viewController.view.window?.windowScene else { return nil }
         return scene.keyWindow?.rootViewController
-    }
-
-    func presentUpdatedModelPicker() {
-        guard isUpdatedModelPickerAvailable,
-              let presentingViewController = attachmentPresenterViewController,
-              viewController.modelPickerSourceView.window != nil else {
-            return
-        }
-
-        let content = UnifiedToggleInputModelPickerContent(
-            models: modelStore.models,
-            selectedModelID: modelStore.persistedModelId,
-            userTier: modelStore.subscriptionState.userTier
-        )
-        modelPickerPresenter.present(
-            content: content,
-            from: presentingViewController,
-            sourceView: viewController.modelPickerSourceView,
-            onSelect: { [weak self] modelID in
-                self?.handleUpdatedModelSelection(modelID)
-            },
-            onCallToAction: { [weak self] requiredTier in
-                self?.handleUpdatedModelPickerCallToAction(requiredTier: requiredTier)
-            }
-        )
-    }
-
-    func handleUpdatedModelPickerCallToAction(requiredTier: AIChatModelPublicAccessTier) {
-        switch modelStore.subscriptionState.userTier.upgradeFlow(for: requiredTier) {
-        case .purchase:
-            presentSubscriptionUpsell { [weak self] in
-                self?.modelSelector.handleModelPickerSubscriptionCallToAction(requiredTier: requiredTier)
-            }
-        case .upgrade, .none:
-            modelSelector.handleModelPickerSubscriptionCallToAction(requiredTier: requiredTier)
-        }
-    }
-
-    func handleUpdatedModelSelection(_ modelID: String) {
-        guard let model = modelStore.models.first(where: { $0.id == modelID }),
-              !model.entityHasAccess,
-              let requiredTier = model.lowestPublicAccessTier else {
-            modelSelector.handleModelSelection(modelID)
-            return
-        }
-
-        switch modelStore.subscriptionState.userTier.upgradeFlow(for: requiredTier) {
-        case .purchase, .upgrade:
-            presentSubscriptionUpsell { [weak self] in
-                self?.modelSelector.handleModelSelection(modelID)
-            }
-        case .none:
-            modelSelector.handleModelSelection(modelID)
-        }
-    }
-
-    func presentSubscriptionUpsell(onSubscribe: @escaping () -> Void) {
-        guard isUpdatedModelPickerAvailable,
-              let presentingViewController = attachmentPresenterViewController else {
-            return
-        }
-
-        subscriptionUpsellPresenter.present(
-            from: presentingViewController,
-            onSubscribe: onSubscribe,
-            onHaveSubscription: {
-                NotificationCenter.default.post(
-                    name: .settingsDeepLinkNotification,
-                    object: SettingsViewModel.SettingsDeepLinkSection.restoreFlow
-                )
-            }
-        )
     }
 
     func makeFloatingReturnKeyState() -> UnifiedToggleInputFloatingReturnKeyState {

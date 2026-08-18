@@ -23,6 +23,8 @@ import UniformTypeIdentifiers
 import PixelKit
 import os.log
 import BrowserServicesKit
+import Persistence
+import PrivacyConfig
 
 struct DataImportViewModel {
 
@@ -36,6 +38,9 @@ struct DataImportViewModel {
     var successfulImportHappened: Bool?
 
     let availableImportSources: [DataImport.Source]
+
+    private let isDirectoryAccessFeatureEnabled: Bool
+    private let featureFlagger: FeatureFlagger
 
     let selectableImportTypes: Set<DataType>
 
@@ -215,7 +220,7 @@ struct DataImportViewModel {
          isPickerExpanded: Bool = false,
          isPasswordManagerAutolockEnabled: Bool = AutofillPreferences().isAutoLockEnabled,
          syncFeatureVisibility: SyncFeatureVisibility = .hide,
-         loadProfiles: @escaping (ThirdPartyBrowser) -> BrowserProfileList = { $0.browserProfiles() },
+         loadProfiles: ((ThirdPartyBrowser) -> BrowserProfileList)? = nil,
          dataImporterFactory: @escaping DataImporterFactory = dataImporter,
          requestPrimaryPasswordCallback: @escaping @MainActor (Source) -> String? = Self.requestPrimaryPasswordCallback,
          openPanelCallback: @escaping @MainActor ([UTType]) -> URL? = Self.openPanelCallback,
@@ -223,6 +228,9 @@ struct DataImportViewModel {
          wideEvent: WideEventManaging = Application.appDelegate.wideEvent,
          onFinished: @escaping () -> Void = {},
          onCancelled: @escaping () -> Void = {}) {
+        let directoryAccessFeature = DataDirectoryAccessAvailability(featureFlagger: featureFlagger, debugSettings: UserDefaults.standard.keyedStoring())
+        let loadProfiles = loadProfiles ?? { $0.browserProfiles(detectsInaccessibleProfiles: directoryAccessFeature.isEnabled) }
+
         let filteredAvailableSources = availableImportSources.filter {
             // Filter out CSV and HTML as we're using the new combined file import option
              if $0 == .bookmarksHTML || $0 == .csv {
@@ -239,6 +247,7 @@ struct DataImportViewModel {
         }
 
         self.availableImportSources = filteredAvailableSources
+        self.isDirectoryAccessFeatureEnabled = directoryAccessFeature.isEnabled
         let importSource = importSource ?? preferredImportSources.first(where: { filteredAvailableSources.contains($0) }) ?? filteredAvailableSources.first ?? .csv
 
         self.importSource = importSource
@@ -278,6 +287,7 @@ struct DataImportViewModel {
 
         self.requestPrimaryPasswordCallback = requestPrimaryPasswordCallback
         self.openPanelCallback = openPanelCallback
+        self.featureFlagger = featureFlagger
         self.reportSenderFactory = reportSenderFactory
         self.wideEvent = wideEvent
         self.onFinished = onFinished
@@ -929,6 +939,7 @@ extension DataImportViewModel {
                      loadProfiles: loadProfiles,
                      dataImporterFactory: dataImporterFactory,
                      requestPrimaryPasswordCallback: requestPrimaryPasswordCallback,
+                     featureFlagger: featureFlagger,
                      reportSenderFactory: reportSenderFactory,
                      onFinished: onFinished,
                      onCancelled: onCancelled)

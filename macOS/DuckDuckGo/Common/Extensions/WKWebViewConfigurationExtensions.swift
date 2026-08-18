@@ -21,6 +21,7 @@ import Combine
 import Common
 import FoundationExtensions
 import Network
+import PrivacyConfig
 import UserScript
 import WebKit
 
@@ -65,9 +66,9 @@ extension WKWebViewConfiguration {
             setURLSchemeHandler(duckHandler, forURLScheme: URL.NavigationalScheme.duck.rawValue)
         }
 
-        if featureFlagger.isFeatureOn(.failureURLScheme),
-           urlSchemeHandler(forURLScheme: URL.failureDemoURLScheme) == nil {
-            setURLSchemeHandler(duckHandler, forURLScheme: URL.failureDemoURLScheme)
+        if featureFlagger.isFeatureOn(.debugURLScheme),
+           urlSchemeHandler(forURLScheme: URL.debugURLScheme) == nil {
+            setURLSchemeHandler(duckHandler, forURLScheme: URL.debugURLScheme)
         }
 
         if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {

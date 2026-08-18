@@ -29,7 +29,7 @@ class ErrorPageUITests: UITestCase {
     override func setUpWithError() throws {
         try super.setUpWithError()
         continueAfterFailure = false
-        app = XCUIApplication.setUp(featureFlags: ["failureURLScheme": true])
+        app = XCUIApplication.setUp(featureFlags: ["debugURLScheme": true])
         app.enforceSingleWindow()
         webView = app.webViews.firstMatch
         removePinnedTabsForTestCleanup()
@@ -155,9 +155,9 @@ class ErrorPageUITests: UITestCase {
         )
     }
 
-    /// Aligned with `testWhenTabWithNoConnectionErrorActivated_reloadTriggered`: transient `failure://` error, other tab loads, simulate off, re-selecting tab 0 reloads successfully into demo HTML.
+    /// Aligned with `testWhenTabWithNoConnectionErrorActivated_reloadTriggered`: transient `debug://failure` error, other tab loads, simulate off, re-selecting tab 0 reloads successfully into demo HTML.
     func testErrorPage_NoConnectionStyle_TabSwitch_ReactivationLoadsSuccess_WithFailureScheme() throws {
-        // Tab 0: Debug simulate ON, open failure:// demo → connection-style error (not real network).
+        // Tab 0: Debug simulate ON, open debug://failure → connection-style error (not real network).
         ensureSimulateFailureURLSchemeOn()
         openFailureURLSchemeDemoViaDebugMenu()
         assertGenericErrorPageVisible()
@@ -181,18 +181,18 @@ class ErrorPageUITests: UITestCase {
         assertFailureSchemeDemoPageBodyVisible()
 
         // `testWhenTabWithNoConnectionErrorActivated_reloadTriggered`: recovered tab has no forward stack; back is disabled
-        // because failure:// was the first navigation in this window (no prior New Tab entry committed).
+        // because debug://failure was the first navigation in this window (no prior New Tab entry committed).
         XCTAssertTrue(app.forwardButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         XCTAssertFalse(app.forwardButton.isEnabled, "After recovery, tab should not expose forward history")
-        XCTAssertFalse(app.backButton.isEnabled, "failure:// was the first navigation — no prior page to go back to")
+        XCTAssertFalse(app.backButton.isEnabled, "debug://failure was the first navigation — no prior page to go back to")
         XCTAssertEqual(
             navigationHistoryMenuTitlesFromRightClicking(app.backButton),
             [],
-            "Back button disabled when failure:// was the first navigation in this window"
+            "Back button disabled when debug://failure was the first navigation in this window"
         )
     }
 
-    /// Aligned with `testWhenTabWithConnectionLostErrorActivatedAndReloadFailsAgain_errorPageIsUpdated`: first simulated `failure://` failure, another tab, return — second handler invocation surfaces **different** connection-style copy (alternating simulated URLError descriptions on the error page).
+    /// Aligned with `testWhenTabWithConnectionLostErrorActivatedAndReloadFailsAgain_errorPageIsUpdated`: first simulated `debug://failure` failure, another tab, return — second handler invocation surfaces **different** connection-style copy (alternating simulated URLError descriptions on the error page).
     func testErrorPage_FailureScheme_TabSwitch_SecondSimulatedErrorUpdatesDescription() throws {
         // Reset then enable simulate so alternating failure passes start from a known state.
         ensureSimulateFailureURLSchemeOff()
@@ -239,7 +239,7 @@ class ErrorPageUITests: UITestCase {
         assertNavigationChromeMatchesTransientConnectionErrorNoBackCase()
     }
 
-    /// `failure://demo?simulatedError=notConnected` with simulate on always uses `URLError.notConnectedToInternet` (literal code path), not only when `alternatingFailures` is enabled.
+    /// `debug://failure?simulatedError=notConnected` with simulate on always uses `URLError.notConnectedToInternet` (literal code path), not only when `alternatingFailures` is enabled.
     func testErrorPage_FailureScheme_SimulatedErrorQuery_NotConnected_UsesNotConnectedToInternet() throws {
         ensureSimulateFailureURLSchemeOff()
         ensureSimulateFailureURLSchemeOn()
@@ -296,9 +296,9 @@ class ErrorPageUITests: UITestCase {
         XCTAssertTrue(recoveryContent.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Other tab content should still be intact")
     }
 
-    // MARK: - failure:// (Tab ErrorPageTests scenarios; no tests-server gating)
+    // MARK: - debug://failure (Tab ErrorPageTests scenarios; no tests-server gating)
 
-    /// Aligned with `testWhenGoingBackToFailingPage_reloadIsTriggered`: served A; `failure://` with simulate on fails; Back; simulate off; Forward shows demo HTML.
+    /// Aligned with `testWhenGoingBackToFailingPage_reloadIsTriggered`: served A; `debug://failure` with simulate on fails; Back; simulate off; Forward shows demo HTML.
     func testErrorPage_FailureScheme_AfterDisablingSimulate_BackThenForward_LoadsDemo() throws {
         let aTitle = "FailureScheme Back Forward Page A"
         let pageA = UITests.simpleServedPage(titled: aTitle)
@@ -330,13 +330,13 @@ class ErrorPageUITests: UITestCase {
         XCTAssertEqual(
             navigationHistoryMenuTitlesFromRightClicking(app.forwardButton),
             [aTitle, Self.failureSchemeCommittedHostMenuLabel],
-            "Forward stack should preserve the failed failure:// commit ahead of the success page"
+            "Forward stack should preserve the failed debug://failure commit ahead of the success page"
         )
         app.forwardButton.click()
         assertFailureSchemeDemoPageBodyVisible()
     }
 
-    /// Aligned with reload-after-recovery: Cmd+R after turning simulate off loads demo HTML for the committed `failure://` URL.
+    /// Aligned with reload-after-recovery: Cmd+R after turning simulate off loads demo HTML for the committed `debug://failure` URL.
     func testErrorPage_FailureScheme_CmdR_AfterDisablingSimulate_LoadsDemo() throws {
         ensureSimulateFailureURLSchemeOn()
         openFailureURLSchemeDemoViaDebugMenu()
@@ -347,7 +347,7 @@ class ErrorPageUITests: UITestCase {
         assertFailureSchemeDemoPageBodyVisible()
     }
 
-    /// Aligned with `testWhenReloadingBySubmittingSameURL…`: repeated opens of the same `failure://` URL stay on error while simulate is on; after off, demo HTML loads.
+    /// Aligned with `testWhenReloadingBySubmittingSameURL…`: repeated opens of the same `debug://failure` URL stay on error while simulate is on; after off, demo HTML loads.
     func testErrorPage_FailureScheme_ResubmitSameURL_AfterDisablingSimulate_LoadsDemo() throws {
         ensureSimulateFailureURLSchemeOn()
         openFailureURLSchemeAlternatingFailuresViaDebugMenu()
@@ -370,15 +370,15 @@ class ErrorPageUITests: UITestCase {
         assertFailureSchemeDemoPageBodyVisible()
     }
 
-    /// Aligned with `testWhenReloadingBySubmittingSameURL_errorPageRemainsSame`: two failing `failure://` submits on the same URL; Forward still reaches B.
+    /// Aligned with `testWhenReloadingBySubmittingSameURL_errorPageRemainsSame`: two failing `debug://failure` submits on the same URL; Forward still reaches B.
     ///
-    /// Structure: failure://demo?alt error → B → Back (forward: [B]) → Cmd+R (second submit, advances alternating) → Forward reaches B.
+    /// Structure: debug://failure?alt error → B → Back (forward: [B]) → Cmd+R (second submit, advances alternating) → Forward reaches B.
     /// The alternating-failures URL is the *first* navigation so that B can be added on top and Back preserves it in forward.
     func testErrorPage_FailureScheme_ResubmitSameURL_Twice_ThenForwardToB() throws {
         let bTitle = "FailureScheme Resubmit Seq B"
         let urlB = UITests.simpleServedPage(titled: bTitle)
 
-        // Open a new window so that "New Tab" is committed to history before the failure:// navigation.
+        // Open a new window so that "New Tab" is committed to history before the debug://failure navigation.
         app.openNewWindow()
 
         // First submit: alternating-failures URL with simulate on → error (attempt 1, connectionLost).
@@ -417,7 +417,7 @@ class ErrorPageUITests: UITestCase {
         XCTAssertEqual(
             navigationHistoryMenuTitlesFromRightClicking(app.backButton),
             [Self.failureSchemeCommittedHostMenuLabel, "New Tab"],
-            "Back list: error row then new tab (failure:// was opened from the fresh New Tab window)"
+            "Back list: error row then new tab (debug://failure was opened from the fresh New Tab window)"
         )
         // Forward should still reach B after two failing submits on the failure URL.
         app.forwardButton.click()
@@ -427,18 +427,18 @@ class ErrorPageUITests: UITestCase {
         )
     }
 
-    /// Aligned with forward history after error + recovery: `failure://` error → B → Back → simulate off + reload → Forward still reaches B.
+    /// Aligned with forward history after error + recovery: `debug://failure` error → B → Back → simulate off + reload → Forward still reaches B.
     ///
-    /// Structure: open new window → failure://demo error → B → Back (forward: [B]) → sim off Cmd+R → demo → Forward still has B.
-    /// The failure:// URL is the first navigation so that navigating to B and coming back keeps B in the forward stack.
+    /// Structure: open new window → debug://failure error → B → Back (forward: [B]) → sim off Cmd+R → demo → Forward still has B.
+    /// The debug://failure URL is the first navigation so that navigating to B and coming back keeps B in the forward stack.
     func testErrorPage_HistoryChain_FailureScheme_SimulateOffReload_ShowsDemo_ForwardToB() throws {
         let bTitle = "History FailureScheme Page B"
         let urlB = UITests.simpleServedPage(titled: bTitle)
 
-        // Open a new window so that "New Tab" is committed to history before the failure:// navigation.
+        // Open a new window so that "New Tab" is committed to history before the debug://failure navigation.
         app.openNewWindow()
 
-        // Navigate to failure://demo with simulate on → error.
+        // Navigate to debug://failure with simulate on → error.
         ensureSimulateFailureURLSchemeOn()
         openFailureURLSchemeDemoViaDebugMenu()
         assertGenericErrorPageVisible()
@@ -470,7 +470,7 @@ class ErrorPageUITests: UITestCase {
         XCTAssertEqual(
             navigationHistoryMenuTitlesFromRightClicking(app.backButton),
             [Self.failureSchemeDocumentTitle, "New Tab"],
-            "Recovered demo: single prior back entry (New Tab committed before failure:// navigation)"
+            "Recovered demo: single prior back entry (New Tab committed before debug://failure navigation)"
         )
         app.forwardButton.click()
         XCTAssertTrue(
@@ -484,7 +484,7 @@ class ErrorPageUITests: UITestCase {
         let okTitle = "FailureScheme Back Success Title"
         let urlOk = UITests.simpleServedPage(titled: okTitle)
 
-        // Start on simulated failure:// error, then load a real page on top.
+        // Start on simulated debug://failure error, then load a real page on top.
         ensureSimulateFailureURLSchemeOn()
         openFailureURLSchemeDemoViaDebugMenu()
         assertGenericErrorPageVisible()
@@ -518,12 +518,12 @@ class ErrorPageUITests: UITestCase {
 
     /// Aligned with `testWhenPageLoadedAndFailsOnRefreshAndOnConsequentRefresh…`: two Cmd+R while simulate is on stay on error; Forward reaches B.
     ///
-    /// Structure: open new window → failure://demo?alt error → B → Back (forward: [B]) → Cmd+R x2 (alternating copy) → Forward reaches B.
+    /// Structure: open new window → debug://failure?alt error → B → Back (forward: [B]) → Cmd+R x2 (alternating copy) → Forward reaches B.
     func testErrorPage_FailureScheme_HistoryBack_ReloadTwice_ForwardToB() throws {
         let bTitle = "FailureScheme Reload Chain B"
         let urlB = UITests.simpleServedPage(titled: bTitle)
 
-        // Open a new window so that "New Tab" is committed to history before the failure:// navigation.
+        // Open a new window so that "New Tab" is committed to history before the debug://failure navigation.
         app.openNewWindow()
 
         // Navigate to alternating-failures URL with simulate on → error (attempt 1, connectionLost).
@@ -581,7 +581,7 @@ class ErrorPageUITests: UITestCase {
         XCTAssertEqual(
             navigationHistoryMenuTitlesFromRightClicking(app.backButton),
             [Self.failureSchemeCommittedHostMenuLabel, "New Tab"],
-            "Back list: error row then New Tab (failure:// was opened from the fresh New Tab window, no prior demo)"
+            "Back list: error row then New Tab (debug://failure was opened from the fresh New Tab window, no prior demo)"
         )
         XCTAssertEqual(
             navigationHistoryMenuTitlesFromRightClicking(app.forwardButton),
@@ -600,12 +600,12 @@ class ErrorPageUITests: UITestCase {
 
     /// Aligned with `testWhenPageLoadedAndFailsOnRefreshAndSucceedsOnConsequentRefresh…`: reload fails with simulate on; simulate off + reload restores demo; Forward to B.
     ///
-    /// Structure: open new window → failure://demo?alt error → B → Back (forward: [B]) → sim off Cmd+R → demo → Forward reaches B.
+    /// Structure: open new window → debug://failure?alt error → B → Back (forward: [B]) → sim off Cmd+R → demo → Forward reaches B.
     func testErrorPage_FailureScheme_HistoryBack_ReloadFailThenSimulateOff_ReloadSuccess_ForwardToB() throws {
         let bTitle = "FailureScheme Reload Recover B"
         let urlB = UITests.simpleServedPage(titled: bTitle)
 
-        // Open a new window so that "New Tab" is committed to history before the failure:// navigation.
+        // Open a new window so that "New Tab" is committed to history before the debug://failure navigation.
         app.openNewWindow()
 
         // Navigate to alternating-failures URL with simulate on → error (attempt 1, connectionLost).
@@ -638,7 +638,7 @@ class ErrorPageUITests: UITestCase {
         XCTAssertEqual(
             navigationHistoryMenuTitlesFromRightClicking(app.backButton),
             [Self.failureSchemeDocumentTitle, "New Tab"],
-            "Back from recovered demo: New Tab committed before failure:// navigation"
+            "Back from recovered demo: New Tab committed before debug://failure navigation"
         )
         app.forwardButton.click()
         XCTAssertTrue(
@@ -647,7 +647,7 @@ class ErrorPageUITests: UITestCase {
         )
     }
 
-    /// Aligned with `testWhenGoingToAnotherUrlFails_newBackForwardHistoryItemIsAdded`: after `failure://` error, a second failing URL clears forward.
+    /// Aligned with `testWhenGoingToAnotherUrlFails_newBackForwardHistoryItemIsAdded`: after `debug://failure` error, a second failing URL clears forward.
     func testErrorPage_FailureScheme_AfterFailure_SecondRefusedURL_DisablesForward() throws {
         let aTitle = "FailureScheme Another Fail A"
         let bTitle = "FailureScheme Another Fail B"
@@ -655,7 +655,7 @@ class ErrorPageUITests: UITestCase {
         let urlB = UITests.simpleServedPage(titled: bTitle)
         let urlRefused = URL(string: "http://127.0.0.1:13312/failure-scheme-chain")!
 
-        // Served A → B, Back to A, then stack failure:// error and a second refused URL (forward cleared).
+        // Served A → B, Back to A, then stack debug://failure error and a second refused URL (forward cleared).
         app.activateAddressBar()
         addressBarTextField.pasteURL(urlA, pressingEnter: true)
         XCTAssertTrue(
@@ -696,11 +696,11 @@ class ErrorPageUITests: UITestCase {
                 aTitle,
                 "New Tab"
             ],
-            "Current refused error, prior `failure://` error, then served page A and home (`BackForwardListItemViewModel` titles)"
+            "Current refused error, prior `debug://failure` error, then served page A and home (`BackForwardListItemViewModel` titles)"
         )
     }
 
-    /// Aligned with `testWhenGoingToAnotherUrlSucceeds…`: after `failure://` error, a served page loads; forward remains disabled.
+    /// Aligned with `testWhenGoingToAnotherUrlSucceeds…`: after `debug://failure` error, a served page loads; forward remains disabled.
     func testErrorPage_FailureScheme_AfterFailure_SecondServedURL_ForwardStillDisabled() throws {
         let aTitle = "FailureScheme Another Ok A"
         let bTitle = "FailureScheme Another Ok B"
@@ -709,7 +709,7 @@ class ErrorPageUITests: UITestCase {
         let urlB = UITests.simpleServedPage(titled: bTitle)
         let urlD = UITests.simpleServedPage(titled: dTitle)
 
-        // Same A → B → Back, then failure:// with simulate on; simulate off and navigate to D (forward still off).
+        // Same A → B → Back, then debug://failure with simulate on; simulate off and navigate to D (forward still off).
         app.activateAddressBar()
         addressBarTextField.pasteURL(urlA, pressingEnter: true)
         XCTAssertTrue(
@@ -749,7 +749,7 @@ class ErrorPageUITests: UITestCase {
         XCTAssertEqual(
             navigationHistoryMenuTitlesFromRightClicking(app.backButton),
             [dTitle, Self.failureSchemeCommittedHostMenuLabel, aTitle, "New Tab"],
-            "Served page D after `failure://` error: back through error row, page A, then home"
+            "Served page D after `debug://failure` error: back through error row, page A, then home"
         )
     }
 
@@ -1112,12 +1112,12 @@ class ErrorPageUITests: UITestCase {
 
     // MARK: - Pinned tab
 
-    /// Pinned tab: `failure://` connection error with simulate on, then simulate off + toolbar reload shows demo HTML; still one pinned tab.
+    /// Pinned tab: `debug://failure` connection error with simulate on, then simulate off + toolbar reload shows demo HTML; still one pinned tab.
     func testErrorPage_PinnedTab_FailureScheme_ReloadClearsError_StillSingleTab() throws {
         app.disableWarnBeforeClosingPinnedTabs(closeSettings: true)
         app.closeAllWindows()
 
-        // Load a real page, pin it, then drive the same tab to failure:// error via Debug menu.
+        // Load a real page, pin it, then drive the same tab to debug://failure error via Debug menu.
         let pageURL = UITests.simpleServedPage(titled: "Pinned Before Failure Scheme Title")
         app.activateAddressBar()
         addressBarTextField.pasteURL(pageURL, pressingEnter: true)
@@ -1194,7 +1194,7 @@ class ErrorPageUITests: UITestCase {
 
     // MARK: - Session restoration after error
 
-    /// Session restore on; history from URLs (middle → forward → back), then **`failure://` + simulate connection error** (reliable
+    /// Session restore on; history from URLs (middle → forward → back), then **`debug://failure` + simulate connection error** (reliable
     /// failure without tests-server gating). After relaunch: new tab, **simulate off** immediately before **select tab 0** so
     /// reactivation loads demo HTML. Back/Forward menus follow the same shape as before.
     func testErrorPage_SessionRestoration_FailureScheme_NewTabSelectRecover() {
@@ -1233,7 +1233,7 @@ class ErrorPageUITests: UITestCase {
             "Forward menu should list current row then Session Restore Forward"
         )
 
-        // Replace current entry with failure:// + simulated error (session will restore to this state).
+        // Replace current entry with debug://failure + simulated error (session will restore to this state).
         ensureSimulateFailureURLSchemeOn()
         openFailureURLSchemeDemoViaDebugMenu()
         assertGenericErrorPageVisible()
@@ -1241,10 +1241,10 @@ class ErrorPageUITests: UITestCase {
         let addressBeforeQuit = app.addressBarValueActivatingIfNeeded() ?? ""
         XCTAssertTrue(
             addressBeforeQuit.lowercased().contains("failure"),
-            "Address bar should reference failure://, got: \(addressBeforeQuit)"
+            "Address bar should reference debug://failure, got: \(addressBeforeQuit)"
         )
 
-        // Quit and relaunch; session restore should reopen on the same failing failure:// tab.
+        // Quit and relaunch; session restore should reopen on the same failing debug://failure tab.
         app.typeKey("q", modifierFlags: [.command])
         app.launch()
         XCTAssertTrue(app.wait(for: .runningForeground, timeout: UITests.Timeouts.elementExistence))
@@ -1257,7 +1257,7 @@ class ErrorPageUITests: UITestCase {
         let addressAfterRestore = app.addressBarValueActivatingIfNeeded() ?? ""
         XCTAssertTrue(
             addressAfterRestore.lowercased().contains("failure"),
-            "Restored navigation should keep failure:// in the address bar, got: \(addressAfterRestore)"
+            "Restored navigation should keep debug://failure in the address bar, got: \(addressAfterRestore)"
         )
 
         // Open a fresh tab first, then select the restored tab (reload on activation succeeds once simulate is off).
@@ -1283,7 +1283,7 @@ class ErrorPageUITests: UITestCase {
                 "Session Restore Middle",
                 "New Tab"
             ],
-            "Back menu: recovered failure:// demo document title, prior middle, new tab (no duplicate error-only row)"
+            "Back menu: recovered debug://failure document title, prior middle, new tab (no duplicate error-only row)"
         )
 
         // Jump back through history via Back menu, then walk Forward to the recovered demo.
@@ -1352,9 +1352,9 @@ class ErrorPageUITests: UITestCase {
         XCTAssertEqual(app.addressBarValueActivatingIfNeeded(), Self.privacyTestPagesHomeAddressBarValue, "URL should remain on privacy-test-pages.site after reload")
     }
 
-    // MARK: - failure:// scheme (DuckURLSchemeHandler; Debug submenu)
+    // MARK: - debug://failure scheme (DuckURLSchemeHandler; Debug submenu)
 
-    /// `failure://` connection error, switch to another tab and back while simulate stays **on** — still the same error surface.
+    /// `debug://failure` connection error, switch to another tab and back while simulate stays **on** — still the same error surface.
     func testErrorPage_FailureScheme_ReactivationWithSimulateOn_StillShowsError() throws {
         app.closeAllWindows()
 
@@ -1382,11 +1382,11 @@ class ErrorPageUITests: UITestCase {
         assertSelectedTabTitleEquals(Self.tabErrorTitle)
     }
 
-    /// Simulated `failure://` error, simulate **off**, load privacy-test-pages.site, **Back** — handler serves demo HTML again.
+    /// Simulated `debug://failure` error, simulate **off**, load privacy-test-pages.site, **Back** — handler serves demo HTML again.
     func testErrorPage_GoingBackToFailureScheme_AfterDisablingSimulate_ReloadSucceeds() throws {
         app.closeAllWindows()
 
-        // Error first, then privacy-test-pages.site on top; turn simulate off before Back so the failure:// commit reloads as demo.
+        // Error first, then privacy-test-pages.site on top; turn simulate off before Back so the debug://failure commit reloads as demo.
         ensureSimulateFailureURLSchemeOn()
         openFailureURLSchemeDemoViaDebugMenu()
         assertGenericErrorPageVisible()
@@ -1397,18 +1397,18 @@ class ErrorPageUITests: UITestCase {
         let privacyTestPagesContent = webView.staticTexts.containing(\.value, containing: Self.privacyTestPagesHomeBodyText).firstMatch
         XCTAssertTrue(privacyTestPagesContent.waitForExistence(timeout: UITests.Timeouts.navigation), "privacy-test-pages.site should load")
 
-        XCTAssertTrue(app.backButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Back should return to the failure:// commit")
+        XCTAssertTrue(app.backButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Back should return to the debug://failure commit")
         XCTAssertTrue(app.backButton.isEnabled, "Back should be enabled with privacy-test-pages.site above the failed scheme load")
         ensureSimulateFailureURLSchemeOff()
         app.backButton.click()
         assertFailureSchemeDemoPageBodyVisible()
         XCTAssertFalse(
             webView.staticTexts.containing(\.value, containing: Self.errorPageHeader).firstMatch.exists,
-            "Back to failure:// should show the demo document, not the generic error header"
+            "Back to debug://failure should show the demo document, not the generic error header"
         )
     }
 
-    /// `failure://` opened with simulate **on** (error), then privacy-test-pages.site, then **Back** — still the simulated connection error, not demo HTML.
+    /// `debug://failure` opened with simulate **on** (error), then privacy-test-pages.site, then **Back** — still the simulated connection error, not demo HTML.
     ///
     /// The back-forward item must come from an initial **failed** load. If the first load is the successful demo (simulate off),
     /// **Back** can restore WebKit’s cached document without re-invoking the scheme handler, so toggling simulate on afterward
@@ -1439,13 +1439,13 @@ class ErrorPageUITests: UITestCase {
         )
     }
 
-    /// **Debug → failure:// URL scheme:** simulate on, open demo → error; second tab loads a real page; tab A reloads on
+    /// **Debug → debug:// URL scheme:** simulate on, open demo → error; second tab loads a real page; tab A reloads on
     /// reselect; simulate off + tab switch shows demo HTML again. Includes two failed **Cmd+R** reloads on the error page.
     /// Requires the Debug menu.
     func testFailureURLScheme_DebugMenuTogglesSimulatedConnectionError() throws {
         app.closeAllWindows()
 
-        // Tab 0: simulate OFF → demo (`failure://` in the address bar is treated as search; use Debug menu).
+        // Tab 0: simulate OFF → demo (`debug://failure` in the address bar is treated as search; use Debug menu).
         ensureSimulateFailureURLSchemeOff()
         openFailureURLSchemeDemoViaDebugMenu()
         assertFailureSchemeDemoPageBodyVisible()
@@ -1486,7 +1486,7 @@ class ErrorPageUITests: UITestCase {
         assertFailureSchemeDemoPageBodyVisible()
     }
 
-    /// Aligned with `testWhenTabWithOtherErrorActivated_reloadNotTriggered`: `failure://demo?simulatedError=hostNotFound` fails with
+    /// Aligned with `testWhenTabWithOtherErrorActivated_reloadNotTriggered`: `debug://failure?simulatedError=hostNotFound` fails with
     /// `URLError.cannotFindHost` — outside `Tab.shouldReload`'s connection-error auto-reload list. Unlike real-DNS variants of this
     /// scenario, the handler's attempt counter makes "no reload happened" observable: after switching away and back, the error copy
     /// must still read attempt 1.
@@ -1538,7 +1538,7 @@ class ErrorPageUITests: UITestCase {
         )
     }
 
-    /// Debug menu opens `failure://demo` as an actual page (simulate off): demo HTML renders, Save As is enabled (real document,
+    /// Debug menu opens `debug://failure` as an actual page (simulate off): demo HTML renders, Save As is enabled (real document,
     /// not an error surface), and both Cmd+R and toolbar reload keep serving the demo. Finally, turning simulate on and reloading
     /// must surface the error — proving reload re-invokes the scheme handler rather than repainting a cached document.
     func testErrorPage_FailureScheme_DemoPageViaDebugMenu_ReloadWorks() throws {
@@ -1583,41 +1583,41 @@ private extension ErrorPageUITests {
     static var privacyTestPagesHomeDocumentTitle: String { "Privacy Test Pages - Home" }
     static var privacyTestPagesHomeAddressBarValue: String { "https://privacy-test-pages.site/" }
 
-    /// Copy from `DuckURLSchemeHandler.failureSchemeDemoHtml` only; simulated connection-error UI includes `failure://` in the NSError description, so do not key off that substring alone.
+    /// Copy from `DuckURLSchemeHandler.failureSchemeDemoHtml` only; simulated connection-error UI includes `debug://failure` in the NSError description, so do not key off that substring alone.
     static var failureSchemeDemoPageBody: String { "This page is served by the app URL scheme handler." }
 
     /// Prefix of `DuckURLSchemeHandler` `NSLocalizedDescriptionKey` when simulate is enabled (suffix is ` · attempt N`).
-    static var failureSchemeSimulatedConnectionLostDescription: String { "Debug simulated connection lost (failure://)" }
+    static var failureSchemeSimulatedConnectionLostDescription: String { "Debug simulated connection lost (debug://failure)" }
 
-    /// Prefix for `URLError.notConnectedToInternet` simulation (`failure://demo?alternatingFailures=1` on alternating passes, or `simulatedError=notConnected`).
-    static var failureSchemeSimulatedNotConnectedDescription: String { "Debug simulated not connected to internet (failure://)" }
+    /// Prefix for `URLError.notConnectedToInternet` simulation (`debug://failure?alternatingFailures=1` on alternating passes, or `simulatedError=notConnected`).
+    static var failureSchemeSimulatedNotConnectedDescription: String { "Debug simulated not connected to internet (debug://failure)" }
 
-    /// Prefix for `URLError.cannotFindHost` simulation (`failure://demo?simulatedError=hostNotFound`) — an error kind outside `Tab.shouldReload`'s auto-reload list.
-    static var failureSchemeSimulatedHostNotFoundDescription: String { "Debug simulated host not found (failure://)" }
+    /// Prefix for `URLError.cannotFindHost` simulation (`debug://failure?simulatedError=hostNotFound`) — an error kind outside `Tab.shouldReload`'s auto-reload list.
+    static var failureSchemeSimulatedHostNotFoundDescription: String { "Debug simulated host not found (debug://failure)" }
 
     /// Suffix appended to simulated failure descriptions for UI-visible load counting (`DuckURLSchemeHandler`).
     static func failureSchemeSimulateAttemptSuffix(_ attempt: Int) -> String {
         " · attempt \(attempt)"
     }
 
-    /// Same host path as `MainMenuActions.openFailureURLSchemeDemo` (`failure://demo`).
-    static var failureDemoNavigationURL: URL { URL(string: "failure://demo")! }
+    /// Same host path as `MainMenuActions.openFailureURLSchemeDemo` (`debug://failure`).
+    static var failureDemoNavigationURL: URL { URL(string: "debug://failure")! }
 
     /// Opt-in alternating simulated errors for successive handler invocations (tab reactivation / reload).
-    static var failureDemoAlternatingFailuresURL: URL { URL(string: "failure://demo?alternatingFailures=1")! }
+    static var failureDemoAlternatingFailuresURL: URL { URL(string: "debug://failure?alternatingFailures=1")! }
 
-    /// Always `URLError.notConnectedToInternet` when simulate is on (`?simulatedError=notConnected` on `failure://demo`).
-    static var failureDemoSimulatedNotConnectedQueryURL: URL { URL(string: "failure://demo?simulatedError=notConnected")! }
+    /// Always `URLError.notConnectedToInternet` when simulate is on (`?simulatedError=notConnected` on `debug://failure`).
+    static var failureDemoSimulatedNotConnectedQueryURL: URL { URL(string: "debug://failure?simulatedError=notConnected")! }
 
     /// Document `<title>` from `DuckURLSchemeHandler.failureSchemeDemoHtml` (history / navigation menu rows).
-    static var failureSchemeDocumentTitle: String { "failure:// demo" }
+    static var failureSchemeDocumentTitle: String { "debug://failure" }
 
     /// Menu label for a committed URL when there is no document title (`BackForwardListItemViewModel` falls back to `url.host ?? url.absoluteString`).
     static func backForwardMenuLabel(forCommittedURL url: URL) -> String {
         url.host ?? url.absoluteString
     }
 
-    /// `failure://demo` error commits use the URL host in back/forward menus, not `tabErrorTitle`.
+    /// `debug://failure` error commits use the URL host in back/forward menus, not `tabErrorTitle`.
     static var failureSchemeCommittedHostMenuLabel: String {
         backForwardMenuLabel(forCommittedURL: failureDemoNavigationURL)
     }
@@ -1639,9 +1639,9 @@ private extension ErrorPageUITests {
         app.closeAllWindows()
     }
 
-    // MARK: - failure:// Debug menu (DuckURLSchemeHandler UI tests)
+    // MARK: - debug://failure Debug menu (DuckURLSchemeHandler UI tests)
 
-    /// Opens **Debug → failure:// URL scheme**. Submenu rows open on hover; clicking can dismiss or mis-hit the parent item.
+    /// Opens **Debug → debug:// URL scheme**. Submenu rows open on hover; clicking can dismiss or mis-hit the parent item.
     func openFailureURLSchemeDebugSubmenu() {
         let failureURLSchemeSubmenu = app.debugMenu.menuItems[AccessibilityIdentifiers.DebugMenu.failureURLScheme]
         app.debugMenu.click()
@@ -1698,7 +1698,7 @@ private extension ErrorPageUITests {
         let demoBody = webView.staticTexts.containing(\.value, containing: Self.failureSchemeDemoPageBody).firstMatch
         XCTAssertTrue(
             demoBody.waitForExistence(timeout: UITests.Timeouts.navigation),
-            "failure:// demo HTML should be visible (distinct from error-page copy that also mentions failure://)",
+            "debug://failure HTML should be visible (distinct from error-page copy that also mentions debug://failure)",
             file: file,
             line: line
         )
@@ -1794,7 +1794,7 @@ private extension ErrorPageUITests {
         assertSaveAsMenuItemEnabled(false, file: file, line: line)
     }
 
-    /// Transient connection-style error where `failure://` was the **first** navigation in the window
+    /// Transient connection-style error where `debug://failure` was the **first** navigation in the window
     /// (no prior page — back is disabled).  Used when the debug-menu action opens a fresh window directly
     /// to the failure URL without committing a New Tab entry first.
     func assertNavigationChromeMatchesTransientConnectionErrorNoBackCase(file: StaticString = #filePath, line: UInt = #line) {
@@ -1803,7 +1803,7 @@ private extension ErrorPageUITests {
         let reload = app.reloadButton
         XCTAssertTrue(back.waitForExistence(timeout: UITests.Timeouts.elementExistence), file: file, line: line)
         XCTAssertTrue(forward.exists && reload.exists, file: file, line: line)
-        XCTAssertFalse(back.isEnabled, "Back should be disabled: failure:// was the first navigation in this window", file: file, line: line)
+        XCTAssertFalse(back.isEnabled, "Back should be disabled: debug://failure was the first navigation in this window", file: file, line: line)
         XCTAssertFalse(forward.isEnabled, file: file, line: line)
         XCTAssertTrue(reload.isEnabled, file: file, line: line)
         assertSaveAsMenuItemEnabled(false, file: file, line: line)

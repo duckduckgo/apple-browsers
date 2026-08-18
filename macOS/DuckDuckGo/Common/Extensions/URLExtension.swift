@@ -34,6 +34,9 @@ extension URL.NavigationalScheme {
 
     static let javascript = URL.NavigationalScheme(rawValue: "javascript")
 
+    /// Custom `WKURLSchemeHandler` scheme for debug / UI-test pages (`debug://<identifier>`).
+    static let debug = URL.NavigationalScheme(rawValue: "debug")
+
     static var validSchemes: [URL.NavigationalScheme] {
         return [.http, .https, .file]
     }
@@ -408,11 +411,69 @@ extension URL {
     }
 
     var isExternalSchemeLink: Bool {
-        return ![.https, .http, .about, .file, .blob, .data, .ftp, .javascript, .duck, .failureDemo, .webkitExtension].contains(navigationalScheme)
+        return ![.https, .http, .about, .file, .blob, .data, .ftp, .javascript, .duck, .debug, .webkitExtension].contains(navigationalScheme)
     }
 
     var isWebExtensionUrl: Bool {
         return navigationalScheme == .webkitExtension
+    }
+
+    /// Raw value of ``NavigationalScheme/debug``.
+    static let debugURLScheme = NavigationalScheme.debug.rawValue
+
+    var isDebugURLScheme: Bool {
+        navigationalScheme == .debug
+    }
+
+    /// Host of a `debug://<identifier>` URL.
+    enum DebugURLIdentifier: String {
+        case failure
+    }
+
+    /// Query parameter names for `debug://` URLs.
+    enum DebugURLQueryParameter: String {
+        case alternatingFailures
+        case simulatedError
+
+        /// Truthy value for flag-style parameters such as ``alternatingFailures``.
+        static let enabledValue = "1"
+    }
+
+    /// `simulatedError` query values for ``DebugURLIdentifier/failure``.
+    enum DebugURLSimulatedError: String, CaseIterable {
+        case notConnected
+        case notConnectedToInternet
+        case hostNotFound
+        case cannotFindHost
+
+        init?(queryValue: String) {
+            let folded = queryValue.lowercased()
+            guard let match = Self.allCases.first(where: { $0.rawValue.lowercased() == folded }) else {
+                return nil
+            }
+            self = match
+        }
+    }
+
+    var debugURLIdentifier: DebugURLIdentifier? {
+        guard isDebugURLScheme else { return nil }
+        return host.flatMap(DebugURLIdentifier.init(rawValue:))
+    }
+
+    var debugURLSimulatedError: DebugURLSimulatedError? {
+        guard isDebugURLScheme, let value = getParameter(named: DebugURLQueryParameter.simulatedError.rawValue) else { return nil }
+        return DebugURLSimulatedError(queryValue: value)
+    }
+
+    var hasDebugURLAlternatingFailures: Bool {
+        guard isDebugURLScheme, let item = getQueryItem(named: DebugURLQueryParameter.alternatingFailures.rawValue) else { return false }
+        return item.value == nil || item.value == DebugURLQueryParameter.enabledValue
+    }
+
+    /// Builds `debug://<identifier>` URLs for the debug scheme handler.
+    static func debugURL(_ identifier: DebugURLIdentifier, parameters: KeyValuePairs<DebugURLQueryParameter, String> = [:]) -> URL {
+        URL(string: "\(debugURLScheme)://\(identifier.rawValue)/")!
+            .appendingParameters(parameters.map { (key: $0.key.rawValue, value: $0.value) })
     }
 
     // MARK: - Base URLs (Internal User Configurable)

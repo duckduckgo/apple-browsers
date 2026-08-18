@@ -1026,26 +1026,26 @@ final class MainMenu: NSMenu {
                 NSMenuItem(title: "Show Pop Up Window", action: #selector(MainViewController.showPopUpWindow))
                 alwaysShowFirstTimeQuitSurvey
             }
-            if featureFlagger.isFeatureOn(.failureURLScheme) {
-                NSMenuItem(title: "failure:// URL scheme") {
+            if featureFlagger.isFeatureOn(.debugURLScheme) {
+                NSMenuItem(title: "debug:// URL scheme") {
                     simulateFailureURLSchemeConnectionErrorMenuItem
                     NSMenuItem(
-                        title: "Open failure:// demo page",
+                        title: "Open debug://failure demo page",
                         action: #selector(AppDelegate.openFailureURLSchemeDemoDebugPage(_:))
                     )
                     .withAccessibilityIdentifier(AccessibilityIdentifiers.DebugMenu.openFailureURLSchemeDemoPage)
                     NSMenuItem(
-                        title: "Open failure:// demo (alternating failures)",
+                        title: "Open debug://failure (alternating failures)",
                         action: #selector(AppDelegate.openFailureURLSchemeAlternatingFailuresDebugPage(_:))
                     )
                     .withAccessibilityIdentifier(AccessibilityIdentifiers.DebugMenu.openFailureURLSchemeAlternatingFailuresDemoPage)
                     NSMenuItem(
-                        title: "Open failure:// demo (notConnected query)",
+                        title: "Open debug://failure (notConnected query)",
                         action: #selector(AppDelegate.openFailureURLSchemeNotConnectedQueryDebugPage(_:))
                     )
                     .withAccessibilityIdentifier(AccessibilityIdentifiers.DebugMenu.openFailureURLSchemeNotConnectedQueryDemoPage)
                     NSMenuItem(
-                        title: "Open failure:// demo (hostNotFound query)",
+                        title: "Open debug://failure (hostNotFound query)",
                         action: #selector(AppDelegate.openFailureURLSchemeHostNotFoundQueryDebugPage(_:))
                     )
                     .withAccessibilityIdentifier(AccessibilityIdentifiers.DebugMenu.openFailureURLSchemeHostNotFoundQueryDemoPage)
@@ -1407,7 +1407,7 @@ final class MainMenu: NSMenu {
     @objc private func toggleSimulateFailureURLSchemeConnectionErrorAction(_ sender: NSMenuItem) {
         let keyed = failureURLSchemeDebugKeyedStorage
         keyed.simulateConnectionLost = !(keyed.simulateConnectionLost == true)
-        if featureFlagger.isFeatureOn(.failureURLScheme) {
+        if featureFlagger.isFeatureOn(.debugURLScheme) {
             DuckURLSchemeHandler.resetFailureSchemeAlternatingStateForUITests()
         }
         updateSimulateFailureURLSchemeConnectionErrorMenuItem()
@@ -1617,11 +1617,11 @@ extension MainMenu: SharingMenuDelegate {
     }
 }
 
-// MARK: - failure:// debug menu (UserDefaults / KeyedStoring)
+// MARK: - debug:// debug menu (UserDefaults / KeyedStoring)
 
 enum MainMenuFailureURLSchemeDebugKeys: String, StorageKeyDescribing {
-    /// When enabled, navigations to `failure://` fail with a network connection error from the URL scheme handler (demo HTML when off).
-    case simulateConnectionLost = "debug-failure-url-scheme-simulate-connection-lost"
+    /// When enabled, navigations to `debug://failure` fail with a network connection error from the URL scheme handler (demo HTML when off).
+    case simulateConnectionLost = "debug-url-scheme-simulate-connection-lost"
 }
 
 extension StorageKey {

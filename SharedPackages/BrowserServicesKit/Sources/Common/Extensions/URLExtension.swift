@@ -102,8 +102,6 @@ extension URL {
         public static let blob = NavigationalScheme(rawValue: "blob")
         public static let about = NavigationalScheme(rawValue: "about")
         public static let duck = NavigationalScheme(rawValue: "duck")
-        /// macOS: custom `WKURLSchemeHandler` demo / debug scheme (`failure://`).
-        public static let failureDemo = NavigationalScheme(rawValue: "failure")
         public static let mailto = NavigationalScheme(rawValue: "mailto")
         public static let webkitExtension = NavigationalScheme(rawValue: "webkit-extension")
 
@@ -506,13 +504,6 @@ extension URL {
               var components = URLComponents(url: self, resolvingAgainstBaseURL: false) else { return self }
         components.scheme = NavigationalScheme.https.rawValue
         return components.url
-    }
-
-    /// Raw value of ``NavigationalScheme/failureDemo`` (macOS URL scheme handler).
-    public static let failureDemoURLScheme = NavigationalScheme.failureDemo.rawValue
-
-    public var isFailureDemoURLScheme: Bool {
-        navigationalScheme == .failureDemo
     }
 
     public var isHttp: Bool {

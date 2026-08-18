@@ -62,8 +62,8 @@ final class DuckURLSchemeHandler: NSObject, WKURLSchemeHandler {
             return
         }
 
-        if requestURL.navigationalScheme == .failureDemo {
-            handleFailureSchemeURL(requestURL: requestURL, urlSchemeTask: urlSchemeTask)
+        if requestURL.isDebugURLScheme {
+            handleDebugSchemeURL(requestURL: requestURL, urlSchemeTask: urlSchemeTask)
             return
         }
 
@@ -116,24 +116,24 @@ final class DuckURLSchemeHandler: NSObject, WKURLSchemeHandler {
     <html lang="en">
     <head>
       <meta charset="utf-8" />
-      <title>failure:// demo</title>
+      <title>debug://failure</title>
       <style>
         body { font: -apple-system-body; margin: 2rem; line-height: 1.4; }
         code { font: -apple-system-monospaced; }
       </style>
     </head>
     <body>
-      <h1><code>failure://</code> demo</h1>
+      <h1><code>debug://failure</code></h1>
       <p>This page is served by the app URL scheme handler.</p>
-      <p>Turn on <strong>Debug → failure:// URL scheme → Simulate failure:// connection error</strong> to produce a
+      <p>Turn on <strong>Debug → debug:// URL scheme → Simulate debug://failure connection error</strong> to produce a
       connection-lost navigation failure instead of this page.</p>
     </body>
     </html>
     """
 
-    /// UI tests only: `failure://demo?alternatingFailures=1` alternates simulated `URLError` on successive handler invocations (tab reactivation / reload), matching `ErrorPageTests` connection-lost vs not-connected style updates without the tests server.
+    /// UI tests only: `debug://failure?alternatingFailures=1` alternates simulated `URLError` on successive handler invocations (tab reactivation / reload), matching the former `ErrorPageTests` connection-lost vs not-connected style updates without the tests server.
     ///
-    /// `failure://demo?simulatedError=notConnected` always uses `URLError.notConnectedToInternet`; `simulatedError=hostNotFound` always uses `URLError.cannotFindHost` (no auto-reload on tab reactivation). Simulated failures append ` · attempt N` to `NSLocalizedDescriptionKey` (counter resets with the alternating pass index when the Debug simulate toggle changes).
+    /// `debug://failure?simulatedError=notConnected` always uses `URLError.notConnectedToInternet`; `simulatedError=hostNotFound` always uses `URLError.cannotFindHost` (no auto-reload on tab reactivation). Simulated failures append ` · attempt N` to `NSLocalizedDescriptionKey` (counter resets with the alternating pass index when the Debug simulate toggle changes).
     static func resetFailureSchemeAlternatingStateForUITests() {
         alternatingFailuresLock.lock()
         alternatingFailuresPassIndex = 0
@@ -158,49 +158,55 @@ final class DuckURLSchemeHandler: NSObject, WKURLSchemeHandler {
     }
 
     private func shouldUseAlternatingSimulatedFailures(requestURL: URL) -> Bool {
-        guard featureFlagger.isFeatureOn(.failureURLScheme) else { return false }
-        guard let items = URLComponents(url: requestURL, resolvingAgainstBaseURL: false)?.queryItems else { return false }
-        return items.contains { $0.name == "alternatingFailures" && ($0.value == nil || $0.value == "1") }
+        guard featureFlagger.isFeatureOn(.debugURLScheme) else { return false }
+        return requestURL.hasDebugURLAlternatingFailures
     }
 
-    /// UI tests: `failure://demo?simulatedError=notConnected` always fails with `URLError.notConnectedToInternet` (when simulate is on).
+    /// UI tests: `debug://failure?simulatedError=notConnected` always fails with `URLError.notConnectedToInternet` (when simulate is on).
     private func failureSchemeForcesNotConnectedToInternetError(requestURL: URL) -> Bool {
-        guard featureFlagger.isFeatureOn(.failureURLScheme) else { return false }
-        guard let items = URLComponents(url: requestURL, resolvingAgainstBaseURL: false)?.queryItems else { return false }
-        return items.contains { item in
-            guard item.name.caseInsensitiveCompare("simulatedError") == .orderedSame else { return false }
-            guard let value = item.value else { return false }
-            return value.caseInsensitiveCompare("notConnected") == .orderedSame
-                || value.caseInsensitiveCompare("notConnectedToInternet") == .orderedSame
+        guard featureFlagger.isFeatureOn(.debugURLScheme) else { return false }
+        switch requestURL.debugURLSimulatedError {
+        case .notConnected, .notConnectedToInternet:
+            return true
+        case .hostNotFound, .cannotFindHost, nil:
+            return false
         }
     }
 
-    /// UI tests: `failure://demo?simulatedError=hostNotFound` always fails with `URLError.cannotFindHost` (when simulate is on).
+    /// UI tests: `debug://failure?simulatedError=hostNotFound` always fails with `URLError.cannotFindHost` (when simulate is on).
     /// Unlike the connection-style errors above, this error kind must NOT trigger the tab-reactivation auto-reload
     /// (`Tab.shouldReload` reloads only for `.notConnectedToInternet` / `.networkConnectionLost`), which the attempt counter makes observable.
     private func failureSchemeForcesHostNotFoundError(requestURL: URL) -> Bool {
-        guard featureFlagger.isFeatureOn(.failureURLScheme) else { return false }
-        guard let items = URLComponents(url: requestURL, resolvingAgainstBaseURL: false)?.queryItems else { return false }
-        return items.contains { item in
-            guard item.name.caseInsensitiveCompare("simulatedError") == .orderedSame else { return false }
-            guard let value = item.value else { return false }
-            return value.caseInsensitiveCompare("hostNotFound") == .orderedSame
-                || value.caseInsensitiveCompare("cannotFindHost") == .orderedSame
+        guard featureFlagger.isFeatureOn(.debugURLScheme) else { return false }
+        switch requestURL.debugURLSimulatedError {
+        case .hostNotFound, .cannotFindHost:
+            return true
+        case .notConnected, .notConnectedToInternet, nil:
+            return false
         }
     }
 
-    private func handleFailureSchemeURL(requestURL: URL, urlSchemeTask: WKURLSchemeTask) {
-        guard featureFlagger.isFeatureOn(.failureURLScheme) else {
+    private func handleDebugSchemeURL(requestURL: URL, urlSchemeTask: WKURLSchemeTask) {
+        guard featureFlagger.isFeatureOn(.debugURLScheme) else {
             urlSchemeTask.didFailWithError(URLError(.unsupportedURL))
             return
         }
 
+        switch requestURL.debugURLIdentifier {
+        case .failure:
+            handleDebugFailureURL(requestURL: requestURL, urlSchemeTask: urlSchemeTask)
+        case nil:
+            urlSchemeTask.didFailWithError(URLError(.unsupportedURL))
+        }
+    }
+
+    private func handleDebugFailureURL(requestURL: URL, urlSchemeTask: WKURLSchemeTask) {
         if failureURLSchemeDebugKeyedStorage.simulateConnectionLost == true {
             if failureSchemeForcesHostNotFoundError(requestURL: requestURL) {
                 let attempt = Self.nextSimulatedFailureAttemptNumber()
                 let error = URLError(.cannotFindHost, userInfo: [
                     NSURLErrorFailingURLErrorKey: requestURL,
-                    NSLocalizedDescriptionKey: "Debug simulated host not found (failure://) · attempt \(attempt)"
+                    NSLocalizedDescriptionKey: "Debug simulated host not found (debug://failure) · attempt \(attempt)"
                 ])
                 urlSchemeTask.didFailWithError(error)
                 return
@@ -209,7 +215,7 @@ final class DuckURLSchemeHandler: NSObject, WKURLSchemeHandler {
                 let attempt = Self.nextSimulatedFailureAttemptNumber()
                 let error = URLError(.notConnectedToInternet, userInfo: [
                     NSURLErrorFailingURLErrorKey: requestURL,
-                    NSLocalizedDescriptionKey: "Debug simulated not connected to internet (failure://) · attempt \(attempt)"
+                    NSLocalizedDescriptionKey: "Debug simulated not connected to internet (debug://failure) · attempt \(attempt)"
                 ])
                 urlSchemeTask.didFailWithError(error)
                 return
@@ -225,12 +231,12 @@ final class DuckURLSchemeHandler: NSObject, WKURLSchemeHandler {
                 if pass % 2 == 0 {
                     error = URLError(.networkConnectionLost, userInfo: [
                         NSURLErrorFailingURLErrorKey: requestURL,
-                        NSLocalizedDescriptionKey: "Debug simulated connection lost (failure://) · attempt \(attempt)"
+                        NSLocalizedDescriptionKey: "Debug simulated connection lost (debug://failure) · attempt \(attempt)"
                     ])
                 } else {
                     error = URLError(.notConnectedToInternet, userInfo: [
                         NSURLErrorFailingURLErrorKey: requestURL,
-                        NSLocalizedDescriptionKey: "Debug simulated not connected to internet (failure://) · attempt \(attempt)"
+                        NSLocalizedDescriptionKey: "Debug simulated not connected to internet (debug://failure) · attempt \(attempt)"
                     ])
                 }
                 urlSchemeTask.didFailWithError(error)
@@ -240,7 +246,7 @@ final class DuckURLSchemeHandler: NSObject, WKURLSchemeHandler {
             let attempt = Self.nextSimulatedFailureAttemptNumber()
             let error = URLError(.networkConnectionLost, userInfo: [
                 NSURLErrorFailingURLErrorKey: requestURL,
-                NSLocalizedDescriptionKey: "Debug simulated connection lost (failure://) · attempt \(attempt)"
+                NSLocalizedDescriptionKey: "Debug simulated connection lost (debug://failure) · attempt \(attempt)"
             ])
             urlSchemeTask.didFailWithError(error)
             return

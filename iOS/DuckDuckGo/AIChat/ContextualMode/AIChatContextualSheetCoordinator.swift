@@ -244,6 +244,11 @@ final class AIChatContextualSheetCoordinator {
 
     /// Presents the suggestion chips and the input floating over the page, with no sheet.
     func presentFloatingInput(from presentingViewController: UIViewController) async {
+        await presentFloatingInput(from: presentingViewController, skippingAutoAttach: false)
+    }
+
+    private func presentFloatingInput(from presentingViewController: UIViewController,
+                                      skippingAutoAttach: Bool) async {
         guard floatingInputViewController == nil, !isSheetPresented else { return }
 
         sessionState.refreshAutoAttachSetting()
@@ -251,12 +256,16 @@ final class AIChatContextualSheetCoordinator {
         clearStaleManualContextIfNeeded()
 
         startObservingContextUpdates()
-        // "Ask About Page" is an explicit attach request, so the page attaches outright rather than
-        // going down the signals-only path an auto-collect would take with auto-attach off.
-        if sessionState.showsSuggestionsStartSurface {
-            sessionState.beginLoadingSuggestions()
+        if skippingAutoAttach {
+            collectContextForNewSession(skippingAutoAttach: true)
+        } else {
+            // "Ask About Page" is an explicit attach request, so the page attaches outright rather than
+            // going down the signals-only path an auto-collect would take with auto-attach off.
+            if sessionState.showsSuggestionsStartSurface {
+                sessionState.beginLoadingSuggestions()
+            }
+            requestManualPageContextAttach()
         }
-        requestManualPageContextAttach()
 
         stopSessionTimer()
 
@@ -366,7 +375,12 @@ final class AIChatContextualSheetCoordinator {
     }
 
     private func collectContextForNewSession(skippingAutoAttach: Bool = false) {
+        if !skippingAutoAttach {
+            sessionState.allowAutoAttachAgain()
+        }
+
         if skippingAutoAttach {
+            sessionState.suppressAutoAttachForSelectionEntry()
             // An already-attached page keeps its own signals, and pushing the stripped signals-only
             // payload over it would clear the attached context on the frontend.
             if currentPageURL != nil, sessionState.intendedAttachedContext == nil {
@@ -397,9 +411,9 @@ final class AIChatContextualSheetCoordinator {
         )
     }
 
-    /// Runs a Duck.ai action on text selected in the page, presenting the sheet either way.
+    /// Runs a Duck.ai action on text selected in the page, presenting the configured contextual surface.
     ///
-    /// `ask` attaches the selection; at the cap it is refused with a banner and the sheet still presents.
+    /// `ask` attaches the selection; at the cap it is refused with a banner and the surface still presents.
     /// The submitting actions attach nothing and clear any selections already attached.
     func handleSelectionAction(_ action: AIChatTextSelectionAction,
                                selection selectedText: AIChatPageTextSelection,
@@ -419,7 +433,16 @@ final class AIChatContextualSheetCoordinator {
             sessionState.clearAttachedSelections()
         }
 
-        await presentSheet(from: presentingViewController, restoreURL: restoreURL, skippingAutoAttach: true)
+        if floatingInputFeature.isAvailable,
+           !sessionState.hasActiveChat,
+           !isSheetPresented,
+           restoreURL == nil {
+            sheetViewController = nil
+            persistentUTIHost = nil
+            await presentFloatingInput(from: presentingViewController, skippingAutoAttach: true)
+        } else {
+            await presentSheet(from: presentingViewController, restoreURL: restoreURL, skippingAutoAttach: true)
+        }
         refreshSelectionChips()
 
         if didHitCap {
@@ -808,6 +831,16 @@ private extension AIChatContextualSheetCoordinator {
                 return host
             }
         )
+
+        webVC.setAttachedSelectionsProvider { [weak self] in
+            self?.sessionState.attachedSelections ?? []
+        }
+
+        webVC.setAttachedSelectionsConsumedHandler { [weak self] selectionIDs in
+            guard let self else { return }
+            self.sessionState.consumeAttachedSelections(ids: selectionIDs)
+            self.refreshSelectionChips()
+        }
 
         return webVC
     }

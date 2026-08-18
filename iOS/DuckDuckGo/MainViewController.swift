@@ -6627,7 +6627,7 @@ extension MainViewController: TabDelegate {
         // The sheet bypasses `openAIChat`, so fire the entry pixel directly.
         fireAIChatEntryPointPixel(source: .contextualChat, opensNewTab: false, hasPrompt: true)
         Task { @MainActor in
-            await tab.presentContextualAIChatSheet(withSelectedText: text, from: self)
+            await tab.presentContextualAIChat(withSelectedText: text, from: self)
         }
     }
 

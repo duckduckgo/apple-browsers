@@ -658,11 +658,6 @@ protocol ExperimentPixelFiring {
                                     value: String)
 }
 
-/// Conforming `PixelKit` to the `ExperimentPixelFiring` protocol.
-///
-/// `PixelKit` provides the concrete implementation for firing experiment pixels. By extending
-/// `PixelKit` to conform to `ExperimentPixelFiring`, its functionality can be injected and mocked
-/// for testing purposes.
 extension PixelKit: ExperimentPixelFiring {}
 
 struct OnboardingDownloadReasonExperimentMetric {

@@ -35,9 +35,9 @@ public enum OnboardingDownloadReasonStore {
 
     /// Maps a persisted `OnboardingDownloadReason` raw value to its pixel token.
     ///
-    /// Deliberately duplicates `OnboardingDownloadReason.pixelToken` so Core stays free of the
-    /// `Onboarding` module (importing it would invert the Core → Onboarding layering). Acceptable
-    /// because this is a temporary experiment; keep the two mappings in sync until it's removed.
+    /// Kept here (keyed on the raw value) so Core stays free of the `Onboarding` module — importing it
+    /// would invert the Core → Onboarding layering. Mirrors the download-reason tokens in the Onboarding
+    /// pixel layer (`DownloadChoiceEvent.Value`); keep them in sync while the experiment is live.
     private static func pixelToken(forRawValue rawValue: String) -> String? {
         switch rawValue {
         case "browserPrivately": "search"

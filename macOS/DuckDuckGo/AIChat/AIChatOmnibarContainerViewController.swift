@@ -1915,7 +1915,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     // MARK: - Reasoning Picker
 
-    /// Width floor, so the trailing tier word clears its tab stop.
+    /// Width floor, so a two-line row's subtitle isn't cramped.
     private static let reasoningPickerMinimumWidth: CGFloat = 250
 
     @objc private func reasoningPickerButtonClicked() {

@@ -7463,7 +7463,7 @@
     },
     "aichat.model-picker.tier-badge.plus" : {
       "comment" : "Trailing badge on a model picker row for a model that requires a Plus subscription",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -7523,7 +7523,7 @@
     },
     "aichat.model-picker.tier-badge.pro" : {
       "comment" : "Trailing badge on a model picker row for a model that requires a Pro subscription",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {

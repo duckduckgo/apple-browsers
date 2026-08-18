@@ -446,10 +446,11 @@ final class TabCollectionViewModel: NSObject {
         tabCollection.append(tab: tab)
         handleNewTabPageSideEffects(for: tab)
         let insertionIndex = tabCollection.tabs.indices.index(before: tabCollection.tabs.endIndex)
+        // Notify the delegate before updating selection — see `insert(_:at:selected:)`.
+        delegate?.tabCollectionViewModelDidAppend(self, selected: selected)
         if selected {
             selectUnpinnedTab(at: insertionIndex, forceChange: forceChange)
         }
-        delegate?.tabCollectionViewModelDidAppend(self, selected: selected)
         return insertionIndex
     }
 
@@ -492,11 +493,12 @@ final class TabCollectionViewModel: NSObject {
         }
 
         tabCollection.append(tabs: tabsToAppend)
+        // Notify the delegate before updating selection — see `insert(_:at:selected:)`.
+        delegate?.tabCollectionViewModelDidMultipleChanges(self)
         if shouldSelectLastTab {
             let newSelectionIndex = tabCollection.tabs.count - 1
             selectUnpinnedTab(at: newSelectionIndex)
         }
-        delegate?.tabCollectionViewModelDidMultipleChanges(self)
     }
 
     func append(tabs: [Tab], andSelect shouldSelectLastTab: Bool) {
@@ -537,10 +539,16 @@ final class TabCollectionViewModel: NSObject {
         }()
 
         tabCollection.insert(tabToInsert, at: index.item)
+        // Notify the delegate before updating selection: setting `selectionIndex` publishes
+        // `selectedTabViewModel`, and a subscriber can synchronously insert another tab (a
+        // queued pop-up arriving at `createdChild` while the web view is attached on
+        // selection) while the collection view still holds the pre-insert item count,
+        // raising NSInternalInconsistencyException. The tab bar sizes the incoming tab from
+        // `index`/`selected` — see `TabBarViewController.incomingSelectionIndex`.
+        delegate?.tabCollectionViewModelDidInsert(self, at: index, selected: selected)
         if selected {
             select(at: index)
         }
-        delegate?.tabCollectionViewModelDidInsert(self, at: index, selected: selected)
     }
 
     func insert(_ tab: Tab, at index: TabIndex, selected: Bool = true) {
@@ -745,8 +753,9 @@ final class TabCollectionViewModel: NSObject {
 
             didRemoveTab(movedTab, at: fromIndex, withParent: parentTab)
 
-            otherViewModel.selectWithoutResettingState(at: toIndex)
+            // Notify the delegate before updating selection — see `insert(_:at:selected:)`.
             otherViewModel.delegate?.tabCollectionViewModelDidInsert(otherViewModel, at: toIndex, selected: true)
+            otherViewModel.selectWithoutResettingState(at: toIndex)
         }
     }
 
@@ -848,9 +857,9 @@ final class TabCollectionViewModel: NSObject {
         let newIndex = tabIndex.makeNext()
 
         tabCollection(for: tabIndex)?.insert(tabCopy, at: newIndex.item)
-        select(at: newIndex)
-
+        // Notify the delegate before updating selection — see `insert(_:at:selected:)`.
         delegate?.tabCollectionViewModelDidInsert(self, at: newIndex, selected: true)
+        select(at: newIndex)
     }
 
     func pinTab(at index: Int) {

@@ -14583,6 +14583,10 @@
 			);
 			mainGroup = AA585D75248FD31100E9A3E2;
 			packageReferences = (
+				FCFC00012F00000000010001 /* XCLocalSwiftPackageReference "../SharedPackages/DDGError" */,
+				FCFC00012F00000000020001 /* XCLocalSwiftPackageReference "../SharedPackages/Common" */,
+				FCFC00012F00000000030001 /* XCLocalSwiftPackageReference "../SharedPackages/Persistence" */,
+				FCFC00012F00000000040001 /* XCLocalSwiftPackageReference "../SharedPackages/PixelKit" */,
 				B6DA44152616C13800DD1EC2 /* XCRemoteSwiftPackageReference "OHHTTPStubs" */,
 				B6EC37F529B5DAAC001ACE79 /* XCRemoteSwiftPackageReference "swifter" */,
 				B6F997B92B8F352500476735 /* XCRemoteSwiftPackageReference "apple-toolbox" */,
@@ -20987,6 +20991,22 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
+		FCFC00012F00000000010001 /* XCLocalSwiftPackageReference "../SharedPackages/DDGError" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../SharedPackages/DDGError;
+		};
+		FCFC00012F00000000020001 /* XCLocalSwiftPackageReference "../SharedPackages/Common" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../SharedPackages/Common;
+		};
+		FCFC00012F00000000030001 /* XCLocalSwiftPackageReference "../SharedPackages/Persistence" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../SharedPackages/Persistence;
+		};
+		FCFC00012F00000000040001 /* XCLocalSwiftPackageReference "../SharedPackages/PixelKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../SharedPackages/PixelKit;
+		};
 		315E395D2F86A36200D2289D /* XCLocalSwiftPackageReference "../SharedPackages/DebugServer" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = ../SharedPackages/DebugServer;

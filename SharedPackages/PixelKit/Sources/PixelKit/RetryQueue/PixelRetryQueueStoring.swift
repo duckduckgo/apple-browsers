@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import DDGError
 import Common
 
 /// Persists pixels awaiting retry. Implementations must be safe to call from multiple threads.

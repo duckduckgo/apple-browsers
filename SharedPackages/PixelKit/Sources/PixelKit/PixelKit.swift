@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import DDGError
 import os.log
 import Common
 import FoundationExtensions

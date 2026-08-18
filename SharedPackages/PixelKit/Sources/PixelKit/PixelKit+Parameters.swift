@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import DDGError
 
 public extension PixelKit {
 

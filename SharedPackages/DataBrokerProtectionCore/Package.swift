@@ -36,6 +36,8 @@ let package = Package(
         .library(name: "DataBrokerProtectionCoreTestsUtils", targets: ["DataBrokerProtectionCoreTestsUtils"]),
     ],
     dependencies: [
+        .package(path: "../Persistence"),
+        .package(path: "../PixelKit"),
         .package(path: "../BrowserServicesKit"),
         .package(path: "../DebugServer"),
         .package(url: "https://github.com/weichsel/ZIPFoundation.git", exact: "0.9.20"),
@@ -48,8 +50,8 @@ let package = Package(
             dependencies: [
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
                 .product(name: "PrivacyConfig", package: "BrowserServicesKit"),
-                .product(name: "PixelKit", package: "BrowserServicesKit"),
-                .product(name: "Persistence", package: "BrowserServicesKit"),
+                .product(name: "PixelKit", package: "PixelKit"),
+                .product(name: "Persistence", package: "Persistence"),
                 .product(name: "Subscription", package: "BrowserServicesKit"),
                 "ZIPFoundation",
                 .product(name: "Algorithms", package: "swift-algorithms"),
@@ -75,8 +77,8 @@ let package = Package(
             dependencies: [
                 "DataBrokerProtectionCore",
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
-                .product(name: "PixelKit", package: "BrowserServicesKit"),
-                .product(name: "Persistence", package: "BrowserServicesKit"),
+                .product(name: "PixelKit", package: "PixelKit"),
+                .product(name: "Persistence", package: "Persistence"),
                 .product(name: "Algorithms", package: "swift-algorithms"),
             ],
             swiftSettings: [
@@ -89,8 +91,8 @@ let package = Package(
                 "DataBrokerProtectionCore",
                 "DataBrokerProtectionCoreTestsUtils",
                 "BrowserServicesKit",
-                .product(name: "PixelKitTestingUtilities", package: "BrowserServicesKit"),
-                .product(name: "PersistenceTestingUtils", package: "BrowserServicesKit"),
+                .product(name: "PixelKitTestingUtilities", package: "PixelKit"),
+                .product(name: "PersistenceTestingUtils", package: "Persistence"),
                 .product(name: "SubscriptionTestingUtilities", package: "BrowserServicesKit"),
                 .product(name: "BrowserServicesKitTestsUtils", package: "BrowserServicesKit"),
                 .product(name: "SecureStorageTestsUtils", package: "BrowserServicesKit"),

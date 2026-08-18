@@ -18,7 +18,7 @@
 
 import XCTest
 import Foundation
-@testable import Common
+@testable import DDGError
 
 final class DDGErrorTests: XCTestCase {
 

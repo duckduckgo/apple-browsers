@@ -25,7 +25,6 @@ import Testing
 
 @Suite("DuckAI Selection Journey Instrumentation")
 @MainActor
-@available(iOS 16, *)
 struct DuckAISelectionJourneyInstrumentationTests {
 
     private final class TestClock {
@@ -60,6 +59,7 @@ struct DuckAISelectionJourneyInstrumentationTests {
         return (data, completion.1)
     }
 
+    @available(iOS 16, *)
     @Test("First attachment starts one journey and later attachments update its bounded maximum", .timeLimit(.minutes(1)))
     func attachmentsStartAndUpdateJourney() {
         let context = makeSUT()
@@ -75,6 +75,7 @@ struct DuckAISelectionJourneyInstrumentationTests {
         #expect(data?.maxSelectionCount == 5)
     }
 
+    @available(iOS 16, *)
     @Test("Dismissal keeps the journey open and a later prompt succeeds", .timeLimit(.minutes(1)))
     func dismissalThenPromptSubmission() throws {
         let context = makeSUT()
@@ -97,6 +98,7 @@ struct DuckAISelectionJourneyInstrumentationTests {
         #expect(completion.0.postDismissalSubmissionInterval.end != nil)
     }
 
+    @available(iOS 16, *)
     @Test("Selection suggestion identifies the successful submission action", .timeLimit(.minutes(1)))
     func selectionSuggestionSubmission() throws {
         let context = makeSUT()
@@ -110,6 +112,7 @@ struct DuckAISelectionJourneyInstrumentationTests {
         #expect(completion.0.submissionAction == .translate)
     }
 
+    @available(iOS 16, *)
     @Test("A non-selection suggestion clears a previously pending selection action", .timeLimit(.minutes(1)))
     func nonSelectionSuggestionClearsPendingAction() throws {
         let context = makeSUT()
@@ -124,6 +127,7 @@ struct DuckAISelectionJourneyInstrumentationTests {
         #expect(completion.0.submissionAction == .prompt)
     }
 
+    @available(iOS 16, *)
     @Test("Delivery timeout is retained while a later submission can still succeed", .timeLimit(.minutes(1)))
     func deliveryTimeoutThenSubmission() throws {
         let context = makeSUT()
@@ -140,6 +144,7 @@ struct DuckAISelectionJourneyInstrumentationTests {
         #expect(completion.0.submissionAction == .prompt)
     }
 
+    @available(iOS 16, *)
     @Test("Removing the final unsubmitted selection explicitly abandons the journey", .timeLimit(.minutes(1)))
     func removingLastSelectionFailsJourney() throws {
         let context = makeSUT()
@@ -154,6 +159,7 @@ struct DuckAISelectionJourneyInstrumentationTests {
         #expect(completion.0.terminalReason == .selectionsRemoved)
     }
 
+    @available(iOS 16, *)
     @Test("Explicit clearing actions complete as conversion failures", .timeLimit(.minutes(1)), arguments: [
         DuckAISelectionJourneyWideEventData.TerminalReason.newChat,
         .chatCleared,
@@ -171,6 +177,7 @@ struct DuckAISelectionJourneyInstrumentationTests {
         #expect(completion.0.terminalReason == reason)
     }
 
+    @available(iOS 16, *)
     @Test("Persisted journeys from a previous process complete as unknown on initialization", .timeLimit(.minutes(1)))
     func orphanedJourneyCompletesUnknown() throws {
         let orphan = DuckAISelectionJourneyWideEventData(
@@ -185,6 +192,7 @@ struct DuckAISelectionJourneyInstrumentationTests {
         #expect(completion.0.terminalReason == nil)
     }
 
+    @available(iOS 16, *)
     @Test("Creating another tab instrumentation does not terminate a journey from this process", .timeLimit(.minutes(1)))
     func currentProcessJourneyIsResumed() throws {
         let active = DuckAISelectionJourneyWideEventData(selectionCount: 1, localScopeID: "test-scope")
@@ -198,6 +206,7 @@ struct DuckAISelectionJourneyInstrumentationTests {
         #expect(completion.0.globalData.id == active.globalData.id)
     }
 
+    @available(iOS 16, *)
     @Test("Tab closure completes a persisted journey even when its controller was evicted", .timeLimit(.minutes(1)))
     func persistedJourneyCompletesOnTabClose() throws {
         let active = DuckAISelectionJourneyWideEventData(selectionCount: 1, localScopeID: "evicted-tab")
@@ -215,6 +224,7 @@ struct DuckAISelectionJourneyInstrumentationTests {
         #expect(completion.0.terminalReason == .tabClosed)
     }
 
+    @available(iOS 16, *)
     @Test("Payload contains only closed and bucketed journey data", .timeLimit(.minutes(1)))
     func payloadIsBounded() throws {
         let context = makeSUT()
@@ -240,6 +250,7 @@ struct DuckAISelectionJourneyInstrumentationTests {
         #expect(parameters[WideEventParameter.DuckAISelectionJourneyFeature.sawSelectionSuggestions] as? Bool == true)
     }
 
+    @available(iOS 16, *)
     @Test("Wide event metadata matches the registered schema", .timeLimit(.minutes(1)))
     func metadataMatchesSchema() {
         #expect(DuckAISelectionJourneyWideEventData.metadata.pixelName == "duckai_selection_journey")
@@ -248,6 +259,7 @@ struct DuckAISelectionJourneyInstrumentationTests {
         #expect(DuckAISelectionJourneyWideEventData.metadata.version == "1.1.0")
     }
 
+    @available(iOS 16, *)
     @Test("Only a flow from a previous process is eligible for launch cleanup", .timeLimit(.minutes(1)))
     func launchCleanupDecision() async {
         let current = DuckAISelectionJourneyWideEventData(selectionCount: 1, localScopeID: "current")

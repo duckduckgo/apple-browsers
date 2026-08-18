@@ -40,6 +40,7 @@ final class UTIModelStore {
     private let modelsService: AIChatModelsProviding
     private(set) var preferences: AIChatPreferencesPersisting
     private let subscriptionManager: any SubscriptionManager
+    private let isUpdatedModelPickerEnabled: Bool
     private var modelsFetchTask: Task<Void, Never>?
     private var cancellables = Set<AnyCancellable>()
 
@@ -50,12 +51,17 @@ final class UTIModelStore {
     init(
         modelsService: AIChatModelsProviding,
         preferences: AIChatPreferencesPersisting,
-        subscriptionManager: any SubscriptionManager
+        subscriptionManager: any SubscriptionManager,
+        isUpdatedModelPickerEnabled: Bool
     ) {
         self.modelsService = modelsService
         self.preferences = preferences
         self.subscriptionManager = subscriptionManager
-        subscribeToAppStoreProductAvailability()
+        self.isUpdatedModelPickerEnabled = isUpdatedModelPickerEnabled
+        if isUpdatedModelPickerEnabled {
+            // Only the updated picker labels gated models and reasoning efforts based on trial eligibility.
+            subscribeToAppStoreProductAvailability()
+        }
     }
 
     var persistedModelId: String? {
@@ -120,7 +126,9 @@ final class UTIModelStore {
     }
 
     func fetchModels() {
-        updateFreeTrialEligibilityFromSubscriptionCache(notifyOnChange: false)
+        if isUpdatedModelPickerEnabled {
+            updateFreeTrialEligibilityFromSubscriptionCache(notifyOnChange: false)
+        }
         modelsFetchTask?.cancel()
         modelsFetchTask = Task { [weak self] in
             guard let self else { return }

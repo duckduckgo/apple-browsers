@@ -39,7 +39,8 @@ final class UTIModelStoreTests: XCTestCase {
         sut = UTIModelStore(
             modelsService: modelsService,
             preferences: preferences,
-            subscriptionManager: subscriptionManager
+            subscriptionManager: subscriptionManager,
+            isUpdatedModelPickerEnabled: false
         )
     }
 

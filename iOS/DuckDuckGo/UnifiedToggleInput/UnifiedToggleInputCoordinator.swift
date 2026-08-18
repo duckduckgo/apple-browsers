@@ -303,6 +303,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         placesAttachmentsAboveInput: Bool = false,
         updatedModelPickerFeature: UpdatedModelPickerFeatureProviding = UpdatedModelPickerFeature()
     ) {
+        let isUpdatedModelPickerEnabled = updatedModelPickerFeature.isAvailable
         self.host = host
         self.isToggleEnabled = isToggleEnabled
         self.hidesToggleOnDuckAITab = hidesToggleOnDuckAITab
@@ -324,7 +325,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 accessTokenProvider: subscriptionManager
             ),
             preferences: preferences,
-            subscriptionManager: subscriptionManager
+            subscriptionManager: subscriptionManager,
+            isUpdatedModelPickerEnabled: isUpdatedModelPickerEnabled
         )
         self.lastUsedModelProvider = lastUsedModelProvider
             ?? duckAiNativeStorageHandler.map { DuckAiLastUsedModelProvider(storage: $0, pixelFiring: duckAiNativeStoragePixelFiring) }
@@ -411,7 +413,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 clearSubmitRecoveryBlock: { [weak self] in self?.isSubmitBlockedByRecoveryCard = false },
                 onModelApplied: { [weak self] in self?.notifyFrontendOfActiveChatModelChange($0) }
             ),
-            isUpdatedModelPickerEnabled: updatedModelPickerFeature.isAvailable
+            isUpdatedModelPickerEnabled: isUpdatedModelPickerEnabled
         )
         attachmentController = UTIAttachmentController(
             pixelReporter: pixelReporter,

@@ -52,15 +52,17 @@ final class IPadOmnibarModelPickerController {
         upsellPresenter: DuckAISubscriptionUpselling = DuckAISubscriptionUpsellPresenter(),
         updatedModelPickerFeature: UpdatedModelPickerFeatureProviding = UpdatedModelPickerFeature()
     ) {
+        let isUpdatedModelPickerEnabled = updatedModelPickerFeature.isAvailable
         self.upsellPresenter = upsellPresenter
-        self.menuFactory = UnifiedToggleInputModelMenuFactory(isUpdatedModelPickerEnabled: updatedModelPickerFeature.isAvailable)
+        self.menuFactory = UnifiedToggleInputModelMenuFactory(isUpdatedModelPickerEnabled: isUpdatedModelPickerEnabled)
         store = UTIModelStore(
             modelsService: modelsService ?? AIChatModelsService(
                 baseURL: aiChatModelsBaseURL(forChatURL: aiChatSettings.aiChatURL),
                 accessTokenProvider: subscriptionManager
             ),
             preferences: preferences,
-            subscriptionManager: subscriptionManager
+            subscriptionManager: subscriptionManager,
+            isUpdatedModelPickerEnabled: isUpdatedModelPickerEnabled
         )
         store.onModelsUpdated = { [weak self] in
             self?.onModelsUpdated?()

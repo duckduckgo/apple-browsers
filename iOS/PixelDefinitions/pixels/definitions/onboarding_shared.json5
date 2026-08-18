@@ -362,9 +362,8 @@
             "onboardingEventType",
             {
                 "key": "value",
-                "type": "string",
-                "description": "On the engagement (clicked) event: whether new tabs open with AI chat: true or false",
-                "enum": ["true", "false"]
+                "type": "boolean",
+                "description": "On the engagement (clicked) event: whether new tabs open with AI chat: true or false"
             },
             "onboardingInstallType",
             "onboardingDaysSinceInstall",

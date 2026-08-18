@@ -23,6 +23,7 @@ import Combine
 import Core
 import DDGSync
 import os.log
+import PrivacyConfig
 import Subscription
 import UIKit
 import UniformTypeIdentifiers
@@ -280,6 +281,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     private let duckAIWideEventFlowScope: DuckAIWideEventFlowScope?
 
+    private let footerController: UTIFooterController?
+
     // MARK: - Initialization
 
     init(
@@ -308,7 +311,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         contextualStart: ContextualInputStart = .expandedOnExistingChat,
         attachmentPasteEnabled: Bool = false,
         placesAttachmentsAboveInput: Bool = false,
-        updatedModelPickerFeature: UpdatedModelPickerFeatureProviding = UpdatedModelPickerFeature()
+        updatedModelPickerFeature: UpdatedModelPickerFeatureProviding = UpdatedModelPickerFeature(),
+        footerWarningProvider: UTIFooterWarningProviding? = nil,
+        featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger
     ) {
         let isUpdatedModelPickerEnabled = updatedModelPickerFeature.isAvailable
         self.host = host
@@ -340,6 +345,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         self.lastUsedReasoningModeProvider = lastUsedReasoningModeProvider
             ?? duckAiNativeStorageHandler.map { DuckAiLastUsedReasoningModeProvider(storage: $0, pixelFiring: duckAiNativeStoragePixelFiring) }
         self.duckAIWideEventFlowScope = duckAIWideEventFlowScope
+        let resolvedFooterProvider = footerWarningProvider ?? duckAiNativeStorageHandler.map { handler in
+            UTIFooterWarningProvider(limitsStore: DuckAiUsageLimitsStore(storageHandler: handler,
+                                                                        featureFlagger: featureFlagger))
+        }
+        self.footerController = resolvedFooterProvider.map { UTIFooterController(provider: $0) }
         viewController = UnifiedToggleInputViewController(isToggleEnabled: isToggleEnabled,
                                                          isFireTab: isFireTab,
                                                          placesAttachmentsAboveInput: placesAttachmentsAboveInput)
@@ -353,6 +363,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         floatingReturnKeyViewController = UnifiedToggleInputFloatingReturnKeyViewController()
         super.init()
         viewController.delegate = self
+        footerController?.presenter = viewController
+        footerController?.onAction = { [weak self] action in
+            self?.handleFooterAction(action)
+        }
         textModel = UTITextModel(sideEffects: .init(
             applyTextToView: { [weak self] in self?.viewController.text = $0 },
             persistDraft: { [weak self] in self?.persistDraftToStore() },
@@ -733,6 +747,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         // Pose deferred to the intent handler so the morph animates in sync with the keyboard.
         applyToolbarPresentation()
         viewController.deactivateInput()
+        footerController?.resetForPoseChange()
         intentSubject.send(.showCollapsed(from: previousDisplayState))
     }
 
@@ -758,6 +773,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             textModel.markPrefilledSelected()
         }
         updateFloatingReturnKeyState()
+        Logger.duckAIUsageWarnings.debug("[UsageWarnings] showExpanded host=\(String(describing: self.host), privacy: .public) mode=\(String(describing: self.inputMode), privacy: .public) controller=\(self.footerController == nil ? "nil" : "present", privacy: .public)")
+        refreshFooterSuppression()
+        footerController?.refresh()
 
         intentSubject.send(.showExpanded(from: previousDisplayState))
         guard activatesInput else { return }
@@ -857,7 +875,20 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     private func applyEditMode() {
         viewController.setEditMode(isEditing, showsReplaceDisclaimer: isEditing && editHasResponsesToLose)
+        refreshFooterSuppression()
         delegate?.unifiedToggleInputDidChangeEditMode(isEditing)
+    }
+
+    // MARK: - Footer Warning
+
+    private func refreshFooterSuppression() {
+        let suppressed = isEditing || inputMode != .aiChat
+        Logger.duckAIUsageWarnings.debug("[UsageWarnings] suppression inputs: isEditing=\(self.isEditing, privacy: .public) mode=\(String(describing: self.inputMode), privacy: .public) → \(suppressed, privacy: .public)")
+        footerController?.setSuppressed(suppressed)
+    }
+
+    private func handleFooterAction(_ action: UTIFooterAction) {
+        Logger.aiChat.debug("[UsageWarnings] footer action: \(String(describing: action), privacy: .public)")
     }
 
     func hide() {
@@ -887,6 +918,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         viewController.apply(renderState.viewConfig, animated: false)
         applyToolbarPresentation()
         viewController.deactivateInput()
+        footerController?.resetForPoseChange()
         intentSubject.send(.hide)
     }
 
@@ -908,6 +940,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         resetToolsSelection()
         modelSelector.updateModelChipVisibility()
         syncHasSubmittedPromptToHandler()
+        Logger.duckAIUsageWarnings.debug("[UsageWarnings] omnibar session starting mode=\(String(describing: self.inputMode), privacy: .public)")
+        refreshFooterSuppression()
+        footerController?.refresh()
 
         viewController.applyCardLayout(.collapsed, animated: false)
         let renderState = computeRenderState()
@@ -1079,6 +1114,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         if didModeChange {
             attachmentController.syncValidationErrorForCurrentMode()
             recordUserChoiceToStore()
+            refreshFooterSuppression()
         }
     }
 
@@ -1720,6 +1756,14 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         attachmentsChangeSubject.send()
         updateImageButtonEnabledState()
         updateFloatingReturnKeyState()
+    }
+
+    func unifiedToggleInputVCDidTapFooterPrimaryAction(_ vc: UnifiedToggleInputViewController) {
+        footerController?.performPrimaryAction()
+    }
+
+    func unifiedToggleInputVCDidDismissFooter(_ vc: UnifiedToggleInputViewController) {
+        footerController?.dismissCurrent()
     }
 
     func unifiedToggleInputVCDidChangeHeight(_ vc: UnifiedToggleInputViewController) {

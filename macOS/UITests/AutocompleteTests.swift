@@ -39,7 +39,7 @@ class AutocompleteTests: UITestCase {
     override func setUpWithError() throws {
         try super.setUpWithError()
         continueAfterFailure = false
-        app = XCUIApplication.setUp(featureFlags: ["fireDialogSimplified": false])
+        app = XCUIApplication.setUp()
         addBookmarkButton = app.buttons["BookmarkDialogButtonsView.defaultButton"]
         resetBookMarksMenuItem = app.menuItems["MainMenu.resetBookmarks"]
         historyMenuBarItem = app.menuBarItems["History"]
@@ -191,8 +191,14 @@ private extension AutocompleteTests {
             "Fire dialog didn't appear in a reasonable timeframe."
         )
 
-        // Select "Everything" scope to clear all history
-        app.fireDialogSegmentedControl.buttons["Everything"].click()
+        // Select "All data" scope to clear all history
+        app.fireDialogSegmentedControl.buttons["All data"].click()
+
+        // Expand Fire Dialog details
+        let detailsDisclosureButton = app.fireDialogDetailsDisclosureButton
+        if (detailsDisclosureButton.value as? String) != "expanded" {
+            detailsDisclosureButton.click()
+        }
 
         // Ensure history, cookies, and tabs toggles are enabled
         let fireDialogHistoryToggle = app.fireDialogHistoryToggle

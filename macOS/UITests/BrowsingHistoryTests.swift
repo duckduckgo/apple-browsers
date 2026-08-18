@@ -29,11 +29,12 @@ class BrowsingHistoryTests: UITestCase {
     private var fireDialogCookiesToggle: XCUIElement { app.fireDialogCookiesToggle }
     private var fireDialogTabsToggle: XCUIElement { app.fireDialogTabsToggle }
     private var fireDialogBurnButton: XCUIElement { app.fireDialogBurnButton }
+    private var fireDialogDetailsDisclosureButton: XCUIElement { app.fireDialogDetailsDisclosureButton }
 
     override func setUpWithError() throws {
         try super.setUpWithError()
         continueAfterFailure = false
-        app = XCUIApplication.setUp(featureFlags: ["fireDialogSimplified": false])
+        app = XCUIApplication.setUp()
         app.enforceSingleWindow()
 
         // Clear history using Fire Dialog
@@ -56,7 +57,12 @@ class BrowsingHistoryTests: UITestCase {
         )
 
         // Select "Everything" scope to clear all history
-        app.fireDialogSegmentedControl.buttons["Everything"].click()
+        app.fireDialogSegmentedControl.buttons["All data"].click()
+
+        // Expand Fire Dialog details
+        if (fireDialogDetailsDisclosureButton.value as? String) != "expanded" {
+            fireDialogDetailsDisclosureButton.click()
+        }
 
         // Ensure history toggle is enabled
         fireDialogHistoryToggle.toggleCheckboxIfNeeded(to: true, ensureHittable: { _ in })

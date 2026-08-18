@@ -187,13 +187,13 @@ final class UnifiedToggleInputModelMenuTests: XCTestCase {
         XCTAssertEqual(gatedSection(in: menu)?.title, UserText.aiChatModelPickerTryFree)
     }
 
-    func testWhenUpdatedMenuPlusUserHasGatedModelsThenUsesAvailableWithProTitle() {
+    func testWhenUpdatedMenuPlusUserHasGatedModelsThenUsesProPlanExclusiveTitle() {
         let menu = makeUpdatedMenu(
             models: [makeFakeModel(id: "pro", accessTier: ["pro"], hasAccess: false)],
             userTier: .plus
         )
 
-        XCTAssertEqual(gatedSection(in: menu)?.title, UserText.aiChatModelPickerAvailableWithPro)
+        XCTAssertEqual(gatedSection(in: menu)?.title, UserText.aiChatModelPickerProPlanExclusive)
     }
 
     func testWhenUpdatedMenuAvailableModelsHaveMixedRecommendationLabelsThenDoesNotAddSectionSeparator() {

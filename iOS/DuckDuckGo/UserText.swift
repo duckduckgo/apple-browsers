@@ -2344,7 +2344,7 @@ public struct UserText {
     public static let aiChatPlusModelsSectionHeader = NotLocalizedString("aichat.model-picker.plus-section-header", value: "Plus", comment: "Section header in the model picker menu for models available from the DuckDuckGo Plus tier")
     public static let aiChatProModelsSectionHeader = NotLocalizedString("aichat.model-picker.pro-section-header", value: "Pro", comment: "Section header in the model picker menu for models available from the DuckDuckGo Pro tier")
     public static let aiChatModelPickerTryFree = NotLocalizedString("aichat.model-picker.try-free", value: "Try Free for 7 Days", comment: "Section header for subscription models shown to free users")
-    public static let aiChatModelPickerAvailableWithPro = NotLocalizedString("aichat.model-picker.available-with-pro", value: "Available with Pro", comment: "Section header for Pro-only models shown to DuckDuckGo Plus subscribers")
+    public static let aiChatModelPickerProPlanExclusive = NotLocalizedString("aichat.model-picker.pro-plan-exclusive", value: "Pro Plan Exclusive", comment: "Section header for Pro-only models shown to DuckDuckGo Plus subscribers")
     public static let aiChatModelPickerEffortTitle = NotLocalizedString(
         "aichat.model-picker.effort-title",
         value: "Effort",

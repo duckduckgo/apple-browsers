@@ -107,7 +107,7 @@ struct UnifiedToggleInputModelMenuFactory {
                     onSelect: onSelect
                 )
             }
-            let gatedSectionTitle = userTier == .plus ? UserText.aiChatModelPickerAvailableWithPro : UserText.aiChatModelPickerTryFree
+            let gatedSectionTitle = userTier == .plus ? UserText.aiChatModelPickerProPlanExclusive : UserText.aiChatModelPickerTryFree
             children.append(UIMenu(title: gatedSectionTitle, options: .displayInline, children: gatedActions))
         }
 

@@ -19,6 +19,7 @@
 
 import Core
 import Foundation
+import PixelKit
 
 /// Protocol for firing contextual mode pixels, enabling dependency injection and testing.
 protocol AIChatContextualModePixelFiring {
@@ -111,6 +112,7 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
 
     private let firePixel: (Pixel.Event) -> Void
     private let firePixelWithParameters: (Pixel.Event, [String: String]) -> Void
+    private let fireSelectionPixel: (PixelKit.Event, PixelKit.Frequency) -> Void
 
     // MARK: - Public Properties
 
@@ -123,9 +125,13 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
     init(firePixel: @escaping (Pixel.Event) -> Void = { DailyPixel.fireDailyAndCount(pixel: $0) },
          firePixelWithParameters: @escaping (Pixel.Event, [String: String]) -> Void = {
              DailyPixel.fireDailyAndCount(pixel: $0, withAdditionalParameters: $1)
+         },
+         fireSelectionPixel: @escaping (PixelKit.Event, PixelKit.Frequency) -> Void = {
+             PixelKit.fire($0, frequency: $1)
          }) {
         self.firePixel = firePixel
         self.firePixelWithParameters = firePixelWithParameters
+        self.fireSelectionPixel = fireSelectionPixel
     }
 
     // MARK: - Sheet Lifecycle
@@ -229,15 +235,15 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
     // MARK: - Text Selections
 
     func fireSelectionAttached() {
-        firePixel(.aiChatContextualSelectionAttached)
+        fireSelectionPixel(AIChatContextualSelectionPixel.attached, .dailyAndCount)
     }
 
     func fireSelectionLimitReached() {
-        firePixel(.aiChatContextualSelectionLimitReached)
+        fireSelectionPixel(AIChatContextualSelectionPixel.limitReached, .dailyAndCount)
     }
 
     func fireSelectionRemoved() {
-        firePixel(.aiChatContextualSelectionRemoved)
+        fireSelectionPixel(AIChatContextualSelectionPixel.removed, .dailyAndCount)
     }
 
     func firePromptSubmittedWithSelections(count: Int) {
@@ -248,12 +254,11 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
         case 3...AIChatSelectionContextBuilder.maxAttachedSelections: countBucket = "3-5"
         default: return
         }
-        firePixelWithParameters(.aiChatContextualPromptSubmittedWithSelections,
-                                [PixelParameters.aiChatSelectionCount: countBucket])
+        fireSelectionPixel(AIChatContextualSelectionPixel.promptSubmitted(selectionCount: countBucket), .dailyAndCount)
     }
 
     func fireSelectionToolDeliveryTimedOut() {
-        firePixel(.aiChatContextualSelectionToolDeliveryTimedOut)
+        fireSelectionPixel(AIChatContextualSelectionPixel.toolDeliveryTimedOut, .dailyAndCount)
     }
 
     // MARK: - Page Context Collection
@@ -337,4 +342,34 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
             _isManualAttachInProgress = false
         }
     }
+}
+
+enum AIChatContextualSelectionPixel: PixelKit.Event {
+    case attached
+    case limitReached
+    case removed
+    case promptSubmitted(selectionCount: String)
+    case toolDeliveryTimedOut
+
+    var name: String {
+        switch self {
+        case .attached:
+            return "aichat_contextual_selection_attached"
+        case .limitReached:
+            return "aichat_contextual_selection_limit_reached"
+        case .removed:
+            return "aichat_contextual_selection_removed"
+        case .promptSubmitted:
+            return "aichat_contextual_prompt_submitted_with_selections"
+        case .toolDeliveryTimedOut:
+            return "debug_aichat_contextual_selection_tool_delivery_timed_out"
+        }
+    }
+
+    var parameters: [String: String]? {
+        guard case .promptSubmitted(let selectionCount) = self else { return nil }
+        return [PixelParameters.aiChatSelectionCount: selectionCount]
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? { nil }
 }

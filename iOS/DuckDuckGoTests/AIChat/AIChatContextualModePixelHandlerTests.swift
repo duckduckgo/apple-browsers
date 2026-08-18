@@ -19,6 +19,7 @@
 
 import Testing
 import Core
+import PixelKit
 @testable import DuckDuckGo
 
 @Suite("AI Chat Contextual Mode Pixel Handler Tests", .serialized)
@@ -431,17 +432,21 @@ final class AIChatContextualModePixelHandlerTests {
     func prompt_submitted_with_selections_carries_bucketed_count(count: Int, expectedBucket: String) {
         var firedEventName: String?
         var firedParameters: [String: String]?
+        var firedFrequency: PixelKit.Frequency?
         let sut = AIChatContextualModePixelHandler(
             firePixel: { _ in },
-            firePixelWithParameters: { event, parameters in
+            firePixelWithParameters: { _, _ in },
+            fireSelectionPixel: { event, frequency in
                 firedEventName = event.name
-                firedParameters = parameters
+                firedParameters = event.parameters
+                firedFrequency = frequency
             })
 
         sut.firePromptSubmittedWithSelections(count: count)
 
-        #expect(firedEventName == Pixel.Event.aiChatContextualPromptSubmittedWithSelections.name)
+        #expect(firedEventName == AIChatContextualSelectionPixel.promptSubmitted(selectionCount: expectedBucket).name)
         #expect(firedParameters == ["selection_count": expectedBucket])
+        #expect(firedFrequency == .dailyAndCount)
     }
 
     @Test("Prompt submitted with selections drops out-of-contract counts", .timeLimit(.minutes(1)), arguments: [0, 6])
@@ -449,7 +454,8 @@ final class AIChatContextualModePixelHandlerTests {
         var didFire = false
         let sut = AIChatContextualModePixelHandler(
             firePixel: { _ in },
-            firePixelWithParameters: { _, _ in didFire = true }
+            firePixelWithParameters: { _, _ in },
+            fireSelectionPixel: { _, _ in didFire = true }
         )
 
         sut.firePromptSubmittedWithSelections(count: count)
@@ -460,7 +466,13 @@ final class AIChatContextualModePixelHandlerTests {
     @Test("Parameterless selection pixels fire under their own names", .timeLimit(.minutes(1)))
     func parameterless_selection_pixels_fire_under_their_own_names() {
         var firedEventNames: [String] = []
-        let sut = AIChatContextualModePixelHandler(firePixel: { firedEventNames.append($0.name) })
+        let sut = AIChatContextualModePixelHandler(
+            firePixel: { _ in },
+            fireSelectionPixel: { event, frequency in
+                #expect(frequency == .dailyAndCount)
+                firedEventNames.append(event.name)
+            }
+        )
 
         sut.fireSelectionAttached()
         sut.fireSelectionLimitReached()
@@ -468,10 +480,10 @@ final class AIChatContextualModePixelHandlerTests {
         sut.fireSelectionToolDeliveryTimedOut()
 
         #expect(firedEventNames == [
-            Pixel.Event.aiChatContextualSelectionAttached.name,
-            Pixel.Event.aiChatContextualSelectionLimitReached.name,
-            Pixel.Event.aiChatContextualSelectionRemoved.name,
-            Pixel.Event.aiChatContextualSelectionToolDeliveryTimedOut.name
+            AIChatContextualSelectionPixel.attached.name,
+            AIChatContextualSelectionPixel.limitReached.name,
+            AIChatContextualSelectionPixel.removed.name,
+            AIChatContextualSelectionPixel.toolDeliveryTimedOut.name
         ])
     }
 

@@ -19,83 +19,85 @@
 
 import Foundation
 
-enum PromoType: Hashable {
-    case remoteMessage
-}
-
-struct VisiblePromoIdentity: Hashable {
-    let surfaceID: UUID
-    let promoType: PromoType
-    let promoID: String
-}
-
-/// Opaque per-acquisition identity that travels with its modal lease through the evaluating, committed, and
-/// presentation-active phases, so a callback for an older attempt can be recognised and ignored.
-struct PromoQueueModalAttemptIdentity: Hashable {
+struct PromoQueueAcquisitionIdentity: Hashable {
     fileprivate let id: UUID
+
+    var diagnosticDescription: String {
+        id.uuidString
+    }
 
     fileprivate init() {
         id = UUID()
     }
 }
 
-struct PromoQueueLeaseSnapshot: Equatable {
-    let modalAttemptIdentity: PromoQueueModalAttemptIdentity?
-    let visiblePromoIdentities: Set<VisiblePromoIdentity>
+struct PromoQueueModalOwnershipIdentity: Hashable {
+    fileprivate let id: UUID
 
-    var hasModalLease: Bool {
-        modalAttemptIdentity != nil
+    var diagnosticDescription: String {
+        id.uuidString
     }
 
-    var visiblePromoCount: Int {
-        visiblePromoIdentities.count
+    fileprivate init() {
+        id = UUID()
+    }
+}
+
+enum PromoQueueLeaseOwnerSnapshot: Equatable {
+    case modal(ownershipIdentity: PromoQueueModalOwnershipIdentity)
+    case remoteMessage(
+        messageID: String,
+        acquisitionIdentity: PromoQueueAcquisitionIdentity,
+        appearanceConfirmed: Bool
+    )
+}
+
+struct PromoQueueLeaseSnapshot: Equatable {
+    let owner: PromoQueueLeaseOwnerSnapshot?
+
+    var hasModalLease: Bool {
+        guard case .modal = owner else { return false }
+        return true
+    }
+
+    var modalOwnershipIdentity: PromoQueueModalOwnershipIdentity? {
+        guard case .modal(let ownershipIdentity) = owner else { return nil }
+        return ownershipIdentity
     }
 }
 
 enum PromoQueueModalLeaseAcquisitionResult {
     /// The caller now owns the lease and is responsible for releasing it.
     case acquired(PromoQueueModalLease)
-    /// A modal lease already owns the slot.
     case blockedByModal
-    /// One or more visible promos own the slot, carried as their identities.
-    case blockedByVisiblePromos(Set<VisiblePromoIdentity>)
+    case blockedByRemoteMessage(messageID: String)
 }
 
-enum PromoQueueVisiblePromoLeaseAcquisitionResult {
-    /// The caller now owns the lease and is responsible for releasing it.
-    case acquired(PromoQueueVisiblePromoLease)
-    /// A modal lease already owns the slot.
+enum PromoQueueRemoteMessageLeaseAcquisitionResult {
+    case acquired(PromoQueueRemoteMessageArbiterLease)
     case blockedByModal
-    /// The requested `(surfaceID, promoType)` slot already holds the carried identity, even when the promo ID differs.
-    case occupiedSurfaceSlot(VisiblePromoIdentity)
+    case blockedByRemoteMessage(messageID: String)
 }
 
-/// The single mutual-exclusion authority for promo slots. It owns no provider policy, RMF selection, cooldown, or persistent history.
 @MainActor
 protocol PromoQueueLeaseArbitrating: AnyObject {
-    /// Read-only view of the current leases, for tests and the debug screen.
     var snapshot: PromoQueueLeaseSnapshot { get }
 
-    /// Acquires the modal lease, which succeeds only when there is no modal lease and no visible-promo leases.
     func acquireModalLease() -> PromoQueueModalLeaseAcquisitionResult
-    /// Acquires a visible-promo lease, which succeeds only when there is no modal lease and the identity's
-    /// `(surfaceID, promoType)` slot is free, so several surfaces may hold leases concurrently but one slot may not hold two.
-    func acquireVisiblePromoLease(for identity: VisiblePromoIdentity) -> PromoQueueVisiblePromoLeaseAcquisitionResult
-    /// Clears every lease, so outstanding tokens become no-ops. Used on a live feature-flag transition.
-    func invalidateAllLeases()
+    func acquireRemoteMessageLease(for messageID: String) -> PromoQueueRemoteMessageLeaseAcquisitionResult
 }
 
 @MainActor
 final class PromoQueueModalLease {
-    let attemptIdentity: PromoQueueModalAttemptIdentity
+    let ownershipIdentity: PromoQueueModalOwnershipIdentity
 
     private var releaseHandler: (() -> Void)?
 
     fileprivate init(
-        attemptIdentity: PromoQueueModalAttemptIdentity,
+        ownershipIdentity: PromoQueueModalOwnershipIdentity,
         releaseHandler: @escaping () -> Void
     ) {
-        self.attemptIdentity = attemptIdentity
+        self.ownershipIdentity = ownershipIdentity
         self.releaseHandler = releaseHandler
     }
 
@@ -107,14 +109,31 @@ final class PromoQueueModalLease {
 }
 
 @MainActor
-final class PromoQueueVisiblePromoLease {
+final class PromoQueueRemoteMessageArbiterLease {
+    let messageID: String
+    let acquisitionIdentity: PromoQueueAcquisitionIdentity
+
+    private var confirmAppearanceHandler: (() -> Bool)?
     private var releaseHandler: (() -> Void)?
 
-    fileprivate init(releaseHandler: @escaping () -> Void) {
+    fileprivate init(
+        messageID: String,
+        acquisitionIdentity: PromoQueueAcquisitionIdentity,
+        confirmAppearanceHandler: @escaping () -> Bool,
+        releaseHandler: @escaping () -> Void
+    ) {
+        self.messageID = messageID
+        self.acquisitionIdentity = acquisitionIdentity
+        self.confirmAppearanceHandler = confirmAppearanceHandler
         self.releaseHandler = releaseHandler
     }
 
+    func confirmAppearance() -> Bool {
+        confirmAppearanceHandler?() ?? false
+    }
+
     func release() {
+        confirmAppearanceHandler = nil
         let releaseHandler = releaseHandler
         self.releaseHandler = nil
         releaseHandler?()
@@ -123,154 +142,144 @@ final class PromoQueueVisiblePromoLease {
 
 @MainActor
 final class PromoQueueLeaseArbiter: PromoQueueLeaseArbitrating {
-    /// `token` is weak so that a lease whose owner dropped it without calling `release()` can be reclaimed. It cannot
-    /// retain the token: the acquirer owns the lease, and a strong reference here would keep every lease alive forever.
     private struct ModalLeaseRecord {
-        let attemptIdentity: PromoQueueModalAttemptIdentity
+        let ownershipIdentity: PromoQueueModalOwnershipIdentity
         weak var token: PromoQueueModalLease?
     }
 
-    private struct VisiblePromoSlot: Hashable {
-        let surfaceID: UUID
-        let promoType: PromoType
-
-        init(identity: VisiblePromoIdentity) {
-            surfaceID = identity.surfaceID
-            promoType = identity.promoType
-        }
+    private struct RemoteMessageLeaseRecord {
+        let messageID: String
+        let acquisitionIdentity: PromoQueueAcquisitionIdentity
+        var appearanceConfirmed: Bool
+        weak var token: PromoQueueRemoteMessageArbiterLease?
     }
 
-    /// `id` is minted per acquisition but `identity` is not: the same `(surfaceID, promoType, promoID)` may hold the
-    /// slot again while an earlier token is still armed, so release has to be keyed on `id` rather than on `identity`.
-    ///
-    /// `token` is weak for the same reason as `ModalLeaseRecord.token`.
-    private struct VisiblePromoLeaseRecord {
-        let id: UUID
-        let identity: VisiblePromoIdentity
-        weak var token: PromoQueueVisiblePromoLease?
+    private enum Owner {
+        case modal(ModalLeaseRecord)
+        case remoteMessage(RemoteMessageLeaseRecord)
     }
 
-    private var modalLease: ModalLeaseRecord?
-    private var visiblePromoLeases = [VisiblePromoSlot: VisiblePromoLeaseRecord]()
+    private var owner: Owner?
 
-    /// Prunes before reading so neither the debug screen nor a caller can observe a lease whose token is already gone.
     var snapshot: PromoQueueLeaseSnapshot {
-        pruneLeasesWithDeallocatedTokens()
-        return PromoQueueLeaseSnapshot(
-            modalAttemptIdentity: modalLease?.attemptIdentity,
-            visiblePromoIdentities: Set(visiblePromoLeases.values.map(\.identity))
-        )
+        pruneOwnerWithDeallocatedToken()
+
+        switch owner {
+        case .modal(let record):
+            return PromoQueueLeaseSnapshot(owner: .modal(ownershipIdentity: record.ownershipIdentity))
+        case .remoteMessage(let record):
+            return PromoQueueLeaseSnapshot(
+                owner: .remoteMessage(
+                    messageID: record.messageID,
+                    acquisitionIdentity: record.acquisitionIdentity,
+                    appearanceConfirmed: record.appearanceConfirmed
+                )
+            )
+        case nil:
+            return PromoQueueLeaseSnapshot(owner: nil)
+        }
     }
 
     func acquireModalLease() -> PromoQueueModalLeaseAcquisitionResult {
-        pruneLeasesWithDeallocatedTokens()
+        pruneOwnerWithDeallocatedToken()
 
-        guard modalLease == nil else {
+        switch owner {
+        case .modal:
             return .blockedByModal
+        case .remoteMessage(let record):
+            return .blockedByRemoteMessage(messageID: record.messageID)
+        case nil:
+            break
         }
 
-        guard visiblePromoLeases.isEmpty else {
-            return .blockedByVisiblePromos(Set(visiblePromoLeases.values.map(\.identity)))
-        }
-
-        let attemptIdentity = PromoQueueModalAttemptIdentity()
+        let ownershipIdentity = PromoQueueModalOwnershipIdentity()
         let lease = PromoQueueModalLease(
-            attemptIdentity: attemptIdentity,
+            ownershipIdentity: ownershipIdentity,
             releaseHandler: { [weak self] in
-                self?.releaseModalLease(attemptIdentity: attemptIdentity)
+                self?.releaseModalLease(ownershipIdentity: ownershipIdentity)
             }
         )
-        modalLease = ModalLeaseRecord(
-            attemptIdentity: attemptIdentity,
-            token: lease
+        owner = .modal(
+            ModalLeaseRecord(
+                ownershipIdentity: ownershipIdentity,
+                token: lease
+            )
         )
         return .acquired(lease)
     }
 
-    func acquireVisiblePromoLease(for identity: VisiblePromoIdentity) -> PromoQueueVisiblePromoLeaseAcquisitionResult {
-        pruneLeasesWithDeallocatedTokens()
+    func acquireRemoteMessageLease(for messageID: String) -> PromoQueueRemoteMessageLeaseAcquisitionResult {
+        pruneOwnerWithDeallocatedToken()
 
-        guard modalLease == nil else {
+        switch owner {
+        case .modal:
             return .blockedByModal
+        case .remoteMessage(let record):
+            return .blockedByRemoteMessage(messageID: record.messageID)
+        case nil:
+            break
         }
 
-        let slot = VisiblePromoSlot(identity: identity)
-        if let existingLease = visiblePromoLeases[slot] {
-            return .occupiedSurfaceSlot(existingLease.identity)
-        }
-
-        let leaseID = UUID()
-        let lease = PromoQueueVisiblePromoLease { [weak self] in
-            self?.releaseVisiblePromoLease(for: slot, id: leaseID)
-        }
-        visiblePromoLeases[slot] = VisiblePromoLeaseRecord(
-            id: leaseID,
-            identity: identity,
-            token: lease
+        let acquisitionIdentity = PromoQueueAcquisitionIdentity()
+        let lease = PromoQueueRemoteMessageArbiterLease(
+            messageID: messageID,
+            acquisitionIdentity: acquisitionIdentity,
+            confirmAppearanceHandler: { [weak self] in
+                self?.confirmRemoteMessageAppearance(acquisitionIdentity: acquisitionIdentity) ?? false
+            },
+            releaseHandler: { [weak self] in
+                self?.releaseRemoteMessageLease(acquisitionIdentity: acquisitionIdentity)
+            }
+        )
+        owner = .remoteMessage(
+            RemoteMessageLeaseRecord(
+                messageID: messageID,
+                acquisitionIdentity: acquisitionIdentity,
+                appearanceConfirmed: false,
+                token: lease
+            )
         )
         return .acquired(lease)
     }
 
-    func invalidateAllLeases() {
-        let hadModalLease = modalLease != nil
-        let visiblePromoLeaseCount = visiblePromoLeases.count
-        modalLease = nil
-        visiblePromoLeases.removeAll()
-
-        guard hadModalLease || visiblePromoLeaseCount > 0 else { return }
-
-        Logger.modalPrompt.debug(
-            """
-            [Promo Queue] - Invalidated leases \
-            (modal: \(hadModalLease, privacy: .public), visible promos: \(visiblePromoLeaseCount, privacy: .public)).
-            """
-        )
-    }
-
-    /// Reclaims leases whose token deallocated without `release()`, so a dropped token cannot wedge the arbiter for the
-    /// rest of the session: one leaked visible-promo token would otherwise block every launch modal, and a leaked modal
-    /// token would block every visible promo, with no timeout and no recovery.
-    private func pruneLeasesWithDeallocatedTokens() {
-        let didPruneModalLease: Bool
-        if let modalLease, modalLease.token == nil {
-            self.modalLease = nil
-            didPruneModalLease = true
-        } else {
-            didPruneModalLease = false
+    private func confirmRemoteMessageAppearance(acquisitionIdentity: PromoQueueAcquisitionIdentity) -> Bool {
+        guard case .remoteMessage(var record) = owner,
+              record.acquisitionIdentity == acquisitionIdentity,
+              !record.appearanceConfirmed else {
+            return false
         }
 
-        let visiblePromoLeaseCount = visiblePromoLeases.count
-        visiblePromoLeases = visiblePromoLeases.filter { $0.value.token != nil }
-        let prunedVisiblePromoLeaseCount = visiblePromoLeaseCount - visiblePromoLeases.count
-
-        guard didPruneModalLease || prunedVisiblePromoLeaseCount > 0 else { return }
-
-        Logger.modalPrompt.debug(
-            """
-            [Promo Queue] - Pruned deallocated lease tokens \
-            (modal: \(didPruneModalLease, privacy: .public), visible promos: \(prunedVisiblePromoLeaseCount, privacy: .public)).
-            """
-        )
+        record.appearanceConfirmed = true
+        owner = .remoteMessage(record)
+        return true
     }
 
-    private func releaseModalLease(attemptIdentity: PromoQueueModalAttemptIdentity) {
-        // `attemptIdentity` is minted per acquisition, so matching it proves the stored record is this token's. A token
-        // whose record was cleared, by release or by an invalidation, cannot match whatever replaced it.
-        guard let modalLease,
-              modalLease.attemptIdentity == attemptIdentity else {
+    private func releaseModalLease(ownershipIdentity: PromoQueueModalOwnershipIdentity) {
+        guard case .modal(let record) = owner,
+              record.ownershipIdentity == ownershipIdentity else {
             return
         }
 
-        self.modalLease = nil
+        owner = nil
     }
 
-    private func releaseVisiblePromoLease(for slot: VisiblePromoSlot, id: UUID) {
-        // `id` proves the record in this slot is this token's, so a token for message A cannot release message B.
-        guard let visiblePromoLease = visiblePromoLeases[slot],
-              visiblePromoLease.id == id else {
+    private func releaseRemoteMessageLease(acquisitionIdentity: PromoQueueAcquisitionIdentity) {
+        guard case .remoteMessage(let record) = owner,
+              record.acquisitionIdentity == acquisitionIdentity else {
             return
         }
 
-        visiblePromoLeases[slot] = nil
+        owner = nil
+    }
+
+    private func pruneOwnerWithDeallocatedToken() {
+        switch owner {
+        case .modal(let record) where record.token == nil:
+            owner = nil
+        case .remoteMessage(let record) where record.token == nil:
+            owner = nil
+        default:
+            break
+        }
     }
 }

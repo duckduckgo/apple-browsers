@@ -16,71 +16,65 @@
 //  limitations under the License.
 //
 
-/// A section of AI models for display in a picker menu or dropdown.
-public struct AIChatModelSection {
-    public let header: String?
-    public let items: [AIChatModel]
-
-    public init(header: String?, items: [AIChatModel]) {
-        self.header = header
-        self.items = items
-    }
+/// A gated (subscriber-only) model paired with the public tier required to unlock it.
+public struct AIChatGatedModel {
+    public let model: AIChatModel
+    public let requiredTier: AIChatModelPublicAccessTier
 }
 
-/// Builds sectioned model lists for both the native menu and the NTP dropdown.
-///
-/// The section layout depends on subscription status:
-/// - **Free user**: accessible models (no header), then "Advanced Models" section (disabled)
-/// - **Subscribed user**: advanced models (no header), then "Basic Models" section
+/// Splits and orders AI models for display in a picker menu or dropdown, shared by the native
+/// address bar's model picker and the NTP dropdown.
 public enum AIChatModelSectionBuilder {
 
-    /// Builds model sections from a list of models and subscription state.
-    /// - Parameters:
-    ///   - models: All available AI models with access already resolved.
-    ///   - hasActiveSubscription: Whether the user has an active paid subscription.
-    ///   - advancedSectionHeader: Localized header for the advanced/premium section (free users).
-    ///   - basicSectionHeader: Localized header for the basic/free section (subscribed users).
-    /// - Returns: An array of sections ready for display.
-    public static func buildSections(
-        models: [AIChatModel],
-        hasActiveSubscription: Bool,
-        advancedSectionHeader: String,
-        basicSectionHeader: String
-    ) -> [AIChatModelSection] {
-        if hasActiveSubscription {
-            return buildSubscribedSections(models: models, basicSectionHeader: basicSectionHeader)
-        } else {
-            return buildFreeSections(models: models, advancedSectionHeader: advancedSectionHeader)
+    /// Splits models into accessible and gated (each paired with its required tier) — gated models
+    /// stay visible, with an upsell, rather than being hidden from a subscriber whose tier doesn't yet cover them.
+    public static func groupByAccess(models: [AIChatModel]) -> (accessible: [AIChatModel], gated: [AIChatGatedModel]) {
+        let accessible = models.filter { $0.entityHasAccess }
+        let gated = models.compactMap { model -> AIChatGatedModel? in
+            guard !model.entityHasAccess, let requiredTier = model.lowestPublicAccessTier else { return nil }
+            return AIChatGatedModel(model: model, requiredTier: requiredTier)
         }
+        return (accessible, gated)
     }
 
-    private static func buildFreeSections(models: [AIChatModel], advancedSectionHeader: String) -> [AIChatModelSection] {
-        let accessible = models.filter { $0.entityHasAccess }
-        let premium = models.filter { !$0.entityHasAccess }
-
-        var sections = [AIChatModelSection]()
-        if !accessible.isEmpty {
-            sections.append(AIChatModelSection(header: nil, items: accessible))
-        }
-        if !premium.isEmpty {
-            sections.append(AIChatModelSection(header: advancedSectionHeader, items: premium))
-        }
-        return sections
+    /// Groups models by the presence of a backend-provided recommendation label while preserving API order within each group.
+    public static func groupByRecommendationLabel(models: [AIChatModel]) -> (withLabel: [AIChatModel], withoutLabel: [AIChatModel]) {
+        let withLabel = models.filter { $0.label != nil }
+        let withoutLabel = models.filter { $0.label == nil }
+        return (withLabel, withoutLabel)
     }
 
-    private static func buildSubscribedSections(models: [AIChatModel], basicSectionHeader: String) -> [AIChatModelSection] {
-        // Only show models the user can actually access — hides models from higher tiers (e.g. pro-only for plus users)
-        let accessible = models.filter { $0.entityHasAccess }
-        let basic = accessible.filter { $0.accessTier.contains(AIChatUserTier.free.rawValue) }
-        let advanced = accessible.filter { !$0.accessTier.contains(AIChatUserTier.free.rawValue) }
+    /// PoC ordering: per-tier "recommended" first, rest keep API order. Delete when backend ships ordering (task 1216559729471554).
+    public static func orderedAccessibleModels(_ models: [AIChatModel], userTier: AIChatUserTier) -> [AIChatModel] {
+        var remaining = models
+        var recommended: [AIChatModel] = []
+        for matches in recommendedModelMatchers(for: userTier) {
+            guard let index = remaining.firstIndex(where: { matches($0.name.lowercased()) }) else { continue }
+            recommended.append(remaining.remove(at: index))
+        }
+        return recommended + remaining
+    }
 
-        var sections = [AIChatModelSection]()
-        if !advanced.isEmpty {
-            sections.append(AIChatModelSection(header: nil, items: advanced))
+    /// Per-tier "recommended" matchers in display order, matched by lowercased name substring (family, not id).
+    private static func recommendedModelMatchers(for userTier: AIChatUserTier) -> [(String) -> Bool] {
+        let isFullGPT: (String) -> Bool = { $0.contains("gpt") && !$0.contains("mini") && !$0.contains("nano") }
+        switch userTier {
+        case .free:
+            return [
+                { $0.contains("nano") },
+                { $0.contains("mini") },
+                { $0.contains("claude") && $0.contains("haiku") }
+            ]
+        case .plus, .internal:
+            return [
+                isFullGPT,
+                { $0.contains("claude") && $0.contains("sonnet") }
+            ]
+        case .pro:
+            return [
+                isFullGPT,
+                { $0.contains("claude") && $0.contains("opus") }
+            ]
         }
-        if !basic.isEmpty {
-            sections.append(AIChatModelSection(header: basicSectionHeader, items: basic))
-        }
-        return sections
     }
 }

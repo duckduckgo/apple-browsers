@@ -56,7 +56,9 @@ extension Preferences {
                                 Text(UserText.isDefaultBrowser)
                             } else {
                                 HStack {
-                                    Image(.warning).foregroundColor(Color(.linkBlue))
+                                    Image(nsImage: DesignSystemImages.Glyphs.Size16.exclamation)
+                                        .rebrandableLinkForeground()
+
                                     Text(UserText.isNotDefaultBrowser)
                                 }
                                 .padding(.trailing, 8)
@@ -80,14 +82,17 @@ extension Preferences {
                                 HStack {
                                     if dockModel.isAddedToDock {
                                         HStack {
-                                            Image(.checkCircle).foregroundColor(Color(.successGreen))
+                                            Image(.checkCircle)
+                                                .foregroundColor(Color(designSystemColor: .statusGreen))
                                             Text(UserText.isAddedToDock)
                                         }
                                         .transition(.opacity)
                                         .padding(.trailing, 8)
                                     } else {
                                         HStack {
-                                            Image(.warning).foregroundColor(Color(.linkBlue))
+                                            Image(nsImage: DesignSystemImages.Glyphs.Size16.exclamation)
+                                                .rebrandableLinkForeground()
+
                                             Text(UserText.isNotAddedToDock)
                                         }
                                         .padding(.trailing, 8)

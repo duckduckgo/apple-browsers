@@ -233,6 +233,16 @@
             </BuildableReference>
          </TestableReference>
          <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "EventHubTests"
+               BuildableName = "EventHubTests"
+               BlueprintName = "EventHubTests"
+               ReferencedContainer = "container:../SharedPackages/EventHub">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
             skipped = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
@@ -252,7 +262,34 @@
                ReferencedContainer = "container:LocalPackages/SyncUI-iOS">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "SnapshotTestingSupportTests"
+               BuildableName = "SnapshotTestingSupportTests"
+               BlueprintName = "SnapshotTestingSupportTests"
+               ReferencedContainer = "container:../SharedPackages/SnapshotTestingSupport">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "FeatureFlagsTests"
+               BuildableName = "FeatureFlagsTests"
+               BlueprintName = "FeatureFlagsTests"
+               ReferencedContainer = "container:LocalPackages/FeatureFlags-iOS">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
+      <EnvironmentVariables>
+         <EnvironmentVariable
+            key = "SKIP_SNAPSHOT_TESTS"
+            value = "1"
+            isEnabled = "YES">
+         </EnvironmentVariable>
+      </EnvironmentVariables>
    </TestAction>
    <LaunchAction
       buildConfiguration = "Debug"

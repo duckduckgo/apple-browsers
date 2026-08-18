@@ -79,6 +79,17 @@ final class DuckPlayerNativeUIPresenter {
         static let height: CGFloat = 50
         static let fadeAnimationDuration: TimeInterval = 0.2
         static let visibleDuration: TimeInterval = 3.0
+
+        // Fallback clearance for the floating toolbar if the host hasn't reported a bar height yet.
+        static let floatingToolbarClearance: CGFloat = BrowserToolbarView.floatingButtonsHeight + 21
+
+        // Max time to wait for the floating pill thumbnail before sliding in anyway.
+        static let thumbnailReadyTimeout: TimeInterval = 1.0
+
+        // persistentBottomBarHeight is the full safe-area-anchored bar region, but the visible floating
+        // capsule floats lower than that region's top. Trim this much so the pill sits just above the
+        // capsule rather than the (taller) logical bar region. Tuned against device runtime numbers.
+        static let floatingCapsuleInset: CGFloat = 20
     }
 
     /// The container view model for the entry pill
@@ -107,6 +118,12 @@ final class DuckPlayerNativeUIPresenter {
     private var playerCancellables = Set<AnyCancellable>()
     @MainActor
     private var containerCancellables = Set<AnyCancellable>()
+
+    /// Readiness signal for the floating pill thumbnail; set while building a floating pill and
+    /// consumed to gate the slide-in so the pill and its thumbnail animate in together.
+    @MainActor private var pendingThumbnailReady: AnyPublisher<Bool, Never>?
+    @MainActor private var thumbnailReadyCancellable: AnyCancellable?
+    @MainActor private var thumbnailReadyTimeoutWorkItem: DispatchWorkItem?
 
     // Other cancellables
     private var cancellables = Set<AnyCancellable>()
@@ -150,6 +167,9 @@ final class DuckPlayerNativeUIPresenter {
     // Pixel Handler
     let pixelHandler: DuckPlayerPixelFiring.Type
 
+    /// When enabled, the entry and re-entry pills use the black floating design.
+    private let floatingUIManager: FloatingUIManaging
+
     // MARK: - Public Methods
     ///
     /// - Parameter appSettings: The application settings
@@ -158,13 +178,15 @@ final class DuckPlayerNativeUIPresenter {
          state: DuckPlayerState = DuckPlayerState(),
          notificationCenter: NotificationCenter = .default,
          userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
-         pixelHandler: DuckPlayerPixelFiring.Type = DuckPlayerPixelHandler.self) {
+         pixelHandler: DuckPlayerPixelFiring.Type = DuckPlayerPixelHandler.self,
+         floatingUIManager: FloatingUIManaging = FloatingUIManager()) {
         self.appSettings = appSettings
         self.duckPlayerSettings = duckPlayerSettings
         self.state = state
         self.notificationCenter = notificationCenter
         self.pixelHandler = pixelHandler
         self.userScriptsDependencies = userScriptsDependencies
+        self.floatingUIManager = floatingUIManager
         setupNotificationObservers(notificationCenter: notificationCenter)
     }
     
@@ -197,14 +219,20 @@ final class DuckPlayerNativeUIPresenter {
     }
 
     
+    /// Floating UI: sit above the whole bottom chrome using the host's bar height. Otherwise: above
+    /// the address bar when it's at the bottom, at screen bottom when it's at the top.
+    private var pillBottomConstraintConstant: CGFloat {
+        if floatingUIManager.isFloatingUIEnabled {
+            let barHeight = hostView?.persistentBottomBarHeight ?? Constants.floatingToolbarClearance
+            return -(barHeight - Constants.floatingCapsuleInset)
+        }
+        return appSettings.currentAddressBarPosition == .bottom ? -DefaultOmniBarView.expectedHeight : 0
+    }
+
     /// Updates the pill's bottom constraint based on the current address bar position
     private func updatePillBottomConstraint() {
         guard let bottomConstraint = self.bottomConstraint else { return }
-        
-        let addressBarPosition = self.appSettings.currentAddressBarPosition
-        
-        // Position pill above address bar when it's at bottom, or at screen bottom when address bar is at top
-        bottomConstraint.constant = addressBarPosition == .bottom ? -DefaultOmniBarView.expectedHeight : 0
+        bottomConstraint.constant = pillBottomConstraintConstant
     }
 
         /// Updates the UI based on Ombibar Notification
@@ -259,15 +287,24 @@ final class DuckPlayerNativeUIPresenter {
                 AnyView(DuckPlayerWelcomePillView(viewModel: welcomePillViewModel))
             }
         } else if pillType == .entry {
-            // Create the pill view model for entry type
-            let pillViewModel = DuckPlayerEntryPillViewModel { [weak self] in
+            let useFloatingStyle = floatingUIManager.isFloatingUIEnabled
+
+            // videoID is only needed to fetch the thumbnail used by the floating design.
+            let pillViewModel = DuckPlayerEntryPillViewModel(videoID: useFloatingStyle ? videoID : nil) { [weak self] in
                 self?.videoPlaybackRequest.send((videoID, timestamp, .entry))
+            }
+
+            // Floating pill waits for the thumbnail before sliding in so it animates as one unit.
+            if useFloatingStyle {
+                pendingThumbnailReady = pillViewModel.$thumbnailImage.map { $0 != nil }.eraseToAnyPublisher()
             }
 
             // Create the container view with the pill view
             return DuckPlayerContainer.Container(
                 viewModel: containerViewModel,
                 hasBackground: false,
+                showDragHandle: !useFloatingStyle,
+                floatingStyle: useFloatingStyle,
                 onDismiss: { [weak self] programatic in
                     self?.dismissPill(programatic: programatic)
                 },
@@ -283,21 +320,39 @@ final class DuckPlayerNativeUIPresenter {
                     )
                 }
             ) { _ in
-                AnyView(DuckPlayerEntryPillView(viewModel: pillViewModel))
+                AnyView(
+                    Group {
+                        if useFloatingStyle {
+                            DuckPlayerFloatingEntryPillView(viewModel: pillViewModel)
+                        } else {
+                            DuckPlayerEntryPillView(viewModel: pillViewModel)
+                        }
+                    }
+                )
             }
         } else {
+            let useFloatingStyle = floatingUIManager.isFloatingUIEnabled
+
             // Create the mini pill view model for re-entry type
             let miniPillViewModel = DuckPlayerMiniPillViewModel(
                 onOpen: { [weak self] in
                     self?.videoPlaybackRequest.send((videoID, timestamp, .reEntry))
                 },
-                videoID: videoID
+                videoID: videoID,
+                loadsThumbnailImage: useFloatingStyle
             )
+
+            // Floating pill waits for the thumbnail before sliding in so it animates as one unit.
+            if useFloatingStyle {
+                pendingThumbnailReady = miniPillViewModel.$thumbnailImage.map { $0 != nil }.eraseToAnyPublisher()
+            }
 
             // Create the container view with the mini pill view
             return DuckPlayerContainer.Container(
                 viewModel: containerViewModel,
                 hasBackground: false,
+                showDragHandle: !useFloatingStyle,
+                floatingStyle: useFloatingStyle,
                 onDismiss: { [weak self] programatic in
                     self?.dismissPill(programatic: programatic)
                 },
@@ -313,7 +368,15 @@ final class DuckPlayerNativeUIPresenter {
                     )
                 }
             ) { _ in
-                AnyView(DuckPlayerMiniPillView(viewModel: miniPillViewModel))
+                AnyView(
+                    Group {
+                        if useFloatingStyle {
+                            DuckPlayerFloatingMiniPillView(viewModel: miniPillViewModel)
+                        } else {
+                            DuckPlayerMiniPillView(viewModel: miniPillViewModel)
+                        }
+                    }
+                )
             }
         }
     }
@@ -322,6 +385,8 @@ final class DuckPlayerNativeUIPresenter {
     @MainActor
     private func updateWebViewConstraintForPillHeight() {
         guard hostView != nil else { return }
+        // Floating UI content is full-bleed under the glass, so the pill overlays it instead of resizing it.
+        guard !floatingUIManager.isFloatingUIEnabled else { return }
         constraintUpdatePublisher.send(.showPill(height: self.pillHeight))
     }
 
@@ -353,6 +418,7 @@ final class DuckPlayerNativeUIPresenter {
     @MainActor
     private func removePillContainer() {
         // Cancel all subscriptions first
+        cancelPendingPillReveal()
         containerCancellables.removeAll()
         
         // Remove constraints before removing from superview
@@ -561,6 +627,8 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
         if let existingViewModel = containerViewModel, let hostingController = containerViewController {
             updatePillContent(for: pillType, videoID: videoID, timestamp: timestamp, in: hostingController)
             pillHeight = Constants.webViewRequiredBottomConstraint
+            // Re-presentation of an existing pill shows immediately (no thumbnail wait).
+            pendingThumbnailReady = nil
             existingViewModel.show()
             postPillVisibilityNotification(isVisible: true)
             return
@@ -589,14 +657,11 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
         // Add to host view
         hostView.view.addSubview(hostingController.view)
 
-        // Calculate bottom constraints based on address bar position
-        // If address bar is at the bottom, position the pill above it
-        // If address bar is at the top, position the pill at the bottom of the screen
-        let newBottomConstraint =
-            appSettings.currentAddressBarPosition == .bottom
-            ? hostingController.view.bottomAnchor.constraint(equalTo: hostView.view.bottomAnchor, constant: -DefaultOmniBarView.expectedHeight)
-            : hostingController.view.bottomAnchor.constraint(equalTo: hostView.view.bottomAnchor)
-        
+        // Position the pill above the bottom chrome (see pillBottomConstraintConstant).
+        let newBottomConstraint = hostingController.view.bottomAnchor.constraint(
+            equalTo: hostView.view.bottomAnchor,
+            constant: pillBottomConstraintConstant)
+
         bottomConstraint = newBottomConstraint
 
         NSLayoutConstraint.activate([
@@ -634,14 +699,64 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
 
         // Show the container view if it's not already visible
         if !containerViewModel.sheetVisible {
-            containerViewModel.show()
-            postPillVisibilityNotification(isVisible: true)
+            showPillWhenReady(containerViewModel)
         }
+    }
+
+    /// Shows the pill immediately, unless a floating thumbnail is still loading — then it waits for
+    /// the image (or a timeout) so the pill and its thumbnail slide in together.
+    @MainActor
+    private func showPillWhenReady(_ viewModel: DuckPlayerContainer.ViewModel) {
+        let ready = pendingThumbnailReady
+        pendingThumbnailReady = nil
+
+        // Drop any prior pending reveal so a stale subscription/timeout can't fire later.
+        cancelPendingPillReveal()
+
+        guard let ready else {
+            viewModel.show()
+            postPillVisibilityNotification(isVisible: true)
+            return
+        }
+
+        var didShow = false
+        let show: () -> Void = { [weak self, weak viewModel] in
+            guard !didShow, let self, let viewModel else { return }
+            didShow = true
+            self.cancelPendingPillReveal()
+            viewModel.show()
+            self.postPillVisibilityNotification(isVisible: true)
+        }
+
+        thumbnailReadyCancellable = ready
+            .filter { $0 }
+            .prefix(1)
+            .receive(on: DispatchQueue.main)
+            .sink { _ in show() }
+
+        // Timeout fallback so a slow/failed image never blocks the pill. Cancellable so a dismiss
+        // mid-load doesn't later revive the pill.
+        let timeout = DispatchWorkItem { show() }
+        thumbnailReadyTimeoutWorkItem = timeout
+        DispatchQueue.main.asyncAfter(deadline: .now() + Constants.thumbnailReadyTimeout, execute: timeout)
+    }
+
+    /// Cancels a scheduled floating-pill reveal (thumbnail subscription + timeout) so it can't fire
+    /// after the pill has been dismissed or torn down.
+    @MainActor
+    private func cancelPendingPillReveal() {
+        thumbnailReadyCancellable = nil
+        thumbnailReadyTimeoutWorkItem?.cancel()
+        thumbnailReadyTimeoutWorkItem = nil
+        pendingThumbnailReady = nil
     }
 
     /// Dismisses the currently presented entry pill
     @MainActor
     func dismissPill(reset: Bool = false, animated: Bool = true, programatic: Bool = true, skipTransition: Bool = false) {
+        // Cancel any pending thumbnail-gated reveal so it can't re-show the pill after dismissal.
+        cancelPendingPillReveal()
+
         // First reset constraints immediately
         resetWebViewConstraint()
 

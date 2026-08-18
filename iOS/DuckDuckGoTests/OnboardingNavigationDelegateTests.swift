@@ -128,6 +128,7 @@ final class OnboardingNavigationDelegateTests: XCTestCase {
             maliciousSiteProtectionManager: MockMaliciousSiteProtectionManager(),
             maliciousSiteProtectionPreferencesManager: MockMaliciousSiteProtectionPreferencesManager(),
             aiChatSettings: MockAIChatSettingsProvider(),
+            profileStateManager: profileStateManager,
             themeManager: MockThemeManager()
         )
         let window = UIWindow(frame: UIScreen.main.bounds)

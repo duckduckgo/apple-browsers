@@ -21,7 +21,6 @@ import Foundation
 #if os(macOS)
 
 public typealias DesignSystemColor = SharedDesignSystemColor
-public typealias SingleUseColor = SharedSingleUseColor
 
 public enum SharedDesignSystemColor {
 
@@ -30,6 +29,16 @@ public enum SharedDesignSystemColor {
     case accentContentSecondary
     case accentContentTertiary
     case accentFirePrimary
+    case accentFireSecondary
+    case accentFireTertiary
+    case accentFireContentPrimary
+    case accentFireContentSecondary
+    case accentFireContentTertiary
+    case accentFireGlowPrimary
+    case accentFireGlowSecondary
+    case accentFireTextPrimary
+    case accentFireTextSecondary
+    case accentFireTextTertiary
     case accentGlowPrimary
     case accentGlowSecondary
     case accentPrimary
@@ -59,6 +68,21 @@ public enum SharedDesignSystemColor {
 
     // Shield
     case shieldPrivacy
+
+    // Status
+    case statusGray
+    case statusGreen
+    case statusRed
+
+    // VPN
+    case vpnGreen
+    case vpnGreenPressed
+    case vpnGreenForeground
+    case vpnGreenForegroundPressed
+    case vpnYellow
+    case vpnYellowPressed
+    case vpnYellowForeground
+    case vpnYellowForegroundPressed
 
     // Buttons/Primary
     case buttonsPrimaryDefault
@@ -118,8 +142,21 @@ public enum SharedDesignSystemColor {
     case iconsTertiary
 
     // Input
-    case inputActive
-    case inputResting
+    case unifiedInputControlFillPrimary
+    case unifiedInputControlFillSecondary
+    case unifiedInputControlShadowPrimary
+    case unifiedInputFieldFillPrimary
+    case unifiedInputFieldFillSecondary
+    case unifiedInputFireControlFillPrimary
+    case unifiedInputFireControlFillSecondary
+    case unifiedInputFireFieldFillPrimary
+    case unifiedInputFireFieldFillSecondary
+    case unifiedInputFireIconsPrimary
+    case unifiedInputFireIconsSecondary
+    case unifiedInputFireTextPrimary
+    case unifiedInputFireTextSecondary
+    case unifiedInputTextPrimary
+    case unifiedInputTextSecondary
 
     // System
     case lines
@@ -138,6 +175,11 @@ public enum SharedDesignSystemColor {
     case surfaceSecondary
     case surfaceTertiary
 
+    // Status
+    case statusYellowPrimary
+    case statusYellowSecondary
+    case statusYellowTertiary
+
     // Surface Decoration
     case surfaceDecorationPrimary
     case surfaceDecorationSecondary
@@ -153,6 +195,7 @@ public enum SharedDesignSystemColor {
     // Tone
     case toneShadePrimary
     case toneTintPrimary
+    case toneTintSecondary
 
     // Permission Center
     case permissionCenterBackground
@@ -160,12 +203,6 @@ public enum SharedDesignSystemColor {
     case permissionWarningBackground
     case permissionReloadButtonBackground
     case permissionReloadButtonText
-}
-
-public enum SharedSingleUseColor {
-
-    // Fire View
-    case fireModeAccent
 }
 
 #endif

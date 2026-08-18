@@ -320,6 +320,55 @@ final class MoreOptionsMenuTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenMoreOptionsMenuBuiltAndFreemiumAvailableThenOnlyScanImpressionPixelsFire() {
+        // Given
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
+        mockSubscriptionManager.currentEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .stripe)
+        mockFreemiumDBPFeature.featureAvailable = true
+
+        // When
+        setupMoreOptionsMenu()
+
+        // Then
+        XCTAssertTrue(mockPixelHandler.allFiredEvents.contains(.overFlowScanImpressionCount))
+        XCTAssertTrue(mockPixelHandler.allFiredEvents.contains(.overFlowScanImpression))
+        XCTAssertFalse(mockPixelHandler.allFiredEvents.contains(.overFlowResultsImpressionCount))
+        XCTAssertFalse(mockPixelHandler.allFiredEvents.contains(.overFlowResultsImpression))
+    }
+
+    @MainActor
+    func testWhenMoreOptionsMenuBuiltAndFreemiumActivatedThenOnlyResultsImpressionPixelsFire() {
+        // Given
+        mockFreemiumDBPUserStateManager.didPostFirstProfileSavedNotification = true
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
+        mockSubscriptionManager.currentEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .stripe)
+        mockFreemiumDBPFeature.featureAvailable = true
+
+        // When
+        setupMoreOptionsMenu()
+
+        // Then
+        XCTAssertFalse(mockPixelHandler.allFiredEvents.contains(.overFlowScanImpressionCount))
+        XCTAssertFalse(mockPixelHandler.allFiredEvents.contains(.overFlowScanImpression))
+        XCTAssertTrue(mockPixelHandler.allFiredEvents.contains(.overFlowResultsImpressionCount))
+        XCTAssertTrue(mockPixelHandler.allFiredEvents.contains(.overFlowResultsImpression))
+    }
+
+    @MainActor
+    func testWhenMoreOptionsMenuBuiltAndFreemiumUnavailableThenNoImpressionPixelsFire() {
+        // Given
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
+        mockSubscriptionManager.currentEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .stripe)
+        mockFreemiumDBPFeature.featureAvailable = false
+
+        // When
+        setupMoreOptionsMenu()
+
+        // Then
+        XCTAssertTrue(mockPixelHandler.allFiredEvents.isEmpty)
+    }
+
+    @MainActor
     func testWhenClickingWinBackOfferPurchasePageThenActionDelegateIsCalled() throws {
         // Given
         mockWinBackOfferVisibilityManager.isOfferAvailable = true

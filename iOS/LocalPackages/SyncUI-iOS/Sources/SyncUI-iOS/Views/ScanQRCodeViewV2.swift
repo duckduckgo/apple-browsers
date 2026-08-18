@@ -23,6 +23,10 @@ import DuckUI
 import SwiftUI
 import UIComponents
 
+#if DEBUG
+import PreviewSnapshots
+#endif
+
 public struct ScanQRCodeViewV2: View {
 
     enum Tab {
@@ -32,7 +36,6 @@ public struct ScanQRCodeViewV2: View {
 
     @ObservedObject var model: ScanOrPasteCodeViewModel
     @State private var selectedTab: Tab = .scanQRCode
-    @State private var isShowingSyncCodeSheet = false
     @State private var showIntroAnimation = true
 
     public init(model: ScanOrPasteCodeViewModel) {
@@ -52,17 +55,22 @@ public struct ScanQRCodeViewV2: View {
         .background(SimplifiedSyncStyle.screenBackground)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
-                Button(UserText.simplifiedScanCloseButton, action: model.cancel)
+                Button {
+                    model.cancel()
+                } label: {
+                    Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
+                }
+                .accessibilityLabel(UserText.simplifiedScanCloseButton)
             }
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button {
-                    isShowingSyncCodeSheet = true
+                    model.isShowingSyncCodeSheet = true
                 } label: {
                     Image(uiImage: DesignSystemImages.Glyphs.Size24.qr)
                 }
             }
         }
-        .sheet(isPresented: $isShowingSyncCodeSheet) {
+        .sheet(isPresented: $model.isShowingSyncCodeSheet) {
             SyncCodeSheetView(model: model)
         }
         .navigationBarTitleDisplayMode(.inline)
@@ -84,7 +92,7 @@ public struct ScanQRCodeViewV2: View {
     private var contentPanel: some View {
         switch selectedTab {
         case .scanQRCode:
-            ScanTabView(model: model, isCameraActive: !isShowingSyncCodeSheet, showIntroAnimation: $showIntroAnimation)
+            ScanTabView(model: model, isCameraActive: !model.isShowingSyncCodeSheet, showIntroAnimation: $showIntroAnimation)
         case .enterCode:
             EnterCodeTabView(model: model)
         }
@@ -92,28 +100,30 @@ public struct ScanQRCodeViewV2: View {
 }
 
 #if DEBUG
-#Preview {
-    let sampleCode = "eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiNjgwRDQ1QjUtNUU2RS00MzQ3LTlDNDQtQjZGQkU4MEZDNEE3IiwicHJpbWFyeV9rZXkiOiJBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWiJ9fQ=="
+struct ScanQRCodeViewV2_Previews: PreviewProvider {
 
-    return NavigationView {
-        RebrandedPreview(isRebranded: true) {
-            ScanQRCodeViewV2(
-                model: ScanOrPasteCodeViewModel(codeForDisplayOrPasting: sampleCode, qrCodeString: sampleCode, source: .connect)
-            )
-        }
+    static let sampleCode = "https://duckduckgo.com/sync/pairing/#&code2=eyJ2ZXJzaW9uIjoiMiIsImNoYW5uZWxJZCI6IjY4MEQ0NUI1LTVFNkUtNDM0Ny05QzQ0LUI2RkJFODBGQzRBNyIsInB1YmxpY0tleSI6IkFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaIn0"
+
+    static var previews: some View {
+        snapshots.previews
     }
-}
 
-#Preview("Enter Code") {
-    let sampleCode = "eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiNjgwRDQ1QjUtNUU2RS00MzQ3LTlDNDQtQjZGQkU4MEZDNEE3IiwicHJpbWFyeV9rZXkiOiJBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWiJ9fQ=="
-
-    return NavigationView {
-        RebrandedPreview(isRebranded: true) {
-            ScanQRCodeViewV2(
-                model: ScanOrPasteCodeViewModel(codeForDisplayOrPasting: sampleCode, qrCodeString: sampleCode, source: .connect),
-                selectedTab: .enterCode
-            )
+    static let snapshots = PreviewSnapshots<ScanQRCodeViewV2.Tab>(
+        configurations: [
+            .init(name: "Scan QR Code", state: .scanQRCode),
+            .init(name: "Enter Code", state: .enterCode)
+        ],
+        configure: { tab in
+            NavigationView {
+                RebrandedPreview(isRebranded: true) {
+                    ScanQRCodeViewV2(
+                        model: ScanOrPasteCodeViewModel(codeForDisplayOrPasting: sampleCode, qrCodeString: sampleCode, source: .connect),
+                        selectedTab: tab
+                    )
+                }
+            }
+            .navigationViewStyle(.stack)
         }
-    }
+    )
 }
 #endif

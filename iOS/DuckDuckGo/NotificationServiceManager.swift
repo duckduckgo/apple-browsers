@@ -29,14 +29,18 @@ protocol NotificationServiceManaging: UNUserNotificationCenterDelegate {}
 final class NotificationServiceManager: NSObject, NotificationServiceManaging {
 
     private let mainCoordinator: MainCoordinator
+    private let inactivityStateStore: InactivityNotificationStateStoring
 
     static let notificationCategories: Set<UNNotificationCategory> = [
-        DefaultSubscriptionExpirationReminderScheduler.notificationCategory
+        DefaultSubscriptionExpirationReminderScheduler.notificationCategory,
+        InactivityNotificationSchedulerService.Constants.notificationCategory
     ]
 
     init(mainCoordinator: MainCoordinator,
+         inactivityStateStore: InactivityNotificationStateStoring,
          notificationCenter: UNUserNotificationCenterRepresentable = UNUserNotificationCenter.current()) {
         self.mainCoordinator = mainCoordinator
+        self.inactivityStateStore = inactivityStateStore
         super.init()
         Self.registerNotificationCategories(on: notificationCenter)
     }
@@ -65,13 +69,18 @@ final class NotificationServiceManager: NSObject, NotificationServiceManaging {
             return
         }
 
+        if id == InactivityNotificationSchedulerService.Constants.notificationIdentifier {
+            handleInactivityNotification(for: response)
+            return
+        }
+
         guard response.actionIdentifier == UNNotificationDefaultActionIdentifier else { return }
 
         switch id {
-        case InactivityNotificationSchedulerService.Constants.notificationIdentifier:
-            handleInactivityNotification(for: response)
         case let raw where NetworkProtectionNotificationIdentifier(rawValue: raw) != nil:
-            handleVPNNotification()
+            if let identifier = NetworkProtectionNotificationIdentifier(rawValue: raw) {
+                handleVPNNotification(identifier: identifier)
+            }
         case let raw where DataBrokerProtectionNotificationIdentifier(rawValue: raw) != nil:
             if let identifier = DataBrokerProtectionNotificationIdentifier(rawValue: raw) {
                 handleDataBrokerProtectionNotification(identifier: identifier)
@@ -83,19 +92,44 @@ final class NotificationServiceManager: NSObject, NotificationServiceManaging {
 }
 
 
+// MARK: - Testability
+
+extension NotificationServiceManager {
+
+    static func handleInactivityNotification(actionIdentifier: String,
+                                             userInfo: [AnyHashable: Any],
+                                             stateStore: InactivityNotificationStateStoring) {
+        let daysInactiveKey = InactivityNotificationSchedulerService.Settings.daysInactive.rawValue
+        let daysInactive = userInfo[daysInactiveKey] as? Int ?? InactivityNotificationSchedulerService.Settings.daysInactive.defaultValue
+
+        switch actionIdentifier {
+        case UNNotificationDefaultActionIdentifier:
+            stateStore.recordInteraction()
+            Pixel.fire(pixel: .inactiveUserProvisionalPushNotificationTapped, withAdditionalParameters: [daysInactiveKey: String(daysInactive)])
+            // no special navigation
+        case UNNotificationDismissActionIdentifier:
+            stateStore.recordInteraction()
+        default:
+            break
+        }
+    }
+}
+
 // MARK: - Helpers
 
 private extension NotificationServiceManager {
-    
+
     func handleInactivityNotification(for response: UNNotificationResponse) {
-        let daysInactiveKey = InactivityNotificationSchedulerService.Constants.daysInactiveSettingKey
-        let daysInactive = response.notification.request.content.userInfo[daysInactiveKey] as? Int ?? InactivityNotificationSchedulerService.Constants.defaultDaysInactive
-        Pixel.fire(pixel: .inactiveUserProvisionalPushNotificationTapped, withAdditionalParameters: [daysInactiveKey: String(daysInactive)])
+        Self.handleInactivityNotification(actionIdentifier: response.actionIdentifier,
+                                          userInfo: response.notification.request.content.userInfo,
+                                          stateStore: inactivityStateStore)
     }
-    
+
     @MainActor
-    func handleVPNNotification() {
-        mainCoordinator.presentNetworkProtectionStatusSettingsModal(origin: .notificationVPN)
+    func handleVPNNotification(identifier: NetworkProtectionNotificationIdentifier) {
+        let scrollToStrictRouting = identifier == .strictRoutingReminder
+        mainCoordinator.presentNetworkProtectionStatusSettingsModal(entryPoint: .notification,
+                                                                    scrollToStrictRouting: scrollToStrictRouting)
     }
 
     @MainActor

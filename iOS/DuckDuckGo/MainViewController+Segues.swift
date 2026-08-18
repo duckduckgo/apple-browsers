@@ -29,6 +29,46 @@ import Subscription
 import DDGSync
 import os.log
 import DataBrokerProtection_iOS
+import VPN
+
+struct VPNEntryPoint {
+    let screenSource: VPNConnectionWideEventData.ScreenSource
+    let subscriptionFunnelOrigin: SubscriptionFunnelOrigin
+    let subscriptionFunnelClickPixel: (_ isSubscriptionActive: Bool?) -> SubscriptionPixel
+
+    static let toolbar = VPNEntryPoint(
+        screenSource: .toolbar,
+        subscriptionFunnelOrigin: .toolbarVPN,
+        subscriptionFunnelClickPixel: { .subscriptionVPNToolbarClick(isSubscriptionActive: $0) })
+
+    static let addressBar = VPNEntryPoint(
+        screenSource: .addressBar,
+        subscriptionFunnelOrigin: .addressBarVPN,
+        subscriptionFunnelClickPixel: { .subscriptionVPNAddressBarClick(isSubscriptionActive: $0) })
+
+    static let widget = VPNEntryPoint(
+        screenSource: .widget,
+        subscriptionFunnelOrigin: .widgetVPN,
+        subscriptionFunnelClickPixel: { _ in .subscriptionVPNWidgetClick })
+
+    static let shortcut = VPNEntryPoint(
+        screenSource: .shortcut,
+        subscriptionFunnelOrigin: .shortcutVPN,
+        subscriptionFunnelClickPixel: { _ in .subscriptionVPNShortcutClick })
+
+    static let notification = VPNEntryPoint(
+        screenSource: .notification,
+        subscriptionFunnelOrigin: .notificationVPN,
+        subscriptionFunnelClickPixel: { _ in .subscriptionVPNNotificationClick })
+
+    private init(screenSource: VPNConnectionWideEventData.ScreenSource,
+                 subscriptionFunnelOrigin: SubscriptionFunnelOrigin,
+                 subscriptionFunnelClickPixel: @escaping (_ isSubscriptionActive: Bool?) -> SubscriptionPixel) {
+        self.screenSource = screenSource
+        self.subscriptionFunnelOrigin = subscriptionFunnelOrigin
+        self.subscriptionFunnelClickPixel = subscriptionFunnelClickPixel
+    }
+}
 
 extension MainViewController {
 
@@ -65,7 +105,9 @@ extension MainViewController {
             systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
             daxDialogsManager: daxDialogsManager,
             syncAutoRestoreHandler: syncAutoRestoreHandler,
-            onboardingManager: onboardingManager
+            onboardingManager: onboardingManager,
+            keyValueStore: keyValueStore,
+            adBlockingAvailability: adBlockingAvailability
         )
         let controller = OnboardingIntroFactory.makeController(
             viewModel: viewModel,
@@ -287,12 +329,13 @@ extension MainViewController {
         }, deepLinkTarget: .subscriptionWelcome)
     }
 
-    func segueToVPN() {
+    func segueToVPN(source: VPNConnectionWideEventData.ScreenSource,
+                    scrollToStrictRouting: Bool = false) {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
         launchSettings(completion: {
-            $0.triggerDeepLinkNavigation(to: .netP)
-        }, deepLinkTarget: .netP)
+            $0.triggerDeepLinkNavigation(to: .netP(source: source, scrollToStrictRouting: scrollToStrictRouting))
+        }, deepLinkTarget: .netP(source: source, scrollToStrictRouting: scrollToStrictRouting))
     }
 
     func segueToDataBrokerProtection() {

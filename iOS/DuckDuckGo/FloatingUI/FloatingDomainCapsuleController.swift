@@ -152,7 +152,9 @@ final class FloatingDomainCapsuleController {
         if domainLabel.text != domain {
             domainLabel.text = domain
         }
-        button.accessibilityLabel = domain
+        if button.accessibilityLabel != domain {
+            button.accessibilityLabel = domain
+        }
 
         let p = max(0, min(1, barsVisibilityPercent))
 
@@ -170,7 +172,9 @@ final class FloatingDomainCapsuleController {
         domainLabel.alpha = reduceMotion ? 1 : max(0, min(1, 1 - p))
         button.isHidden = false
         button.alpha = pillAlpha
-        view.bringSubviewToFront(button)
+        if view.subviews.last !== button {
+            view.bringSubviewToFront(button)
+        }
     }
 
     /// Opacity of the morph pill. Fully opaque through the resize band (`p <= handoffStart`), then

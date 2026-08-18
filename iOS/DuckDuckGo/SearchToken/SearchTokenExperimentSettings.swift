@@ -19,6 +19,7 @@
 
 import Foundation
 import PrivacyConfig
+import FeatureFlags_iOS
 
 /// Remotely-configured tuning for the Search Token experiment, read from the `searchTokenExperiment`
 /// subfeature settings. Falls back to defaults when the setting is absent or malformed.
@@ -48,7 +49,7 @@ struct SearchTokenExperimentSettings {
     }
 
     private func seconds(forKey key: String) -> TimeInterval? {
-        guard let json = privacyConfigurationManager.privacyConfig.settings(for: iOSBrowserConfigSubfeature.searchTokenExperiment),
+        guard let json = privacyConfigurationManager.privacyConfig.settings(for: iOSBrowserConfigSubfeature.searchTokenExperimentV3),
               let data = json.data(using: .utf8),
               let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let value = dict[key] as? NSNumber else {

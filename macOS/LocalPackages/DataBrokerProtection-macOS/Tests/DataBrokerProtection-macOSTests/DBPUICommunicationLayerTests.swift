@@ -185,7 +185,7 @@ private final class MockDelegate: DBPUICommunicationDelegate {
     var handshakeUserDataCalled = false
     var handshakeUserDataToReturn: DBPUIHandshakeUserData?
 
-    func getHandshakeUserData() -> DBPUIHandshakeUserData? {
+    func getHandshakeUserData() async -> DBPUIHandshakeUserData? {
         handshakeUserDataCalled = true
         return handshakeUserDataToReturn
     }

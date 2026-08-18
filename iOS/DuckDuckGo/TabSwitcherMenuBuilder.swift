@@ -28,9 +28,10 @@ struct TabSwitcherMultiSelectMenuState {
     let totalCount: Int
     let selectedContainsWebPages: Bool
     let allContainsWebPages: Bool
+    var shouldShowSelectionToggleActions = true
 
-    var canShowDeselectAll: Bool { selectedCount > 0 && selectedCount == totalCount }
-    var canShowSelectAll: Bool { selectedCount < totalCount }
+    var canShowDeselectAll: Bool { shouldShowSelectionToggleActions && selectedCount > 0 && selectedCount == totalCount }
+    var canShowSelectAll: Bool { shouldShowSelectionToggleActions && selectedCount < totalCount }
     var canShare: Bool { selectedContainsWebPages }
     var canAddBookmarks: Bool { selectedContainsWebPages }
     var canCloseOther: Bool { selectedCount > 0 && selectedCount < totalCount }

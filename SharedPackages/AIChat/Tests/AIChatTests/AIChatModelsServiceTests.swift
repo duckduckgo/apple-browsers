@@ -18,9 +18,17 @@
 
 import XCTest
 import AIChat
+import NetworkingTestingUtils
+import Subscription
 
 @MainActor
 final class AIChatModelsServiceTests: XCTestCase {
+
+    override func tearDown() {
+        MockURLProtocol.lastRequest = nil
+        MockURLProtocol.requestHandler = nil
+        super.tearDown()
+    }
 
     // MARK: - JSON Decoding Tests
 
@@ -56,6 +64,90 @@ final class AIChatModelsServiceTests: XCTestCase {
         XCTAssertEqual(response.models[0].supportedTools, ["WebSearch"])
         XCTAssertEqual(response.models[0].accessTier, ["free"])
         XCTAssertEqual(response.models[0].supportedReasoningEffort, [])
+    }
+
+    func testWhenLabelsAreDecoded_ThenKnownNullAndUnknownValuesArePreserved() throws {
+        let json = """
+        {
+            "models": [
+                {
+                    "id": "everyday",
+                    "name": "Everyday",
+                    "provider": "openai",
+                    "entityHasAccess": true,
+                    "supportsImageUpload": false,
+                    "supportedTools": [],
+                    "accessTier": ["free"],
+                    "label": "EVERYDAY_USE"
+                },
+                {
+                    "id": "limits",
+                    "name": "Limits",
+                    "provider": "anthropic",
+                    "entityHasAccess": true,
+                    "supportsImageUpload": false,
+                    "supportedTools": [],
+                    "accessTier": ["pro"],
+                    "label": "USES_LIMITS_FASTER"
+                },
+                {
+                    "id": "unlabelled",
+                    "name": "Unlabelled",
+                    "provider": "mistral",
+                    "entityHasAccess": true,
+                    "supportsImageUpload": false,
+                    "supportedTools": [],
+                    "accessTier": ["free"],
+                    "label": null
+                },
+                {
+                    "id": "future",
+                    "name": "Future",
+                    "provider": "openai",
+                    "entityHasAccess": true,
+                    "supportsImageUpload": false,
+                    "supportedTools": [],
+                    "accessTier": ["free"],
+                    "label": "FUTURE_LABEL"
+                }
+            ]
+        }
+        """
+        let data = try XCTUnwrap(json.data(using: .utf8))
+
+        let response = try JSONDecoder().decode(AIChatModelsResponse.self, from: data)
+
+        XCTAssertEqual(response.models.map(\.label), [
+            .everydayUse,
+            .usesLimitsFaster,
+            nil,
+            .unknown("FUTURE_LABEL")
+        ])
+    }
+
+    func testWhenLabelHasWrongType_ThenLabelFallsBackToNilButModelDecodes() throws {
+        let json = """
+        {
+            "models": [
+                {
+                    "id": "malformed-label",
+                    "name": "Malformed Label",
+                    "provider": "openai",
+                    "entityHasAccess": true,
+                    "supportsImageUpload": false,
+                    "supportedTools": [],
+                    "accessTier": ["free"],
+                    "label": { "value": "EVERYDAY_USE" }
+                }
+            ]
+        }
+        """
+        let data = try XCTUnwrap(json.data(using: .utf8))
+
+        let response = try JSONDecoder().decode(AIChatModelsResponse.self, from: data)
+
+        XCTAssertEqual(response.models[0].id, "malformed-label")
+        XCTAssertNil(response.models[0].label)
     }
 
     func testWhenJSONOmitsSupportedReasoningEffort_ThenDecodesWithEmptyArray() throws {
@@ -629,7 +721,8 @@ final class AIChatModelsServiceTests: XCTestCase {
             entityHasAccess: true,
             supportsImageUpload: false,
             supportedTools: ["WebSearch"],
-            accessTier: ["free"]
+            accessTier: ["free"],
+            label: .usesLimitsFaster
         )
 
         // When — free user should have access to a free-tier model
@@ -640,6 +733,7 @@ final class AIChatModelsServiceTests: XCTestCase {
         XCTAssertEqual(model.name, "GPT-4o mini")
         XCTAssertTrue(model.entityHasAccess)
         XCTAssertFalse(model.supportsImageUpload)
+        XCTAssertEqual(model.label, .usesLimitsFaster)
     }
 
     func testWhenRemoteModelIncludesFileSupport_ThenMappedModelSupportsFileUpload() {
@@ -789,6 +883,89 @@ final class AIChatModelsServiceTests: XCTestCase {
         XCTAssertEqual(provider, .mistral)
     }
 
+    // MARK: - Service Request Tests
+
+    func testWhenAccessTokenIsAvailableThenFetchModelsSendsBearerAuthorizationHeader() async throws {
+        let session = makeInterceptingSession { request in
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer pro-token")
+            XCTAssertEqual(request.cachePolicy, .reloadIgnoringLocalCacheData)
+        }
+        let service = AIChatModelsService(
+            session: session,
+            cookieProvider: MockCookieProvider(),
+            accessTokenProvider: MockSubscriptionTokenProvider(result: .success("pro-token"))
+        )
+
+        _ = try await service.fetchModels()
+    }
+
+    func testWhenAccessTokenProviderIsNilThenFetchModelsContinuesWithoutAuthorizationHeader() async throws {
+        let session = makeInterceptingSession { request in
+            XCTAssertNil(request.value(forHTTPHeaderField: "Authorization"))
+        }
+        let service = AIChatModelsService(
+            session: session,
+            cookieProvider: MockCookieProvider()
+        )
+
+        _ = try await service.fetchModels()
+    }
+
+    func testWhenAccessTokenIsUnavailableThenFetchModelsContinuesWithoutAuthorizationHeader() async throws {
+        let session = makeInterceptingSession { request in
+            XCTAssertNil(request.value(forHTTPHeaderField: "Authorization"))
+        }
+        let service = AIChatModelsService(
+            session: session,
+            cookieProvider: MockCookieProvider(),
+            accessTokenProvider: MockSubscriptionTokenProvider(
+                result: .failure(MockSubscriptionTokenProvider.ProviderError.tokenUnavailable)
+            )
+        )
+
+        _ = try await service.fetchModels()
+    }
+
+    func testWhenAccessTokenIsEmptyThenFetchModelsContinuesWithoutAuthorizationHeader() async throws {
+        let session = makeInterceptingSession { request in
+            XCTAssertNil(request.value(forHTTPHeaderField: "Authorization"))
+        }
+        let service = AIChatModelsService(
+            session: session,
+            cookieProvider: MockCookieProvider(),
+            accessTokenProvider: MockSubscriptionTokenProvider(result: .success(""))
+        )
+
+        _ = try await service.fetchModels()
+    }
+
+    func testWhenAccessTokenContainsOnlyWhitespaceThenFetchModelsContinuesWithoutAuthorizationHeader() async throws {
+        let session = makeInterceptingSession { request in
+            XCTAssertNil(request.value(forHTTPHeaderField: "Authorization"))
+        }
+        let service = AIChatModelsService(
+            session: session,
+            cookieProvider: MockCookieProvider(),
+            accessTokenProvider: MockSubscriptionTokenProvider(result: .success(" \n\t"))
+        )
+
+        _ = try await service.fetchModels()
+    }
+
+    func testWhenBaseURLIsUntrustedThenFetchModelsDoesNotSendAuthorizationHeader() async throws {
+        let session = makeInterceptingSession { request in
+            XCTAssertNil(request.value(forHTTPHeaderField: "Authorization"))
+        }
+        let service = AIChatModelsService(
+            baseURL: URL(string: "https://untrusted.example")!,
+            session: session,
+            cookieProvider: MockCookieProvider(),
+            accessTokenProvider: MockSubscriptionTokenProvider(result: .success("pro-token"))
+        )
+
+        _ = try await service.fetchModels()
+    }
+
     // MARK: - Service Error Tests
 
     func testWhenHTTPErrorOccurs_ThenServiceThrowsHTTPError() async {
@@ -820,7 +997,38 @@ private final class MockCookieProvider: AIChatCookieProviding {
     }
 }
 
+private struct MockSubscriptionTokenProvider: SubscriptionTokenProvider {
+    enum ProviderError: Error {
+        case tokenUnavailable
+    }
+
+    let result: Result<String, Error>
+
+    func getAccessToken() async throws -> String {
+        try result.get()
+    }
+}
+
 // MARK: - Helpers
+
+private func makeInterceptingSession(onRequest: @escaping (URLRequest) -> Void) -> URLSession {
+    let configuration = URLSessionConfiguration.ephemeral
+    configuration.protocolClasses = [MockURLProtocol.self]
+    MockURLProtocol.requestHandler = { request in
+        onRequest(request)
+        guard let url = request.url,
+              let response = HTTPURLResponse(
+                url: url,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: nil
+              ) else {
+            fatalError("Failed to create models endpoint response")
+        }
+        return (response, Data(#"{"models":[]}"#.utf8))
+    }
+    return URLSession(configuration: configuration)
+}
 
 private func makeStubSession(statusCode: Int, data: Data) -> (URLSession, URL) {
     // Returns a placeholder URL for documentation; real URLProtocol stubbing

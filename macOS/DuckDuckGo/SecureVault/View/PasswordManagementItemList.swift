@@ -301,9 +301,9 @@ private struct SyncPromoItemView: View {
 
         Button(action: action, label: {
             HStack(spacing: 2) {
-
-                Image(.syncOK32)
-                    .frame(width: 32)
+                Image(style.headerImageName)
+                    .resizable()
+                    .frame(width: 32, height: 32)
                     .padding(.leading, 6)
 
                 VStack(alignment: .leading, spacing: 4) {
@@ -573,6 +573,7 @@ private struct FlexibleButtonSizingModifier: ViewModifier {
 }
 
 struct PasswordManagementStyle {
+    let headerImageName: ImageResource
     let backgroundColor: Color
     let backgroundCornerRadius: CGFloat
     let buttonCornerRadius: CGFloat
@@ -594,7 +595,8 @@ struct PasswordManagementStyle {
         let controlTextColor = Color(NSColor.controlTextColor)
 
         guard isAppRebranded else {
-            return PasswordManagementStyle(backgroundColor: clearBackgroundColor,
+            return PasswordManagementStyle(headerImageName: .syncOK32Legacy,
+                                           backgroundColor: clearBackgroundColor,
                                            backgroundCornerRadius: 3,
                                            buttonCornerRadius: 3,
                                            textColor: controlTextColor,
@@ -603,7 +605,8 @@ struct PasswordManagementStyle {
         }
 
         let selectedBackgroundColor = Color(theme.palette.controlsFillTertiary)
-        return PasswordManagementStyle(backgroundColor: clearBackgroundColor,
+        return PasswordManagementStyle(headerImageName: .syncCheck56,
+                                       backgroundColor: clearBackgroundColor,
                                        backgroundCornerRadius: 5,
                                        buttonCornerRadius: 5,
                                        textColor: controlTextColor,

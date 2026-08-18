@@ -239,7 +239,9 @@ private extension UIButton.Configuration {
 
 extension BrowserChromeButton {
 
-    static func createToolbarButton(title: String, image: UIImage?, fixedWidth: CGFloat? = 34, action: (() -> Void)? = nil) -> BrowserChromeButton {
+    static let toolbarButtonSize: CGFloat = 44
+
+    static func createToolbarButton(title: String, image: UIImage?, fixedWidth: CGFloat? = toolbarButtonSize, action: (() -> Void)? = nil) -> BrowserChromeButton {
         let button = BrowserChromeButton(.toolbar)
         if let image {
             button.setImage(image)
@@ -256,7 +258,7 @@ extension BrowserChromeButton {
 
         button.accessibilityLabel = title
         button.translatesAutoresizingMaskIntoConstraints = false
-        button.heightAnchor.constraint(equalToConstant: 44).isActive = true
+        button.heightAnchor.constraint(equalToConstant: toolbarButtonSize).isActive = true
         // Icon buttons use a fixed width; text buttons pass nil and size to their title (see applyTextConstraints).
         if let fixedWidth {
             button.widthAnchor.constraint(equalToConstant: fixedWidth).isActive = true
@@ -265,7 +267,7 @@ extension BrowserChromeButton {
         return button
     }
 
-    static func createToolbarButtonItem(title: String, image: UIImage?, fixedWidth: CGFloat? = 34, action: (() -> Void)? = nil) -> UIBarButtonItem {
+    static func createToolbarButtonItem(title: String, image: UIImage?, fixedWidth: CGFloat? = toolbarButtonSize, action: (() -> Void)? = nil) -> UIBarButtonItem {
         let button = createToolbarButton(title: title, image: image, fixedWidth: fixedWidth, action: action)
 
         let barItem = UIBarButtonItem(customView: button)

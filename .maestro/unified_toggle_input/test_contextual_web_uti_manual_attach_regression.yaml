@@ -8,8 +8,10 @@ name: test_contextual_web_uti_manual_attach_regression
 ---
 
 # With the immediate contextual UTI flag off, contextual chat still starts with the
-# basic native input, then shows the web UTI after the first prompt. In manual mode,
-# placeholder and manually attached context stay sticky across navigation.
+# basic native input, then shows the web UTI after the first prompt. In manual mode
+# there is no placeholder chip: page context is attached from the web UTI's attachment
+# menu via "Ask About Page", and a manually attached context is cleared when the sheet
+# is reopened on a different page.
 
 - launchApp:
     appId: "com.duckduckgo.mobile.ios"
@@ -48,10 +50,16 @@ name: test_contextual_web_uti_manual_attach_regression
 
 - runFlow:
     file: ../shared/dismiss_chat_open_modals.yaml
+
+# After the first prompt the web UTI replaces the native input. There is no dashed
+# placeholder chip and, in manual mode, no context is attached yet.
 - extendedWaitUntil:
-    visible:
-        text: "Attach Page Content"
+    visible: "Attach"
     timeout: 30000
+- assertNotVisible:
+    id: "AIChat.ContextChip.Placeholder"
+- assertNotVisible:
+    id: "AIChat.ContextChip.AttachedTitle"
 
 - tapOn:
     id: "AIChat.ContextualSheet.CloseButton"
@@ -64,17 +72,19 @@ name: test_contextual_web_uti_manual_attach_regression
 - pressKey: Enter
 - assertVisible: ".*Address Bar Spoofing.*"
 
+# Manually attach the current page from the web UTI's attachment menu.
 - tapOn:
     id: "Browser.OmniBar.Button.AIChat"
 - assertVisible:
     id: "AIChat.ContextualSheet"
-- assertVisible:
-    text: "Attach Page Content"
-
-- tapOn:
-    text: "Attach Page Content"
+- assertNotVisible:
+    id: "AIChat.ContextChip.AttachedTitle"
+- tapOn: "Attach"
+- assertVisible: "Ask About Page"
+- tapOn: "Ask About Page"
 - extendedWaitUntil:
-    notVisible: "Attach Page Content"
+    visible:
+        id: "AIChat.ContextChip.AttachedTitle"
     timeout: 10000
 
 - tapOn:
@@ -82,6 +92,9 @@ name: test_contextual_web_uti_manual_attach_regression
 - waitForAnimationToEnd:
     timeout: 3000
 
+# Navigating to a different page and reopening clears the manually attached context; it
+# does not silently reattach and no placeholder chip appears. "Ask About Page" is still
+# available to attach the new page.
 - tapOn:
     id: "searchEntry"
 - inputText: "https://privacy-test-pages.site/privacy-protections/geolocation/"
@@ -93,5 +106,10 @@ name: test_contextual_web_uti_manual_attach_regression
 - assertVisible:
     id: "AIChat.ContextualSheet"
 - extendedWaitUntil:
-    notVisible: "Attach Page Content"
+    notVisible:
+        id: "AIChat.ContextChip.AttachedTitle"
     timeout: 10000
+- assertNotVisible:
+    id: "AIChat.ContextChip.Placeholder"
+- tapOn: "Attach"
+- assertVisible: "Ask About Page"

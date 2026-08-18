@@ -2967,11 +2967,9 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
                 self.fireExpectation = fireExpectation
                 self.completionExpectation = completionExpectation
             }
-            public func fire(_ event: PixelKitEvent,
+            public func fire(event: PixelKit.Event,
                              frequency: PixelKit.Frequency,
-                             includeAppVersionParameter: Bool,
-                             withAdditionalParameters: [String: String]?,
-                             withNamePrefix: String?,
+                             options: PixelKit.Options,
                              onComplete: @escaping PixelKit.CompletionBlock) {
                 fireExpectation.fulfill()
                 // Never call completion handler - simulates timeout

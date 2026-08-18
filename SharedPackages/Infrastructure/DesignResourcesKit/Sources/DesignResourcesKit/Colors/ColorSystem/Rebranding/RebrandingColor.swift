@@ -20,7 +20,10 @@ import SwiftUI
 
 /// Rebranding colors sourced from Figma: https://www.figma.com/design/3W4vi0zX8hrpQc7zInQQB6/%F0%9F%8E%A8-Global-Colors---Styles?node-id=11-1&m=dev&vars=1&var-set-id=7943-516.
 /// These are currently scoped for limited use and will be promoted to a ColorPalette when approved for app-wide use.
-enum RebrandingColor {
+/// `Pollen` and `pollen30` are `public` because the Duck.ai omnibar's "Try for free"/"Upgrade"
+/// tag was explicitly reviewed against this exact token (Figma's "Pollen 300") — everything else
+/// here stays internal until it goes through the same process.
+public enum RebrandingColor {
 
     enum GrayScale {
         static let white = Color(0xFFFFFF)
@@ -67,13 +70,13 @@ enum RebrandingColor {
         static let mandarin100 = Color(0x290E0A)
     }
 
-    enum Pondwater {
+    public enum Pondwater {
         static let pondwater0 = Color(0xF5FBFE)
         static let pondwater10 = Color(0xE6F6FF)
         static let pondwater20 = Color(0xCBEAFF)
         static let pondwater30 = Color(0xA1D0F7)
         static let pondwater40 = Color(0x75B6EB)
-        static let pondwater50 = Color(0x4397E0)
+        public static let pondwater50 = Color(0x4397E0)
         static let pondwater60 = Color(0x1074CC)
         static let pondwater70 = Color(0x045EB2)
         static let pondwater80 = Color(0x034180)
@@ -109,11 +112,11 @@ enum RebrandingColor {
         static let blossom100 = Color(0x230829)
     }
 
-    enum Pollen {
+    public enum Pollen {
         static let pollen0 = Color(0xFFFBF0)
         static let pollen10 = Color(0xFEF4DA)
         static let pollen20 = Color(0xFFEAB8)
-        static let pollen30 = Color(0xFFD885)
+        public static let pollen30 = Color(0xFFD885)
         static let pollen40 = Color(0xFFC95C)
         static let pollen50 = Color(0xFAB341)
         static let pollen60 = Color(0xF5A031)

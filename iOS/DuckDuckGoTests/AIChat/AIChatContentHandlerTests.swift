@@ -772,6 +772,7 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
     var submitStartChatActionCallCount = 0
     var submitOpenSettingsActionCallCount = 0
     var submitToggleSidebarActionCallCount = 0
+    var submitOpenChatProtectionActionCallCount = 0
     var submitPageContextCallCount = 0
     var lastSubmittedPageContextViaSubmit: AIChatPageContextData?
     var lastDisplayModeSet: AIChatDisplayMode?
@@ -831,6 +832,10 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
         submitToggleSidebarActionCallCount += 1
     }
 
+    func submitOpenChatProtectionAction() {
+        submitOpenChatProtectionActionCallCount += 1
+    }
+
     func submitPageContext(_ context: AIChatPageContextData?) {
         submitPageContextCallCount += 1
         lastSubmittedPageContextViaSubmit = context
@@ -884,6 +889,8 @@ final class MockAIChatUserScriptHandling: AIChatUserScriptHandling {
     func disableChatInput(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
     func enableChatInput(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
     func focusChatInput(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
+    func editPrompt(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
+    func cancelEdit(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
 }
 // swiftlint:enable inclusive_language
 

@@ -17,6 +17,7 @@
 //
 
 import SwiftUI
+import AppKit
 import SwiftUIExtensions
 import Combine
 import VPN
@@ -151,7 +152,15 @@ public struct TunnelControllerView: View {
                 .padding([.top], 8)
                 .multilineText()
 
-            Text(model.isToggleOn.wrappedValue ? UserText.networkProtectionStatusHeaderMessageOn : UserText.networkProtectionStatusHeaderMessageOff)
+            if model.showStrictRoutingPill {
+                StrictRoutingPillView(isStrictRoutingOn: model.enforceRoutes) {
+                    model.showVPNSettings()
+                    dismiss()
+                }
+                .padding(.top, 8)
+            }
+
+            Text(model.headerMessage)
                 .multilineText()
                 .multilineTextAlignment(.center)
                 .applyDescriptionAttributes()
@@ -173,8 +182,18 @@ public struct TunnelControllerView: View {
 
     @ViewBuilder
     private func headerAnimationView(_ animationName: String) -> some View {
+        let tintedAnimationView = LottieView(animation: .named(animationName))
+            .configure { [isAppRebranded, enforceRoutes = model.enforceRoutes, colorScheme] animationView in
+                Self.applyStrictRoutingTint(spec: isAppRebranded ? .rebranded : .legacy,
+                                            enforceRoutes: enforceRoutes,
+                                            colorScheme: colorScheme,
+                                            to: animationView)
+            }
+
+        // Re-create the view on a light/dark switch so the tint is re-applied for the new scheme;
+        // otherwise it keeps the colours resolved when the view was first configured.
         if isAppRebranded {
-            LottieView(animation: .named(animationName))
+            tintedAnimationView
                 .playing(withIntro: .init(
                     skipIntro: model.isConnectedOrConnecting && !model.isToggleDisabled,
                     introStartFrame: 0,
@@ -182,8 +201,9 @@ public struct TunnelControllerView: View {
                     loopStartFrame: 30,
                     loopEndFrame: 120,
                 ), isAnimating: model.isConnectedOrConnecting)
+                .id(colorScheme)
         } else {
-            LottieView(animation: .named(animationName))
+            tintedAnimationView
                 .playing(withIntro: .init(
                     skipIntro: model.isConnectedOrConnecting && !model.isToggleDisabled,
                     introStartFrame: 0,
@@ -191,14 +211,112 @@ public struct TunnelControllerView: View {
                     loopStartFrame: 130,
                     loopEndFrame: 370
                 ), isAnimating: model.isConnectedOrConnecting)
+                .id(colorScheme)
         }
+    }
+
+    /// The Lottie keypaths the strict-routing tint recolors, per header animation variant.
+    ///
+    /// The legacy animation's groups and fills are unnamed in the JSON; lottie-ios decodes a
+    /// null `nm` as "Layer", which is why the legacy keypaths read `<layer>.Layer.Layer.Color`.
+    struct TintSpec {
+        /// The badge circle behind the lock. Its color is keyframed to reveal below `revealFrame`.
+        let badgeKeypath: String
+        /// The frame at which the badge reveal completes: black before, accent after.
+        let revealFrame: CGFloat
+        /// Decorative arc lines that take the accent color (rebrand only).
+        let accentLineKeypaths: [(fill: String, stroke: String)]
+        /// The lock glyph, which takes the foreground color.
+        let lockKeypaths: [String]
+
+        static let rebranded = TintSpec(
+            badgeKeypath: "badge-fill.badge-fill.Fill 1.Color",
+            revealFrame: 14,
+            accentLineKeypaths: ["Line", "Line 2", "Line 3"].map {
+                (fill: "\($0).Shape 1.Fill 1.Color", stroke: "\($0).Shape 1.Stroke 1.Color")
+            },
+            lockKeypaths: ["lock 1.lock.Stroke 1.Color", "lock-body.lock-body.Fill 1.Color"]
+        )
+
+        static let legacy = TintSpec(
+            badgeKeypath: "bg.Layer.Layer.Color",
+            revealFrame: 35,
+            accentLineKeypaths: [],
+            lockKeypaths: ["lock-hook.Layer.Layer.Color", "lock-base.Layer.Layer.Color"]
+        )
+    }
+
+    /// Tints the VPN header animation to reflect strict routing, sharing the pill's exact background
+    /// colour so the lock circle and pill can't drift apart: the badge + arc lines use the pill's
+    /// background (green when enforced, yellow when not) and the lock takes the colour Figma shows on
+    /// that badge — the green foreground when enforced, white when not.
+    private static func applyStrictRoutingTint(spec: TintSpec, enforceRoutes: Bool, colorScheme: ColorScheme, to animationView: LottieAnimationView) {
+        let black = LottieColor(r: 0, g: 0, b: 0, a: 1)
+        let white = LottieColor(r: 1, g: 1, b: 1, a: 1)
+        let accentToken: DesignSystemColor = enforceRoutes ? .vpnGreen : .vpnYellow
+        let accent = Self.lottieColor(designSystemColor: accentToken, colorScheme: colorScheme)
+        // Lock colour once the badge has lit up: it matches the pill's foreground for the state —
+        // the green foreground when strict routing is on, the amber foreground when off. Before the
+        // reveal the badge is black (also the disconnected state), so the lock is white to read on it.
+        let revealedLock = enforceRoutes
+            ? Self.lottieColor(designSystemColor: .vpnGreenForeground, colorScheme: colorScheme)
+            : Self.lottieColor(designSystemColor: .vpnYellowForeground, colorScheme: colorScheme)
+
+        // Circle: its color is keyframed to a light-up reveal, so a block preserves the
+        // black off-state and swaps the accent in above the reveal.
+        animationView.setValueProvider(
+            ColorValueProvider(block: { frame in frame < spec.revealFrame ? black : accent }),
+            keypath: AnimationKeypath(keypath: spec.badgeKeypath)
+        )
+
+        // Arc lines: static accent fill + stroke.
+        for line in spec.accentLineKeypaths {
+            animationView.setValueProvider(ColorValueProvider(accent),
+                                           keypath: AnimationKeypath(keypath: line.fill))
+            animationView.setValueProvider(ColorValueProvider(accent),
+                                           keypath: AnimationKeypath(keypath: line.stroke))
+        }
+
+        // Lock: white while the badge is still black (pre-reveal / disconnected), then the
+        // revealed colour — kept in step with the badge so it's always legible.
+        for lock in spec.lockKeypaths {
+            animationView.setValueProvider(
+                ColorValueProvider(block: { frame in frame < spec.revealFrame ? white : revealedLock }),
+                keypath: AnimationKeypath(keypath: lock))
+        }
+    }
+
+    /// Resolves a design-system color to a `LottieColor` for use in a value provider.
+    /// (Lottie's `lottieColorValue` convenience is UIKit-only, so we bridge via `NSColor`.)
+    /// Resolved against an appearance built from the SwiftUI colour scheme rather than the view's
+    /// `effectiveAppearance`, which can lag a live light/dark switch and leave the tint on the old mode.
+    private static func lottieColor(designSystemColor: DesignSystemColor, colorScheme: ColorScheme) -> LottieColor {
+        var lottieColor = LottieColor(r: 0, g: 0, b: 0, a: 1)
+        let appearance = NSAppearance(named: colorScheme == .dark ? .darkAqua : .aqua)
+        appearance?.performAsCurrentDrawingAppearance {
+            if let color = NSColor(designSystemColor: designSystemColor).usingColorSpace(.sRGB) {
+                lottieColor = LottieColor(r: Double(color.redComponent),
+                                          g: Double(color.greenComponent),
+                                          b: Double(color.blueComponent),
+                                          a: Double(color.alphaComponent))
+            }
+        }
+        return lottieColor
     }
 
     @ViewBuilder
     private func statusBadge(isConnected: Bool) -> some View {
         Circle()
-            .fill(isConnected ? .green : .yellow)
+            .fill(statusColor(isConnected: isConnected))
             .frame(width: 8, height: 8)
+    }
+
+    private func statusColor(isConnected: Bool) -> Color {
+        if isAppRebranded {
+            return isConnected ? .green : Color(designSystemColor: .statusYellowSecondary)
+        }
+
+        return isConnected ? .green : .yellow
     }
 
     /// Connected/Selected location

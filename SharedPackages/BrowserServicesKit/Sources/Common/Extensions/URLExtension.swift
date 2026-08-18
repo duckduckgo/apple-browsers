@@ -25,6 +25,8 @@ extension URL {
 
     public static let empty = (NSURL(string: "") ?? NSURL()) as URL
 
+    public static let blankPage = URL(string: "about:blank")!
+
     public var isEmpty: Bool {
         absoluteString.isEmpty
     }

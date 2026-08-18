@@ -27,6 +27,7 @@ import NetworkExtension
 import VPN
 import Subscription
 import PixelKit
+import FeatureFlags_iOS
 
 enum VPNConfigurationRemovalReason: String {
     case didBecomeActiveCheck
@@ -35,7 +36,7 @@ enum VPNConfigurationRemovalReason: String {
     case debugMenu
 }
 
-final class NetworkProtectionTunnelController: TunnelController, TunnelSessionProvider {
+final class NetworkProtectionTunnelController: VPNConnectionContextProvidingTunnelController, TunnelSessionProvider {
     static var shouldSimulateFailure: Bool = false
 
     private let featureFlagger: FeatureFlagger
@@ -59,6 +60,15 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     private let controllerErrorSubject = CurrentValueSubject<String?, Never>(nil)
     var controllerErrorPublisher: AnyPublisher<String?, Never> {
         controllerErrorSubject.eraseToAnyPublisher()
+    }
+
+    /// Signals that the customer declined the system prompt to add the VPN configuration.
+    ///
+    /// Kept separate from `controllerErrorPublisher` because a denial is an intentional user action. It fires only so screens that need
+    /// to react to a denial can observe it.
+    private let configurationDeniedSubject = PassthroughSubject<Void, Never>()
+    var configurationDeniedPublisher: AnyPublisher<Void, Never> {
+        configurationDeniedSubject.eraseToAnyPublisher()
     }
 
     // Wide Event
@@ -188,7 +198,15 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     /// Starts the VPN connection used for Network Protection
     ///
     func start() async {
-        setupAndStartConnectionWideEvent()
+        await start(with: nil)
+    }
+
+    func start(entryContext: VPNConnectionWideEventData.EntryContext) async {
+        await start(with: entryContext)
+    }
+
+    private func start(with entryContext: VPNConnectionWideEventData.EntryContext?) async {
+        setupAndStartConnectionWideEvent(entryContext: entryContext)
         controllerErrorSubject.send(nil)
         persistentPixel.fire(
             pixel: .networkProtectionControllerStartAttempt,
@@ -214,6 +232,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
             completeAndCleanupConnectionWideEvent(with: error, description: error.contextualizedDescription())
             if case StartError.configSystemPermissionsDenied = error {
+                configurationDeniedSubject.send()
                 return
             }
 
@@ -311,6 +330,16 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     var isInstalled: Bool {
         get async {
             return await self.tunnelManager != nil
+        }
+    }
+
+    /// A fresh "is a VPN configuration installed?" check.
+    /// `isInstalled` can report a stale `true` after a config is removed from
+    /// system Settings, because `subscribeToConfigurationChanges` only clears the cache when the reload
+    /// throws or reports `.invalid`, which a Settings removal doesn't always surface.
+    var isConfigurationInstalled: Bool {
+        get async {
+            (try? await NETunnelProviderManager.loadAllFromPreferences())?.isEmpty == false
         }
     }
 
@@ -627,10 +656,11 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
 private extension NetworkProtectionTunnelController {
     
-    func setupAndStartConnectionWideEvent() {
+    func setupAndStartConnectionWideEvent(entryContext: VPNConnectionWideEventData.EntryContext?) {
         let data = VPNConnectionWideEventData(
             extensionType: .app,
             startupMethod: .manualByMainApp,
+            entryContext: entryContext,
             contextData: WideEventContextData(name: NetworkProtectionFunnelOrigin.appSettings.rawValue)
         )
         self.connectionWideEventData = data

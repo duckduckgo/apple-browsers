@@ -30,6 +30,7 @@ import BrowserServicesKit
 import Subscription
 import RemoteMessaging
 import WebExtensions
+import FeatureFlags_iOS
 
 /// Represents the transient state where the app is being prepared for user interaction after being launched by the system.
 /// - Usage:
@@ -171,12 +172,24 @@ struct Launching: LaunchingHandling {
                                                             fireModeStorageController: fireModeStorageController,
                                                             adBlockingAvailability: adBlockingAvailability)
 
+        // Constructed before MainCoordinator: its `eventHub` is threaded down to every tab.
+        // EventHub gets its own store, matching macOS, so its period state never shares a file with app
+        // settings. `try?` — an unopenable store degrades telemetry to in-memory rather than failing launch.
+        let eventHubStore = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+            .flatMap { try? KeyValueFileStore(location: $0, name: "EventHubKeyValueStore") }
+        let eventHubService = EventHubService(
+            privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager,
+            keyValueStore: eventHubStore,
+            consentStore: appKeyValueFileStoreService.keyValueFilesStore
+        )
+
         let freemiumPIRDebugSettings = FreemiumPIRDebugSettings(keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
         let dbpService = DBPService(appDependencies: AppDependencyProvider.shared,
                                     contentBlocking: contentBlockingService.common,
                                     freemiumPIRDebugSettings: freemiumPIRDebugSettings)
         let configurationService = RemoteConfigurationService()
         let crashCollectionService = CrashCollectionService(featureFlagger: featureFlagger)
+        let launchTimeMetricsService = LaunchTimeMetricsService(featureFlagger: featureFlagger)
         let statisticsService = StatisticsService()
 
         let productSurfaceTelemetry = PixelProductSurfaceTelemetry(featureFlagger: featureFlagger, dailyPixelFiring: DailyPixel.self)
@@ -246,7 +259,8 @@ struct Launching: LaunchingHandling {
         )
 
         // Has to be initialised after configuration.start in case values need to be migrated
-        aiChatSettings = AIChatSettings()
+        let aiChatSettings = AIChatSettings()
+        self.aiChatSettings = aiChatSettings
 
         // Create What's New repository for use in modal prompts and settings
         let whatsNewRepository = DefaultWhatsNewMessageRepository(
@@ -261,15 +275,25 @@ struct Launching: LaunchingHandling {
         )
         let subscriptionPromoPresenter = SubscriptionPromoPresenter(coordinator: subscriptionPromoCoordinator)
 
-        // Initialise modal prompts coordination
+        // Subscription promo for existing users (7+ days since install) who have never seen a subscription offer
+        let subscriptionPromoExistingUserCoordinator = SubscriptionPromoExistingUserCoordinator(
+            daxDialogs: daxDialogs,
+            featureFlagger: featureFlagger,
+            subscriptionManager: AppDependencyProvider.shared.subscriptionManager
+        )
+        let subscriptionPromoExistingUserPresenter = SubscriptionPromoPresenter(coordinator: subscriptionPromoExistingUserCoordinator)
+
+        // Initialise promo coordination
         let omniBarFocuser = OmniBarFocuserProvider()
-        let modalPromptCoordinationService = ModalPromptCoordinationFactory.makeService(
+        let promoQueueLeaseArbiter = PromoQueueLeaseArbiter()
+        let promoCoordinationService = PromoCoordinationFactory.makeService(
             dependency: .init(
                 launchSourceManager: launchSourceManager,
                 contextualOnboardingStatusProvider: daxDialogs,
                 keyValueFileStoreService: appKeyValueFileStoreService.keyValueFilesStore,
                 privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager,
                 featureFlagger: featureFlagger,
+                promoQueueLeaseArbiter: promoQueueLeaseArbiter,
                 whatsNewRepository: whatsNewRepository,
                 remoteMessagingActionHandler: remoteMessagingService.remoteMessagingActionHandler,
                 remoteMessagingPixelReporter: remoteMessagingService.pixelReporter,
@@ -282,12 +306,17 @@ struct Launching: LaunchingHandling {
                 winBackOfferCoordinator: winBackOfferService.coordinator,
                 subscriptionPromoPresenter: subscriptionPromoPresenter,
                 subscriptionPromoCoordinator: subscriptionPromoCoordinator,
+                subscriptionPromoExistingUserPresenter: subscriptionPromoExistingUserPresenter,
+                subscriptionPromoExistingUserCoordinator: subscriptionPromoExistingUserCoordinator,
                 userScriptsDependencies: contentBlockingService.userScriptsDependencies,
                 omniBarFocuser: omniBarFocuser
             )
         )
 
-        let mobileCustomization = MobileCustomization(keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
+        let mobileCustomization = MobileCustomization(
+            keyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
+            connectionStatusObserver: AppDependencyProvider.shared.connectionObserver,
+            isDuckAIEnabled: { aiChatSettings.isAIChatEnabled })
 
         // MARK: - Main Coordinator Setup
         // Initialize the main coordinator which manages the app's primary view controller
@@ -321,13 +350,14 @@ struct Launching: LaunchingHandling {
                                               freemiumPIRDebugSettings: freemiumPIRDebugSettings,
                                               freemiumDBPUserStateManager: dbpService.freemiumDBPUserStateManager,
                                               profileStateManager: dbpService.profileStateManager,
-                                              modalPromptCoordinationService: modalPromptCoordinationService,
+                                              promoCoordinationService: promoCoordinationService,
                                               mobileCustomization: mobileCustomization,
                                               productSurfaceTelemetry: productSurfaceTelemetry,
                                               whatsNewRepository: whatsNewRepository,
                                               sharedSecureVault: configuration.persistentStoresConfiguration.sharedSecureVault,
                                               wideEvent: AppDependencyProvider.shared.wideEvent,
-                                              onboardingManager: onboardingManager
+                                              onboardingManager: onboardingManager,
+                                              eventHub: eventHubService.eventHub
         )
 
         // MARK: - UI-Dependent Services Setup
@@ -339,13 +369,20 @@ struct Launching: LaunchingHandling {
         remoteMessagingService.messageNavigator = DefaultMessageNavigator(delegate: mainCoordinator.controller)
         omniBarFocuser.focuser = mainCoordinator.controller
 
-        let notificationServiceManager = NotificationServiceManager(mainCoordinator: mainCoordinator)
+        let inactivityStateStore = InactivityNotificationStateStore(
+            keyValueStore: appKeyValueFileStoreService.keyValueFilesStore
+        )
+        let notificationServiceManager = NotificationServiceManager(
+            mainCoordinator: mainCoordinator,
+            inactivityStateStore: inactivityStateStore
+        )
 
         let vpnService = VPNService(mainCoordinator: mainCoordinator, notificationServiceManager: notificationServiceManager)
         let inactivityNotificationSchedulerService = InactivityNotificationSchedulerService(
             featureFlagger: featureFlagger,
             notificationServiceManager: notificationServiceManager,
-            privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager
+            privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager,
+            stateStore: inactivityStateStore
         )
 
         winBackOfferService.setURLHandler(mainCoordinator)
@@ -366,6 +403,7 @@ struct Launching: LaunchingHandling {
                                reportingService: reportingService,
                                subscriptionService: subscriptionService,
                                crashCollectionService: crashCollectionService,
+                               launchTimeMetricsService: launchTimeMetricsService,
                                maliciousSiteProtectionService: maliciousSiteProtectionService,
                                statisticsService: statisticsService,
                                keyValueFileStoreService: appKeyValueFileStoreService,
@@ -374,11 +412,18 @@ struct Launching: LaunchingHandling {
                                systemSettingsPiPTutorialService: systemSettingsPiPTutorialService,
                                inactivityNotificationSchedulerService: inactivityNotificationSchedulerService,
                                wideEventService: wideEventService,
-                               aiChatService: AIChatService(aiChatSettings: aiChatSettings)
+                               aiChatService: AIChatService(aiChatSettings: aiChatSettings),
+                               eventHubService: eventHubService
         )
 
         // Clean up wide event data at launch
         launchTaskManager.register(task: WideEventLaunchCleanupTask(wideEventService: wideEventService))
+        launchTaskManager.register(task: BlockLaunchTask(name: "Initialize PIR Secure Vault") { taskContext in
+            Task {
+                await dbpService.prepareSecureVaultResourcesAtLaunch()
+                taskContext.finish()
+            }
+        })
 
         // MARK: - Final Configuration
         // Complete the configuration process and set up the main window
@@ -398,6 +443,15 @@ struct Launching: LaunchingHandling {
 #endif
 
         logAppLaunchTime()
+
+#if DEBUG
+        if LaunchOptionsHandler().shouldOpenPIRDashboardForTesting {
+            let mainCoordinator = mainCoordinator
+            Task { @MainActor in
+                mainCoordinator.presentDataBrokerProtectionDashboard()
+            }
+        }
+#endif
         // Keep this init method minimal and think twice before adding anything here.
         // - Use AppConfiguration for one-time setup.
         // - Use a service for functionality that persists throughout the app's lifecycle.

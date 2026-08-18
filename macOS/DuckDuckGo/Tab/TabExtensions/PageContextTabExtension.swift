@@ -46,13 +46,16 @@ final class PageContextTabExtension {
     private let featureFlagger: FeatureFlagger
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let extractionPixelHandler: PageContextExtractionPixelFiring
-    private var lastMainFrameResponse: (url: URL, mimeType: String?)?
+    private var mainFrameMIMECache = MainFrameMIMECache()
+    private var pendingSettledNavigationURL: URL?
 
     private var extractionResolver = PageContextExtractionResolver()
 
     /// Set once an automatic (page-load) extraction outcome is reported for the current navigation,
     /// so its overlapping navigation/signals-only collects don't each fire a pixel. Reset on new URL.
     private var didReportExtractionForCurrentNavigation = false
+
+    private var didReportSidebarOpenOutcomeForCurrentNavigation = false
 
     /// Safety-net window for a fire-and-forget `collect()` whose result never arrives (hung JS,
     /// torn-down page). After it, `scheduleCollectionTimeout` fires `.timeout` and drops the pending
@@ -164,12 +167,16 @@ final class PageContextTabExtension {
                     self.pendingSelectionContexts = []
                     // Drop the previous page's outstanding collects so a slow or never-resolving
                     // collect can't pair (FIFO) with this page's result and mis-attribute its
-                    // extraction telemetry (trigger/latency/outcome).
+                    // extraction measurement (trigger/latency/outcome).
                     self.extractionResolver.reset()
                     self.didReportExtractionForCurrentNavigation = false
+                    self.didReportSidebarOpenOutcomeForCurrentNavigation = false
                 }
-                self.handleNavigationForMultipleContexts(from: previousContent, to: tabContent)
+                self.updateSidebarPageContextOnNavigation(from: previousContent, to: tabContent)
                 self.sendNonAttachableContextIfNeeded()
+                // A settled navigation that beat this debounced update deferred its re-collect; now
+                // that `content` matches, run it (a fast / back-forward restore the delegate missed).
+                self.runPendingSettledNavigationReCollectIfNeeded()
                 // Signals-only collection is driven from `navigationDidFinish` (post-load, parsed
                 // markup). Collecting here at didCommit too would race the post-load re-collect for
                 // the single-shot `pendingSignalsOnlyCollection` flag and let stale signals win.
@@ -198,6 +205,7 @@ final class PageContextTabExtension {
         aiChatMenuConfiguration.valuesChangedPublisher
             .map { aiChatMenuConfiguration.shouldAutomaticallySendPageContext }
             .removeDuplicates()
+            .receive(on: DispatchQueue.main)
             .sink { [weak self] isEnabled in
                 guard let self else {
                     return
@@ -223,23 +231,27 @@ final class PageContextTabExtension {
 
         pageContextUserScript.collectionResultPublisher
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] pageContext in
+            .sink { [weak self] result in
                 guard let self else {
                     return
                 }
+                let pageContext = result.pageContext
                 /// Process full collection when auto-collect is enabled (or the user explicitly
                 /// requested context). When auto-collect is OFF but we requested a signals-only
                 /// collection, deliver just the page-type signals (content stripped). Otherwise
                 /// ignore unsolicited results so they can't overwrite attached context with nil.
                 if self.isContextCollectionEnabled {
                     self.pendingSignalsOnlyCollection = false
-                    self.fireExtractionOutcome(for: pageContext)
-                    Task {
-                        await self.handle(pageContext)
+                    let wasForced = self.shouldForceContextCollection
+                    self.shouldForceContextCollection = false
+                    self.fireExtractionOutcome(for: result)
+                    if Self.shouldDeliverCollectionResult(pageContext, wasForced: wasForced, cached: self.cachedPageContext) {
+                        Task {
+                            await self.handle(pageContext)
+                        }
                     }
                 } else if self.pendingSignalsOnlyCollection {
                     self.pendingSignalsOnlyCollection = false
-                    self.fireExtractionOutcome(for: pageContext)
                     Task {
                         await self.handleSignalsOnly(pageContext)
                     }
@@ -296,6 +308,14 @@ final class PageContextTabExtension {
             .store(in: &sidebarCancellables)
     }
 
+    /// Results with content always deliver. Empty/nil results deliver only for a forced
+    /// (user-requested) collect — the FE awaits the `getAIChatPageContext` response, so dropping
+    /// them would leave it hanging — and never when they'd replace attached content.
+    static func shouldDeliverCollectionResult(_ result: AIChatPageContextData?, wasForced: Bool, cached: AIChatPageContextData?) -> Bool {
+        if result?.content.isEmpty == false { return true }
+        return wasForced && cached?.content.isEmpty != false
+    }
+
     /// This is the main place where page context handling happens.
     /// We always cache the latest context, and if sidebar is open,
     /// we're passing the context to it.
@@ -305,12 +325,13 @@ final class PageContextTabExtension {
             return
         }
         shouldForceContextCollection = false
+        let gatedPageContext = forcingNonAttachableIfNeeded(pageContext)
         // Page-type signals (for duck.ai page shortcuts) ride the collected payload from
         // Content-Scope-Scripts (includePageTypeSignals) and are preserved through favicon encoding.
-        cachedPageContext = replaceFaviconURLWithEncodedData(pageContext)
+        cachedPageContext = replaceFaviconURLWithEncodedData(gatedPageContext)
         if let chatViewController = aiChatSessionStore.sessions[tabID]?.chatViewController {
             chatViewController.setPageContext(cachedPageContext)
-            if pageContext != nil, pageContext?.attachable != false {
+            if gatedPageContext != nil, gatedPageContext?.attachable != false {
                 // New attachable context pushed — reset the consumed flag so navigation
                 // won't clear it until the next prompt is submitted.
                 hasContextBeenConsumedByChat = false
@@ -318,7 +339,29 @@ final class PageContextTabExtension {
         }
     }
 
+    private func forcingNonAttachableIfNeeded(_ pageContext: AIChatPageContextData?) -> AIChatPageContextData? {
+        guard let pageContext,
+              case .url(let url, _, _) = content,
+              preventedAttachReason(for: url) != nil,
+              pageContext.attachable != false else {
+            return pageContext
+        }
+        return AIChatPageContextData(
+            title: pageContext.title,
+            favicon: pageContext.favicon,
+            url: pageContext.url,
+            content: pageContext.content,
+            truncated: pageContext.truncated,
+            fullContentLength: pageContext.fullContentLength,
+            attachable: false,
+            tabId: pageContext.tabId,
+            pageTypeSignals: pageContext.pageTypeSignals,
+            attached: pageContext.attached
+        )
+    }
+
     private func deliverContextToCurrentSidebar() {
+        reportSidebarOpenExtractionOutcome()
         if let cachedPageContext, isContextCollectionEnabled {
             Task { await self.handle(cachedPageContext) }
         } else {
@@ -337,16 +380,41 @@ final class PageContextTabExtension {
         return PageContextAttachabilityPolicy(settings: blocklist)
     }
 
-    /// Extraction telemetry (success / failure / prevented / timeout) is only reported once the
+    /// Extraction measurement (success / failure / prevented / timeout) is only reported once the
     /// `aiPageContextBlocklist` privacy config is present
     private var isExtractionMeasurementEnabled: Bool {
         currentAttachabilityPolicy() != nil
     }
 
+    private var isSidebarVisibleForTab: Bool {
+        aiChatSessionStore.sessions[tabID]?.chatViewController != nil
+    }
+
+    private func reportSidebarOpenExtractionOutcome() {
+        guard isSidebarVisibleForTab,
+              isExtractionMeasurementEnabled,
+              !didReportExtractionForCurrentNavigation,
+              !didReportSidebarOpenOutcomeForCurrentNavigation else {
+            return
+        }
+        didReportSidebarOpenOutcomeForCurrentNavigation = true
+
+        guard case .url(let url, _, _) = content else {
+            fireExtractionPixel(.prevented(PageContextExtractionOutcome.internalPageCategory), trigger: .navigation, latency: nil)
+            return
+        }
+        if let reason = preventedAttachReason(for: url) {
+            deliverPreventedContext(for: url, reason: reason, trigger: .navigation)
+            return
+        }
+        if isContextCollectionEnabled, !extractionResolver.hasPendingCollections {
+            collectPageContextIfNeeded(trigger: .auto)
+        }
+    }
+
     private func preventedAttachReason(for url: URL) -> String? {
         guard let policy = currentAttachabilityPolicy() else { return nil }
-        let mimeType = lastMainFrameResponse.flatMap { $0.url == url ? $0.mimeType : nil }
-        let verdict = policy.verdict(url: url, mimeType: mimeType)
+        let verdict = policy.verdict(url: url, mimeType: mainFrameMIMECache[url])
         return verdict.isAttachable ? nil : (verdict.preventionReason ?? PageContextExtractionOutcome.internalPageCategory)
     }
 
@@ -364,9 +432,9 @@ final class PageContextTabExtension {
         fireExtractionPixel(.prevented(reason), trigger: trigger, latency: nil)
     }
 
-    private func fireExtractionOutcome(for pageContext: AIChatPageContextData?) {
+    private func fireExtractionOutcome(for result: PageContextCollectionResult) {
         // No pending request → duplicate or a collect we didn't initiate; skip the pixel.
-        guard let resolution = extractionResolver.resolve(pageContext: pageContext) else {
+        guard let resolution = extractionResolver.resolve(result) else {
             return
         }
         fire(resolution)
@@ -380,6 +448,8 @@ final class PageContextTabExtension {
                                      trigger: PageContextExtractionTrigger,
                                      latency: PageContextExtractionLatencyBucket?) {
         guard isExtractionMeasurementEnabled else { return }
+        guard isSidebarVisibleForTab else { return }
+        if case .failure(.emptyContent) = outcome, trigger != .userRequest { return }
         // A navigation triggers several automatic collects (navigation re-collect + signals-only);
         // report only the first. User/setting collects (.userRequest / .auto) always report.
         if trigger == .navigation || trigger == .tabContent {
@@ -409,6 +479,13 @@ final class PageContextTabExtension {
             deliverPreventedContext(for: url, reason: reason, trigger: trigger)
             return
         }
+        // Skip automatic collects while the webview still shows the previous document (debounced
+        // `Tab.$content` races the swap on back/forward); the settled-navigation re-collect covers it.
+        if trigger == .navigation || trigger == .tabContent,
+           let webViewURL = webView?.url, webViewURL != url {
+            Logger.aiChat.debug("⏭️ PageContext gate: document mismatch (webView=\(webViewURL.host ?? "nil", privacy: .public) content=\(url.host ?? "nil", privacy: .public)), skipping collect")
+            return
+        }
         guard let pageContextUserScript, webView != nil else {
             Logger.aiChat.debug("⚠️ PageContext gate: no webview/user script, cannot collect host=\(url.host ?? "nil", privacy: .public)")
             fireExtractionPixel(.failure(.noWebView), trigger: trigger, latency: nil)
@@ -431,6 +508,18 @@ final class PageContextTabExtension {
         pendingSelectionContexts.append(selectionWithEncodedFavicon(selection))
         // Defer so a just-revealed sidebar's chat VC exists before we push (matches page-context timing).
         Task { @MainActor [weak self] in self?.flushPendingSelectionContexts() }
+    }
+
+    /// Forces page-context collection into the sidebar regardless of the auto-send preference — the
+    /// native equivalent of the web app's "attach page content" request. Used by "Ask About Page".
+    @MainActor
+    func requestPageContextAttachment() {
+        // Non-URL pages (NTP, settings, …) have nothing to attach. Bail without arming the force flag:
+        // collectPageContextIfNeeded would bail too, leaving the flag set and leaking into the next
+        // navigation (auto-attaching that page even with auto-send off).
+        guard case .url = content else { return }
+        shouldForceContextCollection = true
+        collectPageContextIfNeeded(trigger: .userRequest)
     }
 
     /// Stamps the source page's base64-encoded favicon onto the selection (raw favicon URLs get
@@ -474,55 +563,44 @@ final class PageContextTabExtension {
     /// Determines the appropriate action when the browser tab navigates to a new URL
     /// while the sidebar has an active chat session.
     private enum NavigationContextAction {
-        /// Auto-collect is enabled — collect and push the new page's context.
+        /// Auto-send is enabled — collect and push the new page's context.
         case collectNewContext
-        /// A prompt was already submitted — send nil so the frontend shows "Add page content".
+        /// Auto-send is off — send nil so the previous attachment is dropped and the frontend shows
+        /// "Add page content" for the new page.
         case sendNavigationSignal
-        /// Context hasn't been consumed yet — keep the existing attached context.
-        case keepExistingContext
     }
 
-    private func navigationAction(autoCollectEnabled: Bool, contextConsumed: Bool, fromAttachablePage: Bool = true) -> NavigationContextAction {
-        if autoCollectEnabled {
-            return .collectNewContext
-        } else if contextConsumed || !fromAttachablePage {
-            return .sendNavigationSignal
-        } else {
-            return .keepExistingContext
-        }
+    private func navigationAction(autoCollectEnabled: Bool) -> NavigationContextAction {
+        autoCollectEnabled ? .collectNewContext : .sendNavigationSignal
     }
 
-    /// Handles navigation events for the multiple page contexts feature.
-    /// When enabled, pushes new page context or signals the frontend depending on settings.
-    private func handleNavigationForMultipleContexts(from previousContent: Tab.TabContent?, to newContent: Tab.TabContent) {
-        guard featureFlagger.isFeatureOn(.aiChatMultiplePageContexts),
-              case .url(let newURL, _, _) = newContent,
+    /// Keeps the open sidebar's page attachment in sync when the tab navigates to a different URL.
+    /// With auto-send on the new page is (re)collected; with auto-send off the previous attachment is
+    /// dropped so it never lingers from the page the user navigated away from.
+    private func updateSidebarPageContextOnNavigation(from previousContent: Tab.TabContent?, to newContent: Tab.TabContent) {
+        guard case .url(let newURL, _, _) = newContent,
               let session = aiChatSessionStore.sessions[tabID],
               session.state.presentationMode != .hidden,
-              session.chatViewController != nil else {
+              let chatViewController = session.chatViewController else {
             return
         }
 
-        // When the previous page was also a URL, skip if the URL hasn't changed.
-        // When coming from a non-URL page (NTP, settings, etc.) always proceed —
-        // the attachability just changed from false to true, so the sidebar needs a signal.
-        let previousWasURL: Bool
+        // Skip if the URL didn't actually change (in-page updates coming from a URL to the same URL).
         if case .url(let oldURL, _, _) = previousContent {
             guard oldURL != newURL else { return }
-            previousWasURL = true
-        } else {
-            previousWasURL = false
         }
 
-        switch navigationAction(autoCollectEnabled: isContextCollectionEnabled,
-                                contextConsumed: hasContextBeenConsumedByChat,
-                                fromAttachablePage: previousWasURL) {
+        switch navigationAction(autoCollectEnabled: isContextCollectionEnabled) {
         case .collectNewContext:
-            collectPageContextIfNeeded(trigger: .navigation)
+            // The proactive collect-on-navigation is the multiple-page-contexts feature; when it's off
+            // the auto-send path still re-collects the new page via navigationDidFinish.
+            if featureFlagger.isFeatureOn(.aiChatMultiplePageContexts) {
+                collectPageContextIfNeeded(trigger: .navigation)
+            }
         case .sendNavigationSignal:
-            session.chatViewController?.setPageContext(nil)
-        case .keepExistingContext:
-            break
+            // Auto-send off: navigating away invalidates the attached page, so drop it. Runs regardless
+            // of the multiple-page-contexts flag so a manual "Ask About Page" attachment can't linger.
+            chatViewController.setPageContext(nil)
         }
     }
 
@@ -600,9 +678,7 @@ final class PageContextTabExtension {
             return
         }
         pendingSignalsOnlyCollection = true
-        extractionResolver.requested(trigger: .tabContent)
         pageContextUserScript.collect()
-        scheduleCollectionTimeout()
     }
 
     /// Delivers a signals-only payload from a collected context: keeps the Content-Scope-Scripts
@@ -632,10 +708,42 @@ final class PageContextTabExtension {
     }
 }
 
+/// Main-frame MIME types keyed by URL (bounded FIFO). Back/forward cache restores don't re-fire
+/// `decidePolicy(for navigationResponse:)`, so a single "last response" slot loses the MIME on the way back.
+struct MainFrameMIMECache {
+    private var mimeTypes: [URL: String] = [:]
+    private var order: [URL] = []
+    private let capacity: Int
+
+    init(capacity: Int = 100) {
+        self.capacity = capacity
+    }
+
+    subscript(url: URL) -> String? {
+        mimeTypes[url]
+    }
+
+    /// Empty/nil MIMEs are ignored — the attachability gate falls back to the URL extension for those.
+    mutating func record(_ mimeType: String?, for url: URL) {
+        guard let mimeType, !mimeType.isEmpty else { return }
+        if mimeTypes[url] == nil {
+            order.append(url)
+            if order.count > capacity {
+                mimeTypes[order.removeFirst()] = nil
+            }
+        }
+        mimeTypes[url] = mimeType
+    }
+}
+
 protocol PageContextProtocol: AnyObject, NavigationResponder {
     /// Appends a user text selection to the sidebar's selection-context list. See the
     /// implementation in `PageContextTabExtension` for buffering/lifecycle semantics.
     @MainActor func appendSelectionContext(_ selection: AIChatSelectionContextData)
+
+    /// Force-collects and attaches the current page's context to the sidebar, bypassing the
+    /// auto-send preference (used by the tab-bar "Ask About Page" action).
+    @MainActor func requestPageContextAttachment()
 }
 
 extension PageContextTabExtension: PageContextProtocol, TabExtension {
@@ -649,6 +757,37 @@ extension PageContextTabExtension: NavigationResponder {
     /// update on same-tab navigation. Mirrors Windows' `NavigationCompleted` re-collect.
     func navigationDidFinish(_ navigation: Navigation) {
         guard !isLoadedInSidebar else { return }
+        reCollectForSettledNavigation(navigation)
+    }
+
+    /// Back/forward cache restores can end in `didFail` (NSURLError -999) after committing — the page
+    /// is displayed but `navigationDidFinish` never fires, so committed failures must re-collect too.
+    func navigation(_ navigation: Navigation, didFailWith error: WKError) {
+        guard !isLoadedInSidebar, navigation.isCommitted else { return }
+        reCollectForSettledNavigation(navigation)
+    }
+
+    /// Collects only once the debounced `Tab.$content` matches this navigation — on fast loads it may
+    /// still reference the previous page, and collecting then would extract the wrong document.
+    @MainActor
+    private func reCollectForSettledNavigation(_ navigation: Navigation) {
+        guard case .url(let url, _, _) = content, url == navigation.url else {
+            pendingSettledNavigationURL = navigation.url
+            return
+        }
+        pendingSettledNavigationURL = nil
+        collectPageContextIfNeeded(trigger: .navigation)
+        requestSignalsOnlyCollectionIfNeeded()
+    }
+
+    private func runPendingSettledNavigationReCollectIfNeeded() {
+        guard let pendingURL = pendingSettledNavigationURL else { return }
+        guard case .url(let url, _, _) = content, url == pendingURL else {
+            pendingSettledNavigationURL = nil
+            return
+        }
+        pendingSettledNavigationURL = nil
+        guard !extractionResolver.hasPendingCollections else { return }
         collectPageContextIfNeeded(trigger: .navigation)
         requestSignalsOnlyCollectionIfNeeded()
     }
@@ -656,7 +795,7 @@ extension PageContextTabExtension: NavigationResponder {
     @MainActor
     func decidePolicy(for navigationResponse: NavigationResponse) async -> NavigationResponsePolicy? {
         guard !isLoadedInSidebar, navigationResponse.isForMainFrame else { return .next }
-        lastMainFrameResponse = (navigationResponse.url, navigationResponse.response.mimeType)
+        mainFrameMIMECache.record(navigationResponse.response.mimeType, for: navigationResponse.url)
         Logger.aiChat.debug("📄 PageContext MIME captured: \(navigationResponse.response.mimeType ?? "nil", privacy: .public) host=\(navigationResponse.url.host ?? "nil", privacy: .public)")
         return .next
     }

@@ -17,7 +17,9 @@
 //
 
 import AppKit
+import Combine
 import Common
+import FeatureFlags_macOS
 import FoundationExtensions
 import PixelKitTestingUtilities
 import PrivacyConfig
@@ -74,8 +76,19 @@ struct FireCoordinatorTests {
         let currentTime = CACurrentMediaTime()
         pixelFiring.expectedFireCalls = [
             .init(pixel: AIChatPixel.aiChatDeleteHistoryRequested, frequency: .dailyAndCount),
+            .init(pixel: GeneralPixel.fireButton(option: .tab), frequency: .standard),
+            .init(
+                pixel: FireDialogPixel.burn(
+                    .currentTab(
+                        .init(pinned: false, closeTab: true, clearHistory: true, clearSiteData: true)
+                    )
+                ),
+                frequency: .dailyAndCount,
+                doNotEnforcePrefix: true
+            ),
             .init(pixel: GeneralPixel.fireButtonFirstBurn, frequency: .legacyDailyNoSuffix),
-            .init(pixel: GeneralPixel.fireButton(option: .tab), frequency: .standard)
+            .init(pixel: FireDialogPixel.fireStarted, frequency: .dailyAndCount, doNotEnforcePrefix: true),
+            .init(pixel: FireDialogPixel.fireStartedInSession, frequency: .dailyAndCount, doNotEnforcePrefix: true)
         ]
 
         let result = FireDialogResult(clearingOption: .currentTab,
@@ -92,8 +105,19 @@ struct FireCoordinatorTests {
     @Test(.timeLimit(.minutes(1))) func testHandleDialogResult_FiresExpectedPixels_ForCurrentTab_NotIncludingChatHistory() async throws {
         let coordinator = makeCoordinator()
         pixelFiring.expectedFireCalls = [
+            .init(pixel: GeneralPixel.fireButton(option: .tab), frequency: .standard),
+            .init(
+                pixel: FireDialogPixel.burn(
+                    .currentTab(
+                        .init(pinned: false, closeTab: true, clearHistory: true, clearSiteData: true)
+                    )
+                ),
+                frequency: .dailyAndCount,
+                doNotEnforcePrefix: true
+            ),
             .init(pixel: GeneralPixel.fireButtonFirstBurn, frequency: .legacyDailyNoSuffix),
-            .init(pixel: GeneralPixel.fireButton(option: .tab), frequency: .standard)
+            .init(pixel: FireDialogPixel.fireStarted, frequency: .dailyAndCount, doNotEnforcePrefix: true),
+            .init(pixel: FireDialogPixel.fireStartedInSession, frequency: .dailyAndCount, doNotEnforcePrefix: true)
         ]
 
         let result = FireDialogResult(clearingOption: .currentTab,
@@ -111,8 +135,19 @@ struct FireCoordinatorTests {
         let coordinator = makeCoordinator()
         pixelFiring.expectedFireCalls = [
             .init(pixel: AIChatPixel.aiChatDeleteHistoryRequested, frequency: .dailyAndCount),
+            .init(pixel: GeneralPixel.fireButton(option: .window), frequency: .standard),
+            .init(
+                pixel: FireDialogPixel.burn(
+                    .currentWindow(
+                        .init(hasPinnedTabs: !tabCollectionViewModel.pinnedTabs.isEmpty, closeWindow: true, clearHistory: true, clearSiteData: true)
+                    )
+                ),
+                frequency: .dailyAndCount,
+                doNotEnforcePrefix: true
+            ),
             .init(pixel: GeneralPixel.fireButtonFirstBurn, frequency: .legacyDailyNoSuffix),
-            .init(pixel: GeneralPixel.fireButton(option: .window), frequency: .standard)
+            .init(pixel: FireDialogPixel.fireStarted, frequency: .dailyAndCount, doNotEnforcePrefix: true),
+            .init(pixel: FireDialogPixel.fireStartedInSession, frequency: .dailyAndCount, doNotEnforcePrefix: true)
         ]
 
         let result = FireDialogResult(clearingOption: .currentWindow,
@@ -129,8 +164,19 @@ struct FireCoordinatorTests {
     @Test(.timeLimit(.minutes(1))) func testHandleDialogResult_FiresExpectedPixels_ForCurrentWindow_NotIncludingChatHistory() async throws {
         let coordinator = makeCoordinator()
         pixelFiring.expectedFireCalls = [
+            .init(pixel: GeneralPixel.fireButton(option: .window), frequency: .standard),
+            .init(
+                pixel: FireDialogPixel.burn(
+                    .currentWindow(
+                        .init(hasPinnedTabs: !tabCollectionViewModel.pinnedTabs.isEmpty, closeWindow: true, clearHistory: true, clearSiteData: true)
+                    )
+                ),
+                frequency: .dailyAndCount,
+                doNotEnforcePrefix: true
+            ),
             .init(pixel: GeneralPixel.fireButtonFirstBurn, frequency: .legacyDailyNoSuffix),
-            .init(pixel: GeneralPixel.fireButton(option: .window), frequency: .standard)
+            .init(pixel: FireDialogPixel.fireStarted, frequency: .dailyAndCount, doNotEnforcePrefix: true),
+            .init(pixel: FireDialogPixel.fireStartedInSession, frequency: .dailyAndCount, doNotEnforcePrefix: true)
         ]
 
         let result = FireDialogResult(clearingOption: .currentWindow,
@@ -148,8 +194,19 @@ struct FireCoordinatorTests {
         let coordinator = makeCoordinator()
         pixelFiring.expectedFireCalls = [
             .init(pixel: AIChatPixel.aiChatDeleteHistoryRequested, frequency: .dailyAndCount),
+            .init(pixel: GeneralPixel.fireButton(option: .allSites), frequency: .standard),
+            .init(
+                pixel: FireDialogPixel.burn(
+                    .allData(
+                        .init(hasPinnedTabs: !windowControllersManager.pinnedTabsManagerProvider.arePinnedTabsEmpty, closeWindows: true, clearHistory: true, clearSiteData: true, clearAIChats: true)
+                    )
+                ),
+                frequency: .dailyAndCount,
+                doNotEnforcePrefix: true
+            ),
             .init(pixel: GeneralPixel.fireButtonFirstBurn, frequency: .legacyDailyNoSuffix),
-            .init(pixel: GeneralPixel.fireButton(option: .allSites), frequency: .standard)
+            .init(pixel: FireDialogPixel.fireStarted, frequency: .dailyAndCount, doNotEnforcePrefix: true),
+            .init(pixel: FireDialogPixel.fireStartedInSession, frequency: .dailyAndCount, doNotEnforcePrefix: true)
         ]
 
         let result = FireDialogResult(clearingOption: .allData,
@@ -166,8 +223,19 @@ struct FireCoordinatorTests {
     @Test(.timeLimit(.minutes(1))) func testHandleDialogResult_FiresExpectedPixels_ForAllData_NotIncludingChatHistory() async throws {
         let coordinator = makeCoordinator()
         pixelFiring.expectedFireCalls = [
+            .init(pixel: GeneralPixel.fireButton(option: .allSites), frequency: .standard),
+            .init(
+                pixel: FireDialogPixel.burn(
+                    .allData(
+                        .init(hasPinnedTabs: !windowControllersManager.pinnedTabsManagerProvider.arePinnedTabsEmpty, closeWindows: true, clearHistory: true, clearSiteData: true, clearAIChats: false)
+                    )
+                ),
+                frequency: .dailyAndCount,
+                doNotEnforcePrefix: true
+            ),
             .init(pixel: GeneralPixel.fireButtonFirstBurn, frequency: .legacyDailyNoSuffix),
-            .init(pixel: GeneralPixel.fireButton(option: .allSites), frequency: .standard)
+            .init(pixel: FireDialogPixel.fireStarted, frequency: .dailyAndCount, doNotEnforcePrefix: true),
+            .init(pixel: FireDialogPixel.fireStartedInSession, frequency: .dailyAndCount, doNotEnforcePrefix: true)
         ]
 
         let result = FireDialogResult(clearingOption: .allData,
@@ -178,6 +246,95 @@ struct FireCoordinatorTests {
         await coordinator.handleDialogResult(result, tabCollectionViewModel: tabCollectionViewModel, isAllHistorySelected: true)
 
         #expect(pixelFiring.actualFireCalls == pixelFiring.expectedFireCalls)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1))) func testHandleDialogResult_ForCurrentTab_ShowsTabScopedDeletingDataMessage() async throws {
+        let messages = await deletingDataMessages(for: makeDialogResult(clearingOption: .currentTab), isAllHistorySelected: true)
+
+        #expect(messages == [UserText.fireDialogDeletingDataFromThisTab])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1))) func testHandleDialogResult_ForAllData_ShowsAllDataDeletingDataMessage() async throws {
+        let messages = await deletingDataMessages(for: makeDialogResult(clearingOption: .allData), isAllHistorySelected: true)
+
+        #expect(messages == [UserText.fireDialogDeletingAllData])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1))) func testHandleDialogResult_ForAllDataKeepingTabsAndWindows_ShowsAllDataDeletingDataMessage() async throws {
+        // This burns all windows as an entity instead of burning all data.
+        let result = makeDialogResult(clearingOption: .allData, includeTabsAndWindows: false)
+        let messages = await deletingDataMessages(for: result, isAllHistorySelected: true)
+
+        #expect(messages == [UserText.fireDialogDeletingAllData])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1))) func testHandleDialogResult_ForCurrentWindow_ShowsGenericDeletingDataMessage() async throws {
+        let messages = await deletingDataMessages(for: makeDialogResult(clearingOption: .currentWindow), isAllHistorySelected: true)
+
+        #expect(messages == [UserText.fireDialogDeletingData])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1))) func testBurnVisitsFromToday_ShowsGenericDeletingDataMessage() async throws {
+        // Burning today's visits burns all windows, but it only deletes the selected visits.
+        let messages = await deletingDataMessages { coordinator in
+            await coordinator.fireViewModel.fire.burnVisits([],
+                                                            except: coordinator.fireViewModel.fire.fireproofDomains,
+                                                            isToday: true,
+                                                            closeWindows: true,
+                                                            clearSiteData: true,
+                                                            clearChatHistory: false)
+        }
+
+        #expect(messages == [UserText.fireDialogDeletingData])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1))) func testHandleDialogResult_WhenFireDialogIsNotSimplified_ShowsGenericDeletingDataMessage() async throws {
+        let messages = await deletingDataMessages(for: makeDialogResult(clearingOption: .currentTab),
+                                                  isAllHistorySelected: true,
+                                                  isFireDialogSimplified: false)
+
+        #expect(messages == [UserText.fireDialogDeletingData])
+    }
+
+    private func makeDialogResult(clearingOption: FireDialogViewModel.ClearingOption, includeTabsAndWindows: Bool = true) -> FireDialogResult {
+        FireDialogResult(clearingOption: clearingOption,
+                         includeHistory: true,
+                         includeTabsAndWindows: includeTabsAndWindows,
+                         includeCookiesAndSiteData: true,
+                         includeChatHistory: false)
+    }
+
+    /// Collects the text of the burning progress dialog for all burns started by `result`.
+    private func deletingDataMessages(for result: FireDialogResult,
+                                      isAllHistorySelected: Bool,
+                                      isFireDialogSimplified: Bool = true) async -> [String] {
+        await deletingDataMessages(isFireDialogSimplified: isFireDialogSimplified) { coordinator in
+            await coordinator.handleDialogResult(result,
+                                                 tabCollectionViewModel: tabCollectionViewModel,
+                                                 isAllHistorySelected: isAllHistorySelected)
+        }
+    }
+
+    /// Collects the text of the burning progress dialog for all burns started by `burn`.
+    private func deletingDataMessages(isFireDialogSimplified: Bool = true,
+                                      during burn: @MainActor (FireCoordinator) async -> Void) async -> [String] {
+        let coordinator = makeCoordinator()
+        let featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.fireDialogSimplified.rawValue: isFireDialogSimplified])
+        var messages = [String]()
+        let cancellable = coordinator.fireViewModel.fire.burningDataPublisher
+            .compactMap { $0?.deletingDataMessage(featureFlagger: featureFlagger) }
+            .sink { messages.append($0) }
+        defer { cancellable.cancel() }
+
+        await burn(coordinator)
+
+        return messages
     }
 
     @available(iOS 16, macOS 13, *)

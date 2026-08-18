@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Common
 import Foundation
 import Persistence
 import PersistenceTestingUtils
@@ -66,6 +67,52 @@ final class SERPSettingsProvidingTests: XCTestCase {
         XCTAssertEqual(provider.serpSettingValue(forKey: SERPSettingsConstants.hideAIGeneratedImagesKey), "1")
     }
 
+    // MARK: - Safe Search
+
+    func testSafeSearch_returnsDefault_whenKeyAbsent() {
+        XCTAssertEqual(provider.safeSearch, .moderate)
+        XCTAssertNil(provider.serpSettingValue(forKey: SERPSettingsConstants.safeSearch))
+    }
+
+    func testSettingSafeSearch_persistsRawEncoding() {
+        provider.safeSearch = .strict
+        XCTAssertEqual(provider.safeSearch, .strict)
+        XCTAssertEqual(provider.serpSettingValue(forKey: SERPSettingsConstants.safeSearch), "1")
+
+        provider.safeSearch = .off
+        XCTAssertEqual(provider.safeSearch, .off)
+        XCTAssertEqual(provider.serpSettingValue(forKey: SERPSettingsConstants.safeSearch), "-2")
+    }
+
+    func testSettingSafeSearchToDefault_persistsExplicitValue() {
+        provider.safeSearch = .off
+        XCTAssertEqual(provider.serpSettingValue(forKey: SERPSettingsConstants.safeSearch), "-2")
+
+        provider.safeSearch = .moderate // the default — still written explicitly, so native stays authoritative
+        XCTAssertEqual(provider.serpSettingValue(forKey: SERPSettingsConstants.safeSearch), "-1")
+        XCTAssertEqual(provider.safeSearch, .moderate)
+    }
+
+    func testUnrecognizedSafeSearchRawValue_fallsBackToDefault() {
+        provider.setSERPSetting("99", forKey: SERPSettingsConstants.safeSearch)
+        XCTAssertEqual(provider.safeSearch, .moderate)
+    }
+
+    func testSafeSearch_recognizesModerateWireValue() {
+        provider.setSERPSetting("-1", forKey: SERPSettingsConstants.safeSearch)
+        XCTAssertEqual(provider.safeSearch, .moderate)
+    }
+
+    func testSafeSearchMergeWrite_preservesSiblingKeys() {
+        provider.searchAssistFrequency = .often   // kbe "3"
+        provider.safeSearch = .strict             // kp "1"
+
+        XCTAssertEqual(provider.serpSettingValue(forKey: SERPSettingsConstants.searchAssistKey), "3")
+        XCTAssertEqual(provider.serpSettingValue(forKey: SERPSettingsConstants.safeSearch), "1")
+        XCTAssertEqual(provider.searchAssistFrequency, .often)
+        XCTAssertEqual(provider.safeSearch, .strict)
+    }
+
     // MARK: - Merge does not clobber siblings
 
     func testMergeWrite_preservesSiblingKey() {
@@ -78,23 +125,26 @@ final class SERPSettingsProvidingTests: XCTestCase {
         XCTAssertTrue(provider.hideAIGeneratedImages)
     }
 
-    // MARK: - Setting the default removes the key
+    // MARK: - Setting the default persists the value explicitly
 
-    func testSettingSearchAssistToDefault_removesKey() {
+    // Every synced setting always persists the explicit value, even the default. Keeping the key
+    // present makes native authoritative at the SERP's load-time read, so an open SERP can't fall
+    // back to a stale localStorage cache and clobber a native write.
+    func testSettingSearchAssistToDefault_persistsExplicitValue() {
         provider.searchAssistFrequency = .often
-        XCTAssertNotNil(provider.serpSettingValue(forKey: SERPSettingsConstants.searchAssistKey))
+        XCTAssertEqual(provider.serpSettingValue(forKey: SERPSettingsConstants.searchAssistKey), "3")
 
-        provider.searchAssistFrequency = .sometimes // the default
-        XCTAssertNil(provider.serpSettingValue(forKey: SERPSettingsConstants.searchAssistKey))
+        provider.searchAssistFrequency = .sometimes // the default — still written explicitly
+        XCTAssertEqual(provider.serpSettingValue(forKey: SERPSettingsConstants.searchAssistKey), "2")
         XCTAssertEqual(provider.searchAssistFrequency, .sometimes)
     }
 
-    func testSettingHideAIGeneratedImagesToDefault_removesKey() {
+    func testSettingHideAIGeneratedImagesToDefault_persistsExplicitValue() {
         provider.hideAIGeneratedImages = true
-        XCTAssertNotNil(provider.serpSettingValue(forKey: SERPSettingsConstants.hideAIGeneratedImagesKey))
+        XCTAssertEqual(provider.serpSettingValue(forKey: SERPSettingsConstants.hideAIGeneratedImagesKey), "1")
 
-        provider.hideAIGeneratedImages = false // the default (show)
-        XCTAssertNil(provider.serpSettingValue(forKey: SERPSettingsConstants.hideAIGeneratedImagesKey))
+        provider.hideAIGeneratedImages = false // the default (show) — still written explicitly
+        XCTAssertEqual(provider.serpSettingValue(forKey: SERPSettingsConstants.hideAIGeneratedImagesKey), "-1")
         XCTAssertFalse(provider.hideAIGeneratedImages)
     }
 
@@ -102,8 +152,8 @@ final class SERPSettingsProvidingTests: XCTestCase {
         provider.searchAssistFrequency = .often
         provider.hideAIGeneratedImages = true
 
-        provider.hideAIGeneratedImages = false // default, removes kbj only
-        XCTAssertNil(provider.serpSettingValue(forKey: SERPSettingsConstants.hideAIGeneratedImagesKey))
+        provider.hideAIGeneratedImages = false // default, rewrites kbj explicitly; leaves kbe untouched
+        XCTAssertEqual(provider.serpSettingValue(forKey: SERPSettingsConstants.hideAIGeneratedImagesKey), "-1")
         XCTAssertEqual(provider.serpSettingValue(forKey: SERPSettingsConstants.searchAssistKey), "3")
     }
 
@@ -131,15 +181,29 @@ final class SERPSettingsProvidingTests: XCTestCase {
         let snapshot = provider.currentNativeSettingsSnapshot()
         XCTAssertEqual(snapshot[SERPSettingsConstants.searchAssistKey], "2")
         XCTAssertEqual(snapshot[SERPSettingsConstants.hideAIGeneratedImagesKey], "-1")
+        XCTAssertEqual(snapshot[SERPSettingsConstants.safeSearch], "-1")
     }
 
     func testSnapshot_reflectsStoredValues() {
         provider.searchAssistFrequency = .often
         provider.hideAIGeneratedImages = true
+        provider.safeSearch = .strict
 
         let snapshot = provider.currentNativeSettingsSnapshot()
         XCTAssertEqual(snapshot[SERPSettingsConstants.searchAssistKey], "3")
         XCTAssertEqual(snapshot[SERPSettingsConstants.hideAIGeneratedImagesKey], "1")
+        XCTAssertEqual(snapshot[SERPSettingsConstants.safeSearch], "1")
+    }
+
+    func testSnapshot_includesSafeSearch_atEachValue() {
+        provider.safeSearch = .off
+        XCTAssertEqual(provider.currentNativeSettingsSnapshot()[SERPSettingsConstants.safeSearch], "-2")
+
+        provider.safeSearch = .strict
+        XCTAssertEqual(provider.currentNativeSettingsSnapshot()[SERPSettingsConstants.safeSearch], "1")
+
+        provider.safeSearch = .moderate
+        XCTAssertEqual(provider.currentNativeSettingsSnapshot()[SERPSettingsConstants.safeSearch], "-1")
     }
 
     // MARK: - Change notification
@@ -168,5 +232,47 @@ final class SERPSettingsProvidingTests: XCTestCase {
         provider.storeSERPSettings(settings: [SERPSettingsConstants.searchAssistKey: "3"])
 
         XCTAssertEqual(notifications, 0)
+    }
+
+    // MARK: - Tolerant decode of non-string scalar values
+
+    func testReadsNumericScalarValues_asStrings_withoutFiringReadError() throws {
+        var firedReadError = false
+        provider.eventMapper = EventMapping<SERPSettingsError> { event, _, _, _ in
+            if case .keyValueStoreReadError = event { firedReadError = true }
+        }
+
+        try mockKeyValueStore.set(#"{"kbe":3,"kbj":1}"#, forKey: SERPSettingsConstants.serpSettingsStorage)
+
+        XCTAssertEqual(provider.searchAssistFrequency, .often)
+        XCTAssertTrue(provider.hideAIGeneratedImages)
+        XCTAssertEqual(provider.serpSettingValue(forKey: SERPSettingsConstants.searchAssistKey), "3")
+        XCTAssertFalse(firedReadError)
+    }
+
+    func testReadsNegativeNumericScalar_asString() throws {
+        try mockKeyValueStore.set(#"{"kbj":-1}"#, forKey: SERPSettingsConstants.serpSettingsStorage)
+
+        XCTAssertFalse(provider.hideAIGeneratedImages) // "-1" means show
+        XCTAssertEqual(provider.serpSettingValue(forKey: SERPSettingsConstants.hideAIGeneratedImagesKey), "-1")
+    }
+
+    func testMixedStringAndNumericBlob_readsAllKeys() throws {
+        try mockKeyValueStore.set(#"{"kbe":"3","kbj":1}"#, forKey: SERPSettingsConstants.serpSettingsStorage)
+
+        XCTAssertEqual(provider.searchAssistFrequency, .often)
+        XCTAssertTrue(provider.hideAIGeneratedImages)
+    }
+
+    func testGenuinelyCorruptBlob_firesReadError_andFallsBackToDefaults() throws {
+        var firedReadError = false
+        provider.eventMapper = EventMapping<SERPSettingsError> { event, _, _, _ in
+            if case .keyValueStoreReadError = event { firedReadError = true }
+        }
+
+        try mockKeyValueStore.set("this is not json", forKey: SERPSettingsConstants.serpSettingsStorage)
+
+        XCTAssertEqual(provider.searchAssistFrequency, .sometimes) // default
+        XCTAssertTrue(firedReadError)
     }
 }

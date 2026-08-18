@@ -19,6 +19,9 @@
 import Cocoa
 import Combine
 import AIChat
+import AppKitExtensions
+import UniformTypeIdentifiers
+import DesignResourcesKitIcons
 import PixelKit
 import PrivacyConfig
 
@@ -33,6 +36,11 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         static let dividerTopOffset: CGFloat = -10.0
         static let placeholderLeadingOffset: CGFloat = 10
         static let placeholderLegacyLeadingOffset: CGFloat = 9
+        static let textLeadingOffset: CGFloat = 10
+        static let duckAILogoSize: CGFloat = 24
+        static let duckAILogoToTextSpacing: CGFloat = 12
+        static let duckAILogoLeadingOffset: CGFloat = 5
+        static let duckAILogoLegacyLeadingOffset: CGFloat = 3
     }
 
     private let backgroundView = MouseBlockingBackgroundView()
@@ -43,6 +51,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     private let textContainer = NSTextContainer()
     private let textView: FocusableTextView
     private let placeholderLabel = ClickThroughLabel(labelWithString: "")
+    private let duckAILogoView = ClickThroughImageView()
     private let dividerView = ColorView(frame: .zero)
     private let omnibarController: AIChatOmnibarController
     /// Coordinator for the `@`-mention tab picker. `nil` until the first detected token, so
@@ -69,6 +78,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     private var isUpdatingProgrammatically = false
 
     private let featureFlagger: FeatureFlagger
+    private let isBurner: Bool
     let themeManager: ThemeManaging
     var themeUpdateCancellable: AnyCancellable?
     private var appearanceCancellable: AnyCancellable?
@@ -81,9 +91,10 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     /// Used by the orchestrating layer to re-focus into duck.ai mode when the user clicks the prompt while unfocused.
     var onTextViewDidBecomeFirstResponder: (() -> Void)?
 
-    init(omnibarController: AIChatOmnibarController, themeManager: ThemeManaging, featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
+    init(omnibarController: AIChatOmnibarController, themeManager: ThemeManaging, isBurner: Bool, featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
         self.omnibarController = omnibarController
         self.themeManager = themeManager
+        self.isBurner = isBurner
         self.featureFlagger = featureFlagger
 
         textStorage.addLayoutManager(layoutManager)
@@ -111,6 +122,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
 
     override func viewDidLoad() {
         super.viewDidLoad()
+
         setupUI()
         setupTextViewDelegate()
         subscribeToThemeChanges()
@@ -199,6 +211,16 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
 
         let placeholderLeadingConstant = themeManager.isAppRebranded ? Constants.placeholderLeadingOffset : Constants.placeholderLegacyLeadingOffset
 
+        let showsDuckAILogo = omnibarController.surface.showsDuckAILogo
+        if showsDuckAILogo {
+            setUpDuckAILogo()
+        }
+
+        let scrollViewLeading = showsDuckAILogo
+            ? scrollView.leadingAnchor.constraint(equalTo: duckAILogoView.trailingAnchor,
+                                                  constant: Constants.duckAILogoToTextSpacing - Constants.textLeadingOffset)
+            : scrollView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor)
+
         NSLayoutConstraint.activate([
             backgroundView.topAnchor.constraint(equalTo: view.topAnchor),
             backgroundView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -211,7 +233,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
             containerView.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor),
 
             scrollView.topAnchor.constraint(equalTo: containerView.topAnchor),
-            scrollView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
+            scrollViewLeading,
             scrollView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
             scrollView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -Constants.bottomPadding),
 
@@ -223,6 +245,25 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
 
             placeholderLabel.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor, constant: placeholderLeadingConstant),
             placeholderLabel.topAnchor.constraint(equalTo: scrollView.topAnchor, constant: 9),
+        ])
+    }
+
+    private func setUpDuckAILogo() {
+        duckAILogoView.translatesAutoresizingMaskIntoConstraints = false
+        duckAILogoView.image = DesignSystemImages.Color.Size24.duckAI
+        duckAILogoView.imageScaling = .scaleProportionallyUpOrDown
+        duckAILogoView.hitTestForwardingTarget = textView
+        duckAILogoView.setAccessibilityIdentifier("AIChatOmnibarTextContainerViewController.duckAILogoView")
+        duckAILogoView.setAccessibilityElement(false)
+        containerView.addSubview(duckAILogoView)
+
+        let leadingConstant = themeManager.isAppRebranded ? Constants.duckAILogoLeadingOffset : Constants.duckAILogoLegacyLeadingOffset
+
+        NSLayoutConstraint.activate([
+            duckAILogoView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: leadingConstant),
+            duckAILogoView.centerYAnchor.constraint(equalTo: placeholderLabel.centerYAnchor),
+            duckAILogoView.widthAnchor.constraint(equalToConstant: Constants.duckAILogoSize),
+            duckAILogoView.heightAnchor.constraint(equalToConstant: Constants.duckAILogoSize)
         ])
     }
 
@@ -385,6 +426,12 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         heightDidChange?(desiredHeight)
     }
 
+    /// The text's own height, without the bottom band `calculateDesiredPanelHeight()` reserves for a
+    /// host that overlaps its controls into it, as the address bar does.
+    var promptContentHeight: CGFloat {
+        calculateDesiredPanelHeight() - Constants.bottomPadding
+    }
+
     func calculateDesiredPanelHeight() -> CGFloat {
         guard let layoutManager = textView.layoutManager,
               let textContainer = textView.textContainer else {
@@ -453,8 +500,8 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
                 view.window?.makeFirstResponder(customToggleControl)
                 return true
             }
-            return false
-
+            // The Prompt Bar has no toggle to hop through, so Tab would never leave the prompt.
+            return focusFirstControlInCycle()
         }
 
         return false
@@ -540,17 +587,23 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
 
     /// Called by the owner when the toggle receives a Tab press in AI Chat mode.
     func handleToggleTabPressed() {
-        guard let containerVC = containerViewController else {
+        if !focusFirstControlInCycle() {
             focusTextViewWithCursorAtEnd()
-            return
         }
+    }
+
+    private func focusFirstControlInCycle() -> Bool {
+        guard let containerVC = containerViewController else { return false }
+
         if containerVC.firstAvailableToolButtonForFocus() != nil {
             containerVC.makeFirstAvailableToolButtonFirstResponder()
-        } else if containerVC.isModelPickerButtonAvailableForFocus {
-            containerVC.makeModelPickerButtonFirstResponder()
-        } else {
-            focusTextViewWithCursorAtEnd()
+            return true
         }
+        if containerVC.isModelPickerButtonAvailableForFocus {
+            containerVC.makeModelPickerButtonFirstResponder()
+            return true
+        }
+        return false
     }
 
     private func wireTabCycle() {
@@ -629,16 +682,9 @@ extension AIChatOmnibarTextContainerViewController: FocusableTextViewNavigationD
         return true
     }
 
-    func textViewDidReceiveImageDrop(_ fileURLs: [URL]) -> Bool {
-        guard let containerVC = containerViewController else { return false }
-        guard omnibarController.isOmnibarToolsEnabled else { return false }
-        let canAttach = omnibarController.isImageGenerationMode || omnibarController.selectedModelSupportsImageUpload
-        guard canAttach else { return false }
-        var accepted = false
-        for url in fileURLs where containerVC.addImageAttachmentFromDrop(url) {
-            accepted = true
-        }
-        return accepted
+    func textViewDidReceiveAttachmentDrop(_ fileURLs: [URL]) -> Bool {
+        guard let containerVC = containerViewController, omnibarController.isOmnibarToolsEnabled else { return false }
+        return containerVC.addAttachmentsFromDrop(fileURLs)
     }
 }
 
@@ -655,15 +701,23 @@ protocol FocusableTextViewNavigationDelegate: AnyObject {
     /// Called when user presses Enter while a suggestion is selected
     /// - Returns: `true` if a suggestion was selected, `false` otherwise
     func textViewDidRequestSelectCurrentSuggestion() -> Bool
-    /// Called when the user drops image files onto the text view
-    /// - Returns: `true` if any images were accepted, `false` otherwise
-    func textViewDidReceiveImageDrop(_ fileURLs: [URL]) -> Bool
+    /// Called when the user drops files onto the text view
+    /// - Returns: `true` if any were accepted, `false` otherwise
+    func textViewDidReceiveAttachmentDrop(_ fileURLs: [URL]) -> Bool
 }
 
 /// NSTextField label that forwards mouse hits to a configured target view.
 /// Used for the prompt placeholder: clicks on the placeholder area hit-test to the text view so the prompt takes focus,
 /// rather than falling through the empty scroll-view area to the address bar behind (which would switch to search mode).
 private final class ClickThroughLabel: NSTextField {
+    weak var hitTestForwardingTarget: NSView?
+
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        return hitTestForwardingTarget ?? nil
+    }
+}
+
+private final class ClickThroughImageView: NSImageView {
     weak var hitTestForwardingTarget: NSView?
 
     override func hitTest(_ point: NSPoint) -> NSView? {
@@ -698,42 +752,45 @@ private final class FocusableTextView: NSTextView {
         return didResign
     }
 
-    private static let imageExtensions: Set<String> = ["jpg", "jpeg", "png", "gif", "webp", "heic", "heif", "bmp", "tiff", "tif"]
-
     func registerForImageDrop() {
         registerForDraggedTypes([.fileURL])
     }
 
     override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
-        if !Self.imageFileURLs(from: sender).isEmpty {
+        if !Self.attachableFileURLs(from: sender).isEmpty {
             return .copy
         }
         return super.draggingEntered(sender)
     }
 
     override func draggingUpdated(_ sender: NSDraggingInfo) -> NSDragOperation {
-        if !Self.imageFileURLs(from: sender).isEmpty {
+        if !Self.attachableFileURLs(from: sender).isEmpty {
             return .copy
         }
         return super.draggingUpdated(sender)
     }
 
     override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
-        let imageURLs = Self.imageFileURLs(from: sender)
-        if !imageURLs.isEmpty,
-           navigationDelegate?.textViewDidReceiveImageDrop(imageURLs) == true {
+        let fileURLs = Self.attachableFileURLs(from: sender)
+        if !fileURLs.isEmpty,
+           navigationDelegate?.textViewDidReceiveAttachmentDrop(fileURLs) == true {
             return true
         }
         return super.performDragOperation(sender)
     }
 
-    private static func imageFileURLs(from draggingInfo: NSDraggingInfo) -> [URL] {
+    /// Images and PDFs, matching what the attach menu offers. Anything else falls through to the
+    /// text view, which drops a file path into the prompt.
+    private static func attachableFileURLs(from draggingInfo: NSDraggingInfo) -> [URL] {
         guard let urls = draggingInfo.draggingPasteboard.readObjects(forClasses: [NSURL.self], options: [
             .urlReadingFileURLsOnly: true
         ]) as? [URL] else {
             return []
         }
-        return urls.filter { imageExtensions.contains($0.pathExtension.lowercased()) }
+        return urls.filter { url in
+            guard let type = UTType(filenameExtension: url.pathExtension.lowercased()) else { return false }
+            return type.conforms(to: .image) || type.conforms(to: .pdf)
+        }
     }
 
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool {

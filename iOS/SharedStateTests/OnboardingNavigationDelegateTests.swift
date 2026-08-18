@@ -136,6 +136,7 @@ final class OnboardingNavigationDelegateTests: XCTestCase {
             aiChatSettings: aiChatSettings,
             aiChatAddressBarExperience: AIChatAddressBarExperience(featureFlagger: featureFlagger,
                                                                    aiChatSettings: aiChatSettings),
+            profileStateManager: profileStateManager,
             themeManager: MockThemeManager(),
             keyValueStore: keyValueStore,
             customConfigurationURLProvider: MockCustomURLProvider()

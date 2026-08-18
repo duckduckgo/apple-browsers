@@ -120,6 +120,9 @@ jobs:
           ref: ${{ steps.params.outputs.branch }}
           persist-credentials: true
 
+      - name: Print macOS version
+        run: sw_vers
+
       - name: Parse job details from PR comments
         if: steps.params.outputs.needs_comment_parsing == 'true'
         id: parse_comment

@@ -25,6 +25,7 @@ import DesignResourcesKitIcons
 import SwiftUI
 import UIKit
 import PrivacyConfig
+import FeatureFlags_iOS
 
 /// A view controller displaying the list of recent AI chats
 final class AIChatHistoryListViewController: UIViewController {
@@ -366,7 +367,7 @@ final class AIChatHistoryListViewController: UIViewController {
         config.imageToTextPadding = Constants.iconTextSpacing
 
         cell.contentConfiguration = config
-        cell.backgroundColor = UIColor(designSystemColor: .surface)
+        cell.backgroundColor = UIColor(singleUseColor: .groupedListContentBackground)
 
         configureDeleteActionIfNeeded(cell: cell, chat: chat)
     }
@@ -398,7 +399,7 @@ final class AIChatHistoryListViewController: UIViewController {
         config.imageToTextPadding = Constants.iconTextSpacing
 
         cell.contentConfiguration = config
-        cell.backgroundColor = UIColor(designSystemColor: .surface)
+        cell.backgroundColor = UIColor(singleUseColor: .groupedListContentBackground)
 
         // The "View all chats" row never offers per-row deletion.
         if let cell = cell as? DuckAISuggestionTableViewCell {

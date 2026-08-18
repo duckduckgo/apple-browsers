@@ -20,6 +20,7 @@
 import PrivacyConfig
 import Core
 import Combine
+import FeatureFlags_iOS
 
 final class MockFeatureFlagger: FeatureFlagger {
 
@@ -28,8 +29,26 @@ final class MockFeatureFlagger: FeatureFlagger {
 
     var enabledFeatureFlags: [FeatureFlag] = []
 
+    private let updatesSubject = PassthroughSubject<Void, Never>()
+
+    /// The number of subscriptions established on `updatesPublisher`.
+    ///
+    /// Driven by Combine when a subscriber actually attaches, not by reads of `updatesPublisher`,
+    /// so storing the publisher and subscribing twice counts twice, while composing a chain that
+    /// reads the property once and subscribes once counts once.
+    private(set) var updatesPublisherSubscriptionCount = 0
+
     var updatesPublisher: AnyPublisher<Void, Never> {
-        PassthroughSubject().eraseToAnyPublisher()
+        updatesSubject
+            .handleEvents(receiveSubscription: { [weak self] _ in
+                self?.updatesPublisherSubscriptionCount += 1
+            })
+            .eraseToAnyPublisher()
+    }
+
+    /// Call this method in tests to trigger the updates publisher
+    func triggerUpdate() {
+        updatesSubject.send()
     }
 
     public init(internalUserDecider: InternalUserDecider = DefaultInternalUserDecider(store: MockInternalUserStoring()),

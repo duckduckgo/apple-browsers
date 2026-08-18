@@ -44,6 +44,8 @@ public struct AIChatModel {
     public let supportedReasoningEffort: [AIChatReasoningEffort]
     /// Per-effort access metadata from the `/models` API. `nil` when the backend omits the field.
     public let reasoningEffortAccess: [AIChatReasoningEffortAccess]?
+    /// Suggested usage label returned by the `/models` API.
+    public let label: AIChatModelLabel?
 
     public enum ModelProvider {
         case openAI
@@ -58,6 +60,12 @@ public struct AIChatModel {
         !supportedFileTypes.isEmpty
     }
 
+    /// Whether this is an advanced (paid-tier) model — i.e. not available on the free tier. Single source
+    /// of truth for the basic/advanced split in the model picker and the "PLUS" marker in onboarding.
+    public var isAdvanced: Bool {
+        !accessTier.contains(AIChatUserTier.free.rawValue)
+    }
+
     public init(
         id: String,
         name: String,
@@ -70,7 +78,8 @@ public struct AIChatModel {
         entityHasAccess: Bool,
         accessTier: [String] = [],
         supportedReasoningEffort: [AIChatReasoningEffort] = [],
-        reasoningEffortAccess: [AIChatReasoningEffortAccess]? = nil
+        reasoningEffortAccess: [AIChatReasoningEffortAccess]? = nil,
+        label: AIChatModelLabel? = nil
     ) {
         self.id = id
         self.name = name
@@ -84,6 +93,7 @@ public struct AIChatModel {
         self.accessTier = accessTier
         self.supportedReasoningEffort = supportedReasoningEffort
         self.reasoningEffortAccess = reasoningEffortAccess
+        self.label = label
     }
 
     public func supportsTool(_ tool: AIChatRAGTool) -> Bool {

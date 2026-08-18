@@ -46,7 +46,7 @@ import FoundationExtensions
 /// - Platform-specific AI chat preference providers
 /// - Message origin rules for security validation
 /// - Optional event mapper for error analytics
-public protocol SERPSettingsProviding {
+public protocol SERPSettingsProviding: AnyObject {
 
     /// Builds message origin rules for validating SERP communication.
     ///
@@ -130,7 +130,7 @@ public extension SERPSettingsProviding {
         }
 
         do {
-            return try JSONDecoder().decode([String: String].self, from: data)
+            return try decodeSettingsBlob(from: data)
         } catch {
             eventMapper?.fire(.keyValueStoreReadError, error: error, parameters: SERPSettingsReadFailure.decode.pixelParameters)
             return nil
@@ -154,8 +154,10 @@ public extension SERPSettingsProviding {
     ///
     /// - Parameter settings: Complete dictionary of SERP settings to store
     func storeSERPSettings(settings: [String: Any]) {
+        // Store as strings to match the read contract (the SERP may send scalars as JSON numbers).
+        let settingsAsStrings = settings.compactMapValues(Self.settingStringValue(from:))
         do {
-            let data = try JSONSerialization.data(withJSONObject: settings, options: [])
+            let data = try JSONSerialization.data(withJSONObject: settingsAsStrings, options: [])
             let stringData = String(data: data, encoding: .utf8)
             do {
                 try keyValueStore?.set(stringData, forKey: SERPSettingsConstants.serpSettingsStorage)
@@ -218,14 +220,18 @@ public extension SERPSettingsProviding {
     func currentNativeSettingsSnapshot() -> [String: String] {
         return [
             SERPSettingsConstants.searchAssistKey: searchAssistFrequency.rawValue,
-            SERPSettingsConstants.hideAIGeneratedImagesKey: HideAIGeneratedImages.rawValue(forHidden: hideAIGeneratedImages)
+            SERPSettingsConstants.hideAIGeneratedImagesKey: HideAIGeneratedImages.rawValue(forHidden: hideAIGeneratedImages),
+            SERPSettingsConstants.safeSearch: safeSearch.rawValue
         ]
     }
 
     /// Search Assist (`kbe`) frequency, backed by native storage.
     ///
-    /// Reads fall back to `SearchAssistFrequency.defaultValue` when the key is absent. Setting the
-    /// default removes the key, mirroring the SERP (which omits defaults) so the two stay consistent.
+    /// Reads fall back to `SearchAssistFrequency.defaultValue` when the key is absent.The value is
+    /// **always written explicitly — even the default** — rather than removing the key.
+    /// Keeping `kbe` present makes native the source of truth at the SERP's load-time `getNativeSettings` read, so an open SERP can't fall back to a stale `localStorage`
+    /// cache and clobber a native write.
+    /// The SERP still omits the default from its own snapshots, so a later SERP sync may drop the key again which is fine.
     var searchAssistFrequency: SearchAssistFrequency {
         get {
             guard let rawValue = serpSettingValue(forKey: SERPSettingsConstants.searchAssistKey) else {
@@ -239,15 +245,16 @@ public extension SERPSettingsProviding {
             return frequency
         }
         set {
-            let value = newValue == .defaultValue ? nil : newValue.rawValue
-            setSERPSetting(value, forKey: SERPSettingsConstants.searchAssistKey)
+            setSERPSetting(newValue.rawValue, forKey: SERPSettingsConstants.searchAssistKey)
         }
     }
 
     /// Whether AI-generated images are hidden (`kbj`), backed by native storage.
     ///
-    /// Reads fall back to `HideAIGeneratedImages.defaultValue` when the key is absent. Setting the
-    /// default removes the key.
+    /// Reads fall back to `HideAIGeneratedImages.defaultValue` when the key is absent. The value is
+    /// **always written explicitly — even the default** (see `searchAssistFrequency` for the full
+    /// rationale): keeping `kbj` present makes native authoritative at the SERP's load-time read, so
+    /// an open SERP can't fall back to a stale localStorage cache and clobber a native write.
     var hideAIGeneratedImages: Bool {
         get {
             guard let rawValue = serpSettingValue(forKey: SERPSettingsConstants.hideAIGeneratedImagesKey) else {
@@ -261,8 +268,30 @@ public extension SERPSettingsProviding {
             return hidden
         }
         set {
-            let value = newValue == HideAIGeneratedImages.defaultValue ? nil : HideAIGeneratedImages.rawValue(forHidden: newValue)
-            setSERPSetting(value, forKey: SERPSettingsConstants.hideAIGeneratedImagesKey)
+            setSERPSetting(HideAIGeneratedImages.rawValue(forHidden: newValue), forKey: SERPSettingsConstants.hideAIGeneratedImagesKey)
+        }
+    }
+
+    /// Safe Search (`kp`) level, backed by native storage.
+    ///
+    /// Reads fall back to `SafeSearch.defaultValue` when the key is absent. The value is **always
+    /// written explicitly — even the default** (see `searchAssistFrequency` for the full rationale):
+    /// keeping `kp` present makes native authoritative at the SERP's load-time read, so an open SERP
+    /// can't fall back to a stale localStorage cache and clobber a native write.
+    var safeSearch: SafeSearch {
+        get {
+            guard let rawValue = serpSettingValue(forKey: SERPSettingsConstants.safeSearch) else {
+                return .defaultValue
+            }
+            guard let safeSearch = SafeSearch(rawValue: rawValue) else {
+                // Key is present but holds a value the native enum doesn't recognize (contract mismatch).
+                eventMapper?.fire(.unrecognizedValue)
+                return .defaultValue
+            }
+            return safeSearch
+        }
+        set {
+            setSERPSetting(newValue.rawValue, forKey: SERPSettingsConstants.safeSearch)
         }
     }
 
@@ -282,9 +311,30 @@ public extension SERPSettingsProviding {
         }
 
         do {
-            return try JSONDecoder().decode([String: String].self, from: data)
+            return try decodeSettingsBlob(from: data)
         } catch {
             eventMapper?.fire(.keyValueStoreReadError, error: error, parameters: SERPSettingsReadFailure.decode.pixelParameters)
+            return nil
+        }
+    }
+
+    // Coerce scalars to strings so one number-typed key can't fail the whole decode; throw only when the blob isn't a JSON object.
+    private func decodeSettingsBlob(from data: Data) throws -> [String: String] {
+        let object = try JSONSerialization.jsonObject(with: data)
+        guard let rawDictionary = object as? [String: Any] else {
+            throw SERPSettingsBlobError.notAnObject
+        }
+        return rawDictionary.compactMapValues(Self.settingStringValue(from:))
+    }
+
+    // stringValue renders integers without a decimal (2 -> "2", not "2.0"), matching the SERP raw values.
+    private static func settingStringValue(from value: Any) -> String? {
+        switch value {
+        case let string as String:
+            return string
+        case let number as NSNumber:
+            return number.stringValue
+        default:
             return nil
         }
     }
@@ -306,6 +356,10 @@ public extension SERPSettingsProviding {
             return false
         }
     }
+}
+
+private enum SERPSettingsBlobError: Error {
+    case notAnObject
 }
 
 /// Internal for testing purposes

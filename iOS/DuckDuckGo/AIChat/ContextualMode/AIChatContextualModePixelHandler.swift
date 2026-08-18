@@ -29,11 +29,28 @@ protocol AIChatContextualModePixelFiring {
 
     // MARK: - Sheet Actions
     func fireExpandButtonTapped()
+    func fireHeaderTitleTapped()
     func fireNewChatButtonTapped()
     func fireQuickActionSummarizeSelected()
+    func fireQuickActionAskAboutPageShown()
     func fireQuickActionAskAboutPageSelected()
     func fireFireButtonTapped()
     func fireFireButtonConfirmed()
+
+    // MARK: - Address Bar Menu
+    func fireAddressBarMenuShown()
+    func fireAddressBarMenuNewChatSelected()
+    func fireAddressBarMenuAskAboutPageSelected()
+
+    // MARK: - Floating Input
+    func fireFloatingInputDismissedWithoutSubmission()
+    func fireFloatingInputPromotedToSheet()
+
+    // MARK: - Suggested Prompts
+    func fireAskAboutPageSuggestionSelected(pageType: SuggestionsPageType)
+    func fireSuggestionSelected(suggestionId: String, pageType: SuggestionsPageType)
+    func fireSuggestionsViewed(isSmart: Bool, pageType: SuggestionsPageType)
+    func fireSuggestionsContextCollectionTimedOut()
 
     // MARK: - Recent Chats Popup
     func fireRecentChatsPopupDisplayed()
@@ -73,6 +90,8 @@ protocol AIChatContextualModePixelFiring {
 /// **Thread Safety**: This class is thread-safe. All mutable state access is synchronized using a serial queue.
 final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
 
+    private static let askAboutPageSuggestionId = "ask-about-page"
+
     // MARK: - State
 
     /// Serial queue for synchronizing access to mutable state
@@ -84,6 +103,7 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
     // MARK: - Dependencies
 
     private let firePixel: (Pixel.Event) -> Void
+    private let firePixelWithParameters: (Pixel.Event, [String: String]) -> Void
 
     // MARK: - Public Properties
 
@@ -93,8 +113,12 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
 
     // MARK: - Initialization
 
-    init(firePixel: @escaping (Pixel.Event) -> Void = { DailyPixel.fireDailyAndCount(pixel: $0) }) {
+    init(firePixel: @escaping (Pixel.Event) -> Void = { DailyPixel.fireDailyAndCount(pixel: $0) },
+         firePixelWithParameters: @escaping (Pixel.Event, [String: String]) -> Void = {
+             DailyPixel.fireDailyAndCount(pixel: $0, withAdditionalParameters: $1)
+         }) {
         self.firePixel = firePixel
+        self.firePixelWithParameters = firePixelWithParameters
     }
 
     // MARK: - Sheet Lifecycle
@@ -117,6 +141,10 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
         firePixel(.aiChatContextualExpandButtonTapped)
     }
 
+    func fireHeaderTitleTapped() {
+        firePixel(.aiChatContextualHeaderTitleTapped)
+    }
+
     func fireNewChatButtonTapped() {
         firePixel(.aiChatContextualNewChatButtonTapped)
     }
@@ -125,8 +153,32 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
         firePixel(.aiChatContextualQuickActionSummarizeSelected)
     }
 
+    func fireQuickActionAskAboutPageShown() {
+        firePixel(.aiChatContextualQuickActionAskAboutPageShown)
+    }
+
     func fireQuickActionAskAboutPageSelected() {
         firePixel(.aiChatContextualQuickActionAskAboutPageSelected)
+    }
+
+    func fireAddressBarMenuShown() {
+        firePixel(.aiChatContextualAddressBarMenuShown)
+    }
+
+    func fireAddressBarMenuNewChatSelected() {
+        firePixel(.aiChatContextualAddressBarMenuNewChatSelected)
+    }
+
+    func fireAddressBarMenuAskAboutPageSelected() {
+        firePixel(.aiChatContextualAddressBarMenuAskAboutPageSelected)
+    }
+
+    func fireFloatingInputDismissedWithoutSubmission() {
+        firePixel(.aiChatContextualFloatingInputDismissedWithoutSubmission)
+    }
+
+    func fireFloatingInputPromotedToSheet() {
+        firePixel(.aiChatContextualFloatingInputPromotedToSheet)
     }
 
     func fireFireButtonTapped() {
@@ -183,6 +235,30 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
 
     func firePromptSubmittedWithoutContext() {
         firePixel(.aiChatContextualPromptSubmittedWithoutContextNative)
+    }
+
+    // MARK: - Suggested Prompts
+
+    func fireAskAboutPageSuggestionSelected(pageType: SuggestionsPageType) {
+        fireSuggestionSelected(suggestionId: Self.askAboutPageSuggestionId, pageType: pageType)
+    }
+
+    func fireSuggestionSelected(suggestionId: String, pageType: SuggestionsPageType) {
+        firePixelWithParameters(.aiChatContextualSuggestionSelected, [
+            PixelParameters.suggestionId: suggestionId,
+            PixelParameters.suggestionsPageType: pageType.rawValue
+        ])
+    }
+
+    func fireSuggestionsViewed(isSmart: Bool, pageType: SuggestionsPageType) {
+        firePixelWithParameters(.aiChatContextualSuggestionsViewed, [
+            PixelParameters.suggestionsAreSmart: String(isSmart),
+            PixelParameters.suggestionsPageType: pageType.rawValue
+        ])
+    }
+
+    func fireSuggestionsContextCollectionTimedOut() {
+        firePixel(.aiChatContextualSuggestionsContextCollectionTimedOut)
     }
 
     // MARK: - Recent Chats Popup

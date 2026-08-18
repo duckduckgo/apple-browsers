@@ -86,7 +86,7 @@
                 "key": "value",
                 "type": "string",
                 "description": "The selected app icon color",
-                "enum": ["red", "pink", "yellow", "green", "blue", "purple", "black"]
+                "enum": ["red", "pink", "yellow", "green", "blue", "purple", "black", "white"]
             },
             "onboardingInstallType",
             "onboardingDaysSinceInstall",

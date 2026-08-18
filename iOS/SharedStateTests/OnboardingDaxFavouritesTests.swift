@@ -143,7 +143,8 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
                                     voiceSearchHelper: MockVoiceSearchHelper(),
                                     launchSourceManager: MockLaunchSourceManager(),
                                     darkReaderFeatureSettings: MockDarkReaderFeatureSettings(),
-                                    adBlockingAvailability: StubAdBlockingAvailability()
+                                    adBlockingAvailability: StubAdBlockingAvailability(),
+                                    eventHub: StubEventHub()
         )
         let fireExecutor = FireExecutor(tabManager: tabManager,
                                         websiteDataManager: mockWebsiteDataManager,
@@ -220,7 +221,8 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
             privacyStats: MockPrivacyStats(),
             whatsNewRepository: MockWhatsNewMessageRepository(scheduledRemoteMessage: nil),
             darkReaderFeatureSettings: MockDarkReaderFeatureSettings(),
-            onboardingManager: OnboardingManagerMock()
+            onboardingManager: OnboardingManagerMock(),
+            newTabPagePromoCoordinator: MockNewTabPagePromoCoordinator()
         )
         let window = UIWindow(frame: UIScreen.main.bounds)
         window.rootViewController = UIViewController()

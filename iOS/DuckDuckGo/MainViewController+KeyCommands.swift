@@ -18,6 +18,7 @@
 //
 
 import UIKit
+import FeatureFlags_iOS
 
 extension MainViewController {
     
@@ -191,7 +192,11 @@ extension MainViewController {
     
     @objc func keyboardEscape() {
         guard tabSwitcherController == nil else { return }
-        findInPageView?.done()
+        if #available(iOS 16.0, *), featureFlagger.isFeatureOn(.systemFindInPage) {
+            dismissSystemFindNavigator(for: currentTab)
+        } else {
+            findInPageView?.done()
+        }
         hideSuggestionTray()
         performCancel()
     }

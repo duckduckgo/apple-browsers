@@ -691,6 +691,8 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
         // Given
         mockFeatureFlagger.enabledFeatures = [.duckPlayer]
         let youtubeURL = URL(string: "https://www.youtube.com/watch?v=testVideoID")!
+        // Distinct video for .auto so the same-video pill guard doesn't suppress re-presentation.
+        let youtubeURLAuto = URL(string: "https://www.youtube.com/watch?v=testVideoIDAuto")!
         var receivedURL: URL?
         let expectation = self.expectation(description: "URLChangedPublisher should emit")
         expectation.assertForOverFulfill = false // Allow fulfilling multiple times if needed, though we reset
@@ -729,15 +731,15 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
         cancellables.insert(newCancellable)
         
         playerSettings.nativeUIYoutubeMode = .auto
-        _ = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: youtubeURL, isNavigationError: false)
+        _ = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: youtubeURLAuto, isNavigationError: false)
 
         waitForExpectations(timeout: 1.0) { error in
             XCTAssertNil(error, "Expectation should not error for .auto mode")
-            XCTAssertEqual(receivedURL, youtubeURL, "urlChangedPublisher should emit the correct URL for .auto mode")
+            XCTAssertEqual(receivedURL, youtubeURLAuto, "urlChangedPublisher should emit the correct URL for .auto mode")
         }
         XCTAssertTrue(sut.isDuckPlayerPillPresented, "Pill should be presented in .auto mode")
         XCTAssertTrue(sut.isDuckPlayerPresented, "Player should be presented in .auto mode")
-        XCTAssertEqual(sut.lastHandledVideoID, "testVideoID", "lastHandledVideoID should be updated in .auto mode")
+        XCTAssertEqual(sut.lastHandledVideoID, "testVideoIDAuto", "lastHandledVideoID should be updated in .auto mode")
     }
     
     func testHandleURLChange_WhenNavigationError_ReturnsNotHandledAndPausesVideo() {

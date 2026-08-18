@@ -118,6 +118,8 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
         }
     }
 
+    var isImageGenerationSelected: Bool = false
+
     // MARK: - SwitchBarHandling — Publishers
 
     var currentTextPublisher: AnyPublisher<String, Never> {

@@ -19,7 +19,7 @@
 import Foundation
 import PixelKit
 
-enum SyncPromoPixelKitEvent: PixelKitEvent {
+enum SyncPromoPixelKitEvent: PixelKit.Event {
     case syncPromoDisplayed
     case syncPromoConfirmed
     case syncPromoDismissed

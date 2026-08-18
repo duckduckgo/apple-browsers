@@ -7,11 +7,11 @@
         "parameters": ["appVersion"]
     },
     "m_aichat_history_delete_failed": {
-        "description": "Fired when Duck.ai chat history fails to be deleted via fire button",
+        "description": "Fired when Duck.ai chat history fails to be deleted (single chat, multi-select, or delete-all). The error parameters identify the failure cause (e.g. no storage space)",
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion"]
+        "parameters": ["appVersion", "errorDomain", "errorCode", "underlyingErrorDomain", "underlyingErrorCode"]
     },
     "m_aichat_settings_chat_suggestions_turned_on": {
         "description": "Fired when the user enables Chat Suggestions in AI Chat settings",

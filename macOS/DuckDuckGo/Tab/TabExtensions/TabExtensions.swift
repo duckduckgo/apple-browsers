@@ -23,6 +23,7 @@ import Combine
 import Common
 import FoundationExtensions
 import ContentBlocking
+import EventHub
 import Foundation
 import History
 import MaliciousSiteProtection
@@ -92,6 +93,7 @@ protocol TabExtensionDependencies {
     var autoplayPreferences: AutoplayPreferences { get }
     var permissionManager: PermissionManagerProtocol { get }
     var webTrackingProtectionPreferences: WebTrackingProtectionPreferences { get }
+    var eventHub: EventHubManaging { get }
 }
 
 // swiftlint:disable:next large_tuple
@@ -139,15 +141,8 @@ extension TabExtensionsBuilder {
             HTTPSUpgradeTabExtension(httpsUpgrade: dependencies.privacyFeatures.httpsUpgrade)
         }
 
-        let fbProtection = add {
-            FBProtectionTabExtension(privacyConfigurationManager: dependencies.privacyFeatures.contentBlocking.privacyConfigurationManager,
-                                     userContentControllerFuture: args.userContentControllerFuture,
-                                     clickToLoadUserScriptPublisher: userScripts.map(\.?.clickToLoadScript))
-        }
-
         let contentBlocking = add {
-            ContentBlockingTabExtension(fbBlockingEnabledProvider: fbProtection.value,
-                                        userContentControllerFuture: args.userContentControllerFuture,
+            ContentBlockingTabExtension(userContentControllerFuture: args.userContentControllerFuture,
                                         cbaTimeReporter: dependencies.cbaTimeReporter,
                                         privacyConfigurationManager: dependencies.privacyFeatures.contentBlocking.privacyConfigurationManager,
                                         trackerProtectionSubfeaturePublisher: userScripts.map(\.?.trackerProtectionSubfeature),
@@ -159,7 +154,8 @@ extension TabExtensionsBuilder {
             SpecialErrorPageTabExtension(webViewPublisher: args.webViewFuture,
                                          scriptsPublisher: userScripts.compactMap { $0 },
                                          closeTab: args.closeTab,
-                                         maliciousSiteDetector: dependencies.maliciousSiteDetector)
+                                         maliciousSiteDetector: dependencies.maliciousSiteDetector,
+                                         acceptsInsecureCertificates: LaunchOptionsHandler().acceptsInsecureCertificates)
         }
 
         add {
@@ -375,6 +371,14 @@ extension TabExtensionsBuilder {
                 isTabPinned: args.isTabPinned
             )
         }
+
+        add {
+            EventHubTabExtension(
+                tabID: args.tabID,
+                eventHub: dependencies.eventHub,
+                contentScopeUserScriptPublisher: userScripts.compactMap(\.?.contentScopeUserScriptIsolated)
+            )
+        }
     }
 
 }
@@ -392,10 +396,8 @@ extension TestTabExtensionsBuilder {
     // override Tab Extensions initialisation registered in TabExtensionsBuilder.registerExtensions for Unit Tests
     func overrideExtensions(with args: TabExtensionsBuilderArguments, dependencies: TabExtensionDependencies) {
         /** ```
-         let fbProtection = get(FBProtectionTabExtension.self)
-
          let contentBlocking = override {
-         ContentBlockingTabExtension(fbBlockingEnabledProvider: fbProtection.value)
+         ContentBlockingTabExtension(cbaTimeReporter: nil)
          }
          override {
          HistoryTabExtension(trackersPublisher: contentBlocking.trackersPublisher)

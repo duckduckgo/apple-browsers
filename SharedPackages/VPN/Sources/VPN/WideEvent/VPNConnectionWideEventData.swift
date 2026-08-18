@@ -26,7 +26,7 @@ public class VPNConnectionWideEventData: WideEventData {
         featureName: "vpn-connection",
         mobileMetaType: "ios-vpn-connection",
         desktopMetaType: "macos-vpn-connection",
-        version: "1.2.0"
+        version: "1.3.0"
     )
 
     public static let connectionTimeout: TimeInterval = .minutes(15)
@@ -40,6 +40,7 @@ public class VPNConnectionWideEventData: WideEventData {
     public var startupMethod: StartupMethod
     public var isSetup: SetupState
     public var onboardingStatus: MacOSOnboardingStatus?
+    public var entryContext: EntryContext?
 
     // Overall duration
     public var overallDuration: WideEvent.MeasuredInterval?
@@ -62,6 +63,7 @@ public class VPNConnectionWideEventData: WideEventData {
                 startupMethod: StartupMethod,
                 isSetup: SetupState = .unknown,
                 onboardingStatus: MacOSOnboardingStatus? = nil,
+                entryContext: EntryContext? = nil,
                 overallDuration: WideEvent.MeasuredInterval? = nil,
                 browserStartDuration: WideEvent.MeasuredInterval? = nil,
                 controllerStartDuration: WideEvent.MeasuredInterval? = nil,
@@ -79,6 +81,7 @@ public class VPNConnectionWideEventData: WideEventData {
         self.startupMethod = startupMethod
         self.isSetup = isSetup
         self.onboardingStatus = onboardingStatus
+        self.entryContext = entryContext
         self.overallDuration = overallDuration
 
         // Per-step latencies
@@ -148,6 +151,39 @@ extension VPNConnectionWideEventData {
         case unknown
     }
 
+    /// Identifies the in-app surface a user came from when starting the VPN from the status screen. This is
+    /// particularly useful in cases where metrics suggest that the VPN is being started without an auth token -
+    /// this should be impossible, but this will help us detect if it ever happens. Only user-initiated starts
+    /// carry a source; on-demand and system-initiated starts have no entry context at all.
+    public enum ScreenSource: String, Codable, CaseIterable, Equatable {
+        case subscriptionSettings = "subscription_settings"
+        case subscriptionEmail = "subscription_email"
+        case subscriptionFlow = "subscription_flow"
+        case browserMenu = "browser_menu"
+        case toolbar
+        case addressBar = "address_bar"
+        case widget
+        case shortcut
+        case notification
+    }
+
+    public enum TokenState: String, Codable, CaseIterable, Equatable {
+        case present
+        case missing
+        case readError = "read_error"
+    }
+
+    public struct EntryContext: Codable, Equatable {
+        public let source: ScreenSource
+        public let tokenState: TokenState
+
+        public init(source: ScreenSource,
+                    tokenState: TokenState) {
+            self.source = source
+            self.tokenState = tokenState
+        }
+    }
+
     public enum StatusReason: String, Codable, CaseIterable {
         case partialData = "partial_data"
         case timeout
@@ -185,6 +221,8 @@ extension VPNConnectionWideEventData {
             (WideEventParameter.VPNConnectionFeature.startupMethod, startupMethod.rawValue),
             (WideEventParameter.VPNConnectionFeature.isSetup, isSetup.rawValue),
             (WideEventParameter.VPNConnectionFeature.onboardingStatus, onboardingStatus?.rawValue),
+            (WideEventParameter.VPNConnectionFeature.screenSource, entryContext?.source.rawValue),
+            (WideEventParameter.VPNConnectionFeature.screenEntryTokenState, entryContext?.tokenState.rawValue),
             (WideEventParameter.VPNConnectionFeature.latency, overallDuration?.intValue(.noBucketing)),
         ])
 
@@ -249,6 +287,8 @@ extension WideEventParameter {
         static let startupMethod = "feature.data.ext.startup_method"
         static let onboardingStatus = "feature.data.ext.onboarding_status"
         static let isSetup = "feature.data.ext.is_setup"
+        static let screenSource = "feature.data.ext.vpn_screen_source"
+        static let screenEntryTokenState = "feature.data.ext.vpn_screen_entry_token_state"
         static let latency = "feature.data.ext.latency_ms"
 
         static func latency(at step: VPNConnectionWideEventData.Step) -> String {

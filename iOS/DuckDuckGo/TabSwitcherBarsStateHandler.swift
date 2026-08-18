@@ -360,12 +360,12 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
         button.alpha = 0
         button.isUserInteractionEnabled = false
         button.translatesAutoresizingMaskIntoConstraints = false
-        button.frame = CGRect(x: 0, y: 0, width: 34, height: 44)
+        button.frame = CGRect(x: 0, y: 0, width: BrowserChromeButton.toolbarButtonSize, height: BrowserChromeButton.toolbarButtonSize)
         // Match the real toolbar buttons' fixed size so the equal-spacing stack (used when the
         // bottom bar is a BrowserToolbarView) distributes this placeholder identically.
         NSLayoutConstraint.activate([
-            button.widthAnchor.constraint(equalToConstant: 34),
-            button.heightAnchor.constraint(equalToConstant: 44),
+            button.widthAnchor.constraint(equalToConstant: BrowserChromeButton.toolbarButtonSize),
+            button.heightAnchor.constraint(equalToConstant: BrowserChromeButton.toolbarButtonSize),
         ])
 
         let barItem = UIBarButtonItem(customView: button)

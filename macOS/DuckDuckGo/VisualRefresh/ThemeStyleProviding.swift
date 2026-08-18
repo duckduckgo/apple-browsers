@@ -18,7 +18,7 @@
 
 import AppKit
 import Combine
-import FeatureFlags
+import FeatureFlags_macOS
 import NetworkProtectionUI
 import DesignResourcesKit
 import PixelKit
@@ -92,7 +92,7 @@ struct ThemeStyle: ThemeStyleProviding {
             fireWindowGraphic: .burnerWindowGraphicNew,
             addressBarStyleProvider: AddressBarStyleProvidingFactory.buildStyleProvider(featureFlagger: featureFlagger),
             navigationBarStyleProvider: NavigationBarStyleProvidingFactory.buildStyleProvider(),
-            tabStyleProvider: TabStyleProvidingFactory.buildStyleProvider(palette: palette),
+            tabStyleProvider: TabStyleProvidingFactory.buildStyleProvider(featureFlagger: featureFlagger, palette: palette),
             colorsProvider: ColorsProvidingFactory.buildColorsProvider(featureFlagger: featureFlagger, palette: palette),
             iconsProvider: IconsProvidingFactory.buildColorsProvider(featureFlagger: featureFlagger),
             fireButtonSize: 32,

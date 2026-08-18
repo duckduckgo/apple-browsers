@@ -28,22 +28,18 @@ class CompleteDownloadRowViewModel: DownloadsListRowViewModel {
     var fileURL: URL
     var fileSize: String
 
-    private let featureFlagger: FeatureFlagger
     private let pixelFiring: PixelFiring.Type
 
     init(fileURL: URL,
-         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          pixelFiring: PixelFiring.Type = Pixel.self) {
         self.fileURL = fileURL
         self.fileSize = DownloadsListRowViewModel.byteCountFormatter.string(fromByteCount: Int64(fileURL.fileSize))
-        self.featureFlagger = featureFlagger
         self.pixelFiring = pixelFiring
         super.init(filename: fileURL.filename)
     }
 
     func preparePreviewEvent() -> PreparedCalendarEvent? {
         guard #available(iOS 17, *),
-              featureFlagger.isFeatureOn(.icsCalendarLinks),
               fileURL.pathExtension.lowercased() == "ics",
               case .singleEvent(let icsEvent) = ICSFileReader.read(at: fileURL).outcome else {
             return nil

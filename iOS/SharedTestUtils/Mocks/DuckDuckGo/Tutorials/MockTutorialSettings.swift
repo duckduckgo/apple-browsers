@@ -26,6 +26,7 @@ class MockTutorialSettings: TutorialSettings {
     var hasSeenOnboarding: Bool
     var hasSkippedOnboarding: Bool
     var onboardingFlowType: OnboardingFlowType?
+    var onboardingDownloadReason: OnboardingDownloadReason?
 
     init(hasSeenOnboarding: Bool, hasSkippedOnboarding: Bool = false) {
         self.hasSeenOnboarding = hasSeenOnboarding

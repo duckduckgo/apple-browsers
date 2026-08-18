@@ -69,4 +69,10 @@ public enum SERPSettingsConstants {
     /// Stored inside the `serpSettingsStorage` blob. See `HideAIGeneratedImages` for the
     /// value encoding and default.
     public static let hideAIGeneratedImagesKey = "kbj"
+
+    /// SERP settings key for the Safe Search settings.
+    ///
+    /// Stored inside the `serpSettingsStorage` blob. See `SafeSearch` for the
+    /// value encoding and default.
+    public static let safeSearch = "kp"
 }

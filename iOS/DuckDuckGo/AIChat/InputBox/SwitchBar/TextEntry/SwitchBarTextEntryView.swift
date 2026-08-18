@@ -104,22 +104,21 @@ class SwitchBarTextEntryView: UIView {
                 textView.isHidden = false
             }
 
-            // Transfer FR while both controls are visible so UIKit keeps the keyboard alive
-            // without a dismiss/re-present cycle.
-            if wasFirstResponder { _ = becomeFirstResponder() }
+            // Without this the caret animates in from a stale position, because the style flip runs
+            // inside the coordinator's mode-change UIView.animate. updateTextViewHeight stays outside
+            // so the height still animates with that transaction.
+            UIView.performWithoutAnimation {
+                adjustTextViewContentInset()
+                if wasFirstResponder { _ = becomeFirstResponder() }
+                if style == .singleLine && textView.isFirstResponder { _ = textView.resignFirstResponder() }
+                if style == .multiLine && textField.isFirstResponder { _ = textField.resignFirstResponder() }
+                syncActiveControl()
+                updatePlaceholderVisibility()
+                updateKeyboardConfiguration()
+                (usesTextField ? textField : textView).layoutIfNeeded()
+            }
 
-            // If becomeFirstResponder() returned false the outgoing control is still FR.
-            // Resign it explicitly so it is never hidden while holding keyboard focus.
-            if style == .singleLine && textView.isFirstResponder { _ = textView.resignFirstResponder() }
-            if style == .multiLine && textField.isFirstResponder { _ = textField.resignFirstResponder() }
-
-            // Hide the outgoing control — it has now lost first responder.
-            syncActiveControl()
-
-            updatePlaceholderVisibility()
-            updateKeyboardConfiguration()
             updateTextViewHeight()
-            adjustTextViewContentInset()
         }
     }
 
@@ -217,6 +216,7 @@ class SwitchBarTextEntryView: UIView {
 
     private var heightConstraint: NSLayoutConstraint?
     private var buttonsTrailingConstraint: NSLayoutConstraint?
+    private var buttonsCenterYConstraint: NSLayoutConstraint?
     private var placeholderTopConstraint: NSLayoutConstraint?
     private var placeholderCenterYConstraint: NSLayoutConstraint?
 
@@ -236,6 +236,13 @@ class SwitchBarTextEntryView: UIView {
 
     var onTextInputActivated: (() -> Void)?
     var onAIChatShortcutTapped: (() -> Void)?
+
+    /// Injected paste handler for the multi-line (Duck.ai) control. Attachments are Duck.ai-only, so the single-line search field doesn't receive it. Nil leaves default paste.
+    weak var attachmentPasteHandler: AttachmentPasteHandling? {
+        didSet {
+            textView.attachmentPasteHandler = attachmentPasteHandler
+        }
+    }
 
     var isExpandable: Bool = false {
         didSet {
@@ -259,6 +266,13 @@ class SwitchBarTextEntryView: UIView {
     var isUsingIncreasedButtonPadding: Bool = false {
         didSet {
             updateButtonsPadding()
+        }
+    }
+
+    var trailingButtonsRowHeight: CGFloat = Constants.minHeight {
+        didSet {
+            guard trailingButtonsRowHeight != oldValue else { return }
+            updateButtonsVerticalAlignment()
         }
     }
 
@@ -358,6 +372,41 @@ class SwitchBarTextEntryView: UIView {
         textField.delegate = self
         textField.addTarget(self, action: #selector(textFieldEditingChanged), for: .editingChanged)
         syncActiveControl()
+        setupPasteAndGoMenuItem()
+    }
+
+    // MARK: - Paste & Go
+
+    /// iOS 15 fallback; iOS 16+ builds the menu via the `editMenuFor…` delegate methods below.
+    private func setupPasteAndGoMenuItem() {
+        guard #unavailable(iOS 16.0) else { return }
+        UIMenuController.shared.menuItems = [
+            UIMenuItem(title: UserText.actionPasteAndGo, action: #selector(pasteURLAndGo))
+        ]
+    }
+
+    override func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {
+        if action == #selector(pasteURLAndGo) {
+            return UIPasteboard.general.hasStrings
+        }
+        return super.canPerformAction(action, withSender: sender)
+    }
+
+    @objc private func pasteURLAndGo() {
+        guard let pastedText = UIPasteboard.general.string,
+              !pastedText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        handler.updateCurrentText(pastedText)
+        handler.submitText(pastedText)
+    }
+
+    /// Appends "Paste & Go" to the long-press menu when the clipboard has text (iOS 16+).
+    @available(iOS 16.0, *)
+    private func pasteAndGoEditMenu(appendingTo suggestedActions: [UIMenuElement]) -> UIMenu? {
+        guard UIPasteboard.general.hasStrings else { return nil }
+        let pasteAndGo = UIAction(title: UserText.actionPasteAndGo) { [weak self] _ in
+            self?.pasteURLAndGo()
+        }
+        return UIMenu(children: suggestedActions + [pasteAndGo])
     }
 
     // MARK: - Setup Methods
@@ -407,10 +456,16 @@ class SwitchBarTextEntryView: UIView {
         buttonsTrailingConstraint?.constant = isUsingIncreasedButtonPadding ? -Constants.additionalVerticalButtonsPadding : 0
     }
 
+    private func updateButtonsVerticalAlignment() {
+        buttonsCenterYConstraint?.constant = trailingButtonsRowHeight / 2
+    }
+
     private func setupConstraints() {
 
         buttonsTrailingConstraint = buttonsView.trailingAnchor.constraint(equalTo: trailingAnchor)
         buttonsTrailingConstraint?.isActive = true
+        let buttonsCenterY = buttonsView.centerYAnchor.constraint(equalTo: topAnchor, constant: trailingButtonsRowHeight / 2)
+        buttonsCenterYConstraint = buttonsCenterY
         let placeholderTopConstraint = placeholderLabel.topAnchor.constraint(equalTo: textView.topAnchor, constant: Constants.placeholderTopOffset)
         let placeholderCenterYConstraint = placeholderLabel.centerYAnchor.constraint(equalTo: textView.centerYAnchor)
         self.placeholderTopConstraint = placeholderTopConstraint
@@ -435,7 +490,7 @@ class SwitchBarTextEntryView: UIView {
             placeholderLabel.trailingAnchor.constraint(equalTo: buttonsView.leadingAnchor),
 
             // Pin to the top row so the button stays top-right when the field grows multi-line.
-            buttonsView.centerYAnchor.constraint(equalTo: topAnchor, constant: Constants.minHeight / 2)
+            buttonsCenterY
         ])
     }
 
@@ -513,8 +568,11 @@ class SwitchBarTextEntryView: UIView {
         case .search:
             return UserText.searchDuckDuckGo
         case .aiChat:
-            return handler.hasSubmittedPrompt
-                ? UserText.aiChatFollowUpPlaceholder
+            if handler.hasSubmittedPrompt {
+                return UserText.aiChatFollowUpPlaceholder
+            }
+            return handler.isImageGenerationSelected
+                ? UserText.aiChatImageGenerationPlaceholder
                 : UserText.searchInputFieldPlaceholderDuckAI
         }
     }
@@ -928,6 +986,17 @@ class SwitchBarTextEntryView: UIView {
         }
     }
 
+    func moveCaretToStart() {
+        if usesTextField {
+            let start = textField.beginningOfDocument
+            textField.selectedTextRange = textField.textRange(from: start, to: start)
+        } else {
+            let start = textView.beginningOfDocument
+            textView.selectedTextRange = textView.textRange(from: start, to: start)
+            textView.scrollRangeToVisible(NSRange(location: 0, length: 0))
+        }
+    }
+
     func setQueryText(_ text: String) {
         if usesTextField {
             textField.text = text
@@ -1113,9 +1182,19 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
         }
         return true
     }
+
+    @available(iOS 16.0, *)
+    func textView(_ textView: UITextView, editMenuForTextIn range: NSRange, suggestedActions: [UIMenuElement]) -> UIMenu? {
+        pasteAndGoEditMenu(appendingTo: suggestedActions)
+    }
 }
 
 extension SwitchBarTextEntryView: UITextFieldDelegate {
+
+    @available(iOS 16.0, *)
+    func textField(_ textField: UITextField, editMenuForCharactersIn range: NSRange, suggestedActions: [UIMenuElement]) -> UIMenu? {
+        pasteAndGoEditMenu(appendingTo: suggestedActions)
+    }
 
     func textFieldDidBeginEditing(_ textField: UITextField) {
         hasBeenInteractedWith = true

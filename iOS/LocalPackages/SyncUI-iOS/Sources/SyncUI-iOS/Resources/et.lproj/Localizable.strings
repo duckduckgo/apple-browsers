@@ -190,6 +190,12 @@
 /* Prompt title after enabling sync */
 "sync.simplified.another.device.title" = "Kas sünkroonida oma andmed teise seadmega?";
 
+/* Body on the sync-setup prompt explaining the sync-another-device option */
+"sync.simplified.another.device.v2.body" = "Aitame sul seadmed sünkroonida.";
+
+/* Title on the sync-setup prompt asking whether to sync with another device or just this device */
+"sync.simplified.another.device.v2.title" = "Sünkrooni see seade lähedalasuva arvutiga.";
+
 /* Caption displayed on 'auto-download bookmarks icons' toggle. */
 "sync.simplified.bookmarks.section.fetch-favicons.caption" = "Laadib ikoonid veebisaitidelt, mille oled järjehoidjatesse lisanud. Ikoonide allalaadimine toimub sinu võrgus.";
 
@@ -202,14 +208,56 @@
 /* Text shown next to toggle while sync is being set up */
 "sync.simplified.connecting" = "Ühendamine...";
 
+/* Title shown on the connecting screen while Sync & Backup is being set up on this device */
+"sync.simplified.connecting.v2.title" = "Sync & Backup on kõigis sinu seadmetes otspunktkrüpeeritud.";
+
 /* Sync settings 'Copy Recovery Code' button */
 "sync.simplified.copy.recovery.code.button" = "Kopeeri taastamiskood";
 
 /* Sync settings action button title to turn off sync and delete server data */
 "sync.simplified.delete.sync.data.button" = "Lülita sünkroonimine välja ja kustuta serveri andmed";
 
+/* Description on the device-added success screen explaining what the recovery code is for */
+"sync.simplified.device.added.v2.description" = "Kasuta seda koodi oma andmete taastamiseks, kui kaotad juurdepääsu oma seadmetele. Hoia seda kindlas kohas.";
+
+/* Fallback subject used in the device-added success title when the current device's name is unavailable. Substituted as %@ in simplifiedDeviceAddedV2Title. */
+"sync.simplified.device.added.v2.fallback.device.name" = "See seade";
+
+/* Title on the success screen shown after a device joins Sync & Backup. %@ is the name of the current device that was just added. */
+"sync.simplified.device.added.v2.title" = "%@ on lisatud Sync & Backupi.";
+
 /* Sync settings 'Download Recovery Code' button */
 "sync.simplified.download.recovery.code.button" = "Laadi taastamiskood alla";
+
+/* Section header above the get-desktop-browser option in sync setup */
+"sync.simplified.download.section.header" = "Laadi alla";
+
+/* Button to download the recovery code on the recover-your-data screen */
+"sync.simplified.download.your.recovery.code.button" = "Laadi oma taastamiskood alla";
+
+/* Description shown when Sync & Backup is enabled (when AI chat sync is available) */
+"sync.simplified.enabled.header.message" = "Sinu järjehoidjad, automaatse täitmise andmed ja Duck.ai vestlused sünkroonitakse ja varundatakse otspunktkrüpteerimisega.";
+
+/* Description shown when Sync & Backup is enabled */
+"sync.simplified.enabled.header.message.basic" = "Sinu järjehoidjaid ja automaatse täitmise andmeid sünkroonitakse otspunktkrüpteerimisega.";
+
+/* Sync & Backup screen title shown when Sync is enabled */
+"sync.simplified.enabled.header.title" = "DuckDuckGo on sünkroonitud";
+
+/* Label above the example sync code placeholder on the enter-code tab */
+"sync.simplified.enter.code.example.label" = "Näidiskood:";
+
+/* First part of the enter-code instructions, followed by a DuckDuckGo app chip */
+"sync.simplified.enter.code.open" = "Ava oma teises";
+
+/* Button to paste the sync code on the enter-code tab */
+"sync.simplified.enter.code.paste.button" = "Kleebi sünkroonimiskood";
+
+/* Second part of the enter-code instructions. **...** marks the parts shown in the primary text color. */
+"sync.simplified.enter.code.steps" = "Valige **Sync & Backup** › **Sünkrooni teise seadmega** › **Kopeeri tekstikood**.";
+
+/* Title on the enter-code tab of the V2 scan screen */
+"sync.simplified.enter.code.title" = "Sisesta sünkroonimiskood.";
 
 /* Button subtitle to get the DuckDuckGo desktop browser */
 "sync.simplified.get.desktop.browser.subtitle" = "DuckDuckGo Maci ja Windowsi jaoks";
@@ -217,11 +265,53 @@
 /* Button title to get the DuckDuckGo desktop browser. */
 "sync.simplified.get.desktop.browser.title" = "Hangi töölaua brauser";
 
+/* Row label to get the DuckDuckGo desktop browser */
+"sync.simplified.get.our.desktop.browser.title" = "Hangi meie töölaua brauser";
+
+/* Sync setup row label to recover synced data using an existing recovery code */
+"sync.simplified.have.recovery.code.button" = "Mul on taastamiskood";
+
 /* Description of the Sync & Backup feature (when AI chat sync is available) */
 "sync.simplified.header.message" = "Salvesta oma järjehoidjad, automaatse täitmise andmed ja Duck.ai vestlused ning sünkrooni need oma seadmete vahel otspunktkrüpteerimisega.";
 
 /* Description of the Sync & Backup feature */
 "sync.simplified.header.message.basic" = "Salvesta oma järjehoidjad ja automaatse täitmise andmed ning sünkrooni need oma seadmete vahel otspunktkrüpteerimise abil.";
+
+/* Description of the Sync & Backup feature */
+"sync.simplified.header.message.basic.v2" = "Sünkrooni oma automaatse täitmise andmed ja järjehoidjad, otspunktkrüpteeritult kõigis oma DuckDuckGo rakendustes.";
+
+/* Description of the Sync & Backup feature (when AI chat sync is available) */
+"sync.simplified.header.message.v2" = "Sünkrooni ja varunda oma automaatse täitmise andmeid, järjehoidjaid ja Duck.ai vestlusi, mis on otspunktkrüpteeritud kõigis sinu DuckDuckGo rakendustes.";
+
+/* Sync & Backup screen title */
+"sync.simplified.header.title" = "Hoia DuckDuckGo sünkroonis";
+
+/* Footer caption shown under the Remove Device button on the manage device screen */
+"sync.simplified.manage.device.remove.footer" = "See seade ei pääse enam sinu sünkroonitud andmetele ligi, kui selle eemaldad.";
+
+/* Status label shown under a device name on the manage device screen when the device is synced */
+"sync.simplified.manage.device.status.synced" = "Sünkroonitud";
+
+/* Footer caption shown under the Sync & Backup This Device toggle on the manage this device screen */
+"sync.simplified.manage.device.turn.off.footer" = "See seade ei pääse enam sinu sünkroonitud andmetele ligi, kui see on välja lülitatud.";
+
+/* My Devices section header shown when Sync & Backup is enabled */
+"sync.simplified.my.devices.section.header" = "Minu seadmed";
+
+/* Section header above the recovery-code option in sync setup */
+"sync.simplified.recover.synced.data.section.header" = "Taasta sünkroonitud andmed";
+
+/* Title shown on the connecting screen while a device's synced data is being recovered */
+"sync.simplified.recovering.data.v2.title" = "Andmete taastamine";
+
+/* Label above the recovery code on the recover-your-data screen */
+"sync.simplified.recovery.code.label" = "Taastamiskood";
+
+/* Description on the success screen shown after synced data has been recovered on this device */
+"sync.simplified.recovery.complete.v2.description" = "Otspunktkrüpteeritud kõigis sinu seadmetes.";
+
+/* Title on the success screen shown after synced data has been recovered on this device */
+"sync.simplified.recovery.complete.v2.title" = "Sync & Backup lubatud";
 
 /* Sync settings data recovery section footer. %@ is replaced with the URL. */
 "sync.simplified.recovery.section.footer" = "Kasuta seda koodi oma andmete taastamiseks, kui kaotad juurdepääsu sellele seadmele. Funktsiooni Sync & Backup andmeid ei saa taastada pärast 18-kuulist mitteaktiivsust. [Loe edasi](%@)";
@@ -274,8 +364,56 @@
 /* Instructions on sync QR code display screen (will be shown above the DuckDuckGo app icon and name) */
 "sync.simplified.scan-or-view-code.view.instructions" = "Skanni või kopeeri see kood oma teise seadmesse";
 
+/* Close button in the V2 scan screen navigation bar */
+"sync.simplified.scan.v2.close.button" = "Sulge";
+
+/* Chip label on the scan-QR tab referring to the DuckDuckGo desktop app */
+"sync.simplified.scan.v2.qr.app.name" = "DuckDuckGo töölauarakendus";
+
+/* Heading overlaid on the camera on the scan-QR tab of the V2 scan screen */
+"sync.simplified.scan.v2.qr.heading" = "Sünkroonimiseks skanni QR-kood.";
+
+/* First part of the scan-QR instructions, followed by a DuckDuckGo app chip */
+"sync.simplified.scan.v2.qr.open" = "Avatud";
+
+/* Button on the scan-QR intro animation that dismisses the animation and reveals the camera */
+"sync.simplified.scan.v2.qr.ready.button" = "Olen skannimiseks valmis";
+
+/* Second part of the scan-QR instructions. **...** marks the parts shown in the primary text color. */
+"sync.simplified.scan.v2.qr.steps" = "ja ava **Sync & Backup** › **Sünkrooni teise seadmega**";
+
+/* V2 segmented control tab title for entering a code */
+"sync.simplified.scan.v2.tab.enter.code" = "Sisesta kood";
+
+/* V2 segmented control tab title for scanning a QR code */
+"sync.simplified.scan.v2.tab.scan.qr" = "Skanni QR-kood";
+
+/* Status label shown next to the title when Sync & Backup is disabled */
+"sync.simplified.status.off" = "Väljas";
+
+/* Status label shown next to the title when Sync & Backup is enabled */
+"sync.simplified.status.on" = "Sees";
+
+/* Button to copy the text sync code on the sync-code sheet */
+"sync.simplified.sync.code.copy.button" = "Kopeeri tekstikood";
+
+/* First part of the sync-code sheet instructions, followed by a DuckDuckGo app chip */
+"sync.simplified.sync.code.sheet.open" = "Ava teisel seadmel";
+
+/* Second part of the sync-code sheet instructions. **...** marks the parts shown in the primary text color. */
+"sync.simplified.sync.code.sheet.scan" = "Ava **Sync & Backup** › **Sünkrooni teise seadmega** ja skanni see kood:";
+
+/* Navigation title of the sheet that shows this device's sync QR code */
+"sync.simplified.sync.code.sheet.title" = "Skanni või kopeeri kood";
+
+/* Button on the sync-setup prompt to enable Sync & Backup on the current device only, without pairing another device */
+"sync.simplified.this.device.only" = "Sünkrooni ainult see seade";
+
 /* Sync & Backup enabled / disabled toggle title */
 "sync.simplified.toggle.title" = "Sünkroonimine ja varundamine";
+
+/* Sync & Backup enabled / disabled toggle title, referring to the current device */
+"sync.simplified.toggle.title.this.device" = "Sünkrooni see seade";
 
 /* Use Recovery Code sync setup button label */
 "sync.simplified.use.recovery.code.button" = "Kasuta taastamiskoodi";

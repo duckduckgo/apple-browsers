@@ -42,6 +42,9 @@
          location = "group:SERPSettings">
       </FileRef>
       <FileRef
+         location = "group:SnapshotTestingSupport">
+      </FileRef>
+      <FileRef
          location = "group:UIComponents">
       </FileRef>
       <FileRef

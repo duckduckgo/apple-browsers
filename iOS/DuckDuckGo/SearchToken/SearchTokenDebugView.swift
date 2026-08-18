@@ -20,6 +20,7 @@
 import Core
 import PrivacyConfig
 import SwiftUI
+import FeatureFlags_iOS
 
 /// Debug screen for the Search Token (Dindex) experiment.
 ///
@@ -36,7 +37,7 @@ struct SearchTokenDebugView: View {
             Section {
                 NavigationLink {
                     ExperimentCohortView(viewModel: FeatureFlagsSettingViewModel(),
-                                         experiment: FeatureFlag.searchTokenExperiment)
+                                         experiment: FeatureFlag.searchTokenExperimentV3)
                 } label: {
                     Text(verbatim: "Experiment cohort override")
                 }

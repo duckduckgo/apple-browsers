@@ -24,15 +24,14 @@ If you have encountered a security issue, please reach us through https://hacker
 
 ## Contributing Code
 
-We're always open to contributions from the community! There are different approaches depending on how you wish to contribute:
+We're always open to contributions from the community!
 
-* **For bug fixes**, feel free to open a pull request along with an associated issue. Someone from the team will review your issue/change within a few days.
-* **For new features**, start by logging an issue with a description of your idea. Proposals that fit our product direction and timeline will be added to our backlog and labelled accordingly.
-* If you're looking for a bug to work on, see the [Help Wanted](https://github.com/duckduckgo/apple-browsers/issues?q=is%3Aissue+is%3Aopen+label%3A%22Help+Wanted%22) tag for a list of open issues.
+* **Bug fixes:** Please feel free to open an issue to initiate a discussion before submitting any pull requests. If there's already an associated issue created, please add it to the description. Someone from the team will review your issue/change within a few days.
+* **Refactoring and product/feature changes:** These changes won't be considered and pull requests will be closed.
 
 ### Style Guide
 
-We care about clean code. Refer to our [style guide](styleguide/STYLEGUIDE.md).
+We care about clean code. Refer to our [style guide](iOS/styleguide/STYLEGUIDE.md).
 
 ### Commit Messages
 

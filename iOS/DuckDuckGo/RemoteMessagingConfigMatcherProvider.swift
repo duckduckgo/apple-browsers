@@ -30,6 +30,7 @@ import VPN
 import Subscription
 import DDGSync
 import DataBrokerProtection_iOS
+import FeatureFlags_iOS
 
 extension DefaultVPNActivationDateStore: VPNActivationDateProviding {}
 
@@ -119,14 +120,15 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         }
 
         let shouldShowWinBackOfferUrgencyMessage = winBackOfferService.shouldShowUrgencyMessage
-        let isCurrentPIRUser: Bool
+        let isCurrentPIRUser: Bool?
 
         if featureFlagger.isFeatureOn(.personalInformationRemoval) {
             let profileState = profileStateManager.profileState
-            if profileState == .unknown {
-                isCurrentPIRUser = (await dbpRunPrerequisitesDelegate?.validateRunPrerequisites()) ?? false
-            } else {
+            switch profileState {
+            case .hasProfile, .noProfile:
                 isCurrentPIRUser = (await dbpRunPrerequisitesDelegate?.validateRunPrerequisites(usingCachedProfileState: profileState)) ?? false
+            case .unknown:
+                isCurrentPIRUser = nil
             }
         } else {
             isCurrentPIRUser = false

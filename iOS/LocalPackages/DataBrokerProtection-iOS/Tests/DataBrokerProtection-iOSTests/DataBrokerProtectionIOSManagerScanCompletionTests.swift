@@ -73,7 +73,7 @@ final class DataBrokerProtectionIOSManagerScanCompletionTests: XCTestCase {
         hasMatchesError: Error? = nil
     ) async -> IOSManagerTestDependencies {
         isAuthenticated = authenticated
-        let (sut, deps) = DBPContinuedProcessingTestUtils.makeTestIOSManager(
+        let (sut, deps) = DBPIOSManagerTestUtils.makeTestIOSManager(
             freemiumDBPUserStateManagerOverride: stateManager
         )
         deps.database.hasMatchesToReturn = hasMatches
@@ -123,7 +123,7 @@ final class DataBrokerProtectionIOSManagerScanCompletionTests: XCTestCase {
         hasMatchesError: Error? = nil
     ) async -> IOSManagerTestDependencies {
         isAuthenticated = authenticated
-        let (sut, deps) = DBPContinuedProcessingTestUtils.makeTestIOSManager(
+        let (sut, deps) = DBPIOSManagerTestUtils.makeTestIOSManager(
             freemiumDBPUserStateManagerOverride: stateManager
         )
         deps.database.hasMatchesToReturn = hasMatches
@@ -179,7 +179,7 @@ final class DataBrokerProtectionIOSManagerScanCompletionTests: XCTestCase {
 
     func test_pathA_unauthenticated_hasMatchesThrows_leavesFirstScanResultNil() async {
         isAuthenticated = false
-        let (sut, deps) = DBPContinuedProcessingTestUtils.makeTestIOSManager(
+        let (sut, deps) = DBPIOSManagerTestUtils.makeTestIOSManager(
             freemiumDBPUserStateManagerOverride: stateManager
         )
         deps.database.hasMatchesError = ScanCompletionTestError.hasMatchesFailed
@@ -202,7 +202,7 @@ final class DataBrokerProtectionIOSManagerScanCompletionTests: XCTestCase {
 
     func test_pathA_unauthenticated_interruptedRun_doesNotWriteFirstScanResult_butStillFiresMatchesFound() async {
         isAuthenticated = false
-        let (sut, deps) = DBPContinuedProcessingTestUtils.makeTestIOSManager(
+        let (sut, deps) = DBPIOSManagerTestUtils.makeTestIOSManager(
             freemiumDBPUserStateManagerOverride: stateManager
         )
         deps.database.hasMatchesToReturn = true
@@ -228,7 +228,7 @@ final class DataBrokerProtectionIOSManagerScanCompletionTests: XCTestCase {
 
     func test_pathB_unauthenticated_interruptedRun_doesNotWriteFirstScanResult_butStillFiresMatchesFound() async {
         isAuthenticated = false
-        let (sut, deps) = DBPContinuedProcessingTestUtils.makeTestIOSManager(
+        let (sut, deps) = DBPIOSManagerTestUtils.makeTestIOSManager(
             freemiumDBPUserStateManagerOverride: stateManager
         )
         deps.database.hasMatchesToReturn = true

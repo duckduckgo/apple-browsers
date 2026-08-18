@@ -173,7 +173,7 @@ final class IPadOmnibarAttachmentController {
         if let validationError = attachmentPolicy.fileValidationError(for: fileAttachment) {
             DailyPixel.fireDailyAndCount(
                 pixel: .unifiedToggleInputFileValidationFailed,
-                withAdditionalParameters: ["reason": validationError.reason.rawValue, "surface": UnifiedToggleInputPixelSurface.addressBar.rawValue]
+                withAdditionalParameters: ["reason": validationError.reason.rawValue, "surface": UnifiedToggleInputPixelSurface.addressBar.rawValue, "source": "file_picker"]
             )
             attachmentsStripView?.addAttachment(.invalidFile(
                 UnifiedToggleInputInvalidFileAttachment(
@@ -188,7 +188,7 @@ final class IPadOmnibarAttachmentController {
             return
         }
 
-        DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputFileAttached, withAdditionalParameters: ["surface": UnifiedToggleInputPixelSurface.addressBar.rawValue])
+        DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputFileAttached, withAdditionalParameters: ["surface": UnifiedToggleInputPixelSurface.addressBar.rawValue, "source": "file_picker"])
         attachmentsStripView?.addAttachment(.file(fileAttachment))
     }
 
@@ -209,7 +209,7 @@ final class IPadOmnibarAttachmentController {
         }
         DailyPixel.fireDailyAndCount(
             pixel: .unifiedToggleInputFileValidationFailed,
-            withAdditionalParameters: ["reason": reason.rawValue, "surface": UnifiedToggleInputPixelSurface.addressBar.rawValue]
+            withAdditionalParameters: ["reason": reason.rawValue, "surface": UnifiedToggleInputPixelSurface.addressBar.rawValue, "source": "file_picker"]
         )
         attachmentsStripView?.addAttachment(.invalidFile(
             UnifiedToggleInputInvalidFileAttachment(

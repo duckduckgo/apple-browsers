@@ -135,7 +135,7 @@ struct SystemDisabledPermissionInfoView: View {
         + Text(linkSeparator)
         + Text(settingsLinkText)
             .font(.system(size: 12))
-            .foregroundColor(Color(designSystemColor: .textLink))
+            .foregroundColor(Color(designSystemColor: .accentTextPrimary))
     }
 
     private func openSystemSettings() {

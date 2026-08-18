@@ -36,22 +36,25 @@ enum WebViewTransitionGeometry {
             return CGRect(origin: .zero, size: cellBounds)
         }
 
-        let containerAspectRatio = (cellBounds.height - TabViewCell.Constants.cellHeaderHeight) / cellBounds.width
-        let strechedVerically = containerAspectRatio < previewAspectRatio
+        let availableHeight = cellBounds.height - TabViewCell.Constants.cellHeaderHeight
+        let containerAspectRatio = availableHeight / cellBounds.width
 
-        var targetSize = CGSize.zero
-        if strechedVerically {
-            targetSize.width = cellBounds.width
-            targetSize.height = cellBounds.width * previewAspectRatio
-        } else {
-            targetSize.height = cellBounds.height - TabViewCell.Constants.cellHeaderHeight
-            targetSize.width = targetSize.height / previewAspectRatio
+        if previewAspectRatio <= containerAspectRatio {
+            // Wide (landscape) preview: fill the cell height and centre horizontally so the
+            // overflow is centre-cropped (matching `TabViewCell.updatePreviewToDisplay`), rather
+            // than showing only the left edge or leaving empty space.
+            let width = availableHeight / previewAspectRatio
+            return CGRect(x: (cellBounds.width - width) / 2,
+                          y: TabViewCell.Constants.cellHeaderHeight,
+                          width: width,
+                          height: availableHeight)
         }
 
+        // Tall (portrait) preview: fit the cell width and anchor at the top, cropping excess height.
         return CGRect(x: 0,
                       y: TabViewCell.Constants.cellHeaderHeight,
-                      width: targetSize.width,
-                      height: targetSize.height - 8)
+                      width: cellBounds.width,
+                      height: cellBounds.width * previewAspectRatio - 8)
             .insetBy(dx: 4, dy: 4)
     }
 

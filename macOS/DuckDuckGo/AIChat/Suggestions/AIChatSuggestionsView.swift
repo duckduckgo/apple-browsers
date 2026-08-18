@@ -35,7 +35,8 @@ final class AIChatSuggestionsView: NSView {
         static let legacySeparatorHorizontalInset: CGFloat = 12
         static let rowsHorizontalPadding: CGFloat = 6
         static let legacyRowsHorizontalPadding: CGFloat = 4
-        static let bottomPadding: CGFloat = 2
+        /// Space under the last row. Belongs here because this height is what panels are sized from.
+        static let bottomPadding: CGFloat = 8
         static let legacyBottomPadding: CGFloat = 4
         static let viewAllChatsSeparatorBottomPadding: CGFloat = 0
         static let legacyViewAllChatsSeparatorBottomPadding: CGFloat = 8
@@ -73,6 +74,7 @@ final class AIChatSuggestionsView: NSView {
     private var viewAllChatsRowView: AIChatViewAllChatsRowView?
     private var viewAllChatsSeparatorView: NSView?
 
+    var isBurner: Bool = false
     var canDeleteSuggestions: Bool = false
     var onSuggestionClicked: ((AIChatSuggestion) -> Void)?
     var onSuggestionDeleted: ((AIChatSuggestion) -> Void)?
@@ -118,7 +120,7 @@ final class AIChatSuggestionsView: NSView {
     }
 
     private func updateSeparatorColor() {
-        NSAppearance.withAppAppearance {
+        NSAppearance.withAppearance(appearance) {
             separatorView.layer?.backgroundColor = NSColor(designSystemColor: .lines).cgColor
         }
     }
@@ -182,7 +184,7 @@ final class AIChatSuggestionsView: NSView {
 
         // Create new row views
         for (index, suggestion) in suggestions.enumerated() {
-            let rowView = AIChatSuggestionRowView(suggestion: suggestion)
+            let rowView = AIChatSuggestionRowView(suggestion: suggestion, isBurner: isBurner)
             rowView.translatesAutoresizingMaskIntoConstraints = false
 
             rowView.onClick = { [weak self] in
@@ -232,7 +234,7 @@ final class AIChatSuggestionsView: NSView {
             let separator = NSView()
             separator.translatesAutoresizingMaskIntoConstraints = false
             separator.wantsLayer = true
-            NSAppearance.withAppAppearance {
+            NSAppearance.withAppearance(appearance) {
                 separator.layer?.backgroundColor = NSColor(designSystemColor: .lines).cgColor
             }
             stackView.addArrangedSubview(separator)
@@ -242,7 +244,7 @@ final class AIChatSuggestionsView: NSView {
             viewAllChatsSeparatorView = separator
         }
 
-        let viewAllRow = AIChatViewAllChatsRowView()
+        let viewAllRow = AIChatViewAllChatsRowView(isBurner: isBurner)
         viewAllRow.translatesAutoresizingMaskIntoConstraints = false
 
         viewAllRow.onClick = { [weak self] in

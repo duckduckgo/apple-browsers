@@ -22,6 +22,28 @@ public enum DataBrokerProtectionDebugServerDefaults {
     public static let defaultPort: UInt16 = 8474
 }
 
+// MARK: - /api/runtime-status
+
+public struct DBPDebugIOSRuntimeStatus: Encodable, Equatable {
+    public let profileState: String
+    public let vault: VaultStatus
+
+    public init(profileState: String, vault: VaultStatus) {
+        self.profileState = profileState
+        self.vault = vault
+    }
+
+    public struct VaultStatus: Encodable, Equatable {
+        public let initialized: Bool
+        public let lastInitReason: String?
+
+        public init(initialized: Bool, lastInitReason: String?) {
+            self.initialized = initialized
+            self.lastInitReason = lastInitReason
+        }
+    }
+}
+
 // MARK: - /api
 
 public struct DebugSnapshot: Encodable, Equatable {

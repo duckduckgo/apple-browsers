@@ -21,7 +21,7 @@ import Common
 import FoundationExtensions
 import Combine
 import DDGSync
-import FeatureFlags
+import FeatureFlags_macOS
 import SwiftUI
 import Networking
 import Subscription
@@ -46,10 +46,14 @@ final class PreferencesSidebarModel: ObservableObject {
     let tabSwitcherTabs: [Tab.TabContent]
 
     @Published private(set) var sections: [PreferencesSection] = []
+
+    @Published private(set) var scrollTarget: PreferencesScrollAnchor?
+
     @Published var selectedTabIndex: Int = 0
     @Published private(set) var selectedPane: PreferencePaneIdentifier = .defaultBrowser {
         didSet {
             isInitialSelectedPanePixelFired = true
+
             switch selectedPane {
             case .aiChat:
                 pixelFiring?.fire(AIChatPixel.aiChatSettingsDisplayed, frequency: .dailyAndCount)
@@ -59,7 +63,7 @@ final class PreferencesSidebarModel: ObservableObject {
                 pixelFiring?.fire(
                     SettingsPixel.settingsPaneOpened(selectedPane),
                     frequency: .dailyAndStandard,
-                    withAdditionalParameters: ["subscribed": String(subscriptionManager.isUserAuthenticated)]
+                    options: .parameters(["subscribed": String(subscriptionManager.isUserAuthenticated)])
                 )
             default:
                 pixelFiring?.fire(SettingsPixel.settingsPaneOpened(selectedPane), frequency: .daily)
@@ -457,8 +461,20 @@ final class PreferencesSidebarModel: ObservableObject {
                 updatedState = PreferencesSidebarSubscriptionState(shouldHideSubscriptionPurchase: shouldHideSubscriptionPurchase)
             }
 
-            guard self.currentSubscriptionState != updatedState else { return }
+            let isInitialLoad = !hasLoadedInitialSubscriptionState
             hasLoadedInitialSubscriptionState = true
+
+            guard self.currentSubscriptionState != updatedState else {
+                // On the first settled load, correct any pane parked on a subscription-gated pane
+                // even when the resolved state equals the default (e.g. signed-out App Store build
+                // with no products). `adjustSelectedPaneIfNeeded()` was suppressed until now because
+                // the initial state hadn't loaded; without this it would never run for the
+                // equal-to-default case. Later equal refreshes short-circuit here and churn nothing.
+                if isInitialLoad {
+                    self.refreshSections()
+                }
+                return
+            }
 
             if self.currentSubscriptionState.isPersonalInformationRemovalEnabled != updatedState.isPersonalInformationRemovalEnabled {
                 personalInformationRemovalSubject.send(personalInformationRemovalStatus().status ?? .off)
@@ -482,15 +498,24 @@ final class PreferencesSidebarModel: ObservableObject {
         adjustSelectedPaneIfNeeded()
     }
 
+    /// Panes whose visibility and correct target depend on subscription entitlement state, which
+    /// loads asynchronously.
+    private static let subscriptionGatedPanes: Set<PreferencePaneIdentifier> = [
+        .vpn, .personalInformationRemoval, .identityTheftRestoration, .paidAIChat, .subscription, .subscriptionSettings
+    ]
+
     func adjustSelectedPaneIfNeeded() {
         let allPanes = sections.flatMap(\.panes)
 
-        if !allPanes.contains(selectedPane) {
+        // Keep the requested pane as-is until entitlement state has loaded. Adjusting against the
+        // initial (empty) state can bounce a deep link to a subscription-gated pane (e.g. `.vpn`)
+        // onto the subscription pane, depending on whether the entitlements happened to load first.
+        // `refreshSections()` calls this again once the state arrives.
+        if !hasLoadedInitialSubscriptionState, Self.subscriptionGatedPanes.contains(selectedPane) {
+            return
+        }
 
-            // Required to keep selection since subscription settings need to load its initial state
-            if selectedPane == .subscriptionSettings && !hasLoadedInitialSubscriptionState {
-                return
-            }
+        if !allPanes.contains(selectedPane) {
 
             // Adjust Subscription selection when subscribed/unsubscribed state changes
             if selectedPane == .subscriptionSettings, allPanes.contains(.subscription) {
@@ -512,6 +537,8 @@ final class PreferencesSidebarModel: ObservableObject {
 
     @MainActor
     func selectPane(_ identifier: PreferencePaneIdentifier) {
+        resetScrollRequest()
+
         // Open a new tab in case of special panes
         if identifier.rawValue.hasPrefix(URL.NavigationalScheme.https.rawValue),
            let url = URL(string: identifier.rawValue) {
@@ -520,8 +547,11 @@ final class PreferencesSidebarModel: ObservableObject {
                                                                   newTab: true)
         }
 
-        // Required to keep selection since subscription settings need to load its initial state
-        if identifier == .subscriptionSettings && !hasLoadedInitialSubscriptionState {
+        // Subscription-gated panes are absent from `sections` until entitlement state loads, so a
+        // deep link to one (e.g. `.vpn` from the VPN status view) would otherwise no-op and leave
+        // Settings on the default pane. Remember the requested pane so it survives the async load;
+        // `adjustSelectedPaneIfNeeded()` preserves it until the sections include it.
+        if !hasLoadedInitialSubscriptionState, Self.subscriptionGatedPanes.contains(identifier) {
             selectedPane = identifier
             return
         }
@@ -532,6 +562,21 @@ final class PreferencesSidebarModel: ObservableObject {
         if visiblePanes.contains(resolvedIdentifier), resolvedIdentifier != selectedPane {
             selectedPane = resolvedIdentifier
         }
+    }
+
+    @MainActor
+    func navigate(to destination: PreferencesDestination) {
+        selectPane(destination.pane)
+        guard let anchor = destination.scrollAnchor, destination.pane == selectedPane else {
+            return
+        }
+
+        scrollTarget = anchor
+    }
+
+    @MainActor
+    func resetScrollRequest() {
+        scrollTarget = nil
     }
 
     /// Redirect navigations targeting panes that have been folded into a parent surface.

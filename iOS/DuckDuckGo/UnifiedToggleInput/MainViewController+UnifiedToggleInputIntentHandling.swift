@@ -43,7 +43,7 @@ extension MainViewController {
 
     func syncBottomOmnibarAnchorIfNeeded(for coordinator: UnifiedToggleInputCoordinator) {
         guard coordinator.cardPosition == .bottom,
-              case .omnibar(let state) = coordinator.displayState,
+              let state = coordinator.omnibarState,
               viewCoordinator.addressBarPosition.isBottom else {
             return
         }
@@ -312,6 +312,8 @@ private extension MainViewController {
                 )
             }
         } else {
+            // Match the animated path: restore resting layout before cleanup, else the returning tab's content is stranded.
+            viewCoordinator.animateUnifiedToggleInputOmnibarDismissLayout()
             viewCoordinator.finishUnifiedToggleInputOmnibarDismiss()
             onDismissed()
         }
@@ -328,11 +330,14 @@ private extension MainViewController {
         reconcileFloatingLayoutAfterUTIExit()
     }
 
+    /// Shared intent teardown; restores the NTP logo/favorites hidden at focus, mirroring the animated back-button dismiss (idempotent).
     func resetUnifiedInputContentAfterHide() {
         unifiedToggleInputCoordinator?.contentViewController.setActive(false)
         viewCoordinator.hideUnifiedInputContent()
         unifiedToggleInputCoordinator?.contentViewController.setContentInset(top: 0, bottom: 0)
         hideSuggestionTray()
+        newTabPageViewController?.setLogoHidden(false)
+        newTabPageViewController?.setFavoritesHidden(false)
     }
 
     func applyBottomOmnibarVisibility(_ state: UnifiedToggleInputDisplayState.OmnibarState) {

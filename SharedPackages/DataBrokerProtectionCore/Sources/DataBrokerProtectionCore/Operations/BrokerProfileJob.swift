@@ -210,7 +210,8 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
                 var executed = false
 
                 if jobData is ScanJobData {
-                    executed = try await withTimeout(jobDependencies.executionConfig.scanJobTimeout) { [self] in
+                    executed = try await withTimeout(jobDependencies.executionConfig.scanJobTimeout,
+                                                     throwing: DataBrokerProtectionError.jobTimeout) { [self] in
                         try await BrokerProfileScanSubJob(dependencies: jobDependencies).runScan(
                             brokerProfileQueryData: brokerProfileData,
                             showWebView: showWebView,
@@ -221,7 +222,8 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
                             })
                     }
                 } else if let optOutJobData = jobData as? OptOutJobData {
-                    executed = try await withTimeout(jobDependencies.executionConfig.optOutJobTimeout) { [self] in
+                    executed = try await withTimeout(jobDependencies.executionConfig.optOutJobTimeout,
+                                                     throwing: DataBrokerProtectionError.jobTimeout) { [self] in
                         try await BrokerProfileOptOutSubJob(dependencies: jobDependencies).runOptOut(
                             for: optOutJobData.extractedProfile,
                             brokerProfileQueryData: brokerProfileData,

@@ -47,6 +47,9 @@ jobs:
       with:
         submodules: recursive
 
+    - name: Print macOS version
+      run: sw_vers
+
     - name: Start measuring duration
       id: start-duration
       uses: ./.github/actions/measure-duration
@@ -236,6 +239,9 @@ jobs:
 
     - name: Check out the code
       uses: actions/checkout@v6 # Don't need submodules here as this is only for the tests folder
+
+    - name: Print macOS version
+      run: sw_vers
 
     - name: Start measuring duration
       id: start-duration

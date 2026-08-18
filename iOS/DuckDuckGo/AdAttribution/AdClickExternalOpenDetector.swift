@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import FoundationExtensions
 import UIKit
 import os.log
 import Combine

@@ -20,6 +20,7 @@
 import Core
 import SwiftUI
 import DesignResourcesKit
+import FeatureFlags_iOS
 
 enum AfterInactivityOption: String, CaseIterable, CustomStringConvertible {
     case newTab
@@ -153,7 +154,7 @@ struct SettingsGeneralView: View {
                     SettingsCellView(label: UserText.settingsAutoplayLabel,
                                      accessory: .rightDetail(viewModel.state.autoplayBlockingMode.description))
                 }
-                .listRowBackground(Color(designSystemColor: .surface))
+                .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
             }
 
         }

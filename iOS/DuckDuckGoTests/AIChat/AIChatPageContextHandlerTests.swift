@@ -19,6 +19,7 @@
 
 import AIChat
 import Combine
+import Core
 import UserScript
 import WebKit
 import XCTest
@@ -62,7 +63,7 @@ final class AIChatPageContextHandlerTests: XCTestCase {
         let userScriptProvider: UserScriptProvider = { nil }
         let handler = makeHandler(userScriptProvider: userScriptProvider)
 
-        let didTrigger = handler.triggerContextCollection()
+        let didTrigger = handler.triggerContextCollection(trigger: .auto)
 
         XCTAssertFalse(didTrigger)
         var receivedValue: AIChatPageContext??
@@ -172,7 +173,7 @@ final class AIChatPageContextHandlerTests: XCTestCase {
             .store(in: &cancellables)
 
         // When: Script publishes empty context (valid but no content)
-        handler.triggerContextCollection()
+        handler.triggerContextCollection(trigger: .auto)
         mockScript.simulateEmptyContext()
 
         wait(for: [expectation], timeout: 1.0)
@@ -206,7 +207,7 @@ final class AIChatPageContextHandlerTests: XCTestCase {
             .store(in: &cancellables)
 
         // When: Script publishes nil (decode failure)
-        handler.triggerContextCollection()
+        handler.triggerContextCollection(trigger: .auto)
         mockScript.simulateNilContext()
 
         wait(for: [expectation], timeout: 1.0)
@@ -240,7 +241,7 @@ final class AIChatPageContextHandlerTests: XCTestCase {
             .store(in: &cancellables)
 
         // When: Script publishes valid context with content
-        handler.triggerContextCollection()
+        handler.triggerContextCollection(trigger: .auto)
         mockScript.simulateValidContext()
 
         wait(for: [expectation], timeout: 1.0)
@@ -249,6 +250,86 @@ final class AIChatPageContextHandlerTests: XCTestCase {
         XCTAssertEqual(mockPixelHandler.pageContextCollectionEmptyCount, 0)
         XCTAssertNotNil(receivedContext)
         XCTAssertNotNil(receivedContext!)
+    }
+
+    // MARK: - Favicon Enrichment Tests
+
+    func testFaviconEnrichmentReplacesFaviconAndPreservesPageTypeSignals() throws {
+        // Given: A favicon provider that supplies an encoded favicon, forcing the handler
+        // to re-build the context data (the enrichment path).
+        let mockScript = MockPageContextCollecting()
+        let webView = WKWebView()
+        let encodedFavicon = "data:image/png;base64,\(Self.onePixelPNGBase64)"
+        let handler = makeHandler(
+            webViewProvider: { webView },
+            userScriptProvider: { mockScript },
+            faviconProvider: { _ in encodedFavicon }
+        )
+
+        let expectation = XCTestExpectation(description: "Context published")
+        var receivedContext: AIChatPageContext?
+        handler.contextPublisher
+            .dropFirst()
+            .first()
+            .sink { context in
+                receivedContext = context
+                expectation.fulfill()
+            }
+            .store(in: &cancellables)
+
+        // When: Script publishes a context carrying every optional field
+        handler.triggerContextCollection(trigger: .auto)
+        mockScript.simulate(context: Self.makeFullyPopulatedContext())
+
+        wait(for: [expectation], timeout: 1.0)
+
+        // Then: Favicon is replaced, everything else survives the re-build
+        let contextData = try XCTUnwrap(receivedContext?.contextData)
+        XCTAssertEqual(contextData.favicon, [.init(href: encodedFavicon, rel: "icon")])
+        XCTAssertNotNil(receivedContext?.favicon, "Encoded favicon should decode to a UIImage")
+        XCTAssertEqual(contextData.pageTypeSignals, Self.makeFullyPopulatedContext().pageTypeSignals)
+        XCTAssertEqual(contextData.tabId, "tab-1")
+        XCTAssertEqual(contextData.attached, false)
+        XCTAssertEqual(contextData.attachable, true)
+    }
+
+    /// Compares the enriched context against the original field-by-field via their
+    /// JSON representations, ignoring only `favicon`. When a new field is added to
+    /// `AIChatPageContextData` but not carried over in the handler's favicon enrichment,
+    /// this test fails without needing an update — extend `makeFullyPopulatedContext`
+    /// with a non-default value for the new field so the protection stays meaningful.
+    func testFaviconEnrichmentPreservesEveryFieldExceptFavicon() throws {
+        let mockScript = MockPageContextCollecting()
+        let webView = WKWebView()
+        let handler = makeHandler(
+            webViewProvider: { webView },
+            userScriptProvider: { mockScript },
+            faviconProvider: { _ in "data:image/png;base64,\(Self.onePixelPNGBase64)" }
+        )
+
+        let expectation = XCTestExpectation(description: "Context published")
+        var receivedContext: AIChatPageContext?
+        handler.contextPublisher
+            .dropFirst()
+            .first()
+            .sink { context in
+                receivedContext = context
+                expectation.fulfill()
+            }
+            .store(in: &cancellables)
+
+        let original = Self.makeFullyPopulatedContext()
+        handler.triggerContextCollection(trigger: .auto)
+        mockScript.simulate(context: original)
+
+        wait(for: [expectation], timeout: 1.0)
+
+        let enriched = try XCTUnwrap(receivedContext?.contextData)
+        XCTAssertEqual(
+            try jsonDictionary(of: original, ignoringKey: "favicon"),
+            try jsonDictionary(of: enriched, ignoringKey: "favicon"),
+            "Favicon enrichment re-builds AIChatPageContextData - every field except favicon must be carried over"
+        )
     }
 
     // MARK: - Unavailable Pixel Tests
@@ -260,26 +341,342 @@ final class AIChatPageContextHandlerTests: XCTestCase {
             pixelHandler: mockPixelHandler
         )
 
-        let didTrigger = handler.triggerContextCollection()
+        let didTrigger = handler.triggerContextCollection(trigger: .auto)
 
         XCTAssertFalse(didTrigger)
         XCTAssertEqual(mockPixelHandler.pageContextCollectionUnavailableCount, 1)
     }
 
+    // MARK: - Attachability Gate
+
+    func testWhenBlocklistedMIMEThenSkipsCollectionAndFiresPreventedPixel() {
+        let mockScript = MockPageContextCollecting()
+        let extractionPixels = MockPageContextExtractionPixelFiring()
+        let policy = makeBlocklistPolicy()
+        let handler = makeHandler(
+            webViewProvider: { WKWebView() },
+            userScriptProvider: { mockScript },
+            attachabilityPolicyProvider: { policy },
+            currentURLProvider: { URL(string: "https://example.com/download") },
+            mimeTypeProvider: { _ in "application/pdf" },
+            extractionPixelHandler: extractionPixels
+        )
+
+        let didTrigger = handler.triggerContextCollection(trigger: .navigation)
+
+        XCTAssertFalse(didTrigger)
+        XCTAssertEqual(mockScript.collectCallCount, 0)
+        XCTAssertEqual(extractionPixels.calls.count, 1)
+        XCTAssertEqual(extractionPixels.calls.first?.outcome, .prevented("pdf"))
+        XCTAssertEqual(extractionPixels.calls.first?.trigger, .navigation)
+    }
+
+    func testWhenBlocklistedExtensionAndNoMIMEThenSkipsCollectionAndFiresPreventedPixel() {
+        let mockScript = MockPageContextCollecting()
+        let extractionPixels = MockPageContextExtractionPixelFiring()
+        let policy = makeBlocklistPolicy()
+        let handler = makeHandler(
+            webViewProvider: { WKWebView() },
+            userScriptProvider: { mockScript },
+            attachabilityPolicyProvider: { policy },
+            currentURLProvider: { URL(string: "https://example.com/report.pdf") },
+            mimeTypeProvider: { _ in nil },
+            extractionPixelHandler: extractionPixels
+        )
+
+        let didTrigger = handler.triggerContextCollection(trigger: .userRequest)
+
+        XCTAssertFalse(didTrigger)
+        XCTAssertEqual(mockScript.collectCallCount, 0)
+        XCTAssertEqual(extractionPixels.calls.first?.outcome, .prevented("pdf"))
+        XCTAssertEqual(extractionPixels.calls.first?.trigger, .userRequest)
+    }
+
+    func testWhenAttachablePageThenCollectsAndReportsSuccessOutcome() {
+        let mockScript = MockPageContextCollecting()
+        let extractionPixels = MockPageContextExtractionPixelFiring()
+        let policy = makeBlocklistPolicy()
+        let handler = makeHandler(
+            webViewProvider: { WKWebView() },
+            userScriptProvider: { mockScript },
+            attachabilityPolicyProvider: { policy },
+            currentURLProvider: { URL(string: "https://example.com/article") },
+            mimeTypeProvider: { _ in "text/html" },
+            extractionPixelHandler: extractionPixels
+        )
+
+        let expectation = XCTestExpectation(description: "Context published")
+        handler.contextPublisher.dropFirst().first().sink { _ in expectation.fulfill() }.store(in: &cancellables)
+
+        let didTrigger = handler.triggerContextCollection(trigger: .navigation)
+        XCTAssertTrue(didTrigger)
+        XCTAssertEqual(mockScript.collectCallCount, 1)
+
+        mockScript.simulateValidContext()
+        wait(for: [expectation], timeout: 1.0)
+
+        XCTAssertEqual(extractionPixels.calls.count, 1)
+        XCTAssertEqual(extractionPixels.calls.first?.outcome, .success)
+        XCTAssertEqual(extractionPixels.calls.first?.trigger, .navigation)
+    }
+
+    func testWhenEmptyContextThenReportsEmptyContentFailureOutcome() {
+        let mockScript = MockPageContextCollecting()
+        let extractionPixels = MockPageContextExtractionPixelFiring()
+        let policy = makeBlocklistPolicy()
+        let handler = makeHandler(
+            webViewProvider: { WKWebView() },
+            userScriptProvider: { mockScript },
+            attachabilityPolicyProvider: { policy },
+            currentURLProvider: { URL(string: "https://example.com/article") },
+            mimeTypeProvider: { _ in "text/html" },
+            extractionPixelHandler: extractionPixels
+        )
+
+        let expectation = XCTestExpectation(description: "Context published")
+        handler.contextPublisher.dropFirst().first().sink { _ in expectation.fulfill() }.store(in: &cancellables)
+
+        handler.triggerContextCollection(trigger: .navigation)
+        mockScript.simulateEmptyContext()
+        wait(for: [expectation], timeout: 1.0)
+
+        XCTAssertEqual(extractionPixels.calls.first?.outcome, .failure(.emptyContent))
+    }
+
+    func testWhenDeserializeFailureThenReportsDeserializeFailedOutcome() {
+        let mockScript = MockPageContextCollecting()
+        let extractionPixels = MockPageContextExtractionPixelFiring()
+        let policy = makeBlocklistPolicy()
+        let handler = makeHandler(
+            webViewProvider: { WKWebView() },
+            userScriptProvider: { mockScript },
+            attachabilityPolicyProvider: { policy },
+            currentURLProvider: { URL(string: "https://example.com/article") },
+            mimeTypeProvider: { _ in "text/html" },
+            extractionPixelHandler: extractionPixels
+        )
+
+        let expectation = XCTestExpectation(description: "Context published")
+        handler.contextPublisher.dropFirst().first().sink { _ in expectation.fulfill() }.store(in: &cancellables)
+
+        handler.triggerContextCollection(trigger: .navigation)
+        mockScript.simulateNilContext()
+        wait(for: [expectation], timeout: 1.0)
+
+        XCTAssertEqual(extractionPixels.calls.first?.outcome, .failure(.deserializeFailed))
+    }
+
+    /// A script error used to be dropped without resolving the request, so it surfaced 30s later as
+    /// a timeout. It must now report its own reason, with a latency, as soon as the reply arrives.
+    func testWhenScriptErrorThenReportsScriptErrorOutcomeNotTimeout() {
+        let mockScript = MockPageContextCollecting()
+        let extractionPixels = MockPageContextExtractionPixelFiring()
+        let policy = makeBlocklistPolicy()
+        let handler = makeHandler(
+            webViewProvider: { WKWebView() },
+            userScriptProvider: { mockScript },
+            attachabilityPolicyProvider: { policy },
+            currentURLProvider: { URL(string: "https://example.com/article") },
+            mimeTypeProvider: { _ in "text/html" },
+            extractionPixelHandler: extractionPixels
+        )
+
+        let expectation = XCTestExpectation(description: "Context published")
+        handler.contextPublisher.dropFirst().first().sink { _ in expectation.fulfill() }.store(in: &cancellables)
+
+        handler.triggerContextCollection(trigger: .userRequest)
+        mockScript.simulateScriptError()
+        wait(for: [expectation], timeout: 1.0)
+
+        XCTAssertEqual(extractionPixels.calls.count, 1)
+        XCTAssertEqual(extractionPixels.calls.first?.outcome, .failure(.scriptError))
+        XCTAssertEqual(extractionPixels.calls.first?.trigger, .userRequest)
+        XCTAssertNotNil(extractionPixels.calls.first?.latency)
+    }
+
+    func testWhenNoAttachabilityConfigThenCollectsButFiresNoExtractionPixels() {
+        let mockScript = MockPageContextCollecting()
+        let extractionPixels = MockPageContextExtractionPixelFiring()
+        // attachabilityPolicyProvider defaults to { nil } — the kill-switch.
+        let handler = makeHandler(
+            webViewProvider: { WKWebView() },
+            userScriptProvider: { mockScript },
+            currentURLProvider: { URL(string: "https://example.com/report.pdf") },
+            mimeTypeProvider: { _ in "application/pdf" },
+            extractionPixelHandler: extractionPixels
+        )
+
+        let expectation = XCTestExpectation(description: "Context published")
+        handler.contextPublisher.dropFirst().first().sink { _ in expectation.fulfill() }.store(in: &cancellables)
+
+        let didTrigger = handler.triggerContextCollection(trigger: .navigation)
+        XCTAssertTrue(didTrigger)
+        XCTAssertEqual(mockScript.collectCallCount, 1, "kill-switch must not gate collection")
+
+        mockScript.simulateValidContext()
+        wait(for: [expectation], timeout: 1.0)
+
+        XCTAssertTrue(extractionPixels.calls.isEmpty, "no extraction telemetry when blocklist config absent")
+    }
+
+    func testWhenSameNavigationTriggersOverlapThenReportsExtractionOnlyOnce() {
+        let mockScript = MockPageContextCollecting()
+        let extractionPixels = MockPageContextExtractionPixelFiring()
+        let policy = makeBlocklistPolicy()
+        let handler = makeHandler(
+            webViewProvider: { WKWebView() },
+            userScriptProvider: { mockScript },
+            attachabilityPolicyProvider: { policy },
+            currentURLProvider: { URL(string: "https://example.com/article") },
+            mimeTypeProvider: { _ in "text/html" },
+            extractionPixelHandler: extractionPixels
+        )
+
+        let expectation = XCTestExpectation(description: "Two contexts published")
+        expectation.expectedFulfillmentCount = 2
+        handler.contextPublisher.dropFirst().sink { _ in expectation.fulfill() }.store(in: &cancellables)
+
+        // Two collects for the same URL (navigation + signals-only) — only one pixel expected.
+        handler.triggerContextCollection(trigger: .navigation)
+        handler.triggerContextCollection(trigger: .tabContent)
+        mockScript.simulateValidContext()
+        mockScript.simulateValidContext()
+        wait(for: [expectation], timeout: 1.0)
+
+        XCTAssertEqual(extractionPixels.calls.count, 1)
+        XCTAssertEqual(extractionPixels.calls.first?.trigger, .navigation)
+    }
+
+    // MARK: - Attachability measurement (no collection)
+
+    func testReportAttachabilityMeasurementFiresPreventedWhenNotAttachable() {
+        let extractionPixels = MockPageContextExtractionPixelFiring()
+        let policy = makeBlocklistPolicy()
+        let handler = makeHandler(
+            attachabilityPolicyProvider: { policy },
+            currentURLProvider: { URL(string: "https://example.com/report.pdf") },
+            mimeTypeProvider: { _ in "application/pdf" },
+            extractionPixelHandler: extractionPixels
+        )
+
+        handler.reportAttachabilityMeasurement(trigger: .navigation)
+
+        XCTAssertEqual(extractionPixels.calls.count, 1)
+        XCTAssertEqual(extractionPixels.calls.first?.outcome, .prevented("pdf"))
+        XCTAssertEqual(extractionPixels.calls.first?.trigger, .navigation)
+    }
+
+    func testReportAttachabilityMeasurementDoesNothingWhenAttachable() {
+        let extractionPixels = MockPageContextExtractionPixelFiring()
+        let policy = makeBlocklistPolicy()
+        let handler = makeHandler(
+            attachabilityPolicyProvider: { policy },
+            currentURLProvider: { URL(string: "https://example.com/article") },
+            mimeTypeProvider: { _ in "text/html" },
+            extractionPixelHandler: extractionPixels
+        )
+
+        handler.reportAttachabilityMeasurement(trigger: .navigation)
+
+        XCTAssertTrue(extractionPixels.calls.isEmpty)
+    }
+
+    func testReportAttachabilityMeasurementDoesNothingWhenNoConfig() {
+        let extractionPixels = MockPageContextExtractionPixelFiring()
+        let handler = makeHandler(
+            currentURLProvider: { URL(string: "https://example.com/report.pdf") },
+            mimeTypeProvider: { _ in "application/pdf" },
+            extractionPixelHandler: extractionPixels
+        )
+
+        handler.reportAttachabilityMeasurement(trigger: .navigation)
+
+        XCTAssertTrue(extractionPixels.calls.isEmpty)
+    }
+
+    func testClearResetsExtractionQueueSoLaterCollectReportsItsOwnTrigger() {
+        let mockScript = MockPageContextCollecting()
+        let extractionPixels = MockPageContextExtractionPixelFiring()
+        let policy = makeBlocklistPolicy()
+        let handler = makeHandler(
+            webViewProvider: { WKWebView() },
+            userScriptProvider: { mockScript },
+            attachabilityPolicyProvider: { policy },
+            currentURLProvider: { URL(string: "https://example.com/article") },
+            mimeTypeProvider: { _ in "text/html" },
+            extractionPixelHandler: extractionPixels
+        )
+
+        // A .navigation collect is requested but never resolves, then the session is cleared.
+        handler.triggerContextCollection(trigger: .navigation)
+        handler.clear()
+
+        // A later .userRequest collect on the same URL must report its own trigger, not the stale one.
+        let expectation = XCTestExpectation(description: "Context published")
+        handler.contextPublisher.dropFirst().first().sink { _ in expectation.fulfill() }.store(in: &cancellables)
+        handler.triggerContextCollection(trigger: .userRequest)
+        mockScript.simulateValidContext()
+        wait(for: [expectation], timeout: 1.0)
+
+        XCTAssertEqual(extractionPixels.calls.count, 1)
+        XCTAssertEqual(extractionPixels.calls.first?.trigger, .userRequest)
+    }
+
     // MARK: - Helpers
+
+    /// 1x1 transparent PNG so the encoded favicon decodes into a real UIImage.
+    private static let onePixelPNGBase64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
+
+    /// Every optional field carries a non-default value so field-preservation tests catch drops.
+    private static func makeFullyPopulatedContext() -> AIChatPageContextData {
+        AIChatPageContextData(
+            title: "Test Page",
+            favicon: [.init(href: "https://example.com/favicon.ico", rel: "icon")],
+            url: "https://example.com/article",
+            content: "This is some page content for testing.",
+            truncated: true,
+            fullContentLength: 1234,
+            attachable: true,
+            tabId: "tab-1",
+            pageTypeSignals: AIChatPageTypeSignals(jsonLdType: ["Recipe", "Article"], ogType: "article", lang: "eu"),
+            attached: false
+        )
+    }
+
+    private func jsonDictionary(of context: AIChatPageContextData, ignoringKey key: String) throws -> NSDictionary {
+        let encoded = try JSONEncoder().encode(context)
+        var dictionary = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        dictionary.removeValue(forKey: key)
+        return NSDictionary(dictionary: dictionary)
+    }
 
     private func makeHandler(
         webViewProvider: WebViewProvider? = nil,
         userScriptProvider: UserScriptProvider? = nil,
         faviconProvider: FaviconProvider? = nil,
-        pixelHandler: AIChatContextualModePixelFiring? = nil
+        pixelHandler: AIChatContextualModePixelFiring? = nil,
+        attachabilityPolicyProvider: @escaping AttachabilityPolicyProvider = { nil },
+        currentURLProvider: PageContextURLProvider? = nil,
+        mimeTypeProvider: @escaping PageContextMIMETypeProvider = { _ in nil },
+        extractionPixelHandler: PageContextExtractionPixelFiring? = nil
     ) -> DuckDuckGo.AIChatPageContextHandler {
         DuckDuckGo.AIChatPageContextHandler(
             webViewProvider: webViewProvider ?? { nil },
             userScriptProvider: userScriptProvider ?? { nil },
             faviconProvider: faviconProvider ?? { _ in nil },
-            pixelHandler: pixelHandler ?? MockContextualModePixelHandler()
+            pixelHandler: pixelHandler ?? MockContextualModePixelHandler(),
+            attachabilityPolicyProvider: attachabilityPolicyProvider,
+            currentURLProvider: currentURLProvider,
+            mimeTypeProvider: mimeTypeProvider,
+            extractionPixelHandler: extractionPixelHandler ?? MockPageContextExtractionPixelFiring()
         )
+    }
+
+    private func makeBlocklistPolicy() -> PageContextAttachabilityPolicy {
+        PageContextAttachabilityPolicy(settings: PageContextBlocklistSettings(categories: [
+            "pdf": MediaCategoryRule(urlExtensions: [".pdf"], contentTypes: ["application/pdf"]),
+            "image": MediaCategoryRule(urlExtensions: [".png"], contentTypePrefixes: ["image/"])
+        ]))
     }
 }
 
@@ -293,14 +690,25 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
     func fireSheetDismissed() {}
     func fireSessionRestored() {}
     func fireExpandButtonTapped() {}
+    func fireHeaderTitleTapped() {}
     func fireNewChatButtonTapped() {}
     func fireQuickActionSummarizeSelected() {}
+    func fireQuickActionAskAboutPageShown() {}
     func fireQuickActionAskAboutPageSelected() {}
+    func fireAskAboutPageSuggestionSelected(pageType: SuggestionsPageType) {}
+    func fireSuggestionSelected(suggestionId: String, pageType: SuggestionsPageType) {}
+    func fireSuggestionsViewed(isSmart: Bool, pageType: SuggestionsPageType) {}
+    func fireSuggestionsContextCollectionTimedOut() {}
     func fireRecentChatsPopupDisplayed() {}
     func fireRecentChatSelected() {}
     func fireViewAllChatsTapped() {}
     func fireFireButtonTapped() {}
     func fireFireButtonConfirmed() {}
+    func fireAddressBarMenuShown() {}
+    func fireAddressBarMenuNewChatSelected() {}
+    func fireAddressBarMenuAskAboutPageSelected() {}
+    func fireFloatingInputDismissedWithoutSubmission() {}
+    func fireFloatingInputPromotedToSheet() {}
     func firePageContextAutoAttached() {}
     func firePageContextUpdatedOnNavigation(url: String) {}
     func firePageContextManuallyAttachedNative() {}
@@ -324,20 +732,26 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
 // MARK: - Mock Page Context Collecting
 
 private final class MockPageContextCollecting: PageContextCollecting {
-    private let mockSubject = PassthroughSubject<AIChatPageContextData?, Never>()
+    private let mockSubject = PassthroughSubject<PageContextCollectionResult, Never>()
 
-    var collectionResultPublisher: AnyPublisher<AIChatPageContextData?, Never> {
+    var collectionResultPublisher: AnyPublisher<PageContextCollectionResult, Never> {
         mockSubject.eraseToAnyPublisher()
     }
 
     weak var webView: WKWebView?
+    private(set) var collectCallCount = 0
 
     func collect() {
         // No-op for testing - we'll manually send values via simulate methods
+        collectCallCount += 1
     }
 
     func simulateNilContext() {
-        mockSubject.send(nil)
+        mockSubject.send(.decodeFailed)
+    }
+
+    func simulateScriptError() {
+        mockSubject.send(.scriptError)
     }
 
     func simulateEmptyContext() {
@@ -349,7 +763,7 @@ private final class MockPageContextCollecting: PageContextCollecting {
             truncated: false,
             fullContentLength: 0
         )
-        mockSubject.send(emptyContext)
+        mockSubject.send(.collected(emptyContext))
     }
 
     func simulateValidContext() {
@@ -361,6 +775,70 @@ private final class MockPageContextCollecting: PageContextCollecting {
             truncated: false,
             fullContentLength: 39
         )
-        mockSubject.send(validContext)
+        mockSubject.send(.collected(validContext))
+    }
+
+    func simulate(context: AIChatPageContextData) {
+        mockSubject.send(.collected(context))
+    }
+}
+
+// MARK: - Mock Extraction Pixel Firing
+
+private final class MockPageContextExtractionPixelFiring: PageContextExtractionPixelFiring {
+    struct Call: Equatable {
+        let outcome: PageContextExtractionOutcome
+        let trigger: PageContextExtractionTrigger
+        let latency: PageContextExtractionLatencyBucket?
+    }
+
+    private(set) var calls: [Call] = []
+
+    func fire(_ outcome: PageContextExtractionOutcome,
+              trigger: PageContextExtractionTrigger,
+              latency: PageContextExtractionLatencyBucket?) {
+        calls.append(Call(outcome: outcome, trigger: trigger, latency: latency))
+    }
+}
+
+// MARK: - PageContextExtractionPixelHandler mapping tests
+
+final class PageContextExtractionPixelHandlerTests: XCTestCase {
+
+    private func capture(_ outcome: PageContextExtractionOutcome,
+                         trigger: PageContextExtractionTrigger,
+                         latency: PageContextExtractionLatencyBucket?) -> (event: Pixel.Event, params: [String: String])? {
+        var captured: (Pixel.Event, [String: String])?
+        let handler = PageContextExtractionPixelHandler(firePixel: { captured = ($0, $1) })
+        handler.fire(outcome, trigger: trigger, latency: latency)
+        return captured.map { (event: $0.0, params: $0.1) }
+    }
+
+    func testWhenSuccessThenFiresSuccessPixelWithNoAdditionalParams() {
+        let result = capture(.success, trigger: .navigation, latency: .under1s)
+        XCTAssertEqual(result?.event.name, "aichat_page_context_extraction_success")
+        XCTAssertEqual(result?.params, [:])
+    }
+
+    func testWhenFailureThenFiresFailedPixelWithReasonTriggerLatency() {
+        let result = capture(.failure(.emptyContent), trigger: .auto, latency: .oneToFiveSeconds)
+        XCTAssertEqual(result?.event.name, "aichat_page_context_extraction_failed")
+        XCTAssertEqual(result?.params["reason"], "empty_content")
+        XCTAssertEqual(result?.params["trigger"], "auto")
+        XCTAssertEqual(result?.params["latency"], "1_to_5s")
+    }
+
+    func testWhenFailureWithoutLatencyThenOmitsLatencyParam() {
+        let result = capture(.failure(.timeout), trigger: .navigation, latency: nil)
+        XCTAssertEqual(result?.params["reason"], "timeout")
+        XCTAssertNil(result?.params["latency"])
+    }
+
+    func testWhenPreventedThenFiresPreventedPixelWithCategoryReasonTrigger() {
+        let result = capture(.prevented("pdf"), trigger: .tabContent, latency: nil)
+        XCTAssertEqual(result?.event.name, "aichat_page_context_extraction_prevented")
+        XCTAssertEqual(result?.params["category"], "pdf")
+        XCTAssertEqual(result?.params["reason"], "non_attachable")
+        XCTAssertEqual(result?.params["trigger"], "tab_content")
     }
 }

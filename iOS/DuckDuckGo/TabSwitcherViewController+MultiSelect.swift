@@ -293,18 +293,27 @@ extension TabSwitcherViewController {
                       tabsStyle: tabsStyle,
                       canShowSelectionMenu: canShowSelectionMenu,
                       isEditing: isEditing)
-        chrome.applyCollectionContentInset(to: collectionView)
+        applyCollectionContentInsets()
         chrome.trackScrollEdge(of: collectionView)
+    }
+
+    func applyCollectionContentInsets() {
+        chrome.applyCollectionContentInset(to: normalPageController.collectionView)
+        if let fireCollectionView = firePageController?.collectionView {
+            chrome.applyCollectionContentInset(to: fireCollectionView)
+        }
     }
     
     func createMultiSelectionMenu() -> UIMenu {
         let selectedIndexPaths = selectedTabs
         let selectedTabObjects = selectedIndexPaths.map { tabsModel.get(tabAt: $0.row) }.compactMap { $0 }
+        let shouldShowSelectionToggleActions = !floatingUIManager.isFloatingTabSwitcherEnabled
         let state = TabSwitcherMultiSelectMenuState(
             selectedCount: selectedTabObjects.count,
             totalCount: tabsModel.count,
             selectedContainsWebPages: selectedTabObjects.contains(where: { $0.link != nil }),
-            allContainsWebPages: tabsModel.tabs.contains(where: { $0.link != nil })
+            allContainsWebPages: tabsModel.tabs.contains(where: { $0.link != nil }),
+            shouldShowSelectionToggleActions: shouldShowSelectionToggleActions
         )
         canShowSelectionMenu = state.canShowSelectionMenu
         return menuBuilder.multiSelectionMenu(state: state, actions: TabSwitcherMultiSelectMenuActions(

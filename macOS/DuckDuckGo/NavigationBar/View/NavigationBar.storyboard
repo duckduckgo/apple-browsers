@@ -21,13 +21,13 @@
                                 <rect key="frame" x="0.0" y="0.0" width="1675" height="68"/>
                             </customView>
                             <stackView distribution="fill" orientation="horizontal" alignment="centerY" spacing="0.0" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="eEh-kf-smR">
-                                <rect key="frame" x="12" y="18" width="128" height="32"/>
+                                <rect key="frame" x="14" y="18" width="128" height="32"/>
                                 <subviews>
                                     <customView hidden="YES" translatesAutoresizingMaskIntoConstraints="NO" id="3o5-MS-AWl">
-                                        <rect key="frame" x="0.0" y="0.0" width="21" height="32"/>
+                                        <rect key="frame" x="0.0" y="0.0" width="23" height="32"/>
                                         <subviews>
                                             <box horizontalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="X5m-gH-M1N">
-                                                <rect key="frame" x="8" y="6" width="5" height="20"/>
+                                                <rect key="frame" x="9" y="6" width="5" height="20"/>
                                                 <constraints>
                                                     <constraint firstAttribute="height" constant="20" id="1Cr-jJ-dOQ"/>
                                                 </constraints>
@@ -37,7 +37,7 @@
                                             <constraint firstItem="X5m-gH-M1N" firstAttribute="centerY" secondItem="3o5-MS-AWl" secondAttribute="centerY" id="4kH-wN-unK"/>
                                             <constraint firstAttribute="height" constant="32" id="7rc-fw-YoZ"/>
                                             <constraint firstItem="X5m-gH-M1N" firstAttribute="centerX" secondItem="3o5-MS-AWl" secondAttribute="centerX" id="tIx-7L-jDt"/>
-                                            <constraint firstAttribute="width" constant="21" id="zPT-KA-4vC"/>
+                                            <constraint firstAttribute="width" constant="23" id="zPT-KA-4vC"/>
                                         </constraints>
                                     </customView>
                                     <button translatesAutoresizingMaskIntoConstraints="NO" id="kky-0N-Cfd" customClass="LongPressButton" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
@@ -401,7 +401,7 @@
                             <constraint firstItem="aWu-Jm-Oaz" firstAttribute="centerY" secondItem="hYV-nu-QIp" secondAttribute="centerY" id="8Jg-mH-CHM"/>
                             <constraint firstAttribute="bottom" secondItem="bSB-ca-LaM" secondAttribute="bottom" id="Exa-XS-C2I"/>
                             <constraint firstAttribute="height" constant="68" id="KjG-nj-hqf"/>
-                            <constraint firstItem="eEh-kf-smR" firstAttribute="leading" secondItem="hYV-nu-QIp" secondAttribute="leading" constant="12" id="MQ7-vv-adb"/>
+                            <constraint firstItem="eEh-kf-smR" firstAttribute="leading" secondItem="hYV-nu-QIp" secondAttribute="leading" constant="14" id="MQ7-vv-adb"/>
                             <constraint firstAttribute="trailing" secondItem="aWu-Jm-Oaz" secondAttribute="trailing" constant="12" id="UeG-qO-bD2"/>
                             <constraint firstItem="bSB-ca-LaM" firstAttribute="leading" secondItem="hYV-nu-QIp" secondAttribute="leading" id="Vx4-mN-uKA"/>
                             <constraint firstAttribute="bottom" secondItem="gIy-el-24l" secondAttribute="bottom" constant="6" id="Xaz-X5-bmg"/>
@@ -682,7 +682,7 @@
                             <constraint firstAttribute="trailing" secondItem="ENV-0H-Fcc" secondAttribute="trailing" constant="2" id="Cig-ek-031"/>
                             <constraint firstItem="zaX-wZ-E3D" firstAttribute="height" relation="lessThanOrEqual" secondItem="wj6-L2-5rJ" secondAttribute="height" multiplier="0.55" id="E0Q-AU-qRQ"/>
                             <constraint firstItem="e0p-7S-Gan" firstAttribute="leading" secondItem="wj6-L2-5rJ" secondAttribute="leading" id="E5D-iA-uu3"/>
-                            <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="JKb-5c-xaF" secondAttribute="trailing" constant="29" id="F0b-NX-BKL"/>
+                            <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="JKb-5c-xaF" secondAttribute="trailing" priority="200" constant="29" id="F0b-NX-BKL"/>
                             <constraint firstItem="ENV-0H-Fcc" firstAttribute="top" secondItem="wj6-L2-5rJ" secondAttribute="top" constant="2" id="HfA-Q8-0Uz"/>
                             <constraint firstItem="zaX-wZ-E3D" firstAttribute="centerY" secondItem="wj6-L2-5rJ" secondAttribute="centerY" id="M2U-b3-Z0t"/>
                             <constraint firstItem="bOl-8Z-hTh" firstAttribute="leading" secondItem="wj6-L2-5rJ" secondAttribute="leading" constant="2" id="OSv-yy-Yz5"/>
@@ -740,6 +740,7 @@
                         <outlet property="shadowView" destination="ktI-g4-Uk6" id="v81-tf-DGJ"/>
                         <outlet property="switchToTabBox" destination="JKb-5c-xaF" id="mhx-BL-hG3"/>
                         <outlet property="switchToTabBoxMinXConstraint" destination="9CH-r6-Spp" id="snN-dF-gMm"/>
+                        <outlet property="switchToTabBoxTrailingConstraint" destination="F0b-NX-BKL" id="45A-fo-J8L"/>
                         <outlet property="switchToTabLabel" destination="LBz-Pz-Fw5" id="4bU-BW-M67"/>
                         <outlet property="view" destination="wj6-L2-5rJ" id="bsr-e7-gS7"/>
                     </connections>

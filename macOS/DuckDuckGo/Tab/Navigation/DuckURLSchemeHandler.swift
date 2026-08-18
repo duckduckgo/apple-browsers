@@ -19,7 +19,7 @@
 import BrowserServicesKit
 import Common
 import ContentScopeScripts
-import FeatureFlags
+import FeatureFlags_macOS
 import Foundation
 import MaliciousSiteProtection
 import Persistence

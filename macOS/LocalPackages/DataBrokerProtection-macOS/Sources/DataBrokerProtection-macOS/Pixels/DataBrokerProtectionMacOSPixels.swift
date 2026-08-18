@@ -83,7 +83,7 @@ public enum DataBrokerProtectionMacOSPixels {
     case failedToParsePrivacyConfig(Error)
 }
 
-extension DataBrokerProtectionMacOSPixels: PixelKitEvent {
+extension DataBrokerProtectionMacOSPixels: PixelKit.Event {
     public var name: String {
         switch self {
 

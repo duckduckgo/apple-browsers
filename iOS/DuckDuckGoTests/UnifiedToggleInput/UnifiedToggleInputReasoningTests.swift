@@ -158,7 +158,7 @@ final class UnifiedToggleInputReasoningTests: XCTestCase {
                 return false
             }
             return self.hasQueryItem(in: components, name: "featurePage", value: "duckai")
-                && self.hasQueryItem(in: components, name: "origin", value: "funnel_addressbar_ios__reasoningpicker")
+                && self.hasQueryItem(in: components, name: "origin", value: "funnel_addressbar_ios__reasoningdropdown")
         }
 
         sut.handleReasoningModeSelection(.extendedReasoning)
@@ -184,7 +184,7 @@ final class UnifiedToggleInputReasoningTests: XCTestCase {
                 return false
             }
             return self.hasQueryItem(in: components, name: "featurePage", value: "duckai")
-                && self.hasQueryItem(in: components, name: "origin", value: "funnel_addressbar_ios__reasoningpicker")
+                && self.hasQueryItem(in: components, name: "origin", value: "funnel_addressbar_ios__reasoningdropdown")
         }
 
         sut.handleReasoningModeSelection(.extendedReasoning)

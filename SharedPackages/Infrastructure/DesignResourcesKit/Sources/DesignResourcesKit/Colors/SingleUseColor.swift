@@ -16,12 +16,20 @@
 //  limitations under the License.
 //
 
-#if os(iOS)
-
 /// Semantic colors used for single use case.
 ///
 /// - Important: When used in multiple places, it should be proposed to promote the color to `DesignSystemColor`.
 public enum SingleUseColor {
+
+    // Fire View
+    case fireModeAccent
+
+#if os(iOS)
+    /// Background for grouped-list rows and visually associated inline cards.
+    /// Temporary compatibility token; replace with `.surfaceTertiary` when the
+    /// legacy palette and app-rebranding feature flag are removed.
+    case groupedListContentBackground
+
     case controlWidgetBackground
     case unifiedFeedbackFieldBackground
     case privacyDashboardBackground
@@ -62,7 +70,6 @@ public enum SingleUseColor {
     case toolbarButton
 
     // Fire Mode
-    case fireModeAccent
     case fireModeAccentDark
     case fireModeAccentTertiary
     case fireModeBackground
@@ -70,7 +77,24 @@ public enum SingleUseColor {
 
     // Duck.ai Grid Cell
     case duckAIVoiceCellBackground
+
+#elseif os(macOS)
+
+    case fireButtonGradientStart
+    case fireButtonGradientEnd
+    case fireButtonPressedGradientStart
+    case fireButtonPressedGradientEnd
+    case fireDialogKnobFill
+    case fireDialogTabBackground
+    case fireDialogTabBackgroundSelected
+    case fireDialogTabShadowPrimary
+    case fireDialogTabShadowSecondary
+
+#endif
+
 }
+
+#if os(iOS)
 
 // MARK: - Onboarding Rebranding 2026
 
@@ -105,11 +129,13 @@ public extension SingleUseColor {
         case destructiveGlowPrimary
 
         case controlsFillPrimary
+        case controlBorderTertiary
 
         case decorationPrimary
         case decorationSecondary
 
         case alertGreen
+        case calendarStripYellow
     }
 
 }

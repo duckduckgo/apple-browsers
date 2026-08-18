@@ -48,6 +48,8 @@ struct SubscriptionPromoLaunchView: View {
                 .padding(.vertical, Metrics.Footer.verticalPadding)
         }
         .background(Color(designSystemColor: .surface))
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("subscriptionPromoSheet")
     }
 }
 
@@ -68,8 +70,9 @@ private extension SubscriptionPromoLaunchView {
                         .resizable()
                         .scaledToFit()
                         .frame(width: Metrics.Header.closeButtonSize, height: Metrics.Header.closeButtonSize)
-                        .foregroundStyle(Color.primary)
                 }
+                .buttonStyle(CloseButtonStyle())
+                .accessibilityIdentifier("subscriptionPromoCloseButton")
             }
         }
     }
@@ -85,7 +88,7 @@ private extension SubscriptionPromoLaunchView {
             VStack(spacing: SheetMetrics.contentSpacing) {
                 let imageSize = Metrics.Content.imageSize.build(v: verticalSizeClass, h: horizontalSizeClass)
 
-                Image(rebrandable: "SheetIcon")
+                Image(rebrandable: "Subscription-Clock-128")
                     .resizable()
                     .scaledToFit()
                     .frame(width: imageSize.width, height: imageSize.height)

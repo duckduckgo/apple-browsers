@@ -24,6 +24,7 @@ import Suggestions
 import Bookmarks
 import AIChat
 import Core
+import FeatureFlags_iOS
 
 final class DefaultOmniBarViewController: OmniBarViewController {
 
@@ -764,7 +765,9 @@ extension DefaultOmniBarViewController {
             attachments: attachments,
             reasoningMode: iPadReasoningModeForSubmitPixel,
             modelId: modelPickerController?.currentModelId,
-            surface: .addressBar
+            surface: .addressBar,
+            pageType: omniDelegate?.currentPromptPageType() ?? .unknown,
+            origin: .ipadTogglePrompt
         )
         UnifiedToggleInputCoordinatorPixelHelper.fireToolSubmittedPixelIfNeeded(
             selectedTool: selectedTool,
@@ -796,6 +799,7 @@ extension DefaultOmniBarViewController {
 extension DefaultOmniBarViewController: OmniBarEditingStateViewControllerDelegate {
 
     func onQueryUpdated(_ query: String) {
+        omniDelegate?.onOmniBarTextEdited(query)
     }
 
     func onQuerySubmitted(_ query: String) {

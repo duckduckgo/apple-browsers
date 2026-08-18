@@ -1,4 +1,20 @@
 {
+    "m_ios_dbp_secure-vault_deferred-init-succeeded": {
+        "description": "Fired daily and count when deferred secure vault initialization completes successfully.",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "trigger",
+                "description": "The app lifecycle entry point that triggered deferred secure vault initialization",
+                "type": "string",
+                "enum": ["launch", "appActive", "dashboard", "backgroundTask"]
+            }
+        ]
+    },
     "m_ios_dbp_optout_stage_start": {
         "description": "Fired at the start stage of an opt-out attempt.",
         "owners": ["quanganhdo", "THISISDINOSAUR"],

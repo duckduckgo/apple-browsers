@@ -20,6 +20,7 @@ import XCTest
 import BrowserServicesKit
 import Common
 import PixelKit
+import PixelKitTestingUtilities
 @testable import DataBrokerProtectionCore
 import DataBrokerProtectionCoreTestsUtils
 
@@ -605,6 +606,47 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         let firedNames = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.map(\.name)
         XCTAssertFalse(firedNames.contains("dbp_optout_process_success"))
         XCTAssertFalse(firedNames.contains("dbp_optout_stage_finish"))
+    }
+
+    func testMarkSavedProfilesAsRemovedAndNotifyUser_resolvesFoundDateBeforeStoringConfirmation() throws {
+        let identifiers = makeFixtureIdentifiers()
+        let foundDate = Date().addingTimeInterval(-60)
+        mockDatabase.scanEvents = [
+            HistoryEvent(brokerId: identifiers.brokerId,
+                         profileQueryId: identifiers.profileQueryId,
+                         type: .matchesFound(count: 1),
+                         date: foundDate)
+        ]
+        mockDatabase.optOutEvents = [
+            HistoryEvent(extractedProfileId: 1,
+                         brokerId: identifiers.brokerId,
+                         profileQueryId: identifiers.profileQueryId,
+                         type: .optOutRequested,
+                         date: foundDate.addingTimeInterval(10))
+        ]
+        let wideEvent = WideEventMock()
+        mockDependencies.wideEvent = wideEvent
+        let completionExpectation = expectation(description: "confirmation wide event completed")
+        wideEvent.onComplete = { data, status in
+            let confirmationData = data as? OptOutConfirmationWideEventData
+            XCTAssertEqual(status, .success)
+            XCTAssertEqual(confirmationData?.confirmationInterval?.start, foundDate)
+            XCTAssertNotNil(confirmationData?.confirmationInterval?.end)
+            XCTAssertGreaterThan(confirmationData?.confirmationInterval?.durationMilliseconds ?? 0, 0)
+            completionExpectation.fulfill()
+        }
+
+        try sut.markSavedProfilesAsRemovedAndNotifyUser(
+            removedProfiles: [.mockWithoutRemovedDate],
+            brokerId: identifiers.brokerId,
+            profileQueryId: identifiers.profileQueryId,
+            brokerProfileQueryData: makeFixtureBrokerProfileQueryData(),
+            database: mockDatabase,
+            pixelHandler: mockPixelHandler,
+            eventsHandler: mockEventsHandler
+        )
+
+        wait(for: [completionExpectation], timeout: 1.0)
     }
 
     // MARK: - handleRemovedProfiles
@@ -1227,6 +1269,119 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
             XCTAssertFalse(mockDatabase.wasUpdateRemoveDateCalled)
             XCTAssertNil(mockDatabase.extractedProfileRemovedDate)
             XCTAssertFalse(mockDatabase.wasSaveOptOutOperationCalled)
+        } catch {
+            XCTFail("Should not throw")
+        }
+    }
+
+    func testWhenScannedProfileIsAlreadyInTheDatabase_thenTheStoredProfileIsRefreshedFromTheScrape() async {
+        do {
+            let storedProfile = ExtractedProfile(id: 1,
+                                                 name: "Some name",
+                                                 addresses: [AddressCityState(city: "Springfield", state: "IL", extras: ["street": "100 Sample Dr"])],
+                                                 profileUrl: "someURL",
+                                                 identifier: "someURL",
+                                                 extras: ["county": "Sangamon"])
+            let scrapedProfile = ExtractedProfile(name: "Some name",
+                                                  addresses: [AddressCityState(city: "Springfield", state: "IL", extras: ["zip": "62701"])],
+                                                  profileUrl: "someURL",
+                                                  identifier: "someURL")
+            mockDatabase.extractedProfilesFromBroker = [storedProfile]
+            mockScanRunner.scanResults = [scrapedProfile]
+
+            _ = try await sut.runScan(
+                brokerProfileQueryData: .init(
+                    dataBroker: .mock,
+                    profileQuery: .mock,
+                    scanJobData: .mock,
+                    optOutJobData: [OptOutJobData.mock(with: storedProfile)]
+                ),
+                showWebView: false,
+                isManual: false,
+                shouldRunNextStep: { true }
+            )
+
+            XCTAssertEqual(mockDatabase.updatedExtractedProfiles.count, 1)
+            let update = try XCTUnwrap(mockDatabase.updatedExtractedProfiles.first)
+            XCTAssertEqual(update.id, 1)
+            XCTAssertEqual(update.profile.extras, ["county": "Sangamon"])
+            XCTAssertEqual(update.profile.addresses?.first?.extras, ["street": "100 Sample Dr", "zip": "62701"])
+        } catch {
+            XCTFail("Should not throw")
+        }
+    }
+
+    func testWhenExtractedProfileRefreshIsOff_thenTheStoredProfileIsNotRefreshed() async {
+        do {
+            mockDependencies.featureFlagger = MockDBPFeatureFlagger(isExtractedProfileRefreshOn: false)
+            let storedProfile = ExtractedProfile(id: 1,
+                                                 name: "Some name",
+                                                 profileUrl: "someURL",
+                                                 identifier: "someURL",
+                                                 extras: ["county": "Sangamon"])
+            let scrapedProfile = ExtractedProfile(name: "Some name",
+                                                  profileUrl: "someURL",
+                                                  identifier: "someURL",
+                                                  extras: ["zip": "62701"])
+            mockDatabase.extractedProfilesFromBroker = [storedProfile]
+            mockScanRunner.scanResults = [scrapedProfile]
+
+            _ = try await sut.runScan(
+                brokerProfileQueryData: .init(
+                    dataBroker: .mock,
+                    profileQuery: .mock,
+                    scanJobData: .mock,
+                    optOutJobData: [OptOutJobData.mock(with: storedProfile)]
+                ),
+                showWebView: false,
+                isManual: false,
+                shouldRunNextStep: { true }
+            )
+
+            XCTAssertTrue(mockDatabase.updatedExtractedProfiles.isEmpty)
+        } catch {
+            XCTFail("Should not throw")
+        }
+    }
+
+    func testWhenScannedProfileIsNotYetInTheDatabase_thenNoStoredProfileIsRefreshed() async {
+        do {
+            mockScanRunner.scanResults = [.mockWithoutRemovedDate]
+
+            _ = try await sut.runScan(
+                brokerProfileQueryData: .init(dataBroker: .mock, profileQuery: .mock, scanJobData: .mock),
+                showWebView: false,
+                isManual: false,
+                shouldRunNextStep: { true }
+            )
+
+            XCTAssertTrue(mockDatabase.updatedExtractedProfiles.isEmpty)
+            XCTAssertTrue(mockDatabase.wasSaveOptOutOperationCalled)
+        } catch {
+            XCTFail("Should not throw")
+        }
+    }
+
+    func testWhenScannedProfileHasNoIdentifier_thenNoStoredProfileIsRefreshed() async {
+        do {
+            let storedProfile = ExtractedProfile(id: 1, name: "Some name", extras: ["county": "Sangamon"])
+            let scrapedProfile = ExtractedProfile(name: "Some other name")
+            mockDatabase.extractedProfilesFromBroker = [storedProfile]
+            mockScanRunner.scanResults = [scrapedProfile]
+
+            _ = try await sut.runScan(
+                brokerProfileQueryData: .init(
+                    dataBroker: .mock,
+                    profileQuery: .mock,
+                    scanJobData: .mock,
+                    optOutJobData: [OptOutJobData.mock(with: storedProfile)]
+                ),
+                showWebView: false,
+                isManual: false,
+                shouldRunNextStep: { true }
+            )
+
+            XCTAssertTrue(mockDatabase.updatedExtractedProfiles.isEmpty)
         } catch {
             XCTFail("Should not throw")
         }

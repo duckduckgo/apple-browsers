@@ -24,6 +24,7 @@ import DDGSync
 import Persistence
 import PrivacyConfig
 import AIChat
+import FeatureFlags_iOS
 
 final class SyncService {
 
@@ -94,6 +95,12 @@ final class SyncService {
                 },
                 isPairingV2CodeEnabled: {
                     featureFlagger.isFeatureOn(for: FeatureFlag.syncCanShowV2ConnectCode)
+                },
+                canWriteUnifiedDeviceList: {
+                    featureFlagger.isFeatureOn(for: FeatureFlag.syncCanWriteUnifiedDeviceList)
+                },
+                canReadUnifiedDeviceList: {
+                    featureFlagger.isFeatureOn(for: FeatureFlag.syncCanReadUnifiedDeviceList)
                 }
             ),
             shouldPreserveAccountWhenSyncDisabled: {

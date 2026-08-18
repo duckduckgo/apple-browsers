@@ -78,6 +78,7 @@ struct LottieView: UIViewRepresentable {
     private let loopMode: LoopMode
     private let animationImageProvider: AnimationImageProvider?
     private let valueProvider: ValueProvider?
+    private let configure: ((LottieAnimationView) -> Void)?
     private let contentSize: CGSize?
 
     let animationName: String
@@ -91,6 +92,7 @@ struct LottieView: UIViewRepresentable {
         isAnimating: Binding<Bool> = .constant(true),
         animationImageProvider: AnimationImageProvider? = nil,
         valueProvider: ValueProvider? = nil,
+        configure: ((LottieAnimationView) -> Void)? = nil,
         contentSize: CGSize? = nil
     ) {
         self.animationName = lottieFile
@@ -100,6 +102,7 @@ struct LottieView: UIViewRepresentable {
         self.loopMode = loopMode
         self.animationImageProvider = animationImageProvider
         self.valueProvider = valueProvider
+        self.configure = configure
         self.contentSize = contentSize
     }
 
@@ -115,6 +118,7 @@ struct LottieView: UIViewRepresentable {
         if let valueProvider {
             animationView.setValueProvider(valueProvider.provider, keypath: valueProvider.keypath)
         }
+        configure?(animationView)
 
         switch loopMode {
         case .mode(let lottieLoopMode): animationView.loopMode = lottieLoopMode
@@ -142,6 +146,10 @@ struct LottieView: UIViewRepresentable {
                 animationView.animation = self.animation
             }
         }
+
+        // Re-apply external configuration (e.g. value providers) on every update: it reflects
+        // current state, and the animation-swap hack above would otherwise wipe any providers.
+        configure?(animationView)
 
         guard isAnimating.wrappedValue, !animationView.isAnimationPlaying else {
             return

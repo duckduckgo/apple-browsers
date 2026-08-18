@@ -24,7 +24,7 @@ import Common
 import ConcurrencyExtensions
 import Configuration
 import DesignResourcesKitIcons
-import FeatureFlags
+import FeatureFlags_macOS
 import FoundationExtensions
 import History
 import OSLog
@@ -900,15 +900,26 @@ final class MainMenu: NSMenu {
     private func updateDuckAIChromeButtonMenuItems() {
         let shouldShowDuckAIChromeItems = featureFlagger.isFeatureOn(.aiChatChromeSidebar)
             && aiChatMenuConfig.shouldDisplayAnyAIChatFeature
-        toggleDuckAISidebarMenuItem.isHidden = !shouldShowDuckAIChromeItems
-        toggleDuckAISidebarSeparatorMenuItem.isHidden = !shouldShowDuckAIChromeItems
+        // Menu-button layout: no separate sidebar button, the Duck.ai item is reworded to "Ask Duck.ai",
+        // and "Show Duck.ai Sidebar" is dropped — its ⌘⌥L shortcut is reused by Duck.ai → Ask About Page.
+        let isMenuButtonLayout = shouldShowDuckAIChromeItems && featureFlagger.isFeatureOn(.aiChatChromeMenuButton)
+        toggleDuckAISidebarMenuItem.isHidden = !shouldShowDuckAIChromeItems || isMenuButtonLayout
+        toggleDuckAISidebarSeparatorMenuItem.isHidden = !shouldShowDuckAIChromeItems || isMenuButtonLayout
+        // ⌥⌘L moves to Ask About Page in menu-button layout; drop it here so the duplicate doesn't
+        // suppress the shortcut's display / capture the key event on this hidden item.
+        toggleDuckAISidebarMenuItem.keyEquivalent = isMenuButtonLayout ? "" : "l"
+        toggleDuckAISidebarMenuItem.keyEquivalentModifierMask = isMenuButtonLayout ? [] : [.option, .command]
         toggleDuckAIChromeButtonMenuItem.isHidden = !shouldShowDuckAIChromeItems
-        toggleDuckAIChromeSidebarButtonMenuItem.isHidden = !shouldShowDuckAIChromeItems
+        toggleDuckAIChromeSidebarButtonMenuItem.isHidden = !shouldShowDuckAIChromeItems || isMenuButtonLayout
         duckAIChromeButtonsSeparatorMenuItem.isHidden = !shouldShowDuckAIChromeItems
 
         let isDuckAIButtonHidden = duckAIChromeButtonsVisibilityManager.isHidden(.duckAI)
         let isSidebarButtonHidden = duckAIChromeButtonsVisibilityManager.isHidden(.sidebar)
-        toggleDuckAIChromeButtonMenuItem.title = isDuckAIButtonHidden ? UserText.aiChatChromeShowDuckAIButton : UserText.aiChatChromeHideDuckAIButton
+        if isMenuButtonLayout {
+            toggleDuckAIChromeButtonMenuItem.title = isDuckAIButtonHidden ? UserText.aiChatChromeShowAskDuckAIButton : UserText.aiChatChromeHideAskDuckAIButton
+        } else {
+            toggleDuckAIChromeButtonMenuItem.title = isDuckAIButtonHidden ? UserText.aiChatChromeShowDuckAIButton : UserText.aiChatChromeHideDuckAIButton
+        }
         toggleDuckAIChromeSidebarButtonMenuItem.title = isSidebarButtonHidden ? UserText.aiChatChromeShowSidebarButton : UserText.aiChatChromeHideSidebarButton
     }
 
@@ -1065,6 +1076,7 @@ final class MainMenu: NSMenu {
             FreemiumDebugMenu()
             SubscriptionPromoDebugMenu()
             AdBlockingDebugMenu()
+            FireDialogDebugMenu()
 
             if case .normal = AppVersion.runType {
                 NSMenuItem(title: "VPN")
@@ -1316,13 +1328,21 @@ final class MainMenu: NSMenu {
 
     @MainActor private func makeAIChatMenu() -> AIChatMenu {
         let actions = AIChatMenu.Actions.makeDefault(
+            conversationSource: .mainMenu,
             remoteSettings: AIChatRemoteSettings(),
             tabOpener: NSApp.delegateTyped.aiChatTabOpener,
             historyCleaner: aiChatHistoryCleaner,
             windowControllersManager: Application.appDelegate.windowControllersManager,
             aiChatSyncCleaner: { Application.appDelegate.aiChatSyncCleaner }
         )
-        return AIChatMenu(suggestionsReader: aiChatSuggestionsReader, actions: actions, maxChatItems: 8)
+        let featureFlagger = self.featureFlagger
+        return AIChatMenu(suggestionsReader: aiChatSuggestionsReader, actions: actions, maxChatItems: 8, shouldShowAskAboutPage: {
+            featureFlagger.isFeatureOn(.aiChatChromeSidebar) && featureFlagger.isFeatureOn(.aiChatChromeMenuButton)
+        }, isCurrentPageAttachable: {
+            Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.mainViewController.tabBarViewController.isCurrentPageAttachableForAIChat ?? false
+        }, isChatPresented: {
+            Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.mainViewController.tabBarViewController.isDuckAIChatPresented ?? false
+        })
     }
 
     private func setupAIChatMenu() {

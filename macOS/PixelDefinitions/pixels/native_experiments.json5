@@ -22,6 +22,44 @@
                     "enum": ["true"]
                 }
             }
+        },
+        "onboardingSubscriptionUpsellExperiment": {
+            "cohorts": ["control", "treatment"],
+            "metrics": {
+                "upsellShown": {
+                    "description": "The subscription upsell dialog was shown at the end of onboarding",
+                    "enum": ["1"]
+                },
+                "tryForFreeClick": {
+                    "description": "User clicked the primary call to action on the subscription upsell dialog",
+                    "enum": ["1"]
+                },
+                "noThanksClick": {
+                    "description": "User declined the subscription upsell dialog",
+                    "enum": ["1"]
+                },
+                "upsellDismissed": {
+                    "description": "User left the subscription upsell dialog without choosing either action",
+                    "enum": ["1"]
+                },
+                "trialStarted": {
+                    "description": "A free trial was started and attributed to the onboarding upsell origin",
+                    "enum": ["1"]
+                }
+            }
+        },
+        "onboardingChromeExtension": {
+            "cohorts": ["control", "treatment"],
+            "metrics": {
+                "setAsDefault": {
+                    "description": "User clicked the Set as Default call to action during onboarding",
+                    "enum": ["true"]
+                },
+                "onboardingCompleted": {
+                    "description": "User completed the full onboarding flow",
+                    "enum": ["true"]
+                }
+            }
         }
     }
 }

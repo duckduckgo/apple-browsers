@@ -167,7 +167,7 @@ final class StartupOptionsTests: XCTestCase {
         XCTAssertEqual(vpnSettings.excludeLocalNetworks, true)
     }
 
-    func testVPNSettingsSnapshotRoundTripsOrphanProxyDetectionFlag() throws {
+    func testVPNSettingsSnapshotRoundTripsEnforceRoutesFlag() throws {
         let snapshot = VPNSettingsSnapshot(
             registrationKeyValidity: .custom(3600),
             selectedEnvironment: .production,
@@ -175,16 +175,16 @@ final class StartupOptionsTests: XCTestCase {
             selectedLocation: .nearest,
             dnsSettings: .ddg(blockRiskyDomains: true),
             excludeLocalNetworks: false,
-            isOrphanProxyDetectionEnabled: false
+            enforceRoutes: false
         )
 
         let decoded = try JSONDecoder().decode(VPNSettingsSnapshot.self, from: JSONEncoder().encode(snapshot))
 
-        XCTAssertFalse(decoded.isOrphanProxyDetectionEnabled)
+        XCTAssertFalse(decoded.enforceRoutes)
     }
 
-    func testVPNSettingsSnapshotDefaultsOrphanProxyDetectionEnabledWhenMissingFromPayload() throws {
-        // Simulate a snapshot persisted by an older version that predates the flag.
+    func testVPNSettingsSnapshotDefaultsEnforceRoutesWhenMissingFromPayload() throws {
+        // Simulate a snapshot persisted by an older version that predates carrying the flag.
         let snapshot = VPNSettingsSnapshot(
             registrationKeyValidity: .custom(3600),
             selectedEnvironment: .production,
@@ -195,28 +195,28 @@ final class StartupOptionsTests: XCTestCase {
         )
         let encoded = try JSONEncoder().encode(snapshot)
         var json = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
-        json.removeValue(forKey: "isOrphanProxyDetectionEnabled")
+        json.removeValue(forKey: "enforceRoutes")
         let legacyData = try JSONSerialization.data(withJSONObject: json)
 
         let decoded = try JSONDecoder().decode(VPNSettingsSnapshot.self, from: legacyData)
 
-        XCTAssertTrue(decoded.isOrphanProxyDetectionEnabled)
+        XCTAssertTrue(decoded.enforceRoutes)
     }
 
-    func testVPNSettingsSnapshotCarriesOrphanProxyDetectionFromSettings() {
-        let sourceDefaults = UserDefaults(suiteName: "orphan-proxy-source-test")!
-        defer { sourceDefaults.removePersistentDomain(forName: "orphan-proxy-source-test") }
+    func testVPNSettingsSnapshotCarriesEnforceRoutesFromSettings() {
+        let sourceDefaults = UserDefaults(suiteName: "enforce-routes-source-test")!
+        defer { sourceDefaults.removePersistentDomain(forName: "enforce-routes-source-test") }
         let vpnSettings = VPNSettings(defaults: sourceDefaults)
-        vpnSettings.isOrphanProxyDetectionEnabled = false
+        vpnSettings.enforceRoutes = false
 
         let snapshot = VPNSettingsSnapshot(from: vpnSettings)
-        XCTAssertFalse(snapshot.isOrphanProxyDetectionEnabled)
+        XCTAssertFalse(snapshot.enforceRoutes)
 
-        let targetDefaults = UserDefaults(suiteName: "orphan-proxy-apply-test")!
-        defer { targetDefaults.removePersistentDomain(forName: "orphan-proxy-apply-test") }
+        let targetDefaults = UserDefaults(suiteName: "enforce-routes-apply-test")!
+        defer { targetDefaults.removePersistentDomain(forName: "enforce-routes-apply-test") }
         let other = VPNSettings(defaults: targetDefaults)
         snapshot.applyTo(other)
-        XCTAssertFalse(other.isOrphanProxyDetectionEnabled)
+        XCTAssertFalse(other.enforceRoutes)
     }
 
     func testCorruptedVPNSettingsResultInResetOption() {

@@ -70,11 +70,17 @@ final class AIChatMenuTests: XCTestCase {
         XCTAssertTrue(titles.contains(UserText.aiChatMenuDeleteAllChats))
     }
 
-    func testOpenDuckAIItemHasOptionCommandNShortcut() {
+    func testNewChatItemHasOptionCommandNShortcut() {
         let menu = AIChatMenu(suggestionsReader: suggestionsReader, actions: actions)
-        let item = menu.items.first { $0.title == UserText.aiChatMenuOpenDuckAI }
+        let item = menu.items.first { $0.title == UserText.aiChatMenuNewChat }
         XCTAssertEqual(item?.keyEquivalent, "n")
         XCTAssertEqual(item?.keyEquivalentModifierMask, [.option, .command])
+    }
+
+    func testOpenDuckAIItemHasNoShortcut() {
+        let menu = AIChatMenu(suggestionsReader: suggestionsReader, actions: actions)
+        let item = menu.items.first { $0.title == UserText.aiChatMenuOpenDuckAI }
+        XCTAssertEqual(item?.keyEquivalent, "")
     }
 
     func testMoreOptionsOpenDuckAIItemHasNoShortcut() {
@@ -283,6 +289,7 @@ final class AIChatMenuTests: XCTestCase {
         let historyCleaner = StubAIChatHistoryCleaner(result: .success(()))
         let syncCleaner = StubAIChatSyncCleaning()
         let defaultActions = AIChatMenu.Actions.makeDefault(
+            conversationSource: .mainMenu,
             remoteSettings: AIChatRemoteSettings(),
             tabOpener: MockAIChatTabOpener(),
             historyCleaner: historyCleaner,
@@ -300,6 +307,7 @@ final class AIChatMenuTests: XCTestCase {
         let historyCleaner = StubAIChatHistoryCleaner(result: .failure(NSError(domain: "test", code: 0)))
         let syncCleaner = StubAIChatSyncCleaning()
         let defaultActions = AIChatMenu.Actions.makeDefault(
+            conversationSource: .mainMenu,
             remoteSettings: AIChatRemoteSettings(),
             tabOpener: MockAIChatTabOpener(),
             historyCleaner: historyCleaner,
@@ -315,6 +323,7 @@ final class AIChatMenuTests: XCTestCase {
     func testDeleteAllChats_succeedsWhenSyncCleanerIsNil() async {
         let historyCleaner = StubAIChatHistoryCleaner(result: .success(()))
         let defaultActions = AIChatMenu.Actions.makeDefault(
+            conversationSource: .mainMenu,
             remoteSettings: AIChatRemoteSettings(),
             tabOpener: MockAIChatTabOpener(),
             historyCleaner: historyCleaner,
@@ -331,6 +340,7 @@ final class AIChatMenuTests: XCTestCase {
         let historyCleaner = StubAIChatHistoryCleaner(result: .success(()))
         var syncCleaner: StubAIChatSyncCleaning?
         let defaultActions = AIChatMenu.Actions.makeDefault(
+            conversationSource: .mainMenu,
             remoteSettings: AIChatRemoteSettings(),
             tabOpener: MockAIChatTabOpener(),
             historyCleaner: historyCleaner,
@@ -375,6 +385,10 @@ private final class StubAIChatHistoryCleaner: AIChatHistoryCleaning {
     func cleanAIChatHistory() async -> Result<Void, Error> {
         cleanAIChatHistoryCalled = true
         return result
+    }
+
+    func allChats() -> [DuckAiChat] {
+        []
     }
 }
 

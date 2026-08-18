@@ -36,11 +36,11 @@ jobs:
       needs: should-run-checks
       if: needs.should-run-checks.outputs.should_run == 'true'
 
-      runs-on: macos-26
+      runs-on: [image:osx-tahoe-26, size:large]
       timeout-minutes: 45
 
       env:
-        RUNS_ON: macos-26 # keep this in sync with runs-on above
+        RUNS_ON: bitrise:macos26-m4 # keep this in sync with runs-on above
         WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
 
       outputs:
@@ -58,6 +58,18 @@ jobs:
         uses: actions/checkout@v6
         with:
           submodules: recursive
+
+      - name: Override RUNS_ON
+        if: runner.environment == 'self-hosted'
+        run: |
+          if [[ "${{ contains(runner.name, 'm4pro') }}" == "true" ]]; then
+            echo "RUNS_ON=bitrise:macos26-m4pro" >> $GITHUB_ENV
+          else
+            echo "RUNS_ON=bitrise:macos26-m4" >> $GITHUB_ENV
+          fi
+
+      - name: Print macOS version
+        run: sw_vers
 
       - name: Start measuring duration
         id: start-duration-macos
@@ -86,6 +98,13 @@ jobs:
 
       - name: Select Xcode
         uses: ./.github/actions/select-xcode-version
+
+      - name: Setup Bitrise Build Cache
+        if: runner.environment == 'self-hosted'
+        uses: ./.github/actions/bitrise-build-cache
+        with:
+          token: ${{ secrets.BITRISE_BUILD_CACHE_AUTH_TOKEN }}
+          workspace-id: ${{ secrets.BITRISE_BUILD_CACHE_WORKSPACE_ID }}
 
       - name: Run tests
         id: run-unit-tests
@@ -192,11 +211,11 @@ jobs:
       needs: should-run-checks
       if: needs.should-run-checks.outputs.should_run == 'true'
 
-      runs-on: macos-26
+      runs-on: [image:osx-tahoe-26, size:large]
       timeout-minutes: 45
 
       env:
-        RUNS_ON: macos-26 # keep this in sync with runs-on above
+        RUNS_ON: bitrise:macos26-m4 # keep this in sync with runs-on above
         WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
 
       steps:
@@ -210,6 +229,18 @@ jobs:
         uses: actions/checkout@v6
         with:
           submodules: recursive
+
+      - name: Override RUNS_ON
+        if: runner.environment == 'self-hosted'
+        run: |
+          if [[ "${{ contains(runner.name, 'm4pro') }}" == "true" ]]; then
+            echo "RUNS_ON=bitrise:macos26-m4pro" >> $GITHUB_ENV
+          else
+            echo "RUNS_ON=bitrise:macos26-m4" >> $GITHUB_ENV
+          fi
+
+      - name: Print macOS version
+        run: sw_vers
 
       - name: Start measuring duration
         id: start-duration-ios
@@ -259,6 +290,13 @@ jobs:
           # set -o pipefail && swift package resolve | tee ios-build-log.txt | xcbeautify
           # mkdir -p DerivedData/SourcePackages
           # mv .build/* DerivedData/SourcePackages
+
+      - name: Setup Bitrise Build Cache
+        if: runner.environment == 'self-hosted'
+        uses: ./.github/actions/bitrise-build-cache
+        with:
+          token: ${{ secrets.BITRISE_BUILD_CACHE_AUTH_TOKEN }}
+          workspace-id: ${{ secrets.BITRISE_BUILD_CACHE_WORKSPACE_ID }}
 
       - name: Run tests
         id: run-unit-tests-ios

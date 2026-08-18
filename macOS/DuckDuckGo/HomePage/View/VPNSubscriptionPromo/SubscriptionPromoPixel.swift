@@ -19,7 +19,7 @@
 import Foundation
 import PixelKit
 
-enum SubscriptionPromoPixel: PixelKitEvent {
+enum SubscriptionPromoPixel: PixelKit.Event {
     case promoDisplayed(isEligibleForFreeTrial: Bool)
     case promoViewed(isEligibleForFreeTrial: Bool)
     case promoCtaActioned(isEligibleForFreeTrial: Bool)

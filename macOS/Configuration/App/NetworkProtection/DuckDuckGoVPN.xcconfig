@@ -16,6 +16,11 @@
 #include "../AppTargetsBase.xcconfig"
 #include "../../DeveloperID.xcconfig"
 
+ASSETCATALOG_COMPILER_APPICON_NAME[config=Debug][sdk=*] = AppIcon-Debug
+ASSETCATALOG_COMPILER_APPICON_NAME[config=CI][sdk=*] = AppIcon-Debug
+ASSETCATALOG_COMPILER_APPICON_NAME[config=Review][sdk=*] = AppIcon-Review
+ASSETCATALOG_COMPILER_APPICON_NAME[config=Alpha][sdk=*] = AppIcon-Alpha
+
 BUNDLE_IDENTIFIER_PREFIX = $(AGENT_BUNDLE_ID)
 
 // Override AppTargetsBase.xcconfig until we resolve bundle IDs.

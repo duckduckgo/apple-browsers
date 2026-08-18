@@ -27,6 +27,7 @@ import Subscription
 import Persistence
 import DDGSync
 import Configuration
+import EventHub
 import SetDefaultBrowserUI
 import SystemSettingsPiPTutorial
 import DataBrokerProtection_iOS
@@ -34,6 +35,7 @@ import PrivacyStats
 import Networking
 import WebExtensions
 import Onboarding
+import FeatureFlags_iOS
 
 @MainActor
 protocol URLHandling: AnyObject {
@@ -68,7 +70,7 @@ final class MainCoordinator {
 
     private let subscriptionManager: any SubscriptionManager
     private let featureFlagger: FeatureFlagger
-    private let modalPromptCoordinationService: ModalPromptCoordinationService
+    private let promoCoordinationService: PromoCoordinationService
     private let launchSourceManager: LaunchSourceManaging
     private let keyValueStore: ThrowingKeyValueStoring
     private let onboardingSearchExperienceSelectionHandler: OnboardingSearchExperienceSelectionHandler
@@ -91,6 +93,7 @@ final class MainCoordinator {
     private let darkReaderFeatureSettings: DarkReaderFeatureSettings
     private var darkReaderCancellables = Set<AnyCancellable>()
     private var youTubeAdBlockingCancellable: AnyCancellable?
+    private let nativeMessagingSupport = NativeMessagingSupport()
     private var webExtensionLoadTask: Task<Void, Never>?
     private var isWebExtensionLoadPending = false
     private var protectedDataCancellable: AnyCancellable?
@@ -129,21 +132,22 @@ final class MainCoordinator {
          freemiumPIRDebugSettings: FreemiumPIRDebugSettings,
          freemiumDBPUserStateManager: FreemiumDBPUserStateManaging,
          profileStateManager: DBPProfileStateManaging,
-         modalPromptCoordinationService: ModalPromptCoordinationService,
+         promoCoordinationService: PromoCoordinationService,
          mobileCustomization: MobileCustomization,
          productSurfaceTelemetry: ProductSurfaceTelemetry,
          whatsNewRepository: WhatsNewMessageRepository,
          sharedSecureVault: (any AutofillSecureVault)? = nil,
          syncAutoRestoreDecisionManager: SyncAutoRestoreDecisionManaging = AppDependencyProvider.shared.syncAutoRestoreDecisionManager,
          wideEvent: WideEventManaging,
-         onboardingManager: OnboardingManaging
+         onboardingManager: OnboardingManaging,
+         eventHub: EventHubManaging
     ) throws {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
         self.keyValueStore = keyValueStore
         self.darkReaderFeatureSettings = AppDarkReaderFeatureSettings(featureFlagger: featureFlagger,
                                                                       privacyConfigurationManager: privacyConfigurationManager)
-        self.modalPromptCoordinationService = modalPromptCoordinationService
+        self.promoCoordinationService = promoCoordinationService
         self.wideEvent = wideEvent
         self.onboardingManager = onboardingManager
         self.voiceSessionStateManager = VoiceSessionStateManager()
@@ -218,7 +222,8 @@ final class MainCoordinator {
                                 duckAiNativeStorageHandler: contentBlockingService.duckAiNativeStorageHandler,
                                 duckAiFireModeStorageHandler: contentBlockingService.duckAiFireModeStorageHandler,
                                 toggleModeStorage: toggleModeStorage,
-                                adBlockingAvailability: contentBlockingService.adBlockingAvailability)
+                                adBlockingAvailability: contentBlockingService.adBlockingAvailability,
+                                eventHub: eventHub)
         let fireExecutor = FireExecutor(tabManager: tabManager,
                                         websiteDataManager: websiteDataManager,
                                         daxDialogsManager: daxDialogsManager,
@@ -312,7 +317,8 @@ final class MainCoordinator {
                                         darkReaderFeatureSettings: darkReaderFeatureSettings,
                                         toggleModeStorage: toggleModeStorage,
                                         onboardingManager: onboardingManager,
-                                        recentModalPromptStatusProvider: modalPromptCoordinationService)
+                                        newTabPagePromoCoordinator: promoCoordinationService,
+                                        recentModalPromptStatusProvider: promoCoordinationService)
 
         setupWebExtensions(privacyConfigurationManager: privacyConfigurationManager)
 
@@ -555,7 +561,7 @@ final class MainCoordinator {
     @available(iOS 18.4, *)
     private func enabledEmbeddedExtensionTypes() -> Set<DuckDuckGoWebExtensionType> {
         var enabledTypes: Set<DuckDuckGoWebExtensionType> = []
-        if featureFlagger.isFeatureOn(.embeddedExtension) {
+        if featureFlagger.isFeatureOn(.embeddedExtension), nativeMessagingSupport.isSupported {
             enabledTypes.insert(.embedded)
         }
         if darkReaderFeatureSettings.isForceDarkModeEnabled == true {
@@ -646,8 +652,8 @@ final class MainCoordinator {
         controller.segueToSubscriptionWelcome()
     }
 
-    func presentNetworkProtectionStatusSettingsModal(origin: SubscriptionFunnelOrigin) {
-        controller.presentNetworkProtectionStatusSettingsModal(origin: origin)
+    func presentNetworkProtectionStatusSettingsModal(entryPoint: VPNEntryPoint, scrollToStrictRouting: Bool = false) {
+        controller.presentNetworkProtectionStatusSettingsModal(entryPoint: entryPoint, scrollToStrictRouting: scrollToStrictRouting)
     }
 
     func presentDataBrokerProtectionDashboard() {
@@ -655,7 +661,7 @@ final class MainCoordinator {
     }
 
     func presentModalPromptIfNeeded() {
-        modalPromptCoordinationService.presentModalPromptIfNeeded(from: controller)
+        promoCoordinationService.presentModalPromptIfNeeded(from: controller)
     }
 
     // MARK: App Lifecycle handling
@@ -762,7 +768,7 @@ extension MainCoordinator: URLHandling {
         case .newEmail:
             controller.newEmailAddress()
         case .openVPN:
-            presentNetworkProtectionStatusSettingsModal(origin: .widgetVPN)
+            presentNetworkProtectionStatusSettingsModal(entryPoint: .widget)
         case .openPasswords:
             handleOpenPasswords(url: url)
         case .openAIChat:
@@ -817,7 +823,7 @@ extension MainCoordinator: URLHandling {
           controller.clearNavigationStack()
           // Give the `clearNavigationStack` call time to complete.
           DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 0.5) {
-              self.controller.openAIChat()
+              self.controller.openAIChat(source: .iconShortcut)
           }
           Pixel.fire(pixel: .openAIChatFromIconShortcut)
       }
@@ -831,7 +837,7 @@ extension MainCoordinator: ShortcutItemHandling {
         } else if item.type == ShortcutKey.passwords {
             handleSearchPassword()
         } else if item.type == ShortcutKey.openVPNSettings {
-            controller.presentNetworkProtectionStatusSettingsModal(origin: .shortcutVPN)
+            controller.presentNetworkProtectionStatusSettingsModal(entryPoint: .shortcut)
         } else if item.type == ShortcutKey.aiChat {
             handleAIChatAppIconShortuct()
         } else if item.type == ShortcutKey.voiceSearch {
@@ -892,8 +898,9 @@ extension MainCoordinator: UserActivityHandling {
 
 extension MainCoordinator: IdleReturnLaunchDelegate {
 
-    func showNewTabPageAfterIdleReturn() {
+    func showNewTabPageAfterIdleReturn(timeAwayMs: Int?) {
         if voiceShortcutFeature.isAvailable, voiceSessionStateManager.isVoiceSessionActive {
+            startUntreatedReturnSession(timeAwayMs: timeAwayMs)
             return
         }
 
@@ -905,17 +912,39 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
         // We require a non-nil current tab here: if there is no current tab,
         // we still want to fall through to `newTab(...)` to create one.
         if let currentTab = tabManager.currentTabsModel.currentTab, currentTab.link == nil {
+            startUntreatedReturnSession(timeAwayMs: timeAwayMs)
             return
         }
 
+        // The NTP session starts when the NTP actually renders; stash the time away so it carries it.
+        controller.postIdleSessionInstrumentation.noteReturn(timeAwayMs: timeAwayMs)
         controller.prepareForIdleReturnNTP { [weak self] in
             guard let self else { return }
             self.controller.newTab(reuseExisting: true, allowingKeyboard: true, openedAfterIdle: true)
         }
     }
 
-    func markLastUsedTabAsResumedAfterIdle() {
-        controller.postIdleSessionInstrumentation.sessionStarted(surface: .lut)
+    func markLastUsedTabAsResumedAfterIdle(timeAwayMs: Int?) {
+        controller.postIdleSessionInstrumentation.noteReturn(timeAwayMs: timeAwayMs)
+        controller.postIdleSessionInstrumentation.sessionStarted(landedOn: landedOnForCurrentTab(), afterIdleSurface: .lut, focused: false)
+    }
+
+    func recordOrdinaryReturn(timeAwayMs: Int?) {
+        startUntreatedReturnSession(timeAwayMs: timeAwayMs)
+    }
+
+    /// A return where no after-idle treatment was applied, so `after_idle` stays false and
+    /// the post-idle event — which only reports on treated returns — is not started.
+    private func startUntreatedReturnSession(timeAwayMs: Int?) {
+        controller.postIdleSessionInstrumentation.noteReturn(timeAwayMs: timeAwayMs)
+        controller.postIdleSessionInstrumentation.sessionStarted(landedOn: landedOnForCurrentTab(), afterIdleSurface: nil, focused: false)
+    }
+
+    private func landedOnForCurrentTab() -> ReturnSessionWideEventData.LandedOn {
+        guard let url = tabManager.currentTabsModel.currentTab?.link?.url else { return .ntpUserInitiated }
+        if url.isDuckAIURL { return .duckAI }
+        if url.isDuckDuckGoSearch { return .serp }
+        return .web
     }
 
 }

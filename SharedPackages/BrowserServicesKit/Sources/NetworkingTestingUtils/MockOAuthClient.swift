@@ -26,8 +26,12 @@ public class MockOAuthClient: OAuthClient {
         internalCurrentTokenContainer != nil
     }
     public var internalCurrentTokenContainer: Networking.TokenContainer?
+    public var currentTokenContainerError: Error?
     public func currentTokenContainer() throws -> TokenContainer? {
-        internalCurrentTokenContainer
+        if let currentTokenContainerError {
+            throw currentTokenContainerError
+        }
+        return internalCurrentTokenContainer
     }
 
     public func setCurrentTokenContainer(_ tokenContainer: TokenContainer?) throws {

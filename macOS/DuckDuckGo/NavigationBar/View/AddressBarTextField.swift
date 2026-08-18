@@ -29,6 +29,7 @@ import Subscription
 import os.log
 import UIComponents
 import AIChat
+import DesignResourcesKit
 
 protocol AddressBarTextFieldFocusDelegate: AnyObject {
     func addressBarDidFocus(_ addressBarTextField: AddressBarTextField)
@@ -486,6 +487,7 @@ final class AddressBarTextField: NSTextField {
             pixel = .aiChatSuggestionAIChatSubmittedMouse
         }
         PixelKit.fire(pixel, frequency: .dailyAndCount, includeAppVersionParameter: true)
+        NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.addressBar)
         NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(with: .query(prompt, shouldAutoSubmit: true), behavior: behavior)
         currentEditor()?.selectAll(self)
     }
@@ -763,7 +765,6 @@ final class AddressBarTextField: NSTextField {
         NSStoryboard.suggestion.instantiateController(identifier: "SuggestionViewController") { coder in
             let suggestionViewController = SuggestionViewController(coder: coder,
                                                                     suggestionContainerViewModel: self.suggestionContainerViewModel!,
-                                                                    isBurner: self.isBurner,
                                                                     themeManager: self.themeManager,
                                                                     aiChatPreferencesStorage: self.aiChatPreferences ?? DefaultAIChatPreferencesStorage(),
                                                                     featureFlagger: Application.appDelegate.featureFlagger)
@@ -1147,11 +1148,12 @@ extension AddressBarTextField {
         case openTab(URL)
 
         func toAttributedString(size: CGFloat, isBurner: Bool) -> NSAttributedString {
-            let suffixColor = isBurner ? NSColor.burnerAccent : NSColor(designSystemColor: .accentTextPrimary)
+            let suffixColor: DesignSystemColor = isBurner ? .accentFireTextPrimary : .accentTextPrimary
             let attrs: [NSAttributedString.Key: Any] = [
                 .font: NSFont.systemFont(ofSize: size, weight: .light),
-                .foregroundColor: suffixColor
+                .foregroundColor: NSColor(designSystemColor: suffixColor)
             ]
+
             return NSAttributedString(string: string, attributes: attrs)
         }
 

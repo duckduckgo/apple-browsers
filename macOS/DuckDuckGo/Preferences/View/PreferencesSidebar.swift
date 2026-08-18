@@ -116,7 +116,7 @@ extension Preferences {
                 .font(.system(size: 11, weight: .bold))
                 .padding(.horizontal, 8)
                 .padding(.vertical, 2)
-                .background(Color(designSystemColor: .alertYellow))
+                .background(Color(designSystemColor: DesignSystemRebrand.isAppRebranded() ? .statusYellowTertiary : .alertYellow))
                 .foregroundColor(.black)
                 .cornerRadius(DesignSystemRebrand.isAppRebranded() ? 9 : 4)
         }
@@ -128,7 +128,7 @@ extension Preferences {
                 .font(.system(size: 11, weight: .bold))
                 .padding(.horizontal, 8)
                 .padding(.vertical, 2)
-                .background(Color(designSystemColor: .alertYellow))
+                .background(Color(designSystemColor: DesignSystemRebrand.isAppRebranded() ? .statusYellowTertiary : .alertYellow))
                 .foregroundColor(.black)
                 .cornerRadius(DesignSystemRebrand.isAppRebranded() ? 9 : 4)
         }

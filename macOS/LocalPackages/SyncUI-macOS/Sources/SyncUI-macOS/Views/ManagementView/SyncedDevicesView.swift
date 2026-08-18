@@ -57,20 +57,32 @@ struct SyncedDevicesView<ViewModel>: View where ViewModel: ManagementViewModel {
 struct SyncedDeviceIcon: View {
     var kind: SyncDevice.Kind
 
-    var image: NSImage {
+    private var imageResource: ImageResource {
         switch kind {
         case .current, .desktop:
-            return NSImage(imageLiteralResourceName: "SyncedDeviceDesktop")
+            return .syncedDeviceDesktop
         case .mobile:
-            return NSImage(imageLiteralResourceName: "SyncedDeviceMobile")
+            return .syncedDeviceMobile
         case .thirdParty:
-            return NSImage(imageLiteralResourceName: "SyncAllDevices")
+            return .syncAllDevices
+        }
+    }
+
+    private var accessibilityIdentifier: String {
+        switch kind {
+        case .current, .desktop:
+            return "SyncSettings.syncedDevice.desktop"
+        case .mobile:
+            return "SyncSettings.syncedDevice.mobile"
+        case .thirdParty:
+            return "SyncSettings.syncedDevice.thirdParty"
         }
     }
 
     var body: some View {
-        Image(nsImage: image)
+        Image(imageResource)
             .aspectRatio(contentMode: .fit)
+            .accessibilityIdentifier(accessibilityIdentifier)
     }
 }
 

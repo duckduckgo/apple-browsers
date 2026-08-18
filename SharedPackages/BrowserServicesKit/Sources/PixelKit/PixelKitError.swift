@@ -23,6 +23,10 @@ import FoundationExtensions
 public enum PixelKitError: DDGError {
     case externalError(Error)
 
+    /// `PixelKit.setUp` has not been called, so there is no shared instance to fire through.
+    /// Only surfaced by the async static entry point: the synchronous one silently no-ops.
+    case notConfigured
+
     // MARK: - DDGError Conformance
 
     public static var errorDomain: String { "com.duckduckgo.pixelkit" }
@@ -30,18 +34,21 @@ public enum PixelKitError: DDGError {
     public var errorCode: Int {
         switch self {
         case .externalError: return 0
+        case .notConfigured: return 1
         }
     }
 
     public var underlyingError: Error? {
         switch self {
         case .externalError(let underlyingError): return underlyingError
+        case .notConfigured: return nil
         }
     }
 
     public var description: String {
         switch self {
         case .externalError(let underlyingError): return "An external error occurred: \(underlyingError)"
+        case .notConfigured: return "PixelKit has not been set up"
         }
     }
 
@@ -49,6 +56,10 @@ public enum PixelKitError: DDGError {
         switch (lhs, rhs) {
         case (.externalError(let lhs), .externalError(let rhs)):
             return String(describing: lhs) == String(describing: rhs)
+        case (.notConfigured, .notConfigured):
+            return true
+        default:
+            return false
         }
     }
 }

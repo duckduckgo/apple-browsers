@@ -19,6 +19,72 @@
 
 import UIKit
 
+enum FloatingOmnibarSwipeDirection: Equatable {
+    case left
+    case right
+}
+
+enum FloatingOmnibarSwipeGeometry {
+
+    static let fieldSpacing: CGFloat = 32
+
+    static func visibleRects(bounds: CGRect,
+                             progress: CGFloat,
+                             direction: FloatingOmnibarSwipeDirection) -> (outgoing: CGRect, incoming: CGRect) {
+        let progress = max(0, min(progress, 1))
+        let spacingRampIn = max(0, min((progress - 0.2) / 0.1, 1))
+        let spacingRampOut = 1 - max(0, min((progress - 0.9) / 0.1, 1))
+        let spacing = fieldSpacing * min(spacingRampIn, spacingRampOut)
+        let outgoingWidth = max(bounds.width * (1 - progress) - spacing / 2, 0)
+        let incomingWidth = max(bounds.width * progress - spacing / 2, 0)
+
+        switch direction {
+        case .left:
+            return (
+                CGRect(x: 0, y: 0, width: outgoingWidth, height: bounds.height),
+                CGRect(x: bounds.width - incomingWidth, y: 0, width: incomingWidth, height: bounds.height)
+            )
+        case .right:
+            return (
+                CGRect(x: bounds.width - outgoingWidth, y: 0, width: outgoingWidth, height: bounds.height),
+                CGRect(x: 0, y: 0, width: incomingWidth, height: bounds.height)
+            )
+        }
+    }
+
+    static func trailingTranslationX(bounds: CGRect, visibleRect: CGRect) -> CGFloat {
+        visibleRect.maxX - bounds.maxX
+    }
+
+    static func leadingTranslationX(bounds: CGRect, visibleRect: CGRect) -> CGFloat {
+        visibleRect.minX - bounds.minX
+    }
+}
+
+struct FloatingOmnibarSwipeMorph {
+
+    let incomingBarAlpha: CGFloat
+    let outgoingTextAlpha: CGFloat
+    let incomingTextAlpha: CGFloat
+
+    static func values(progress: CGFloat) -> FloatingOmnibarSwipeMorph {
+        let progress = max(0, min(progress, 1))
+        let incomingBarAlpha = normalized(progress, from: 0.2, to: 0.32)
+        let outgoingTextAlpha = 1 - normalized(progress, from: 0.2, to: 0.5)
+        let incomingTextAlpha = normalized(progress, from: 0.35, to: 0.55)
+
+        return FloatingOmnibarSwipeMorph(
+            incomingBarAlpha: incomingBarAlpha,
+            outgoingTextAlpha: outgoingTextAlpha,
+            incomingTextAlpha: incomingTextAlpha
+        )
+    }
+
+    private static func normalized(_ value: CGFloat, from start: CGFloat, to end: CGFloat) -> CGFloat {
+        max(0, min((value - start) / (end - start), 1))
+    }
+}
+
 /// Custom bottom toolbar container (replaces `UIToolbar`) with widened touch targets matching legacy `HitTestingToolbar` behavior.
 final class BrowserToolbarView: UIView {
 
@@ -122,6 +188,10 @@ final class BrowserToolbarView: UIView {
     private var materialBackgroundTrailingConstraint: NSLayoutConstraint!
     private var materialBackgroundBottomConstraint: NSLayoutConstraint!
     private weak var hostedOmnibarView: UIView?
+    private weak var swipeIncomingOmnibarView: UIView?
+    private var swipeIncomingOmnibarConstraints: [NSLayoutConstraint] = []
+    private let outgoingSwipeMask = CAShapeLayer()
+    private let incomingSwipeMask = CAShapeLayer()
     private weak var hostedExpandedContentView: UIView?
     private var isFloatingStyleEnabled = false
     /// How far the glass capsule is shifted down from its safe-area-anchored layout position so it
@@ -233,6 +303,7 @@ final class BrowserToolbarView: UIView {
     }
     
     func setOmnibarView(_ view: UIView?, height: CGFloat) {
+        endOmnibarSwipe()
         hostedOmnibarView?.removeFromSuperview()
         hostedOmnibarView = nil
         
@@ -263,6 +334,158 @@ final class BrowserToolbarView: UIView {
 
     func isHostingOmnibarView(_ view: UIView) -> Bool {
         hostedOmnibarView === view
+    }
+
+    func beginOmnibarSwipe(with incomingView: UIView) {
+        endOmnibarSwipe()
+        guard hostedOmnibarView != nil else { return }
+
+        incomingView.translatesAutoresizingMaskIntoConstraints = false
+        incomingView.isUserInteractionEnabled = false
+        (incomingView as? DefaultOmniBarView)?.safeAreaManagedByContainer = false
+        omnibarContainer.addSubview(incomingView)
+        swipeIncomingOmnibarView = incomingView
+        swipeIncomingOmnibarConstraints = [
+            incomingView.leadingAnchor.constraint(equalTo: omnibarContainer.leadingAnchor, constant: Self.omnibarHorizontalInset),
+            incomingView.trailingAnchor.constraint(equalTo: omnibarContainer.trailingAnchor, constant: -Self.omnibarHorizontalInset),
+            incomingView.topAnchor.constraint(equalTo: omnibarContainer.topAnchor),
+            incomingView.bottomAnchor.constraint(equalTo: omnibarContainer.bottomAnchor),
+        ]
+        NSLayoutConstraint.activate(swipeIncomingOmnibarConstraints)
+        layoutIfNeeded()
+        updateOmnibarSwipe(progress: 0, direction: .left)
+    }
+
+    func updateOmnibarSwipe(progress: CGFloat, direction: FloatingOmnibarSwipeDirection) {
+        guard let outgoingView = hostedOmnibarView, let incomingView = swipeIncomingOmnibarView else { return }
+
+        let outgoingMaskTarget = swipeMaskTarget(for: outgoingView)
+        let incomingMaskTarget = swipeMaskTarget(for: incomingView)
+        let outgoingRect = FloatingOmnibarSwipeGeometry.visibleRects(
+            bounds: outgoingMaskTarget.bounds,
+            progress: progress,
+            direction: direction
+        ).outgoing
+        let incomingRect = FloatingOmnibarSwipeGeometry.visibleRects(
+            bounds: incomingMaskTarget.bounds,
+            progress: progress,
+            direction: direction
+        ).incoming
+
+        let outgoingCorners: UIRectCorner
+        let incomingCorners: UIRectCorner
+        switch direction {
+        case .left:
+            outgoingCorners = [.topRight, .bottomRight]
+            incomingCorners = [.topLeft, .bottomLeft]
+        case .right:
+            outgoingCorners = [.topLeft, .bottomLeft]
+            incomingCorners = [.topRight, .bottomRight]
+        }
+
+        applySwipeMask(
+            outgoingSwipeMask,
+            to: outgoingMaskTarget,
+            visibleRect: outgoingRect,
+            roundedCorners: outgoingCorners
+        )
+        applySwipeMask(
+            incomingSwipeMask,
+            to: incomingMaskTarget,
+            visibleRect: incomingRect,
+            roundedCorners: incomingCorners
+        )
+
+        let morph = FloatingOmnibarSwipeMorph.values(progress: progress)
+        incomingView.alpha = morph.incomingBarAlpha
+        if let outgoingTextField = (outgoingView as? DefaultOmniBarView)?.textField {
+            outgoingTextField.alpha = morph.outgoingTextAlpha
+            let translationX: CGFloat
+            if direction == .left {
+                translationX = FloatingOmnibarSwipeGeometry.trailingTranslationX(
+                    bounds: outgoingMaskTarget.bounds,
+                    visibleRect: outgoingRect
+                )
+            } else {
+                translationX = FloatingOmnibarSwipeGeometry.leadingTranslationX(
+                    bounds: outgoingMaskTarget.bounds,
+                    visibleRect: outgoingRect
+                )
+            }
+            outgoingTextField.transform = CGAffineTransform(
+                translationX: translationX,
+                y: 0
+            )
+        }
+        if let incomingTextField = (incomingView as? DefaultOmniBarView)?.textField {
+            incomingTextField.alpha = morph.incomingTextAlpha
+            let translationX: CGFloat
+            if direction == .left {
+                translationX = FloatingOmnibarSwipeGeometry.leadingTranslationX(
+                    bounds: incomingMaskTarget.bounds,
+                    visibleRect: incomingRect
+                )
+            } else {
+                translationX = FloatingOmnibarSwipeGeometry.trailingTranslationX(
+                    bounds: incomingMaskTarget.bounds,
+                    visibleRect: incomingRect
+                )
+            }
+            incomingTextField.transform = CGAffineTransform(
+                translationX: translationX,
+                y: 0
+            )
+        }
+    }
+
+    func endOmnibarSwipe() {
+        if let outgoingTextField = (hostedOmnibarView as? DefaultOmniBarView)?.textField {
+            outgoingTextField.alpha = 1
+            outgoingTextField.transform = .identity
+        }
+        if let incomingTextField = (swipeIncomingOmnibarView as? DefaultOmniBarView)?.textField {
+            incomingTextField.alpha = 1
+            incomingTextField.transform = .identity
+        }
+        swipeIncomingOmnibarView?.alpha = 1
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        if let hostedOmnibarView {
+            swipeMaskTarget(for: hostedOmnibarView).layer.mask = nil
+        }
+        if let swipeIncomingOmnibarView {
+            swipeMaskTarget(for: swipeIncomingOmnibarView).layer.mask = nil
+        }
+        CATransaction.commit()
+        NSLayoutConstraint.deactivate(swipeIncomingOmnibarConstraints)
+        swipeIncomingOmnibarConstraints = []
+        swipeIncomingOmnibarView?.removeFromSuperview()
+        swipeIncomingOmnibarView = nil
+    }
+
+    private func applySwipeMask(_ mask: CAShapeLayer,
+                                to view: UIView,
+                                visibleRect: CGRect,
+                                roundedCorners: UIRectCorner) {
+        let cornerRadius = min(visibleRect.width, visibleRect.height) / 2
+        let path = UIBezierPath(
+            roundedRect: visibleRect,
+            byRoundingCorners: roundedCorners,
+            cornerRadii: CGSize(width: cornerRadius, height: cornerRadius)
+        ).cgPath
+
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        mask.frame = view.bounds
+        mask.path = path
+        if view.layer.mask !== mask {
+            view.layer.mask = mask
+        }
+        CATransaction.commit()
+    }
+
+    private func swipeMaskTarget(for view: UIView) -> UIView {
+        (view as? DefaultOmniBarView)?.searchContainer ?? view
     }
 
     func setExpandedContentView(_ view: UIView?, height: CGFloat, animated: Bool) {

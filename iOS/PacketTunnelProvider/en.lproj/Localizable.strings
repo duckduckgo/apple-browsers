@@ -13,6 +13,12 @@
 /* The body of the notification when the VPN is snoozed, with a duration string as parameter (e.g, 30 minutes) */
 "network.protection.snoozed.notification.body" = "VPN snoozed for %@";
 
+/* The body of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.body" = "Some traffic may bypass the VPN while off. Strict Routing is recommended for public networks.";
+
+/* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.title" = "Strict Routing is OFF";
+
 /* The body of the notification shown when VPN reconnects successfully */
 "network.protection.success.notification.body" = "DuckDuckGo VPN is On. Your location and online activity are protected.";
 

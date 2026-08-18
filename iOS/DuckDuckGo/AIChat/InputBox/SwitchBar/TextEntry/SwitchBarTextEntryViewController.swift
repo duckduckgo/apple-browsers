@@ -82,7 +82,6 @@ class SwitchBarTextEntryViewController: UIViewController {
         super.viewDidLoad()
         setupViews()
         setupConstraints()
-        setupPasteAndGo()
     }
 
     override func viewDidLayoutSubviews() {
@@ -166,27 +165,6 @@ class SwitchBarTextEntryViewController: UIViewController {
             // Suggest 0, but allow to grow based on the content
             buttonsContainerView.heightAnchor.constraint(equalToConstant: 0).withPriority(.defaultLow)
         ])
-    }
-
-    private func setupPasteAndGo() {
-        let title = UserText.actionPasteAndGo
-        UIMenuController.shared.menuItems = [UIMenuItem(title: title, action: #selector(self.pasteURLAndGo))]
-    }
-
-    // MARK: - Action Handlers
-    @objc private func pasteURLAndGo(sender: UIMenuItem) {
-        guard let pastedText = UIPasteboard.general.string,
-              !pastedText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
-        handler.updateCurrentText(pastedText)
-        handleSend()
-    }
-
-    private func handleSend() {
-        let currentText = handler.currentText
-        if !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            handler.submitText(currentText)
-            handler.clearText()
-        }
     }
 
     // MARK: - Public Methods

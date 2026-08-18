@@ -93,6 +93,7 @@ class AutoClearHandlerTests: XCTestCase {
                                    stateRestorationManager: mockStateRestoration,
                                    aiChatSyncCleaner: nil,
                                    wideEvent: WideEventMock(),
+                                   pixelFiring: nil,
                                    alertPresenter: mockAlertPresenter)
     }
 

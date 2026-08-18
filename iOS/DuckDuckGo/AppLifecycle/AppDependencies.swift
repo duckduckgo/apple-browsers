@@ -45,6 +45,7 @@ struct AppServices {
     let reportingService: ReportingService
     let subscriptionService: SubscriptionService
     let crashCollectionService: CrashCollectionService
+    let launchTimeMetricsService: LaunchTimeMetricsService
     let maliciousSiteProtectionService: MaliciousSiteProtectionService
     let statisticsService: StatisticsService
     let keyValueFileStoreService: AppKeyValueFileStoreService
@@ -54,6 +55,7 @@ struct AppServices {
     let inactivityNotificationSchedulerService: InactivityNotificationSchedulerService
     let wideEventService: WideEventService
     let aiChatService: AIChatService
+    let eventHubService: EventHubService
 
 }
 

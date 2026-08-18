@@ -174,7 +174,7 @@ final class PopoverMessageViewController: NSHostingController<PopoverMessageView
         self.preferredContentSize.width = self.view.fittingSize.width
 
         parent.present(self,
-                       asPopoverRelativeTo: self.view.bounds,
+                       asPopoverRelativeTo: view.bounds,
                        of: view,
                        preferredEdge: preferredEdge,
                        behavior: behavior)

@@ -41,6 +41,12 @@ struct ModalPromptConfiguration {
 /// Providers act as lightweight adapters between feature-specific modal prompt logic and the centralised `ModalPromptCoordinationManager`.
 @MainActor
 protocol ModalPromptProvider {
+    /// Per-provider onboarding gate. The manager calls this before evaluating `provideModalPrompt()`.
+    ///
+    /// Default: returns `isOnboardingComplete` — providers that need standard gating get it for free.
+    /// Override to apply a softer or stricter check.
+    func isEligibleToPresent(isOnboardingComplete: Bool) -> Bool
+
     /// Provides a `ModalPromptConfiguration` if the provider has a prompt that is eligible to present.
     /// - Returns: A configured `ModalPromptConfiguration` ready for presentation if it is eligible to present the modal. `nil` otherwise.
     func provideModalPrompt() -> ModalPromptConfiguration?
@@ -51,6 +57,12 @@ protocol ModalPromptProvider {
 }
 
 extension ModalPromptProvider {
+
+    /// Default implementation returns `isOnboardingComplete` — providers that need standard gating get it for free.
+    /// Override to apply a softer or stricter check.
+    func isEligibleToPresent(isOnboardingComplete: Bool) -> Bool {
+        isOnboardingComplete
+    }
 
     func didPresentModal() {}
 

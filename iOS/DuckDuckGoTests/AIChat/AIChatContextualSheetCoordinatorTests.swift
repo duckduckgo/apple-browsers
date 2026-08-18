@@ -31,6 +31,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
     private final class MockPageContextHandler: AIChatPageContextHandling {
         var triggerContextCollectionCallCount = 0
+        var lastTriggerContextCollectionTrigger: PageContextExtractionTrigger?
         var triggerContextCollectionReturnValue = true
         var clearCallCount = 0
         var clearAttachedContextCallCount = 0
@@ -46,10 +47,24 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
             contextSubject.send(context)
         }
 
-        func triggerContextCollection() -> Bool {
+        var isCurrentPageAttachableReturnValue = true
+        var reportAttachabilityMeasurementCallCount = 0
+        var lastReportAttachabilityMeasurementTrigger: PageContextExtractionTrigger?
+
+        func triggerContextCollection(trigger: PageContextExtractionTrigger) -> Bool {
             triggerContextCollectionCallCount += 1
+            lastTriggerContextCollectionTrigger = trigger
             onTriggerContextCollection?()
             return triggerContextCollectionReturnValue
+        }
+
+        func isCurrentPageAttachable() -> Bool {
+            isCurrentPageAttachableReturnValue
+        }
+
+        func reportAttachabilityMeasurement(trigger: PageContextExtractionTrigger) {
+            reportAttachabilityMeasurementCallCount += 1
+            lastReportAttachabilityMeasurementTrigger = trigger
         }
 
         func clear() {
@@ -192,6 +207,51 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         super.tearDown()
     }
 
+    // MARK: - handleSelectionAction Tests
+
+    @MainActor
+    func testAttachSelectionAttachesAndPresentsTheSheet() async {
+        await sut.handleSelectionAction(.ask, selection: .init(text: "selected text", url: URL(string: "https://example.com"), faviconBase64: nil), from: mockPresentingVC)
+
+        XCTAssertEqual(sut.sessionState.attachedSelections.map(\.content), ["selected text"])
+        XCTAssertNotNil(sut.sheetViewController)
+    }
+
+    /// The signals-only payload is content-free and marked unattached, so pushing it while a page is
+    /// attached would clear that page on the frontend while the chip still shows it.
+    @MainActor
+    func testSelectionActionDoesNotCollectSignalsWhileAPageIsAttached() async {
+        sut.sessionState.attachContextFromSuggestionTap(makeTestContext(title: "Attached"))
+        mockPageContextHandler.triggerContextCollectionCallCount = 0
+
+        await sut.handleSelectionAction(.ask, selection: .init(text: "selected text", url: URL(string: "https://example.com"), faviconBase64: nil), from: mockPresentingVC)
+
+        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 0)
+        XCTAssertNotNil(sut.sessionState.intendedAttachedContext)
+    }
+
+    /// Reading a selection suspends, so two taps on the omnibar icon can both reach here with the same
+    /// text. Each would otherwise mint its own id and burn a second cap slot on one passage.
+    @MainActor
+    func testAttachingTheSameSelectionTwiceAttachesItOnce() async {
+        let url = URL(string: "https://example.com")
+
+        await sut.handleSelectionAction(.ask, selection: .init(text: "selected text", url: url, faviconBase64: nil), from: mockPresentingVC)
+        await sut.handleSelectionAction(.ask, selection: .init(text: "selected text", url: url, faviconBase64: nil), from: mockPresentingVC)
+
+        XCTAssertEqual(sut.sessionState.attachedSelections.count, 1)
+    }
+
+    /// Attaching a selection must not cost the user the conversation they already had.
+    @MainActor
+    func testAttachSelectionRestoresThePersistedChat() async {
+        let restoreURL = URL(string: "https://duckduckgo.com/?chatID=abc")!
+
+        await sut.handleSelectionAction(.ask, selection: .init(text: "selected text", url: URL(string: "https://example.com"), faviconBase64: nil), restoreURL: restoreURL, from: mockPresentingVC)
+
+        XCTAssertEqual(sut.sessionState.contextualChatURL, restoreURL)
+    }
+
     // MARK: - presentSheet Tests
 
     @MainActor
@@ -230,6 +290,32 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         // Then
         XCTAssertNotNil(sut.sheetViewController?.delegate)
     }
+
+    @MainActor
+    func testPresentSheetMeasuresAttachabilityWhenNoCollectionTriggered() async {
+        // Auto-attach off + suggested prompts off (defaults) → no collection → attachability still measured.
+        await sut.presentSheet(from: mockPresentingVC)
+
+        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 0)
+        XCTAssertEqual(mockPageContextHandler.reportAttachabilityMeasurementCallCount, 1)
+        XCTAssertEqual(mockPageContextHandler.lastReportAttachabilityMeasurementTrigger, .navigation)
+    }
+
+    @MainActor
+    func testURLChangeRefreshesQuickActionsForAttachability() async {
+        // Covers back/forward navigation: the URL-change (originating) signal must refresh affordances,
+        // not just `didFinish` (which cached back-navigations may not fire).
+        await sut.presentSheet(from: mockPresentingVC)
+        XCTAssertEqual(sut.sessionState.viewState.quickActions, [.askAboutPage])
+
+        mockPageContextHandler.isCurrentPageAttachableReturnValue = false
+        originatingTabURLSubject.send(URL(string: "https://example.com/image.png"))
+        XCTAssertEqual(sut.sessionState.viewState.quickActions, [])
+
+        mockPageContextHandler.isCurrentPageAttachableReturnValue = true
+        originatingTabURLSubject.send(URL(string: "https://duckduckgo.com/?q=cats"))
+        XCTAssertEqual(sut.sessionState.viewState.quickActions, [.askAboutPage])
+    }
     
     // MARK: - clearActiveChat Tests
 
@@ -244,6 +330,21 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
         // Then
         XCTAssertNil(sut.sheetViewController)
+    }
+
+    /// Both callers delete the conversation, so leaving the URL on the tab would let the address bar
+    /// restore a chat the user just deleted — including after a relaunch.
+    @MainActor
+    func testClearActiveChatClearsThePersistedChatURL() async {
+        // Given
+        await sut.presentSheet(from: mockPresentingVC)
+        mockDelegate.contextualChatURLUpdates = []
+
+        // When
+        sut.clearActiveChat()
+
+        // Then
+        XCTAssertEqual(mockDelegate.contextualChatURLUpdates, [nil])
     }
 
     @MainActor
@@ -263,7 +364,8 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
     @MainActor
     func testPresentExistingSheetTriggersContextCollectionWhenAutoAttachEnabled() async {
-        // Given
+        // Given - a page is loaded (collection is skipped entirely when there's no page URL)
+        originatingTabURLSubject.send(URL(string: "https://example.com")!)
         mockSettings.isAutomaticContextAttachmentEnabled = false
         await sut.presentSheet(from: mockPresentingVC)
         XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 0)
@@ -358,6 +460,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     func testNotifyPageChangedTriggersCollectionWhenAutoAttachEnabled() async {
         mockSettings.isAutomaticContextAttachmentEnabled = true
         await sut.presentSheet(from: mockPresentingVC)
+        sut.sessionState.updateContext(makeTestContext(title: "Page A"))
         mockPageContextHandler.triggerContextCollectionCallCount = 0
 
         await sut.notifyPageChanged()
@@ -417,6 +520,78 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         await sut.notifyPageChanged()
 
         XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 1)
+    }
+
+    @MainActor
+    func testNotifyPageChangedDoesNotRefreshSuggestionsWhenAutoAttachIsOffAndContextIsPinned() async {
+        // Given
+        let pageAURL = URL(string: "https://example.com/page-a")!
+        let pageBURL = URL(string: "https://example.com/page-b")!
+        mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
+        mockSettings.isAutomaticContextAttachmentEnabled = false
+        await sut.presentSheet(from: mockPresentingVC)
+        originatingTabURLSubject.send(pageAURL)
+        sut.sessionState.beginManualAttach()
+        mockPageContextHandler.sendContext(makeTestContext(title: "Page A", url: pageAURL.absoluteString))
+        await waitForAttachedChip()
+        originatingTabURLSubject.send(pageBURL)
+        mockPageContextHandler.triggerContextCollectionCallCount = 0
+
+        // When
+        await sut.notifyPageChanged()
+
+        // Then
+        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 0)
+        XCTAssertEqual(sut.sessionState.suggestionsLoadState, .loaded)
+    }
+
+    @MainActor
+    func testRemovePinnedContextImmediatelyRefreshesSuggestionsForCurrentPage() async {
+        // Given
+        let pageAURL = URL(string: "https://example.com/page-a")!
+        let pageBURL = URL(string: "https://example.com/page-b")!
+        mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
+        mockSettings.isAutomaticContextAttachmentEnabled = false
+        await sut.presentSheet(from: mockPresentingVC)
+        originatingTabURLSubject.send(pageAURL)
+        sut.sessionState.beginManualAttach()
+        mockPageContextHandler.sendContext(makeTestContext(title: "Page A", url: pageAURL.absoluteString))
+        await waitForAttachedChip()
+        originatingTabURLSubject.send(pageBURL)
+        await sut.notifyPageChanged()
+        mockPageContextHandler.triggerContextCollectionCallCount = 0
+        let refreshStarted = expectation(description: "suggestions refresh started")
+        mockPageContextHandler.onTriggerContextCollection = {
+            refreshStarted.fulfill()
+        }
+
+        // When
+        sut.aiChatContextualSheetViewControllerDidRequestRemoveChip(sut.sheetViewController!)
+        await fulfillment(of: [refreshStarted], timeout: 1.0)
+
+        // Then
+        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 1)
+        XCTAssertEqual(mockPageContextHandler.lastTriggerContextCollectionTrigger, .tabContent)
+        XCTAssertEqual(sut.sessionState.suggestionsLoadState, .loading)
+    }
+
+    @MainActor
+    func testNotifyPageChangedRefreshesSuggestionsWhenAutoAttachIsOffAndContextIsNotPinned() async {
+        // Given
+        let pageURL = URL(string: "https://example.com/page")!
+        mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
+        mockSettings.isAutomaticContextAttachmentEnabled = false
+        await sut.presentSheet(from: mockPresentingVC)
+        originatingTabURLSubject.send(pageURL)
+        mockPageContextHandler.triggerContextCollectionCallCount = 0
+
+        // When
+        await sut.notifyPageChanged()
+
+        // Then
+        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 1)
+        XCTAssertEqual(mockPageContextHandler.lastTriggerContextCollectionTrigger, .tabContent)
+        XCTAssertEqual(sut.sessionState.suggestionsLoadState, .loading)
     }
 
     @MainActor
@@ -764,7 +939,294 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         XCTAssertEqual(received, [url, nil])
     }
 
+    // MARK: - Suggestion Tap Attach Tests
+
+    @MainActor
+    func testAttachForSuggestionDoesNothingWhenFlagOff() async {
+        mockFeatureFlagger.enabledFeatureFlags = []
+        await sut.presentSheet(from: mockPresentingVC)
+        mockPageContextHandler.triggerContextCollectionCallCount = 0
+
+        await sut.aiChatContextualSheetViewControllerAttachContextForSuggestion(sut.sheetViewController!)
+
+        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 0)
+        XCTAssertEqual(sut.sessionState.chipState.description, "placeholder")
+    }
+
+    @MainActor
+    func testAttachForSuggestionSkipsCollectionWhenChipAlreadyAttached() async {
+        mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
+        await sut.presentSheet(from: mockPresentingVC)
+        sut.sessionState.attachContextFromSuggestionTap(makeTestContext())
+        mockPageContextHandler.triggerContextCollectionCallCount = 0
+
+        await sut.aiChatContextualSheetViewControllerAttachContextForSuggestion(sut.sheetViewController!)
+
+        // Reuses the existing attachment; no fresh collection is triggered.
+        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 0)
+    }
+
+    @MainActor
+    func testAttachForSuggestionCollectsAndAttachesFreshContext() async {
+        mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
+        mockSettings.isAutomaticContextAttachmentEnabled = false
+        await sut.presentSheet(from: mockPresentingVC)
+        mockPageContextHandler.triggerContextCollectionCallCount = 0
+
+        let fresh = makeTestContext(title: "Fresh", url: "https://example.com/fresh")
+        mockPageContextHandler.onTriggerContextCollection = { [weak self] in
+            self?.mockPageContextHandler.sendContext(fresh)
+        }
+
+        await sut.aiChatContextualSheetViewControllerAttachContextForSuggestion(sut.sheetViewController!)
+
+        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 1)
+        guard case .attached(let attached) = sut.sessionState.chipState else {
+            return XCTFail("Expected chip attached after fresh collection")
+        }
+        XCTAssertEqual(attached.contextData.url, "https://example.com/fresh")
+    }
+
+    @MainActor
+    func testAttachForSuggestionDoesNotAttachWhenCollectionUnavailable() async {
+        mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
+        await sut.presentSheet(from: mockPresentingVC)
+        mockPageContextHandler.triggerContextCollectionCallCount = 0
+        // JS collection can't start (e.g. web view torn down) → await yields nil.
+        mockPageContextHandler.triggerContextCollectionReturnValue = false
+
+        await sut.aiChatContextualSheetViewControllerAttachContextForSuggestion(sut.sheetViewController!)
+
+        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 1)
+        XCTAssertEqual(sut.sessionState.chipState.description, "placeholder")
+    }
+
+    // MARK: - Empty Page (No URL) Tests
+
+    @MainActor
+    func testPresentSheetDoesNotCollectWhenNoPageURL() async {
+        // No page loaded (nil URL, e.g. iPad start/empty page).
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+
+        await sut.presentSheet(from: mockPresentingVC)
+
+        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 0)
+    }
+
+    @MainActor
+    func testPresentSheetCollectsWhenPageURLPresent() async {
+        originatingTabURLSubject.send(URL(string: "https://example.com/page")!)
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+
+        await sut.presentSheet(from: mockPresentingVC)
+
+        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 1)
+    }
+
+    @MainActor
+    func testPresentSheetDoesNotCollectSignalsOnlyWhenNoPageURL() async {
+        // Suggestions ON + auto-attach OFF would normally collect signals-only, but not without a URL.
+        mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
+        mockSettings.isAutomaticContextAttachmentEnabled = false
+
+        await sut.presentSheet(from: mockPresentingVC)
+
+        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 0)
+    }
+
+    @MainActor
+    func testPresentSheetCollectsSignalsOnlyWhenSuggestionsOnAndAutoAttachOff() async {
+        // Suggestions ON + auto-attach OFF + a page URL → signals-only collection with the spinner on.
+        originatingTabURLSubject.send(URL(string: "https://example.com/page")!)
+        mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
+        mockSettings.isAutomaticContextAttachmentEnabled = false
+
+        await sut.presentSheet(from: mockPresentingVC)
+
+        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 1)
+        XCTAssertEqual(sut.sessionState.suggestionsLoadState, .loading)
+    }
+
+    // MARK: - Fresh Context URL Filter Tests
+
+    @MainActor
+    func testAttachForSuggestionSkipsEmissionForStaleURL() async {
+        // Given - the tab finished loading a target URL; the sheet is on the start surface
+        mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
+        mockSettings.isAutomaticContextAttachmentEnabled = false
+        await sut.presentSheet(from: mockPresentingVC)
+        didFinishTabURLSubject.send(URL(string: "https://example.com/target")!)
+        // The didFinish sink handles the navigation in a Task; wait for its signals-only collection
+        // to land before resetting the counter.
+        await yieldUntil { [weak self] in self?.mockPageContextHandler.triggerContextCollectionCallCount == 1 }
+        mockPageContextHandler.triggerContextCollectionCallCount = 0
+
+        // A stale emission (previous page) arrives before the one matching the current URL
+        mockPageContextHandler.onTriggerContextCollection = { [weak self] in
+            self?.mockPageContextHandler.sendContext(self?.makeTestContext(title: "Stale", url: "https://other.example/old"))
+            self?.mockPageContextHandler.sendContext(self?.makeTestContext(title: "Target", url: "https://example.com/target"))
+        }
+
+        // When
+        await sut.aiChatContextualSheetViewControllerAttachContextForSuggestion(sut.sheetViewController!)
+
+        // Then - only the context matching the current page attaches
+        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 1)
+        guard case .attached(let attached) = sut.sessionState.chipState else {
+            return XCTFail("Expected chip attached after matching emission")
+        }
+        XCTAssertEqual(attached.contextData.url, "https://example.com/target")
+        XCTAssertEqual(attached.contextData.title, "Target")
+    }
+
+    // MARK: - Initial UTI Attachment Tests
+
+    @MainActor
+    func testInitialUTIAttachmentIsPendingSubmitForPreSubmitChipWithImmediateUTI() {
+        mockUnifiedToggleInputFeature.isAvailable = true
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput]
+        sut.sessionState.attachContextFromSuggestionTap(makeTestContext(title: "Attached"))
+
+        let attachment = sut.initialUTIAttachment
+
+        XCTAssertEqual(attachment.context?.contextData.title, "Attached")
+        XCTAssertEqual(attachment.deliveryState, .pendingSubmit)
+    }
+
+    @MainActor
+    func testInitialUTIAttachmentIsDeliveredForChipWhenChatActive() {
+        mockUnifiedToggleInputFeature.isAvailable = true
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput]
+        sut.sessionState.attachContextFromSuggestionTap(makeTestContext(title: "Attached"))
+        sut.sessionState.handlePromptSubmission("Hello")
+
+        let attachment = sut.initialUTIAttachment
+
+        XCTAssertEqual(attachment.context?.contextData.title, "Attached")
+        XCTAssertEqual(attachment.deliveryState, .delivered)
+    }
+
+    @MainActor
+    func testInitialUTIAttachmentIsDeliveredForChipWhenImmediateUTIDisabled() {
+        // Base web UTI without the immediate contextual flag: carry-over arrives already delivered
+        mockUnifiedToggleInputFeature.isAvailable = true
+        mockFeatureFlagger.enabledFeatureFlags = []
+        sut.sessionState.attachContextFromSuggestionTap(makeTestContext(title: "Attached"))
+
+        let attachment = sut.initialUTIAttachment
+
+        XCTAssertEqual(attachment.context?.contextData.title, "Attached")
+        XCTAssertEqual(attachment.deliveryState, .delivered)
+    }
+
+    @MainActor
+    func testInitialUTIAttachmentFallsBackToLatestContextWhenChatActiveWithoutChip() {
+        // Auto-attach OFF stores the collected context without attaching the chip
+        mockSettings.isAutomaticContextAttachmentEnabled = false
+        sut.sessionState.updateContext(makeTestContext(title: "Latest"))
+        sut.sessionState.handlePromptSubmission("Hello")
+
+        let attachment = sut.initialUTIAttachment
+
+        XCTAssertEqual(attachment.context?.contextData.title, "Latest")
+        XCTAssertEqual(attachment.deliveryState, .pendingSubmit)
+    }
+
+    @MainActor
+    func testInitialUTIAttachmentIsEmptyWithoutAnyContext() {
+        let attachment = sut.initialUTIAttachment
+
+        XCTAssertNil(attachment.context)
+        XCTAssertEqual(attachment.deliveryState, .delivered)
+    }
+
+    // MARK: - UTI Chip Delivery Tests
+
+    @MainActor
+    func testDeliverToUTIChipReusesLatestContextFavicon() async throws {
+        // Given - immediate UTI with auto-attach ON and a presented sheet (persistent host exists)
+        mockUnifiedToggleInputFeature.isAvailable = true
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput]
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        await sut.presentSheet(from: mockPresentingVC)
+        let host = try XCTUnwrap(sut.persistentUTIHost)
+
+        let favicon = UIGraphicsImageRenderer(size: CGSize(width: 1, height: 1)).image { context in
+            UIColor.red.setFill()
+            context.fill(CGRect(x: 0, y: 0, width: 1, height: 1))
+        }
+        let context = AIChatPageContext(
+            contextData: makeTestContext(title: "With Favicon").contextData,
+            favicon: favicon
+        )
+
+        // When - collection publishes a context carrying a decoded favicon
+        mockPageContextHandler.sendContext(context)
+        await yieldUntil { host.chipViewModel.attachedContext != nil }
+
+        // Then - the chip receives the session's wrapper, favicon included
+        XCTAssertEqual(host.chipViewModel.attachedContext?.contextData.title, "With Favicon")
+        XCTAssertNotNil(host.chipViewModel.attachedContext?.favicon, "Chip delivery must reuse the favicon-carrying wrapper")
+    }
+
+    @MainActor
+    func testDeliverToUTIChipWrapsUnknownContextWithoutFavicon() async throws {
+        // Given - the session never stored this context (latestContext is nil)
+        mockUnifiedToggleInputFeature.isAvailable = true
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput, .contextualSuggestedPrompts]
+        mockSettings.isAutomaticContextAttachmentEnabled = false
+        await sut.presentSheet(from: mockPresentingVC)
+        let host = try XCTUnwrap(sut.persistentUTIHost)
+
+        // When - a suggestion tap attaches a context unknown to the handler
+        sut.sessionState.attachContextFromSuggestionTap(makeTestContext(title: "Tapped"))
+
+        // Then - the chip still gets the context, wrapped without a favicon
+        XCTAssertEqual(host.chipViewModel.attachedContext?.contextData.title, "Tapped")
+        XCTAssertNil(host.chipViewModel.attachedContext?.favicon)
+    }
+
+    // MARK: - New Chat Reset Tests
+
+    @MainActor
+    func testNewChatCollectsSignalsOnlyWhenSuggestionsOnAndAutoAttachOff() async {
+        mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
+        mockSettings.isAutomaticContextAttachmentEnabled = false
+        await sut.presentSheet(from: mockPresentingVC)
+        mockPageContextHandler.triggerContextCollectionCallCount = 0
+        mockDelegate.contextualChatURLUpdates = []
+
+        sut.aiChatContextualSheetViewControllerDidRequestNewChat(sut.sheetViewController!)
+
+        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 1)
+        XCTAssertEqual(sut.sessionState.suggestionsLoadState, .loading)
+        XCTAssertEqual(mockDelegate.contextualChatURLUpdates.count, 1)
+        XCTAssertNil(mockDelegate.contextualChatURLUpdates[0])
+    }
+
+    @MainActor
+    func testNewChatBeginsLoadingSuggestionsAndCollectsWhenAutoAttachOn() async {
+        mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        await sut.presentSheet(from: mockPresentingVC)
+        mockPageContextHandler.triggerContextCollectionCallCount = 0
+
+        sut.aiChatContextualSheetViewControllerDidRequestNewChat(sut.sheetViewController!)
+
+        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 1)
+        XCTAssertEqual(sut.sessionState.suggestionsLoadState, .loading)
+    }
+
     // MARK: - Helpers
+
+    /// Yields the main actor until `condition` holds (or the timeout elapses), letting
+    /// main-queue context deliveries run between checks.
+    private func yieldUntil(_ condition: () -> Bool, timeout: TimeInterval = 2.0) async {
+        let deadline = Date().addingTimeInterval(timeout)
+        while !condition() && Date() < deadline {
+            await Task.yield()
+        }
+    }
 
     private func makeTestContext(title: String = "Test Page", url: String = "https://example.com") -> AIChatPageContext {
         let contextData = AIChatPageContextData(

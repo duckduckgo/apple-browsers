@@ -77,9 +77,6 @@ extension TabViewController {
     }
 
     private func onNewTabAction(url: URL) {
-        Pixel.fire(pixel: .linkLongPressNewTab, withAdditionalParameters: [
-            PixelParameters.browsingMode: tabModel.pixelParamValue
-        ])
         delegate?.tab(self,
                       didRequestNewTabForUrl: url,
                       openedByPage: false,
@@ -87,16 +84,12 @@ extension TabViewController {
     }
 
     private func onFireTabAction(url: URL) {
-        Pixel.fire(pixel: .linkLongPressFireTab)
         delegate?.tab(self,
                       didRequestNewFireTabForUrl: url,
                       inheritingAttribution: adClickAttributionLogic.state)
     }
 
     private func onBackgroundTabAction(url: URL) {
-        Pixel.fire(pixel: .linkLongPressBackgroundTab, withAdditionalParameters: [
-            PixelParameters.browsingMode: tabModel.pixelParamValue
-        ])
         delegate?.tab(self, didRequestNewBackgroundTabForUrl: url, inheritingAttribution: adClickAttributionLogic.state)
     }
     
@@ -170,7 +163,8 @@ extension TabViewController {
             voiceSearchHelper: voiceSearchHelper,
             darkReaderFeatureSettings: darkReaderFeatureSettings,
             autoplaySettings: autoplaySettings,
-            adBlockingAvailability: adBlockingAvailability)
+            adBlockingAvailability: adBlockingAvailability,
+            eventHub: eventHub)
 
         tabController.isLinkPreview = true
         let configuration = WKWebViewConfiguration.nonPersistent()

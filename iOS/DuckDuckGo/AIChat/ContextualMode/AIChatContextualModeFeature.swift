@@ -22,6 +22,7 @@ import Common
 import FoundationExtensions
 import Foundation
 import PrivacyConfig
+import FeatureFlags_iOS
 
 /// Provides access to contextual Duck AI chat mode availability.
 protocol AIChatContextualModeFeatureProviding {
@@ -31,7 +32,7 @@ protocol AIChatContextualModeFeatureProviding {
     /// - The `contextualDuckAIMode` sub-feature flag is enabled
     /// - The AI Chat URL domain is `duck.ai`
     /// - On iPhone: the `pageContextFeature` flag is enabled
-    /// - On iPad: the `iPadPageContext` flag is enabled
+    /// - On iPad: always enabled
     var isAvailable: Bool { get }
 }
 
@@ -61,6 +62,6 @@ struct AIChatContextualModeFeature: AIChatContextualModeFeatureProviding {
         if devicePlatform.isIphone {
             return featureFlagger.isFeatureOn(.pageContextFeature)
         }
-        return featureFlagger.isFeatureOn(.iPadPageContext)
+        return true
     }
 }

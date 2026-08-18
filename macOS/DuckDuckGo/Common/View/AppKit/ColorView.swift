@@ -40,13 +40,30 @@ internal class ColorView: DraggingDestinationView {
         setupView()
     }
 
+    /// When `true` colors will be reserved agains the `effectiveAppearance` value.
+    /// Otherwise, we'll rely on `NSApp.effectiveAppearance`
+    var resolvesStyleWithEffectiveAppearance: Bool = false {
+        didSet {
+            guard resolvesStyleWithEffectiveAppearance != oldValue else {
+                return
+            }
+
+            updateBackgroundColor()
+            updateBorderColor()
+        }
+    }
+
+    private var targetAppearance: NSAppearance? {
+        resolvesStyleWithEffectiveAppearance ? effectiveAppearance : nil
+    }
+
     @IBInspectable var backgroundColor: NSColor? = NSColor.clear {
         didSet {
             updateBackgroundColor()
         }
     }
     private func updateBackgroundColor() {
-        NSAppearance.withAppAppearance {
+        NSAppearance.withAppearance(targetAppearance) {
             layer?.backgroundColor = backgroundColor?.cgColor
         }
     }
@@ -75,7 +92,7 @@ internal class ColorView: DraggingDestinationView {
         }
     }
     private func updateBorderColor() {
-        NSAppearance.withAppAppearance {
+        NSAppearance.withAppearance(targetAppearance) {
             layer?.borderColor = borderColor?.cgColor
         }
     }
@@ -101,7 +118,7 @@ internal class ColorView: DraggingDestinationView {
 
     override func updateLayer() {
         super.updateLayer()
-        NSAppearance.withAppAppearance {
+        NSAppearance.withAppearance(targetAppearance) {
             layer?.backgroundColor = backgroundColor?.cgColor
             layer?.borderColor = borderColor?.cgColor
         }

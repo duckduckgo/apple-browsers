@@ -90,6 +90,7 @@ final class MainWindowController: NSWindowController {
         subscribeToKeyWindow()
         subscribeToThemeChanges()
         subscribeToEffectiveAppearance()
+        subscribeToWindowOcclusion()
 
         applyThemeStyle()
 
@@ -194,6 +195,21 @@ final class MainWindowController: NSWindowController {
             .store(in: &cancellables)
     }
 
+    private func subscribeToWindowOcclusion() {
+        // A window occluded by a full screen Space — either another window's native Full Screen or a
+        // WKFullScreenWindowController video — doesn't reliably repaint its titlebar strip when the
+        // system appearance changes while it's off screen: subscribeToEffectiveAppearance() runs, but
+        // the layer color assignment doesn't stick until the window is on screen again. Re-apply the
+        // theme when the window becomes visible, when its effective appearance is guaranteed current.
+        guard AppVersion.isLiquidGlassSupported, let window else { return }
+        NotificationCenter.default.publisher(for: NSWindow.didChangeOcclusionStateNotification, object: window)
+            .filter { ($0.object as? NSWindow)?.occlusionState.contains(.visible) == true }
+            .sink { [weak self] _ in
+                self?.applyThemeStyle()
+            }
+            .store(in: &cancellables)
+    }
+
     private func subscribeToFullScreenToolbarChanges() {
         NotificationCenter.default.publisher(for: AppearancePreferences.Notifications.showTabsAndBookmarksBarOnFullScreenChanged)
             .compactMap { $0.userInfo?[AppearancePreferences.Constants.showTabsAndBookmarksBarOnFullScreenParameter] as? Bool }
@@ -271,6 +287,7 @@ final class MainWindowController: NSWindowController {
     private var burningDataCancellable: AnyCancellable?
     private var delayedBlockingWorkItem: DispatchWorkItem?
     private var didMoveTabBarForFireAnimation = false
+    private var isClosingAndBurning = false
 
     private func subscribeToBurningData() {
         burningDataCancellable = fireViewModel.fire.burningDataPublisher
@@ -576,12 +593,24 @@ extension MainWindowController: NSWindowDelegate {
     func windowShouldClose(_ window: NSWindow) -> Bool {
         guard mainViewController.tabCollectionViewModel.isBurner else { return true }
 
+        burnAndClose(window)
+        return false
+    }
+
+    /// `NSWindow.close()` bypasses `windowShouldClose(_:)`, so programmatic Fire Window closes have to come
+    /// through here or they lose the fire animation and the in-progress downloads warning.
+    func burnAndClose(_ window: NSWindow) {
+        // A burn already has the animation on screen and closes windows itself (see Fire.closeWindows).
+        guard fireViewModel.fire.burningData == nil else {
+            window.close()
+            return
+        }
+
         if showAlertIfActiveDownloadsPresent(in: window) {
-            return false
+            return
         }
 
         animateBurningIfNeededAndClose(window)
-        return false
     }
 
     private func showAlertIfActiveDownloadsPresent(in window: NSWindow) -> Bool {
@@ -619,6 +648,10 @@ extension MainWindowController: NSWindowDelegate {
     }
 
     private func animateBurningIfNeededAndClose(_ window: NSWindow) {
+        // The animation is awaited, so the window stays around and closable in the meantime.
+        guard !isClosingAndBurning else { return }
+        isClosingAndBurning = true
+
         guard !window.isPopUpWindow else {
             window.close()
             return

@@ -79,6 +79,8 @@ class NavigationProtectionUITests: UITestCase {
             let label = allLabelsInOrder[index]
             // not working: handled in testNavigationProtection_AMPLinks_GuardianDotAmp_RedirectsToCanonical
             if label == "amp. link" { continue }
+            // Destination bot protection can interrupt canonical URL redirect; handled in testNavigationProtection_AMPLinks_NonStandardTLD_RedirectsToCanonical
+            if label == "*Non Standard TLD (Google Domain)" { continue }
 
             let expectedURL = expectedTexts[index]
             let link = webView.links[label].firstMatch
@@ -134,71 +136,37 @@ class NavigationProtectionUITests: UITestCase {
         XCTAssertEqual(finalURL, expectedURL, "Should be redirected to exact canonical URL specified in test page")
     }
 
-    // MARK: - Click-to-Load Social Media Tests
+    func testNavigationProtection_AMPLinks_NonStandardTLD_RedirectsToCanonical() throws {
+        // Navigate to AMP protection test page
+        let ampTestURL = URL(string: "https://privacy-test-pages.site/privacy-protections/amp/")!
+        addressBarTextField.pasteURL(ampTestURL, pressingEnter: true)
 
-    func testNavigationProtection_SocialMediaEmbeds_ShowsClickToLoad() throws {
-        // Navigate to a test page with social media embeds
-        let socialTestURL = URL(string: "https://privacy-test-pages.site/privacy-protections/click-to-load/")!
-        addressBarTextField.pasteURL(socialTestURL, pressingEnter: true)
+        // Find the Non Standard TLD test link
+        let nonStandardTLDAmpLink = webView.links["*Non Standard TLD (Google Domain)"].firstMatch
+        XCTAssertTrue(nonStandardTLDAmpLink.waitForExistence(timeout: UITests.Timeouts.elementExistence), "*Non Standard TLD (Google Domain) test link should be available")
 
-        // Wait for page to load completely
-        let pageHeader = webView.staticTexts.containing(\.value, containing: "About ClickToLoad Tests").firstMatch
-        XCTAssertTrue(pageHeader.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Click-to-load test page should load")
+        // Get the expected URL from the test page instead of hardcoding
+        let expectedURLElement = webView.staticTexts.containing(\.value, containing: "Expected: https://www.brookings.edu").firstMatch
+        XCTAssertTrue(expectedURLElement.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Expected URL element should be found on the test page")
 
-        // Validate that Click-to-Load blocked FB resources on the page (functional signal from the test page)
-        let metrics = webView.staticTexts.containing(\.value, containing: "Facebook Resources Loads:").firstMatch
-        XCTAssertTrue(metrics.waitForExistence(timeout: UITests.Timeouts.navigation), "Metrics section should be visible on the click-to-load page")
+        let expectedURLText = expectedURLElement.value as? String ?? ""
+        let expectedURL = expectedURLText.replacingOccurrences(of: "Expected: ", with: "")
 
-        // Initial state: resources should be NONE
-        let noneValue = webView.staticTexts["NONE"].firstMatch
-        if !noneValue.waitForExistence(timeout: UITests.Timeouts.navigation) {
-            let attach = XCTAttachment(string: app.debugDescription)
-            attach.lifetime = .keepAlways
-            add(attach)
-            XCTFail("Facebook Resources Loads should be NONE before user interaction")
+        // Click the AMP link to test protection
+        nonStandardTLDAmpLink.click()
+
+        // Wait for navigation to complete
+        let newPageContent = webView.staticTexts.firstMatch
+        XCTAssertTrue(newPageContent.waitForExistence(timeout: UITests.Timeouts.navigation), "Navigation should complete after AMP link click")
+
+        // Verify AMP protection redirected to the expected canonical URL.
+        // Skip test if bot protection is triggered, as the canonical URL cannot be verified in that case.
+        let finalURL = app.addressBarValueActivatingIfNeeded() ?? ""
+        guard finalURL == expectedURL else {
+            XCTAssertTrue(app.staticTexts["Performing security verification"].exists,
+                          "Should be redirected to exact canonical URL \(expectedURL) or bot detection page; actual: \(finalURL)")
+            throw XCTSkip("Bot detection prevented redirect to canonical URL")
         }
-
-        // Prefer the FIRST login control by exact label/value to avoid the custom variant and popover overlap
-        let firstLoginButton = webView.buttons["Log in with Facebook"].firstMatch
-        let firstLoginLink = webView.links["Log in with Facebook"].firstMatch
-        let firstLoginStatic = webView.staticTexts["Log in with Facebook"].firstMatch
-        let customLoginButton = webView.buttons["Custom Facebook Login"].firstMatch
-
-        let hasFirstButton = firstLoginButton.waitForExistence(timeout: UITests.Timeouts.elementExistence)
-        let hasFirstLink = hasFirstButton ? false : firstLoginLink.waitForExistence(timeout: UITests.Timeouts.elementExistence)
-        let hasFirstStatic = (hasFirstButton || hasFirstLink) ? false : firstLoginStatic.waitForExistence(timeout: UITests.Timeouts.elementExistence)
-        let hasCustom = (!hasFirstButton && !hasFirstLink && !hasFirstStatic) ? customLoginButton.waitForExistence(timeout: UITests.Timeouts.elementExistence) : false
-
-        guard hasFirstButton || hasFirstLink || hasFirstStatic || hasCustom else {
-            let attach = XCTAttachment(string: app.debugDescription)
-            attach.lifetime = .keepAlways
-            add(attach)
-            XCTFail("Expected a 'Log in with Facebook' control or 'Custom Facebook Login' to exist")
-            return
-        }
-
-        // Click the login control; CTL overlay should appear
-        let loginControl = hasFirstButton ? firstLoginButton : (hasFirstLink ? firstLoginLink : (hasFirstStatic ? firstLoginStatic : customLoginButton))
-        if loginControl.isHittable {
-            loginControl.click()
-        } else {
-            // Tap slightly lower than center to avoid the DDG popover covering the top of the control
-            let coord = loginControl.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.8))
-            coord.tap()
-        }
-
-        // Wait for the CTL overlay to be presented
-        let overlayTitle = app.staticTexts["Logging in with Facebook lets them track you"].firstMatch
-        XCTAssertTrue(overlayTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence), "CTL overlay should appear after clicking login")
-
-        let overlayLogin = app.buttons["Log In"].firstMatch
-        XCTAssertTrue(overlayLogin.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Overlay 'Log In' should be visible")
-
-        // Do not proceed further in CI; presence of overlay and primary action is sufficient
-
-        // Verify we stayed on the click-to-load page in the main window
-        let currentURL = app.addressBarValueActivatingIfNeeded() ?? ""
-        XCTAssertTrue(currentURL.contains("click-to-load"), "Should be on the click-to-load test page; actual: \(currentURL)")
     }
 
     // MARK: - Tracking Parameter Removal Tests

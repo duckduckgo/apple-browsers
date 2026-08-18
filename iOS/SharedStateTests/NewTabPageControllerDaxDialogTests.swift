@@ -38,6 +38,7 @@ private class MockURLBasedDebugCommands: URLBasedDebugCommands {
     }
 }
 
+@MainActor
 final class NewTabPageControllerDaxDialogTests: XCTestCase {
 
     var variantManager: CapturingVariantManager!
@@ -67,6 +68,7 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
             faviconLoader: EmptyFaviconLoading(),
             remoteMessagingActionHandler: MockRemoteMessagingActionHandler(),
             remoteMessagingImageLoader: MockRemoteMessagingImageLoader(),
+            promoCoordinator: MockNewTabPagePromoCoordinator(),
             appSettings: AppSettingsMock(),
             faviconsCache: Favicons(),
             subscriptionManager: SubscriptionManagerMock(),
@@ -118,6 +120,7 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
             faviconLoader: EmptyFaviconLoading(),
             remoteMessagingActionHandler: MockRemoteMessagingActionHandler(),
             remoteMessagingImageLoader: MockRemoteMessagingImageLoader(),
+            promoCoordinator: MockNewTabPagePromoCoordinator(),
             appSettings: AppSettingsMock(),
             faviconsCache: Favicons(),
             subscriptionManager: SubscriptionManagerMock(),
@@ -174,9 +177,9 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
         XCTAssertEqual(store.capturedTriggerFilter, .specific(.afterIdle))
     }
 
-    func testWhenViewDidAppear_CorrectTypePassedToDialogFactory() throws {
+    func testWhenViewDidAppearWithInitialSpecThenDaxDialogIsCreated() throws {
         // GIVEN
-        let expectedSpec = randomDialogType()
+        let expectedSpec = DaxDialogs.HomeScreenSpec.initial
         specProvider.specToReturn = expectedSpec
 
         // WHEN
@@ -187,11 +190,12 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
         XCTAssertTrue(self.specProvider.nextHomeScreenMessageNewCalled)
         XCTAssertEqual(self.dialogFactory.homeDialog, expectedSpec)
         XCTAssertNotNil(self.dialogFactory.onDismiss)
+        XCTAssertNil(self.dialogFactory.endOfJourneyContent)
     }
 
-    func testWhenOnboardingComplete_CorrectTypePassedToDialogFactory() throws {
+    func testWhenOnboardingCompletesWithInitialSpecThenDaxDialogIsCreated() throws {
         // GIVEN
-        let expectedSpec = randomDialogType()
+        let expectedSpec = DaxDialogs.HomeScreenSpec.initial
         specProvider.specToReturn = expectedSpec
 
         // WHEN
@@ -202,6 +206,23 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
         XCTAssertTrue(self.specProvider.nextHomeScreenMessageNewCalled)
         XCTAssertEqual(self.dialogFactory.homeDialog, expectedSpec)
         XCTAssertNotNil(self.dialogFactory.onDismiss)
+        XCTAssertNil(self.dialogFactory.endOfJourneyContent)
+    }
+
+    func testWhenOnboardingCompletesWithFinalSpecThenEndOfJourneyDialogIsCreated() throws {
+        // GIVEN
+        specProvider.specToReturn = .final
+
+        // WHEN
+        hvc.onboardingCompleted()
+
+        // THEN
+        XCTAssertFalse(specProvider.nextHomeScreenMessageCalled)
+        XCTAssertTrue(specProvider.nextHomeScreenMessageNewCalled)
+        XCTAssertNil(dialogFactory.homeDialog)
+        XCTAssertNil(dialogFactory.onDismiss)
+        XCTAssertNotNil(dialogFactory.endOfJourneyContent)
+        XCTAssertNotNil(dialogFactory.onEndOfJourneyAction)
     }
 
     func testWhenShowNextDaxDialog_AndShouldShowDaxDialogs_ThenReturnTrue() {
@@ -268,11 +289,6 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
         // a stray `.initial`/`.subsequent` dialog could leak into the Duck.ai onboarding completion UX.
         XCTAssertFalse(specProvider.nextHomeScreenMessageNewCalled)
     }
-
-    private func randomDialogType() -> DaxDialogs.HomeScreenSpec {
-        let specs: [DaxDialogs.HomeScreenSpec] = [.initial, .subsequent, .final, .addFavorite]
-        return specs.randomElement()!
-    }
 }
 
 class CapturingVariantManager: VariantManager {
@@ -292,6 +308,9 @@ class CapturingVariantManager: VariantManager {
 class CapturingNewTabDaxDialogProvider: NewTabDaxDialogProviding {
     var homeDialog: DaxDialogs.HomeScreenSpec?
     var onDismiss: ((_ activateSearch: Bool) -> Void)?
+    var endOfJourneyContent: OnboardingEndOfJourneyContent?
+    var onEndOfJourneyAction: ((OnboardingEndOfJourneyAction) -> Void)?
+
     func createDaxDialog(for homeDialog: DaxDialogs.HomeScreenSpec, onCompletion: @escaping (_ activateSearch: Bool) -> Void, onManualDismiss: @escaping () -> Void) -> some View {
         self.homeDialog = homeDialog
         self.onDismiss = onCompletion
@@ -300,6 +319,12 @@ class CapturingNewTabDaxDialogProvider: NewTabDaxDialogProviding {
 
     func createDuckAIFireOnboardingCompletionDialog(message: String, onDismiss: @escaping () -> Void) -> AnyView {
         AnyView(EmptyView())
+    }
+
+    func createEndOfJourneyDialog(content: OnboardingEndOfJourneyContent, onAction: @escaping (OnboardingEndOfJourneyAction) -> Void) -> AnyView {
+        endOfJourneyContent = content
+        onEndOfJourneyAction = onAction
+        return AnyView(EmptyView())
     }
 }
 

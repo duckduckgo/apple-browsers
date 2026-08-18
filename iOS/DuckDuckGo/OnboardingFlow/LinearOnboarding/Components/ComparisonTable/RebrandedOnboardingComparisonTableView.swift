@@ -331,3 +331,29 @@ struct CircleCheckView: View {
         }
     }
 }
+
+// MARK: - Previews
+
+#if DEBUG
+
+private struct CircleCheckViewPreviewSamples: View {
+    var body: some View {
+        HStack(spacing: 24) {
+            CircleCheckView(size: 24, shouldAnimate: true, staggerDelay: 0)
+            CircleCheckView(size: 44, shouldAnimate: true, staggerDelay: 0)
+            CircleCheckView(size: 72, shouldAnimate: true, staggerDelay: 0)
+        }
+        .padding()
+    }
+}
+
+#Preview("Light") {
+    CircleCheckViewPreviewSamples()
+}
+
+#Preview("Dark") {
+    CircleCheckViewPreviewSamples()
+        .preferredColorScheme(.dark)
+}
+
+#endif

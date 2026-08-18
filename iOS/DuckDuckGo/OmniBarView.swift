@@ -134,8 +134,11 @@ protocol OmniBarView: UIView, OmniBarStatusUpdateable {
     func makeGlass()
     func makeOpaque()
 
-    /// Swaps the omnibar Duck.ai button glyph to reflect whether the contextual AI chat sheet is open.
-    func updateAIChatButtonForContextualSheet(isPresented: Bool)
+    /// Re-asserts the field's resting background for the current position. No-op unless floating UI.
+    func restoreFloatingFieldAppearance()
+
+    /// Swaps the omnibar Duck.ai button glyph to reflect whether a contextual surface is open.
+    func updateAIChatButtonForContextualSurface(isPresented: Bool)
 
     /// In floating UI minimal chrome, wraps the button groups in their own glass capsules (the field
     /// keeps its glass). Pass `false` to restore the standard per-position appearance.

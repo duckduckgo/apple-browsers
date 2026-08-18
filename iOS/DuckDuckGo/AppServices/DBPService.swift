@@ -26,6 +26,8 @@ import BrowserServicesKit
 import PixelKit
 import Networking
 import Subscription
+import os.log
+import FeatureFlags_iOS
 
 final class DBPService: NSObject {
     private let dbpIOSManager: DataBrokerProtectionIOSManager?
@@ -51,6 +53,17 @@ final class DBPService: NSObject {
         )
         self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
         let profileStateManager = DefaultDBPProfileStateManager(keyValueStore: UserDefaults.dbp)
+
+#if DEBUG
+        let launchOptionsHandler = LaunchOptionsHandler()
+        // Seed cached profile state so UI tests can verify deferred Secure Vault initialization skip paths.
+        if let profileStateRawValue = launchOptionsHandler.pirProfileStateOverride,
+           let profileState = DBPProfileState(rawValue: profileStateRawValue) {
+            profileStateManager.setProfileStateForTesting(profileState)
+        }
+        let shouldAutostartPIRDebugServer = launchOptionsHandler.shouldAutostartPIRDebugServer
+#endif
+
         self.profileStateManager = profileStateManager
 
         guard appDependencies.featureFlagger.isFeatureOn(.personalInformationRemoval) else {
@@ -124,12 +137,21 @@ final class DBPService: NSObject {
                 profileStateManager: profileStateManager,
                 isWebViewInspectable: isWebViewInspectable,
                 freeTrialConversionService: appDependencies.freeTrialConversionService,
-                contentBlocking: dbpContentBlocking)
+                contentBlocking: dbpContentBlocking,
+                shouldDeferSecureVaultInitialization: appDependencies.featureFlagger.isFeatureOn(.dbpDeferredSecureVaultInit))
         } else {
             assertionFailure("PixelKit not set up")
             self.dbpIOSManager = nil
         }
         super.init()
+
+#if DEBUG
+        if shouldAutostartPIRDebugServer {
+            Task { [weak self] in
+                await self?.dbpIOSManager?.startDebugServer()
+            }
+        }
+#endif
     }
 
     func onBackground() {
@@ -139,6 +161,14 @@ final class DBPService: NSObject {
     func resume() {
         Task { @MainActor in
             await dbpIOSManager?.appDidBecomeActive()
+        }
+    }
+
+    func prepareSecureVaultResourcesAtLaunch() async {
+        do {
+            try await dbpIOSManager?.prepareSecureVaultResourcesAtLaunch()
+        } catch {
+            Logger.dataBrokerProtection.error("Failed to initialize PIR Secure Vault resources: \(error.localizedDescription, privacy: .public)")
         }
     }
 }
@@ -158,10 +188,6 @@ final class DBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeatureFlagging {
     private let appDependencies: DependencyProvider
     private let freemiumPIRDebugSettings: FreemiumPIRDebugSettings
 
-    var isRemoteBrokerDeliveryFeatureOn: Bool {
-        appDependencies.featureFlagger.isFeatureOn(.dbpRemoteBrokerDelivery)
-    }
-
     var isForegroundRunningOnAppActiveFeatureOn: Bool {
         appDependencies.featureFlagger.isFeatureOn(.dbpForegroundRunningOnAppActive)
     }
@@ -176,6 +202,10 @@ final class DBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeatureFlagging {
 
     var isOptOutRetryErrorFrequencyExperimentOn: Bool {
         appDependencies.featureFlagger.isFeatureOn(.dbpOptOutRetryError96Hours)
+    }
+
+    var isExtractedProfileRefreshOn: Bool {
+        appDependencies.featureFlagger.isFeatureOn(.dbpExtractedProfileRefresh)
     }
 
     var isFreemiumPIREnabled: Bool {

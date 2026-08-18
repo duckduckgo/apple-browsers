@@ -4,7 +4,7 @@
         "owners": ["samsymons"],
         "meta": {
             "type": "macos-vpn-connection",
-            "version": "2.0"
+            "version": "3.0"
         },
         "feature": {
             "name": "vpn-connection",
@@ -35,6 +35,26 @@
                         "type": "string",
                         "description": "VPN onboarding state at connection time (macOS). `needs_to_allow_extension` and `needs_to_allow_vpn_configuration` mean onboarding was still incomplete; `completed` means onboarding had finished; `unknown` if it could not be determined.",
                         "enum": ["needs_to_allow_extension", "needs_to_allow_vpn_configuration", "completed", "unknown"]
+                    },
+                    "vpn_screen_source": {
+                        "type": "string",
+                        "description": "The app surface that opened the VPN screen before the connection attempt. Not currently populated on macOS: the VPN screen entry context is only captured on iOS, so this dimension is always absent in macOS events.",
+                        "enum": [
+                            "subscription_settings",
+                            "subscription_email",
+                            "subscription_flow",
+                            "browser_menu",
+                            "toolbar",
+                            "address_bar",
+                            "widget",
+                            "shortcut",
+                            "notification"
+                        ]
+                    },
+                    "vpn_screen_entry_token_state": {
+                        "type": "string",
+                        "description": "Whether a local Privacy Pro token container was present at connect time. `read_error` means local token storage could not be read without mutating account state. Not currently populated on macOS: the VPN screen entry context is only captured on iOS, so this dimension is always absent in macOS events.",
+                        "enum": ["present", "missing", "read_error"]
                     },
                     "latency_ms": {
                         "type": "integer",

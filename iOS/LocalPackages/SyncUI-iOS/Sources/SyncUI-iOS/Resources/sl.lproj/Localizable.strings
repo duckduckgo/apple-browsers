@@ -190,6 +190,12 @@
 /* Prompt title after enabling sync */
 "sync.simplified.another.device.title" = "Želite podatke sinhronizirati z drugo napravo?";
 
+/* Body on the sync-setup prompt explaining the sync-another-device option */
+"sync.simplified.another.device.v2.body" = "Pomagali vam bomo sinhronizirati vaše naprave.";
+
+/* Title on the sync-setup prompt asking whether to sync with another device or just this device */
+"sync.simplified.another.device.v2.title" = "Sinhronizirajte to napravo z bližnjim računalnikom.";
+
 /* Caption displayed on 'auto-download bookmarks icons' toggle. */
 "sync.simplified.bookmarks.section.fetch-favicons.caption" = "Naloži ikone spletnih mest, ki ste jih dodali med zaznamke. Prenosi ikon so izpostavljeni vašemu omrežju.";
 
@@ -202,14 +208,56 @@
 /* Text shown next to toggle while sync is being set up */
 "sync.simplified.connecting" = "Povezovanje ...";
 
+/* Title shown on the connecting screen while Sync & Backup is being set up on this device */
+"sync.simplified.connecting.v2.title" = "Sync & Backup je šifriran v celoti v vseh vaših napravah.";
+
 /* Sync settings 'Copy Recovery Code' button */
 "sync.simplified.copy.recovery.code.button" = "Kopiraj obnovitveno kodo";
 
 /* Sync settings action button title to turn off sync and delete server data */
 "sync.simplified.delete.sync.data.button" = "Izklopi sinhronizacijo in izbriši podatke strežnika";
 
+/* Description on the device-added success screen explaining what the recovery code is for */
+"sync.simplified.device.added.v2.description" = "S to kodo obnovite svoje podatke, če izgubite dostop do svojih naprav. Hranite jo na varnem.";
+
+/* Fallback subject used in the device-added success title when the current device's name is unavailable. Substituted as %@ in simplifiedDeviceAddedV2Title. */
+"sync.simplified.device.added.v2.fallback.device.name" = "Ta naprava";
+
+/* Title on the success screen shown after a device joins Sync & Backup. %@ is the name of the current device that was just added. */
+"sync.simplified.device.added.v2.title" = "Naprava %@ je bila dodana v Sync & Backup.";
+
 /* Sync settings 'Download Recovery Code' button */
 "sync.simplified.download.recovery.code.button" = "Prenesi obnovitveno kodo";
+
+/* Section header above the get-desktop-browser option in sync setup */
+"sync.simplified.download.section.header" = "Prenesi";
+
+/* Button to download the recovery code on the recover-your-data screen */
+"sync.simplified.download.your.recovery.code.button" = "Prenesi svojo obnovitveno kodo";
+
+/* Description shown when Sync & Backup is enabled (when AI chat sync is available) */
+"sync.simplified.enabled.header.message" = "Vaši zaznamki, podatki za samodejno izpolnjevanje in klepeti Duck.ai so sinhronizirani in varnostno kopirani s celovitim šifriranjem.";
+
+/* Description shown when Sync & Backup is enabled */
+"sync.simplified.enabled.header.message.basic" = "Vaši zaznamki in podatki za samodejno izpolnjevanje se sinhronizirajo s celovitim šifriranjem.";
+
+/* Sync & Backup screen title shown when Sync is enabled */
+"sync.simplified.enabled.header.title" = "DuckDuckGo je sinhroniziran";
+
+/* Label above the example sync code placeholder on the enter-code tab */
+"sync.simplified.enter.code.example.label" = "Primer kode:";
+
+/* First part of the enter-code instructions, followed by a DuckDuckGo app chip */
+"sync.simplified.enter.code.open" = "Odprite svojo drugo";
+
+/* Button to paste the sync code on the enter-code tab */
+"sync.simplified.enter.code.paste.button" = "Prilepite kodo za sinhronizacijo";
+
+/* Second part of the enter-code instructions. **...** marks the parts shown in the primary text color. */
+"sync.simplified.enter.code.steps" = "Pojdite v **Sync & Backup** › **Sinhronizacija z drugo napravo** › **Kopiraj besedilno kodo**.";
+
+/* Title on the enter-code tab of the V2 scan screen */
+"sync.simplified.enter.code.title" = "Vnesite kodo za sinhronizacijo.";
 
 /* Button subtitle to get the DuckDuckGo desktop browser */
 "sync.simplified.get.desktop.browser.subtitle" = "DuckDuckGo za računalnike Mac in Windows";
@@ -217,11 +265,53 @@
 /* Button title to get the DuckDuckGo desktop browser. */
 "sync.simplified.get.desktop.browser.title" = "Namesti namizni brskalnik";
 
+/* Row label to get the DuckDuckGo desktop browser */
+"sync.simplified.get.our.desktop.browser.title" = "Namestite naš namizni brskalnik";
+
+/* Sync setup row label to recover synced data using an existing recovery code */
+"sync.simplified.have.recovery.code.button" = "Imam obnovitveno kodo";
+
 /* Description of the Sync & Backup feature (when AI chat sync is available) */
 "sync.simplified.header.message" = "Shranite zaznamke, podatke za samodejno izpolnjevanje in klepete Duck.ai ter jih sinhronizirajte med napravami s šifriranjem od začetka do konca.";
 
 /* Description of the Sync & Backup feature */
 "sync.simplified.header.message.basic" = "Shranite zaznamke in podatke za samodejno izpolnjevanje ter jih sinhronizirajte med napravami s šifriranjem od začetka do konca.";
+
+/* Description of the Sync & Backup feature */
+"sync.simplified.header.message.basic.v2" = "Sinhronizirajte svoje podatke za samodejno izpolnjevanje in zaznamke s celovitim šifriranjem v vseh svojih aplikacijah DuckDuckGo.";
+
+/* Description of the Sync & Backup feature (when AI chat sync is available) */
+"sync.simplified.header.message.v2" = "Sinhronizirajte in varnostno kopirajte svoje podatke za samodejno izpolnjevanje, zaznamke in klepete Duck.ai, s celovitim šifriranjem v vseh vaših aplikacijah DuckDuckGo.";
+
+/* Sync & Backup screen title */
+"sync.simplified.header.title" = "Ohranite DuckDuckGo sinhroniziran";
+
+/* Footer caption shown under the Remove Device button on the manage device screen */
+"sync.simplified.manage.device.remove.footer" = "Če napravo odstranite, ne bo več mogla dostopati do vaših sinhroniziranih podatkov.";
+
+/* Status label shown under a device name on the manage device screen when the device is synced */
+"sync.simplified.manage.device.status.synced" = "Sinhronizirano";
+
+/* Footer caption shown under the Sync & Backup This Device toggle on the manage this device screen */
+"sync.simplified.manage.device.turn.off.footer" = "Ta naprava ne bo več mogla dostopati do vaših sinhroniziranih podatkov, če to izklopite.";
+
+/* My Devices section header shown when Sync & Backup is enabled */
+"sync.simplified.my.devices.section.header" = "Moje naprave";
+
+/* Section header above the recovery-code option in sync setup */
+"sync.simplified.recover.synced.data.section.header" = "Obnovitev sinhroniziranih podatkov";
+
+/* Title shown on the connecting screen while a device's synced data is being recovered */
+"sync.simplified.recovering.data.v2.title" = "Obnovitev podatkov";
+
+/* Label above the recovery code on the recover-your-data screen */
+"sync.simplified.recovery.code.label" = "Obnovitvena koda";
+
+/* Description on the success screen shown after synced data has been recovered on this device */
+"sync.simplified.recovery.complete.v2.description" = "Celovito šifriranje v vseh vaših napravah.";
+
+/* Title on the success screen shown after synced data has been recovered on this device */
+"sync.simplified.recovery.complete.v2.title" = "Funkcija Sync & Backup je omogočena";
 
 /* Sync settings data recovery section footer. %@ is replaced with the URL. */
 "sync.simplified.recovery.section.footer" = "S to kodo obnovite podatke, če izgubite dostop do te naprave. Podatkov funkcije Sync & Backup ni mogoče obnoviti po 18 mesecih nedejavnosti. [Več informacij](%@)";
@@ -274,8 +364,56 @@
 /* Instructions on sync QR code display screen (will be shown above the DuckDuckGo app icon and name) */
 "sync.simplified.scan-or-view-code.view.instructions" = "Optično preberite ali prilepite to kodo v drugi napravi";
 
+/* Close button in the V2 scan screen navigation bar */
+"sync.simplified.scan.v2.close.button" = "Zapri";
+
+/* Chip label on the scan-QR tab referring to the DuckDuckGo desktop app */
+"sync.simplified.scan.v2.qr.app.name" = "DuckDuckGo za namizje";
+
+/* Heading overlaid on the camera on the scan-QR tab of the V2 scan screen */
+"sync.simplified.scan.v2.qr.heading" = "Skeniraj kodo QR za sinhronizacijo.";
+
+/* First part of the scan-QR instructions, followed by a DuckDuckGo app chip */
+"sync.simplified.scan.v2.qr.open" = "Odpri";
+
+/* Button on the scan-QR intro animation that dismisses the animation and reveals the camera */
+"sync.simplified.scan.v2.qr.ready.button" = "Pripravljen/a sem na skeniranje";
+
+/* Second part of the scan-QR instructions. **...** marks the parts shown in the primary text color. */
+"sync.simplified.scan.v2.qr.steps" = "in pojdite v **Sync & Backup** › **Sinhronizacija z drugo napravo**";
+
+/* V2 segmented control tab title for entering a code */
+"sync.simplified.scan.v2.tab.enter.code" = "Vnesite kodo";
+
+/* V2 segmented control tab title for scanning a QR code */
+"sync.simplified.scan.v2.tab.scan.qr" = "Skeniranje kode QR";
+
+/* Status label shown next to the title when Sync & Backup is disabled */
+"sync.simplified.status.off" = "Izklop";
+
+/* Status label shown next to the title when Sync & Backup is enabled */
+"sync.simplified.status.on" = "Vklop";
+
+/* Button to copy the text sync code on the sync-code sheet */
+"sync.simplified.sync.code.copy.button" = "Kopiraj besedilno kodo";
+
+/* First part of the sync-code sheet instructions, followed by a DuckDuckGo app chip */
+"sync.simplified.sync.code.sheet.open" = "V drugi napravi odprite";
+
+/* Second part of the sync-code sheet instructions. **...** marks the parts shown in the primary text color. */
+"sync.simplified.sync.code.sheet.scan" = "Pojdite v **Sync & Backup** › **Sinhroniziraj z drugo napravo** in skenirajte to kodo:";
+
+/* Navigation title of the sheet that shows this device's sync QR code */
+"sync.simplified.sync.code.sheet.title" = "Skenirajte ali kopirajte kodo";
+
+/* Button on the sync-setup prompt to enable Sync & Backup on the current device only, without pairing another device */
+"sync.simplified.this.device.only" = "Sinhroniziraj samo to napravo";
+
 /* Sync & Backup enabled / disabled toggle title */
 "sync.simplified.toggle.title" = "Sinhronizacija in varnostno kopiranje";
+
+/* Sync & Backup enabled / disabled toggle title, referring to the current device */
+"sync.simplified.toggle.title.this.device" = "Sinhroniziraj to napravo";
 
 /* Use Recovery Code sync setup button label */
 "sync.simplified.use.recovery.code.button" = "Uporabi obnovitveno kodo";

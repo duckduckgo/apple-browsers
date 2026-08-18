@@ -599,7 +599,10 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
 #endif
         }
         let authV2RefreshInstrumentation = DefaultAuthV2TokenRefreshInstrumentation(wideEvent: wideEvent,
-                                                                                    isFeatureEnabled: isAuthV2WideEventEnabled)
+                                                                                    isFeatureEnabled: isAuthV2WideEventEnabled,
+                                                                                    shouldSuppressFailure: {
+                                                                                        loopDetector.shouldSuppressCurrentAttemptTelemetry
+                                                                                    })
         let authClient = DefaultOAuthClient(tokensStorage: tokenStorage,
                                             authService: authService,
                                             refreshEventMapping: authV2RefreshInstrumentation.eventMapping)

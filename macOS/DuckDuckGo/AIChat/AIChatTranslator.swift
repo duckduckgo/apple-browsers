@@ -54,17 +54,20 @@ final class AIChatTranslator: AIChatTranslating {
     private let aiChatCoordinator: AIChatCoordinating
     private let aiChatTabOpener: AIChatTabOpening
     private let pixelFiring: PixelFiring?
+    private let aiChatConversationSourceHandler: AIChatConversationSourceHandler
 
     init(
         aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
         aiChatCoordinator: AIChatCoordinating,
         aiChatTabOpener: AIChatTabOpening,
-        pixelFiring: PixelFiring?
+        pixelFiring: PixelFiring?,
+        aiChatConversationSourceHandler: AIChatConversationSourceHandler = Application.appDelegate.aiChatConversationSourceHandler
     ) {
         self.aiChatMenuConfig = aiChatMenuConfig
         self.aiChatCoordinator = aiChatCoordinator
         self.aiChatTabOpener = aiChatTabOpener
         self.pixelFiring = pixelFiring
+        self.aiChatConversationSourceHandler = aiChatConversationSourceHandler
     }
 
     /// This function performs text translation for the provided `request`.
@@ -94,6 +97,7 @@ final class AIChatTranslator: AIChatTranslating {
                 ),
                 frequency: .dailyAndStandard
             )
+            aiChatConversationSourceHandler.setData(.translation)
         }
         aiChatCoordinator.revealChat(for: prompt)
     }

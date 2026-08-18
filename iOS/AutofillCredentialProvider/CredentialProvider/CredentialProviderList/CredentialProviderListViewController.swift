@@ -320,7 +320,7 @@ extension CredentialProviderListViewController: UITableViewDataSource {
                 fatalError("Could not dequeue cell")
             }
             cell.item = items[indexPath.row]
-            cell.backgroundColor = UIColor(designSystemColor: .surface)
+            cell.backgroundColor = UIColor(singleUseColor: .groupedListContentBackground)
 
             cell.disclosureButtonTapped = { [weak self] in
                 let item = items[indexPath.row]

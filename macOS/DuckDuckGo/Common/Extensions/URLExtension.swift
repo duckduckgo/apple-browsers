@@ -160,8 +160,6 @@ extension URL {
     }
 #endif
 
-    static let blankPage = URL(string: "about:blank")!
-
     static let newtab = URL(string: "duck://newtab")!
     static let welcome = URL(string: "duck://welcome")!
     static let settings = URL(string: "duck://settings")!
@@ -608,10 +606,6 @@ extension URL {
 
     static var aiChatApproachToAI: URL {
         return URL(string: "\(base)/duckduckgo-help-pages/duckai/approach-to-ai")!
-    }
-
-    static var aiChatSettings: URL {
-        return URL(string: "\(base)/settings?return=aiFeatures#aifeatures")!
     }
 
     static var aiChatAccessSubscriberModels: URL {

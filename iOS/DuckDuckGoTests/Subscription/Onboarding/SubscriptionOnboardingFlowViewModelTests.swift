@@ -20,6 +20,7 @@
 import XCTest
 @testable import DuckDuckGo
 import SwiftUI
+import Subscription
 
 @MainActor
 final class SubscriptionOnboardingFlowViewModelTests: XCTestCase {
@@ -33,11 +34,16 @@ final class SubscriptionOnboardingFlowViewModelTests: XCTestCase {
                        [.orderConfirmation, .welcome, .vpnActivation, .vpnWidget, .idtr, .duckAI, .progress])
     }
 
-    func testWhenEntryIsPostCheckoutThenCompletedSectionsAreStillWalked() {
+    func testWhenEntryIsPostCheckoutThenAlreadyCompletedSectionsAreSkipped() {
+        let sut = makeSUT(entryPoint: .postCheckout, completed: [.duckAI])
+
+        XCTAssertEqual(sut.sequence, [.orderConfirmation, .welcome, .vpnActivation, .vpnWidget, .idtr, .progress])
+    }
+
+    func testWhenEntryIsPostCheckoutAndEverythingIsAlreadyCompleteThenOnlyTheOverviewAndSummaryShow() {
         let sut = makeSUT(entryPoint: .postCheckout, completed: [.vpn, .widget, .idtr, .duckAI])
 
-        XCTAssertEqual(sut.sequence,
-                       [.orderConfirmation, .welcome, .vpnActivation, .vpnWidget, .idtr, .duckAI, .progress])
+        XCTAssertEqual(sut.sequence, [.orderConfirmation, .welcome, .progress])
     }
 
     // MARK: - Sequence, subscription settings
@@ -90,13 +96,52 @@ final class SubscriptionOnboardingFlowViewModelTests: XCTestCase {
     func testWhenPIRIsUnavailableThenTheChecklistDropsIt() {
         let sut = makeSUT(entryPoint: .postCheckout, isPIRAvailable: false)
 
-        XCTAssertEqual(sut.progress.checklistItems, [.vpn, .widget, .idtr, .duckAI])
+        XCTAssertEqual(sut.progress.checklist, [.vpn, .widget, .idtr, .duckAI])
     }
 
     func testWhenPIRIsAvailableThenTheChecklistHasAllFiveItems() {
         let sut = makeSUT(entryPoint: .postCheckout)
 
-        XCTAssertEqual(sut.progress.checklistItems, SubscriptionOnboardingChecklistItem.allCases)
+        XCTAssertEqual(sut.progress.checklist, SubscriptionOnboardingChecklistItem.allCases)
+    }
+
+    // MARK: - Entitlement gating
+
+    func testWhenEntitlementExcludesDuckAIThenItsSectionIsDroppedFromTheSequence() {
+        let entitlement = EntitlementStatus(networkProtection: true, dataBrokerProtection: true,
+                                            identityTheftRestoration: true, identityTheftRestorationGlobal: true,
+                                            paidAIChat: false)
+        let sut = makeSUT(entryPoint: .postCheckout, entitlement: entitlement)
+
+        XCTAssertEqual(sut.sequence, [.orderConfirmation, .welcome, .vpnActivation, .vpnWidget, .idtr, .progress])
+    }
+
+    func testWhenEntitlementExcludesVPNThenVPNAndItsWidgetAreDroppedFromTheSequence() {
+        let entitlement = EntitlementStatus(networkProtection: false, dataBrokerProtection: true,
+                                            identityTheftRestoration: true, identityTheftRestorationGlobal: true,
+                                            paidAIChat: true)
+        let sut = makeSUT(entryPoint: .postCheckout, entitlement: entitlement)
+
+        XCTAssertEqual(sut.sequence, [.orderConfirmation, .welcome, .idtr, .duckAI, .progress])
+    }
+
+    /// Entitlement gating composes with the existing completed-items filter on resume.
+    func testWhenEntitlementExcludesAnItemThenSettingsResumeSkipsItToo() {
+        let entitlement = EntitlementStatus(networkProtection: true, dataBrokerProtection: true,
+                                            identityTheftRestoration: true, identityTheftRestorationGlobal: true,
+                                            paidAIChat: false)
+        let sut = makeSUT(entryPoint: .subscriptionSettings, completed: [.vpn], entitlement: entitlement)
+
+        XCTAssertEqual(sut.sequence, [.vpnWidget, .idtr, .progress])
+    }
+
+    /// No fallback: an empty checklist just means no activation sections appear. The launcher (not the VM)
+    /// is responsible for refusing to present a flow whose checklist came back empty — see
+    /// `SubscriptionOnboardingLauncherTests`.
+    func testWhenNothingIsEntitledThenNoActivationSectionsAppear() {
+        let sut = makeSUT(entryPoint: .postCheckout, entitlement: .empty)
+
+        XCTAssertEqual(sut.sequence, [.orderConfirmation, .welcome, .progress])
     }
 
     // MARK: - Routing
@@ -427,13 +472,14 @@ final class SubscriptionOnboardingFlowViewModelTests: XCTestCase {
     private func makeSUT(entryPoint: SubscriptionOnboardingEntryPoint,
                          completed: Set<SubscriptionOnboardingChecklistItem> = [],
                          isPIRAvailable: Bool = true,
+                         entitlement: EntitlementStatus = .allEnabled,
                          store: MockProgressStore? = nil,
                          instrumentation: SubscriptionOnboardingInstrumenting? = nil,
                          onFinish: @escaping () -> Void = {},
                          onRequestDuckAIChat: @escaping (String?) -> Bool = { _ in true }) -> SubscriptionOnboardingFlowViewModel {
         let store = store ?? MockProgressStore()
         store.completedItems = store.completedItems.union(completed)
-        let progress = SubscriptionOnboardingProgress(persistor: store, isPIRAvailable: isPIRAvailable)
+        let progress = SubscriptionOnboardingProgress(persistor: store, isPIRAvailable: isPIRAvailable, entitlement: entitlement)
         return SubscriptionOnboardingFlowViewModel(entryPoint: entryPoint,
                                                   progress: progress,
                                                   onFinish: onFinish,

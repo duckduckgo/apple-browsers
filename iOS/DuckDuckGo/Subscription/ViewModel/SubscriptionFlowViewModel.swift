@@ -107,7 +107,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
 
     private let meetsPIRLocaleRequirement: () -> Bool
 
-    private var isPIRAvailable: Bool {
+    var isPIRAvailable: Bool {
         PIRAvailability.isAvailable(isPIREnabled: isPIREnabled,
                                     meetsLocaleRequirement: meetsPIRLocaleRequirement(),
                                     provider: dataBrokerProtectionViewControllerProvider)
@@ -116,11 +116,10 @@ final class SubscriptionFlowViewModel: ObservableObject {
     /// Latched so a defensive re-invocation of `onPurchaseCompleted` cannot re-offer the flow.
     private var didRequestOnboarding = false
 
-    var onboardingProgress: SubscriptionOnboardingProgress? {
+    /// `nil` unless this flow came from `makeSubscribeFlowV2`.
+    var onboardingPersistor: SubscriptionOnboardingProgressPersisting? {
         guard let onboardingKeyValueStore else { return nil }
-        return SubscriptionOnboardingProgress(
-            persistor: SubscriptionOnboardingProgressPersistor(keyValueStore: onboardingKeyValueStore),
-            isPIRAvailable: isPIRAvailable)
+        return SubscriptionOnboardingProgressPersistor(keyValueStore: onboardingKeyValueStore)
     }
 
     /// A pure rule so it can be tested

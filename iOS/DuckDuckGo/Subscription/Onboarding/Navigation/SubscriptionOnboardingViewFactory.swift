@@ -60,6 +60,7 @@ struct SubscriptionOnboardingViewFactory {
         case .welcome:
             return AnyView(SubscriptionOnboardingWelcomeView(
                 navigationButton: navigationButton,
+                features: SubscriptionOnboardingWelcomeView.displayedFeatures(entitledChecklist: flow.progress.checklist),
                 onNext: { flow.sectionDidRequestAdvance() }))
 
         case .vpnActivation:

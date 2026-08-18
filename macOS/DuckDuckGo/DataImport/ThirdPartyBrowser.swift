@@ -242,7 +242,7 @@ enum ThirdPartyBrowser: CaseIterable {
             profiles = []
         }
 
-        let profilesWithAccessState = detectsInaccessibleProfiles ? resolveAccessState(for: profiles, applicationSupportURL: applicationSupportURL) : profiles
+        let profilesWithAccessState = detectsInaccessibleProfiles ? detectAccessState(for: profiles, applicationSupportURL: applicationSupportURL) : profiles
 
         return DataImport.BrowserProfileList(browser: self, profiles: profilesWithAccessState)
     }
@@ -317,7 +317,7 @@ enum ThirdPartyBrowser: CaseIterable {
 
 extension ThirdPartyBrowser {
 
-    func resolveAccessState(for profiles: [DataImport.BrowserProfile], applicationSupportURL: URL? = nil) -> [DataImport.BrowserProfile] {
+    func detectAccessState(for profiles: [DataImport.BrowserProfile], applicationSupportURL: URL? = nil) -> [DataImport.BrowserProfile] {
         guard isWebBrowser, !isSafari else {
             return profiles
         }

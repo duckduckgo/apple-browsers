@@ -3944,10 +3944,10 @@
 		C11198352C89AEFA00F0272C /* FreemiumDBPFirstProfileSavedNotifierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C11198332C89AEFA00F0272C /* FreemiumDBPFirstProfileSavedNotifierTests.swift */; };
 		C124AC232D4257BE009FBFD0 /* DataImportExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = C124AC222D4257BE009FBFD0 /* DataImportExtension.swift */; };
 		DD27DA7B0000000000000001 /* DataImportDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD27DA7B0000000000000002 /* DataImportDebugMenu.swift */; };
-		DD27DA7C0000000000000001 /* DataDirectoryAccessAvailability.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD27DA7C0000000000000002 /* DataDirectoryAccessAvailability.swift */; };
+		DD27DA7C0000000000000001 /* DirectoryAccessAvailability.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD27DA7C0000000000000002 /* DirectoryAccessAvailability.swift */; };
 		C124AC242D4257BE009FBFD0 /* DataImportExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = C124AC222D4257BE009FBFD0 /* DataImportExtension.swift */; };
 		DD27DA7B0000000000000003 /* DataImportDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD27DA7B0000000000000002 /* DataImportDebugMenu.swift */; };
-		DD27DA7C0000000000000003 /* DataDirectoryAccessAvailability.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD27DA7C0000000000000002 /* DataDirectoryAccessAvailability.swift */; };
+		DD27DA7C0000000000000003 /* DirectoryAccessAvailability.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD27DA7C0000000000000002 /* DirectoryAccessAvailability.swift */; };
 		C126B35A2C820924005DC2A3 /* FreemiumDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = C126B3592C820924005DC2A3 /* FreemiumDebugMenu.swift */; };
 		C126B35B2C820924005DC2A3 /* FreemiumDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = C126B3592C820924005DC2A3 /* FreemiumDebugMenu.swift */; };
 		C1351DD12C8B31CE0086B058 /* NotificationName+FreemiumDBP.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1351DD02C8B31CE0086B058 /* NotificationName+FreemiumDBP.swift */; };
@@ -6974,7 +6974,7 @@
 		C11198332C89AEFA00F0272C /* FreemiumDBPFirstProfileSavedNotifierTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreemiumDBPFirstProfileSavedNotifierTests.swift; sourceTree = "<group>"; };
 		C124AC222D4257BE009FBFD0 /* DataImportExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataImportExtension.swift; sourceTree = "<group>"; };
 		DD27DA7B0000000000000002 /* DataImportDebugMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataImportDebugMenu.swift; sourceTree = "<group>"; };
-		DD27DA7C0000000000000002 /* DataDirectoryAccessAvailability.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataDirectoryAccessAvailability.swift; sourceTree = "<group>"; };
+		DD27DA7C0000000000000002 /* DirectoryAccessAvailability.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DirectoryAccessAvailability.swift; sourceTree = "<group>"; };
 		C126B3592C820924005DC2A3 /* FreemiumDebugMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreemiumDebugMenu.swift; sourceTree = "<group>"; };
 		C1351DD02C8B31CE0086B058 /* NotificationName+FreemiumDBP.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NotificationName+FreemiumDBP.swift"; sourceTree = "<group>"; };
 		C1372EF32BBC5BAD003F8793 /* SecureTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureTextField.swift; sourceTree = "<group>"; };
@@ -9407,7 +9407,7 @@
 				EECA36B82E869885005A42EE /* ImportArchiveReader.swift */,
 				C124AC222D4257BE009FBFD0 /* DataImportExtension.swift */,
 				DD27DA7B0000000000000002 /* DataImportDebugMenu.swift */,
-				DD27DA7C0000000000000002 /* DataDirectoryAccessAvailability.swift */,
+				DD27DA7C0000000000000002 /* DirectoryAccessAvailability.swift */,
 				4B5A4F4B27F3A5AA008FBD88 /* NSNotificationName+DataImport.swift */,
 				4B59024726B3673600489384 /* ThirdPartyBrowser.swift */,
 				4B7A57CE279A4EF300B1C70E /* ChromiumPreferences.swift */,
@@ -16330,7 +16330,7 @@
 				B6BCC51F2AFCD9ED002C5499 /* DataImportSourcePicker.swift in Sources */,
 				C124AC242D4257BE009FBFD0 /* DataImportExtension.swift in Sources */,
 				DD27DA7B0000000000000003 /* DataImportDebugMenu.swift in Sources */,
-				DD27DA7C0000000000000003 /* DataDirectoryAccessAvailability.swift in Sources */,
+				DD27DA7C0000000000000003 /* DirectoryAccessAvailability.swift in Sources */,
 				1D5C23402F16CE000055046E /* PassthroughView.swift in Sources */,
 				EEC4A6722B2C90AB00F7C0AA /* VPNLocationPreferenceItem.swift in Sources */,
 				37EE56332D5F197700D53C7C /* BackForwardListItem.swift in Sources */,
@@ -18329,7 +18329,7 @@
 				BBC7BDAA2D5B82BD0037A4AE /* DefaultBrowserAndDockPromptCoordinator.swift in Sources */,
 				C124AC232D4257BE009FBFD0 /* DataImportExtension.swift in Sources */,
 				DD27DA7B0000000000000001 /* DataImportDebugMenu.swift in Sources */,
-				DD27DA7C0000000000000001 /* DataDirectoryAccessAvailability.swift in Sources */,
+				DD27DA7C0000000000000001 /* DirectoryAccessAvailability.swift in Sources */,
 				B63ED0E526BB8FB900A9DAD1 /* SharingMenu.swift in Sources */,
 				AA4FF40C2624751A004E2377 /* GrammarFeaturesManager.swift in Sources */,
 				F156E39B2FB5FCBA004A8424 /* Documentation.docc in Sources */,

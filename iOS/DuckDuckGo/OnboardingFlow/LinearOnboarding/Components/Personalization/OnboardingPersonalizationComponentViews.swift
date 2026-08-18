@@ -92,9 +92,6 @@ private struct OnboardingPersonalizationToggleRow: View {
 }
 
 /// A parent toggle plus its dependent rows, which are shown only while the parent is on.
-///
-/// The parent's on/off is held as this view's own `@State` (canonical Toggle→@State) so flipping it reliably re-renders *this* group.
-/// Each group owns its state, so multiple parents on one screen stay independent.
 private struct OnboardingPersonalizationDependentToggleGroup: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 

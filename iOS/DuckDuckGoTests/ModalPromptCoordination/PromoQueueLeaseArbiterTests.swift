@@ -66,7 +66,7 @@ struct PromoQueueLeaseArbiterTests {
     }
 
     @available(iOS 16, *)
-    @Test("A deallocated token relinquishes ownership", .timeLimit(.minutes(1)))
+    @Test("Passive snapshots report a dropped token as ownerless and acquisition recovers", .timeLimit(.minutes(1)))
     func weakTokenRecovery() throws {
         let arbiter = PromoQueueLeaseArbiter()
 
@@ -82,6 +82,7 @@ struct PromoQueueLeaseArbiterTests {
             _ = droppedLease
         }
 
+        // The passive read remains observational; the subsequent acquisition path performs stale-record recovery.
         #expect(arbiter.snapshot.owner == nil)
         let modalLease = try acquiredModalLease(from: arbiter.acquireModalLease())
         #expect(arbiter.snapshot.owner == .modal(ownershipIdentity: modalLease.ownershipIdentity))

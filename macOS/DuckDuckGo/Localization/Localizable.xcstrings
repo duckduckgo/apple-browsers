@@ -45516,7 +45516,7 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Zostaną usunięte czaty (**%#@chats@**):"
+            "value" : "**Czaty Duck.ai (%#@chats@)** zostaną usunięte:"
           },
           "substitutions" : {
             "chats" : {
@@ -45527,25 +45527,25 @@
                   "few" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "**%arg czaty Duck.ai** zostaną usunięte:"
+                      "value" : "%arg"
                     }
                   },
                   "many" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "**%arg czatów Duck.ai** zostanie usuniętych:"
+                      "value" : "%arg"
                     }
                   },
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg czat Duck.ai"
+                      "value" : "%arg"
                     }
                   },
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "Liczba czatów Duck.ai: %arg"
+                      "value" : "%arg"
                     }
                   }
                 }
@@ -45594,14 +45594,14 @@
                 "plural" : {
                   "few" : {
                     "stringUnit" : {
-                      "state" : "new",
-                      "value" : "%arg Duck.ai chats"
+                      "state" : "translated",
+                      "value" : "%arg чата Duck.ai"
                     }
                   },
                   "many" : {
                     "stringUnit" : {
-                      "state" : "new",
-                      "value" : "%arg Duck.ai chats"
+                      "state" : "translated",
+                      "value" : "%arg чатов Duck.ai"
                     }
                   },
                   "one" : {
@@ -48542,14 +48542,14 @@
             "plural" : {
               "few" : {
                 "stringUnit" : {
-                  "state" : "new",
-                  "value" : "%d items"
+                  "state" : "translated",
+                  "value" : "%d записи"
                 }
               },
               "many" : {
                 "stringUnit" : {
-                  "state" : "new",
-                  "value" : "%d items"
+                  "state" : "translated",
+                  "value" : "%d записей"
                 }
               },
               "one" : {
@@ -48772,7 +48772,7 @@
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg elem. historii"
+                      "value" : "%arg elementów historii"
                     }
                   }
                 }
@@ -48821,14 +48821,14 @@
                 "plural" : {
                   "few" : {
                     "stringUnit" : {
-                      "state" : "new",
-                      "value" : "%arg History items"
+                      "state" : "translated",
+                      "value" : "%arg записи в истории"
                     }
                   },
                   "many" : {
                     "stringUnit" : {
-                      "state" : "new",
-                      "value" : "%arg History items"
+                      "state" : "translated",
+                      "value" : "%arg записей в истории"
                     }
                   },
                   "one" : {
@@ -49084,7 +49084,7 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Zostaną usunięte elementy (**%#@items@**):"
+            "value" : "**Elementy historii (%#@items@)** zostaną usunięte:"
           },
           "substitutions" : {
             "items" : {
@@ -49095,25 +49095,25 @@
                   "few" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "**%arg elementy historii** zostaną usunięte:"
+                      "value" : "%arg"
                     }
                   },
                   "many" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "**%arg elementów historii** zostanie usuniętych:"
+                      "value" : "%arg"
                     }
                   },
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg element historii"
+                      "value" : "%arg "
                     }
                   },
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg elem. historii"
+                      "value" : "%arg"
                     }
                   }
                 }
@@ -49152,7 +49152,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Из журнала будет удалено **%1$#@записей@**:"
+            "value" : "Из журнала будет удалено **%1$#@items@**:"
           },
           "substitutions" : {
             "items" : {
@@ -49162,14 +49162,14 @@
                 "plural" : {
                   "few" : {
                     "stringUnit" : {
-                      "state" : "new",
-                      "value" : "%arg history items"
+                      "state" : "translated",
+                      "value" : "%arg записи в истории"
                     }
                   },
                   "many" : {
                     "stringUnit" : {
-                      "state" : "new",
-                      "value" : "%arg history items"
+                      "state" : "translated",
+                      "value" : "%arg записей в истории"
                     }
                   },
                   "one" : {
@@ -50505,25 +50505,25 @@
                   "few" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg witryn"
+                      "value" : "%arg"
                     }
                   },
                   "many" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg witryn"
+                      "value" : "%arg"
                     }
                   },
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg witryna"
+                      "value" : "%arg"
                     }
                   },
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg witryn(y)"
+                      "value" : "%arg"
                     }
                   }
                 }
@@ -50562,7 +50562,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "**Файлы cookie и прочие данные с %1$#@сайтов@** будут удалены:"
+            "value" : "**Файлы cookie и прочие данные с %#@sites@** будут удалены:"
           },
           "substitutions" : {
             "sites" : {
@@ -50572,20 +50572,20 @@
                 "plural" : {
                   "few" : {
                     "stringUnit" : {
-                      "state" : "new",
-                      "value" : "%arg sites"
+                      "state" : "translated",
+                      "value" : "%arg сайтов"
                     }
                   },
                   "many" : {
                     "stringUnit" : {
-                      "state" : "new",
-                      "value" : "%arg sites"
+                      "state" : "translated",
+                      "value" : "%arg сайтов"
                     }
                   },
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg сайт"
+                      "value" : "%arg сайта"
                     }
                   },
                   "other" : {

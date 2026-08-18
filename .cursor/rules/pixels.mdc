@@ -237,7 +237,8 @@ if try await pixelKit.fireAsync(event, frequency: .daily) == .suppressed { ... }
 ```
 
 `PixelKit.Options` presets cover the common cases (`.default`, `.parameters(_:)`, `.namePrefix(_:)`,
-`.unenforcedPrefix`, `.withoutAppVersion`). It is a value type, so uncommon combinations compose:
+`.unenforcedPrefix`, `.withoutAppVersion`, `.withRetry`). It is a value type, so uncommon combinations
+compose:
 
 ```swift
 var options = PixelKit.Options.unenforcedPrefix
@@ -245,6 +246,14 @@ options.additionalParameters = ["source": "menu"]
 ```
 
 Do not add convenience overloads of `fire` to hide parameters; that is what `Options` replaced.
+
+### Retrying a failed pixel
+
+A pixel that fails to send is dropped. `options: .withRetry` (`Options.retryOnFailure`) persists the
+failed send and replays it later, up to 28 days. It is off by default because a replay carries two
+extra parameters, `originalPixelTimestamp` and `retriedPixel`: the pixel must be privacy triaged for
+both, and must declare them in its JSON5 definition, before opting in. See
+`SharedPackages/BrowserServicesKit/Sources/PixelKit/RetryQueue/README.md`.
 
 ## Best Practices
 

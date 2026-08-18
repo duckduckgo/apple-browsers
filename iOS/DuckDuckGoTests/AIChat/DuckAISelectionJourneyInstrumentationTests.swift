@@ -25,6 +25,7 @@ import Testing
 
 @Suite("DuckAI Selection Journey Instrumentation")
 @MainActor
+@available(iOS 16, *)
 struct DuckAISelectionJourneyInstrumentationTests {
 
     private final class TestClock {

@@ -45,6 +45,7 @@ final class AIChatContextualModePixelHandlerTests {
         #expect(PixelFiringMock.lastPixelName == Pixel.Event.aiChatContextualSheetOpened.name)
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test("Sheet dismissed pixel fires correctly", .timeLimit(.minutes(1)), arguments: [true, false])
     func testSheetDismissedPixel(hadUnsubmittedSelections: Bool) {
         // GIVEN
@@ -65,6 +66,7 @@ final class AIChatContextualModePixelHandlerTests {
         #expect(firedParameters == ["had_unsubmitted_selections": String(hadUnsubmittedSelections)])
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test("Floating input dismissed pixel includes unsubmitted selection state", .timeLimit(.minutes(1)), arguments: [true, false])
     func floatingInputDismissedPixel(hadUnsubmittedSelections: Bool) {
         var firedEventName: String?
@@ -427,6 +429,7 @@ final class AIChatContextualModePixelHandlerTests {
         #expect(sut.isManualAttachInProgress == false)
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test("Prompt submitted with selections carries a bucketed count", .timeLimit(.minutes(1)), arguments: [
         (1, "1"),
         (2, "2"),
@@ -454,6 +457,7 @@ final class AIChatContextualModePixelHandlerTests {
         #expect(firedFrequency == .dailyAndCount)
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test("Prompt submitted with selections drops out-of-contract counts", .timeLimit(.minutes(1)), arguments: [0, 6])
     func prompt_submitted_with_selections_drops_out_of_contract_counts(count: Int) {
         var didFire = false
@@ -468,6 +472,7 @@ final class AIChatContextualModePixelHandlerTests {
         #expect(!didFire)
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test("Parameterless selection pixels fire under their own names", .timeLimit(.minutes(1)))
     func parameterless_selection_pixels_fire_under_their_own_names() {
         var firedEventNames: [String] = []

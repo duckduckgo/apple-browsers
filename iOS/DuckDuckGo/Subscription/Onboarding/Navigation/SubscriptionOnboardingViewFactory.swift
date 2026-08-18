@@ -43,7 +43,14 @@ struct SubscriptionOnboardingViewFactory {
 
     func screen(for section: SubscriptionOnboardingSection) -> AnyView {
         AnyView(content(for: section)
-            .onFirstAppear { flow.instrumentation.stepShown(section) })
+            .onFirstAppear { reportShown(section) })
+    }
+
+    /// `.vpnTips` is bundled with `.vpnWidget` and shares its pixel name — firing here too would
+    /// double-count a single "vpn_widget shown" impression.
+    func reportShown(_ section: SubscriptionOnboardingSection) {
+        guard section != .vpnTips else { return }
+        flow.instrumentation.stepShown(section)
     }
 
     private func content(for section: SubscriptionOnboardingSection) -> AnyView {
@@ -78,6 +85,15 @@ struct SubscriptionOnboardingViewFactory {
                 navigationButton: navigationButton,
                 onComplete: { flow.sectionDidComplete(.vpnWidget) },
                 onNext: { flow.sectionDidRequestAdvance() }))
+
+        case .vpnTips:
+            return AnyView(SubscriptionOnboardingVPNTipsView(
+                title: title,
+                navigationButton: navigationButton,
+                onNext: {
+                    flow.sectionDidComplete(.vpnTips)
+                    flow.sectionDidRequestAdvance()
+                }))
 
         case .idtr:
             return AnyView(SubscriptionOnboardingProtectionOverviewView(

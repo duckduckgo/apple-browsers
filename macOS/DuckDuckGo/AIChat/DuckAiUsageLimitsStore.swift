@@ -42,11 +42,17 @@ final class DuckAiUsageLimitsStore {
     func currentLimits() -> DuckAiUsageLimits? {
         guard featureFlagger.isFeatureOn(.aiChatUsageWarnings), let provider else { return nil }
         let limits = provider.currentUsageLimits()
-        // Presence only: enough to verify the read, and keeps the user's percentages out of the log.
+        // Marked private so the percentages are redacted wherever redaction applies; local debug builds
+        // still show them, which is what makes a read verifiable while testing.
         Logger.aiChat.debug("""
-            Duck.ai usage limits read: daily=\(limits.daily == nil ? "none" : "present", privacy: .public) \
-            weekly=\(limits.weekly == nil ? "none" : "present", privacy: .public)
+            Duck.ai usage limits read: daily=\(Self.describe(limits.daily), privacy: .private) \
+            weekly=\(Self.describe(limits.weekly), privacy: .private)
             """)
         return limits
+    }
+
+    private static func describe(_ window: DuckAiUsageLimitWindow?) -> String {
+        guard let window else { return "none" }
+        return "\(window.percentUsed)% resets \(window.resetsAt)"
     }
 }

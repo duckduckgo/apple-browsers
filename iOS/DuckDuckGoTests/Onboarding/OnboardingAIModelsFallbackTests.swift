@@ -43,6 +43,10 @@ struct OnboardingAIModelsFallbackTests {
     { "defaultModelId": "o", "models": "[{\\"id\\": \\"o\\", \\"provider\\": \\"openai\\", \\"modelShortName\\": \\"O\\"}, {\\"id\\": \\"t\\", \\"provider\\": \\"tinfoil\\", \\"modelShortName\\": \\"T\\"}]" }
     """
 
+    static let modelsWithAllUnsupportedProviderJSON = """
+    { "defaultModelId": "o", "models": "[{\\"id\\": \\"t0\\", \\"provider\\": \\"tinfoil\\", \\"modelShortName\\": \\"T0\\"}, {\\"id\\": \\"t1\\", \\"provider\\": \\"tinfoil\\", \\"modelShortName\\": \\"T1\\"}]" }
+    """
+
     private func makeSUT(subfeatureSettings: String?) -> OnboardingAIModelsFallback {
         let privacyConfig = PrivacyConfigurationMock()
         if let subfeatureSettings {
@@ -112,6 +116,20 @@ struct OnboardingAIModelsFallbackTests {
     func absentConfigFallsBackToBaked() {
         // GIVEN
         let sut = makeSUT(subfeatureSettings: nil)
+
+        // WHEN
+        let result = sut.aiModels
+
+        // THEN
+        #expect(result.models.map(\.id) == BakedDefault.ids)
+        #expect(result.models.map(\.provider) == BakedDefault.providers)
+        #expect(result.defaultModelId == BakedDefault.defaultModelId)
+    }
+
+    @Test("Check config entries with all unsupported providers fallback to last resort")
+    func allUnsupportedProviderFallbackToLastResort() {
+        // GIVEN
+        let sut = makeSUT(subfeatureSettings: Self.modelsWithAllUnsupportedProviderJSON)
 
         // WHEN
         let result = sut.aiModels

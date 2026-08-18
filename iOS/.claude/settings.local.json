@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__plugin_asana_asana__asana_get_task"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

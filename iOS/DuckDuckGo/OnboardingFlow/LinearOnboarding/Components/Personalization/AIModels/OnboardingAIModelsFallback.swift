@@ -65,8 +65,9 @@ struct OnboardingAIModelsFallback: OnboardingAIModelsFallbackProviding {
         guard
             let json = privacyConfigurationManager.privacyConfig.settings(for: iOSBrowserConfigSubfeature.onboardingFlowByDownloadReasonExperiment),
             let data = json.data(using: .utf8),
-            let payload = try? JSONDecoder().decode(OnboardingAIModelsFallbackAPIModel.self, from: data),
-            let response = payload.response
+            let payload = try? JSONDecoder().decode(OnboardingAIModelsFallbackPayload.self, from: data),
+            let response = payload.response,
+            !response.models.isEmpty // If models is empty fallback to hardcoded version
         else {
             return nil
         }
@@ -74,9 +75,8 @@ struct OnboardingAIModelsFallback: OnboardingAIModelsFallbackProviding {
     }
 }
 
-/// The wire format of the fallback settings payload, kept separate from the domain model so the
-/// config JSON can evolve independently.
-private struct OnboardingAIModelsFallbackAPIModel: Decodable {
+private struct OnboardingAIModelsFallbackPayload: Decodable {
+
     struct Model: Decodable {
         let id: String
         let provider: String

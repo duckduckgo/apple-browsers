@@ -65,5 +65,12 @@
                 "enum": ["this_device_only", "sync_another_device"]
             }
         ]
+    },
+    "m_settings_sync_another_device_prompt_dismissed": {
+        "description": "Fired when the user dismisses the Sync Another Device prompt (simplifiedSyncSetupV2) without choosing an option.",
+        "owners": ["pballart"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "ui_version"]
     }
 }

@@ -120,4 +120,24 @@ extension FileManager {
         throw CocoaError(.fileWriteFileExists)
     }
 
+    func directoryExists(atPath path: String) -> Bool {
+        var isDirectory: ObjCBool = false
+        guard fileExists(atPath: path, isDirectory: &isDirectory) else {
+            return false
+        }
+
+        return isDirectory.boolValue
+    }
+
+    func requiresReadPermission(atPath path: String) -> Bool {
+        do {
+            _ = try contentsOfDirectory(atPath: path)
+        } catch let error as CocoaError where error.code == .fileReadNoPermission {
+            return true
+        } catch {
+            // NO-OP
+        }
+
+        return false
+    }
 }

@@ -18,11 +18,36 @@
 //
 
 import UIKit
+import os.log
 import ObjectiveC
 import DesignResourcesKit
 import DesignResourcesKitIcons
 
 class BrowserChromeButton: UIButton {
+
+    /// The view UIKit may reparent into the menu platter while this button's menu is open. It moves the
+    /// real preview view, and pulling one out of a glass group stops the group rendering — so callers in a
+    /// glass container pass a throwaway stand-in instead of letting UIKit take the button.
+    var menuHighlightTarget: (() -> UIView?)?
+
+    @available(iOS 16.0, *)
+    override func contextMenuInteraction(_ interaction: UIContextMenuInteraction,
+                                         configuration: UIContextMenuConfiguration,
+                                         highlightPreviewForItemWithIdentifier identifier: any NSCopying) -> UITargetedPreview? {
+        targetedMenuPreview()
+    }
+
+    @available(iOS 16.0, *)
+    override func contextMenuInteraction(_ interaction: UIContextMenuInteraction,
+                                         configuration: UIContextMenuConfiguration,
+                                         dismissalPreviewForItemWithIdentifier identifier: any NSCopying) -> UITargetedPreview? {
+        targetedMenuPreview()
+    }
+
+    private func targetedMenuPreview() -> UITargetedPreview? {
+        guard let target = menuHighlightTarget?() else { return nil }
+        return UITargetedPreview(view: target)
+    }
 
     enum ButtonType {
         case primary

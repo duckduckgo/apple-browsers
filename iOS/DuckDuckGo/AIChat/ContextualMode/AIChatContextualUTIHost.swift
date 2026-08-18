@@ -371,6 +371,10 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         coordinator.showCollapsed()
     }
 
+    var isInputFirstResponder: Bool {
+        coordinator.viewController.isInputFirstResponder
+    }
+
     /// A finished transcript belongs in the input, focused so the user can edit or send it.
     func applyDictatedQuery(_ query: String) {
         setText(query)

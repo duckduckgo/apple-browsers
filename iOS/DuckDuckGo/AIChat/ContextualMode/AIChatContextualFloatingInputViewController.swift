@@ -18,6 +18,7 @@
 //
 
 import UIKit
+import WebKit
 import os.log
 
 protocol AIChatContextualFloatingInputViewControllerDelegate: AnyObject {
@@ -34,6 +35,8 @@ protocol AIChatContextualFloatingInputHosting: AnyObject {
 
     func mount(in parent: UIViewController) -> UIView
     func unmount(from parent: UIViewController)
+    var isInputFirstResponder: Bool { get }
+
     func deactivateInput()
     func freezeInputPosition()
     func applyDictatedQuery(_ query: String)
@@ -120,6 +123,7 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
     weak var delegate: AIChatContextualFloatingInputViewControllerDelegate?
 
     private let utiHost: AIChatContextualFloatingInputHosting
+    private var isTransitioningSize = false
     let chipsViewController: AIChatContextualInputViewController
 
     /// Lets touches outside the input reach the page underneath, so it stays scrollable while the
@@ -161,12 +165,11 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
         }
     }
 
-    /// Installed on the presenter and deliberately non-consuming: a tap dismisses this surface *and*
-    /// still activates whatever it hit, so a link opens on the same tap.
+    /// Installed on the presenter so any tap outside the surface dismisses it. A tap on the page is
+    /// consumed with it — the user is leaving, not following a link — while chrome taps still act.
     private lazy var dismissOnPageTapRecognizer: UITapGestureRecognizer = {
         let recognizer = BriefTapGestureRecognizer(target: self, action: #selector(handlePageTap))
         recognizer.delegate = self
-        recognizer.cancelsTouchesInView = false
         recognizer.delaysTouchesBegan = false
         recognizer.delaysTouchesEnded = false
         return recognizer
@@ -222,6 +225,17 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
         addDimView()
         addChipsContainer()
         observeKeyboardAnimation()
+    }
+
+    /// A rotation takes the keyboard down and puts it back up. That is the device turning, not the user
+    /// leaving, so the surface sits through it — and it is this surface that pins the app to portrait,
+    /// so leaving mid-rotation releases the pin and the rotation reverses.
+    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+        super.viewWillTransition(to: size, with: coordinator)
+        isTransitioningSize = true
+        coordinator.animate(alongsideTransition: nil) { [weak self] _ in
+            self?.isTransitioningSize = false
+        }
     }
 
     /// Adds the floating input over `parent`'s content and mounts the shared input above the keyboard.
@@ -493,6 +507,7 @@ private extension AIChatContextualFloatingInputViewController {
         // or the page blurring its own field — so the surface goes too.
         guard notification.name == UIResponder.keyboardWillHideNotification,
               hasKeyboardAppeared,
+              !isTransitioningSize,
               !isDismissing else { return }
         // Backgrounding and system interruptions take the keyboard too, and neither is the user leaving: the
         // surface and whatever has been typed into it should still be here on the way back.
@@ -500,6 +515,9 @@ private extension AIChatContextualFloatingInputViewController {
         // This surface is the attachment picker's presenter, so its own picker takes the keyboard on the
         // way up — leaving now would tear down the input the picked attachment is meant to land in.
         guard presentedViewController == nil else { return }
+        // Something else claiming the keyboard resigns our input with it. Still holding focus means the
+        // keyboard is only churning — a rotation settling, or a hardware keyboard — so the surface stays.
+        guard !utiHost.isInputFirstResponder else { return }
         requestDismiss()
     }
 
@@ -544,7 +562,28 @@ extension AIChatContextualFloatingInputViewController: UIGestureRecognizerDelega
     /// hit test keeps one definition of which points this surface owns.
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
         guard gestureRecognizer === dismissOnPageTapRecognizer else { return true }
+        // Only the page is swallowed. Chrome acts on its own taps, and the address bar dismisses this
+        // surface by taking focus, which never happens if the tap that focuses it is cancelled.
+        gestureRecognizer.cancelsTouchesInView = isWithinWebContent(touch.view)
         return view.hitTest(touch.location(in: view), with: nil) == nil
+    }
+
+    /// A page tap is the user leaving, so the page's own tap has to wait for ours and lose — otherwise the
+    /// link it landed on opens behind the dismissal. Pans are left alone, so the page still scrolls.
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
+                           shouldBeRequiredToFailBy otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+        guard gestureRecognizer === dismissOnPageTapRecognizer,
+              !(otherGestureRecognizer is UIPanGestureRecognizer) else { return false }
+        return isWithinWebContent(otherGestureRecognizer.view)
+    }
+
+    private func isWithinWebContent(_ view: UIView?) -> Bool {
+        var candidate = view
+        while let current = candidate {
+            if current is WKWebView { return true }
+            candidate = current.superview
+        }
+        return false
     }
 
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,

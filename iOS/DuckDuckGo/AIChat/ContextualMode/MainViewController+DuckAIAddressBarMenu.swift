@@ -40,7 +40,16 @@ extension MainViewController {
         guard duckAIAddressBarEntry == .menu else {
             button?.menu = nil
             button?.showsMenuAsPrimaryAction = false
+            (button as? BrowserChromeButton)?.menuHighlightTarget = nil
+            duckAIMenuAnchor?.removeFromSuperview()
+            duckAIMenuAnchor = nil
             return
+        }
+
+        // UIKit reparents the preview into the menu platter. Hand it a stand-in that lives outside the
+        // field's glass group, so nothing is pulled out of the group and the bar keeps rendering.
+        if let button = button as? BrowserChromeButton {
+            button.menuHighlightTarget = { [weak self] in self?.duckAIMenuAnchorView(over: button) }
         }
 
         // Deferred so the shown pixel records an actual display rather than the menu being attached.
@@ -51,6 +60,26 @@ extension MainViewController {
             }
         ])
         button?.showsMenuAsPrimaryAction = true
+    }
+
+    /// A transparent stand-in over the Duck.ai button, parented in the bar's container rather than the
+    /// glass field, so the menu has something to reparent that costs nothing when it leaves.
+    private func duckAIMenuAnchorView(over button: UIView) -> UIView? {
+        guard let container: UIView = viewCoordinator.navigationBarContainer else { return nil }
+        let anchor = duckAIMenuAnchor ?? {
+            let view = UIView()
+            view.isUserInteractionEnabled = false
+            view.isAccessibilityElement = false
+            duckAIMenuAnchor = view
+            return view
+        }()
+        if anchor.superview !== container {
+            container.addSubview(anchor)
+        }
+        // Framed here rather than by constraints: the menu anchors wherever this sits, and constraints
+        // added on the way into the presentation are still unlaid out, leaving it at the origin.
+        anchor.frame = container.convert(button.bounds, from: button)
+        return anchor
     }
 
     func askAboutCurrentPageFromAddressBar() {

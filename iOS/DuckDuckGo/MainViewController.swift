@@ -240,6 +240,7 @@ class MainViewController: UIViewController {
     private weak var boundAIChatChromeChipCoordinator: AIChatContextualSheetCoordinator?
     /// Separates "bound to no tab" from "never bound", so a launch onto a tab-less NTP still refreshes.
     private var hasBoundAIChatChromeChip = false
+    var duckAIMenuAnchor: UIView?
     private var settingsCancellables = Set<AnyCancellable>()
     private var webViewViewportRefreshCancellable: AnyCancellable?
     private lazy var floatingDomainCapsuleController = FloatingDomainCapsuleController { [weak self] in
@@ -1127,7 +1128,10 @@ class MainViewController: UIViewController {
             .removeDuplicates { $0 == $1 }
             .dropFirst()
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in self?.refreshAIChatChromeChip() }
+            .sink { [weak self] _ in
+                self?.refreshAIChatChromeChip()
+                self?.updateSupportedOrientationsForContextualSurface()
+            }
             .store(in: &aiChatChromeChipCancellables)
 
         refreshAIChatChromeChip()
@@ -1897,7 +1901,26 @@ class MainViewController: UIViewController {
         if let presentedViewController {
             return presentedViewController.supportedInterfaceOrientations
         }
+        // A child is never asked about orientation, so the presenter answers for the floating input —
+        // which is the same surface as the sheet, and the sheet is portrait-only.
+        if isFloatingContextualInputPresented {
+            return .portrait
+        }
         return needsToShowOnboardingIntro() ? [.portrait] : [.allButUpsideDown]
+    }
+
+    private var isFloatingContextualInputPresented: Bool {
+        currentTab?.aiChatContextualSheetCoordinator.isFloatingInputPresented == true
+    }
+
+    /// UIKit only re-asks when something else prompts a rotation, so a surface opening in landscape has
+    /// to ask on its own behalf — the sheet gets this for free by being presented.
+    private func updateSupportedOrientationsForContextualSurface() {
+        if #available(iOS 16.0, *) {
+            setNeedsUpdateOfSupportedInterfaceOrientations()
+        } else {
+            UIViewController.attemptRotationToDeviceOrientation()
+        }
     }
 
     override var shouldAutorotate: Bool {

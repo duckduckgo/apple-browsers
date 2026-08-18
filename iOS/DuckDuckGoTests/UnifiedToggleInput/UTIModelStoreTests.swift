@@ -36,12 +36,7 @@ final class UTIModelStoreTests: XCTestCase {
         preferences = StubPreferences()
         modelsService = StubModelsService()
         subscriptionManager = SubscriptionManagerMock()
-        sut = UTIModelStore(
-            modelsService: modelsService,
-            preferences: preferences,
-            subscriptionManager: subscriptionManager,
-            isUpdatedModelPickerEnabled: false
-        )
+        sut = makeSUT(isUpdatedModelPickerEnabled: false)
     }
 
     override func tearDown() {
@@ -428,7 +423,77 @@ final class UTIModelStoreTests: XCTestCase {
         XCTAssertEqual(sut.subscriptionState.userTier, .free)
     }
 
+    // MARK: - Free Trial Eligibility
+
+    func test_fetchModels_whenUpdatedModelPickerIsDisabled_keepsTrialEligibilityUnknown() {
+        subscriptionManager.isEligibleForFreeTrialResult = true
+
+        sut.fetchModels()
+
+        XCTAssertEqual(sut.freeTrialEligibility, .unknown)
+    }
+
+    func test_whenUpdatedModelPickerIsDisabled_productAvailabilityDoesNotChangeTrialEligibility() async {
+        subscriptionManager.hasAppStoreProductsAvailable = false
+        subscriptionManager.isEligibleForFreeTrialResult = true
+        sut = makeSUT(isUpdatedModelPickerEnabled: false)
+
+        subscriptionManager.hasAppStoreProductsAvailable = true
+        await Task.yield()
+
+        XCTAssertEqual(sut.freeTrialEligibility, .unknown)
+    }
+
+    func test_fetchModels_whenCachedTrialEligibilityChanges_updatesTrialEligibility() {
+        sut = makeSUT(isUpdatedModelPickerEnabled: true)
+        subscriptionManager.isEligibleForFreeTrialResult = true
+
+        sut.fetchModels()
+        XCTAssertEqual(sut.freeTrialEligibility, .eligible)
+
+        subscriptionManager.isEligibleForFreeTrialResult = false
+        sut.fetchModels()
+
+        XCTAssertEqual(sut.freeTrialEligibility, .ineligible)
+    }
+
+    func test_fetchModels_whenPurchasePlatformIsStripe_usesCachedTrialEligibility() {
+        subscriptionManager.currentEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .stripe)
+        subscriptionManager.hasAppStoreProductsAvailable = false
+        subscriptionManager.isEligibleForFreeTrialResult = false
+        sut = makeSUT(isUpdatedModelPickerEnabled: true)
+
+        sut.fetchModels()
+
+        XCTAssertEqual(sut.freeTrialEligibility, .ineligible)
+    }
+
+    func test_whenAppStoreProductsBecomeAvailable_updatesTrialEligibilityAndNotifies() async {
+        subscriptionManager.hasAppStoreProductsAvailable = false
+        subscriptionManager.isEligibleForFreeTrialResult = true
+        sut = makeSUT(isUpdatedModelPickerEnabled: true)
+        let didUpdate = expectation(description: "trial eligibility updated")
+        sut.onModelsUpdated = {
+            didUpdate.fulfill()
+        }
+
+        XCTAssertEqual(sut.freeTrialEligibility, .unknown)
+        subscriptionManager.hasAppStoreProductsAvailable = true
+
+        await fulfillment(of: [didUpdate], timeout: 1)
+        XCTAssertEqual(sut.freeTrialEligibility, .eligible)
+    }
+
     // MARK: - Helpers
+
+    private func makeSUT(isUpdatedModelPickerEnabled: Bool) -> UTIModelStore {
+        UTIModelStore(
+            modelsService: modelsService,
+            preferences: preferences,
+            subscriptionManager: subscriptionManager,
+            isUpdatedModelPickerEnabled: isUpdatedModelPickerEnabled
+        )
+    }
 
     private func makeLimits() -> AIChatAttachmentTierLimits {
         AIChatAttachmentTierLimits(

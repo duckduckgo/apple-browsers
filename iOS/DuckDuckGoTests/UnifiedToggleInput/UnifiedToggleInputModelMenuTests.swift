@@ -178,19 +178,41 @@ final class UnifiedToggleInputModelMenuTests: XCTestCase {
         XCTAssertEqual(availableActions(in: menu).first?.title, "plus")
     }
 
-    func testWhenUpdatedMenuFreeUserHasGatedModelsThenUsesTryFreeTitle() {
+    func testWhenUpdatedMenuFreeUserTrialEligibilityIsUnknownThenUsesTryFreeTitle() {
         let menu = makeUpdatedMenu(
             models: [makeFakeModel(id: "plus", accessTier: ["plus"], hasAccess: false)],
-            userTier: .free
+            userTier: .free,
+            freeTrialEligibility: .unknown
         )
 
         XCTAssertEqual(gatedSection(in: menu)?.title, UserText.aiChatModelPickerTryFree)
     }
 
+    func testWhenUpdatedMenuFreeUserIsEligibleForTrialThenUsesTryFreeTitle() {
+        let menu = makeUpdatedMenu(
+            models: [makeFakeModel(id: "plus", accessTier: ["plus"], hasAccess: false)],
+            userTier: .free,
+            freeTrialEligibility: .eligible
+        )
+
+        XCTAssertEqual(gatedSection(in: menu)?.title, UserText.aiChatModelPickerTryFree)
+    }
+
+    func testWhenUpdatedMenuFreeUserIsIneligibleForTrialThenUsesSubscriberExclusiveTitle() {
+        let menu = makeUpdatedMenu(
+            models: [makeFakeModel(id: "plus", accessTier: ["plus"], hasAccess: false)],
+            userTier: .free,
+            freeTrialEligibility: .ineligible
+        )
+
+        XCTAssertEqual(gatedSection(in: menu)?.title, UserText.aiChatModelPickerSubscriberExclusive)
+    }
+
     func testWhenUpdatedMenuPlusUserHasGatedModelsThenUsesProPlanExclusiveTitle() {
         let menu = makeUpdatedMenu(
             models: [makeFakeModel(id: "pro", accessTier: ["pro"], hasAccess: false)],
-            userTier: .plus
+            userTier: .plus,
+            freeTrialEligibility: .ineligible
         )
 
         XCTAssertEqual(gatedSection(in: menu)?.title, UserText.aiChatModelPickerProPlanExclusive)
@@ -250,12 +272,14 @@ final class UnifiedToggleInputModelMenuTests: XCTestCase {
     private func makeUpdatedMenu(
         models: [AIChatModel],
         selectedId: String? = nil,
-        userTier: AIChatUserTier = .free
+        userTier: AIChatUserTier = .free,
+        freeTrialEligibility: FreeTrialEligibility = .unknown
     ) -> UIMenu {
         UnifiedToggleInputModelMenuFactory(isUpdatedModelPickerEnabled: true).makeMenu(
             models: models,
             selectedId: selectedId,
             userTier: userTier,
+            freeTrialEligibility: freeTrialEligibility,
             onSelect: { _ in }
         )
     }

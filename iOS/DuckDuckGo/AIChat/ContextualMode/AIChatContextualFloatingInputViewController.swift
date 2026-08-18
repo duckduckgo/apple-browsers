@@ -568,12 +568,14 @@ extension AIChatContextualFloatingInputViewController: UIGestureRecognizerDelega
         return view.hitTest(touch.location(in: view), with: nil) == nil
     }
 
-    /// A page tap is the user leaving, so the page's own tap has to wait for ours and lose — otherwise the
-    /// link it landed on opens behind the dismissal. Pans are left alone, so the page still scrolls.
+    /// A page tap is the user leaving, so the page's own tap waits for ours and loses — the link it landed
+    /// on would otherwise open behind the dismissal. Only taps: this recognizer never fails while a finger
+    /// is held, so making long presses wait for it would leave a hold doing nothing at all.
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
                            shouldBeRequiredToFailBy otherGestureRecognizer: UIGestureRecognizer) -> Bool {
         guard gestureRecognizer === dismissOnPageTapRecognizer,
-              !(otherGestureRecognizer is UIPanGestureRecognizer) else { return false }
+              !(otherGestureRecognizer is UIPanGestureRecognizer),
+              !(otherGestureRecognizer is UILongPressGestureRecognizer) else { return false }
         return isWithinWebContent(otherGestureRecognizer.view)
     }
 

@@ -1040,11 +1040,12 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
         }
     }
 
-    /// Hands the conversation off to a Duck.ai tab, leaving this sheet's chat as it is — the user asked
-    /// to go to Duck.ai, not to start over here.
+    /// Opens Duck.ai itself, not this conversation — that is the header's hand-off, which carries the chat
+    /// URL. This chat is left as it is, since the user asked to go to Duck.ai, not to start over here.
     func aiChatContextualSheetViewControllerDidRequestOpenDuckAI(_ viewController: AIChatContextualSheetViewController) {
         delegate?.aiChatContextualSheetCoordinator(self, didRequestExpandWithURL: aiChatSettings.aiChatURL)
         viewController.dismiss(animated: true)
+        sessionState.cancelManualAttach()
     }
 
     func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController, didSubmitPrompt prompt: String) {

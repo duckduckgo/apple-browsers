@@ -1,5 +1,5 @@
 //
-//  DataDirectoryAccessAvailability.swift
+//  DirectoryAccessAvailability.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -25,7 +25,7 @@ import PrivacyConfig
 ///
 /// macOS 27+ denies apps with `com.apple.security.*` entitlements access to other apps'
 /// `~/Library/Application Support/*` directories (TCC), so browser profiles can't be read until the user grants it.
-struct DataDirectoryAccessAvailability {
+struct DirectoryAccessAvailability {
 
     private static let minimumRequiredMacVersion = 27
 

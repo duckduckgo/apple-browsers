@@ -357,12 +357,14 @@ jobs:
       always() &&
       needs.validate-wpr.result == 'success' &&
       (github.event_name == 'schedule' || inputs.upload-to-clickhouse)
-    runs-on: [self-hosted, apple]
-    # 60 minutes, deliberately loose: this job's runner pool ([self-hosted,
-    # apple]) and ddg-lcp's ([self-hosted, macOS, ARM64]) may or may not be
-    # the same physical machine — that isn't verified — so if they are, this
-    # job can legitimately queue behind a multi-hour measurement job before it
-    # even starts running.
+    # `apple` names the owning team, not a platform: the label covers both a
+    # Linux utility runner and the bare-metal measurement mac, and only the
+    # former has clickhouse-client. Without the platform label this job lands on
+    # either, so roughly half of its runs fail on a missing binary. Asking for
+    # Linux keeps it off the measurement mac without naming a machine.
+    runs-on: [self-hosted, apple, Linux]
+    # 60 minutes, deliberately loose: this job can queue behind a multi-hour
+    # measurement job whenever the runner it wants is busy.
     timeout-minutes: 60
 
     steps:

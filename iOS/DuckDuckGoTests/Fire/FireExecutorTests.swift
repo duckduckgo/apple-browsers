@@ -45,6 +45,7 @@ final class FireExecutorTests: XCTestCase {
         private(set) var didFinishBurningAIHistoryCalled = false
         private(set) var willStartBurningCalled = false
         private(set) var willStartBurningFireRequest: FireRequest?
+        private(set) var willClearAppSwitcherSnapshotsCalled = false
         private(set) var didFinishBurningCalled = false
         private(set) var didFinishBurningFireRequest: FireRequest?
         
@@ -75,6 +76,10 @@ final class FireExecutorTests: XCTestCase {
         
         func didFinishBurningAIHistory(fireRequest: FireRequest) {
             didFinishBurningAIHistoryCalled = true
+        }
+
+        func willClearAppSwitcherSnapshots(fireRequest: FireRequest) {
+            willClearAppSwitcherSnapshotsCalled = true
         }
         
         func didFinishBurning(fireRequest: FireRequest) {
@@ -290,6 +295,21 @@ final class FireExecutorTests: XCTestCase {
         await executor.burn(request: makeFireRequest(options: .tabs), applicationState: .unknown)
 
         XCTAssertEqual(mockAppSwitcherSnapshotCleaner.clearSnapshotsCallCount, 0)
+        XCTAssertFalse(mockDelegate.willClearAppSwitcherSnapshotsCalled)
+    }
+
+    func testTabsOnlyBurnNotifiesDelegateBeforeClearingAppSwitcherSnapshots() async {
+        mockFeatureFlagger.enabledFeatureFlags.append(.appSwitcherSnapshotClearing)
+        let snapshotCleaner = MockAppSwitcherSnapshotCleaner {
+            XCTAssertTrue(self.mockDelegate.willClearAppSwitcherSnapshotsCalled)
+            XCTAssertFalse(self.mockDelegate.didFinishBurningCalled)
+        }
+        let executor = makeFireExecutor(appSwitcherSnapshotCleaner: snapshotCleaner)
+        let request = makeFireRequest(options: .tabs, scope: .tab(viewModel: makeTabViewModel()))
+
+        await executor.burn(request: request, applicationState: .unknown)
+
+        XCTAssertEqual(snapshotCleaner.clearSnapshotsCallCount, 1)
     }
 
     private func makeTabViewModel(chatID: String, fireTab: Bool) -> TabViewModel {

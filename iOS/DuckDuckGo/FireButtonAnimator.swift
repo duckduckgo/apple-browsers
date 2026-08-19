@@ -114,6 +114,7 @@ class FireButtonAnimator {
     
     private let appSettings: AppSettings
     private var preLoadedComposition: LottieAnimation?
+    private weak var preBurnSnapshot: UIView?
 
     init(appSettings: AppSettings) {
         self.appSettings = appSettings
@@ -126,6 +127,7 @@ class FireButtonAnimator {
     }
         
     func animate(onAnimationStart: @escaping () async -> Void, onTransitionCompleted: @escaping () async -> Void, completion: @escaping () async -> Void) {
+        removePreBurnSnapshot()
 
         guard let window = UIApplication.shared.firstKeyWindow,
               let snapshot = window.snapshotView(afterScreenUpdates: false) else {
@@ -147,6 +149,7 @@ class FireButtonAnimator {
         }
         
         window.addSubview(snapshot)
+        preBurnSnapshot = snapshot
         
         let animationView = LottieAnimationView(animation: composition)
         let currentAnimation = appSettings.currentFireButtonAnimation
@@ -158,8 +161,11 @@ class FireButtonAnimator {
 
         let duration = Double(composition.duration) / speed
         let delay = duration * currentAnimation.transition
-        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
             snapshot.removeFromSuperview()
+            if self?.preBurnSnapshot === snapshot {
+                self?.preBurnSnapshot = nil
+            }
             Task { @MainActor in
                 await onTransitionCompleted()
             }
@@ -177,6 +183,11 @@ class FireButtonAnimator {
                 await onAnimationStart()
             }
         }
+    }
+
+    func removePreBurnSnapshot() {
+        preBurnSnapshot?.removeFromSuperview()
+        preBurnSnapshot = nil
     }
     
     @objc func onFireButtonAnimationChange() {

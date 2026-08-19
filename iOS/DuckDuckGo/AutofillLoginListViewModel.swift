@@ -520,8 +520,19 @@ class AutofillLoginListViewModel: ObservableObject {
     private func setupCancellables() {
         authenticator.$state
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.updateViewState()
+            .sink { [weak self] state in
+                guard let self else { return }
+
+                switch state {
+                case .loggedIn:
+                    authenticationAvailable = true
+                case .notAvailable:
+                    authenticationAvailable = false
+                case .loggedOut:
+                    break
+                }
+
+                updateViewState()
             }
             .store(in: &cancellables)
     }

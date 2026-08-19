@@ -618,7 +618,8 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         do {
 #if DEBUG
             if case .present = tokenBeforeAttempt {
-                throw OAuthClientError.unknownAccount
+                // Uncomment this to simulate an automatic signout:
+                // throw OAuthClientError.unknownAccount
             }
 #endif
             let resultTokenContainer = try await oAuthClient.getTokens(policy: policy)

@@ -587,7 +587,10 @@ struct AIChatUserScriptHandlerTests {
         (.userDidViewSettingsSubscribeButton, "funnel_duckai_macos__settings"),
         (.userDidViewProUpgradeDisclaimerBanner, "funnel_duckai_macos__disclaimerbanner"),
         (.userDidViewVoiceChatLimitModal, "funnel_duckai_macos__voicechatlimit"),
-        (.userDidViewVoiceChatDurationLimitModal, "funnel_duckai_macos__voicechatdurationlimit")
+        (.userDidViewVoiceChatDurationLimitModal, "funnel_duckai_macos__voicechatdurationlimit"),
+        (.userDidViewModelPickerUpgrade, "funnel_duckai_macos__modelpicker"),
+        (.userDidViewReasoningDropdownUpgrade, "funnel_duckai_macos__reasoningdropdown"),
+        (.userDidViewSwitchModelUpgrade, "funnel_duckai_macos__switchmodel")
     ])
     @MainActor
     func testFunnelImpressionMetricFiresImpressionPixelWithOrigin(metric: AIChatMetricName, origin: String) async {
@@ -614,7 +617,10 @@ struct AIChatUserScriptHandlerTests {
         (.userDidClickSettingsSubscribeButton, "funnel_duckai_macos__settings"),
         (.userDidClickProUpgradeDisclaimerBannerButton, "funnel_duckai_macos__disclaimerbanner"),
         (.userDidClickVoiceChatLimitModalSubscribeButton, "funnel_duckai_macos__voicechatlimit"),
-        (.userDidClickVoiceChatDurationLimitModalSubscribeButton, "funnel_duckai_macos__voicechatdurationlimit")
+        (.userDidClickVoiceChatDurationLimitModalSubscribeButton, "funnel_duckai_macos__voicechatdurationlimit"),
+        (.userDidClickModelPickerUpgrade, "funnel_duckai_macos__modelpicker"),
+        (.userDidClickReasoningDropdownUpgrade, "funnel_duckai_macos__reasoningdropdown"),
+        (.userDidClickSwitchModelUpgrade, "funnel_duckai_macos__switchmodel")
     ])
     @MainActor
     func testFunnelClickMetricFiresClickPixelWithOrigin(metric: AIChatMetricName, origin: String) async {

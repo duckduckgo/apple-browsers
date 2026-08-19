@@ -1204,9 +1204,15 @@ class ErrorPageUITests: UITestCase {
         let sessionHistoryForwardURL = UITests.simpleServedPage(titled: "Session Restore Forward")
 
         // Turn on “restore previous session” so the next quit/relaunch restores tabs and history.
+        // This preference is persisted across UI-test launches, so restore the default before finishing.
         app.openPreferencesWindow()
         app.preferencesSetRestorePreviousSession(to: .restoreLastSession)
         app.closePreferencesWindow()
+        defer {
+            app.openPreferencesWindow()
+            app.preferencesSetRestorePreviousSession(to: .newWindow)
+            app.closePreferencesWindow()
+        }
         app.enforceSingleWindow()
 
         XCTAssertTrue(addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence))

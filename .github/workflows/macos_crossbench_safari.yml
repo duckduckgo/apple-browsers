@@ -33,6 +33,11 @@ on:
         type: boolean
         required: false
         default: true
+      safaridriver-diagnose:
+        description: "Log safaridriver's own session diagnostics (investigation only; perturbs timings)"
+        type: boolean
+        required: false
+        default: false
   schedule:
     # Scheduled workflows run only from the default branch. Blank sites use the
     # full list, and the upload job below sends scheduled results to ClickHouse.
@@ -164,6 +169,10 @@ jobs:
           REPS: ${{ inputs.reps }}
           WPR_DIR: ${{ runner.temp }}/wpr-archives
           WPR_ARCHIVES_PREPARED: "1"
+          # Off by default on purpose: it writes driver logs while the page is
+          # loading, inside the window being timed. For investigating a site,
+          # not for producing numbers.
+          SAFARIDRIVER_DIAGNOSE: ${{ inputs.safaridriver-diagnose && '1' || '' }}
         run: |
           args=(--yes)
           if [ -n "$SITES" ]; then

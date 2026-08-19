@@ -171,6 +171,7 @@ DIAGNOSTICS_DIR="${DIAGNOSTICS_DIR:-$PWD/safari-diagnostics}"
 MAX_SITE_DIAGNOSTICS="${MAX_SITE_DIAGNOSTICS:-5}"
 MAX_DIAGNOSTIC_BYTES="${MAX_DIAGNOSTIC_BYTES:-5242880}"
 MAX_CRASH_REPORTS="${MAX_CRASH_REPORTS:-10}"
+SAFARIDRIVER_DIAGNOSE="${SAFARIDRIVER_DIAGNOSE:-}"
 SITE_DIAGNOSTICS=0
 # Marker for "when this run began", so only crash reports belonging to this run
 # get collected rather than whatever the box accumulated earlier.
@@ -399,11 +400,31 @@ preserve_crash_reports() {
   echo "    crash reports: found=$candidates kept=$copied${unreadable:+ unreadable:$unreadable}" >&2
 }
 
+# safaridriver keeps its --diagnose output in its own directory rather than on
+# stdout, so it has to be collected separately from SAFARIDRIVER_LOG. Only
+# reachable when --diagnose was requested, and scoped to this run.
+preserve_driver_diagnostics() {
+  [ -n "$SAFARIDRIVER_DIAGNOSE" ] || return 0
+  [ -n "$RUN_START_MARKER" ] && [ -f "$RUN_START_MARKER" ] || return 0
+  local source="$HOME/Library/Logs/com.apple.WebDriver" report destination kept=0
+  [ -d "$source" ] && [ -r "$source" ] || return 0
+  destination="$DIAGNOSTICS_DIR/safaridriver-diagnose"
+  while IFS= read -r report; do
+    mkdir -p "$destination" || return 0
+    if tail -c "$MAX_DIAGNOSTIC_BYTES" "$report" \
+        > "$destination/$(basename "$report")" 2>/dev/null; then
+      kept=$((kept + 1))
+    fi
+  done < <(find "$source" -type f -newer "$RUN_START_MARKER" 2>/dev/null | sort)
+  echo "    safaridriver diagnostics: kept=$kept" >&2
+}
+
 preserve_shared_diagnostics() {
   preserve_diagnostic "$SAFARIDRIVER_LOG" safaridriver.log
   preserve_diagnostic "$HTTPPROXY_LOG" httpproxy.log
   preserve_diagnostic "$TSPROXY_LOG" tsproxy.log
   preserve_crash_reports
+  preserve_driver_diagnostics
 }
 
 preserve_site_diagnostics() {
@@ -762,7 +783,15 @@ start_safaridriver() {
   # newer than this one belongs to us.
   RUN_START_MARKER="$(mktemp)"
   SAFARIDRIVER_LOG="$(mktemp)"
-  safaridriver -p "$SAFARIDRIVER_PORT" >"$SAFARIDRIVER_LOG" 2>&1 &
+  local driver_args=(-p "$SAFARIDRIVER_PORT")
+  if [ -n "$SAFARIDRIVER_DIAGNOSE" ]; then
+    # safaridriver writes these per-session, to its own directory, while pages
+    # are loading. That is inside the window being timed, so this is for
+    # investigating a site and not for producing numbers.
+    driver_args+=(--diagnose)
+    echo "NOTE: safaridriver --diagnose is on; timings are not comparable." >&2
+  fi
+  safaridriver "${driver_args[@]}" >"$SAFARIDRIVER_LOG" 2>&1 &
   SAFARIDRIVER_PID=$!
   if ! wait_for_port "$SAFARIDRIVER_PORT" 15; then
     echo "ERROR: safaridriver failed to start. Log:" >&2

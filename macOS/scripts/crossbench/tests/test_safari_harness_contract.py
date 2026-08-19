@@ -158,6 +158,21 @@ class SafariHarnessContractTests(unittest.TestCase):
         self.assertIn('surviving="$(safari_pids | tr \'\\n\' \' \')"', HARNESS)
         self.assertIn("Safari after failure: ${surviving:-no process}", HARNESS)
 
+    def test_driver_diagnostics_are_opt_in_and_collected_when_requested(self):
+        """--diagnose logs inside the timed window, so it must stay off."""
+        self.assertIn('default: false', WORKFLOW)
+        self.assertIn("safaridriver-diagnose:", WORKFLOW)
+        self.assertIn(
+            "SAFARIDRIVER_DIAGNOSE: ${{ inputs.safaridriver-diagnose && '1' || '' }}",
+            WORKFLOW,
+        )
+        self.assertIn('SAFARIDRIVER_DIAGNOSE="${SAFARIDRIVER_DIAGNOSE:-}"', HARNESS)
+        self.assertIn('if [ -n "$SAFARIDRIVER_DIAGNOSE" ]; then', HARNESS)
+        self.assertIn("driver_args+=(--diagnose)", HARNESS)
+        # Its output lands in its own directory, not on the driver's stdout.
+        self.assertIn('"$HOME/Library/Logs/com.apple.WebDriver"', HARNESS)
+        self.assertIn("preserve_driver_diagnostics", HARNESS)
+
     def test_diagnostics_artifact_includes_nested_crash_reports(self):
         self.assertIn("path: macOS/scripts/crossbench/safari-diagnostics/**", WORKFLOW)
 

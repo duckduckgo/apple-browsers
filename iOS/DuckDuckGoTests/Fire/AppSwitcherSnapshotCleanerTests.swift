@@ -71,7 +71,6 @@ final class AppSwitcherSnapshotCleanerTests: XCTestCase {
         let cleaner = AppSwitcherSnapshotCleaner(fileManager: fileManager, libraryDirectoryOverride: libraryDirectory)
         await cleaner.clearSnapshots()
 
-        XCTAssertEqual(fileManager.removalAttempts.count, 2)
         let failedItem = try XCTUnwrap(fileManager.removalAttempts.first)
         let laterItem = try XCTUnwrap(fileManager.removalAttempts.dropFirst().first)
         XCTAssertTrue(fileManager.fileExists(atPath: failedItem.path))

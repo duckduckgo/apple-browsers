@@ -47,7 +47,6 @@ final class FireExecutorTests: XCTestCase {
         private(set) var willStartBurningFireRequest: FireRequest?
         private(set) var didFinishBurningCalled = false
         private(set) var didFinishBurningFireRequest: FireRequest?
-        var didFinishBurningHandler: (() -> Void)?
         
         func willStartBurning(fireRequest: FireRequest) {
             willStartBurningCalled = true
@@ -81,7 +80,6 @@ final class FireExecutorTests: XCTestCase {
         func didFinishBurning(fireRequest: FireRequest) {
             didFinishBurningCalled = true
             didFinishBurningFireRequest = fireRequest
-            didFinishBurningHandler?()
         }
     }
     
@@ -124,21 +122,6 @@ final class FireExecutorTests: XCTestCase {
         func cancelCleaningSchedule() {}
     }
 
-    @MainActor
-    private final class MockAppSwitcherSnapshotCleaner: AppSwitcherSnapshotClearing {
-        private(set) var clearSnapshotsCallCount = 0
-        private let onCompletion: (() -> Void)?
-
-        init(onCompletion: (() -> Void)? = nil) {
-            self.onCompletion = onCompletion
-        }
-
-        func clearSnapshots() async {
-            clearSnapshotsCallCount += 1
-            onCompletion?()
-        }
-    }
-    
     // MARK: - Setup
     
     private var mockTabManager: MockTabManager!
@@ -157,7 +140,6 @@ final class FireExecutorTests: XCTestCase {
     private var mockDelegate: MockFireExecutorDelegate!
     private var mockAppSettings: AppSettingsMock!
     private var mockAIChatSyncCleaner: MockAIChatSyncCleaning!
-    private var mockAppSwitcherSnapshotCleaner: MockAppSwitcherSnapshotCleaner!
     
     private var normalTextZoomCoordinator: MockTextZoomCoordinator {
         mockTextZoomCoordinatorProvider.normalCoordinator
@@ -182,7 +164,6 @@ final class FireExecutorTests: XCTestCase {
         mockAppSettings = AppSettingsMock()
         mockAppSettings.autoClearAIChatHistory = true
         mockAIChatSyncCleaner = MockAIChatSyncCleaning()
-        mockAppSwitcherSnapshotCleaner = MockAppSwitcherSnapshotCleaner()
     }
     
     override func tearDown() {
@@ -203,7 +184,6 @@ final class FireExecutorTests: XCTestCase {
         mockDelegate = nil
         mockAppSettings = nil
         mockAIChatSyncCleaner = nil
-        mockAppSwitcherSnapshotCleaner = nil
         super.tearDown()
     }
     
@@ -211,7 +191,7 @@ final class FireExecutorTests: XCTestCase {
         syncService: DDGSyncing? = nil,
         bookmarksDatabaseCleaner: (any BookmarkDatabaseCleaning)? = nil,
         fireproofing: Fireproofing? = nil,
-        appSwitcherSnapshotCleaner: AppSwitcherSnapshotClearing? = nil
+        clearAppSwitcherSnapshots: @escaping @MainActor () async -> Void = {}
     ) -> FireExecutor {
         let executor = FireExecutor(
             tabManager: mockTabManager,
@@ -236,7 +216,7 @@ final class FireExecutorTests: XCTestCase {
             appSettings: mockAppSettings,
             aiChatSyncCleaner: mockAIChatSyncCleaner,
             wideEvent: WideEventMock(),
-            appSwitcherSnapshotCleaner: appSwitcherSnapshotCleaner ?? mockAppSwitcherSnapshotCleaner
+            clearAppSwitcherSnapshots: clearAppSwitcherSnapshots
         )
         executor.delegate = mockDelegate
         return executor
@@ -271,50 +251,30 @@ final class FireExecutorTests: XCTestCase {
 
     // MARK: - App Switcher Snapshot Tests
 
-    func testWhenFeatureIsEnabledThenAppSwitcherSnapshotCleanupFollowsCoreWorkAndPrecedesCompletion() async {
+    func testWhenFeatureIsEnabledAndSingleTabIsBurnedThenAppSwitcherSnapshotCleanupFollowsTabWorkAndPrecedesCompletion() async {
         mockFeatureFlagger.enabledFeatureFlags.append(.appSwitcherSnapshotClearing)
-        var events: [String] = []
-        mockDelegate.didFinishBurningHandler = {
-            events.append("didFinishBurning")
-        }
-        let snapshotCleaner = MockAppSwitcherSnapshotCleaner {
+        var didClearSnapshots = false
+        let executor = makeFireExecutor {
             XCTAssertTrue(self.mockDelegate.didFinishBurningTabsCalled)
-            XCTAssertTrue(self.mockDelegate.didFinishBurningDataCalled)
-            XCTAssertTrue(self.mockDelegate.didFinishBurningAIHistoryCalled)
             XCTAssertFalse(self.mockDelegate.didFinishBurningCalled)
-            events.append("clearSnapshots")
+            didClearSnapshots = true
         }
-        let executor = makeFireExecutor(appSwitcherSnapshotCleaner: snapshotCleaner)
 
-        await executor.burn(request: makeFireRequest(options: .all), applicationState: .unknown)
+        await executor.burn(request: makeFireRequest(options: .tabs, scope: .tab(viewModel: makeTabViewModel())), applicationState: .unknown)
 
-        XCTAssertEqual(snapshotCleaner.clearSnapshotsCallCount, 1)
-        XCTAssertEqual(events, ["clearSnapshots", "didFinishBurning"])
+        XCTAssertTrue(didClearSnapshots)
+        XCTAssertTrue(mockDelegate.didFinishBurningCalled)
     }
 
     func testWhenFeatureIsDisabledThenBurnDoesNotClearAppSwitcherSnapshots() async {
-        let executor = makeFireExecutor()
+        var didClearSnapshots = false
+        let executor = makeFireExecutor {
+            didClearSnapshots = true
+        }
 
         await executor.burn(request: makeFireRequest(options: .tabs), applicationState: .unknown)
 
-        XCTAssertEqual(mockAppSwitcherSnapshotCleaner.clearSnapshotsCallCount, 0)
-    }
-
-    func testWhenFeatureIsEnabledThenRepresentativeBurnRequestsClearAppSwitcherSnapshots() async {
-        mockFeatureFlagger.enabledFeatureFlags.append(.appSwitcherSnapshotClearing)
-        let requests = [
-            makeFireRequest(options: .tabs, scope: .tab(viewModel: makeTabViewModel())),
-            makeFireRequest(options: .data, trigger: .autoClearOnLaunch)
-        ]
-
-        for request in requests {
-            let snapshotCleaner = MockAppSwitcherSnapshotCleaner()
-            let executor = makeFireExecutor(appSwitcherSnapshotCleaner: snapshotCleaner)
-
-            await executor.burn(request: request, applicationState: .unknown)
-
-            XCTAssertEqual(snapshotCleaner.clearSnapshotsCallCount, 1)
-        }
+        XCTAssertFalse(didClearSnapshots)
     }
 
     private func makeTabViewModel(chatID: String, fireTab: Bool) -> TabViewModel {

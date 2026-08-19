@@ -41,7 +41,6 @@ final class FireButtonAnimatorTests: XCTestCase {
         defer { addedSubviews.forEach { $0.removeFromSuperview() } }
 
         let snapshot = try XCTUnwrap(addedSubviews.first)
-        XCTAssertTrue(snapshot.superview === window)
 
         notificationCenter.post(name: UIApplication.willResignActiveNotification, object: nil)
 

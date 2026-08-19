@@ -20,13 +20,7 @@
 import Common
 import Foundation
 
-protocol AppSwitcherSnapshotClearing: Sendable {
-    /// Best-effort deletes the contents of Library/SplashBoard/Snapshots while preserving the directory itself.
-    /// Missing directories and deletion failures are ignored so cleanup never prevents a Fire operation from completing.
-    func clearSnapshots() async
-}
-
-actor AppSwitcherSnapshotCleaner: AppSwitcherSnapshotClearing {
+actor AppSwitcherSnapshotCleaner {
 
     private let fileManager: FileManager
     private let libraryDirectoryOverride: URL?
@@ -46,19 +40,9 @@ actor AppSwitcherSnapshotCleaner: AppSwitcherSnapshotClearing {
             .appendingPathComponent("SplashBoard", isDirectory: true)
             .appendingPathComponent("Snapshots", isDirectory: true)
 
-        guard fileManager.fileExists(atPath: snapshotsDirectory.path) else {
-            return
-        }
-
-        let snapshotItems: [URL]
-        do {
-            snapshotItems = try fileManager.contentsOfDirectory(at: snapshotsDirectory,
-                                                                includingPropertiesForKeys: nil,
-                                                                options: [])
-        } catch {
-            Logger.general.error("Failed to read app switcher snapshots: \(error.localizedDescription, privacy: .public)")
-            return
-        }
+        let snapshotItems = (try? fileManager.contentsOfDirectory(at: snapshotsDirectory,
+                                                                  includingPropertiesForKeys: nil,
+                                                                  options: [])) ?? []
 
         for snapshotItem in snapshotItems {
             do {

@@ -114,13 +114,11 @@ enum FireButtonAnimationType: String, CaseIterable, Identifiable, CustomStringCo
 class FireButtonAnimator {
     
     private let appSettings: AppSettings
-    private let notificationCenter: NotificationCenter
     private var preLoadedComposition: LottieAnimation?
     private weak var preBurnSnapshot: UIView?
 
     init(appSettings: AppSettings, notificationCenter: NotificationCenter = .default) {
         self.appSettings = appSettings
-        self.notificationCenter = notificationCenter
         reloadPreLoadedComposition()
                 
         notificationCenter.addObserver(self,
@@ -168,11 +166,8 @@ class FireButtonAnimator {
 
         let duration = Double(composition.duration) / speed
         let delay = duration * currentAnimation.transition
-        DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
             snapshot.removeFromSuperview()
-            if self?.preBurnSnapshot === snapshot {
-                self?.preBurnSnapshot = nil
-            }
             Task { @MainActor in
                 await onTransitionCompleted()
             }

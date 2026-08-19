@@ -138,7 +138,7 @@ class FireExecutor: FireExecuting {
     private let aiChatDeleter: AIChatDeleting
     private let idManager: DataStoreIDManaging
     private let fireModeStorageController: FireModeNativeStorageController?
-    private let appSwitcherSnapshotCleaner: AppSwitcherSnapshotClearing
+    private let clearAppSwitcherSnapshots: @MainActor () async -> Void
 
     weak var delegate: FireExecutorDelegate?
     private(set) var burnInProgress = false
@@ -171,7 +171,9 @@ class FireExecutor: FireExecuting {
          pixelsReporter: DataClearingPixelsReporter = DataClearingPixelsReporter(),
          wideEvent: WideEventManaging? = nil,
          idManager: DataStoreIDManaging = DataStoreIDManager.shared,
-         appSwitcherSnapshotCleaner: AppSwitcherSnapshotClearing = AppSwitcherSnapshotCleaner()) {
+         clearAppSwitcherSnapshots: @escaping @MainActor () async -> Void = {
+             await AppSwitcherSnapshotCleaner().clearSnapshots()
+         }) {
         self.tabManager = tabManager
         self.downloadManager = downloadManager
         self.favicons = favicons
@@ -194,7 +196,7 @@ class FireExecutor: FireExecuting {
         self.appSettings = appSettings
         self.aiChatSyncCleaner = aiChatSyncCleaner
         self.fireModeStorageController = fireModeStorageController
-        self.appSwitcherSnapshotCleaner = appSwitcherSnapshotCleaner
+        self.clearAppSwitcherSnapshots = clearAppSwitcherSnapshots
         self.pixelsReporter = pixelsReporter
         self.dataClearingWideEventService = wideEvent.map { DataClearingWideEventService(wideEvent: $0) }
         let aiChatDeleter = AIChatDeleter(historyCleanerProvider: self.historyCleanerProvider,
@@ -269,7 +271,7 @@ class FireExecutor: FireExecuting {
 
         // Notify delegate that we're starting
         delegate?.willStartBurning(fireRequest: request)
-
+        
         // Compute flags
         let shouldBurnTabs = request.options.contains(.tabs)
         let shouldBurnData = request.options.contains(.data)
@@ -304,7 +306,7 @@ class FireExecutor: FireExecuting {
         }
 
         if featureFlagger.isFeatureOn(.appSwitcherSnapshotClearing) {
-            await appSwitcherSnapshotCleaner.clearSnapshots()
+            await clearAppSwitcherSnapshots()
         }
 
         // Notify delegate that we finished

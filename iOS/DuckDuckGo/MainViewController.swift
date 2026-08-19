@@ -7621,7 +7621,7 @@ extension MainViewController: FireExecutorDelegate {
             return
         }
     }
-
+    
     func didFinishBurning(fireRequest: FireRequest) {
         // Trigger sync if needed after data and aichats finish
         // because data could potentially delete a contextual chat that needs syncing

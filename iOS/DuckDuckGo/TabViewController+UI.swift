@@ -158,6 +158,9 @@ extension TabViewController {
 
         showBarsTapGestureRecogniser = UITapGestureRecognizer(target: self, action: #selector(onBottomOfScreenTapped(_:)))
         showBarsTapGestureRecogniser.delegate = self
+        // This sits above the web view, so holding touch-end back would stall every tap on every
+        // page while waiting for a recognizer that only fires on a bottom-of-screen tap.
+        showBarsTapGestureRecogniser.delaysTouchesEnded = false
         rootView.addGestureRecognizer(showBarsTapGestureRecogniser)
     }
 

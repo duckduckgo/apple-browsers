@@ -21,7 +21,8 @@ import Common
 import Foundation
 
 protocol AppSwitcherSnapshotClearing: Sendable {
-    /// Deletes the OS-cached app switcher and launch snapshots in Library/SplashBoard/Snapshots.
+    /// Best-effort deletes the contents of Library/SplashBoard/Snapshots while preserving the directory itself.
+    /// Missing directories and deletion failures are ignored so cleanup never prevents a Fire operation from completing.
     func clearSnapshots() async
 }
 

@@ -83,7 +83,6 @@ protocol FireExecutorDelegate: AnyObject {
     func didFinishBurningData(fireRequest: FireRequest)
     func willStartBurningAIHistory(fireRequest: FireRequest)
     func didFinishBurningAIHistory(fireRequest: FireRequest)
-    func willClearAppSwitcherSnapshots(fireRequest: FireRequest)
     func didFinishBurning(fireRequest: FireRequest)
 }
 
@@ -305,8 +304,6 @@ class FireExecutor: FireExecuting {
         }
 
         if featureFlagger.isFeatureOn(.appSwitcherSnapshotClearing) {
-            // Remove any retained pre-burn UI before purging so it cannot be captured again.
-            delegate?.willClearAppSwitcherSnapshots(fireRequest: request)
             await appSwitcherSnapshotCleaner.clearSnapshots()
         }
 

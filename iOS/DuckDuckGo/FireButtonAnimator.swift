@@ -110,20 +110,27 @@ enum FireButtonAnimationType: String, CaseIterable, Identifiable, CustomStringCo
 
 }
 
+@MainActor
 class FireButtonAnimator {
     
     private let appSettings: AppSettings
+    private let notificationCenter: NotificationCenter
     private var preLoadedComposition: LottieAnimation?
     private weak var preBurnSnapshot: UIView?
 
-    init(appSettings: AppSettings) {
+    init(appSettings: AppSettings, notificationCenter: NotificationCenter = .default) {
         self.appSettings = appSettings
+        self.notificationCenter = notificationCenter
         reloadPreLoadedComposition()
                 
-        NotificationCenter.default.addObserver(self,
-                                               selector: #selector(onFireButtonAnimationChange),
-                                               name: AppUserDefaults.Notifications.currentFireButtonAnimationChange,
-                                               object: nil)
+        notificationCenter.addObserver(self,
+                                       selector: #selector(onFireButtonAnimationChange),
+                                       name: AppUserDefaults.Notifications.currentFireButtonAnimationChange,
+                                       object: nil)
+        notificationCenter.addObserver(self,
+                                       selector: #selector(onApplicationWillResignActive),
+                                       name: UIApplication.willResignActiveNotification,
+                                       object: nil)
     }
         
     func animate(onAnimationStart: @escaping () async -> Void, onTransitionCompleted: @escaping () async -> Void, completion: @escaping () async -> Void) {
@@ -185,13 +192,17 @@ class FireButtonAnimator {
         }
     }
 
-    func removePreBurnSnapshot() {
+    private func removePreBurnSnapshot() {
         preBurnSnapshot?.removeFromSuperview()
         preBurnSnapshot = nil
     }
     
     @objc func onFireButtonAnimationChange() {
         reloadPreLoadedComposition()
+    }
+
+    @objc private func onApplicationWillResignActive() {
+        removePreBurnSnapshot()
     }
     
     private func reloadPreLoadedComposition() {

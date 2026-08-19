@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		05F1108C822949F08BF3A2D6 /* AppSwitcherSnapshotCleanerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D2CD0727DF6499698C2C9B6 /* AppSwitcherSnapshotCleanerTests.swift */; };
+		A11F1F0030B1000000000001 /* FireButtonAnimatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11F1F0130B1000000000001 /* FireButtonAnimatorTests.swift */; };
 		6B8037F2CB054FEFA71D9805 /* AppSwitcherSnapshotCleaner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B201258F344468FA92BB7D2 /* AppSwitcherSnapshotCleaner.swift */; };
 		02025664298818B200E694E7 /* NetworkExtension.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 02025663298818B100E694E7 /* NetworkExtension.framework */; };
 		021440742C7FAB1900426724 /* ConfigurationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 021440732C7FAB1900426724 /* ConfigurationManager.swift */; };
@@ -2957,6 +2958,7 @@
 /* Begin PBXFileReference section */
 		3B201258F344468FA92BB7D2 /* AppSwitcherSnapshotCleaner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSwitcherSnapshotCleaner.swift; sourceTree = "<group>"; };
 		5D2CD0727DF6499698C2C9B6 /* AppSwitcherSnapshotCleanerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSwitcherSnapshotCleanerTests.swift; sourceTree = "<group>"; };
+		A11F1F0130B1000000000001 /* FireButtonAnimatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireButtonAnimatorTests.swift; sourceTree = "<group>"; };
 		02025662298818B100E694E7 /* PacketTunnelProvider.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PacketTunnelProvider.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		02025663298818B100E694E7 /* NetworkExtension.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = NetworkExtension.framework; path = System/Library/Frameworks/NetworkExtension.framework; sourceTree = SDKROOT; };
 		02025668298818B200E694E7 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -7780,6 +7782,7 @@
 			isa = PBXGroup;
 			children = (
 				5D2CD0727DF6499698C2C9B6 /* AppSwitcherSnapshotCleanerTests.swift */,
+				A11F1F0130B1000000000001 /* FireButtonAnimatorTests.swift */,
 				36F6195F2F686F3300CBF121 /* DataClearingWideEventServiceTests.swift */,
 				36F6195B2F68657100CBF121 /* DataClearingPixelsReporterTests.swift */,
 				80437D6C2EFB3BD600D3E896 /* AutoClearSettingsViewModelTests.swift */,
@@ -15286,6 +15289,7 @@
 				805898353006C5BA00A4EA69 /* SerpSearchTokenInterceptorTests.swift in Sources */,
 				80E8D5D32EEA655900820EB0 /* FireExecutorTests.swift in Sources */,
 				05F1108C822949F08BF3A2D6 /* AppSwitcherSnapshotCleanerTests.swift in Sources */,
+				A11F1F0030B1000000000001 /* FireButtonAnimatorTests.swift in Sources */,
 				8582D7282E58A11D00A356FD /* AutocompleteViewModelTests.swift in Sources */,
 				981FED7422046017008488D7 /* AutoClearTests.swift in Sources */,
 				319BE1092D47EBE300E510A4 /* AIChatUserScriptHandlerTests.swift in Sources */,

@@ -7622,11 +7622,6 @@ extension MainViewController: FireExecutorDelegate {
         }
     }
 
-    func willClearAppSwitcherSnapshots(fireRequest: FireRequest) {
-        guard fireRequest.trigger == .manualFire else { return }
-        fireButtonAnimator.removePreBurnSnapshot()
-    }
-    
     func didFinishBurning(fireRequest: FireRequest) {
         // Trigger sync if needed after data and aichats finish
         // because data could potentially delete a contextual chat that needs syncing

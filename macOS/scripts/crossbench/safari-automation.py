@@ -21,8 +21,29 @@ def request(port, method, path, body=None, timeout=60):
     )
     if data is not None:
         req.add_header("Content-Type", "application/json; charset=utf-8")
-    with urllib.request.urlopen(req, timeout=timeout) as response:
-        return json.load(response)
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as response:
+            return json.load(response)
+    except urllib.error.HTTPError as error:
+        # WebDriver maps unrelated conditions onto the same status: a browsing
+        # context that died and a session the driver has dropped are both 404.
+        # The response body is what distinguishes them, and they need different
+        # fixes, so fold it into the message rather than letting HTTPError
+        # stringify to a bare "HTTP Error 404: Not Found". OSError keeps this
+        # catchable by the existing handlers, since URLError derives from it.
+        try:
+            body = error.read().decode("utf-8", "replace").strip()[:500]
+        except OSError:
+            body = ""
+        raise OSError(
+            "{} {} -> HTTP {} {}{}".format(
+                method,
+                path,
+                error.code,
+                error.reason,
+                ": " + body if body else "",
+            )
+        ) from error
 
 
 def new_session(port):

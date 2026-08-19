@@ -170,7 +170,11 @@ HTTPS_PROXY_VALUE=""
 DIAGNOSTICS_DIR="${DIAGNOSTICS_DIR:-$PWD/safari-diagnostics}"
 MAX_SITE_DIAGNOSTICS="${MAX_SITE_DIAGNOSTICS:-5}"
 MAX_DIAGNOSTIC_BYTES="${MAX_DIAGNOSTIC_BYTES:-5242880}"
+MAX_CRASH_REPORTS="${MAX_CRASH_REPORTS:-10}"
 SITE_DIAGNOSTICS=0
+# Marker for "when this run began", so only crash reports belonging to this run
+# get collected rather than whatever the box accumulated earlier.
+RUN_START_MARKER=""
 
 if ! [[ "$MAX_SITE_DIAGNOSTICS" =~ ^[0-9]+$ ]]; then
   echo "ERROR: MAX_SITE_DIAGNOSTICS must be a non-negative integer." >&2
@@ -178,6 +182,10 @@ if ! [[ "$MAX_SITE_DIAGNOSTICS" =~ ^[0-9]+$ ]]; then
 fi
 if ! [[ "$MAX_DIAGNOSTIC_BYTES" =~ ^[1-9][0-9]*$ ]]; then
   echo "ERROR: MAX_DIAGNOSTIC_BYTES must be a positive integer." >&2
+  exit 2
+fi
+if ! [[ "$MAX_CRASH_REPORTS" =~ ^[0-9]+$ ]]; then
+  echo "ERROR: MAX_CRASH_REPORTS must be a non-negative integer." >&2
   exit 2
 fi
 
@@ -356,10 +364,37 @@ preserve_diagnostic() {
   tail -c "$MAX_DIAGNOSTIC_BYTES" "$source" > "$DIAGNOSTICS_DIR/$name"
 }
 
+# A repetition that loses its browser mid-load looks, from the harness side,
+# like a WebDriver call against a session that no longer exists. That is the
+# same symptom whether Safari crashed or the driver dropped the session, and
+# only a crash report tells the two apart — so collect any that this run
+# produced. Best effort throughout: ReportCrash writes these asynchronously and
+# the directory may not be readable, neither of which is worth failing a run.
+preserve_crash_reports() {
+  [ "$MAX_CRASH_REPORTS" -gt 0 ] || return 0
+  [ -n "$RUN_START_MARKER" ] && [ -f "$RUN_START_MARKER" ] || return 0
+  local directory report destination copied=0
+  destination="$DIAGNOSTICS_DIR/crash-reports"
+  for directory in "$HOME/Library/Logs/DiagnosticReports" \
+      /Library/Logs/DiagnosticReports; do
+    [ -d "$directory" ] || continue
+    while IFS= read -r report; do
+      [ "$copied" -lt "$MAX_CRASH_REPORTS" ] || return 0
+      mkdir -p "$destination" || return 0
+      if cp "$report" "$destination/" 2>/dev/null; then
+        copied=$((copied + 1))
+      fi
+    done < <(find "$directory" -maxdepth 1 -type f \
+      \( -name '*Safari*' -o -name '*WebContent*' -o -name '*WebKit*' \) \
+      -newer "$RUN_START_MARKER" 2>/dev/null | sort)
+  done
+}
+
 preserve_shared_diagnostics() {
   preserve_diagnostic "$SAFARIDRIVER_LOG" safaridriver.log
   preserve_diagnostic "$HTTPPROXY_LOG" httpproxy.log
   preserve_diagnostic "$TSPROXY_LOG" tsproxy.log
+  preserve_crash_reports
 }
 
 preserve_site_diagnostics() {
@@ -402,11 +437,13 @@ cleanup() {
     preserve_diagnostic "$HTTPPROXY_LOG" httpproxy.log
     preserve_diagnostic "$TSPROXY_LOG" tsproxy.log
     preserve_diagnostic "$WPR_LOG" wpr.log
+    preserve_crash_reports
   fi
   [ -z "$SAFARIDRIVER_LOG" ] || rm -f "$SAFARIDRIVER_LOG"
   [ -z "$HTTPPROXY_LOG" ] || rm -f "$HTTPPROXY_LOG"
   [ -z "$TSPROXY_LOG" ] || rm -f "$TSPROXY_LOG"
   [ -z "$WPR_LOG" ] || rm -f "$WPR_LOG"
+  [ -z "$RUN_START_MARKER" ] || rm -f "$RUN_START_MARKER"
   exit "$exit_code"
 }
 trap cleanup EXIT
@@ -712,6 +749,9 @@ start_http_proxy() {
 
 start_safaridriver() {
   assert_port_free "$SAFARIDRIVER_PORT" safaridriver
+  # Stamped before the first Safari of the run exists, so every crash report
+  # newer than this one belongs to us.
+  RUN_START_MARKER="$(mktemp)"
   SAFARIDRIVER_LOG="$(mktemp)"
   safaridriver -p "$SAFARIDRIVER_PORT" >"$SAFARIDRIVER_LOG" 2>&1 &
   SAFARIDRIVER_PID=$!

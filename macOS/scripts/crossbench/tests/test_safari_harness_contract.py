@@ -133,6 +133,24 @@ class SafariHarnessContractTests(unittest.TestCase):
             HARNESS,
         )
 
+    def test_crash_reports_from_this_run_are_collected_and_bounded(self):
+        """A lost session is ambiguous; only a crash report names the cause."""
+        self.assertIn("preserve_crash_reports()", HARNESS)
+        # Collected wherever the other shared diagnostics are, so a site-level
+        # failure preserves them without the whole job having to fail.
+        self.assertIn("  preserve_crash_reports\n", HARNESS)
+        # Bounded like every other diagnostic the harness keeps.
+        self.assertIn('MAX_CRASH_REPORTS="${MAX_CRASH_REPORTS:-10}"', HARNESS)
+        self.assertIn('[ "$copied" -lt "$MAX_CRASH_REPORTS" ] || return 0', HARNESS)
+        # Scoped to this run, so an unrelated earlier crash is not reported as
+        # evidence about this one.
+        self.assertIn('-newer "$RUN_START_MARKER"', HARNESS)
+        self.assertIn('RUN_START_MARKER="$(mktemp)"', HARNESS)
+        self.assertIn('rm -f "$RUN_START_MARKER"', HARNESS)
+
+    def test_diagnostics_artifact_includes_nested_crash_reports(self):
+        self.assertIn("path: macOS/scripts/crossbench/safari-diagnostics/**", WORKFLOW)
+
 
 if __name__ == "__main__":
     unittest.main()

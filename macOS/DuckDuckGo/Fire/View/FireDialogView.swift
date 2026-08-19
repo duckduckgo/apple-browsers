@@ -931,22 +931,22 @@ struct FireDialogView: ModalView {
     private var deleteButtonBackground: LinearGradient {
         LinearGradient(
             stops: [
-                .init(color: Color(singleUseColor: .fireButtonGradientStart), location: 0.116),
+                .init(color: Color(singleUseColor: .fireButtonGradientStart), location: 0),
                 .init(color: Color(singleUseColor: .fireButtonGradientEnd), location: 1.0)
             ],
-            startPoint: UnitPoint(x: 0, y: 0.37),
-            endPoint: UnitPoint(x: 1, y: 0.63)
+            startPoint: UnitPoint(x: -0.20, y: 0),
+            endPoint: UnitPoint(x: 1.20, y: 1)
         )
     }
 
     private var deleteButtonPressedBackground: LinearGradient {
         LinearGradient(
             stops: [
-                .init(color: Color(singleUseColor: .fireButtonPressedGradientStart), location: 0.116),
+                .init(color: Color(singleUseColor: .fireButtonPressedGradientStart), location: 0),
                 .init(color: Color(singleUseColor: .fireButtonPressedGradientEnd), location: 1.0)
             ],
-            startPoint: UnitPoint(x: 0, y: 0.37),
-            endPoint: UnitPoint(x: 1, y: 0.63)
+            startPoint: UnitPoint(x: -0.20, y: 0),
+            endPoint: UnitPoint(x: 1.20, y: 1)
         )
     }
 

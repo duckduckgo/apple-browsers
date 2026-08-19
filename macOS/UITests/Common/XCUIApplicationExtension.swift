@@ -94,6 +94,7 @@ extension XCUIApplication {
 
         static let fireDialogTitle = "FireDialogView.title"
         static let fireDialogSegmentedControl = "FireDialogView.segmentedControl"
+        static let fireDialogDetailsDisclosureButton = "FireDialogView.detailsDisclosureButton"
         static let fireDialogTabsToggle = "FireDialogView.tabsToggle"
         static let fireDialogHistoryToggle = "FireDialogView.historyToggle"
         static let fireDialogCookiesToggle = "FireDialogView.cookiesToggle"
@@ -822,6 +823,10 @@ extension XCUIApplication {
 
     var fireDialogSegmentedControl: XCUIElement {
         groups[AccessibilityIdentifiers.fireDialogSegmentedControl]
+    }
+
+    var fireDialogDetailsDisclosureButton: XCUIElement {
+        buttons[AccessibilityIdentifiers.fireDialogDetailsDisclosureButton]
     }
 
     var fireDialogTabsToggle: XCUIElement {

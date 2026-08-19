@@ -783,7 +783,9 @@ private extension AIChatContextualSheetViewController {
             }
         )
 
+        // Inject the presenting context's true size class; the built-in one reports `.compact` inside the sheet/popover.
         let confirmationView = ScopedFireConfirmationView(viewModel: viewModel)
+            .environment(\.presentationHorizontalSizeClass, UserInterfaceSizeClass(traitCollection.horizontalSizeClass))
         let hostingController = UIHostingController(rootView: confirmationView)
         hostingController.view.backgroundColor = UIColor(designSystemColor: .backgroundTertiary)
         hostingController.modalTransitionStyle = .coverVertical
@@ -798,8 +800,8 @@ private extension AIChatContextualSheetViewController {
         present(hostingController, animated: true)
     }
 
-    private func configureIPadPopoverPresentation(for hostingController: UIHostingController<ScopedFireConfirmationView>,
-                                                  confirmationView: ScopedFireConfirmationView) {
+    private func configureIPadPopoverPresentation<Content: View>(for hostingController: UIHostingController<Content>,
+                                                                 confirmationView: Content) {
         if let popover = hostingController.popoverPresentationController {
             popover.sourceView = fireButton
             popover.sourceRect = fireButton.bounds
@@ -815,8 +817,8 @@ private extension AIChatContextualSheetViewController {
         }
     }
 
-    private func configureIPhoneSheetPresentation(for hostingController: UIHostingController<ScopedFireConfirmationView>,
-                                                  confirmationView: ScopedFireConfirmationView) {
+    private func configureIPhoneSheetPresentation<Content: View>(for hostingController: UIHostingController<Content>,
+                                                                 confirmationView: Content) {
         if let sheet = hostingController.sheetPresentationController {
             if #available(iOS 16.0, *) {
                 let sizingController = UIHostingController(rootView: confirmationView)

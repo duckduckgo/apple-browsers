@@ -42,10 +42,6 @@ final class NetworkProtectionVPNSettingsViewModel: ObservableObject {
 
     @Published private(set) var isStrictRoutingAvailable: Bool
 
-    var isExcludeCGNATAvailable: Bool {
-        featureFlagger.isFeatureOn(.vpnExcludeCGNATToggle)
-    }
-
     private var notificationsAuthorization: NotificationsAuthorizationControlling
     @Published var viewKind: NetworkProtectionNotificationsViewKind = .loading
 
@@ -149,7 +145,6 @@ final class NetworkProtectionVPNSettingsViewModel: ObservableObject {
 
     @MainActor
     func onViewAppeared() async {
-        settings.updateExcludeCGNAT(isFeatureEnabled: featureFlagger.isFeatureOn(.vpnExcludeCGNATToggle))
         let status = await notificationsAuthorization.authorizationStatus
         updateViewKind(for: status)
     }

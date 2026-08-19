@@ -1531,6 +1531,7 @@
 		9F3668762EAF0A7600AA8670 /* MockContextualOnboardingStatusProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F3668742EAF0A6900AA8670 /* MockContextualOnboardingStatusProvider.swift */; };
 		9F3668772EAF0A7600AA8670 /* MockContextualOnboardingStatusProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F3668742EAF0A6900AA8670 /* MockContextualOnboardingStatusProvider.swift */; };
 		9F3668782EAF0A7600AA8670 /* MockContextualOnboardingStatusProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F3668742EAF0A6900AA8670 /* MockContextualOnboardingStatusProvider.swift */; };
+		9F371806302DB47A0071F761 /* OnboardingDownloadReasonStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F371805302DB47A0071F761 /* OnboardingDownloadReasonStore.swift */; };
 		9F387DD82EA86CE3006861F8 /* PromptCooldownStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F387DD72EA86CE3006861F8 /* PromptCooldownStoreTests.swift */; };
 		9F387DDA2EA87C0F006861F8 /* PromptCooldownManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F387DD92EA87C0F006861F8 /* PromptCooldownManagerTests.swift */; };
 		9F387DDD2EA881D1006861F8 /* PromptCooldownMocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F387DDC2EA881C7006861F8 /* PromptCooldownMocks.swift */; };
@@ -1592,6 +1593,7 @@
 		9F5E5AB22C3E606D00165F54 /* ContextualOnboardingPresenterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F5E5AB12C3E606D00165F54 /* ContextualOnboardingPresenterTests.swift */; };
 		9F5EA7C40000000000000004 /* OnboardingEndOfJourneyTryAIProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F5EA7C40000000000000003 /* OnboardingEndOfJourneyTryAIProvider.swift */; };
 		9F5EA7C40000000000000006 /* OnboardingEndOfJourneyTryAIProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F5EA7C40000000000000005 /* OnboardingEndOfJourneyTryAIProviderTests.swift */; };
+		9F5EA7C40000000000000008 /* ContextualOnboardingContentProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F5EA7C40000000000000007 /* ContextualOnboardingContentProviderTests.swift */; };
 		9F60CBA92E9892CF004D2367 /* SurveyLastSearchStateRefresherTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F60CBA82E9892CF004D2367 /* SurveyLastSearchStateRefresherTests.swift */; };
 		9F60CBAA2E9892CF004D2367 /* RemoteMessagingActionHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F60CBA72E9892CF004D2367 /* RemoteMessagingActionHandlerTests.swift */; };
 		9F60CBAE2E989580004D2367 /* SurveyLastSearchStateRefresherIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F60CBAD2E989580004D2367 /* SurveyLastSearchStateRefresherIntegrationTests.swift */; };
@@ -1636,7 +1638,7 @@
 		9F80A98A2EA9E4CF0079C5AD /* PromptCooldownMigratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F80A9882EA9E4CF0079C5AD /* PromptCooldownMigratorTests.swift */; };
 		9F81E5AD2FECE8F900EAB88E /* OnboardingIntroViewState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F81E5AC2FECE8F400EAB88E /* OnboardingIntroViewState.swift */; };
 		9F880BEE2F331CDF00BF211E /* FadeInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F880BED2F331CD900BF211E /* FadeInView.swift */; };
-		9F8828482EBAAF68006C878B /* ModalPromptCoordinationDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F8828472EBAAF5A006C878B /* ModalPromptCoordinationDebugMenu.swift */; };
+		9F8828482EBAAF68006C878B /* PromptCoordinationDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F8828472EBAAF5A006C878B /* PromptCoordinationDebugMenu.swift */; };
 		9F8BCBCE2EB43283004F071E /* RemoteMessagingPixelReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F8BCBCD2EB43278004F071E /* RemoteMessagingPixelReporter.swift */; };
 		9F8E0F2D2CCA618E001EA7C5 /* VideoPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F8E0F2C2CCA618E001EA7C5 /* VideoPlayerView.swift */; };
 		9F8FE9492BAE50E50071E372 /* Lottie in Frameworks */ = {isa = PBXBuildFile; productRef = 9F8FE9482BAE50E50071E372 /* Lottie */; };
@@ -1655,6 +1657,8 @@
 		9FA09DA62EA71F2900E26F3F /* PromptCooldownIntervalProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA09DA22EA71F2900E26F3F /* PromptCooldownIntervalProvider.swift */; };
 		9FA09DA72EA71F2900E26F3F /* PromptCooldownStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA09DA32EA71F2900E26F3F /* PromptCooldownStore.swift */; };
 		9FA09DA82EA71F2900E26F3F /* PromptCooldownManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA09DA42EA71F2900E26F3F /* PromptCooldownManager.swift */; };
+		B6A7C25131A1000100F00D01 /* PromoQueueCooldownPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6A7C25031A1000100F00D01 /* PromoQueueCooldownPolicy.swift */; };
+		B6A7C25331A1000100F00D01 /* PromoQueueCooldownPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6A7C25231A1000100F00D01 /* PromoQueueCooldownPolicyTests.swift */; };
 		9FA09DAC2EA7400200E26F3F /* PromptCooldownStorePixelReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA09DAB2EA7400200E26F3F /* PromptCooldownStorePixelReporter.swift */; };
 		9FA09DAF2EA84F5D00E26F3F /* ModalPromptScheduling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA09DAE2EA84F5200E26F3F /* ModalPromptScheduling.swift */; };
 		9FA0AF192EB4855000713387 /* MockRemoteMessagingPixelReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA0AF182EB4855000713387 /* MockRemoteMessagingPixelReporter.swift */; };
@@ -1892,17 +1896,13 @@
 		B6A7C20231A1000100F00D01 /* PromoQueueLeaseArbiter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6A7C20131A1000100F00D01 /* PromoQueueLeaseArbiter.swift */; };
 		B6A7C20531A1000100F00D01 /* PromoQueueLeaseArbiterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6A7C20431A1000100F00D01 /* PromoQueueLeaseArbiterTests.swift */; };
 		B6A7C20A31A1000100F00D01 /* PromoPresentationCoordinationFeatureFlagTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6A7C20931A1000100F00D01 /* PromoPresentationCoordinationFeatureFlagTests.swift */; };
-		B6A7C20C31A1000100F00D01 /* MockNewTabPagePromoCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6A7C20B31A1000100F00D01 /* MockNewTabPagePromoCoordinator.swift */; };
-		B6A7C20D31A1000100F00D01 /* MockNewTabPagePromoCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6A7C20B31A1000100F00D01 /* MockNewTabPagePromoCoordinator.swift */; };
-		B6A7C20E31A1000100F00D01 /* MockNewTabPagePromoCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6A7C20B31A1000100F00D01 /* MockNewTabPagePromoCoordinator.swift */; };
-		B6A7C20F31A1000100F00D01 /* MockNewTabPagePromoCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6A7C20B31A1000100F00D01 /* MockNewTabPagePromoCoordinator.swift */; };
-		B6A7C21231A1000100F00D01 /* PromoQueueFeatureState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6A7C21131A1000100F00D01 /* PromoQueueFeatureState.swift */; };
 		B6A7C21431A1000100F00D01 /* NewTabPagePromoCoordination.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6A7C21331A1000100F00D01 /* NewTabPagePromoCoordination.swift */; };
 		B6A7C21631A1000100F00D01 /* ModalPromptRootAttachmentChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6A7C21531A1000100F00D01 /* ModalPromptRootAttachmentChecker.swift */; };
 		B6A7C21831A1000100F00D01 /* PromoCoordinationServicePromoQueueTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6A7C21731A1000100F00D01 /* PromoCoordinationServicePromoQueueTests.swift */; };
 		B6A7C21A31A1000100F00D01 /* ModalPromptCoordinationManagerPromoQueueTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6A7C21931A1000100F00D01 /* ModalPromptCoordinationManagerPromoQueueTests.swift */; };
 		B6A7C21C31A1000100F00D01 /* ModalPromptRootAttachmentCheckerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6A7C21B31A1000100F00D01 /* ModalPromptRootAttachmentCheckerTests.swift */; };
 		B6A7C21E31A1000100F00D01 /* ModalPromptCoordinationRealUIKitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6A7C21D31A1000100F00D01 /* ModalPromptCoordinationRealUIKitTests.swift */; };
+		B6A7C26131A1000100F00D01 /* PromptCoordinationDebugViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6A7C26031A1000100F00D01 /* PromptCoordinationDebugViewModelTests.swift */; };
 		B6AD9E3728D4510A0019CDE9 /* ContentBlockingUpdatingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6AD9E3528D4510A0019CDE9 /* ContentBlockingUpdatingTests.swift */; };
 		B6AD9E3828D4512E0019CDE9 /* EmbeddedTrackerDataTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9801F08927E4B21100191874 /* EmbeddedTrackerDataTests.swift */; };
 		B6BA95C328891E33004ABA20 /* BrowsingMenuAnimator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6BA95C228891E33004ABA20 /* BrowsingMenuAnimator.swift */; };
@@ -4477,6 +4477,7 @@
 		9F3361BB2F2B394500E0C21A /* ContextualOnboardingDelegateMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextualOnboardingDelegateMock.swift; sourceTree = "<group>"; };
 		9F3361C02F2B3A0500E0C21A /* MockContextualDaxDialogsFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockContextualDaxDialogsFactory.swift; sourceTree = "<group>"; };
 		9F3668742EAF0A6900AA8670 /* MockContextualOnboardingStatusProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockContextualOnboardingStatusProvider.swift; sourceTree = "<group>"; };
+		9F371805302DB47A0071F761 /* OnboardingDownloadReasonStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingDownloadReasonStore.swift; sourceTree = "<group>"; };
 		9F387DD72EA86CE3006861F8 /* PromptCooldownStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptCooldownStoreTests.swift; sourceTree = "<group>"; };
 		9F387DD92EA87C0F006861F8 /* PromptCooldownManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptCooldownManagerTests.swift; sourceTree = "<group>"; };
 		9F387DDC2EA881C7006861F8 /* PromptCooldownMocks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptCooldownMocks.swift; sourceTree = "<group>"; };
@@ -4513,6 +4514,7 @@
 		9F5E5AB12C3E606D00165F54 /* ContextualOnboardingPresenterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextualOnboardingPresenterTests.swift; sourceTree = "<group>"; };
 		9F5EA7C40000000000000003 /* OnboardingEndOfJourneyTryAIProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingEndOfJourneyTryAIProvider.swift; sourceTree = "<group>"; };
 		9F5EA7C40000000000000005 /* OnboardingEndOfJourneyTryAIProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingEndOfJourneyTryAIProviderTests.swift; sourceTree = "<group>"; };
+		9F5EA7C40000000000000007 /* ContextualOnboardingContentProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextualOnboardingContentProviderTests.swift; sourceTree = "<group>"; };
 		9F60CBA72E9892CF004D2367 /* RemoteMessagingActionHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteMessagingActionHandlerTests.swift; sourceTree = "<group>"; };
 		9F60CBA82E9892CF004D2367 /* SurveyLastSearchStateRefresherTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SurveyLastSearchStateRefresherTests.swift; sourceTree = "<group>"; };
 		9F60CBAD2E989580004D2367 /* SurveyLastSearchStateRefresherIntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SurveyLastSearchStateRefresherIntegrationTests.swift; sourceTree = "<group>"; };
@@ -4536,7 +4538,7 @@
 		9F80A9882EA9E4CF0079C5AD /* PromptCooldownMigratorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptCooldownMigratorTests.swift; sourceTree = "<group>"; };
 		9F81E5AC2FECE8F400EAB88E /* OnboardingIntroViewState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingIntroViewState.swift; sourceTree = "<group>"; };
 		9F880BED2F331CD900BF211E /* FadeInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FadeInView.swift; sourceTree = "<group>"; };
-		9F8828472EBAAF5A006C878B /* ModalPromptCoordinationDebugMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModalPromptCoordinationDebugMenu.swift; sourceTree = "<group>"; };
+		9F8828472EBAAF5A006C878B /* PromptCoordinationDebugMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptCoordinationDebugMenu.swift; sourceTree = "<group>"; };
 		9F8BCBCD2EB43278004F071E /* RemoteMessagingPixelReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteMessagingPixelReporter.swift; sourceTree = "<group>"; };
 		9F8E0F2C2CCA618E001EA7C5 /* VideoPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoPlayerView.swift; sourceTree = "<group>"; };
 		9F94BBAE2EAB395800185F78 /* WhatsNewModalPromptProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhatsNewModalPromptProviderTests.swift; sourceTree = "<group>"; };
@@ -4554,6 +4556,8 @@
 		9FA09DA22EA71F2900E26F3F /* PromptCooldownIntervalProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptCooldownIntervalProvider.swift; sourceTree = "<group>"; };
 		9FA09DA32EA71F2900E26F3F /* PromptCooldownStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptCooldownStore.swift; sourceTree = "<group>"; };
 		9FA09DA42EA71F2900E26F3F /* PromptCooldownManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptCooldownManager.swift; sourceTree = "<group>"; };
+		B6A7C25031A1000100F00D01 /* PromoQueueCooldownPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromoQueueCooldownPolicy.swift; sourceTree = "<group>"; };
+		B6A7C25231A1000100F00D01 /* PromoQueueCooldownPolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromoQueueCooldownPolicyTests.swift; sourceTree = "<group>"; };
 		9FA09DAB2EA7400200E26F3F /* PromptCooldownStorePixelReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptCooldownStorePixelReporter.swift; sourceTree = "<group>"; };
 		9FA09DAE2EA84F5200E26F3F /* ModalPromptScheduling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModalPromptScheduling.swift; sourceTree = "<group>"; };
 		9FA0AF182EB4855000713387 /* MockRemoteMessagingPixelReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockRemoteMessagingPixelReporter.swift; sourceTree = "<group>"; };
@@ -4759,14 +4763,13 @@
 		B6A7C20131A1000100F00D01 /* PromoQueueLeaseArbiter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromoQueueLeaseArbiter.swift; sourceTree = "<group>"; };
 		B6A7C20431A1000100F00D01 /* PromoQueueLeaseArbiterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromoQueueLeaseArbiterTests.swift; sourceTree = "<group>"; };
 		B6A7C20931A1000100F00D01 /* PromoPresentationCoordinationFeatureFlagTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromoPresentationCoordinationFeatureFlagTests.swift; sourceTree = "<group>"; };
-		B6A7C20B31A1000100F00D01 /* MockNewTabPagePromoCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockNewTabPagePromoCoordinator.swift; sourceTree = "<group>"; };
-		B6A7C21131A1000100F00D01 /* PromoQueueFeatureState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromoQueueFeatureState.swift; sourceTree = "<group>"; };
 		B6A7C21331A1000100F00D01 /* NewTabPagePromoCoordination.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPagePromoCoordination.swift; sourceTree = "<group>"; };
 		B6A7C21531A1000100F00D01 /* ModalPromptRootAttachmentChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModalPromptRootAttachmentChecker.swift; sourceTree = "<group>"; };
 		B6A7C21731A1000100F00D01 /* PromoCoordinationServicePromoQueueTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromoCoordinationServicePromoQueueTests.swift; sourceTree = "<group>"; };
 		B6A7C21931A1000100F00D01 /* ModalPromptCoordinationManagerPromoQueueTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModalPromptCoordinationManagerPromoQueueTests.swift; sourceTree = "<group>"; };
 		B6A7C21B31A1000100F00D01 /* ModalPromptRootAttachmentCheckerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModalPromptRootAttachmentCheckerTests.swift; sourceTree = "<group>"; };
 		B6A7C21D31A1000100F00D01 /* ModalPromptCoordinationRealUIKitTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModalPromptCoordinationRealUIKitTests.swift; sourceTree = "<group>"; };
+		B6A7C26031A1000100F00D01 /* PromptCoordinationDebugViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptCoordinationDebugViewModelTests.swift; sourceTree = "<group>"; };
 		B6AD9E3528D4510A0019CDE9 /* ContentBlockingUpdatingTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ContentBlockingUpdatingTests.swift; sourceTree = "<group>"; };
 		B6BA95C228891E33004ABA20 /* BrowsingMenuAnimator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowsingMenuAnimator.swift; sourceTree = "<group>"; };
 		B772933186CDFE9E9DDBD2BF /* FileCorruptErrorViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileCorruptErrorViewController.swift; sourceTree = "<group>"; };
@@ -8901,7 +8904,7 @@
 			isa = PBXGroup;
 			children = (
 				B6A7C20331A1000100F00D01 /* Arbitration */,
-				9F8828462EBAAF46006C878B /* DebugMenu */,
+				9F8828462EBAAF46006C878B /* PromptCoordination */,
 				9F387E002EA9812F006861F8 /* Factory */,
 				9F80A9862EA9DE3D0079C5AD /* Migrator */,
 				9F387E012EA9812F006861F8 /* Logging */,
@@ -8909,7 +8912,6 @@
 				9FA09DA52EA71F2900E26F3F /* Cooldown */,
 				9F0B19B22EA5E4FA001FA867 /* Providers */,
 				9F0B19B62EA5E740001FA867 /* ModalPromptCoordinationManager.swift */,
-				B6A7C21131A1000100F00D01 /* PromoQueueFeatureState.swift */,
 				B6A7C21331A1000100F00D01 /* NewTabPagePromoCoordination.swift */,
 			);
 			path = ModalPromptCoordination;
@@ -8980,6 +8982,7 @@
 				9795B2122EC62BF2002A812F /* OnboardingSearchExperienceSelectionHandlerTests.swift */,
 				97EFB15A2EFAB2D600CF06E1 /* OnboardingSearchExperienceSettingsResolverTests.swift */,
 				9F5EA7C40000000000000005 /* OnboardingEndOfJourneyTryAIProviderTests.swift */,
+				9F5EA7C40000000000000007 /* ContextualOnboardingContentProviderTests.swift */,
 				9F5179D92D545D4300E40B40 /* DaxDialogsOnboardingMigratorTests.swift */,
 				9FD1BDEB2D8C183C002F4EFE /* OnboardingManagerTests.swift */,
 				FDEC1A2B30260001000000F2 /* IOSMonthlyFreeTrialDeciderTests.swift */,
@@ -9077,7 +9080,6 @@
 			isa = PBXGroup;
 			children = (
 				9F387DFB2EA8BFA0006861F8 /* MockModalPromptCoordinationManager.swift */,
-				B6A7C20B31A1000100F00D01 /* MockNewTabPagePromoCoordinator.swift */,
 				9F387DDC2EA881C7006861F8 /* PromptCooldownMocks.swift */,
 				9F387DE72EA895B6006861F8 /* MockModalPromptProvider.swift */,
 				9F387DEC2EA895DC006861F8 /* MockModalPromptPresenter.swift */,
@@ -9224,6 +9226,7 @@
 		9F7634BC2EA8633300804550 /* Cooldown */ = {
 			isa = PBXGroup;
 			children = (
+				B6A7C25231A1000100F00D01 /* PromoQueueCooldownPolicyTests.swift */,
 				9F7634BB2EA8633300804550 /* PromptCooldownIntervalProviderTests.swift */,
 				9F387DD72EA86CE3006861F8 /* PromptCooldownStoreTests.swift */,
 				9F387DD92EA87C0F006861F8 /* PromptCooldownManagerTests.swift */,
@@ -9241,6 +9244,7 @@
 				B6A7C21931A1000100F00D01 /* ModalPromptCoordinationManagerPromoQueueTests.swift */,
 				B6A7C21B31A1000100F00D01 /* ModalPromptRootAttachmentCheckerTests.swift */,
 				B6A7C21D31A1000100F00D01 /* ModalPromptCoordinationRealUIKitTests.swift */,
+				B6A7C26031A1000100F00D01 /* PromptCoordinationDebugViewModelTests.swift */,
 				B6A7C20431A1000100F00D01 /* PromoQueueLeaseArbiterTests.swift */,
 			);
 			path = ModalPromptCoordination;
@@ -9304,12 +9308,12 @@
 			path = Components;
 			sourceTree = "<group>";
 		};
-		9F8828462EBAAF46006C878B /* DebugMenu */ = {
+		9F8828462EBAAF46006C878B /* PromptCoordination */ = {
 			isa = PBXGroup;
 			children = (
-				9F8828472EBAAF5A006C878B /* ModalPromptCoordinationDebugMenu.swift */,
+				9F8828472EBAAF5A006C878B /* PromptCoordinationDebugMenu.swift */,
 			);
-			path = DebugMenu;
+			path = PromptCoordination;
 			sourceTree = "<group>";
 		};
 		9F8BCBCC2EB4324F004F071E /* Pixels */ = {
@@ -9396,6 +9400,7 @@
 			isa = PBXGroup;
 			children = (
 				9FA09DAA2EA73FD700E26F3F /* Monitoring */,
+				B6A7C25031A1000100F00D01 /* PromoQueueCooldownPolicy.swift */,
 				9FA09DA22EA71F2900E26F3F /* PromptCooldownIntervalProvider.swift */,
 				9FA09DA32EA71F2900E26F3F /* PromptCooldownStore.swift */,
 				9FA09DA42EA71F2900E26F3F /* PromptCooldownManager.swift */,
@@ -11435,6 +11440,7 @@
 		F1134EA91F3E2BA700B73467 /* Store */ = {
 			isa = PBXGroup;
 			children = (
+				9F371805302DB47A0071F761 /* OnboardingDownloadReasonStore.swift */,
 				F1134EA51F3E2AF400B73467 /* StatisticsStore.swift */,
 				F1134EAA1F3E2C6A00B73467 /* StatisticsUserDefaults.swift */,
 			);
@@ -13668,7 +13674,7 @@
 				EEF7091F2DDE77B000BA3C36 /* SyncExtensions.swift in Sources */,
 				EE458D0D2AB1DA4600FC651A /* EventMapping+NetworkProtectionError.swift in Sources */,
 				6F5DCFCE2E854C2000758C8A /* UniversalOmniBarEditingStateTransition.swift in Sources */,
-				9F8828482EBAAF68006C878B /* ModalPromptCoordinationDebugMenu.swift in Sources */,
+				9F8828482EBAAF68006C878B /* PromptCoordinationDebugMenu.swift in Sources */,
 				CBB4A8672FD31A4D00A65956 /* UnifiedSuggestionsView.swift in Sources */,
 				F44D279F27F331BB0037F371 /* AutofillLoginPromptViewController.swift in Sources */,
 				C1BF0BA529B63D7200482B73 /* AutofillLoginPromptHelper.swift in Sources */,
@@ -14306,7 +14312,6 @@
 				5AB12C3D4E5F60718293A4E1 /* ChatExportWriter.swift in Sources */,
 				5AB12C3D4E5F60718293A4E3 /* ChatHistoryDownloader.swift in Sources */,
 				9F0B19B72EA5E74F001FA867 /* ModalPromptCoordinationManager.swift in Sources */,
-				B6A7C21231A1000100F00D01 /* PromoQueueFeatureState.swift in Sources */,
 				B6A7C21431A1000100F00D01 /* NewTabPagePromoCoordination.swift in Sources */,
 				B6A7C21631A1000100F00D01 /* ModalPromptRootAttachmentChecker.swift in Sources */,
 				B6A7C20231A1000100F00D01 /* PromoQueueLeaseArbiter.swift in Sources */,
@@ -14394,6 +14399,7 @@
 				80A198C72F1AB3A90015521B /* TabViewModel.swift in Sources */,
 				5BF65FDA2F5A2CB800BCC9F4 /* AutoplaySettings.swift in Sources */,
 				9FA09DA82EA71F2900E26F3F /* PromptCooldownManager.swift in Sources */,
+				B6A7C25131A1000100F00D01 /* PromoQueueCooldownPolicy.swift in Sources */,
 				80A09D642F6BBA1F00AACDEE /* DataStoreWarmupWorker.swift in Sources */,
 				1E4DCF4E27B6A69600961E25 /* DownloadsListHostingController.swift in Sources */,
 				850F93DB2B594AB800823EEA /* ZippedPassKitPreviewHelper.swift in Sources */,
@@ -14938,6 +14944,7 @@
 				B6A7C21A31A1000100F00D01 /* ModalPromptCoordinationManagerPromoQueueTests.swift in Sources */,
 				B6A7C21C31A1000100F00D01 /* ModalPromptRootAttachmentCheckerTests.swift in Sources */,
 				B6A7C21E31A1000100F00D01 /* ModalPromptCoordinationRealUIKitTests.swift in Sources */,
+				B6A7C26131A1000100F00D01 /* PromptCoordinationDebugViewModelTests.swift in Sources */,
 				B6A7C20531A1000100F00D01 /* PromoQueueLeaseArbiterTests.swift in Sources */,
 				B6A7C20A31A1000100F00D01 /* PromoPresentationCoordinationFeatureFlagTests.swift in Sources */,
 				98E5631D2DE8AF3100E6E75F /* CoreDataTestUtilities.swift in Sources */,
@@ -15141,6 +15148,7 @@
 				98E564A22DE8EDCE00E6E75F /* CapturingSyncPausedStateManager.swift in Sources */,
 				9FE7CD5C2E14C6CD006691AB /* DefaultBrowserPromptUserActivityManagerTests.swift in Sources */,
 				9F387DDA2EA87C0F006861F8 /* PromptCooldownManagerTests.swift in Sources */,
+				B6A7C25331A1000100F00D01 /* PromoQueueCooldownPolicyTests.swift in Sources */,
 				98E563F72DE8B32D00E6E75F /* OnboardingHostingControllerMock.swift in Sources */,
 				BBFF22EF2F3469160055A710 /* MockFreeTrialConversionInstrumentationService.swift in Sources */,
 				98E563F82DE8B32D00E6E75F /* MockOmniBar.swift in Sources */,
@@ -15151,7 +15159,6 @@
 				98E563FD2DE8B32D00E6E75F /* OnboardingManagerMock.swift in Sources */,
 				9FE7CD5E2E14C81A006691AB /* MockDefaultBrowserPromptUserActivityStorage.swift in Sources */,
 				9F387DFD2EA8BFA4006861F8 /* MockModalPromptCoordinationManager.swift in Sources */,
-				B6A7C20E31A1000100F00D01 /* MockNewTabPagePromoCoordinator.swift in Sources */,
 				C19888EC2EF18B69004612AD /* DaxEasterEggLogoStoreTests.swift in Sources */,
 				98E563FF2DE8B32D00E6E75F /* DuckPlayerMocks.swift in Sources */,
 				CB6D17A22FA397FC00ECD5AE /* UnifiedToggleInputPageContextChipViewModelTests.swift in Sources */,
@@ -15309,6 +15316,7 @@
 				C1935A222C89CA9F001AD72D /* AutofillSurveyManagerTests.swift in Sources */,
 				97EFB15B2EFAB2D600CF06E1 /* OnboardingSearchExperienceSettingsResolverTests.swift in Sources */,
 				9F5EA7C40000000000000006 /* OnboardingEndOfJourneyTryAIProviderTests.swift in Sources */,
+				9F5EA7C40000000000000008 /* ContextualOnboardingContentProviderTests.swift in Sources */,
 				22CB1ED8203DDD2C00D2C724 /* AppDeepLinksTests.swift in Sources */,
 				9847C00527A41A0A00DB07AA /* WebViewTestHelper.swift in Sources */,
 				3170048227A9504F00C03F35 /* DownloadMocks.swift in Sources */,
@@ -15534,7 +15542,6 @@
 				98E5642F2DE8B32D00E6E75F /* MockTutorialSettings.swift in Sources */,
 				989F0DAA2ECB517100781641 /* MockDefaultScriptSourceProviderDependencies.swift in Sources */,
 				9F387DFE2EA8BFA4006861F8 /* MockModalPromptCoordinationManager.swift in Sources */,
-				B6A7C20C31A1000100F00D01 /* MockNewTabPagePromoCoordinator.swift in Sources */,
 				36F2CA622E6098F800C7039D /* InactivityNotificationSchedulerServiceIntegrationTests.swift in Sources */,
 				98E564302DE8B32D00E6E75F /* OnboardingPixelReporterMock.swift in Sources */,
 				80483EEF2F4D5C0100563037 /* MockAutoconsentManagement.swift in Sources */,
@@ -15616,7 +15623,6 @@
 				9F60CBBB2E989EDC004D2367 /* MockLastSearchStateRefresher.swift in Sources */,
 				98E564A02DE8EDCE00E6E75F /* CapturingSyncPausedStateManager.swift in Sources */,
 				9F387DFC2EA8BFA4006861F8 /* MockModalPromptCoordinationManager.swift in Sources */,
-				B6A7C20F31A1000100F00D01 /* MockNewTabPagePromoCoordinator.swift in Sources */,
 				989F0DA22ECB278600781641 /* ContentBlockerRulesManagerMock.swift in Sources */,
 				98E563472DE8B04D00E6E75F /* TestDataLoader.swift in Sources */,
 				9FA0AF242EB8358100713387 /* MockWhatsNewDisplayModelMapper.swift in Sources */,
@@ -15744,7 +15750,6 @@
 				9F60CBBA2E989EDC004D2367 /* MockLastSearchStateRefresher.swift in Sources */,
 				98E564AA2DE8EDF000E6E75F /* CapturingAdapterErrorHandler.swift in Sources */,
 				9F387DFF2EA8BFA4006861F8 /* MockModalPromptCoordinationManager.swift in Sources */,
-				B6A7C20D31A1000100F00D01 /* MockNewTabPagePromoCoordinator.swift in Sources */,
 				989F0DA02ECB278600781641 /* ContentBlockerRulesManagerMock.swift in Sources */,
 				9876DF2C2DEEE21700E30713 /* MockThemeManager.swift in Sources */,
 				9FA0AF222EB8358100713387 /* MockWhatsNewDisplayModelMapper.swift in Sources */,
@@ -15905,6 +15910,7 @@
 				CBAA195A27BFE15600A4BD49 /* NSManagedObjectContextExtension.swift in Sources */,
 				F124B95A2F2CC20C00B29447 /* BuildFlags.swift in Sources */,
 				85BDC3192436161C0053DB07 /* LoginFormDetectionUserScript.swift in Sources */,
+				9F371806302DB47A0071F761 /* OnboardingDownloadReasonStore.swift in Sources */,
 				F143C3291E4A9A0E00CFDE3A /* URLExtension.swift in Sources */,
 				C1C1FF4A2D085A4C0017ACCE /* AutofillInterfaceEmailTruncator.swift in Sources */,
 				C1C1FF4B2D085A4C0017ACCE /* TextMasker.swift in Sources */,

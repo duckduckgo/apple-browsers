@@ -347,10 +347,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     func setEscapeHatch(_ model: EscapeHatchModel?) {
         let hatchPresenceChanged = (escapeHatchModel != nil) != (model != nil)
         escapeHatchModel = model
-        unifiedSuggestionsHost?.setEscapeHatch(model)
-        // `setEscapeHatch` infers this value from hatch presence, so apply the authoritative session
-        // value afterwards.
-        unifiedSuggestionsHost?.updateOpenedAfterIdle(sessionOpenedAfterIdle)
+        unifiedSuggestionsHost?.setEscapeHatch(model, openedAfterIdle: sessionOpenedAfterIdle)
         // Favorites render the hatch in the embedded NTP; other non-typing states keep it pinned.
         updatePinnedChrome()
         updateSingleHostTopOffset()
@@ -424,12 +421,16 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         topBarContentGap + requestedContentInset.top
     }
 
+    private var favoritesOwnEscapeHatch: Bool {
+        escapeHatchModel != nil && !switchBarHandler.isFireTab && isShowingFavoritesContent
+    }
+
     /// The hatch stays pinned for non-typing states that do not show favorites. The embedded NTP owns
     /// it while favorites are visible so both elements scroll together.
     private var shouldShowPinnedHatch: Bool {
         escapeHatchModel != nil
             && !switchBarHandler.isFireTab
-            && !isShowingFavoritesContent
+            && !favoritesOwnEscapeHatch
             && !UnifiedSuggestionsInputsMerger.isTyping(text: switchBarHandler.currentText,
                                                         hasUserInteractedWithText: switchBarHandler.hasUserInteractedWithText)
     }
@@ -654,6 +655,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         host.onContentChanged = { [weak self] in
             self?.refreshVisibleContent(animateContentUpdates: true)
         }
+        host.setEscapeHatch(escapeHatchModel, openedAfterIdle: sessionOpenedAfterIdle)
 
         let containerView = UIView()
         containerView.translatesAutoresizingMaskIntoConstraints = false
@@ -703,11 +705,14 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         unifiedSuggestionsTopConstraint?.constant = topBarContentGap
     }
 
-    /// With a top address bar the input sits above the content, so the content needs a small gap
-    /// beneath it. With a bottom bar the content is anchored to the top of the screen (the input is
-    /// below it), so no gap applies — and adding one there pushes the favorites below the NTP.
+    /// With a top address bar the input sits above the content, so the content normally needs a small
+    /// gap beneath it. When the embedded NTP owns the hatch, its 10pt content inset already matches the
+    /// resting NTP; omitting the extra 4pt keeps the focus/dismiss handoff stationary. A bottom bar has
+    /// no host gap because its content is anchored to the top of the screen.
     private var topBarContentGap: CGFloat {
-        isUsingTopBarPosition ? Metrics.topBarContentClearance : 0
+        UnifiedInputContentLayoutPolicy.topBarContentGap(
+            isUsingTopBarPosition: isUsingTopBarPosition,
+            favoritesOwnEscapeHatch: favoritesOwnEscapeHatch)
     }
 
     /// One merged inputs stream feeding the single host: mode + text + search facts (always) +
@@ -962,9 +967,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private enum Metrics {
         static let horizontalMarginForCompactLayout: CGFloat = 108
         static let backgroundColor = UIColor(designSystemColor: .panel)
-        /// Brings the card's 8pt bottom margin up to the design's 12pt UTI bottom margin on the top bar
-        /// (content then adds its own 6pt top → 18pt UTI→content, per Figma).
-        static let topBarContentClearance: CGFloat = 4
         /// Gap between the bar's edge and the pinned chrome (Figma). The chrome owns its other metrics.
         static let hatchTopInsetTopBar: CGFloat = 6
         /// Bottom bar: the focused content top coincides with the NTP content top, so this must equal the
@@ -972,6 +974,18 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         /// for the focused and NTP hatches to land on the same line. Keep the two in sync.
         static let hatchTopInsetBottomBar: CGFloat = 10
     }
+}
+
+enum UnifiedInputContentLayoutPolicy {
+
+    static func topBarContentGap(isUsingTopBarPosition: Bool, favoritesOwnEscapeHatch: Bool) -> CGFloat {
+        guard isUsingTopBarPosition, !favoritesOwnEscapeHatch else { return 0 }
+        return topBarContentClearance
+    }
+
+    /// Brings the card's 8pt bottom margin up to the design's 12pt UTI bottom margin on the top bar
+    /// (content then adds its own 6pt top → 18pt UTI→content, per Figma).
+    private static let topBarContentClearance: CGFloat = 4
 }
 
 private extension UnifiedInputContentContainerViewController {

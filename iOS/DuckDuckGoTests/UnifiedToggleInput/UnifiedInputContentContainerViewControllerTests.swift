@@ -28,6 +28,30 @@ import XCTest
 @MainActor
 final class UnifiedInputContentContainerViewControllerTests: XCTestCase {
 
+    func testTopBarContentGap_WhenFavoritesOwnEscapeHatch_IsRemoved() {
+        XCTAssertEqual(
+            UnifiedInputContentLayoutPolicy.topBarContentGap(
+                isUsingTopBarPosition: true,
+                favoritesOwnEscapeHatch: true),
+            0)
+    }
+
+    func testTopBarContentGap_WhenHatchRemainsPinned_IsPreserved() {
+        XCTAssertEqual(
+            UnifiedInputContentLayoutPolicy.topBarContentGap(
+                isUsingTopBarPosition: true,
+                favoritesOwnEscapeHatch: false),
+            4)
+    }
+
+    func testTopBarContentGap_WhenUsingBottomBar_IsZero() {
+        XCTAssertEqual(
+            UnifiedInputContentLayoutPolicy.topBarContentGap(
+                isUsingTopBarPosition: false,
+                favoritesOwnEscapeHatch: false),
+            0)
+    }
+
     func testDuckAISuggestionsDidRequestSyncSetup_RequestsSyncSetupOnDelegate() {
         let delegate = MockUnifiedInputContentContainerDelegate()
         let viewController = UnifiedInputContentContainerViewController(

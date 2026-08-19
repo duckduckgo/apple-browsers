@@ -175,6 +175,17 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
         XCTAssertEqual(store.capturedTriggerFilter, .specific(.afterIdle))
     }
 
+    func testWhenSettingEscapeHatchAndOpenedAfterIdleThenMessagesRefreshOnce() {
+        let configuration = RefreshCountingHomePageMessagesConfiguration()
+        let controller = makeNewTabPage(openedAfterIdle: false, homePageMessagesConfiguration: configuration)
+        let initialRefreshCount = configuration.refreshCallCount
+
+        controller.setEscapeHatch(nil, openedAfterIdle: true)
+
+        XCTAssertEqual(configuration.refreshCallCount, initialRefreshCount + 1)
+        XCTAssertEqual(configuration.lastRefreshOpenedAfterIdle, true)
+    }
+
     func testWhenViewDidAppearWithInitialSpecThenDaxDialogIsCreated() throws {
         // GIVEN
         let expectedSpec = DaxDialogs.HomeScreenSpec.initial
@@ -287,6 +298,21 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
         // a stray `.initial`/`.subsequent` dialog could leak into the Duck.ai onboarding completion UX.
         XCTAssertFalse(specProvider.nextHomeScreenMessageNewCalled)
     }
+}
+
+private final class RefreshCountingHomePageMessagesConfiguration: HomePageMessagesConfiguration {
+
+    var homeMessages: [HomeMessage] = []
+    private(set) var refreshCallCount = 0
+    private(set) var lastRefreshOpenedAfterIdle: Bool?
+
+    func refresh(openedAfterIdle: Bool) {
+        refreshCallCount += 1
+        lastRefreshOpenedAfterIdle = openedAfterIdle
+    }
+
+    func didAppear(_ homeMessage: HomeMessage) {}
+    func dismissHomeMessage(_ homeMessage: HomeMessage) {}
 }
 
 class CapturingVariantManager: VariantManager {

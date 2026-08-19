@@ -164,8 +164,14 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     }
 
     func setEscapeHatch(_ model: EscapeHatchModel?) {
+        setEscapeHatch(model, openedAfterIdle: model != nil)
+    }
+
+    /// Applies both values before refreshing messages so callers with an authoritative session value
+    /// do not briefly refresh against the hatch-derived value first.
+    func setEscapeHatch(_ model: EscapeHatchModel?, openedAfterIdle: Bool) {
         newTabPageViewModel.escapeHatch = model
-        newTabPageViewModel.openedAfterIdle = (model != nil)
+        newTabPageViewModel.openedAfterIdle = openedAfterIdle
         messagesModel.refresh()
         updateBorderView()
     }

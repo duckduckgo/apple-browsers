@@ -53,21 +53,16 @@ final class UnifiedSuggestionsHost {
     private func memoizedFavoritesController() -> NewTabPageViewController? {
         if let cachedFavoritesController { return cachedFavoritesController }
         cachedFavoritesController = config.favoritesProvider()
-        cachedFavoritesController?.setEscapeHatch(pendingEscapeHatchModel)
-        if let pendingOpenedAfterIdle {
-            cachedFavoritesController?.setOpenedAfterIdle(pendingOpenedAfterIdle)
-        }
+        cachedFavoritesController?.setEscapeHatch(
+            pendingEscapeHatchModel,
+            openedAfterIdle: pendingOpenedAfterIdle ?? (pendingEscapeHatchModel != nil))
         return cachedFavoritesController
     }
 
-    func setEscapeHatch(_ model: EscapeHatchModel?) {
+    func setEscapeHatch(_ model: EscapeHatchModel?, openedAfterIdle: Bool) {
         pendingEscapeHatchModel = model
-        cachedFavoritesController?.setEscapeHatch(model)
-    }
-
-    func updateOpenedAfterIdle(_ openedAfterIdle: Bool) {
         pendingOpenedAfterIdle = openedAfterIdle
-        cachedFavoritesController?.setOpenedAfterIdle(openedAfterIdle)
+        cachedFavoritesController?.setEscapeHatch(model, openedAfterIdle: openedAfterIdle)
     }
 
     init(config: UnifiedSuggestionsHostConfig) {

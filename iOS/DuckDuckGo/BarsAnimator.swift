@@ -62,6 +62,13 @@ class BarsAnimator {
         /// Floor on the settle duration for the hardest flicks, seconds.
         static let flickFastestCollapseDuration: CFTimeInterval = 0.08
         static let flickFastestExpandDuration: CFTimeInterval = 0.14
+
+        /// Scroll distance from a drag's anchor beyond which the floating chrome commits fully to the
+        /// next state instead of continuing to track the finger, matching Safari's playful snap. Once
+        /// crossed, the transition completes via the same animated `hideBars`/`revealBars` a release
+        /// would trigger, so a finger that then holds the scroll steady mid-drag lets the animation run
+        /// to completion instead of parking the bar at whatever fraction the hold happened to catch.
+        static let floatingSnapCommitDistance: CGFloat = 16
     }
 
     weak var delegate: BrowserChromeDelegate?
@@ -80,6 +87,17 @@ class BarsAnimator {
 
     /// `nil` until the first rate-limited frame of a transition.
     private var lastProgressTimestamp: CFTimeInterval?
+
+    private enum SnapDirection {
+        case collapsing
+        case revealing
+    }
+
+    /// Set once the current drag has committed past `Metrics.floatingSnapCommitDistance`; `nil` for
+    /// the rest of the drag until a firm reversal (the same distance, measured from the commit point)
+    /// flips it. `nil` at the start of every drag (reset in `didStartScrolling`).
+    private var floatingCommittedDirection: SnapDirection?
+    private var floatingCommitOffsetY: CGFloat?
 
     /// Injected so tests can drive the collapse rate limiter deterministically.
     private let currentTime: () -> CFTimeInterval
@@ -125,6 +143,8 @@ class BarsAnimator {
             transitionStartPosY = scrollView.contentOffset.y
             transitionStartProgress = transitionProgress
             lastProgressTimestamp = nil
+            floatingCommittedDirection = nil
+            floatingCommitOffsetY = nil
         }
     }
 
@@ -164,6 +184,28 @@ class BarsAnimator {
         }
         guard bottomRevealGestureState != .triggered else { return }
 
+        if let committed = floatingCommittedDirection, let commitOffsetY = floatingCommitOffsetY {
+            let reversal = scrollView.contentOffset.y - commitOffsetY
+            switch committed {
+            case .collapsing where reversal <= -Metrics.floatingSnapCommitDistance:
+                commitFloatingTransition(.revealing, at: scrollView.contentOffset.y)
+            case .revealing where reversal >= Metrics.floatingSnapCommitDistance:
+                commitFloatingTransition(.collapsing, at: scrollView.contentOffset.y)
+            default:
+                break
+            }
+            return
+        }
+
+        let distanceFromAnchor = scrollView.contentOffset.y - transitionStartPosY
+        if distanceFromAnchor >= Metrics.floatingSnapCommitDistance {
+            commitFloatingTransition(.collapsing, at: scrollView.contentOffset.y)
+            return
+        } else if distanceFromAnchor <= -Metrics.floatingSnapCommitDistance {
+            commitFloatingTransition(.revealing, at: scrollView.contentOffset.y)
+            return
+        }
+
         let ratio = calculateTransitionRatio(for: scrollView.contentOffset.y)
         if ratio >= 1.0 {
             barsState = .hidden
@@ -174,6 +216,17 @@ class BarsAnimator {
         }
         transitionProgress = ratio
         delegate?.setBarsVisibility(1.0 - ratio, animated: false, animationDuration: nil)
+    }
+
+    private func commitFloatingTransition(_ direction: SnapDirection, at offsetY: CGFloat) {
+        floatingCommittedDirection = direction
+        floatingCommitOffsetY = offsetY
+        switch direction {
+        case .collapsing:
+            hideBars(animated: true)
+        case .revealing:
+            revealBars(animated: true)
+        }
     }
 
     // MARK: - Legacy (non-floating) scrolling. Unchanged: re-anchors on every state entry.

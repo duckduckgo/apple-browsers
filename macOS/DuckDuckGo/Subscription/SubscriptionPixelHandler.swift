@@ -24,19 +24,19 @@ public struct SubscriptionPixelHandler: SubscriptionPixelHandling {
 
     public enum Source {
         case mainApp
-        case systemExtension
+        case packetTunnelProvider
         case vpnApp
-        case dbp
+        case dbpBackgroundAgent
 
         var description: String {
             switch self {
             case .mainApp:
                 return "MainApp"
-            case .systemExtension:
+            case .packetTunnelProvider:
                 return "SysExt"
             case .vpnApp:
                 return "VPNApp"
-            case .dbp:
+            case .dbpBackgroundAgent:
                 return "DBP"
             }
         }
@@ -55,6 +55,8 @@ public struct SubscriptionPixelHandler: SubscriptionPixelHandling {
             pixelKit?.fireOSDistributionPixel(metric: .activeSubscriptions)
         case .getTokensError(let policy, let error):
             pixelKit?.fire(SubscriptionPixel.subscriptionAuthV2GetTokensError(policy, source, error), frequency: .dailyAndCount)
+        case .automaticSignOut(let data):
+            pixelKit?.fire(SubscriptionPixel.subscriptionAutomaticSignOut(data, source), frequency: .dailyAndCount)
         case .invalidRefreshTokenSignedOut:
             pixelKit?.fire(SubscriptionPixel.subscriptionInvalidRefreshTokenSignedOut, frequency: .dailyAndCount)
         case .invalidRefreshTokenRecovered:

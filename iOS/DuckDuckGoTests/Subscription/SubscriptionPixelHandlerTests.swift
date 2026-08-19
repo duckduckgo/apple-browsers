@@ -128,8 +128,26 @@ final class SubscriptionPixelHandlerTests: XCTestCase {
                 PixelKit.Parameters.underlyingErrorDomain: OAuthRequest.TokenStatus.errorDomain,
                 PixelKit.Parameters.errorDomain: OAuthClientError.errorDomain,
                 "source": subscriptionSource.rawValue,
-                "policycache": AuthTokensCachePolicy.localValid.description
+                "policycache": SubscriptionAutomaticSignOutPixelData.TokenCachePolicy.localValid.rawValue
             ]
+        )
+    }
+
+    func testAutomaticSignOutPixel() {
+        let data = makeAutomaticSignOutPixelData()
+        let handler = SubscriptionPixelHandler(source: subscriptionSource, pixelKit: pixelKit)
+        handler.handle(pixel: .automaticSignOut(data))
+
+        var expectedParameters = data.parameters
+        XCTAssertTrue(data.parameters.values.allSatisfy(Self.isSnakeCase),
+                      "Automatic sign-out metadata values must use snake_case")
+        expectedParameters["source"] = subscriptionSource.rawValue
+        expectedParameters[PixelKit.Parameters.pixelSource] = pixelSource
+        expectedParameters[PixelKit.Parameters.appVersion] = "1.0.0"
+
+        assertDailyAndCountPixel(
+            baseName: SubscriptionPixel.subscriptionAutomaticSignOut(data, subscriptionSource).name,
+            expectedParameters: expectedParameters
         )
     }
 
@@ -260,6 +278,31 @@ final class SubscriptionPixelHandlerTests: XCTestCase {
 
         assertParameters(modifiedExpectedParameters, in: daily?.parameters)
         assertParameters(modifiedExpectedParameters, in: count?.parameters)
+    }
+
+    private func makeAutomaticSignOutPixelData() -> SubscriptionAutomaticSignOutPixelData {
+        SubscriptionAutomaticSignOutPixelData(
+            reason: .invalidRefreshToken,
+            tokenStatus: .reused,
+            recoveryOutcome: .failed,
+            tokenCachePolicy: .localValid,
+            entitlementStateBefore: .present,
+            accessTokenTimeRemainingBefore: .expired,
+            refreshTokenTimeRemainingBefore: .sevenToThirtyDays,
+            refreshTokenAgeBefore: .oneToSevenDays,
+            cachedSubscriptionStatusBefore: .autoRenewable,
+            cachedSubscriptionTimeRemainingBefore: .sevenToThirtyDays,
+            storedRefreshTokenStateDuringAttempt: .changed,
+            localTokenStateAfterSignOut: .missing)
+    }
+
+    func testAuthenticationPixelsUseLegacySourceValues() {
+        XCTAssertEqual(SubscriptionPixelHandler.Source.mainApp.rawValue, "MainApp")
+        XCTAssertEqual(SubscriptionPixelHandler.Source.packetTunnelProvider.rawValue, "SysExt")
+    }
+
+    private static func isSnakeCase(_ value: String) -> Bool {
+        value.range(of: #"^[a-z0-9]+(?:_[a-z0-9]+)*$"#, options: .regularExpression) != nil
     }
 
     private func assertLegacyDailyPixel(baseName: String, expectedParameters: [String: String]) {

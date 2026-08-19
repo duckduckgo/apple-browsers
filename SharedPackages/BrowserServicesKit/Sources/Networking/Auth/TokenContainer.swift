@@ -151,6 +151,10 @@ public struct JWTRefreshToken: JWTPayload, Equatable {
     public var expirationDate: Date {
         exp.value
     }
+
+    public var issuedAtDate: Date {
+        iat.value
+    }
 }
 
 public enum SubscriptionEntitlement: String, Codable, Equatable, CustomDebugStringConvertible, Hashable, CaseIterable {

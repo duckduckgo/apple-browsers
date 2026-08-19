@@ -20,12 +20,14 @@
 import Foundation
 import PixelKit
 import Networking
+import Subscription
 
 enum SubscriptionPixel: PixelKit.Event {
     // Subscription
     case subscriptionActive
     // Auth
     case subscriptionInvalidRefreshTokenDetected(SubscriptionPixelHandler.Source)
+    case subscriptionAutomaticSignOut(SubscriptionAutomaticSignOutPixelData, SubscriptionPixelHandler.Source)
     case subscriptionInvalidRefreshTokenSignedOut
     case subscriptionInvalidRefreshTokenRecovered
     case subscriptionAuthV2GetTokensError(AuthTokensCachePolicy, SubscriptionPixelHandler.Source, Error)
@@ -51,6 +53,7 @@ enum SubscriptionPixel: PixelKit.Event {
         case .subscriptionActive: return "m_privacy-pro_app_subscription_active"
             // Auth
         case .subscriptionInvalidRefreshTokenDetected: return "m_privacy-pro_auth_invalid_refresh_token_detected"
+        case .subscriptionAutomaticSignOut: return "m_privacy-pro_auth_account_automatically_signed_out"
         case .subscriptionInvalidRefreshTokenSignedOut: return "m_privacy-pro_auth_invalid_refresh_token_signed_out"
         case .subscriptionInvalidRefreshTokenRecovered: return "m_privacy-pro_auth_invalid_refresh_token_recovered"
         case .subscriptionAuthV2GetTokensError: return "m_privacy-pro_auth_v2_get_tokens_error"
@@ -88,8 +91,9 @@ enum SubscriptionPixel: PixelKit.Event {
 
     var parameters: [String: String]? {
         switch self {
-        case .subscriptionInvalidRefreshTokenDetected(let source),
-                .subscriptionPurchaseSuccessAfterPendingTransaction(let source),
+        case .subscriptionInvalidRefreshTokenDetected(let source):
+            return [SubscriptionPixelsDefaults.sourceKey: source.rawValue]
+        case .subscriptionPurchaseSuccessAfterPendingTransaction(let source),
                 .subscriptionPendingTransactionApproved(let source),
                 .subscriptionKeychainManagerDataAddedToTheBacklog(let source),
                 .subscriptionKeychainManagerDeallocatedWithBacklog(let source),
@@ -97,8 +101,12 @@ enum SubscriptionPixel: PixelKit.Event {
                 .subscriptionKeychainManagerFailedToWriteDataFromBacklog(let source):
             return [SubscriptionPixelsDefaults.sourceKey: source.rawValue]
         case .subscriptionAuthV2GetTokensError(let policy, let source, _):
-            return [SubscriptionPixelsDefaults.policyCacheKey: policy.description,
+            return [SubscriptionPixelsDefaults.policyCacheKey: SubscriptionAutomaticSignOutPixelData.TokenCachePolicy(policy).rawValue,
                     SubscriptionPixelsDefaults.sourceKey: source.rawValue]
+        case .subscriptionAutomaticSignOut(let data, let source):
+            var parameters = data.parameters
+            parameters[SubscriptionPixelsDefaults.sourceKey] = source.rawValue
+            return parameters
         case .subscriptionVPNToolbarImpression(let isSubscriptionActive),
                 .subscriptionVPNToolbarClick(let isSubscriptionActive),
                 .subscriptionVPNAddressBarImpression(let isSubscriptionActive),
@@ -113,6 +121,7 @@ enum SubscriptionPixel: PixelKit.Event {
         switch self {
         case .subscriptionActive,
                 .subscriptionInvalidRefreshTokenDetected,
+                .subscriptionAutomaticSignOut,
                 .subscriptionInvalidRefreshTokenSignedOut,
                 .subscriptionInvalidRefreshTokenRecovered,
                 .subscriptionAuthV2GetTokensError,

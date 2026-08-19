@@ -1,0 +1,271 @@
+// Privacy Pro AuthV2 diagnostic pixels
+{
+    "m_mac_store_privacy-pro_auth_invalid_refresh_token_detected": {
+        "description": "Fired when the backend rejects a Privacy Pro refresh token as invalid, before any account recovery is attempted (App Store distribution).",
+        "owners": ["samsymons"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionAuthSource"]
+    },
+    "m_mac_direct_privacy-pro_auth_invalid_refresh_token_detected": {
+        "description": "Fired when the backend rejects a Privacy Pro refresh token as invalid, before any account recovery is attempted (direct distribution).",
+        "owners": ["samsymons"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionAuthSource"]
+    },
+    "m_mac_store_privacy-pro_auth_invalid_refresh_token_signed_out": {
+        "description": "Fired when an invalid Privacy Pro refresh token results in sign-out because recovery was unavailable or failed (App Store distribution). The account_automatically_signed_out pixel contains the detailed outcome.",
+        "owners": ["samsymons"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_direct_privacy-pro_auth_invalid_refresh_token_signed_out": {
+        "description": "Fired when an invalid Privacy Pro refresh token results in sign-out because recovery was unavailable or failed (direct distribution). The account_automatically_signed_out pixel contains the detailed outcome.",
+        "owners": ["samsymons"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_store_privacy-pro_auth_invalid_refresh_token_recovered": {
+        "description": "Fired when the client successfully recovers from an invalid Privacy Pro refresh token without signing the user out (App Store distribution).",
+        "owners": ["samsymons"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_direct_privacy-pro_auth_invalid_refresh_token_recovered": {
+        "description": "Fired when the client successfully recovers from an invalid Privacy Pro refresh token without signing the user out (direct distribution).",
+        "owners": ["samsymons"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_store_privacy-pro_auth_v2_get_tokens_error": {
+        "description": "Fired when Privacy Pro AuthV2 cannot return a token container (App Store distribution). Error parameters distinguish invalid refresh tokens, unknown accounts, and other failures.",
+        "owners": ["samsymons"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            "subscriptionAuthSource",
+            "subscriptionAuthTokenCachePolicy",
+            "errorDomain",
+            "errorCode",
+            "underlyingErrorDomain",
+            "underlyingErrorCode"
+        ]
+    },
+    "m_mac_direct_privacy-pro_auth_v2_get_tokens_error": {
+        "description": "Fired when Privacy Pro AuthV2 cannot return a token container (direct distribution). Error parameters distinguish invalid refresh tokens, unknown accounts, and other failures.",
+        "owners": ["samsymons"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            "subscriptionAuthSource",
+            "subscriptionAuthTokenCachePolicy",
+            "errorDomain",
+            "errorCode",
+            "underlyingErrorDomain",
+            "underlyingErrorCode"
+        ]
+    },
+    "m_mac_store_privacy-pro_auth_account_automatically_signed_out": {
+        "description": "Fired after Privacy Pro automatically signs a user out because the backend reported an unknown account or an invalid refresh token that could not be recovered (App Store distribution). Low-cardinality local state captured before deletion helps distinguish expected backend invalidation from client token races or inconsistent account state.",
+        "owners": ["samsymons"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            "subscriptionAuthSource",
+            "subscriptionAuthTokenCachePolicy",
+            {
+                "key": "reason",
+                "type": "string",
+                "description": "The authentication failure that caused the client to sign out automatically",
+                "enum": ["unknown_account", "invalid_refresh_token"]
+            },
+            {
+                "key": "token_status",
+                "type": "string",
+                "description": "The backend token status for an invalid refresh token, or not_applicable for unknown_account",
+                "enum": ["invalid", "expired", "reused", "logged_out", "fraud_detected", "unknown", "not_applicable"]
+            },
+            {
+                "key": "recovery_outcome",
+                "type": "string",
+                "description": "Whether account recovery was unavailable or failed; not_applicable when recovery is not part of the sign-out path",
+                "enum": ["not_attempted", "failed", "not_applicable"]
+            },
+            {
+                "key": "had_subscription_entitlements_before",
+                "type": "string",
+                "description": "Whether the locally stored access token contained subscription entitlements immediately before the token attempt",
+                "enum": ["present", "absent", "unknown"]
+            },
+            {
+                "key": "access_token_time_remaining_bucket_before",
+                "type": "string",
+                "description": "Bucketed time until the locally stored access token expired, captured immediately before the token attempt",
+                "enum": ["expired", "less_than_1_hour", "1_hour_to_1_day", "1_to_7_days", "7_to_30_days", "more_than_30_days", "unknown"]
+            },
+            {
+                "key": "refresh_token_time_remaining_bucket_before",
+                "type": "string",
+                "description": "Bucketed time until the locally stored refresh token expired, captured immediately before the token attempt",
+                "enum": ["expired", "less_than_1_hour", "1_hour_to_1_day", "1_to_7_days", "7_to_30_days", "more_than_30_days", "unknown"]
+            },
+            {
+                "key": "refresh_token_age_bucket_before",
+                "type": "string",
+                "description": "Bucketed age of the locally stored refresh token immediately before the token attempt; issued_in_future can indicate clock skew",
+                "enum": [
+                    "issued_in_future",
+                    "less_than_1_hour",
+                    "1_hour_to_1_day",
+                    "1_to_7_days",
+                    "7_to_30_days",
+                    "more_than_30_days",
+                    "unknown"
+                ]
+            },
+            {
+                "key": "cached_subscription_status_before",
+                "type": "string",
+                "description": "Status of the subscription cached in the reporting process before sign-out; absence does not mean the backend subscription was inactive",
+                "enum": ["auto_renewable", "not_auto_renewable", "grace_period", "inactive", "expired", "unknown", "not_present_in_process"]
+            },
+            {
+                "key": "cached_subscription_time_remaining_bucket_before",
+                "type": "string",
+                "description": "Bucketed time until the cached subscription expiry or renewal date before sign-out; absence is reported per process",
+                "enum": [
+                    "expired",
+                    "less_than_1_hour",
+                    "1_hour_to_1_day",
+                    "1_to_7_days",
+                    "7_to_30_days",
+                    "more_than_30_days",
+                    "unknown",
+                    "not_present_in_process"
+                ]
+            },
+            {
+                "key": "stored_refresh_token_state_during_attempt",
+                "type": "string",
+                "description": "Whether the locally stored refresh token changed or disappeared between the pre-request snapshot and the failed request",
+                "enum": ["unchanged", "changed", "missing", "read_error", "unavailable_before_attempt"]
+            },
+            {
+                "key": "local_token_state_after_sign_out",
+                "type": "string",
+                "description": "Whether local authentication tokens were actually removed after the automatic sign-out completed",
+                "enum": ["present", "missing", "read_error"]
+            }
+        ]
+    },
+    "m_mac_direct_privacy-pro_auth_account_automatically_signed_out": {
+        "description": "Fired after Privacy Pro automatically signs a user out because the backend reported an unknown account or an invalid refresh token that could not be recovered (direct distribution). Low-cardinality local state captured before deletion helps distinguish expected backend invalidation from client token races or inconsistent account state.",
+        "owners": ["samsymons"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            "subscriptionAuthSource",
+            "subscriptionAuthTokenCachePolicy",
+            {
+                "key": "reason",
+                "type": "string",
+                "description": "The authentication failure that caused the client to sign out automatically",
+                "enum": ["unknown_account", "invalid_refresh_token"]
+            },
+            {
+                "key": "token_status",
+                "type": "string",
+                "description": "The backend token status for an invalid refresh token, or not_applicable for unknown_account",
+                "enum": ["invalid", "expired", "reused", "logged_out", "fraud_detected", "unknown", "not_applicable"]
+            },
+            {
+                "key": "recovery_outcome",
+                "type": "string",
+                "description": "Whether account recovery was unavailable or failed; not_applicable when recovery is not part of the sign-out path",
+                "enum": ["not_attempted", "failed", "not_applicable"]
+            },
+            {
+                "key": "had_subscription_entitlements_before",
+                "type": "string",
+                "description": "Whether the locally stored access token contained subscription entitlements immediately before the token attempt",
+                "enum": ["present", "absent", "unknown"]
+            },
+            {
+                "key": "access_token_time_remaining_bucket_before",
+                "type": "string",
+                "description": "Bucketed time until the locally stored access token expired, captured immediately before the token attempt",
+                "enum": ["expired", "less_than_1_hour", "1_hour_to_1_day", "1_to_7_days", "7_to_30_days", "more_than_30_days", "unknown"]
+            },
+            {
+                "key": "refresh_token_time_remaining_bucket_before",
+                "type": "string",
+                "description": "Bucketed time until the locally stored refresh token expired, captured immediately before the token attempt",
+                "enum": ["expired", "less_than_1_hour", "1_hour_to_1_day", "1_to_7_days", "7_to_30_days", "more_than_30_days", "unknown"]
+            },
+            {
+                "key": "refresh_token_age_bucket_before",
+                "type": "string",
+                "description": "Bucketed age of the locally stored refresh token immediately before the token attempt; issued_in_future can indicate clock skew",
+                "enum": [
+                    "issued_in_future",
+                    "less_than_1_hour",
+                    "1_hour_to_1_day",
+                    "1_to_7_days",
+                    "7_to_30_days",
+                    "more_than_30_days",
+                    "unknown"
+                ]
+            },
+            {
+                "key": "cached_subscription_status_before",
+                "type": "string",
+                "description": "Status of the subscription cached in the reporting process before sign-out; absence does not mean the backend subscription was inactive",
+                "enum": ["auto_renewable", "not_auto_renewable", "grace_period", "inactive", "expired", "unknown", "not_present_in_process"]
+            },
+            {
+                "key": "cached_subscription_time_remaining_bucket_before",
+                "type": "string",
+                "description": "Bucketed time until the cached subscription expiry or renewal date before sign-out; absence is reported per process",
+                "enum": [
+                    "expired",
+                    "less_than_1_hour",
+                    "1_hour_to_1_day",
+                    "1_to_7_days",
+                    "7_to_30_days",
+                    "more_than_30_days",
+                    "unknown",
+                    "not_present_in_process"
+                ]
+            },
+            {
+                "key": "stored_refresh_token_state_during_attempt",
+                "type": "string",
+                "description": "Whether the locally stored refresh token changed or disappeared between the pre-request snapshot and the failed request",
+                "enum": ["unchanged", "changed", "missing", "read_error", "unavailable_before_attempt"]
+            },
+            {
+                "key": "local_token_state_after_sign_out",
+                "type": "string",
+                "description": "Whether local authentication tokens were actually removed after the automatic sign-out completed",
+                "enum": ["present", "missing", "read_error"]
+            }
+        ]
+    }
+}

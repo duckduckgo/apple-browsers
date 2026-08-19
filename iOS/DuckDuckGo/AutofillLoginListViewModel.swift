@@ -80,6 +80,7 @@ class AutofillLoginListViewModel: ObservableObject {
     private var showBreakageReporter: Bool = false
     private let extensionPromotionManager: AutofillExtensionPromotionManaging
     private let featureFlagger: FeatureFlagger
+    private var authenticationAvailable: Bool?
 
     private lazy var reporterDateFormatter = {
         let dateFormatter = DateFormatter()
@@ -211,11 +212,16 @@ class AutofillLoginListViewModel: ObservableObject {
 
         isAuthenticating = true
 
-        if !authenticator.canAuthenticate() {
+        let authenticationAvailable = authenticator.canAuthenticate()
+        self.authenticationAvailable = authenticationAvailable
+
+        if !authenticationAvailable {
             viewState = .noAuthAvailable
             completion(nil)
             return
         }
+
+        updateViewState()
 
         if viewState != .authLocked {
             completion(nil)
@@ -523,9 +529,9 @@ class AutofillLoginListViewModel: ObservableObject {
     private func updateViewState() {
         var newViewState: AutofillLoginListViewModel.ViewState
         
-        if !authenticator.canAuthenticate() {
+        if authenticationAvailable == false {
             newViewState = .noAuthAvailable
-        } else if authenticator.state == .loggedOut && !authenticationNotRequired {
+        } else if authenticator.state != .loggedIn && !authenticationNotRequired {
             newViewState = .authLocked
         } else if isSearching {
             if sections.count == 0 {

@@ -141,12 +141,22 @@ class SafariHarnessContractTests(unittest.TestCase):
         self.assertIn("  preserve_crash_reports\n", HARNESS)
         # Bounded like every other diagnostic the harness keeps.
         self.assertIn('MAX_CRASH_REPORTS="${MAX_CRASH_REPORTS:-10}"', HARNESS)
-        self.assertIn('[ "$copied" -lt "$MAX_CRASH_REPORTS" ] || return 0', HARNESS)
+        self.assertIn('[ "$copied" -lt "$MAX_CRASH_REPORTS" ] || continue', HARNESS)
         # Scoped to this run, so an unrelated earlier crash is not reported as
         # evidence about this one.
         self.assertIn('-newer "$RUN_START_MARKER"', HARNESS)
         self.assertIn('RUN_START_MARKER="$(mktemp)"', HARNESS)
         self.assertIn('rm -f "$RUN_START_MARKER"', HARNESS)
+
+    def test_crash_report_collection_reports_its_own_outcome(self):
+        """Silence would conflate "nothing crashed" with "cannot read them"."""
+        self.assertIn("found=$candidates kept=$copied", HARNESS)
+        self.assertIn('unreadable="$unreadable $directory"', HARNESS)
+
+    def test_failed_repetition_records_whether_the_browser_survived(self):
+        """invalid-session-id and a dead browser are the same over WebDriver."""
+        self.assertIn('surviving="$(safari_pids | tr \'\\n\' \' \')"', HARNESS)
+        self.assertIn("Safari after failure: ${surviving:-no process}", HARNESS)
 
     def test_diagnostics_artifact_includes_nested_crash_reports(self):
         self.assertIn("path: macOS/scripts/crossbench/safari-diagnostics/**", WORKFLOW)

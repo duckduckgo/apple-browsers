@@ -373,14 +373,19 @@ preserve_diagnostic() {
 preserve_crash_reports() {
   [ "$MAX_CRASH_REPORTS" -gt 0 ] || return 0
   [ -n "$RUN_START_MARKER" ] && [ -f "$RUN_START_MARKER" ] || return 0
-  local directory report destination copied=0
+  local directory report destination copied=0 candidates=0 unreadable=""
   destination="$DIAGNOSTICS_DIR/crash-reports"
   for directory in "$HOME/Library/Logs/DiagnosticReports" \
       /Library/Logs/DiagnosticReports; do
     [ -d "$directory" ] || continue
+    if [ ! -r "$directory" ]; then
+      unreadable="$unreadable $directory"
+      continue
+    fi
     while IFS= read -r report; do
-      [ "$copied" -lt "$MAX_CRASH_REPORTS" ] || return 0
-      mkdir -p "$destination" || return 0
+      candidates=$((candidates + 1))
+      [ "$copied" -lt "$MAX_CRASH_REPORTS" ] || continue
+      mkdir -p "$destination" || continue
       if cp "$report" "$destination/" 2>/dev/null; then
         copied=$((copied + 1))
       fi
@@ -388,6 +393,10 @@ preserve_crash_reports() {
       \( -name '*Safari*' -o -name '*WebContent*' -o -name '*WebKit*' \) \
       -newer "$RUN_START_MARKER" 2>/dev/null | sort)
   done
+  # Report the count even when it is zero. Staying quiet would make "nothing
+  # crashed" and "the reports could not be read" look identical, which is the
+  # one distinction this function exists to provide.
+  echo "    crash reports: found=$candidates kept=$copied${unreadable:+ unreadable:$unreadable}" >&2
 }
 
 preserve_shared_diagnostics() {
@@ -804,7 +813,7 @@ mark_runtime_failure() {
 measure_site() {
   local site="$1" archive rep before output lcp detail landed_url offsite field
   local field_count
-  local automation_status site_harness_failed=0
+  local automation_status site_harness_failed=0 surviving
   local unfinalized=0 no_metric=0 observed=0 recorded=0
   local -a values=()
   reset_measurement_counters
@@ -907,6 +916,12 @@ measure_site() {
     if [ "$automation_status" -ne 0 ]; then
       echo "::warning title=Harness failure::$site: Safari automation exited $automation_status on repetition $rep"
       printf '%s\n' "$output" | tail -20 >&2
+      # A session the driver has dropped and a browser that died report the
+      # same way over WebDriver. Whether a Safari is still alive separates the
+      # two, and it has to be sampled here, before the next repetition quits
+      # whatever is left of this one.
+      surviving="$(safari_pids | tr '\n' ' ')"
+      echo "    rep=$rep: Safari after failure: ${surviving:-no process}" >&2
       site_harness_failed=1
       no_metric=$((no_metric + 1))
       mark_runtime_failure automation command_failed \

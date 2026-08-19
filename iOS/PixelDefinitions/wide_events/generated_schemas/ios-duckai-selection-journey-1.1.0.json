@@ -67,7 +67,14 @@
                                         "terminal_reason": {
                                             "type": "string",
                                             "description": "submitted maps to SUCCESS. Discarding the unsubmitted selections, and the inactivity session expiring with them still attached, map to FAILURE.",
-                                            "enum": ["submitted", "selections_removed", "new_chat", "chat_cleared", "tab_closed", "session_expired"]
+                                            "enum": [
+                                                "submitted",
+                                                "selections_removed",
+                                                "new_chat",
+                                                "chat_cleared",
+                                                "tab_closed",
+                                                "session_expired"
+                                            ]
                                         }
                                     }
                                 },
@@ -129,15 +136,7 @@
                                         "journey_duration_ms_bucketed": {
                                             "type": "string",
                                             "description": "Time from first attachment to the terminal action.",
-                                            "enum": [
-                                                "0",
-                                                "1000",
-                                                "5000",
-                                                "10000",
-                                                "30000",
-                                                "60000",
-                                                "300000"
-                                            ]
+                                            "enum": ["0", "1000", "5000", "10000", "30000", "60000", "300000"]
                                         }
                                     }
                                 }

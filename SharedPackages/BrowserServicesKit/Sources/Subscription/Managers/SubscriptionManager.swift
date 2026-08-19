@@ -791,12 +791,10 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
             return .lessThanOneHour
         case ..<TimeInterval.days(1):
             return .oneHourToOneDay
-        case ..<TimeInterval.days(7):
-            return .oneToSevenDays
-        case ..<TimeInterval.days(30):
-            return .sevenToThirtyDays
+        case ...TimeInterval.days(3):
+            return .oneToThreeDays
         default:
-            return .moreThanThirtyDays
+            return .moreThanThreeDays
         }
     }
 

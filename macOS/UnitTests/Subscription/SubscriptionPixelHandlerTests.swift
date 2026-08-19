@@ -282,12 +282,12 @@ final class SubscriptionPixelHandlerTests: XCTestCase {
             tokenCachePolicy: .localValid,
             entitlementStateBefore: .present,
             accessTokenTimeRemainingBefore: .expired,
-            refreshTokenTimeRemainingBefore: .sevenToThirtyDays,
+            refreshTokenTimeRemainingBefore: .moreThanThreeDays,
             refreshTokenAgeBefore: .oneToSevenDays,
             cachedSubscriptionStatusBefore: .autoRenewable,
             cachedSubscriptionTrialStatusBefore: .active,
             cachedSubscriptionPurchasePlatformBefore: .appStore,
-            cachedSubscriptionTimeRemainingBefore: .sevenToThirtyDays,
+            cachedSubscriptionTimeRemainingBefore: .moreThanThreeDays,
             storedRefreshTokenStateDuringAttempt: .changed,
             localTokenStateAfterSignOut: .missing)
     }

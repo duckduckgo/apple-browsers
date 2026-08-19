@@ -82,9 +82,8 @@ public struct SubscriptionAutomaticSignOutPixelData: Equatable {
         case expired
         case lessThanOneHour = "less_than_1_hour"
         case oneHourToOneDay = "1_hour_to_1_day"
-        case oneToSevenDays = "1_to_7_days"
-        case sevenToThirtyDays = "7_to_30_days"
-        case moreThanThirtyDays = "more_than_30_days"
+        case oneToThreeDays = "1_to_3_days"
+        case moreThanThreeDays = "more_than_3_days"
         case unknown
         case notPresentInProcess = "not_present_in_process"
     }

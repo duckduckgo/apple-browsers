@@ -177,7 +177,7 @@ class SubscriptionManagerTests: XCTestCase {
         XCTAssertEqual(automaticSignOutData.cachedSubscriptionStatusBefore, .autoRenewable)
         XCTAssertEqual(automaticSignOutData.cachedSubscriptionTrialStatusBefore, .active)
         XCTAssertEqual(automaticSignOutData.cachedSubscriptionPurchasePlatformBefore, .appStore)
-        XCTAssertEqual(automaticSignOutData.cachedSubscriptionTimeRemainingBefore, .sevenToThirtyDays)
+        XCTAssertEqual(automaticSignOutData.cachedSubscriptionTimeRemainingBefore, .moreThanThreeDays)
         XCTAssertEqual(automaticSignOutData.storedRefreshTokenStateDuringAttempt, .unchanged)
         XCTAssertEqual(automaticSignOutData.localTokenStateAfterSignOut, .missing)
     }

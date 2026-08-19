@@ -39,13 +39,13 @@
                 "key": "access_token_time_remaining_bucket_before",
                 "type": "string",
                 "description": "Bucketed time until the locally stored access token expired, captured immediately before the token attempt",
-                "enum": ["expired", "less_than_1_hour", "1_hour_to_1_day", "1_to_7_days", "7_to_30_days", "more_than_30_days", "unknown"]
+                "enum": ["expired", "less_than_1_hour", "1_hour_to_1_day", "1_to_3_days", "more_than_3_days", "unknown"]
             },
             {
                 "key": "refresh_token_time_remaining_bucket_before",
                 "type": "string",
                 "description": "Bucketed time until the locally stored refresh token expired, captured immediately before the token attempt",
-                "enum": ["expired", "less_than_1_hour", "1_hour_to_1_day", "1_to_7_days", "7_to_30_days", "more_than_30_days", "unknown"]
+                "enum": ["expired", "less_than_1_hour", "1_hour_to_1_day", "1_to_3_days", "more_than_3_days", "unknown"]
             },
             {
                 "key": "refresh_token_age_bucket_before",
@@ -87,9 +87,8 @@
                     "expired",
                     "less_than_1_hour",
                     "1_hour_to_1_day",
-                    "1_to_7_days",
-                    "7_to_30_days",
-                    "more_than_30_days",
+                    "1_to_3_days",
+                    "more_than_3_days",
                     "unknown",
                     "not_present_in_process"
                 ]
@@ -147,13 +146,13 @@
                 "key": "access_token_time_remaining_bucket_before",
                 "type": "string",
                 "description": "Bucketed time until the locally stored access token expired, captured immediately before the token attempt",
-                "enum": ["expired", "less_than_1_hour", "1_hour_to_1_day", "1_to_7_days", "7_to_30_days", "more_than_30_days", "unknown"]
+                "enum": ["expired", "less_than_1_hour", "1_hour_to_1_day", "1_to_3_days", "more_than_3_days", "unknown"]
             },
             {
                 "key": "refresh_token_time_remaining_bucket_before",
                 "type": "string",
                 "description": "Bucketed time until the locally stored refresh token expired, captured immediately before the token attempt",
-                "enum": ["expired", "less_than_1_hour", "1_hour_to_1_day", "1_to_7_days", "7_to_30_days", "more_than_30_days", "unknown"]
+                "enum": ["expired", "less_than_1_hour", "1_hour_to_1_day", "1_to_3_days", "more_than_3_days", "unknown"]
             },
             {
                 "key": "refresh_token_age_bucket_before",
@@ -195,9 +194,8 @@
                     "expired",
                     "less_than_1_hour",
                     "1_hour_to_1_day",
-                    "1_to_7_days",
-                    "7_to_30_days",
-                    "more_than_30_days",
+                    "1_to_3_days",
+                    "more_than_3_days",
                     "unknown",
                     "not_present_in_process"
                 ]

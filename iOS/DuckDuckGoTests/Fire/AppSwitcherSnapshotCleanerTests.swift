@@ -74,6 +74,7 @@ final class AppSwitcherSnapshotCleanerTests: XCTestCase {
         XCTAssertTrue(fileManager.fileExists(atPath: protectedSceneDirectory.path))
         XCTAssertFalse(fileManager.fileExists(atPath: removableSceneDirectory.path))
         XCTAssertTrue(fileManager.fileExists(atPath: snapshotsDirectory.path))
+        XCTAssertEqual(fileManager.removalAttempts.map(\.lastPathComponent), ["protected-scene", "removable-scene"])
     }
 
     private func makeTemporaryLibraryDirectory() -> URL {
@@ -85,13 +86,26 @@ final class AppSwitcherSnapshotCleanerTests: XCTestCase {
 private final class SelectivelyFailingFileManager: FileManager, @unchecked Sendable {
 
     private let failingItemName: String
+    private(set) var removalAttempts: [URL] = []
 
     init(failingItemName: String) {
         self.failingItemName = failingItemName
         super.init()
     }
 
+    override func contentsOfDirectory(at url: URL,
+                                      includingPropertiesForKeys keys: [URLResourceKey]?,
+                                      options mask: DirectoryEnumerationOptions = []) throws -> [URL] {
+        var items = try super.contentsOfDirectory(at: url, includingPropertiesForKeys: keys, options: mask)
+        guard let failingItemIndex = items.firstIndex(where: { $0.lastPathComponent == failingItemName }) else {
+            return items
+        }
+        let failingItem = items.remove(at: failingItemIndex)
+        return [failingItem] + items.sorted { $0.lastPathComponent < $1.lastPathComponent }
+    }
+
     override func removeItem(at URL: URL) throws {
+        removalAttempts.append(URL)
         guard URL.lastPathComponent != failingItemName else {
             throw NSError(domain: NSCocoaErrorDomain, code: CocoaError.fileWriteNoPermission.rawValue)
         }

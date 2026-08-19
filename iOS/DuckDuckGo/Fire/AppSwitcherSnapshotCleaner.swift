@@ -20,12 +20,12 @@
 import Common
 import Foundation
 
-protocol AppSwitcherSnapshotClearing {
+protocol AppSwitcherSnapshotClearing: Sendable {
     /// Deletes the OS-cached app switcher and launch snapshots in Library/SplashBoard/Snapshots.
     func clearSnapshots() async
 }
 
-struct AppSwitcherSnapshotCleaner: AppSwitcherSnapshotClearing {
+actor AppSwitcherSnapshotCleaner: AppSwitcherSnapshotClearing {
 
     private let fileManager: FileManager
     private let libraryDirectoryOverride: URL?
@@ -37,41 +37,36 @@ struct AppSwitcherSnapshotCleaner: AppSwitcherSnapshotClearing {
     }
 
     func clearSnapshots() async {
-        let fileManager = fileManager
-        let libraryDirectoryOverride = libraryDirectoryOverride
+        guard let libraryDirectory = libraryDirectoryOverride ?? fileManager.urls(for: .libraryDirectory, in: .userDomainMask).first else {
+            return
+        }
 
-        await Task.detached(priority: .utility) {
-            guard let libraryDirectory = libraryDirectoryOverride ?? fileManager.urls(for: .libraryDirectory, in: .userDomainMask).first else {
-                return
-            }
+        let snapshotsDirectory = libraryDirectory
+            .appendingPathComponent("SplashBoard", isDirectory: true)
+            .appendingPathComponent("Snapshots", isDirectory: true)
 
-            let snapshotsDirectory = libraryDirectory
-                .appendingPathComponent("SplashBoard", isDirectory: true)
-                .appendingPathComponent("Snapshots", isDirectory: true)
+        guard fileManager.fileExists(atPath: snapshotsDirectory.path) else {
+            return
+        }
 
-            guard fileManager.fileExists(atPath: snapshotsDirectory.path) else {
-                return
-            }
+        let snapshotItems: [URL]
+        do {
+            snapshotItems = try fileManager.contentsOfDirectory(at: snapshotsDirectory,
+                                                                includingPropertiesForKeys: nil,
+                                                                options: [])
+        } catch {
+            Logger.general.error("Failed to read app switcher snapshots: \(error.localizedDescription, privacy: .public)")
+            return
+        }
 
-            let snapshotItems: [URL]
+        for snapshotItem in snapshotItems {
             do {
-                snapshotItems = try fileManager.contentsOfDirectory(at: snapshotsDirectory,
-                                                                    includingPropertiesForKeys: nil,
-                                                                    options: [])
+                try fileManager.removeItem(at: snapshotItem)
             } catch {
-                Logger.general.error("Failed to read app switcher snapshots: \(error.localizedDescription, privacy: .public)")
-                return
+                let itemName = snapshotItem.lastPathComponent
+                let errorDescription = error.localizedDescription
+                Logger.general.error("Failed to remove snapshot \(itemName, privacy: .public): \(errorDescription, privacy: .public)")
             }
-
-            for snapshotItem in snapshotItems {
-                do {
-                    try fileManager.removeItem(at: snapshotItem)
-                } catch {
-                    let itemName = snapshotItem.lastPathComponent
-                    let errorDescription = error.localizedDescription
-                    Logger.general.error("Failed to remove snapshot \(itemName, privacy: .public): \(errorDescription, privacy: .public)")
-                }
-            }
-        }.value
+        }
     }
 }

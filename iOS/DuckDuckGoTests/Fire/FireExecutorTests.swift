@@ -124,9 +124,15 @@ final class FireExecutorTests: XCTestCase {
 
     actor MockAppSwitcherSnapshotCleaner: AppSwitcherSnapshotClearing {
         private(set) var clearSnapshotsCallCount = 0
+        private let clearSnapshotsStartedExpectation: XCTestExpectation?
+
+        init(clearSnapshotsStartedExpectation: XCTestExpectation? = nil) {
+            self.clearSnapshotsStartedExpectation = clearSnapshotsStartedExpectation
+        }
 
         func clearSnapshots() async {
             clearSnapshotsCallCount += 1
+            clearSnapshotsStartedExpectation?.fulfill()
         }
     }
     
@@ -300,6 +306,26 @@ final class FireExecutorTests: XCTestCase {
 
         let callCount = await mockAppSwitcherSnapshotCleaner.clearSnapshotsCallCount
         XCTAssertEqual(callCount, 0)
+    }
+
+    func testBurnStartsAppSwitcherSnapshotCleanupBeforeTabDomainLookupCompletes() async {
+        mockFeatureFlagger.enabledFeatureFlags.append(.appSwitcherSnapshotClearing)
+        let tabHistoryStartedExpectation = expectation(description: "Tab history lookup started")
+        let snapshotCleanupStartedExpectation = expectation(description: "Snapshot cleanup started")
+        let blockingHistoryManager = BlockingHistoryManager(tabHistoryStartedExpectation: tabHistoryStartedExpectation)
+        mockHistoryManager = blockingHistoryManager
+        let snapshotCleaner = MockAppSwitcherSnapshotCleaner(clearSnapshotsStartedExpectation: snapshotCleanupStartedExpectation)
+        let executor = makeFireExecutor(appSwitcherSnapshotCleaner: snapshotCleaner)
+        let request = makeFireRequest(options: .tabs, scope: .tab(viewModel: makeTabViewModel()))
+
+        let burnTask = Task {
+            await executor.burn(request: request, applicationState: .unknown)
+        }
+
+        await fulfillment(of: [tabHistoryStartedExpectation], timeout: 1.0)
+        await fulfillment(of: [snapshotCleanupStartedExpectation], timeout: 1.0)
+        await blockingHistoryManager.resumeTabHistory()
+        await burnTask.value
     }
 
     private func makeTabViewModel(chatID: String, fireTab: Bool) -> TabViewModel {
@@ -968,5 +994,47 @@ final class FireExecutorTests: XCTestCase {
         await executor.burn(request: makeFireRequest(options: .aiChats, scope: .normalMode), applicationState: .unknown)
 
         XCTAssertEqual(mockHistoryCleaner.lastIsFireMode, false, "Normal-mode burn must route through normal native storage")
+    }
+}
+
+private final class BlockingHistoryManager: MockHistoryManager {
+
+    private let tabHistoryStartedExpectation: XCTestExpectation
+    private let tabHistoryGate = AsyncGate()
+
+    init(tabHistoryStartedExpectation: XCTestExpectation) {
+        self.tabHistoryStartedExpectation = tabHistoryStartedExpectation
+        super.init(historyCoordinator: NullHistoryCoordinator(), isEnabledByUser: false, historyFeatureEnabled: false)
+    }
+
+    override func tabHistory(tabID: String) async throws -> [URL] {
+        tabHistoryStartedExpectation.fulfill()
+        await tabHistoryGate.wait()
+        return []
+    }
+
+    func resumeTabHistory() async {
+        await tabHistoryGate.open()
+    }
+}
+
+private actor AsyncGate {
+
+    private var isOpen = false
+    private var continuation: CheckedContinuation<Void, Never>?
+
+    func wait() async {
+        guard !isOpen else {
+            return
+        }
+        await withCheckedContinuation { continuation in
+            self.continuation = continuation
+        }
+    }
+
+    func open() {
+        isOpen = true
+        continuation?.resume()
+        continuation = nil
     }
 }

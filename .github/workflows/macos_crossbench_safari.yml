@@ -97,17 +97,24 @@ jobs:
           INSTALL_CHROME: "0"
         run: ./provision-macos.sh
 
-      - name: Diagnose safaridriver configuration
-        # TEMPORARY: confirms that `sudo safaridriver --enable` writes the
-        # per-user WebDriver plist into root's home rather than the runner
-        # user's. Remove once the enable step below is proven. Runs BEFORE the
-        # enable step, so it reports the state left by previous runs.
+      - name: Diagnose safaridriver authorization
+        # TEMPORARY: separates "not authorized" from "no console session" as the
+        # reason safaridriver refuses to start. The unified-log dump after a
+        # failed start carries the actual denial reason. Remove once known.
         continue-on-error: true
         run: |
-          echo "ec2-user WebDriver plist:"
-          plutil -p ~/Library/WebDriver/com.apple.Safari.plist 2>&1 || echo "absent for ec2-user"
-          echo "root WebDriver plist:"
-          sudo plutil -p /var/root/Library/WebDriver/com.apple.Safari.plist 2>&1 || echo "absent for root"
+          echo "--- console session owner (expect ec2-user) ---"
+          stat -f '%Su' /dev/console 2>&1
+          echo "--- authorization right ---"
+          security authorizationdb read com.apple.Safari.allow-remote-automation 2>&1 | head -20
+          echo "--- per-user flag ---"
+          plutil -p ~/Library/WebDriver/com.apple.Safari.plist 2>&1 || echo "absent"
+          echo "--- failed start, then its log ---"
+          safaridriver -p 0 & sleep 3; kill %1 2>/dev/null || true
+          log show --last 2m --style compact \
+            --predicate 'process == "safaridriver" OR eventMessage CONTAINS "RemoteAutomation"' 2>&1 \
+            | tail -40 || sudo log show --last 2m --style compact \
+            --predicate 'process == "safaridriver"' 2>&1 | tail -40
 
       - name: Enable safaridriver Remote Automation
         # Two separate pieces of state are required, and GitHub's hosted images

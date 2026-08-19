@@ -31,21 +31,22 @@ struct AppReturnInstrumentationTests {
 
     /// Runs the send as soon as it is handed over, so the existing expectations can stay synchronous.
     private final class ImmediateDelay: PixelTransmissionDelaying {
-        func delaySend(_ send: @escaping () -> Void) {
-            send()
+        func delaySend(_ send: @escaping (@escaping () -> Void) -> Void) {
+            send { }
         }
     }
 
     /// Holds the send until the test releases it, standing in for the randomised wait.
     private final class ManualDelay: PixelTransmissionDelaying {
-        private var pending: (() -> Void)?
+        private var pending: ((@escaping () -> Void) -> Void)?
+        private(set) var requestDidFinish = false
 
-        func delaySend(_ send: @escaping () -> Void) {
+        func delaySend(_ send: @escaping (@escaping () -> Void) -> Void) {
             pending = send
         }
 
         func elapse() {
-            pending?()
+            pending?({ self.requestDidFinish = true })
         }
     }
 
@@ -70,8 +71,9 @@ struct AppReturnInstrumentationTests {
             isToggleEnabled: { toggleEnabled },
             now: { Self.now },
             delay: delay,
-            fireDailyAndCount: { event, params in
+            fireDailyAndCount: { event, params, onComplete in
                 collector.fired.append((event.name, params))
+                onComplete(true, nil)
             })
         return (sut, collector)
     }
@@ -209,6 +211,21 @@ struct AppReturnInstrumentationTests {
 
         #expect(collector.fired.first?.params["idle_threshold_seconds"] == "900")
         #expect(collector.fired.first?.params["exceeded_idle_threshold"] == "true")
+    }
+
+    @available(iOS 16, *)
+    @Test("When the fired pixel completes then the delay is told the request finished", .timeLimit(.minutes(1)))
+    func whenFiredPixelCompletesThenDelayIsToldRequestFinished() {
+        let delay = ManualDelay()
+        let (sut, _) = makeSUT(delay: delay)
+
+        sut.recordAppForeground(lastBackgroundDate: backgroundDate(secondsAgo: 120),
+                                launchAction: .standardLaunch(lastBackgroundDate: nil, isFirstForeground: false))
+        #expect(delay.requestDidFinish == false)
+
+        delay.elapse()
+
+        #expect(delay.requestDidFinish)
     }
 
     // MARK: - Launch source

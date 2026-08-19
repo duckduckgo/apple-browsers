@@ -44,15 +44,15 @@ final class DefaultAppReturnInstrumentation: AppReturnInstrumentation {
     private let isToggleEnabled: () -> Bool
     private let now: () -> Date
     private let delay: PixelTransmissionDelaying
-    private let fireDailyAndCount: (AppReturnPixel, [String: String]) -> Void
+    private let fireDailyAndCount: (AppReturnPixel, [String: String], @escaping PixelKit.CompletionBlock) -> Void
 
     init(eligibilityManager: IdleReturnEligibilityManaging,
          isUnifiedInputAvailable: @escaping () -> Bool = { UnifiedToggleInputFeature().isAvailable },
          isToggleEnabled: @escaping () -> Bool,
          now: @escaping () -> Date = Date.init,
          delay: PixelTransmissionDelaying = PixelTransmissionDelay(),
-         fireDailyAndCount: @escaping (AppReturnPixel, [String: String]) -> Void = { event, params in
-             PixelKit.fire(event, frequency: .dailyAndCount, withAdditionalParameters: params)
+         fireDailyAndCount: @escaping (AppReturnPixel, [String: String], @escaping PixelKit.CompletionBlock) -> Void = { event, params, onComplete in
+             PixelKit.fire(event, frequency: .dailyAndCount, withAdditionalParameters: params, onComplete: onComplete)
          }) {
         self.eligibilityManager = eligibilityManager
         self.isUnifiedInputAvailable = isUnifiedInputAvailable
@@ -85,7 +85,9 @@ final class DefaultAppReturnInstrumentation: AppReturnInstrumentation {
 
         // Defer the whole fire, not just the request: the daily marker is written inside it.
         let fire = fireDailyAndCount
-        delay.delaySend { fire(.appReturn, parameters) }
+        delay.delaySend { requestDidFinish in
+            fire(.appReturn, parameters) { _, _ in requestDidFinish() }
+        }
     }
 
     static func timeAwayBucket(for timeAway: TimeInterval?) -> String {

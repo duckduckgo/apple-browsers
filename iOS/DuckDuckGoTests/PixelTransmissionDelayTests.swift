@@ -45,6 +45,17 @@ struct PixelTransmissionDelayTests {
 
     private final class SendSpy {
         var count = 0
+        private var requestDidFinish: (() -> Void)?
+
+        /// Stands in for a send: records the call and holds its completion until the test finishes it.
+        func send(_ requestDidFinish: @escaping () -> Void) {
+            count += 1
+            self.requestDidFinish = requestDidFinish
+        }
+
+        func finishRequest() {
+            requestDidFinish?()
+        }
     }
 
     private func makeSUT(interval: TimeInterval = 5,
@@ -68,7 +79,7 @@ struct PixelTransmissionDelayTests {
         let (sut, scheduler) = makeSUT(interval: 12)
         let spy = SendSpy()
 
-        sut.delaySend { spy.count += 1 }
+        sut.delaySend(spy.send)
 
         #expect(spy.count == 0)
         #expect(scheduler.interval == 12)
@@ -79,7 +90,7 @@ struct PixelTransmissionDelayTests {
         let (sut, scheduler) = makeSUT()
         let spy = SendSpy()
 
-        sut.delaySend { spy.count += 1 }
+        sut.delaySend(spy.send)
         scheduler.elapse()
 
         #expect(spy.count == 1)
@@ -107,7 +118,7 @@ struct PixelTransmissionDelayTests {
         let (sut, _) = makeSUT(assertion: assertion)
         let spy = SendSpy()
 
-        sut.delaySend { spy.count += 1 }
+        sut.delaySend(spy.send)
         assertion.systemDidReleaseAssertion?()
 
         #expect(spy.count == 1)
@@ -119,34 +130,97 @@ struct PixelTransmissionDelayTests {
         let (sut, scheduler) = makeSUT(assertion: assertion)
         let spy = SendSpy()
 
-        sut.delaySend { spy.count += 1 }
+        sut.delaySend(spy.send)
         assertion.systemDidReleaseAssertion?()
         scheduler.elapse()
 
         #expect(spy.count == 1)
     }
 
-    @Test("When the send runs then the background assertion is released")
-    func whenSendRunsThenAssertionIsReleased() {
+    @Test("When the request is still in flight then the background assertion is still held")
+    func whenRequestIsInFlightThenAssertionIsStillHeld() {
         let assertion = FakeBackgroundAssertion()
         let (sut, scheduler) = makeSUT(assertion: assertion)
+        let spy = SendSpy()
 
-        sut.delaySend { }
+        sut.delaySend(spy.send)
         #expect(assertion.releaseCount == 0)
 
         scheduler.elapse()
+
+        // The send has been kicked off but its request has not come back yet.
+        #expect(spy.count == 1)
+        #expect(assertion.releaseCount == 0)
+    }
+
+    @Test("When the request finishes then the background assertion is released")
+    func whenRequestFinishesThenAssertionIsReleased() {
+        let assertion = FakeBackgroundAssertion()
+        let (sut, scheduler) = makeSUT(assertion: assertion)
+        let spy = SendSpy()
+
+        sut.delaySend(spy.send)
+        scheduler.elapse()
+        spy.finishRequest()
+
         #expect(assertion.releaseCount == 1)
     }
 
-    @Test("When the interval elapses twice then the assertion is released only once")
-    func whenIntervalElapsesTwiceThenAssertionIsReleasedOnce() {
+    @Test("When the request reports completion twice then the assertion is released twice, harmlessly")
+    func whenRequestReportsCompletionTwiceThenReleaseIsIdempotent() {
         let assertion = FakeBackgroundAssertion()
         let (sut, scheduler) = makeSUT(assertion: assertion)
+        let spy = SendSpy()
 
-        sut.delaySend { }
+        // `.dailyAndCount` calls back once per fired variant, and `release()` is documented safe to
+        // call redundantly, so the delay does not need to count completions itself.
+        sut.delaySend(spy.send)
+        scheduler.elapse()
+        spy.finishRequest()
+        spy.finishRequest()
+
+        #expect(assertion.releaseCount == 2)
+    }
+
+    @Test("When the interval elapses twice then the send runs only once")
+    func whenIntervalElapsesTwiceThenSendRunsOnce() {
+        let assertion = FakeBackgroundAssertion()
+        let (sut, scheduler) = makeSUT(assertion: assertion)
+        let spy = SendSpy()
+
+        sut.delaySend(spy.send)
         scheduler.elapse()
         scheduler.elapse()
 
+        #expect(spy.count == 1)
+    }
+
+    @Test("When the release lands off the main thread then it is hopped back onto it")
+    func whenReleaseLandsOffMainThenItIsHoppedOntoMain() {
+        let assertion = FakeBackgroundAssertion()
+        let scheduler = Scheduler()
+        var hops = 0
+        let sut = PixelTransmissionDelay(
+            interval: { 5 },
+            makeAssertion: { assertion },
+            runOnMain: { work in
+                hops += 1
+                work()
+            },
+            schedule: { interval, work in
+                scheduler.interval = interval
+                scheduler.work = work
+            })
+        let spy = SendSpy()
+
+        sut.delaySend(spy.send)
+        scheduler.elapse()
+        #expect(hops == 1)
+
+        // PixelKit's iOS fire request calls back off the main thread, and releasing asserts on it.
+        spy.finishRequest()
+
+        #expect(hops == 2)
         #expect(assertion.releaseCount == 1)
     }
 }
@@ -156,21 +230,30 @@ struct ReturnSessionSendDelayingWideEventSenderTests {
 
     private final class SpyWideEventSender: WideEventSending {
         var sentPixelNames: [String] = []
+        var sentStatuses: [WideEventStatus] = []
+        private var onComplete: PixelKit.CompletionBlock?
 
         func send<T: WideEventData>(_ data: T,
                                     status: WideEventStatus,
                                     featureFlagProvider: WideEventFeatureFlagProviding,
                                     onComplete: @escaping PixelKit.CompletionBlock) {
             sentPixelNames.append(T.metadata.pixelName)
+            sentStatuses.append(status)
+            self.onComplete = onComplete
+        }
+
+        func finishRequest(success: Bool) {
+            onComplete?(success, nil)
         }
     }
 
     private final class ImmediateDelay: PixelTransmissionDelaying {
         var delayedSends = 0
+        private(set) var requestDidFinish = false
 
-        func delaySend(_ send: @escaping () -> Void) {
+        func delaySend(_ send: @escaping (@escaping () -> Void) -> Void) {
             delayedSends += 1
-            send()
+            send { self.requestDidFinish = true }
         }
     }
 
@@ -206,5 +289,39 @@ struct ReturnSessionSendDelayingWideEventSenderTests {
 
         #expect(delay.delayedSends == 0)
         #expect(wrapped.sentPixelNames == ["post_idle_session"])
+    }
+
+    @Test("When the delayed send completes then the caller and the delay are both told")
+    func whenDelayedSendCompletesThenCallerAndDelayAreBothTold() {
+        let wrapped = SpyWideEventSender()
+        let delay = ImmediateDelay()
+        let sut = ReturnSessionSendDelayingWideEventSender(wrapping: wrapped, delay: delay)
+        var reportedSuccess: Bool?
+
+        sut.send(ReturnSessionWideEventData(landedOn: .ntp, afterIdle: true),
+                 status: .cancelled,
+                 featureFlagProvider: StubFeatureFlagProvider(),
+                 onComplete: { success, _ in reportedSuccess = success })
+
+        #expect(reportedSuccess == nil)
+        #expect(delay.requestDidFinish == false)
+
+        wrapped.finishRequest(success: true)
+
+        #expect(reportedSuccess == true)
+        #expect(delay.requestDidFinish)
+    }
+
+    @Test("When an event is wrapped then the status reaches the wrapped sender unchanged")
+    func whenEventIsWrappedThenStatusReachesWrappedSenderUnchanged() {
+        let wrapped = SpyWideEventSender()
+        let sut = ReturnSessionSendDelayingWideEventSender(wrapping: wrapped, delay: ImmediateDelay())
+
+        sut.send(ReturnSessionWideEventData(landedOn: .ntp, afterIdle: true),
+                 status: .success(reason: "search_submitted"),
+                 featureFlagProvider: StubFeatureFlagProvider(),
+                 onComplete: { _, _ in })
+
+        #expect(wrapped.sentStatuses == [.success(reason: "search_submitted")])
     }
 }

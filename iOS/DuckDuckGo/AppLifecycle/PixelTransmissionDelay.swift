@@ -31,8 +31,9 @@ extension QRunInBackgroundAssertion: BackgroundAssertion {}
 
 /// Holds a send back so it does not land in the burst of pixels the app sends when it foregrounds.
 protocol PixelTransmissionDelaying {
-    /// Safe to call from any thread; the send itself runs on the main thread.
-    func delaySend(_ send: @escaping () -> Void)
+    /// Safe to call from any thread; the send itself runs on the main thread. The send must call the
+    /// closure it is handed once its request finished, so the assertion covers the request too.
+    func delaySend(_ send: @escaping (_ requestDidFinish: @escaping () -> Void) -> Void)
 }
 
 final class PixelTransmissionDelay: PixelTransmissionDelaying {
@@ -71,14 +72,15 @@ final class PixelTransmissionDelay: PixelTransmissionDelaying {
         self.schedule = schedule
     }
 
-    func delaySend(_ send: @escaping () -> Void) {
+    func delaySend(_ send: @escaping (@escaping () -> Void) -> Void) {
         let interval = self.interval()
         let makeAssertion = self.makeAssertion
+        let runOnMain = self.runOnMain
         let schedule = self.schedule
 
         // The assertion must be taken now, not when the delay elapses, and is main-thread only.
         runOnMain {
-            let pending = PendingSend(send: send, assertion: makeAssertion())
+            let pending = PendingSend(send: send, assertion: makeAssertion(), runOnMain: runOnMain)
             schedule(interval) { pending.run() }
         }
     }
@@ -88,20 +90,28 @@ final class PixelTransmissionDelay: PixelTransmissionDelaying {
 /// Both arrive on the main thread, so the one-shot guard needs no locking.
 private final class PendingSend {
 
-    private var send: (() -> Void)?
+    private var send: ((@escaping () -> Void) -> Void)?
     private let assertion: BackgroundAssertion?
+    private let runOnMain: (@escaping () -> Void) -> Void
 
-    init(send: @escaping () -> Void, assertion: BackgroundAssertion?) {
+    init(send: @escaping (@escaping () -> Void) -> Void,
+         assertion: BackgroundAssertion?,
+         runOnMain: @escaping (@escaping () -> Void) -> Void) {
         self.send = send
         self.assertion = assertion
+        self.runOnMain = runOnMain
         assertion?.systemDidReleaseAssertion = { [weak self] in self?.run() }
     }
 
     func run() {
         guard let send else { return }
         self.send = nil
-        send()
-        assertion?.release()
+
+        // Handing the assertion to the completion keeps it alive for the request, not just for the
+        // call that starts it. Hop to main because PixelKit calls back off it and releasing cannot.
+        let assertion = self.assertion
+        let runOnMain = self.runOnMain
+        send { runOnMain { assertion?.release() } }
     }
 }
 
@@ -122,15 +132,17 @@ final class ReturnSessionSendDelayingWideEventSender: WideEventSending {
                                 featureFlagProvider: WideEventFeatureFlagProviding,
                                 onComplete: @escaping PixelKit.CompletionBlock) {
         let wrapped = self.wrapped
-        let send = {
-            wrapped.send(data, status: status, featureFlagProvider: featureFlagProvider, onComplete: onComplete)
-        }
 
         guard data is ReturnSessionWideEventData else {
-            send()
+            wrapped.send(data, status: status, featureFlagProvider: featureFlagProvider, onComplete: onComplete)
             return
         }
 
-        delay.delaySend(send)
+        delay.delaySend { requestDidFinish in
+            wrapped.send(data, status: status, featureFlagProvider: featureFlagProvider) { success, error in
+                onComplete(success, error)
+                requestDidFinish()
+            }
+        }
     }
 }

@@ -183,6 +183,8 @@ protocol AIChatUserScriptHandling: AnyObject {
     func voiceSessionEnded(params: Any, message: UserScriptMessage) async -> Encodable?
     func newImageGenerationChatStarted(params: Any, message: UserScriptMessage) async -> Encodable?
     func showModelPicker(params: Any, message: UserScriptMessage) async -> Encodable?
+    func showReasoningPicker(params: Any, message: UserScriptMessage) async -> Encodable?
+    func openAttachmentPicker(params: Any, message: UserScriptMessage) async -> Encodable?
     func disableChatInput(params: Any, message: UserScriptMessage) async -> Encodable?
     func enableChatInput(params: Any, message: UserScriptMessage) async -> Encodable?
     func focusChatInput(params: Any, message: UserScriptMessage) async -> Encodable?
@@ -418,6 +420,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             supportsMultipleContexts: supportsContextualMode && featureFlagger.isFeatureOn(.multiplePageContexts),
             supportsNativeStorage: featureFlagger.isFeatureOn(.aiChatNativeStorage) && isNativeStorageBridgeAvailable,
             supportsNativePromptEditing: featureFlagger.isFeatureOn(.nativeAIPromptEditing) && supportsNativeChatInput,
+            supportsPromoCards: featureFlagger.isFeatureOn(.nativePromoCards) && supportsNativeChatInput,
             supportsSuggestions: supportsSuggestions,
             installType: installTypeProvider(),
             installAge: AIChatNativeConfigValues.installAgeBucket(installDate: installDateProvider())
@@ -622,6 +625,18 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     @MainActor
     func showModelPicker(params: Any, message: UserScriptMessage) async -> Encodable? {
         NotificationCenter.default.post(name: .aiChatShowModelPicker, object: message.messageWebView)
+        return nil
+    }
+    
+    @MainActor
+    func showReasoningPicker(params: Any, message: UserScriptMessage) async -> Encodable? {
+        NotificationCenter.default.post(name: .aiChatShowReasoningPicker, object: message.messageWebView)
+        return nil
+    }
+
+    @MainActor
+    func openAttachmentPicker(params: Any, message: UserScriptMessage) async -> Encodable? {
+        NotificationCenter.default.post(name: .aiChatOpenAttachmentPicker, object: message.messageWebView)
         return nil
     }
 

@@ -1381,7 +1381,13 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     /// so a subsequent supported-model selection still emits `submitChangeModelAction`.
     func presentModelPickerForActiveChat() {
         isModelPickerForcedVisible = true
-        showExpanded(inputMode: .aiChat)
+        // If the bar is already expanded (keyboard kept up), avoid re-running showExpanded (which reloads
+        // the bar); just apply the toolbar so the forced model chip still shows for the recovery flow.
+        if !isInputPaneExpanded {
+            showExpanded(inputMode: .aiChat)
+        } else {
+            applyToolbarPresentation()
+        }
         if isSubmitBlockedByRecoveryCard,
            let supportedModel = modelStore.selectedModel,
            supportedModel.entityHasAccess {
@@ -1396,6 +1402,38 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             if self.viewController.presentModelPickerMenu() {
                 self.fireModelPickerShown()
             }
+        }
+    }
+    
+    /// Surfaces the native reasoning picker on the active chat for the FE's `showReasoningPicker`
+    /// (reasoning promo CTA). No-ops when the current model has no reasoning support.
+    func presentReasoningPickerForActiveChat() {
+        // If the input bar is already expanded (keyboard kept up), just open the picker — don't re-run
+        // showExpanded, which reloads/re-lays-out the bar. Only expand when it's actually collapsed.
+        if !isInputPaneExpanded {
+            showExpanded(inputMode: .aiChat)
+        }
+        // Defer so the toolbar is laid out after the expand animation before opening the menu.
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            if self.viewController.presentReasoningPickerMenu() {
+                self.pixelReporter.reportReasoningPickerShown()
+            }
+        }
+    }
+
+    /// Opens the system file picker on the active chat for the FE's `openAttachmentPicker` (pdf promo
+    /// CTA). Goes straight to the document picker, not the attach menu; no-ops when files can't be
+    /// attached to the active chat.
+    func presentAttachmentPickerForActiveChat() {
+        // If the input bar is already expanded (keyboard kept up), just open the picker — don't re-run
+        // showExpanded, which reloads/re-lays-out the bar. Only expand when it's actually collapsed.
+        if !isInputPaneExpanded {
+            showExpanded(inputMode: .aiChat)
+        }
+        // Defer so the input is expanded (attachment chip has somewhere to land) before presenting.
+        DispatchQueue.main.async { [weak self] in
+            self?.attachmentController.presentFilePicker()
         }
     }
 

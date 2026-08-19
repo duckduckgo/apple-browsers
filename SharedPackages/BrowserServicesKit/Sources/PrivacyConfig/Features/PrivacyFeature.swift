@@ -524,6 +524,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Supports Duck.ai edit prompt from the native input field.
     case nativePromptEditing
 
+    /// Re-enables Duck.ai promo cards on the native input (their CTAs open native pickers).
+    case nativePromoCards
+
     /// Warns users as they approach their daily/weekly Duck.ai limits, using the usage snapshot the
     /// web app writes into the reserved `usageLimits` native-storage entry.
     case usageWarnings

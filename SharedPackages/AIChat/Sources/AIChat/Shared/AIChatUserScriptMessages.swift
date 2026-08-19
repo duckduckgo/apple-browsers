@@ -80,6 +80,12 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
     /// shown for an unsupported model. Native surfaces its model picker for the active chat
     /// (expands the input, reveals the model chip).
     case showModelPicker
+    
+    case showReasoningPicker
+
+    /// Posted by the FE when the user taps a promo card CTA to add an attachment. Native surfaces
+    /// its attachment picker for the active chat.
+    case openAttachmentPicker
 
     /// Posted by the FE while the subscription recovery card is showing for the active chat.
     case disableChatInput

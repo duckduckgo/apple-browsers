@@ -645,6 +645,22 @@ private extension MainViewController {
                 self?.handleShowModelPicker(for: webView)
             }
             .store(in: &unifiedToggleInputCancellables)
+        
+        NotificationCenter.default.publisher(for: .aiChatShowReasoningPicker)
+            .compactMap { $0.object as? WKWebView }
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] webView in
+                self?.handleShowReasoningPicker(for: webView)
+            }
+            .store(in: &unifiedToggleInputCancellables)
+
+        NotificationCenter.default.publisher(for: .aiChatOpenAttachmentPicker)
+            .compactMap { $0.object as? WKWebView }
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] webView in
+                self?.handleOpenAttachmentPicker(for: webView)
+            }
+            .store(in: &unifiedToggleInputCancellables)
     }
 
     /// Routes the FE's `showModelPicker` to the foreground Duck.ai tab's UTI so the user can pick a
@@ -657,6 +673,26 @@ private extension MainViewController {
             return
         }
         coordinator.presentModelPickerForActiveChat()
+    }
+    
+    /// Routes the FE's `showReasoningPicker` (reasoning promo CTA) to the foreground Duck.ai tab's UTI.
+    private func handleShowReasoningPicker(for webView: WKWebView) {
+        let isCurrent = tabManager.controller(forWebView: webView) === currentTab
+        let isAITab = currentTab?.isAITab == true
+        guard isCurrent, isAITab, let coordinator = unifiedToggleInputCoordinator else {
+            return
+        }
+        coordinator.presentReasoningPickerForActiveChat()
+    }
+
+    /// Routes the FE's `openAttachmentPicker` (promo CTA) to the foreground Duck.ai tab's UTI.
+    private func handleOpenAttachmentPicker(for webView: WKWebView) {
+        let isCurrent = tabManager.controller(forWebView: webView) === currentTab
+        let isAITab = currentTab?.isAITab == true
+        guard isCurrent, isAITab, let coordinator = unifiedToggleInputCoordinator else {
+            return
+        }
+        coordinator.presentAttachmentPickerForActiveChat()
     }
 
     /// Updates the foreground tab's UTI to reflect an FE-initiated image-generation chat.

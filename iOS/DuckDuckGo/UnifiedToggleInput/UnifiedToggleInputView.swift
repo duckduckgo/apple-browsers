@@ -255,6 +255,11 @@ final class UnifiedToggleInputView: UIView {
     func presentModelPickerMenu() -> Bool {
         toolsToolbar.presentModelPickerMenu()
     }
+    
+    @discardableResult
+    func presentReasoningPickerMenu() -> Bool {
+        toolsToolbar.presentReasoningPickerMenu()
+    }
 
     var toolsMenu: UIMenu? {
         get { toolsToolbar.toolsMenu }

@@ -256,6 +256,10 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.newImageGenerationChatStarted
         case .showModelPicker:
             return handler.showModelPicker
+        case .showReasoningPicker:
+            return handler.showReasoningPicker
+        case .openAttachmentPicker:
+            return handler.openAttachmentPicker
         case .disableChatInput:
             return handler.disableChatInput
         case .enableChatInput:

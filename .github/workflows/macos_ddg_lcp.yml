@@ -25,6 +25,11 @@ on:
         type: boolean
         required: false
         default: false
+      capture-screenshots:
+        description: "Save a PNG of the first load of each site (diagnostics artifact)"
+        type: boolean
+        required: false
+        default: false
       alert-asana:
         description: "Create Asana subtasks for validation or measurement errors"
         type: boolean
@@ -184,6 +189,7 @@ jobs:
           WPR_ARCHIVES_PREPARED: "1"
           DIAGNOSTICS_DIR: ${{ github.workspace }}/macOS/scripts/crossbench/ddg-diagnostics
           RUNNER_IMAGE: ${{ vars.MACOS_PERFORMANCE_RUNNER_IMAGE || runner.name }}
+          CAPTURE_SCREENSHOTS: ${{ inputs.capture-screenshots && '1' || '0' }}
         run: |
           args=()
           if [ -n "$SITES" ]; then

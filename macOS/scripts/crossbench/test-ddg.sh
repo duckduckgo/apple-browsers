@@ -52,6 +52,7 @@ DDG_AUTOMATION_HOST="${DDG_AUTOMATION_HOST:-::1}"
 
 LOAD_WINDOW_SECONDS="${LOAD_WINDOW_SECONDS:-12}"
 ALLOW_TEST_OVERRIDES="${ALLOW_TEST_OVERRIDES:-0}"
+CAPTURE_SCREENSHOTS="${CAPTURE_SCREENSHOTS:-0}"
 LCP_SETTLE_MS="${LCP_SETTLE_MS:-600}"
 REPETITION_TIMEOUT_SECONDS="${REPETITION_TIMEOUT_SECONDS:-60}"
 SERVICE_START_TIMEOUT_SECONDS="${SERVICE_START_TIMEOUT_SECONDS:-15}"
@@ -91,6 +92,7 @@ bounded_integer REPETITION_TIMEOUT_SECONDS 1 300
 bounded_integer SERVICE_START_TIMEOUT_SECONDS 1 30
 bounded_integer AUTOMATION_READY_TIMEOUT_SECONDS 1 120
 bounded_integer LCP_SETTLE_MS 0 5000
+bounded_integer CAPTURE_SCREENSHOTS 0 1
 bounded_integer MAX_SITE_DIAGNOSTICS 0 22
 bounded_integer MAX_DIAGNOSTIC_BYTES 1 10485760
 bounded_integer MAX_TOTAL_DIAGNOSTIC_BYTES 1 104857600
@@ -831,6 +833,7 @@ measure_site() {
     )"
     command_status=$?
     set -e
+    capture_screenshot "$site" "$rep"
     cleanup_failed=0
     if ! shutdown_app; then
       cleanup_failed=1
@@ -1015,6 +1018,28 @@ record_after_shared_failure() {
     set_runtime_failure 100 "$SHARED_FAILURE_STAGE" \
       "$SHARED_FAILURE_REASON" "$SHARED_FAILURE_DETAIL"
     record_disposition "$site" infra_error
+  fi
+}
+
+# Captures what the page actually looked like when the LCP window closed.
+# A tiny LCP candidate is ambiguous on its own: the page may have rendered
+# fully and simply had no large element to offer, or it may never have painted
+# its content at all. Those two cases produce the same number and different
+# pixels, so only an image separates them. Off by default, and only the first
+# repetition of each site, so a full run cannot balloon the artifact.
+capture_screenshot() {
+  [ "$CAPTURE_SCREENSHOTS" = 1 ] || return 0
+  [ "$2" = 1 ] || return 0
+  local site="$1" rep="$2" out
+  mkdir -p "$DIAGNOSTICS_DIR" || return 0
+  out="$DIAGNOSTICS_DIR/screenshot-$site-rep$rep.png"
+  # Best effort, like the load sampler below: the app is about to be shut down
+  # regardless, and a failed capture must never turn a good measurement into a
+  # failed run.
+  if ! AUTOMATION_TOKEN="$AUTOMATION_TOKEN_VALUE" \
+      "$PYTHON_BIN" "$DDG_AUTOMATION_PY" \
+        "$AUTOMATION_PORT" screenshot "$out" 2>&1; then
+    log "screenshot: capture failed for $site rep=$rep"
   fi
 }
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Drive a Review/debug DuckDuckGo build through its local automation server."""
 
+import base64
 import json
 import math
 import os
@@ -91,6 +92,21 @@ def lcp_probe(settle_ms, load_window_ms):
         "title:document.title});},settleMs);"
         "});"
     )
+
+
+def screenshot(port, out_path):
+    """Save a PNG of the current webview for diagnostics.
+
+    Deliberately not part of measure(): capturing costs an IPC round trip and
+    an image encode, and the harness runs this between repetitions only, so a
+    diagnostic can never inflate the interval it is meant to explain.
+    """
+    message = request(port, "GET", "/screenshot", timeout=60)
+    data = base64.b64decode(message)
+    with open(out_path, "wb") as handle:
+        handle.write(data)
+    print("screenshot: {} bytes={}".format(out_path, len(data)))
+    return 0
 
 
 def check(port):
@@ -194,6 +210,7 @@ USAGE = """usage:
   ddg-automation.py <port> check
   ddg-automation.py <port> shutdown
   ddg-automation.py <port> measure <url> [settle_ms] [load_window_seconds]
+  ddg-automation.py <port> screenshot <out_path>
 
 AUTOMATION_TOKEN must be present in the environment."""
 
@@ -207,6 +224,8 @@ def main(argv):
         return check(port)
     if command == "shutdown":
         return shutdown(port)
+    if command == "screenshot" and len(argv) >= 4:
+        return screenshot(port, argv[3])
     if command == "measure" and len(argv) >= 4:
         settle_ms = float(argv[4]) if len(argv) >= 5 else 600
         load_window = float(argv[5]) if len(argv) >= 6 else 12

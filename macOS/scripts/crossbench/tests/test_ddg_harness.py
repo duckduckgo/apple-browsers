@@ -679,6 +679,39 @@ class DDGHarnessTests(unittest.TestCase):
             [("apple.com", "infra_error"), ("example.com", "measured")],
         )
 
+    def test_screenshots_are_opt_in_and_never_fail_the_run(self):
+        """A tiny LCP candidate and an unpainted page produce the same number."""
+        harness = SCRIPT.read_text(encoding="utf-8")
+        self.assertIn("capture_screenshot() {", harness)
+        self.assertIn('CAPTURE_SCREENSHOTS="${CAPTURE_SCREENSHOTS:-0}"', harness)
+        self.assertIn("bounded_integer CAPTURE_SCREENSHOTS 0 1", harness)
+        # Captured after the measurement and before the app goes away, so the
+        # image shows the page the LCP number was read from.
+        measure_then_capture = harness.index('capture_screenshot "$site" "$rep"')
+        self.assertLess(
+            harness.index('measure "https://$site"'), measure_then_capture
+        )
+        self.assertLess(
+            measure_then_capture,
+            harness.index("if ! shutdown_app", measure_then_capture),
+        )
+        # Diagnostics must not decide whether a run passes: the helper logs
+        # its own failure instead of propagating one under `set -euo pipefail`.
+        body = harness[
+            harness.index("capture_screenshot() {") :
+            harness.index("record_machine_load() {")
+        ]
+        self.assertIn('log "screenshot: capture failed', body)
+        self.assertNotIn("set_shared_failure", body)
+        self.assertNotIn("exit 1", body)
+
+    def test_screenshot_verb_exists_in_automation_client(self):
+        """The harness cannot capture what the client cannot request."""
+        client = (SCRIPT.parent / "ddg-automation.py").read_text(encoding="utf-8")
+        self.assertIn('command == "screenshot"', client)
+        self.assertIn('request(port, "GET", "/screenshot"', client)
+        self.assertIn("base64.b64decode", client)
+
     def test_machine_load_is_recorded_between_sites(self):
         """A run-long transient looks identical to a real regression."""
         harness = SCRIPT.read_text(encoding="utf-8")

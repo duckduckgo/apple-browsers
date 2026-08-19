@@ -38,13 +38,12 @@ enum AIChatPickerSectionCopy {
                                  : UserText.aiChatModelPickerAvailableWithProSectionHeader
     }
 
-    /// Heading for a gated effort's section: the trial while it's still on offer, otherwise the
-    /// plan that unlocks it.
-    static func gatedEffortsHeader(requiredTier: AIChatModelPublicAccessTier?, isEligibleForFreeTrial: Bool) -> String? {
-        if isEligibleForFreeTrial { return UserText.aiChatModelPickerTryFreeSectionHeader }
+    /// Same heading as the models section — what unlocks a gated row depends on the plan the user
+    /// has, not on the row's own tier. Keying off `requiredTier` alone told a trial-spent free user
+    /// their gated effort was "Pro Plan Exclusive" when Plus would have unlocked it too.
+    static func gatedEffortsHeader(requiredTier: AIChatModelPublicAccessTier?, userTier: AIChatUserTier, isEligibleForFreeTrial: Bool) -> String? {
         switch requiredTier {
-        case .plus: return UserText.aiChatModelPickerAvailableWithPlusSectionHeader
-        case .pro: return UserText.aiChatModelPickerAvailableWithProSectionHeader
+        case .plus, .pro: return gatedModelsHeader(userTier: userTier, isEligibleForFreeTrial: isEligibleForFreeTrial)
         case .free, .none: return nil
         }
     }

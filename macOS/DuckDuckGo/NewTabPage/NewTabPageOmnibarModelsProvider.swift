@@ -146,6 +146,7 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
             let sectionHeader = isAvailable || titledGatedSection || !isSubscriptionUpsellEnabled
                 ? nil
                 : AIChatPickerSectionCopy.gatedEffortsHeader(requiredTier: requiredTier,
+                                                            userTier: userTier,
                                                             isEligibleForFreeTrial: isEligibleForFreeTrial)
             titledGatedSection = titledGatedSection || sectionHeader != nil
             return NewTabPageDataModel.AIModelReasoningEffort(

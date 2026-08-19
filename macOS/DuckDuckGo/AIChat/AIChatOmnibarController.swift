@@ -1531,7 +1531,7 @@ extension AIChatOmnibarController {
             let isGated = requiredTier != nil
             // Only the first gated effort heads the section.
             let sectionTitle = isGated && isSubscriptionUpsellEnabled && !titledGatedSection
-                ? AIChatPickerSectionCopy.gatedEffortsHeader(requiredTier: requiredTier, isEligibleForFreeTrial: shouldOfferFreeTrial)
+                ? AIChatPickerSectionCopy.gatedEffortsHeader(requiredTier: requiredTier, userTier: userTier, isEligibleForFreeTrial: shouldOfferFreeTrial)
                 : nil
             titledGatedSection = titledGatedSection || sectionTitle != nil
             items.append(AIChatReasoningPickerItem(

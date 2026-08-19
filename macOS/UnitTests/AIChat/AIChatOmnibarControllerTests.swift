@@ -2283,8 +2283,9 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         XCTAssertEqual(open?.routesToUpsell, false, "An accessible effort is a plain selection, not an upsell")
     }
 
-    /// Trial spent: the heading names the plan that unlocks the effort instead of the trial.
-    func testReasoningPickerItems_freeUserTrialIneligible_headingNamesTheRequiredPlan() async {
+    /// Trial spent: a non-subscriber's gated efforts read as subscriber-only, not Pro-only — Plus
+    /// unlocks them too, so keying the heading off the effort's own tier was wrong.
+    func testReasoningPickerItems_freeUserTrialIneligible_headingNamesThePaidPlans() async {
         featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarReasoningEffort.rawValue] = true
         featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarSubscriptionUpsell.rawValue] = true
         mockPreferences.selectedModelId = "reasoning-model"
@@ -2292,7 +2293,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
 
         let gated = controller.reasoningPickerItems().first { $0.effort == .medium }
 
-        XCTAssertEqual(gated?.gatedSectionTitle, UserText.aiChatModelPickerAvailableWithPlusSectionHeader)
+        XCTAssertEqual(gated?.gatedSectionTitle, UserText.aiChatModelPickerAvailableWithPaidPlansSectionHeader)
     }
 
     func testReasoningPickerItems_upsellOff_gatedEffortHasNoHeadingAndNoUpsell() async {

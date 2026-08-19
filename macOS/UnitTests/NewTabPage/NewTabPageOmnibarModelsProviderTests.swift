@@ -633,7 +633,7 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
 
         XCTAssertEqual(efforts?.map(\.isAvailable), [true, false, false])
         XCTAssertNil(efforts?.first?.gatedSectionHeader)
-        XCTAssertEqual(efforts?[1].gatedSectionHeader, UserText.aiChatModelPickerAvailableWithPlusSectionHeader)
+        XCTAssertEqual(efforts?[1].gatedSectionHeader, UserText.aiChatModelPickerAvailableWithPaidPlansSectionHeader)
         XCTAssertNil(efforts?[2].gatedSectionHeader)
     }
 

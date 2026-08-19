@@ -83,8 +83,7 @@ final class DefaultAppReturnInstrumentation: AppReturnInstrumentation {
             "launch_source": Self.launchSource(for: launchAction)
         ]
 
-        // The whole fire is deferred, not just the request: the daily marker is written inside it,
-        // so delaying only the request would mark the day as sent while the send can still be lost.
+        // Defer the whole fire, not just the request: the daily marker is written inside it.
         let fire = fireDailyAndCount
         delay.delaySend { fire(.appReturn, parameters) }
     }

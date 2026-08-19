@@ -21,7 +21,7 @@ import Foundation
 import UIKit
 import PixelKit
 
-/// The part of `QRunInBackgroundAssertion` needed here, so the delay can be exercised without `UIApplication`.
+/// The part of `QRunInBackgroundAssertion` needed here, so tests can run without `UIApplication`.
 protocol BackgroundAssertion: AnyObject {
     var systemDidReleaseAssertion: (() -> Void)? { get set }
     func release()
@@ -29,18 +29,15 @@ protocol BackgroundAssertion: AnyObject {
 
 extension QRunInBackgroundAssertion: BackgroundAssertion {}
 
-/// Holds a measurement back so it does not land in the burst of pixels the app sends when it
-/// foregrounds. Sends within that burst group into one session, and a time-away parameter sent
-/// alongside them then points back to the previous burst.
+/// Holds a send back so it does not land in the burst of pixels the app sends when it foregrounds.
 protocol PixelTransmissionDelaying {
-    /// Must be safe to call from any thread; the send itself runs on the main thread.
+    /// Safe to call from any thread; the send itself runs on the main thread.
     func delaySend(_ send: @escaping () -> Void)
 }
 
 final class PixelTransmissionDelay: PixelTransmissionDelaying {
 
-    /// Agreed with Privacy Triage. The upper bound also matches the background execution window
-    /// iOS grants, so a send drawn at the top of the range still runs if the user leaves at once.
+    /// Agreed with Privacy Triage; the upper bound also matches the background window iOS grants.
     static let range: ClosedRange<TimeInterval> = 1...30
 
     static func randomInterval() -> TimeInterval {
@@ -79,8 +76,7 @@ final class PixelTransmissionDelay: PixelTransmissionDelaying {
         let makeAssertion = self.makeAssertion
         let schedule = self.schedule
 
-        // The assertion has to be taken now rather than when the delay elapses, and both it and
-        // its callback are main-thread only.
+        // The assertion must be taken now, not when the delay elapses, and is main-thread only.
         runOnMain {
             let pending = PendingSend(send: send, assertion: makeAssertion())
             schedule(interval) { pending.run() }
@@ -88,8 +84,8 @@ final class PixelTransmissionDelay: PixelTransmissionDelaying {
     }
 }
 
-/// Sends once, on whichever comes first: the delay elapsing, or the system reclaiming the
-/// assertion. Both arrive on the main thread, so the one-shot guard needs no locking.
+/// Sends once, on whichever comes first: the delay elapsing or the assertion being reclaimed.
+/// Both arrive on the main thread, so the one-shot guard needs no locking.
 private final class PendingSend {
 
     private var send: (() -> Void)?
@@ -109,11 +105,8 @@ private final class PendingSend {
     }
 }
 
-/// Applies the transmission delay to the return-session event only. Every other wide event is sent
-/// as it was: none of the others carry a time-away parameter pointing back to a previous session.
-///
-/// This sits at the send seam, which `WideEvent.completeFlow` reaches only after removing the flow
-/// from storage, so a delayed send can never be completed a second time by the orphan sweep.
+/// Delays the return-session event only. Sits at the send seam, which `completeFlow` reaches
+/// after removing the flow from storage, so a delayed send is out of reach of the orphan sweep.
 final class ReturnSessionSendDelayingWideEventSender: WideEventSending {
 
     private let wrapped: WideEventSending

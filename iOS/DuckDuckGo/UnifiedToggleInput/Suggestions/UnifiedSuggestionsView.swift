@@ -25,14 +25,14 @@ struct UnifiedSuggestionsView: View {
 
     @ObservedObject var viewModel: UnifiedSuggestionsViewModel
     let isAddressBarAtBottom: Bool
+    let syncPromo: AnyView?
     /// Built lazily by the host for the `.favorites` state; nil when favorites aren't supported (Duck.ai).
     let favoritesProvider: () -> NewTabPageViewController?
 
     var body: some View {
-        // The chrome (escape hatch + sync-promo) is pinned to the bar by the container (it rides the
-        // bar's UIKit animation in the same layout pass), so it's not in this host. The logo overlays
-        // the content, anchored to the keyboard (the host's fixed bottom) so neither the bar-driven top
-        // inset nor a Search↔Duck.ai toggle moves it.
+        // The escape hatch is pinned to the bar by the container while the sync promo scrolls with
+        // recents. The logo overlays the content, anchored to the keyboard (the host's fixed bottom) so
+        // neither the bar-driven top inset nor a Search↔Duck.ai toggle moves it.
         ZStack(alignment: .bottom) {
             contentArea
             logoLayer
@@ -87,7 +87,8 @@ struct UnifiedSuggestionsView: View {
 
     private var listLayer: some View {
         SuggestionsListView(viewModel: viewModel.listViewModel(for: activeListKind),
-                            isAddressBarAtBottom: isAddressBarAtBottom)
+                            isAddressBarAtBottom: isAddressBarAtBottom,
+                            syncPromo: activeListKind == .recents ? syncPromo : nil)
             .opacity(isShowingList ? 1 : 0)
             // Fade *in* on a mode change, but snap *out* — otherwise the recents list lingers over the
             // Search favorites/logo (which snap in instantly) when toggling away from Duck.ai.

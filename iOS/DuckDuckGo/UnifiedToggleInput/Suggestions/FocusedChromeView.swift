@@ -19,42 +19,16 @@
 
 import SwiftUI
 
-/// The bar-pinned chrome shown above the focused suggestions in non-typing states: the escape hatch
-/// plus the optional Duck.ai sync-promo. The container pins this to the bar (so it rides the bar's
-/// animation in the same layout pass) and reserves its reported height for the content below it.
-/// Owns the chrome's own spacing/margins so they live in one place.
+/// The bar-pinned escape hatch shown above the focused suggestions in non-typing states.
 struct FocusedChromeView: View {
 
     let hatchModel: EscapeHatchModel?
-    let syncPromo: AnyView?
     /// Gap between the bar's edge and the first chrome element (Figma: 6 top bar, 16 bottom bar).
     let topInset: CGFloat
-    /// Reports the chrome's laid-out height so the container can inset the content below it. 0 when empty.
-    let onHeightChange: (CGFloat) -> Void
-
-    private var hasContent: Bool { hatchModel != nil || syncPromo != nil }
 
     var body: some View {
-        content
-            .background(
-                GeometryReader { proxy in
-                    Color.clear.onChange(of: proxy.size.height) { onHeightChange($0) }
-                        .onAppear { onHeightChange(proxy.size.height) }
-                }
-            )
-    }
-
-    @ViewBuilder
-    private var content: some View {
-        if hasContent {
-            VStack(spacing: Metrics.interCardSpacing) {
-                if let hatchModel {
-                    EscapeHatchView(model: hatchModel)
-                }
-                if let syncPromo {
-                    syncPromo
-                }
-            }
+        if let hatchModel {
+            EscapeHatchView(model: hatchModel)
             .padding(.horizontal, Metrics.horizontalMargin)
             .padding(.top, topInset)
             .padding(.bottom, Metrics.bottomInset)
@@ -71,6 +45,5 @@ struct FocusedChromeView: View {
         /// Kept in step with `SuggestionsListView`'s cell edge so the hatch aligns with the rows.
         static let horizontalMargin: CGFloat = 16
         static let bottomInset: CGFloat = 16
-        static let interCardSpacing: CGFloat = 20
     }
 }

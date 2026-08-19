@@ -125,8 +125,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private lazy var aiChatSyncPromoViewModel: AIChatSyncPromoViewModel? =
         syncPromoManager.map { AIChatSyncPromoViewModel(syncPromoManager: $0,
                                                         recentModalPromptStatusProvider: recentModalPromptStatusProvider) }
-    /// Built once and rebound into the pinned chrome by `updatePinnedChrome`; its show/hide rides
-    /// `isSyncPromoCardVisible`, so there's no need to reconstruct it each time.
+    /// Built once and inserted into the recent-chats list when eligible.
     private lazy var syncPromoView = AnyView(AIChatSyncPromoView(
         onCTATap: { [weak self] in self?.handleSyncPromoCTATap() },
         onCloseTap: { [weak self] in self?.handleSyncPromoClose() }))
@@ -137,13 +136,10 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private var needsVisibleRefresh = true
     private var requestedContentInset: (top: CGFloat, bottom: CGFloat) = (0, 0)
     private var escapeHatchModel: EscapeHatchModel?
-    /// Pins the sync promo and non-favorites hatch to the bar; the NTP owns the hatch while it scrolls with favorites.
+    /// Pins the non-favorites hatch to the bar; the NTP owns the hatch while it scrolls with favorites.
     private var chromeHostingController: UIHostingController<FocusedChromeView>?
     private var chromeTopConstraint: NSLayoutConstraint?
     private var chromeHeightConstraint: NSLayoutConstraint?
-    /// Async-measured chrome height — used only for the variable-height sync-promo case (Duck.ai).
-    private var chromeMeasuredHeight: CGFloat = 0
-    private var isSyncPromoCardVisible = false
 
     private var notificationCancellable: AnyCancellable?
 
@@ -344,14 +340,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     }
 
     func setEscapeHatch(_ model: EscapeHatchModel?) {
-        let hatchPresenceChanged = (escapeHatchModel != nil) != (model != nil)
         escapeHatchModel = model
         applyEscapeHatchPlacement()
         updateSingleHostTopOffset()
-        // The sync-promo sits below the hatch, so its layout changes when the hatch is added/removed.
-        if hatchPresenceChanged {
-            refreshSyncPromoIfActive()
-        }
         if isContentActive {
             applyRequestedContentInset()
         }
@@ -359,22 +350,11 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
     private func updatePinnedChrome() {
         let hatchModel = shouldShowPinnedHatch ? escapeHatchModel : nil
-        let promo: AnyView? = isSyncPromoCardVisible ? syncPromoView : nil
-        guard hatchModel != nil || promo != nil || chromeHostingController != nil else { return }
+        guard hatchModel != nil || chromeHostingController != nil else { return }
 
         let rootView = FocusedChromeView(
             hatchModel: hatchModel,
-            syncPromo: promo,
-            topInset: chromeTopInsetForPosition,
-            onHeightChange: { [weak self] height in
-                guard let self, self.chromeMeasuredHeight != height else { return }
-                self.chromeMeasuredHeight = height
-                // Only the sync-promo case relies on the measured height; the hatch-only case uses a
-                // synchronous known height so empty-state content does not jump.
-                guard self.isSyncPromoCardVisible else { return }
-                self.chromeHeightConstraint?.constant = self.currentChromeReservedHeight
-                self.applyHostContentInsets()
-            })
+            topInset: chromeTopInsetForPosition)
 
         if let hostingController = chromeHostingController {
             hostingController.rootView = rootView
@@ -452,13 +432,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     }
 
     private var currentChromeReservedHeight: CGFloat {
-        if isSyncPromoCardVisible {
-            return chromeMeasuredHeight
-        } else if shouldShowPinnedHatch {
-            return chromeTopInsetForPosition + TabSwitcherPill.compactSize + FocusedChromeView.Metrics.bottomInset
-        } else {
-            return 0
-        }
+        shouldShowPinnedHatch
+            ? chromeTopInsetForPosition + TabSwitcherPill.compactSize + FocusedChromeView.Metrics.bottomInset
+            : 0
     }
 
     private func applyEscapeHatchPlacement() {
@@ -916,8 +892,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         updateSingleHostTopOffset()
 
         // Pinned chrome: track the bar (the constant updates inside the bar's animation here, so it
-        // glides in the same pass), rebind its content for the current state, and reserve its measured
-        // height only while the hatch or sync-promo belongs outside the scrolling content.
+        // glides in the same pass), rebind its content for the current state, and reserve the hatch height.
         chromeTopConstraint?.constant = pinnedChromeTopConstant
         updatePinnedChrome()
         chromeHeightConstraint?.constant = currentChromeReservedHeight
@@ -925,8 +900,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         contentContainerView.layoutIfNeeded()
     }
 
-    /// Refreshes derived bar chrome (the Duck.ai sync-promo) after a content/visibility change. The
-    /// focused empty state itself now renders in the SwiftUI host, so there's no logo to update here.
+    /// Refreshes the Duck.ai sync promo after a content/visibility change.
     private func refreshSyncPromoIfActive() {
         guard isContentActive else {
             markNeedsVisibleRefresh()
@@ -935,8 +909,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         updateSyncPromo()
     }
 
-    /// Shows the Duck.ai sync-promo card below the escape hatch in the not-typing state, mirroring
-    /// the legacy Duck.ai suggestions header. Gated by the sync-promo manager + recents count.
+    /// Shows the Duck.ai sync-promo card above recent chats in their scrollable list. Gated by the
+    /// sync-promo manager + recents count.
     private func updateSyncPromo() {
         guard let promoViewModel = aiChatSyncPromoViewModel else { return }
 
@@ -947,19 +921,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             && (duckAISurface?.isAttached ?? false)
             && promoViewModel.shouldShowPromo(isQueryActive: isTyping, chatCount: duckAISurface?.recentsCount ?? 0)
 
-        // The sync-promo rides the bar-pinned chrome (not the host), so toggling its visibility just
-        // rebinds the chrome; the content inset follows from the chrome's reported height.
-        let wasVisible = isSyncPromoCardVisible
-        isSyncPromoCardVisible = shouldShow
-        updatePinnedChrome()
-        // On hide, the reserved height was the promo's async-measured one and `onHeightChange` is gated
-        // to the visible case — so re-apply the now-synchronous reserved height (hatch or 0) here, or
-        // the content (recents) stays pushed down where the promo was.
-        if wasVisible && !shouldShow {
-            chromeHeightConstraint?.constant = currentChromeReservedHeight
-            applyHostContentInsets()
-            contentContainerView.layoutIfNeeded()
-        }
+        unifiedSuggestionsHost?.setSyncPromo(shouldShow ? syncPromoView : nil)
         promoViewModel.recordImpressionIfNeeded(isVisibleContent: isContentActive, isPromoVisible: shouldShow)
     }
 

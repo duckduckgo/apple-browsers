@@ -21,12 +21,13 @@ import Combine
 import DesignResourcesKit
 import SwiftUI
 
-/// The data-driven suggestion sections (the scrolling rows). The escape hatch + sync promo are
-/// chrome rendered above this by `UnifiedSuggestionsView`. Replaces `DuckAISuggestionsViewController`'s table.
+/// The data-driven suggestion sections (the scrolling rows), including the optional Duck.ai sync promo.
+/// Replaces `DuckAISuggestionsViewController`'s table.
 struct SuggestionsListView: View {
 
     @ObservedObject var viewModel: SuggestionsListViewModel
     let isAddressBarAtBottom: Bool
+    var syncPromo: AnyView?
     var isFloatingPopover: Bool = false
 
     private enum Metrics {
@@ -34,6 +35,8 @@ struct SuggestionsListView: View {
         static let listTopInset: CGFloat = 6
         static let popoverVerticalInset: CGFloat = 12
         static let popoverSectionSpacing: CGFloat = 10
+        static let syncPromoBottomBarTopInset: CGFloat = 4
+        static let syncPromoBottomInset: CGFloat = 16
         /// Per Figma: single-line rows use 15pt top/bottom padding; rows with a subtitle use 14pt
         static let rowVerticalPaddingSingleLine: CGFloat = 15
         static let rowVerticalPaddingWithSubtitle: CGFloat = 14
@@ -47,6 +50,14 @@ struct SuggestionsListView: View {
     var body: some View {
         ScrollViewReader { proxy in
             List {
+                if let syncPromo {
+                    syncPromo
+                        .padding(.top, isAddressBarAtBottom ? Metrics.syncPromoBottomBarTopInset : 0)
+                        .padding(.bottom, Metrics.syncPromoBottomInset)
+                        .listRowInsets(EdgeInsets())
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                }
                 ForEach(viewModel.sections) { section in
                     Section {
                         rows(for: section)

@@ -67,6 +67,18 @@
                 "enum": ["auto_renewable", "not_auto_renewable", "grace_period", "inactive", "expired", "unknown", "not_present_in_process"]
             },
             {
+                "key": "cached_subscription_trial_status_before",
+                "type": "string",
+                "description": "Whether the subscription cached in the reporting process had an active free-trial offer before sign-out",
+                "enum": ["active", "not_active", "not_present_in_process"]
+            },
+            {
+                "key": "cached_subscription_purchase_platform_before",
+                "type": "string",
+                "description": "Purchase platform of the subscription cached in the reporting process before sign-out",
+                "enum": ["app_store", "play_store", "stripe", "unknown", "not_present_in_process"]
+            },
+            {
                 "key": "cached_subscription_time_remaining_bucket_before",
                 "type": "string",
                 "description": "Bucketed time until the cached subscription expiry or renewal date before sign-out; absence is reported per process",

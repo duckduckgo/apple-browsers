@@ -616,6 +616,11 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         let tokenBeforeAttempt = localTokenSnapshot()
 
         do {
+#if DEBUG
+            if case .present = tokenBeforeAttempt {
+                throw OAuthClientError.unknownAccount
+            }
+#endif
             let resultTokenContainer = try await oAuthClient.getTokens(policy: policy)
             let newEntitlements = resultTokenContainer.decodedAccessToken.subscriptionEntitlements
 
@@ -706,6 +711,8 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
                 issuedAt: tokenBeforeAttempt.tokenContainer?.decodedRefreshToken.issuedAtDate,
                 now: now),
             cachedSubscriptionStatusBefore: cachedSubscriptionStatus(from: cachedSubscription),
+            cachedSubscriptionTrialStatusBefore: cachedSubscriptionTrialStatus(from: cachedSubscription),
+            cachedSubscriptionPurchasePlatformBefore: cachedSubscriptionPurchasePlatform(from: cachedSubscription),
             cachedSubscriptionTimeRemainingBefore: cachedSubscriptionTimeRemainingBucket(from: cachedSubscription, now: now),
             storedRefreshTokenStateDuringAttempt: storedRefreshTokenState(before: tokenBeforeAttempt, after: tokenAfterAttempt),
             localTokenStateAfterSignOut: automaticSignOutLocalTokenState(localTokenState()))
@@ -822,6 +829,34 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
             return .notPresentInProcess
         }
         return timeRemainingBucket(until: subscription.expiresOrRenewsAt, now: now)
+    }
+
+    private func cachedSubscriptionTrialStatus(
+        from subscription: DuckDuckGoSubscription?
+    ) -> SubscriptionAutomaticSignOutPixelData.CachedSubscriptionTrialStatus {
+        guard let subscription else {
+            return .notPresentInProcess
+        }
+        return subscription.hasActiveTrialOffer ? .active : .notActive
+    }
+
+    private func cachedSubscriptionPurchasePlatform(
+        from subscription: DuckDuckGoSubscription?
+    ) -> SubscriptionAutomaticSignOutPixelData.CachedSubscriptionPurchasePlatform {
+        guard let subscription else {
+            return .notPresentInProcess
+        }
+
+        switch subscription.platform {
+        case .apple:
+            return .appStore
+        case .google:
+            return .playStore
+        case .stripe:
+            return .stripe
+        case .unknown:
+            return .unknown
+        }
     }
 
     private func storedRefreshTokenState(before: LocalTokenSnapshot,

@@ -99,6 +99,20 @@ public struct SubscriptionAutomaticSignOutPixelData: Equatable {
         case notPresentInProcess = "not_present_in_process"
     }
 
+    public enum CachedSubscriptionTrialStatus: String {
+        case active
+        case notActive = "not_active"
+        case notPresentInProcess = "not_present_in_process"
+    }
+
+    public enum CachedSubscriptionPurchasePlatform: String {
+        case appStore = "app_store"
+        case playStore = "play_store"
+        case stripe
+        case unknown
+        case notPresentInProcess = "not_present_in_process"
+    }
+
     public enum StoredRefreshTokenState: String {
         case unchanged
         case changed
@@ -122,6 +136,8 @@ public struct SubscriptionAutomaticSignOutPixelData: Equatable {
     public let refreshTokenTimeRemainingBefore: TimeRemainingBucket
     public let refreshTokenAgeBefore: TokenAgeBucket
     public let cachedSubscriptionStatusBefore: CachedSubscriptionStatus
+    public let cachedSubscriptionTrialStatusBefore: CachedSubscriptionTrialStatus
+    public let cachedSubscriptionPurchasePlatformBefore: CachedSubscriptionPurchasePlatform
     public let cachedSubscriptionTimeRemainingBefore: TimeRemainingBucket
     public let storedRefreshTokenStateDuringAttempt: StoredRefreshTokenState
     public let localTokenStateAfterSignOut: LocalTokenState
@@ -135,6 +151,8 @@ public struct SubscriptionAutomaticSignOutPixelData: Equatable {
                 refreshTokenTimeRemainingBefore: TimeRemainingBucket,
                 refreshTokenAgeBefore: TokenAgeBucket,
                 cachedSubscriptionStatusBefore: CachedSubscriptionStatus,
+                cachedSubscriptionTrialStatusBefore: CachedSubscriptionTrialStatus,
+                cachedSubscriptionPurchasePlatformBefore: CachedSubscriptionPurchasePlatform,
                 cachedSubscriptionTimeRemainingBefore: TimeRemainingBucket,
                 storedRefreshTokenStateDuringAttempt: StoredRefreshTokenState,
                 localTokenStateAfterSignOut: LocalTokenState) {
@@ -147,6 +165,8 @@ public struct SubscriptionAutomaticSignOutPixelData: Equatable {
         self.refreshTokenTimeRemainingBefore = refreshTokenTimeRemainingBefore
         self.refreshTokenAgeBefore = refreshTokenAgeBefore
         self.cachedSubscriptionStatusBefore = cachedSubscriptionStatusBefore
+        self.cachedSubscriptionTrialStatusBefore = cachedSubscriptionTrialStatusBefore
+        self.cachedSubscriptionPurchasePlatformBefore = cachedSubscriptionPurchasePlatformBefore
         self.cachedSubscriptionTimeRemainingBefore = cachedSubscriptionTimeRemainingBefore
         self.storedRefreshTokenStateDuringAttempt = storedRefreshTokenStateDuringAttempt
         self.localTokenStateAfterSignOut = localTokenStateAfterSignOut
@@ -163,6 +183,8 @@ public struct SubscriptionAutomaticSignOutPixelData: Equatable {
             "refresh_token_time_remaining_bucket_before": refreshTokenTimeRemainingBefore.rawValue,
             "refresh_token_age_bucket_before": refreshTokenAgeBefore.rawValue,
             "cached_subscription_status_before": cachedSubscriptionStatusBefore.rawValue,
+            "cached_subscription_trial_status_before": cachedSubscriptionTrialStatusBefore.rawValue,
+            "cached_subscription_purchase_platform_before": cachedSubscriptionPurchasePlatformBefore.rawValue,
             "cached_subscription_time_remaining_bucket_before": cachedSubscriptionTimeRemainingBefore.rawValue,
             "stored_refresh_token_state_during_attempt": storedRefreshTokenStateDuringAttempt.rawValue,
             "local_token_state_after_sign_out": localTokenStateAfterSignOut.rawValue

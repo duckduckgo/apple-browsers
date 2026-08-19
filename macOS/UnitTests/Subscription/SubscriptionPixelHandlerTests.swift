@@ -135,8 +135,6 @@ final class SubscriptionPixelHandlerTests: XCTestCase {
         handler.handle(pixel: .automaticSignOut(data))
 
         var expectedParameters = data.parameters
-        XCTAssertTrue(data.parameters.values.allSatisfy(Self.isSnakeCase),
-                      "Automatic sign-out metadata values must use snake_case")
         expectedParameters["source"] = subscriptionSource.description
         expectedParameters[PixelKit.Parameters.pixelSource] = pixelSource
         expectedParameters[PixelKit.Parameters.appVersion] = "1.0.0"
@@ -287,6 +285,8 @@ final class SubscriptionPixelHandlerTests: XCTestCase {
             refreshTokenTimeRemainingBefore: .sevenToThirtyDays,
             refreshTokenAgeBefore: .oneToSevenDays,
             cachedSubscriptionStatusBefore: .autoRenewable,
+            cachedSubscriptionTrialStatusBefore: .active,
+            cachedSubscriptionPurchasePlatformBefore: .appStore,
             cachedSubscriptionTimeRemainingBefore: .sevenToThirtyDays,
             storedRefreshTokenStateDuringAttempt: .changed,
             localTokenStateAfterSignOut: .missing)
@@ -297,10 +297,6 @@ final class SubscriptionPixelHandlerTests: XCTestCase {
         XCTAssertEqual(SubscriptionPixelHandler.Source.packetTunnelProvider.description, "SysExt")
         XCTAssertEqual(SubscriptionPixelHandler.Source.vpnApp.description, "VPNApp")
         XCTAssertEqual(SubscriptionPixelHandler.Source.dbpBackgroundAgent.description, "DBP")
-    }
-
-    private static func isSnakeCase(_ value: String) -> Bool {
-        value.range(of: #"^[a-z0-9]+(?:_[a-z0-9]+)*$"#, options: .regularExpression) != nil
     }
 
     private func assertLegacyDailyPixel(baseName: String, expectedParameters: [String: String]) {

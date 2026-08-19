@@ -148,7 +148,9 @@ class SubscriptionManagerTests: XCTestCase {
     func testGetTokenContainer_UnknownAccount_SendsGetTokensError() async throws {
         let tokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
         mockOAuthClient.internalCurrentTokenContainer = tokenContainer
-        mockSubscriptionCachingService.cachedSubscription = SubscriptionMockFactory.appleSubscription
+        mockSubscriptionCachingService.cachedSubscription = SubscriptionMockFactory.subscription(
+            status: .autoRenewable,
+            activeOffers: [DuckDuckGoSubscription.Offer(type: .trial)])
         mockOAuthClient.getTokensResponse = .failure(OAuthClientError.unknownAccount)
 
         do {
@@ -173,6 +175,8 @@ class SubscriptionManagerTests: XCTestCase {
         XCTAssertEqual(automaticSignOutData.refreshTokenTimeRemainingBefore, .lessThanOneHour)
         XCTAssertEqual(automaticSignOutData.refreshTokenAgeBefore, .lessThanOneHour)
         XCTAssertEqual(automaticSignOutData.cachedSubscriptionStatusBefore, .autoRenewable)
+        XCTAssertEqual(automaticSignOutData.cachedSubscriptionTrialStatusBefore, .active)
+        XCTAssertEqual(automaticSignOutData.cachedSubscriptionPurchasePlatformBefore, .appStore)
         XCTAssertEqual(automaticSignOutData.cachedSubscriptionTimeRemainingBefore, .sevenToThirtyDays)
         XCTAssertEqual(automaticSignOutData.storedRefreshTokenStateDuringAttempt, .unchanged)
         XCTAssertEqual(automaticSignOutData.localTokenStateAfterSignOut, .missing)
@@ -192,6 +196,8 @@ class SubscriptionManagerTests: XCTestCase {
 
         let automaticSignOutData = try XCTUnwrap(automaticSignOutPixelData())
         XCTAssertEqual(automaticSignOutData.reason, .unknownAccount)
+        XCTAssertEqual(automaticSignOutData.cachedSubscriptionTrialStatusBefore, .notPresentInProcess)
+        XCTAssertEqual(automaticSignOutData.cachedSubscriptionPurchasePlatformBefore, .notPresentInProcess)
         XCTAssertEqual(automaticSignOutData.localTokenStateAfterSignOut, .present)
     }
 
@@ -236,6 +242,8 @@ class SubscriptionManagerTests: XCTestCase {
         XCTAssertEqual(automaticSignOutData.recoveryOutcome, .failed)
         XCTAssertEqual(automaticSignOutData.entitlementStateBefore, .present)
         XCTAssertEqual(automaticSignOutData.cachedSubscriptionStatusBefore, .autoRenewable)
+        XCTAssertEqual(automaticSignOutData.cachedSubscriptionTrialStatusBefore, .notActive)
+        XCTAssertEqual(automaticSignOutData.cachedSubscriptionPurchasePlatformBefore, .appStore)
         XCTAssertEqual(automaticSignOutData.storedRefreshTokenStateDuringAttempt, .missing)
         XCTAssertEqual(automaticSignOutData.localTokenStateAfterSignOut, .missing)
     }

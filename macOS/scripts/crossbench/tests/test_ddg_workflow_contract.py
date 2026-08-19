@@ -22,11 +22,23 @@ SAFARI_WORKFLOW = (
     / "workflows"
     / "macos_crossbench_safari.yml"
 ).read_text(encoding="utf-8")
+WPR_VALIDATION_WORKFLOW = (
+    Path(__file__).parents[4]
+    / ".github"
+    / "workflows"
+    / "wpr_archive_validation.yml"
+).read_text(encoding="utf-8")
 LAUNCHER = (
     Path(__file__).parents[1] / "launch-ddg-app.sh"
 ).read_text(encoding="utf-8")
 HARNESS = (
     Path(__file__).parents[1] / "test-ddg.sh"
+).read_text(encoding="utf-8")
+PROVISION_MACOS = (
+    Path(__file__).parents[1] / "provision-macos.sh"
+).read_text(encoding="utf-8")
+PROVISION_DDG_RUNTIME = (
+    Path(__file__).parents[1] / "provision-ddg-runtime.sh"
 ).read_text(encoding="utf-8")
 
 
@@ -120,6 +132,37 @@ class DDGWorkflowContractTests(unittest.TestCase):
 
     def test_normal_launch_does_not_arm_the_updater(self) -> None:
         self.assertIn("-SUEnableAutomaticChecks false", HARNESS)
+
+    def test_provisioning_scripts_install_gh_when_missing(self) -> None:
+        # The self-hosted runner does not ship the GitHub CLI, and the
+        # aggregation steps read this run's metadata with `gh api`.
+        for script in (PROVISION_MACOS, PROVISION_DDG_RUNTIME):
+            self.assertIn("command -v gh >/dev/null 2>&1 || brew install gh", script)
+
+    def test_workflows_do_not_bootstrap_gh_inline(self) -> None:
+        # gh installation now lives in the provisioning scripts above; a
+        # per-workflow "Ensure gh is available" step must not creep back.
+        for workflow in (WORKFLOW, CHROME_WORKFLOW, SAFARI_WORKFLOW):
+            self.assertNotIn("Ensure gh is available", workflow)
+            self.assertNotIn("brew install gh", workflow)
+
+    def test_asana_step_wires_the_followers_repo_variable(self) -> None:
+        for workflow in (WORKFLOW, CHROME_WORKFLOW, SAFARI_WORKFLOW):
+            self.assertIn(
+                "ASANA_FOLLOWERS: ${{ vars.CROSSBENCH_ALERT_FOLLOWERS }}",
+                workflow,
+            )
+
+    def test_asana_alerts_target_the_ci_alerts_project_section(self) -> None:
+        # Alerts land as top-level tasks in the "Alerts" section of the
+        # "macOS Site-Loading CI Test Alerts" project, not as subtasks of the
+        # old hardcoded parent task. wpr_archive_validation.yml calls the same
+        # helper and was updated alongside the three measurement workflows.
+        for workflow in (WORKFLOW, CHROME_WORKFLOW, SAFARI_WORKFLOW, WPR_VALIDATION_WORKFLOW):
+            self.assertIn("1217628708169653", workflow)
+            self.assertIn("1217628708169657", workflow)
+            self.assertNotIn("1216902374642227", workflow)
+            self.assertNotIn("1217628789139804", workflow)
 
 
 if __name__ == "__main__":

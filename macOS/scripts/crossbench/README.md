@@ -66,9 +66,11 @@ Everything else is installed by `provision-macos.sh`.
 The manual CI workflow also accepts a `reps` input. Scheduled runs retain the
 10-load default; use a smaller value for validation runs.
 
-CI can create one write-only Asana subtask for archive-validation errors and one
-for browser-measurement errors per workflow run under task `1216902374642227`.
-It uses `ASANA_ACCESS_TOKEN` only to create subtasks and never reads Asana.
+CI can create one write-only Asana task for archive-validation errors and one
+for browser-measurement errors per workflow run, in the `Alerts` section
+(`1217628708169657`) of project `1217628708169653`. It uses
+`ASANA_ACCESS_TOKEN` only to create tasks and never reads Asana. Repository
+variable `CROSSBENCH_ALERT_FOLLOWERS` optionally adds collaborators.
 GitHub artifacts provide best-effort deduplication without querying Asana.
 Alerting defaults on and can be disabled for a manual run with `alert-asana`;
 repository variables `CROSSBENCH_WPR_ASANA_ALERTS_ENABLED` and

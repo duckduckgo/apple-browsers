@@ -35,6 +35,9 @@ fi
 brew list "python@$PYTHON_VERSION" >/dev/null 2>&1 ||
   brew install "python@$PYTHON_VERSION"
 brew list go >/dev/null 2>&1 || brew install go
+# The GitHub CLI reads this run's metadata during result aggregation. Hosted
+# images ship it; a self-hosted runner does not.
+command -v gh >/dev/null 2>&1 || brew install gh
 PYTHON_BIN="$(brew --prefix "python@$PYTHON_VERSION")/bin/python$PYTHON_VERSION"
 
 WPR_SRC="$WPR_SRC" WPR_BIN="$WPR_BIN" \

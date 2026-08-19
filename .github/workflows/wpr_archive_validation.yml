@@ -176,6 +176,7 @@ jobs:
         working-directory: .
         env:
           ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
+          ASANA_FOLLOWERS: ${{ vars.CROSSBENCH_ALERT_FOLLOWERS }}
           PACKAGE_FAILED: ${{ steps.report.outputs.package-failed }}
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -220,7 +221,8 @@ jobs:
             task_name="WPR Validation Failure: Site Archives"
           fi
           "$helper" \
-            1216902374642227 \
+            1217628708169653 \
+            1217628708169657 \
             "$task_name" \
             "$notes_file" \
             "$start_date" \

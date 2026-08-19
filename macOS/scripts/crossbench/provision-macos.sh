@@ -83,6 +83,9 @@ echo "brew: $(brew --version | head -1)"
 log "Python ${PYTHON_VERSION} + Poetry"
 brew list "python@${PYTHON_VERSION}" >/dev/null 2>&1 || brew install "python@${PYTHON_VERSION}"
 command -v poetry >/dev/null 2>&1 || brew install poetry
+# The GitHub CLI reads this run's metadata during result aggregation. Hosted
+# images ship it; a self-hosted runner does not.
+command -v gh >/dev/null 2>&1 || brew install gh
 PY_BIN="$(brew --prefix "python@${PYTHON_VERSION}")/bin/python${PYTHON_VERSION}"
 echo "python: $("$PY_BIN" --version)"
 echo "poetry: $(poetry --version)"

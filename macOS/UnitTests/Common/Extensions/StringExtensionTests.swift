@@ -90,6 +90,24 @@ class StringExtensionTests: XCTestCase {
                        "What color is the sky? ")
     }
 
+    func testRemovingInvisibleFormatCharacters_preservesEmojiSequences() {
+        XCTAssertEqual("👨‍👩‍👧".removingInvisibleFormatCharacters(), "👨‍👩‍👧")
+        XCTAssertEqual("❤️".removingInvisibleFormatCharacters(), "❤️")
+        XCTAssertEqual("👋🏻".removingInvisibleFormatCharacters(), "👋🏻")
+    }
+
+    func testRemovingInvisibleFormatCharacters_preservesPersianAndArabicZWNJ() {
+        XCTAssertEqual("می‌رود".removingInvisibleFormatCharacters(), "می‌رود")
+        XCTAssertEqual("خانه‌ام".removingInvisibleFormatCharacters(), "خانه‌ام")
+    }
+
+    func testRemovingInvisibleFormatCharacters_stripsJoinersNextToLatin() {
+        XCTAssertEqual("a\u{200D}b".removingInvisibleFormatCharacters(), "ab")
+        XCTAssertEqual("a\u{200C}b".removingInvisibleFormatCharacters(), "ab")
+        XCTAssertEqual("hello\u{200B}world".removingInvisibleFormatCharacters(), "helloworld")
+        XCTAssertEqual("test\u{200C}می‌رود".removingInvisibleFormatCharacters(), "testمی‌رود")
+    }
+
     func testDropSubdomainDoesntDropDomainWhenTLDHasTwoComponents() {
         let sample = [
             ("lantean.com.ar", "lantean.com.ar"),

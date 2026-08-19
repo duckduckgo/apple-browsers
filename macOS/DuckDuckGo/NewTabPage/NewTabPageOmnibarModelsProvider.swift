@@ -124,7 +124,7 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
             accessTier: accessTierString(for: model),
             reasoningEfforts: reasoningEfforts(for: model, userTier: userTier),
             supportedFileTypes: model.supportedFileTypes,
-            upsell: requiredTier.flatMap { upsellString(for: userTier.upgradeFlow(for: $0)) }
+            upsell: upsellString(forRequiredTier: requiredTier, userTier: userTier)
         )
     }
 
@@ -141,7 +141,7 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
             guard let effort = model.reasoningEffort(for: mode) else { return nil }
             let isAvailable = model.isAccessible(effort)
             let requiredTier = isAvailable ? nil : model.lowestPublicAccessTier(for: effort)
-            let upsell = requiredTier.flatMap { upsellString(for: userTier.upgradeFlow(for: $0)) }
+            let upsell = upsellString(forRequiredTier: requiredTier, userTier: userTier)
             // Only the first gated effort heads the section.
             let sectionHeader = isAvailable || titledGatedSection || !isSubscriptionUpsellEnabled
                 ? nil
@@ -164,6 +164,13 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
     // `AIChatOmnibarController` this can't also check `surface.supportsSubscriptionUpsell` — the flag alone gates it here.
     private var isSubscriptionUpsellEnabled: Bool {
         featureFlagger.isFeatureOn(.aiChatOmnibarSubscriptionUpsell)
+    }
+
+    /// `nil` with the kill switch off, so the web leaves gated rows inert instead of opening the
+    /// purchase dialog — the address bar's `routesToUpsell: false` in the same state.
+    private func upsellString(forRequiredTier requiredTier: AIChatModelPublicAccessTier?, userTier: AIChatUserTier) -> String? {
+        guard isSubscriptionUpsellEnabled else { return nil }
+        return requiredTier.flatMap { upsellString(for: userTier.upgradeFlow(for: $0)) }
     }
 
     private func upsellString(for flow: DuckAISubscriptionUpsellingFlow) -> String? {

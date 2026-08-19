@@ -23,7 +23,7 @@ final class FireDialogHistoryDateDeletionUITests: UITestCase, FireDialogUITests 
 
     override func setUp() {
         super.setUp()
-        setUpFireDialogUITests(featureFlags: ["fireDialogSimplified": false])
+        setUpFireDialogUITests()
     }
 
     func test_historyView_deleteToday_historyAndCookies() throws {
@@ -70,9 +70,11 @@ final class FireDialogHistoryDateDeletionUITests: UITestCase, FireDialogUITests 
         // Verify no scope pill appears
         XCTAssertFalse(app.fireDialogSegmentedControl.exists, "Scope pill should not appear for date deletion")
 
-        // Configure toggles: history + cookies
+        // Verify no Delete history toggle
+        XCTAssertFalse(fireDialogHistoryToggle.exists, "History toggle should not appear for history view deletion")
+
+        // Configure toggles: delete cookies + don't close tabs
         fireDialogTabsToggle.toggleCheckboxIfNeeded(to: false, validate: true, ensureHittable: { _ in })
-        fireDialogHistoryToggle.toggleCheckboxIfNeeded(to: true, validate: true, ensureHittable: { _ in })
         fireDialogCookiesToggle.toggleCheckboxIfNeeded(to: true, validate: true, ensureHittable: { _ in })
 
         // Burn
@@ -148,11 +150,13 @@ final class FireDialogHistoryDateDeletionUITests: UITestCase, FireDialogUITests 
         // Verify no scope pill appears
         XCTAssertFalse(app.fireDialogSegmentedControl.exists, "Scope pill should not appear for date deletion")
 
+        // Verify no Delete history toggle
+        XCTAssertFalse(fireDialogHistoryToggle.exists, "History toggle should not appear for history view deletion")
+
         // Verify no Close tabs toggle
         XCTAssertFalse(fireDialogTabsToggle.exists, "Tabs toggle should not appear for date-based deletion")
 
-        // Configure toggles: only history
-        fireDialogHistoryToggle.toggleCheckboxIfNeeded(to: true, validate: true, ensureHittable: { _ in })
+        // Configure toggles: don't delete cookies
         fireDialogCookiesToggle.toggleCheckboxIfNeeded(to: false, validate: true, ensureHittable: { _ in })
 
         // Burn
@@ -191,7 +195,7 @@ final class FireDialogHistoryDateDeletionUITests: UITestCase, FireDialogUITests 
         verifyInitialCountersSet()
     }
 
-    func test_historyView_deleteWeekDay_onlyCookies() throws {
+    func test_historyView_deleteWeekDay_historyAndCookies() throws {
         // Populate fake history from debug menu to ensure we have week day history
         populateFakeHistoryFromDebugMenu()
 
@@ -240,11 +244,13 @@ final class FireDialogHistoryDateDeletionUITests: UITestCase, FireDialogUITests 
         // Verify no scope pill appears
         XCTAssertFalse(app.fireDialogSegmentedControl.exists, "Scope pill should not appear for date deletion")
 
+        // Verify no Delete history toggle
+        XCTAssertFalse(fireDialogHistoryToggle.exists, "History toggle should not appear for history view deletion")
+
         // Verify no Close tabs toggle
         XCTAssertFalse(fireDialogTabsToggle.exists, "Tabs toggle should not appear for date-based deletion")
 
-        // Configure toggles: only cookies
-        fireDialogHistoryToggle.toggleCheckboxIfNeeded(to: false, validate: true, ensureHittable: { _ in })
+        // Configure toggles: delete cookies
         fireDialogCookiesToggle.toggleCheckboxIfNeeded(to: true, validate: true, ensureHittable: { _ in })
 
         // Burn
@@ -257,13 +263,13 @@ final class FireDialogHistoryDateDeletionUITests: UITestCase, FireDialogUITests 
         // Navigate to "today" section to verify it still has history
         let todayButton = historyWebView.buttons["Show history for today"]
         todayButton.click()
-        XCTAssertTrue(historyWebView.links[todaySiteTitle].exists, "Today's site should still be in history (history toggle was off)")
+        XCTAssertTrue(historyWebView.links[todaySiteTitle].exists, "Today's site should still be in history")
 
-        // Navigate to the week day section to verify it still has history (history toggle was off)
+        // Navigate to the week day section to verify the history was deleted
         foundWeekDayButton!.click()
 
         let emptyHistoryText = historyWebView.staticTexts["No browsing history yet."]
-        XCTAssertFalse(emptyHistoryText.exists, "\(foundDay) section should NOT be empty when history toggle was off")
+        XCTAssertTrue(emptyHistoryText.exists, "\(foundDay) section should be empty")
 
         // Refresh history (Cmd+R)
         app.typeKey("r", modifierFlags: [.command])
@@ -275,7 +281,7 @@ final class FireDialogHistoryDateDeletionUITests: UITestCase, FireDialogUITests 
 
         // Verify week day still has history after refresh (history toggle was off)
         foundWeekDayButton!.click()
-        XCTAssertFalse(emptyHistoryText.exists, "\(foundDay) section should still NOT be empty after refresh when history toggle was off")
+        XCTAssertTrue(emptyHistoryText.exists, "\(foundDay) section should still be empty after refresh")
 
         // Verify storage was cleared (cookies toggle was on)
         app.activateAddressBar()
@@ -321,11 +327,13 @@ final class FireDialogHistoryDateDeletionUITests: UITestCase, FireDialogUITests 
         // Verify no scope pill appears
         XCTAssertFalse(app.fireDialogSegmentedControl.exists, "Scope pill should not appear for date deletion")
 
+        // Verify no Delete history toggle
+        XCTAssertFalse(fireDialogHistoryToggle.exists, "History toggle should not appear for history view deletion")
+
         // Verify no Close tabs toggle
         XCTAssertFalse(fireDialogTabsToggle.exists, "Tabs toggle should not appear for date-based deletion")
 
         // Configure toggles: history + cookies
-        fireDialogHistoryToggle.toggleCheckboxIfNeeded(to: true, validate: true, ensureHittable: { _ in })
         fireDialogCookiesToggle.toggleCheckboxIfNeeded(to: true, validate: true, ensureHittable: { _ in })
 
         // Burn

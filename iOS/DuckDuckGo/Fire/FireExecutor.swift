@@ -270,8 +270,9 @@ class FireExecutor: FireExecuting {
         // Notify delegate that we're starting
         delegate?.willStartBurning(fireRequest: request)
 
-        let shouldClearAppSwitcherSnapshots = featureFlagger.isFeatureOn(.appSwitcherSnapshotClearing)
-        async let snapshotCleanupTask: Void = shouldClearAppSwitcherSnapshots ? appSwitcherSnapshotCleaner.clearSnapshots() : ()
+        if featureFlagger.isFeatureOn(.appSwitcherSnapshotClearing) {
+            await appSwitcherSnapshotCleaner.clearSnapshots()
+        }
         
         // Compute flags
         let shouldBurnTabs = request.options.contains(.tabs)
@@ -298,7 +299,7 @@ class FireExecutor: FireExecuting {
         }
         
         // Await async tasks
-        _ = await (dataTask, aiTask, snapshotCleanupTask)
+        _ = await (dataTask, aiTask)
 
         // Realign the fire-mode native store after WebsiteDataFireWorker has rotated
         // currentFireModeID. No-op for non-data burns (ID hasn't changed).

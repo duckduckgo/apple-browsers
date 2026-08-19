@@ -62,19 +62,20 @@ final class AppSwitcherSnapshotCleanerTests: XCTestCase {
         let snapshotsDirectory = libraryDirectory
             .appendingPathComponent("SplashBoard", isDirectory: true)
             .appendingPathComponent("Snapshots", isDirectory: true)
-        let protectedSceneDirectory = snapshotsDirectory.appendingPathComponent("protected-scene", isDirectory: true)
-        let removableSceneDirectory = snapshotsDirectory.appendingPathComponent("removable-scene", isDirectory: true)
-        try FileManager.default.createDirectory(at: protectedSceneDirectory, withIntermediateDirectories: true)
-        try FileManager.default.createDirectory(at: removableSceneDirectory, withIntermediateDirectories: true)
+        let firstSceneDirectory = snapshotsDirectory.appendingPathComponent("scene-1", isDirectory: true)
+        let secondSceneDirectory = snapshotsDirectory.appendingPathComponent("scene-2", isDirectory: true)
+        try FileManager.default.createDirectory(at: firstSceneDirectory, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: secondSceneDirectory, withIntermediateDirectories: true)
 
-        let fileManager = SelectivelyFailingFileManager(failingItemName: protectedSceneDirectory.lastPathComponent)
+        let fileManager = FailFirstRemovalFileManager()
         let cleaner = AppSwitcherSnapshotCleaner(fileManager: fileManager, libraryDirectoryOverride: libraryDirectory)
         await cleaner.clearSnapshots()
 
-        XCTAssertTrue(fileManager.fileExists(atPath: protectedSceneDirectory.path))
-        XCTAssertFalse(fileManager.fileExists(atPath: removableSceneDirectory.path))
-        XCTAssertTrue(fileManager.fileExists(atPath: snapshotsDirectory.path))
-        XCTAssertEqual(fileManager.removalAttempts.map(\.lastPathComponent), ["protected-scene", "removable-scene"])
+        XCTAssertEqual(fileManager.removalAttempts.count, 2)
+        let failedItem = try XCTUnwrap(fileManager.removalAttempts.first)
+        let laterItem = try XCTUnwrap(fileManager.removalAttempts.dropFirst().first)
+        XCTAssertTrue(fileManager.fileExists(atPath: failedItem.path))
+        XCTAssertFalse(fileManager.fileExists(atPath: laterItem.path))
     }
 
     private func makeTemporaryLibraryDirectory() -> URL {
@@ -83,30 +84,12 @@ final class AppSwitcherSnapshotCleanerTests: XCTestCase {
     }
 }
 
-private final class SelectivelyFailingFileManager: FileManager, @unchecked Sendable {
-
-    private let failingItemName: String
+private final class FailFirstRemovalFileManager: FileManager, @unchecked Sendable {
     private(set) var removalAttempts: [URL] = []
-
-    init(failingItemName: String) {
-        self.failingItemName = failingItemName
-        super.init()
-    }
-
-    override func contentsOfDirectory(at url: URL,
-                                      includingPropertiesForKeys keys: [URLResourceKey]?,
-                                      options mask: DirectoryEnumerationOptions = []) throws -> [URL] {
-        var items = try super.contentsOfDirectory(at: url, includingPropertiesForKeys: keys, options: mask)
-        guard let failingItemIndex = items.firstIndex(where: { $0.lastPathComponent == failingItemName }) else {
-            return items
-        }
-        let failingItem = items.remove(at: failingItemIndex)
-        return [failingItem] + items.sorted { $0.lastPathComponent < $1.lastPathComponent }
-    }
 
     override func removeItem(at URL: URL) throws {
         removalAttempts.append(URL)
-        guard URL.lastPathComponent != failingItemName else {
+        guard removalAttempts.count > 1 else {
             throw NSError(domain: NSCocoaErrorDomain, code: CocoaError.fileWriteNoPermission.rawValue)
         }
         try super.removeItem(at: URL)

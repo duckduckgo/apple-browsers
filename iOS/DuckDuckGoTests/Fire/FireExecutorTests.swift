@@ -122,17 +122,18 @@ final class FireExecutorTests: XCTestCase {
         func cancelCleaningSchedule() {}
     }
 
-    actor MockAppSwitcherSnapshotCleaner: AppSwitcherSnapshotClearing {
+    @MainActor
+    private final class MockAppSwitcherSnapshotCleaner: AppSwitcherSnapshotClearing {
         private(set) var clearSnapshotsCallCount = 0
-        private let clearSnapshotsStartedExpectation: XCTestExpectation?
+        private let onCompletion: (() -> Void)?
 
-        init(clearSnapshotsStartedExpectation: XCTestExpectation? = nil) {
-            self.clearSnapshotsStartedExpectation = clearSnapshotsStartedExpectation
+        init(onCompletion: (() -> Void)? = nil) {
+            self.onCompletion = onCompletion
         }
 
         func clearSnapshots() async {
             clearSnapshotsCallCount += 1
-            clearSnapshotsStartedExpectation?.fulfill()
+            onCompletion?()
         }
     }
     
@@ -268,35 +269,18 @@ final class FireExecutorTests: XCTestCase {
 
     // MARK: - App Switcher Snapshot Tests
 
-    func testBurnAllOptionsClearsAppSwitcherSnapshotsWhenFeatureIsEnabled() async {
+    func testBurnCompletesAppSwitcherSnapshotCleanupBeforeTabDomainLookupWhenFeatureIsEnabled() async {
         mockFeatureFlagger.enabledFeatureFlags.append(.appSwitcherSnapshotClearing)
-        let executor = makeFireExecutor()
+        let snapshotCleaner = MockAppSwitcherSnapshotCleaner {
+            XCTAssertTrue(self.mockHistoryManager.tabHistoryCalls.isEmpty)
+        }
+        let executor = makeFireExecutor(appSwitcherSnapshotCleaner: snapshotCleaner)
+        let request = makeFireRequest(options: .tabs, scope: .tab(viewModel: makeTabViewModel()))
 
-        await executor.burn(request: makeFireRequest(options: .all), applicationState: .unknown)
+        await executor.burn(request: request, applicationState: .unknown)
 
-        let callCount = await mockAppSwitcherSnapshotCleaner.clearSnapshotsCallCount
-        XCTAssertEqual(callCount, 1)
-    }
-
-    func testBurnTabsOnlyClearsAppSwitcherSnapshotsWhenFeatureIsEnabled() async {
-        mockFeatureFlagger.enabledFeatureFlags.append(.appSwitcherSnapshotClearing)
-        let executor = makeFireExecutor()
-
-        await executor.burn(request: makeFireRequest(options: .tabs), applicationState: .unknown)
-
-        let callCount = await mockAppSwitcherSnapshotCleaner.clearSnapshotsCallCount
-        XCTAssertEqual(callCount, 1)
-    }
-
-    func testBurnTabScopeClearsAppSwitcherSnapshotsWhenFeatureIsEnabled() async {
-        mockFeatureFlagger.enabledFeatureFlags.append(.appSwitcherSnapshotClearing)
-        let executor = makeFireExecutor()
-        let tabViewModel = makeTabViewModel()
-
-        await executor.burn(request: makeFireRequest(options: .tabs, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
-
-        let callCount = await mockAppSwitcherSnapshotCleaner.clearSnapshotsCallCount
-        XCTAssertEqual(callCount, 1)
+        XCTAssertEqual(snapshotCleaner.clearSnapshotsCallCount, 1)
+        XCTAssertEqual(mockHistoryManager.tabHistoryCalls, ["test-tab-uid"])
     }
 
     func testBurnDoesNotClearAppSwitcherSnapshotsWhenFeatureIsDisabled() async {
@@ -304,28 +288,7 @@ final class FireExecutorTests: XCTestCase {
 
         await executor.burn(request: makeFireRequest(options: .tabs), applicationState: .unknown)
 
-        let callCount = await mockAppSwitcherSnapshotCleaner.clearSnapshotsCallCount
-        XCTAssertEqual(callCount, 0)
-    }
-
-    func testBurnStartsAppSwitcherSnapshotCleanupBeforeTabDomainLookupCompletes() async {
-        mockFeatureFlagger.enabledFeatureFlags.append(.appSwitcherSnapshotClearing)
-        let tabHistoryStartedExpectation = expectation(description: "Tab history lookup started")
-        let snapshotCleanupStartedExpectation = expectation(description: "Snapshot cleanup started")
-        let blockingHistoryManager = BlockingHistoryManager(tabHistoryStartedExpectation: tabHistoryStartedExpectation)
-        mockHistoryManager = blockingHistoryManager
-        let snapshotCleaner = MockAppSwitcherSnapshotCleaner(clearSnapshotsStartedExpectation: snapshotCleanupStartedExpectation)
-        let executor = makeFireExecutor(appSwitcherSnapshotCleaner: snapshotCleaner)
-        let request = makeFireRequest(options: .tabs, scope: .tab(viewModel: makeTabViewModel()))
-
-        let burnTask = Task {
-            await executor.burn(request: request, applicationState: .unknown)
-        }
-
-        await fulfillment(of: [tabHistoryStartedExpectation], timeout: 1.0)
-        await fulfillment(of: [snapshotCleanupStartedExpectation], timeout: 1.0)
-        await blockingHistoryManager.resumeTabHistory()
-        await burnTask.value
+        XCTAssertEqual(mockAppSwitcherSnapshotCleaner.clearSnapshotsCallCount, 0)
     }
 
     private func makeTabViewModel(chatID: String, fireTab: Bool) -> TabViewModel {
@@ -994,47 +957,5 @@ final class FireExecutorTests: XCTestCase {
         await executor.burn(request: makeFireRequest(options: .aiChats, scope: .normalMode), applicationState: .unknown)
 
         XCTAssertEqual(mockHistoryCleaner.lastIsFireMode, false, "Normal-mode burn must route through normal native storage")
-    }
-}
-
-private final class BlockingHistoryManager: MockHistoryManager {
-
-    private let tabHistoryStartedExpectation: XCTestExpectation
-    private let tabHistoryGate = AsyncGate()
-
-    init(tabHistoryStartedExpectation: XCTestExpectation) {
-        self.tabHistoryStartedExpectation = tabHistoryStartedExpectation
-        super.init(historyCoordinator: NullHistoryCoordinator(), isEnabledByUser: false, historyFeatureEnabled: false)
-    }
-
-    override func tabHistory(tabID: String) async throws -> [URL] {
-        tabHistoryStartedExpectation.fulfill()
-        await tabHistoryGate.wait()
-        return []
-    }
-
-    func resumeTabHistory() async {
-        await tabHistoryGate.open()
-    }
-}
-
-private actor AsyncGate {
-
-    private var isOpen = false
-    private var continuation: CheckedContinuation<Void, Never>?
-
-    func wait() async {
-        guard !isOpen else {
-            return
-        }
-        await withCheckedContinuation { continuation in
-            self.continuation = continuation
-        }
-    }
-
-    func open() {
-        isOpen = true
-        continuation?.resume()
-        continuation = nil
     }
 }

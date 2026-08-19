@@ -1622,10 +1622,10 @@ class MainViewController: UIViewController {
         return CGRect(x: centerX - width / 2, y: centerY - expectedHeight / 2, width: width, height: expectedHeight)
     }
 
-    /// Alpha for the real chrome (nav bar / tabs / toolbar) during a bars transition. In the floating
-    /// capsule morph the real chrome is opaque above `handoffStart` (where the button row's own
-    /// fade/shrink, driven separately by `setButtonRowCollapseProgress`, is doing the visible work) and
-    /// transparent below it, with only a narrow ramp straddling the boundary — the complement of
+    /// Alpha for the real chrome (nav bar / tabs) during a bars transition. In the floating capsule
+    /// morph the real chrome is opaque above `handoffStart` (where the button row's own fade/shrink,
+    /// driven separately by `setButtonRowCollapseProgress`, is doing the visible work) and transparent
+    /// below it, with only a narrow ramp straddling the boundary — the complement of
     /// `FloatingDomainCapsuleController.pillAlpha`, so the two swap without a wide simultaneous
     /// cross-fade. Everywhere else it tracks `percent` linearly (unchanged behaviour).
     private func chromeAlpha(for percent: CGFloat) -> CGFloat {
@@ -1633,6 +1633,19 @@ class MainViewController: UIViewController {
         let handoffStart = FloatingDomainCapsuleController.handoffStart
         let halfWidth = FloatingDomainCapsuleController.handoffBandHalfWidth
         return rampedProgress(percent, from: handoffStart - halfWidth, to: handoffStart + halfWidth)
+    }
+
+    /// Alpha for `viewCoordinator.toolbar` specifically. Only shares `chromeAlpha`'s narrow handoff
+    /// band when the toolbar is actually hosting the embedded omnibar (bottom address bar) and so has
+    /// a domain-capsule pill taking its place underneath. A standalone, buttons-only toolbar (e.g. top
+    /// address bar position) has no such counterpart — cutting its alpha on that same narrow band, in
+    /// sync with a slide that's also compressed to finish by `handoffStart`, reads as the toolbar
+    /// abruptly vanishing rather than gently collapsing. It fades linearly across the full range
+    /// instead, alongside `setStandaloneCollapseProgress`'s scale-down and the uncompressed slide in
+    /// `updateToolbarConstant`.
+    private func toolbarAlpha(for percent: CGFloat) -> CGFloat {
+        guard viewCoordinator.isOmnibarInToolbar else { return percent }
+        return chromeAlpha(for: percent)
     }
 
     private func rampedProgress(_ percent: CGFloat, from start: CGFloat, to end: CGFloat) -> CGFloat {
@@ -4557,14 +4570,22 @@ extension MainViewController: BrowserChromeDelegate {
         // Ahead of `updateToolbarConstant` so its slide math reads this frame's height, not last
         // frame's. Stage the button row's own fade/shrink from `percent` (1 = expanded) into the
         // [0, 1] "how collapsed are the buttons" progress `setButtonRowCollapseProgress` expects.
-        let buttonCollapseProgress = isFloatingCapsuleActive && !UIAccessibility.isReduceMotionEnabled
+        let reduceMotion = UIAccessibility.isReduceMotionEnabled
+        let buttonCollapseProgress = isFloatingCapsuleActive && !reduceMotion
             ? ((1 - percent) / (1 - FloatingDomainCapsuleController.handoffStart)).clamped(to: 0...1)
             : 0
         let panelHeight = viewCoordinator.toolbar.setButtonRowCollapseProgress(
             buttonCollapseProgress,
-            reduceMotion: UIAccessibility.isReduceMotionEnabled
+            reduceMotion: reduceMotion
         )
         viewCoordinator.constraints.toolbarHeight.constant = panelHeight
+
+        // The standalone (no embedded omnibar) toolbar has no domain-capsule pill to hand off to, so
+        // it collapses over the full range rather than the compressed-to-`handoffStart` progress above.
+        let standaloneCollapseProgress = isFloatingCapsuleActive && !viewCoordinator.isOmnibarInToolbar && !reduceMotion
+            ? 1 - percent
+            : 0
+        viewCoordinator.toolbar.setStandaloneCollapseProgress(standaloneCollapseProgress, reduceMotion: reduceMotion)
 
         updateToolbarConstant(percent)
         updateNavBarConstant(percent)
@@ -4577,7 +4598,7 @@ extension MainViewController: BrowserChromeDelegate {
         if isWindowControlsRowEnabled {
             tabsBarController?.setCurrentTabSelectionAlpha(currentTabSelectionAlpha(for: chromeAlpha))
         }
-        viewCoordinator.toolbar.alpha = chromeAlpha
+        viewCoordinator.toolbar.alpha = toolbarAlpha(for: percent)
         updateFloatingDomainCapsuleVisibility(for: percent)
 
         if postChromeVisibilityNotification {
@@ -4804,8 +4825,10 @@ extension MainViewController: BrowserChromeDelegate {
         // would compound two motions where the user should see one. Remapped so the slide is pinned at
         // "fully shown" until `handoffStart`, then covers the retraction over the remaining range. Below
         // `handoffStart` the panel is already alpha-0 (the capsule pill has taken over), so where
-        // exactly it sits off-screen no longer has a visual effect.
-        let slideRatio = isFloatingCapsuleActive && !UIAccessibility.isReduceMotionEnabled
+        // exactly it sits off-screen no longer has a visual effect. Only applies when the toolbar is
+        // actually hosting the embedded omnibar -- a standalone toolbar has no pill to hand off to, so
+        // it slides over the full range in sync with `setStandaloneCollapseProgress`'s scale-down.
+        let slideRatio = isFloatingCapsuleActive && viewCoordinator.isOmnibarInToolbar && !UIAccessibility.isReduceMotionEnabled
             ? min(1, ratio / FloatingDomainCapsuleController.handoffStart)
             : ratio
         // Minimal chrome owns the toolbar slot as a permanent offscreen spacer for the bottom

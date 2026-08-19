@@ -198,6 +198,9 @@ final class BrowserToolbarView: UIView {
     /// floats near the device bottom (see `floatingBottomMargin`). Kept in sync with the host's
     /// safe-area inset in `layoutSubviews`; also widens the hit-test region.
     private var floatingBottomOffset: CGFloat = 0
+    /// Current scale applied by `setStandaloneCollapseProgress`, combined with `floatingBottomOffset`
+    /// in `applyMaterialBackgroundTransform` since both target the same `transform` property.
+    private var standaloneCollapseScale: CGFloat = 1
     /// The tab switcher reuses this bar purely for button-position parity with the browser, but
     /// paints its own backdrop — so in the non-floating style its own background must stay clear.
     private var isLegacyBackgroundTransparent = false
@@ -634,7 +637,40 @@ final class BrowserToolbarView: UIView {
         updateCornerStyle()
         return height
     }
-    
+
+    #if DEBUG
+    /// Test seam for `setStandaloneCollapseProgress`'s effect on the capsule.
+    var standaloneCapsuleTransformForTesting: CGAffineTransform { materialBackgroundView.transform }
+    #endif
+
+    /// Drives the scroll-coupled collapse for the standalone, buttons-only toolbar -- no embedded
+    /// omnibar to hand off to (e.g. the top address bar position, where the bottom floating UI is just
+    /// the button row). There's nothing to shrink toward the way the embedded case shrinks toward the
+    /// single omnibar row, so the whole capsule scales down toward its own centre as it fades; the
+    /// existing bottom-edge slide (`MainViewController.updateToolbarConstant`, uncompressed for this
+    /// case) carries it the rest of the way off-screen. A no-op when this toolbar hosts an embedded
+    /// omnibar instead (handled by `setButtonRowCollapseProgress`), outside floating style, or under
+    /// Reduce Motion.
+    func setStandaloneCollapseProgress(_ collapseProgress: CGFloat, reduceMotion: Bool) {
+        guard isFloatingStyleEnabled, !hasEmbeddedOmnibar, !reduceMotion else {
+            standaloneCollapseScale = 1
+            applyMaterialBackgroundTransform()
+            return
+        }
+
+        let progress = collapseProgress.clamped(to: 0...1)
+        standaloneCollapseScale = 1 - 0.2 * progress
+        applyMaterialBackgroundTransform()
+    }
+
+    /// Combines `floatingBottomOffset`'s translation with `standaloneCollapseScale` -- both drive
+    /// `materialBackgroundView.transform` independently, so writing either one in isolation would
+    /// clobber the other.
+    private func applyMaterialBackgroundTransform() {
+        materialBackgroundView.transform = CGAffineTransform(translationX: 0, y: floatingBottomOffset)
+            .concatenating(CGAffineTransform(scaleX: standaloneCollapseScale, y: standaloneCollapseScale))
+    }
+
     /// Shifts the glass capsule down from its safe-area-anchored position toward the device bottom,
     /// leaving `floatingBottomMargin`. Done as a transform (not a constraint change) so it doesn't
     /// disturb the toolbar's layout slot or the runtime chrome hide/show constant logic.
@@ -643,7 +679,7 @@ final class BrowserToolbarView: UIView {
         let target = isFloatingStyleEnabled ? max(0, hostBottomInset - floatingBottomMargin) : 0
         guard target != floatingBottomOffset else { return }
         floatingBottomOffset = target
-        materialBackgroundView.transform = CGAffineTransform(translationX: 0, y: target)
+        applyMaterialBackgroundTransform()
     }
 
     private func updateCornerStyle() {

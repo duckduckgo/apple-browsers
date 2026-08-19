@@ -309,7 +309,12 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
         }
         UIView.animate(withDuration: Constants.chipsFadeDuration,
                        animations: { self.chipsContainerView.alpha = alpha },
-                       completion: { _ in completion?() })
+                       // An interrupted fade has been overtaken by the next one, whose content is already
+                       // in place — clearing it here would empty a row that is on its way back in.
+                       completion: { finished in
+            guard finished else { return }
+            completion?()
+        })
     }
 
     /// The entrance in reverse: settles back down to where it rose from, fading out as it goes. One alpha for
@@ -568,9 +573,8 @@ extension AIChatContextualFloatingInputViewController: UIGestureRecognizerDelega
         return view.hitTest(touch.location(in: view), with: nil) == nil
     }
 
-    /// A page tap is the user leaving, so the page's own tap waits for ours and loses — the link it landed
-    /// on would otherwise open behind the dismissal. Only taps: this recognizer never fails while a finger
-    /// is held, so making long presses wait for it would leave a hold doing nothing at all.
+    /// The page's own tap waits for ours and loses, or the link it hit opens behind the dismissal. Taps
+    /// only: a held finger never fails this recognizer, so a waiting long press would do nothing at all.
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
                            shouldBeRequiredToFailBy otherGestureRecognizer: UIGestureRecognizer) -> Bool {
         guard gestureRecognizer === dismissOnPageTapRecognizer,

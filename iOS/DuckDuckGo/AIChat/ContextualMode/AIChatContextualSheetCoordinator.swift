@@ -398,6 +398,23 @@ final class AIChatContextualSheetCoordinator {
         }
     }
 
+    /// Voice chat replaces whatever is on screen, and either surface can be the one showing the input —
+    /// routing only through the sheet left the button dead whenever the floating input was up without one.
+    func requestNewVoiceChatLeavingCurrentSurface() {
+        let requestVoiceChat = { [weak self] in
+            guard let self else { return }
+            self.delegate?.aiChatContextualSheetCoordinatorDidRequestNewVoiceChat(self)
+        }
+        if floatingInputViewController != nil {
+            dismissFloatingInput()
+            requestVoiceChat()
+        } else if let sheetViewController {
+            sheetViewController.dismiss(animated: true, completion: requestVoiceChat)
+        } else {
+            requestVoiceChat()
+        }
+    }
+
     /// Explicit user request to attach the current page, as opposed to a passive auto-collect.
     private func requestManualPageContextAttach() {
         sessionState.beginManualAttach()
@@ -690,11 +707,7 @@ private extension AIChatContextualSheetCoordinator {
             self?.sessionState.refreshForAttachmentChange()
         }
         host.onAIVoiceChatRequested = { [weak self] in
-            guard let self else { return }
-            self.sheetViewController?.dismiss(animated: true) { [weak self] in
-                guard let self else { return }
-                self.delegate?.aiChatContextualSheetCoordinatorDidRequestNewVoiceChat(self)
-            }
+            self?.requestNewVoiceChatLeavingCurrentSurface()
         }
         host.setVoiceSearchAvailable(voiceSearchHelper.isVoiceSearchEnabled)
         host.onVoiceSearchRequested = { [weak self] in

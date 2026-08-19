@@ -49,7 +49,10 @@ extension MainViewController {
         // UIKit reparents the preview into the menu platter. Hand it a stand-in that lives outside the
         // field's glass group, so nothing is pulled out of the group and the bar keeps rendering.
         if let button = button as? BrowserChromeButton {
-            button.menuHighlightTarget = { [weak self] in self?.duckAIMenuAnchorView(over: button) }
+            button.menuHighlightTarget = { [weak self, weak button] in
+                guard let button else { return nil }
+                return self?.duckAIMenuAnchorView(over: button)
+            }
         }
 
         // Deferred so the shown pixel records an actual display rather than the menu being attached.

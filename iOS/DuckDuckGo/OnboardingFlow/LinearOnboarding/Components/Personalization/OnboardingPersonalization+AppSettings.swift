@@ -26,8 +26,7 @@ import WebExtensions
 /// - **Recently visited sites** (Search step): passthrough to `recentlyVisitedSites`:
 ///   - `true` → On (the app default, shown selected on first load)
 ///   - `false` → Off.
-/// - **Cookie pop-up protection** + **Pop-ups without opt-outs** (Block Ads step): both derived from the
-///   single `cookiePopupPreference` (`.off` / `.default` / `.max`), so the two toggles stay consistent —
+/// - **Cookie pop-up protection** + **Pop-ups without opt-outs** (Block Ads step): passthrough to `cookiePopupPreference` (`.off` / `.default` / `.max`)
 ///   turning protection off collapses the preference to `.off`, which makes pop-ups-without-opt-outs `false`.
 ///
 /// - See: [Search: Setup step](https://app.asana.com/1/137249556945/task/1216445221863465?focus=true)
@@ -48,7 +47,7 @@ extension AppUserDefaults: OnboardingAppSettingsPersonalizationStore {
             cookiePopupPreference.isBlockingEnabled
         }
         set {
-            // Disabling collapses to `.off` (which clears pop-ups-without-opt-outs); enabling preserves it.
+            // Disabling clears pop-ups-without-opt-outs
             cookiePopupPreference = .preference(
                 autoManageEnabled: newValue,
                 popUpsWithoutOptOutsEnabled: newValue ? cookiePopupPreference.isPopUpsWithoutOptOutsEnabled : false

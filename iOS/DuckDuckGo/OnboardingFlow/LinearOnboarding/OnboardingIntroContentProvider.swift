@@ -209,8 +209,7 @@ extension OnboardingPersonalizationContent {
         let type: ItemType
         let title: String
         let subtitle: String?
-        /// Rows shown only while this item's toggle is on (e.g. "Accept other cookies" under
-        /// "Reject optional cookies"). Empty for standalone rows.
+        /// Rows shown only while this item's toggle is on. Empty for standalone rows.
         let dependentItems: [Item]
 
         init(type: ItemType, title: String, subtitle: String?, dependentItems: [Item] = []) {

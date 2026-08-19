@@ -30,7 +30,7 @@ import DesignResourcesKitIcons
 struct OnboardingPersonalizationToggleItem: Identifiable {
     let item: OnboardingPersonalizationContent.Item
     let isOn: Binding<Bool>
-    /// Rows shown only while this item's toggle is on (mirrors `Item.dependentItems`, with bindings).
+    /// Rows shown only while this item's toggle is on
     let dependentItems: [OnboardingPersonalizationToggleItem]
 
     var id: OnboardingPersonalizationContent.Item.ItemType {

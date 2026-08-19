@@ -33,10 +33,13 @@ extension NSOpenPanel {
     }
 
     /// Panel asking the user to pick a directory so the app is granted access to it.
+    /// - Parameter directoryURL: the directory we need access to. The panel opens in its parent so
+    ///   `directoryURL` itself is a selectable item: opening inside it would leave the user with nothing
+    ///   to pick but its children, and granting access to a child doesn't grant access to `directoryURL`.
     static func directoryAccessPanel(directoryURL: URL, message: String, prompt: String) -> NSOpenPanel {
         let panel = NSOpenPanel()
 
-        panel.directoryURL = directoryURL
+        panel.directoryURL = directoryURL.deletingLastPathComponent()
         panel.message = message
         panel.prompt = prompt
         panel.canChooseFiles = false

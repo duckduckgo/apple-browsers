@@ -29,6 +29,7 @@
 		18EB298166184F06B6A87190 /* OnboardingSearchAIToggleGrey.lottie in Resources */ = {isa = PBXBuildFile; fileRef = 17BA504D98D84DB79BDE168D /* OnboardingSearchAIToggleGrey.lottie */; };
 		1A2B3C4D5E6F708192A3B402 /* MainViewController+AIChatHistoryViewModelDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F708192A3B401 /* MainViewController+AIChatHistoryViewModelDelegate.swift */; };
 		1AD965E390AC1B7FDE09D956 /* OnboardingView+ComparisonContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8693FFCAC02CE4A85D0BD62C /* OnboardingView+ComparisonContent.swift */; };
+		1CBBE38A74610DD6C6CF7524 /* TabViewControllerHTTPSForcedTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00BC30682612C1D398C8629A /* TabViewControllerHTTPSForcedTests.swift */; };
 		1D116C11AE6EDE0456EE23B3 /* SubscriptionPromoExistingUserCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DEC03128C893FD62A15EF4A /* SubscriptionPromoExistingUserCoordinatorTests.swift */; };
 		1D200C972BA3157A00108701 /* SettingsNextStepsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D200C962BA3157A00108701 /* SettingsNextStepsView.swift */; };
 		1D200C992BA3176D00108701 /* SettingsOthersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D200C982BA3176D00108701 /* SettingsOthersView.swift */; };
@@ -6587,6 +6588,7 @@
 			children = (
 				317045BF2858C6B90016ED1F /* AutofillInterfaceEmailTruncatorTests.swift */,
 				C14E2F7629DE14EA002AC515 /* AutofillInterfaceUsernameTruncatorTests.swift */,
+				00BC30682612C1D398C8629A /* TabViewControllerHTTPSForcedTests.swift */,
 			);
 			name = Utils;
 			sourceTree = "<group>";
@@ -15385,6 +15387,7 @@
 				AA10B5022FA0000100AB12CD /* WebExtensionAvailabilityTests.swift in Sources */,
 				39BD5432CF6280442CDE88F0 /* DBPIOSContentBlockingTests.swift in Sources */,
 				B7A97190FB026429E034DB99 /* TabViewControllerSiteLoadingPixelTests.swift in Sources */,
+				1CBBE38A74610DD6C6CF7524 /* TabViewControllerHTTPSForcedTests.swift in Sources */,
 				A627D8C9C6C477E0A51B89E5 /* NavigationPixelNavigationResponderTests.swift in Sources */,
 				9F032A343019A1AA00F8D5E9 /* OnboardingPersonalizationToggleBindingTests.swift in Sources */,
 				88CED5F7656BFDD8D99B3CA0 /* UnifiedToggleInputReasoningMenuFactoryTests.swift in Sources */,

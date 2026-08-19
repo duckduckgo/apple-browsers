@@ -2228,13 +2228,21 @@ extension TabViewController: WKNavigationDelegate {
 
         url = webView.url
         let tld = storageCache.tld
-        let httpsForced = tld.domain(lastUpgradedURL?.host) == tld.domain(webView.url?.host)
+        let httpsForced = Self.isHTTPSForced(lastUpgradedURL: lastUpgradedURL, currentURL: webView.url, tld: tld)
         onWebpageDidStartLoading(httpsForced: httpsForced)
         textZoomCoordinator.onNavigationCommitted(applyToWebView: webView)
         
         // Check cache for instant logo display during back navigation
         checkDaxEasterEggCacheIfDuckDuckGoSearch(webView)
 
+    }
+
+    /// Whether the committed page was reached via an HTTPS upgrade.
+    ///
+    /// Guards on `lastUpgradedURL` so an upgrade is only reported when one actually happened.
+    static func isHTTPSForced(lastUpgradedURL: URL?, currentURL: URL?, tld: TLD) -> Bool {
+        guard let lastUpgradedURL else { return false }
+        return tld.domain(lastUpgradedURL.host) == tld.domain(currentURL?.host)
     }
 
     private func onWebpageDidStartLoading(httpsForced: Bool) {

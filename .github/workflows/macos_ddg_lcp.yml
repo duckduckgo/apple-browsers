@@ -1,5 +1,5 @@
-name: "macOS - Measure LCP (DDG)"
-run-name: "macOS - Measure LCP (DDG)"
+name: "macOS - LCP: DuckDuckGo"
+run-name: "macOS - LCP: DuckDuckGo"
 
 on:
   workflow_dispatch:

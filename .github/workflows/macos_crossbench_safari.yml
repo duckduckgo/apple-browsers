@@ -1,5 +1,5 @@
-name: "macOS - Measure LCP (Safari)"
-run-name: "macOS - Measure LCP (Safari)"
+name: "macOS - LCP: Safari"
+run-name: "macOS - LCP: Safari"
 
 # Measures Safari navigation-to-LCP against validated WPR archives through the
 # US-broadband shaping profile. ClickHouse upload is scheduled or opt-in.

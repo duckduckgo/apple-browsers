@@ -747,7 +747,7 @@ public class DDGSync: DDGSyncing {
         // A failed best-effort repair retries on a later app launch, not on every device-list poll.
         hasAttemptedCurrentDeviceInfoRepair = true
         let task = Task {
-            await deviceInfoMigrationCoordinator.repairCurrentDeviceInfo(for: account)
+            await deviceInfoMigrationCoordinator.repairCurrentDeviceInfo(for: currentAccount)
         }
         currentDeviceInfoRepairTask = task
         Task { [weak self] in

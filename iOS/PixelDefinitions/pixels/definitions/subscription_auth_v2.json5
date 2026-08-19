@@ -1,42 +1,5 @@
 // Privacy Pro AuthV2 diagnostic pixels
 {
-    "m_privacy-pro_auth_invalid_refresh_token_detected": {
-        "description": "Fired when the backend rejects a Privacy Pro refresh token as invalid, before any account recovery is attempted.",
-        "owners": ["samsymons"],
-        "triggers": ["other"],
-        "suffixes": ["first_daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion", "pixelSource", "subscriptionAuthSource"]
-    },
-    "m_privacy-pro_auth_invalid_refresh_token_signed_out": {
-        "description": "Fired when an invalid Privacy Pro refresh token results in sign-out because recovery was unavailable or failed. The account_automatically_signed_out pixel contains the detailed outcome.",
-        "owners": ["samsymons"],
-        "triggers": ["other"],
-        "suffixes": ["first_daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion", "pixelSource"]
-    },
-    "m_privacy-pro_auth_invalid_refresh_token_recovered": {
-        "description": "Fired when the client successfully recovers from an invalid Privacy Pro refresh token without signing the user out.",
-        "owners": ["samsymons"],
-        "triggers": ["other"],
-        "suffixes": ["first_daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion", "pixelSource"]
-    },
-    "m_privacy-pro_auth_v2_get_tokens_error": {
-        "description": "Fired when Privacy Pro AuthV2 cannot return a token container. Error parameters distinguish invalid refresh tokens, unknown accounts, and other failures.",
-        "owners": ["samsymons"],
-        "triggers": ["other"],
-        "suffixes": ["first_daily_count", "platform", "form_factor"],
-        "parameters": [
-            "appVersion",
-            "pixelSource",
-            "subscriptionAuthSource",
-            "subscriptionAuthTokenCachePolicy",
-            "errorDomain",
-            "errorCode",
-            "underlyingErrorDomain",
-            "underlyingErrorCode"
-        ]
-    },
     "m_privacy-pro_auth_account_automatically_signed_out": {
         "description": "Fired after Privacy Pro automatically signs a user out because the backend reported an unknown account or an invalid refresh token that could not be recovered. Low-cardinality local state captured before deletion helps distinguish expected backend invalidation from client token races or inconsistent account state.",
         "owners": ["samsymons"],

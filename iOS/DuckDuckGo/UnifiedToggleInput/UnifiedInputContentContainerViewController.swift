@@ -237,7 +237,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     func refreshFireMode(fireMode: Bool) {
         // The fire empty state is a SwiftUI host content state now — just flip the flag; no manager rebuild.
         unifiedSuggestionsHost?.setIsFireTab(fireMode)
-        applyEscapeHatchPlacement()
+        refreshVisibleContent(animateContentUpdates: false)
         rebuildDuckAISuggestionsCoordinator()
 
         guard isContentActive,
@@ -323,14 +323,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     /// content takes over cleanly.
     func beginDismissFade() {
         unifiedSuggestionsHost?.beginDismissFade()
-    }
-
-    func copyFavoritesScrollPosition(from controller: NewTabPageViewController) {
-        unifiedSuggestionsHost?.copyFavoritesScrollPosition(from: controller)
-    }
-
-    func copyFavoritesScrollPosition(to controller: NewTabPageViewController) {
-        unifiedSuggestionsHost?.copyFavoritesScrollPosition(to: controller)
     }
 
     /// Logo→logo collapse: morph the focused logo to the Dax mark and keep it visible, so it hands

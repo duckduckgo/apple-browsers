@@ -78,7 +78,6 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     private(set) var isShowingDuckAICompletionDialog = false
     private var isBorderSuppressedForChromeLayout = false
     private var didHideBarsForChatPathVisitSiteDialog = false
-    private var pendingScrollDistanceFromTop: CGFloat?
     private let appSettings: AppSettings
     private let appWidthObserver: AppWidthObserver
     private let floatingUIManager: FloatingUIManaging
@@ -180,46 +179,6 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         updateBorderView()
     }
 
-    func copyScrollPosition(from source: NewTabPageViewController) {
-        source.loadViewIfNeeded()
-        loadViewIfNeeded()
-        source.view.layoutIfNeeded()
-        view.layoutIfNeeded()
-
-        guard let sourceScrollView = source.newTabPageScrollView else { return }
-        pendingScrollDistanceFromTop = sourceScrollView.contentOffset.y + sourceScrollView.adjustedContentInset.top
-        applyPendingScrollPosition()
-    }
-
-    private var newTabPageScrollView: UIScrollView? {
-        firstScrollView(in: view)
-    }
-
-    private func firstScrollView(in view: UIView) -> UIScrollView? {
-        if let scrollView = view as? UIScrollView {
-            return scrollView
-        }
-        for subview in view.subviews {
-            if let scrollView = firstScrollView(in: subview) {
-                return scrollView
-            }
-        }
-        return nil
-    }
-
-    private func applyPendingScrollPosition() {
-        guard let pendingScrollDistanceFromTop,
-              let scrollView = newTabPageScrollView,
-              scrollView.bounds.height > 0 else { return }
-
-        let minimumOffsetY = -scrollView.adjustedContentInset.top
-        let maximumOffsetY = max(minimumOffsetY,
-                                 scrollView.contentSize.height - scrollView.bounds.height + scrollView.adjustedContentInset.bottom)
-        let offsetY = min(max(pendingScrollDistanceFromTop - scrollView.adjustedContentInset.top, minimumOffsetY), maximumOffsetY)
-        scrollView.setContentOffset(CGPoint(x: scrollView.contentOffset.x, y: offsetY), animated: false)
-        self.pendingScrollDistanceFromTop = nil
-    }
-
     func setChromeLayoutContext(isBorderSuppressed: Bool) {
         isBorderSuppressedForChromeLayout = isBorderSuppressed
         updateBorderView()
@@ -234,7 +193,6 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         updateDaxDialogTopInsetIfNeeded()
-        applyPendingScrollPosition()
     }
 
     override func viewWillDisappear(_ animated: Bool) {

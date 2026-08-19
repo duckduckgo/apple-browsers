@@ -19,8 +19,17 @@
 
 import AIChat
 import Bookmarks
+import BrowserServicesKit
 import Combine
+import Common
+import Core
+import FeatureFlags_iOS
+import Onboarding
+import Persistence
+import RemoteMessaging
 import Suggestions
+import SubscriptionTestingUtilities
+import SwiftUI
 import UIKit
 import XCTest
 @testable import DuckDuckGo
@@ -50,6 +59,41 @@ final class UnifiedInputContentContainerViewControllerTests: XCTestCase {
         }
     }
 
+    func testWhenRefreshingFireModeThenPinnedHatchLayoutReconcilesImmediately() throws {
+        let switchBarHandler = MockUnifiedInputSwitchBarHandler()
+        let viewController = makeLayoutTestSubject(switchBarHandler: switchBarHandler)
+        viewController.loadViewIfNeeded()
+        viewController.view.frame = CGRect(x: 0, y: 0, width: 390, height: 844)
+        viewController.setActive(true)
+        viewController.setEscapeHatch(makeEscapeHatch())
+        viewController.view.layoutIfNeeded()
+
+        let chromeController = try XCTUnwrap(viewController.children.compactMap { $0 as? UIHostingController<FocusedChromeView> }.first)
+        let suggestionsController = try XCTUnwrap(viewController.children.compactMap { $0 as? UIHostingController<UnifiedSuggestionsView> }.first)
+        let initialChromeHeight = chromeController.view.bounds.height
+        let initialHostTopInset = suggestionsController.additionalSafeAreaInsets.top
+
+        XCTAssertNotNil(chromeController.rootView.hatchModel)
+        XCTAssertGreaterThan(initialChromeHeight, 0)
+        XCTAssertEqual(initialHostTopInset, initialChromeHeight, accuracy: 0.001)
+
+        switchBarHandler.isFireTab = true
+        viewController.refreshFireMode(fireMode: true)
+        viewController.view.layoutIfNeeded()
+
+        XCTAssertNil(chromeController.rootView.hatchModel)
+        XCTAssertEqual(chromeController.view.bounds.height, 0, accuracy: 0.001)
+        XCTAssertEqual(suggestionsController.additionalSafeAreaInsets.top, 0, accuracy: 0.001)
+
+        switchBarHandler.isFireTab = false
+        viewController.refreshFireMode(fireMode: false)
+        viewController.view.layoutIfNeeded()
+
+        XCTAssertNotNil(chromeController.rootView.hatchModel)
+        XCTAssertEqual(chromeController.view.bounds.height, initialChromeHeight, accuracy: 0.001)
+        XCTAssertEqual(suggestionsController.additionalSafeAreaInsets.top, initialHostTopInset, accuracy: 0.001)
+    }
+
     func testDuckAISuggestionsDidRequestSyncSetup_RequestsSyncSetupOnDelegate() {
         let delegate = MockUnifiedInputContentContainerDelegate()
         let viewController = UnifiedInputContentContainerViewController(
@@ -62,6 +106,84 @@ final class UnifiedInputContentContainerViewControllerTests: XCTestCase {
         XCTAssertEqual(delegate.syncSetupRequestCount, 1)
     }
 
+    private func makeLayoutTestSubject(switchBarHandler: MockUnifiedInputSwitchBarHandler) -> UnifiedInputContentContainerViewController {
+        let favorites = MockFavoritesListInteracting()
+        let appSettings = AppSettingsMock()
+        let featureFlagger = MockFeatureFlagger()
+        let aiChatSettings = MockAIChatSettingsProvider()
+        let tabsModel = TabsModel(desktop: false)
+        let newTabPageDependencies = SuggestionTrayViewController.NewTabPageDependencies(
+            favoritesModel: favorites,
+            homePageMessagesConfiguration: HomePageMessagesConfigurationMock(homeMessages: []),
+            subscriptionDataReporting: nil,
+            newTabDialogFactory: TestNewTabDaxDialogFactory(),
+            newTabDaxDialogManager: MockDaxDialogsManager(),
+            onboardingFlowProvider: TestOnboardingFlowProvider(),
+            faviconLoader: EmptyFaviconLoading(),
+            faviconsCache: TestFavoritesFaviconCache(),
+            remoteMessagingActionHandler: MockRemoteMessagingActionHandler(),
+            remoteMessagingImageLoader: MockRemoteMessagingImageLoader(),
+            remoteMessagingPixelReporter: nil,
+            appSettings: appSettings,
+            subscriptionManager: SubscriptionManagerMock(),
+            internalUserCommands: TestURLBasedDebugCommands())
+        let dependencies = SuggestionTrayDependencies(
+            favoritesViewModel: favorites,
+            bookmarksDatabase: .bookmarksMock,
+            historyManager: MockHistoryManager(),
+            tabsModelProvider: { tabsModel },
+            featureFlagger: featureFlagger,
+            appSettings: appSettings,
+            aiChatSettings: aiChatSettings,
+            featureDiscovery: DefaultFeatureDiscovery(),
+            newTabPageDependencies: newTabPageDependencies,
+            productSurfaceTelemetry: MockProductSurfaceTelemetry())
+        let viewController = UnifiedInputContentContainerViewController(
+            switchBarHandler: switchBarHandler,
+            appSettings: appSettings,
+            featureFlagger: featureFlagger,
+            aiChatSettings: aiChatSettings)
+        viewController.suggestionTrayDependencies = dependencies
+        return viewController
+    }
+
+    private func makeEscapeHatch() -> EscapeHatchModel {
+        .preview(title: "Return to Example",
+                 subtitle: "example.com",
+                 tabType: .regular,
+                 domain: "example.com",
+                 targetTab: Tab(),
+                 tabCount: 2)
+    }
+}
+
+private struct TestNewTabDaxDialogFactory: NewTabDaxDialogProviding {
+    func createDaxDialog(for homeDialog: DaxDialogs.HomeScreenSpec,
+                         onCompletion: @escaping (_ activateSearch: Bool) -> Void,
+                         onManualDismiss: @escaping () -> Void) -> some View {
+        EmptyView()
+    }
+
+    func createDuckAIFireOnboardingCompletionDialog(message: String, onDismiss: @escaping () -> Void) -> AnyView {
+        AnyView(EmptyView())
+    }
+
+    func createEndOfJourneyDialog(content: OnboardingEndOfJourneyContent,
+                                  onAction: @escaping (OnboardingEndOfJourneyAction) -> Void) -> AnyView {
+        AnyView(EmptyView())
+    }
+}
+
+private struct TestOnboardingFlowProvider: OnboardingFlowProviding {
+    let currentOnboardingFlow: OnboardingFlowType = .default
+}
+
+private struct TestFavoritesFaviconCache: FavoritesFaviconCaching {
+    func populateFavicon(for domain: String, intoCache: FaviconsCacheType, fromCache: FaviconsCacheType?) {}
+}
+
+private struct TestURLBasedDebugCommands: URLBasedDebugCommands {
+    func handle(url: URL) -> Bool { false }
 }
 
 private final class MockUnifiedInputContentContainerDelegate: UnifiedInputContentContainerViewControllerDelegate {

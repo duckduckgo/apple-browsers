@@ -265,8 +265,7 @@ private extension MainViewController {
         let utiPlaceholderColor = coordinator.viewController.defaultPlaceholderColor
 
         let isLogoToLogo = newTabPageViewController?.isShowingLogo == true
-        // Favorites hand off seamlessly too: the embedded grid is already laid out where the NTP grid is,
-        // so it slides in without the container's fade (which otherwise reads as a flash over the slide).
+        // Favorites hand off without the container's fade, which otherwise reads as a flash over the slide.
         let isFavoritesToFavorites = newTabPageViewController?.isShowingFavorites == true
         let isBottom = coordinator.cardPosition.isBottom
         let isSeamlessHandoff = isLogoToLogo || isFavoritesToFavorites
@@ -281,9 +280,6 @@ private extension MainViewController {
         viewCoordinator.showUnifiedToggleInputOmnibar(expandedHeight: height)
         viewCoordinator.suggestionTrayContainer.isHidden = true
         updateUnifiedInputContentVisibility(for: coordinator)
-        if isFavoritesToFavorites, let newTabPageViewController {
-            coordinator.contentViewController.copyFavoritesScrollPosition(from: newTabPageViewController)
-        }
         let duration = Constants.omnibarTransitionDuration(isBottom: isBottom, isFloatingUIEnabled: isFloatingUIEnabled)
         if isFloatingUIEnabled, coordinator.cardPosition.isBottom {
             coordinator.viewController.prepareForOmnibarMaterialTransition(duration: duration)

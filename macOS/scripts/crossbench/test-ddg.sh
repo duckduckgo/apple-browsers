@@ -1018,6 +1018,28 @@ record_after_shared_failure() {
   fi
 }
 
+# Records what else the machine was doing, sampled between sites so the reading
+# can never land inside a timed repetition. A run-long transient — another
+# tenant on the runner, thermal throttling, memory pressure — raises every
+# site's LCP together while leaving per-site spread normal, which is
+# indistinguishable from a real regression unless the machine's own state is
+# recorded next to the measurements. Best effort throughout: a missing sysctl
+# or ps is not worth failing a measurement run over.
+record_machine_load() {
+  local label="$1" loadavg busiest pressure
+  # Each assignment absorbs its own failure: the harness runs under
+  # `set -euo pipefail`, where a missing sysctl or ps makes the whole pipeline
+  # non-zero and would abort the run this line only exists to annotate.
+  loadavg="$(sysctl -n vm.loadavg 2>/dev/null | tr -d '{}' \
+    | awk '{printf "%s/%s/%s", $1, $2, $3}')" || loadavg=""
+  busiest="$(ps -Ao %cpu=,ucomm= 2>/dev/null | sort -rn | head -3 \
+    | awk '{printf "%s%%:%s ", $1, $2}')" || busiest=""
+  pressure="$(memory_pressure -Q 2>/dev/null \
+    | awk -F: '/percentage/ {gsub(/ /, "", $2); print $2; exit}')" || pressure=""
+  printf 'machine: %s loadavg=%s free_mem=%s busiest=%s\n' \
+    "$label" "${loadavg:-unknown}" "${pressure:-unknown}" "${busiest:-none}"
+}
+
 run_ddg() {
   local site
   log "DuckDuckGo LCP (mandatory WPR, ${WPR_US_BROADBAND_RTT_MS}ms RTT, ${WPR_US_BROADBAND_IN_KBPS}/${WPR_US_BROADBAND_OUT_KBPS} Kbps, window ${WPR_US_BROADBAND_WINDOW})"
@@ -1027,11 +1049,13 @@ run_ddg() {
 
   for site in "${SITES[@]}"; do
     log "site: $site"
+    record_machine_load "before $site"
     if [ "$SHARED_SERVICE_FAILURE" -ne 0 ]; then
       record_after_shared_failure "$site"
     else
       measure_site "$site"
     fi
+    record_machine_load "after $site"
   done
   if [ "$HANDOFF_FAILURES" -gt 0 ]; then
     RUN_FATAL=1

@@ -679,6 +679,20 @@ class DDGHarnessTests(unittest.TestCase):
             [("apple.com", "infra_error"), ("example.com", "measured")],
         )
 
+    def test_machine_load_is_recorded_between_sites(self):
+        """A run-long transient looks identical to a real regression."""
+        harness = SCRIPT.read_text(encoding="utf-8")
+        self.assertIn("record_machine_load() {", harness)
+        self.assertIn('record_machine_load "before $site"', harness)
+        self.assertIn('record_machine_load "after $site"', harness)
+        # Sampled between sites only. Inside measure_site it would land in a
+        # timed repetition and perturb the very number it exists to explain.
+        measure = harness[
+            harness.index("measure_site() {") :
+            harness.index("# Records what else the machine was doing")
+        ]
+        self.assertNotIn("record_machine_load", measure)
+
 
 if __name__ == "__main__":
     unittest.main()

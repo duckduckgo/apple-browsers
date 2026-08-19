@@ -152,7 +152,13 @@ struct AIChatTabOpener: AIChatTabOpening {
             }
 
         case .url(let url):
-            aiChatTabManaging.openAIChat(url, with: behavior, hasPrompt: false)
+            let didOpen = aiChatTabManaging.openAIChat(url, with: behavior, hasPrompt: false)
+            // A mode URL (e.g. `?mode=image`) starts a fresh mode-driven chat, like `.mode`, so it
+            // counts. Other `.url` uses — the customize-responses modal, the sidebar handoff — carry no
+            // `mode` param and are not new chats.
+            if didOpen, url.getParameter(named: AIChatURLParameters.modeName) != nil {
+                fireNewChatExperimentPixels()
+            }
 
         case .payload(let payload):
             aiChatTabManaging.insertAIChatTab(with: aiChatRemoteSettings.aiChatURL, payload: payload)

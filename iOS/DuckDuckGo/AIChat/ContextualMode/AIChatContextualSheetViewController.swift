@@ -211,6 +211,7 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     /// Stops async suggestion work as soon as the sheet starts dismissing.
     private var canProcessSuggestionSubmission = false
+    private var suggestionAwaitingAppearance: ContextualSuggestedPrompt?
 
     // MARK: - UI Components
 
@@ -455,6 +456,10 @@ final class AIChatContextualSheetViewController: UIViewController {
             mountPersistentUTIHostIfNeeded()
         }
         canProcessSuggestionSubmission = true
+        if let suggestion = suggestionAwaitingAppearance {
+            suggestionAwaitingAppearance = nil
+            submitSuggestion(suggestion)
+        }
         pixelHandler.fireSheetOpened()
         addKeyboardObserver()
         showDimmingView(animated: animated)
@@ -951,6 +956,15 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
             abandonAwaitedSubmittedChat()
             return
         }
+        // Promotion submits while this sheet is still presenting, and delivery bails on a gate that only
+        // opens once it appears — so hold it until then. Only while presenting: a shut gate otherwise
+        // means dismissal, where the submission belongs to a surface the user has left.
+        guard canProcessSuggestionSubmission else {
+            if isBeingPresented {
+                suggestionAwaitingAppearance = suggestion
+            }
+            return
+        }
         let actsOnSelection = AIChatTextSelectionAction(selectionSuggestionID: suggestion.id) != nil
         cancelSuggestionSubmission()
         pixelHandler.fireSuggestionSelected(suggestionId: suggestion.id, pageType: sessionState.viewState.suggestionsPageType)
@@ -1249,6 +1263,7 @@ private extension AIChatContextualSheetViewController {
     func prepareForDismissal() {
         guard canProcessSuggestionSubmission else { return }
         canProcessSuggestionSubmission = false
+        suggestionAwaitingAppearance = nil
         cancelSuggestionSubmission()
         contextualInputViewController.setStartActionsDimmed(false)
     }

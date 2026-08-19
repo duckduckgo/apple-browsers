@@ -276,7 +276,15 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
             parent.addChild(viewController)
             parent.view.addSubview(viewController.view)
             viewController.view.translatesAutoresizingMaskIntoConstraints = false
-            let bottom = viewController.view.bottomAnchor.constraint(equalTo: parent.view.keyboardLayoutGuide.topAnchor)
+            let bottom: NSLayoutConstraint
+            if #available(iOS 16.0, *) {
+                bottom = viewController.view.bottomAnchor.constraint(equalTo: parent.view.keyboardLayoutGuide.topAnchor)
+            } else {
+                // iOS 15 never drives the keyboard guide, so Auto Layout moves the guide to the input
+                // instead of the input to the keyboard. Pin to the bottom and follow the keyboard by hand.
+                bottom = viewController.view.bottomAnchor.constraint(equalTo: parent.view.bottomAnchor)
+                followKeyboardManually(parent: parent, pin: bottom)
+            }
             keyboardBottomConstraint = bottom
             NSLayoutConstraint.activate([
                 viewController.view.leadingAnchor.constraint(equalTo: parent.view.leadingAnchor),
@@ -290,6 +298,28 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         }
         Logger.contextualUTI.info("Mounted above the keyboard")
         return viewController.view
+    }
+
+    private var legacyKeyboardPinCancellables = Set<AnyCancellable>()
+
+    /// Keeps `pin` at the keyboard's overlap with `parent`, animated on the keyboard's own curve.
+    private func followKeyboardManually(parent: UIViewController, pin: NSLayoutConstraint) {
+        legacyKeyboardPinCancellables.removeAll()
+        let update: (Notification) -> Void = { [weak parent] notification in
+            guard let parentView = parent?.viewIfLoaded else { return }
+            let end = (notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue ?? .zero
+            let overlap = max(0, parentView.bounds.maxY - parentView.convert(end, from: nil).minY)
+            pin.constant = -overlap
+            let duration = notification.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double ?? 0
+            UIView.animate(withDuration: duration) { parentView.layoutIfNeeded() }
+        }
+        for name in [UIResponder.keyboardWillShowNotification,
+                     UIResponder.keyboardWillChangeFrameNotification,
+                     UIResponder.keyboardWillHideNotification] {
+            NotificationCenter.default.publisher(for: name)
+                .sink(receiveValue: update)
+                .store(in: &legacyKeyboardPinCancellables)
+        }
     }
 
     /// Mounting must not decide focus: the surface that opened this UTI already did.

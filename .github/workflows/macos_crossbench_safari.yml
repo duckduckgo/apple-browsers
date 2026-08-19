@@ -114,11 +114,14 @@ jobs:
         # to relaunch the runner from a real login session so that it acquires
         # an audit session owner, which only the runner's owner can do.
         run: |
+          # --enable reinstalls the shipped definition of that right, so it has
+          # to run before the rule is rewritten rather than after. Run the other
+          # way around it silently undoes the line above it.
+          sudo safaridriver --enable
+
           sudo security authorizationdb write com.apple.safaridriver.allow allow
           security authorizationdb read com.apple.safaridriver.allow 2>/dev/null \
             | plutil -p - 2>&1 || true
-
-          sudo safaridriver --enable
 
           # The per-user flag lives outside the authorization system, so it has
           # to be written as the runner user rather than as root.

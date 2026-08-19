@@ -50,10 +50,6 @@ struct NetworkProtectionVPNSettingsView: View {
 
     private let strictRoutingRowID = "strictRoutingRow"
 
-    private var showsCopyDiagnosticsButton: Bool {
-        AppDependencyProvider.shared.featureFlagger.isFeatureOn(.vpnShowCopyDiagnosticsButton)
-    }
-
     var body: some View {
         VStack {
             ScrollViewReader { proxy in
@@ -86,9 +82,7 @@ struct NetworkProtectionVPNSettingsView: View {
 
                 dnsSection()
 
-                if showsCopyDiagnosticsButton {
-                    diagnostics()
-                }
+                diagnostics()
             }
             .onAppear {
                 Task {

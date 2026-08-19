@@ -243,10 +243,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214946884020610?focus=true
     case vpnExcludeCGNATToggle
 
-    /// Toggle for the Copy VPN Diagnostics button in the VPN status screen.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215794369750045
-    case vpnShowCopyDiagnosticsButton
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866614199859
     case forgetAllInSettings
 
@@ -739,8 +735,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(NetworkProtectionSubfeature.strictRoutingToggle))
         case .vpnExcludeCGNATToggle:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(NetworkProtectionSubfeature.excludeCGNAT))
-        case .vpnShowCopyDiagnosticsButton:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(NetworkProtectionSubfeature.showCopyDiagnosticsButton))
         case .forgetAllInSettings:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.forgetAllInSettings))
         case .fullDuckAIMode:

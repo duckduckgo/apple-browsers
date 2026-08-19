@@ -136,6 +136,7 @@ public class SyncSettingsViewModel: ObservableObject {
         case recoveryConfirmedTapped
         case anotherDevicePromptShown
         case anotherDevicePromptOptionTapped(SyncAnotherDeviceOption)
+        case anotherDevicePromptDismissed
     }
 
     public enum SyncAnotherDeviceOption: String {
@@ -486,6 +487,12 @@ public class SyncSettingsViewModel: ObservableObject {
 
     public func doneFromConnectingSheet() {
         connectingSheetPhase = nil
+    }
+
+    public func dismissAnotherDevicePrompt() {
+        guard connectingSheetPhase == .syncAnotherDevice(isConnecting: false) else { return }
+        delegate?.fireSyncSetupPixel(event: .anotherDevicePromptDismissed)
+        dismissConnectingSheet()
     }
 
     public func dismissConnectingSheet(then action: (() -> Void)? = nil) {

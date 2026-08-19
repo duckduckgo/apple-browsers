@@ -369,7 +369,10 @@ preserve_diagnostic() {
 # like a WebDriver call against a session that no longer exists. That is the
 # same symptom whether Safari crashed or the driver dropped the session, and
 # only a crash report tells the two apart — so collect any that this run
-# produced. Best effort throughout: ReportCrash writes these asynchronously and
+# produced. A memory-pressure kill is filed as JetsamEvent-<date> rather than
+# under the process name, so it has to be matched separately or a jetsammed
+# WebContent would be reported as nothing having happened at all.
+# Best effort throughout: ReportCrash writes these asynchronously and
 # the directory may not be readable, neither of which is worth failing a run.
 preserve_crash_reports() {
   [ "$MAX_CRASH_REPORTS" -gt 0 ] || return 0
@@ -391,7 +394,8 @@ preserve_crash_reports() {
         copied=$((copied + 1))
       fi
     done < <(find "$directory" -maxdepth 1 -type f \
-      \( -name '*Safari*' -o -name '*WebContent*' -o -name '*WebKit*' \) \
+      \( -name '*Safari*' -o -name '*WebContent*' -o -name '*WebKit*' \
+         -o -name 'JetsamEvent*' \) \
       -newer "$RUN_START_MARKER" 2>/dev/null | sort)
   done
   # Report the count even when it is zero. Staying quiet would make "nothing

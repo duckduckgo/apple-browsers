@@ -153,6 +153,10 @@ class SafariHarnessContractTests(unittest.TestCase):
         self.assertIn("found=$candidates kept=$copied", HARNESS)
         self.assertIn('unreadable="$unreadable $directory"', HARNESS)
 
+    def test_memory_pressure_kills_are_collected_too(self):
+        """A jetsammed WebContent leaves no report under the process name."""
+        self.assertIn("-o -name 'JetsamEvent*'", HARNESS)
+
     def test_failed_repetition_records_whether_the_browser_survived(self):
         """invalid-session-id and a dead browser are the same over WebDriver."""
         self.assertIn('surviving="$(safari_pids | tr \'\\n\' \' \')"', HARNESS)

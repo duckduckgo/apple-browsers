@@ -29,7 +29,7 @@ final class TabNavigationInterfaceTests: UITestCase, TabNavigationTestHelpers {
 
     override func setUpWithError() throws {
         continueAfterFailure = false
-        app = XCUIApplication.setUp(featureFlags: ["fireDialogSimplified": false])
+        app = XCUIApplication.setUp()
     }
 
     // MARK: - Link Navigation Tests

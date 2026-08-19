@@ -31,10 +31,11 @@ extension FireDialogUITests {
     var fireDialogCookiesToggle: XCUIElement { app.fireDialogCookiesToggle }
     var fireDialogTabsToggle: XCUIElement { app.fireDialogTabsToggle }
     var fireDialogBurnButton: XCUIElement { app.fireDialogBurnButton }
+    var fireDialogDetailsDisclosureButton: XCUIElement { app.fireDialogDetailsDisclosureButton }
 
-    func setUpFireDialogUITests() {
+    func setUpFireDialogUITests(featureFlags: [String: Bool] = [:]) {
         continueAfterFailure = false
-        app = XCUIApplication.setUp(featureFlags: ["fireDialogSimplified": false])
+        app = XCUIApplication.setUp(featureFlags: featureFlags)
         // Clear the Local Network permission prompt if it surfaced during launch, before the
         // debug-menu / fire-button clicks below (which it would otherwise intercept).
         XCUIApplication.dismissLocalNetworkPromptIfPresent()
@@ -46,7 +47,11 @@ extension FireDialogUITests {
 
         // Clear state
         app.fireButton.click()
-        app.fireDialogSegmentedControl.buttons["Everything"].click()
+
+        app.fireDialogSegmentedControl.buttons["All data"].click()
+        if (fireDialogDetailsDisclosureButton.value as? String) != "expanded" {
+            fireDialogDetailsDisclosureButton.click()
+        }
         fireDialogTabsToggle.toggleCheckboxIfNeeded(to: true, ensureHittable: { _ in })
         fireDialogHistoryToggle.toggleCheckboxIfNeeded(to: true, ensureHittable: { _ in })
         fireDialogCookiesToggle.toggleCheckboxIfNeeded(to: true, ensureHittable: { _ in })
@@ -166,7 +171,8 @@ extension FireDialogUITests {
     }
 
     func fireproofCurrentSite(file: StaticString = #file, line: UInt = #line) {
-        app.fireDialogManageFireproofButton.click()
+        app.fireDialogMoreOptionsMenuButton.click()
+        app.fireDialogManageFireproofSitesMenuItem.click()
 
         let fireproofDialog = app.sheets.containing(.staticText, where: .keyPath(\.value, equalTo: "Fireproof Sites")).firstMatch
         XCTAssertTrue(

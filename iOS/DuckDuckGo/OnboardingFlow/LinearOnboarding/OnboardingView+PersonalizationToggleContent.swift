@@ -30,6 +30,8 @@ import DesignResourcesKitIcons
 struct OnboardingPersonalizationToggleItem: Identifiable {
     let item: OnboardingPersonalizationContent.Item
     let isOn: Binding<Bool>
+    /// Rows shown only while this item's toggle is on
+    let dependentItems: [OnboardingPersonalizationToggleItem]
 
     var id: OnboardingPersonalizationContent.Item.ItemType {
         item.type
@@ -38,9 +40,10 @@ struct OnboardingPersonalizationToggleItem: Identifiable {
 
 extension OnboardingPersonalizationToggleItem {
 
-    init(_ item: OnboardingPersonalizationContent.Item, isOn: Binding<Bool>) {
+    init(_ item: OnboardingPersonalizationContent.Item, isOn: Binding<Bool>, dependentItems: [OnboardingPersonalizationToggleItem] = []) {
         self.item = item
         self.isOn = isOn
+        self.dependentItems = dependentItems
     }
 
 }
@@ -94,13 +97,22 @@ extension OnboardingPersonalizationContent.Item.ItemType {
                     manager.setYouTubeAdBlocking($0)
                 }
             )
-        case .duckPlayer:
+        case .rejectOptionalCookies:
             Binding(
                 get: {
-                    manager.isDuckPlayerEnabled
+                    manager.isCookiePopUpProtectionEnabled
                 },
                 set: {
-                    manager.setDuckPlayer($0)
+                    manager.setCookiePopUpProtection($0)
+                }
+            )
+        case .acceptOtherCookies:
+            Binding(
+                get: {
+                    manager.isPopUpsWithoutOptOutsEnabled
+                },
+                set: {
+                    manager.setPopUpsWithoutOptOuts($0)
                 }
             )
         }

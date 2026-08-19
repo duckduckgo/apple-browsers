@@ -380,7 +380,7 @@ final class OnboardingSharedPixelTests: XCTestCase {
             (.preferencesAIToggleMode(.shown), "onboarding_preferences_ai-toggle-mode"),
             (.preferencesAISearch(.shown), "onboarding_preferences_ai-search"),
             (.preferencesDuckAI(.shown), "onboarding_preferences_duck-ai"),
-            (.preferencesYoutube(.shown), "onboarding_preferences_youtube")
+            (.preferencesAdBlocking(.shown), "onboarding_preferences_ad-blocking")
         ]
 
         for (pixelEvent, expectedName) in cases {
@@ -456,21 +456,22 @@ final class OnboardingSharedPixelTests: XCTestCase {
         XCTAssertEqual(event.pixel.parameters?["ai_generated_images_enabled"], "true")
     }
 
-    func testWhenPreferencesYoutubeClickedThenSendsToggleParametersAndNoValue() throws {
+    func testWhenPreferencesAdBlockingClickedThenSendsToggleParametersAndNoValue() throws {
         // GIVEN
         let pixelFiring = PixelKitMock()
         let pixelHandler = makeHandler(pixelFiring: pixelFiring)
 
         // WHEN
-        pixelHandler.fire(.preferencesYoutube(.clicked(youTubeAdBlockingEnabled: true, duckPlayerEnabled: false)))
+        pixelHandler.fire(.preferencesAdBlocking(.clicked(youTubeAdBlockingEnabled: true, cookiePopUpProtectionEnabled: true, popUpsWithoutOptOutsEnabled: false)))
 
         // THEN
         let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
-        XCTAssertEqual(event.pixel.name, "onboarding_preferences_youtube")
+        XCTAssertEqual(event.pixel.name, "onboarding_preferences_ad-blocking")
         XCTAssertEqual(event.pixel.parameters?["event"], "clicked")
         XCTAssertNil(event.pixel.parameters?["value"])
         XCTAssertEqual(event.pixel.parameters?["youtube_ad_blocking_enabled"], "true")
-        XCTAssertEqual(event.pixel.parameters?["duck_player_enabled"], "false")
+        XCTAssertEqual(event.pixel.parameters?["cookie_popup_protection_enabled"], "true")
+        XCTAssertEqual(event.pixel.parameters?["popups_without_optouts_enabled"], "false")
     }
 
     func testWhenPreferencesAIModelClickedThenUsesModelValue() throws {

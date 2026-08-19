@@ -32,7 +32,7 @@ protocol OnboardingIntroContentProviding {
     var addressBarToggleModePersonalizationContent: OnboardingAddressBarToggleModeContent { get }
     var aiSearchPersonalizationContent: OnboardingPersonalizationContent { get }
     var aiChatEnabledPersonalizationContent: OnboardingDuckAIEnabledPersonalizationContent { get }
-    var youTubePersonalizationContent: OnboardingPersonalizationContent { get }
+    var adBlockingPersonalizationContent: OnboardingPersonalizationContent { get }
     var setDefaultBrowserContent: OnboardingComparisonContent { get }
     var aiIntroContent: OnboardingComparisonContent { get }
     var addToDockContent: OnboardingAddToDockContent { get }
@@ -209,6 +209,15 @@ extension OnboardingPersonalizationContent {
         let type: ItemType
         let title: String
         let subtitle: String?
+        /// Rows shown only while this item's toggle is on. Empty for standalone rows.
+        let dependentItems: [Item]
+
+        init(type: ItemType, title: String, subtitle: String?, dependentItems: [Item] = []) {
+            self.type = type
+            self.title = title
+            self.subtitle = subtitle
+            self.dependentItems = dependentItems
+        }
     }
 
 }
@@ -221,7 +230,8 @@ extension OnboardingPersonalizationContent.Item {
         case searchAssist
         case aiGeneratedImages
         case youTubeAdBlocking
-        case duckPlayer
+        case rejectOptionalCookies
+        case acceptOtherCookies
     }
 
 }
@@ -310,15 +320,26 @@ extension OnboardingIntroContentProvider {
         )
     }
 
-    var youTubePersonalizationContent: OnboardingPersonalizationContent {
+    var adBlockingPersonalizationContent: OnboardingPersonalizationContent {
         OnboardingPersonalizationContent(
-            title: UserText.Onboarding.Personalization.YouTube.title,
+            title: UserText.Onboarding.Personalization.AdBlocking.title,
             message: nil,
             items: [
-                OnboardingPersonalizationContent.Item(type: .youTubeAdBlocking, title: UserText.Onboarding.Personalization.YouTube.adBlockingTitle, subtitle: nil),
-                OnboardingPersonalizationContent.Item(type: .duckPlayer, title: UserText.Onboarding.Personalization.YouTube.duckPlayerTitle, subtitle: UserText.Onboarding.Personalization.YouTube.duckPlayerSubtitle)
+                OnboardingPersonalizationContent.Item(type: .youTubeAdBlocking, title: UserText.Onboarding.Personalization.AdBlocking.adBlockingTitle, subtitle: nil),
+                OnboardingPersonalizationContent.Item(
+                    type: .rejectOptionalCookies,
+                    title: UserText.Onboarding.Personalization.AdBlocking.rejectOptionalCookiesTitle,
+                    subtitle: UserText.Onboarding.Personalization.AdBlocking.rejectOptionalCookiesSubtitle,
+                    dependentItems: [
+                        OnboardingPersonalizationContent.Item(
+                            type: .acceptOtherCookies,
+                            title: UserText.Onboarding.Personalization.AdBlocking.acceptOtherCookiesTitle,
+                            subtitle: UserText.Onboarding.Personalization.AdBlocking.acceptOtherCookiesSubtitle
+                        )
+                    ]
+                )
             ],
-            primaryCTA: UserText.Onboarding.Personalization.YouTube.cta,
+            primaryCTA: UserText.Onboarding.Personalization.AdBlocking.cta,
             daxAnimation: .wingLeft
         )
     }

@@ -1864,9 +1864,9 @@ extension OnboardingIntroViewModelTests {
         XCTAssertEqual(sut.state.intro?.type, .setDefaultBrowserDialog(content: .mockBrowser))
 
         sut.setDefaultBrowserAction()
-        XCTAssertEqual(sut.state.intro?.type, .duckPlayerDialog(content: .mock))
+        XCTAssertEqual(sut.state.intro?.type, .adBlockingDialog(content: .mock))
 
-        sut.duckPlayerContinueAction()
+        sut.adBlockingContinueAction()
         XCTAssertEqual(sut.state.intro?.type, .chooseSearchExperienceDialog(content: .mock))
 
         sut.selectSearchExperienceAction()
@@ -1906,8 +1906,8 @@ extension OnboardingIntroViewModelTests {
         makeSUT(currentOnboardingStep: .keepDuckAISelection).onAppear()
         XCTAssertTrue(pixelReporterMock.didCallMeasureKeepDuckAIImpression)
 
-        makeSUT(currentOnboardingStep: .duckPlayerSelection).onAppear()
-        XCTAssertTrue(pixelReporterMock.didCallMeasureDuckPlayerImpression)
+        makeSUT(currentOnboardingStep: .adBlockingPersonalization).onAppear()
+        XCTAssertTrue(pixelReporterMock.didCallMeasureAdBlockingImpression)
     }
 
     func testWhenSelectDownloadReasonThenSelectionPixelFiresWithChosenReason() {
@@ -2025,22 +2025,25 @@ extension OnboardingIntroViewModelTests {
         XCTAssertEqual(pixelReporterMock.didCaptureKeepDuckAISelection, false)
     }
 
-    func testWhenDuckPlayerContinueThenFirePixelWithCorrectParameters() {
+    func testWhenAdBlockingContinueThenFirePixelWithCorrectParameters() {
         // GIVEN
-        onboardingManagerMock.onboardingSteps = [.duckPlayerSelection]
+        onboardingManagerMock.onboardingSteps = [.adBlockingPersonalization]
         let personalizationManager = MockOnboardingPersonalizationManager()
         personalizationManager.isYouTubeAdBlockingEnabled = true
-        personalizationManager.isDuckPlayerEnabled = false
-        let sut = makeSUT(currentOnboardingStep: .duckPlayerSelection, personalizationManager: personalizationManager)
+        personalizationManager.isCookiePopUpProtectionEnabled = true
+        personalizationManager.isPopUpsWithoutOptOutsEnabled = false
+        let sut = makeSUT(currentOnboardingStep: .adBlockingPersonalization, personalizationManager: personalizationManager)
 
         // WHEN
-        sut.duckPlayerContinueAction()
+        sut.adBlockingContinueAction()
 
         // THEN
-        XCTAssertTrue(pixelReporterMock.didCallMeasureDuckPlayerSelection)
-        XCTAssertEqual(pixelReporterMock.didCaptureDuckPlayerSelection?.youTubeAdBlockingEnabled, true)
-        XCTAssertEqual(pixelReporterMock.didCaptureDuckPlayerSelection?.duckPlayerEnabled, false)
+        XCTAssertTrue(pixelReporterMock.didCallMeasureAdBlockingSelection)
+        XCTAssertEqual(pixelReporterMock.didCaptureAdBlockingSelection?.youTubeAdBlockingEnabled, true)
+        XCTAssertEqual(pixelReporterMock.didCaptureAdBlockingSelection?.cookiePopUpProtectionEnabled, true)
+        XCTAssertEqual(pixelReporterMock.didCaptureAdBlockingSelection?.popUpsWithoutOptOutsEnabled, false)
     }
+
 }
 
 private final class MockRestorePromptHandler: OnboardingRestorePromptHandling {

@@ -1270,22 +1270,33 @@ struct OnboardingIntroContentProviderTests {
             #expect(result == expected)
         }
 
-        @Test("YouTube personalization content matches the expected copy and toggles")
-        func youTubePersonalizationContent() {
+        @Test("Ad-blocking personalization content matches the expected copy and nested cookie toggles")
+        func adBlockingPersonalizationContent() {
             // GIVEN
             let expected = OnboardingPersonalizationContent(
-                title: "YouTube, without the noise.",
+                title: "Internet, without the noise.",
                 message: nil,
                 items: [
-                    .init(type: .youTubeAdBlocking, title: "YouTube ad blocking", subtitle: nil),
-                    .init(type: .duckPlayer, title: "Duck Player", subtitle: "Open YouTube videos in theater mode")
+                    .init(type: .youTubeAdBlocking, title: "Block video ads on YouTube", subtitle: nil),
+                    .init(
+                        type: .rejectOptionalCookies,
+                        title: "Reject optional cookies",
+                        subtitle: "Maximizes privacy and closes cookie pop-ups",
+                        dependentItems: [
+                            .init(
+                                type: .acceptOtherCookies,
+                                title: "Accept cookies that can’t be rejected",
+                                subtitle: "Hides even more pop-ups"
+                            )
+                        ]
+                    )
                 ],
                 primaryCTA: "Next",
                 daxAnimation: .wingLeft
             )
 
             // WHEN
-            let result = sut.youTubePersonalizationContent
+            let result = sut.adBlockingPersonalizationContent
 
             // THEN
             #expect(result == expected)

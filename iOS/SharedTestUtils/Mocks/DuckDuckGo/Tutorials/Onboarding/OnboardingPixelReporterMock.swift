@@ -360,9 +360,9 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
     private(set) var didCallMeasureKeepDuckAIImpression = false
     private(set) var didCallMeasureKeepDuckAISelection = false
     private(set) var didCaptureKeepDuckAISelection: Bool?
-    private(set) var didCallMeasureDuckPlayerImpression = false
-    private(set) var didCallMeasureDuckPlayerSelection = false
-    private(set) var didCaptureDuckPlayerSelection: (youTubeAdBlockingEnabled: Bool, duckPlayerEnabled: Bool)?
+    private(set) var didCallMeasureAdBlockingImpression = false
+    private(set) var didCallMeasureAdBlockingSelection = false
+    private(set) var didCaptureAdBlockingSelection: (youTubeAdBlockingEnabled: Bool, cookiePopUpProtectionEnabled: Bool, popUpsWithoutOptOutsEnabled: Bool)?
 
     func measureDownloadReasonImpression() {
         didCallMeasureDownloadReasonImpression = true
@@ -418,13 +418,13 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
         didCaptureKeepDuckAISelection = shouldKeep
     }
 
-    func measureDuckPlayerImpression() {
-        didCallMeasureDuckPlayerImpression = true
+    func measureAdBlockingImpression() {
+        didCallMeasureAdBlockingImpression = true
     }
 
-    func measureDuckPlayerSelection(youTubeAdBlockingEnabled: Bool, duckPlayerEnabled: Bool) {
-        didCallMeasureDuckPlayerSelection = true
-        didCaptureDuckPlayerSelection = (youTubeAdBlockingEnabled, duckPlayerEnabled)
+    func measureAdBlockingSelection(youTubeAdBlockingEnabled: Bool, cookiePopUpProtectionEnabled: Bool, popUpsWithoutOptOutsEnabled: Bool) {
+        didCallMeasureAdBlockingSelection = true
+        didCaptureAdBlockingSelection = (youTubeAdBlockingEnabled, cookiePopUpProtectionEnabled, popUpsWithoutOptOutsEnabled)
     }
 
     // MARK: - Try Duck.ai End of Journey

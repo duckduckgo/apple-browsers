@@ -28,7 +28,13 @@ final class MockOnboardingAppSettingsStore: OnboardingAppSettingsPersonalization
         }
     }
 
-    var isDuckPlayerEnabled = false {
+    var isCookiePopUpProtectionEnabled = false {
+        didSet {
+            setCallCount += 1
+        }
+    }
+
+    var isPopUpsWithoutOptOutsEnabled = false {
         didSet {
             setCallCount += 1
         }

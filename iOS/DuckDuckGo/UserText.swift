@@ -2601,12 +2601,14 @@ public struct UserText {
                 public static let secondaryCTA = NotLocalizedString("onboarding.personalization.duckAIEnabled.cta.secondary", value: "Keep Duck.ai Off", comment: "Secondary button to keep Duck.ai off from the onboarding Duck.ai enabled personalization screen.")
             }
 
-            public enum YouTube {
-                public static let title = NotLocalizedString("onboarding.personalization.youTube.title", value: "YouTube, without the noise.", comment: "Title of the onboarding YouTube personalization screen.")
-                public static let adBlockingTitle = NotLocalizedString("onboarding.personalization.youTube.adBlocking.title", value: "YouTube ad blocking", comment: "Title for the YouTube ad blocking option on the onboarding YouTube personalization screen.")
-                public static let duckPlayerTitle = NotLocalizedString("onboarding.personalization.youTube.duckPlayer.title", value: "Duck Player", comment: "Title for the Duck Player option on the onboarding YouTube personalization screen.")
-                public static let duckPlayerSubtitle = NotLocalizedString("onboarding.personalization.youTube.duckPlayer.subtitle", value: "Open YouTube videos in theater mode", comment: "Subtitle for the Duck Player option on the onboarding YouTube personalization screen.")
-                public static let cta = NotLocalizedString("onboarding.personalization.youTube.cta", value: "Next", comment: "Button to continue to the next onboarding screen from the YouTube personalization screen.")
+            public enum AdBlocking {
+                public static let title = NotLocalizedString("onboarding.personalization.adBlocking.title", value: "Internet, without the noise.", comment: "Title of the onboarding ad-blocking personalization screen.")
+                public static let adBlockingTitle = NotLocalizedString("onboarding.personalization.adBlocking.youTubeAdBlocking.title", value: "Block video ads on YouTube", comment: "Title for the YouTube ad blocking option on the onboarding ad-blocking personalization screen.")
+                public static let rejectOptionalCookiesTitle = NotLocalizedString("onboarding.personalization.adBlocking.rejectOptionalCookies.title", value: "Reject optional cookies", comment: "Title for the reject-optional-cookies option on the onboarding ad-blocking personalization screen.")
+                public static let rejectOptionalCookiesSubtitle = NotLocalizedString("onboarding.personalization.adBlocking.rejectOptionalCookies.subtitle", value: "Maximizes privacy and closes cookie pop-ups", comment: "Subtitle for the reject-optional-cookies option on the onboarding ad-blocking personalization screen.")
+                public static let acceptOtherCookiesTitle = NotLocalizedString("onboarding.personalization.adBlocking.acceptOtherCookies.title", value: "Accept cookies that can’t be rejected", comment: "Title for the accept-other-cookies option on the onboarding ad-blocking personalization screen.")
+                public static let acceptOtherCookiesSubtitle = NotLocalizedString("onboarding.personalization.adBlocking.acceptOtherCookies.subtitle", value: "Hides even more pop-ups", comment: "Subtitle for the accept-other-cookies option on the onboarding ad-blocking personalization screen.")
+                public static let cta = NotLocalizedString("onboarding.personalization.adBlocking.cta", value: "Next", comment: "Button to continue to the next onboarding screen from the ad-blocking personalization screen.")
             }
 
             public enum DuckAIQuery {

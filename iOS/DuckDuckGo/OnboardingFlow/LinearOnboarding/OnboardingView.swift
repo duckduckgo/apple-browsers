@@ -474,8 +474,8 @@ extension OnboardingView {
                 addressBarToggleModeView(content: content)
             case let .keepDuckAIDialog(content):
                 aiChatEnabledSelectionView(content: content)
-            case let .duckPlayerDialog(content):
-                toggleSettingsPersonalizationView(content: content, action: model.duckPlayerContinueAction)
+            case let .adBlockingDialog(content):
+                toggleSettingsPersonalizationView(content: content, action: model.adBlockingContinueAction)
             case let .setDefaultBrowserDialog(content):
                 setDefaultBrowserView(content: content)
             case let .aiIntroDialog(content):
@@ -505,11 +505,16 @@ extension OnboardingView {
         }
 
         private func toggleSettingsPersonalizationView(content: OnboardingPersonalizationContent, action: @escaping () -> Void) -> some View {
-            let personalizationManager = model.personalizationManager
-
-            let items = content.items.map { item in
-                OnboardingPersonalizationToggleItem(item, isOn: item.type.uiBindingTo(manager: personalizationManager))
+            func makeToggleItem(_ item: OnboardingPersonalizationContent.Item) -> OnboardingPersonalizationToggleItem {
+                OnboardingPersonalizationToggleItem(
+                    item,
+                    isOn: item.type.uiBindingTo(manager: personalizationManager),
+                    dependentItems: item.dependentItems.map(makeToggleItem)
+                )
             }
+
+            let personalizationManager = model.personalizationManager
+            let items = content.items.map(makeToggleItem)
 
             return PersonalizationToggleTemplate(
                 content: content,
@@ -660,7 +665,7 @@ extension OnboardingView {
                 return scaledThumbUpAnimation(forBubbleHeight: lockedIntroBubbleHeight, base: content.daxAnimation)
             case .downloadReasonDialog(let content):
                 return content.daxAnimation
-            case .searchPrivacySettingsDialog(let content), .aiSearchSettingsDialog(let content), .duckPlayerDialog(let content):
+            case .searchPrivacySettingsDialog(let content), .aiSearchSettingsDialog(let content), .adBlockingDialog(let content):
                 return content.daxAnimation
             case .aiModelDialog(let content, _, _):
                 return content.daxAnimation
@@ -844,7 +849,7 @@ private extension OnboardingView {
             )
         case .downloadReasonDialog,
              .searchPrivacySettingsDialog, .aiSearchSettingsDialog, .aiModelDialog,
-             .toggleInputModeDialog, .keepDuckAIDialog, .duckPlayerDialog:
+             .toggleInputModeDialog, .keepDuckAIDialog, .adBlockingDialog:
             return BubbleBackedDialogConfiguration(
                 tailOffset: tailLeadingOffset,
                 tailDirection: .leading,

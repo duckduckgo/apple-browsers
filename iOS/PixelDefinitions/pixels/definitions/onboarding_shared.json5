@@ -418,8 +418,8 @@
             "onboardingFlowVariant"
         ]
     },
-    "m_ios_onboarding_preferences_youtube": {
-        "description": "Fired during linear onboarding on the YouTube (Duck Player) preferences step of the download-reason segmented flow (treatment cohort).",
+    "m_ios_onboarding_preferences_ad-blocking": {
+        "description": "Fired during linear onboarding on the ad-blocking & cookie preferences step of the download-reason segmented flow (treatment cohort).",
         "owners": ["alessandroboron"],
         "triggers": ["other"],
         "parameters": [
@@ -432,9 +432,14 @@
                 "description": "On the engagement (clicked) event: whether YouTube ad blocking is enabled: true or false"
             },
             {
-                "key": "duck_player_enabled",
+                "key": "cookie_popup_protection_enabled",
                 "type": "boolean",
-                "description": "On the engagement (clicked) event: whether Duck Player is enabled: true or false"
+                "description": "On the engagement (clicked) event: whether cookie pop-up protection (autoconsent) is enabled: true or false"
+            },
+            {
+                "key": "popups_without_optouts_enabled",
+                "type": "boolean",
+                "description": "On the engagement (clicked) event: whether cookie pop-ups without opt-outs are auto-accepted: true or false"
             },
             "onboardingInstallType",
             "onboardingDaysSinceInstall",

@@ -138,8 +138,8 @@ protocol OnboardingDownloadReasonPixelReporting {
     func measureAISearchSettingsSelection(searchAssistEnabled: Bool, aiGeneratedImagesEnabled: Bool)
     func measureKeepDuckAIImpression()
     func measureKeepDuckAISelection(shouldKeep: Bool)
-    func measureDuckPlayerImpression()
-    func measureDuckPlayerSelection(youTubeAdBlockingEnabled: Bool, duckPlayerEnabled: Bool)
+    func measureAdBlockingImpression()
+    func measureAdBlockingSelection(youTubeAdBlockingEnabled: Bool, cookiePopUpProtectionEnabled: Bool, popUpsWithoutOptOutsEnabled: Bool)
 }
 
 typealias LinearOnboardingPixelReporting = OnboardingIntroPixelReporting & OnboardingAddToDockReporting & OnboardingDownloadReasonPixelReporting
@@ -619,12 +619,12 @@ extension OnboardingPixelReporter: OnboardingDownloadReasonPixelReporting {
         fireSharedPixel(.preferencesDuckAI(.clicked(shouldKeep ? .on : .off)))
     }
 
-    func measureDuckPlayerImpression() {
-        fireSharedPixel(.preferencesYoutube(.shown))
+    func measureAdBlockingImpression() {
+        fireSharedPixel(.preferencesAdBlocking(.shown))
     }
 
-    func measureDuckPlayerSelection(youTubeAdBlockingEnabled: Bool, duckPlayerEnabled: Bool) {
-        fireSharedPixel(.preferencesYoutube(.clicked(youTubeAdBlockingEnabled: youTubeAdBlockingEnabled, duckPlayerEnabled: duckPlayerEnabled)))
+    func measureAdBlockingSelection(youTubeAdBlockingEnabled: Bool, cookiePopUpProtectionEnabled: Bool, popUpsWithoutOptOutsEnabled: Bool) {
+        fireSharedPixel(.preferencesAdBlocking(.clicked(youTubeAdBlockingEnabled: youTubeAdBlockingEnabled, cookiePopUpProtectionEnabled: cookiePopUpProtectionEnabled, popUpsWithoutOptOutsEnabled: popUpsWithoutOptOutsEnabled)))
     }
 
 }

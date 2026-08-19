@@ -39,8 +39,9 @@ struct HapticsPlaygroundView: View {
             timingSection(animationDuration: duration)
             intensitySection(animationDuration: duration)
             sharpnessSection(animationDuration: duration)
-            resetSection
             previewSection
+            exportSection
+            resetSection
 
         }
         .background(Color(designSystemColor: .background))
@@ -185,6 +186,23 @@ struct HapticsPlaygroundView: View {
             Text(verbatim: "Test Selected Haptic")
         }
     }
+
+    var exportSection: some View {
+        Section {
+            Button {
+                viewModel.exportConfiguration()
+            } label: {
+                Label(
+                    viewModel.didCopyPreset ? "Copied" : "Copy Swift Preset",
+                    systemImage: viewModel.didCopyPreset ? "checkmark" : "doc.on.doc"
+                )
+            }
+        } header: {
+            Text(verbatim: "Export")
+        } footer: {
+            Text(verbatim: "Copies the current values as a Swift HapticDesign preset.")
+        }
+    }
 }
 
 struct ProgressSlider: View {
@@ -305,10 +323,12 @@ final class HapticsPlaygroundViewModel: ObservableObject {
     @Published private var fireButtonAnimation: FireButtonAnimationType {
         didSet {
             configuration = fireButtonAnimation.hapticConfiguration
+            didCopyPreset = false
         }
     }
 
     @Published var configuration: HapticConfiguration
+    @Published var didCopyPreset = false
 
     let animations = [FireButtonAnimationType.fireRising, .fireRisingLegacy, .waterSwirl, .airstream]
 
@@ -354,6 +374,60 @@ final class HapticsPlaygroundViewModel: ObservableObject {
             // no op
         }
         self.hapticEngine.play(haptic: configuration, duration: fireButtonAnimationBinding.wrappedValue.duration)
+    }
+
+    func exportConfiguration() {
+        didCopyPreset = true
+        UIPasteboard.general.string = makeSwiftPreset(
+            name: fireButtonAnimation.rawValue,
+            configuration: configuration
+        )
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            self.didCopyPreset = false
+        }
+    }
+
+    private func makeSwiftPreset(
+        name: String,
+        configuration: HapticConfiguration
+    ) -> String {
+        func format(_ value: Double) -> String {
+            String(format: "%.3f", value)
+        }
+
+        func format(_ value: Float) -> String {
+            String(format: "%.3f", value)
+        }
+
+        return """
+        static let \(name) = HapticDesign(
+            baseIntensity: \(format(configuration.baseIntensity)),
+            baseSharpness: \(format(configuration.baseSharpness)),
+            hapticStart: \(format(configuration.hapticStart)),
+            hapticEnd: \(format(configuration.hapticEnd)),
+
+            intensityPoints: [
+        \(configuration.intensityPoints
+            .map {
+                "        .init(progress: \(format($0.progress)), value: \(format($0.value)))"
+            }
+            .joined(separator: ",\n"))
+            ],
+
+            sharpnessPoints: [
+        \(configuration.sharpnessPoints
+            .map {
+                "        .init(progress: \(format($0.progress)), value: \(format($0.value)))"
+            }
+            .joined(separator: ",\n"))
+            ],
+
+            transientEnabled: \(configuration.transientEnabled),
+            transientProgress: \(format(configuration.transientProgress)),
+            transientIntensity: \(format(configuration.transientIntensity)),
+            transientSharpness: \(format(configuration.transientSharpness))
+        )
+        """
     }
 }
 
@@ -410,6 +484,123 @@ extension HapticConfiguration {
         transientSharpness: 0.65
     )
 
+    static let infernoLegacy = HapticConfiguration(
+        baseIntensity: 0.85,
+        baseSharpness: 0.18,
+
+        hapticStart: 0.04,
+        hapticEnd: 0.88,
+
+        intensityPoints: [
+            // ~0.08s — flame first appears
+            .init(progress: 0.04, value: 0.00),
+            // ~0.33s — early ignition
+            .init(progress: 0.17, value: 0.12),
+            // ~0.67s — flame establishing
+            .init(progress: 0.33, value: 0.32),
+            // ~1.00s — clearly rising
+            .init(progress: 0.50, value: 0.58),
+            // ~1.33s — strongest visual growth
+            .init(progress: 0.67, value: 0.90),
+            // ~1.50s — brief sustained strength
+            .init(progress: 0.75, value: 0.78),
+            // ~1.67s — orange sequence finishing
+            .init(progress: 0.83, value: 0.35),
+            // ~1.76s — tactile fade finishes
+            .init(progress: 0.88, value: 0.00)
+        ],
+
+        sharpnessPoints: [
+            // Start very soft
+            .init(progress: 0.04, value: 0.00),
+            // Flame starts to acquire texture
+            .init(progress: 0.25, value: 0.08),
+            // More definition as it rises
+            .init(progress: 0.45, value: 0.18),
+            // Crispest near the visual high point
+            .init(progress: 0.67, value: 0.34),
+            // Soften during release
+            .init(progress: 0.78, value: 0.18),
+            .init(progress: 0.88, value: 0.00)
+        ],
+        transientEnabled: true,
+        transientProgress: 0.67,
+        transientIntensity: 0.22,
+        transientSharpness: 0.38
+    )
+
+    static let swirl = HapticConfiguration(
+        baseIntensity: 0.72,
+        baseSharpness: 0.22,
+
+        hapticStart: 0.04,
+        hapticEnd: 0.94,
+
+        intensityPoints: [
+            .init(progress: 0.04, value: 0.00),
+            .init(progress: 0.15, value: 0.18),
+            .init(progress: 0.30, value: 0.42),
+            .init(progress: 0.45, value: 0.68),
+            .init(progress: 0.60, value: 0.76),
+            .init(progress: 0.72, value: 0.66),
+            .init(progress: 0.84, value: 0.38),
+            .init(progress: 0.94, value: 0.00)
+        ],
+
+        sharpnessPoints: [
+            .init(progress: 0.04, value: 0.00),
+            .init(progress: 0.20, value: 0.10),
+            .init(progress: 0.40, value: 0.22),
+            .init(progress: 0.58, value: 0.30),
+            .init(progress: 0.74, value: 0.22),
+            .init(progress: 0.88, value: 0.10),
+            .init(progress: 0.94, value: 0.00)
+        ],
+
+        transientEnabled: false,
+        transientProgress: 0.58,
+        transientIntensity: 0.18,
+        transientSharpness: 0.30
+    )
+
+    static let airstream = HapticConfiguration(
+        baseIntensity: 0.78,
+        baseSharpness: 0.28,
+
+        hapticStart: 0.03,
+        hapticEnd: 0.92,
+
+        intensityPoints: [
+            .init(progress: 0.03, value: 0.00),
+            // Quick initial engagement
+            .init(progress: 0.12, value: 0.24),
+            // Multiple colour passes are now active
+            .init(progress: 0.24, value: 0.52),
+            // Strong tactile body
+            .init(progress: 0.40, value: 0.78),
+            .init(progress: 0.58, value: 0.82),
+            // Start releasing
+            .init(progress: 0.72, value: 0.62),
+            .init(progress: 0.84, value: 0.30),
+            .init(progress: 0.92, value: 0.00)
+        ],
+
+        sharpnessPoints: [
+            .init(progress: 0.03, value: 0.00),
+            .init(progress: 0.16, value: 0.14),
+            .init(progress: 0.32, value: 0.30),
+            .init(progress: 0.50, value: 0.42),
+            .init(progress: 0.66, value: 0.34),
+            .init(progress: 0.82, value: 0.16),
+            .init(progress: 0.92, value: 0.00)
+        ],
+
+        transientEnabled: false,
+        transientProgress: 0.22,
+        transientIntensity: 0.20,
+        transientSharpness: 0.45
+    )
+
 }
 
 private extension FireButtonAnimationType {
@@ -417,16 +608,27 @@ private extension FireButtonAnimationType {
     var duration: TimeInterval {
         switch self {
         case .fireRising:
-            return 1.17
-        case.fireRisingLegacy, .airstream, .waterSwirl:
-            return 1.0
+            1.17
+        case.fireRisingLegacy, .waterSwirl:
+            2.0
+        case .airstream:
+            1.5
         case .none:
-            return 0
+            0
         }
     }
 
     var hapticConfiguration: HapticConfiguration {
-        .inferno
+        switch self {
+        case .fireRising, .none:
+                .inferno
+        case .fireRisingLegacy:
+                .infernoLegacy
+        case .waterSwirl:
+                .swirl
+        case .airstream:
+                .airstream
+        }
     }
 
 }

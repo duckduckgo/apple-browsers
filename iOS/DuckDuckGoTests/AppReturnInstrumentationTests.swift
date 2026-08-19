@@ -29,6 +29,26 @@ struct AppReturnInstrumentationTests {
         var fired: [(name: String, params: [String: String])] = []
     }
 
+    /// Runs the send as soon as it is handed over, so the existing expectations can stay synchronous.
+    private final class ImmediateDelay: PixelTransmissionDelaying {
+        func delaySend(_ send: @escaping () -> Void) {
+            send()
+        }
+    }
+
+    /// Holds the send until the test releases it, standing in for the randomised wait.
+    private final class ManualDelay: PixelTransmissionDelaying {
+        private var pending: (() -> Void)?
+
+        func delaySend(_ send: @escaping () -> Void) {
+            pending = send
+        }
+
+        func elapse() {
+            pending?()
+        }
+    }
+
     private static let now = Date(timeIntervalSince1970: 1_750_000_000)
 
     private func makeSUT(
@@ -36,7 +56,8 @@ struct AppReturnInstrumentationTests {
         effectiveOption: AfterInactivityOption = .newTab,
         thresholdSeconds: Int = 1800,
         unifiedInputAvailable: Bool = false,
-        toggleEnabled: Bool = false
+        toggleEnabled: Bool = false,
+        delay: PixelTransmissionDelaying = ImmediateDelay()
     ) -> (DefaultAppReturnInstrumentation, PixelCollector) {
         let eligibility = MockIdleReturnEligibilityManager()
         eligibility.isFeatureAvailableResult = featureAvailable
@@ -48,6 +69,7 @@ struct AppReturnInstrumentationTests {
             isUnifiedInputAvailable: { unifiedInputAvailable },
             isToggleEnabled: { toggleEnabled },
             now: { Self.now },
+            delay: delay,
             fireDailyAndCount: { event, params in
                 collector.fired.append((event.name, params))
             })
@@ -154,6 +176,39 @@ struct AppReturnInstrumentationTests {
 
         #expect(collector.fired.first?.params["unified_input_available"] == "true")
         #expect(collector.fired.first?.params["toggle_enabled"] == "true")
+    }
+
+    // MARK: - Transmission delay
+
+    @available(iOS 16, *)
+    @Test("When the app foregrounds then the pixel is held back until the delay elapses", .timeLimit(.minutes(1)))
+    func whenAppForegroundsThenPixelIsHeldBackUntilDelayElapses() {
+        let delay = ManualDelay()
+        let (sut, collector) = makeSUT(delay: delay)
+
+        sut.recordAppForeground(lastBackgroundDate: backgroundDate(secondsAgo: 120),
+                                launchAction: .standardLaunch(lastBackgroundDate: nil, isFirstForeground: false))
+
+        #expect(collector.fired.isEmpty)
+
+        delay.elapse()
+
+        #expect(collector.fired.count == 1)
+        #expect(collector.fired.first?.params["time_away_bucket"] == "1_5m")
+    }
+
+    @available(iOS 16, *)
+    @Test("When the delay elapses then the parameters are the ones captured at foreground time", .timeLimit(.minutes(1)))
+    func whenDelayElapsesThenParametersAreCapturedAtForegroundTime() {
+        let delay = ManualDelay()
+        let (sut, collector) = makeSUT(thresholdSeconds: 900, delay: delay)
+
+        sut.recordAppForeground(lastBackgroundDate: backgroundDate(secondsAgo: 1000),
+                                launchAction: .standardLaunch(lastBackgroundDate: nil, isFirstForeground: false))
+        delay.elapse()
+
+        #expect(collector.fired.first?.params["idle_threshold_seconds"] == "900")
+        #expect(collector.fired.first?.params["exceeded_idle_threshold"] == "true")
     }
 
     // MARK: - Launch source

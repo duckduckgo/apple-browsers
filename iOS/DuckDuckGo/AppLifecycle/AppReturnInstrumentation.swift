@@ -43,12 +43,14 @@ final class DefaultAppReturnInstrumentation: AppReturnInstrumentation {
     private let isUnifiedInputAvailable: () -> Bool
     private let isToggleEnabled: () -> Bool
     private let now: () -> Date
+    private let delay: PixelTransmissionDelaying
     private let fireDailyAndCount: (AppReturnPixel, [String: String]) -> Void
 
     init(eligibilityManager: IdleReturnEligibilityManaging,
          isUnifiedInputAvailable: @escaping () -> Bool = { UnifiedToggleInputFeature().isAvailable },
          isToggleEnabled: @escaping () -> Bool,
          now: @escaping () -> Date = Date.init,
+         delay: PixelTransmissionDelaying = PixelTransmissionDelay(),
          fireDailyAndCount: @escaping (AppReturnPixel, [String: String]) -> Void = { event, params in
              PixelKit.fire(event, frequency: .dailyAndCount, withAdditionalParameters: params)
          }) {
@@ -56,6 +58,7 @@ final class DefaultAppReturnInstrumentation: AppReturnInstrumentation {
         self.isUnifiedInputAvailable = isUnifiedInputAvailable
         self.isToggleEnabled = isToggleEnabled
         self.now = now
+        self.delay = delay
         self.fireDailyAndCount = fireDailyAndCount
     }
 
@@ -69,7 +72,7 @@ final class DefaultAppReturnInstrumentation: AppReturnInstrumentation {
         case .lastUsedTab: afterInactivityOption = "last_used_tab"
         }
 
-        fireDailyAndCount(.appReturn, [
+        let parameters = [
             "time_away_bucket": Self.timeAwayBucket(for: timeAway),
             "exceeded_idle_threshold": String(timeAway.map { $0 >= Double(thresholdSeconds) } ?? false),
             "idle_threshold_seconds": String(thresholdSeconds),
@@ -78,7 +81,12 @@ final class DefaultAppReturnInstrumentation: AppReturnInstrumentation {
             "unified_input_available": String(isUnifiedInputAvailable()),
             "toggle_enabled": String(isToggleEnabled()),
             "launch_source": Self.launchSource(for: launchAction)
-        ])
+        ]
+
+        // The whole fire is deferred, not just the request: the daily marker is written inside it,
+        // so delaying only the request would mark the day as sent while the send can still be lost.
+        let fire = fireDailyAndCount
+        delay.delaySend { fire(.appReturn, parameters) }
     }
 
     static func timeAwayBucket(for timeAway: TimeInterval?) -> String {

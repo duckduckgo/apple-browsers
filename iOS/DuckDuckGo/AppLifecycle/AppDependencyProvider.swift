@@ -179,14 +179,18 @@ final class AppDependencyProvider: DependencyProvider {
         PixelKit.configureExperimentKit(featureFlagger: featureFlagger,
                                         eventTracker: ExperimentEventTracker(store: UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults()))
 
-        self.wideEvent = WideEvent(
-            useMockRequests: {
+        let useMockWideEventRequests = {
 #if DEBUG || REVIEW || ALPHA
-                true
+            true
 #else
-                false
+            false
 #endif
-            }(),
+        }()
+        self.wideEvent = WideEvent(
+            storage: WideEventUserDefaultsStorage(),
+            sender: ReturnSessionSendDelayingWideEventSender(
+                wrapping: DefaultWideEventSender(useMockRequests: useMockWideEventRequests)
+            ),
             featureFlagProvider: WideEventFeatureFlagAdapter(featureFlagger: featureFlagger)
         )
         configurationURLProvider = ConfigurationURLProvider(defaultProvider: AppConfigurationURLProvider(featureFlagger: featureFlagger), internalUserDecider: internalUserDecider, store: CustomConfigurationURLStorage(defaults: UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults()))

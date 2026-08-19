@@ -76,7 +76,7 @@ final class FireDialogWindowScopeUITests: UITestCase, FireDialogUITests {
         fireDialogCookiesToggle.toggleCheckboxIfNeeded(to: true, validate: true, ensureHittable: { _ in })
 
         // Click the info button to open sites overlay and verify all window's domains
-        app.fireDialogCookiesInfoButton.click()
+        app.fireDialogCookiesDetailButton.click()
 
         let sitesOverlay = fireDialog.groups.containing(.button, identifier: "FireDialogView.sitesOverlayCloseButton").firstMatch
         XCTAssertTrue(sitesOverlay.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Sites overlay should be open")
@@ -265,7 +265,7 @@ final class FireDialogWindowScopeUITests: UITestCase, FireDialogUITests {
         fireDialogCookiesToggle.toggleCheckboxIfNeeded(to: true, validate: true, ensureHittable: { _ in })
 
         // Click the info button to open sites overlay
-        app.fireDialogCookiesInfoButton.click()
+        app.fireDialogCookiesDetailButton.click()
 
         let sitesOverlay = fireDialog.groups.containing(.button, identifier: "FireDialogView.sitesOverlayCloseButton").firstMatch
         XCTAssertTrue(sitesOverlay.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Sites overlay should be open")
@@ -361,7 +361,7 @@ final class FireDialogWindowScopeUITests: UITestCase, FireDialogUITests {
         fireDialogCookiesToggle.toggleCheckboxIfNeeded(to: true, validate: true, ensureHittable: { _ in })
 
         // Click the info button to open sites overlay
-        app.fireDialogCookiesInfoButton.click()
+        app.fireDialogCookiesDetailButton.click()
 
         let sitesOverlay = fireDialog.groups.containing(.button, identifier: "FireDialogView.sitesOverlayCloseButton").firstMatch
         XCTAssertTrue(sitesOverlay.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Sites overlay should be open")

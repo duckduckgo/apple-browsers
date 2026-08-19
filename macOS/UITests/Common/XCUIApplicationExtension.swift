@@ -98,7 +98,7 @@ extension XCUIApplication {
         static let fireDialogTabsToggle = "FireDialogView.tabsToggle"
         static let fireDialogHistoryToggle = "FireDialogView.historyToggle"
         static let fireDialogCookiesToggle = "FireDialogView.cookiesToggle"
-        static let fireDialogCookiesInfoButton = "FireDialogView.cookiesInfoButton"
+        static let fireDialogCookiesDetailButton = "FireDialogView.cookiesDetailButton"
         static let fireDialogManageFireproofButton = "FireDialogView.manageFireproofButton"
         static let fireDialogIndividualSitesLink = "FireDialogView.individualSitesLink"
         static let fireDialogSitesOverlayCloseButton = "FireDialogView.sitesOverlayCloseButton"
@@ -844,8 +844,8 @@ extension XCUIApplication {
         checkBoxes[AccessibilityIdentifiers.fireDialogCookiesToggle]
     }
 
-    var fireDialogCookiesInfoButton: XCUIElement {
-        buttons[AccessibilityIdentifiers.fireDialogCookiesInfoButton]
+    var fireDialogCookiesDetailButton: XCUIElement {
+        buttons[AccessibilityIdentifiers.fireDialogCookiesDetailButton]
     }
 
     var fireDialogManageFireproofButton: XCUIElement {

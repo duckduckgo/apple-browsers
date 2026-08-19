@@ -91,8 +91,17 @@ jobs:
       - name: Ensure gh is available
         # The self-hosted runner does not ship the GitHub CLI, and the
         # aggregation steps below read this run's metadata with `gh api`.
-        # GITHUB_PATH carries the install to later steps, which each get a
-        # fresh shell.
+        # Nothing is installed when gh is already present, so this costs
+        # nothing after the first run. The formula index update and the
+        # periodic cleanup are suppressed: both would do network and disk work
+        # inside a measurement job, and the cleanup discards cached downloads
+        # for unrelated formulae on a machine other jobs share. The
+        # GITHUB_PATH write is a safety net, since each step gets a fresh
+        # shell and Homebrew's bin directory is not guaranteed to be on PATH.
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: "1"
+          HOMEBREW_NO_INSTALL_CLEANUP: "1"
+          HOMEBREW_NO_ENV_HINTS: "1"
         run: |
           if command -v gh >/dev/null; then exit 0; fi
           echo /opt/homebrew/bin >> "$GITHUB_PATH"

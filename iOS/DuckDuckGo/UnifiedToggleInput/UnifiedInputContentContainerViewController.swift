@@ -396,8 +396,11 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     }
 
     enum EscapeHatchPlacement: Equatable {
+        /// Does not display the Escape Hatch.
         case none
+        /// Pins the Escape Hatch above the focused content.
         case pinned
+        /// Embeds the Escape Hatch in the scrollable favorites content.
         case embedded
 
         static func resolve(hasEscapeHatch: Bool,

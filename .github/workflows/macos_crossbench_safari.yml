@@ -97,41 +97,43 @@ jobs:
           INSTALL_CHROME: "0"
         run: ./provision-macos.sh
 
-      - name: Diagnose safaridriver authorization
-        # TEMPORARY: separates "not authorized" from "no console session" as the
-        # reason safaridriver refuses to start. The unified-log dump after a
-        # failed start carries the actual denial reason. Remove once known.
-        continue-on-error: true
+      - name: Authorize safaridriver for Remote Automation
+        # safaridriver acquires the `com.apple.safaridriver.allow` authorization
+        # right when it starts. In the shipped rule set that right is k-of-n 1
+        # over three rules: is-admin, is-webdeveloper, authenticate-webdeveloper.
+        # The first two are plain group-membership checks with authenticate-user
+        # disabled, so they grant silently. The third opens a GUI dialog, which
+        # nothing in CI can answer, and comes back as -60007, interaction not
+        # allowed. Putting the runner user in the _webdeveloper group takes the
+        # non-interactive path. This changes machine state rather than job state
+        # and so belongs in the runner image, but doing it here keeps a rebuilt
+        # runner working, and makes the requirement visible to the next reader.
         run: |
-          echo "--- console session owner (expect ec2-user) ---"
-          stat -f '%Su' /dev/console 2>&1
-          echo "--- authorization right ---"
-          security authorizationdb read com.apple.Safari.allow-remote-automation 2>&1 | head -20
-          echo "--- per-user flag ---"
-          plutil -p ~/Library/WebDriver/com.apple.Safari.plist 2>&1 || echo "absent"
-          echo "--- failed start, then its log ---"
-          safaridriver -p 0 & sleep 3; kill %1 2>/dev/null || true
-          log show --last 2m --style compact \
-            --predicate 'process == "safaridriver" OR eventMessage CONTAINS "RemoteAutomation"' 2>&1 \
-            | tail -40 || sudo log show --last 2m --style compact \
-            --predicate 'process == "safaridriver"' 2>&1 | tail -40
+          echo "--- who is asking, and which groups answer for them ---"
+          whoami
+          for group in admin _webdeveloper; do
+            printf '%s: ' "$group"
+            dsmemberutil checkmembership -U "$(whoami)" -G "$group" 2>&1 || true
+          done
 
-      - name: Enable safaridriver Remote Automation
-        # Two separate pieces of state are required, and GitHub's hosted images
-        # set both — the machine-level authorization, and a per-user WebDriver
-        # plist. The plist has to be written as the runner user. Idempotent, so
-        # it also survives a runner rebuild without manual provisioning.
-        run: |
-          # safaridriver asks Authorization Services for its remote-automation
-          # right and cannot prompt in CI, so the request fails with -60007,
-          # interaction not allowed. Rewriting that rule to `allow` is what
-          # makes the right grantable without a human at the machine. This
-          # really belongs in the runner's provisioning, since it changes
-          # machine security state rather than job state, but keeping it here
-          # means a rebuilt runner still works.
-          sudo security authorizationdb write \
-            com.apple.Safari.allow-remote-automation allow
+          echo "--- the right, as this machine defines it ---"
+          security authorizationdb read com.apple.safaridriver.allow 2>/dev/null \
+            | plutil -p - 2>&1 || true
+
+          # An earlier attempt guessed the right's name wrong and left behind a
+          # rule that nothing consults. Harmless, but it misleads whoever audits
+          # this machine next.
+          sudo security authorizationdb remove \
+            com.apple.Safari.allow-remote-automation 2>/dev/null || true
+
+          sudo dseditgroup -o edit -a "$(whoami)" -t user _webdeveloper
+          printf 'after: '
+          dsmemberutil checkmembership -U "$(whoami)" -G _webdeveloper || true
+
           sudo safaridriver --enable
+
+          # The per-user flag lives outside the authorization system, so it has
+          # to be written as the runner user rather than as root.
           mkdir -p ~/Library/WebDriver
           /usr/libexec/PlistBuddy -c 'delete AllowRemoteAutomation' \
             ~/Library/WebDriver/com.apple.Safari.plist 2>/dev/null || true
@@ -140,8 +142,11 @@ jobs:
           plutil -p ~/Library/WebDriver/com.apple.Safari.plist
 
       - name: Verify safaridriver can start
-        # TEMPORARY: turns a misconfiguration into a failure here rather than an
-        # opaque one inside the harness. Remove with the diagnostic above.
+        # Fails here, with the denial reason attached, rather than opaquely
+        # inside the harness twenty minutes later. If the runner user is already
+        # an admin and the start still fails, group membership is not being
+        # evaluated at all, and the audit session dump below is what the runner
+        # owner needs to see.
         run: |
           safaridriver -p 0 &
           sd_pid=$!
@@ -149,10 +154,17 @@ jobs:
           if kill -0 "$sd_pid" 2>/dev/null; then
             echo "safaridriver started"
             kill "$sd_pid"
-          else
-            echo "ERROR: safaridriver still cannot start" >&2
-            exit 1
+            exit 0
           fi
+          echo "ERROR: safaridriver still cannot start" >&2
+          echo "--- audit session of this shell ---" >&2
+          sudo launchctl procinfo $$ 2>&1 \
+            | grep -iE 'uid|asid|session|audit' >&2 || true
+          echo "--- what authd decided ---" >&2
+          sudo log show --last 3m --style compact --info --debug \
+            --predicate 'process == "authd" OR process == "safaridriver"' 2>&1 \
+            | tail -60 >&2 || true
+          exit 1
 
       - name: Run Safari LCP suite
         # Inputs passed via env, not interpolated into the script, to avoid shell injection.

@@ -619,7 +619,8 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     }
 
     func insertNewlineIfHasContent(addressBarText: String) {
-        guard !addressBarText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+        let sanitized = addressBarText.removingInvisibleFormatCharacters()
+        guard !sanitized.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             return
         }
         insertNewline()
@@ -799,6 +800,32 @@ private final class FocusableTextView: NSTextView {
 
     override var acceptsFirstResponder: Bool {
         return true
+    }
+
+    /// Drop invisible / format characters before they hit the text storage — they render as tofu.
+    override func insertText(_ string: Any, replacementRange: NSRange) {
+        guard let text = string as? String else {
+            super.insertText(string, replacementRange: replacementRange)
+            return
+        }
+        let filtered = text.removingInvisibleFormatCharacters()
+        if filtered.isEmpty {
+            // Swallow invisible-only input so it never appears as a black box.
+            return
+        }
+        super.insertText(filtered, replacementRange: replacementRange)
+    }
+
+    override func paste(_ sender: Any?) {
+        guard let pasted = NSPasteboard.general.string(forType: .string) else {
+            super.paste(sender)
+            return
+        }
+        let filtered = pasted.removingInvisibleFormatCharacters()
+        let range = selectedRange()
+        guard shouldChangeText(in: range, replacementString: filtered) else { return }
+        replaceCharacters(in: range, with: filtered)
+        didChangeText()
     }
 
     override func mouseDown(with event: NSEvent) {

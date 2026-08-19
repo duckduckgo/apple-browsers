@@ -75,6 +75,18 @@ class StringExtensionTests: XCTestCase {
         XCTAssertFalse("anything".containsAny(of: [""]))
     }
 
+    func testRemovingInvisibleFormatCharacters_stripsZeroWidthAndControls() {
+        XCTAssertEqual("\u{200B}".removingInvisibleFormatCharacters(), "")
+        XCTAssertEqual("\u{200C}".removingInvisibleFormatCharacters(), "")
+        XCTAssertEqual("\u{200D}".removingInvisibleFormatCharacters(), "")
+        XCTAssertEqual("\u{2060}".removingInvisibleFormatCharacters(), "")
+        XCTAssertEqual("\u{FEFF}".removingInvisibleFormatCharacters(), "")
+        XCTAssertEqual("a\u{200C}b\u{200B}c".removingInvisibleFormatCharacters(), "abc")
+        XCTAssertEqual("hello\nworld".removingInvisibleFormatCharacters(), "hello\nworld")
+        XCTAssertEqual("hello\tworld".removingInvisibleFormatCharacters(), "hello\tworld")
+        XCTAssertEqual("a\u{0000}b".removingInvisibleFormatCharacters(), "ab")
+    }
+
     func testDropSubdomainDoesntDropDomainWhenTLDHasTwoComponents() {
         let sample = [
             ("lantean.com.ar", "lantean.com.ar"),

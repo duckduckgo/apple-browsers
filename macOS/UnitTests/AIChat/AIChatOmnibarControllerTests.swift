@@ -234,6 +234,24 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         XCTAssertFalse(mockTabOpener.openAIChatTabCalled)
     }
 
+    func testWhenInvisibleFormatOnlyIsSubmitted_ThenNothingHappens() {
+        // ZWNJ/ZWJ/BOM render as tofu and must not count as prompt content.
+        controller.updateText("\u{200C}\u{200D}\u{FEFF}\u{2060}")
+
+        controller.submit()
+
+        XCTAssertEqual(controller.currentText, "")
+        XCTAssertFalse(mockDelegate.didSubmitCalled)
+        XCTAssertFalse(mockDelegate.didRequestNavigationToURLCalled)
+        XCTAssertFalse(mockTabOpener.openAIChatTabCalled)
+    }
+
+    func testWhenTextContainsInvisibleFormatCharacters_ThenTheyAreStrippedOnUpdate() {
+        controller.updateText("hello\u{200B} world\u{200C}")
+
+        XCTAssertEqual(controller.currentText, "hello world")
+    }
+
     func testWhenTextWithLeadingWhitespaceIsSubmitted_ThenItIsTrimmed() {
         // Given
         controller.updateText("  apple.com  ")

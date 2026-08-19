@@ -76,6 +76,24 @@ extension String {
         self.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
+    /// Strips characters that render as tofu / are invisible in the Duck.ai prompt field.
+    ///
+    /// Removes Unicode default-ignorable code points (ZWSP, ZWNJ, ZWJ, WJ, BOM, soft hyphen, …)
+    /// and C0/C1 controls other than tab/newline/carriage-return (kept for multiline prompts).
+    func removingInvisibleFormatCharacters() -> String {
+        String(unicodeScalars.filter { scalar in
+            switch scalar {
+            case "\t", "\n", "\r":
+                return true
+            default:
+                if CharacterSet.controlCharacters.contains(scalar) {
+                    return false
+                }
+                return !scalar.properties.isDefaultIgnorableCodePoint
+            }
+        })
+    }
+
     // MARK: - URL
 
     var url: URL? {

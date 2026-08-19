@@ -378,9 +378,10 @@ final class AIChatOmnibarController {
         // Toggling Duck.ai → search runs `cleanup()` (zeroing `currentText`, `activeToolMode`, the attachments view),
         // but the tab's shared state still holds the draft; without re-sync, toggling back would show an empty panel.
         if let draftStore {
-            if draftStore.hasUserInteractedWithText, currentText != draftStore.text {
+            let restoredText = Self.sanitizedPromptText(draftStore.text)
+            if draftStore.hasUserInteractedWithText, currentText != restoredText {
                 isUpdatingFromSharedState = true
-                currentText = draftStore.text
+                currentText = restoredText
                 isUpdatingFromSharedState = false
             }
             if activeToolMode != draftStore.aiChatToolMode {
@@ -830,10 +831,16 @@ final class AIChatOmnibarController {
     /// Updates the current text being typed by the user
     /// - Parameter text: The new text value
     func updateText(_ text: String) {
-        currentText = text
+        let sanitized = Self.sanitizedPromptText(text)
+        currentText = sanitized
         if !isUpdatingFromSharedState {
-            draftStore?.updateText(text, markInteraction: true)
+            draftStore?.updateText(sanitized, markInteraction: true)
         }
+    }
+
+    /// Invisible / format characters must never reach the prompt field (they render as tofu).
+    static func sanitizedPromptText(_ text: String) -> String {
+        text.removingInvisibleFormatCharacters()
     }
 
     /// Persists the prompt text view's cursor position / selection to the current tab's shared state so it
@@ -1143,7 +1150,7 @@ final class AIChatOmnibarController {
                 /// `$activeToolMode` sink writing the restored value straight back to the store.
                 self.isUpdatingFromSharedState = true
                 if let text = store?.text {
-                    self.currentText = text
+                    self.currentText = Self.sanitizedPromptText(text)
                 }
                 self.activeToolMode = store?.aiChatToolMode
                 self.isUpdatingFromSharedState = false
@@ -1172,9 +1179,10 @@ final class AIChatOmnibarController {
         draftStoreCancellable = draftStore.textPublisher
             .sink { [weak self] newText in
                 guard let self = self else { return }
-                if self.currentText != newText && draftStore.hasUserInteractedWithText {
+                let sanitized = Self.sanitizedPromptText(newText)
+                if self.currentText != sanitized && draftStore.hasUserInteractedWithText {
                     self.isUpdatingFromSharedState = true
-                    self.currentText = newText
+                    self.currentText = sanitized
                     self.isUpdatingFromSharedState = false
                 }
             }

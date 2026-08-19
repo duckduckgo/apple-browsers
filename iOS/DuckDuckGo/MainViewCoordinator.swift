@@ -579,7 +579,18 @@ class MainViewCoordinator {
             unifiedToggleInputContainer.alpha = 1
             ensureBottomOmnibarAttachedToToolbarIfNeeded()
             omniBar?.barView.restoreBarChrome()
-            omniBar?.barView.setIconContainersAlpha(1)
+            // Crossfade the icons in rather than snapping them to visible the instant the omnibar is
+            // reattached -- otherwise the toolbar arrives at full size with the UTI card already gone
+            // but its own content still invisible, then pops in a single frame. Mirrors the inline
+            // reveal path's `omnibarIconFadeInDurationMultiplier` idiom.
+            omniBar?.barView.setIconContainersAlpha(0)
+            UIView.animate(
+                withDuration: MainViewController.Constants.omnibarTransitionDuration(isBottom: true, isFloatingUIEnabled: true)
+                    * MainViewController.Constants.omnibarIconFadeInDurationMultiplier,
+                delay: 0,
+                options: [.curveEaseIn, .allowUserInteraction],
+                animations: { [weak self] in self?.omniBar?.barView.setIconContainersAlpha(1) }
+            )
         } else {
             // Snap chrome (pill + text field) back now that UTI is gone; icons faded in alongside the collapse.
             navigationBarCollectionView.alpha = 1

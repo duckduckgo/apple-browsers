@@ -97,9 +97,19 @@ class FromWebViewTransition: WebViewTransition {
         }
 
         imageContainer.frame = mainViewController.viewCoordinator.contentContainer.frame
-        imageContainer.frame = adjustFrame(imageContainer.frame,
-                                           forAddressBarPosition: mainViewController.appSettings.currentAddressBarPosition,
-                                           byHeight: -mainViewController.omniBar.barView.expectedHeight)
+        if !isFloating {
+            // Legacy bottom chrome resizes `contentContainer` to sit above the omnibar, but at the
+            // moment this frame is read it still measures the taller, pre-resize value, so this
+            // compensates. Floating UI's `contentContainer` anchors to the safe area instead (the
+            // toolbar floats on top via obscured content insets, not a frame resize), so it's
+            // already the right height -- applying this compensation there shrank the screenshot
+            // substitute a few points shorter than the live webview it was replacing, reading as a
+            // slight "shrink" the instant the tab button is pressed. `ToWebViewTransition`'s mirror
+            // image (growing back from the tab cell) never applied this adjustment either.
+            imageContainer.frame = adjustFrame(imageContainer.frame,
+                                               forAddressBarPosition: mainViewController.appSettings.currentAddressBarPosition,
+                                               byHeight: -mainViewController.omniBar.barView.expectedHeight)
+        }
         imageView.frame = imageContainer.bounds
         imageView.image = preview
 

@@ -65,10 +65,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// Gates the "Strict routing" VPN toggle.
     case vpnStrictRoutingToggle
 
-    /// Gates the "Exclude Carrier-Grade NAT" VPN toggle.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214946884020610?focus=true
-    case vpnExcludeCGNATToggle
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866615719736
     case autoUpdateInDEBUG
 
@@ -574,8 +570,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(NetworkProtectionSubfeature.appStoreSystemExtensionMessage), category: .vpn)
         case .vpnStrictRoutingToggle:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(NetworkProtectionSubfeature.strictRoutingToggle), category: .vpn)
-        case .vpnExcludeCGNATToggle:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(NetworkProtectionSubfeature.excludeCGNAT), category: .vpn)
         case .autoUpdateInDEBUG:
             Config(source: .disabled, category: .updates)
         case .autoUpdateInREVIEW:

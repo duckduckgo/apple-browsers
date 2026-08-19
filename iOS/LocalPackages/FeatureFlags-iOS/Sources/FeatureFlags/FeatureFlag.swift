@@ -239,10 +239,6 @@ public enum FeatureFlag: String {
     /// Gates the "Strict routing" VPN toggle.
     case vpnStrictRoutingToggle
 
-    /// Gates the "Exclude Carrier-Grade NAT" VPN toggle.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214946884020610?focus=true
-    case vpnExcludeCGNATToggle
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866614199859
     case forgetAllInSettings
 
@@ -733,8 +729,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(PrivacyProSubfeature.vpnMenuItem))
         case .vpnStrictRoutingToggle:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(NetworkProtectionSubfeature.strictRoutingToggle))
-        case .vpnExcludeCGNATToggle:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(NetworkProtectionSubfeature.excludeCGNAT))
         case .forgetAllInSettings:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.forgetAllInSettings))
         case .fullDuckAIMode:

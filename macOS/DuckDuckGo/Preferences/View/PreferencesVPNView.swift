@@ -70,15 +70,13 @@ extension Preferences {
                         )
                     }
 
-                    if model.isExcludeCGNATAvailable {
-                        SpacedCheckbox {
-                            ToggleMenuItemWithDescription(
-                                UserText.vpnExcludeCGNATSettingTitle,
-                                UserText.vpnExcludeCGNATSettingDescription,
-                                isOn: $model.excludeCGNAT,
-                                spacing: 12
-                            )
-                        }
+                    SpacedCheckbox {
+                        ToggleMenuItemWithDescription(
+                            UserText.vpnExcludeCGNATSettingTitle,
+                            UserText.vpnExcludeCGNATSettingDescription,
+                            isOn: $model.excludeCGNAT,
+                            spacing: 12
+                        )
                     }
 
                     if model.isStrictRoutingAvailable {
@@ -231,9 +229,6 @@ extension Preferences {
                         }
                     }
                 }
-            }
-            .onAppear {
-                model.onViewAppeared()
             }
         }
 

@@ -700,7 +700,8 @@ private extension AIChatContextualSheetViewController {
         overlay.backgroundColor = .clear
         overlay.isOpaque = false
         overlay.overrideUserInterfaceStyle = traitCollection.userInterfaceStyle
-        overlay.makeKeyAndVisible()
+        // Visible but never key: taking key status resigns the input and takes the keyboard with it.
+        overlay.isHidden = false
 
         // Convert pill position to screen coordinates for positioning
         let pillFrameInScreen = leftButtonContainer.convert(leftButtonContainer.bounds, to: nil)

@@ -76,8 +76,13 @@ final class AIChatRecentChatsPopupViewController: UIViewController {
     }()
 
     private lazy var blurView: UIVisualEffectView = {
-        let blur = UIBlurEffect(style: .systemUltraThinMaterial)
-        let effectView = UIVisualEffectView(effect: blur)
+        let effectView: UIVisualEffectView
+        if #available(iOS 26.0, *) {
+            // Shape comes from `contentView`, which already clips to the popup's corner radius.
+            effectView = UIVisualEffectView(effect: UIGlassEffect(style: .regular))
+        } else {
+            effectView = UIVisualEffectView(effect: UIBlurEffect(style: .systemChromeMaterial))
+        }
         effectView.translatesAutoresizingMaskIntoConstraints = false
         return effectView
     }()
@@ -172,10 +177,12 @@ private extension AIChatRecentChatsPopupViewController {
     }
 
     func buildContent() {
+        stackView.addArrangedSubview(makeOpenDuckAIRow())
+
         if viewModel.showNewChat {
+            stackView.addArrangedSubview(makeSeparator())
             stackView.addArrangedSubview(makeNewChatRow())
         }
-        stackView.addArrangedSubview(makeOpenDuckAIRow())
 
         if !viewModel.suggestions.isEmpty {
             stackView.addArrangedSubview(makeSeparator())

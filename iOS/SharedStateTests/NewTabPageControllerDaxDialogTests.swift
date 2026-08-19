@@ -141,14 +141,23 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
     func testWhenOpenedAfterIdleTrueThenMessagesConfigFetchesWithAfterIdleTrigger() {
         // GIVEN a shared config with a scheduled after-idle message
         let (config, store) = makeConfiguration(withScheduledMessage: true)
+        store.fetchScheduledRemoteMessageCalls = 0
+        store.capturedTriggerFilter = nil
 
         // WHEN an embedded (hatch-suppressed) NTP is built seeded with the after-idle signal
-        _ = makeNewTabPage(openedAfterIdle: true, homePageMessagesConfiguration: config)
+        let controller = makeNewTabPage(openedAfterIdle: true, homePageMessagesConfiguration: config)
 
         // THEN its first refresh fetches the after-idle message (not .noTrigger) and keeps it in the
         // shared config the focused-content gate reads
+        XCTAssertEqual(store.fetchScheduledRemoteMessageCalls, 1)
         XCTAssertEqual(store.capturedTriggerFilter, .specific(.afterIdle))
         XCTAssertFalse(config.homeMessages.isEmpty)
+
+        // WHEN visual ownership replays the same authoritative signal
+        controller.setEscapeHatch(nil, openedAfterIdle: true)
+
+        // THEN the message model does not fetch again
+        XCTAssertEqual(store.fetchScheduledRemoteMessageCalls, 1)
     }
 
     func testWhenOpenedAfterIdleFalseThenMessagesConfigFetchesWithNoTrigger() {
@@ -165,24 +174,17 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
     func testWhenSetOpenedAfterIdleTrueThenMessagesConfigRefetchesWithAfterIdleTrigger() {
         // GIVEN a cached NTP originally built without the after-idle signal
         let (config, store) = makeConfiguration(withScheduledMessage: true)
+        store.fetchScheduledRemoteMessageCalls = 0
         let controller = makeNewTabPage(openedAfterIdle: false, homePageMessagesConfiguration: config)
+        XCTAssertEqual(store.fetchScheduledRemoteMessageCalls, 1)
         store.capturedTriggerFilter = nil
 
         // WHEN a later after-idle session pushes the signal into the cached controller
-        controller.setOpenedAfterIdle(true)
+        controller.setEscapeHatch(nil, openedAfterIdle: true)
 
         // THEN it re-fetches with the after-idle trigger
+        XCTAssertEqual(store.fetchScheduledRemoteMessageCalls, 2)
         XCTAssertEqual(store.capturedTriggerFilter, .specific(.afterIdle))
-    }
-
-    func testWhenConstructingWithAuthoritativeOpenedAfterIdleThenMessagesRefreshOnce() {
-        let configuration = RefreshCountingHomePageMessagesConfiguration()
-
-        XCTAssertEqual(configuration.refreshCallCount, 0)
-        _ = makeNewTabPage(openedAfterIdle: true, homePageMessagesConfiguration: configuration)
-
-        XCTAssertEqual(configuration.refreshCallCount, 1)
-        XCTAssertEqual(configuration.lastRefreshOpenedAfterIdle, true)
     }
 
     func testWhenViewDidAppearWithInitialSpecThenDaxDialogIsCreated() throws {
@@ -297,21 +299,6 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
         // a stray `.initial`/`.subsequent` dialog could leak into the Duck.ai onboarding completion UX.
         XCTAssertFalse(specProvider.nextHomeScreenMessageNewCalled)
     }
-}
-
-private final class RefreshCountingHomePageMessagesConfiguration: HomePageMessagesConfiguration {
-
-    var homeMessages: [HomeMessage] = []
-    private(set) var refreshCallCount = 0
-    private(set) var lastRefreshOpenedAfterIdle: Bool?
-
-    func refresh(openedAfterIdle: Bool) {
-        refreshCallCount += 1
-        lastRefreshOpenedAfterIdle = openedAfterIdle
-    }
-
-    func didAppear(_ homeMessage: HomeMessage) {}
-    func dismissHomeMessage(_ homeMessage: HomeMessage) {}
 }
 
 class CapturingVariantManager: VariantManager {

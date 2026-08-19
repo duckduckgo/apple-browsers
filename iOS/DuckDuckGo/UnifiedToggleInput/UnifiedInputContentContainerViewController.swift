@@ -144,7 +144,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     /// Async-measured chrome height — used only for the variable-height sync-promo case (Duck.ai).
     private var chromeMeasuredHeight: CGFloat = 0
     private var isSyncPromoCardVisible = false
-    private var appliedEscapeHatchPlacement: EscapeHatchPlacement?
 
     private var notificationCancellable: AnyCancellable?
 
@@ -355,7 +354,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     func setEscapeHatch(_ model: EscapeHatchModel?) {
         let hatchPresenceChanged = (escapeHatchModel != nil) != (model != nil)
         escapeHatchModel = model
-        applyEscapeHatchPlacement(forceEmbeddedUpdate: true)
+        applyEscapeHatchPlacement()
         updateSingleHostTopOffset()
         // The sync-promo sits below the hatch, so its layout changes when the hatch is added/removed.
         if hatchPresenceChanged {
@@ -425,24 +424,31 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         topBarContentGap + requestedContentInset.top
     }
 
-    private enum EscapeHatchPlacement: Equatable {
+    enum EscapeHatchPlacement: Equatable {
         case none
         case pinned
         case embedded
+
+        static func resolve(hasEscapeHatch: Bool,
+                            isFireTab: Bool,
+                            isTyping: Bool,
+                            inputMode: TextEntryMode,
+                            hasFavorites: Bool) -> EscapeHatchPlacement {
+            guard hasEscapeHatch, !isFireTab, !isTyping else {
+                return .none
+            }
+            return inputMode == .search && hasFavorites ? .embedded : .pinned
+        }
     }
 
     private var escapeHatchPlacement: EscapeHatchPlacement {
-        guard escapeHatchModel != nil,
-              !switchBarHandler.isFireTab,
-              !UnifiedSuggestionsInputsMerger.isTyping(text: switchBarHandler.currentText,
-                                                        hasUserInteractedWithText: switchBarHandler.hasUserInteractedWithText) else {
-            return .none
-        }
-        if switchBarHandler.currentToggleState == .search,
-           suggestionTrayDependencies?.favoritesViewModel.favorites.isEmpty == false {
-            return .embedded
-        }
-        return .pinned
+        EscapeHatchPlacement.resolve(
+            hasEscapeHatch: escapeHatchModel != nil,
+            isFireTab: switchBarHandler.isFireTab,
+            isTyping: UnifiedSuggestionsInputsMerger.isTyping(text: switchBarHandler.currentText,
+                                                               hasUserInteractedWithText: switchBarHandler.hasUserInteractedWithText),
+            inputMode: switchBarHandler.currentToggleState,
+            hasFavorites: suggestionTrayDependencies?.favoritesViewModel.favorites.isEmpty == false)
     }
 
     private var embeddedEscapeHatchModel: EscapeHatchModel? {
@@ -451,10 +457,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
     private var shouldShowPinnedHatch: Bool {
         escapeHatchPlacement == .pinned
-    }
-
-    var isShowingEmbeddedEscapeHatch: Bool {
-        unifiedSuggestionsHost?.isShowingFavoritesEscapeHatch == true
     }
 
     private var currentChromeReservedHeight: CGFloat {
@@ -467,12 +469,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         }
     }
 
-    private func applyEscapeHatchPlacement(forceEmbeddedUpdate: Bool = false) {
-        let placement = escapeHatchPlacement
-        if forceEmbeddedUpdate || placement != appliedEscapeHatchPlacement {
-            unifiedSuggestionsHost?.setEscapeHatch(embeddedEscapeHatchModel, openedAfterIdle: sessionOpenedAfterIdle)
-            appliedEscapeHatchPlacement = placement
-        }
+    private func applyEscapeHatchPlacement() {
+        unifiedSuggestionsHost?.setEscapeHatch(embeddedEscapeHatchModel, openedAfterIdle: sessionOpenedAfterIdle)
         updatePinnedChrome()
     }
 
@@ -719,8 +717,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         host.setLandscape(isLandscapeOrientation)
         updateSingleHostTopOffset()
         unifiedSuggestionsHost = host
-        appliedEscapeHatchPlacement = escapeHatchPlacement
-        updatePinnedChrome()
+        applyEscapeHatchPlacement()
     }
 
     /// Single-host path: the suggestions container aligns with the new-tab page (the favorites

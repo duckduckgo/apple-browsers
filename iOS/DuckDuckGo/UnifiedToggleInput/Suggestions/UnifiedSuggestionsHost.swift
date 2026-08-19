@@ -56,10 +56,6 @@ final class UnifiedSuggestionsHost {
         cachedFavoritesController?.setEscapeHatch(model, openedAfterIdle: openedAfterIdle)
     }
 
-    var isShowingFavoritesEscapeHatch: Bool {
-        cachedFavoritesController?.isShowingEscapeHatch == true
-    }
-
     func copyFavoritesScrollPosition(from controller: NewTabPageViewController) {
         memoizedFavoritesController()?.copyScrollPosition(from: controller)
     }

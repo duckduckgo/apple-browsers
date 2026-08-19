@@ -38,10 +38,6 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         restingContentIsFavorites && !newTabPageViewModel.isFavoritesHidden
     }
 
-    var isShowingEscapeHatch: Bool {
-        newTabPageViewModel.escapeHatch != nil
-    }
-
     /// What the NTP shows at rest (logo vs favorites), independent of the transient
     /// `isLogoHidden`/`isFavoritesHidden` flags the focus/dismiss handoff toggles. The dismiss path
     /// uses these to pick the right handoff while those flags are still mid-transition.
@@ -175,15 +171,13 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     }
 
     func setEscapeHatch(_ model: EscapeHatchModel?, openedAfterIdle: Bool) {
+        let didOpenedAfterIdleChange = newTabPageViewModel.openedAfterIdle != openedAfterIdle
         newTabPageViewModel.escapeHatch = model
         newTabPageViewModel.openedAfterIdle = openedAfterIdle
-        messagesModel.refresh()
+        if didOpenedAfterIdleChange {
+            messagesModel.refresh()
+        }
         updateBorderView()
-    }
-
-    func setOpenedAfterIdle(_ openedAfterIdle: Bool) {
-        newTabPageViewModel.openedAfterIdle = openedAfterIdle
-        messagesModel.refresh()
     }
 
     func copyScrollPosition(from source: NewTabPageViewController) {

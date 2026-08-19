@@ -298,7 +298,7 @@ final class SubscriptionPixelHandlerTests: XCTestCase {
 
     func testAuthenticationPixelsUseLegacySourceValues() {
         XCTAssertEqual(SubscriptionPixelHandler.Source.mainApp.rawValue, "MainApp")
-        XCTAssertEqual(SubscriptionPixelHandler.Source.packetTunnelProvider.rawValue, "SysExt")
+        XCTAssertEqual(SubscriptionPixelHandler.Source.systemExtension.rawValue, "SysExt")
     }
 
     private func assertLegacyDailyPixel(baseName: String, expectedParameters: [String: String]) {

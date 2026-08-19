@@ -26,7 +26,7 @@ public struct SubscriptionPixelHandler: SubscriptionPixelHandling {
 
     public enum Source: String {
         case mainApp = "MainApp"
-        case packetTunnelProvider = "SysExt"
+        case systemExtension = "SysExt"
     }
 
     let source: Source

@@ -24,19 +24,19 @@ public struct SubscriptionPixelHandler: SubscriptionPixelHandling {
 
     public enum Source {
         case mainApp
-        case packetTunnelProvider
+        case systemExtension
         case vpnApp
-        case dbpBackgroundAgent
+        case dbp
 
         var description: String {
             switch self {
             case .mainApp:
                 return "MainApp"
-            case .packetTunnelProvider:
+            case .systemExtension:
                 return "SysExt"
             case .vpnApp:
                 return "VPNApp"
-            case .dbpBackgroundAgent:
+            case .dbp:
                 return "DBP"
             }
         }

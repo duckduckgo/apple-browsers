@@ -23,6 +23,9 @@ import PixelKit
 
 final class DuckAISelectionJourneyWideEventData: WideEventData {
 
+    /// Identifies the process that created a flow, so a flow left behind by a terminated process can be
+    /// told apart from a live one belonging to another tab. Stored only — never sent: it is absent from
+    /// `jsonParameters()`, which is the wire format.
     static let currentProcessSessionID = UUID()
 
     static let metadata = WideEventMetadata(
@@ -45,6 +48,7 @@ final class DuckAISelectionJourneyWideEventData: WideEventData {
         case newChat = "new_chat"
         case chatCleared = "chat_cleared"
         case tabClosed = "tab_closed"
+        case sessionExpired = "session_expired"
     }
 
     var globalData: WideEventGlobalData
@@ -61,8 +65,6 @@ final class DuckAISelectionJourneyWideEventData: WideEventData {
     var sawSelectionSuggestions: Bool = false
     var hadDeliveryTimeout: Bool = false
     var journeyInterval: WideEvent.MeasuredInterval
-    var firstDismissalInterval: WideEvent.MeasuredInterval
-    var postDismissalSubmissionInterval: WideEvent.MeasuredInterval
 
     init(selectionCount: Int,
          localScopeID: String,
@@ -75,25 +77,17 @@ final class DuckAISelectionJourneyWideEventData: WideEventData {
         self.processSessionID = processSessionID
         self.localScopeID = localScopeID
         self.journeyInterval = WideEvent.MeasuredInterval(start: startedAt)
-        self.firstDismissalInterval = WideEvent.MeasuredInterval(start: startedAt)
-        self.postDismissalSubmissionInterval = WideEvent.MeasuredInterval()
         self.contextData = contextData
         self.appData = appData
         self.globalData = globalData
     }
 
-    func completionDecision(for trigger: WideEventCompletionTrigger) async -> WideEventCompletionDecision {
-        guard processSessionID != Self.currentProcessSessionID else { return .keepPending }
-        return .complete(.unknown(reason: Self.appTerminatedReason))
-    }
-
-    static let appTerminatedReason = "app_terminated"
 }
 
 extension DuckAISelectionJourneyWideEventData {
 
     static let durationBucket: DurationBucket = .bucketed { ms in
-        let thresholds = [0, 1_000, 5_000, 10_000, 30_000, 60_000, 300_000, 600_000, 1_800_000, 3_600_000]
+        let thresholds = [0, 1_000, 5_000, 10_000, 30_000, 60_000, 300_000]
         return thresholds.last(where: { $0 <= ms }) ?? 0
     }
 
@@ -124,9 +118,6 @@ extension DuckAISelectionJourneyWideEventData {
             (WideEventParameter.DuckAISelectionJourneyFeature.sawSelectionSuggestions, sawSelectionSuggestions),
             (WideEventParameter.DuckAISelectionJourneyFeature.hadDeliveryTimeout, hadDeliveryTimeout),
             (WideEventParameter.DuckAISelectionJourneyFeature.journeyDurationMsBucketed, journeyInterval.stringValue(bucket)),
-            (WideEventParameter.DuckAISelectionJourneyFeature.timeToFirstDismissalMsBucketed, firstDismissalInterval.stringValue(bucket)),
-            (WideEventParameter.DuckAISelectionJourneyFeature.timeFromFirstDismissalToSubmissionMsBucketed,
-             postDismissalSubmissionInterval.stringValue(bucket)),
         ])
     }
 }
@@ -142,7 +133,5 @@ extension WideEventParameter {
         static let sawSelectionSuggestions = "feature.data.ext.interaction.saw_selection_suggestions"
         static let hadDeliveryTimeout = "feature.data.ext.delivery.had_timeout"
         static let journeyDurationMsBucketed = "feature.data.ext.latency.journey_duration_ms_bucketed"
-        static let timeToFirstDismissalMsBucketed = "feature.data.ext.latency.time_to_first_dismissal_ms_bucketed"
-        static let timeFromFirstDismissalToSubmissionMsBucketed = "feature.data.ext.latency.time_from_first_dismissal_to_submission_ms_bucketed"
     }
 }

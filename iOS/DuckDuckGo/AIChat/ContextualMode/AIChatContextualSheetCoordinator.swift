@@ -915,7 +915,11 @@ private extension AIChatContextualSheetCoordinator {
 
         sessionTimer = AIChatSessionTimer(durationInSeconds: sessionDuration) { [weak self] in
             Task { @MainActor in
-                self?.resetToNativeInputState(preservingSelections: true)
+                guard let self else { return }
+                // Selections survive inactivity, but the measured journey does not: it describes one
+                // in-session interaction, so it ends here rather than staying open indefinitely.
+                self.selectionJourneyInstrumentation.selectionsCleared(reason: .sessionExpired)
+                self.resetToNativeInputState(preservingSelections: true)
             }
         }
         sessionTimer?.start()

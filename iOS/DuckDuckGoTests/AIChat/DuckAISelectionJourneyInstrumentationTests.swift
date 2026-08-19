@@ -94,8 +94,7 @@ struct DuckAISelectionJourneyInstrumentationTests {
         #expect(completion.0.terminalReason == .submitted)
         #expect(completion.0.submissionAction == .prompt)
         #expect(completion.0.dismissalCount == 1)
-        #expect(completion.0.firstDismissalInterval.end != nil)
-        #expect(completion.0.postDismissalSubmissionInterval.end != nil)
+        #expect(completion.0.journeyInterval.end != nil)
     }
 
     @available(iOS 16, *)
@@ -178,23 +177,50 @@ struct DuckAISelectionJourneyInstrumentationTests {
     }
 
     @available(iOS 16, *)
-    @Test("Persisted journeys from a previous process complete as unknown on initialization", .timeLimit(.minutes(1)))
-    func orphanedJourneyCompletesUnknown() throws {
-        let orphan = DuckAISelectionJourneyWideEventData(
+    @Test("Flows left by a terminated process are discarded, never reported", .timeLimit(.minutes(1)))
+    func staleFlowsAreDiscardedNotReported() {
+        let stale = DuckAISelectionJourneyWideEventData(
             selectionCount: 1,
-            localScopeID: "test-scope",
+            localScopeID: "previous-launch",
             processSessionID: UUID()
         )
-        let wideEvent = makeSUT(seededFlows: [orphan]).wideEvent
+        let wideEvent = makeSUT(seededFlows: [stale]).wideEvent
 
-        let completion = try #require(lastCompletion(wideEvent))
-        #expect(completion.1 == .unknown(reason: DuckAISelectionJourneyWideEventData.appTerminatedReason))
-        #expect(completion.0.terminalReason == nil)
+        #expect(wideEvent.discarded.count == 1)
+        #expect(wideEvent.discarded.first?.globalData.id == stale.globalData.id)
+        #expect(lastCompletion(wideEvent) == nil)
     }
 
     @available(iOS 16, *)
-    @Test("Creating another tab instrumentation does not terminate a journey from this process", .timeLimit(.minutes(1)))
-    func currentProcessJourneyIsResumed() throws {
+    @Test("A live journey from another tab is left alone", .timeLimit(.minutes(1)))
+    func liveJourneyFromAnotherTabSurvives() {
+        let otherTab = DuckAISelectionJourneyWideEventData(selectionCount: 1, localScopeID: "other-tab")
+        let wideEvent = makeSUT(seededFlows: [otherTab]).wideEvent
+
+        #expect(wideEvent.discarded.isEmpty)
+        #expect(lastCompletion(wideEvent) == nil)
+    }
+
+    @available(iOS 16, *)
+    @Test("A journey left open past the interaction bound ends rather than absorbing new selections", .timeLimit(.minutes(1)))
+    func openJourneyIsBounded() throws {
+        let context = makeSUT()
+        let (sut, wideEvent, clock) = (context.sut, context.wideEvent, context.clock)
+        sut.selectionAttached(currentCount: 1)
+
+        clock.advance(by: 301)
+        sut.selectionAttached(currentCount: 1)
+
+        let completions = wideEvent.completions.compactMap { $0.0 as? DuckAISelectionJourneyWideEventData }
+        #expect(completions.count == 1)
+        #expect(completions.first?.terminalReason == .sessionExpired)
+        // The new selection starts a fresh journey rather than joining the expired one.
+        #expect(wideEvent.started.count == 2)
+    }
+
+    @available(iOS 16, *)
+    @Test("An in-session journey is resumed by a new instrumentation for the same scope", .timeLimit(.minutes(1)))
+    func inSessionJourneyIsResumed() throws {
         let active = DuckAISelectionJourneyWideEventData(selectionCount: 1, localScopeID: "test-scope")
         let context = makeSUT(seededFlows: [active])
         let (sut, wideEvent) = (context.sut, context.wideEvent)
@@ -207,13 +233,13 @@ struct DuckAISelectionJourneyInstrumentationTests {
     }
 
     @available(iOS 16, *)
-    @Test("Tab closure completes a persisted journey even when its controller was evicted", .timeLimit(.minutes(1)))
-    func persistedJourneyCompletesOnTabClose() throws {
+    @Test("Tab closure completes a journey even when its controller was evicted", .timeLimit(.minutes(1)))
+    func journeyCompletesOnTabClose() throws {
         let active = DuckAISelectionJourneyWideEventData(selectionCount: 1, localScopeID: "evicted-tab")
         let wideEvent = WideEventMock()
         wideEvent.startFlow(active)
 
-        DefaultDuckAISelectionJourneyInstrumentation.completePersistedFlow(
+        DefaultDuckAISelectionJourneyInstrumentation.completeFlow(
             localScopeID: "evicted-tab",
             reason: .tabClosed,
             wideEvent: wideEvent
@@ -260,24 +286,16 @@ struct DuckAISelectionJourneyInstrumentationTests {
     }
 
     @available(iOS 16, *)
-    @Test("Only a flow from a previous process is eligible for launch cleanup", .timeLimit(.minutes(1)))
-    func launchCleanupDecision() async {
-        let current = DuckAISelectionJourneyWideEventData(selectionCount: 1, localScopeID: "current")
-        let previous = DuckAISelectionJourneyWideEventData(
-            selectionCount: 1,
-            localScopeID: "previous",
-            processSessionID: UUID()
-        )
+    @Test("Inactivity expiry ends the journey rather than leaving it open", .timeLimit(.minutes(1)))
+    func sessionExpiryEndsJourney() throws {
+        let context = makeSUT()
+        let (sut, wideEvent) = (context.sut, context.wideEvent)
+        sut.selectionAttached(currentCount: 2)
 
-        if case .keepPending = await current.completionDecision(for: .appLaunch) {
-        } else {
-            Issue.record("Expected the current-process flow to remain pending")
-        }
+        sut.selectionsCleared(reason: .sessionExpired)
 
-        if case .complete(let status) = await previous.completionDecision(for: .appLaunch) {
-            #expect(status == .unknown(reason: "app_terminated"))
-        } else {
-            Issue.record("Expected the previous-process flow to complete")
-        }
+        let completion = try #require(lastCompletion(wideEvent))
+        #expect(completion.1 == .failure)
+        #expect(completion.0.terminalReason == .sessionExpired)
     }
 }

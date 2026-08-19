@@ -1,6 +1,6 @@
 {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "description": "Sent when a Duck.ai contextual text-selection journey reaches a terminal outcome. The journey starts on the first successful selection attachment, survives sheet dismissal and re-entry, and ends when the selections are submitted or explicitly discarded.",
+    "description": "Sent when a Duck.ai contextual text-selection interaction reaches a terminal outcome within a single app session. It starts on the first successful selection attachment, survives sheet dismissal and re-entry, and ends when the selections are submitted, explicitly discarded, or the inactivity session expires. It never spans an app restart: an interaction interrupted by app termination is discarded, not reported.",
     "$comment": "{\"owners\":[\"pikorddg\"]}",
     "type": "object",
     "required": ["meta", "global", "feature", "app"],
@@ -49,7 +49,7 @@
                 "status": {
                     "type": "string",
                     "description": "The overall status of the operation",
-                    "enum": ["SUCCESS", "FAILURE", "UNKNOWN"]
+                    "enum": ["SUCCESS", "FAILURE"]
                 },
                 "data": {
                     "type": "object",
@@ -60,25 +60,20 @@
                             "type": "object",
                             "additionalProperties": false,
                             "properties": {
-                                "status_reason": {
-                                    "type": "string",
-                                    "description": "Terminal reason accompanying UNKNOWN outcomes when a persisted journey from a previous process is recovered.",
-                                    "enum": ["app_terminated"]
-                                },
                                 "outcome": {
                                     "type": "object",
-                                    "description": "The action that definitively ended the attachment journey. Dismissing the surface is not terminal because the user can return and submit later.",
+                                    "description": "The action that definitively ended the attachment interaction. Dismissing the surface is not terminal because the user can return and submit later.",
                                     "properties": {
                                         "terminal_reason": {
                                             "type": "string",
-                                            "description": "submitted maps to SUCCESS. All explicit ways of discarding the unsubmitted selections map to FAILURE. Absent for UNKNOWN app-termination recovery.",
-                                            "enum": ["submitted", "selections_removed", "new_chat", "chat_cleared", "tab_closed"]
+                                            "description": "submitted maps to SUCCESS. Discarding the unsubmitted selections, and the inactivity session expiring with them still attached, map to FAILURE.",
+                                            "enum": ["submitted", "selections_removed", "new_chat", "chat_cleared", "tab_closed", "session_expired"]
                                         }
                                     }
                                 },
                                 "submission": {
                                     "type": "object",
-                                    "description": "How the user submitted the selection journey. Present only for SUCCESS.",
+                                    "description": "How the user submitted the selection interaction. Present only for SUCCESS.",
                                     "properties": {
                                         "action": {
                                             "type": "string",
@@ -93,7 +88,7 @@
                                     "properties": {
                                         "max_count_bucketed": {
                                             "type": "string",
-                                            "description": "Maximum number of unsubmitted text selections attached at once during the journey.",
+                                            "description": "Maximum number of unsubmitted text selections attached at once during the interaction.",
                                             "enum": ["1", "2", "3-5"]
                                         }
                                     }
@@ -109,11 +104,11 @@
                                         },
                                         "dismissed_before_submission": {
                                             "type": "boolean",
-                                            "description": "Whether the surface was dismissed at least once before the journey ended. On SUCCESS this identifies dismissal followed by a later submission."
+                                            "description": "Whether the surface was dismissed at least once before the interaction ended. On SUCCESS this identifies dismissal followed by a later submission."
                                         },
                                         "saw_selection_suggestions": {
                                             "type": "boolean",
-                                            "description": "Whether selection-scoped suggestions were visibly rendered during this attachment journey."
+                                            "description": "Whether selection-scoped suggestions were visibly rendered during this attachment interaction."
                                         }
                                     }
                                 },
@@ -123,17 +118,17 @@
                                     "properties": {
                                         "had_timeout": {
                                             "type": "boolean",
-                                            "description": "Whether a Summarize or Translate attempt timed out waiting for frontend readiness. The journey remains open so a later submission can still succeed."
+                                            "description": "Whether a Summarize or Translate attempt timed out waiting for frontend readiness. The interaction remains open so a later submission can still succeed."
                                         }
                                     }
                                 },
                                 "latency": {
                                     "type": "object",
-                                    "description": "Journey timings bucketed by lower bound in milliseconds: 0, 1000, 5000, 10000, 30000, 60000, 300000, 600000, 1800000, or 3600000.",
+                                    "description": "Interaction timing bucketed by lower bound in milliseconds: 0, 1000, 5000, 10000, 30000, 60000, or 300000.",
                                     "properties": {
                                         "journey_duration_ms_bucketed": {
                                             "type": "string",
-                                            "description": "Time from first attachment to the observed terminal action. Absent for UNKNOWN app-termination recovery.",
+                                            "description": "Time from first attachment to the terminal action.",
                                             "enum": [
                                                 "0",
                                                 "1000",
@@ -141,42 +136,7 @@
                                                 "10000",
                                                 "30000",
                                                 "60000",
-                                                "300000",
-                                                "600000",
-                                                "1800000",
-                                                "3600000"
-                                            ]
-                                        },
-                                        "time_to_first_dismissal_ms_bucketed": {
-                                            "type": "string",
-                                            "description": "Time from first attachment to first dismissal. Absent if the surface was never dismissed.",
-                                            "enum": [
-                                                "0",
-                                                "1000",
-                                                "5000",
-                                                "10000",
-                                                "30000",
-                                                "60000",
-                                                "300000",
-                                                "600000",
-                                                "1800000",
-                                                "3600000"
-                                            ]
-                                        },
-                                        "time_from_first_dismissal_to_submission_ms_bucketed": {
-                                            "type": "string",
-                                            "description": "Time from first dismissal to eventual submission. Present only when a dismissed journey later succeeds.",
-                                            "enum": [
-                                                "0",
-                                                "1000",
-                                                "5000",
-                                                "10000",
-                                                "30000",
-                                                "60000",
-                                                "300000",
-                                                "600000",
-                                                "1800000",
-                                                "3600000"
+                                                "300000"
                                             ]
                                         }
                                     }

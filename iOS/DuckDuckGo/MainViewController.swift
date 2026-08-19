@@ -8403,7 +8403,7 @@ extension MainViewController {
     }
 
     fileprivate func reportDuckAITabClosedIfNeeded(_ tab: Tab) {
-        DefaultDuckAISelectionJourneyInstrumentation.completePersistedFlow(
+        DefaultDuckAISelectionJourneyInstrumentation.completeFlow(
             localScopeID: tab.uid,
             reason: .tabClosed,
             wideEvent: AppDependencyProvider.shared.wideEvent
@@ -8417,7 +8417,7 @@ extension MainViewController {
         guard fireRequest.trigger == .manualFire, fireRequest.options.contains(.tabs) else { return }
 
         for tab in tabsClearedByFireButton(fireRequest.scope) {
-            DefaultDuckAISelectionJourneyInstrumentation.completePersistedFlow(
+            DefaultDuckAISelectionJourneyInstrumentation.completeFlow(
                 localScopeID: tab.uid,
                 reason: .chatCleared,
                 wideEvent: AppDependencyProvider.shared.wideEvent

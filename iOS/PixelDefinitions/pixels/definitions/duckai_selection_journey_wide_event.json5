@@ -1,6 +1,6 @@
 {
     "m_ios_wide_duckai_selection_journey": {
-        "description": "Wide pixel sent when a Duck.ai contextual text-selection journey reaches submission or an explicit abandonment outcome.",
+        "description": "Wide pixel sent when a Duck.ai contextual text-selection interaction reaches submission or an abandonment outcome within a single app session.",
         "owners": ["pikorddg"],
         "triggers": ["other"],
         "suffixes": ["daily"],
@@ -28,21 +28,15 @@
                 "enum": ["duckai-selection-journey"]
             },
             {
-                "key": "feature.data.ext.status_reason",
-                "type": "string",
-                "description": "Terminal reason accompanying UNKNOWN app-termination recovery.",
-                "enum": ["app_terminated"]
-            },
-            {
                 "key": "feature.data.ext.outcome.terminal_reason",
                 "type": "string",
-                "description": "The action that definitively ended the selection journey. Dismissal alone is not terminal.",
-                "enum": ["submitted", "selections_removed", "new_chat", "chat_cleared", "tab_closed"]
+                "description": "The action that definitively ended the selection interaction. Dismissal alone is not terminal.",
+                "enum": ["submitted", "selections_removed", "new_chat", "chat_cleared", "tab_closed", "session_expired"]
             },
             {
                 "key": "feature.data.ext.submission.action",
                 "type": "string",
-                "description": "How the successful selection journey was submitted.",
+                "description": "How the successful selection interaction was submitted.",
                 "enum": ["prompt", "summarize", "translate"]
             },
             {
@@ -65,30 +59,18 @@
             {
                 "key": "feature.data.ext.interaction.saw_selection_suggestions",
                 "type": "boolean",
-                "description": "Whether selection-scoped suggestions were visibly rendered during this attachment journey."
+                "description": "Whether selection-scoped suggestions were visibly rendered during this attachment interaction."
             },
             {
                 "key": "feature.data.ext.delivery.had_timeout",
                 "type": "boolean",
-                "description": "Whether selection-suggestion delivery timed out during the journey."
+                "description": "Whether selection-suggestion delivery timed out during the interaction."
             },
             {
                 "key": "feature.data.ext.latency.journey_duration_ms_bucketed",
                 "type": "string",
                 "description": "Bucketed time from attachment to terminal outcome.",
-                "enum": ["0", "1000", "5000", "10000", "30000", "60000", "300000", "600000", "1800000", "3600000"]
-            },
-            {
-                "key": "feature.data.ext.latency.time_to_first_dismissal_ms_bucketed",
-                "type": "string",
-                "description": "Bucketed time from attachment to first dismissal.",
-                "enum": ["0", "1000", "5000", "10000", "30000", "60000", "300000", "600000", "1800000", "3600000"]
-            },
-            {
-                "key": "feature.data.ext.latency.time_from_first_dismissal_to_submission_ms_bucketed",
-                "type": "string",
-                "description": "Bucketed time from first dismissal to eventual submission.",
-                "enum": ["0", "1000", "5000", "10000", "30000", "60000", "300000", "600000", "1800000", "3600000"]
+                "enum": ["0", "1000", "5000", "10000", "30000", "60000", "300000"]
             }
         ]
     }

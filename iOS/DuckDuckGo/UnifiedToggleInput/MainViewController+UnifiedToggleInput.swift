@@ -1090,7 +1090,11 @@ extension MainViewController {
 
         if isLogoToLogo {
             coordinator.contentViewController.morphLogoHomeForDismiss(matching: duration)
-        } else if !isFavoritesToFavorites {
+        } else if isFavoritesToFavorites {
+            if let newTabPageViewController {
+                coordinator.contentViewController.copyFavoritesScrollPosition(to: newTabPageViewController)
+            }
+        } else {
             coordinator.contentViewController.beginDismissFade()
         }
 

@@ -41,10 +41,6 @@ final class UnifiedSuggestionsHost {
     private var cancellables = Set<AnyCancellable>()
     /// Built once on first `.favorites` render; NTP has a heavy init, so don't rebuild per body pass.
     private var cachedFavoritesController: NewTabPageViewController?
-    private var pendingEscapeHatchModel: EscapeHatchModel?
-    /// Applying the hatch also derives this value, so replay the authoritative session value last
-    /// when the favorites controller is created lazily.
-    private var pendingOpenedAfterIdle: Bool?
 
     /// Single-host path only: the duck.ai surface's source/VM, attached lazily and detached on
     /// disappear (mirrors the legacy per-host lifecycle). Nil on the old single-surface path.
@@ -53,16 +49,24 @@ final class UnifiedSuggestionsHost {
     private func memoizedFavoritesController() -> NewTabPageViewController? {
         if let cachedFavoritesController { return cachedFavoritesController }
         cachedFavoritesController = config.favoritesProvider()
-        cachedFavoritesController?.setEscapeHatch(
-            pendingEscapeHatchModel,
-            openedAfterIdle: pendingOpenedAfterIdle ?? (pendingEscapeHatchModel != nil))
         return cachedFavoritesController
     }
 
     func setEscapeHatch(_ model: EscapeHatchModel?, openedAfterIdle: Bool) {
-        pendingEscapeHatchModel = model
-        pendingOpenedAfterIdle = openedAfterIdle
         cachedFavoritesController?.setEscapeHatch(model, openedAfterIdle: openedAfterIdle)
+    }
+
+    var isShowingFavoritesEscapeHatch: Bool {
+        cachedFavoritesController?.isShowingEscapeHatch == true
+    }
+
+    func copyFavoritesScrollPosition(from controller: NewTabPageViewController) {
+        memoizedFavoritesController()?.copyScrollPosition(from: controller)
+    }
+
+    func copyFavoritesScrollPosition(to controller: NewTabPageViewController) {
+        guard let cachedFavoritesController else { return }
+        controller.copyScrollPosition(from: cachedFavoritesController)
     }
 
     init(config: UnifiedSuggestionsHostConfig) {

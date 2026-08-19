@@ -38,6 +38,10 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         restingContentIsFavorites && !newTabPageViewModel.isFavoritesHidden
     }
 
+    var isShowingEscapeHatch: Bool {
+        newTabPageViewModel.escapeHatch != nil
+    }
+
     /// What the NTP shows at rest (logo vs favorites), independent of the transient
     /// `isLogoHidden`/`isFavoritesHidden` flags the focus/dismiss handoff toggles. The dismiss path
     /// uses these to pick the right handoff while those flags are still mid-transition.
@@ -78,6 +82,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     private(set) var isShowingDuckAICompletionDialog = false
     private var isBorderSuppressedForChromeLayout = false
     private var didHideBarsForChatPathVisitSiteDialog = false
+    private var pendingScrollDistanceFromTop: CGFloat?
     private let appSettings: AppSettings
     private let appWidthObserver: AppWidthObserver
     private let floatingUIManager: FloatingUIManaging
@@ -90,6 +95,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     var onViewDidAppear: (() -> Void)?
 
     init(isFocussedState: Bool,
+         initialEscapeHatch: EscapeHatchModel? = nil,
          openedAfterIdle: Bool = false,
          dismissKeyboardOnScroll: Bool,
          tab: Tab,
@@ -126,6 +132,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         self.contextualContentProvider = contextualContentProvider
 
         newTabPageViewModel = NewTabPageViewModel(fireTab: tab.fireTab)
+        newTabPageViewModel.escapeHatch = initialEscapeHatch
         newTabPageViewModel.openedAfterIdle = openedAfterIdle
         favoritesModel = FavoritesViewModel(isFocussedState: isFocussedState,
                                             favoriteDataSource: FavoritesListInteractingAdapter(favoritesListInteracting: interactionModel),
@@ -167,8 +174,6 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         setEscapeHatch(model, openedAfterIdle: model != nil)
     }
 
-    /// Applies both values before refreshing messages so callers with an authoritative session value
-    /// do not briefly refresh against the hatch-derived value first.
     func setEscapeHatch(_ model: EscapeHatchModel?, openedAfterIdle: Bool) {
         newTabPageViewModel.escapeHatch = model
         newTabPageViewModel.openedAfterIdle = openedAfterIdle
@@ -179,6 +184,46 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     func setOpenedAfterIdle(_ openedAfterIdle: Bool) {
         newTabPageViewModel.openedAfterIdle = openedAfterIdle
         messagesModel.refresh()
+    }
+
+    func copyScrollPosition(from source: NewTabPageViewController) {
+        source.loadViewIfNeeded()
+        loadViewIfNeeded()
+        source.view.layoutIfNeeded()
+        view.layoutIfNeeded()
+
+        guard let sourceScrollView = source.newTabPageScrollView else { return }
+        pendingScrollDistanceFromTop = sourceScrollView.contentOffset.y + sourceScrollView.adjustedContentInset.top
+        applyPendingScrollPosition()
+    }
+
+    private var newTabPageScrollView: UIScrollView? {
+        firstScrollView(in: view)
+    }
+
+    private func firstScrollView(in view: UIView) -> UIScrollView? {
+        if let scrollView = view as? UIScrollView {
+            return scrollView
+        }
+        for subview in view.subviews {
+            if let scrollView = firstScrollView(in: subview) {
+                return scrollView
+            }
+        }
+        return nil
+    }
+
+    private func applyPendingScrollPosition() {
+        guard let pendingScrollDistanceFromTop,
+              let scrollView = newTabPageScrollView,
+              scrollView.bounds.height > 0 else { return }
+
+        let minimumOffsetY = -scrollView.adjustedContentInset.top
+        let maximumOffsetY = max(minimumOffsetY,
+                                 scrollView.contentSize.height - scrollView.bounds.height + scrollView.adjustedContentInset.bottom)
+        let offsetY = min(max(pendingScrollDistanceFromTop - scrollView.adjustedContentInset.top, minimumOffsetY), maximumOffsetY)
+        scrollView.setContentOffset(CGPoint(x: scrollView.contentOffset.x, y: offsetY), animated: false)
+        self.pendingScrollDistanceFromTop = nil
     }
 
     func setChromeLayoutContext(isBorderSuppressed: Bool) {
@@ -195,6 +240,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         updateDaxDialogTopInsetIfNeeded()
+        applyPendingScrollPosition()
     }
 
     override func viewWillDisappear(_ animated: Bool) {

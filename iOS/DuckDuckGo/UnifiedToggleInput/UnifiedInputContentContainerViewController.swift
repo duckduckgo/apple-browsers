@@ -137,15 +137,14 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private var needsVisibleRefresh = true
     private var requestedContentInset: (top: CGFloat, bottom: CGFloat) = (0, 0)
     private var escapeHatchModel: EscapeHatchModel?
-    /// The Duck.ai sync-promo and the hatch for non-favorites states are pinned to the bar so they ride
-    /// its animation in the same layout pass. Favorites render the hatch inside the embedded NTP so it
-    /// scrolls with them; only active pinned chrome reserves height in the content inset.
+    /// Pins the sync promo and non-favorites hatch to the bar; the NTP owns the hatch while it scrolls with favorites.
     private var chromeHostingController: UIHostingController<FocusedChromeView>?
     private var chromeTopConstraint: NSLayoutConstraint?
     private var chromeHeightConstraint: NSLayoutConstraint?
     /// Async-measured chrome height — used only for the variable-height sync-promo case (Duck.ai).
     private var chromeMeasuredHeight: CGFloat = 0
     private var isSyncPromoCardVisible = false
+    private var appliedEscapeHatchPlacement: EscapeHatchPlacement?
 
     private var notificationCancellable: AnyCancellable?
 
@@ -239,6 +238,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     func refreshFireMode(fireMode: Bool) {
         // The fire empty state is a SwiftUI host content state now — just flip the flag; no manager rebuild.
         unifiedSuggestionsHost?.setIsFireTab(fireMode)
+        applyEscapeHatchPlacement()
         rebuildDuckAISuggestionsCoordinator()
 
         guard isContentActive,
@@ -326,6 +326,14 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         unifiedSuggestionsHost?.beginDismissFade()
     }
 
+    func copyFavoritesScrollPosition(from controller: NewTabPageViewController) {
+        unifiedSuggestionsHost?.copyFavoritesScrollPosition(from: controller)
+    }
+
+    func copyFavoritesScrollPosition(to controller: NewTabPageViewController) {
+        unifiedSuggestionsHost?.copyFavoritesScrollPosition(to: controller)
+    }
+
     /// Logo→logo collapse: morph the focused logo to the Dax mark and keep it visible, so it hands
     /// off to the (identical) NTP logo without crossfading two different logos. Sped up to finish
     /// within the bar's `collapseDuration`.
@@ -347,9 +355,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     func setEscapeHatch(_ model: EscapeHatchModel?) {
         let hatchPresenceChanged = (escapeHatchModel != nil) != (model != nil)
         escapeHatchModel = model
-        unifiedSuggestionsHost?.setEscapeHatch(model, openedAfterIdle: sessionOpenedAfterIdle)
-        // Favorites render the hatch in the embedded NTP; other non-typing states keep it pinned.
-        updatePinnedChrome()
+        applyEscapeHatchPlacement(forceEmbeddedUpdate: true)
         updateSingleHostTopOffset()
         // The sync-promo sits below the hatch, so its layout changes when the hatch is added/removed.
         if hatchPresenceChanged {
@@ -360,8 +366,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         }
     }
 
-    /// Creates / updates / removes the bar-pinned chrome hosting controller and rebinds the
-    /// non-favorites hatch and sync-promo to the current state.
     private func updatePinnedChrome() {
         let hatchModel = shouldShowPinnedHatch ? escapeHatchModel : nil
         let promo: AnyView? = isSyncPromoCardVisible ? syncPromoView : nil
@@ -421,23 +425,38 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         topBarContentGap + requestedContentInset.top
     }
 
-    private var favoritesOwnEscapeHatch: Bool {
-        escapeHatchModel != nil && !switchBarHandler.isFireTab && isShowingFavoritesContent
+    private enum EscapeHatchPlacement: Equatable {
+        case none
+        case pinned
+        case embedded
     }
 
-    /// The hatch stays pinned for non-typing states that do not show favorites. The embedded NTP owns
-    /// it while favorites are visible so both elements scroll together.
+    private var escapeHatchPlacement: EscapeHatchPlacement {
+        guard escapeHatchModel != nil,
+              !switchBarHandler.isFireTab,
+              !UnifiedSuggestionsInputsMerger.isTyping(text: switchBarHandler.currentText,
+                                                        hasUserInteractedWithText: switchBarHandler.hasUserInteractedWithText) else {
+            return .none
+        }
+        if switchBarHandler.currentToggleState == .search,
+           suggestionTrayDependencies?.favoritesViewModel.favorites.isEmpty == false {
+            return .embedded
+        }
+        return .pinned
+    }
+
+    private var embeddedEscapeHatchModel: EscapeHatchModel? {
+        escapeHatchPlacement == .embedded ? escapeHatchModel : nil
+    }
+
     private var shouldShowPinnedHatch: Bool {
-        escapeHatchModel != nil
-            && !switchBarHandler.isFireTab
-            && !favoritesOwnEscapeHatch
-            && !UnifiedSuggestionsInputsMerger.isTyping(text: switchBarHandler.currentText,
-                                                        hasUserInteractedWithText: switchBarHandler.hasUserInteractedWithText)
+        escapeHatchPlacement == .pinned
     }
 
-    /// Height to reserve below the bar for active pinned chrome. The favorites NTP reserves its own
-    /// in-scroll hatch space; the fixed-height pinned hatch covers other states, while the variable
-    /// sync-promo uses its async-measured height.
+    var isShowingEmbeddedEscapeHatch: Bool {
+        unifiedSuggestionsHost?.isShowingFavoritesEscapeHatch == true
+    }
+
     private var currentChromeReservedHeight: CGFloat {
         if isSyncPromoCardVisible {
             return chromeMeasuredHeight
@@ -446,6 +465,15 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         } else {
             return 0
         }
+    }
+
+    private func applyEscapeHatchPlacement(forceEmbeddedUpdate: Bool = false) {
+        let placement = escapeHatchPlacement
+        if forceEmbeddedUpdate || placement != appliedEscapeHatchPlacement {
+            unifiedSuggestionsHost?.setEscapeHatch(embeddedEscapeHatchModel, openedAfterIdle: sessionOpenedAfterIdle)
+            appliedEscapeHatchPlacement = placement
+        }
+        updatePinnedChrome()
     }
 
     /// Sets the host's content inset so content starts below the bar and any active pinned chrome.
@@ -655,7 +683,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         host.onContentChanged = { [weak self] in
             self?.refreshVisibleContent(animateContentUpdates: true)
         }
-        host.setEscapeHatch(escapeHatchModel, openedAfterIdle: sessionOpenedAfterIdle)
 
         let containerView = UIView()
         containerView.translatesAutoresizingMaskIntoConstraints = false
@@ -692,6 +719,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         host.setLandscape(isLandscapeOrientation)
         updateSingleHostTopOffset()
         unifiedSuggestionsHost = host
+        appliedEscapeHatchPlacement = escapeHatchPlacement
         updatePinnedChrome()
     }
 
@@ -705,14 +733,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         unifiedSuggestionsTopConstraint?.constant = topBarContentGap
     }
 
-    /// With a top address bar the input sits above the content, so the content normally needs a small
-    /// gap beneath it. When the embedded NTP owns the hatch, its 10pt content inset already matches the
-    /// resting NTP; omitting the extra 4pt keeps the focus/dismiss handoff stationary. A bottom bar has
-    /// no host gap because its content is anchored to the top of the screen.
+    /// Omits the top-bar gap while the NTP owns the hatch to prevent a jump during the focus/dismiss handoff.
     private var topBarContentGap: CGFloat {
-        UnifiedInputContentLayoutPolicy.topBarContentGap(
-            isUsingTopBarPosition: isUsingTopBarPosition,
-            favoritesOwnEscapeHatch: favoritesOwnEscapeHatch)
+        isUsingTopBarPosition && escapeHatchPlacement != .embedded ? Metrics.topBarContentClearance : 0
     }
 
     /// One merged inputs stream feeding the single host: mode + text + search facts (always) +
@@ -781,6 +804,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         let ntpDeps = dependencies.newTabPageDependencies
         let controller = NewTabPageViewController(
             isFocussedState: true,
+            initialEscapeHatch: embeddedEscapeHatchModel,
             openedAfterIdle: sessionOpenedAfterIdle,
             dismissKeyboardOnScroll: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
             tab: Tab(fireTab: dependencies.tabsModelProvider().shouldCreateFireTabs),
@@ -803,8 +827,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         // Route favorite taps / edits / tab actions to the host's delegate so they open like the
         // standalone NTP (the embedded controller has no owner to set this otherwise).
         controller.delegate = self
-        // The embedded NTP owns the hatch in `.favorites`, while pinned chrome owns it in `.logo`
-        // and promo states. The host still owns the focused empty-state logo.
         controller.setLogoHidden(true)
         return controller
     }
@@ -967,6 +989,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private enum Metrics {
         static let horizontalMarginForCompactLayout: CGFloat = 108
         static let backgroundColor = UIColor(designSystemColor: .panel)
+        static let topBarContentClearance: CGFloat = 4
         /// Gap between the bar's edge and the pinned chrome (Figma). The chrome owns its other metrics.
         static let hatchTopInsetTopBar: CGFloat = 6
         /// Bottom bar: the focused content top coincides with the NTP content top, so this must equal the
@@ -974,18 +997,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         /// for the focused and NTP hatches to land on the same line. Keep the two in sync.
         static let hatchTopInsetBottomBar: CGFloat = 10
     }
-}
-
-enum UnifiedInputContentLayoutPolicy {
-
-    static func topBarContentGap(isUsingTopBarPosition: Bool, favoritesOwnEscapeHatch: Bool) -> CGFloat {
-        guard isUsingTopBarPosition, !favoritesOwnEscapeHatch else { return 0 }
-        return topBarContentClearance
-    }
-
-    /// Brings the card's 8pt bottom margin up to the design's 12pt UTI bottom margin on the top bar
-    /// (content then adds its own 6pt top → 18pt UTI→content, per Figma).
-    private static let topBarContentClearance: CGFloat = 4
 }
 
 private extension UnifiedInputContentContainerViewController {
@@ -1013,6 +1024,7 @@ private extension UnifiedInputContentContainerViewController {
         needsVisibleRefresh = false
 
         let applyContentUpdates = {
+            self.applyEscapeHatchPlacement()
             self.refreshSyncPromoIfActive()
             self.updateSingleHostTopOffset()
             self.applyRequestedContentInset()

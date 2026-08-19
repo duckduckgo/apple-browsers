@@ -175,14 +175,13 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
         XCTAssertEqual(store.capturedTriggerFilter, .specific(.afterIdle))
     }
 
-    func testWhenSettingEscapeHatchAndOpenedAfterIdleThenMessagesRefreshOnce() {
+    func testWhenConstructingWithAuthoritativeOpenedAfterIdleThenMessagesRefreshOnce() {
         let configuration = RefreshCountingHomePageMessagesConfiguration()
-        let controller = makeNewTabPage(openedAfterIdle: false, homePageMessagesConfiguration: configuration)
-        let initialRefreshCount = configuration.refreshCallCount
 
-        controller.setEscapeHatch(nil, openedAfterIdle: true)
+        XCTAssertEqual(configuration.refreshCallCount, 0)
+        _ = makeNewTabPage(openedAfterIdle: true, homePageMessagesConfiguration: configuration)
 
-        XCTAssertEqual(configuration.refreshCallCount, initialRefreshCount + 1)
+        XCTAssertEqual(configuration.refreshCallCount, 1)
         XCTAssertEqual(configuration.lastRefreshOpenedAfterIdle, true)
     }
 

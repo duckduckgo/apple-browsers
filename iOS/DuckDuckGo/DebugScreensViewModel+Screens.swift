@@ -168,8 +168,8 @@ extension DebugScreensViewModel {
             .view(title: "Notifications Playground", { d in
                 LocalNotificationsPlaygroundView(keyValueStore: d.keyValueStore)
             }),
-            .view(title: "Haptics Playground", { _ in
-                HapticsPlaygroundView()
+            .view(title: "Haptics Playground", { d in
+                HapticsPlaygroundView(keyValueStore: d.keyValueStore)
             }),
             .view(title: "Win-back Offer", { d in
                 WinBackOfferDebugView(keyValueStore: d.keyValueStore)

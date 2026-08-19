@@ -21,14 +21,19 @@ import SwiftUI
 import Bookmarks
 import WebExtensions
 import Onboarding
+import Persistence
 import CoreHaptics
 
 struct HapticsPlaygroundView: View {
-    @StateObject private var viewModel = HapticsPlaygroundViewModel()
+    @StateObject private var viewModel: HapticsPlaygroundViewModel
 
     @State private var isTimingSectionExpanded = false
     @State private var isIntensitySectionExpanded = false
     @State private var isSharpnessExpanded = false
+
+    init(keyValueStore: ThrowingKeyValueStoring) {
+        _viewModel = StateObject(wrappedValue: HapticsPlaygroundViewModel(keyValueStore: keyValueStore))
+    }
 
     var body: some View {
         let duration = viewModel.animationDuration
@@ -322,17 +327,23 @@ struct HapticCurvePointEditor: View {
 final class HapticsPlaygroundViewModel: ObservableObject {
     @Published private var fireButtonAnimation: FireButtonAnimationType {
         didSet {
-            configuration = fireButtonAnimation.hapticConfiguration
+            configuration = store.load(for: fireButtonAnimation.rawValue) ?? appSettings.currentFireButtonAnimation.hapticConfiguration
             didCopyPreset = false
         }
     }
 
-    @Published var configuration: HapticConfiguration
+    @Published var configuration: HapticConfiguration {
+        didSet {
+            store.save(configuration, for: fireButtonAnimation.rawValue)
+        }
+    }
+
     @Published var didCopyPreset = false
 
     let animations = [FireButtonAnimationType.fireRising, .fireRisingLegacy, .waterSwirl, .airstream]
 
     private let appSettings: AppSettings
+    private let store: HapticConfigurationStore
     private let animator: FireButtonAnimator
     private let hapticEngine: HapticEngine
 
@@ -340,9 +351,10 @@ final class HapticsPlaygroundViewModel: ObservableObject {
         fireButtonAnimation.duration
     }
 
-    init(appSettings: AppSettings = InMemoryAppSettings()) {
+    init(appSettings: AppSettings = InMemoryAppSettings(), keyValueStore: ThrowingKeyValueStoring) {
         self.appSettings = appSettings
-        configuration = animations.first!.hapticConfiguration
+        self.store = HapticConfigurationStore(keyValueStore: keyValueStore)
+        configuration = store.load(for: appSettings.currentFireButtonAnimation.rawValue) ?? appSettings.currentFireButtonAnimation.hapticConfiguration
         animator = FireButtonAnimator(appSettings: appSettings)
         fireButtonAnimation = appSettings.currentFireButtonAnimation
         hapticEngine = HapticEngine()
@@ -431,15 +443,54 @@ final class HapticsPlaygroundViewModel: ObservableObject {
     }
 }
 
-// MARK: - Haptics
+final class HapticConfigurationStore {
+    private enum StorageKey {
+        static let hapticConfiguration = "debug.haptics.fire-animation-configuration."
+    }
 
-struct HapticPoint: Identifiable, Equatable {
-    let id = UUID()
-    var progress: Double       // 0...1 relative to animation
-    var value: Float
+    private let keyValueStore: ThrowingKeyValueStoring
+
+    init(keyValueStore: ThrowingKeyValueStoring) {
+        self.keyValueStore = keyValueStore
+    }
+
+    func save(_ configuration: HapticConfiguration, for key: String) {
+        guard let data = try? JSONEncoder().encode(configuration) else { return }
+        try? keyValueStore.set(data, forKey: StorageKey.hapticConfiguration+key)
+    }
+
+    func load(for key: String) -> HapticConfiguration? {
+        guard let data = try? keyValueStore.object(forKey: StorageKey.hapticConfiguration+key) as? Data else {
+            return nil
+        }
+
+        return try? JSONDecoder().decode(HapticConfiguration.self, from: data)
+    }
+
+    func remove(for key: String) {
+        try? keyValueStore.removeObject(forKey: key)
+    }
 }
 
-struct HapticConfiguration {
+// MARK: - Haptics
+
+struct HapticPoint: Identifiable, Equatable, Codable {
+    let id: UUID
+    var progress: Double // 0...1 relative to animation
+    var value: Float
+
+    init(
+        id: UUID = UUID(),
+        progress: Double,
+        value: Float
+    ) {
+        self.id = id
+        self.progress = progress
+        self.value = value
+    }
+}
+
+struct HapticConfiguration: Equatable, Codable {
     var baseIntensity: Float
     var baseSharpness: Float
 
@@ -449,7 +500,7 @@ struct HapticConfiguration {
     var intensityPoints: [HapticPoint]
     var sharpnessPoints: [HapticPoint]
 
-    var transientEnabled = true
+    var transientEnabled: Bool
     var transientProgress: Double
     var transientIntensity: Float
     var transientSharpness: Float

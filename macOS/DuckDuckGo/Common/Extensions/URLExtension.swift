@@ -328,7 +328,7 @@ extension URL {
             }
 
             if decodePunycode,
-               let decodedHost = host.idnaDecoded {
+               let decodedHost = host.punycodeDecodedHostname {
                 host = decodedHost
             }
 
@@ -363,7 +363,7 @@ extension URL {
     func toString(forUserInput input: String, decodePunycode: Bool = true) -> String {
         let hasInputScheme = input.hasOrIsPrefix(of: self.separatedScheme ?? "")
         let hasInputWww = input.dropping(prefix: self.separatedScheme ?? "").hasOrIsPrefix(of: URL.HostPrefix.www.rawValue)
-        let hasInputHost = (decodePunycode ? host?.idnaDecoded : host)?.hasOrIsPrefix(of: input) ?? false
+        let hasInputHost = (decodePunycode ? host?.punycodeDecodedHostname : host)?.hasOrIsPrefix(of: input) ?? false
 
         return self.toString(decodePunycode: decodePunycode,
                              dropScheme: input.isEmpty || !(hasInputScheme && !hasInputHost),

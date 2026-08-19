@@ -28,4 +28,13 @@ public extension StringProtocol {
             .joined(separator: ".")
     }
 
+    /// The Unicode form of a punycoded hostname, or `nil` if it cannot be decoded.
+    ///
+    /// Counterpart to `punycodeEncodedHostname`. Callers use this instead of `Punycode`'s
+    /// `idnaDecoded` directly so that `Punycode` stays an implementation detail of `Common`
+    /// and consumers don't have to link it themselves.
+    var punycodeDecodedHostname: String? {
+        String(self).idnaDecoded
+    }
+
 }

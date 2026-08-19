@@ -84,9 +84,10 @@ final class DefaultAppReturnInstrumentation: AppReturnInstrumentation {
         ]
 
         // Defer the whole fire, not just the request: the daily marker is written inside it.
+        // Copied out so the deferred send does not capture `self`.
         let fire = fireDailyAndCount
-        delay.delaySend { requestDidFinish in
-            fire(.appReturn, parameters) { _, _ in requestDidFinish() }
+        delay.delaySend { keepAppAwake in
+            fire(.appReturn, parameters) { _, _ in withExtendedLifetime(keepAppAwake) { } }
         }
     }
 

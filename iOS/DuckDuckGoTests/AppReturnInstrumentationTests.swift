@@ -27,26 +27,39 @@ struct AppReturnInstrumentationTests {
 
     private final class PixelCollector {
         var fired: [(name: String, params: [String: String])] = []
+        private var completions: [(Bool, Error?) -> Void] = []
+
+        func record(_ name: String, _ params: [String: String], _ onComplete: @escaping (Bool, Error?) -> Void) {
+            fired.append((name, params))
+            completions.append(onComplete)
+        }
+
+        /// Reports back and lets go, the way the transport does once a request is done.
+        func completeFires(success: Bool = true) {
+            let reported = completions
+            completions = []
+            reported.forEach { $0(success, nil) }
+        }
     }
 
     /// Runs the send as soon as it is handed over, so the existing expectations can stay synchronous.
     private final class ImmediateDelay: PixelTransmissionDelaying {
-        func delaySend(_ send: @escaping (@escaping () -> Void) -> Void) {
-            send { }
+        func delaySend(_ send: @escaping (PixelSendToken) -> Void) {
+            send(PixelSendToken(assertion: nil, runOnMain: { $0() }))
         }
     }
 
     /// Holds the send until the test releases it, standing in for the randomised wait.
     private final class ManualDelay: PixelTransmissionDelaying {
-        private var pending: ((@escaping () -> Void) -> Void)?
-        private(set) var requestDidFinish = false
+        let assertion = FakeBackgroundAssertion()
+        private var pending: ((PixelSendToken) -> Void)?
 
-        func delaySend(_ send: @escaping (@escaping () -> Void) -> Void) {
+        func delaySend(_ send: @escaping (PixelSendToken) -> Void) {
             pending = send
         }
 
         func elapse() {
-            pending?({ self.requestDidFinish = true })
+            pending?(PixelSendToken(assertion: assertion, runOnMain: { $0() }))
         }
     }
 
@@ -72,8 +85,7 @@ struct AppReturnInstrumentationTests {
             now: { Self.now },
             delay: delay,
             fireDailyAndCount: { event, params, onComplete in
-                collector.fired.append((event.name, params))
-                onComplete(true, nil)
+                collector.record(event.name, params, onComplete)
             })
         return (sut, collector)
     }
@@ -214,18 +226,31 @@ struct AppReturnInstrumentationTests {
     }
 
     @available(iOS 16, *)
-    @Test("When the fired pixel completes then the delay is told the request finished", .timeLimit(.minutes(1)))
-    func whenFiredPixelCompletesThenDelayIsToldRequestFinished() {
+    @Test("When the fired pixel is still in flight then the app is kept awake", .timeLimit(.minutes(1)))
+    func whenFiredPixelIsStillInFlightThenAppIsKeptAwake() {
         let delay = ManualDelay()
-        let (sut, _) = makeSUT(delay: delay)
+        let (sut, collector) = makeSUT(delay: delay)
 
         sut.recordAppForeground(lastBackgroundDate: backgroundDate(secondsAgo: 120),
                                 launchAction: .standardLaunch(lastBackgroundDate: nil, isFirstForeground: false))
-        #expect(delay.requestDidFinish == false)
-
         delay.elapse()
 
-        #expect(delay.requestDidFinish)
+        #expect(collector.fired.count == 1)
+        #expect(delay.assertion.releaseCount == 0)
+    }
+
+    @available(iOS 16, *)
+    @Test("When the fired pixel finishes then the app is let go", .timeLimit(.minutes(1)))
+    func whenFiredPixelFinishesThenAppIsLetGo() {
+        let delay = ManualDelay()
+        let (sut, collector) = makeSUT(delay: delay)
+
+        sut.recordAppForeground(lastBackgroundDate: backgroundDate(secondsAgo: 120),
+                                launchAction: .standardLaunch(lastBackgroundDate: nil, isFirstForeground: false))
+        delay.elapse()
+        collector.completeFires()
+
+        #expect(delay.assertion.releaseCount == 1)
     }
 
     // MARK: - Launch source

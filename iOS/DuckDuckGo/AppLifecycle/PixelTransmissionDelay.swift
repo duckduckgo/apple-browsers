@@ -29,26 +29,57 @@ protocol BackgroundAssertion: AnyObject {
 
 extension QRunInBackgroundAssertion: BackgroundAssertion {}
 
+/// Keeps the app awake while a delayed send is in flight. The guarantee lasts exactly as long as
+/// the last reference to it, so hold one from every completion the send hands out.
+final class PixelSendToken {
+
+    private let assertion: BackgroundAssertion?
+    private let runOnMain: (@escaping () -> Void) -> Void
+
+    init(assertion: BackgroundAssertion?, runOnMain: @escaping (@escaping () -> Void) -> Void) {
+        self.assertion = assertion
+        self.runOnMain = runOnMain
+    }
+
+    /// Called on the main thread when the system reclaims the assertion before we are done with it.
+    func onSystemRelease(_ handler: @escaping () -> Void) {
+        assertion?.systemDidReleaseAssertion = handler
+    }
+
+    deinit {
+        // Hop because the last reference is usually dropped by a URL session callback, and both
+        // releasing and clearing `systemDidReleaseAssertion` assert they are on the main queue.
+        let assertion = self.assertion
+        runOnMain { assertion?.release() }
+    }
+}
+
 /// Holds a send back so it does not land in the burst of pixels the app sends when it foregrounds.
 protocol PixelTransmissionDelaying {
-    /// Safe to call from any thread; the send itself runs on the main thread. The send must call the
-    /// closure it is handed once its request finished, so the assertion covers the request too.
-    func delaySend(_ send: @escaping (_ requestDidFinish: @escaping () -> Void) -> Void)
+    /// Safe to call from any thread. The send runs on the main thread and must keep the token it is
+    /// handed alive until every request it started has finished.
+    func delaySend(_ send: @escaping (_ keepAppAwake: PixelSendToken) -> Void)
 }
 
 final class PixelTransmissionDelay: PixelTransmissionDelaying {
 
-    /// Agreed with Privacy Triage; the upper bound also matches the background window iOS grants.
+    /// Agreed with Privacy Triage. The wait is trimmed when the remaining background budget is
+    /// smaller, so the upper bound does not have to fit inside the window iOS grants.
     static let range: ClosedRange<TimeInterval> = 1...30
 
     static func randomInterval() -> TimeInterval {
         .random(in: range)
     }
 
+    /// Kept back from the background budget for the request itself, since the assertion starts
+    /// running down the moment it is taken rather than when the wait is over.
+    private static let requestHeadroom: TimeInterval = 10
+
     private static let assertionName = "Delayed pixel transmission"
 
     private let interval: () -> TimeInterval
     private let makeAssertion: () -> BackgroundAssertion?
+    private let backgroundTimeRemaining: () -> TimeInterval
     private let runOnMain: (@escaping () -> Void) -> Void
     private let schedule: (TimeInterval, @escaping () -> Void) -> Void
 
@@ -56,6 +87,9 @@ final class PixelTransmissionDelay: PixelTransmissionDelaying {
          makeAssertion: @escaping () -> BackgroundAssertion? = {
              QRunInBackgroundAssertion(name: PixelTransmissionDelay.assertionName, application: .shared)
          },
+         // `.greatestFiniteMagnitude` while foregrounded, so the wait is only ever trimmed when the
+         // app is on its way out.
+         backgroundTimeRemaining: @escaping () -> TimeInterval = { UIApplication.shared.backgroundTimeRemaining },
          // Always hops, because being on the main thread does not mean being on the main queue and
          // `QRunInBackgroundAssertion` asserts the latter.
          runOnMain: @escaping (@escaping () -> Void) -> Void = { work in
@@ -66,50 +100,54 @@ final class PixelTransmissionDelay: PixelTransmissionDelaying {
          }) {
         self.interval = interval
         self.makeAssertion = makeAssertion
+        self.backgroundTimeRemaining = backgroundTimeRemaining
         self.runOnMain = runOnMain
         self.schedule = schedule
     }
 
-    func delaySend(_ send: @escaping (@escaping () -> Void) -> Void) {
+    func delaySend(_ send: @escaping (PixelSendToken) -> Void) {
         let interval = self.interval()
         let makeAssertion = self.makeAssertion
+        let backgroundTimeRemaining = self.backgroundTimeRemaining
         let runOnMain = self.runOnMain
         let schedule = self.schedule
 
-        // The assertion must be taken now, not when the delay elapses, and is main-thread only.
+        // The assertion must be taken now, not when the wait elapses, and is main-thread only.
         runOnMain {
-            let pending = PendingSend(send: send, assertion: makeAssertion(), runOnMain: runOnMain)
-            schedule(interval) { pending.run() }
+            let token = PixelSendToken(assertion: makeAssertion(), runOnMain: runOnMain)
+            let wait = Self.wait(for: interval, budget: backgroundTimeRemaining())
+            let pending = PendingSend(send: send, token: token)
+            schedule(wait) { pending.run() }
         }
+    }
+
+    /// Read after the assertion is taken, so the budget is the one the system actually granted.
+    private static func wait(for interval: TimeInterval, budget: TimeInterval) -> TimeInterval {
+        min(interval, max(range.lowerBound, budget - requestHeadroom))
     }
 }
 
-/// Sends once, on whichever comes first: the delay elapsing or the assertion being reclaimed.
+/// Sends once, on whichever comes first: the wait elapsing or the assertion being reclaimed.
 /// Both arrive on the main thread, so the one-shot guard needs no locking.
 private final class PendingSend {
 
-    private var send: ((@escaping () -> Void) -> Void)?
-    private let assertion: BackgroundAssertion?
-    private let runOnMain: (@escaping () -> Void) -> Void
+    private var send: ((PixelSendToken) -> Void)?
+    private var token: PixelSendToken?
 
-    init(send: @escaping (@escaping () -> Void) -> Void,
-         assertion: BackgroundAssertion?,
-         runOnMain: @escaping (@escaping () -> Void) -> Void) {
+    init(send: @escaping (PixelSendToken) -> Void, token: PixelSendToken) {
         self.send = send
-        self.assertion = assertion
-        self.runOnMain = runOnMain
-        assertion?.systemDidReleaseAssertion = { [weak self] in self?.run() }
+        self.token = token
+        token.onSystemRelease { [weak self] in self?.run() }
     }
 
     func run() {
-        guard let send else { return }
+        guard let send, let token else { return }
         self.send = nil
 
-        // Handing the assertion to the completion keeps it alive for the request, not just for the
-        // call that starts it. Hop to main because PixelKit calls back off it and releasing cannot.
-        let assertion = self.assertion
-        let runOnMain = self.runOnMain
-        send { runOnMain { assertion?.release() } }
+        // Hand the token over rather than releasing when the send reports back: `.dailyAndCount`
+        // completes once per fired variant, so the first report is not the last request.
+        self.token = nil
+        send(token)
     }
 }
 
@@ -136,10 +174,10 @@ final class ReturnSessionSendDelayingWideEventSender: WideEventSending {
             return
         }
 
-        delay.delaySend { requestDidFinish in
+        delay.delaySend { keepAppAwake in
             wrapped.send(data, status: status, featureFlagProvider: featureFlagProvider) { success, error in
                 onComplete(success, error)
-                requestDidFinish()
+                withExtendedLifetime(keepAppAwake) { }
             }
         }
     }

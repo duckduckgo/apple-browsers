@@ -48,10 +48,10 @@ extension OnboardingPersonalizationManager {
     public func applyDefaults(for reason: OnboardingDownloadReason) {
         switch reason {
         case .noAI:
-            // The only reason whose presented toggles diverge from the app's existing defaults:
-            // both Search AI features start off.
+            // Disable AI features, Search Assist, Duck.ai and AI generated images when user select no AI.
             setSearchAssist(false)
             setAIGeneratedImagesHidden(true)
+            setDuckAIEnabled(false)
         case .browserPrivately, .privateAIChat, .blockAds:
             // Presented toggles already match the app's existing defaults; nothing to override.
             break

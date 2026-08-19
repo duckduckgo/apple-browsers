@@ -1493,6 +1493,62 @@ extension OnboardingIntroViewModelTests {
         XCTAssertEqual(sut.state, .onboarding(.init(type: .aiModelDialog(content: contentProviderMock.aiModelPersonalizationContent, options: [], selectedID: nil), step: .init(currentStep: 1, totalSteps: 2))))
     }
 
+    // MARK: - Personalization writes on the commit (two-button) screens
+
+    func testToggleInputModeContinueActionPersistsOpensWithAIChatWhenEnabled() {
+        // GIVEN
+        onboardingManagerMock.onboardingSteps = [.toggleInputModeSelection, .setDefaultBrowser]
+        let personalizationManager = MockOnboardingPersonalizationManager()
+        let sut = makeSUT(currentOnboardingStep: .toggleInputModeSelection, personalizationManager: personalizationManager)
+
+        // WHEN
+        sut.toggleInputModeContinueAction(opensWithAIChat: true)
+
+        // THEN
+        XCTAssertTrue(personalizationManager.doesNewTabOpenWithAIChat)
+    }
+
+    func testToggleInputModeContinueActionPersistsOpensWithAIChatWhenDisabled() {
+        // GIVEN
+        onboardingManagerMock.onboardingSteps = [.toggleInputModeSelection, .setDefaultBrowser]
+        let personalizationManager = MockOnboardingPersonalizationManager()
+        personalizationManager.doesNewTabOpenWithAIChat = true
+        let sut = makeSUT(currentOnboardingStep: .toggleInputModeSelection, personalizationManager: personalizationManager)
+
+        // WHEN
+        sut.toggleInputModeContinueAction(opensWithAIChat: false)
+
+        // THEN
+        XCTAssertFalse(personalizationManager.doesNewTabOpenWithAIChat)
+    }
+
+    func testKeepDuckAIContinueActionPersistsDuckAIEnabledWhenEnabled() {
+        // GIVEN
+        onboardingManagerMock.onboardingSteps = [.keepDuckAISelection, .setDefaultBrowser]
+        let personalizationManager = MockOnboardingPersonalizationManager()
+        let sut = makeSUT(currentOnboardingStep: .keepDuckAISelection, personalizationManager: personalizationManager)
+
+        // WHEN
+        sut.keepDuckAIContinueAction(isEnabled: true)
+
+        // THEN
+        XCTAssertTrue(personalizationManager.isDuckAIEnabled)
+    }
+
+    func testKeepDuckAIContinueActionPersistsDuckAIEnabledWhenDisabled() {
+        // GIVEN
+        onboardingManagerMock.onboardingSteps = [.keepDuckAISelection, .setDefaultBrowser]
+        let personalizationManager = MockOnboardingPersonalizationManager()
+        personalizationManager.isDuckAIEnabled = true
+        let sut = makeSUT(currentOnboardingStep: .keepDuckAISelection, personalizationManager: personalizationManager)
+
+        // WHEN
+        sut.keepDuckAIContinueAction(isEnabled: false)
+
+        // THEN
+        XCTAssertFalse(personalizationManager.isDuckAIEnabled)
+    }
+
     func makeSUT(
         currentOnboardingStep: OnboardingIntroStep = .introDialog(isReturningUser: false),
         onboardingSearchExperienceProvider: OnboardingSearchExperienceProvider = MockOnboardingSearchExperienceProvider(),
@@ -1759,7 +1815,7 @@ extension OnboardingIntroViewModelTests {
         sut.aiModelContinueAction()
         XCTAssertEqual(sut.state.intro?.type, .toggleInputModeDialog(content: .mock))
 
-        sut.toggleInputModeContinueAction()
+        sut.toggleInputModeContinueAction(opensWithAIChat: true)
         XCTAssertEqual(sut.state.intro?.type, .chooseAddressBarPositionDialog(content: .mock))
 
         sut.selectAddressBarPositionAction()

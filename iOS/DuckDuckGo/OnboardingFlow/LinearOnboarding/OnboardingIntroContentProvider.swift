@@ -374,6 +374,15 @@ extension OnboardingIntroContentProvider {
         // Return default version of comparison table if download reason is nil (Duck.ai + No experiment enrolled users)
         guard let reason = downloadReasonProvider() else { return defaultSetDefaultBrowserContent }
 
+        let title = switch reason {
+        case .browserPrivately, .privateAIChat:
+            UserText.Onboarding.BrowsersComparison.titleGenericDownloadReasonExperiment
+        case .noAI:
+            UserText.Onboarding.BrowsersComparison.titleNoAIDownloadReasonExperiment
+        case .blockAds:
+            UserText.Onboarding.BrowsersComparison.titleNoAdsDownloadReasonExperiment
+        }
+
         let subHeader = reason == .privateAIChat ? UserText.Onboarding.DuckAICPP.AIComparison.subHeader : nil
 
         let competitor: OnboardingComparisonContent.Competitor = switch reason {
@@ -386,7 +395,7 @@ extension OnboardingIntroContentProvider {
         }
 
         return OnboardingComparisonContent(
-            title: UserText.Onboarding.BrowsersComparison.titleDownloadExperiment,
+            title: title,
             subHeader: subHeader,
             competitor: competitor,
             features: RebrandedComparisonTableModel.browserFeatures(for: reason),

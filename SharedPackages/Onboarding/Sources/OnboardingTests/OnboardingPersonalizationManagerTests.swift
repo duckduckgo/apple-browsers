@@ -188,13 +188,15 @@ struct OnboardingPersonalizationManagerTests {
 
     // MARK: - applyDefaults
 
-    @Test("applyDefaults for .noAI disables both Search AI features")
+    @Test("applyDefaults for .noAI disables the Search AI features and Duck.ai")
     func applyDefaultsNoAI() {
         // GIVEN
         let serpSettings = MockOnboardingSERPStore()
         serpSettings.isSearchAssistEnabled = true
         serpSettings.areAIGeneratedImagesHidden = false
-        let manager = makeManager(serpSettings: serpSettings)
+        let aiChatSettings = MockOnboardingAIChatStore()
+        aiChatSettings.isDuckAIEnabled = true
+        let manager = makeManager(serpSettings: serpSettings, aiChatSettings: aiChatSettings)
 
         // WHEN
         manager.applyDefaults(for: .noAI)
@@ -202,6 +204,7 @@ struct OnboardingPersonalizationManagerTests {
         // THEN
         #expect(!serpSettings.isSearchAssistEnabled)
         #expect(serpSettings.areAIGeneratedImagesHidden)
+        #expect(!aiChatSettings.isDuckAIEnabled)
     }
 
     @Test(

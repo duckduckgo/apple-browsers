@@ -412,10 +412,10 @@ struct OnboardingIntroContentProviderTests {
         }
 
         @Test(
-            "Every reason shows the shared heading and keeps the browser CTAs",
+            "Every reason shows its tailored heading and keeps the browser CTAs",
             arguments: OnboardingDownloadReason.allCases
         )
-        func sharedHeadingAndCTAs(reason: OnboardingDownloadReason) {
+        func headingAndCTAs(reason: OnboardingDownloadReason) {
             // GIVEN
             let sut = makeSUT(reason: reason)
 
@@ -423,7 +423,15 @@ struct OnboardingIntroContentProviderTests {
             let result = sut.setDefaultBrowserContent
 
             // THEN
-            #expect(result.title == UserText.Onboarding.BrowsersComparison.titleDownloadExperiment)
+            let expectedTitle: String = switch reason {
+            case .browserPrivately, .privateAIChat:
+                UserText.Onboarding.BrowsersComparison.titleGenericDownloadReasonExperiment
+            case .noAI:
+                UserText.Onboarding.BrowsersComparison.titleNoAIDownloadReasonExperiment
+            case .blockAds:
+                UserText.Onboarding.BrowsersComparison.titleNoAdsDownloadReasonExperiment
+            }
+            #expect(result.title == expectedTitle)
             #expect(result.primaryCTA == UserText.Onboarding.BrowsersComparison.cta)
             #expect(result.secondaryCTA == UserText.onboardingSkip)
         }
@@ -1172,8 +1180,8 @@ struct OnboardingIntroContentProviderTests {
                 title: "Your search, your way.",
                 message: nil,
                 items: [
-                    .init(type: .recentlyVisitedSites, title: "Recently visited sites", subtitle: "Show when searching. Private, only on your device."),
-                    .init(type: .safeSearch, title: "Safe search", subtitle: "Omit questionable (mostly adult) material in results.")
+                    .init(type: .recentlyVisitedSites, title: "Search History", subtitle: "Show recently visited sites in search suggestions. Private, only on your device."),
+                    .init(type: .safeSearch, title: "Safe Search", subtitle: "Omit questionable (mostly adult) material in results.")
                 ],
                 primaryCTA: "Next",
                 daxAnimation: .wingLeft
@@ -1229,8 +1237,8 @@ struct OnboardingIntroContentProviderTests {
                 title: "Search without AI",
                 message: nil,
                 items: [
-                    .init(type: .searchAssist, title: "Search Assist", subtitle: "AI-generated answers within search results"),
-                    .init(type: .aiGeneratedImages, title: "Hide AI-generated images", subtitle: "Filters out known AI spam sites from image search results")
+                    .init(type: .searchAssist, title: "Search Assist", subtitle: "Include AI-generated answers with search results"),
+                    .init(type: .aiGeneratedImages, title: "Hide AI-generated images", subtitle: "Filter out known AI spam sites from image search results")
                 ],
                 primaryCTA: "Next",
                 daxAnimation: .wingLeft
@@ -1250,8 +1258,8 @@ struct OnboardingIntroContentProviderTests {
                 icon: OnboardingImageResources.Personalization.addressBarToggleMode,
                 title: "Want the option to chat privately with popular AIs?",
                 message: "In Duck.ai, your chats are anonymized by us and never used to train AI.",
-                primaryCTA: "Keep Duck.ai On",
-                secondaryCTA: "Turn Duck.ai Off",
+                primaryCTA: "Turn Duck.ai On",
+                secondaryCTA: "Keep Duck.ai Off",
                 daxAnimation: nil
             )
 
@@ -1270,7 +1278,7 @@ struct OnboardingIntroContentProviderTests {
                 message: nil,
                 items: [
                     .init(type: .youTubeAdBlocking, title: "YouTube ad blocking", subtitle: nil),
-                    .init(type: .duckPlayer, title: "Duck Player", subtitle: "Opens YouTube videos in theater mode")
+                    .init(type: .duckPlayer, title: "Duck Player", subtitle: "Open YouTube videos in theater mode")
                 ],
                 primaryCTA: "Next",
                 daxAnimation: .wingLeft

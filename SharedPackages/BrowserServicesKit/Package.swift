@@ -63,7 +63,6 @@ let package = Package(
         .package(path: "../Common"),
         .package(path: "../Persistence"),
         .package(path: "../PixelKit"),
-        .package(path: "../URLPredictor"),
         .package(path: "../Infrastructure/SystemFrameworksExtensions"),
     ],
     targets: [

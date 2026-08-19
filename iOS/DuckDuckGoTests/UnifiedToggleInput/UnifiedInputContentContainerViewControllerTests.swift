@@ -30,23 +30,25 @@ final class UnifiedInputContentContainerViewControllerTests: XCTestCase {
 
     func testWhenResolvingEscapeHatchPlacementThenUsesCurrentInputs() {
         typealias Placement = UnifiedInputContentContainerViewController.EscapeHatchPlacement
-        let cases: [(String, Bool, Bool, Bool, TextEntryMode, Bool, Placement)] = [
-            ("no hatch", false, false, false, .search, true, .none),
-            ("Fire Tab", true, true, false, .search, true, .none),
-            ("typing", true, false, true, .search, true, .none),
-            ("idle Search with favorites", true, false, false, .search, true, .embedded),
-            ("idle Search without favorites", true, false, false, .search, false, .pinned),
-            ("idle Duck.ai", true, false, false, .aiChat, true, .pinned)
-        ]
 
-        for (name, hasEscapeHatch, isFireTab, isTyping, inputMode, hasFavorites, expected) in cases {
-            let result = Placement.resolve(hasEscapeHatch: hasEscapeHatch,
-                                           isFireTab: isFireTab,
-                                           isTyping: isTyping,
-                                           inputMode: inputMode,
-                                           hasFavorites: hasFavorites)
-            XCTAssertEqual(result, expected, name)
+        func resolve(hasEscapeHatch: Bool = true,
+                     isFireTab: Bool = false,
+                     isTyping: Bool = false,
+                     inputMode: TextEntryMode = .search,
+                     hasFavorites: Bool = true) -> Placement {
+            Placement.resolve(hasEscapeHatch: hasEscapeHatch,
+                              isFireTab: isFireTab,
+                              isTyping: isTyping,
+                              inputMode: inputMode,
+                              hasFavorites: hasFavorites)
         }
+
+        XCTAssertEqual(resolve(hasEscapeHatch: false), .none)
+        XCTAssertEqual(resolve(isFireTab: true), .none)
+        XCTAssertEqual(resolve(isTyping: true), .none)
+        XCTAssertEqual(resolve(), .embedded)
+        XCTAssertEqual(resolve(hasFavorites: false), .pinned)
+        XCTAssertEqual(resolve(inputMode: .aiChat), .pinned)
     }
 
     func testDuckAISuggestionsDidRequestSyncSetup_RequestsSyncSetupOnDelegate() {

@@ -162,6 +162,38 @@ jobs:
             | tail -60 >&2 || true
           exit 1
 
+      - name: Quit any Safari left behind by an earlier run
+        # The harness must be the only Safari on the machine, since it quits
+        # Safari between repetitions, so it refuses to start while another one
+        # is running. That refusal protects a developer's own browser, but on
+        # this runner it means one cancelled run leaves every later run failing
+        # at the same check until someone logs in and quits it by hand. Nothing
+        # here browses, so any Safari alive before the harness starts is debris.
+        run: |
+          if ! pgrep -x Safari >/dev/null 2>&1; then
+            echo "no Safari running"
+            exit 0
+          fi
+          echo "::warning title=Stray browser::Quitting a Safari left by an earlier run"
+          pgrep -xl Safari
+          pkill -x Safari || true
+          for _ in 1 2 3 4 5 6 7 8 9 10; do
+            pgrep -x Safari >/dev/null 2>&1 || break
+            sleep 1
+          done
+          if pgrep -x Safari >/dev/null 2>&1; then
+            pkill -9 -x Safari || true
+            sleep 2
+          fi
+          # Fail here rather than let the harness fail on the same condition
+          # thirty seconds later, where the reason is less obvious.
+          if pgrep -x Safari >/dev/null 2>&1; then
+            echo "ERROR: a Safari process survived both signals." >&2
+            pgrep -xl Safari >&2
+            exit 1
+          fi
+          echo "stray Safari quit"
+
       - name: Run Safari LCP suite
         # Inputs passed via env, not interpolated into the script, to avoid shell injection.
         env:

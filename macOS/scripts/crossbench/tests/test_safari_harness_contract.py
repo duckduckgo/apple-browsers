@@ -177,6 +177,13 @@ class SafariHarnessContractTests(unittest.TestCase):
         self.assertIn('"$HOME/Library/Logs/com.apple.WebDriver"', HARNESS)
         self.assertIn("preserve_driver_diagnostics", HARNESS)
 
+    def test_a_stray_browser_is_quit_before_the_harness_runs(self):
+        """A cancelled run leaves a Safari that blocks every later run."""
+        self.assertIn("Quit any Safari left behind by an earlier run", WORKFLOW)
+        self.assertIn("pkill -x Safari", WORKFLOW)
+        # The harness keeps refusing on its own behalf; this only clears CI.
+        self.assertIn("Safari is already running; refusing to start.", HARNESS)
+
     def test_diagnostics_artifact_includes_nested_crash_reports(self):
         self.assertIn("path: macOS/scripts/crossbench/safari-diagnostics/**", WORKFLOW)
 

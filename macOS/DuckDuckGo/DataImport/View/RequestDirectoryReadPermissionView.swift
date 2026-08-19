@@ -24,17 +24,19 @@ import SwiftUIExtensions
 
 /// Asks the user to grant access to a browser data directory before importing from it.
 struct RequestDirectoryReadPermissionView: View {
+
+    enum Mode {
+        case initialRequest
+        case retryAfterDenial
+    }
+
     let source: DataImport.Source
+    var mode: Mode = .initialRequest
     let onSelectData: () -> Void
 
     var body: some View {
         HStack(alignment: .top, spacing: Metrics.iconSpacing) {
-            Image(nsImage: DesignSystemImages.Glyphs.Size16.infoSolid)
-                .renderingMode(.template)
-                .resizable()
-                .foregroundColor(RebrandingColor.Pondwater.pondwater50)
-                .frame(width: Metrics.iconSize, height: Metrics.iconSize)
-                .offset(y: Metrics.iconTopOffset)
+            iconView
 
             VStack(alignment: .leading, spacing: Metrics.contentSpacing) {
                 titleView
@@ -48,8 +50,17 @@ struct RequestDirectoryReadPermissionView: View {
         .padding(.vertical, Metrics.verticalPadding)
     }
 
+    private var iconView: some View {
+        Image(nsImage: mode.icon)
+            .renderingMode(mode.iconTintColor == nil ? .original : .template)
+            .resizable()
+            .foregroundColor(mode.iconTintColor)
+            .frame(width: Metrics.iconSize, height: Metrics.iconSize)
+            .offset(y: Metrics.iconTopOffset)
+    }
+
     private var titleView: some View {
-        Text(UserText.importBrowserDataRequestAccessTitle(for: source))
+        Text(mode.title(for: source))
             .font(.title2.weight(.semibold))
             .foregroundColor(Color(designSystemColor: .textPrimary))
     }
@@ -81,6 +92,38 @@ struct RequestDirectoryReadPermissionView: View {
         let output = try? AttributedString(markdown: text)
 
         return output ?? AttributedString(text)
+    }
+}
+
+// MARK: - Mode Presentation
+
+private extension RequestDirectoryReadPermissionView.Mode {
+
+    var icon: DesignSystemImage {
+        switch self {
+        case .initialRequest:
+            return DesignSystemImages.Glyphs.Size16.infoSolid
+        case .retryAfterDenial:
+            return DesignSystemImages.Glyphs.Size16.exclamationRecolorableInvert
+        }
+    }
+
+    var iconTintColor: Color? {
+        switch self {
+        case .initialRequest:
+            return RebrandingColor.Pondwater.pondwater50
+        case .retryAfterDenial:
+            return nil
+        }
+    }
+
+    func title(for source: DataImport.Source) -> String {
+        switch self {
+        case .initialRequest:
+            return UserText.importBrowserDataRequestAccessTitle(for: source)
+        case .retryAfterDenial:
+            return UserText.importBrowserDataRequestAccessDeniedTitle(for: source)
+        }
     }
 }
 
@@ -182,7 +225,12 @@ private extension FilePickerExampleView {
     }
 }
 
-#Preview {
+#Preview("Request Access") {
     RequestDirectoryReadPermissionView(source: .chrome) {}
+        .frame(width: 420)
+}
+
+#Preview("Retry After Denial") {
+    RequestDirectoryReadPermissionView(source: .chrome, mode: .retryAfterDenial) {}
         .frame(width: 420)
 }

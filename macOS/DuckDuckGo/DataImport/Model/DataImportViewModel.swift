@@ -831,6 +831,7 @@ extension DataImportViewModel {
         case selectFile
         case skip
         case cancel
+        case cancelImport
         case back
         case done
         case submit
@@ -842,7 +843,7 @@ extension DataImportViewModel {
             switch self {
             case .initiateImport(disabled: let disabled):
                 return disabled
-            case .skip, .done, .cancel, .back, .submit, .continue, .selectFile, .sync, .close:
+            case .skip, .done, .cancel, .cancelImport, .back, .submit, .continue, .selectFile, .sync, .close:
                 return false
             }
         }
@@ -894,8 +895,10 @@ extension DataImportViewModel {
             switch screen {
             case .sourceAndDataTypesPicker:
                 return .cancel
-            case .archiveImport, .profilePicker, .moreInfo, .getFileReadPermission, .getDirectoryReadPermission, .directoryReadPermissionDenied:
+            case .archiveImport, .profilePicker, .moreInfo, .getFileReadPermission, .getDirectoryReadPermission:
                 return .back
+            case .directoryReadPermissionDenied:
+                return .cancelImport
             case .passwordEntryHelp:
                 return .cancel
             case .fileImport(_, let summary):
@@ -1009,10 +1012,11 @@ extension DataImportViewModel {
             if screen == .passwordEntryHelp {
                 goBack()
             } else {
-                importTask?.cancel()
-                onCancelled()
-                self.dismiss(using: dismiss)
+                cancelImport(using: dismiss)
             }
+
+        case .cancelImport:
+            cancelImport(using: dismiss)
 
         case .submit:
             submitReport()
@@ -1022,6 +1026,12 @@ extension DataImportViewModel {
         case .sync:
             launchSync(using: dismiss)
         }
+    }
+
+    private mutating func cancelImport(using dismiss: @escaping () -> Void) {
+        importTask?.cancel()
+        onCancelled()
+        self.dismiss(using: dismiss)
     }
 
     /// Returns `true` when we successfully acquired Read Permissions

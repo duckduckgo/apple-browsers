@@ -19,7 +19,6 @@
 import AppKit
 import AppKitExtensions
 import BrowserServicesKit
-import FeatureFlags_macOS
 
 private struct BundleIdentifiers {
     let production: String

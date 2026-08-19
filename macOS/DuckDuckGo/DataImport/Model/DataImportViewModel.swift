@@ -1035,7 +1035,7 @@ extension DataImportViewModel {
             return false
         }
 
-        return FileManager.default.requiresReadPermission(atPath: directoryURL.path) == false
+        return FileManager.default.isDirectoryReadable(atPath: directoryURL.path)
     }
 
     @MainActor

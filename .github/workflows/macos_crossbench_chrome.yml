@@ -88,18 +88,15 @@ jobs:
       - name: Print macOS version
         run: sw_vers
 
-      - name: Locate gh
-        # TEMPORARY: the install step is removed for this run, to test whether
-        # the default PATH already reaches a gh on this machine. Remove.
-        continue-on-error: true
+      - name: Ensure gh is available
+        # The self-hosted runner does not ship the GitHub CLI, and the
+        # aggregation steps below read this run's metadata with `gh api`.
+        # GITHUB_PATH carries the install to later steps, which each get a
+        # fresh shell.
         run: |
-          echo "PATH=$PATH"
-          echo "command -v gh: $(command -v gh 2>&1 || echo NOT FOUND)"
-          for c in /opt/homebrew/bin/gh /usr/local/bin/gh /usr/bin/gh /opt/local/bin/gh; do
-            [ -x "$c" ] && echo "exists: $c" || echo "absent: $c"
-          done
-          echo "--- any gh on disk ---"
-          sudo find /opt /usr/local /Applications -maxdepth 4 -name gh -type f 2>/dev/null | head -10
+          if command -v gh >/dev/null; then exit 0; fi
+          echo /opt/homebrew/bin >> "$GITHUB_PATH"
+          /opt/homebrew/bin/brew install gh
 
       - name: Download validated WPR archives
         uses: actions/download-artifact@v7

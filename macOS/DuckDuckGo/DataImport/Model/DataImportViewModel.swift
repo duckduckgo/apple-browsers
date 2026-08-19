@@ -1031,7 +1031,11 @@ extension DataImportViewModel {
                                                          message: UserText.importBrowserDataAccessPanelMessage(for: importSource),
                                                          prompt: UserText.importBrowserDataAccessPanelPrompt)
 
-        guard case .OK = openPanel.runModal() else {
+        guard case .OK = openPanel.runModal(),
+              let selectedURL = openPanel.url,
+              // access is granted for what the user actually picked, so it only covers the directory
+              // we need when that's the selection itself or one of its ancestors
+              directoryURL.isContained(in: selectedURL) else {
             return false
         }
 

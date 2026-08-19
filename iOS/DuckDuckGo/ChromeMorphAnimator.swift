@@ -29,6 +29,42 @@ import UIKit
 /// exact transition instead.
 final class ChromeMorphAnimator {
 
+    /// Easing applied to the scrubbed progress. All cases are functions of normalized time, so scaling
+    /// a duration compresses the curve rather than truncating it.
+    enum Curve {
+        /// Ease-in-out. Appropriate when the motion starts from rest.
+        case smoothstep
+
+        /// Starts at full speed and decelerates. The right family for a released fling: the bars are
+        /// already moving when the finger lifts, so an ease-in would visibly stall before continuing.
+        case easeOutCubic
+
+        /// Unit-step response of a damped second-order system. `naturalFrequency` is in radians per unit
+        /// duration (not per second) so the shape holds when the duration is scaled. A `dampingRatio`
+        /// below 1 overshoots by `exp(-pi * ratio / sqrt(1 - ratio * ratio))`; 1 or above never does.
+        case spring(dampingRatio: CGFloat, naturalFrequency: CGFloat)
+
+        func value(at t: CGFloat) -> CGFloat {
+            switch self {
+            case .smoothstep:
+                return t * t * (3 - 2 * t)
+
+            case .easeOutCubic:
+                let remaining = 1 - t
+                return 1 - remaining * remaining * remaining
+
+            case .spring(let dampingRatio, let naturalFrequency):
+                let decay = exp(-dampingRatio * naturalFrequency * t)
+                guard dampingRatio < 1 else {
+                    return 1 - decay * (1 + naturalFrequency * t)
+                }
+                let dampedFrequency = naturalFrequency * sqrt(1 - dampingRatio * dampingRatio)
+                let phase = dampedFrequency * t
+                return 1 - decay * (cos(phase) + (dampingRatio * naturalFrequency / dampedFrequency) * sin(phase))
+            }
+        }
+    }
+
     /// Forwards display-link ticks without the link retaining the animator, so the animator (and its
     /// link) deallocate naturally when their owner goes away even if `cancel()` is never called.
     private final class WeakDisplayLinkProxy {
@@ -51,6 +87,7 @@ final class ChromeMorphAnimator {
     private var toValue: CGFloat = 0
     private var onProgress: ((CGFloat) -> Void)?
     private var onComplete: (() -> Void)?
+    private var curve: Curve = .smoothstep
 
     /// The last value emitted, so an interrupted animation can resume from where it visually is
     /// rather than snapping back to a stale endpoint.
@@ -66,6 +103,7 @@ final class ChromeMorphAnimator {
     func animate(from: CGFloat,
                  to: CGFloat,
                  duration: CFTimeInterval,
+                 curve: Curve = .smoothstep,
                  onProgress: @escaping (CGFloat) -> Void,
                  onComplete: @escaping () -> Void) {
         cancel()
@@ -80,6 +118,7 @@ final class ChromeMorphAnimator {
         self.fromValue = from
         self.toValue = to
         self.duration = duration
+        self.curve = curve
         self.onProgress = onProgress
         self.onComplete = onComplete
         currentValue = from
@@ -121,8 +160,7 @@ final class ChromeMorphAnimator {
             return
         }
 
-        let eased = t * t * (3 - 2 * t)
-        let value = fromValue + (toValue - fromValue) * CGFloat(eased)
+        let value = fromValue + (toValue - fromValue) * curve.value(at: CGFloat(t))
         currentValue = value
         onProgress?(value)
     }

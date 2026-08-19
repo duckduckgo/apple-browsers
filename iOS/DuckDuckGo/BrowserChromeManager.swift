@@ -39,6 +39,17 @@ protocol BrowserChromeDelegate: AnyObject {
     var barsMaxHeight: CGFloat { get }
     var isInMinimalChromeLayout: Bool { get }
 
+    /// True when the floating-UI chrome owns the bars transition, selecting the retuned
+    /// scroll-distance and progress math in `BarsAnimator`. Legacy chrome keeps its historical feel.
+    var isFloatingChromeEnabled: Bool { get }
+
+    /// Base settle duration (seconds) for a floating-chrome release, before `BarsAnimator` scales it
+    /// down for a fast flick. Mirrors `MainViewController.ChromeAnimationConstants.morphCollapseDuration`
+    /// / `morphExpandDuration` — the single source of truth for the *unscaled* value stays there; this
+    /// just exposes it to `BarsAnimator` without a reverse dependency on `MainViewController`.
+    var floatingMorphCollapseDuration: CFTimeInterval { get }
+    var floatingMorphExpandDuration: CFTimeInterval { get }
+
     /// Height (from the screen bottom) obscured by the visible bottom chrome at the given chrome
     /// visibility fraction, used to resize the floating web view so page-fixed footers pin to the top
     /// of whatever is on screen (toolbar -> capsule -> safe area).
@@ -50,6 +61,15 @@ protocol BrowserChromeDelegate: AnyObject {
 
     var omniBar: any OmniBar { get }
     var tabBarContainer: UIView { get }
+}
+
+extension BrowserChromeDelegate {
+
+    /// Defaults to the legacy math so existing conformances (including test mocks) are unaffected.
+    var isFloatingChromeEnabled: Bool { false }
+
+    var floatingMorphCollapseDuration: CFTimeInterval { 0.20 }
+    var floatingMorphExpandDuration: CFTimeInterval { 0.34 }
 }
 
 class BrowserChromeManager: NSObject, UIScrollViewDelegate {

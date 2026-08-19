@@ -1280,7 +1280,7 @@ struct OnboardingIntroContentProviderTests {
                     .init(type: .youTubeAdBlocking, title: "Block video ads on YouTube", subtitle: nil),
                     .init(
                         type: .rejectOptionalCookies,
-                        title: "Manage cookie pop-ups",
+                        title: "Reject optional cookies",
                         subtitle: "Maximizes privacy and closes cookie pop-ups",
                         dependentItems: [
                             .init(

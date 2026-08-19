@@ -377,11 +377,11 @@ class TabsBarViewController: UIViewController {
             return
         }
         self.tabsModel = tabsModel
-        recomputeItemSize()
         // deleteItems animates by default; suppress it to match reloadData()'s instant update.
         UIView.performWithoutAnimation {
             collectionView.deleteItems(at: [IndexPath(item: index, section: 0)])
         }
+        recomputeItemSize()
         refreshVisibleCellStyles()
         refreshTabSwitcherButton()
     }

@@ -265,7 +265,8 @@ private extension MainViewController {
         let utiPlaceholderColor = coordinator.viewController.defaultPlaceholderColor
 
         let isLogoToLogo = newTabPageViewController?.isShowingLogo == true
-        // Favorites hand off without the container's fade, which otherwise reads as a flash over the slide.
+        // Favorites hand off seamlessly too: the embedded grid is already laid out where the NTP grid is,
+        // so it slides in without the container's fade (which otherwise reads as a flash over the slide).
         let isFavoritesToFavorites = newTabPageViewController?.isShowingFavorites == true
         let isBottom = coordinator.cardPosition.isBottom
         let isSeamlessHandoff = isLogoToLogo || isFavoritesToFavorites

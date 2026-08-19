@@ -96,9 +96,10 @@ final class PageContextTabExtension {
     /// (content stripped, attached:false). Cleared when that result arrives.
     private var pendingSignalsOnlyCollection: Bool = false
 
-    /// Set when the user explicitly removes page context from the chat.
+    /// Set when the user explicitly removes page context from the chat, or attaches a text
+    /// selection (the selection is the context they asked about).
     /// Suppresses auto-collection on the current page until the next navigation.
-    private var userRemovedContext: Bool = false
+    private var isAutoPageContextSuppressed: Bool = false
 
     private weak var webView: WKWebView?
     private weak var pageContextUserScript: PageContextUserScript? {
@@ -161,7 +162,7 @@ final class PageContextTabExtension {
                 // Also drop the previous page's cached context so a stale snapshot
                 // can't be re-pushed to the sidebar before the new page is collected.
                 if case .url = tabContent {
-                    self.userRemovedContext = false
+                    self.isAutoPageContextSuppressed = false
                     self.cachedPageContext = nil
                     // Selections are tied to the page they were made on — drop any not-yet-flushed ones.
                     self.pendingSelectionContexts = []
@@ -299,7 +300,7 @@ final class PageContextTabExtension {
                 // After submit the context was already consumed; pushing nil back would
                 // make the FE re-show "Add page content" on the same URL.
                 guard !self.hasContextBeenConsumedByChat else { return }
-                self.userRemovedContext = true
+                self.isAutoPageContextSuppressed = true
                 self.cachedPageContext = nil
                 // Clear the stored pageContext too, so a later FE `getAIChatPageContext`
                 // returns nil and triggers a fresh collect instead of the stale snapshot.
@@ -505,6 +506,11 @@ final class PageContextTabExtension {
     /// sidebar is shown.
     @MainActor
     func appendSelectionContext(_ selection: AIChatSelectionContextData) {
+        // Opening the sidebar for a selection shouldn't also auto-attach the whole page — the
+        // selection is what the user asked about. Leaves an already-attached page context alone.
+        if Self.shouldSuppressAutoPageContextOnSelectionAttach(isSidebarVisible: isSidebarVisibleForTab) {
+            isAutoPageContextSuppressed = true
+        }
         pendingSelectionContexts.append(selectionWithEncodedFavicon(selection))
         // Defer so a just-revealed sidebar's chat VC exists before we push (matches page-context timing).
         Task { @MainActor [weak self] in self?.flushPendingSelectionContexts() }
@@ -629,9 +635,23 @@ final class PageContextTabExtension {
     /// or when we allow one-time collection requested by the user.
     /// Suppressed when the user explicitly removed context on the current page.
     private var isContextCollectionEnabled: Bool {
+        Self.isContextCollectionEnabled(shouldForceContextCollection: shouldForceContextCollection,
+                                        isAutoPageContextSuppressed: isAutoPageContextSuppressed,
+                                        shouldAutomaticallySendPageContext: aiChatMenuConfiguration.shouldAutomaticallySendPageContext)
+    }
+
+    static func isContextCollectionEnabled(shouldForceContextCollection: Bool,
+                                           isAutoPageContextSuppressed: Bool,
+                                           shouldAutomaticallySendPageContext: Bool) -> Bool {
         if shouldForceContextCollection { return true }
-        if userRemovedContext { return false }
-        return aiChatMenuConfiguration.shouldAutomaticallySendPageContext
+        if isAutoPageContextSuppressed { return false }
+        return shouldAutomaticallySendPageContext
+    }
+
+    /// Attaching a selection suppresses this page's auto page-context only when the selection is
+    /// what opens the sidebar — an already-open sidebar keeps whatever page context it has.
+    static func shouldSuppressAutoPageContextOnSelectionAttach(isSidebarVisible: Bool) -> Bool {
+        !isSidebarVisible
     }
 
     @MainActor private func replaceFaviconURLWithEncodedData(_ pageContext: AIChatPageContextData?) -> AIChatPageContextData? {

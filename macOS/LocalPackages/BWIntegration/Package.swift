@@ -62,7 +62,8 @@ let package = Package(
             name: "BWManagementSharedTests",
             dependencies: [
                 "BWManagementShared",
-                .product(name: "Common", package: "Common")
+                .product(name: "Common", package: "Common"),
+                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions")
             ]
         ),
         .testTarget(

@@ -33,7 +33,7 @@ struct SpeechRecognizerTests {
         )
     )
     func testWhenFormatHasNoSampleRateOrNoChannelsThenItIsNotValidForRecording(sampleRate: Double,
-                                                                              channelCount: AVAudioChannelCount) throws {
+                                                                               channelCount: AVAudioChannelCount) throws {
         let format = try #require(AVAudioFormat(standardFormatWithSampleRate: sampleRate, channels: channelCount))
 
         #expect(SpeechRecognizer.isValidRecordingFormat(format) == false)

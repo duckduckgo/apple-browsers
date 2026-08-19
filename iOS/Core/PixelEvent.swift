@@ -2206,7 +2206,7 @@ extension Pixel.Event {
         case .settingsSyncRecoveryConfirmedTapped: return "m_settings_sync_recovery_confirmed_tapped"
         case .settingsSyncAnotherDevicePromptShown: return "m_settings_sync_another_device_prompt_shown"
         case .settingsSyncAnotherDevicePromptOptionTapped: return "m_settings_sync_another_device_prompt_option_tapped"
-        case .settingsSyncAnotherDevicePromptDismissed: return "m_settings_sync_another_device_prompt_dismissed"
+        case .settingsSyncAnotherDevicePromptDismissed: return "settings_sync_another_device_prompt_dismissed"
         case .settingsAppearanceOpen: return "m_settings_appearance_open"
         case .settingsThemeSelectorPressed: return "m_settings_theme_selector_pressed"
         case .settingsAddressBarTopSelected: return "m_settings_address_bar_top_selected"

@@ -17,8 +17,7 @@
 //
 
 import XCTest
-import PixelKit
-import PixelKitTestingUtilities
+@_spi(Testing) import PixelKit
 @testable import Onboarding
 
 final class OnboardingSharedPixelTests: XCTestCase {

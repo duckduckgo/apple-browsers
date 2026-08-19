@@ -17,9 +17,8 @@
 //
 
 import Foundation
-import PixelKit
-import XCTest
 
+@_spi(Testing)
 public final class WideEventMock: WideEventManaging {
 
     public var started: [WideEventData] = []

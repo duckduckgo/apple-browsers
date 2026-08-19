@@ -34,6 +34,7 @@ let package = Package(
         .package(path: "../Utilities"),
         .package(path: "../AppKitExtensions"),
         .package(path: "../../../SharedPackages/Common"),
+        .package(path: "../../../SharedPackages/PixelKit"),
         .package(path: "../../../SharedPackages/BrowserServicesKit"),
         .package(path: "../../../SharedPackages/Infrastructure/SystemFrameworksExtensions"),
         .package(path: "../CommonObjCExtensions"),
@@ -63,6 +64,7 @@ let package = Package(
                 .product(name: "Navigation", package: "BrowserServicesKit"),
                 .product(name: "Suggestions", package: "BrowserServicesKit"),
                 .product(name: "SharedObjCTestsUtils", package: "BrowserServicesKit"),
+                .product(name: "PixelKit", package: "PixelKit"),
                 .product(name: "Utilities", package: "Utilities"),
             ]
         ),

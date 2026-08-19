@@ -120,7 +120,7 @@ let package = Package(
                 .product(name: "Sparkle", package: "Sparkle"),
                 .product(name: "BrowserServicesKitTestsUtils", package: "BrowserServicesKit"),
                 .product(name: "PersistenceTestingUtils", package: "Persistence"),
-                .product(name: "PixelKitTestingUtilities", package: "PixelKit"),
+                .product(name: "PixelKit", package: "PixelKit"),
                 .product(name: "PrivacyConfig", package: "BrowserServicesKit"),
             ]
         ),

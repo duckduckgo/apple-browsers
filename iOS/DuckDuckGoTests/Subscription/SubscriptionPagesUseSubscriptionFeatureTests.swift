@@ -19,7 +19,7 @@
 
 import XCTest
 import WebKit
-import PixelKit
+@_spi(Testing) import PixelKit
 import PrivacyConfig
 import UserNotifications
 @testable import DuckDuckGo
@@ -27,7 +27,6 @@ import UserNotifications
 @testable import UserScript
 @testable import Subscription
 import SubscriptionTestingUtilities
-import PixelKitTestingUtilities
 import Networking
 import BrowserServicesKitTestsUtils
 import NetworkingTestingUtils

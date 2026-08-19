@@ -28,7 +28,6 @@ let package = Package(
     ],
     products: [
         .library(name: "PixelKit", targets: ["PixelKit"]),
-        .library(name: "PixelKitTestingUtilities", targets: ["PixelKitTestingUtilities"]),
     ],
     dependencies: [
         .package(path: "../DDGError"),
@@ -49,23 +48,17 @@ let package = Package(
             ],
             exclude: [
                 "README.md",
-                "RetryQueue/README.md"
+                "RetryQueue/README.md",
+                "TestingSupport/README.md"
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
-            ]
-        ),
-        .target(
-            name: "PixelKitTestingUtilities",
-            dependencies: [
-                "PixelKit"
             ]
         ),
         .testTarget(
             name: "PixelKitTests",
             dependencies: [
                 "PixelKit",
-                "PixelKitTestingUtilities",
                 .product(name: "PersistenceTestingUtils", package: "Persistence"),
             ]
         ),

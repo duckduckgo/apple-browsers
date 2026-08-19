@@ -824,7 +824,6 @@ let package = Package(
             name: "SubscriptionTests",
             dependencies: [
                 .product(name: "PixelKit", package: "PixelKit"),
-                .product(name: "PixelKitTestingUtilities", package: "PixelKit"),
                 "SharedObjCTestsUtils",
                 "Subscription",
                 "SubscriptionTestingUtilities",

@@ -20,8 +20,7 @@ import Bookmarks
 import Combine
 import Foundation
 import Persistence
-import PixelKit
-import PixelKitTestingUtilities
+@_spi(Testing) import PixelKit
 @testable import SyncUI_macOS
 import XCTest
 import PersistenceTestingUtils

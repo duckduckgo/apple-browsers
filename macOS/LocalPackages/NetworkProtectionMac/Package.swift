@@ -157,7 +157,7 @@ let package = Package(
                 "NetworkProtectionUI",
                 .product(name: "VPNTestUtils", package: "VPN"),
                 .product(name: "LoginItems", package: "LoginItems"),
-                .product(name: "PixelKitTestingUtilities", package: "PixelKit"),
+                .product(name: "PixelKit", package: "PixelKit"),
             ]
         ),
     ]

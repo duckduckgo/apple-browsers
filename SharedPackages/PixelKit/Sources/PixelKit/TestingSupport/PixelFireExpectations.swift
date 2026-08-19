@@ -17,15 +17,15 @@
 //
 
 import Foundation
-import PixelKit
 
 /// Structure containing information about a pixel fire event.
 ///
 /// This is useful for test validation for libraries that rely on PixelKit, to make sure the pixels contain
 /// all of the fields they are supposed to contain..
 ///
+@_spi(Testing)
 public struct PixelFireExpectations {
-    let pixelName: String
+    public let pixelName: String
     var error: Error?
     var underlyingErrors: [Error]
     var customFields: [String: String]?

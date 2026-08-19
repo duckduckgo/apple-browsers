@@ -17,10 +17,10 @@
 //
 
 import Foundation
-import PixelKit
+@_spi(Testing) @testable import PixelKit
 import XCTest
 
-public extension XCTestCase {
+extension XCTestCase {
 
     // MARK: - Parameters
 

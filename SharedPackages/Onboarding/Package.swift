@@ -75,7 +75,6 @@ let package = Package(
                 "Onboarding",
                 "DesignResourcesKit",
                 .product(name: "PixelKit", package: "PixelKit"),
-                .product(name: "PixelKitTestingUtilities", package: "PixelKit")
             ]
         )
     ]

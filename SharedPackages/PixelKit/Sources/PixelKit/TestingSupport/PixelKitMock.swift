@@ -17,9 +17,8 @@
 //
 
 import Foundation
-import PixelKit
-import XCTest
 
+@_spi(Testing)
 public final class PixelKitMock: PixelFiring {
 
     /// An array of fire calls, in order, that this mock expects
@@ -47,12 +46,9 @@ public final class PixelKitMock: PixelFiring {
         actualFireCalls.append(fireCall)
         onComplete(true, nil)
     }
-
-    public func verifyExpectations(file: StaticString = #file, line: UInt = #line) {
-        XCTAssertEqual(expectedFireCalls, actualFireCalls, file: file, line: line)
-    }
 }
 
+@_spi(Testing)
 public struct ExpectedFireCall: Equatable {
     public let pixel: PixelKit.Event
     public let frequency: PixelKit.Frequency

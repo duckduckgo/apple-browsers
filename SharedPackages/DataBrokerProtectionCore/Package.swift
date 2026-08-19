@@ -91,7 +91,7 @@ let package = Package(
                 "DataBrokerProtectionCore",
                 "DataBrokerProtectionCoreTestsUtils",
                 "BrowserServicesKit",
-                .product(name: "PixelKitTestingUtilities", package: "PixelKit"),
+                .product(name: "PixelKit", package: "PixelKit"),
                 .product(name: "PersistenceTestingUtils", package: "Persistence"),
                 .product(name: "SubscriptionTestingUtilities", package: "BrowserServicesKit"),
                 .product(name: "BrowserServicesKitTestsUtils", package: "BrowserServicesKit"),

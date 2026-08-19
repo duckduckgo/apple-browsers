@@ -138,6 +138,7 @@ class FireExecutor: FireExecuting {
     private let aiChatDeleter: AIChatDeleting
     private let idManager: DataStoreIDManaging
     private let fireModeStorageController: FireModeNativeStorageController?
+    private let appSwitcherSnapshotCleaner: AppSwitcherSnapshotClearing
 
     weak var delegate: FireExecutorDelegate?
     private(set) var burnInProgress = false
@@ -169,7 +170,8 @@ class FireExecutor: FireExecuting {
          fireModeStorageController: FireModeNativeStorageController? = nil,
          pixelsReporter: DataClearingPixelsReporter = DataClearingPixelsReporter(),
          wideEvent: WideEventManaging? = nil,
-         idManager: DataStoreIDManaging = DataStoreIDManager.shared) {
+         idManager: DataStoreIDManaging = DataStoreIDManager.shared,
+         appSwitcherSnapshotCleaner: AppSwitcherSnapshotClearing = AppSwitcherSnapshotCleaner()) {
         self.tabManager = tabManager
         self.downloadManager = downloadManager
         self.favicons = favicons
@@ -192,6 +194,7 @@ class FireExecutor: FireExecuting {
         self.appSettings = appSettings
         self.aiChatSyncCleaner = aiChatSyncCleaner
         self.fireModeStorageController = fireModeStorageController
+        self.appSwitcherSnapshotCleaner = appSwitcherSnapshotCleaner
         self.pixelsReporter = pixelsReporter
         self.dataClearingWideEventService = wideEvent.map { DataClearingWideEventService(wideEvent: $0) }
         let aiChatDeleter = AIChatDeleter(historyCleanerProvider: self.historyCleanerProvider,
@@ -298,6 +301,10 @@ class FireExecutor: FireExecuting {
         // currentFireModeID. No-op for non-data burns (ID hasn't changed).
         if shouldBurnData {
             fireModeStorageController?.syncWithCurrentFireModeID()
+        }
+
+        if featureFlagger.isFeatureOn(.appSwitcherSnapshotClearing) {
+            await appSwitcherSnapshotCleaner.clearSnapshots()
         }
 
         // Notify delegate that we finished

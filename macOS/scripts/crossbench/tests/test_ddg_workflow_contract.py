@@ -153,6 +153,71 @@ class DDGWorkflowContractTests(unittest.TestCase):
                 workflow,
             )
 
+    def test_notify_job_also_depends_on_the_clickhouse_upload_job(self) -> None:
+        # A measurement job can go green while its ClickHouse insert fails
+        # silently in the separate self-hosted upload job; the notify job has
+        # to see that job's result too, not just the measurement job's.
+        for workflow, upload_needs in (
+            (WORKFLOW, "needs: [ddg-lcp, upload-to-clickhouse]"),
+            (CHROME_WORKFLOW, "needs: [chrome-lcp, upload-to-clickhouse]"),
+            (SAFARI_WORKFLOW, "needs: [safari-lcp, upload-to-clickhouse]"),
+        ):
+            self.assertIn(upload_needs, workflow)
+
+    def test_upload_result_is_folded_into_the_runtime_report(self) -> None:
+        for workflow, job in (
+            (WORKFLOW, "needs.ddg-lcp.result"),
+            (CHROME_WORKFLOW, "needs.chrome-lcp.result"),
+            (SAFARI_WORKFLOW, "needs.safari-lcp.result"),
+        ):
+            self.assertIn(
+                "UPLOAD_RESULT: ${{ needs.upload-to-clickhouse.result }}",
+                workflow,
+            )
+            self.assertIn("id: upload-check", workflow)
+            self.assertIn("[UPLOAD ERROR] ClickHouse insert did not complete.", workflow)
+            self.assertIn("upload-failed=true", workflow)
+            self.assertIn("upload-failed=false", workflow)
+            # Sanity check that the job whose result feeds upload-check is the
+            # measurement job this workflow actually runs.
+            self.assertIn(job, workflow)
+
+    def test_marker_check_and_asana_creation_also_fire_on_upload_failure(self) -> None:
+        for workflow in (WORKFLOW, CHROME_WORKFLOW, SAFARI_WORKFLOW):
+            self.assertIn(
+                "(steps.report.outputs.has-errors == 'true' ||\n"
+                "           steps.upload-check.outputs.upload-failed == 'true')",
+                workflow,
+            )
+
+    def test_upload_to_clickhouse_jobs_have_a_generous_timeout(self) -> None:
+        # None of these jobs had a timeout before, so the 360-minute default
+        # would stall the alert. 60 minutes is deliberately loose because it's
+        # unverified whether the [self-hosted, apple] pool and the
+        # [self-hosted, macOS, ARM64] measurement pool queue on the same
+        # machine.
+        for workflow in (WORKFLOW, CHROME_WORKFLOW, SAFARI_WORKFLOW):
+            upload_job = workflow[workflow.index("\n  upload-to-clickhouse:\n"):]
+            self.assertIn("timeout-minutes: 60", upload_job[:upload_job.index("\n    steps:\n")])
+            self.assertIn("deliberately loose", upload_job[:upload_job.index("\n    steps:\n")])
+
+    def test_asana_creation_failure_fails_the_job_loudly(self) -> None:
+        # continue-on-error on the Create Asana subtask step keeps the run
+        # green even when the notification itself fails; a dedicated,
+        # non-continue-on-error step must surface that as a job failure.
+        for workflow in (WORKFLOW, CHROME_WORKFLOW, SAFARI_WORKFLOW, WPR_VALIDATION_WORKFLOW):
+            self.assertIn("steps.asana.outcome == 'failure'", workflow)
+            self.assertIn("::error title=Asana alert not delivered::", workflow)
+
+    def test_marker_lookup_retries_before_giving_up(self) -> None:
+        # A transient gh api failure must not cost the alert outright; only 3
+        # consecutive failures should fall back to exists=unknown (never
+        # exists=false, which would risk a duplicate task).
+        for workflow in (WORKFLOW, CHROME_WORKFLOW, SAFARI_WORKFLOW, WPR_VALIDATION_WORKFLOW):
+            self.assertIn("exists=unknown", workflow)
+            self.assertIn("sleep 5", workflow)
+            self.assertIn("for attempt in 1 2 3", workflow)
+
     def test_asana_alerts_target_the_ci_alerts_project_section(self) -> None:
         # Alerts land as top-level tasks in the "Alerts" section of the
         # "macOS Site-Loading CI Test Alerts" project, not as subtasks of the

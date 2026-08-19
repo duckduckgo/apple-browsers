@@ -246,6 +246,12 @@ jobs:
       needs.validate-wpr.result == 'success' &&
       (github.event_name == 'schedule' || inputs.upload-to-clickhouse)
     runs-on: [ self-hosted, apple ]
+    # 60 minutes, deliberately loose: this job's runner pool ([self-hosted,
+    # apple]) and chrome-lcp's ([self-hosted, macOS, ARM64]) may or may not be
+    # the same physical machine — that isn't verified — so if they are, this
+    # job can legitimately queue behind a multi-hour measurement job before it
+    # even starts running.
+    timeout-minutes: 60
 
     steps:
       - name: Download ClickHouse rows TSV
@@ -311,7 +317,7 @@ jobs:
 
   notify-runtime-failures:
     name: Report Chrome measurement errors
-    needs: chrome-lcp
+    needs: [chrome-lcp, upload-to-clickhouse]
     if: >-
       always() &&
       (github.event_name != 'workflow_dispatch' || inputs.alert-asana) &&
@@ -372,6 +378,32 @@ jobs:
             exit 0
           fi
 
+      - name: Check ClickHouse upload result
+        # A green chrome-lcp job tells you nothing about whether the aggregated
+        # rows actually reached ClickHouse — that's a separate, self-hosted job.
+        # Runs after "Prepare runtime failure report" on purpose: that step's
+        # python helper also writes has-errors/report.txt, and running before
+        # it would let this step's write of the file (or has-errors) get
+        # clobbered by that one.
+        id: upload-check
+        continue-on-error: true
+        working-directory: .
+        env:
+          UPLOAD_RESULT: ${{ needs.upload-to-clickhouse.result }}
+        run: |
+          if [ "$UPLOAD_RESULT" = "failure" ] || [ "$UPLOAD_RESULT" = "cancelled" ]; then
+            mkdir -p runtime-report
+            cat >> runtime-report/report.txt <<EOF
+
+          [UPLOAD ERROR] ClickHouse insert did not complete.
+          Result: $UPLOAD_RESULT
+          Action: inspect the upload-to-clickhouse job logs.
+          EOF
+            echo "upload-failed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "upload-failed=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Upload runtime failure report
         if: always()
         continue-on-error: true
@@ -383,18 +415,33 @@ jobs:
           retention-days: 30
 
       - name: Check run alert marker
-        if: always() && steps.report.outputs.has-errors == 'true'
+        if: >-
+          always() &&
+          (steps.report.outputs.has-errors == 'true' ||
+           steps.upload-check.outputs.upload-failed == 'true')
         id: alert-marker
         continue-on-error: true
         working-directory: .
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if ! marker_count="$(
-              gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=chrome-runtime-failure-run-$GITHUB_RUN_ID&per_page=100" \
-                --jq '[.artifacts[] | select(.expired == false)] | length'
-            )"; then
-            echo "::warning title=Asana notification skipped::Could not check the run alert marker; skipping task creation to avoid duplicates."
+          # Up to 3 attempts, 5s apart: a transient API failure should not lose
+          # an alert. exists=unknown (and skipping task creation) is still the
+          # outcome after 3 consecutive failures — treating unknown as "false"
+          # would risk duplicate tasks, which is worse than a delayed alert.
+          marker_count=""
+          for attempt in 1 2 3; do
+            if marker_count="$(
+                gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=chrome-runtime-failure-run-$GITHUB_RUN_ID&per_page=100" \
+                  --jq '[.artifacts[] | select(.expired == false)] | length'
+              )"; then
+              break
+            fi
+            marker_count=""
+            [ "$attempt" -lt 3 ] && sleep 5
+          done
+          if [ -z "$marker_count" ]; then
+            echo "::warning title=Asana notification skipped::Could not check the run alert marker after 3 attempts; skipping task creation to avoid duplicates."
             echo "exists=unknown" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -406,7 +453,9 @@ jobs:
 
       - name: Create Asana subtask
         if: >-
-          always() && steps.report.outputs.has-errors == 'true' &&
+          always() &&
+          (steps.report.outputs.has-errors == 'true' ||
+           steps.upload-check.outputs.upload-failed == 'true') &&
           steps.alert-marker.outputs.exists == 'false'
         id: asana
         continue-on-error: true
@@ -462,6 +511,16 @@ jobs:
           echo "created=true" >> "$GITHUB_OUTPUT"
           mkdir -p runtime-report
           echo "reported by run $GITHUB_RUN_ID" > runtime-report/alert-marker.txt
+
+      - name: Fail loudly when the Asana alert could not be delivered
+        # No continue-on-error: create-asana-subtask.sh keeps it on the step
+        # above so the marker-saving step below still runs, but a failed
+        # notification must not leave the run green.
+        if: always() && steps.asana.outcome == 'failure'
+        working-directory: .
+        run: |
+          echo "::error title=Asana alert not delivered::Asana subtask creation failed for run https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          exit 1
 
       - name: Save run alert marker
         if: always() && steps.asana.outputs.created == 'true'

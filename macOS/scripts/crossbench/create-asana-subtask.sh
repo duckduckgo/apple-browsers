@@ -82,6 +82,7 @@ trap 'rm -f "$response_file"' EXIT
 
 http_status="$(
   curl --silent --show-error \
+    --retry 3 --retry-delay 5 --retry-all-errors \
     --request POST \
     --header "Authorization: Bearer $ASANA_ACCESS_TOKEN" \
     --header "Content-Type: application/json" \

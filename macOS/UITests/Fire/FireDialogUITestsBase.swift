@@ -48,13 +48,9 @@ extension FireDialogUITests {
         // Clear state
         app.fireButton.click()
 
-        if fireDialogDetailsDisclosureButton.exists {
-            app.fireDialogSegmentedControl.buttons["All data"].click()
-            if (fireDialogDetailsDisclosureButton.value as? String) != "expanded" {
-                fireDialogDetailsDisclosureButton.click()
-            }
-        } else {
-            app.fireDialogSegmentedControl.buttons["Everything"].click()
+        app.fireDialogSegmentedControl.buttons["All data"].click()
+        if (fireDialogDetailsDisclosureButton.value as? String) != "expanded" {
+            fireDialogDetailsDisclosureButton.click()
         }
         fireDialogTabsToggle.toggleCheckboxIfNeeded(to: true, ensureHittable: { _ in })
         fireDialogHistoryToggle.toggleCheckboxIfNeeded(to: true, ensureHittable: { _ in })
@@ -175,12 +171,8 @@ extension FireDialogUITests {
     }
 
     func fireproofCurrentSite(file: StaticString = #file, line: UInt = #line) {
-        if fireDialogDetailsDisclosureButton.exists {
-            app.fireDialogMoreOptionsMenuButton.click()
-            app.fireDialogManageFireproofSitesMenuItem.click()
-        } else {
-            app.fireDialogManageFireproofButton.click()
-        }
+        app.fireDialogMoreOptionsMenuButton.click()
+        app.fireDialogManageFireproofSitesMenuItem.click()
 
         let fireproofDialog = app.sheets.containing(.staticText, where: .keyPath(\.value, equalTo: "Fireproof Sites")).firstMatch
         XCTAssertTrue(

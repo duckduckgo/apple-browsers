@@ -7432,7 +7432,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Available with Paid Plans"
+            "value" : "Subscriber Exclusive"
           }
         }
       }
@@ -7456,7 +7456,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Available with Pro"
+            "value" : "Pro Plan Exclusive"
           }
         }
       }
@@ -7468,7 +7468,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Try Free for 7 Days"
+            "value" : "Try for Free"
           }
         }
       }

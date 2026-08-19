@@ -25,8 +25,10 @@ import Testing
 struct SpeechRecognizerTests {
 
     // AVFAudio raises `IsFormatSampleRateAndChannelCountValid` if a tap is installed with either value at zero.
+    @available(iOS 16, macOS 13, *)
     @Test(
         "Degraded input format is rejected",
+        .timeLimit(.minutes(1)),
         arguments: zip(
             [0, 0, 44100] as [Double],
             [0, 1, 0] as [AVAudioChannelCount]
@@ -39,7 +41,8 @@ struct SpeechRecognizerTests {
         #expect(SpeechRecognizer.isValidRecordingFormat(format) == false)
     }
 
-    @Test("Usable input format is accepted")
+    @available(iOS 16, macOS 13, *)
+    @Test("Usable input format is accepted", .timeLimit(.minutes(1)))
     func testWhenFormatHasSampleRateAndChannelsThenItIsValidForRecording() throws {
         let format = try #require(AVAudioFormat(standardFormatWithSampleRate: 44100, channels: 1))
 

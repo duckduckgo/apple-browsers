@@ -306,7 +306,8 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     private func followKeyboardManually(parent: UIViewController, pin: NSLayoutConstraint) {
         legacyKeyboardPinCancellables.removeAll()
         let update: (Notification) -> Void = { [weak parent] notification in
-            guard let parentView = parent?.viewIfLoaded else { return }
+            // A freeze or a detach replaces this pin, and laying out the old one mid-dismissal fights the slide.
+            guard pin.isActive, let parentView = parent?.viewIfLoaded else { return }
             let end = (notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue ?? .zero
             let overlap = max(0, parentView.bounds.maxY - parentView.convert(end, from: nil).minY)
             pin.constant = -overlap
@@ -368,6 +369,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     private func detachInput() {
         // Ahead of the mounted check, so a surface that lost its parent some other way still leaves these
         // behind. Rebuilt by the next mount, against whatever parent that is.
+        legacyKeyboardPinCancellables.removeAll()
         frozenBottomConstraint?.isActive = false
         frozenBottomConstraint = nil
         keyboardBottomConstraint = nil

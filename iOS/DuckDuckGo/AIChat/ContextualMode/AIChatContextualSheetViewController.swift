@@ -957,10 +957,10 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
             return
         }
         // Promotion submits while this sheet is still presenting, and delivery bails on a gate that only
-        // opens once it appears — so hold it until then. Only while presenting: a shut gate otherwise
-        // means dismissal, where the submission belongs to a surface the user has left.
+        // opens once it appears — so hold it until then. Not while dismissing: that submission belongs to
+        // a surface the user has left, and would otherwise resurface on the next presentation.
         guard canProcessSuggestionSubmission else {
-            if isBeingPresented {
+            if !isBeingDismissed {
                 suggestionAwaitingAppearance = suggestion
             }
             return

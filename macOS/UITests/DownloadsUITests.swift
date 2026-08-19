@@ -378,7 +378,7 @@ class DownloadsUITests: UITestCase {
         app.launch()
         _ = app.wait(for: .runningForeground, timeout: UITests.Timeouts.elementExistence)
 
-        XCTAssertTrue(webView.staticTexts["Page loaded!"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCTAssertTrue(webView.staticTexts["Page loaded!"].waitForExistence(timeout: UITests.Timeouts.navigation))
         sleep(2)
 
         // Verify no NEW download was added after restoration (still exactly one)

@@ -328,7 +328,7 @@ extension XCUIApplication {
         addressBar.pasteURL(url, pressingEnter: true)
         Self.dismissLocalNetworkPromptIfPresent()
         XCTAssertTrue(
-            windows.firstMatch.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            windows.firstMatch.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.navigation),
             "Visited site didn't load with the expected title in a reasonable timeframe."
         )
     }
@@ -441,7 +441,7 @@ extension XCUIApplication {
         )
         addressBarTextField.typeURL(url)
         XCTAssertTrue(
-            windows.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            windows.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.navigation),
             "Visited site didn't load with the expected title in a reasonable timeframe."
         )
         if bookmarkingViaDialog {

@@ -1,6 +1,6 @@
 {
     "m_ios_wide_return_session": {
-        "description": "Wide pixel sent at the end of a return session on iOS: every return to the app, whether it got an after-idle treatment (NTP or LUT) or was an ordinary return. m_ios_wide_post_idle_session stays scoped to after-idle returns and runs alongside this pixel. Transmission is held back by a random 1-30s so it does not land in the burst of pixels sent on launch.",
+        "description": "Wide pixel sent at the end of a return session on iOS: every return to the app, whether it got an after-idle treatment (NTP or LUT) or was an ordinary return. m_ios_wide_post_idle_session stays scoped to after-idle returns and runs alongside this pixel. Transmission is held back by a random 1-30s so it does not land in the burst of pixels sent on launch, which means a session ending just before midnight UTC can be counted on the following day.",
         "owners": ["Bunn", "SabrinaTardio"],
         "triggers": ["other"],
         "suffixes": ["daily"],

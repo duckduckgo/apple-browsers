@@ -1,7 +1,7 @@
 // App return: per-foreground snapshot of time away and capability exposure.
 {
     "m_app_return": {
-        "description": "Fires on every foreground transition, ungated and launch-action-independent. Reports how long the user was away, the resolved idle threshold, and which Duck.ai capabilities are available. Transmission is held back by a random 1-30s so it does not land in the burst of pixels sent on launch.",
+        "description": "Fires on every foreground transition, ungated and launch-action-independent. Reports how long the user was away, the resolved idle threshold, and which Duck.ai capabilities are available. Transmission is held back by a random 1-30s so it does not land in the burst of pixels sent on launch, which means two foregrounds inside one window can be transmitted out of order and the first_daily_count variant is not guaranteed to carry the day's first foreground.",
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor", "first_daily_count"],

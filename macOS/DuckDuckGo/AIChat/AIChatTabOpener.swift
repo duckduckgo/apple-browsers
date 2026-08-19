@@ -18,6 +18,8 @@
 
 import Foundation
 import AIChat
+import PixelKit
+import PixelExperimentKit
 
 /// Represents different triggers for opening an AI chat tab.
 ///
@@ -119,15 +121,19 @@ protocol AIChatTabOpening {
 struct AIChatTabOpener: AIChatTabOpening {
     private let promptHandler: AIChatPromptHandler
     private let aiChatTabManaging: AIChatTabManaging
+    /// Fires the `duck_ai_new_chat` retention experiment metric. Injected so it can be observed in tests.
+    private let fireNewChatExperimentPixels: () -> Void
 
     let aiChatRemoteSettings = AIChatRemoteSettings()
 
     init(
         promptHandler: AIChatPromptHandler,
-        aiChatTabManaging: AIChatTabManaging
+        aiChatTabManaging: AIChatTabManaging,
+        fireNewChatExperimentPixels: @escaping () -> Void = { PixelKit.fireNewAIChatExperimentPixels() }
     ) {
         self.promptHandler = promptHandler
         self.aiChatTabManaging = aiChatTabManaging
+        self.fireNewChatExperimentPixels = fireNewChatExperimentPixels
     }
 
     // MARK: - New Simplified API
@@ -136,10 +142,14 @@ struct AIChatTabOpener: AIChatTabOpening {
     func openAIChatTab(with trigger: AIChatOpenTrigger, behavior: LinkOpenBehavior) {
         switch trigger {
         case .newChat:
-            openAIChatTab(query: nil, with: behavior, autoSubmit: true)
+            if openAIChatTab(query: nil, with: behavior, autoSubmit: true) {
+                fireNewChatExperimentPixels()
+            }
 
         case .query(let query, shouldAutoSubmit: let shouldAutoSubmit):
-            openAIChatTab(query: query, with: behavior, autoSubmit: shouldAutoSubmit)
+            if openAIChatTab(query: query, with: behavior, autoSubmit: shouldAutoSubmit) {
+                fireNewChatExperimentPixels()
+            }
 
         case .url(let url):
             aiChatTabManaging.openAIChat(url, with: behavior, hasPrompt: false)
@@ -157,7 +167,9 @@ struct AIChatTabOpener: AIChatTabOpening {
         case .mode(let mode):
             let prompt = AIChatNativePrompt.queryPrompt("", autoSubmit: false, mode: mode)
             promptHandler.setData(prompt)
-            aiChatTabManaging.openAIChat(aiChatRemoteSettings.aiChatURL, with: behavior, hasPrompt: true)
+            if aiChatTabManaging.openAIChat(aiChatRemoteSettings.aiChatURL, with: behavior, hasPrompt: true) {
+                fireNewChatExperimentPixels()
+            }
 
         case .openSettings:
             aiChatTabManaging.insertAIChatTabRequestingOpenSettings(with: aiChatRemoteSettings.aiChatURL)
@@ -181,22 +193,28 @@ struct AIChatTabOpener: AIChatTabOpening {
     func openAIChatTab(withQuery query: String, inNewTabOf windowController: MainWindowController) {
         promptHandler.setData(.queryPrompt(query, autoSubmit: true))
         aiChatTabManaging.openAIChat(aiChatRemoteSettings.aiChatURL, inNewTabOf: windowController, hasPrompt: true)
+        fireNewChatExperimentPixels()
     }
 
     @MainActor
     func openAIChatTab(withQuery query: String, inNewWindowAt droppingPoint: NSPoint) {
         promptHandler.setData(.queryPrompt(query, autoSubmit: true))
         aiChatTabManaging.openAIChat(aiChatRemoteSettings.aiChatURL, inNewWindowAt: droppingPoint, hasPrompt: true)
+        fireNewChatExperimentPixels()
     }
 
     // MARK: - Private Helpers
 
+    /// - Returns: `true` if a new Duck.ai chat surface was actually opened (so the caller can fire the
+    ///   `duck_ai_new_chat` metric), `false` when the request resolved to a no-op — e.g. tapping New Chat
+    ///   while already sitting on an empty Duck.ai tab with no prompt.
     @MainActor
-    private func openAIChatTab(query: String?, with linkOpenBehavior: LinkOpenBehavior, autoSubmit: Bool) {
+    @discardableResult
+    private func openAIChatTab(query: String?, with linkOpenBehavior: LinkOpenBehavior, autoSubmit: Bool) -> Bool {
         if let query = query {
             promptHandler.setData(.queryPrompt(query, autoSubmit: autoSubmit))
         }
-        aiChatTabManaging.openAIChat(aiChatRemoteSettings.aiChatURL, with: linkOpenBehavior, hasPrompt: query != nil)
+        return aiChatTabManaging.openAIChat(aiChatRemoteSettings.aiChatURL, with: linkOpenBehavior, hasPrompt: query != nil)
     }
 
     /// Builds a URL to open an existing chat by its ID.
@@ -216,8 +234,12 @@ struct AIChatTabOpener: AIChatTabOpening {
 }
 
 protocol AIChatTabManaging {
+    /// - Returns: `true` if a Duck.ai chat surface was actually opened/shown, `false` for a no-op
+    ///   (e.g. `.currentTab` onto an already-loaded Duck.ai tab with no prompt) or a navigation to an
+    ///   existing chat. Callers use this to avoid counting no-ops toward the `duck_ai_new_chat` metric.
     @MainActor
-    func openAIChat(_ url: URL, with behavior: LinkOpenBehavior, hasPrompt: Bool)
+    @discardableResult
+    func openAIChat(_ url: URL, with behavior: LinkOpenBehavior, hasPrompt: Bool) -> Bool
 
     @MainActor
     func openAIChat(_ url: URL, inNewTabOf windowController: MainWindowController, hasPrompt: Bool)
@@ -255,7 +277,8 @@ extension WindowControllersManager: AIChatTabManaging {
     ///   - hasPrompt: With `.currentTab`, if the current tab is already an AI chat and a prompt was supplied,
     ///                opens a fresh chat in a new selected tab so the loaded conversation is left untouched.
     ///                Ignored for `.newTab` / `.newWindow`, which always open a new tab/window.
-    func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior = .currentTab, hasPrompt: Bool) {
+    @discardableResult
+    func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior = .currentTab, hasPrompt: Bool) -> Bool {
 
         let tabCollectionViewModel = mainWindowController?.mainViewController.tabCollectionViewModel
 
@@ -267,15 +290,21 @@ extension WindowControllersManager: AIChatTabManaging {
                     // selected tab rather than injecting the prompt into the loaded conversation,
                     // which users found confusing.
                     open(url, with: .newTab(selected: true), source: .ui, target: nil)
+                    return true
                 } else if url.getParameter(named: "chatID") != nil {
                     // Navigate to a specific existing chat — must load even if already on duck.ai
                     show(url: url, source: .ui, newTab: false)
+                    return false
                 }
+                // Already on an empty Duck.ai tab with no prompt: nothing to open.
+                return false
             } else {
                 show(url: url, source: .ui, newTab: false)
+                return true
             }
         default:
             open(url, with: linkOpenBehavior, source: .ui, target: nil)
+            return true
         }
     }
 

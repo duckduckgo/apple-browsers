@@ -117,10 +117,15 @@ final class WindowControllersManagerMock: WindowControllersManagerProtocol, AICh
         let hasPrompt: Bool
     }
     var openAIChatCalls: [OpenAIChatCall] = []
+    /// Controls the `didOpen` value returned by `openAIChat(_:with:hasPrompt:)`; defaults to `true`
+    /// (a surface was opened). Set to `false` to simulate the no-op path.
+    var openAIChatDidOpen = true
 
     @MainActor
-    func openAIChat(_ url: URL, with behavior: LinkOpenBehavior, hasPrompt: Bool) {
+    @discardableResult
+    func openAIChat(_ url: URL, with behavior: LinkOpenBehavior, hasPrompt: Bool) -> Bool {
         openAIChatCalls.append(OpenAIChatCall(url: url, behavior: behavior, hasPrompt: hasPrompt))
+        return openAIChatDidOpen
     }
 
     struct OpenAIChatInNewTabOfCall {

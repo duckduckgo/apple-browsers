@@ -21,6 +21,7 @@ import AppKit
 import Combine
 import FeatureFlags_macOS
 import PixelKit
+import PixelExperimentKit
 import PrivacyConfig
 
 /// Represents an event of hiding or showing an AI Chat tab sidebar.
@@ -306,7 +307,13 @@ final class AIChatCoordinator: AIChatCoordinating {
     private func showSidebar(for tabID: TabIdentifier, animated: Bool) {
         sessionStore.expireSessionIfNeeded(for: tabID)
 
+        // A brand-new session means a new Duck.ai conversation is starting in the sidebar; reusing a
+        // kept session (or a session pre-created by the SERP handoff) is a resume and must not count.
+        let isNewConversation = sessionStore.sessions[tabID] == nil
         let session = sessionStore.getOrCreateSession(for: tabID, burnerMode: sidebarHost.burnerMode)
+        if isNewConversation {
+            PixelKit.fireNewAIChatExperimentPixels()
+        }
         let chatViewController = session.chatViewController ?? session.makeChatViewController(tabID: tabID)
 
         chatViewController.isChatFloatingEnabled = isChatFloatingEnabled

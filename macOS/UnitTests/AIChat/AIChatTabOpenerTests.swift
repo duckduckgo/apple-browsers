@@ -49,4 +49,81 @@ final class AIChatTabOpenerTests: XCTestCase {
 
         XCTAssertEqual(mockManager.insertAIChatTabRequestingOpenSettingsCalls.count, 1)
     }
+
+    // MARK: - duck_ai_new_chat metric
+
+    @MainActor
+    private func makeOpener(_ mockManager: WindowControllersManagerMock, newChatFired: @escaping () -> Void) -> AIChatTabOpener {
+        AIChatTabOpener(promptHandler: AIChatPromptHandler.shared,
+                        aiChatTabManaging: mockManager,
+                        fireNewChatExperimentPixels: newChatFired)
+    }
+
+    @MainActor
+    func testNewChatTriggerFiresNewChatExperimentPixel() {
+        let mockManager = WindowControllersManagerMock()
+        var fireCount = 0
+        let opener = makeOpener(mockManager) { fireCount += 1 }
+
+        opener.openAIChatTab(with: .newChat, behavior: .newTab(selected: true))
+
+        XCTAssertEqual(fireCount, 1, "Starting a new chat must fire duck_ai_new_chat exactly once")
+    }
+
+    @MainActor
+    func testQueryTriggerFiresNewChatExperimentPixel() {
+        let mockManager = WindowControllersManagerMock()
+        var fireCount = 0
+        let opener = makeOpener(mockManager) { fireCount += 1 }
+
+        opener.openAIChatTab(with: .query("hello"), behavior: .newTab(selected: true))
+
+        XCTAssertEqual(fireCount, 1)
+    }
+
+    @MainActor
+    func testModeTriggerFiresNewChatExperimentPixel() {
+        let mockManager = WindowControllersManagerMock()
+        var fireCount = 0
+        let opener = makeOpener(mockManager) { fireCount += 1 }
+
+        opener.openAIChatTab(with: .mode(AIChatNativePrompt.voiceMode), behavior: .newTab(selected: true))
+
+        XCTAssertEqual(fireCount, 1)
+    }
+
+    @MainActor
+    func testNewChatNoOpDoesNotFireNewChatExperimentPixel() {
+        // The manager reports it did not open a surface (e.g. already on an empty Duck.ai tab): no metric.
+        let mockManager = WindowControllersManagerMock()
+        mockManager.openAIChatDidOpen = false
+        var fireCount = 0
+        let opener = makeOpener(mockManager) { fireCount += 1 }
+
+        opener.openAIChatTab(with: .newChat, behavior: .currentTab)
+
+        XCTAssertEqual(fireCount, 0, "A no-op New Chat must not fire duck_ai_new_chat")
+    }
+
+    @MainActor
+    func testExistingChatTriggerDoesNotFireNewChatExperimentPixel() {
+        let mockManager = WindowControllersManagerMock()
+        var fireCount = 0
+        let opener = makeOpener(mockManager) { fireCount += 1 }
+
+        opener.openAIChatTab(with: .existingChat(chatId: "abc"), behavior: .newTab(selected: true))
+
+        XCTAssertEqual(fireCount, 0, "Resuming an existing chat is not a new chat")
+    }
+
+    @MainActor
+    func testURLTriggerDoesNotFireNewChatExperimentPixel() {
+        let mockManager = WindowControllersManagerMock()
+        var fireCount = 0
+        let opener = makeOpener(mockManager) { fireCount += 1 }
+
+        opener.openAIChatTab(with: .url(opener.aiChatRemoteSettings.aiChatURL), behavior: .newTab(selected: true))
+
+        XCTAssertEqual(fireCount, 0)
+    }
 }

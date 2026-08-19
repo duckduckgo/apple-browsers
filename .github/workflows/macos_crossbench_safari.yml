@@ -97,6 +97,35 @@ jobs:
           INSTALL_CHROME: "0"
         run: ./provision-macos.sh
 
+      - name: Diagnose safaridriver configuration
+        # TEMPORARY: safaridriver reports "not configured" even though the sudo
+        # enable above succeeds. Establishes which user holds the Remote
+        # Automation flag and whether SIP is in the state we think. Remove.
+        continue-on-error: true
+        run: |
+          echo "--- identity and machine state ---"
+          id
+          echo "managername: $(launchctl managername 2>&1)"
+          echo "csrutil: $(csrutil status 2>&1)"
+          echo "safaridriver: $(command -v safaridriver 2>&1)"
+          echo "safari: $(defaults read /Applications/Safari.app/Contents/Info CFBundleShortVersionString 2>&1)"
+          echo "--- container readable now? ---"
+          ls -la ~/Library/Containers/com.apple.Safari/Data/Library/Preferences/ 2>&1 | head -10
+          echo "--- automation flag per user ---"
+          echo "ec2-user AllowRemoteAutomation: $(defaults read com.apple.Safari AllowRemoteAutomation 2>&1)"
+          echo "root AllowRemoteAutomation: $(sudo defaults read com.apple.Safari AllowRemoteAutomation 2>&1)"
+          echo "--- leftover proxy keys from earlier runs ---"
+          echo "WebKit2HTTPProxy: $(defaults read com.apple.Safari WebKit2HTTPProxy 2>&1)"
+          echo "WebKit2HTTPSProxy: $(defaults read com.apple.Safari WebKit2HTTPSProxy 2>&1)"
+          echo "--- unprivileged enable attempt ---"
+          safaridriver --enable 2>&1 && echo "unprivileged enable: exit 0" || echo "unprivileged enable: exit $?"
+          echo "ec2-user AllowRemoteAutomation after: $(defaults read com.apple.Safari AllowRemoteAutomation 2>&1)"
+          echo "--- can safaridriver start now? ---"
+          (safaridriver -p 0 &
+           sd_pid=$!
+           sleep 3
+           if kill -0 "$sd_pid" 2>/dev/null; then echo "safaridriver started"; kill "$sd_pid"; else echo "safaridriver exited early"; fi) 2>&1
+
       - name: Enable safaridriver Remote Automation
         # safaridriver refuses sessions until this per-user setting is enabled.
         run: sudo safaridriver --enable

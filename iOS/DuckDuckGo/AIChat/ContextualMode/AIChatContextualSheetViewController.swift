@@ -71,8 +71,7 @@ protocol AIChatContextualSheetViewControllerDelegate: AnyObject {
 
     /// Called when the user taps the "New Chat" button to start a fresh conversation
     func aiChatContextualSheetViewControllerDidRequestNewChat(_ viewController: AIChatContextualSheetViewController)
-    /// The active chat is gone server-side, so the sheet resets in place. Housekeeping, not a user
-    /// request — it must not move the user to another surface.
+    /// Housekeeping, not a user request: reset in place, never move the user to another surface.
     func aiChatContextualSheetViewControllerDidDetectActiveChatRemoved(_ viewController: AIChatContextualSheetViewController)
 
     /// Called when the user asks to open Duck.ai itself, rather than continue in this sheet.
@@ -88,8 +87,7 @@ protocol AIChatContextualSheetViewControllerDelegate: AnyObject {
     func aiChatContextualSheetViewControllerDidConfirmDeleteChat(_ viewController: AIChatContextualSheetViewController)
 }
 
-/// Capsule chrome for a group of header buttons, so the header can host either style without
-/// caring which one it got. Controls go in `contentView`.
+/// Capsule chrome for a group of header buttons; controls go in `contentView`.
 private protocol ContextualHeaderPill: UIView {
     var contentView: UIView { get }
     /// `UIGlassEffect`'s style is fixed at construction, so glass chrome rebuilds on a light/dark flip.
@@ -507,8 +505,7 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     // MARK: - Sheet Configuration
 
-    /// The opening detent, applied per presentation and never re-asserted: UIKit re-runs the appearance
-    /// transition when the sheet is dragged to an undimmed detent, which would overwrite the drag.
+    /// Applied per presentation only: UIKit re-runs appearance on a drag, which would overwrite it.
     func prepareForPresentation() {
         configureSheetPresentation()
         sheetPresentationController?.selectedDetentIdentifier = opensOntoSubmittedChat ? .large : .medium
@@ -1393,8 +1390,7 @@ private extension AIChatContextualSheetViewController {
         setupConstraints()
     }
 
-    /// The redesign puts close where the hand-off used to be and pairs the hand-off with fire;
-    /// the original keeps the hand-off leading and pairs fire with close.
+    /// The redesign puts close leading and pairs the hand-off with fire; the original is the reverse.
     private func resolveHeaderButtons() -> (leading: [UIButton], trailing: [UIButton]) {
         let chats = suggestionsReader != nil ? [recentChatsButton] : []
         guard usesRedesignedHeader else {
@@ -1461,8 +1457,7 @@ private extension AIChatContextualSheetViewController {
         ])
     }
 
-    /// Re-runnable: the input is one view the floating surface also borrows, so a sheet that mounted it
-    /// once can find it gone by the time it is presented again.
+    /// Re-runnable: the floating surface borrows the same input, so a mounted sheet can lose it.
     func mountPersistentUTIHostIfNeeded() {
         guard let persistentUTIHost, !persistentUTIHost.isMounted(in: self) else { return }
 

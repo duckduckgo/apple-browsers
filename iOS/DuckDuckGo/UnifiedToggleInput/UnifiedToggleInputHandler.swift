@@ -90,8 +90,7 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
         }
     }
 
-    /// On a surface that dictates rather than opening voice chat, the voice-chat leg must not keep the
-    /// button on screen — dictation off would otherwise leave a microphone that does nothing on tap.
+    /// Where the button dictates, voice-chat availability must not keep a dead microphone on screen.
     var prefersDictationOverVoiceChat: Bool = false {
         didSet {
             guard prefersDictationOverVoiceChat != oldValue else { return }

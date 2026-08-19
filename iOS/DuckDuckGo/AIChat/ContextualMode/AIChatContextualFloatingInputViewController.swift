@@ -165,8 +165,7 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
         }
     }
 
-    /// Installed on the presenter so any tap outside the surface dismisses it. A tap on the page is
-    /// consumed with it — the user is leaving, not following a link — while chrome taps still act.
+    /// Any tap outside dismisses; page taps are consumed with it, chrome taps still act.
     private lazy var dismissOnPageTapRecognizer: UITapGestureRecognizer = {
         let recognizer = BriefTapGestureRecognizer(target: self, action: #selector(handlePageTap))
         recognizer.delegate = self
@@ -227,9 +226,7 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
         observeKeyboardAnimation()
     }
 
-    /// A rotation takes the keyboard down and puts it back up. That is the device turning, not the user
-    /// leaving, so the surface sits through it — and it is this surface that pins the app to portrait,
-    /// so leaving mid-rotation releases the pin and the rotation reverses.
+    /// This surface pins the app to portrait, so leaving mid-rotation would reverse the rotation.
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
         super.viewWillTransition(to: size, with: coordinator)
         isTransitioningSize = true
@@ -282,8 +279,7 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
     /// guide, so they ride up with it rather than landing once it has stopped.
     func showChipsIfNeeded() {
         guard chipsViewController.startActionCount > 0 else { return }
-        // Already entered once, so this is content returning after `clearChipsFadingOut` — fade it back
-        // rather than re-running the one-shot entrance.
+        // Content returning after `clearChipsFadingOut`, so fade back rather than re-enter.
         guard !hasShownChips else {
             fadeChipsContainer(to: 1)
             return
@@ -293,9 +289,7 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
         chipsViewController.showStartActions()
     }
 
-    /// Clears the chips only once they are invisible: removing them collapses the stack, and that
-    /// collapse rides whatever layout animation the input is already running — which reads as the row
-    /// sliding down behind the bar rather than leaving.
+    /// Clears only once invisible: removing them collapses the stack into the input's own animation.
     func clearChipsFadingOut() {
         fadeChipsContainer(to: 0) { [weak self] in
             self?.chipsViewController.updateStartActions(suggestions: [], quickActions: [])
@@ -309,8 +303,7 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
         }
         UIView.animate(withDuration: Constants.chipsFadeDuration,
                        animations: { self.chipsContainerView.alpha = alpha },
-                       // An interrupted fade has been overtaken by the next one, whose content is already
-                       // in place — clearing it here would empty a row that is on its way back in.
+                       // An interrupted fade was overtaken; its clear would empty the row coming back.
                        completion: { finished in
             guard finished else { return }
             completion?()
@@ -517,11 +510,9 @@ private extension AIChatContextualFloatingInputViewController {
         // Backgrounding and system interruptions take the keyboard too, and neither is the user leaving: the
         // surface and whatever has been typed into it should still be here on the way back.
         guard UIApplication.shared.applicationState == .active else { return }
-        // This surface is the attachment picker's presenter, so its own picker takes the keyboard on the
-        // way up — leaving now would tear down the input the picked attachment is meant to land in.
+        // Its own attachment picker takes the keyboard on the way up.
         guard presentedViewController == nil else { return }
-        // Something else claiming the keyboard resigns our input with it. Still holding focus means the
-        // keyboard is only churning — a rotation settling, or a hardware keyboard — so the surface stays.
+        // Still holding focus means the keyboard is only churning, not being claimed elsewhere.
         guard !utiHost.isInputFirstResponder else { return }
         requestDismiss()
     }
@@ -567,14 +558,12 @@ extension AIChatContextualFloatingInputViewController: UIGestureRecognizerDelega
     /// hit test keeps one definition of which points this surface owns.
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
         guard gestureRecognizer === dismissOnPageTapRecognizer else { return true }
-        // Only the page is swallowed. Chrome acts on its own taps, and the address bar dismisses this
-        // surface by taking focus, which never happens if the tap that focuses it is cancelled.
+        // Page only: the address bar dismisses this surface by taking focus, so its tap must land.
         gestureRecognizer.cancelsTouchesInView = isWithinWebContent(touch.view)
         return view.hitTest(touch.location(in: view), with: nil) == nil
     }
 
-    /// The page's own tap waits for ours and loses, or the link it hit opens behind the dismissal. Taps
-    /// only: a held finger never fails this recognizer, so a waiting long press would do nothing at all.
+    /// Taps only: a held finger never fails this recognizer, so a waiting long press would do nothing.
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
                            shouldBeRequiredToFailBy otherGestureRecognizer: UIGestureRecognizer) -> Bool {
         guard gestureRecognizer === dismissOnPageTapRecognizer,

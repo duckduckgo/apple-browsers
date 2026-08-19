@@ -27,8 +27,7 @@ enum UnifiedToggleInputDisplayState: Equatable {
     case aiTab(ExpansionState)
     case omnibar(OmnibarState)
 
-    /// Shared by the two Duck.ai surfaces: both show either the expanded input pane or the
-    /// collapsed footer pill that the fire / voice accessories flank.
+    /// Shared by both Duck.ai surfaces: the expanded input pane, or the collapsed footer pill.
     enum ExpansionState: Equatable, CaseIterable {
         case collapsed
         case expanded

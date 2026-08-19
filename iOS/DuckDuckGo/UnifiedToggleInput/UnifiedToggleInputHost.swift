@@ -29,9 +29,7 @@ enum UnifiedToggleInputHost: Equatable {
     case contextualChat
 }
 
-/// The state a contextual-chat input is born into. Composes two otherwise-independent facts — whether
-/// the session has a prompt in it yet, and whether a keyboard comes up alongside the input — as the
-/// three combinations that actually occur, so the contradictory fourth can't be expressed.
+/// The state a contextual input is born into: the three combinations of prompt-yet and keyboard that occur.
 enum ContextualInputStart: Equatable {
     /// Nothing submitted yet: the user is about to type, so the input opens expanded and takes focus.
     case expandedPreSubmit

@@ -25,9 +25,7 @@ import DesignResourcesKitIcons
 
 class BrowserChromeButton: UIButton {
 
-    /// The view UIKit may reparent into the menu platter while this button's menu is open. It moves the
-    /// real preview view, and pulling one out of a glass group stops the group rendering — so callers in a
-    /// glass container pass a throwaway stand-in instead of letting UIKit take the button.
+    /// UIKit reparents this into the menu platter, so callers inside a glass group pass a throwaway.
     var menuHighlightTarget: (() -> UIView?)?
 
     @available(iOS 16.0, *)

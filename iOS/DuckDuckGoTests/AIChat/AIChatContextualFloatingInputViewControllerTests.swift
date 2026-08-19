@@ -66,8 +66,7 @@ final class AIChatContextualFloatingInputViewControllerTests: XCTestCase {
         func deactivateInput() { deactivateInputCount += 1 }
         func freezeInputPosition() { freezeInputPositionCount += 1 }
 
-        /// The surface asks before leaving on a keyboard hide: focus it still holds means the keyboard is
-        /// only churning, so tests set this to exercise both answers.
+        /// Set by tests: focus still held on a keyboard hide means it is only churning.
         var isInputFirstResponder = false
         var dictatedQueries: [String] = []
         func applyDictatedQuery(_ query: String) { dictatedQueries.append(query) }
@@ -172,8 +171,7 @@ final class AIChatContextualFloatingInputViewControllerTests: XCTestCase {
         XCTAssertEqual(spy.dismissRequestCount, 1)
     }
 
-    /// The tap now consumes the touch on page content — dismissing must not also follow the link it hit —
-    /// but that is decided per touch, so only the delay behaviour is fixed at construction.
+    /// Consumption is decided per touch, so only the delay behaviour is fixed at construction.
     func testThePageTapRecognizerDoesNotDelayTouches() throws {
         let (_, _, parent) = makeSubject()
         let recognizer = try XCTUnwrap(parent.view.gestureRecognizers?.compactMap { $0 as? UITapGestureRecognizer }.first)

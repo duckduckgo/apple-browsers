@@ -126,8 +126,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(sut.displayState, .contextualChat(.expanded))
     }
 
-    /// Opening onto an existing chat brings no keyboard, so expanding would leave the toolbar row
-    /// standing in space nothing is going to fill. Covers the cold-launch chat restore.
+    /// No keyboard on an existing chat, so expanding would leave the toolbar row over nothing.
     func test_contextualChat_bootsCollapsed_whenOpeningOntoAnExistingChat() {
         sut = UnifiedToggleInputCoordinator(
             host: .contextualChat,
@@ -141,8 +140,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertFalse(sut.isInputPaneExpanded)
     }
 
-    /// The legacy in-web-view input opens on a chat that already exists yet still takes focus, which is
-    /// what keeps the session and pose facts separate rather than one implying the other.
+    /// The legacy input opens on an existing chat yet still takes focus: the two facts stay separate.
     func test_contextualChat_bootsExpanded_onAnExistingChatThatTakesFocus() {
         sut = UnifiedToggleInputCoordinator(
             host: .contextualChat,

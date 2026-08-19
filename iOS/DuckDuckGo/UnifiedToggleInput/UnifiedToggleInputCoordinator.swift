@@ -487,8 +487,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
         viewController.handler.prefersDictationOverVoiceChat = stateMachine.prefersDictationOverVoiceChat
 
-        // `hasSubmittedPrompt` drives the follow-up placeholder and the model chip, so a chat that
-        // already has a prompt in it must say so here.
+        // Drives the follow-up placeholder and model chip, so an existing chat must say so.
         if host == .contextualChat {
             displayState = .contextualChat(contextualStart.startsCollapsed ? .collapsed : .expanded)
             hasSubmittedPrompt = !contextualStart.isPreSubmit
@@ -1651,8 +1650,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         }
 
         if isContextualChatState {
-            // Ahead of the collapse below, which takes the keyboard with it: a surface that reads the
-            // hide as losing its keyboard tears itself down, and then nothing is left to hand over.
+            // Ahead of the collapse below, which takes the keyboard and the surface with it.
             delegate?.unifiedToggleInputDidSubmitPromptToBoundChat()
         }
         clearAttachments()
@@ -1663,8 +1661,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         if isOmnibarSession {
             deactivateToOmnibar()
         } else {
-            // showCollapsed has no dismiss hook; clear synchronously. It resigns the input on the way,
-            // which is what takes the keyboard — `dismissOmnibarKeyboard` would bail on its own guard.
+            // showCollapsed has no dismiss hook; it resigns the input, which takes the keyboard.
             setText("")
             showCollapsed()
         }

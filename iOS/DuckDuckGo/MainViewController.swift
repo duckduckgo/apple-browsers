@@ -1104,8 +1104,7 @@ class MainViewController: UIViewController {
         refreshAIChatChromeChip()
     }
 
-    /// Driven by `refreshOmniBar` so every route that changes the on-screen tab is covered — rebinding
-    /// route by route left cold launch unsubscribed. Idempotent; that refresh is the far more frequent.
+    /// Driven by `refreshOmniBar` to cover every tab change, cold launch included. Idempotent.
     func bindAIChatChromeChipToCurrentTab() {
         let coordinator = currentTab?.aiChatContextualSheetCoordinator
         guard coordinator !== boundAIChatChromeChipCoordinator || !hasBoundAIChatChromeChip else { return }
@@ -1901,8 +1900,7 @@ class MainViewController: UIViewController {
         if let presentedViewController {
             return presentedViewController.supportedInterfaceOrientations
         }
-        // A child is never asked about orientation, so the presenter answers for the floating input —
-        // which is the same surface as the sheet, and the sheet is portrait-only.
+        // A child is never asked, so the presenter answers for it; the sheet is portrait-only too.
         if isFloatingContextualInputPresented {
             return .portrait
         }
@@ -1913,8 +1911,7 @@ class MainViewController: UIViewController {
         currentTab?.aiChatContextualSheetCoordinator.isFloatingInputPresented == true
     }
 
-    /// UIKit only re-asks when something else prompts a rotation, so a surface opening in landscape has
-    /// to ask on its own behalf — the sheet gets this for free by being presented.
+    /// UIKit only re-asks on a rotation, so a surface opening in landscape has to ask itself.
     private func updateSupportedOrientationsForContextualSurface() {
         if #available(iOS 16.0, *) {
             setNeedsUpdateOfSupportedInterfaceOrientations()

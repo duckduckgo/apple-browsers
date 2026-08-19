@@ -77,9 +77,7 @@ final class UTIStateMachine {
         displayState == .contextualChat(.collapsed)
     }
 
-    /// The voice button dictates into the field instead of opening Duck.ai voice chat. The contextual
-    /// sheet is already a chat surface, so sending the user out to voice mode is the wrong destination.
-    /// A property of the host, read by the glyph, the tap routing and the button's visibility alike.
+    /// The voice button dictates into the field: this surface is already a chat, so voice mode is wrong.
     var prefersDictationOverVoiceChat: Bool {
         host == .contextualChat
     }

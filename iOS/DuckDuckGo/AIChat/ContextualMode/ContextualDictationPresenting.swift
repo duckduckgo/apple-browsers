@@ -19,8 +19,7 @@
 
 import UIKit
 
-/// A surface showing the contextual input hosts dictation for it: the modal presents over whatever is on
-/// screen, and the transcript goes back to the input rather than to the surface.
+/// The surface showing the input hosts dictation for it; the transcript goes back to the input.
 @MainActor
 protocol ContextualDictationPresenting: UIViewController, VoiceSearchViewControllerDelegate {
     func applyDictatedQuery(_ query: String)

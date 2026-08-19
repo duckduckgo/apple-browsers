@@ -180,8 +180,7 @@ final class UTIStateMachineTests: XCTestCase {
         )
     }
 
-    /// The flanked pose carries the fire / menu accessories, which only a Duck.ai tab has. A collapsed
-    /// contextual sheet is the plain pill instead — no accessories, just the field and its voice button.
+    /// Flanked carries the fire / menu accessories, which only a Duck.ai tab has.
     func test_cardLayout_isFlankedOnlyForTheCollapsedAITab() {
         XCTAssertEqual(renderState(for: .aiTab(.collapsed), host: .omnibar).cardLayout, .flanked)
         XCTAssertEqual(renderState(for: .contextualChat(.collapsed), host: .contextualChat).cardLayout, .collapsed)

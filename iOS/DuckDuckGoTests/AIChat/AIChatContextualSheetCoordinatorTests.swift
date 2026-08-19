@@ -1237,8 +1237,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
     // MARK: - Open Duck.ai
 
-    /// The default SUT leaves the floating input unavailable, so these rebuild it: the input host snapshots
-    /// availability when it is constructed, so it has to be on before the coordinator exists.
+    /// Rebuilt because the host snapshots availability, so it must be on before the coordinator exists.
     @MainActor
     private func makeCoordinatorWithFloatingInput() -> AIChatContextualSheetCoordinator {
         let floatingInputFeature = MockFloatingInputFeature()

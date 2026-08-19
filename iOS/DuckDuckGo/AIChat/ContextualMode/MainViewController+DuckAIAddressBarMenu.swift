@@ -46,8 +46,7 @@ extension MainViewController {
             return
         }
 
-        // UIKit reparents the preview into the menu platter. Hand it a stand-in that lives outside the
-        // field's glass group, so nothing is pulled out of the group and the bar keeps rendering.
+        // UIKit reparents the preview, so hand it a stand-in from outside the field's glass group.
         if let button = button as? BrowserChromeButton {
             button.menuHighlightTarget = { [weak self, weak button] in
                 guard let button else { return nil }
@@ -65,8 +64,7 @@ extension MainViewController {
         button?.showsMenuAsPrimaryAction = true
     }
 
-    /// A transparent stand-in over the Duck.ai button, parented in the bar's container rather than the
-    /// glass field, so the menu has something to reparent that costs nothing when it leaves.
+    /// Transparent stand-in over the button, outside the glass field, for the menu to reparent.
     private func duckAIMenuAnchorView(over button: UIView) -> UIView? {
         guard let container: UIView = viewCoordinator.navigationBarContainer else { return nil }
         let anchor = duckAIMenuAnchor ?? {
@@ -79,8 +77,8 @@ extension MainViewController {
         if anchor.superview !== container {
             container.addSubview(anchor)
         }
-        // Framed here rather than by constraints: the menu anchors wherever this sits, and constraints
-        // added on the way into the presentation are still unlaid out, leaving it at the origin.
+        // Laid out first: the bar repositions its buttons after a surface closes.
+        container.layoutIfNeeded()
         anchor.frame = container.convert(button.bounds, from: button)
         return anchor
     }

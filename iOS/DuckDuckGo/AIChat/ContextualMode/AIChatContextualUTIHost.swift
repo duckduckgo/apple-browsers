@@ -143,14 +143,11 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
             .store(in: &cancellables)
     }
 
-    /// The expanded pose sits above a keyboard, so losing one collapses it — even with the field still
-    /// first responder, as a sheet drag leaves it. Only a keyboard that was really shown can be lost:
-    /// a hardware keyboard reports hides with no matching show, on every keystroke.
+    /// Only a keyboard that was really shown can be lost: a hardware keyboard hides on every keystroke.
     private func collapseForKeyboardDismissal() {
         guard hasKeyboardAppeared else { return }
         hasKeyboardAppeared = false
-        // Backgrounding takes the keyboard too and isn't the user leaving; offscreen hosts outlive
-        // their surface, so they ignore a keyboard they were never above.
+        // Backgrounding takes the keyboard too, and offscreen hosts were never above one.
         guard UIApplication.shared.applicationState == .active,
               !coordinator.isPresentingAttachmentModal,
               coordinator.isInputOnScreen,
@@ -295,9 +292,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         return viewController.view
     }
 
-    /// Installing or mounting must not decide focus — the surface that opened this UTI already did.
-    /// A sheet that opens onto a submitted chat has no keyboard, so expanding here would leave the
-    /// toolbar row up with nothing behind it.
+    /// Mounting must not decide focus: the surface that opened this UTI already did.
     private func applyHostedExpansion(activatesInput: Bool) {
         if coordinator.isContextualChatCollapsed {
             coordinator.showCollapsed()
@@ -328,8 +323,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         frozenBottomConstraint = frozen
     }
 
-    /// Whether `parent` currently holds the input. The input is one view that surfaces borrow from each
-    /// other, so a surface that mounted it once cannot assume it still has it.
+    /// Surfaces borrow this one input from each other, so having mounted it is no guarantee of holding it.
     func isMounted(in parent: UIViewController) -> Bool {
         coordinator.viewController.parent === parent
     }
@@ -361,8 +355,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         coordinator.showExpanded()
     }
 
-    /// Collapses to the plain pill, which drops first responder on the way. Without the collapsed
-    /// pill the sheet's input has no collapsed form, so it only gives up first responder.
+    /// Collapses to the plain pill, dropping first responder; without that pill, only resigns.
     func deactivateInput() {
         guard usesFloatingInput else {
             coordinator.viewController.deactivateInput()
@@ -399,9 +392,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     }
 
     func prepareForNewChat() {
-        // The surface is back on its start state, so the next prompt is a first prompt again — whatever
-        // this host was born as. Left set, the submission that follows never reports itself and the
-        // sheet stays on the start surface while the frontend answers behind it.
+        // Back on the start state, so the next prompt is a first prompt again and reports itself.
         hasDeliveredFirstPrompt = false
         clearAttachedContext()
         chipViewModel.clearReattachOffer()
@@ -440,8 +431,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         onPromptDelivered?()
     }
 
-    /// True for the first report only. Both submission reports race — the input reports as it happens,
-    /// the frontend acknowledges the same prompt afterwards — and only one of them may be believed.
+    /// True for the first report only: the input and the frontend both report the same submission.
     private func claimFirstPromptSubmission() -> Bool {
         guard !hasDeliveredFirstPrompt else { return false }
         hasDeliveredFirstPrompt = true

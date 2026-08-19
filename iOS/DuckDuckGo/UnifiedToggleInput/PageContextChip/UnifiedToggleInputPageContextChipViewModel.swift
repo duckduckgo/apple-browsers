@@ -53,9 +53,7 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
     var onRemoveActionRequested: (() -> Void)?
 
     private let isAutoAttachEnabled: () -> Bool
-    /// Whether removing the page context leaves a re-attach button in place of the pill. Evaluated at
-    /// removal time: the offer belongs to the pre-chat surface, where attaching the page is the point.
-    /// Once a chat exists the attachment menu is the way back, so a removal is just a removal.
+    /// Evaluated at removal time: the re-attach offer belongs to the pre-chat surface only.
     private let showsAttachAffordance: () -> Bool
     private(set) var attachedContext: AIChatPageContext?
     private var attachedURL: URL?

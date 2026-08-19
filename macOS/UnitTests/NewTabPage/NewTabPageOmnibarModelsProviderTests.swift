@@ -108,6 +108,8 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
 
     /// A Pro-only model must still show (disabled, with an upsell) to a Plus subscriber, not be dropped.
     func testWhenSubscribedPlusUserThenProOnlyModelIsShownDisabledWithUpgradeUpsell() async {
+        // `upsell` only ships while the kill switch is on.
+        mockFeatureFlagger.enabledFeatureFlags.append(.aiChatOmnibarSubscriptionUpsell)
         mockSubscriptionManager.resultSubscription = .success(makeSubscription(tier: .plus))
         mockModelsService.modelsToReturn = [
             makeRemoteModel(id: "plus-model", accessTier: ["plus", "pro"]),
@@ -223,6 +225,8 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
     /// A reasoning effort gated behind a higher tier than the user's must be mapped `unavailable`
     /// with the right `upsell` flow, while effort ids/order stay stable regardless of gating.
     func testWhenReasoningEffortIsGatedForPlusUserThenItIsMappedUnavailableWithUpgradeUpsell() async {
+        // `upsell` only ships while the kill switch is on.
+        mockFeatureFlagger.enabledFeatureFlags.append(.aiChatOmnibarSubscriptionUpsell)
         mockSubscriptionManager.resultSubscription = .success(makeSubscription(tier: .plus))
         mockModelsService.modelsToReturn = [
             makeRemoteModel(
@@ -251,6 +255,8 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
     /// effort, not whether the mode has *any* accessible effort — otherwise a Plus user with only
     /// `.medium` access would see the `.high`-labeled row reported as available.
     func testWhenRepresentativeEffortIsGatedButModeHasAnotherAccessibleEffortThenItIsMappedUnavailable() async {
+        // `upsell` only ships while the kill switch is on.
+        mockFeatureFlagger.enabledFeatureFlags.append(.aiChatOmnibarSubscriptionUpsell)
         mockSubscriptionManager.resultSubscription = .success(makeSubscription(tier: .plus))
         mockModelsService.modelsToReturn = [
             makeRemoteModel(
@@ -276,6 +282,8 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
 
     /// The same gated effort routes to "subscribe" rather than "upgrade" for a free user.
     func testWhenReasoningEffortIsGatedForFreeUserThenItIsMappedUnavailableWithSubscribeUpsell() async {
+        // `upsell` only ships while the kill switch is on.
+        mockFeatureFlagger.enabledFeatureFlags.append(.aiChatOmnibarSubscriptionUpsell)
         mockModelsService.modelsToReturn = [
             makeRemoteModel(
                 id: "reasoning-model",
@@ -610,6 +618,8 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
 
         XCTAssertNil(sections.first?.header)
         XCTAssertEqual(sections.first?.items.first?.id, "premium-model")
+        // No upsell target either, so the web leaves the row inert instead of opening the dialog.
+        XCTAssertNil(sections.first?.items.first?.upsell)
     }
 
     /// Two efforts are gated behind higher tiers; only the first of them should head the section.
@@ -657,6 +667,7 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
 
         XCTAssertEqual(efforts?.map(\.isAvailable), [true, false, false])
         XCTAssertTrue(efforts?.allSatisfy { $0.gatedSectionHeader == nil } == true)
+        XCTAssertTrue(efforts?.allSatisfy { $0.upsell == nil } == true)
     }
 
     /// A model whose efforts are all available produces no `gatedSectionHeader` anywhere.

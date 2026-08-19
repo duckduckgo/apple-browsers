@@ -129,12 +129,17 @@ public struct TrackerProtectionEventMapper {
 
     // MARK: - Classification helpers
 
+    /// This set contains eTLD+1 domains owned by DuckDuckGo, to avoid incorrectly
+    /// reporting 3rd party requests between DDG domains.
+    static let duckDuckGoETLDplus1: Set<String> = ["duckduckgo.com", "duck.ai"]
+
     /// Returns true when request and page share the same eTLD+1.
     public func isSameSiteObservation(_ observation: TrackerProtectionSubfeature.ResourceObservation) -> Bool {
         let requestETLDplus1 = tld.eTLDplus1(forStringURL: observation.url)
         let pageETLDplus1 = tld.eTLDplus1(forStringURL: observation.pageUrl)
         guard let requestETLDplus1, let pageETLDplus1 else { return false }
-        return requestETLDplus1 == pageETLDplus1
+        return requestETLDplus1 == pageETLDplus1 ||
+            (Self.duckDuckGoETLDplus1.contains(pageETLDplus1) && Self.duckDuckGoETLDplus1.contains(requestETLDplus1))
     }
 
     /// Build a DetectedRequest for a non-TDS cross-site resource (third-party request).

@@ -801,6 +801,11 @@ final class FireDialogTabScopeUITests: UITestCase, FireDialogUITests {
         // Select "Tab" scope
         app.fireDialogSegmentedControl.buttons["From this tab"].click()
 
+        // Expand Dialog details
+        if (fireDialogDetailsDisclosureButton.value as? String) != "expanded" {
+            fireDialogDetailsDisclosureButton.click()
+        }
+
         // Enable tabs only, disable history and cookies
         fireDialogTabsToggle.toggleCheckboxIfNeeded(to: true, validate: true, ensureHittable: { _ in })
         fireDialogHistoryToggle.toggleCheckboxIfNeeded(to: false, validate: true, ensureHittable: { _ in })

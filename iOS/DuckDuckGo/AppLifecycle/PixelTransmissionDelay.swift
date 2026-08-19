@@ -56,12 +56,10 @@ final class PixelTransmissionDelay: PixelTransmissionDelaying {
          makeAssertion: @escaping () -> BackgroundAssertion? = {
              QRunInBackgroundAssertion(name: PixelTransmissionDelay.assertionName, application: .shared)
          },
+         // Always hops, because being on the main thread does not mean being on the main queue and
+         // `QRunInBackgroundAssertion` asserts the latter.
          runOnMain: @escaping (@escaping () -> Void) -> Void = { work in
-             if Thread.isMainThread {
-                 work()
-             } else {
-                 DispatchQueue.main.async(execute: work)
-             }
+             DispatchQueue.main.async(execute: work)
          },
          schedule: @escaping (TimeInterval, @escaping () -> Void) -> Void = { interval, work in
              DispatchQueue.main.asyncAfter(deadline: .now() + interval, execute: work)

@@ -993,7 +993,7 @@ extension DataImportViewModel {
             goBack()
 
         case .initiateImport, .continue:
-            if selectedProfile?.requiresDirectoryAccessPermission == true {
+            if requiresDirectoryAccessPermission {
                 showDirectoryReadPermissionScreen()
             } else {
                 importButtonPressed()
@@ -1036,6 +1036,16 @@ extension DataImportViewModel {
         }
 
         return FileManager.default.isDirectoryReadable(atPath: directoryURL.path)
+    }
+
+    private var requiresDirectoryAccessPermission: Bool {
+        guard let selectedProfile else {
+            return false
+        }
+
+        let directoryAccessFeature = DirectoryAccessAvailability(featureFlagger: featureFlagger, debugSettings: UserDefaults.standard.keyedStoring())
+        let isImportScreenAndForced = (screen == .sourceAndDataTypesPicker && directoryAccessFeature.mustForcePermissionFix)
+        return selectedProfile.requiresDirectoryAccessPermission || isImportScreenAndForced
     }
 
     @MainActor

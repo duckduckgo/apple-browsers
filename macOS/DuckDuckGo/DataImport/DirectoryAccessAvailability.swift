@@ -41,10 +41,15 @@ struct DirectoryAccessAvailability {
         self.operatingSystemVersion = operatingSystemVersion
     }
 
+    /// Debug override: run the flow regardless of the OS version, the Feature Flag, and the directory's actual access state.
+    var mustForcePermissionFix: Bool {
+        debugSettings.isForcingMacOS27PermissionsFix
+    }
+
     /// Returns `true` running `macOS >= 27` and the `dataImportDataDirectoryAccess` Feature Flag is enabled.
     /// Can also be overridden via `isForcingMacOS27PermissionsFix`
     var isEnabled: Bool {
-        if debugSettings.isForcingMacOS27PermissionsFix {
+        if mustForcePermissionFix {
             return true
         }
 

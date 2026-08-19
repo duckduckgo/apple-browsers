@@ -62,7 +62,7 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProviding {
     private var daxDialogsFlowCoordinator: DaxDialogsFlowCoordinator
     private let onboardingPixelReporter: OnboardingPixelReporting
     private let onboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHelping
-    private let onboardingFlowProvider: OnboardingFlowProviding
+    private let onboardingFlowProvider: OnboardingFlowProviding & OnboardingDownloadReasonHandling
     private let featureFlagger: FeatureFlagger
 
     init(
@@ -70,7 +70,7 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProviding {
         daxDialogsFlowCoordinator: DaxDialogsFlowCoordinator,
         onboardingPixelReporter: OnboardingPixelReporting,
         onboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHelping = OnboardingSubscriptionPromotionHelper(),
-        onboardingFlowProvider: OnboardingFlowProviding = OnboardingManager(),
+        onboardingFlowProvider: OnboardingFlowProviding & OnboardingDownloadReasonHandling = OnboardingManager(),
         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger
     ) {
         self.delegate = delegate
@@ -175,9 +175,14 @@ extension NewTabDaxDialogFactory {
                 ScrollView(.vertical, showsIndicators: false) {
                     OnboardingRebranding.OnboardingEndOfJourneyDialog(content: content) { [weak self] action in
                         switch action {
-                        case .completeAndActivateSearch, .tryDuckAI:
+                        case .completeAndActivateSearch:
                             self?.onboardingPixelReporter.measureEndOfJourneyDialogCTAAction()
-                        case .skip, .manualDismiss:
+                        case .tryDuckAI:
+                            // Try Duck.ai EOJ CTA — surface-scoped pixel for CTR (only the Try-AI variant emits `.tryDuckAI`).
+                            self?.onboardingPixelReporter.measureEndOfJourneyTryDuckAICTAAction()
+                        case .skip:
+                            self?.onboardingPixelReporter.measureEndOfJourneyTryDuckAISkipAction()
+                        case .manualDismiss:
                             self?.onboardingPixelReporter.measureEndOfJourneyDialogNewTabDismissButtonTapped()
                         }
                         onAction(action)
@@ -189,7 +194,12 @@ extension NewTabDaxDialogFactory {
             .onFirstAppear { [weak self] in
                 self?.daxDialogsFlowCoordinator.setFinalOnboardingDialogSeen()
                 self?.onboardingPixelReporter.measureScreenImpression(event: .daxDialogsEndOfJourneyNewTabUnique)
-                self?.onboardingPixelReporter.measureScreenImpression(.end(.shown))
+                // Try Duck.ai EOJ impression — surface-scoped pixel for CTR, only for the Try-AI variant.
+                if content.primaryAction == .tryDuckAI {
+                    self?.onboardingPixelReporter.measureScreenImpression(.endTryDuckAI(.shown))
+                } else {
+                    self?.onboardingPixelReporter.measureScreenImpression(.end(.shown))
+                }
             }
         )
     }
@@ -277,24 +287,29 @@ private extension NewTabDaxDialogFactory {
             return AttributedString(fullText)
         }
 
+        // If Duck.ai CPP flow or Private AI Chat Download reason show AI-flavored message and redirect to AI-flavored page of the Subscription flow
+        let isAIFlowFlavored: Bool = onboardingFlowProvider.currentOnboardingFlow == .duckAI || onboardingFlowProvider.currentDownloadReason == .privateAIChat
+
         let isChatPath = daxDialogsFlowCoordinator.isChatFirstPath
         let title = UserText.SubscriptionPromotionOnboarding.Promo.title
-        let message = switch onboardingFlowProvider.currentOnboardingFlow {
-        case .default:
+
+        let message = if isAIFlowFlavored {
+            AttributedString(UserText.Onboarding.DuckAICPP.Contextual.subscriptionMessage.preventWidows())
+        } else {
             if featureFlagger.isFeatureOn(.paidAIChat){
                 createSubscriptionPromoMessage()
             } else {
                 createSubscriptionPromoMessageDeprecated()
             }
-        case .duckAI:
-            AttributedString(UserText.Onboarding.DuckAICPP.Contextual.subscriptionMessage.preventWidows())
         }
+
         let dismissText = UserText.SubscriptionPromotionOnboarding.Buttons.Rebranding.skip
         let manualDismissAction: (() -> Void)? = isChatPath ? nil : { [weak self] in
             self?.onboardingSubscriptionPromotionHelper.fireDismissPixel()
             self?.onboardingPixelReporter.measureSubscriptionDialogNewTabDismissButtonTapped()
             onDismiss(true)
         }
+
         return FadeInView {
             OnboardingRebranding.OnboardingSubscriptionPromoDialog(
                 title: title,
@@ -304,7 +319,7 @@ private extension NewTabDaxDialogFactory {
                 proceedAction: { [weak self] in
                     self?.onboardingPixelReporter.measureSubscriptionPromoEngageCTAAction()
                     self?.onboardingSubscriptionPromotionHelper.fireTapPixel()
-                    let featurePage: OnboardingSubscriptionPromotionPage? = self?.onboardingFlowProvider.currentOnboardingFlow == .duckAI ? .duckAI : nil
+                    let featurePage: OnboardingSubscriptionPromotionPage? = isAIFlowFlavored ? .duckAI : nil
                     let urlComponents = self?.onboardingSubscriptionPromotionHelper.redirectURLComponents(featurePage: featurePage)
                     // Pass onDismiss as a post-presentation callback so it fires only after
                     // the settings sheet is fully on screen — keeping the promo dialog visible

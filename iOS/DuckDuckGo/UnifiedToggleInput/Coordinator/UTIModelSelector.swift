@@ -271,6 +271,7 @@ final class UTIModelSelector {
             models: modelStore.models,
             selectedId: selectedId,
             userTier: modelStore.subscriptionState.userTier,
+            freeTrialEligibility: modelStore.freeTrialEligibility,
             onSelect: onSelect
         )
     }
@@ -301,6 +302,7 @@ final class UTIModelSelector {
             model: selectedModel,
             selectedMode: resolvedSelectedReasoningMode,
             userTier: modelStore.subscriptionState.userTier,
+            freeTrialEligibility: modelStore.freeTrialEligibility,
             onSelect: onSelect
         )
     }

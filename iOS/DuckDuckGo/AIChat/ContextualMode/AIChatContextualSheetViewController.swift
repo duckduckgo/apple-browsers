@@ -909,13 +909,11 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
     /// Attaches context, waits for the frontend, then submits. Also used by the floating input, which
     /// promotes to this sheet first so the web view exists to receive the prompt.
     func submitSuggestion(_ suggestion: ContextualSuggestedPrompt) {
-        // Selection suggestions act on the attached selection, so they must not take the page route
-        // below: it attaches the whole page and submits the label as prompt text.
-        guard featureFlagger.isFeatureOn(.contextualSuggestedPrompts),
-              AIChatTextSelectionAction(selectionSuggestionID: suggestion.id) == nil else {
+        guard featureFlagger.isFeatureOn(.contextualSuggestedPrompts) else {
             abandonAwaitedSubmittedChat()
             return
         }
+        let actsOnSelection = AIChatTextSelectionAction(selectionSuggestionID: suggestion.id) != nil
         cancelSuggestionSubmission()
         pixelHandler.fireSuggestionSelected(suggestionId: suggestion.id, pageType: sessionState.viewState.suggestionsPageType)
         contextualInputViewController.setStartActionsDimmed(true)
@@ -933,10 +931,28 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
                 }
             }
 
-            if await self.deliverSuggestionPrompt(suggestion) == false {
+            let didDeliver = if actsOnSelection {
+                await self.deliverSelectionSuggestionPrompt(suggestion)
+            } else {
+                await self.deliverSuggestionPrompt(suggestion)
+            }
+            if !didDeliver {
                 self.abandonAwaitedSubmittedChat()
             }
         }
+    }
+
+    private func deliverSelectionSuggestionPrompt(_ suggestion: ContextualSuggestedPrompt) async -> Bool {
+        guard !sessionState.attachedSelections.isEmpty,
+              let webViewController else { return false }
+
+        let isFrontendReady = await webViewController.waitUntilFrontendReady(timeout: Constants.suggestedPromptFrontendReadinessTimeout)
+        guard isFrontendReady else { return false }
+        guard !Task.isCancelled, canProcessSuggestionSubmission else { return true }
+        guard !sessionState.attachedSelections.isEmpty else { return false }
+
+        submitSuggestionPrompt(suggestion.prompt)
+        return true
     }
 
     /// Attaches the context, waits for the frontend, then submits. Returns whether anything is still

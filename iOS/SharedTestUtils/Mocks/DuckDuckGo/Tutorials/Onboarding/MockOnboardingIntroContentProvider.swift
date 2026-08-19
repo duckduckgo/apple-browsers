@@ -29,7 +29,7 @@ class MockOnboardingIntroContentProvider: OnboardingIntroContentProviding {
     var addressBarToggleModePersonalizationContent: OnboardingAddressBarToggleModeContent = .mock
     var aiSearchPersonalizationContent: OnboardingPersonalizationContent = .mock
     var aiChatEnabledPersonalizationContent: OnboardingDuckAIEnabledPersonalizationContent = .mock
-    var youTubePersonalizationContent: OnboardingPersonalizationContent = .mock
+    var adBlockingPersonalizationContent: OnboardingPersonalizationContent = .mock
     var setDefaultBrowserContent: OnboardingComparisonContent = .mockBrowser
     var aiIntroContent: OnboardingComparisonContent = .mockAI
     var addToDockContent: OnboardingAddToDockContent = .mock

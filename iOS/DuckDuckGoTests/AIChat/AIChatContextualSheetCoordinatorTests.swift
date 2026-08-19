@@ -145,6 +145,10 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         }
     }
 
+    private final class MockFloatingInputFeature: AIChatContextualFloatingInputFeatureProviding {
+        var isAvailable = false
+    }
+
     // MARK: - Properties
 
     private var sut: AIChatContextualSheetCoordinator!
@@ -153,6 +157,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     private var mockSettings: MockAIChatSettingsProvider!
     private var mockFeatureFlagger: MockFeatureFlagger!
     private var mockUnifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider!
+    private var mockFloatingInputFeature: MockFloatingInputFeature!
     private var mockPageContextHandler: MockPageContextHandler!
     private var contentBlockingSubject: PassthroughSubject<ContentBlockingUpdating.NewContent, Never>!
     private var originatingTabURLSubject: CurrentValueSubject<URL?, Never>!
@@ -167,6 +172,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         mockSettings = MockAIChatSettingsProvider()
         mockFeatureFlagger = MockFeatureFlagger()
         mockUnifiedToggleInputFeature = MockUnifiedToggleInputFeatureProvider()
+        mockFloatingInputFeature = MockFloatingInputFeature()
         mockPageContextHandler = MockPageContextHandler()
         contentBlockingSubject = PassthroughSubject<ContentBlockingUpdating.NewContent, Never>()
         originatingTabURLSubject = CurrentValueSubject<URL?, Never>(nil)
@@ -179,6 +185,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
             featureDiscovery: MockFeatureDiscovery(),
             featureFlagger: mockFeatureFlagger,
             unifiedToggleInputFeature: mockUnifiedToggleInputFeature,
+            floatingInputFeature: mockFloatingInputFeature,
             pageContextHandler: mockPageContextHandler,
             tabURLPublishers: AIChatTabURLPublishers(
                 originating: originatingTabURLSubject.eraseToAnyPublisher(),
@@ -199,6 +206,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         mockSettings = nil
         mockFeatureFlagger = nil
         mockUnifiedToggleInputFeature = nil
+        mockFloatingInputFeature = nil
         mockPageContextHandler = nil
         contentBlockingSubject = nil
         originatingTabURLSubject = nil
@@ -215,6 +223,47 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
         XCTAssertEqual(sut.sessionState.attachedSelections.map(\.content), ["selected text"])
         XCTAssertNotNil(sut.sheetViewController)
+    }
+
+    @MainActor
+    func testAttachSelectionPresentsFloatingInputWhenAvailableWithoutAttachingThePage() async {
+        mockFloatingInputFeature.isAvailable = true
+        mockUnifiedToggleInputFeature.isAvailable = true
+        originatingTabURLSubject.send(URL(string: "https://example.com"))
+
+        await sut.handleSelectionAction(.ask, selection: .init(text: "selected text", url: URL(string: "https://example.com"), faviconBase64: nil), from: mockPresentingVC)
+
+        XCTAssertEqual(sut.sessionState.attachedSelections.map(\.content), ["selected text"])
+        XCTAssertTrue(sut.isFloatingInputPresented)
+        XCTAssertNil(sut.sheetViewController)
+        XCTAssertEqual(mockPageContextHandler.lastTriggerContextCollectionTrigger, .tabContent)
+    }
+
+    @MainActor
+    func testAttachSelectionPresentsFloatingInputAfterInactiveSheetWasDismissed() async throws {
+        await sut.presentSheet(from: mockPresentingVC)
+        let retainedSheet = try XCTUnwrap(sut.sheetViewController)
+        sut.aiChatContextualSheetViewControllerDidDismiss(retainedSheet)
+        mockFloatingInputFeature.isAvailable = true
+        mockUnifiedToggleInputFeature.isAvailable = true
+
+        await sut.handleSelectionAction(.ask, selection: .init(text: "selected text", url: URL(string: "https://example.com"), faviconBase64: nil), from: mockPresentingVC)
+
+        XCTAssertTrue(sut.isFloatingInputPresented)
+        XCTAssertNil(sut.sheetViewController)
+    }
+
+    @MainActor
+    func testAttachSelectionPresentsSheetWhenRestoringAChatDespiteFloatingInputAvailability() async {
+        mockFloatingInputFeature.isAvailable = true
+        mockUnifiedToggleInputFeature.isAvailable = true
+        let restoreURL = URL(string: "https://duckduckgo.com/?chatID=abc")!
+
+        await sut.handleSelectionAction(.ask, selection: .init(text: "selected text", url: URL(string: "https://example.com"), faviconBase64: nil), restoreURL: restoreURL, from: mockPresentingVC)
+
+        XCTAssertFalse(sut.isFloatingInputPresented)
+        XCTAssertNotNil(sut.sheetViewController)
+        XCTAssertEqual(sut.sessionState.contextualChatURL, restoreURL)
     }
 
     /// The signals-only payload is content-free and marked unattached, so pushing it while a page is

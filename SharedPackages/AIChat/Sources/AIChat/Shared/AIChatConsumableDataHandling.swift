@@ -311,6 +311,8 @@ public struct AIChatPageContextData: Codable, Equatable {
 /// ones it missed (via `getAIChatSelectionContext`), mirroring how `AIChatPageContextHandler` backs
 /// `getAIChatPageContext`. Unlike the single-slot page-context handler, selections append and the
 /// list is read non-destructively (the FE dedupes by `id`); it's cleared when a prompt is submitted.
+///
+/// Not used where prompts are composed natively — those carry selections on `AIChatNativePrompt.selections`.
 public final class AIChatSelectionContextHandler {
     private var selections: [AIChatSelectionContextData] = []
 

@@ -1206,6 +1206,10 @@ class TabViewController: UIViewController {
             self?.isSearchSelectionItemAvailable ?? false
         }
 
+        webView.isSelectionFrameAvailable = { [weak self] in
+            self?.userScripts?.selectionFrameScript.frameWithSelection != nil
+        }
+
         webView.askAIChatHandler = { [weak self] text in
             guard let self else { return }
             self.delegate?.tab(self, didRequestAIChatForSelectedText: text)
@@ -1214,6 +1218,10 @@ class TabViewController: UIViewController {
         webView.searchWithDuckDuckGoHandler = { [weak self] text in
             guard let self else { return }
             self.delegate?.tab(self, didRequestSearchForSelectedText: text)
+        }
+
+        webView.selectionFrameProvider = { [weak self] in
+            self?.userScripts?.selectionFrameScript.frameWithSelection
         }
     }
 
@@ -2208,6 +2216,8 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+        userScripts?.selectionFrameScript.reset()
+
         if let url = webView.url {
             let finalURL = duckPlayerNavigationHandler.getDuckURLFor(url)
             viewModel.captureWebviewDidCommit(finalURL)
@@ -3944,6 +3954,8 @@ extension TabViewController: WKUIDelegate {
     }
 
     private func handleWebContentProcessDidTerminate(_ webView: WKWebView, reasonName: String?) {
+        userScripts?.selectionFrameScript.reset()
+
         let isDuckAITab = webView.url?.isDuckAIURL == true
         if isDuckAITab {
             DailyPixel.fireDailyAndCount(.aiChatTabDidTerminate, error: nil, withAdditionalParameters: [:])

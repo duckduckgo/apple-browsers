@@ -36,12 +36,6 @@ public extension OnboardingSharedPixelHandling {
         fire(event, source: nil, flow: nil, variant: nil)
     }
     #endif
-
-    func fire(_ event: OnboardingSharedPixelEvent,
-              source: OnboardingPixelParameter.Source?,
-              flow: OnboardingPixelParameter.Flow?) {
-        fire(event, source: source, flow: flow, variant: nil)
-    }
 }
 
 public enum OnboardingPixelParameter {
@@ -55,13 +49,31 @@ public enum OnboardingPixelParameter {
     public enum Flow: String {
         case `default` = "default"
         case duckAI = "duckai"
-        case tailoredByDownloadReason = "tailored_download_reason"
+        case tailoredByDownloadReason = "tailored_by_download_reason"
     }
 
     /// Pixel parameter for the variant of the onboarding flow the user enters after a branching step during onboarding.
     public enum Variant: String {
         case duckAISearch = "search_plus_duckai-search"
         case duckAIChat = "search_plus_duckai-chat"
+        // Records the download reason the user selected, passed to every pixel after the choice for internal cohort segmentation.
+        case downloadReasonSearch = "download_reason_search"
+        case downloadReasonAIChat = "download_reason_ai-chat"
+        case downloadReasonNoAI = "download_reason_no-ai"
+        case downloadReasonAdBlocking = "download_reason_ad-blocking"
+    }
+}
+
+public extension OnboardingPixelParameter.Variant {
+    /// Maps the domain download reason to its pixel variant, so the selected reason can be
+    /// recorded on the segmented-onboarding pixels for cohort segmentation.
+    init(_ reason: OnboardingDownloadReason) {
+        switch reason {
+        case .browserPrivately: self = .downloadReasonSearch
+        case .privateAIChat:    self = .downloadReasonAIChat
+        case .noAI:             self = .downloadReasonNoAI
+        case .blockAds:         self = .downloadReasonAdBlocking
+        }
     }
 }
 
@@ -193,7 +205,17 @@ public enum OnboardingSharedPixelEvent: PixelKit.Event, Equatable {
     case trackersBlocked(EngagementEvent)
     case fireButton(EngagementEvent)
     case end(EngagementEvent)
+    case endTryDuckAI(EngagementEvent) // iOS only — the Try Duck.ai end-of-journey dialog
     case subscriptionPromo(EngagementEvent) // iOS only
+
+    // Segmented onboarding (download-reason) events — iOS only
+    case downloadChoice(DownloadChoiceEvent)
+    case preferencesSerp(SerpEngagementEvent)
+    case preferencesAIModel(AIModelEvent)
+    case preferencesAIToggleMode(AIToggleModeEvent)
+    case preferencesAISearch(AISearchEngagementEvent)
+    case preferencesDuckAI(DuckAIEvent)
+    case preferencesAdBlocking(AdBlockingEngagementEvent)
 
     public enum EngagementEvent: Equatable {
         public enum Value: String {
@@ -276,6 +298,60 @@ public enum OnboardingSharedPixelEvent: PixelKit.Event, Equatable {
         case shown
         case clicked(Value)
     }
+
+    /// The download-reason selection screen. `Value` records the reason the user chose.
+    public enum DownloadChoiceEvent: Equatable {
+        public enum Value: String {
+            case search
+            case aiChat = "ai-chat"
+            case noAI = "no-ai"
+            case adBlocking = "ad-blocking"
+        }
+
+        case shown
+        case clicked(Value)
+    }
+
+    /// The SERP preferences screen.
+    public enum SerpEngagementEvent: Equatable {
+        case shown
+        case clicked(recentlyVisitedSitesEnabled: Bool, safeSearchEnabled: Bool)
+    }
+
+    /// The AI search settings screen.
+    public enum AISearchEngagementEvent: Equatable {
+        case shown
+        case clicked(searchAssistEnabled: Bool, aiGeneratedImagesEnabled: Bool)
+    }
+
+    /// The ad-blocking & cookie preferences screen ("Internet, without the noise").
+    public enum AdBlockingEngagementEvent: Equatable {
+        case shown
+        case clicked(youTubeAdBlockingEnabled: Bool, cookiePopUpProtectionEnabled: Bool, popUpsWithoutOptOutsEnabled: Bool)
+    }
+
+    /// The AI model picker. The selected model as a coarse label (e.g. "claude", "chatgpt")
+    public enum AIModelEvent: Equatable {
+        case shown
+        case clicked(model: String)
+    }
+
+    /// The Search/AI address-bar toggle-mode screen.
+    public enum AIToggleModeEvent: Equatable {
+        case shown
+        case clicked(openNewTabsWithAIChat: Bool)
+    }
+
+    /// The "Keep Duck.ai on / Turn Duck.ai off" screen.
+    public enum DuckAIEvent: Equatable {
+        public enum Value: String {
+            case on
+            case off
+        }
+
+        case shown
+        case clicked(Value)
+    }
 }
 
 public extension OnboardingSharedPixelEvent {
@@ -291,6 +367,8 @@ public extension OnboardingSharedPixelEvent {
         if let value {
             parameters["value"] = value
         }
+
+        parameters.merge(extraParameters) { _, new in new }
 
         return parameters
     }
@@ -326,7 +404,15 @@ private extension OnboardingSharedPixelEvent {
         case .trackersBlocked: return "trackers-blocked"
         case .fireButton: return "fire-button"
         case .end: return "end"
+        case .endTryDuckAI: return "end-try-duckai"
         case .subscriptionPromo: return "subscription-promo"
+        case .downloadChoice: return "download-choice"
+        case .preferencesSerp: return "preferences_serp"
+        case .preferencesAIModel: return "preferences_ai-model"
+        case .preferencesAIToggleMode: return "preferences_ai-toggle-mode"
+        case .preferencesAISearch: return "preferences_ai-search"
+        case .preferencesDuckAI: return "preferences_duck-ai"
+        case .preferencesAdBlocking: return "preferences_ad-blocking"
         }
     }
 
@@ -351,6 +437,7 @@ private extension OnboardingSharedPixelEvent {
                 .trackersBlocked(let event),
                 .fireButton(let event),
                 .end(let event),
+                .endTryDuckAI(let event),
                 .subscriptionPromo(let event):
             switch event {
             case .shown:
@@ -403,6 +490,55 @@ private extension OnboardingSharedPixelEvent {
             case .clicked:
                 return ParameterValues.clicked
             }
+        case .downloadChoice(let event):
+            switch event {
+            case .shown:
+                return ParameterValues.shown
+            case .clicked:
+                return ParameterValues.clicked
+            }
+        case .preferencesSerp(let event):
+            switch event {
+            case .shown:
+                return ParameterValues.shown
+            case .clicked:
+                return ParameterValues.clicked
+            }
+        case .preferencesAISearch(let event):
+            switch event {
+            case .shown:
+                return ParameterValues.shown
+            case .clicked:
+                return ParameterValues.clicked
+            }
+        case .preferencesAdBlocking(let event):
+            switch event {
+            case .shown:
+                return ParameterValues.shown
+            case .clicked:
+                return ParameterValues.clicked
+            }
+        case .preferencesAIModel(let event):
+            switch event {
+            case .shown:
+                return ParameterValues.shown
+            case .clicked:
+                return ParameterValues.clicked
+            }
+        case .preferencesAIToggleMode(let event):
+            switch event {
+            case .shown:
+                return ParameterValues.shown
+            case .clicked:
+                return ParameterValues.clicked
+            }
+        case .preferencesDuckAI(let event):
+            switch event {
+            case .shown:
+                return ParameterValues.shown
+            case .clicked:
+                return ParameterValues.clicked
+            }
         }
     }
 
@@ -420,6 +556,7 @@ private extension OnboardingSharedPixelEvent {
                 .trackersBlocked(let event),
                 .fireButton(let event),
                 .end(let event),
+                .endTryDuckAI(let event),
                 .subscriptionPromo(let event):
             switch event {
             case .shown, .confirmed:
@@ -474,6 +611,74 @@ private extension OnboardingSharedPixelEvent {
             case .clicked(let value):
                 return value.rawValue
             }
+        case .downloadChoice(let event):
+            switch event {
+            case .shown:
+                return nil
+            case .clicked(let value):
+                return value.rawValue
+            }
+        case .preferencesSerp(let event):
+            switch event {
+            case .shown, .clicked:
+                // Toggle states are emitted via `extraParameters`, not as `value`.
+                return nil
+            }
+        case .preferencesAISearch(let event):
+            switch event {
+            case .shown, .clicked:
+                return nil
+            }
+        case .preferencesAdBlocking(let event):
+            switch event {
+            case .shown, .clicked:
+                return nil
+            }
+        case .preferencesAIModel(let event):
+            switch event {
+            case .shown:
+                return nil
+            case .clicked(let model):
+                return model
+            }
+        case .preferencesAIToggleMode(let event):
+            switch event {
+            case .shown:
+                return nil
+            case .clicked(let openNewTabsWithAIChat):
+                return String(openNewTabsWithAIChat)
+            }
+        case .preferencesDuckAI(let event):
+            switch event {
+            case .shown:
+                return nil
+            case .clicked(let value):
+                return value.rawValue
+            }
+        }
+    }
+
+    // Screen-specific toggle states emitted as their own pixel parameters (in addition to `event`/`value`).
+    var extraParameters: [String: String] {
+        switch self {
+        case .preferencesSerp(.clicked(let recentlyVisitedSitesEnabled, let safeSearchEnabled)):
+            return [
+                "recently_visited_sites_enabled": String(recentlyVisitedSitesEnabled),
+                "safe_search_enabled": String(safeSearchEnabled)
+            ]
+        case .preferencesAISearch(.clicked(let searchAssistEnabled, let aiGeneratedImagesEnabled)):
+            return [
+                "search_assist_enabled": String(searchAssistEnabled),
+                "ai_generated_images_enabled": String(aiGeneratedImagesEnabled)
+            ]
+        case .preferencesAdBlocking(.clicked(let youTubeAdBlockingEnabled, let cookiePopUpProtectionEnabled, let popUpsWithoutOptOutsEnabled)):
+            return [
+                "youtube_ad_blocking_enabled": String(youTubeAdBlockingEnabled),
+                "cookie_popup_protection_enabled": String(cookiePopUpProtectionEnabled),
+                "popups_without_optouts_enabled": String(popUpsWithoutOptOutsEnabled)
+            ]
+        default:
+            return [:]
         }
     }
 }

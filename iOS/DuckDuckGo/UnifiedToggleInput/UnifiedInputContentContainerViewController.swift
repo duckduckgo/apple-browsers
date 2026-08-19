@@ -50,7 +50,6 @@ protocol UnifiedInputContentContainerViewControllerDelegate: AnyObject {
 
 final class UnifiedInputContentContainerViewController: UIViewController {
 
-
     // MARK: - Properties
 
     var suggestionTrayDependencies: SuggestionTrayDependencies?
@@ -964,7 +963,6 @@ private extension UnifiedInputContentContainerViewController {
             }
             .store(in: &cancellables)
     }
-
 
     private func refreshVisibleContent(animateContentUpdates: Bool) {
         guard isContentActive else {

@@ -683,7 +683,6 @@ extension NewTabPageViewController {
             }
         }
 
-
         addChild(hostingController)
         view.addSubview(hostingController.view)
         hostingController.view.translatesAutoresizingMaskIntoConstraints = false

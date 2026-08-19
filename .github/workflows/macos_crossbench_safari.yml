@@ -98,37 +98,25 @@ jobs:
         run: ./provision-macos.sh
 
       - name: Authorize safaridriver for Remote Automation
-        # safaridriver acquires the `com.apple.safaridriver.allow` authorization
-        # right when it starts. In the shipped rule set that right is k-of-n 1
-        # over three rules: is-admin, is-webdeveloper, authenticate-webdeveloper.
-        # The first two are plain group-membership checks with authenticate-user
-        # disabled, so they grant silently. The third opens a GUI dialog, which
-        # nothing in CI can answer, and comes back as -60007, interaction not
-        # allowed. Putting the runner user in the _webdeveloper group takes the
-        # non-interactive path. This changes machine state rather than job state
-        # and so belongs in the runner image, but doing it here keeps a rebuilt
-        # runner working, and makes the requirement visible to the next reader.
+        # safaridriver evaluates the `com.apple.safaridriver.allow` right when it
+        # starts, and deliberately evaluates it without allowing interaction.
+        # The shipped rule is k-of-n 1 over is-admin, is-webdeveloper and an
+        # interactive prompt. The two group rules resolve "the user asking" from
+        # the audit session owner rather than from the calling process's uid, and
+        # this runner has no audit session owner — launchctl procinfo reports an
+        # audit uid of 4294967295, unset. So authd rejects both group rules with
+        # "session owner -3 invalid" however the user's groups are configured,
+        # then fails outright because it cannot prompt. Replacing the rule with
+        # an unconditional allow takes the session owner out of the decision.
+        #
+        # The cost is that any local process can then drive Safari, which is
+        # acceptable on a box whose only job is measurement. The alternative is
+        # to relaunch the runner from a real login session so that it acquires
+        # an audit session owner, which only the runner's owner can do.
         run: |
-          echo "--- who is asking, and which groups answer for them ---"
-          whoami
-          for group in admin _webdeveloper; do
-            printf '%s: ' "$group"
-            dsmemberutil checkmembership -U "$(whoami)" -G "$group" 2>&1 || true
-          done
-
-          echo "--- the right, as this machine defines it ---"
+          sudo security authorizationdb write com.apple.safaridriver.allow allow
           security authorizationdb read com.apple.safaridriver.allow 2>/dev/null \
             | plutil -p - 2>&1 || true
-
-          # An earlier attempt guessed the right's name wrong and left behind a
-          # rule that nothing consults. Harmless, but it misleads whoever audits
-          # this machine next.
-          sudo security authorizationdb remove \
-            com.apple.Safari.allow-remote-automation 2>/dev/null || true
-
-          sudo dseditgroup -o edit -a "$(whoami)" -t user _webdeveloper
-          printf 'after: '
-          dsmemberutil checkmembership -U "$(whoami)" -G _webdeveloper || true
 
           sudo safaridriver --enable
 

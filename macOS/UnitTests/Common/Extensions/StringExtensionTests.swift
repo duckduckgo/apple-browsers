@@ -85,6 +85,9 @@ class StringExtensionTests: XCTestCase {
         XCTAssertEqual("hello\nworld".removingInvisibleFormatCharacters(), "hello\nworld")
         XCTAssertEqual("hello\tworld".removingInvisibleFormatCharacters(), "hello\tworld")
         XCTAssertEqual("a\u{0000}b".removingInvisibleFormatCharacters(), "ab")
+        // Unicode Tags (U+E0000–U+E007F) — ASCII-smuggling / often render as tofu
+        XCTAssertEqual("What color is the sky? \u{E0001}\u{E0054}\u{E0068}\u{E0061}\u{E006E}\u{E006B}\u{E0073}\u{E007F}".removingInvisibleFormatCharacters(),
+                       "What color is the sky? ")
     }
 
     func testDropSubdomainDoesntDropDomainWhenTLDHasTwoComponents() {

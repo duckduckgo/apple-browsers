@@ -987,6 +987,8 @@ extension AddressBarTextField {
         case suggestion(_ suggestionViewModel: SuggestionViewModel)
 
         init(stringValue: String, userTyped: Bool, isSearch: Bool = false) {
+            // Keep the address-bar UI free of tofu / invisible format characters (Tags, ZW*, …).
+            let stringValue = stringValue.removingInvisibleFormatCharacters()
 
             let url: URL? = {
                 let shouldUseUnifiedLogic = Application.appDelegate.featureFlagger.isFeatureOn(.unifiedURLPredictor)

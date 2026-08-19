@@ -166,7 +166,13 @@ final class AddressBarTextEditor: NSTextView {
     override func paste(_ sender: Any?) {
         // Fixes an issue when url-name instead of url is pasted
         if let url = NSPasteboard.general.url {
-            super.pasteAsPlainText(url.absoluteString)
+            let filtered = url.absoluteString.removingInvisibleFormatCharacters()
+            guard !filtered.isEmpty else { return }
+            super.pasteAsPlainText(filtered)
+        } else if let pasted = NSPasteboard.general.string(forType: .string) {
+            let filtered = pasted.removingInvisibleFormatCharacters()
+            guard !filtered.isEmpty else { return }
+            super.pasteAsPlainText(filtered)
         } else {
             super.paste(sender)
         }
@@ -196,10 +202,14 @@ final class AddressBarTextEditor: NSTextView {
             super.insertText(string, replacementRange: replacementRange)
             return
         }
-        breakUndoCoalescingIfNeeded(for: InputType(string))
+        // Drop default-ignorables / controls before they hit the field (render as tofu).
+        let filtered = string.removingInvisibleFormatCharacters()
+        guard !filtered.isEmpty else { return }
 
-        addressBar.textView(self, userTypedString: string, at: replacementRange.location == NSNotFound ? self.selectedRange() : replacementRange) {
-            super.insertText(string, replacementRange: replacementRange)
+        breakUndoCoalescingIfNeeded(for: InputType(filtered))
+
+        addressBar.textView(self, userTypedString: filtered, at: replacementRange.location == NSNotFound ? self.selectedRange() : replacementRange) {
+            super.insertText(filtered, replacementRange: replacementRange)
         }
     }
 

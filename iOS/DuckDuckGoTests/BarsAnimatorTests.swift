@@ -211,23 +211,29 @@ class BarsAnimatorFloatingTests: XCTestCase {
         XCTAssertEqual(delegate.receivedMessages.last, .setBarsVisibility(0.0))
     }
 
-    func testWhenScrollingHalfTheTravelDistanceThenBarsAreHalfVisible() {
+    /// Below `Metrics.floatingSnapCommitDistance` the chrome still tracks the finger live, exactly like
+    /// before -- the commit-and-snap behaviour (covered separately below) only kicks in once a drag
+    /// crosses that distance.
+    func testWhenScrollingBelowTheCommitThresholdThenBarsTrackProportionally() throws {
         let (sut, delegate, clock) = makeFloatingSUT()
         let scrollView = mockTallScrollView()
+        let subThreshold = BarsAnimator.Metrics.floatingSnapCommitDistance / 2
 
         scrollView.contentOffset.y = 0
         sut.didStartScrolling(in: scrollView)
-        scroll(sut, scrollView, clock, to: stride(from: 10.0, through: travel / 2, by: 10.0))
+        scroll(sut, scrollView, clock, to: stride(from: subThreshold / 4, through: subThreshold, by: subThreshold / 4))
 
         XCTAssertEqual(sut.barsState, .transitioning)
-        XCTAssertEqual(try XCTUnwrap(delegate.receivedMessages.last?.percent), 0.5, accuracy: 0.001)
+        XCTAssertEqual(try XCTUnwrap(delegate.receivedMessages.last?.percent), 1.0 - (subThreshold / travel), accuracy: 0.001)
     }
 
     /// `combinedBarsHeight` is ~188pt with a bottom address bar but ~122pt with a top one, so gearing off
     /// it would collapse the two positions at different speeds. The travel is absolute precisely to avoid
-    /// that, and this is the regression test for it.
+    /// that, and this is the regression test for it. Kept below the commit threshold so it's still
+    /// exercising live tracking rather than the snap.
     func testWhenBarHeightDiffersThenTravelDistanceIsUnchanged() throws {
         var finalPercents: [CGFloat] = []
+        let subThreshold = BarsAnimator.Metrics.floatingSnapCommitDistance / 2
 
         for toolbarHeight in [CGFloat(128), CGFloat(62)] {
             let (sut, delegate, clock) = makeFloatingSUT()
@@ -236,7 +242,7 @@ class BarsAnimatorFloatingTests: XCTestCase {
 
             scrollView.contentOffset.y = 0
             sut.didStartScrolling(in: scrollView)
-            scroll(sut, scrollView, clock, to: stride(from: 10.0, through: travel / 2, by: 10.0))
+            scroll(sut, scrollView, clock, to: stride(from: subThreshold / 4, through: subThreshold, by: subThreshold / 4))
 
             finalPercents.append(try XCTUnwrap(delegate.receivedMessages.last?.percent))
         }
@@ -245,18 +251,20 @@ class BarsAnimatorFloatingTests: XCTestCase {
     }
 
     /// Holds only while the per-frame scroll stays inside the collapse rate cap — above it the cap
-    /// deliberately throttles, which `testWhenFlickIsFasterThanTheRateCapThenProgressIsLimited` covers.
-    /// Both step sizes divide the half-travel exactly so the runs end on the same offset.
+    /// deliberately throttles, superseded once a drag crosses the commit distance (see
+    /// `testWhenScrollJumpsFarPastTheCommitThresholdInASingleFrameThenChromeSnapsImmediately`). Both step
+    /// sizes divide the sub-threshold distance exactly so the runs end on the same offset.
     func testWhenFrameStepSizeDiffersThenFinalProgressIsUnchanged() throws {
         var finalPercents: [CGFloat] = []
+        let subThreshold = BarsAnimator.Metrics.floatingSnapCommitDistance / 2
 
-        for step in [CGFloat(5), CGFloat(10)] {
+        for step in [CGFloat(2), CGFloat(4)] {
             let (sut, delegate, clock) = makeFloatingSUT()
             let scrollView = mockTallScrollView()
 
             scrollView.contentOffset.y = 0
             sut.didStartScrolling(in: scrollView)
-            scroll(sut, scrollView, clock, to: stride(from: step, through: travel / 2, by: step))
+            scroll(sut, scrollView, clock, to: stride(from: step, through: subThreshold, by: step))
 
             finalPercents.append(try XCTUnwrap(delegate.receivedMessages.last?.percent))
         }
@@ -265,14 +273,16 @@ class BarsAnimatorFloatingTests: XCTestCase {
     }
 
     /// The legacy formula re-seeded from `transitionSpeed * transitionProgress`, so a second drag resumed
-    /// at half the progress it had visually reached.
+    /// at half the progress it had visually reached. Kept below the commit threshold so the drag is still
+    /// live-tracking, not already snapped, when it's interrupted.
     func testWhenDragIsInterruptedThenProgressResumesWhereItLeftOff() throws {
         let (sut, delegate, clock) = makeFloatingSUT()
         let scrollView = mockTallScrollView()
+        let subThreshold = BarsAnimator.Metrics.floatingSnapCommitDistance / 2
 
         scrollView.contentOffset.y = 0
         sut.didStartScrolling(in: scrollView)
-        scroll(sut, scrollView, clock, to: stride(from: 10.0, through: travel / 2, by: 10.0))
+        scroll(sut, scrollView, clock, to: stride(from: subThreshold / 4, through: subThreshold, by: subThreshold / 4))
         let interruptedPercent = try XCTUnwrap(delegate.receivedMessages.last?.percent)
 
         // Lift and start a fresh drag from the same offset.
@@ -303,71 +313,136 @@ class BarsAnimatorFloatingTests: XCTestCase {
         XCTAssertLessThan(percent, 0.1, "1pt of overscroll must not reveal a large slice of the chrome")
     }
 
-    func testWhenFlickIsFasterThanTheRateCapThenProgressIsLimited() throws {
+    /// The core of the "snap once you start scrolling" feature: a drag doesn't need to reach the full
+    /// travel distance, or even a second frame, before the chrome fully commits. This is what stops the
+    /// bar from ever parking at a half-transitioned position if the user holds the scroll steady mid-drag
+    /// without lifting -- by the time they could hold anything, the commit (and its animation) already
+    /// fired.
+    func testWhenScrollJumpsFarPastTheCommitThresholdInASingleFrameThenChromeSnapsImmediately() {
         let (sut, delegate, clock) = makeFloatingSUT()
         let scrollView = mockTallScrollView()
 
         scrollView.contentOffset.y = 0
         sut.didStartScrolling(in: scrollView)
 
-        // Far past the full travel in a single frame — uncapped this would complete instantly.
+        // Far past the commit threshold in a single frame, as a real fast flick would be.
         scrollView.contentOffset.y = 1000
         clock.advance(by: 1.0 / 60.0)
         sut.didScroll(in: scrollView)
 
-        let maxStep = BarsAnimator.Metrics.maxCollapseProgressPerSecond * CGFloat(1.0 / 60.0)
-        let percent = try XCTUnwrap(delegate.receivedMessages.last?.percent)
-        XCTAssertEqual(percent, 1.0 - maxStep, accuracy: 0.001)
-        XCTAssertNotEqual(sut.barsState, .hidden, "A single frame must not complete the collapse")
+        XCTAssertEqual(sut.barsState, .hidden, "Crossing the commit threshold, even within one frame, must snap immediately rather than waiting for release")
+        XCTAssertEqual(delegate.receivedMessages.last, .setBarsVisibility(0.0))
+    }
+
+    /// Symmetric case: revealing from hidden also snaps immediately once the drag crosses the commit
+    /// threshold, without needing `didFinishScrolling` to ever be called.
+    func testWhenScrollJumpsFarPastTheCommitThresholdWhileHiddenThenChromeRevealsImmediately() {
+        let (sut, delegate, clock) = makeFloatingSUT()
+        let scrollView = mockTallScrollView()
+
+        sut.hideBars(animated: false)
+        delegate.receivedMessages.removeAll()
+        scrollView.contentOffset.y = 500
+        sut.didStartScrolling(in: scrollView)
+
+        scrollView.contentOffset.y = 0
+        clock.advance(by: 1.0 / 60.0)
+        sut.didScroll(in: scrollView)
+
+        XCTAssertEqual(sut.barsState, .revealed)
+        XCTAssertEqual(delegate.receivedMessages.last, .setBarsVisibility(1.0))
+    }
+
+    /// Once committed, holding the scroll steady (no further `didScroll` calls, finger still down) must
+    /// not undo or re-litigate the commit -- this is the exact "held mid-way" scenario the feature exists
+    /// to fix, just expressed as "nothing changes" rather than "something animates," since the commit
+    /// animation itself already ran to completion independent of further scroll events.
+    func testWhenScrollHoldsSteadyAfterCommitThenStateStaysCommitted() {
+        let (sut, delegate, clock) = makeFloatingSUT()
+        let scrollView = mockTallScrollView()
+        let commit = BarsAnimator.Metrics.floatingSnapCommitDistance
+
+        scrollView.contentOffset.y = 0
+        sut.didStartScrolling(in: scrollView)
+        advanceOffset(sut, scrollView, clock, to: commit + 4)
+        XCTAssertEqual(sut.barsState, .hidden)
+
+        let messageCountAtCommit = delegate.receivedMessages.count
+        clock.advance(by: 1.0 / 60.0)
+        sut.didScroll(in: scrollView) // offset unchanged: finger held steady mid-drag
+
+        XCTAssertEqual(sut.barsState, .hidden)
+        XCTAssertEqual(delegate.receivedMessages.count, messageCountAtCommit, "A held, unmoving scroll must not re-trigger the commit")
+    }
+
+    /// Reversing far enough past the point of commit flips the commitment, and this must keep working
+    /// across any number of reversals within one continuous drag (finger never lifted) -- the scenario
+    /// that used to defeat the legacy re-anchoring formula for live tracking, now replayed against the
+    /// commit/snap model.
+    func testWhenReversingPastTheCommitThresholdMultipleTimesThenFinalStateMatchesLastDirection() {
+        let (sut, delegate, clock) = makeFloatingSUT()
+        let scrollView = mockTallScrollView()
+        let commit = BarsAnimator.Metrics.floatingSnapCommitDistance
+
+        scrollView.contentOffset.y = 0
+        sut.didStartScrolling(in: scrollView)
+
+        // Down past the commit threshold: collapses immediately, without waiting for release.
+        advanceOffset(sut, scrollView, clock, to: commit + 4)
+        XCTAssertEqual(sut.barsState, .hidden)
+        XCTAssertEqual(delegate.receivedMessages.last, .setBarsVisibility(0.0))
+
+        // ...reverse far enough past the commit point to flip to revealing...
+        advanceOffset(sut, scrollView, clock, to: 0)
+        XCTAssertEqual(sut.barsState, .revealed)
+        XCTAssertEqual(delegate.receivedMessages.last, .setBarsVisibility(1.0))
+
+        // ...and back down again, never having lifted the finger.
+        advanceOffset(sut, scrollView, clock, to: commit + 4)
+        XCTAssertEqual(sut.barsState, .hidden)
+        XCTAssertEqual(delegate.receivedMessages.last, .setBarsVisibility(0.0))
     }
 
     // MARK: - Release precision
 
     /// The bug this guards: gating the progress-based decision on `velocity == 0` means a real touch
     /// release (which is essentially never exactly zero) is decided by the sign of noise, not by how
-    /// far the user actually dragged.
-    func testWhenReleaseVelocityIsBelowCommitThresholdThenOutcomeIsDecidedByProgress() {
-        let cases: [(progress: CGFloat, velocitySign: CGFloat, expected: BarsAnimator.State)] = [
-            (0.6, 1, .hidden),    // past halfway, released with noise velocity in the "continue" direction
-            (0.6, -1, .hidden),   // ...and in the "reverse" direction: progress wins either way
-            (0.4, 1, .revealed),
-            (0.4, -1, .revealed),
-        ]
+    /// far the user actually dragged. Now that a real drag commits well before halfway (see the snap
+    /// tests above), a release that's still `.transitioning` can only be at a small progress -- so with
+    /// noise velocity in either direction, it should always reveal.
+    func testWhenReleaseVelocityIsBelowCommitThresholdWhileStillUncommittedThenBarsReveal() {
+        let subThreshold = BarsAnimator.Metrics.floatingSnapCommitDistance / 2
 
-        for testCase in cases {
+        for velocitySign: CGFloat in [1, -1] {
             let (sut, delegate, clock) = makeFloatingSUT()
             let scrollView = mockTallScrollView()
-            let travel = BarsAnimator.Metrics.floatingTransitionTravel
 
             scrollView.contentOffset.y = 0
             sut.didStartScrolling(in: scrollView)
-            advanceOffset(sut, scrollView, clock, to: travel * testCase.progress)
-            XCTAssertEqual(sut.transitionProgressForTesting, testCase.progress, accuracy: 0.01)
+            advanceOffset(sut, scrollView, clock, to: subThreshold)
             XCTAssertEqual(sut.barsState, .transitioning)
 
-            let noiseVelocity = testCase.velocitySign * (BarsAnimator.Metrics.floatingVelocityCommitThreshold - 0.01)
+            let noiseVelocity = velocitySign * (BarsAnimator.Metrics.floatingVelocityCommitThreshold - 0.01)
             sut.didFinishScrolling(in: scrollView, velocity: noiseVelocity)
 
-            XCTAssertEqual(sut.barsState, testCase.expected,
-                          "progress \(testCase.progress), velocity sign \(testCase.velocitySign)")
-            XCTAssertEqual(delegate.receivedMessages.last,
-                          .setBarsVisibility(testCase.expected == .hidden ? 0.0 : 1.0))
+            XCTAssertEqual(sut.barsState, .revealed, "velocity sign \(velocitySign)")
+            XCTAssertEqual(delegate.receivedMessages.last, .setBarsVisibility(1.0))
         }
     }
 
     func testWhenReleaseVelocityIsAboveCommitThresholdThenDirectionWins() {
         let (sut, delegate, clock) = makeFloatingSUT()
         let scrollView = mockTallScrollView()
-        let travel = BarsAnimator.Metrics.floatingTransitionTravel
+        let subThreshold = BarsAnimator.Metrics.floatingSnapCommitDistance / 2
 
-        // Only 20% collapsed -- progress alone would reveal -- but a real flick still commits to hiding.
+        // Only a small fraction collapsed -- progress alone would reveal -- but a real flick still commits to hiding.
         scrollView.contentOffset.y = 0
         sut.didStartScrolling(in: scrollView)
         sut.didScroll(in: scrollView) // primes lastProgressTimestamp
-        scrollView.contentOffset.y = travel * 0.2
+        scrollView.contentOffset.y = subThreshold
         clock.advance(by: 1.0)
         sut.didScroll(in: scrollView)
-        XCTAssertEqual(sut.transitionProgressForTesting, 0.2, accuracy: 0.01)
+        XCTAssertEqual(sut.barsState, .transitioning, "Must still be below the commit threshold for this test to be meaningful")
 
         sut.didFinishScrolling(in: scrollView, velocity: BarsAnimator.Metrics.floatingVelocityCommitThreshold + 0.1)
 
@@ -382,12 +457,12 @@ class BarsAnimatorFloatingTests: XCTestCase {
     func testWhenFlickVelocityIsAtTheCommitThresholdThenDurationMatchesTheBase() {
         let (sut, delegate, clock) = makeFloatingSUT()
         let scrollView = mockTallScrollView()
-        let travel = BarsAnimator.Metrics.floatingTransitionTravel
+        let subThreshold = BarsAnimator.Metrics.floatingSnapCommitDistance / 2
 
         scrollView.contentOffset.y = 0
         sut.didStartScrolling(in: scrollView)
         sut.didScroll(in: scrollView) // primes lastProgressTimestamp
-        scrollView.contentOffset.y = travel * 0.2
+        scrollView.contentOffset.y = subThreshold
         clock.advance(by: 1.0)
         sut.didScroll(in: scrollView)
 
@@ -399,12 +474,12 @@ class BarsAnimatorFloatingTests: XCTestCase {
     func testWhenFlickVelocityIsAtOrAboveTheReferenceThenDurationIsTheFastestFloor() {
         let (sut, delegate, clock) = makeFloatingSUT()
         let scrollView = mockTallScrollView()
-        let travel = BarsAnimator.Metrics.floatingTransitionTravel
+        let subThreshold = BarsAnimator.Metrics.floatingSnapCommitDistance / 2
 
         scrollView.contentOffset.y = 0
         sut.didStartScrolling(in: scrollView)
         sut.didScroll(in: scrollView) // primes lastProgressTimestamp
-        scrollView.contentOffset.y = travel * 0.2
+        scrollView.contentOffset.y = subThreshold
         clock.advance(by: 1.0)
         sut.didScroll(in: scrollView)
 
@@ -416,12 +491,12 @@ class BarsAnimatorFloatingTests: XCTestCase {
     func testWhenFlickVelocityIsBetweenTheThresholdsThenDurationIsBetweenBaseAndFastest() {
         let (sut, delegate, clock) = makeFloatingSUT()
         let scrollView = mockTallScrollView()
-        let travel = BarsAnimator.Metrics.floatingTransitionTravel
+        let subThreshold = BarsAnimator.Metrics.floatingSnapCommitDistance / 2
 
         scrollView.contentOffset.y = 0
         sut.didStartScrolling(in: scrollView)
         sut.didScroll(in: scrollView) // primes lastProgressTimestamp
-        scrollView.contentOffset.y = travel * 0.2
+        scrollView.contentOffset.y = subThreshold
         clock.advance(by: 1.0)
         sut.didScroll(in: scrollView)
 
@@ -440,12 +515,12 @@ class BarsAnimatorFloatingTests: XCTestCase {
         func finishDrag(withVelocity velocity: CGFloat) -> CGFloat? {
             let (sut, delegate, clock) = makeFloatingSUT()
             let scrollView = mockTallScrollView()
-            let travel = BarsAnimator.Metrics.floatingTransitionTravel
+            let subThreshold = BarsAnimator.Metrics.floatingSnapCommitDistance / 2
 
             scrollView.contentOffset.y = 0
             sut.didStartScrolling(in: scrollView)
             sut.didScroll(in: scrollView) // primes lastProgressTimestamp
-            scrollView.contentOffset.y = travel * 0.2
+            scrollView.contentOffset.y = subThreshold
             clock.advance(by: 1.0)
             sut.didScroll(in: scrollView)
 
@@ -500,38 +575,29 @@ class BarsAnimatorFloatingTests: XCTestCase {
     }
 
     /// Regression test for the "continuous gesture, transitions won't happen sometimes" report: with a
-    /// single fixed anchor for the whole drag, reversing direction any number of times within one
-    /// continuous touch must keep tracking live -- not fall through a re-entry guard that compares
-    /// against a start position that's now stale after the first reversal.
-    func testWhenReversingDirectionMultipleTimesWithinOneDragThenTrackingNeverStalls() throws {
+    /// single fixed anchor for the whole drag, reversing direction within one continuous touch must keep
+    /// tracking live below the commit threshold -- not fall through a re-entry guard that compares against
+    /// a start position that's now stale after the first reversal. (Reversal *after* commit is covered by
+    /// `testWhenReversingPastTheCommitThresholdMultipleTimesThenFinalStateMatchesLastDirection` above.)
+    func testWhenReversingDirectionBelowTheCommitThresholdThenTrackingNeverStalls() throws {
         let (sut, delegate, clock) = makeFloatingSUT()
         let scrollView = mockTallScrollView()
-        let travel = BarsAnimator.Metrics.floatingTransitionTravel
+        let subThreshold = BarsAnimator.Metrics.floatingSnapCommitDistance / 2
 
         scrollView.contentOffset.y = 0
         sut.didStartScrolling(in: scrollView)
 
-        // Down (collapsing)... each leg is stepped in small increments (see `advanceOffset`) so the
-        // collapse-direction rate limiter -- tuned for realistic frame deltas, capped per call
-        // regardless of how much wall-clock time a single big jump claims to cover -- never binds.
-        // That cap is separate, already-covered behaviour, not what this test is checking.
-        advanceOffset(sut, scrollView, clock, to: travel * 0.3)
-        XCTAssertEqual(try XCTUnwrap(delegate.receivedMessages.last?.percent), 0.7, accuracy: 0.01)
+        // Down (collapsing)...
+        advanceOffset(sut, scrollView, clock, to: subThreshold)
+        XCTAssertEqual(sut.barsState, .transitioning)
+        let collapsingPercent = try XCTUnwrap(delegate.receivedMessages.last?.percent)
 
-        // ...up (revealing)...
-        advanceOffset(sut, scrollView, clock, to: travel * 0.1)
-        XCTAssertEqual(try XCTUnwrap(delegate.receivedMessages.last?.percent), 0.9, accuracy: 0.01,
-                      "Must keep tracking after the first reversal, not stall")
+        // ...up (revealing), never having lifted the finger.
+        advanceOffset(sut, scrollView, clock, to: subThreshold / 4)
+        let revealingPercent = try XCTUnwrap(delegate.receivedMessages.last?.percent)
 
-        // ...down again (collapsing again)...
-        advanceOffset(sut, scrollView, clock, to: travel * 0.5)
-        XCTAssertEqual(try XCTUnwrap(delegate.receivedMessages.last?.percent), 0.5, accuracy: 0.01,
-                      "Must keep tracking after the second reversal too")
-
-        // ...up again (revealing again), never having lifted the finger.
-        advanceOffset(sut, scrollView, clock, to: 0)
-        XCTAssertEqual(sut.barsState, .revealed)
-        XCTAssertEqual(delegate.receivedMessages.last, .setBarsVisibility(1.0))
+        XCTAssertGreaterThan(revealingPercent, collapsingPercent, "Must keep tracking after the reversal, not stall")
+        XCTAssertEqual(sut.barsState, .transitioning)
     }
 
     func testWhenLegacyChromeThenMidPageDragUpFromHiddenDoesNothing() {

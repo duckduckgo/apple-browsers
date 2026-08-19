@@ -269,18 +269,19 @@ final class FireExecutorTests: XCTestCase {
 
     // MARK: - App Switcher Snapshot Tests
 
-    func testBurnCompletesAppSwitcherSnapshotCleanupBeforeTabDomainLookupWhenFeatureIsEnabled() async {
+    func testBurnClearsAppSwitcherSnapshotsAfterCoreWorkAndBeforeCompletionWhenFeatureIsEnabled() async {
         mockFeatureFlagger.enabledFeatureFlags.append(.appSwitcherSnapshotClearing)
         let snapshotCleaner = MockAppSwitcherSnapshotCleaner {
-            XCTAssertTrue(self.mockHistoryManager.tabHistoryCalls.isEmpty)
+            XCTAssertTrue(self.mockDelegate.didFinishBurningTabsCalled)
+            XCTAssertTrue(self.mockDelegate.didFinishBurningDataCalled)
+            XCTAssertTrue(self.mockDelegate.didFinishBurningAIHistoryCalled)
+            XCTAssertFalse(self.mockDelegate.didFinishBurningCalled)
         }
         let executor = makeFireExecutor(appSwitcherSnapshotCleaner: snapshotCleaner)
-        let request = makeFireRequest(options: .tabs, scope: .tab(viewModel: makeTabViewModel()))
 
-        await executor.burn(request: request, applicationState: .unknown)
+        await executor.burn(request: makeFireRequest(options: .all), applicationState: .unknown)
 
         XCTAssertEqual(snapshotCleaner.clearSnapshotsCallCount, 1)
-        XCTAssertEqual(mockHistoryManager.tabHistoryCalls, ["test-tab-uid"])
     }
 
     func testBurnDoesNotClearAppSwitcherSnapshotsWhenFeatureIsDisabled() async {

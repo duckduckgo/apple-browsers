@@ -270,10 +270,6 @@ class FireExecutor: FireExecuting {
         // Notify delegate that we're starting
         delegate?.willStartBurning(fireRequest: request)
 
-        if featureFlagger.isFeatureOn(.appSwitcherSnapshotClearing) {
-            await appSwitcherSnapshotCleaner.clearSnapshots()
-        }
-        
         // Compute flags
         let shouldBurnTabs = request.options.contains(.tabs)
         let shouldBurnData = request.options.contains(.data)
@@ -305,6 +301,10 @@ class FireExecutor: FireExecuting {
         // currentFireModeID. No-op for non-data burns (ID hasn't changed).
         if shouldBurnData {
             fireModeStorageController?.syncWithCurrentFireModeID()
+        }
+
+        if featureFlagger.isFeatureOn(.appSwitcherSnapshotClearing) {
+            await appSwitcherSnapshotCleaner.clearSnapshots()
         }
 
         // Notify delegate that we finished

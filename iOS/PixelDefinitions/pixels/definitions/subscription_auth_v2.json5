@@ -50,15 +50,7 @@
                 "key": "refresh_token_age_bucket_before",
                 "type": "string",
                 "description": "Bucketed age of the locally stored refresh token immediately before the token attempt; issued_in_future can indicate clock skew",
-                "enum": [
-                    "issued_in_future",
-                    "less_than_1_hour",
-                    "1_hour_to_1_day",
-                    "1_to_7_days",
-                    "7_to_30_days",
-                    "more_than_30_days",
-                    "unknown"
-                ]
+                "enum": ["issued_in_future", "less_than_1_hour", "1_hour_to_1_day", "1_to_3_days", "more_than_3_days", "unknown"]
             },
             {
                 "key": "cached_subscription_status_before",

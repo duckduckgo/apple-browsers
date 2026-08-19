@@ -287,7 +287,7 @@ final class SubscriptionPixelHandlerTests: XCTestCase {
             entitlementStateBefore: .present,
             accessTokenTimeRemainingBefore: .expired,
             refreshTokenTimeRemainingBefore: .moreThanThreeDays,
-            refreshTokenAgeBefore: .oneToSevenDays,
+            refreshTokenAgeBefore: .oneToThreeDays,
             cachedSubscriptionStatusBefore: .autoRenewable,
             cachedSubscriptionTrialStatusBefore: .active,
             cachedSubscriptionPurchasePlatformBefore: .appStore,

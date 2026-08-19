@@ -227,6 +227,14 @@ final class BrowserToolbarView: UIView {
         return (verticalContentPadding * 2) + targetHeight + omnibarHeight + omnibarToButtonsSpacing
     }
 
+    /// Height of the bar once the button row has fully collapsed away, leaving only the omnibar row.
+    /// This is what `setButtonRowCollapseProgress` shrinks the panel toward, and what `restingCapsuleFrame`
+    /// reports as the pill's morph target — a value stable across the whole collapse rather than the
+    /// live, mid-animation `buttonsHeightConstraint.constant`.
+    static func singleRowHeight(withOmnibarHeight omnibarHeight: CGFloat) -> CGFloat {
+        (verticalContentPadding * 2) + omnibarHeight
+    }
+
     override init(frame: CGRect) {
         super.init(frame: frame)
         backgroundColor = .clear
@@ -277,6 +285,13 @@ final class BrowserToolbarView: UIView {
     var arrangedToolbarButtonViews: [UIView] {
         buttonStack.arrangedSubviews
     }
+
+    #if DEBUG
+    /// Test seam for `setButtonRowCollapseProgress`'s effect on the button row and panel height.
+    var buttonRowAlphaForTesting: CGFloat { buttonStack.alpha }
+    var buttonRowTransformForTesting: CGAffineTransform { buttonStack.transform }
+    var panelHeightForTesting: CGFloat { buttonsHeightConstraint.constant }
+    #endif
 
     func setFloatingStyleEnabled(_ enabled: Bool, animated: Bool = false) {
         guard isFloatingStyleEnabled != enabled else { return }
@@ -576,10 +591,48 @@ final class BrowserToolbarView: UIView {
         let safeBottom = view.safeAreaInsets.bottom
         let insets = Self.floatingBarOuterInsets
         let width = bounds.width - insets.left - insets.right
-        let height = buttonsHeightConstraint.constant
+        // Once the button row has fully faded, the bar's shape is the single omnibar row -- not the
+        // live `buttonsHeightConstraint.constant`, which is still mid-shrink for part of the collapse
+        // and would make the pill's morph target move under it. Falls back to the live height when
+        // there's no omnibar to hand off to (the standalone, buttons-only toolbar).
+        let height = hasEmbeddedOmnibar
+            ? Self.singleRowHeight(withOmnibarHeight: omnibarHeightConstraint.constant)
+            : buttonsHeightConstraint.constant
         let offset = max(0, safeBottom - floatingBottomMargin)
         let bottom = bounds.maxY - safeBottom + offset
         return CGRect(x: bounds.minX + insets.left, y: bottom - height, width: width, height: height)
+    }
+
+    /// Drives the button-row fade/shrink stage of the scroll-coupled chrome collapse: as `collapseProgress`
+    /// goes from 0 (buttons fully shown) to 1 (buttons fully gone, bar down to just the omnibar row), the
+    /// button row fades and scales down while the panel's height shrinks to match. `collapseProgress` is
+    /// pre-normalized by the caller against `FloatingDomainCapsuleController.handoffStart` -- this view
+    /// only knows about its own two heights, not the bars-visibility fraction those are staged against.
+    /// A no-op (buttons fully shown, panel at full height) outside floating bottom mode, with an expanded
+    /// menu open, or under Reduce Motion. Returns the panel height actually applied, so the caller can
+    /// keep the outer toolbar-height layout constraint in lockstep (this view has no reference to it).
+    @discardableResult
+    func setButtonRowCollapseProgress(_ collapseProgress: CGFloat, reduceMotion: Bool) -> CGFloat {
+        let fullHeight = Self.totalHeight(withOmnibarHeight: omnibarHeightConstraint.constant, isFloating: isFloatingStyleEnabled)
+
+        guard isFloatingStyleEnabled, hasEmbeddedOmnibar, !hasExpandedContent, !reduceMotion else {
+            buttonStack.alpha = 1
+            buttonStack.transform = .identity
+            buttonsHeightConstraint.constant = fullHeight
+            return fullHeight
+        }
+
+        let progress = collapseProgress.clamped(to: 0...1)
+        buttonStack.alpha = 1 - progress
+        let scale = 1 - 0.2 * progress
+        buttonStack.transform = CGAffineTransform(scaleX: scale, y: scale)
+            .concatenating(CGAffineTransform(translationX: 0, y: 8 * progress))
+
+        let singleRowHeight = Self.singleRowHeight(withOmnibarHeight: omnibarHeightConstraint.constant)
+        let height = fullHeight - (fullHeight - singleRowHeight) * progress
+        buttonsHeightConstraint.constant = height
+        updateCornerStyle()
+        return height
     }
     
     /// Shifts the glass capsule down from its safe-area-anchored position toward the device bottom,

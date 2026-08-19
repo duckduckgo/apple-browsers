@@ -1623,16 +1623,21 @@ class MainViewController: UIViewController {
     }
 
     /// Alpha for the real chrome (nav bar / tabs / toolbar) during a bars transition. In the floating
-    /// capsule morph the chrome stays hidden through the resize band and only fades in over
-    /// `[handoffStart, 1]`, so the morph pill owns the visible transition. Everywhere else it tracks
-    /// `percent` linearly (unchanged behaviour).
+    /// capsule morph the real chrome is opaque above `handoffStart` (where the button row's own
+    /// fade/shrink, driven separately by `setButtonRowCollapseProgress`, is doing the visible work) and
+    /// transparent below it, with only a narrow ramp straddling the boundary — the complement of
+    /// `FloatingDomainCapsuleController.pillAlpha`, so the two swap without a wide simultaneous
+    /// cross-fade. Everywhere else it tracks `percent` linearly (unchanged behaviour).
     private func chromeAlpha(for percent: CGFloat) -> CGFloat {
         guard isFloatingCapsuleActive, !UIAccessibility.isReduceMotionEnabled else { return percent }
-        return rampedProgress(percent, from: FloatingDomainCapsuleController.handoffStart)
+        let handoffStart = FloatingDomainCapsuleController.handoffStart
+        let halfWidth = FloatingDomainCapsuleController.handoffBandHalfWidth
+        return rampedProgress(percent, from: handoffStart - halfWidth, to: handoffStart + halfWidth)
     }
 
-    private func rampedProgress(_ percent: CGFloat, from start: CGFloat) -> CGFloat {
-        ((percent - start) / (1 - start)).clamped(to: 0...1)
+    private func rampedProgress(_ percent: CGFloat, from start: CGFloat, to end: CGFloat) -> CGFloat {
+        guard end > start else { return percent < end ? 0 : 1 }
+        return ((percent - start) / (end - start)).clamped(to: 0...1)
     }
 
     private func currentTabSelectionAlpha(for chromeAlpha: CGFloat) -> CGFloat {
@@ -4414,9 +4419,25 @@ extension MainViewController: BrowserChromeDelegate {
 
     struct ChromeAnimationConstants {
         static let duration = 0.1
+
         /// Longer than `duration` so the floating capsule morph is legible; the pill grows/moves into
-        /// the bars (and back) rather than snapping across the short legacy cross-fade.
-        static let morphDuration = 0.33
+        /// the bars (and back) rather than snapping across the short legacy cross-fade. Asymmetric
+        /// because iOS 26 Safari collapses noticeably faster than it expands.
+        static let morphCollapseDuration = 0.20
+        static let morphExpandDuration = 0.34
+
+        /// The collapse follows a released fling, so it decelerates from full speed rather than easing
+        /// in from rest. No overshoot: the bars clip against the screen edge, where a bounce reads as a
+        /// glitch rather than as weight.
+        static let morphCollapseCurve = ChromeMorphAnimator.Curve.easeOutCubic
+
+        /// ~1% overshoot, settled well inside `morphExpandDuration`. Raise the damping ratio to 1 for a
+        /// critically damped, strictly non-overshooting expand.
+        static let morphExpandCurve = ChromeMorphAnimator.Curve.spring(dampingRatio: 0.82, naturalFrequency: 8.84)
+
+        /// Floor on the duration scaling applied to a partial transition, so an interrupted scrub
+        /// covering a short range finishes quicker without becoming an instant jump.
+        static let minMorphDurationScale: CGFloat = 0.55
     }
 
     var tabBarContainer: UIView {
@@ -4478,10 +4499,21 @@ extension MainViewController: BrowserChromeDelegate {
             && abs(fromPercent - percent) > 0.001
 
         if useMorphScrub {
+            let isExpanding = percent > fromPercent
+            // A partial transition shouldn't take as long as a full one, but shouldn't collapse to an
+            // instant jump either. Scaling normalized time also keeps the spring's shape intact.
+            let durationScale = max(ChromeAnimationConstants.minMorphDurationScale, abs(percent - fromPercent))
+            let baseDuration = isExpanding
+                ? ChromeAnimationConstants.morphExpandDuration
+                : ChromeAnimationConstants.morphCollapseDuration
+
             chromeMorphAnimator.animate(
                 from: fromPercent,
                 to: percent,
-                duration: animationDuration ?? ChromeAnimationConstants.morphDuration,
+                duration: animationDuration ?? baseDuration * Double(durationScale),
+                curve: isExpanding
+                    ? ChromeAnimationConstants.morphExpandCurve
+                    : ChromeAnimationConstants.morphCollapseCurve,
                 onProgress: { [weak self] progress in
                     guard let self else { return }
                     self.applyBarsVisibilityState(progress, postChromeVisibilityNotification: false)
@@ -4522,6 +4554,18 @@ extension MainViewController: BrowserChromeDelegate {
         if isFloatingUIEnabled {
             viewCoordinator.ensureBottomOmnibarAttachedToToolbarIfNeeded()
         }
+        // Ahead of `updateToolbarConstant` so its slide math reads this frame's height, not last
+        // frame's. Stage the button row's own fade/shrink from `percent` (1 = expanded) into the
+        // [0, 1] "how collapsed are the buttons" progress `setButtonRowCollapseProgress` expects.
+        let buttonCollapseProgress = isFloatingCapsuleActive && !UIAccessibility.isReduceMotionEnabled
+            ? ((1 - percent) / (1 - FloatingDomainCapsuleController.handoffStart)).clamped(to: 0...1)
+            : 0
+        let panelHeight = viewCoordinator.toolbar.setButtonRowCollapseProgress(
+            buttonCollapseProgress,
+            reduceMotion: UIAccessibility.isReduceMotionEnabled
+        )
+        viewCoordinator.constraints.toolbarHeight.constant = panelHeight
+
         updateToolbarConstant(percent)
         updateNavBarConstant(percent)
         currentTab?.updateWebViewBottomAnchor(for: percent)
@@ -4625,7 +4669,22 @@ extension MainViewController: BrowserChromeDelegate {
     var toolbarHeight: CGFloat {
         viewCoordinator.constraints.toolbarHeight.constant
     }
-    
+
+    /// Gated on the feature flag rather than `isFloatingCapsuleActive`, so the retuned scroll distance
+    /// also applies on AI tabs and in minimal chrome, where the floating bars still slide even though the
+    /// domain capsule doesn't own the transition.
+    var isFloatingChromeEnabled: Bool {
+        isFloatingUIEnabled
+    }
+
+    var floatingMorphCollapseDuration: CFTimeInterval {
+        ChromeAnimationConstants.morphCollapseDuration
+    }
+
+    var floatingMorphExpandDuration: CFTimeInterval {
+        ChromeAnimationConstants.morphExpandDuration
+    }
+
     var barsMaxHeight: CGFloat {
         let height = max(toolbarHeight, viewCoordinator.omniBar.barView.expectedHeight)
         if isInMinimalChromeLayout && viewCoordinator.addressBarPosition.isBottom {
@@ -4740,11 +4799,20 @@ extension MainViewController: BrowserChromeDelegate {
             bottomHeight += viewCoordinator.navigationBarContainer.frame.height
         }
         bottomHeight += view.safeAreaInsets.bottom
+        // With the floating capsule morph, the panel shouldn't slide at all while its button row is
+        // still fading/shrinking in place (`setButtonRowCollapseProgress`) -- sliding at the same time
+        // would compound two motions where the user should see one. Remapped so the slide is pinned at
+        // "fully shown" until `handoffStart`, then covers the retraction over the remaining range. Below
+        // `handoffStart` the panel is already alpha-0 (the capsule pill has taken over), so where
+        // exactly it sits off-screen no longer has a visual effect.
+        let slideRatio = isFloatingCapsuleActive && !UIAccessibility.isReduceMotionEnabled
+            ? min(1, ratio / FloatingDomainCapsuleController.handoffStart)
+            : ratio
         // Minimal chrome owns the toolbar slot as a permanent offscreen spacer for the bottom
         // address bar, and on iPad the toolbar is permanently hidden (its layout slot would
         // otherwise leave a 49pt gap below the webview). Everywhere else the slot tracks
         // `ratio` (chrome-animator visibility).
-        let multiplier = (viewCoordinator.toolbar.isHidden || isInMinimalChromeLayout) ? 1.0 : 1.0 - ratio
+        let multiplier = (viewCoordinator.toolbar.isHidden || isInMinimalChromeLayout) ? 1.0 : 1.0 - slideRatio
         viewCoordinator.constraints.toolbarBottom.constant = bottomHeight * multiplier
 
         if isInMinimalChromeLayout, viewCoordinator.addressBarPosition.isBottom {

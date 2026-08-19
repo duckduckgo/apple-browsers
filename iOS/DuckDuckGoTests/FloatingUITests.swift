@@ -750,3 +750,63 @@ final class FloatingOmnibarSwipeGeometryTests: XCTestCase {
         XCTAssertNil(incomingView.superview)
     }
 }
+
+final class ChromeMorphAnimatorCurveTests: XCTestCase {
+
+    private let expandCurve = MainViewController.ChromeAnimationConstants.morphExpandCurve
+    private let collapseCurve = MainViewController.ChromeAnimationConstants.morphCollapseCurve
+
+    func testWhenCurveIsSmoothstepThenItEasesInAndOutSymmetrically() {
+        let curve = ChromeMorphAnimator.Curve.smoothstep
+
+        XCTAssertEqual(curve.value(at: 0), 0, accuracy: 0.0001)
+        XCTAssertEqual(curve.value(at: 0.5), 0.5, accuracy: 0.0001)
+        XCTAssertEqual(curve.value(at: 1), 1, accuracy: 0.0001)
+    }
+
+    func testWhenCurveIsEaseOutCubicThenItStartsFastAndDecelerates() {
+        let curve = ChromeMorphAnimator.Curve.easeOutCubic
+
+        XCTAssertEqual(curve.value(at: 0), 0, accuracy: 0.0001)
+        XCTAssertEqual(curve.value(at: 0.5), 0.875, accuracy: 0.0001)
+        XCTAssertEqual(curve.value(at: 1), 1, accuracy: 0.0001)
+        // The defining property for a released fling: most of the distance is covered early.
+        XCTAssertGreaterThan(curve.value(at: 0.25), 0.5)
+    }
+
+    func testWhenCollapsingThenTheCurveNeverOvershoots() {
+        for step in 0...100 {
+            let value = collapseCurve.value(at: CGFloat(step) / 100)
+            XCTAssertLessThanOrEqual(value, 1.0, "Collapse must not overshoot at t = \(CGFloat(step) / 100)")
+        }
+    }
+
+    /// The scrubber snaps to the target when normalized time reaches 1, so whatever the spring hasn't
+    /// settled by then becomes a visible jump. At the shipped parameters the residual is ~0.0007.
+    func testWhenExpandingThenTheSpringSettlesByTheEndOfItsDuration() {
+        XCTAssertEqual(expandCurve.value(at: 0), 0, accuracy: 0.0001)
+        XCTAssertEqual(expandCurve.value(at: 1),
+                       1,
+                       accuracy: 0.001,
+                       "Residual at the cutoff becomes a snap. Raise naturalFrequency or the damping ratio.")
+    }
+
+    func testWhenExpandingThenOvershootStaysBelowOnePointFivePercent() {
+        var peak: CGFloat = 0
+        for step in 0...200 {
+            peak = max(peak, expandCurve.value(at: CGFloat(step) / 200))
+        }
+
+        XCTAssertGreaterThan(peak, 1.0, "A lightly damped spring is expected to overshoot slightly")
+        XCTAssertLessThan(peak, 1.015, "Overshoot on a bar that clips the screen edge reads as a glitch")
+    }
+
+    func testWhenSpringIsCriticallyDampedThenItNeverOvershoots() {
+        let curve = ChromeMorphAnimator.Curve.spring(dampingRatio: 1, naturalFrequency: 8.84)
+
+        for step in 0...100 {
+            XCTAssertLessThanOrEqual(curve.value(at: CGFloat(step) / 100), 1.0)
+        }
+        XCTAssertEqual(curve.value(at: 1), 1, accuracy: 0.01)
+    }
+}

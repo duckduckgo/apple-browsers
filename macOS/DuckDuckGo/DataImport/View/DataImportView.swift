@@ -141,8 +141,8 @@ struct DataImportView: ModalView {
                     model.grantAccessButtonPressed()
                 }
             case .directoryReadPermissionDenied:
-                // TODO: design the "access not granted" screen
-                Text(verbatim: "TODO: directory access was not granted")
+                // Implemented in a Follow-UP
+                Text(verbatim: "Directory access was not granted")
                     .padding(.horizontal, 20)
                     .padding(.vertical, 12)
             case .passwordEntryHelp:

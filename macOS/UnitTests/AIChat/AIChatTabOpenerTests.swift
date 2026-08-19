@@ -117,7 +117,9 @@ final class AIChatTabOpenerTests: XCTestCase {
     }
 
     @MainActor
-    func testURLTriggerDoesNotFireNewChatExperimentPixel() {
+    func testPlainURLTriggerDoesNotFireNewChatExperimentPixel() {
+        // A .url without a mode param (e.g. the customize-responses modal or a sidebar handoff URL)
+        // is not a new chat.
         let mockManager = WindowControllersManagerMock()
         var fireCount = 0
         let opener = makeOpener(mockManager) { fireCount += 1 }
@@ -125,5 +127,17 @@ final class AIChatTabOpenerTests: XCTestCase {
         opener.openAIChatTab(with: .url(opener.aiChatRemoteSettings.aiChatURL), behavior: .newTab(selected: true))
 
         XCTAssertEqual(fireCount, 0)
+    }
+
+    @MainActor
+    func testImageModeURLTriggerFiresNewChatExperimentPixel() {
+        let mockManager = WindowControllersManagerMock()
+        var fireCount = 0
+        let opener = makeOpener(mockManager) { fireCount += 1 }
+        let imageModeURL = AIChatURLParameters.imageModeURL(from: opener.aiChatRemoteSettings.aiChatURL)
+
+        opener.openAIChatTab(with: .url(imageModeURL), behavior: .newTab(selected: true))
+
+        XCTAssertEqual(fireCount, 1, "A mode-driven fresh chat (e.g. image generation) must count as a new chat")
     }
 }

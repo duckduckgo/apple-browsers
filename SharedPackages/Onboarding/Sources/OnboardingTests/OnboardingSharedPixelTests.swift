@@ -73,6 +73,63 @@ final class OnboardingSharedPixelTests: XCTestCase {
         XCTAssertEqual(event.additionalParameters?["variant"], "search_plus_duckai-search")
     }
 
+    func testWhenFlowIsTailoredByDownloadReasonThenUsesTailoredByDownloadReasonValue() throws {
+        // GIVEN
+        let pixelFiring = PixelKitMock()
+        let pixelHandler = makeHandler(pixelFiring: pixelFiring)
+
+        // WHEN
+        pixelHandler.fire(.welcome(.shown),
+                          source: .default,
+                          flow: .tailoredByDownloadReason,
+                          variant: nil)
+
+        // THEN
+        let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
+        XCTAssertEqual(event.additionalParameters?["flow"], "tailored_by_download_reason")
+    }
+
+    func testWhenVariantIsDownloadReasonThenUsesDownloadReasonValue() throws {
+        // GIVEN
+        let expectedValues: [OnboardingPixelParameter.Variant: String] = [
+            .downloadReasonSearch: "download_reason_search",
+            .downloadReasonAIChat: "download_reason_ai-chat",
+            .downloadReasonNoAI: "download_reason_no-ai",
+            .downloadReasonAdBlocking: "download_reason_ad-blocking"
+        ]
+
+        // WHEN
+        for (variant, expectedValue) in expectedValues {
+            let pixelFiring = PixelKitMock()
+            let pixelHandler = makeHandler(pixelFiring: pixelFiring)
+
+            pixelHandler.fire(.welcome(.shown),
+                              source: .default,
+                              flow: .tailoredByDownloadReason,
+                              variant: variant)
+
+            // THEN
+            let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
+            XCTAssertEqual(event.additionalParameters?["variant"], expectedValue, "Failed for variant \(variant)")
+        }
+    }
+
+    func testWhenVariantInitFromDownloadReasonThenMapsToExpectedVariant() {
+        // GIVEN
+        let expectedMappings: [OnboardingDownloadReason: OnboardingPixelParameter.Variant] = [
+            .browserPrivately: .downloadReasonSearch,
+            .privateAIChat: .downloadReasonAIChat,
+            .noAI: .downloadReasonNoAI,
+            .blockAds: .downloadReasonAdBlocking
+        ]
+
+        // WHEN
+        for (reason, expectedVariant) in expectedMappings {
+            // THEN
+            XCTAssertEqual(OnboardingPixelParameter.Variant(reason), expectedVariant, "Failed for reason \(reason)")
+        }
+    }
+
     func testWhenFiringPixelEventThenFrequencyIsUniqueByNameAndParameters() throws {
         let pixelFiring = PixelKitMock()
         let pixelHandler = makeHandler(pixelFiring: pixelFiring)
@@ -310,6 +367,185 @@ final class OnboardingSharedPixelTests: XCTestCase {
 
         let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
         XCTAssertEqual(event.pixel.parameters?["value"], "bottom")
+    }
+
+    // MARK: - Segmented onboarding (download-reason) events
+
+    func testWhenSegmentedOnboardingImpressionThenUsesExpectedNameAndNoValue() throws {
+        // GIVEN
+        let cases: [(OnboardingSharedPixelEvent, String)] = [
+            (.downloadChoice(.shown), "onboarding_download-choice"),
+            (.preferencesSerp(.shown), "onboarding_preferences_serp"),
+            (.preferencesAIModel(.shown), "onboarding_preferences_ai-model"),
+            (.preferencesAIToggleMode(.shown), "onboarding_preferences_ai-toggle-mode"),
+            (.preferencesAISearch(.shown), "onboarding_preferences_ai-search"),
+            (.preferencesDuckAI(.shown), "onboarding_preferences_duck-ai"),
+            (.preferencesYoutube(.shown), "onboarding_preferences_youtube")
+        ]
+
+        for (pixelEvent, expectedName) in cases {
+            let pixelFiring = PixelKitMock()
+            let pixelHandler = makeHandler(pixelFiring: pixelFiring)
+
+            // WHEN
+            pixelHandler.fire(pixelEvent)
+
+            // THEN
+            let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
+            XCTAssertEqual(event.pixel.name, expectedName, "Failed for \(expectedName)")
+            XCTAssertEqual(event.pixel.parameters?["event"], "shown", "Failed for \(expectedName)")
+            XCTAssertNil(event.pixel.parameters?["value"], "Failed for \(expectedName)")
+        }
+    }
+
+    func testWhenDownloadChoiceClickedThenUsesReasonValue() throws {
+        // GIVEN
+        let expectedValues: [OnboardingSharedPixelEvent.DownloadChoiceEvent.Value: String] = [
+            .search: "search",
+            .aiChat: "ai-chat",
+            .noAI: "no-ai",
+            .adBlocking: "ad-blocking"
+        ]
+
+        for (value, expectedValue) in expectedValues {
+            let pixelFiring = PixelKitMock()
+            let pixelHandler = makeHandler(pixelFiring: pixelFiring)
+
+            // WHEN
+            pixelHandler.fire(.downloadChoice(.clicked(value)))
+
+            // THEN
+            let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
+            XCTAssertEqual(event.pixel.name, "onboarding_download-choice")
+            XCTAssertEqual(event.pixel.parameters?["event"], "clicked")
+            XCTAssertEqual(event.pixel.parameters?["value"], expectedValue, "Failed for \(value)")
+        }
+    }
+
+    func testWhenPreferencesSerpClickedThenSendsToggleParametersAndNoValue() throws {
+        // GIVEN
+        let pixelFiring = PixelKitMock()
+        let pixelHandler = makeHandler(pixelFiring: pixelFiring)
+
+        // WHEN
+        pixelHandler.fire(.preferencesSerp(.clicked(recentlyVisitedSitesEnabled: true, safeSearchEnabled: false)))
+
+        // THEN
+        let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
+        XCTAssertEqual(event.pixel.name, "onboarding_preferences_serp")
+        XCTAssertEqual(event.pixel.parameters?["event"], "clicked")
+        XCTAssertNil(event.pixel.parameters?["value"])
+        XCTAssertEqual(event.pixel.parameters?["recently_visited_sites_enabled"], "true")
+        XCTAssertEqual(event.pixel.parameters?["safe_search_enabled"], "false")
+    }
+
+    func testWhenPreferencesAISearchClickedThenSendsToggleParametersAndNoValue() throws {
+        // GIVEN
+        let pixelFiring = PixelKitMock()
+        let pixelHandler = makeHandler(pixelFiring: pixelFiring)
+
+        // WHEN
+        pixelHandler.fire(.preferencesAISearch(.clicked(searchAssistEnabled: false, aiGeneratedImagesEnabled: true)))
+
+        // THEN
+        let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
+        XCTAssertEqual(event.pixel.name, "onboarding_preferences_ai-search")
+        XCTAssertEqual(event.pixel.parameters?["event"], "clicked")
+        XCTAssertNil(event.pixel.parameters?["value"])
+        XCTAssertEqual(event.pixel.parameters?["search_assist_enabled"], "false")
+        XCTAssertEqual(event.pixel.parameters?["ai_generated_images_enabled"], "true")
+    }
+
+    func testWhenPreferencesYoutubeClickedThenSendsToggleParametersAndNoValue() throws {
+        // GIVEN
+        let pixelFiring = PixelKitMock()
+        let pixelHandler = makeHandler(pixelFiring: pixelFiring)
+
+        // WHEN
+        pixelHandler.fire(.preferencesYoutube(.clicked(youTubeAdBlockingEnabled: true, duckPlayerEnabled: false)))
+
+        // THEN
+        let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
+        XCTAssertEqual(event.pixel.name, "onboarding_preferences_youtube")
+        XCTAssertEqual(event.pixel.parameters?["event"], "clicked")
+        XCTAssertNil(event.pixel.parameters?["value"])
+        XCTAssertEqual(event.pixel.parameters?["youtube_ad_blocking_enabled"], "true")
+        XCTAssertEqual(event.pixel.parameters?["duck_player_enabled"], "false")
+    }
+
+    func testWhenPreferencesAIModelClickedThenUsesModelValue() throws {
+        // GIVEN
+        let pixelFiring = PixelKitMock()
+        let pixelHandler = makeHandler(pixelFiring: pixelFiring)
+
+        // WHEN
+        pixelHandler.fire(.preferencesAIModel(.clicked(model: "claude")))
+
+        // THEN
+        let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
+        XCTAssertEqual(event.pixel.name, "onboarding_preferences_ai-model")
+        XCTAssertEqual(event.pixel.parameters?["event"], "clicked")
+        XCTAssertEqual(event.pixel.parameters?["value"], "claude")
+    }
+
+    func testWhenPreferencesAIToggleModeClickedThenUsesEnabledValue() throws {
+        for (enabled, expectedValue) in [(true, "true"), (false, "false")] {
+            // GIVEN
+            let pixelFiring = PixelKitMock()
+            let pixelHandler = makeHandler(pixelFiring: pixelFiring)
+
+            // WHEN
+            pixelHandler.fire(.preferencesAIToggleMode(.clicked(openNewTabsWithAIChat: enabled)))
+
+            // THEN
+            let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
+            XCTAssertEqual(event.pixel.name, "onboarding_preferences_ai-toggle-mode")
+            XCTAssertEqual(event.pixel.parameters?["value"], expectedValue, "Failed for \(enabled)")
+        }
+    }
+
+    func testWhenPreferencesDuckAIClickedThenUsesOnOffValue() throws {
+        // GIVEN
+        let expectedValues: [OnboardingSharedPixelEvent.DuckAIEvent.Value: String] = [
+            .on: "on",
+            .off: "off"
+        ]
+
+        for (value, expectedValue) in expectedValues {
+            let pixelFiring = PixelKitMock()
+            let pixelHandler = makeHandler(pixelFiring: pixelFiring)
+
+            // WHEN
+            pixelHandler.fire(.preferencesDuckAI(.clicked(value)))
+
+            // THEN
+            let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
+            XCTAssertEqual(event.pixel.name, "onboarding_preferences_duck-ai")
+            XCTAssertEqual(event.pixel.parameters?["value"], expectedValue, "Failed for \(value)")
+        }
+    }
+
+    func testWhenEndTryDuckAIEventThenUsesExpectedNameAndValue() throws {
+        // GIVEN
+        let cases: [(OnboardingSharedPixelEvent, String, String?)] = [
+            (.endTryDuckAI(.shown), "shown", nil),
+            (.endTryDuckAI(.clicked(.engage)), "clicked", "engage"),
+            (.endTryDuckAI(.clicked(.dismiss)), "clicked", "dismiss")
+        ]
+
+        for (pixelEvent, expectedEvent, expectedValue) in cases {
+            let pixelFiring = PixelKitMock()
+            let pixelHandler = makeHandler(pixelFiring: pixelFiring)
+
+            // WHEN
+            pixelHandler.fire(pixelEvent)
+
+            // THEN
+            let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
+            XCTAssertEqual(event.pixel.name, "onboarding_end-try-duckai")
+            XCTAssertEqual(event.pixel.parameters?["event"], expectedEvent, "Failed for \(pixelEvent)")
+            XCTAssertEqual(event.pixel.parameters?["value"], expectedValue, "Failed for \(pixelEvent)")
+        }
     }
 }
 

@@ -404,13 +404,20 @@
         "key": "flow",
         "type": "string",
         "description": "Version of the onboarding flow the user entered",
-        "enum": ["default", "duckai"]
+        "enum": ["default", "duckai", "tailored_by_download_reason"]
     },
     "onboardingFlowVariant": {
         "key": "variant",
         "type": "string",
-        "description": "Variant of the onboarding flow the user selected after branching on the 'Try a search or AI chat' step",
-        "enum": ["search_plus_duckai-search", "search_plus_duckai-chat"]
+        "description": "Variant of the onboarding flow the user selected after branching (the 'Try a search or AI chat' step, or the download-reason screen)",
+        "enum": [
+            "search_plus_duckai-search",
+            "search_plus_duckai-chat",
+            "download_reason_search",
+            "download_reason_ai-chat",
+            "download_reason_no-ai",
+            "download_reason_ad-blocking"
+        ]
     },
     "tabCount": {
         "key": "tab_count",

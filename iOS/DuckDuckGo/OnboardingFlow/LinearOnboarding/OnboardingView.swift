@@ -559,12 +559,12 @@ extension OnboardingView {
                 isVisible: $showBubbleContent,
                 primaryAction: {
                     animateContentTransition {
-                        model.keepDuckAIContinueAction(isEnabled: true)
+                        model.keepDuckAIContinueAction(shouldKeep: true)
                     }
                 },
                 secondaryAction: {
                     animateContentTransition {
-                        model.keepDuckAIContinueAction(isEnabled: false)
+                        model.keepDuckAIContinueAction(shouldKeep: false)
                     }
                 }
             )

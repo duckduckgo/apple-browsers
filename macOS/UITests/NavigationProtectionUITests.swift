@@ -169,84 +169,16 @@ class NavigationProtectionUITests: UITestCase {
         }
     }
 
-    // MARK: - Click-to-Load Social Media Tests
-
-    func testNavigationProtection_SocialMediaEmbeds_ShowsClickToLoad() throws {
-        throw XCTSkip("The Click to Load feature is currently disabled.")
-        // Navigate to a test page with social media embeds
-        let socialTestURL = URL(string: "https://privacy-test-pages.site/privacy-protections/click-to-load/")!
-        addressBarTextField.pasteURL(socialTestURL, pressingEnter: true)
-
-        // Wait for page to load completely
-        let pageHeader = webView.staticTexts.containing(\.value, containing: "About ClickToLoad Tests").firstMatch
-        XCTAssertTrue(pageHeader.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Click-to-load test page should load")
-
-        // Validate that Click-to-Load blocked FB resources on the page (functional signal from the test page)
-        let metrics = webView.staticTexts.containing(\.value, containing: "Facebook Resources Loads:").firstMatch
-        XCTAssertTrue(metrics.waitForExistence(timeout: UITests.Timeouts.navigation), "Metrics section should be visible on the click-to-load page")
-
-        // Initial state: resources should be NONE
-        let noneValue = webView.staticTexts["NONE"].firstMatch
-        if !noneValue.waitForExistence(timeout: UITests.Timeouts.navigation) {
-            let attach = XCTAttachment(string: app.debugDescription)
-            attach.lifetime = .keepAlways
-            add(attach)
-            XCTFail("Facebook Resources Loads should be NONE before user interaction")
-        }
-
-        // Prefer the FIRST login control by exact label/value to avoid the custom variant and popover overlap
-        let firstLoginButton = webView.buttons["Log in with Facebook"].firstMatch
-        let firstLoginLink = webView.links["Log in with Facebook"].firstMatch
-        let firstLoginStatic = webView.staticTexts["Log in with Facebook"].firstMatch
-        let customLoginButton = webView.buttons["Custom Facebook Login"].firstMatch
-
-        let hasFirstButton = firstLoginButton.waitForExistence(timeout: UITests.Timeouts.elementExistence)
-        let hasFirstLink = hasFirstButton ? false : firstLoginLink.waitForExistence(timeout: UITests.Timeouts.elementExistence)
-        let hasFirstStatic = (hasFirstButton || hasFirstLink) ? false : firstLoginStatic.waitForExistence(timeout: UITests.Timeouts.elementExistence)
-        let hasCustom = (!hasFirstButton && !hasFirstLink && !hasFirstStatic) ? customLoginButton.waitForExistence(timeout: UITests.Timeouts.elementExistence) : false
-
-        guard hasFirstButton || hasFirstLink || hasFirstStatic || hasCustom else {
-            let attach = XCTAttachment(string: app.debugDescription)
-            attach.lifetime = .keepAlways
-            add(attach)
-            XCTFail("Expected a 'Log in with Facebook' control or 'Custom Facebook Login' to exist")
-            return
-        }
-
-        // Click the login control; CTL overlay should appear
-        let loginControl = hasFirstButton ? firstLoginButton : (hasFirstLink ? firstLoginLink : (hasFirstStatic ? firstLoginStatic : customLoginButton))
-        if loginControl.isHittable {
-            loginControl.click()
-        } else {
-            // Tap slightly lower than center to avoid the DDG popover covering the top of the control
-            let coord = loginControl.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.8))
-            coord.tap()
-        }
-
-        // Wait for the CTL overlay to be presented
-        let overlayTitle = app.staticTexts["Logging in with Facebook lets them track you"].firstMatch
-        XCTAssertTrue(overlayTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence), "CTL overlay should appear after clicking login")
-
-        let overlayLogin = app.buttons["Log In"].firstMatch
-        XCTAssertTrue(overlayLogin.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Overlay 'Log In' should be visible")
-
-        // Do not proceed further in CI; presence of overlay and primary action is sufficient
-
-        // Verify we stayed on the click-to-load page in the main window
-        let currentURL = app.addressBarValueActivatingIfNeeded() ?? ""
-        XCTAssertTrue(currentURL.contains("click-to-load"), "Should be on the click-to-load test page; actual: \(currentURL)")
-    }
-
     // MARK: - Tracking Parameter Removal Tests
 
     func testNavigationProtection_TrackingParameters_RemovedFromURLs() throws {
         // Test URL with commonly removed tracking parameters (based on actual browser behavior)
-        let trackedURL = URL(string: "https://example.com/?utm_source=test&utm_medium=test&utm_campaign=test&fbclid=test123&gclid=test456")!
+        let trackedURL = URL(string: "https://github.com/?utm_source=test&utm_medium=test&utm_campaign=test&fbclid=test123&gclid=test456")!
         addressBarTextField.pasteURL(trackedURL, pressingEnter: true)
 
         // Wait for page to load
-        let pageContent = webView.staticTexts.containing(\.value, containing: "Example Domain").firstMatch
-        XCTAssertTrue(pageContent.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Example page should load")
+        let pageContent = webView.staticTexts.containing(\.value, containing: "GitHub").firstMatch
+        XCTAssertTrue(pageContent.waitForExistence(timeout: UITests.Timeouts.navigation), "GitHub page should load")
 
         // Check final URL after navigation - tracking parameters should be removed
         let finalURL = app.addressBarValueActivatingIfNeeded() ?? ""
@@ -257,8 +189,8 @@ class NavigationProtectionUITests: UITestCase {
         // Assert that utm_medium parameter was removed (this is consistently removed)
         XCTAssertFalse(finalURL.contains("utm_medium"), "utm_medium tracking parameter should be removed; actual: \(finalURL)")
 
-        // Should still be on example.com (basic functionality preserved)
-        XCTAssertEqual(finalURL, "https://example.com/", "Should be on clean example.com URL after parameter removal; actual: \(finalURL)")
+        // Should still be on github.com (basic functionality preserved)
+        XCTAssertEqual(finalURL, "https://github.com/", "Should be on clean github.com URL after parameter removal; actual: \(finalURL)")
     }
 
     // MARK: - Redirect Protection Tests
@@ -289,21 +221,21 @@ class NavigationProtectionUITests: UITestCase {
         XCTAssertTrue(originContent.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Origin page should load")
 
         // Navigate to different origin to test cross-site protection
-        let crossOriginURL = URL(string: "https://example.com")!
+        let crossOriginURL = URL(string: "https://github.com")!
         app.activateAddressBar()
         addressBarTextField.pasteURL(crossOriginURL, pressingEnter: true)
 
         // Wait for cross-origin page to load completely
-        let crossOriginContent = webView.staticTexts.containing(\.value, containing: "Example Domain").firstMatch
-        XCTAssertTrue(crossOriginContent.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Cross-origin page should load")
+        let crossOriginContent = webView.staticTexts.containing(\.value, containing: "GitHub").firstMatch
+        XCTAssertTrue(crossOriginContent.waitForExistence(timeout: UITests.Timeouts.navigation), "Cross-origin page should load")
 
         // Ensure page is fully loaded before accessing address bar
-        let pageFullyLoaded = webView.staticTexts.containing(\.value, containing: "Example Domain").firstMatch
+        let pageFullyLoaded = webView.staticTexts.containing(\.value, containing: "GitHub").firstMatch
         XCTAssertTrue(pageFullyLoaded.waitForExistence(timeout: UITests.Timeouts.navigation), "Page should be fully loaded")
 
         // Verify cross-site navigation completed (protection allows legitimate navigation)
         let finalURL = app.addressBarValueActivatingIfNeeded() ?? ""
-        XCTAssertTrue(finalURL.contains("example.com"), "Legitimate cross-site navigation should work; actual: \(finalURL)")
+        XCTAssertTrue(finalURL.contains("github.com"), "Legitimate cross-site navigation should work; actual: \(finalURL)")
     }
 
     // MARK: - Referrer Protection Tests

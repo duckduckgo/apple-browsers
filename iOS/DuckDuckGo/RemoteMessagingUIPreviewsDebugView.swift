@@ -77,6 +77,7 @@ struct RemoteMessagingUIPreviewsDebugView: View {
     private func viewModel(id: String, modelType: HomeSupportedMessageDisplayType) -> HomeMessageViewModel {
         HomeMessageViewModel(
             messageId: "preview-\(id)",
+            acquisitionIdentity: nil,
             modelType: modelType,
             messageActionHandler: NoOpRemoteMessagingActionHandler(),
             preloadedImage: previewImage(for: modelType),

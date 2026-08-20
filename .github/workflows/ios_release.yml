@@ -65,7 +65,7 @@ on:
 
 jobs:
   make-release:
-    runs-on: macos-26-xlarge
+    runs-on: bitrise:macos26-m4pro
     name: Make App Store Connect Release
 
     env:
@@ -80,6 +80,9 @@ jobs:
       with:
         submodules: recursive
         ref: ${{ inputs.commit-sha || env.branch }}
+
+    - name: Print macOS version
+      run: sw_vers
 
     - name: Set destination output
       id: destination

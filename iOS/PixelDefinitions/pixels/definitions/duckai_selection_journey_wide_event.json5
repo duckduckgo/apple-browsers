@@ -1,0 +1,77 @@
+{
+    "m_ios_wide_duckai_selection_journey": {
+        "description": "Wide pixel sent when a Duck.ai contextual text-selection interaction reaches submission or an abandonment outcome within a single app session.",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["daily"],
+        "parameters": [
+            "appVersion",
+            "wideEventAppName",
+            "wideEventAppVersion",
+            "wideEventPlatform",
+            "wideEventType",
+            "wideEventFormFactor",
+            "wideEventSampleRate",
+            "wideEventIsFirstDailyOccurrence",
+            "wideEventFeatureStatus",
+            "wideEventMetaVersion",
+            {
+                "key": "meta.type",
+                "type": "string",
+                "description": "Wide event type identifier",
+                "enum": ["ios-duckai-selection-journey"]
+            },
+            {
+                "key": "feature.name",
+                "type": "string",
+                "description": "Feature identifier for this wide event",
+                "enum": ["duckai-selection-journey"]
+            },
+            {
+                "key": "feature.data.ext.outcome.terminal_reason",
+                "type": "string",
+                "description": "The action that definitively ended the selection interaction. Dismissal alone is not terminal.",
+                "enum": ["submitted", "selections_removed", "new_chat", "chat_cleared", "tab_closed", "session_expired"]
+            },
+            {
+                "key": "feature.data.ext.submission.action",
+                "type": "string",
+                "description": "How the successful selection interaction was submitted.",
+                "enum": ["prompt", "summarize", "translate"]
+            },
+            {
+                "key": "feature.data.ext.selection.max_count_bucketed",
+                "type": "string",
+                "description": "Maximum number of unsubmitted text selections attached at once.",
+                "enum": ["1", "2", "3-5"]
+            },
+            {
+                "key": "feature.data.ext.interaction.dismissal_count_bucketed",
+                "type": "string",
+                "description": "Number of dismissals while the journey remained active.",
+                "enum": ["0", "1", "2+"]
+            },
+            {
+                "key": "feature.data.ext.interaction.dismissed_before_submission",
+                "type": "boolean",
+                "description": "Whether the surface was dismissed before the eventual terminal outcome."
+            },
+            {
+                "key": "feature.data.ext.interaction.saw_selection_suggestions",
+                "type": "boolean",
+                "description": "Whether selection-scoped suggestions were visibly rendered during this attachment interaction."
+            },
+            {
+                "key": "feature.data.ext.delivery.had_timeout",
+                "type": "boolean",
+                "description": "Whether selection-suggestion delivery timed out during the interaction."
+            },
+            {
+                "key": "feature.data.ext.latency.journey_duration_ms_bucketed",
+                "type": "string",
+                "description": "Bucketed time from attachment to terminal outcome.",
+                "enum": ["0", "1000", "5000", "10000", "30000", "60000", "300000"]
+            }
+        ]
+    }
+}

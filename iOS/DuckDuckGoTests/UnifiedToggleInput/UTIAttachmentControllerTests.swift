@@ -220,7 +220,7 @@ final class UTIAttachmentControllerTests: XCTestCase {
         return UTIAttachmentController(
             pixelReporter: UTIPixelReporter(
                 firing: UTIPixelFiring(pixel: PixelFiringMock.self, daily: PixelFiringMock.self),
-                context: { UTIPixelContext(surface: .addressBar, isDuckAISurfaceForAttribution: false, inputMode: .aiChat, isToggleVisible: false) }
+                context: { UTIPixelContext(surface: .addressBar, isDuckAISurfaceForAttribution: false, inputMode: .aiChat, isToggleVisible: false, pageType: .unknown, duckAIEntrySource: nil) }
             ),
             view: view.surface,
             environment: .init(

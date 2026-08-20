@@ -22,6 +22,7 @@ import AIChat
 import BrowserServicesKit
 import BrowserServicesKitTestsUtils
 import Combine
+import Core
 import WebKit
 @testable import DuckDuckGo
 
@@ -145,6 +146,31 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         }
     }
 
+    private final class MockFloatingInputFeature: AIChatContextualFloatingInputFeatureProviding {
+        var isAvailable = false
+    }
+
+    @MainActor
+    private final class MockSelectionJourneyInstrumentation: DuckAISelectionJourneyInstrumenting {
+        var attachedCounts: [Int] = []
+        var removedCounts: [Int] = []
+        var dismissalCount = 0
+        var selectionSuggestionsViewedCount = 0
+        var selectedSuggestionActions: [AIChatTextSelectionAction?] = []
+        var deliveryTimeoutCount = 0
+        var promptSubmittedCount = 0
+        var clearReasons: [DuckAISelectionJourneyWideEventData.TerminalReason] = []
+
+        func selectionAttached(currentCount: Int) { attachedCounts.append(currentCount) }
+        func selectionRemoved(remainingCount: Int) { removedCounts.append(remainingCount) }
+        func surfaceDismissed() { dismissalCount += 1 }
+        func selectionSuggestionsViewed() { selectionSuggestionsViewedCount += 1 }
+        func selectionSuggestionSelected(_ action: AIChatTextSelectionAction?) { selectedSuggestionActions.append(action) }
+        func selectionSuggestionDeliveryTimedOut() { deliveryTimeoutCount += 1 }
+        func promptSubmitted() { promptSubmittedCount += 1 }
+        func selectionsCleared(reason: DuckAISelectionJourneyWideEventData.TerminalReason) { clearReasons.append(reason) }
+    }
+
     // MARK: - Properties
 
     private var sut: AIChatContextualSheetCoordinator!
@@ -153,11 +179,15 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     private var mockSettings: MockAIChatSettingsProvider!
     private var mockFeatureFlagger: MockFeatureFlagger!
     private var mockUnifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider!
+    private var mockFloatingInputFeature: MockFloatingInputFeature!
+    private var mockSelectionJourneyInstrumentation: MockSelectionJourneyInstrumentation!
     private var mockPageContextHandler: MockPageContextHandler!
     private var contentBlockingSubject: PassthroughSubject<ContentBlockingUpdating.NewContent, Never>!
     private var originatingTabURLSubject: CurrentValueSubject<URL?, Never>!
     private var didFinishTabURLSubject: CurrentValueSubject<URL?, Never>!
     private var cancellables: Set<AnyCancellable>!
+    private var firedPixelEvents: [Pixel.Event] = []
+    private var firedSelectionPixelNames: [String] = []
 
     // MARK: - Setup
 
@@ -167,10 +197,19 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         mockSettings = MockAIChatSettingsProvider()
         mockFeatureFlagger = MockFeatureFlagger()
         mockUnifiedToggleInputFeature = MockUnifiedToggleInputFeatureProvider()
+        mockFloatingInputFeature = MockFloatingInputFeature()
+        mockSelectionJourneyInstrumentation = MockSelectionJourneyInstrumentation()
         mockPageContextHandler = MockPageContextHandler()
         contentBlockingSubject = PassthroughSubject<ContentBlockingUpdating.NewContent, Never>()
         originatingTabURLSubject = CurrentValueSubject<URL?, Never>(nil)
         didFinishTabURLSubject = CurrentValueSubject<URL?, Never>(nil)
+        firedPixelEvents = []
+        firedSelectionPixelNames = []
+        let pixelHandler = AIChatContextualModePixelHandler(
+            firePixel: { [weak self] event in self?.firedPixelEvents.append(event) },
+            firePixelWithParameters: { [weak self] event, _ in self?.firedPixelEvents.append(event) },
+            fireSelectionPixel: { [weak self] event, _ in self?.firedSelectionPixelNames.append(event.name) }
+        )
         sut = AIChatContextualSheetCoordinator(
             voiceSearchHelper: MockVoiceSearchHelper(),
             aiChatSettings: mockSettings,
@@ -179,11 +218,14 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
             featureDiscovery: MockFeatureDiscovery(),
             featureFlagger: mockFeatureFlagger,
             unifiedToggleInputFeature: mockUnifiedToggleInputFeature,
+            floatingInputFeature: mockFloatingInputFeature,
             pageContextHandler: mockPageContextHandler,
             tabURLPublishers: AIChatTabURLPublishers(
                 originating: originatingTabURLSubject.eraseToAnyPublisher(),
                 didFinish: didFinishTabURLSubject.eraseToAnyPublisher()
-            )
+            ),
+            pixelHandler: pixelHandler,
+            selectionJourneyInstrumentation: mockSelectionJourneyInstrumentation
         )
         mockDelegate = MockDelegate()
         mockPresentingVC = MockPresentingViewController()
@@ -199,6 +241,8 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         mockSettings = nil
         mockFeatureFlagger = nil
         mockUnifiedToggleInputFeature = nil
+        mockFloatingInputFeature = nil
+        mockSelectionJourneyInstrumentation = nil
         mockPageContextHandler = nil
         contentBlockingSubject = nil
         originatingTabURLSubject = nil
@@ -214,7 +258,73 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         await sut.handleSelectionAction(.ask, selection: .init(text: "selected text", url: URL(string: "https://example.com"), faviconBase64: nil), from: mockPresentingVC)
 
         XCTAssertEqual(sut.sessionState.attachedSelections.map(\.content), ["selected text"])
+        XCTAssertEqual(mockSelectionJourneyInstrumentation.attachedCounts, [1])
         XCTAssertNotNil(sut.sheetViewController)
+    }
+
+    @MainActor
+    func testNativePromptSubmissionCompletesSelectionJourney() async throws {
+        await sut.handleSelectionAction(.ask, selection: .init(text: "selected text", url: nil, faviconBase64: nil), from: mockPresentingVC)
+        let sheet = try XCTUnwrap(sut.sheetViewController)
+
+        sut.aiChatContextualSheetViewController(sheet, didSubmitPrompt: "What does this mean?")
+
+        XCTAssertEqual(mockSelectionJourneyInstrumentation.promptSubmittedCount, 1)
+    }
+
+    @MainActor
+    func testSelectionSuggestionSignalsAreForwardedToJourneyInstrumentation() async throws {
+        await sut.handleSelectionAction(.ask, selection: .init(text: "selected text", url: nil, faviconBase64: nil), from: mockPresentingVC)
+        let sheet = try XCTUnwrap(sut.sheetViewController)
+
+        sut.aiChatContextualSheetViewController(sheet, didSelectSelectionSuggestion: .summarize)
+        sut.aiChatContextualSheetViewControllerDidViewSelectionSuggestions(sheet)
+        sut.aiChatContextualSheetViewControllerSelectionSuggestionDeliveryTimedOut(sheet)
+
+        XCTAssertEqual(mockSelectionJourneyInstrumentation.selectedSuggestionActions, [.summarize])
+        XCTAssertEqual(mockSelectionJourneyInstrumentation.selectionSuggestionsViewedCount, 1)
+        XCTAssertEqual(mockSelectionJourneyInstrumentation.deliveryTimeoutCount, 1)
+    }
+
+    @MainActor
+    func testAttachSelectionPresentsFloatingInputWhenAvailableWithoutAttachingThePage() async {
+        mockFloatingInputFeature.isAvailable = true
+        mockUnifiedToggleInputFeature.isAvailable = true
+        originatingTabURLSubject.send(URL(string: "https://example.com"))
+
+        await sut.handleSelectionAction(.ask, selection: .init(text: "selected text", url: URL(string: "https://example.com"), faviconBase64: nil), from: mockPresentingVC)
+
+        XCTAssertEqual(sut.sessionState.attachedSelections.map(\.content), ["selected text"])
+        XCTAssertTrue(sut.isFloatingInputPresented)
+        XCTAssertNil(sut.sheetViewController)
+        XCTAssertEqual(mockPageContextHandler.lastTriggerContextCollectionTrigger, .tabContent)
+    }
+
+    @MainActor
+    func testAttachSelectionPresentsFloatingInputAfterInactiveSheetWasDismissed() async throws {
+        await sut.presentSheet(from: mockPresentingVC)
+        let retainedSheet = try XCTUnwrap(sut.sheetViewController)
+        sut.aiChatContextualSheetViewControllerDidDismiss(retainedSheet)
+        mockFloatingInputFeature.isAvailable = true
+        mockUnifiedToggleInputFeature.isAvailable = true
+
+        await sut.handleSelectionAction(.ask, selection: .init(text: "selected text", url: URL(string: "https://example.com"), faviconBase64: nil), from: mockPresentingVC)
+
+        XCTAssertTrue(sut.isFloatingInputPresented)
+        XCTAssertNil(sut.sheetViewController)
+    }
+
+    @MainActor
+    func testAttachSelectionPresentsSheetWhenRestoringAChatDespiteFloatingInputAvailability() async {
+        mockFloatingInputFeature.isAvailable = true
+        mockUnifiedToggleInputFeature.isAvailable = true
+        let restoreURL = URL(string: "https://duckduckgo.com/?chatID=abc")!
+
+        await sut.handleSelectionAction(.ask, selection: .init(text: "selected text", url: URL(string: "https://example.com"), faviconBase64: nil), restoreURL: restoreURL, from: mockPresentingVC)
+
+        XCTAssertFalse(sut.isFloatingInputPresented)
+        XCTAssertNotNil(sut.sheetViewController)
+        XCTAssertEqual(sut.sessionState.contextualChatURL, restoreURL)
     }
 
     /// The signals-only payload is content-free and marked unattached, so pushing it while a page is
@@ -230,8 +340,6 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         XCTAssertNotNil(sut.sessionState.intendedAttachedContext)
     }
 
-    /// Reading a selection suspends, so two taps on the omnibar icon can both reach here with the same
-    /// text. Each would otherwise mint its own id and burn a second cap slot on one passage.
     @MainActor
     func testAttachingTheSameSelectionTwiceAttachesItOnce() async {
         let url = URL(string: "https://example.com")
@@ -240,6 +348,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         await sut.handleSelectionAction(.ask, selection: .init(text: "selected text", url: url, faviconBase64: nil), from: mockPresentingVC)
 
         XCTAssertEqual(sut.sessionState.attachedSelections.count, 1)
+        XCTAssertEqual(firedSelectionPixelNames.filter { $0 == AIChatContextualSelectionPixel.attached.name }.count, 1)
     }
 
     /// Attaching a selection must not cost the user the conversation they already had.

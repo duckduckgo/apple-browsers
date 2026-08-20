@@ -17,7 +17,6 @@
 //  limitations under the License.
 //
 
-import Foundation
 import Testing
 @testable import DuckDuckGo
 
@@ -25,354 +24,101 @@ import Testing
 @Suite("Promo Queue Lease Arbiter")
 struct PromoQueueLeaseArbiterTests {
 
-    // The arbiter reclaims a lease whose token has deallocated, so a test that needs a lease to keep holding its slot
-    // must bind the token and keep it alive for as long as the assertions depend on it.
-
     @available(iOS 16, *)
-    @Test("Modal lease can be acquired from idle", .timeLimit(.minutes(1)))
-    func acquireModalLeaseFromIdle() throws {
+    @Test("Modal and remote-message leases are mutually exclusive", .timeLimit(.minutes(1)))
+    func crossKindMutualExclusion() throws {
         let arbiter = PromoQueueLeaseArbiter()
+        let modalLease = try acquiredModalLease(from: arbiter.acquireModalLease())
 
-        let lease = try acquiredLease(from: arbiter.acquireModalLease())
-
-        #expect(arbiter.snapshot.hasModalLease)
-        #expect(arbiter.snapshot.modalAttemptIdentity == lease.attemptIdentity)
-        #expect(arbiter.snapshot.visiblePromoIdentities.isEmpty)
-    }
-
-    @available(iOS 16, *)
-    @Test("Visible promo lease can be acquired from idle", .timeLimit(.minutes(1)))
-    func acquireVisiblePromoLeaseFromIdle() throws {
-        let arbiter = PromoQueueLeaseArbiter()
-        let identity = makeVisiblePromoIdentity()
-
-        let lease = try acquiredLease(from: arbiter.acquireVisiblePromoLease(for: identity))
-
-        #expect(!arbiter.snapshot.hasModalLease)
-        #expect(arbiter.snapshot.visiblePromoIdentities == [identity])
-        _ = lease
-    }
-
-    @available(iOS 16, *)
-    @Test("Visible promos block modal acquisition with their identities", .timeLimit(.minutes(1)))
-    func visiblePromosBlockModalAcquisition() throws {
-        let arbiter = PromoQueueLeaseArbiter()
-        let firstIdentity = makeVisiblePromoIdentity(promoID: "first")
-        let secondIdentity = makeVisiblePromoIdentity(promoID: "second")
-        let firstLease = try acquiredLease(from: arbiter.acquireVisiblePromoLease(for: firstIdentity))
-        let secondLease = try acquiredLease(from: arbiter.acquireVisiblePromoLease(for: secondIdentity))
-
-        let result = arbiter.acquireModalLease()
-
-        guard case .blockedByVisiblePromos(let identities) = result else {
-            Issue.record("Expected modal acquisition to be blocked by visible promos")
+        guard case .blockedByModal = arbiter.acquireRemoteMessageLease(for: "message") else {
+            Issue.record("Expected the modal owner to block a remote message")
             return
         }
-        #expect(identities == [firstIdentity, secondIdentity])
-        #expect(!arbiter.snapshot.hasModalLease)
-        _ = (firstLease, secondLease)
-    }
 
-    @available(iOS 16, *)
-    @Test("Modal lease blocks visible promo acquisition", .timeLimit(.minutes(1)))
-    func modalLeaseBlocksVisiblePromoAcquisition() throws {
-        let arbiter = PromoQueueLeaseArbiter()
-        let modalLease = try acquiredLease(from: arbiter.acquireModalLease())
-
-        let result = arbiter.acquireVisiblePromoLease(for: makeVisiblePromoIdentity())
-
-        guard case .blockedByModal = result else {
-            Issue.record("Expected visible promo acquisition to be blocked by the modal")
+        modalLease.release()
+        let remoteMessageLease = try acquiredRemoteMessageLease(from: arbiter.acquireRemoteMessageLease(for: "message"))
+        guard case .blockedByRemoteMessage(messageID: "message") = arbiter.acquireModalLease() else {
+            Issue.record("Expected the remote-message owner to block a modal")
             return
         }
-        #expect(arbiter.snapshot.visiblePromoIdentities.isEmpty)
-        _ = modalLease
+        _ = remoteMessageLease
     }
 
     @available(iOS 16, *)
-    @Test("Existing modal lease blocks another modal acquisition", .timeLimit(.minutes(1)))
-    func modalLeaseBlocksAnotherModalAcquisition() throws {
+    @Test("Release is idempotent and cannot release a replacement", .timeLimit(.minutes(1)))
+    func identitySafeIdempotentRelease() throws {
         let arbiter = PromoQueueLeaseArbiter()
-        let modalLease = try acquiredLease(from: arbiter.acquireModalLease())
-
-        let result = arbiter.acquireModalLease()
-
-        guard case .blockedByModal = result else {
-            Issue.record("Expected modal acquisition to be blocked by the existing modal")
-            return
-        }
-        #expect(arbiter.snapshot.hasModalLease)
-        _ = modalLease
-    }
-
-    @available(iOS 16, *)
-    @Test("The same visible promo can hold leases on different surfaces", .timeLimit(.minutes(1)))
-    func sameVisiblePromoCanHoldLeasesOnDifferentSurfaces() throws {
-        let arbiter = PromoQueueLeaseArbiter()
-        let firstIdentity = makeVisiblePromoIdentity(
-            surfaceID: UUID(),
-            promoID: "message"
-        )
-        let secondIdentity = makeVisiblePromoIdentity(
-            surfaceID: UUID(),
-            promoID: "message"
-        )
-
-        let firstLease = try acquiredLease(from: arbiter.acquireVisiblePromoLease(for: firstIdentity))
-        let secondLease = try acquiredLease(from: arbiter.acquireVisiblePromoLease(for: secondIdentity))
-
-        #expect(arbiter.snapshot.visiblePromoIdentities == [firstIdentity, secondIdentity])
-        #expect(arbiter.snapshot.visiblePromoCount == 2)
-        _ = (firstLease, secondLease)
-    }
-
-    @available(iOS 16, *)
-    @Test("A surface and promo type slot cannot hold two messages", .timeLimit(.minutes(1)))
-    func visiblePromoSlotCannotHoldTwoMessages() throws {
-        let arbiter = PromoQueueLeaseArbiter()
-        let surfaceID = UUID()
-        let firstIdentity = makeVisiblePromoIdentity(
-            surfaceID: surfaceID,
-            promoID: "message-a"
-        )
-        let secondIdentity = makeVisiblePromoIdentity(
-            surfaceID: surfaceID,
-            promoID: "message-b"
-        )
-        let firstLease = try acquiredLease(from: arbiter.acquireVisiblePromoLease(for: firstIdentity))
-
-        let result = arbiter.acquireVisiblePromoLease(for: secondIdentity)
-
-        guard case .occupiedSurfaceSlot(let occupyingIdentity) = result else {
-            Issue.record("Expected visible promo acquisition to be blocked by the occupied surface slot")
-            return
-        }
-        #expect(occupyingIdentity == firstIdentity)
-        #expect(arbiter.snapshot.visiblePromoIdentities == [firstIdentity])
-        _ = firstLease
-    }
-
-    @available(iOS 16, *)
-    @Test("The same message cannot acquire its occupied surface slot twice", .timeLimit(.minutes(1)))
-    func visiblePromoCannotAcquireOccupiedSlotTwice() throws {
-        let arbiter = PromoQueueLeaseArbiter()
-        let identity = makeVisiblePromoIdentity()
-        let lease = try acquiredLease(from: arbiter.acquireVisiblePromoLease(for: identity))
-
-        let result = arbiter.acquireVisiblePromoLease(for: identity)
-
-        guard case .occupiedSurfaceSlot(let occupyingIdentity) = result else {
-            Issue.record("Expected duplicate visible promo acquisition to be blocked by the occupied surface slot")
-            return
-        }
-        #expect(occupyingIdentity == identity)
-        #expect(arbiter.snapshot.visiblePromoCount == 1)
-        _ = lease
-    }
-
-    @available(iOS 16, *)
-    @Test("Releasing one visible promo does not release another", .timeLimit(.minutes(1)))
-    func releasingVisiblePromoDoesNotReleaseAnother() throws {
-        let arbiter = PromoQueueLeaseArbiter()
-        let firstIdentity = makeVisiblePromoIdentity(promoID: "first")
-        let secondIdentity = makeVisiblePromoIdentity(promoID: "second")
-        let firstLease = try acquiredLease(from: arbiter.acquireVisiblePromoLease(for: firstIdentity))
-        let secondLease = try acquiredLease(from: arbiter.acquireVisiblePromoLease(for: secondIdentity))
+        let firstLease = try acquiredRemoteMessageLease(from: arbiter.acquireRemoteMessageLease(for: "first"))
 
         firstLease.release()
+        firstLease.release()
+        let replacementLease = try acquiredRemoteMessageLease(from: arbiter.acquireRemoteMessageLease(for: "replacement"))
+        firstLease.release()
 
-        #expect(arbiter.snapshot.visiblePromoIdentities == [secondIdentity])
-        _ = secondLease
-    }
-
-    @available(iOS 16, *)
-    @Test("Releasing a modal lease more than once is harmless", .timeLimit(.minutes(1)))
-    func duplicateModalReleaseIsHarmless() throws {
-        let arbiter = PromoQueueLeaseArbiter()
-        let lease = try acquiredLease(from: arbiter.acquireModalLease())
-
-        lease.release()
-        lease.release()
-
-        #expect(!arbiter.snapshot.hasModalLease)
-        let reacquiredLease = try acquiredLease(from: arbiter.acquireModalLease())
-        #expect(arbiter.snapshot.hasModalLease)
-        _ = reacquiredLease
-    }
-
-    @available(iOS 16, *)
-    @Test("Releasing a visible promo lease more than once is harmless", .timeLimit(.minutes(1)))
-    func duplicateVisiblePromoReleaseIsHarmless() throws {
-        let arbiter = PromoQueueLeaseArbiter()
-        let identity = makeVisiblePromoIdentity()
-        let lease = try acquiredLease(from: arbiter.acquireVisiblePromoLease(for: identity))
-
-        lease.release()
-        lease.release()
-
-        #expect(arbiter.snapshot.visiblePromoIdentities.isEmpty)
-        let reacquiredLease = try acquiredLease(from: arbiter.acquireVisiblePromoLease(for: identity))
-        #expect(arbiter.snapshot.visiblePromoIdentities == [identity])
-        _ = reacquiredLease
-    }
-
-    @available(iOS 16, *)
-    @Test("A stale visible promo token cannot open the modal gate for the slot it no longer owns", .timeLimit(.minutes(1)))
-    func staleVisiblePromoTokenCannotOpenModalGate() throws {
-        let arbiter = PromoQueueLeaseArbiter()
-        let surfaceID = UUID()
-        let staleIdentity = makeVisiblePromoIdentity(
-            surfaceID: surfaceID,
-            promoID: "message-a"
+        #expect(
+            arbiter.snapshot.owner == .remoteMessage(
+                messageID: "replacement",
+                acquisitionIdentity: replacementLease.acquisitionIdentity,
+                appearanceConfirmed: false
+            )
         )
-        let currentIdentity = makeVisiblePromoIdentity(
-            surfaceID: surfaceID,
-            promoID: "message-b"
-        )
-        let staleLease = try acquiredLease(from: arbiter.acquireVisiblePromoLease(for: staleIdentity))
-        arbiter.invalidateAllLeases()
-        let currentLease = try acquiredLease(from: arbiter.acquireVisiblePromoLease(for: currentIdentity))
-
-        staleLease.release()
-
-        #expect(arbiter.snapshot.visiblePromoIdentities == [currentIdentity])
-        let result = arbiter.acquireModalLease()
-        guard case .blockedByVisiblePromos(let identities) = result else {
-            Issue.record("Expected the surviving visible promo lease to keep blocking modal acquisition")
-            return
-        }
-        #expect(identities == [currentIdentity])
-        _ = currentLease
+        _ = replacementLease
     }
 
     @available(iOS 16, *)
-    @Test("Old modal token cannot release a lease acquired after invalidation", .timeLimit(.minutes(1)))
-    func oldModalTokenCannotReleaseNewLeaseAfterInvalidation() throws {
+    @Test("Passive snapshots report a dropped token as ownerless and acquisition recovers", .timeLimit(.minutes(1)))
+    func weakTokenRecovery() throws {
         let arbiter = PromoQueueLeaseArbiter()
-        let oldLease = try acquiredLease(from: arbiter.acquireModalLease())
-        arbiter.invalidateAllLeases()
-        let newLease = try acquiredLease(from: arbiter.acquireModalLease())
 
-        oldLease.release()
-
-        #expect(arbiter.snapshot.hasModalLease)
-        #expect(newLease.attemptIdentity != oldLease.attemptIdentity)
-        #expect(arbiter.snapshot.modalAttemptIdentity == newLease.attemptIdentity)
-    }
-
-    @available(iOS 16, *)
-    @Test("Old visible promo token cannot release a lease acquired after invalidation", .timeLimit(.minutes(1)))
-    func oldVisiblePromoTokenCannotReleaseNewLeaseAfterInvalidation() throws {
-        let arbiter = PromoQueueLeaseArbiter()
-        let surfaceID = UUID()
-        let oldIdentity = makeVisiblePromoIdentity(
-            surfaceID: surfaceID,
-            promoID: "message-a"
-        )
-        let newIdentity = makeVisiblePromoIdentity(
-            surfaceID: surfaceID,
-            promoID: "message-b"
-        )
-        let oldLease = try acquiredLease(from: arbiter.acquireVisiblePromoLease(for: oldIdentity))
-        arbiter.invalidateAllLeases()
-        let newLease = try acquiredLease(from: arbiter.acquireVisiblePromoLease(for: newIdentity))
-
-        oldLease.release()
-
-        #expect(arbiter.snapshot.visiblePromoIdentities == [newIdentity])
-        _ = newLease
-    }
-
-    @available(iOS 16, *)
-    @Test("Invalidation clears all leases and leaves outstanding tokens inert", .timeLimit(.minutes(1)))
-    func invalidationClearsLeasesAndLeavesOutstandingTokensInert() throws {
-        let arbiter = PromoQueueLeaseArbiter()
-        let outstandingLease = try acquiredLease(from: arbiter.acquireVisiblePromoLease(for: makeVisiblePromoIdentity()))
-
-        arbiter.invalidateAllLeases()
-
-        #expect(!arbiter.snapshot.hasModalLease)
-        #expect(arbiter.snapshot.visiblePromoIdentities.isEmpty)
-        // The cleared slot is immediately re-acquirable and the outstanding token cannot clear what replaced it.
-        let modalLease = try acquiredLease(from: arbiter.acquireModalLease())
-        outstandingLease.release()
-        #expect(arbiter.snapshot.modalAttemptIdentity == modalLease.attemptIdentity)
-    }
-
-    @available(iOS 16, *)
-    @Test("An old token cannot release a re-acquisition of its own identity after invalidation", .timeLimit(.minutes(1)))
-    func oldVisiblePromoTokenCannotReleaseReacquisitionOfSameIdentity() throws {
-        let arbiter = PromoQueueLeaseArbiter()
-        let identity = makeVisiblePromoIdentity()
-        let oldLease = try acquiredLease(from: arbiter.acquireVisiblePromoLease(for: identity))
-        arbiter.invalidateAllLeases()
-        let currentLease = try acquiredLease(from: arbiter.acquireVisiblePromoLease(for: identity))
-
-        oldLease.release()
-
-        #expect(arbiter.snapshot.visiblePromoIdentities == [identity])
-        _ = currentLease
-    }
-
-    @available(iOS 16, *)
-    @Test("A dropped visible promo token stops blocking modal acquisition", .timeLimit(.minutes(1)))
-    func droppedVisiblePromoTokenStopsBlockingModalAcquisition() throws {
-        let arbiter = PromoQueueLeaseArbiter()
-        let identity = makeVisiblePromoIdentity()
         do {
-            let droppedLease = try acquiredLease(from: arbiter.acquireVisiblePromoLease(for: identity))
-            #expect(arbiter.snapshot.visiblePromoIdentities == [identity])
+            let droppedLease = try acquiredRemoteMessageLease(from: arbiter.acquireRemoteMessageLease(for: "message"))
+            #expect(
+                arbiter.snapshot.owner == .remoteMessage(
+                    messageID: "message",
+                    acquisitionIdentity: droppedLease.acquisitionIdentity,
+                    appearanceConfirmed: false
+                )
+            )
             _ = droppedLease
         }
 
-        // The token left scope without `release()`, which must not wedge the modal slot for the rest of the session.
-        #expect(arbiter.snapshot.visiblePromoIdentities.isEmpty)
-        let modalLease = try acquiredLease(from: arbiter.acquireModalLease())
-        #expect(arbiter.snapshot.modalAttemptIdentity == modalLease.attemptIdentity)
-        _ = modalLease
+        // The passive read remains observational; the subsequent acquisition path performs stale-record recovery.
+        #expect(arbiter.snapshot.owner == nil)
+        let modalLease = try acquiredModalLease(from: arbiter.acquireModalLease())
+        #expect(arbiter.snapshot.owner == .modal(ownershipIdentity: modalLease.ownershipIdentity))
     }
 
     @available(iOS 16, *)
-    @Test("A dropped modal token stops blocking visible promo acquisition", .timeLimit(.minutes(1)))
-    func droppedModalTokenStopsBlockingVisiblePromoAcquisition() throws {
+    @Test("Only the first valid appearance confirmation succeeds", .timeLimit(.minutes(1)))
+    func firstValidAppearanceConfirmation() throws {
         let arbiter = PromoQueueLeaseArbiter()
-        do {
-            let droppedLease = try acquiredLease(from: arbiter.acquireModalLease())
-            #expect(arbiter.snapshot.hasModalLease)
-            _ = droppedLease
-        }
+        let lease = try acquiredRemoteMessageLease(from: arbiter.acquireRemoteMessageLease(for: "message"))
 
-        let identity = makeVisiblePromoIdentity()
-        let visibleLease = try acquiredLease(from: arbiter.acquireVisiblePromoLease(for: identity))
-
-        #expect(!arbiter.snapshot.hasModalLease)
-        #expect(arbiter.snapshot.visiblePromoIdentities == [identity])
-        _ = visibleLease
-    }
-
-    private func makeVisiblePromoIdentity(
-        surfaceID: UUID = UUID(),
-        promoID: String = "message"
-    ) -> VisiblePromoIdentity {
-        VisiblePromoIdentity(
-            surfaceID: surfaceID,
-            promoType: .remoteMessage,
-            promoID: promoID
+        #expect(lease.confirmAppearance())
+        #expect(!lease.confirmAppearance())
+        #expect(
+            arbiter.snapshot.owner == .remoteMessage(
+                messageID: "message",
+                acquisitionIdentity: lease.acquisitionIdentity,
+                appearanceConfirmed: true
+            )
         )
+
+        lease.release()
+        #expect(!lease.confirmAppearance())
+        #expect(arbiter.snapshot.owner == nil)
     }
 
-    private func acquiredLease(
-        from result: PromoQueueModalLeaseAcquisitionResult
-    ) throws -> PromoQueueModalLease {
+    private func acquiredModalLease(from result: PromoQueueModalLeaseAcquisitionResult) throws -> PromoQueueModalLease {
         guard case .acquired(let lease) = result else {
             throw TestError.expectedAcquiredLease
         }
         return lease
     }
 
-    private func acquiredLease(
-        from result: PromoQueueVisiblePromoLeaseAcquisitionResult
-    ) throws -> PromoQueueVisiblePromoLease {
+    private func acquiredRemoteMessageLease(
+        from result: PromoQueueRemoteMessageLeaseAcquisitionResult
+    ) throws -> PromoQueueRemoteMessageArbiterLease {
         guard case .acquired(let lease) = result else {
             throw TestError.expectedAcquiredLease
         }

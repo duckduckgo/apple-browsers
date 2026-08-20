@@ -130,6 +130,37 @@ extension PreviewManagementViewModel {
         devices: [SyncDevice(kind: .current, name: "My Mac", id: "current-device")]
     )
 
+    static let enabledSingleDevice = PreviewManagementViewModel(
+        isSyncEnabled: true,
+        isSimplifiedSyncSetupV2Enabled: true,
+        devices: [SyncDevice(kind: .current, name: "My Mac", id: "current-device")]
+    )
+
+    static let enabledLoadingDevices = PreviewManagementViewModel(
+        isSyncEnabled: true,
+        isSimplifiedSyncSetupV2Enabled: true,
+        devices: []
+    )
+
+    static let enabledSyncUnavailable = PreviewManagementViewModel(
+        isSyncEnabled: true,
+        isSimplifiedSyncSetupV2Enabled: true,
+        isDataSyncingAvailable: false,
+        isConnectingDevicesAvailable: false,
+        isAccountCreationAvailable: false,
+        devices: previewDevices
+    )
+
+    static let enabledUpgradeRequired = PreviewManagementViewModel(
+        isSyncEnabled: true,
+        isSimplifiedSyncSetupV2Enabled: true,
+        isDataSyncingAvailable: false,
+        isConnectingDevicesAvailable: false,
+        isAccountCreationAvailable: false,
+        isAppVersionNotSupported: true,
+        devices: previewDevices
+    )
+
     private static let previewDevices = [
         SyncDevice(kind: .current, name: "My Mac", id: "current-device"),
         SyncDevice(kind: .desktop, name: "MacBook Pro", id: "desktop-device"),

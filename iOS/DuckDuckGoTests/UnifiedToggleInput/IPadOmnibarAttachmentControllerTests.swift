@@ -38,7 +38,8 @@ final class IPadOmnibarAttachmentControllerTests: XCTestCase {
         store = UTIModelStore(
             modelsService: StubAttachmentModelsService(),
             preferences: preferences,
-            subscriptionManager: SubscriptionManagerMock()
+            subscriptionManager: SubscriptionManagerMock(),
+            isUpdatedModelPickerEnabled: false
         )
         // In production the models fetch also returns attachment limits; without them the validator
         // treats the per-turn image allowance as 0, so `canAttachImages` (and the attach menu) is

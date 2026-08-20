@@ -1302,7 +1302,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// surfaced in the error label. Limits are evaluated cumulatively so a multi-select batch can't
     /// collectively overshoot. Images keep the `displayCap` (one-over) cue since they have no
     /// size / page dimension and a single submission is bounded to the per-turn image count.
-    private func addPickedAttachments(from urls: [URL]) {
+    private func addPickedAttachments(from urls: [URL], rejection: String? = nil) {
         // Reading bytes off disk and parsing PDFs (page count / encryption) is offloaded to a
         // background task per file — a large PDF would otherwise block the main thread. Validation,
         // attachment, and label updates stay on the main actor; files are processed in order so the
@@ -1352,7 +1352,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                 }
             }
 
-            self.lastAttachmentError = firstFileError
+            self.lastAttachmentError = firstFileError ?? rejection
             self.updateAttachmentsLayout()
         }
     }
@@ -1457,7 +1457,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             keyEquivalent: ""
         )
         attachTabsItem.target = self
-        attachTabsItem.image = DesignSystemImages.Glyphs.Size16.tabContentAttach
+        attachTabsItem.image = DesignSystemImages.Glyphs.Size16.tabContent
         attachTabsItem.isEnabled = !candidates.isEmpty
         menu.addItem(attachTabsItem)
 
@@ -1471,14 +1471,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         let currentTabId = omnibarController.currentTabUUID
         let candidates = allCandidates.prefix(Constants.recentTabsInMenu)
 
-        menu.addItem(NSMenuItem.separator())
+        // With nothing to offer, the disabled Add Tabs item already says so; a placeholder row and
+        // the separator above it would just be more menu saying the same thing.
+        guard !candidates.isEmpty else { return }
 
-        guard !candidates.isEmpty else {
-            let empty = NSMenuItem(title: UserText.aiChatAttachMenuNoOpenTabs, action: nil, keyEquivalent: "")
-            empty.isEnabled = false
-            menu.addItem(empty)
-            return
-        }
+        menu.addItem(NSMenuItem.separator())
 
         let header = NSMenuItem(title: UserText.aiChatAttachMenuRecentTabsHeader, action: nil, keyEquivalent: "")
         header.isEnabled = false
@@ -1496,7 +1493,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             item.target = self
             item.representedObject = candidate
             item.toolTip = candidate.url.absoluteString
-            item.isEnabled = !isAttached && !atCap
+            // An attached tab stays clickable so the same row detaches it; the cap only blocks adding.
+            item.isEnabled = isAttached || !atCap
+            item.state = isAttached ? .on : .off
             item.image = menuFavicon(for: candidate)
             menu.addItem(item)
         }
@@ -1510,9 +1509,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     @objc private func recentTabClicked(_ sender: NSMenuItem) {
         guard let candidate = sender.representedObject as? AIChatTabAttachment else { return }
+        let wasAttached = omnibarController.activeTabAttachments.contains { $0.id == candidate.id }
+        // Only a toggle that took counts as a mutation; a rejected stale row changed nothing.
+        guard omnibarController.togglePickedTabAttachment(candidate) else { return }
         didMutateDuringAttachMenuSession = true
-        omnibarController.toggleTabAttachment(candidate)
-        omnibarController.pixelHandler.fire(.tabChosen)
+        omnibarController.pixelHandler.fire(wasAttached ? .tabAttachmentRemoved : .tabChosen)
         updateAttachmentsLayout()
     }
 
@@ -1536,6 +1537,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     }
 
     private func applyTabSelection(_ selected: [AIChatTabAttachment], offered: [AIChatTabAttachment]) {
+        // Confirming is a fresh pick action; a rejection from last time no longer applies.
+        lastAttachmentError = nil
         let diff = AIChatTabSelectionDiff.compute(current: omnibarController.activeTabAttachments,
                                                  selected: selected,
                                                  offered: offered)
@@ -1543,23 +1546,57 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             omnibarController.removeTabAttachmentFromActiveTab(id: id)
             omnibarController.pixelHandler.fire(.tabAttachmentRemoved)
         }
-        for tab in diff.add {
-            omnibarController.toggleTabAttachment(tab)
+        for tab in diff.add where omnibarController.togglePickedTabAttachment(tab) {
             omnibarController.pixelHandler.fire(.tabChosen)
         }
         updateAttachmentsLayout()
     }
 
-    /// Attempts to add an image attachment from a drag-and-drop operation.
-    /// - Returns: `true` if the image was accepted, `false` if attachments are full.
-    func addImageAttachmentFromDrop(_ url: URL) -> Bool {
-        guard omnibarController.activeImageAttachments.count < omnibarController.imageAttachmentsDisplayCap else { return false }
-        // A successful drop is a pick action from the user's perspective, so clear any stale
-        // pick-time rejection error (matching the file/image picker path).
+    /// Attaches dropped images and PDFs through the same validation as the picker. A file of a kind
+    /// the omnibar attaches always consumes the drag, even when it can't be taken — letting it fall
+    /// through would put its absolute path into the prompt as text.
+    /// - Returns: `true` if the drop was consumed.
+    func addAttachmentsFromDrop(_ urls: [URL]) -> Bool {
+        let dropped = urls.compactMap { url in UTType(filenameExtension: url.pathExtension.lowercased()).map { (url: url, type: $0) } }
+        let images = dropped.filter { $0.type.conforms(to: .image) }
+        let files = dropped.filter { !$0.type.conforms(to: .image) }
+        guard !dropped.isEmpty else { return false }
+
+        // Images keep the picker's one-over cue; a file has to be a type the model listed, since
+        // supporting files at all doesn't mean supporting PDFs.
+        let imageRoom = max(0, omnibarController.imageAttachmentsDisplayCap - omnibarController.activeImageAttachments.count)
+        let acceptedImages = shouldShowImageUpload ? images.prefix(imageRoom).map(\.url) : []
+        let acceptedFiles = files.filter { canAttachDroppedFile(ofType: $0.type) }.map(\.url)
+
+        // A drop is a pick action from the user's perspective, so clear any stale pick-time error.
         lastAttachmentError = nil
-        addImageAttachment(from: url)
-        updateAttachmentsLayout()
+        // Files of a type the model doesn't take never reach the validator, so their rejection has
+        // to be reported here — including when it rode along with images that were taken.
+        let rejection = acceptedFiles.count < files.count || acceptedImages.count < images.count
+            ? dropRejectionMessage(hasRejectedFiles: acceptedFiles.count < files.count)
+            : nil
+        guard !acceptedImages.isEmpty || !acceptedFiles.isEmpty else {
+            lastAttachmentError = rejection
+            updateAttachmentsLayout()
+            return true
+        }
+        addPickedAttachments(from: acceptedImages + acceptedFiles, rejection: rejection)
         return true
+    }
+
+    private func canAttachDroppedFile(ofType type: UTType) -> Bool {
+        guard omnibarController.selectedModelSupportsFileUpload else { return false }
+        return omnibarController.selectedModelSupportedFileTypes
+            .compactMap { UTType(mimeType: $0) }
+            .contains { type.conforms(to: $0) }
+    }
+
+    private func dropRejectionMessage(hasRejectedFiles: Bool) -> String {
+        guard !hasRejectedFiles, shouldShowImageUpload else {
+            let acceptedNames = omnibarController.selectedModelSupportedFileTypes.map(AIChatAttachmentValidator.fileTypeName(for:))
+            return UserText.aiChatAttachmentUnsupportedFileType(acceptedFileTypes: acceptedNames)
+        }
+        return UserText.aiChatAttachmentImageTurnLimit(maxImagesPerTurn: omnibarController.maxImageAttachments)
     }
 
     /// Reads file bytes off disk and builds a file attachment (PDFs etc.), inspecting PDFs for page

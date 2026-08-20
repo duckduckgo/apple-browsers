@@ -92,9 +92,9 @@ extension TabSwitcherChrome {
 enum TabSwitcherChromeFactory {
 
     @MainActor
-    static func makeChrome(isTabSwitcherJuly2026Enabled: Bool,
+    static func makeChrome(isFloatingTabSwitcherEnabled: Bool,
                            appSettings: AppSettings) -> TabSwitcherChrome {
-        if isTabSwitcherJuly2026Enabled {
+        if isFloatingTabSwitcherEnabled {
             return FloatingTabSwitcherChrome()
         }
         return LegacyTabSwitcherChrome(appSettings: appSettings)

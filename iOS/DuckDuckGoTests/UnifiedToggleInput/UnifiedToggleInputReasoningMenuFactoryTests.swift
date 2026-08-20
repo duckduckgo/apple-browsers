@@ -29,7 +29,7 @@ final class UnifiedToggleInputReasoningMenuFactoryTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        sut = UnifiedToggleInputReasoningMenuFactory()
+        sut = UnifiedToggleInputReasoningMenuFactory(isUpdatedModelPickerEnabled: false)
     }
 
     override func tearDown() {
@@ -40,7 +40,7 @@ final class UnifiedToggleInputReasoningMenuFactoryTests: XCTestCase {
     func testWhenModelDoesNotSupportReasoningPickerThenMenuIsNil() {
         let model = makeReasoningModel(id: "gpt-oss", supportedReasoningEffort: [.low])
 
-        let menu = sut.makeMenu(model: model, selectedMode: nil) { _ in }
+        let menu = sut.makeMenu(model: model, selectedMode: nil, userTier: .free) { _ in }
 
         XCTAssertNil(menu)
     }
@@ -48,7 +48,7 @@ final class UnifiedToggleInputReasoningMenuFactoryTests: XCTestCase {
     func testMenuListsAvailableModesInFixedOrder() {
         let model = makeReasoningModel(id: "gpt-5.2", supportedReasoningEffort: [.medium, .low, .none])
 
-        let menu = sut.makeMenu(model: model, selectedMode: nil) { _ in }
+        let menu = sut.makeMenu(model: model, selectedMode: nil, userTier: .free) { _ in }
 
         let titles = menu?.children.compactMap { ($0 as? UIAction)?.title }
         XCTAssertEqual(titles, ["Fast", "Reasoning", "Extended Reasoning"])
@@ -57,7 +57,7 @@ final class UnifiedToggleInputReasoningMenuFactoryTests: XCTestCase {
     func testMenuUsesSingleSelectionOption() {
         let model = makeReasoningModel(id: "gpt-5.2", supportedReasoningEffort: [.none, .low, .medium])
 
-        let menu = sut.makeMenu(model: model, selectedMode: nil) { _ in }
+        let menu = sut.makeMenu(model: model, selectedMode: nil, userTier: .free) { _ in }
 
         XCTAssertTrue(menu?.options.contains(.singleSelection) ?? false)
     }
@@ -65,7 +65,7 @@ final class UnifiedToggleInputReasoningMenuFactoryTests: XCTestCase {
     func testSelectedModeActionIsMarkedOn() {
         let model = makeReasoningModel(id: "gpt-5.2", supportedReasoningEffort: [.none, .low, .medium])
 
-        let menu = sut.makeMenu(model: model, selectedMode: .reasoning) { _ in }
+        let menu = sut.makeMenu(model: model, selectedMode: .reasoning, userTier: .free) { _ in }
 
         let actions = menu?.children.compactMap { $0 as? UIAction }
         let onAction = actions?.first { $0.state == .on }
@@ -73,11 +73,57 @@ final class UnifiedToggleInputReasoningMenuFactoryTests: XCTestCase {
         XCTAssertEqual(actions?.filter { $0.state == .on }.count, 1)
     }
 
+    func testWhenUpdatedModelPickerIsEnabledThenMenuGroupsGatedModes() throws {
+        sut = UnifiedToggleInputReasoningMenuFactory(isUpdatedModelPickerEnabled: true)
+        let model = makeModelWithGatedExtendedReasoning()
+
+        let menu = try XCTUnwrap(sut.makeMenu(
+            model: model,
+            selectedMode: .fast,
+            userTier: .free,
+            freeTrialEligibility: .unknown,
+            onSelect: { _ in }))
+        let availableActions = menu.children.compactMap { $0 as? UIAction }
+        let gatedSection = try XCTUnwrap(menu.children.compactMap { $0 as? UIMenu }.first)
+
+        XCTAssertEqual(availableActions.map(\.title), ["Fast", "Reasoning"])
+        XCTAssertEqual(gatedSection.title, UserText.aiChatModelPickerTryFree)
+        XCTAssertEqual(gatedSection.children.compactMap { ($0 as? UIAction)?.title }, ["Extended Reasoning…"])
+    }
+
+    func testWhenUpdatedMenuFreeUserIsIneligibleForTrialThenUsesSubscriberExclusiveTitle() throws {
+        sut = UnifiedToggleInputReasoningMenuFactory(isUpdatedModelPickerEnabled: true)
+        let model = makeModelWithGatedExtendedReasoning()
+
+        let menu = try XCTUnwrap(sut.makeMenu(
+            model: model,
+            selectedMode: .fast,
+            userTier: .free,
+            freeTrialEligibility: .ineligible,
+            onSelect: { _ in }))
+        let gatedSection = try XCTUnwrap(menu.children.compactMap { $0 as? UIMenu }.first)
+
+        XCTAssertEqual(gatedSection.title, UserText.aiChatModelPickerSubscriberExclusive)
+    }
+
     // MARK: - Helpers
+
+    private func makeModelWithGatedExtendedReasoning() -> AIChatModel {
+        makeReasoningModel(
+            id: "gpt-5.2",
+            supportedReasoningEffort: [.none, .low, .medium],
+            reasoningEffortAccess: [
+                AIChatReasoningEffortAccess(effort: .none, accessTier: ["free"], entityHasAccess: true),
+                AIChatReasoningEffortAccess(effort: .low, accessTier: ["free"], entityHasAccess: true),
+                AIChatReasoningEffortAccess(effort: .medium, accessTier: ["plus"], entityHasAccess: false)
+            ]
+        )
+    }
 
     private func makeReasoningModel(
         id: String,
-        supportedReasoningEffort: [AIChatReasoningEffort]
+        supportedReasoningEffort: [AIChatReasoningEffort],
+        reasoningEffortAccess: [AIChatReasoningEffortAccess]? = nil
     ) -> AIChatModel {
         AIChatModel(
             id: id,
@@ -87,7 +133,7 @@ final class UnifiedToggleInputReasoningMenuFactoryTests: XCTestCase {
             supportsImageUpload: false,
             entityHasAccess: true,
             supportedReasoningEffort: supportedReasoningEffort,
-            reasoningEffortAccess: nil
+            reasoningEffortAccess: reasoningEffortAccess
         )
     }
 }

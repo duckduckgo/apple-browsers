@@ -20,6 +20,7 @@
 import BrowserServicesKit
 import Combine
 import Common
+import DDGError
 import FoundationExtensions
 import Configuration
 import Core

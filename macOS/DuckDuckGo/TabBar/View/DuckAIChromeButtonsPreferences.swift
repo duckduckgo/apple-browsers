@@ -24,6 +24,7 @@ struct DuckAIChromeButtonsUserDefaultsPersistor {
     enum Key: String {
         case isDuckAIButtonHidden = "duck-ai-chrome.title-button.hidden"
         case isSidebarButtonHidden = "duck-ai-chrome.sidebar-button.hidden"
+        case didMigrateMenuButtonLayoutVisibility = "duck-ai-chrome.menu-button-layout.visibility-migrated"
     }
 
     private let keyValueStore: KeyValueStoring
@@ -40,6 +41,11 @@ struct DuckAIChromeButtonsUserDefaultsPersistor {
     var isSidebarButtonHidden: Bool {
         get { boolValue(for: .isSidebarButtonHidden) }
         set { set(newValue, for: .isSidebarButtonHidden) }
+    }
+
+    var didMigrateMenuButtonLayoutVisibility: Bool {
+        get { boolValue(for: .didMigrateMenuButtonLayoutVisibility) }
+        set { set(newValue, for: .didMigrateMenuButtonLayoutVisibility) }
     }
 
     private func boolValue(for key: Key) -> Bool {

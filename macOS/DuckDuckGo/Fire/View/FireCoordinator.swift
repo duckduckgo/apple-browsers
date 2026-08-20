@@ -33,6 +33,10 @@ import AIChat
 protocol FireDialogViewPresenting {
     @MainActor
     func present(in window: NSWindow, completion: (() -> Void)?)
+
+    /// Closes the presented dialog, and does nothing when it is not presented any more.
+    @MainActor
+    func dismiss()
 }
 
 struct FireDialogViewConfig {
@@ -43,11 +47,29 @@ struct FireDialogViewConfig {
 
 typealias FireDialogViewFactory = (_ config: FireDialogViewConfig) -> FireDialogViewPresenting
 
-private struct DefaultFireDialogPresenter: FireDialogViewPresenting {
-    let view: any ModalView
+private final class DefaultFireDialogPresenter: FireDialogViewPresenting {
+    private let view: any ModalView
+    private weak var window: NSWindow?
+    private var isPresented = false
+
+    init(view: any ModalView) {
+        self.view = view
+    }
+
     @MainActor
     func present(in window: NSWindow, completion: (() -> Void)?) {
-        view.show(in: window, completion: completion)
+        self.window = window
+        isPresented = true
+        view.show(in: window) { [weak self] in
+            self?.isPresented = false
+            completion?()
+        }
+    }
+
+    @MainActor
+    func dismiss() {
+        guard isPresented, let window, let sheet = window.attachedSheet else { return }
+        window.endSheet(sheet)
     }
 }
 
@@ -124,7 +146,7 @@ final class FireCoordinator {
                     showIndividualSitesLink: config.showIndividualSitesLink,
                     onConfirm: { response in
                         if case .noAction = response {
-                            pixelFiring?.fire(FireDialogPixel.fireDialogCancel, frequency: .dailyAndCount, doNotEnforcePrefix: true)
+                            pixelFiring?.fire(FireDialogPixel.fireDialogCancel, frequency: .dailyAndCount, options: .unenforcedPrefix)
                         }
                         config.onConfirm(response)
                     }
@@ -135,7 +157,7 @@ final class FireCoordinator {
                 viewModel: config.viewModel,
                 onConfirm: { response in
                     if case .noAction = response {
-                        pixelFiring?.fire(FireDialogPixel.fireDialogCancel, frequency: .dailyAndCount, doNotEnforcePrefix: true)
+                        pixelFiring?.fire(FireDialogPixel.fireDialogCancel, frequency: .dailyAndCount, options: .unenforcedPrefix)
                     }
                     config.onConfirm(response)
                 }
@@ -252,7 +274,7 @@ extension FireCoordinator {
             featureFlagger: self.featureFlagger,
             clearingOption: mode.shouldShowSegmentedControl ? nil /* last selected */ : .allData,
             includeTabsAndWindows: mode.shouldShowCloseTabsToggle ? nil /* last selected */ : false,
-            includeChatHistory: mode.shouldShowChatHistoryToggle ? nil /* last selected */ : false,
+            includeChatHistory: mode.shouldShowChatHistoryToggle(featureFlagger) ? nil /* last selected */ : false,
             mode: mode,
             settings: settings,
             scopeCookieDomains: scopeCookieDomains,
@@ -262,6 +284,8 @@ extension FireCoordinator {
             dataClearingPreferences: self.dataClearingPreferences,
             pixelFiring: self.pixelFiring
         )
+
+        var tabsChangedCancellable: AnyCancellable?
 
         let response: FireDialogView.Response = await withCheckedContinuation { (continuation: CheckedContinuation<FireDialogView.Response, Never>) in
             var didResume = false
@@ -281,10 +305,25 @@ extension FireCoordinator {
                     }
                 )
             )
+
+            // The tabs of the window can change while the dialog is open, without the user doing it
+            // in the browser: a link opened from another app adds a tab and selects it. Let's close the
+            // dialog then.
+            tabsChangedCancellable = tabCollectionViewModel.tabCollection.$tabs
+                .dropFirst()
+                .map { _ in () }
+                .merge(with: tabCollectionViewModel.$selectedTabViewModel.dropFirst().map { _ in () })
+                .sink { _ in
+                    presenter.dismiss()
+                }
+
             presenter.present(in: parentWindow) {
                 resumeOnce(returning: .noAction)
             }
         }
+
+        // The dialog is closed here, so a later change of the tabs is none of its business.
+        tabsChangedCancellable?.cancel()
 
         switch response {
         case .noAction:
@@ -363,7 +402,7 @@ extension FireCoordinator {
                     )
                 ),
                 frequency: .dailyAndCount,
-                doNotEnforcePrefix: true
+                options: .unenforcedPrefix
             )
 
             let entity = Fire.BurningEntity.tab(tabViewModel: tabViewModel,
@@ -396,7 +435,7 @@ extension FireCoordinator {
                     )
                 ),
                 frequency: .dailyAndCount,
-                doNotEnforcePrefix: true
+                options: .unenforcedPrefix
             )
 
             let entity = Fire.BurningEntity.window(tabCollectionViewModel: tabCollectionViewModel,
@@ -424,7 +463,7 @@ extension FireCoordinator {
                     )
                 ),
                 frequency: .dailyAndCount,
-                doNotEnforcePrefix: true
+                options: .unenforcedPrefix
             )
 
             // "All" implies history too; respect includeHistory by routing via burnAll or burnEntity
@@ -459,8 +498,8 @@ extension FireCoordinator {
         }
 
         pixelFiring?.fire(GeneralPixel.fireButtonFirstBurn, frequency: .legacyDailyNoSuffix)
-        pixelFiring?.fire(FireDialogPixel.fireStarted, frequency: .dailyAndCount, doNotEnforcePrefix: true)
-        pixelFiring?.fire(FireDialogPixel.fireStartedInSession, frequency: .dailyAndCount, doNotEnforcePrefix: true)
+        pixelFiring?.fire(FireDialogPixel.fireStarted, frequency: .dailyAndCount, options: .unenforcedPrefix)
+        pixelFiring?.fire(FireDialogPixel.fireStartedInSession, frequency: .dailyAndCount, options: .unenforcedPrefix)
 
         // Complete wide event tracking
         dataClearingWideEventService?.complete()

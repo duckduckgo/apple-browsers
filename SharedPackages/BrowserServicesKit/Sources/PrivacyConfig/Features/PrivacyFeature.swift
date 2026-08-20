@@ -29,7 +29,6 @@ public enum PrivacyFeature: String {
     case gpc
     case httpsUpgrade = "https"
     case autoconsent
-    case clickToLoad
     case autofill
     case autofillBreakageReporter
     case ampLinks
@@ -214,7 +213,7 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// trampoline if the SPI ever misbehaves.
     case newErrorPageReload
 
-    /// "Reorder by name" — permanently reorders a bookmark folder's direct children alphabetically.
+    /// "Sort by name permanently" — permanently reorders a bookmark folder's direct children alphabetically.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217076881156357?focus=true
     case bookmarksReorderByName
 }
@@ -524,6 +523,10 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Supports Duck.ai edit prompt from the native input field.
     case nativePromptEditing
+
+    /// Warns users as they approach their daily/weekly Duck.ai limits, using the usage snapshot the
+    /// web app writes into the reserved `usageLimits` native-storage entry.
+    case usageWarnings
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
@@ -607,7 +610,6 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case syncCreditCards
     case syncIdentities
     case aiChatSync
-    case aiChatSyncPromo
     case allowSingleDeviceOnConnectScreen
     case scopedAccessCredentials
     case canUseV2ConnectFlow
@@ -647,7 +649,7 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case subscriptionPromoForReinstallers
     case subscriptionExpirationReminderNotification
     case subscriptionPromoForExistingUsers
-    case monthlyFreeTrialExperiment
+    case monthlyFreeTrialExperiment2
     case onboardingSubscriptionUpsellExperiment
 }
 
@@ -769,6 +771,7 @@ public enum DataImportSubfeature: String, PrivacySubfeature {
     case newSafariFilePicker
     case newDataImportExperience
     case dataImportSummarySyncPromotion
+    case dataDirectoryAccess
 }
 
 public enum PopupBlockingSubfeature: String, PrivacySubfeature {

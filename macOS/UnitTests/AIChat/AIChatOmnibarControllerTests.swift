@@ -665,6 +665,88 @@ final class AIChatOmnibarControllerTests: XCTestCase {
                        "Attaching beyond the display cap is a no-op")
     }
 
+    // MARK: - Attached tabs navigating
+
+    /// Selected tab A holds the prompt; tab B is attached to it and then navigates.
+    /// Pruning closed tabs is deferred one main-queue turn, so a move between the pinned and
+    /// unpinned collections isn't read mid-transaction.
+    private func waitForPendingMainQueueWork() {
+        let pending = expectation(description: "pending main queue work")
+        DispatchQueue.main.async { pending.fulfill() }
+        wait(for: [pending], timeout: 1)
+    }
+
+    /// Selected tab A holds the prompt; tab B is attached to it and then navigates.
+    private func makeControllerWithAttachedOtherTab() -> (AIChatOmnibarController, Tab) {
+        let promptTab = Tab(content: .url(URL(string: "https://prompt.example")!, credential: nil, source: .ui))
+        let attachedTab = Tab(content: .url(URL(string: "https://example.com")!, credential: nil, source: .ui))
+        _ = tabCollectionViewModel.append(tab: attachedTab, selected: false)
+        _ = tabCollectionViewModel.append(tab: promptTab, selected: true)
+
+        let controller = AIChatOmnibarController(
+            aiChatTabOpener: mockTabOpener,
+            surface: .addressBar,
+            draftSource: TabPromptDraftSource(tabCollectionViewModel: tabCollectionViewModel),
+            origin: WindowPromptOrigin(tabCollectionViewModel: tabCollectionViewModel),
+            pixelHandler: AddressBarPromptPixelHandler(),
+            featureFlagger: featureFlagger,
+            searchPreferencesPersistor: searchPreferencesPersistor,
+            preferences: mockPreferences,
+            modelsService: mockModelsService,
+            subscriptionManager: mockSubscriptionManager,
+            subscriptionUpsellPresenter: mockSubscriptionUpsellPresenter
+        )
+        controller.toggleTabAttachment(AIChatTabAttachment(id: attachedTab.uuid,
+                                                           title: "Example",
+                                                           url: URL(string: "https://example.com")!,
+                                                           favicon: nil))
+        XCTAssertEqual(controller.activeTabAttachments.map(\.id), [attachedTab.uuid])
+        return (controller, attachedTab)
+    }
+
+    func testWhenAttachedTabNavigates_ThenTheAttachmentFollowsIt() {
+        let (controller, attachedTab) = makeControllerWithAttachedOtherTab()
+
+        _ = attachedTab.setContent(.url(URL(string: "https://apple.com")!, credential: nil, source: .ui))
+
+        XCTAssertEqual(controller.activeTabAttachments.map(\.url.absoluteString), ["https://apple.com"],
+                       "An omnibar prompt is about a new chat, so the card follows the tab it names")
+    }
+
+    /// Switching to the attached tab used to cancel its observer, losing that tab's navigation.
+    func testWhenAttachedTabNavigatesWhileItIsSelected_ThenThePromptTabsAttachmentUpdatesImmediately() {
+        let (controller, attachedTab) = makeControllerWithAttachedOtherTab()
+        let promptTabState = tabCollectionViewModel.selectedTabViewModel?.addressBarSharedTextState
+
+        // User switches to the attached tab and navigates it there.
+        tabCollectionViewModel.select(tab: attachedTab)
+        _ = attachedTab.setContent(.url(URL(string: "https://apple.com")!, credential: nil, source: .ui))
+
+        XCTAssertEqual(promptTabState?.aiChatTabAttachments.map(\.url.absoluteString), ["https://apple.com"],
+                       "The prompt tab's attachment must refresh as the navigation happens, not on the next visit")
+        _ = controller
+    }
+
+    func testWhenAttachedTabIsClosed_ThenTheAttachmentIsDropped() throws {
+        let (controller, attachedTab) = makeControllerWithAttachedOtherTab()
+        let attachedIndex = tabCollectionViewModel.indexInAllTabs(where: { $0.uuid == attachedTab.uuid })
+
+        tabCollectionViewModel.remove(at: try XCTUnwrap(attachedIndex))
+        waitForPendingMainQueueWork()
+
+        XCTAssertTrue(controller.activeTabAttachments.isEmpty, "A closed tab has no page content left to send")
+    }
+
+    func testWhenAttachedTabIsDetached_ThenItsNavigationNoLongerTouchesTheAttachments() {
+        let (controller, attachedTab) = makeControllerWithAttachedOtherTab()
+        controller.removeTabAttachmentFromActiveTab(id: attachedTab.uuid)
+        controller.toggleTabAttachment(makeTabAttachment(id: "other-tab"))
+
+        _ = attachedTab.setContent(.url(URL(string: "https://apple.com")!, credential: nil, source: .ui))
+
+        XCTAssertEqual(controller.activeTabAttachments.map(\.id), ["other-tab"])
+    }
+
     func testTabAttachmentFullAndExcessPredicates() {
         XCTAssertFalse(controller.isActiveTabAttachmentsFull)
         XCTAssertFalse(controller.hasExcessTabAttachments)
@@ -956,8 +1038,11 @@ final class AIChatOmnibarControllerTests: XCTestCase {
     }
 
     func testWhenTabSwitchesToTabWithSavedTabAttachments_ThenPanelAttachmentsCallbackFires() {
-        // Given — tab 1 has a saved tab attachment; register the unified-panel callback.
-        let attachment = makeTabAttachment(id: "tab-A")
+        // Given — tab 1 has a saved attachment. It has to name an open tab sitting on the page the
+        // attachment records: a closed tab is pruned, and one on another page is a navigation.
+        let attachedTab = Tab(content: .url(URL(string: "https://example.com")!, credential: nil, source: .ui))
+        _ = tabCollectionViewModel.append(tab: attachedTab, selected: false)
+        let attachment = makeTabAttachment(id: attachedTab.uuid)
         tabCollectionViewModel.selectedTabViewModel?.addressBarSharedTextState.setAIChatTabAttachments([attachment])
 
         var receivedLists: [[AIChatPanelAttachment]] = []

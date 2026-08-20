@@ -27,7 +27,7 @@ import XCTest
 
 final class OnboardingSubscriptionUpsellMetricsTests: XCTestCase {
 
-    private var firedEvents: [PixelKitEvent]!
+    private var firedEvents: [PixelKit.Event]!
     private let subfeatureID = PrivacyProSubfeature.onboardingSubscriptionUpsellExperiment.rawValue
 
     override func setUp() {

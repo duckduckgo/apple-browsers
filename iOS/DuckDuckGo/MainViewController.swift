@@ -3572,6 +3572,8 @@ class MainViewController: UIViewController {
     // MARK: - Idle return NTP (dismiss overlays so NTP is visible)
     /// Dismisses tab switcher and any presented view controller (e.g. Settings) so the caller can then show the NTP.
     func prepareForIdleReturnNTP(completion: @escaping () -> Void) {
+        // A child of this controller rather than a presented one, so it outlives the dismissal below.
+        currentTab?.aiChatContextualSheetCoordinator.dismissFloatingInput(.systemTeardown)
         guard let presented = presentedViewController, !presented.isBeingDismissed else {
             completion()
             return

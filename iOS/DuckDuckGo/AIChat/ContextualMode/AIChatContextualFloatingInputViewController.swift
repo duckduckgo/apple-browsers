@@ -342,6 +342,14 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
         })
     }
 
+    /// Torn down by something other than the user, so it goes at once — whatever replaces it starts clean.
+    func removeWithoutAnimation() {
+        guard !isDismissing else { return }
+        isDismissing = true
+        resignInput()
+        remove()
+    }
+
     func remove() {
         // A removed surface has no business reacting to the keyboard it no longer sits above.
         NotificationCenter.default.removeObserver(self)

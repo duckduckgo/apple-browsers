@@ -46,6 +46,10 @@ final class AIChatRecentChatsPopupViewController: UIViewController {
         static let separatorContainerHeight: CGFloat = 21
         static let popupWidth: CGFloat = 270
         static let popupLeadingOffset: CGFloat = 16
+        static let entranceDuration: TimeInterval = 0.32
+        static let entranceDamping: CGFloat = 0.82
+        static let entranceScale: CGFloat = 0.88
+        static let exitDuration: TimeInterval = 0.16
     }
 
     // MARK: - Properties
@@ -124,6 +128,44 @@ final class AIChatRecentChatsPopupViewController: UIViewController {
     // MARK: - Public
 
     /// Anchors the popup card overlapping the header pill using screen coordinates.
+    /// Grows out of the pill it hangs from, so it reads like the system menus beside it.
+    func animateIn() {
+        view.layoutIfNeeded()
+        let dim = view.backgroundColor
+        view.backgroundColor = .clear
+        shadowContainer.alpha = 0
+        shadowContainer.transform = Self.entranceTransform(for: shadowContainer.bounds)
+        UIView.animate(withDuration: Constants.entranceDuration,
+                       delay: 0,
+                       usingSpringWithDamping: Constants.entranceDamping,
+                       initialSpringVelocity: 0,
+                       options: [.allowUserInteraction]) {
+            self.view.backgroundColor = dim
+            self.shadowContainer.alpha = 1
+            self.shadowContainer.transform = .identity
+        }
+    }
+
+    func animateOut(completion: @escaping () -> Void) {
+        UIView.animate(withDuration: Constants.exitDuration,
+                       delay: 0,
+                       options: [.beginFromCurrentState, .curveEaseIn]) {
+            self.view.backgroundColor = .clear
+            self.shadowContainer.alpha = 0
+            self.shadowContainer.transform = Self.entranceTransform(for: self.shadowContainer.bounds)
+        } completion: { _ in
+            completion()
+        }
+    }
+
+    /// Scaled about its own top-leading corner, which is where the pill is.
+    private static func entranceTransform(for bounds: CGRect) -> CGAffineTransform {
+        let scale = Constants.entranceScale
+        let dx = -(1 - scale) * bounds.width / 2
+        let dy = -(1 - scale) * bounds.height / 2
+        return CGAffineTransform(translationX: dx, y: dy).scaledBy(x: scale, y: scale)
+    }
+
     func anchorContentView(pillFrame: CGRect) {
         let cardTop = pillFrame.minY - ContainerMetrics.cornerRadius
         let cardLeading = pillFrame.minX + Constants.popupLeadingOffset
@@ -304,7 +346,7 @@ private extension AIChatRecentChatsPopupViewController {
 
     /// No `chats` glyph at 16px; `aiChatHistory` is what the app menu uses for the same row.
     func makeViewAllChatsRow() -> UIView {
-        makeActionRow(icon: DesignSystemImages.Glyphs.Size16.aiChatHistory,
+        makeActionRow(icon: DesignSystemImages.Glyphs.Size16.openIn,
                       title: UserText.aiChatViewAllChats,
                       action: #selector(viewAllChatsTapped))
     }

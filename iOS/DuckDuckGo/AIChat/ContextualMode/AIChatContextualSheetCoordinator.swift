@@ -347,14 +347,25 @@ final class AIChatContextualSheetCoordinator {
 
     /// Every dismissal route funnels through here, so the pixel belongs here rather than at each
     /// call site. `promoteFloatingInputToSheet` deliberately bypasses it.
-    func dismissFloatingInput() {
+    /// Who ended the surface: the user giving up on the input, or the app clearing the screen for something else.
+    enum FloatingInputDismissal {
+        case userInitiated
+        case systemTeardown
+    }
+
+    func dismissFloatingInput(_ dismissal: FloatingInputDismissal = .userInitiated) {
         guard let controller = floatingInputViewController else { return }
         // Released before the animation ends: the address bar reads this, and a surface on its way out
         // is no longer one to dismiss. `unmount(from:)` keeps a late removal off a newer surface.
         floatingInputViewController = nil
         floatingChipsCancellable = nil
-        pixelHandler.fireFloatingInputDismissedWithoutSubmission()
-        controller.dismiss { controller.remove() }
+        switch dismissal {
+        case .userInitiated:
+            pixelHandler.fireFloatingInputDismissedWithoutSubmission()
+            controller.dismiss { controller.remove() }
+        case .systemTeardown:
+            controller.removeWithoutAnimation()
+        }
         stopObservingContextUpdates()
         sessionState.handleSheetDismissed()
         startSessionTimer()

@@ -92,6 +92,7 @@ private protocol ContextualHeaderPill: UIView {
     var contentView: UIView { get }
     /// `UIGlassEffect`'s style is fixed at construction, so glass chrome rebuilds on a light/dark flip.
     func refreshGlassForCurrentTraits()
+    func applyShadow(dimmed: Bool)
 }
 
 extension AIChatHeaderGlassPill: ContextualHeaderPill {}
@@ -124,6 +125,8 @@ final class AIChatContextualSheetViewController: UIViewController {
         var contentView: UIView { self }
 
         func refreshGlassForCurrentTraits() {}
+
+        func applyShadow(dimmed: Bool) {}
 
         override func layoutSubviews() {
             super.layoutSubviews()
@@ -253,16 +256,83 @@ final class AIChatContextualSheetViewController: UIViewController {
         return button
     }()
 
+    /// Experiment: flip to compare the system menu against the custom popup.
+    private static let usesNativeChatsMenu = true
+
     private lazy var recentChatsButton: UIButton = {
-        let button = UIButton(type: .system)
+        let button = MenuHostingButton(type: .system)
         button.setImage(DesignSystemImages.Glyphs.Size24.chats, for: .normal)
         button.tintColor = UIColor(designSystemColor: .textPrimary)
         button.translatesAutoresizingMaskIntoConstraints = false
-        button.addTarget(self, action: #selector(recentChatsButtonTapped), for: .touchUpInside)
         button.accessibilityLabel = UserText.aiChatRecentChatsButtonAccessibility
         button.accessibilityTraits = .button
+        if Self.usesNativeChatsMenu {
+            button.showsMenuAsPrimaryAction = true
+            button.onMenuWillDisplay = { [weak self] in self?.setHeaderPillShadowsDimmed(true, alongside: $0) }
+            button.onMenuWillEnd = { [weak self] in self?.setHeaderPillShadowsDimmed(false, alongside: $0) }
+            button.menu = UIMenu(children: [
+                UIDeferredMenuElement.uncached { [weak self] completion in
+                    self?.buildNativeChatsMenuElements(completion) ?? completion([])
+                }
+            ])
+        } else {
+            button.addTarget(self, action: #selector(recentChatsButtonTapped), for: .touchUpInside)
+        }
         return button
     }()
+
+    /// UIKit lays an upward menu out bottom-up, putting the first element nearest the button.
+    private var menuOpensUpward: Bool {
+        guard let window = view.window else { return false }
+        return recentChatsButton.convert(recentChatsButton.bounds, to: nil).midY > window.bounds.midY
+    }
+
+    private static func reversingChildren(_ element: UIMenuElement) -> UIMenuElement {
+        guard let menu = element as? UIMenu else { return element }
+        return menu.replacingChildren(menu.children.reversed())
+    }
+
+    /// Mirrors the custom popup's sections, fetched when the menu opens rather than on the tap.
+    private func buildNativeChatsMenuElements(_ completion: @escaping ([UIMenuElement]) -> Void) {
+        Task { @MainActor in
+            let viewModel = await AIChatRecentChatsPopupViewModel.fetch(
+                using: suggestionsReader,
+                showNewChat: sessionState.hasActiveChat
+            )
+            let openDuckAI = UIAction(title: UserText.duckAiContextualOpenDuckAi,
+                                      image: DesignSystemImages.Glyphs.Size16.aiChat) { [weak self] _ in
+                self?.recentChatsPopupDidSelectOpenDuckAI()
+            }
+            var sections: [UIMenuElement] = [UIMenu(options: .displayInline, children: [openDuckAI])]
+
+            if sessionState.hasActiveChat {
+                let newChat = UIAction(title: UserText.actionNewAIChat,
+                                       image: DesignSystemImages.Glyphs.Size16.compose) { [weak self] _ in
+                    self?.recentChatsPopupDidSelectNewChat()
+                }
+                sections.append(UIMenu(options: .displayInline, children: [newChat]))
+            }
+
+            let chats = (viewModel?.suggestions ?? []).map { suggestion in
+                UIAction(title: suggestion.title,
+                         image: suggestion.isPinned ? DesignSystemImages.Glyphs.Size16.pin : DesignSystemImages.Glyphs.Size16.chat) { [weak self] _ in
+                    self?.recentChatsPopupDidSelectChat(suggestion)
+                }
+            }
+            if !chats.isEmpty {
+                sections.append(UIMenu(title: UserText.aiChatRecentChatsSectionTitle,
+                                       options: .displayInline,
+                                       children: chats))
+            }
+
+            let viewAll = UIAction(title: UserText.aiChatViewAllChats,
+                                   image: DesignSystemImages.Glyphs.Size16.openIn) { [weak self] _ in
+                self?.recentChatsPopupDidSelectViewAll()
+            }
+            sections.append(UIMenu(options: .displayInline, children: [viewAll]))
+            completion(menuOpensUpward ? sections.reversed().map(Self.reversingChildren) : sections)
+        }
+    }
 
     private lazy var titleContainer: UIStackView = {
         let stack = UIStackView()
@@ -556,6 +626,16 @@ final class AIChatContextualSheetViewController: UIViewController {
         delegate?.aiChatContextualSheetViewControllerDidRequestDismiss(self)
     }
 
+    /// The menu dims what is behind it, where the pills' lift reads as a halo rather than separation.
+    private func setHeaderPillShadowsDimmed(_ dimmed: Bool, alongside animator: UIContextMenuInteractionAnimating?) {
+        let applyShadows = { [weak self] in
+            self?.leftButtonContainer.applyShadow(dimmed: dimmed)
+            self?.rightButtonContainer.applyShadow(dimmed: dimmed)
+        }
+        guard let animator else { return applyShadows() }
+        animator.addAnimations(applyShadows)
+    }
+
     @objc private func recentChatsButtonTapped() {
         if recentChatsPopup != nil {
             dismissRecentChatsPopup()
@@ -714,15 +794,16 @@ private extension AIChatContextualSheetViewController {
 
         popupWindow = overlay
         recentChatsPopup = popup
+        popup.animateIn()
         pixelHandler.fireRecentChatsPopupDisplayed()
     }
 
     func dismissRecentChatsPopup() {
-        guard popupWindow != nil else { return }
-        popupWindow?.isHidden = true
+        guard let window = popupWindow, let popup = recentChatsPopup else { return }
         popupWindow = nil
         recentChatsPopup = nil
-        view.window?.makeKey()
+        // The window is held by the closure so it outlives the fade rather than vanishing under it.
+        popup.animateOut { window.isHidden = true }
     }
 
     func updateChipUI(chipState: ChipState) {
@@ -1597,5 +1678,26 @@ extension AIChatContextualSheetViewController {
 
     func notifyInitialNativePromptSubmitted(hasPageContext: Bool) {
         webViewController?.notifyInitialNativePromptSubmitted(hasPageContext: hasPageContext)
+    }
+}
+
+/// Reports the system menu presenting, so the host can settle what the menu is placed against.
+private final class MenuHostingButton: UIButton {
+
+    var onMenuWillDisplay: ((UIContextMenuInteractionAnimating?) -> Void)?
+    var onMenuWillEnd: ((UIContextMenuInteractionAnimating?) -> Void)?
+
+    override func contextMenuInteraction(_ interaction: UIContextMenuInteraction,
+                                        willDisplayMenuFor configuration: UIContextMenuConfiguration,
+                                        animator: UIContextMenuInteractionAnimating?) {
+        super.contextMenuInteraction(interaction, willDisplayMenuFor: configuration, animator: animator)
+        onMenuWillDisplay?(animator)
+    }
+
+    override func contextMenuInteraction(_ interaction: UIContextMenuInteraction,
+                                        willEndFor configuration: UIContextMenuConfiguration,
+                                        animator: UIContextMenuInteractionAnimating?) {
+        super.contextMenuInteraction(interaction, willEndFor: configuration, animator: animator)
+        onMenuWillEnd?(animator)
     }
 }

@@ -287,7 +287,9 @@ final class DuckSchemeHandlerTests: XCTestCase {
         XCTAssertNil(configuration.urlSchemeHandler(forURLScheme: "duck"))
 
         // When
-        configuration.applyStandardConfiguration(contentBlocking: MockContentBlocking(), burnerMode: .regular)
+        configuration.applyStandardConfiguration(featureFlagger: MockFeatureFlagger(),
+                                                 contentBlocking: MockContentBlocking(),
+                                                 burnerMode: .regular)
 
         // Then
         XCTAssertNotNil(configuration.urlSchemeHandler(forURLScheme: "duck"))

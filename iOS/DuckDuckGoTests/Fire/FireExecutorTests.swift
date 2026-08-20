@@ -30,7 +30,7 @@ import PersistenceTestingUtils
 import DDGSync
 import WKAbstractions
 import BrowserServicesKitTestsUtils
-import PixelKitTestingUtilities
+@_spi(Testing) import PixelKit
 
 @MainActor
 final class FireExecutorTests: XCTestCase {

@@ -106,6 +106,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866614764239
     case tabCrashDebugging
 
+    /// Gates the `debug://` custom URL scheme handler and Debug menu entries for UI test / debug pages.
+    case debugURLScheme
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866717382544
     case delayedWebviewPresentation
 
@@ -593,6 +596,8 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .syncSeamlessAccountSwitching:
             Config(source: .remoteReleasable(SyncSubfeature.seamlessAccountSwitching), category: .sync)
         case .tabCrashDebugging:
+            Config(source: .disabled)
+        case .debugURLScheme:
             Config(source: .disabled)
         case .delayedWebviewPresentation:
             Config(defaultValue: .enabled, source: .remoteReleasable(DelayedWebviewPresentationSubfeature.featureEnabled))

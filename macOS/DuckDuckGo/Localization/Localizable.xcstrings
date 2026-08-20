@@ -45348,7 +45348,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "**%#@chats@** werden gelöscht:"
+            "value" : "**%#@chats@** werden gelöscht"
           },
           "substitutions" : {
             "chats" : {
@@ -45375,8 +45375,8 @@
         },
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "**%#@chats@** will be deleted:"
+            "state" : "translated",
+            "value" : "**%#@chats@** will be deleted"
           },
           "substitutions" : {
             "chats" : {
@@ -45404,7 +45404,7 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "**%#@chats@** se borrarán:"
+            "value" : "**%#@chats@** se borrarán"
           },
           "substitutions" : {
             "chats" : {
@@ -45432,7 +45432,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "**%#@chats@** seront supprimées :"
+            "value" : "**%#@chats@** seront supprimées"
           },
           "substitutions" : {
             "chats" : {
@@ -45460,7 +45460,7 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "**%#@chats@** verranno eliminate:"
+            "value" : "**%#@chats@** verranno eliminate"
           },
           "substitutions" : {
             "chats" : {
@@ -45488,7 +45488,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "**%#@chats@** worden verwijderd:"
+            "value" : "**%#@chats@** worden verwijderd"
           },
           "substitutions" : {
             "chats" : {
@@ -45516,7 +45516,7 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "**Czaty Duck.ai (%#@chats@)** zostaną usunięte:"
+            "value" : "**Czaty Duck.ai (%#@chats@)** zostaną usunięte"
           },
           "substitutions" : {
             "chats" : {
@@ -45556,7 +45556,7 @@
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "**%#@chats@** serão eliminados:"
+            "value" : "**%#@chats@** serão eliminados"
           },
           "substitutions" : {
             "chats" : {
@@ -45584,7 +45584,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "**%#@chats@** будут удалены:"
+            "value" : "**%#@chats@** будут удалены"
           },
           "substitutions" : {
             "chats" : {
@@ -48916,7 +48916,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "**%#@items@** werden gelöscht:"
+            "value" : "**%#@items@** werden gelöscht"
           },
           "substitutions" : {
             "items" : {
@@ -48943,8 +48943,8 @@
         },
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "**%#@items@** will be deleted:"
+            "state" : "translated",
+            "value" : "**%#@items@** will be deleted"
           },
           "substitutions" : {
             "items" : {
@@ -48972,7 +48972,7 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Se eliminará **%#@items@**:"
+            "value" : "Se eliminará **%#@items@**"
           },
           "substitutions" : {
             "items" : {
@@ -49000,7 +49000,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "**%#@items@** seront supprimés :"
+            "value" : "**%#@items@** seront supprimés"
           },
           "substitutions" : {
             "items" : {
@@ -49028,7 +49028,7 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "**%#@items@** verranno eliminati:"
+            "value" : "**%#@items@** verranno eliminati"
           },
           "substitutions" : {
             "items" : {
@@ -49056,7 +49056,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "**%#@items@** worden verwijderd:"
+            "value" : "**%#@items@** worden verwijderd"
           },
           "substitutions" : {
             "items" : {
@@ -49084,7 +49084,7 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "**Elementy historii (%#@items@)** zostaną usunięte:"
+            "value" : "**Elementy historii (%#@items@)** zostaną usunięte"
           },
           "substitutions" : {
             "items" : {
@@ -49124,7 +49124,7 @@
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "**%#@items@** serão eliminados:"
+            "value" : "**%#@items@** serão eliminados"
           },
           "substitutions" : {
             "items" : {
@@ -49152,7 +49152,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Из журнала будет удалено **%1$#@items@**:"
+            "value" : "Из журнала будет удалено **%1$#@items@**"
           },
           "substitutions" : {
             "items" : {
@@ -49257,55 +49257,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cookies & andere Daten einbeziehen?"
+            "value" : "Cookies & andere Daten einbeziehen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Include cookies & other data?"
+            "value" : "Include cookies & other data"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "¿Incluir cookies y otros datos?"
+            "value" : "Incluir cookies y otros datos"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Inclure les cookies et autres données ?"
+            "value" : "Inclure les cookies et autres données"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Includere cookie e altri dati?"
+            "value" : "Includere cookie e altri dati"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Inclusief cookies en andere gegevens?"
+            "value" : "Inclusief cookies en andere gegevens"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Uwzględnić pliki cookie i inne dane?"
+            "value" : "Uwzględnić pliki cookie i inne dane"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Incluir cookies e outros dados?"
+            "value" : "Incluir cookies e outros dados"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Также удалить cookie и другие данные?"
+            "value" : "Также удалить cookie и другие данные"
           }
         }
       }
@@ -50326,7 +50326,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "**Cookies & andere Daten von %#@sites@** werden gelöscht:"
+            "value" : "**Cookies & andere Daten von %#@sites@** werden gelöscht"
           },
           "substitutions" : {
             "sites" : {
@@ -50353,8 +50353,8 @@
         },
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "**Cookies & other data from %#@sites@** will be deleted:"
+            "state" : "translated",
+            "value" : "**Cookies & other data from %#@sites@** will be deleted"
           },
           "substitutions" : {
             "sites" : {
@@ -50382,7 +50382,7 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "**Las cookies y otros datos de %#@sites@** se eliminarán:"
+            "value" : "**Las cookies y otros datos de %#@sites@** se eliminarán"
           },
           "substitutions" : {
             "sites" : {
@@ -50410,7 +50410,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Les **cookies et autres données de %#@sites@** seront supprimés :"
+            "value" : "Les **cookies et autres données de %#@sites@** seront supprimés"
           },
           "substitutions" : {
             "sites" : {
@@ -50438,7 +50438,7 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "**I cookie e gli altri dati di %#@sites@** saranno eliminati:"
+            "value" : "**I cookie e gli altri dati di %#@sites@** saranno eliminati"
           },
           "substitutions" : {
             "sites" : {
@@ -50466,7 +50466,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "**Cookies & andere gegevens van %#@sites@** worden verwijderd:"
+            "value" : "**Cookies & andere gegevens van %#@sites@** worden verwijderd"
           },
           "substitutions" : {
             "sites" : {
@@ -50494,7 +50494,7 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "**Pliki cookie i inne dane witryn (%#@sites@)** zostaną usunięte:"
+            "value" : "**Pliki cookie i inne dane witryn (%#@sites@)** zostaną usunięte"
           },
           "substitutions" : {
             "sites" : {
@@ -50534,7 +50534,7 @@
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "**Os cookies e outros dados de %#@sites@** serão eliminados:"
+            "value" : "**Os cookies e outros dados de %#@sites@** serão eliminados"
           },
           "substitutions" : {
             "sites" : {
@@ -50562,7 +50562,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "**Файлы cookie и прочие данные с %#@sites@** будут удалены:"
+            "value" : "**Файлы cookie и прочие данные с %#@sites@** будут удалены"
           },
           "substitutions" : {
             "sites" : {

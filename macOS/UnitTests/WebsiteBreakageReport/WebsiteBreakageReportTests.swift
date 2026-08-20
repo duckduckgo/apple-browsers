@@ -18,8 +18,8 @@
 
 import PrivacyDashboard
 import XCTest
-import PixelKit
-import PixelKitTestingUtilities
+@_spi(Testing) import PixelKit
+@_spi(Testing) import SharedTestUtilities
 @testable import DuckDuckGo_Privacy_Browser
 @testable import Networking
 

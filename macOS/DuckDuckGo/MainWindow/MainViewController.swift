@@ -263,14 +263,20 @@ final class MainViewController: NSViewController {
             aiChatMenuConfig: aiChatMenuConfig,
             aiChatCoordinator: aiChatCoordinator,
             aiChatTabOpener: aiChatTabOpener,
-            pixelFiring: pixelFiring
+            pixelFiring: pixelFiring,
+            currentPageContextProvider: { [weak tabCollectionViewModel] in
+                tabCollectionViewModel?.selectedTabViewModel?.tab.pageContext
+            }
         )
 
         aiChatTranslator = AIChatTranslator(
             aiChatMenuConfig: aiChatMenuConfig,
             aiChatCoordinator: aiChatCoordinator,
             aiChatTabOpener: aiChatTabOpener,
-            pixelFiring: pixelFiring
+            pixelFiring: pixelFiring,
+            currentPageContextProvider: { [weak tabCollectionViewModel] in
+                tabCollectionViewModel?.selectedTabViewModel?.tab.pageContext
+            }
         )
 
         aiChatSelectionContextAttacher = AIChatSelectionContextAttacher(

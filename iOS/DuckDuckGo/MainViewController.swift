@@ -8462,14 +8462,25 @@ extension MainViewController {
     }
 
     fileprivate func reportDuckAITabClosedIfNeeded(_ tab: Tab) {
-        guard let closingURL = tabManager.controller(for: tab)?.webView.url, closingURL.isDuckAIURL else { return }
+        DefaultDuckAISelectionJourneyInstrumentation.completeFlow(
+            localScopeID: tab.uid,
+            reason: .tabClosed,
+            wideEvent: AppDependencyProvider.shared.wideEvent
+        )
+        let controller = tabManager.controller(for: tab)
+        guard let closingURL = controller?.webView.url, closingURL.isDuckAIURL else { return }
         duckAIWideEventInstrumentation.tabClosedDuringGeneration(tabID: tab.uid)
     }
 
     fileprivate func reportDuckAIFireButtonClearedTabsIfNeeded(_ fireRequest: FireRequest) {
-        guard fireRequest.trigger == .manualFire else { return }
+        guard fireRequest.trigger == .manualFire, fireRequest.options.contains(.tabs) else { return }
 
         for tab in tabsClearedByFireButton(fireRequest.scope) {
+            DefaultDuckAISelectionJourneyInstrumentation.completeFlow(
+                localScopeID: tab.uid,
+                reason: .chatCleared,
+                wideEvent: AppDependencyProvider.shared.wideEvent
+            )
             duckAIWideEventInstrumentation.fireButtonClearedTabDuringGeneration(tabID: tab.uid)
         }
     }

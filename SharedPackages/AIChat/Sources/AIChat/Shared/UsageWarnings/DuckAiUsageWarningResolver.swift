@@ -18,18 +18,17 @@
 
 import Foundation
 
-/// Turns a raw usage snapshot into the one message that should be on screen, if any. Pure: every input is
-/// a parameter or an injected collaborator, so the whole rule set is unit-testable without a UI.
+/// Pure: every input is a parameter or an injected collaborator, so the rule set is testable without UI.
 public struct DuckAiUsageWarningResolver {
 
-    /// Why nothing is shown. Reported so each gate stays observable while there is no UI.
+    /// Reported so each gate stays observable while there is no UI.
     public enum NoWarningReason: String, Comparable {
         case noData
         case belowVisibilityFloor
         case tierNotEligible
         case dismissedUntilReset
 
-        /// When both windows are rejected, the more specific reason is the more useful one to report.
+        /// When both windows are rejected, the more specific reason is the more useful to report.
         private var specificity: Int {
             switch self {
             case .noData: return 0
@@ -47,12 +46,10 @@ public struct DuckAiUsageWarningResolver {
         case none(reason: NoWarningReason)
     }
 
-    /// The payload carries no `isBlocked`. The web app clamps `percentUsed` to 0–100 and only reports a
-    /// flat 100 once the window is actually blocked, so 100 is the signal.
+    /// The payload carries no `isBlocked`; web reports a flat 100 only once the window is blocked.
     private static let blockedPercent: Double = 100
 
-    /// `.internal` is here for completeness but is never produced at runtime — internal users are
-    /// identified through `InternalUserDecider`, which arrives separately as `isInternalUser`.
+    /// `.internal` never occurs at runtime; internal users arrive separately as `isInternalUser`.
     private static let tiersThatSeeApproachingWarnings: Set<AIChatUserTier> = [.plus, .pro, .internal]
 
     private let dismissalStore: DuckAiUsageWarningDismissalStoring
@@ -80,7 +77,7 @@ public struct DuckAiUsageWarningResolver {
             }
         }
 
-        // Filtering happens before the pick, so a dismissed daily correctly lets a live weekly through.
+        // Filtering before the pick is what lets a live weekly through a dismissed daily.
         guard let winner = candidates.max(by: Self.isLowerPriority) else { return .none(reason: rejection) }
         return .warning(winner.warning, cheaperModel: winner.cheaperModel)
     }
@@ -92,13 +89,12 @@ public struct DuckAiUsageWarningResolver {
 
     private struct Candidate {
         let warning: DuckAiUsageWarning
-        /// The raw, uncapped percentage — the rounded one in `warning` can't break a 99.4 / 99.6 tie.
+        /// Uncapped, because the rounded one in `warning` can't break a 99.4 / 99.6 tie.
         let percentUsed: Double
         let cheaperModel: DuckAiCheaperModelOutcome
     }
 
-    /// Whichever limit is closest to biting wins; on a tie, daily. Total, because the two candidates
-    /// always come from different windows.
+    /// Whichever limit is closest to biting wins; on a tie, daily.
     private static func isLowerPriority(_ lhs: Candidate, _ rhs: Candidate) -> Bool {
         if lhs.warning.severity != rhs.warning.severity { return lhs.warning.severity < rhs.warning.severity }
         if lhs.percentUsed != rhs.percentUsed { return lhs.percentUsed < rhs.percentUsed }
@@ -115,12 +111,11 @@ public struct DuckAiUsageWarningResolver {
         let percentUsed = data.percentUsed
         let isBlocked = percentUsed >= Self.blockedPercent
 
-        // Gated on the raw value, not the rounded one, so 49.6% never renders as a "50%" message.
+        // Raw, not rounded, so 49.6% never renders as a "50%" message.
         guard isBlocked || percentUsed >= DuckAiUsageWindow.visibilityFloor else {
             return .rejected(.belowVisibilityFloor)
         }
 
-        // Free and unknown tiers only ever see the reached message, and can't dismiss it.
         let canSeeApproachingWarnings = isInternalUser || Self.tiersThatSeeApproachingWarnings.contains(tier)
         guard isBlocked || canSeeApproachingWarnings else { return .rejected(.tierNotEligible) }
 
@@ -129,7 +124,7 @@ public struct DuckAiUsageWarningResolver {
             return .rejected(.dismissedUntilReset)
         }
 
-        // A reached message has nothing left to head off, so it carries no CTA.
+        // Nothing left to head off once blocked.
         let cheaperModel = isBlocked ? .none(reason: .notApplicable) : cheaperModelSuggester.suggestion()
 
         let warning = DuckAiUsageWarning(
@@ -145,7 +140,6 @@ public struct DuckAiUsageWarningResolver {
         return .candidate(Candidate(warning: warning, percentUsed: percentUsed, cheaperModel: cheaperModel))
     }
 
-    /// A dismissal holds until the window resets or the user crosses the next redisplay threshold.
     private func isSuppressedByDismissal(window: DuckAiUsageWindow, percentUsed: Double, resetsAt: Date) -> Bool {
         guard let dismissal = dismissalStore.dismissal(for: window), dismissal.applies(to: resetsAt) else {
             return false

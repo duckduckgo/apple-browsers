@@ -18,8 +18,7 @@
 
 import Foundation
 
-/// The windows the web app reports. The 6-hour and monthly windows are deliberately not part of the
-/// native payload, so there is nothing to warn about for them.
+/// The 6-hour and monthly windows are deliberately absent from the native payload.
 public enum DuckAiUsageWindow: String, CaseIterable {
     case daily
     case weekly
@@ -43,12 +42,11 @@ public enum DuckAiUsageSeverity: Int, Comparable {
     }
 }
 
-/// How long until the window resets, at the granularity the copy uses.
 public enum DuckAiUsageResetInterval: Equatable {
     case days(Int)
     case hours(Int)
 
-    /// `"3d"` / `"5h"`. The localized `Resets in {…}` wrapper belongs to the UI layer.
+    /// The localized `Resets in {…}` wrapper belongs to the UI layer.
     public var shortDescription: String {
         switch self {
         case .days(let days): return "\(days)d"
@@ -56,12 +54,10 @@ public enum DuckAiUsageResetInterval: Equatable {
         }
     }
 
-    /// Two edges here look like bugs and aren't — they're what the web copy does, so leave them:
-    /// 25h renders as `"2d"` rather than `"1d"`, and 23.9h renders as `"24h"` rather than `"1d"`.
+    /// Matches web, including its odd edges: 25h reads as "2d", and 23.9h as "24h".
     public static func from(now: Date, resetsAt: Date) -> Self {
         let interval = resetsAt.timeIntervalSince(now)
-        // Only reachable if the clock moves between read and render — `DuckAiUsageLimits.make` already
-        // drops windows that have already reset.
+        // Only reachable if the clock moves between read and render.
         guard interval > 0 else { return .hours(0) }
 
         if interval >= Self.secondsPerDay {
@@ -74,20 +70,19 @@ public enum DuckAiUsageResetInterval: Equatable {
     private static let secondsPerDay: TimeInterval = 24 * 60 * 60
 }
 
-/// The single message that should be on screen, already resolved against tier, thresholds and dismissal.
 public struct DuckAiUsageWarning: Equatable {
 
     public enum Kind: String {
-        /// "{n}% of daily limit" — a heads-up, dismissible by paid and internal users.
+        /// Dismissible by paid and internal users.
         case approaching
-        /// "Daily limit reached" — sticky, shown to every tier, clears only when the window resets.
+        /// Sticky, shown to every tier, clears only when the window resets.
         case reached
     }
 
     public let window: DuckAiUsageWindow
     public let kind: Kind
     public let severity: DuckAiUsageSeverity
-    /// Rounded, capped at 99 until the window is blocked, then 100.
+    /// Capped at 99 until the window is blocked, then 100.
     public let percent: Int
     public let resetsIn: DuckAiUsageResetInterval
     public let isDismissible: Bool
@@ -112,16 +107,11 @@ public struct DuckAiUsageWarning: Equatable {
 
 extension DuckAiUsageWarning {
 
-    /// The English copy the UI will render, composed for the debug log only — the shipped strings get
-    /// localized in the app targets when the UI lands. Logged so a native decision can be read straight
-    /// across against the web banner rather than decoded from field names.
-    ///
-    /// Web pairs the CTA with a "Reduce usage with a more efficient model" subtitle. iOS and macOS
-    /// deliberately don't, so there is no subtitle here either.
+    /// For the debug log only, so a decision reads straight across against the web banner. iOS and
+    /// macOS deliberately drop web's "Reduce usage with a more efficient model" subtitle.
     var messagePreview: (title: String, button: String?) {
         switch kind {
         case .reached:
-            // Sticky, no reset copy and nothing left to head off — see Message 2.
             return ("\(window.rawValue.capitalized) limit reached", nil)
 
         case .approaching:
@@ -136,18 +126,16 @@ extension DuckAiUsageWarning {
 
 extension DuckAiUsageWindow {
 
-    /// Below this the warning is hidden entirely, unless the window is already blocked.
     static let visibilityFloor: Double = 50
 
-    /// Shared by both windows — drives how urgent the message looks.
     static let severityLadder: [(floor: Double, severity: DuckAiUsageSeverity)] = [
         (90, .critical),
         (75, .warning),
         (50, .info)
     ]
 
-    /// Per-window, and deliberately *not* the severity ladder: a daily banner dismissed at 50% stays
-    /// hidden through 75% — where it is already `.warning` — and only comes back at 90%.
+    /// Deliberately *not* the severity ladder: a daily banner dismissed at 50% stays hidden through
+    /// 75%, where it is already `.warning`, and only comes back at 90%.
     var redisplayLadder: [Int] {
         switch self {
         case .daily: return [50, 90, 100]
@@ -159,8 +147,7 @@ extension DuckAiUsageWindow {
         Self.severityLadder.first { percentUsed >= $0.floor }?.severity
     }
 
-    /// The highest redisplay threshold this percentage has crossed — the bucket a dismissal is recorded
-    /// against, so that crossing the next one brings the message back.
+    /// The bucket a dismissal is recorded against, so crossing the next one brings the message back.
     func redisplayThreshold(forPercentUsed percentUsed: Double) -> Int {
         redisplayLadder.last { percentUsed >= Double($0) } ?? 0
     }

@@ -22,9 +22,8 @@ import FeatureFlags_macOS
 import Persistence
 import PrivacyConfig
 
-/// Owns the app-side flag gating so the shared warning logic stays flag-agnostic and call sites don't
-/// repeat it. Mirrors `CustomizeResponsesStore`: cheap to build, constructed with a burner-aware handler
-/// per surface.
+/// Owns the app-side flag gating so the shared logic stays flag-agnostic and call sites don't repeat it.
+/// Mirrors `CustomizeResponsesStore`: cheap to build, one per surface with a burner-aware handler.
 final class DuckAiUsageLimitsStore {
 
     private let storageHandler: DuckAiNativeStorageHandling?
@@ -39,8 +38,7 @@ final class DuckAiUsageLimitsStore {
         self.keyValueStore = keyValueStore
     }
 
-    /// `nil` means the feature is inactive — the flag is off, or this surface has no storage bridge.
-    /// That is not the same as an active feature with nothing to show.
+    /// `nil` means inactive (flag off, or no storage bridge), which differs from having nothing to show.
     func makeWarningViewModel(isBurner: Bool,
                               tierProvider: @escaping () -> AIChatUserTier,
                               cheaperModelSuggester: DuckAiCheaperModelSuggesting) -> DuckAiUsageWarningViewModel? {

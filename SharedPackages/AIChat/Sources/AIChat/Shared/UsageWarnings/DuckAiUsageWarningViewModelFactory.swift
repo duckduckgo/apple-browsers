@@ -19,12 +19,11 @@
 import Foundation
 import Persistence
 
-/// One composition point, so the two platforms don't each hand-assemble the same five collaborators.
-/// Takes an already-evaluated flag value, which keeps the platform-specific `FeatureFlag` enums in their
-/// own app targets.
+/// Takes an already-evaluated flag value, which keeps the platform-specific `FeatureFlag` enums in
+/// their own app targets.
 public enum DuckAiUsageWarningViewModelFactory {
 
-    /// `nil` when the feature is inactive — the flag is off, or this surface has no storage bridge.
+    /// `nil` when the feature is inactive: flag off, or no storage bridge on this surface.
     public static func make(isFeatureEnabled: Bool,
                             storage: DuckAiNativeStorageHandling?,
                             isBurner: Bool,

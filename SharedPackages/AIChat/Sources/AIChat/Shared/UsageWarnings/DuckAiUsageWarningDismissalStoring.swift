@@ -19,16 +19,14 @@
 import Foundation
 import Persistence
 
-/// A dismissal is scoped to one window *and* one reset period: once `resetsAt` moves on the record is
-/// stale and the message comes back. The native equivalent of the web app's
-/// `duckaiUsageLimitBannerDismissal` local-storage entry.
+/// Scoped to one window *and* one reset period: once `resetsAt` moves on, the record is stale and the
+/// message comes back. Native equivalent of web's `duckaiUsageLimitBannerDismissal`.
 public struct DuckAiUsageWarningDismissal: Equatable, Codable {
 
-    /// Whole seconds rather than a `Date`: this is compared for exact equality against the snapshot's
-    /// `resetsAt`, and a `Date` round-tripped through `Codable` can drift by a fraction of a second.
+    /// Whole seconds, not a `Date`: this is compared for exact equality, and `Codable` can drift a
+    /// `Date` by a fraction of a second.
     public let resetsAtEpochSeconds: Int
 
-    /// The redisplay threshold that was current when the user dismissed.
     public let threshold: Int
 
     public init(resetsAt: Date, threshold: Int) {
@@ -72,7 +70,7 @@ public struct DuckAiUsageWarningDismissalStore: DuckAiUsageWarningDismissalStori
 
     public func dismissal(for window: DuckAiUsageWindow) -> DuckAiUsageWarningDismissal? {
         guard let data = try? keyValueStore.object(forKey: Key(window).rawValue) as? Data else { return nil }
-        // A value we can't decode is treated as no dismissal: showing the message again is the safe failure.
+        // Undecodable reads as not-dismissed: showing the message again is the safe failure.
         return try? JSONDecoder().decode(DuckAiUsageWarningDismissal.self, from: data)
     }
 
@@ -86,7 +84,7 @@ public struct DuckAiUsageWarningDismissalStore: DuckAiUsageWarningDismissalStori
     }
 }
 
-/// Burner surfaces and tests: a dismissal must not outlive the session it was made in.
+/// Burner surfaces: a dismissal must not outlive the session it was made in.
 public final class InMemoryDuckAiUsageWarningDismissalStore: DuckAiUsageWarningDismissalStoring {
 
     private var dismissals: [DuckAiUsageWindow: DuckAiUsageWarningDismissal] = [:]

@@ -284,8 +284,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         customizeResponsesChangedSubject.eraseToAnyPublisher()
     }
 
-    /// `nil` when the usage-warnings feature isn't active, which is not the same as "active with nothing
-    /// to show". Rebuilt per refresh because the burner mode depends on the requesting webview.
+    /// Rebuilt per refresh because the burner mode depends on the requesting webview.
     private(set) var usageWarningViewModel: DuckAiUsageWarningViewModel?
 
     @MainActor

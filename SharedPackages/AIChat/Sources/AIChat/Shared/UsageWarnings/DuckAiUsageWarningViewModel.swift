@@ -20,21 +20,16 @@ import Combine
 import Foundation
 import os.log
 
-/// Owns the usage-limit message for one Duck.ai input surface: reads the snapshot on activation, resolves
-/// it against the rules, and publishes whatever should be on screen.
-///
-/// There is no UI yet, so the debug log is the observable surface — it reports the resolved decision, or
-/// the specific gate that suppressed it.
+/// Owns the usage-limit message for one Duck.ai input surface. With no UI yet, the debug log is the
+/// observable surface: it reports the resolved decision, or the gate that suppressed it.
 public final class DuckAiUsageWarningViewModel: ObservableObject {
 
     @Published public private(set) var warning: DuckAiUsageWarning?
 
-    /// Wired by the platform to its existing model-selection path. This view model decides *what* to
-    /// suggest; it never reaches into model selection itself.
+    /// Wired to the platform's model-selection path; this type decides what to suggest, never applies it.
     public var onSwitchToSuggestedModel: ((DuckAiCheaperModelSuggestion) -> Void)?
 
-    /// `nil` means the feature is inactive — the flag is off, or this surface has no storage bridge. That
-    /// is not the same as an active feature with nothing to show.
+    /// `nil` means inactive (flag off, or no storage bridge), which differs from having nothing to show.
     private let limitsProvider: DuckAiUsageLimitsProviding?
     private let tierProvider: () -> AIChatUserTier
     private let isInternalUser: () -> Bool
@@ -60,7 +55,7 @@ public final class DuckAiUsageWarningViewModel: ObservableObject {
         self.dateProvider = dateProvider
     }
 
-    /// Synchronous: a lookup in the already-loaded entries blob, so it needs no async treatment.
+    /// Synchronous: a lookup in the already-loaded entries blob.
     public func refresh() {
         guard let limitsProvider else {
             warning = nil
@@ -71,8 +66,7 @@ public final class DuckAiUsageWarningViewModel: ObservableObject {
         resolveAndPublish()
     }
 
-    /// Records a dismissal at the threshold the user is currently in, so the message stays hidden until
-    /// the window resets or they cross the next one.
+    /// Holds until the window resets or the user crosses the next redisplay threshold.
     public func dismiss() {
         guard let warning, warning.isDismissible, let data = lastReadLimits.window(warning.window) else { return }
 
@@ -87,7 +81,6 @@ public final class DuckAiUsageWarningViewModel: ObservableObject {
         resolveAndPublish()
     }
 
-    /// The one-click step down the CTA offers — no picker, no dropdown.
     public func switchToSuggestedModel() {
         guard let suggestion = warning?.cheaperModelSuggestion else { return }
 
@@ -96,7 +89,7 @@ public final class DuckAiUsageWarningViewModel: ObservableObject {
         resolveAndPublish()
     }
 
-    /// Teardown. Drops the published message without touching persisted dismissals.
+    /// Teardown: drops the message without recording a dismissal.
     public func clear() {
         warning = nil
         lastReadLimits = .noData
@@ -117,14 +110,8 @@ public final class DuckAiUsageWarningViewModel: ObservableObject {
         }
     }
 
-    /// Leads with the copy the UI will render, so a native decision can be compared straight across
-    /// against the web banner. The diagnostic fields follow, since they are what makes each gate
-    /// observable while there is no UI.
-    ///
-    /// The title carries the rounded percentage and goes out `.public`, unlike the `.private` percentage
-    /// this replaced. It is a debug-level log behind an internal-only flag, and `severity` already
-    /// narrows the number to a 15-point band — redacting the one line the message is meant to be read
-    /// from bought little and cost the whole point of logging it.
+    /// The title carries the percentage and goes out `.public`: this is debug-level behind an
+    /// internal-only flag, and redacting the line the message is read from would defeat logging it.
     private func log(_ warning: DuckAiUsageWarning, cheaperModel: DuckAiCheaperModelOutcome) {
         let message = warning.messagePreview
         let ctaDiagnosis: String

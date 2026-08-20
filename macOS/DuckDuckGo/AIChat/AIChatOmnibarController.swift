@@ -141,12 +141,10 @@ final class AIChatOmnibarController {
     /// omits the block — callers fall back to the previously shipped defaults in that case.
     private(set) var attachmentLimits: AIChatAttachmentTierLimits?
 
-    /// Resolves the daily/weekly usage-limit message for this surface. `nil` when the usage-warnings
-    /// feature isn't active, which is not the same as "active with nothing to show".
+    /// `nil` when the usage-warnings feature isn't active, which differs from having nothing to show.
     private(set) var usageWarningViewModel: DuckAiUsageWarningViewModel?
 
-    /// What the draft in this omnibar needs a model to be able to do, so the cheaper-model CTA never
-    /// suggests stepping down to something that can't handle it.
+    /// Stops the cheaper-model CTA suggesting something that can't handle the current draft.
     private var chatCapabilityRequirements: DuckAiChatCapabilityRequirements {
         DuckAiChatCapabilityRequirements(
             needsImageUpload: hasImageAttachments,
@@ -460,6 +458,9 @@ final class AIChatOmnibarController {
                 self.clearStaleReasoningEffortIfNeeded()
                 self.deactivateWebSearchIfUnsupported()
                 self.deactivateImageGenerationIfUnsupported()
+                // Tier and models land after the activation that resolved the warning, so the first
+                // banner after a tier change would otherwise show a stale tier and no CTA.
+                self.refreshUsageWarnings()
             } catch is CancellationError {
                 return
             } catch {

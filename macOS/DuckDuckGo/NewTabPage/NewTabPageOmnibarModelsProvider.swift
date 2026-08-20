@@ -34,8 +34,7 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
     private(set) var attachmentLimits: NewTabPageDataModel.AttachmentLimits?
     private(set) var isEligibleForFreeTrial = false
 
-    /// Kept from the last fetch so the omnibar's usage warnings can resolve tier and cheaper-model
-    /// suggestions without repeating the subscription lookup. `.free` / empty until the first fetch.
+    /// Kept so usage warnings resolve without repeating the subscription lookup. Empty until first fetch.
     private(set) var lastResolvedUserTier: AIChatUserTier = .free
     private(set) var lastFetchedModels: [AIChatModel] = []
     private let modelsService: AIChatModelsProviding

@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import os.log
 
 public struct DuckAiCheaperModelSuggestion: Equatable {
 
@@ -30,7 +31,6 @@ public struct DuckAiCheaperModelSuggestion: Equatable {
     }
 }
 
-/// What the current chat needs a model to be able to do. All-empty means a plain text chat.
 public struct DuckAiChatCapabilityRequirements: Equatable {
 
     public let needsImageUpload: Bool
@@ -48,16 +48,13 @@ public struct DuckAiChatCapabilityRequirements: Equatable {
     }
 }
 
-/// Why no cheaper model was offered. Carried so the rule chain stays observable while there is no UI.
+/// Carried so the rule chain stays observable in the log while there is no UI.
 public enum DuckAiCheaperModelUnavailableReason: String {
     case recentlySteppedDown
-    /// No model is selected, or its family has no known step-down ladder.
     case unknownCurrentModel
-    /// Nothing cheaper in the same family that this user's tier can select.
-    case noCheaperModelAvailable
-    /// Cheaper siblings exist, but none cover the images / files / tools this chat needs.
-    case cheaperModelMissingCapability
-    /// The caller never asked — a reached message, or a surface with no CTA.
+    case currentModelIsNotCostly
+    case noEverydayUseModelAvailable
+    case everydayUseModelMissingCapability
     case notApplicable
 }
 
@@ -72,7 +69,6 @@ public enum DuckAiCheaperModelOutcome: Equatable {
 }
 
 public protocol DuckAiCheaperModelSuggesting {
-    /// `.none` when no lower-cost model covers the tools / files / images the current chat needs.
     func suggestion() -> DuckAiCheaperModelOutcome
 }
 
@@ -81,15 +77,8 @@ public struct NullDuckAiCheaperModelSuggester: DuckAiCheaperModelSuggesting {
     public func suggestion() -> DuckAiCheaperModelOutcome { .none(reason: .notApplicable) }
 }
 
-/// The cheaper-model CTA: a one-click step down to the cheapest sibling in the same family that still
-/// covers what the chat needs.
-///
-/// Two ladders, both ordered most to least expensive: Opus → Sonnet → Haiku, and GPT-5.4 → mini → nano.
-/// Suggestions never cross families — stepping from Claude to GPT is a bigger change than a quota nudge
-/// should make on the user's behalf.
-///
-/// Live state is read through closures rather than passed into `suggestion()`, so the protocol stays
-/// zero-argument and callers don't have to thread chat state they have no other use for.
+/// Driven by `AIChatModelLabel` rather than a hardcoded ladder: a name-matched ladder got it actively
+/// wrong, stepping `gpt-5.4` down to `gpt-5.4-mini`, which is itself `usesLimitsFaster`.
 public struct DuckAiCheaperModelSuggester: DuckAiCheaperModelSuggesting {
 
     private let modelsProvider: () -> [AIChatModel]
@@ -108,33 +97,35 @@ public struct DuckAiCheaperModelSuggester: DuckAiCheaperModelSuggesting {
     }
 
     public func suggestion() -> DuckAiCheaperModelOutcome {
-        guard !didRecentlyStepDown() else { return .none(reason: .recentlySteppedDown) }
-
         let models = modelsProvider()
-        let currentModelId = currentModelIdProvider()
-        guard let current = models.first(where: { $0.id == currentModelId }),
-              let currentRung = Self.rung(for: current) else {
-            return .none(reason: .unknownCurrentModel)
-        }
+        let current = models.first { $0.id == currentModelIdProvider() }
+        let outcome = resolve(current: current, in: models)
 
-        let cheaperSiblings: [(model: AIChatModel, cheapness: Int)] = models.compactMap { model in
-            guard model.entityHasAccess, model.id != current.id,
-                  let rung = Self.rung(for: model),
-                  rung.family == currentRung.family,
-                  rung.cheapness > currentRung.cheapness else { return nil }
-            return (model, rung.cheapness)
-        }
-        guard !cheaperSiblings.isEmpty else { return .none(reason: .noCheaperModelAvailable) }
+        // Labels are believed to be per-tier; the anonymous payload only shows the free-tier split, so
+        // logging the current one is how that gets confirmed against a real account.
+        Logger.aiChat.debug("""
+            Duck.ai cheaper model: current=\(current?.id ?? "none", privacy: .public) \
+            label=\(current?.label?.rawValue ?? "none", privacy: .public) \
+            outcome=\(Self.describe(outcome), privacy: .public)
+            """)
+        return outcome
+    }
 
-        // Cheapest that still fits, rather than one rung down: the point of the nudge is to buy back as
-        // much quota as the chat can afford to give up.
-        let requirements = requirementsProvider()
-        guard let target = cheaperSiblings
-            .filter({ Self.model($0.model, covers: requirements) })
-            .max(by: { $0.cheapness < $1.cheapness })?
-            .model else {
-            return .none(reason: .cheaperModelMissingCapability)
-        }
+    private func resolve(current: AIChatModel?, in models: [AIChatModel]) -> DuckAiCheaperModelOutcome {
+        guard !didRecentlyStepDown() else { return .none(reason: .recentlySteppedDown) }
+        guard let current else { return .none(reason: .unknownCurrentModel) }
+
+        // An unlabelled model is not known to be costly, and nudging off it could raise usage.
+        guard current.label == .usesLimitsFaster else { return .none(reason: .currentModelIsNotCostly) }
+
+        let candidates = models.filter { $0.entityHasAccess && $0.id != current.id && $0.label == .everydayUse }
+        guard !candidates.isEmpty else { return .none(reason: .noEverydayUseModelAvailable) }
+
+        let capable = candidates.filter { Self.model($0, covers: requirementsProvider()) }
+        guard !capable.isEmpty else { return .none(reason: .everydayUseModelMissingCapability) }
+
+        // Staying with the same provider makes for a smaller change than crossing to another.
+        let target = capable.first { $0.provider == current.provider } ?? capable[0]
 
         return .suggestion(DuckAiCheaperModelSuggestion(
             modelId: target.id,
@@ -142,40 +133,11 @@ public struct DuckAiCheaperModelSuggester: DuckAiCheaperModelSuggesting {
         ))
     }
 
-    private enum ModelFamily {
-        case claude
-        case gpt
-    }
-
-    /// `cheapness` orders rungs within a family — higher is cheaper, so a bigger number is a bigger saving.
-    private struct Rung {
-        let family: ModelFamily
-        let cheapness: Int
-    }
-
-    // Model ids are inconsistent in the wild — "claude-opus-4-6" ships alongside "claude-sonnet-4.6" —
-    // so families are matched on the lowercased display name, the same convention
-    // `AIChatModelSectionBuilder.recommendedModelMatchers` already uses. Both go away together once the
-    // backend ships ordering and `AIChatModelLabel.usesLimitsFaster` / `.everydayUse` can drive this.
-    // https://app.asana.com/1/137249556945/task/1216559729471554
-    private static func rung(for model: AIChatModel) -> Rung? {
-        let name = model.name.lowercased()
-
-        if name.contains("claude") {
-            if name.contains("opus") { return Rung(family: .claude, cheapness: 0) }
-            if name.contains("sonnet") { return Rung(family: .claude, cheapness: 1) }
-            if name.contains("haiku") { return Rung(family: .claude, cheapness: 2) }
-            return nil
+    private static func describe(_ outcome: DuckAiCheaperModelOutcome) -> String {
+        switch outcome {
+        case .suggestion(let suggestion): return "switch-to:\(suggestion.modelId)"
+        case .none(let reason): return reason.rawValue
         }
-
-        // Order matters: "GPT-5.4 nano" contains "gpt" too, so the qualifiers have to be checked first.
-        if name.contains("gpt") {
-            if name.contains("nano") { return Rung(family: .gpt, cheapness: 2) }
-            if name.contains("mini") { return Rung(family: .gpt, cheapness: 1) }
-            return Rung(family: .gpt, cheapness: 0)
-        }
-
-        return nil
     }
 
     private static func model(_ model: AIChatModel, covers requirements: DuckAiChatCapabilityRequirements) -> Bool {

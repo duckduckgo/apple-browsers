@@ -1,0 +1,52 @@
+//
+//  DuckAiUsageWarningViewModelFactory.swift
+//
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import Foundation
+import Persistence
+
+/// One composition point, so the two platforms don't each hand-assemble the same five collaborators.
+/// Takes an already-evaluated flag value, which keeps the platform-specific `FeatureFlag` enums in their
+/// own app targets.
+public enum DuckAiUsageWarningViewModelFactory {
+
+    /// `nil` when the feature is inactive — the flag is off, or this surface has no storage bridge.
+    public static func make(isFeatureEnabled: Bool,
+                            storage: DuckAiNativeStorageHandling?,
+                            isBurner: Bool,
+                            keyValueStore: ThrowingKeyValueStoring,
+                            tierProvider: @escaping () -> AIChatUserTier,
+                            isInternalUser: @escaping () -> Bool,
+                            cheaperModelSuggester: DuckAiCheaperModelSuggesting = NullDuckAiCheaperModelSuggester(),
+                            pixelFiring: DuckAiNativeStoragePixelFiring = NullDuckAiNativeStoragePixelFiring()
+    ) -> DuckAiUsageWarningViewModel? {
+        guard isFeatureEnabled, let storage else { return nil }
+
+        // A burner dismissal must not outlive the session it was made in.
+        let dismissalStore: DuckAiUsageWarningDismissalStoring = isBurner
+            ? InMemoryDuckAiUsageWarningDismissalStore()
+            : DuckAiUsageWarningDismissalStore(keyValueStore: keyValueStore)
+
+        return DuckAiUsageWarningViewModel(
+            limitsProvider: DuckAiUsageLimitsProvider(storage: storage, pixelFiring: pixelFiring),
+            tierProvider: tierProvider,
+            isInternalUser: isInternalUser,
+            dismissalStore: dismissalStore,
+            cheaperModelSuggester: cheaperModelSuggester
+        )
+    }
+}

@@ -96,8 +96,6 @@ final class WebViewTransitionGeometryTests: XCTestCase {
         XCTAssertEqual(frame.height, 780) // 390 * (200/100)
     }
 
-    // MARK: - webContentFrame
-
     func testWebContentFrameInsetsTheContainerBelowTheObscuredTop() {
         let container = CGRect(x: 0, y: 0, width: 390, height: 844)
         let frame = WebViewTransitionGeometry.webContentFrame(from: container, topObscuredHeight: 59)

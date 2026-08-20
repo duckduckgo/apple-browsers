@@ -69,9 +69,6 @@ enum WebViewTransitionGeometry {
                       height: containerSize.width * previewAspectRatio)
     }
 
-    /// Floating UI's content container extends behind the status bar. The site theme colour that
-    /// fills that region is not part of the page, so the shrink/grow screenshot starts and ends
-    /// below it — matching `WebViewPreviewSnapshotGeometry.visibleRect`.
     static func webContentFrame(from containerFrame: CGRect, topObscuredHeight: CGFloat) -> CGRect {
         let top = max(0, topObscuredHeight)
         guard top > 0, containerFrame.height > top, top.isFinite else { return containerFrame }

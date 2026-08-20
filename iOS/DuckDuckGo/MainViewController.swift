@@ -249,16 +249,6 @@ class MainViewController: UIViewController {
     /// separately from container alpha because the floating capsule morph drives chrome alpha with a
     /// non-linear handoff ramp, so alpha is no longer a reliable source for the real percent.
     private var lastChromeVisibilityPercent: CGFloat = 1
-    /// Set while a tab-switcher transition owns the floating toolbar's appearance (animating its
-    /// alpha/transform directly). Chrome-visibility updates keep running and keep their layout side
-    /// effects (constraints, button-row collapse, etc.); they just must not also write the toolbar's
-    /// alpha, because several async paths (`applyWidth`'s deferred `showBars()`, the `isLoading` and
-    /// `contentSize` KVO reveals) land mid-transition and would otherwise snap it back to full opacity
-    /// while the transition is still animating it -- the actual cause of the tab-switcher "doubled
-    /// toolbar" ghosting, confirmed by frame-by-frame video analysis: the real toolbar was fully
-    /// visible only ~20ms into the transition, long before the transition's own reveal animation
-    /// began. Set for the duration of `FromWebViewTransition`/`ToWebViewTransition` (and the
-    /// NTP-side equivalent); must be cleared on every exit path, including guard-clause fallbacks.
     var isTabSwitcherTransitionOwningToolbar = false
     private var lastWindowControlsRowState: (sharesRow: Bool, tabsBarHidden: Bool, topInset: CGFloat) = (false, false, -1)
     private lazy var isWindowControlsRowEnabled = WindowControlsRowLayout.isEnabled(featureFlagger: featureFlagger)
@@ -4544,9 +4534,6 @@ extension MainViewController: BrowserChromeDelegate {
         if isWindowControlsRowEnabled {
             tabsBarController?.setCurrentTabSelectionAlpha(currentTabSelectionAlpha(for: chromeAlpha))
         }
-        // A tab-switcher transition is animating the toolbar's alpha itself; don't fight it -- see
-        // `isTabSwitcherTransitionOwningToolbar`'s doc comment for why this write is the one that
-        // caused the doubled-toolbar ghosting.
         if !isTabSwitcherTransitionOwningToolbar {
             viewCoordinator.toolbar.alpha = chromeAlpha
         }

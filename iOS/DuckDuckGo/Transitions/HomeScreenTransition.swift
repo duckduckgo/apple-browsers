@@ -98,13 +98,6 @@ class FromHomeScreenTransition: HomeScreenTransition {
             return
         }
 
-        // No floating platter to scale/grow from here (unlike `WebViewTransition`), but the toolbar
-        // still needs to fade out under the same `isTabSwitcherTransitionOwningToolbar` protection --
-        // otherwise it's exposed to the same async `showBars()`/KVO paths mid-transition. A snapshot,
-        // brought to the front, fades out continuously over the whole duration instead of waiting on
-        // the switcher's own bars first -- see `WebViewTransition`'s equivalent setup for why (a real
-        // view stuck behind `tabSwitcherViewController.view` for the whole presentation otherwise
-        // reads as appear-disappear-reappear rather than one animation).
         let toolbar: BrowserToolbarView = mainViewController.viewCoordinator.toolbar
         let isFloating = mainViewController.isFloatingUIEnabled
         var toolbarSnapshot: UIView?
@@ -222,19 +215,11 @@ class ToHomeScreenTransition: HomeScreenTransition {
 
         mainViewController.view.alpha = 1
 
-        // No floating platter to scale/grow from here (unlike `WebViewTransition`), but the toolbar
-        // still needs to fade in under the same `isTabSwitcherTransitionOwningToolbar` protection. A
-        // snapshot, brought to the front, fades in continuously over the whole duration instead of
-        // waiting on the switcher's own bars to leave first -- see `WebViewTransition`'s equivalent
-        // setup for why (a real view stuck behind `tabSwitcherViewController.view` otherwise reads as
-        // appear-disappear-reappear rather than one animation).
         let toolbar: BrowserToolbarView = mainViewController.viewCoordinator.toolbar
         let isFloating = mainViewController.isFloatingUIEnabled
         var toolbarSnapshot: UIView?
         if isFloating {
             mainViewController.isTabSwitcherTransitionOwningToolbar = true
-            // Snapshot while still visible -- see `ToWebViewTransition`'s equivalent setup for why
-            // hiding the real view first would capture a blank snapshot.
             if let snapshot = makeToolbarSnapshot(of: toolbar,
                                                   in: transitionContext.containerView,
                                                   afterScreenUpdates: true) {

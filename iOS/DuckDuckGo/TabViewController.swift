@@ -74,9 +74,6 @@ enum WebViewPreviewSnapshotGeometry {
                                                     right: 0))
     }
 
-    /// Floating UI is full-bleed, including the site theme colour that sits behind the status bar.
-    /// `capturesFullBounds` keeps the page content under the floating toolbar, but the top inset is
-    /// still cropped so that colour band doesn't appear in tab previews or the shrink animation.
     static func visibleRect(webViewBounds: CGRect, contentInset: UIEdgeInsets, capturesFullBounds: Bool) -> CGRect? {
         let cropInset = UIEdgeInsets(top: contentInset.top,
                                      left: 0,

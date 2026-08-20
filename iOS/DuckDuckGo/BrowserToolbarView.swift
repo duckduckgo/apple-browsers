@@ -569,19 +569,8 @@ final class BrowserToolbarView: UIView {
         hasEmbeddedOmnibar ? Self.floatingBottomMarginWithEmbedded : Self.floatingBottomMarginStandalone
     }
 
-    /// The rect, in this view's own coordinate space, that fully contains the glass capsule as it is
-    /// actually drawn -- including the part that spills *below* `bounds`.
-    ///
-    /// `updateFloatingBottomOffset` pushes the capsule down past this view's bottom edge by a
-    /// transform (deliberately, so the toolbar's layout slot stays put), and `materialBackgroundView`
-    /// doesn't clip, so on screen the capsule's rounded bottom corners and drop shadow render fine.
-    /// `snapshotView(afterScreenUpdates:)` however only ever renders `bounds`, so a plain snapshot
-    /// slices the corner arc clean off and hands back a flat-bottomed bar. Transitions that animate a
-    /// snapshot of this view must capture *this* rect (via `resizableSnapshotView(from:...)`) instead,
-    /// or the rounded corners visibly pop into existence the moment the real toolbar takes over.
     var visibleCapsuleRect: CGRect {
         guard isFloatingStyleEnabled else { return bounds }
-        // `frame` already folds in the bottom-offset transform; the shadow extends past that again.
         let shadowSpill = materialBackgroundView.layer.shadowRadius + materialBackgroundView.layer.shadowOffset.height
         return bounds.union(materialBackgroundView.frame.insetBy(dx: -shadowSpill, dy: -shadowSpill))
     }

@@ -2283,6 +2283,8 @@
 		CB258D1F29A52B2500DEBA24 /* Configuration.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB258D0C29A4CD0500DEBA24 /* Configuration.swift */; };
 		CB27DAE72FFFE65200EEEADB /* WebViewTransitionGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB27DAE62FFFE65200EEEADB /* WebViewTransitionGeometry.swift */; };
 		CB27DAE92FFFE6BC00EEEADB /* WebViewTransitionGeometryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB27DAE82FFFE6BC00EEEADB /* WebViewTransitionGeometryTests.swift */; };
+		A8452A0101C0DE0000000002 /* HomeScreenTransitionGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8452A0101C0DE0000000001 /* HomeScreenTransitionGeometry.swift */; };
+		A8452A0101C0DE0000000004 /* HomeScreenTransitionGeometryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8452A0101C0DE0000000003 /* HomeScreenTransitionGeometryTests.swift */; };
 		CB27DAF330063B4600EEEADB /* ToolbarVisibilityDecision.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB27DAF230063B4600EEEADB /* ToolbarVisibilityDecision.swift */; };
 		CB27DAF530063B4A00EEEADB /* AITabChromeDecision.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB27DAF430063B4A00EEEADB /* AITabChromeDecision.swift */; };
 		CB27DAF730063B9100EEEADB /* ToolbarVisibilityDecisionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB27DAF630063B9100EEEADB /* ToolbarVisibilityDecisionTests.swift */; };
@@ -5173,6 +5175,8 @@
 		CB258D0F29A4D0FD00DEBA24 /* ConfigurationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigurationManager.swift; sourceTree = "<group>"; };
 		CB27DAE62FFFE65200EEEADB /* WebViewTransitionGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebViewTransitionGeometry.swift; sourceTree = "<group>"; };
 		CB27DAE82FFFE6BC00EEEADB /* WebViewTransitionGeometryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebViewTransitionGeometryTests.swift; sourceTree = "<group>"; };
+		A8452A0101C0DE0000000001 /* HomeScreenTransitionGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeScreenTransitionGeometry.swift; sourceTree = "<group>"; };
+		A8452A0101C0DE0000000003 /* HomeScreenTransitionGeometryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeScreenTransitionGeometryTests.swift; sourceTree = "<group>"; };
 		CB27DAF230063B4600EEEADB /* ToolbarVisibilityDecision.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolbarVisibilityDecision.swift; sourceTree = "<group>"; };
 		CB27DAF430063B4A00EEEADB /* AITabChromeDecision.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AITabChromeDecision.swift; sourceTree = "<group>"; };
 		CB27DAF630063B9100EEEADB /* ToolbarVisibilityDecisionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolbarVisibilityDecisionTests.swift; sourceTree = "<group>"; };
@@ -8149,6 +8153,7 @@
 				BEA13CC2BC37C33434640638 /* WebViewInputAccessoryTests.swift */,
 				CB6EF0502FE020D6000C75BA /* IPadOmnibarFocusModelTests.swift */,
 				CB27DAE82FFFE6BC00EEEADB /* WebViewTransitionGeometryTests.swift */,
+				A8452A0101C0DE0000000003 /* HomeScreenTransitionGeometryTests.swift */,
 			);
 			name = UnitTests;
 			path = DuckDuckGoTests;
@@ -8342,6 +8347,7 @@
 				855D914C2063EF6A00C4B448 /* TabSwitcherTransition.swift */,
 				986DA94924884B18004A7E39 /* WebViewTransition.swift */,
 				CB27DAE62FFFE65200EEEADB /* WebViewTransitionGeometry.swift */,
+				A8452A0101C0DE0000000001 /* HomeScreenTransitionGeometry.swift */,
 			);
 			path = Transitions;
 			sourceTree = "<group>";
@@ -14228,6 +14234,7 @@
 				F2B8A10736AA100000C0DE01 /* UnifiedToggleInputAttachment.swift in Sources */,
 				AABB00010001000100010007 /* UTIAttachmentPolicy.swift in Sources */,
 				CB27DAE72FFFE65200EEEADB /* WebViewTransitionGeometry.swift in Sources */,
+				A8452A0101C0DE0000000002 /* HomeScreenTransitionGeometry.swift in Sources */,
 				AABB0001000100010001000B /* UTIModelStore.swift in Sources */,
 				AABB0001000100010001000F /* UTIToolsController.swift in Sources */,
 				F2B8A10236AA100000C0DE01 /* UnifiedToggleInputModelMenuFactory.swift in Sources */,
@@ -15207,6 +15214,7 @@
 				98E564092DE8B32D00E6E75F /* ContextualOnboardingPresenterMock.swift in Sources */,
 				9F4CC5172C48B8D4006A96EB /* TabViewControllerDaxDialogTests.swift in Sources */,
 				CB27DAE92FFFE6BC00EEEADB /* WebViewTransitionGeometryTests.swift in Sources */,
+				A8452A0101C0DE0000000004 /* HomeScreenTransitionGeometryTests.swift in Sources */,
 				F1A83D872E0AB27E00054B03 /* MockFeatureFlagger.swift in Sources */,
 				9FE59CE72E3307AD00C4B65D /* SystemSettingsPiPTutorialPixelHandlerTests.swift in Sources */,
 				F13B4BFB1F18E3D900814661 /* TabsModelPersistenceTests.swift in Sources */,

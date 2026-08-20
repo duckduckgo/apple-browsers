@@ -23,6 +23,7 @@ import Common
 import FoundationExtensions
 import Foundation
 import PixelKit
+import PixelExperimentKit
 import Subscription
 import UserScript
 import OSLog
@@ -1072,6 +1073,11 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
             }
         case .userDidAcceptTermsAndConditions:
             handleTermsAccepted()
+            completion?()
+        case .userDidCreateNewChat:
+            // New chat started from within the Duck.ai page (e.g. its side-menu "New Chat"). Native
+            // new-chat entry points fire duck_ai_new_chat in AIChatTabOpener; this covers the FE ones.
+            PixelKit.fireNewAIChatExperimentPixels()
             completion?()
         case .userDidSelectSuggestion:
             pixelFiring?.fire(

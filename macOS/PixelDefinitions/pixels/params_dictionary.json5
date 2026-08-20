@@ -58,7 +58,7 @@
         "key": "policycache",
         "type": "string",
         "description": "The token cache policy used by the failed token request",
-        "enum": ["local", "local_valid", "local_force_refresh", "create_if_needed"]
+        "enum": ["Local", "Local valid", "Local force refresh", "Create if needed"]
     },
     "subscriptionAutoSignOutReason": {
         "key": "reason",

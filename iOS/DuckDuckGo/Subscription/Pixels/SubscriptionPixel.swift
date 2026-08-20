@@ -100,7 +100,7 @@ enum SubscriptionPixel: PixelKit.Event {
                 .subscriptionKeychainManagerFailedToWriteDataFromBacklog(let source):
             return [SubscriptionPixelsDefaults.sourceKey: source.rawValue]
         case .subscriptionAuthV2GetTokensError(let policy, let source, _):
-            return [SubscriptionPixelsDefaults.policyCacheKey: TokenCachePolicyParameter(policy).rawValue,
+            return [SubscriptionPixelsDefaults.policyCacheKey: policy.description,
                     SubscriptionPixelsDefaults.sourceKey: source.rawValue]
         case .subscriptionAutomaticSignOut(let data, let source):
             var parameters = data.parameters

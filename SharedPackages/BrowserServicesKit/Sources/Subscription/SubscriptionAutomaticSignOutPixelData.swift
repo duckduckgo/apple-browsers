@@ -20,29 +20,6 @@ import Foundation
 import FoundationExtensions
 import Networking
 
-/// Wire representation of `AuthTokensCachePolicy`. `AuthTokensCachePolicy.description` is display
-/// text ("Local valid") and is deliberately not used here, so that reworded logs can't silently
-/// change a pixel's values.
-public enum TokenCachePolicyParameter: String {
-    case local
-    case localValid = "local_valid"
-    case localForceRefresh = "local_force_refresh"
-    case createIfNeeded = "create_if_needed"
-
-    public init(_ policy: AuthTokensCachePolicy) {
-        switch policy {
-        case .local:
-            self = .local
-        case .localValid:
-            self = .localValid
-        case .localForceRefresh:
-            self = .localForceRefresh
-        case .createIfNeeded:
-            self = .createIfNeeded
-        }
-    }
-}
-
 /// The buckets shared by every "how long" parameter on the sign-out pixel. Keeping the thresholds
 /// in one place stops the token-age and time-remaining buckets from drifting apart. Callers label
 /// the negative side themselves: an expired token and a token issued in the future are different
@@ -312,7 +289,7 @@ public struct SubscriptionAutomaticSignOutPixelData: Equatable {
     public let reason: Reason
     public let tokenStatus: TokenStatus
     public let recoveryOutcome: RecoveryOutcome
-    public let tokenCachePolicy: TokenCachePolicyParameter
+    public let tokenCachePolicy: AuthTokensCachePolicy
     public let entitlementStateBefore: EntitlementState
     public let accessTokenTimeRemainingBefore: TimeRemainingBucket
     public let refreshTokenTimeRemainingBefore: TimeRemainingBucket
@@ -327,7 +304,7 @@ public struct SubscriptionAutomaticSignOutPixelData: Equatable {
     public init(reason: Reason,
                 tokenStatus: TokenStatus,
                 recoveryOutcome: RecoveryOutcome,
-                tokenCachePolicy: TokenCachePolicyParameter,
+                tokenCachePolicy: AuthTokensCachePolicy,
                 entitlementStateBefore: EntitlementState,
                 accessTokenTimeRemainingBefore: TimeRemainingBucket,
                 refreshTokenTimeRemainingBefore: TimeRemainingBucket,
@@ -371,7 +348,7 @@ public struct SubscriptionAutomaticSignOutPixelData: Equatable {
             reason: reason,
             tokenStatus: tokenStatus,
             recoveryOutcome: recoveryOutcome,
-            tokenCachePolicy: .init(policy),
+            tokenCachePolicy: policy,
             entitlementStateBefore: .init(tokenContainerBefore),
             accessTokenTimeRemainingBefore: .init(until: tokenContainerBefore?.decodedAccessToken.expirationDate, now: now),
             refreshTokenTimeRemainingBefore: .init(until: tokenContainerBefore?.decodedRefreshToken.expirationDate, now: now),
@@ -389,7 +366,7 @@ public struct SubscriptionAutomaticSignOutPixelData: Equatable {
             "reason": reason.rawValue,
             "token_status": tokenStatus.rawValue,
             "recovery_outcome": recoveryOutcome.rawValue,
-            "policycache": tokenCachePolicy.rawValue,
+            "policycache": tokenCachePolicy.description,
             "had_subscription_entitlements_before": entitlementStateBefore.rawValue,
             "access_token_time_remaining_bucket_before": accessTokenTimeRemainingBefore.rawValue,
             "refresh_token_time_remaining_bucket_before": refreshTokenTimeRemainingBefore.rawValue,

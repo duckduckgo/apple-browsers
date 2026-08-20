@@ -7821,9 +7821,129 @@
         }
       }
     },
+    "aichat.model-picker.label.everyday-use" : {
+      "comment" : "Subtitle beneath a recommended model in the model picker",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ideal für den täglichen Gebrauch"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Best for everyday use"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ideal para el uso diario"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Idéal pour une utilisation quotidienne"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ideale per l'uso quotidiano"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ideaal voor dagelijks gebruik"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Najlepsze do codziennego użytku"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ideal para o dia a dia"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Идеально подходит для повседневного использования"
+          }
+        }
+      }
+    },
+    "aichat.model-picker.label.uses-limits-faster" : {
+      "comment" : "Subtitle beneath a recommended model in the model picker that consumes usage limits faster",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solide, erreicht Limits aber früher"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Solid but hits limits sooner"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gran calidad, pero llega a los límites antes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Performant, mais atteint les limites plus tôt"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solido, ma raggiunge i limiti prima"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solide, maar bereikt limieten sneller"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solidny, ale szybciej zużywa limity"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eficaz, mas atinge os limites mais depressa"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Работает стабильно, но быстрее исчерпывает лимиты"
+          }
+        }
+      }
+    },
     "aichat.model-picker.pro-exclusive" : {
       "comment" : "Label above the gated models in the model picker menu, shown to Plus subscribers — they're already a subscriber, so the gated models (all Pro-only) are called out specifically rather than reusing the generic 'Subscriber Exclusive' label",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -7881,9 +8001,189 @@
         }
       }
     },
+    "aichat.model-picker.section.available-with-paid-plans" : {
+      "comment" : "Section header above gated models in the model picker, shown to a non-subscriber who is no longer eligible for the free trial — the models below span both paid plans",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exklusiv für Abonnenten"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Subscriber Exclusive"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exclusivo para suscriptores"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Réservé aux abonnés"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esclusiva per abbonati"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alleen voor abonnees"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tylko dla subskrybentów"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exclusivo para subscritores"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Эксклюзивно для подписчиков"
+          }
+        }
+      }
+    },
+    "aichat.model-picker.section.available-with-pro" : {
+      "comment" : "Section header above Pro-only models in the model picker, shown to a Plus subscriber",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exklusiv für Pro-Abonnenten"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Pro Plan Exclusive"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exclusivo del plan Pro"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exclusif au forfait Pro"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Piano Pro Esclusivo"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exclusief voor Pro"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tylko dla planu Pro"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exclusivo do Plano Pro"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Эксклюзивно для тарифа Pro"
+          }
+        }
+      }
+    },
+    "aichat.model-picker.section.try-free" : {
+      "comment" : "Section header above gated models in the model picker, shown when a free trial is available",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kostenlos testen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Try for Free"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Probar gratis"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Essayer gratuitement"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prova gratuitamente"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Probeer gratis"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wypróbuj bezpłatnie"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Experimentar gratuitamente"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Попробовать бесплатно"
+          }
+        }
+      }
+    },
     "aichat.model-picker.subscriber-exclusive" : {
       "comment" : "Label above the gated (subscriber-only) models in the model picker menu, shown to free users where the gated models are a mix of Plus and Pro",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -7943,127 +8243,127 @@
     },
     "aichat.model-picker.tier-badge.plus" : {
       "comment" : "Trailing badge on a model picker row for a model that requires a Plus subscription",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "PLUS"
+            "value" : "Plus"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "PLUS"
+            "value" : "Plus"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "PLUS"
+            "value" : "Plus"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "PLUS"
+            "value" : "Plus"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "PLUS"
+            "value" : "Plus"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "PLUS"
+            "value" : "Plus"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "PLUS"
+            "value" : "Plus"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "PLUS"
+            "value" : "Plus"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "PLUS"
+            "value" : "Plus"
           }
         }
       }
     },
     "aichat.model-picker.tier-badge.pro" : {
       "comment" : "Trailing badge on a model picker row for a model that requires a Pro subscription",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "PRO"
+            "value" : "Pro"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "PRO"
+            "value" : "Pro"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "PRO"
+            "value" : "Pro"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "PRO"
+            "value" : "Pro"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "PRO"
+            "value" : "Pro"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "PRO"
+            "value" : "Pro"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "PRO"
+            "value" : "Pro"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "PRO"
+            "value" : "Pro"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "PRO"
+            "value" : "Pro"
           }
         }
       }
     },
     "aichat.model-picker.try-for-free" : {
       "comment" : "Text of the yellow badge in the model picker and reasoning-effort picker that opens the subscription purchase flow, shown to free users",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -8123,7 +8423,7 @@
     },
     "aichat.model-picker.upgrade" : {
       "comment" : "Text of the yellow badge in the model picker and reasoning-effort picker that opens the subscription upgrade flow, shown to Plus subscribers",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -45348,7 +45648,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "**%#@chats@** werden gelöscht:"
+            "value" : "**%#@chats@** werden gelöscht"
           },
           "substitutions" : {
             "chats" : {
@@ -45375,8 +45675,8 @@
         },
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "**%#@chats@** will be deleted:"
+            "state" : "translated",
+            "value" : "**%#@chats@** will be deleted"
           },
           "substitutions" : {
             "chats" : {
@@ -45404,7 +45704,7 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "**%#@chats@** se borrarán:"
+            "value" : "**%#@chats@** se borrarán"
           },
           "substitutions" : {
             "chats" : {
@@ -45432,7 +45732,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "**%#@chats@** seront supprimées :"
+            "value" : "**%#@chats@** seront supprimées"
           },
           "substitutions" : {
             "chats" : {
@@ -45460,7 +45760,7 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "**%#@chats@** verranno eliminate:"
+            "value" : "**%#@chats@** verranno eliminate"
           },
           "substitutions" : {
             "chats" : {
@@ -45488,7 +45788,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "**%#@chats@** worden verwijderd:"
+            "value" : "**%#@chats@** worden verwijderd"
           },
           "substitutions" : {
             "chats" : {
@@ -45516,7 +45816,7 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "**Czaty Duck.ai (%#@chats@)** zostaną usunięte:"
+            "value" : "**Czaty Duck.ai (%#@chats@)** zostaną usunięte"
           },
           "substitutions" : {
             "chats" : {
@@ -45556,7 +45856,7 @@
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "**%#@chats@** serão eliminados:"
+            "value" : "**%#@chats@** serão eliminados"
           },
           "substitutions" : {
             "chats" : {
@@ -45584,7 +45884,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "**%#@chats@** будут удалены:"
+            "value" : "**%#@chats@** будут удалены"
           },
           "substitutions" : {
             "chats" : {
@@ -48916,7 +49216,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "**%#@items@** werden gelöscht:"
+            "value" : "**%#@items@** werden gelöscht"
           },
           "substitutions" : {
             "items" : {
@@ -48943,8 +49243,8 @@
         },
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "**%#@items@** will be deleted:"
+            "state" : "translated",
+            "value" : "**%#@items@** will be deleted"
           },
           "substitutions" : {
             "items" : {
@@ -48972,7 +49272,7 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Se eliminará **%#@items@**:"
+            "value" : "Se eliminará **%#@items@**"
           },
           "substitutions" : {
             "items" : {
@@ -49000,7 +49300,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "**%#@items@** seront supprimés :"
+            "value" : "**%#@items@** seront supprimés"
           },
           "substitutions" : {
             "items" : {
@@ -49028,7 +49328,7 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "**%#@items@** verranno eliminati:"
+            "value" : "**%#@items@** verranno eliminati"
           },
           "substitutions" : {
             "items" : {
@@ -49056,7 +49356,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "**%#@items@** worden verwijderd:"
+            "value" : "**%#@items@** worden verwijderd"
           },
           "substitutions" : {
             "items" : {
@@ -49084,7 +49384,7 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "**Elementy historii (%#@items@)** zostaną usunięte:"
+            "value" : "**Elementy historii (%#@items@)** zostaną usunięte"
           },
           "substitutions" : {
             "items" : {
@@ -49124,7 +49424,7 @@
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "**%#@items@** serão eliminados:"
+            "value" : "**%#@items@** serão eliminados"
           },
           "substitutions" : {
             "items" : {
@@ -49152,7 +49452,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Из журнала будет удалено **%1$#@items@**:"
+            "value" : "Из журнала будет удалено **%1$#@items@**"
           },
           "substitutions" : {
             "items" : {
@@ -49257,55 +49557,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cookies & andere Daten einbeziehen?"
+            "value" : "Cookies & andere Daten einbeziehen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Include cookies & other data?"
+            "value" : "Include cookies & other data"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "¿Incluir cookies y otros datos?"
+            "value" : "Incluir cookies y otros datos"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Inclure les cookies et autres données ?"
+            "value" : "Inclure les cookies et autres données"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Includere cookie e altri dati?"
+            "value" : "Includere cookie e altri dati"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Inclusief cookies en andere gegevens?"
+            "value" : "Inclusief cookies en andere gegevens"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Uwzględnić pliki cookie i inne dane?"
+            "value" : "Uwzględnić pliki cookie i inne dane"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Incluir cookies e outros dados?"
+            "value" : "Incluir cookies e outros dados"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Также удалить cookie и другие данные?"
+            "value" : "Также удалить cookie и другие данные"
           }
         }
       }
@@ -50326,7 +50626,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "**Cookies & andere Daten von %#@sites@** werden gelöscht:"
+            "value" : "**Cookies & andere Daten von %#@sites@** werden gelöscht"
           },
           "substitutions" : {
             "sites" : {
@@ -50353,8 +50653,8 @@
         },
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "**Cookies & other data from %#@sites@** will be deleted:"
+            "state" : "translated",
+            "value" : "**Cookies & other data from %#@sites@** will be deleted"
           },
           "substitutions" : {
             "sites" : {
@@ -50382,7 +50682,7 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "**Las cookies y otros datos de %#@sites@** se eliminarán:"
+            "value" : "**Las cookies y otros datos de %#@sites@** se eliminarán"
           },
           "substitutions" : {
             "sites" : {
@@ -50410,7 +50710,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Les **cookies et autres données de %#@sites@** seront supprimés :"
+            "value" : "Les **cookies et autres données de %#@sites@** seront supprimés"
           },
           "substitutions" : {
             "sites" : {
@@ -50438,7 +50738,7 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "**I cookie e gli altri dati di %#@sites@** saranno eliminati:"
+            "value" : "**I cookie e gli altri dati di %#@sites@** saranno eliminati"
           },
           "substitutions" : {
             "sites" : {
@@ -50466,7 +50766,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "**Cookies & andere gegevens van %#@sites@** worden verwijderd:"
+            "value" : "**Cookies & andere gegevens van %#@sites@** worden verwijderd"
           },
           "substitutions" : {
             "sites" : {
@@ -50494,7 +50794,7 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "**Pliki cookie i inne dane witryn (%#@sites@)** zostaną usunięte:"
+            "value" : "**Pliki cookie i inne dane witryn (%#@sites@)** zostaną usunięte"
           },
           "substitutions" : {
             "sites" : {
@@ -50534,7 +50834,7 @@
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "**Os cookies e outros dados de %#@sites@** serão eliminados:"
+            "value" : "**Os cookies e outros dados de %#@sites@** serão eliminados"
           },
           "substitutions" : {
             "sites" : {
@@ -50562,7 +50862,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "**Файлы cookie и прочие данные с %#@sites@** будут удалены:"
+            "value" : "**Файлы cookie и прочие данные с %#@sites@** будут удалены"
           },
           "substitutions" : {
             "sites" : {

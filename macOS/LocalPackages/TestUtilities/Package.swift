@@ -33,6 +33,8 @@ let package = Package(
     dependencies: [
         .package(path: "../Utilities"),
         .package(path: "../AppKitExtensions"),
+        .package(path: "../../../SharedPackages/Common"),
+        .package(path: "../../../SharedPackages/PixelKit"),
         .package(path: "../../../SharedPackages/BrowserServicesKit"),
         .package(path: "../../../SharedPackages/Infrastructure/SystemFrameworksExtensions"),
         .package(path: "../CommonObjCExtensions"),
@@ -55,13 +57,14 @@ let package = Package(
             dependencies: [
                 .product(name: "AppKitExtensions", package: "AppKitExtensions"),
                 .product(name: "CommonObjCExtensions", package: "CommonObjCExtensions"),
-                .product(name: "Common", package: "BrowserServicesKit"),
+                .product(name: "Common", package: "Common"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "Navigation", package: "BrowserServicesKit"),
                 .product(name: "Suggestions", package: "BrowserServicesKit"),
                 .product(name: "SharedObjCTestsUtils", package: "BrowserServicesKit"),
+                .product(name: "PixelKit", package: "PixelKit"),
                 .product(name: "Utilities", package: "Utilities"),
             ]
         ),

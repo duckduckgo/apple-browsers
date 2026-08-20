@@ -1729,6 +1729,35 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertEqual(mockProvider.lastInput?.pageTypeSignals, signals)
         XCTAssertEqual(mockProvider.lastInput?.url, "https://recipes.example/eu")
         XCTAssertEqual(mockProvider.lastInput?.uiLocale, Locale.current.identifier)
+        XCTAssertEqual(mockProvider.lastInput?.scope, .page)
+        XCTAssertEqual(sessionState.viewState.suggestionsScope, .page)
+    }
+
+    func testSelectionSuggestionsExposeSelectionScopeForImpressionPixels() {
+        let expected = [ContextualSuggestedPrompt(id: "summarize-selection", label: "Summarize", prompt: "Summarize.", icon: "summary")]
+        let mockProvider = MockContextualSuggestedPromptsProvider(suggestions: expected)
+        mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
+        sessionState = AIChatContextualChatSessionState(
+            aiChatSettings: mockSettings,
+            pixelHandler: mockPixelHandler,
+            featureFlagger: mockFeatureFlagger,
+            suggestedPromptsProvider: mockProvider
+        )
+        let loaded = expectation(description: "selection suggestions loaded")
+        sessionState.$viewState
+            .dropFirst()
+            .sink { state in
+                if state.suggestionsLoadState == .loaded, state.suggestions == expected {
+                    loaded.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+
+        sessionState.attachSelection(makeSelection())
+
+        wait(for: [loaded], timeout: 1.0)
+        XCTAssertEqual(mockProvider.lastInput?.scope, .selection)
+        XCTAssertEqual(sessionState.viewState.suggestionsScope, .selection)
     }
 
     func testWhenAttachedChipIsRemovedThenAskAboutPageReplacesLastSuggestionUntilContextIsAttachedAgain() {
@@ -2148,17 +2177,55 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertNil(sessionState.contextualChatURL)
     }
 
-    func testBeginChatForUTISubmissionIgnoredInRestoredState() {
-        // Given
-        sessionState.restoreChat(with: URL(string: "https://duck.ai/?chat=abc")!)
+    func testSubmittedSelectionsAreNotReportedAsUnsubmittedBeforeFrontendConsumption() {
+        sessionState.attachSelection(makeSelection())
+        XCTAssertTrue(sessionState.hasUnsubmittedSelections)
 
-        // When
         sessionState.beginChatForUTISubmission()
 
-        // Then - restored state is preserved and no submission pixels fire
+        XCTAssertFalse(sessionState.hasUnsubmittedSelections)
+        XCTAssertEqual(sessionState.attachedSelections.count, 1)
+        XCTAssertEqual(mockPixelHandler.promptSubmittedWithSelectionsCounts, [1])
+    }
+
+    func testSelectionAttachedAfterSubmissionIsReportedAsUnsubmitted() {
+        sessionState.attachSelection(makeSelection("submitted"))
+        sessionState.beginChatForUTISubmission()
+
+        sessionState.attachSelection(makeSelection("new"))
+
+        XCTAssertTrue(sessionState.hasUnsubmittedSelections)
+    }
+
+    func testAlreadySubmittedSelectionsAreNotReportedAgainBeforeFrontendConsumption() {
+        sessionState.attachSelection(makeSelection())
+        sessionState.beginChatForUTISubmission()
+
+        sessionState.beginChatForUTISubmission()
+
+        XCTAssertEqual(mockPixelHandler.promptSubmittedWithSelectionsCounts, [1])
+    }
+
+    func testOnlyNewSelectionsAreCountedInLaterSubmission() {
+        sessionState.attachSelection(makeSelection("submitted"))
+        sessionState.beginChatForUTISubmission()
+        sessionState.attachSelection(makeSelection("new"))
+
+        sessionState.beginChatForUTISubmission()
+
+        XCTAssertEqual(mockPixelHandler.promptSubmittedWithSelectionsCounts, [1, 1])
+    }
+
+    func testBeginChatForUTISubmissionPreservesRestoredStateAndReportsSelections() {
+        sessionState.attachSelection(makeSelection())
+        sessionState.restoreChat(with: URL(string: "https://duck.ai/?chat=abc")!)
+
+        sessionState.beginChatForUTISubmission()
+
         XCTAssertEqual(sessionState.frontendState, .restoredChat)
         XCTAssertFalse(mockPixelHandler.promptSubmittedWithContextFired)
         XCTAssertFalse(mockPixelHandler.promptSubmittedWithoutContextFired)
+        XCTAssertEqual(mockPixelHandler.promptSubmittedWithSelectionsCounts, [1])
     }
 
     // MARK: - Helpers
@@ -2432,10 +2499,24 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
     var manualAttachBegan = false
     var manualAttachEnded = false
     var isManualAttachInProgress: Bool = false
+    var sheetDismissedHadUnsubmittedSelections: Bool?
+    var selectionAttachedCount = 0
+    var selectionLimitReachedCount = 0
+    var selectionRemovedCount = 0
+    var promptSubmittedWithSelectionsCounts: [Int] = []
+    var selectionToolDeliveryTimedOutCount = 0
 
     func fireSheetOpened() { sheetOpenedFired = true }
-    func fireSheetDismissed() { sheetDismissedFired = true }
+    func fireSheetDismissed(hadUnsubmittedSelections: Bool) {
+        sheetDismissedFired = true
+        sheetDismissedHadUnsubmittedSelections = hadUnsubmittedSelections
+    }
     func fireSessionRestored() { sessionRestoredFired = true }
+    func fireSelectionAttached() { selectionAttachedCount += 1 }
+    func fireSelectionLimitReached() { selectionLimitReachedCount += 1 }
+    func fireSelectionRemoved() { selectionRemovedCount += 1 }
+    func firePromptSubmittedWithSelections(count: Int) { promptSubmittedWithSelectionsCounts.append(count) }
+    func fireSelectionToolDeliveryTimedOut() { selectionToolDeliveryTimedOutCount += 1 }
     func fireExpandButtonTapped() { expandButtonTappedFired = true }
     func fireHeaderTitleTapped() {}
     func fireNewChatButtonTapped() { newChatButtonTappedFired = true }
@@ -2444,7 +2525,10 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
     func fireQuickActionAskAboutPageSelected() {}
     func fireAskAboutPageSuggestionSelected(pageType: SuggestionsPageType) {}
     func fireSuggestionSelected(suggestionId: String, pageType: SuggestionsPageType) {}
-    func fireSuggestionsViewed(isSmart: Bool, pageType: SuggestionsPageType) {}
+    func fireSuggestionsViewed(isSmart: Bool,
+                               pageType: SuggestionsPageType,
+                               scope: ResolvePageSuggestionsInput.Scope,
+                               surface: AIChatContextualSuggestionsSurface) {}
     func fireSuggestionsContextCollectionTimedOut() {}
     func fireRecentChatsPopupDisplayed() {}
     func fireRecentChatSelected() {}
@@ -2454,7 +2538,7 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
     func fireAddressBarMenuShown() {}
     func fireAddressBarMenuNewChatSelected() {}
     func fireAddressBarMenuAskAboutPageSelected() {}
-    func fireFloatingInputDismissedWithoutSubmission() {}
+    func fireFloatingInputDismissedWithoutSubmission(hadUnsubmittedSelections: Bool) {}
     func fireFloatingInputPromotedToSheet() {}
     func firePageContextAutoAttached() { pageContextAutoAttachedFired = true }
     func firePageContextUpdatedOnNavigation(url: String) { pageContextUpdatedOnNavigationFired = true }

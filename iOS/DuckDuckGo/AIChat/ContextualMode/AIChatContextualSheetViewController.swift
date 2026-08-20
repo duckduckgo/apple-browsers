@@ -83,6 +83,13 @@ protocol AIChatContextualSheetViewControllerDelegate: AnyObject {
     /// Called when the user taps a suggested prompt.
     func aiChatContextualSheetViewControllerAttachContextForSuggestion(_ viewController: AIChatContextualSheetViewController) async
 
+    func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController,
+                                             didSelectSelectionSuggestion action: AIChatTextSelectionAction?)
+
+    func aiChatContextualSheetViewControllerDidViewSelectionSuggestions(_ viewController: AIChatContextualSheetViewController)
+
+    func aiChatContextualSheetViewControllerSelectionSuggestionDeliveryTimedOut(_ viewController: AIChatContextualSheetViewController)
+
     /// Called when the user confirms chat deletion from the fire button confirmation
     func aiChatContextualSheetViewControllerDidConfirmDeleteChat(_ viewController: AIChatContextualSheetViewController)
 }
@@ -544,7 +551,7 @@ final class AIChatContextualSheetViewController: UIViewController {
         dismissRecentChatsPopup()
         view.endEditing(true)
         removeKeyboardObserver()
-        pixelHandler.fireSheetDismissed()
+        pixelHandler.fireSheetDismissed(hadUnsubmittedSelections: sessionState.hasUnsubmittedSelections)
         hideDimmingView(animated: animated)
     }
 
@@ -1048,8 +1055,10 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
             }
             return
         }
-        let actsOnSelection = AIChatTextSelectionAction(selectionSuggestionID: suggestion.id) != nil
+        let selectionAction = AIChatTextSelectionAction(selectionSuggestionID: suggestion.id)
+        let actsOnSelection = selectionAction != nil
         cancelSuggestionSubmission()
+        delegate?.aiChatContextualSheetViewController(self, didSelectSelectionSuggestion: selectionAction)
         pixelHandler.fireSuggestionSelected(suggestionId: suggestion.id, pageType: sessionState.viewState.suggestionsPageType)
         contextualInputViewController.setStartActionsDimmed(true)
         let submissionID = UUID()
@@ -1082,7 +1091,12 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
               let webViewController else { return false }
 
         let isFrontendReady = await webViewController.waitUntilFrontendReady(timeout: Constants.suggestedPromptFrontendReadinessTimeout)
-        guard isFrontendReady else { return false }
+        guard isFrontendReady else {
+            guard !Task.isCancelled else { return true }
+            pixelHandler.fireSelectionToolDeliveryTimedOut()
+            delegate?.aiChatContextualSheetViewControllerSelectionSuggestionDeliveryTimedOut(self)
+            return false
+        }
         guard !Task.isCancelled, canProcessSuggestionSubmission else { return true }
         guard !sessionState.attachedSelections.isEmpty else { return false }
 
@@ -1334,8 +1348,13 @@ private extension AIChatContextualSheetViewController {
         guard isVisible, !areSuggestionsVisible else { return }
         pixelHandler.fireSuggestionsViewed(
             isSmart: viewState.suggestionsAreSmart,
-            pageType: viewState.suggestionsPageType
+            pageType: viewState.suggestionsPageType,
+            scope: viewState.suggestionsScope,
+            surface: .sheet
         )
+        if viewState.suggestionsScope == .selection {
+            delegate?.aiChatContextualSheetViewControllerDidViewSelectionSuggestions(self)
+        }
     }
 }
 

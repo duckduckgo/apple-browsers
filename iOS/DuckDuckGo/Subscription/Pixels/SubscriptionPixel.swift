@@ -27,7 +27,7 @@ enum SubscriptionPixel: PixelKit.Event {
     case subscriptionActive
     // Auth
     case subscriptionInvalidRefreshTokenDetected(SubscriptionPixelHandler.Source)
-    case subscriptionAutomaticSignOut(SubscriptionAutomaticSignOutPixelData, SubscriptionPixelHandler.Source)
+    case subscriptionAutomaticSignOut(SubscriptionAutomaticSignOutPixelData, SubscriptionPixelHandler.Source, Error)
     case subscriptionInvalidRefreshTokenSignedOut
     case subscriptionInvalidRefreshTokenRecovered
     case subscriptionAuthV2GetTokensError(AuthTokensCachePolicy, SubscriptionPixelHandler.Source, Error)
@@ -102,7 +102,7 @@ enum SubscriptionPixel: PixelKit.Event {
         case .subscriptionAuthV2GetTokensError(let policy, let source, _):
             return [SubscriptionPixelsDefaults.policyCacheKey: policy.description,
                     SubscriptionPixelsDefaults.sourceKey: source.rawValue]
-        case .subscriptionAutomaticSignOut(let data, let source):
+        case .subscriptionAutomaticSignOut(let data, let source, _):
             var parameters = data.parameters
             parameters[SubscriptionPixelsDefaults.sourceKey] = source.rawValue
             return parameters

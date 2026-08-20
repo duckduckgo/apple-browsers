@@ -46,38 +46,6 @@ private enum DurationBucket {
 
 public struct SubscriptionAutomaticSignOutPixelData: Equatable {
 
-    public enum Reason: String {
-        case unknownAccount = "unknown_account"
-        case invalidRefreshToken = "invalid_refresh_token"
-    }
-
-    public enum TokenStatus: String {
-        case invalid
-        case expired
-        case reused
-        case loggedOut = "logged_out"
-        case fraudDetected = "fraud_detected"
-        case unknown
-        case notApplicable = "not_applicable"
-
-        public init(_ tokenStatus: OAuthRequest.TokenStatus?) {
-            switch tokenStatus {
-            case .invalid:
-                self = .invalid
-            case .expired:
-                self = .expired
-            case .reused:
-                self = .reused
-            case .loggedOut:
-                self = .loggedOut
-            case .fraudDetected:
-                self = .fraudDetected
-            case nil:
-                self = .unknown
-            }
-        }
-    }
-
     public enum RecoveryOutcome: String {
         case notAttempted = "not_attempted"
         case failed
@@ -286,8 +254,6 @@ public struct SubscriptionAutomaticSignOutPixelData: Equatable {
         }
     }
 
-    public let reason: Reason
-    public let tokenStatus: TokenStatus
     public let recoveryOutcome: RecoveryOutcome
     public let tokenCachePolicy: AuthTokensCachePolicy
     public let entitlementStateBefore: EntitlementState
@@ -301,9 +267,7 @@ public struct SubscriptionAutomaticSignOutPixelData: Equatable {
     public let storedRefreshTokenStateDuringAttempt: StoredRefreshTokenState
     public let localTokenStateAfterSignOut: LocalTokenState
 
-    public init(reason: Reason,
-                tokenStatus: TokenStatus,
-                recoveryOutcome: RecoveryOutcome,
+    public init(recoveryOutcome: RecoveryOutcome,
                 tokenCachePolicy: AuthTokensCachePolicy,
                 entitlementStateBefore: EntitlementState,
                 accessTokenTimeRemainingBefore: TimeRemainingBucket,
@@ -315,8 +279,6 @@ public struct SubscriptionAutomaticSignOutPixelData: Equatable {
                 cachedSubscriptionTimeRemainingBefore: TimeRemainingBucket,
                 storedRefreshTokenStateDuringAttempt: StoredRefreshTokenState,
                 localTokenStateAfterSignOut: LocalTokenState) {
-        self.reason = reason
-        self.tokenStatus = tokenStatus
         self.recoveryOutcome = recoveryOutcome
         self.tokenCachePolicy = tokenCachePolicy
         self.entitlementStateBefore = entitlementStateBefore
@@ -334,9 +296,7 @@ public struct SubscriptionAutomaticSignOutPixelData: Equatable {
     /// Derives every bucketed parameter from the state captured around a failed token request.
     /// `tokenBeforeAttempt` must have been snapshotted *before* the request, so that
     /// `storedRefreshTokenStateDuringAttempt` can tell whether the stored token rotated underneath it.
-    public init(reason: Reason,
-                tokenStatus: TokenStatus,
-                recoveryOutcome: RecoveryOutcome,
+    public init(recoveryOutcome: RecoveryOutcome,
                 policy: AuthTokensCachePolicy,
                 tokenBeforeAttempt: LocalTokenSnapshot,
                 tokenAfterAttempt: LocalTokenSnapshot,
@@ -345,8 +305,6 @@ public struct SubscriptionAutomaticSignOutPixelData: Equatable {
                 now: Date) {
         let tokenContainerBefore = tokenBeforeAttempt.tokenContainer
         self.init(
-            reason: reason,
-            tokenStatus: tokenStatus,
             recoveryOutcome: recoveryOutcome,
             tokenCachePolicy: policy,
             entitlementStateBefore: .init(tokenContainerBefore),
@@ -363,8 +321,6 @@ public struct SubscriptionAutomaticSignOutPixelData: Equatable {
 
     public var parameters: [String: String] {
         [
-            "reason": reason.rawValue,
-            "token_status": tokenStatus.rawValue,
             "recovery_outcome": recoveryOutcome.rawValue,
             "policycache": tokenCachePolicy.description,
             "had_subscription_entitlements_before": entitlementStateBefore.rawValue,

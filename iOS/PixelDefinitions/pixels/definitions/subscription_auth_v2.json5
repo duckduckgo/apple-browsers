@@ -10,18 +10,10 @@
             "pixelSource",
             "subscriptionAuthSource",
             "subscriptionAuthTokenCachePolicy",
-            {
-                "key": "reason",
-                "type": "string",
-                "description": "The authentication failure that caused the client to sign out automatically",
-                "enum": ["unknown_account", "invalid_refresh_token"]
-            },
-            {
-                "key": "token_status",
-                "type": "string",
-                "description": "The backend token status for an invalid refresh token, or not_applicable for unknown_account",
-                "enum": ["invalid", "expired", "reused", "logged_out", "fraud_detected", "unknown", "not_applicable"]
-            },
+            "errorDomain",
+            "errorCode",
+            "underlyingErrorDomain",
+            "underlyingErrorCode",
             {
                 "key": "recovery_outcome",
                 "type": "string",

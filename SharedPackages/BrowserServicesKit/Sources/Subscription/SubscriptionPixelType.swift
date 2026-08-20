@@ -16,7 +16,6 @@
 //  limitations under the License.
 //
 
-import Foundation
 import Networking
 
 public enum SubscriptionPixelType: Equatable {
@@ -24,7 +23,7 @@ public enum SubscriptionPixelType: Equatable {
     case subscriptionIsActive
     case osDistributionActiveSubscription
     case getTokensError(AuthTokensCachePolicy, Error)
-    case automaticSignOut(SubscriptionAutomaticSignOutPixelData)
+    case automaticSignOut(SubscriptionAutomaticSignOutPixelData, Error)
     case invalidRefreshTokenSignedOut
     case invalidRefreshTokenRecovered
     case purchaseSuccessAfterPendingTransaction
@@ -41,7 +40,7 @@ public enum SubscriptionPixelType: Equatable {
             (.purchaseSuccessAfterPendingTransaction, .purchaseSuccessAfterPendingTransaction),
             (.pendingTransactionApproved, .pendingTransactionApproved):
             return true
-        case let (.automaticSignOut(lhsData), .automaticSignOut(rhsData)):
+        case let (.automaticSignOut(lhsData, _), .automaticSignOut(rhsData, _)):
             return lhsData == rhsData
         default:
             return false

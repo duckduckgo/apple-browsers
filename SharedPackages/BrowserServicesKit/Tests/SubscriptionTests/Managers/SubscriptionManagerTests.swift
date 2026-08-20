@@ -167,9 +167,12 @@ class SubscriptionManagerTests: XCTestCase {
         assertGetTokensErrorPixel(policy: .localValid)
         XCTAssertFalse(mockPixelHandler.handledPixels.contains(.invalidRefreshToken))
 
-        let automaticSignOutData = try XCTUnwrap(automaticSignOutPixelData())
-        XCTAssertEqual(automaticSignOutData.reason, .unknownAccount)
-        XCTAssertEqual(automaticSignOutData.tokenStatus, .notApplicable)
+        let automaticSignOut = try XCTUnwrap(automaticSignOutPixel())
+        let automaticSignOutData = automaticSignOut.data
+        let automaticSignOutError = automaticSignOut.error as NSError
+        XCTAssertEqual(automaticSignOutError.domain, OAuthClientError.errorDomain)
+        XCTAssertEqual(automaticSignOutError.code, OAuthClientError.unknownAccount.errorCode)
+        XCTAssertNil(automaticSignOutError.userInfo[NSUnderlyingErrorKey])
         XCTAssertEqual(automaticSignOutData.recoveryOutcome, .notApplicable)
         XCTAssertEqual(automaticSignOutData.tokenCachePolicy, .localValid)
         XCTAssertEqual(automaticSignOutData.entitlementStateBefore, .present)
@@ -196,8 +199,7 @@ class SubscriptionManagerTests: XCTestCase {
             // Expected.
         }
 
-        let automaticSignOutData = try XCTUnwrap(automaticSignOutPixelData())
-        XCTAssertEqual(automaticSignOutData.reason, .unknownAccount)
+        let automaticSignOutData = try XCTUnwrap(automaticSignOutPixel()).data
         XCTAssertEqual(automaticSignOutData.cachedSubscriptionTrialStatusBefore, .unavailable)
         XCTAssertEqual(automaticSignOutData.cachedSubscriptionPurchasePlatformBefore, .unavailable)
         XCTAssertEqual(automaticSignOutData.localTokenStateAfterSignOut, .present)
@@ -215,14 +217,14 @@ class SubscriptionManagerTests: XCTestCase {
         XCTAssertTrue(mockPixelHandler.handledPixels.contains(.invalidRefreshToken))
         XCTAssertTrue(mockPixelHandler.handledPixels.contains(.invalidRefreshTokenRecovered))
         XCTAssertFalse(mockPixelHandler.handledPixels.contains(.invalidRefreshTokenSignedOut))
-        XCTAssertNil(automaticSignOutPixelData())
+        XCTAssertNil(automaticSignOutPixel())
     }
 
     func testGetTokenContainer_InvalidTokenRequest_RecoveryFailure_Pixels() async throws {
         mockOAuthClient.internalCurrentTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
         mockSubscriptionCachingService.cachedSubscription = SubscriptionMockFactory.appleSubscription
         mockOAuthClient.getTokensResponse = .failure(OAuthClientError.invalidTokenRequest(.reused))
-        overrideTokenResponseInRecoveryHandler = .failure(OAuthClientError.invalidTokenRequest(.reused))
+        mockAppStoreRestoreFlowV2.restoreSubscriptionAfterExpiredRefreshTokenError = NSError(domain: "RecoveryError", code: 1)
 
         do {
             _ = try await subscriptionManager.getTokenContainer(policy: .localValid)
@@ -238,9 +240,14 @@ class SubscriptionManagerTests: XCTestCase {
         XCTAssertTrue(mockPixelHandler.handledPixels.contains(.invalidRefreshTokenSignedOut))
         XCTAssertFalse(mockPixelHandler.handledPixels.contains(.invalidRefreshTokenRecovered))
 
-        let automaticSignOutData = try XCTUnwrap(automaticSignOutPixelData())
-        XCTAssertEqual(automaticSignOutData.reason, .invalidRefreshToken)
-        XCTAssertEqual(automaticSignOutData.tokenStatus, .reused)
+        let automaticSignOut = try XCTUnwrap(automaticSignOutPixel())
+        let automaticSignOutData = automaticSignOut.data
+        let automaticSignOutError = automaticSignOut.error as NSError
+        XCTAssertEqual(automaticSignOutError.domain, OAuthClientError.errorDomain)
+        XCTAssertEqual(automaticSignOutError.code, OAuthClientError.invalidTokenRequest(.reused).errorCode)
+        let underlyingError = try XCTUnwrap(automaticSignOutError.userInfo[NSUnderlyingErrorKey] as? NSError)
+        XCTAssertEqual(underlyingError.domain, OAuthRequest.TokenStatus.errorDomain)
+        XCTAssertEqual(underlyingError.code, OAuthRequest.TokenStatus.reused.errorCode)
         XCTAssertEqual(automaticSignOutData.recoveryOutcome, .failed)
         XCTAssertEqual(automaticSignOutData.entitlementStateBefore, .present)
         XCTAssertEqual(automaticSignOutData.cachedSubscriptionStatusBefore, .autoRenewable)
@@ -271,7 +278,7 @@ class SubscriptionManagerTests: XCTestCase {
             // Expected.
         }
 
-        let automaticSignOutData = try XCTUnwrap(automaticSignOutPixelData())
+        let automaticSignOutData = try XCTUnwrap(automaticSignOutPixel()).data
         XCTAssertEqual(automaticSignOutData.cachedSubscriptionStatusBefore, .autoRenewable)
         XCTAssertEqual(automaticSignOutData.cachedSubscriptionTrialStatusBefore, .notActive)
         XCTAssertEqual(automaticSignOutData.cachedSubscriptionPurchasePlatformBefore, .appStore)
@@ -363,9 +370,7 @@ class SubscriptionManagerTests: XCTestCase {
         XCTAssertNil(refreshData.recoveryDuration)
         XCTAssertNotNil(refreshData.errorData)
 
-        let automaticSignOutData = try XCTUnwrap(automaticSignOutPixelData())
-        XCTAssertEqual(automaticSignOutData.reason, .invalidRefreshToken)
-        XCTAssertEqual(automaticSignOutData.tokenStatus, .reused)
+        let automaticSignOutData = try XCTUnwrap(automaticSignOutPixel()).data
         XCTAssertEqual(automaticSignOutData.recoveryOutcome, .notAttempted)
         XCTAssertEqual(automaticSignOutData.storedRefreshTokenStateDuringAttempt, .unchanged)
         XCTAssertEqual(automaticSignOutData.localTokenStateAfterSignOut, .missing)
@@ -973,12 +978,12 @@ class SubscriptionManagerTests: XCTestCase {
         }))
     }
 
-    private func automaticSignOutPixelData() -> SubscriptionAutomaticSignOutPixelData? {
+    private func automaticSignOutPixel() -> (data: SubscriptionAutomaticSignOutPixelData, error: Error)? {
         mockPixelHandler.handledPixels.compactMap { pixel in
-            guard case .automaticSignOut(let data) = pixel else {
+            guard case .automaticSignOut(let data, let error) = pixel else {
                 return nil
             }
-            return data
+            return (data, error)
         }.first
     }
 }

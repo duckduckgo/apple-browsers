@@ -620,21 +620,20 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
             // Expected when no tokens are available
             self.updateCachedUserEntitlements([])
             throw SubscriptionManagerError.noTokenAvailable
-        } catch {
-            pixelHandler.handle(pixel: SubscriptionPixelType.getTokensError(policy, error))
-            Logger.subscriptionTokensManagement.error("Getting token \(policy, privacy: .public) failed: \(error, privacy: .public)")
+        } catch let tokenRequestError {
+            pixelHandler.handle(pixel: SubscriptionPixelType.getTokensError(policy, tokenRequestError))
+            Logger.subscriptionTokensManagement.error("Getting token \(policy, privacy: .public) failed: \(tokenRequestError, privacy: .public)")
 
-            switch error {
+            switch tokenRequestError {
             case OAuthClientError.unknownAccount:
                 let failedRequest = await captureFailedTokenRequestState(policy: policy, tokenBeforeAttempt: tokenBeforeAttempt)
-                await automaticallySignOut(reason: .unknownAccount,
-                                           tokenStatus: .notApplicable,
-                                           recoveryOutcome: .notApplicable,
+                await automaticallySignOut(recoveryOutcome: .notApplicable,
                                            failedRequest: failedRequest,
+                                           triggeringError: tokenRequestError,
                                            notifyUI: true)
                 throw SubscriptionManagerError.noTokenAvailable
 
-            case OAuthClientError.invalidTokenRequest(let tokenStatus):
+            case OAuthClientError.invalidTokenRequest:
                 let failedRequest = await captureFailedTokenRequestState(policy: policy, tokenBeforeAttempt: tokenBeforeAttempt)
                 pixelHandler.handle(pixel: .invalidRefreshToken)
                 do {
@@ -642,25 +641,24 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
                     pixelHandler.handle(pixel: .invalidRefreshTokenRecovered)
                     authV2TokenRefreshInstrumentation?.completeInvalidTokenRecovery(outcome: .succeeded, error: nil)
                     return recoveredTokenContainer
-                } catch {
+                } catch let recoveryError {
                     // `tokenRecoveryNotAttempted` means no restore ran (no handler, or the platform
                     // can't restore), which is a different finding from a restore that ran and
                     // failed to yield a valid token. Either way the refresh is a failure.
-                    let notAttempted = (error as? SubscriptionManagerError) == .tokenRecoveryNotAttempted
-                    await automaticallySignOut(reason: .invalidRefreshToken,
-                                               tokenStatus: .init(tokenStatus),
-                                               recoveryOutcome: notAttempted ? .notAttempted : .failed,
+                    let notAttempted = (recoveryError as? SubscriptionManagerError) == .tokenRecoveryNotAttempted
+                    await automaticallySignOut(recoveryOutcome: notAttempted ? .notAttempted : .failed,
                                                failedRequest: failedRequest,
+                                               triggeringError: tokenRequestError,
                                                notifyUI: false)
                     pixelHandler.handle(pixel: .invalidRefreshTokenSignedOut)
                     authV2TokenRefreshInstrumentation?.completeInvalidTokenRecovery(
                         outcome: notAttempted ? .notAttempted : .failed,
-                        error: notAttempted ? nil : error)
+                        error: notAttempted ? nil : recoveryError)
                     throw SubscriptionManagerError.noTokenAvailable
                 }
 
             default:
-                throw SubscriptionManagerError.errorRetrievingTokenContainer(error: error)
+                throw SubscriptionManagerError.errorRetrievingTokenContainer(error: tokenRequestError)
             }
         }
     }
@@ -686,23 +684,20 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
                                 capturedAt: Date())
     }
 
-    private func automaticallySignOut(reason: SubscriptionAutomaticSignOutPixelData.Reason,
-                                      tokenStatus: SubscriptionAutomaticSignOutPixelData.TokenStatus,
-                                      recoveryOutcome: SubscriptionAutomaticSignOutPixelData.RecoveryOutcome,
+    private func automaticallySignOut(recoveryOutcome: SubscriptionAutomaticSignOutPixelData.RecoveryOutcome,
                                       failedRequest: FailedTokenRequestState,
+                                      triggeringError: Error,
                                       notifyUI: Bool) async {
         await signOut(notifyUI: notifyUI, userInitiated: false)
 
-        let data = SubscriptionAutomaticSignOutPixelData(reason: reason,
-                                                         tokenStatus: tokenStatus,
-                                                         recoveryOutcome: recoveryOutcome,
+        let data = SubscriptionAutomaticSignOutPixelData(recoveryOutcome: recoveryOutcome,
                                                          policy: failedRequest.policy,
                                                          tokenBeforeAttempt: failedRequest.tokenBeforeAttempt,
                                                          tokenAfterAttempt: failedRequest.tokenAfterAttempt,
                                                          cachedSubscription: failedRequest.cachedSubscription,
                                                          localTokenStateAfterSignOut: localTokenState(),
                                                          now: failedRequest.capturedAt)
-        pixelHandler.handle(pixel: .automaticSignOut(data))
+        pixelHandler.handle(pixel: .automaticSignOut(data, triggeringError))
     }
 
     func attemptTokenRecovery() async throws -> TokenContainer {

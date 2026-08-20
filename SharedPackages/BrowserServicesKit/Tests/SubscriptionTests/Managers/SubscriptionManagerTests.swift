@@ -22,8 +22,7 @@ import Common
 @testable import Networking
 import SubscriptionTestingUtilities
 import NetworkingTestingUtils
-import PixelKit
-import PixelKitTestingUtilities
+@_spi(Testing) import PixelKit
 
 class SubscriptionManagerTests: XCTestCase {
 

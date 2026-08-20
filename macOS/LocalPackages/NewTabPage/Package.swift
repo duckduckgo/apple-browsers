@@ -33,6 +33,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../../SharedPackages/AIChat"),
+        .package(path: "../../../SharedPackages/Persistence"),
         .package(path: "../../../SharedPackages/BrowserServicesKit"),
         .package(path: "../../../SharedPackages/Infrastructure/SystemFrameworksExtensions"),
         .package(path: "../WebKitExtensions"),
@@ -48,7 +49,7 @@ let package = Package(
                 .product(name: "AutoconsentStats", package: "BrowserServicesKit"),
                 .product(name: "Bookmarks", package: "BrowserServicesKit"),
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
-                .product(name: "PersistenceTestingUtils", package: "BrowserServicesKit"),
+                .product(name: "PersistenceTestingUtils", package: "Persistence"),
                 .product(name: "PrivacyStats", package: "BrowserServicesKit"),
                 .product(name: "RemoteMessaging", package: "BrowserServicesKit"),
                 .product(name: "UserScript", package: "BrowserServicesKit"),

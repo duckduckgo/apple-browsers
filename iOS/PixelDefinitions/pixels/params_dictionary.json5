@@ -337,6 +337,17 @@
         "description": "Source of the burn action",
         "enum": ["browsing", "tabSwitcher", "settings", "quickFire", "deeplink", "autoClear", "escapeHatch"]
     },
+    "aiChatSelectionCount": {
+        "key": "selection_count",
+        "type": "string",
+        "description": "Bucketed number of text selections attached to a submitted Duck.ai prompt. Bounded by the 5-selection cap",
+        "enum": ["1", "2", "3-5"]
+    },
+    "aiChatHadUnsubmittedSelections": {
+        "key": "had_unsubmitted_selections",
+        "type": "boolean",
+        "description": "Whether text selections were still attached, and so never asked about, when the Duck.ai contextual sheet was dismissed"
+    },
     "tabType": {
         "key": "tabType",
         "type": "string",

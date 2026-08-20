@@ -24,7 +24,7 @@ import Persistence
 import PersistenceTestingUtils
 import PrivacyConfig
 import SharedTestUtilities
-import PixelKitTestingUtilities
+@_spi(Testing) import PixelKit
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser

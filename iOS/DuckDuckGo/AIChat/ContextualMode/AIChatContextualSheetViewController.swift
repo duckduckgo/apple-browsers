@@ -78,6 +78,13 @@ protocol AIChatContextualSheetViewControllerDelegate: AnyObject {
     /// Called when the user taps a suggested prompt.
     func aiChatContextualSheetViewControllerAttachContextForSuggestion(_ viewController: AIChatContextualSheetViewController) async
 
+    func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController,
+                                             didSelectSelectionSuggestion action: AIChatTextSelectionAction?)
+
+    func aiChatContextualSheetViewControllerDidViewSelectionSuggestions(_ viewController: AIChatContextualSheetViewController)
+
+    func aiChatContextualSheetViewControllerSelectionSuggestionDeliveryTimedOut(_ viewController: AIChatContextualSheetViewController)
+
     /// Called when the user confirms chat deletion from the fire button confirmation
     func aiChatContextualSheetViewControllerDidConfirmDeleteChat(_ viewController: AIChatContextualSheetViewController)
 }
@@ -439,7 +446,7 @@ final class AIChatContextualSheetViewController: UIViewController {
         dismissRecentChatsPopup()
         view.endEditing(true)
         removeKeyboardObserver()
-        pixelHandler.fireSheetDismissed()
+        pixelHandler.fireSheetDismissed(hadUnsubmittedSelections: sessionState.hasUnsubmittedSelections)
         hideDimmingView(animated: animated)
     }
 
@@ -740,7 +747,9 @@ private extension AIChatContextualSheetViewController {
             }
         )
 
+        // Inject the presenting context's true size class; the built-in one reports `.compact` inside the sheet/popover.
         let confirmationView = ScopedFireConfirmationView(viewModel: viewModel)
+            .environment(\.presentationHorizontalSizeClass, UserInterfaceSizeClass(traitCollection.horizontalSizeClass))
         let hostingController = UIHostingController(rootView: confirmationView)
         hostingController.view.backgroundColor = UIColor(designSystemColor: .backgroundTertiary)
         hostingController.modalTransitionStyle = .coverVertical
@@ -755,8 +764,8 @@ private extension AIChatContextualSheetViewController {
         present(hostingController, animated: true)
     }
 
-    private func configureIPadPopoverPresentation(for hostingController: UIHostingController<ScopedFireConfirmationView>,
-                                                  confirmationView: ScopedFireConfirmationView) {
+    private func configureIPadPopoverPresentation<Content: View>(for hostingController: UIHostingController<Content>,
+                                                                 confirmationView: Content) {
         if let popover = hostingController.popoverPresentationController {
             popover.sourceView = fireButton
             popover.sourceRect = fireButton.bounds
@@ -772,8 +781,8 @@ private extension AIChatContextualSheetViewController {
         }
     }
 
-    private func configureIPhoneSheetPresentation(for hostingController: UIHostingController<ScopedFireConfirmationView>,
-                                                  confirmationView: ScopedFireConfirmationView) {
+    private func configureIPhoneSheetPresentation<Content: View>(for hostingController: UIHostingController<Content>,
+                                                                 confirmationView: Content) {
         if let sheet = hostingController.sheetPresentationController {
             if #available(iOS 16.0, *) {
                 let sizingController = UIHostingController(rootView: confirmationView)
@@ -913,8 +922,10 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
             abandonAwaitedSubmittedChat()
             return
         }
-        let actsOnSelection = AIChatTextSelectionAction(selectionSuggestionID: suggestion.id) != nil
+        let selectionAction = AIChatTextSelectionAction(selectionSuggestionID: suggestion.id)
+        let actsOnSelection = selectionAction != nil
         cancelSuggestionSubmission()
+        delegate?.aiChatContextualSheetViewController(self, didSelectSelectionSuggestion: selectionAction)
         pixelHandler.fireSuggestionSelected(suggestionId: suggestion.id, pageType: sessionState.viewState.suggestionsPageType)
         contextualInputViewController.setStartActionsDimmed(true)
         let submissionID = UUID()
@@ -947,7 +958,12 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
               let webViewController else { return false }
 
         let isFrontendReady = await webViewController.waitUntilFrontendReady(timeout: Constants.suggestedPromptFrontendReadinessTimeout)
-        guard isFrontendReady else { return false }
+        guard isFrontendReady else {
+            guard !Task.isCancelled else { return true }
+            pixelHandler.fireSelectionToolDeliveryTimedOut()
+            delegate?.aiChatContextualSheetViewControllerSelectionSuggestionDeliveryTimedOut(self)
+            return false
+        }
         guard !Task.isCancelled, canProcessSuggestionSubmission else { return true }
         guard !sessionState.attachedSelections.isEmpty else { return false }
 
@@ -1196,8 +1212,13 @@ private extension AIChatContextualSheetViewController {
         guard isVisible, !areSuggestionsVisible else { return }
         pixelHandler.fireSuggestionsViewed(
             isSmart: viewState.suggestionsAreSmart,
-            pageType: viewState.suggestionsPageType
+            pageType: viewState.suggestionsPageType,
+            scope: viewState.suggestionsScope,
+            surface: .sheet
         )
+        if viewState.suggestionsScope == .selection {
+            delegate?.aiChatContextualSheetViewControllerDidViewSelectionSuggestions(self)
+        }
     }
 }
 

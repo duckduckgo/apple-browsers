@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import PixelKit
 import PrivacyConfig
 import Common
 import FoundationExtensions
@@ -91,6 +92,10 @@ public struct PixelParameters {
 
     public static let count = "count"
     public static let source = "source"
+    public static let aiChatSelectionCount = "selection_count"
+    public static let aiChatHadUnsubmittedSelections = "had_unsubmitted_selections"
+    public static let aiChatSuggestionScope = "suggestion_scope"
+    public static let aiChatSuggestionsSurface = "surface"
     public static let cookiePopupPreference = "cookie_popup_preference"
     public static let autoconsentEnabled = "autoconsent_enabled"
     public static let timeSinceShown = "time_since_shown"

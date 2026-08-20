@@ -39,7 +39,7 @@ struct UserText {
     static let fireDialogHistoryTitle = NSLocalizedString("fire.dialog.history.title", value: "History", comment: "Section title. Toggle that controls whether browsing history entries are deleted.")
     static let cookiesAndSiteDataTitle = NSLocalizedString("fire.dialog.cookies.title", value: "Cookies and site data", comment: "Section title. Toggle that controls whether website cookies and storage (site data) are deleted.")
     static let fireDialogCookiesAndOtherData = NSLocalizedString("fire.dialog.cookies.and.other.data.title", value: "Cookies & other data", comment: "Section title. Toggle that controls whether website cookies and storage (site data) are deleted.")
-    static let fireDialogIncludeCookiesAndOtherData = NSLocalizedString("fire.dialog.include.cookies.and.other.data.title", value: "Include cookies & other data?", comment: "Section title. Toggle that controls whether website cookies and storage (site data) are deleted.")
+    static let fireDialogIncludeCookiesAndOtherData = NSLocalizedString("fire.dialog.include.cookies.and.other.data.title", value: "Include cookies & other data", comment: "Section title. Toggle that controls whether website cookies and storage (site data) are deleted.")
     static let fireDialogCloseThisTab = NSLocalizedString("fire.dialog.close.this.tab", value: "Close this tab.", comment: "Subtitle shown under the Tabs and windows row when scope is ‘Tab’. Means: the currently active tab will be closed.")
     static let fireDialogCloseThisWindow = NSLocalizedString("fire.dialog.close.this.window", value: "Close this window.", comment: "Subtitle shown under the Tabs and windows row when scope is ‘Window’. Means: the current browser window (all tabs inside it) will be closed.")
     static let fireDialogCloseAllTabsWindows = NSLocalizedString("fire.dialog.close.all.tabs.windows", value: "Close all tabs and windows.", comment: "Subtitle shown under the Tabs and windows row when scope is ‘Everything’. Means: all browser tabs and windows will be closed.")
@@ -556,7 +556,7 @@ struct UserText {
     static func fireDialogSitesOverlayTitle(_ count: Int) -> String {
         let template = NSLocalizedString(
             "fire.dialog.sites.overlay.title2",
-            value: "**Cookies & other data from %#@sites@** will be deleted:",
+            value: "**Cookies & other data from %#@sites@** will be deleted",
             comment: "Simplified Fire dialog's sites overlay title, stating the number of sites affected."
         )
         return String.localizedStringWithFormat(template, count)
@@ -566,7 +566,7 @@ struct UserText {
     static func fireDialogChatsOverlayTitle(_ count: Int) -> String {
         let template = NSLocalizedString(
             "fire.dialog.chats.overlay.title2",
-            value: "**%#@chats@** will be deleted:",
+            value: "**%#@chats@** will be deleted",
             comment: "Simplified Fire dialog's chats overlay title, stating the number of chats affected."
         )
         return String.localizedStringWithFormat(template, count)
@@ -576,7 +576,7 @@ struct UserText {
     static func fireDialogHistoryOverlayTitle(_ count: Int) -> String {
         let template = NSLocalizedString(
             "fire.dialog.history.overlay.title",
-            value: "**%#@items@** will be deleted:",
+            value: "**%#@items@** will be deleted",
             comment: "Simplified Fire dialog's history overlay title, stating the number of history items affected."
         )
         return String.localizedStringWithFormat(template, count)

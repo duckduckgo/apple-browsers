@@ -429,6 +429,7 @@ struct FireDialogView: ModalView {
                 detailAction: viewModel.hasCookiesAndSiteDataInScope ? { isShowingSitesOverlay = true } : nil,
                 // grey-out the detail label when the toggle is Off
                 detailActionEnabled: viewModel.includeCookiesAndSiteData,
+                detailAccessibilityIdentifier: "FireDialogView.cookiesDetailButton",
                 isEnabled: viewModel.hasCookiesAndSiteDataInScope,
                 toggleId: "FireDialogView.cookiesToggle"
             )

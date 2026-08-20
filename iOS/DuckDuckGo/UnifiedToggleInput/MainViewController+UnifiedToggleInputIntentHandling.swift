@@ -252,7 +252,11 @@ private extension MainViewController {
         // omnibar is no longer in the toolbar by then.
         coordinator.cachedOmnibarPlaceholderWindowX = omnibarPlaceholderWindowX
 
-        viewCoordinator.ensureNavContainerOwnershipForUnifiedToggleInputIfNeeded()
+        if isFloatingUIEnabled, coordinator.cardPosition.isBottom {
+            viewCoordinator.returnOmnibarToNavigationContainerIfNeeded(applyingToolbarHeightImmediately: false)
+        } else {
+            viewCoordinator.ensureNavContainerOwnershipForUnifiedToggleInputIfNeeded()
+        }
 
         let omnibarPlaceholderColor = currentOmnibarPlaceholderColor()
         let utiPlaceholderColor = coordinator.viewController.defaultPlaceholderColor
@@ -285,10 +289,8 @@ private extension MainViewController {
 
         let growsFromBottom = isBottom && isFloatingUIEnabled && !isSeamlessHandoff
         if growsFromBottom {
-            let initialScale: CGFloat = 0.85
-            let heightLost = unifiedInputContentContainer.bounds.height * (1 - initialScale) / 2
-            unifiedInputContentContainer.transform = CGAffineTransform(scaleX: initialScale, y: initialScale)
-                .concatenating(CGAffineTransform(translationX: 0, y: heightLost))
+            unifiedInputContentContainer.transform = FloatingOmnibarTransitionMetrics.bottomPinnedScaleTransform(
+                height: unifiedInputContentContainer.bounds.height)
             unifiedInputContentContainer.layer.shouldRasterize = true
             unifiedInputContentContainer.layer.rasterizationScale = UIScreen.main.scale
         }
@@ -333,6 +335,8 @@ private extension MainViewController {
                 self?.viewCoordinator.hideUnifiedInputContent()
                 unifiedInputContentContainer.transform = .identity
                 unifiedInputContentContainer.layer.shouldRasterize = false
+                self?.newTabPageViewController?.setLogoHidden(false)
+                self?.newTabPageViewController?.setFavoritesHidden(false)
             }
         }
         if animated {
@@ -351,11 +355,9 @@ private extension MainViewController {
                     coordinator.viewController.alignVisibleTextLeadingEdge(toWindowX: omnibarPlaceholderWindowX)
                 }
                 if shrinksToBottom {
-                    let initialScale: CGFloat = 0.85
-                    let heightLost = unifiedInputContentContainer.bounds.height * (1 - initialScale) / 2
                     unifiedInputContentContainer.alpha = 0
-                    unifiedInputContentContainer.transform = CGAffineTransform(scaleX: initialScale, y: initialScale)
-                        .concatenating(CGAffineTransform(translationX: 0, y: heightLost))
+                    unifiedInputContentContainer.transform = FloatingOmnibarTransitionMetrics.bottomPinnedScaleTransform(
+                        height: unifiedInputContentContainer.bounds.height)
                 }
             }
             viewCoordinator.hideUnifiedToggleInputOmnibar(additionalAnimations: additionalAnimations, completion: onDismissed)
@@ -372,7 +374,7 @@ private extension MainViewController {
             viewCoordinator.finishUnifiedToggleInputOmnibarDismiss()
             onDismissed()
         }
-        resetUnifiedInputContentAfterHide(hidingContent: !shrinksToBottom)
+        resetUnifiedInputContentAfterHide(hidingContent: !shrinksToBottom, restoringNTPChrome: !shrinksToBottom)
         viewCoordinator.suggestionTrayContainer.backgroundColor = .clear
     }
 
@@ -386,15 +388,17 @@ private extension MainViewController {
     }
 
     /// Shared intent teardown; restores the NTP logo/favorites hidden at focus, mirroring the animated back-button dismiss (idempotent).
-    func resetUnifiedInputContentAfterHide(hidingContent: Bool = true) {
+    func resetUnifiedInputContentAfterHide(hidingContent: Bool = true, restoringNTPChrome: Bool = true) {
         unifiedToggleInputCoordinator?.contentViewController.setActive(false)
         if hidingContent {
             viewCoordinator.hideUnifiedInputContent()
         }
         unifiedToggleInputCoordinator?.contentViewController.setContentInset(top: 0, bottom: 0)
         hideSuggestionTray()
-        newTabPageViewController?.setLogoHidden(false)
-        newTabPageViewController?.setFavoritesHidden(false)
+        if restoringNTPChrome {
+            newTabPageViewController?.setLogoHidden(false)
+            newTabPageViewController?.setFavoritesHidden(false)
+        }
     }
 
     func applyBottomOmnibarVisibility(_ state: UnifiedToggleInputDisplayState.OmnibarState) {

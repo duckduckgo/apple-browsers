@@ -44,10 +44,7 @@ extension MainViewController {
 
         // Bottom is longer to accommodate concurrent keyboard descent.
         static func omnibarTransitionDuration(isBottom: Bool, isFloatingUIEnabled: Bool) -> TimeInterval {
-            guard isFloatingUIEnabled else {
-                return isBottom ? 0.35 : 0.25
-            }
-            return isBottom ? 0.109375 : 0.078125
+            FloatingOmnibarTransitionMetrics.duration(isBottom: isBottom, isFloatingUIEnabled: isFloatingUIEnabled)
         }
 
         /// Stretch the icon fade-in past UTI's collapse so the build-up reads rather than front-loading.
@@ -1166,7 +1163,7 @@ extension MainViewController {
         viewCoordinator.ensureNavContainerOwnershipForUnifiedToggleInputIfNeeded()
         viewCoordinator.unifiedInputContentContainer.isHidden = true
         viewCoordinator.showAIChatTabChatHeader()
-        viewCoordinator.animateUnifiedToggleInputOmnibarDismissLayout()
+        viewCoordinator.animateUnifiedToggleInputOmnibarDismissLayout(reattachingOmnibar: false)
         coordinator.deactivateToOmnibar(resetView: false, animateDismiss: false)
         coordinator.showCollapsed()
         if let tab = currentTab {

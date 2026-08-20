@@ -362,7 +362,7 @@ class MainViewCoordinator {
 
     func ensureNavContainerOwnershipForUnifiedToggleInputIfNeeded() {
         guard isFloatingUIEnabled, addressBarPosition.isBottom else { return }
-        returnOmnibarToNavigationContainerIfNeeded(applyingToolbarHeightImmediately: false)
+        returnOmnibarToNavigationContainerIfNeeded()
     }
 
     /// Detaches the bottom omnibar from the toolbar back into the nav container (used by minimal
@@ -532,10 +532,10 @@ class MainViewCoordinator {
     }
 
     /// Call inside an animation context — alpha swap is deferred to completion to avoid a crossfade gap.
-    func animateUnifiedToggleInputOmnibarDismissLayout() {
+    func animateUnifiedToggleInputOmnibarDismissLayout(reattachingOmnibar: Bool = true) {
         if addressBarPosition.isBottom {
             setNavBarContainerBottomToToolbar()
-            if isFloatingUIEnabled {
+            if reattachingOmnibar, isFloatingUIEnabled {
                 applyAttachedToolbarHeight()
             }
         }

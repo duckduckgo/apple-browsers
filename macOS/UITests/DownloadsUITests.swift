@@ -444,7 +444,7 @@ class DownloadsUITests: UITestCase {
         app.pasteURL(pageURL, pressingEnter: true)
 
         let link = app.webViews.firstMatch.links["HTML Link"].firstMatch
-        XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.navigation))
         XCUIApplication.perform(withKeyModifiers: [.option]) {
             link.click()
         }
@@ -536,7 +536,7 @@ class DownloadsUITests: UITestCase {
         openSiteForDownloadingFile(url: url.absoluteString)
 
         let link = webView.links["Download via Data URL"].firstMatch
-        XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.navigation))
         link.tap()
         let saveSheet = app.sheets.firstMatch
         XCTAssertTrue(saveSheet.waitForExistence(timeout: UITests.Timeouts.elementExistence))
@@ -576,7 +576,7 @@ class DownloadsUITests: UITestCase {
 
         app.pasteURL(url, pressingEnter: true)
         let link = webView.links["Download via Blob"].firstMatch
-        XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.navigation))
         link.tap()
         let saveSheet = app.sheets.firstMatch
         XCTAssertTrue(saveSheet.waitForExistence(timeout: UITests.Timeouts.elementExistence))
@@ -730,7 +730,7 @@ class DownloadsUITests: UITestCase {
 
         app.pasteURL(launcherURL, pressingEnter: true)
         let openLink = app.webViews.firstMatch.links["Open Popup"]
-        XCTAssertTrue(openLink.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCTAssertTrue(openLink.waitForExistence(timeout: UITests.Timeouts.navigation))
         // Open link in a new tab with ⌘+click
         XCUIApplication.perform(withKeyModifiers: [.command]) {
             openLink.click()
@@ -828,7 +828,7 @@ class DownloadsUITests: UITestCase {
 
         app.pasteURL(url, pressingEnter: true)
         let link = app.webViews.firstMatch.links["Open Download"]
-        XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.navigation))
         // Click to open in new tab (respects default behavior of target=_blank)
         link.click()
 

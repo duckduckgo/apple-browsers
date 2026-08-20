@@ -59,7 +59,7 @@ final class TabNavigationPopupTests: UITestCase, TabNavigationTestHelpers {
         // Try to navigate in popup
         let popupWindow = app.windows.containing(.keyPath(\.title, equalTo: "Popup Page")).firstMatch
         let link = popupWindow.webViews["Popup Page"].links["Open in new tab"]
-        XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.navigation))
         link.click()
 
         // Should open in new tab of the original window
@@ -440,7 +440,7 @@ final class TabNavigationPopupTests: UITestCase, TabNavigationTestHelpers {
         // Command click in popup - should open in background tab in main window
         let popupWindow = app.windows.containing(.keyPath(\.title, equalTo: "Popup Page")).firstMatch
         let link = popupWindow.webViews["Popup Page"].links["Open Page #13"]
-        XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.navigation))
         XCUIElement.perform(withKeyModifiers: [.command]) {
             link.click()
         }
@@ -485,7 +485,7 @@ final class TabNavigationPopupTests: UITestCase, TabNavigationTestHelpers {
         // Command shift click in popup - should open in foreground tab in main window
         let popupWindow = app.windows.containing(.keyPath(\.title, equalTo: "Popup Page")).firstMatch
         let link = popupWindow.webViews["Popup Page"].links["Open Page #14"]
-        XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.navigation))
         XCUIElement.perform(withKeyModifiers: [.command, .shift]) {
             link.click()
         }
@@ -530,7 +530,7 @@ final class TabNavigationPopupTests: UITestCase, TabNavigationTestHelpers {
         // Command option click in popup - should open in background window
         let popupWindow = app.windows.containing(.keyPath(\.title, equalTo: "Popup Page")).firstMatch
         let link = popupWindow.webViews["Popup Page"].links["Open Page #15"]
-        XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.navigation))
         XCUIElement.perform(withKeyModifiers: [.command, .option]) {
             link.click()
         }
@@ -581,7 +581,7 @@ final class TabNavigationPopupTests: UITestCase, TabNavigationTestHelpers {
         // Command option shift click in popup - should open in foreground window
         let popupWindow = app.windows.containing(.keyPath(\.title, equalTo: "Popup Page")).firstMatch
         let link = popupWindow.webViews["Popup Page"].links["Open Page #16"]
-        XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.navigation))
         XCUIElement.perform(withKeyModifiers: [.command, .option, .shift]) {
             link.click()
         }
@@ -833,7 +833,7 @@ final class TabNavigationPopupTests: UITestCase, TabNavigationTestHelpers {
         // Command click in popup - should open in background tab in Fire window
         let popupWindow = app.windows.containing(.link, identifier: "Open Page #13").firstMatch
         let link = popupWindow.links["Open Page #13"]
-        XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.navigation))
         XCUIElement.perform(withKeyModifiers: [.command]) {
             link.click()
         }
@@ -1190,7 +1190,7 @@ final class TabNavigationPopupTests: UITestCase, TabNavigationTestHelpers {
         // Try to navigate in popup
         let popupWindow = app.windows.containing(.link, identifier: "Open in new tab").firstMatch
         let link = popupWindow.links["Open in new tab"]
-        XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.navigation))
         link.click()
 
         // Should open in new tab of the Fire window

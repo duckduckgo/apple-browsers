@@ -179,6 +179,7 @@
 		315C77822CFA41A400699683 /* AIChat in Frameworks */ = {isa = PBXBuildFile; productRef = 315C77812CFA41A400699683 /* AIChat */; };
 		315E14A92DF77BCD00419C8A /* SwitchBarTextEntryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 315E14A32DF77BCD00419C8A /* SwitchBarTextEntryView.swift */; };
 		315E14AA2DF77BCD00419C8A /* SwitchBarHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 315E14A72DF77BCD00419C8A /* SwitchBarHandler.swift */; };
+		C9CEF2CD0693E638E2633EC8 /* SwitchBarHandling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36B1DB275A60AED193CE41B9 /* SwitchBarHandling.swift */; };
 		315E14AB2DF77BCD00419C8A /* SwitchBarTextEntryViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 315E14A42DF77BCD00419C8A /* SwitchBarTextEntryViewController.swift */; };
 		315E14AD2DF77BCD00419C8A /* SwitchBarViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 315E14A82DF77BCD00419C8A /* SwitchBarViewController.swift */; };
 		315E39652F86ABEE00D2289D /* DebugServer in Frameworks */ = {isa = PBXBuildFile; productRef = 315E39642F86ABEE00D2289D /* DebugServer */; };
@@ -220,6 +221,7 @@
 		31B524572715BB23002225AB /* WebJSAlert.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31B524562715BB23002225AB /* WebJSAlert.swift */; };
 		31B5E8C02E1D54BB00EECC1E /* NavigationActionBarManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31B5E8BB2E1D54BB00EECC1E /* NavigationActionBarManager.swift */; };
 		31B5E8C12E1D54BB00EECC1E /* SuggestionTrayManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31B5E8BC2E1D54BB00EECC1E /* SuggestionTrayManager.swift */; };
+		747208FFDE13AE41F28F621E /* SuggestionTrayDependencies.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E6F205F8E242E207DA606CD /* SuggestionTrayDependencies.swift */; };
 		31B5E8C22E1D54BB00EECC1E /* SwipeContainerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31B5E8BD2E1D54BB00EECC1E /* SwipeContainerManager.swift */; };
 		31B5E8C52E1E64D400EECC1E /* DaxLogoManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31B5E8C42E1E64D400EECC1E /* DaxLogoManager.swift */; };
 		31BB23A42D3A661E00809ABF /* ControlWidgetConfigurable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31BB23A32D3A661A00809ABF /* ControlWidgetConfigurable.swift */; };
@@ -2048,6 +2050,7 @@
 		C1431C7B2E7CB7BE005253C8 /* SyncRecoveryPromptServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1431C7A2E7CB7BE005253C8 /* SyncRecoveryPromptServiceTests.swift */; };
 		C1431C7C2E7CB7BE005253C8 /* SyncRecoveryPromptPresenterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1431C792E7CB7BE005253C8 /* SyncRecoveryPromptPresenterTests.swift */; };
 		C14414762EB10DC30057F921 /* AIChatFullModeFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = C14414752EB10DC30057F921 /* AIChatFullModeFeature.swift */; };
+		7048362F991A98E777F8BD71 /* DevicePlatformProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = B684DD3EC342EBDFEA3B54D4 /* DevicePlatformProviding.swift */; };
 		C14414792EB11A100057F921 /* AIChatFullModeFeatureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C14414782EB11A100057F921 /* AIChatFullModeFeatureTests.swift */; };
 		C145F6CB2F8D0201006CD340 /* export-passwords-dark-optimised.json in Resources */ = {isa = PBXBuildFile; fileRef = C145F6C92F8D0201006CD340 /* export-passwords-dark-optimised.json */; };
 		C145F6CC2F8D0201006CD340 /* export-passwords-light-optimised.json in Resources */ = {isa = PBXBuildFile; fileRef = C145F6CA2F8D0201006CD340 /* export-passwords-light-optimised.json */; };
@@ -3121,6 +3124,7 @@
 		315E14A32DF77BCD00419C8A /* SwitchBarTextEntryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwitchBarTextEntryView.swift; sourceTree = "<group>"; };
 		315E14A42DF77BCD00419C8A /* SwitchBarTextEntryViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwitchBarTextEntryViewController.swift; sourceTree = "<group>"; };
 		315E14A72DF77BCD00419C8A /* SwitchBarHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwitchBarHandler.swift; sourceTree = "<group>"; };
+		36B1DB275A60AED193CE41B9 /* SwitchBarHandling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwitchBarHandling.swift; sourceTree = "<group>"; };
 		315E14A82DF77BCD00419C8A /* SwitchBarViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwitchBarViewController.swift; sourceTree = "<group>"; };
 		3161D13127AC161B00285CF6 /* DownloadMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadMetadata.swift; sourceTree = "<group>"; };
 		31669B9928020A460071CC18 /* SaveLoginViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaveLoginViewModel.swift; sourceTree = "<group>"; };
@@ -3164,6 +3168,7 @@
 		31B524562715BB23002225AB /* WebJSAlert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebJSAlert.swift; sourceTree = "<group>"; };
 		31B5E8BB2E1D54BB00EECC1E /* NavigationActionBarManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationActionBarManager.swift; sourceTree = "<group>"; };
 		31B5E8BC2E1D54BB00EECC1E /* SuggestionTrayManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuggestionTrayManager.swift; sourceTree = "<group>"; };
+		2E6F205F8E242E207DA606CD /* SuggestionTrayDependencies.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuggestionTrayDependencies.swift; sourceTree = "<group>"; };
 		31B5E8BD2E1D54BB00EECC1E /* SwipeContainerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwipeContainerManager.swift; sourceTree = "<group>"; };
 		31B5E8C42E1E64D400EECC1E /* DaxLogoManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxLogoManager.swift; sourceTree = "<group>"; };
 		31BB23A32D3A661A00809ABF /* ControlWidgetConfigurable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlWidgetConfigurable.swift; sourceTree = "<group>"; };
@@ -4905,6 +4910,7 @@
 		C1431C792E7CB7BE005253C8 /* SyncRecoveryPromptPresenterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncRecoveryPromptPresenterTests.swift; sourceTree = "<group>"; };
 		C1431C7A2E7CB7BE005253C8 /* SyncRecoveryPromptServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncRecoveryPromptServiceTests.swift; sourceTree = "<group>"; };
 		C14414752EB10DC30057F921 /* AIChatFullModeFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatFullModeFeature.swift; sourceTree = "<group>"; };
+		B684DD3EC342EBDFEA3B54D4 /* DevicePlatformProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevicePlatformProviding.swift; sourceTree = "<group>"; };
 		C14414782EB11A100057F921 /* AIChatFullModeFeatureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatFullModeFeatureTests.swift; sourceTree = "<group>"; };
 		C1453E322D0863C80024449B /* pl */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = pl; path = pl.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		C1453E332D0863C80024449B /* pl */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = pl; path = pl.lproj/Localizable.strings; sourceTree = "<group>"; };
@@ -6439,6 +6445,7 @@
 			isa = PBXGroup;
 			children = (
 				3685767E3023E30D002F4AFF /* AIChatUserTier+Subscription.swift */,
+				B684DD3EC342EBDFEA3B54D4 /* DevicePlatformProviding.swift */,
 				B56523312FCF40A500B71522 /* Extensions */,
 				C15C85222EEFBA1D0096C9EF /* NativeInput */,
 				C13EBC4D2EE9C65F00CE5A4B /* ContextualMode */,
@@ -6686,6 +6693,7 @@
 			children = (
 				6F33F3902E786875002E95B1 /* DaxLogo */,
 				31B5E8BB2E1D54BB00EECC1E /* NavigationActionBarManager.swift */,
+				2E6F205F8E242E207DA606CD /* SuggestionTrayDependencies.swift */,
 				31B5E8BC2E1D54BB00EECC1E /* SuggestionTrayManager.swift */,
 				31B5E8BD2E1D54BB00EECC1E /* SwipeContainerManager.swift */,
 			);
@@ -7632,6 +7640,7 @@
 				31550CD62E0D89EA006FA55B /* NavigationActionBarViewModel.swift */,
 				31EEBCD82E2AAB4700901255 /* NavigationActionBarViewController.swift */,
 				31EEBCDA2E2AABA900901255 /* NavigationActionBarView.swift */,
+				36B1DB275A60AED193CE41B9 /* SwitchBarHandling.swift */,
 				315E14A72DF77BCD00419C8A /* SwitchBarHandler.swift */,
 				315E14A82DF77BCD00419C8A /* SwitchBarViewController.swift */,
 				C1AAECBC2E699F740016B82E /* SessionStateMetrics.swift */,
@@ -13489,6 +13498,7 @@
 				B59B16982FAB879900C1040A /* OmniBarFocuser.swift in Sources */,
 				315E14A92DF77BCD00419C8A /* SwitchBarTextEntryView.swift in Sources */,
 				315E14AA2DF77BCD00419C8A /* SwitchBarHandler.swift in Sources */,
+				C9CEF2CD0693E638E2633EC8 /* SwitchBarHandling.swift in Sources */,
 				315E14AB2DF77BCD00419C8A /* SwitchBarTextEntryViewController.swift in Sources */,
 				315E14AD2DF77BCD00419C8A /* SwitchBarViewController.swift in Sources */,
 				FD555C0BE82E630360DC2E5A /* ToggleModeStorage.swift in Sources */,
@@ -13775,6 +13785,7 @@
 				8C4838B5221C8F7F008A6739 /* GestureToolbarButton.swift in Sources */,
 				859DB8172CE6263C001F7210 /* TextZoomLevel.swift in Sources */,
 				31B5E8C02E1D54BB00EECC1E /* NavigationActionBarManager.swift in Sources */,
+				747208FFDE13AE41F28F621E /* SuggestionTrayDependencies.swift in Sources */,
 				31B5E8C12E1D54BB00EECC1E /* SuggestionTrayManager.swift in Sources */,
 				31B5E8C22E1D54BB00EECC1E /* SwipeContainerManager.swift in Sources */,
 				BDE91CD62C6294020005CB74 /* FeedbackCategoryProviding.swift in Sources */,
@@ -14121,6 +14132,7 @@
 				9F3C7FE02D7990740061FA72 /* DefaultBrowserInfoStore.swift in Sources */,
 				CBF259902D47BEC700AC63E4 /* AuthenticationService.swift in Sources */,
 				C14414762EB10DC30057F921 /* AIChatFullModeFeature.swift in Sources */,
+				7048362F991A98E777F8BD71 /* DevicePlatformProviding.swift in Sources */,
 				9F104B942F4EA27200FD6139 /* ScrollableOnboardingBackground.swift in Sources */,
 				569B072A2DD7378700E0719A /* ThreatProtectionView.swift in Sources */,
 				7B4F87EE2D0739EB0010B18F /* SiriBubbleView.swift in Sources */,

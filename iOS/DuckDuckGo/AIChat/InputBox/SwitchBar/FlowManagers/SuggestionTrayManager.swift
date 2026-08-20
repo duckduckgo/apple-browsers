@@ -29,20 +29,6 @@ import Suggestions
 import Core
 import AIChat
 
-/// Dependencies required for the suggestion tray
-struct SuggestionTrayDependencies {
-    let favoritesViewModel: FavoritesListInteracting
-    let bookmarksDatabase: CoreDataDatabase
-    let historyManager: HistoryManaging
-    let tabsModelProvider: () -> TabsModelManaging
-    let featureFlagger: FeatureFlagger
-    let appSettings: AppSettings
-    let aiChatSettings: AIChatSettingsProvider
-    let featureDiscovery: FeatureDiscovery
-    let newTabPageDependencies: SuggestionTrayViewController.NewTabPageDependencies
-    let productSurfaceTelemetry: ProductSurfaceTelemetry
-}
-
 /// Protocol for handling suggestion tray events
 protocol SuggestionTrayManagerDelegate: AnyObject {
     func suggestionTrayManager(_ manager: SuggestionTrayManager, didSelectSuggestion suggestion: Suggestion)

@@ -158,11 +158,11 @@ final class JobQueueManagerTests: XCTestCase {
                                                     errorHandler: nil,
                                                     completion: nil)
 
-        XCTAssertEqual(mockQueueDelegate.events, [])
+        XCTAssertEqual(mockQueueDelegate.events, [.didStart])
 
         mockQueue.completeAllOperations()
 
-        XCTAssertEqual(mockQueueDelegate.events, [.willEnqueue, .didStart, .didFinish])
+        XCTAssertEqual(mockQueueDelegate.events, [.didStart, .willEnqueue, .didFinish])
     }
 
     func testWhenActiveRunIsReplaced_thenDelegateFinishesOldRunBeforeStartingNewRun() {
@@ -181,18 +181,22 @@ final class JobQueueManagerTests: XCTestCase {
                                                     errorHandler: nil,
                                                     completion: nil)
         mockQueue.completeNextBarrierBlock()
-        mockQueue.completeNextBarrierBlock()
 
         sut.startImmediateScanOperationsIfPermitted(showWebView: false,
                                                     isAuthenticatedUser: true,
                                                     jobDependencies: mockDependencies,
                                                     errorHandler: nil,
                                                     completion: nil)
+
+        XCTAssertEqual(mockQueueDelegate.events, [
+            .didStart, .willEnqueue, .didFinish, .didStart
+        ])
+
         mockQueue.completeAllOperations()
 
         XCTAssertEqual(mockQueueDelegate.events, [
-            .willEnqueue, .didStart, .didFinish,
-            .willEnqueue, .didStart, .didFinish
+            .didStart, .willEnqueue, .didFinish, .didStart,
+            .willEnqueue, .didFinish
         ])
     }
 
@@ -210,9 +214,7 @@ final class JobQueueManagerTests: XCTestCase {
                                                     jobDependencies: mockDependencies,
                                                     errorHandler: nil,
                                                     completion: nil)
-        mockQueue.completeAllOperations()
-
-        XCTAssertEqual(mockQueueDelegate.events, [.willEnqueue, .didStart, .didFinish])
+        XCTAssertEqual(mockQueueDelegate.events, [.didStart, .didFinish])
     }
 
     func testWhenStartImmediateScan_andScanCompletesWithErrors_thenCompletionIsCalledWithErrors() async throws {

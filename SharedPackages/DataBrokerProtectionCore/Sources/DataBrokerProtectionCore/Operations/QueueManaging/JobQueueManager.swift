@@ -123,10 +123,7 @@ public final class JobQueueManager: JobQueueManaging {
     private var mode = BrokerProfileJobQueueMode.idle
     private let operationErrorsLock = NSLock()
     private var operationErrors: [Error] = []
-    private var nextRunID = 0
-    private var activeRunID: Int?
-    // Accessed only from queue barrier blocks.
-    private var isDelegateRunActive = false
+    private var activeRunID: UUID?
 
     public var debugRunningStatusString: String {
         switch mode {
@@ -177,8 +174,9 @@ public final class JobQueueManager: JobQueueManaging {
                                                           completion: (() -> Void)?) {
         cancelCurrentModeAndResetIfNeeded()
         mode = .immediate(errorHandler: nil, completion: nil)
-        let runID = beginRun()
-        addDelegateDidStartOperationsBarrier()
+        let runID = UUID()
+        activeRunID = runID
+        delegate?.queueManagerDidStartOperations(self)
         addEmailConfirmationJobs(showWebView: showWebView, jobDependencies: jobDependencies)
         addJobs(for: .optOut,
                 runID: runID,
@@ -284,8 +282,6 @@ private extension JobQueueManager {
             return
         }
 
-        cancelCurrentModeAndResetIfNeeded()
-
         if delegate != nil {
             jobQueue.addBarrierBlock1 { [weak self] in
                 guard let self, let delegate = self.delegate else { return }
@@ -293,10 +289,12 @@ private extension JobQueueManager {
             }
         }
 
+        cancelCurrentModeAndResetIfNeeded()
         mode = newMode
-        let runID = beginRun()
+        let runID = UUID()
+        activeRunID = runID
 
-        addDelegateDidStartOperationsBarrier()
+        delegate?.queueManagerDidStartOperations(self)
 
         addEmailConfirmationJobs(showWebView: showWebView, jobDependencies: jobDependencies)
         addJobs(for: type,
@@ -309,15 +307,6 @@ private extension JobQueueManager {
                 completion: completion)
     }
 
-    func addDelegateDidStartOperationsBarrier() {
-        guard delegate != nil else { return }
-
-        jobQueue.addBarrierBlock1 { [weak self] in
-            guard let self else { return }
-            self.notifyDelegateDidStartOperations()
-        }
-    }
-
     func cancelCurrentModeAndResetIfNeeded() {
         switch mode {
         case .immediate(let errorHandler, let completion), .scheduled(let errorHandler, let completion):
@@ -325,38 +314,11 @@ private extension JobQueueManager {
             let errorCollection = DataBrokerProtectionJobsErrorCollection(oneTimeError: BrokerProfileJobQueueError.interrupted, operationErrors: operationErrorsForCurrentOperations())
             errorHandler?(errorCollection)
             resetMode()
-            addDelegateDidFinishOperationsBarrier()
+            delegate?.queueManagerDidFinishOperations(self)
             completion?()
         default:
             break
         }
-    }
-
-    func addDelegateDidFinishOperationsBarrier() {
-        guard delegate != nil else { return }
-
-        jobQueue.addBarrierBlock1 { [weak self] in
-            guard let self else { return }
-            self.notifyDelegateDidFinishOperations()
-        }
-    }
-
-    func notifyDelegateDidStartOperations() {
-        guard !isDelegateRunActive else { return }
-        isDelegateRunActive = true
-        delegate?.queueManagerDidStartOperations(self)
-    }
-
-    func notifyDelegateDidFinishOperations() {
-        guard isDelegateRunActive else { return }
-        isDelegateRunActive = false
-        delegate?.queueManagerDidFinishOperations(self)
-    }
-
-    func beginRun() -> Int {
-        nextRunID += 1
-        activeRunID = nextRunID
-        return nextRunID
     }
 
     func resetMode() {
@@ -366,7 +328,7 @@ private extension JobQueueManager {
     }
 
     func addJobs(for jobType: JobType,
-                 runID: Int,
+                 runID: UUID,
                  priorityDate: Date? = nil,
                  showWebView: Bool,
                  isAuthenticatedUser: Bool,
@@ -392,17 +354,19 @@ private extension JobQueueManager {
             Logger.dataBrokerProtection.error("DataBrokerProtectionProcessor error: addOperations, error: \(error.localizedDescription, privacy: .public)")
             errorHandler?(DataBrokerProtectionJobsErrorCollection(oneTimeError: error))
             resetMode()
-            addDelegateDidFinishOperationsBarrier()
+            delegate?.queueManagerDidFinishOperations(self)
             completion?()
             return
         }
 
         jobQueue.addBarrierBlock1 { [weak self] in
-            guard let self, self.activeRunID == runID else { return }
-            let errorCollection = DataBrokerProtectionJobsErrorCollection(oneTimeError: nil, operationErrors: self.operationErrorsForCurrentOperations())
+            if let self, self.activeRunID != runID { return }
+            let errorCollection = DataBrokerProtectionJobsErrorCollection(oneTimeError: nil, operationErrors: self?.operationErrorsForCurrentOperations())
             errorHandler?(errorCollection)
-            self.resetMode()
-            self.notifyDelegateDidFinishOperations()
+            self?.resetMode()
+            if let self {
+                self.delegate?.queueManagerDidFinishOperations(self)
+            }
             completion?()
         }
     }

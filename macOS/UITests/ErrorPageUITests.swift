@@ -33,6 +33,9 @@ class ErrorPageUITests: UITestCase {
         app.enforceSingleWindow()
         webView = app.webViews.firstMatch
         removePinnedTabsForTestCleanup()
+
+        // wait for the New Tab page to load
+        XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
     }
 
     override func tearDown() {
@@ -1766,7 +1769,10 @@ private extension ErrorPageUITests {
     /// list). Empty if the button is disabled or the delegate hides the menu (only-current case).
     private func navigationHistoryMenuTitlesFromRightClicking(_ button: XCUIElement) -> [String] {
         XCTAssertTrue(button.exists, "Navigation button should exist before reading history menu")
-        guard button.isEnabled else { return [] }
+        guard button.isEnabled else {
+            XCTFail("Navigation button is disabled")
+            return []
+        }
         button.rightClick()
         let menu = app.windows.firstMatch.menus.firstMatch
         defer { app.typeKey(.escape, modifierFlags: []) }

@@ -284,33 +284,41 @@ class BarsAnimator {
         }
 
         guard delegate?.isFloatingChromeEnabled == true else {
-            guard velocity >= 0 else {
-                revealBars(animated: true)
-                return
-            }
-
-            let isAboveExtendedBottomBounceArea = scrollView.contentOffset.y < scrollView.contentOffsetYAtBottom - combinedBarsHeight
-            guard barsState == .transitioning || isAboveExtendedBottomBounceArea else { return }
-
-            guard velocity == 0 else {
-                hideBars(animated: true)
-                return
-            }
-
-            switch barsState {
-            case .revealed, .hidden:
-                break
-
-            case .transitioning:
-                if transitionProgress > 0.5 && transitionProgress < 1.0 {
-                    hideBars(animated: true)
-                } else if transitionProgress > 0 && transitionProgress  <= 0.5 {
-                    revealBars(animated: true)
-                }
-            }
+            finishLegacyScrolling(in: scrollView, velocity: velocity)
             return
         }
 
+        finishFloatingScrolling(in: scrollView, velocity: velocity)
+    }
+
+    private func finishLegacyScrolling(in scrollView: UIScrollView, velocity: CGFloat) {
+        guard velocity >= 0 else {
+            revealBars(animated: true)
+            return
+        }
+
+        let isAboveExtendedBottomBounceArea = scrollView.contentOffset.y < scrollView.contentOffsetYAtBottom - combinedBarsHeight
+        guard barsState == .transitioning || isAboveExtendedBottomBounceArea else { return }
+
+        guard velocity == 0 else {
+            hideBars(animated: true)
+            return
+        }
+
+        switch barsState {
+        case .revealed, .hidden:
+            break
+
+        case .transitioning:
+            if transitionProgress > 0.5 && transitionProgress < 1.0 {
+                hideBars(animated: true)
+            } else if transitionProgress > 0 && transitionProgress  <= 0.5 {
+                revealBars(animated: true)
+            }
+        }
+    }
+
+    private func finishFloatingScrolling(in scrollView: UIScrollView, velocity: CGFloat) {
         let isFastFlick = abs(velocity) >= Metrics.floatingVelocityCommitThreshold
         if isFastFlick {
             if velocity < 0 {

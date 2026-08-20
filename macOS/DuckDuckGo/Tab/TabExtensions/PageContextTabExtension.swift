@@ -157,7 +157,7 @@ final class PageContextTabExtension {
 
                 let previousContent = self.content
                 self.content = tabContent
-                // Reset user-removed suppression when navigating to a new URL so
+                // Reset auto page-context suppression when navigating to a new URL so
                 // auto-collect resumes on the next page, regardless of feature flag state.
                 // Also drop the previous page's cached context so a stale snapshot
                 // can't be re-pushed to the sidebar before the new page is collected.
@@ -506,14 +506,20 @@ final class PageContextTabExtension {
     /// sidebar is shown.
     @MainActor
     func appendSelectionContext(_ selection: AIChatSelectionContextData) {
-        // Opening the sidebar for a selection shouldn't also auto-attach the whole page — the
-        // selection is what the user asked about. Leaves an already-attached page context alone.
-        if Self.shouldSuppressAutoPageContextOnSelectionAttach(isSidebarVisible: isSidebarVisibleForTab) {
-            isAutoPageContextSuppressed = true
-        }
+        suppressAutoPageContextForSelectionAction()
         pendingSelectionContexts.append(selectionWithEncodedFavicon(selection))
         // Defer so a just-revealed sidebar's chat VC exists before we push (matches page-context timing).
         Task { @MainActor [weak self] in self?.flushPendingSelectionContexts() }
+    }
+
+    /// Opening the sidebar for a selection-based action (attach selection, summarize, translate)
+    /// shouldn't also auto-attach the whole page — the selection is what the user asked about.
+    /// Leaves an already-attached page context alone.
+    @MainActor
+    func suppressAutoPageContextForSelectionAction() {
+        if Self.shouldSuppressAutoPageContextOnSelectionAttach(isSidebarVisible: isSidebarVisibleForTab) {
+            isAutoPageContextSuppressed = true
+        }
     }
 
     /// Forces page-context collection into the sidebar regardless of the auto-send preference — the
@@ -633,7 +639,9 @@ final class PageContextTabExtension {
 
     /// Context collection is allowed when it's set to automatic in AI Features Settings
     /// or when we allow one-time collection requested by the user.
-    /// Suppressed when the user explicitly removed context on the current page.
+    /// Suppressed when auto page-context is suppressed for the current page — either the user
+    /// explicitly removed the context, or a selection-based action (attach selection, summarize,
+    /// translate) opened the sidebar.
     private var isContextCollectionEnabled: Bool {
         Self.isContextCollectionEnabled(shouldForceContextCollection: shouldForceContextCollection,
                                         isAutoPageContextSuppressed: isAutoPageContextSuppressed,
@@ -648,8 +656,8 @@ final class PageContextTabExtension {
         return shouldAutomaticallySendPageContext
     }
 
-    /// Attaching a selection suppresses this page's auto page-context only when the selection is
-    /// what opens the sidebar — an already-open sidebar keeps whatever page context it has.
+    /// A selection-based action suppresses this page's auto page-context only when it's what opens
+    /// the sidebar — an already-open sidebar keeps whatever page context it has.
     static func shouldSuppressAutoPageContextOnSelectionAttach(isSidebarVisible: Bool) -> Bool {
         !isSidebarVisible
     }
@@ -760,6 +768,10 @@ protocol PageContextProtocol: AnyObject, NavigationResponder {
     /// Appends a user text selection to the sidebar's selection-context list. See the
     /// implementation in `PageContextTabExtension` for buffering/lifecycle semantics.
     @MainActor func appendSelectionContext(_ selection: AIChatSelectionContextData)
+
+    /// Suppresses this page's auto page-context attachment when a selection-based action
+    /// (attach selection, summarize, translate) is what opens the sidebar.
+    @MainActor func suppressAutoPageContextForSelectionAction()
 
     /// Force-collects and attaches the current page's context to the sidebar, bypassing the
     /// auto-send preference (used by the tab-bar "Ask About Page" action).

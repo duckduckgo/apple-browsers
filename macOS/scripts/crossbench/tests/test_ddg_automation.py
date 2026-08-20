@@ -138,6 +138,21 @@ class DDGAutomationTests(unittest.TestCase):
         self.assertIn("e.startTime<=maxMs", probe)
         self.assertIn("buffered:true", probe)
 
+    def test_probe_captures_bounded_page_state(self):
+        probe = DDG_AUTOMATION.lcp_probe(600, 12000)
+        for field in (
+            "resourceCount",
+            "resourceFinished",
+            "resourceEncodedBytes",
+            "navigationResponseEnd",
+            "readyState",
+            "ytInitialData",
+            "ytdAppChildCount",
+            "richGrid",
+        ):
+            self.assertIn(field, probe)
+        self.assertNotIn("resources.map", probe)
+
     def test_measure_requires_successful_setup_acknowledgements(self):
         for failed_path in ("/clearWebsiteData", "/navigate"):
             with self.subTest(failed_path=failed_path):

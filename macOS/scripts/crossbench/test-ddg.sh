@@ -989,7 +989,12 @@ measure_site() {
   LAST_UNFINALIZED="$unfinalized"
   LAST_NO_METRIC="$no_metric"
   TOTAL_RECORDED=$((TOTAL_RECORDED + recorded))
-  if [ "$site_failed" -ne 0 ] || [ "$recorded" -lt "$MEASURED_REPS" ]; then
+  # A site can record every repetition and still have rendered nothing, which
+  # looks identical to a healthy site in the artifacts. Screenshot runs are
+  # asking exactly that question, so they keep the replay log that says which
+  # requests the archive could not answer.
+  if [ "$site_failed" -ne 0 ] || [ "$recorded" -lt "$MEASURED_REPS" ] ||
+      [ "$CAPTURE_SCREENSHOTS" = 1 ]; then
     preserve_site_diagnostics "$site"
   fi
   if ! stop_wpr; then

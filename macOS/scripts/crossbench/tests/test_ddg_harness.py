@@ -705,6 +705,16 @@ class DDGHarnessTests(unittest.TestCase):
         self.assertNotIn("set_shared_failure", body)
         self.assertNotIn("exit 1", body)
 
+    def test_screenshot_runs_keep_the_replay_log(self):
+        """A green run discards the only record of what failed to load."""
+        harness = SCRIPT.read_text(encoding="utf-8")
+        gate = harness[
+            harness.index('if [ "$site_failed" -ne 0 ]') :
+            harness.index('preserve_site_diagnostics "$site"',
+                          harness.index('if [ "$site_failed" -ne 0 ]'))
+        ]
+        self.assertIn('[ "$CAPTURE_SCREENSHOTS" = 1 ]', gate)
+
     def test_screenshot_verb_exists_in_automation_client(self):
         """The harness cannot capture what the client cannot request."""
         client = (SCRIPT.parent / "ddg-automation.py").read_text(encoding="utf-8")

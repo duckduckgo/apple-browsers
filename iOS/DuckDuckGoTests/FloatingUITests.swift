@@ -463,14 +463,24 @@ final class WebViewPreviewSnapshotGeometryTests: XCTestCase {
         XCTAssertNil(WebViewPreviewSnapshotGeometry.visibleRect(webViewBounds: bounds, contentInset: contentInset))
     }
 
-    func testWhenCapturingFullBoundsThenContentInsetsDoNotCropTheViewport() {
+    func testWhenCapturingFullBoundsThenOnlyTheTopInsetIsCropped() {
         let bounds = CGRect(x: 0, y: 0, width: 320, height: 640)
         let contentInset = UIEdgeInsets(top: 50, left: 0, bottom: 30, right: 0)
 
         XCTAssertEqual(WebViewPreviewSnapshotGeometry.visibleRect(webViewBounds: bounds,
                                                                   contentInset: contentInset,
                                                                   capturesFullBounds: true),
-                       bounds)
+                       CGRect(x: 0, y: 50, width: 320, height: 590))
+    }
+
+    func testWhenNotCapturingFullBoundsThenTopAndBottomInsetsAreCropped() {
+        let bounds = CGRect(x: 0, y: 0, width: 320, height: 640)
+        let contentInset = UIEdgeInsets(top: 50, left: 0, bottom: 30, right: 0)
+
+        XCTAssertEqual(WebViewPreviewSnapshotGeometry.visibleRect(webViewBounds: bounds,
+                                                                  contentInset: contentInset,
+                                                                  capturesFullBounds: false),
+                       CGRect(x: 0, y: 50, width: 320, height: 560))
     }
 }
 

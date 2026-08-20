@@ -68,4 +68,13 @@ enum WebViewTransitionGeometry {
                       width: containerSize.width,
                       height: containerSize.width * previewAspectRatio)
     }
+
+    static func webContentFrame(from containerFrame: CGRect, topObscuredHeight: CGFloat) -> CGRect {
+        let top = max(0, topObscuredHeight)
+        guard top > 0, containerFrame.height > top, top.isFinite else { return containerFrame }
+        return CGRect(x: containerFrame.minX,
+                      y: containerFrame.minY + top,
+                      width: containerFrame.width,
+                      height: containerFrame.height - top)
+    }
 }

@@ -582,6 +582,12 @@ final class BrowserToolbarView: UIView {
         hasEmbeddedOmnibar ? Self.floatingBottomMarginWithEmbedded : Self.floatingBottomMarginStandalone
     }
 
+    var visibleCapsuleRect: CGRect {
+        guard isFloatingStyleEnabled else { return bounds }
+        let shadowSpill = materialBackgroundView.layer.shadowRadius + materialBackgroundView.layer.shadowOffset.height
+        return bounds.union(materialBackgroundView.frame.insetBy(dx: -shadowSpill, dy: -shadowSpill))
+    }
+
     /// Floating style only; returns `.zero` otherwise.
     func restingCapsuleFrame(in view: UIView) -> CGRect {
         guard isFloatingStyleEnabled else { return .zero }

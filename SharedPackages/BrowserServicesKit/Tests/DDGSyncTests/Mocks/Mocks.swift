@@ -598,8 +598,7 @@ final class DeviceInfoMigrationCoordinatingMock: DeviceInfoMigrationCoordinating
     private let lock = NSLock()
     private var recordedCalls: [Call] = []
     private var recordedRepairCalls: [Call] = []
-    private var recordedRenameCalls: [(name: String, account: SyncAccount)] = []
-    private var recordedRenameWithoutUnifiedInfoCalls: [(name: String, account: SyncAccount)] = []
+    private var recordedRenameCalls: [(name: String, account: SyncAccount, mode: DeviceInfoRenameMode)] = []
     private var recordedResetCallCount = 0
     var hasCompletedMigrationStub = false
     var calls: [Call] {
@@ -617,24 +616,16 @@ final class DeviceInfoMigrationCoordinatingMock: DeviceInfoMigrationCoordinating
         defer { lock.unlock() }
         return recordedResetCallCount
     }
-    var renameCalls: [(name: String, account: SyncAccount)] {
+    var renameCalls: [(name: String, account: SyncAccount, mode: DeviceInfoRenameMode)] {
         lock.lock()
         defer { lock.unlock() }
         return recordedRenameCalls
-    }
-    var renameWithoutUnifiedInfoCalls: [(name: String, account: SyncAccount)] {
-        lock.lock()
-        defer { lock.unlock() }
-        return recordedRenameWithoutUnifiedInfoCalls
     }
     var migrateCurrentDeviceHandler: (() async -> Void)?
     var repairCurrentDeviceInfoHandler: (() async -> Void)?
     var renameCurrentDeviceStub: [RegisteredDevice] = []
     var renameCurrentDeviceError: Error?
     var renameCurrentDeviceHandler: (() async throws -> [RegisteredDevice])?
-    var renameCurrentDeviceWithoutUnifiedInfoStub: [RegisteredDevice] = []
-    var renameCurrentDeviceWithoutUnifiedInfoError: Error?
-    var renameCurrentDeviceWithoutUnifiedInfoHandler: (() async throws -> [RegisteredDevice])?
 
     func migrateCurrentDeviceIfNeeded(for account: SyncAccount) async {
         let handler = record(Call(account: account))
@@ -646,19 +637,10 @@ final class DeviceInfoMigrationCoordinatingMock: DeviceInfoMigrationCoordinating
         await handler?()
     }
 
-    func renameCurrentDevice(to name: String, for account: SyncAccount) async throws -> [RegisteredDevice] {
-        let result = recordRename(name: name, account: account)
-        if let handler = result.handler {
-            return try await handler()
-        }
-        if let error = result.error {
-            throw error
-        }
-        return result.stub
-    }
-
-    func renameCurrentDeviceWithoutUnifiedInfo(to name: String, for account: SyncAccount) async throws -> [RegisteredDevice] {
-        let result = recordRenameWithoutUnifiedInfo(name: name, account: account)
+    func renameCurrentDevice(to name: String,
+                             for account: SyncAccount,
+                             mode: DeviceInfoRenameMode) async throws -> [RegisteredDevice] {
+        let result = recordRename(name: name, account: account, mode: mode)
         if let handler = result.handler {
             return try await handler()
         }
@@ -669,23 +651,12 @@ final class DeviceInfoMigrationCoordinatingMock: DeviceInfoMigrationCoordinating
     }
 
     private func recordRename(name: String,
-                              account: SyncAccount) -> (handler: (() async throws -> [RegisteredDevice])?, error: Error?, stub: [RegisteredDevice]) {
+                              account: SyncAccount,
+                              mode: DeviceInfoRenameMode) -> (handler: (() async throws -> [RegisteredDevice])?, error: Error?, stub: [RegisteredDevice]) {
         lock.lock()
         defer { lock.unlock() }
-        recordedRenameCalls.append((name: name, account: account))
+        recordedRenameCalls.append((name: name, account: account, mode: mode))
         return (renameCurrentDeviceHandler, renameCurrentDeviceError, renameCurrentDeviceStub)
-    }
-
-    private func recordRenameWithoutUnifiedInfo(name: String,
-                                                account: SyncAccount) -> (handler: (() async throws -> [RegisteredDevice])?,
-                                                                         error: Error?,
-                                                                         stub: [RegisteredDevice]) {
-        lock.lock()
-        defer { lock.unlock() }
-        recordedRenameWithoutUnifiedInfoCalls.append((name: name, account: account))
-        return (renameCurrentDeviceWithoutUnifiedInfoHandler,
-                renameCurrentDeviceWithoutUnifiedInfoError,
-                renameCurrentDeviceWithoutUnifiedInfoStub)
     }
 
     func hasCompletedMigration(for account: SyncAccount) -> Bool {

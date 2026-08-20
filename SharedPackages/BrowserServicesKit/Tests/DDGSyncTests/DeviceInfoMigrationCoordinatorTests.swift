@@ -98,7 +98,7 @@ final class DeviceInfoMigrationCoordinatorTests: XCTestCase {
         let returnedDevices = [RegisteredDevice(id: "device-1", name: "Device 1", type: "iOS")]
         accountManager.updateDeviceStub = returnedDevices
 
-        let devices = try await coordinator.renameCurrentDevice(to: "Renamed Device", for: .mock)
+        let devices = try await coordinator.renameCurrentDevice(to: "Renamed Device", for: .mock, mode: .unified)
 
         XCTAssertEqual(devices.map(\.id), returnedDevices.map(\.id))
         XCTAssertEqual(scopedAccess.ensureAccountInfoProtectedKeysCalls.map(\.deviceId), [SyncAccount.mock.deviceId])
@@ -129,7 +129,7 @@ final class DeviceInfoMigrationCoordinatorTests: XCTestCase {
         let returnedDevices = [RegisteredDevice(id: "device-1", name: "Device 1", type: "iOS")]
         accountManager.updateDeviceStub = returnedDevices
 
-        let devices = try await coordinator.renameCurrentDeviceWithoutUnifiedInfo(to: "Renamed Device", for: .mock)
+        let devices = try await coordinator.renameCurrentDevice(to: "Renamed Device", for: .mock, mode: .legacyOnly)
 
         XCTAssertEqual(devices.map(\.id), returnedDevices.map(\.id))
         XCTAssertTrue(scopedAccess.ensureAccountInfoProtectedKeysCalls.isEmpty)
@@ -158,7 +158,7 @@ final class DeviceInfoMigrationCoordinatorTests: XCTestCase {
         await coordinator.migrateCurrentDeviceIfNeeded(for: .mock)
         XCTAssertTrue(coordinator.hasCompletedMigration(for: .mock))
 
-        _ = try await coordinator.renameCurrentDeviceWithoutUnifiedInfo(to: "Renamed Device", for: .mock)
+        _ = try await coordinator.renameCurrentDevice(to: "Renamed Device", for: .mock, mode: .legacyOnly)
 
         let renamedAccount = try XCTUnwrap(secureStore.theAccount)
         XCTAssertTrue(coordinator.hasCompletedMigration(for: renamedAccount))
@@ -171,7 +171,7 @@ final class DeviceInfoMigrationCoordinatorTests: XCTestCase {
         coordinator = makeCoordinator()
 
         do {
-            _ = try await coordinator.renameCurrentDeviceWithoutUnifiedInfo(to: "Renamed Device", for: .mock)
+            _ = try await coordinator.renameCurrentDevice(to: "Renamed Device", for: .mock, mode: .legacyOnly)
             XCTFail("Expected rename to throw")
         } catch TestError.expected {
         } catch {
@@ -189,7 +189,7 @@ final class DeviceInfoMigrationCoordinatorTests: XCTestCase {
         accountManager.updateDeviceError = SyncError.unexpectedStatusCode(500)
 
         do {
-            _ = try await coordinator.renameCurrentDeviceWithoutUnifiedInfo(to: "Renamed Device", for: .mock)
+            _ = try await coordinator.renameCurrentDevice(to: "Renamed Device", for: .mock, mode: .legacyOnly)
             XCTFail("Expected rename to throw")
         } catch let error as SyncError {
             XCTAssertEqual(error, .unexpectedStatusCode(500))
@@ -207,7 +207,7 @@ final class DeviceInfoMigrationCoordinatorTests: XCTestCase {
         scopedAccess.ensureAccountInfoProtectedKeysError = TestError.expected
 
         do {
-            _ = try await coordinator.renameCurrentDevice(to: "Renamed Device", for: .mock)
+            _ = try await coordinator.renameCurrentDevice(to: "Renamed Device", for: .mock, mode: .unified)
             XCTFail("Expected rename to throw")
         } catch TestError.expected {
         } catch {
@@ -223,7 +223,7 @@ final class DeviceInfoMigrationCoordinatorTests: XCTestCase {
         deviceInfoCodec.encryptError = TestError.expected
 
         do {
-            _ = try await coordinator.renameCurrentDevice(to: "Renamed Device", for: .mock)
+            _ = try await coordinator.renameCurrentDevice(to: "Renamed Device", for: .mock, mode: .unified)
             XCTFail("Expected rename to throw")
         } catch TestError.expected {
         } catch {
@@ -240,7 +240,7 @@ final class DeviceInfoMigrationCoordinatorTests: XCTestCase {
         coordinator = makeCoordinator()
 
         do {
-            _ = try await coordinator.renameCurrentDevice(to: "Renamed Device", for: .mock)
+            _ = try await coordinator.renameCurrentDevice(to: "Renamed Device", for: .mock, mode: .unified)
             XCTFail("Expected rename to throw")
         } catch TestError.expected {
         } catch {
@@ -257,7 +257,7 @@ final class DeviceInfoMigrationCoordinatorTests: XCTestCase {
         accountManager.updateDeviceError = SyncError.unexpectedStatusCode(500)
 
         do {
-            _ = try await coordinator.renameCurrentDevice(to: "Renamed Device", for: .mock)
+            _ = try await coordinator.renameCurrentDevice(to: "Renamed Device", for: .mock, mode: .unified)
             XCTFail("Expected rename to throw")
         } catch let error as SyncError {
             XCTAssertEqual(error, .unexpectedStatusCode(500))
@@ -274,7 +274,7 @@ final class DeviceInfoMigrationCoordinatorTests: XCTestCase {
         deviceInfoCodec.encryptStub = String(repeating: "a", count: DeviceInfo.maximumEncryptedLength + 1)
 
         do {
-            _ = try await coordinator.renameCurrentDevice(to: "Renamed Device", for: .mock)
+            _ = try await coordinator.renameCurrentDevice(to: "Renamed Device", for: .mock, mode: .unified)
             XCTFail("Expected rename to throw")
         } catch let error as DeviceInfoMigrationError {
             XCTAssertEqual(error, .encryptedDeviceInfoTooLarge)
